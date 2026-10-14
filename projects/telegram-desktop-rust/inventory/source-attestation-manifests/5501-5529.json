@@ -1,0 +1,182 @@
+{
+  "accepted_upstream": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+  "start": 5501,
+  "end": 5529,
+  "entries": [
+    {
+      "order": 5501,
+      "path": "Telegram/SourceFiles/platform/win/tray_win.cpp",
+      "blob": "be54999ea3ad5d30d187ae2f9cd31a53b99f012b",
+      "consumer_symbol": "Windows tray/taskbar UX"
+    },
+    {
+      "order": 5502,
+      "path": "Telegram/SourceFiles/platform/win/tray_win.h",
+      "blob": "2618c73452e8cd4247d7bbde6bcdf17041846876",
+      "consumer_symbol": "Windows tray/taskbar UX"
+    },
+    {
+      "order": 5503,
+      "path": "Telegram/SourceFiles/platform/win/wallet_protection_win.cpp",
+      "blob": "ce7ab60fdf41e736a67aad56db9854b02fbd4077",
+      "consumer_symbol": "Windows Hello wallet protection"
+    },
+    {
+      "order": 5504,
+      "path": "Telegram/SourceFiles/platform/win/wallet_protection_win.h",
+      "blob": "c692cfa2b2a19150e1927dab7d4f32e942cd056c",
+      "consumer_symbol": "Windows Hello wallet registration"
+    },
+    {
+      "order": 5505,
+      "path": "Telegram/SourceFiles/platform/win/webauthn_win.cpp",
+      "blob": "4c9bdd4ba247ca351cba1c5c9bca3b937eb2f71a",
+      "consumer_symbol": "Windows WebAuthn"
+    },
+    {
+      "order": 5506,
+      "path": "Telegram/SourceFiles/platform/win/windows_app_user_model_id.cpp",
+      "blob": "3d051f4ce0afcf33207141b0d0355f1accee7ba7",
+      "consumer_symbol": "Windows application identity"
+    },
+    {
+      "order": 5507,
+      "path": "Telegram/SourceFiles/platform/win/windows_app_user_model_id.h",
+      "blob": "76a7a331296c8067c17a9b6f958d66e91dabf2ef",
+      "consumer_symbol": "Windows application identity"
+    },
+    {
+      "order": 5508,
+      "path": "Telegram/SourceFiles/platform/win/windows_autostart_task.cpp",
+      "blob": "b6eba5a26a32134b2d0ac86adb0a0ba9ca0b8b34",
+      "consumer_symbol": "Windows autostart task"
+    },
+    {
+      "order": 5509,
+      "path": "Telegram/SourceFiles/platform/win/windows_autostart_task.h",
+      "blob": "6f8fe00f10fe5fbe690bdd0465b597febde92f5f",
+      "consumer_symbol": "Windows autostart task"
+    },
+    {
+      "order": 5510,
+      "path": "Telegram/SourceFiles/platform/win/windows_dlls.cpp",
+      "blob": "ded5dd0d13f10096145cbf476d28fcbc5f03ca60",
+      "consumer_symbol": "Windows safe dynamic libraries"
+    },
+    {
+      "order": 5511,
+      "path": "Telegram/SourceFiles/platform/win/windows_dlls.h",
+      "blob": "6ed503c8d3b86e0e582918113ce7f98e98692e53",
+      "consumer_symbol": "Windows safe dynamic libraries"
+    },
+    {
+      "order": 5512,
+      "path": "Telegram/SourceFiles/platform/win/windows_quiethours.idl",
+      "blob": "15e6e85bb4dd046e7c3c9a24d38702fd39c57daf",
+      "consumer_symbol": "Windows quiet-hours contract"
+    },
+    {
+      "order": 5513,
+      "path": "Telegram/SourceFiles/platform/win/windows_taskbar_buttons.cpp",
+      "blob": "0e09d09ff93c1b465b64f1b391f754655725fb48",
+      "consumer_symbol": "Windows taskbar media controls"
+    },
+    {
+      "order": 5514,
+      "path": "Telegram/SourceFiles/platform/win/windows_taskbar_buttons.h",
+      "blob": "706c427e3682ef6bf5c9cee035e7a77a51e063d3",
+      "consumer_symbol": "Windows taskbar media controls"
+    },
+    {
+      "order": 5515,
+      "path": "Telegram/SourceFiles/platform/win/windows_toast_activator.cpp",
+      "blob": "415d4c7b1c060510fa0122281cc8b18b8da98778",
+      "consumer_symbol": "Windows toast activator"
+    },
+    {
+      "order": 5516,
+      "path": "Telegram/SourceFiles/platform/win/windows_toast_activator.h",
+      "blob": "0c859421f6eccbed3ba6b71c07b375478a6eba0e",
+      "consumer_symbol": "Windows toast activator"
+    },
+    {
+      "order": 5517,
+      "path": "Telegram/SourceFiles/platform/win/windows_toastactivator.idl",
+      "blob": "7d9dbd6b44fce03ade54d65244e8e7d3fc384272",
+      "consumer_symbol": "Windows toast activator"
+    },
+    {
+      "order": 5518,
+      "path": "Telegram/SourceFiles/poll/poll_link_box.cpp",
+      "blob": "ee58e3bcfc91f342439d259ff1835fede77d7a5d",
+      "consumer_symbol": "Poll option link editor"
+    },
+    {
+      "order": 5519,
+      "path": "Telegram/SourceFiles/poll/poll_link_box.h",
+      "blob": "1accb9726ab61fbac9f66a104bc148b6670e6d0d",
+      "consumer_symbol": "Poll option link editor"
+    },
+    {
+      "order": 5520,
+      "path": "Telegram/SourceFiles/poll/poll_link_thumbnail.cpp",
+      "blob": "007453e029fe2ae9ae8c55a6a58049c60485adb2",
+      "consumer_symbol": "Poll link thumbnail"
+    },
+    {
+      "order": 5521,
+      "path": "Telegram/SourceFiles/poll/poll_link_thumbnail.h",
+      "blob": "f14a98e1d04e107456789ef3bf49e9008b07ad13",
+      "consumer_symbol": "Poll link thumbnail"
+    },
+    {
+      "order": 5522,
+      "path": "Telegram/SourceFiles/poll/poll_media_upload.cpp",
+      "blob": "b95fa6fa7121389f62d53701c66e13070e10314c",
+      "consumer_symbol": "Poll media upload"
+    },
+    {
+      "order": 5523,
+      "path": "Telegram/SourceFiles/poll/poll_media_upload.h",
+      "blob": "81bf0b7a7bcf04662841dd868bd9085a47929323",
+      "consumer_symbol": "Poll media upload"
+    },
+    {
+      "order": 5524,
+      "path": "Telegram/SourceFiles/profile/profile.style",
+      "blob": "0e535f334f8f381f2f079590252e2d94439384ef",
+      "consumer_symbol": "Profile presentation tokens"
+    },
+    {
+      "order": 5525,
+      "path": "Telegram/SourceFiles/profile/profile_back_button.cpp",
+      "blob": "9b22f55cb9d30f60d8a289d5b8e9b0a463aed909",
+      "consumer_symbol": "Profile back/header control"
+    },
+    {
+      "order": 5526,
+      "path": "Telegram/SourceFiles/profile/profile_back_button.h",
+      "blob": "b55163294df9d1767afbee6af59d234e2c84770f",
+      "consumer_symbol": "Profile back/header control"
+    },
+    {
+      "order": 5527,
+      "path": "Telegram/SourceFiles/profile/profile_block_widget.cpp",
+      "blob": "8c77b0f693a15d0cbdff8b77e0b8d6361170337f",
+      "consumer_symbol": "Profile block composition"
+    },
+    {
+      "order": 5528,
+      "path": "Telegram/SourceFiles/profile/profile_block_widget.h",
+      "blob": "68c6ecbf55f9e687b5f6f2f7dd21a695aaf39b57",
+      "consumer_symbol": "Profile block composition"
+    },
+    {
+      "order": 5529,
+      "path": "Telegram/SourceFiles/profile/profile_cover_drop_area.cpp",
+      "blob": "04045987bbb8f50af87d273a38061037f3a2ba87",
+      "consumer_symbol": "Profile cover drop area"
+    }
+  ],
+  "accepted_tree": "6b616494f3465324e749a04dcd1c9d508657a998"
+}

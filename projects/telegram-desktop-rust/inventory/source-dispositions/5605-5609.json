@@ -1,0 +1,199 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "tree": "9d8fa87ce68c832d2f4c99f372a5bb672463c3e1"
+  },
+  "range": {
+    "first_order": 5605,
+    "last_order": 5609,
+    "entries": 5
+  },
+  "rows": [
+    {
+      "recursive_order": 5605,
+      "source_path": "Telegram/SourceFiles/settings/sections/settings_notifications.cpp",
+      "source_blob_sha": "a16c3ee9690de934d795a2803ada0e82c3f9db94",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Canonical notification settings projection over server-backed per-type policy entrypoints, app desktop/sound/preview/badge preferences, multi-account scope, event/call authorization, and native/custom platform notification manager selection/placement/count.",
+      "upstream_owner": "Settings Notifications + Data notify settings + reactions settings + account authorizations + Window/Platform Notifications",
+      "state_machine": "enter -> load exceptions/reactions/authorizations -> project global/app and server policy -> mutate exact owner -> notify/recreate platform manager where required; disabling all-account scope clears inactive-session notifications",
+      "side_effects": "Persists app preferences; triggers server/account notification refresh/mutations; clears inactive-session notifications; recreates native/custom manager; plays preview sounds.",
+      "failure_cases": "account switch/stale server result; native manager recreation race; unsupported/enforced native capability mismatch; inactive-session cleanup scope error; stale display checksum; privacy preview coupling divergence; retry/reload mismatch",
+      "ui_disposition": "Reuse canonical Settings/Notifications with Switch/ListRow/Checkbox/Radio/Slider/Dialog; native/custom is a bounded platform adapter.",
+      "fabushi_canonical_owner": "Canonical Notification Policy + Account/Session notification scope + Privacy preview policy + Platform Notification adapter + Call authorization",
+      "fabushi_target": "MAPPED OPEN. Native reply/mark-read/open exact-scope authorization remains canonical action-pipeline work.",
+      "platform_differences": "Native support/enforcement, Windows focus behavior, display checksum, flash/bounce and custom positioning are platform adapters.",
+      "production_evidence": "Exact source read; production action bridge and same-head evidence open.",
+      "test_evidence": "CRITICAL: account/type policy, server faults/retry, manager recreation, account-switch fencing, exact inactive-session cleanup, privacy preview, display topology, keyboard/focus/a11y/light-dark/responsive, native action exact-scope regression.",
+      "disposition": "mapped-open-canonical-notification-policy",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "NotificationsId",
+      "consumer_evidence": [
+        "BuildMultiAccountSection",
+        "BuildGlobalNotificationsSection",
+        "BuildNotifyTypeSection",
+        "BuildCallNotificationsSection",
+        "BuildSystemIntegrationAndAdvancedSection"
+      ],
+      "reachability_status": "accepted-tree notification settings responsibility proven; closure open",
+      "license_and_provenance": "tdesktop provenance retained; no Telegram notification runtime retained.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-required",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+        "verified_blob_sha": "a16c3ee9690de934d795a2803ada0e82c3f9db94",
+        "file_type": "blob",
+        "recursive_order": 5605
+      },
+      "notes": "Full exact-source read."
+    },
+    {
+      "recursive_order": 5606,
+      "source_path": "Telegram/SourceFiles/settings/sections/settings_notifications.h",
+      "source_blob_sha": "b55fabd4d8ba98a590cc96a14b917ea1a4d26984",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Public canonical Notifications settings route identifier.",
+      "upstream_owner": "Settings Notifications route interface",
+      "state_machine": "typed route only",
+      "side_effects": "none",
+      "failure_cases": "route bypasses canonical settings shell/capability guard",
+      "ui_disposition": "Canonical Settings/Notifications route.",
+      "fabushi_canonical_owner": "Canonical Settings routing",
+      "fabushi_target": "MAPPED OPEN.",
+      "platform_differences": "none",
+      "production_evidence": "Header read only.",
+      "test_evidence": "route/highlight/navigation lifecycle",
+      "disposition": "mapped-open-canonical-notifications-interface",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "NotificationsId",
+      "consumer_evidence": [
+        "Type NotificationsId()"
+      ],
+      "reachability_status": "public route proven; closure open",
+      "license_and_provenance": "tdesktop provenance retained.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-required",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+        "verified_blob_sha": "b55fabd4d8ba98a590cc96a14b917ea1a4d26984",
+        "file_type": "blob",
+        "recursive_order": 5606
+      },
+      "notes": "Full header read."
+    },
+    {
+      "recursive_order": 5607,
+      "source_path": "Telegram/SourceFiles/settings/sections/settings_notifications.style",
+      "source_blob_sha": "b98dd63f0127fccd50c83b8b621d1f2ffef5f03a",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Notification position/count preview visual metrics.",
+      "upstream_owner": "Notifications style resource",
+      "state_machine": "presentation-only",
+      "side_effects": "none",
+      "failure_cases": "source-specific design tokens copied; contrast/responsive/reduced-motion defects",
+      "ui_disposition": "Map to semantic tokens/canonical notification preview.",
+      "fabushi_canonical_owner": "Canonical design system + notification preview",
+      "fabushi_target": "MAPPED OPEN.",
+      "platform_differences": "Qt pixel/icon resources adapt to semantic tokens.",
+      "production_evidence": "Exact style read only.",
+      "test_evidence": "visual/a11y/light-dark/responsive/reduced-motion",
+      "disposition": "mapped-open-canonical-design-system-adaptation",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "notificationsBoxMonitor",
+      "consumer_evidence": [
+        "notification preview monitor/screen/sample metrics"
+      ],
+      "reachability_status": "visual resource proven; adaptation open",
+      "license_and_provenance": "tdesktop provenance retained.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-required",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+        "verified_blob_sha": "b98dd63f0127fccd50c83b8b621d1f2ffef5f03a",
+        "file_type": "blob",
+        "recursive_order": 5607
+      },
+      "notes": "Full style read."
+    },
+    {
+      "recursive_order": 5608,
+      "source_path": "Telegram/SourceFiles/settings/sections/settings_notifications_reactions.cpp",
+      "source_blob_sha": "87361b9226b8833f244706c4fec2d7e165a89dd6",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Server-backed reaction notification policy for message reactions and poll votes, with sender-scope None/Contacts/All and reaction preview privacy.",
+      "upstream_owner": "Api::ReactionsNotifySettings + Notifications/Reactions settings section",
+      "state_machine": "enter -> reload reaction notification settings -> project messages/poll-votes source scope and preview -> toggle None<->All or choose Contacts/All -> update exact server-backed field -> reactively reconcile",
+      "side_effects": "Reloads and updates account reaction notification settings on server.",
+      "failure_cases": "stale reload overwrites new choice; account switch during update; toggle/dialog race; server reject/retry; preview setting diverges from notification privacy; duplicate mutation",
+      "ui_disposition": "Reuse canonical Notifications subsection, Switch/ListRow/Radio/Dialog.",
+      "fabushi_canonical_owner": "Canonical Notification Policy / reaction-event policy under Account/Session owner",
+      "fabushi_target": "MAPPED OPEN; no separate reaction-notification runtime.",
+      "platform_differences": "none beyond canonical desktop projection.",
+      "production_evidence": "Exact source read; canonical server policy implementation/evidence open.",
+      "test_evidence": "server contract/fault/retry/idempotency, account-switch stale fencing, None/Contacts/All transitions, preview privacy, keyboard/focus/a11y.",
+      "disposition": "mapped-open-canonical-reaction-notification-policy",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "NotificationsReactions",
+      "consumer_evidence": [
+        "reactionsNotifySettings().reload()",
+        "updateMessagesFrom(from)",
+        "updatePollVotesFrom(from)",
+        "updateShowPreviews(checked)"
+      ],
+      "reachability_status": "accepted-tree reaction-notification responsibility proven; closure open",
+      "license_and_provenance": "tdesktop provenance retained.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-required",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+        "verified_blob_sha": "87361b9226b8833f244706c4fec2d7e165a89dd6",
+        "file_type": "blob",
+        "recursive_order": 5608
+      },
+      "notes": "Full 292-line exact-source read."
+    },
+    {
+      "recursive_order": 5609,
+      "source_path": "Telegram/SourceFiles/settings/sections/settings_notifications_reactions.h",
+      "source_blob_sha": "21a661dce7c3790bca8af8f6a1f99367dc2b538b",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Public reaction-notification settings section lifecycle contract.",
+      "upstream_owner": "NotificationsReactions section interface",
+      "state_machine": "construct -> setup account-bound content -> reactive lifetime teardown",
+      "side_effects": "none beyond declared route lifecycle",
+      "failure_cases": "section outlives account/controller; route bypass",
+      "ui_disposition": "Canonical Notifications/Reactions route.",
+      "fabushi_canonical_owner": "Canonical Settings routing + Notification Policy",
+      "fabushi_target": "MAPPED OPEN.",
+      "platform_differences": "none",
+      "production_evidence": "Header read only.",
+      "test_evidence": "route/account lifecycle and teardown",
+      "disposition": "mapped-open-canonical-reaction-notification-interface",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "NotificationsReactions",
+      "consumer_evidence": [
+        "class NotificationsReactions : public Section"
+      ],
+      "reachability_status": "public reaction settings section proven; closure open",
+      "license_and_provenance": "tdesktop provenance retained.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-required",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+        "verified_blob_sha": "21a661dce7c3790bca8af8f6a1f99367dc2b538b",
+        "file_type": "blob",
+        "recursive_order": 5609
+      },
+      "notes": "Full header read."
+    }
+  ]
+}

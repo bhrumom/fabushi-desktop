@@ -12,7 +12,16 @@
       "node"
     ],
     "declaration": false,
-    "sourceMap": false
+    "sourceMap": false,
+    "baseUrl": ".",
+    "paths": {
+      "ws": [
+        "node_modules/@types/ws/index.d.ts"
+      ],
+      "*": [
+        "node_modules/*"
+      ]
+    }
   },
   "include": [
     "../source/shared/update-track.ts",
@@ -66,6 +75,8 @@
     "../source/electron-main/coordinator/coordinator-executors.ts",
     "../source/electron-main/coordinator/coordinator-executors.test.ts",
     "../source/electron-main/local-exec/local-exec-daemon-protocol.ts",
-    "../source/electron-main/local-exec/local-exec-daemon-protocol.test.ts"
+    "../source/electron-main/local-exec/local-exec-daemon-protocol.test.ts",
+    "../source/electron-main/analytics/xlsx-export.ts",
+    "../source/electron-main/analytics/xlsx-export.test.ts"
   ]
 }

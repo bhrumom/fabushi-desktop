@@ -9,7 +9,8 @@ use crate::agents::agent_avatar::{
     read_avatar_within_dir, resolve_derived_avatar_filename,
 };
 use crate::agents::agent_profile::{
-    SandAgentProfile, get_sand_profile_path, read_sand_profile_file,
+    SandAgentProfile, SandBotCommand, get_sand_profile_path, read_sand_bot_commands,
+    read_sand_profile_file,
 };
 use crate::agents::settings_file::{
     get_sand_settings_path, read_sand_settings_file,
@@ -56,6 +57,8 @@ pub struct AgentSummary {
     pub name: String,
     pub description: String,
     pub title: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub bot_commands: Vec<SandBotCommand>,
     pub avatar_data_url: Option<String>,
     pub avatar_version: Option<String>,
     pub avatar_shape: Option<String>,
@@ -199,6 +202,7 @@ pub fn minimal_agent_summary(
         name,
         description,
         title,
+        bot_commands: read_sand_bot_commands(get_sand_profile_path(agent_dir)),
         avatar_data_url: None,
         avatar_version: None,
         avatar_shape: non_empty(profile.as_ref().map(|profile| profile.avatar_shape.as_str())),

@@ -1,0 +1,227 @@
+{
+  "format_version": 3,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "tree": "9d8fa87ce68c832d2f4c99f372a5bb672463c3e1"
+  },
+  "range": {
+    "first_order": 6362,
+    "last_order": 6367,
+    "entries": 6
+  },
+  "rows": [
+    {
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "tdesktop Wallet security/address source authority",
+      "ui_disposition": "Project through existing Fabushi Wallet/account-security canonical surfaces; no Telegram-derived UI root.",
+      "fabushi_canonical_owner": "native/mahayana-messaging Wallet key-protection/address owners plus existing Host/storage/platform-security adapters",
+      "platform_differences": "Telegram/Qt/MTProto/platform mechanics are source authority only; Fabushi preserves security, lifecycle, stale fencing and service semantics in source-neutral owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "reachability_status": "accepted exact blob read/responsibility-decomposed; partial production exists; full shipping/service/platform/release closure remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c",
+      "notes": "Reading advances deterministic read-through only; no verified credit is granted by source reading.",
+      "recursive_order": 6362,
+      "source_path": "Telegram/SourceFiles/wallet/wallet_unlock.cpp",
+      "source_blob_sha": "5fbaea9d950772164094e7477e5f786f9a78279f",
+      "responsibility": "Wallet unlock orchestration: silent/interactive authorization, stale-epoch fencing, cancellation, protected-factor routing, install/reset and exactly-once completion.",
+      "state_machine": "Runtime and service authority are explicitly fenced; stale/cancelled/failed operations do not become durable truth.",
+      "side_effects": "Wallet security/address service, persistence and canonical UI projections.",
+      "failure_cases": "Stale asynchronous results, invalid or unavailable state, cross-account leakage, persistence/restart drift and duplicate completion.",
+      "fabushi_target": "Existing Wallet key-protection owner is partial; descendant cb6d561 makes unlocked projection runtime-only. Full grant/retention/platform prompt/reset lifecycle remains open.",
+      "production_evidence": "Current PR descendant production code only where named; same-head Actions required.",
+      "test_evidence": "Focused Rust evidence exists for implemented slices; full temporal/service/platform acceptance remains open.",
+      "consumer_evidence": [
+        "native/mahayana-messaging/src/wallet.rs",
+        "native/mahayana-messaging/src/engine.rs"
+      ],
+      "source_binary_evidence": {
+        "evidence_status": "accepted-exact-blob-read-current-descendant-actions-required",
+        "accepted_upstream": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+        "verified_blob_sha": "5fbaea9d950772164094e7477e5f786f9a78279f",
+        "file_type": "blob",
+        "recursive_order": 6362
+      }
+    },
+    {
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "tdesktop Wallet security/address source authority",
+      "ui_disposition": "Project through existing Fabushi Wallet/account-security canonical surfaces; no Telegram-derived UI root.",
+      "fabushi_canonical_owner": "native/mahayana-messaging Wallet key-protection/address owners plus existing Host/storage/platform-security adapters",
+      "platform_differences": "Telegram/Qt/MTProto/platform mechanics are source authority only; Fabushi preserves security, lifecycle, stale fencing and service semantics in source-neutral owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "reachability_status": "accepted exact blob read/responsibility-decomposed; partial production exists; full shipping/service/platform/release closure remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c",
+      "notes": "Reading advances deterministic read-through only; no verified credit is granted by source reading.",
+      "recursive_order": 6363,
+      "source_path": "Telegram/SourceFiles/wallet/wallet_unlock.h",
+      "source_blob_sha": "cc3c154c1a24ebad70f81b98709f23ba1876c411",
+      "responsibility": "Typed unlock/grant/install/passcode-scope contract and terminal install/reset outcomes.",
+      "state_machine": "Runtime and service authority are explicitly fenced; stale/cancelled/failed operations do not become durable truth.",
+      "side_effects": "Wallet security/address service, persistence and canonical UI projections.",
+      "failure_cases": "Stale asynchronous results, invalid or unavailable state, cross-account leakage, persistence/restart drift and duplicate completion.",
+      "fabushi_target": "Map into the existing source-neutral Wallet security owner; explicit live grants/install scope remains open.",
+      "production_evidence": "Current PR descendant production code only where named; same-head Actions required.",
+      "test_evidence": "Focused Rust evidence exists for implemented slices; full temporal/service/platform acceptance remains open.",
+      "consumer_evidence": [
+        "native/mahayana-messaging/src/wallet.rs",
+        "native/mahayana-messaging/src/engine.rs"
+      ],
+      "source_binary_evidence": {
+        "evidence_status": "accepted-exact-blob-read-current-descendant-actions-required",
+        "accepted_upstream": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+        "verified_blob_sha": "cc3c154c1a24ebad70f81b98709f23ba1876c411",
+        "file_type": "blob",
+        "recursive_order": 6363
+      }
+    },
+    {
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "tdesktop Wallet security/address source authority",
+      "ui_disposition": "Project through existing Fabushi Wallet/account-security canonical surfaces; no Telegram-derived UI root.",
+      "fabushi_canonical_owner": "native/mahayana-messaging Wallet key-protection/address owners plus existing Host/storage/platform-security adapters",
+      "platform_differences": "Telegram/Qt/MTProto/platform mechanics are source authority only; Fabushi preserves security, lifecycle, stale fencing and service semantics in source-neutral owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "reachability_status": "accepted exact blob read/responsibility-decomposed; partial production exists; full shipping/service/platform/release closure remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c",
+      "notes": "Reading advances deterministic read-through only; no verified credit is granted by source reading.",
+      "recursive_order": 6364,
+      "source_path": "Telegram/SourceFiles/wallet/wallet_user_addresses.cpp",
+      "source_blob_sha": "386e3a2e66b380fa6fbfa092f6c59eba6c304597",
+      "responsibility": "Account wallet-address lookup: <=100 deduped batches, Unknown/Absent/Known, newest-answer serials, forced eligibility/readiness/balance checks, unavailable latch/reset, owner request coalescing and public-key metadata.",
+      "state_machine": "Runtime and service authority are explicitly fenced; stale/cancelled/failed operations do not become durable truth.",
+      "side_effects": "Wallet security/address service, persistence and canonical UI projections.",
+      "failure_cases": "Stale asynchronous results, invalid or unavailable state, cross-account leakage, persistence/restart drift and duplicate completion.",
+      "fabushi_target": "WalletAddressDirectory already owns tri-state, newest serial, owner/public-key and unavailable state; service batching/eligibility/coalescing remains open.",
+      "production_evidence": "Current PR descendant production code only where named; same-head Actions required.",
+      "test_evidence": "Focused Rust evidence exists for implemented slices; full temporal/service/platform acceptance remains open.",
+      "consumer_evidence": [
+        "native/mahayana-messaging/src/wallet.rs",
+        "native/mahayana-messaging/src/engine.rs"
+      ],
+      "source_binary_evidence": {
+        "evidence_status": "accepted-exact-blob-read-current-descendant-actions-required",
+        "accepted_upstream": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+        "verified_blob_sha": "386e3a2e66b380fa6fbfa092f6c59eba6c304597",
+        "file_type": "blob",
+        "recursive_order": 6364
+      }
+    },
+    {
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "tdesktop Wallet security/address source authority",
+      "ui_disposition": "Project through existing Fabushi Wallet/account-security canonical surfaces; no Telegram-derived UI root.",
+      "fabushi_canonical_owner": "native/mahayana-messaging Wallet key-protection/address owners plus existing Host/storage/platform-security adapters",
+      "platform_differences": "Telegram/Qt/MTProto/platform mechanics are source authority only; Fabushi preserves security, lifecycle, stale fencing and service semantics in source-neutral owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "reachability_status": "accepted exact blob read/responsibility-decomposed; partial production exists; full shipping/service/platform/release closure remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c",
+      "notes": "Reading advances deterministic read-through only; no verified credit is granted by source reading.",
+      "recursive_order": 6365,
+      "source_path": "Telegram/SourceFiles/wallet/wallet_user_addresses.h",
+      "source_blob_sha": "2335e16de23f9c8d3765cf68a387816c57072dc9",
+      "responsibility": "Typed user-address/owner/public-key API with force-resolve errors, exactly-once batch completion and unavailable reset.",
+      "state_machine": "Runtime and service authority are explicitly fenced; stale/cancelled/failed operations do not become durable truth.",
+      "side_effects": "Wallet security/address service, persistence and canonical UI projections.",
+      "failure_cases": "Stale asynchronous results, invalid or unavailable state, cross-account leakage, persistence/restart drift and duplicate completion.",
+      "fabushi_target": "Keep WalletAddressDirectory as the canonical state owner and extend Host/service orchestration rather than adding a second directory.",
+      "production_evidence": "Current PR descendant production code only where named; same-head Actions required.",
+      "test_evidence": "Focused Rust evidence exists for implemented slices; full temporal/service/platform acceptance remains open.",
+      "consumer_evidence": [
+        "native/mahayana-messaging/src/wallet.rs",
+        "native/mahayana-messaging/src/engine.rs"
+      ],
+      "source_binary_evidence": {
+        "evidence_status": "accepted-exact-blob-read-current-descendant-actions-required",
+        "accepted_upstream": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+        "verified_blob_sha": "2335e16de23f9c8d3765cf68a387816c57072dc9",
+        "file_type": "blob",
+        "recursive_order": 6365
+      }
+    },
+    {
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "tdesktop Wallet security/address source authority",
+      "ui_disposition": "Project through existing Fabushi Wallet/account-security canonical surfaces; no Telegram-derived UI root.",
+      "fabushi_canonical_owner": "native/mahayana-messaging Wallet key-protection/address owners plus existing Host/storage/platform-security adapters",
+      "platform_differences": "Telegram/Qt/MTProto/platform mechanics are source authority only; Fabushi preserves security, lifecycle, stale fencing and service semantics in source-neutral owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "reachability_status": "accepted exact blob read/responsibility-decomposed; partial production exists; full shipping/service/platform/release closure remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c",
+      "notes": "Reading advances deterministic read-through only; no verified credit is granted by source reading.",
+      "recursive_order": 6366,
+      "source_path": "Telegram/SourceFiles/wallet/wallet_vault.cpp",
+      "source_blob_sha": "7b3c9f32a2f0fc93e4f4213139449711bced1ee7",
+      "responsibility": "Wallet vault security: authenticated keyring/record formats, zeroized secrets, passcode/open/platform wraps, account-bound entries, live grants/retention, clear epoch, lock/sleep invalidation, crash-safe rotation/write ordering and confirmed reset.",
+      "state_machine": "Runtime and service authority are explicitly fenced; stale/cancelled/failed operations do not become durable truth.",
+      "side_effects": "Wallet security/address service, persistence and canonical UI projections.",
+      "failure_cases": "Stale asynchronous results, invalid or unavailable state, cross-account leakage, persistence/restart drift and duplicate completion.",
+      "fabushi_target": "Current Rust key envelope/provider/zeroized-secret owner is partial. cb6d561 closes persisted-unlocked authority; multi-account keyring, grants/retention, record envelopes, platform factors and reset temporal semantics remain open.",
+      "production_evidence": "Current PR descendant production code only where named; same-head Actions required.",
+      "test_evidence": "Focused Rust evidence exists for implemented slices; full temporal/service/platform acceptance remains open.",
+      "consumer_evidence": [
+        "native/mahayana-messaging/src/wallet.rs",
+        "native/mahayana-messaging/src/engine.rs"
+      ],
+      "source_binary_evidence": {
+        "evidence_status": "accepted-exact-blob-read-current-descendant-actions-required",
+        "accepted_upstream": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+        "verified_blob_sha": "7b3c9f32a2f0fc93e4f4213139449711bced1ee7",
+        "file_type": "blob",
+        "recursive_order": 6366
+      }
+    },
+    {
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "tdesktop Wallet security/address source authority",
+      "ui_disposition": "Project through existing Fabushi Wallet/account-security canonical surfaces; no Telegram-derived UI root.",
+      "fabushi_canonical_owner": "native/mahayana-messaging Wallet key-protection/address owners plus existing Host/storage/platform-security adapters",
+      "platform_differences": "Telegram/Qt/MTProto/platform mechanics are source authority only; Fabushi preserves security, lifecycle, stale fencing and service semantics in source-neutral owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "reachability_status": "accepted exact blob read/responsibility-decomposed; partial production exists; full shipping/service/platform/release closure remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c",
+      "notes": "Reading advances deterministic read-through only; no verified credit is granted by source reading.",
+      "recursive_order": 6367,
+      "source_path": "Telegram/SourceFiles/wallet/wallet_vault.h",
+      "source_blob_sha": "5d4cd091071f206d0b05f55962fea6c55bb3e928",
+      "responsibility": "Typed vault constants, keyring/record/grant/runtime contracts and persistence/lifecycle API.",
+      "state_machine": "Runtime and service authority are explicitly fenced; stale/cancelled/failed operations do not become durable truth.",
+      "side_effects": "Wallet security/address service, persistence and canonical UI projections.",
+      "failure_cases": "Stale asynchronous results, invalid or unavailable state, cross-account leakage, persistence/restart drift and duplicate completion.",
+      "fabushi_target": "Continue extending WalletKeyProtectionState/WalletProtectionProvider/WalletSecretBytes; no second Vault runtime.",
+      "production_evidence": "Current PR descendant production code only where named; same-head Actions required.",
+      "test_evidence": "Focused Rust evidence exists for implemented slices; full temporal/service/platform acceptance remains open.",
+      "consumer_evidence": [
+        "native/mahayana-messaging/src/wallet.rs",
+        "native/mahayana-messaging/src/engine.rs"
+      ],
+      "source_binary_evidence": {
+        "evidence_status": "accepted-exact-blob-read-current-descendant-actions-required",
+        "accepted_upstream": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+        "verified_blob_sha": "5d4cd091071f206d0b05f55962fea6c55bb3e928",
+        "file_type": "blob",
+        "recursive_order": 6367
+      }
+    }
+  ]
+}

@@ -173,6 +173,87 @@ fn service_upload_read_text_chunk_and_gateway_use_single_agent_media_store() {
 }
 
 #[test]
+fn human_message_attachment_owner_is_durable_without_an_active_agent() {
+    let root = temp_dir("human-message");
+    fs::create_dir_all(root.join("agents")).expect("agents root");
+    let service = AttachmentsService::new(
+        root.clone(),
+        Arc::new(TestAuth),
+        Arc::new(TestBox::running()),
+        None,
+    );
+    let conversation_id = format!("human-direct-{}", "a".repeat(64));
+    let uploaded = service
+        .dispatch_gateway(
+            "uploadAttachment",
+            &json!({
+                "filename": "human.txt",
+                "bytesBase64": STANDARD.encode(b"human attachment"),
+                "humanConversationId": conversation_id,
+            }),
+        )
+        .expect("owned Human upload method")
+        .expect("Human upload");
+    let path = PathBuf::from(uploaded["path"].as_str().expect("uploaded path"));
+    assert!(path.starts_with(
+        root.join("agents")
+            .join("human-message-outbox")
+            .join(&conversation_id)
+            .join("attachments")
+    ));
+    assert_eq!(fs::read(&path).expect("Human attachment bytes"), b"human attachment");
+
+    let text = service
+        .dispatch_gateway("readAttachmentText", &json!({ "path": path.to_string_lossy() }))
+        .expect("owned Human read method")
+        .expect("Human read");
+    assert_eq!(text["kind"], "text");
+    assert_eq!(text["text"], "human attachment");
+
+    let chunk = service
+        .dispatch_gateway(
+            "readAttachmentChunk",
+            &json!({
+                "path": path.to_string_lossy(),
+                "offset": 6,
+                "length": 10,
+                "videoPlayback": false,
+            }),
+        )
+        .expect("owned Human chunk method")
+        .expect("Human chunk");
+    assert_eq!(
+        STANDARD.decode(chunk["bytesBase64"].as_str().unwrap()).unwrap(),
+        b"attachment"
+    );
+
+    assert!(service
+        .dispatch_gateway(
+            "uploadAttachment",
+            &json!({
+                "filename": "bad.txt",
+                "bytesBase64": STANDARD.encode(b"bad"),
+                "humanConversationId": "human-direct-not-a-digest",
+            }),
+        )
+        .expect("owned malformed Human upload method")
+        .is_err());
+    assert!(service
+        .dispatch_gateway(
+            "uploadAttachment",
+            &json!({
+                "filename": "bad.txt",
+                "bytesBase64": STANDARD.encode(b"bad"),
+                "agentId": "agent-a",
+                "humanConversationId": conversation_id,
+            }),
+        )
+        .expect("owned ambiguous upload method")
+        .is_err());
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn image_reads_and_persistence_preserve_content_addressed_dimensions() {
     let root = temp_dir("image");
     let agent_dir = root.join("agents/agent-a");

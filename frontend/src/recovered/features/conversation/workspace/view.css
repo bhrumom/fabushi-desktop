@@ -3,6 +3,16 @@
 ::highlight(sand-find-match) { background-color: color-mix(in srgb, var(--cursor-warn, #ffc000) 30%, transparent); }
 ::highlight(sand-find-current) { background-color: var(--cursor-warn, #ffc000); color: #1f1f1f; }
 
+/* Find-in-chat is an application control, not titlebar chrome. Keep it in the
+ * conversation flex flow and above the dock without borrowing window-drag hit testing. */
+.sand-chat-find {
+  position: relative;
+  z-index: 4;
+  flex: 0 0 auto;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
 /* @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#L499 */
 /* @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=2603896 (r0n separator) */
 .sand-agents-sidebar { position: relative; min-height: 0; width: 100%; background: var(--cursor-bg-chrome); border-right: 1px solid var(--cursor-stroke-tertiary); container-name: sand-sidebar; container-type: inline-size; }
@@ -135,7 +145,11 @@ html[data-platform="darwin"] .sand-agents-sidebar__new-actions {
   border-radius: 18px;
 }
 .sand-message-action-anchor { position: relative; width: fit-content; max-width: 100%; }
-.sand-message-hover-actions { position: absolute; right: 0; bottom: -30px; z-index: 2; display: flex; gap: 4px; opacity: 0; pointer-events: none; transition: opacity .12s ease; }
+/* Keep an open message action/reaction surface above both the sticky composer and
+ * the fixed native drag carrier (z-index: 4999), otherwise a picker scrolled into
+ * the titlebar band can be visible while the drag region steals pointer input. */
+.sand-message-action-anchor--menu-open { z-index: 5001; }
+.sand-message-hover-actions { position: absolute; right: 0; bottom: -30px; z-index: 5001; display: flex; gap: 4px; opacity: 0; pointer-events: none; transition: opacity .12s ease; }
 .sand-message-action-anchor:hover .sand-message-hover-actions,
 .sand-message-action-anchor:focus-within .sand-message-hover-actions,
 .sand-message-action-anchor--menu-open .sand-message-hover-actions { opacity: 1; pointer-events: auto; }
@@ -147,9 +161,61 @@ html[data-platform="darwin"] .sand-agents-sidebar__new-actions {
 .sand-message-prose a { color: #bfe86b; text-decoration: underline; text-underline-offset: 2px; }
 .sand-code-figure { position: relative; margin: 10px 0; }
 .sand-code-scroll { max-width: 100%; overflow-x: auto; }
-.sand-code-block { margin: 0; padding: 11px 12px; color: #d9ded4; background: #1a1d19; border: 1px solid #343932; border-radius: 8px; font: 11px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.fabushi-rich-content-scroll-region { max-width: 100%; overflow-x: auto; }
+.sand-code-scroll,
+.fabushi-rich-content-scroll-region { touch-action: pan-y; }
+.sand-code-scroll:focus-visible,
+.fabushi-rich-content-scroll-region:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.sand-code-block {
+  --fabushi-syntax-foreground: var(--cursor-syntax-foreground, var(--sand-text-primary));
+  --fabushi-syntax-background: var(--cursor-syntax-background, var(--sand-bg-elevated));
+  --fabushi-syntax-keyword: var(--cursor-syntax-keyword, var(--sand-text-accent));
+  --fabushi-syntax-string: var(--cursor-syntax-string, var(--sand-text-supplementary5));
+  --fabushi-syntax-function: var(--cursor-syntax-function, var(--sand-text-supplementary1));
+  --fabushi-syntax-number: var(--cursor-syntax-number, var(--sand-text-warning));
+  --fabushi-syntax-comment: var(--cursor-syntax-comment, var(--sand-text-tertiary));
+  --fabushi-syntax-constant: var(--cursor-syntax-constant, var(--sand-text-warning));
+  --fabushi-syntax-punctuation: var(--cursor-syntax-punctuation, var(--sand-text-primary));
+  --fabushi-syntax-link: var(--cursor-syntax-link, var(--sand-text-accent));
+  margin: 0;
+  padding: 11px 12px;
+  color: var(--fabushi-syntax-foreground);
+  background: var(--fabushi-syntax-background);
+  border: 1px solid var(--sand-border-default);
+  border-radius: 8px;
+  font: 11px/1.55 var(--cursor-font-family-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+}
 .sand-code-block code { white-space: pre; }
 .sand-code-fallback { white-space: pre; }
+.sand-code-block .token.comment,
+.sand-code-block .token.prolog,
+.sand-code-block .token.doctype,
+.sand-code-block .token.cdata { color: var(--fabushi-syntax-comment); }
+.sand-code-block .token.punctuation { color: var(--fabushi-syntax-punctuation); }
+.sand-code-block .token.property,
+.sand-code-block .token.tag,
+.sand-code-block .token.boolean,
+.sand-code-block .token.number,
+.sand-code-block .token.constant,
+.sand-code-block .token.symbol { color: var(--fabushi-syntax-number); }
+.sand-code-block .token.deleted { color: var(--sand-text-danger); }
+.sand-code-block .token.selector,
+.sand-code-block .token.attr-name,
+.sand-code-block .token.string,
+.sand-code-block .token.char,
+.sand-code-block .token.builtin,
+.sand-code-block .token.inserted { color: var(--fabushi-syntax-string); }
+.sand-code-block .token.operator,
+.sand-code-block .token.entity,
+.sand-code-block .token.url { color: var(--fabushi-syntax-link); }
+.sand-code-block .token.atrule,
+.sand-code-block .token.attr-value,
+.sand-code-block .token.keyword { color: var(--fabushi-syntax-keyword); }
+.sand-code-block .token.function,
+.sand-code-block .token.class-name { color: var(--fabushi-syntax-function); }
+.sand-code-block .token.regex,
+.sand-code-block .token.important,
+.sand-code-block .token.variable { color: var(--sand-text-supplementary4); }
 /*
  * @evidence src/app/dist/renderer/assets/index-lCyB53CO.css#byteOffset=341113
  * @evidence src/app/dist/renderer/assets/index-lCyB53CO.css#byteOffset=341216
@@ -282,8 +348,8 @@ html[data-platform="darwin"] .sand-agents-sidebar__new-actions {
 /* @evidence src/app/dist/renderer/assets/index-UbX-y3il.js */
 .sand-media-viewer { position: fixed; inset: 0; z-index: 4000; display: flex; overflow: hidden; background: rgba(13, 15, 12, .96); }
 .sand-media-viewer__top-bar { position: absolute; inset: 0 0 auto; z-index: 2; display: flex; justify-content: flex-end; padding: 12px 16px; pointer-events: none; }
-.sand-media-viewer__close { width: 34px; height: 34px; color: #d9ded4; background: #20231f; border: 1px solid #343832; border-radius: 8px; cursor: pointer; font-size: 22px; line-height: 1; pointer-events: auto; }
-.sand-media-viewer__close:hover, .sand-media-viewer__close:focus-visible, .sand-media-viewer__nav:hover, .sand-media-viewer__nav:focus-visible, .sand-media-viewer__thumb:hover, .sand-media-viewer__thumb:focus-visible { color: #eef3e7; background: #292d26; outline: 1px solid #a9c85d; outline-offset: 1px; }
+.sand-media-viewer__close { pointer-events: auto; }
+.sand-media-viewer__nav:hover, .sand-media-viewer__nav:focus-visible, .sand-media-viewer__thumb:hover, .sand-media-viewer__thumb:focus-visible { color: #eef3e7; background: #292d26; outline: 1px solid #a9c85d; outline-offset: 1px; }
 .sand-media-viewer__column { display: flex; flex: 1; flex-direction: column; min-width: 0; min-height: 0; }
 .sand-media-viewer__media-cell { position: relative; display: grid; flex: 1; place-items: center; min-height: 0; overflow: hidden; }
 .sand-media-viewer__image { display: block; max-width: 92vw; max-height: calc(100vh - 145px); object-fit: contain; transform-origin: center; user-select: none; }
@@ -322,8 +388,12 @@ html[data-platform="darwin"] .sand-agents-sidebar__new-actions {
 .sand-chat-drop-overlay { display: grid; place-items: center; position: absolute; inset: 0; z-index: 2; border: 2px dashed var(--sand-border-accent); border-radius: 16px; background: var(--cursor-bg-input-surface); }
 .sand-chat-drop-overlay__badge { padding: 8px 12px; color: var(--sand-text-on-color); background: var(--sand-fill-primary); border-radius: 999px; font-size: 11px; font-weight: 600; }
 .sand-prompt-attachment-notice { margin: 2px 6px 8px; color: var(--cursor-text-tertiary); font-size: 10px; }
-.sand-prompt-field { display: block; box-sizing: border-box; width: 100%; min-height: 48px; resize: none; color: var(--cursor-text-primary); background: transparent; border: 0; outline: none; line-height: 1.4; unicode-bidi: plaintext; font-family: var(--cursor-font-family-sans, Inter), var(--fabushi-ui-font-fallback, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", sans-serif); }
+.sand-prompt-field { display: block; box-sizing: border-box; width: 100%; min-height: 48px; max-height: 180px; overflow-y: auto; resize: none; color: var(--cursor-text-primary); background: transparent; border: 0; outline: none; line-height: 1.4; unicode-bidi: plaintext; font-family: var(--cursor-font-family-sans, Inter), var(--fabushi-ui-font-fallback, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", sans-serif); }
 .sand-prompt-field::placeholder { color: var(--cursor-input-placeholder-foreground); }
+.sand-prompt-link-preview { display: flex; align-items: center; gap: 8px; min-width: 0; margin: 0 0 7px; padding: 7px 8px; color: var(--cursor-text-secondary); background: var(--cursor-bg-tertiary); border: 1px solid var(--cursor-stroke-secondary); border-radius: 8px; }
+.sand-prompt-link-preview > span { display: grid; min-width: 0; flex: 1 1 auto; }
+.sand-prompt-link-preview strong, .sand-prompt-link-preview small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sand-prompt-link-preview small { color: var(--cursor-text-tertiary); font-size: 10px; }
 .sand-prompt-attachments { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 7px; }
 .sand-prompt-attachment { display: flex; align-items: center; gap: 8px; max-width: 210px; padding: 6px 7px 6px 9px; background: var(--cursor-bg-tertiary); border: 1px solid var(--cursor-stroke-secondary); border-radius: 8px; }
 .sand-prompt-attachment > span { display: grid; min-width: 0; }
@@ -340,6 +410,7 @@ html[data-platform="darwin"] .sand-agents-sidebar__new-actions {
 .sand-prompt-actions-trailing { display: flex; gap: 6px; }
 .sand-prompt-voice-error { margin: 8px 6px 0; color: var(--sand-text-danger); font-size: 10px; }
 .sand-prompt-voice-status { display: block; margin: 2px 6px 8px; color: var(--cursor-text-secondary); font-size: 10px; }
+.fabushi-input-status { margin: 2px 6px 8px; color: var(--fabushi-color-text-secondary, currentColor); font-size: 10px; }
 .sand-prompt-voice-processing { display: inline-flex; align-items: center; min-height: 30px; padding: 0 10px; color: var(--cursor-text-secondary); background: var(--sand-fill-secondary); border-radius: 999px; font-size: 10px; }
 .sand-recording-chip { display: inline-flex !important; align-items: center; gap: 8px; width: auto !important; min-width: 116px; padding: 0 10px !important; color: var(--sand-text-primary) !important; background: var(--sand-fill-secondary) !important; border: 1px solid var(--sand-border-default) !important; border-radius: 999px !important; }
 /* Immutable i6n recording-chip geometry/colors: stop 10px neutral mark, 18x13 spectrum, tokenized light/dark foregrounds. */

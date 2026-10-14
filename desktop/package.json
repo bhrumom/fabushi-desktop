@@ -1,6 +1,6 @@
 {
   "name": "@fabushi/desktop",
-  "version": "1.2.76",
+  "version": "1.2.77",
   "description": "Fabushi Electron desktop client",
   "homepage": "https://fabushi.ombhrum.com/",
   "author": "bhrumom",
@@ -59,7 +59,8 @@
     "react-dom": "19.1.1",
     "rxjs": "8.0.0-alpha.14",
     "ws": "8.20.0",
-    "zod": "3.25.76"
+    "zod": "3.25.76",
+    "prismjs": "1.30.0"
   },
   "devDependencies": {
     "@playwright/test": "1.62.1",
@@ -70,7 +71,8 @@
     "electron": "43.4.0",
     "electron-builder": "26.15.3",
     "typescript": "5.9.2",
-    "vite": "6.4.3"
+    "vite": "6.4.3",
+    "@types/ws": "8.18.2"
   },
   "build": {
     "appId": "com.ombhrum.fabushi",
@@ -117,7 +119,8 @@
       "entitlementsInherit": "resources/mac/entitlements.plist",
       "extendInfo": {
         "NSMicrophoneUsageDescription": "全球法布施使用麦克风进行语音消息、语音输入和离线语音识别。",
-        "NSCameraUsageDescription": "全球法布施使用摄像头进行视频通话。"
+        "NSCameraUsageDescription": "全球法布施使用摄像头进行视频通话。",
+        "NSAudioCaptureUsageDescription": "全球法布施在你主动共享屏幕时，可采集所选屏幕的系统音频并与通话麦克风混合发送。"
       },
       "icon": "resources/icon.png",
       "forceCodeSigning": true
@@ -163,7 +166,8 @@
       "provisioningProfile": "resources/mas/Fabushi_AppStore.provisionprofile",
       "extendInfo": {
         "NSMicrophoneUsageDescription": "全球法布施使用麦克风进行语音通话、语音输入和离线语音识别。",
-        "NSCameraUsageDescription": "全球法布施使用摄像头进行视频通话。"
+        "NSCameraUsageDescription": "全球法布施使用摄像头进行视频通话。",
+        "NSAudioCaptureUsageDescription": "全球法布施在你主动共享屏幕时，可采集所选屏幕的系统音频并与通话麦克风混合发送。"
       },
       "forceCodeSigning": true,
       "icon": "resources/icon.png"
@@ -175,7 +179,8 @@
         "provider": "github",
         "owner": "bhrumom",
         "repo": "fabushi-desktop",
-        "releaseType": "release"
+        "releaseType": "release",
+        "tagNamePrefix": "v"
       }
     ]
   }

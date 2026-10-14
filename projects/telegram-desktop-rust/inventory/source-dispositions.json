@@ -1,0 +1,220 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "63a1831728147e941ad2dc8939879cf5afe419c7",
+    "tree": "c259b2d6982213b2231266508316cd23f99f5a47"
+  },
+  "deterministic_recursive_prefix": {
+    "first_order": 1,
+    "last_order": 16137,
+    "entries": 16137
+  },
+  "semantics": {
+    "development_only_non_applicable_is_not_omission": true,
+    "unknown_closed_requires_exact_blob_read_and_explicit_disposition": true
+  },
+  "storage": "sharded-v1",
+  "shards": [
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-63a18317/1-500.json",
+      "first_order": 1,
+      "last_order": 500,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-63a18317/501-1000.json",
+      "first_order": 501,
+      "last_order": 1000,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-63a18317/1001-1500.json",
+      "first_order": 1001,
+      "last_order": 1500,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-63a18317/1501-2000.json",
+      "first_order": 1501,
+      "last_order": 2000,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-63a18317/2001-2500.json",
+      "first_order": 2001,
+      "last_order": 2500,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-63a18317/2501-3000.json",
+      "first_order": 2501,
+      "last_order": 3000,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-63a18317/3001-3500.json",
+      "first_order": 3001,
+      "last_order": 3500,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-63a18317/3501-4000.json",
+      "first_order": 3501,
+      "last_order": 4000,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-63a18317/4001-4500.json",
+      "first_order": 4001,
+      "last_order": 4500,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-63a18317/4501-5000.json",
+      "first_order": 4501,
+      "last_order": 5000,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-63a18317/5001-5500.json",
+      "first_order": 5001,
+      "last_order": 5500,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-63a18317/5501-6000.json",
+      "first_order": 5501,
+      "last_order": 6000,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-63a18317/6001-6500.json",
+      "first_order": 6001,
+      "last_order": 6500,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-63a18317/6501-7000.json",
+      "first_order": 6501,
+      "last_order": 7000,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-63a18317/7001-7500.json",
+      "first_order": 7001,
+      "last_order": 7500,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-63a18317/7501-8000.json",
+      "first_order": 7501,
+      "last_order": 8000,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-63a18317/8001-8500.json",
+      "first_order": 8001,
+      "last_order": 8500,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-63a18317/8501-9000.json",
+      "first_order": 8501,
+      "last_order": 9000,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-63a18317/9001-9500.json",
+      "first_order": 9001,
+      "last_order": 9500,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-63a18317/9501-10000.json",
+      "first_order": 9501,
+      "last_order": 10000,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-63a18317/10001-10500.json",
+      "first_order": 10001,
+      "last_order": 10500,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-63a18317/10501-11000.json",
+      "first_order": 10501,
+      "last_order": 11000,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-63a18317/11001-11500.json",
+      "first_order": 11001,
+      "last_order": 11500,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-63a18317/11501-12000.json",
+      "first_order": 11501,
+      "last_order": 12000,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-63a18317/12001-12500.json",
+      "first_order": 12001,
+      "last_order": 12500,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-63a18317/12501-13000.json",
+      "first_order": 12501,
+      "last_order": 13000,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-63a18317/13001-13500.json",
+      "first_order": 13001,
+      "last_order": 13500,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-63a18317/13501-14000.json",
+      "first_order": 13501,
+      "last_order": 14000,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-63a18317/14001-14500.json",
+      "first_order": 14001,
+      "last_order": 14500,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-63a18317/14501-15000.json",
+      "first_order": 14501,
+      "last_order": 15000,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-63a18317/15001-15500.json",
+      "first_order": 15001,
+      "last_order": 15500,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-63a18317/15501-16000.json",
+      "first_order": 15501,
+      "last_order": 16000,
+      "entries": 500
+    },
+    {
+      "path": "projects/telegram-desktop-rust/inventory/source-dispositions/rebaseline-63a18317/16001-16137.json",
+      "first_order": 16001,
+      "last_order": 16137,
+      "entries": 137
+    }
+  ]
+}

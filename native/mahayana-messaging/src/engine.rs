@@ -4,22 +4,38 @@ use crate::community::{
     AdminRights, CommunityAuditAction, CommunityAuditEntry, CommunityError, CommunityMember,
     CommunityState, ForumTopicState, InviteLink, JoinRequest, MemberStatus,
 };
+use crate::connected_app::{
+    ConnectedAppAccess, ConnectedAppClaimDecision, ConnectedAppClaimFate, ConnectedAppError,
+    ConnectedAppKeyError, ConnectedAppLink, ConnectedAppManifest, ConnectedAppRequest,
+    ConnectedAppSession, ConnectedAppState,
+};
 use crate::conversation::{
     Conversation, ConversationChildIdentity, ConversationChildRuntimeState,
-    ConversationDestination, ConversationDraft, ConversationFolder, ConversationId,
+    ConversationChildUnreadThings, ConversationDestination, ConversationDraft, ConversationFolder, ConversationId,
     ConversationKind, ConversationMessagePosition, NotificationSettings, TopicDraft,
 };
 use crate::message::{
     ClientMessageId, DeliveryState, ForwardPrivacy, Message, MessageContent, MessageId,
-    PendingPresenceSend, PresenceSendTrigger, ReactionSummary,
+    PendingPresenceSend, PresenceSendTrigger, ReactionSummary, TextEntityKind,
 };
 use crate::miniapp::{
     MiniAppGrant, MiniAppManifest, MiniAppPermission, MiniAppRequest, MiniAppResponse,
     MiniAppSession,
 };
-use crate::payment::{CustomerInfo, Invoice, Money, PaymentOrder, PaymentStatus};
-use crate::story::{Story, StoryError, StoryId};
-use crate::wallet::{LedgerEntry, WalletAccountId, WalletError, WalletLedger};
+use crate::payment::{CustomerInfo, Entitlement, Invoice, Money, PaymentOrder, PaymentStatus};
+use crate::retention::{ConversationMessageRetention, MessageRetentionError, MessageRetentionPolicy};
+use crate::story::{
+    Story, StoryError, StoryId, StoryStealthState, STORY_STEALTH_ACTIVE_MS,
+    STORY_STEALTH_COOLDOWN_MS, STORY_STEALTH_PRODUCT_ID, STORY_STEALTH_RETROACTIVE_MS,
+};
+use crate::wallet::{
+    LedgerEntry, OnrampProviderInfo, OutboundTransferError, OutboundTransferRecord,
+    OutboundTransferTerminal, WalletAccountId, WalletAddressDirectoryError, WalletError,
+    WalletExistingBalanceError, WalletLedger, WalletLiveError, WalletLivePresence,
+    WalletOnrampError, WalletParkedCheckOutcome, WalletParkedError, WalletRateError,
+    WalletRuntimeState, WalletSponsoredFeeError, WalletStreamKeepalive, WalletStreamRefresh,
+    WalletSponsoredFeeInfo, WalletTransferIdentity, WalletTransferQuote, WalletTransferQuoteError,
+};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 use thiserror::Error;
@@ -74,6 +90,11 @@ pub enum Command {
         conversation_id: ConversationId,
         settings: NotificationSettings,
     },
+    SetConversationMessageRetention {
+        conversation_id: ConversationId,
+        retention_seconds: Option<u32>,
+        expected_revision: u64,
+    },
     UpsertFolder {
         folder: ConversationFolder,
     },
@@ -102,11 +123,10 @@ pub enum Command {
     ForwardMessage {
         source_conversation_id: ConversationId,
         message_id: MessageId,
-        destination_conversation_id: ConversationId,
+        destination: ConversationDestination,
         local_message_id: MessageId,
         client_message_id: ClientMessageId,
         sender_id: ActorId,
-        thread_root_message_id: Option<MessageId>,
         created_at_ms: i64,
         scheduled_at_ms: Option<i64>,
         silent: bool,
@@ -159,6 +179,17 @@ pub enum Command {
         reply_to_message_id: Option<MessageId>,
         updated_at_ms: i64,
     },
+    /// Server/native-authoritative draft projection. Unlike a client-authored
+    /// mutation, a SavedSublist reply target may be represented by trusted child
+    /// membership even when this local projection has not materialized the full
+    /// Message payload.
+    ReconcileConversationChildDraft {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        text: String,
+        reply_to_message_id: Option<MessageId>,
+        updated_at_ms: i64,
+    },
     ReplaceConversationChildWindow {
         destination: ConversationDestination,
         actor_id: ActorId,
@@ -181,6 +212,34 @@ pub enum Command {
         destination: ConversationDestination,
         actor_id: ActorId,
         marked_unread: bool,
+    },
+    /// Server-authoritative reconciliation for child-level unread signals and
+    /// pending incoming notification ids. This intentionally has no
+    /// ClientCommand counterpart: renderer/client code cannot mint unread truth.
+    ReconcileConversationChildUnreadThings {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        known: bool,
+        mention_message_ids: Vec<MessageId>,
+        reaction_message_ids: Vec<MessageId>,
+        poll_vote_message_ids: Vec<MessageId>,
+        pending_incoming_notification_message_ids: Vec<MessageId>,
+    },
+    /// Server/native authority for account-scoped SavedSublist parent access.
+    /// No ClientCommand exposes this relation: a renderer cannot turn an
+    /// arbitrary community into a SavedSublist parent.
+    ReconcileSavedSublistParentAccess {
+        conversation_id: ConversationId,
+        actor_id: ActorId,
+        allowed: bool,
+    },
+    /// Server/native authority for the exact messages owned by one SavedSublist.
+    /// No ClientCommand exposes this relation: renderer-visible parent messages
+    /// are never sufficient evidence of child membership.
+    ReconcileSavedSublistMembership {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        message_ids: Vec<MessageId>,
     },
     SetConversationChildNoPaidMessages {
         destination: ConversationDestination,
@@ -233,6 +292,357 @@ pub enum Command {
         reference: Option<String>,
         settled_at_ms: i64,
     },
+    SetWalletFiatCurrency {
+        currency: String,
+    },
+    ApplyWalletRateSnapshot {
+        rates: BTreeMap<String, i64>,
+        observed_at_ms: i64,
+    },
+    MarkWalletRateRefreshFailed {
+        observed_at_ms: i64,
+    },
+    BeginWalletFunding {
+        address: String,
+        asset: String,
+        base_currency: Option<String>,
+    },
+    ResolveWalletFundingProvider {
+        request_id: u64,
+        providers: Vec<OnrampProviderInfo>,
+    },
+    CompleteWalletFunding {
+        request_id: u64,
+        session_url: Option<String>,
+    },
+    CancelWalletFunding {
+        request_id: u64,
+    },
+    ShowWalletPanel,
+    MinimizeWalletPanel,
+    CloseWalletPanel,
+    BeginWalletExistingBalanceRequest,
+    ApplyWalletExistingBalanceResult {
+        serial: u64,
+        url: Option<String>,
+    },
+    FailWalletExistingBalanceRequest {
+        serial: u64,
+    },
+    SetWalletTransactionsVisible {
+        visible: bool,
+    },
+    JournalOutboundTransfer {
+        record: OutboundTransferRecord,
+    },
+    JournalQuotedOutboundTransfer {
+        record: OutboundTransferRecord,
+        quote: WalletTransferQuote,
+        balance_nano: i64,
+        observed_at_ms: i64,
+    },
+    MarkOutboundTransferHandoff {
+        record_id: String,
+        message_token: Vec<u8>,
+    },
+    RecordOutboundTransferLookup {
+        record_id: String,
+    },
+    StopOutboundTransferLookup {
+        record_id: String,
+    },
+    SettleOutboundTransfer {
+        record_id: String,
+        terminal: OutboundTransferTerminal,
+        confirmed_hash: Option<Vec<u8>>,
+    },
+    ReconcileWalletUserAddress {
+        actor_id: ActorId,
+        serial: u64,
+        address: Option<String>,
+        public_key: Vec<u8>,
+    },
+    ReconcileWalletAddressOwner {
+        address: String,
+        actor_id: Option<ActorId>,
+        public_key: Vec<u8>,
+    },
+    SetWalletAddressServiceUnavailable {
+        unavailable: bool,
+    },
+    BeginWalletLiveGeneration,
+    ReconcileWalletLivePresence {
+        generation: u64,
+        presence: WalletLivePresence,
+        observed_at_ms: i64,
+    },
+    MarkWalletLiveStateFailed {
+        generation: u64,
+        observed_at_ms: i64,
+    },
+    MarkWalletStreamResynced {
+        generation: u64,
+        observed_at_ms: i64,
+    },
+    StartWalletLiveStream {
+        address: String,
+        observed_at_ms: i64,
+    },
+    ApplyWalletLiveStreamUrl {
+        generation: u64,
+        observed_at_ms: i64,
+        expires_in_ms: i64,
+    },
+    MarkWalletLiveStreamConnected {
+        generation: u64,
+        observed_at_ms: i64,
+    },
+    MarkWalletLiveStreamActivity {
+        generation: u64,
+        observed_at_ms: i64,
+    },
+    FailWalletLiveStream {
+        generation: u64,
+        observed_at_ms: i64,
+    },
+    ResumeWalletLiveStream {
+        generation: u64,
+        observed_at_ms: i64,
+    },
+    BeginWalletLiveStreamRenew {
+        generation: u64,
+        observed_at_ms: i64,
+    },
+    WantWalletLiveStreamRefresh {
+        generation: u64,
+        observed_at_ms: i64,
+        wanted: WalletStreamRefresh,
+    },
+    NoteWalletLiveStreamTransaction {
+        generation: u64,
+        observed_at_ms: i64,
+    },
+    TakeWalletLiveStreamRefresh {
+        generation: u64,
+        observed_at_ms: i64,
+    },
+    TakeWalletLiveStreamHistoryRecheck {
+        generation: u64,
+        observed_at_ms: i64,
+    },
+    StopWalletLiveStream,
+    SpendWalletHistoryPageRequest {
+        generation: u64,
+    },
+    RecordWalletHistoryProgress {
+        generation: u64,
+        visible_rows: usize,
+    },
+    RearmWalletHistoryWalk {
+        generation: u64,
+    },
+    SyncWalletParkedAddresses {
+        served_address: String,
+        addresses: Vec<String>,
+    },
+    BeginWalletParkedCheck {
+        address: String,
+        refresh: bool,
+    },
+    ApplyWalletParkedCheck {
+        address: String,
+        serial: u64,
+        outcome: WalletParkedCheckOutcome,
+    },
+    MarkWalletParkedDropFailed {
+        address: String,
+    },
+    BeginWalletSponsoredFeeRequest {
+        network_generation: u64,
+        identity: WalletTransferIdentity,
+        transfer_min_nano: i64,
+        configured_min_nano: i64,
+        observed_at_ms: i64,
+        force: bool,
+    },
+    ApplyWalletSponsoredFeeInfo {
+        serial: u64,
+        network_generation: u64,
+        identity: WalletTransferIdentity,
+        info: WalletSponsoredFeeInfo,
+        observed_at_ms: i64,
+    },
+    FailWalletSponsoredFeeRequest {
+        serial: u64,
+        network_generation: u64,
+        identity: WalletTransferIdentity,
+        observed_at_ms: i64,
+    },
+    ResetWalletSponsoredFeeGeneration {
+        network_generation: u64,
+    },
+    UpsertConnectedAppSession {
+        session: ConnectedAppSession,
+    },
+    UpdateConnectedAppWalletAddress {
+        address: String,
+    },
+    CacheConnectedAppKeyReference {
+        session_id: u64,
+        client_id: String,
+        reference_id: String,
+    },
+    BeginConnectedAppDisconnect {
+        session_id: u64,
+    },
+    DeferConnectedAppClosing {
+        session_id: u64,
+        error: ConnectedAppKeyError,
+    },
+    SettleConnectedAppDisconnect {
+        session_id: u64,
+    },
+    BeginConnectedAppConnectFlow {
+        link: ConnectedAppLink,
+        ownership_domain: String,
+        reserved_platform_domain: String,
+        observed_at_ms: i64,
+    },
+    ResolveConnectedAppConnectAccess {
+        client_id: String,
+        access: ConnectedAppAccess,
+        observed_at_ms: i64,
+    },
+    PollConnectedAppManifest {
+        client_id: String,
+        observed_at_ms: i64,
+    },
+    AcceptConnectedAppManifest {
+        client_id: String,
+        manifest: ConnectedAppManifest,
+    },
+    PinConnectedAppConnectWallet {
+        client_id: String,
+        wallet_address: String,
+    },
+    RetryConnectedAppConnectSubmit {
+        client_id: String,
+        error_type: String,
+    },
+    BeginConnectedAppSessionRefresh {
+        observed_at_ms: i64,
+        wallet_ready: bool,
+    },
+    ApplyConnectedAppSessionRefresh {
+        generation: u64,
+        sessions: Vec<ConnectedAppSession>,
+        observed_at_ms: i64,
+    },
+    FailConnectedAppSessionRefresh {
+        generation: u64,
+    },
+    MarkConnectedAppSessionClosing {
+        session_id: u64,
+        observed_at_ms: i64,
+    },
+    AcknowledgeConnectedAppSessionGone {
+        session_id: u64,
+        observed_at_ms: i64,
+    },
+    QueueConnectedAppRequest {
+        request: ConnectedAppRequest,
+        observed_at_ms: i64,
+    },
+    TakeNextConnectedAppRequest {
+        observed_at_ms: i64,
+    },
+    ChooseConnectedAppRequest {
+        message_id: i64,
+    },
+    MarkConnectedAppRequestHandled {
+        message_id: i64,
+    },
+    FinishConnectedAppRequest {
+        message_id: i64,
+        claimed: bool,
+    },
+    StopConnectedAppRequests,
+    ReconcileConnectedAppClaimRecovery {
+        wallet_identity: Option<WalletTransferIdentity>,
+        fates: Vec<ConnectedAppClaimFate>,
+        observed_at_ms: i64,
+    },
+    SettleConnectedAppRecoverySubmission {
+        session_id: u64,
+        #[serde(default)]
+        message_id: i64,
+        request_id: String,
+        retry_later: bool,
+    },
+    ResolveConnectedAppRequest {
+        session_id: u64,
+        #[serde(default)]
+        message_id: i64,
+        request_id: String,
+        decision: ConnectedAppClaimDecision,
+        operation_id: String,
+        signed_payload: String,
+        #[serde(default)]
+        not_sent: Vec<u8>,
+        answer: Vec<u8>,
+        observed_at_ms: i64,
+    },
+    ResolveConnectedAppWalletRequest {
+        session_id: u64,
+        #[serde(default)]
+        message_id: i64,
+        request_id: String,
+        decision: ConnectedAppClaimDecision,
+        wallet_identity: WalletTransferIdentity,
+        operation_id: String,
+        signed_payload: String,
+        #[serde(default)]
+        not_sent: Vec<u8>,
+        answer: Vec<u8>,
+        observed_at_ms: i64,
+    },
+    LinkConnectedAppClaimOperation {
+        session_id: u64,
+        #[serde(default)]
+        message_id: i64,
+        request_id: String,
+        operation_id: String,
+    },
+    RecordConnectedAppClaimHandoff {
+        session_id: u64,
+        #[serde(default)]
+        message_id: i64,
+        request_id: String,
+        operation_id: String,
+        signed_payload: String,
+    },
+    RecordConnectedAppClaimAnswer {
+        session_id: u64,
+        #[serde(default)]
+        message_id: i64,
+        request_id: String,
+        answer: Vec<u8>,
+    },
+    CloseConnectedAppSession {
+        session_id: u64,
+        closed_at_ms: i64,
+    },
+    PruneConnectedAppClaims {
+        observed_at_ms: i64,
+    },
+    ReconcileEntitlement {
+        entitlement: Entitlement,
+    },
+    ActivateStoryStealth {
+        actor_id: ActorId,
+        request_id: String,
+        activated_at_ms: i64,
+    },
     PublishStory {
         actor_id: ActorId,
         story: Story,
@@ -250,6 +660,7 @@ pub enum Command {
         actor_id: ActorId,
         story_id: StoryId,
         reaction: Option<String>,
+        reacted_at_ms: i64,
     },
     UpdateCommunity {
         actor_id: ActorId,
@@ -395,6 +806,10 @@ pub enum Event {
         conversation_id: ConversationId,
         settings: NotificationSettings,
     },
+    ConversationMessageRetentionUpdated {
+        conversation_id: ConversationId,
+        retention: ConversationMessageRetention,
+    },
     FolderUpserted {
         folder: ConversationFolder,
     },
@@ -480,6 +895,22 @@ pub enum Event {
         actor_id: ActorId,
         marked_unread: bool,
     },
+    ConversationChildUnreadThingsReconciled {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        unread_things: ConversationChildUnreadThings,
+        pending_incoming_notification_message_ids: Vec<String>,
+    },
+    SavedSublistParentAccessReconciled {
+        conversation_id: ConversationId,
+        actor_id: ActorId,
+        allowed: bool,
+    },
+    SavedSublistMembershipReconciled {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        message_ids: Vec<String>,
+    },
     ConversationChildNoPaidMessagesChanged {
         destination: ConversationDestination,
         actor_id: ActorId,
@@ -514,6 +945,19 @@ pub enum Event {
     WalletChanged {
         wallet: WalletLedger,
         entry: LedgerEntry,
+    },
+    WalletRuntimeChanged {
+        runtime: WalletRuntimeState,
+    },
+    ConnectedAppStateChanged {
+        state: ConnectedAppState,
+    },
+    EntitlementReconciled {
+        entitlement: Entitlement,
+    },
+    StoryStealthChanged {
+        actor_id: ActorId,
+        state: StoryStealthState,
     },
     StoryChanged {
         story: Story,
@@ -564,10 +1008,20 @@ pub struct MessagingState {
     /// remain protocol-compatibility projections until their load-time migration
     /// is completed; new saved-sublist/community child state belongs here.
     pub conversation_child_states: Vec<ConversationChildRuntimeState>,
+    /// Server/native-authoritative account access to a Conversation that owns
+    /// SavedSublist children. This is the source-neutral replacement for the
+    /// upstream account-scoped parent/admin relation.
+    pub saved_sublist_parent_access: BTreeMap<ConversationId, BTreeSet<ActorId>>,
+    /// Account-scoped ordinary recent participant suggestions. Unlike
+    /// recent_open_destinations these are durable local projection state.
+    pub recent_participant_suggestions: BTreeMap<ActorId, Vec<ActorId>>,
     pub pending_presence_sends: BTreeMap<ClientMessageId, PendingPresenceSend>,
     pub invoices: BTreeMap<String, Invoice>,
     pub orders: BTreeMap<String, PaymentOrder>,
     pub wallet: WalletLedger,
+    pub connected_apps: ConnectedAppState,
+    pub entitlements: BTreeMap<String, Entitlement>,
+    pub story_stealth: BTreeMap<ActorId, StoryStealthState>,
     pub stories: BTreeMap<StoryId, Story>,
     pub communities: BTreeMap<ConversationId, CommunityState>,
     pub bots: BotRegistry,
@@ -577,6 +1031,16 @@ pub struct MessagingState {
 }
 
 impl MessagingState {
+    fn child_state(
+        &self,
+        destination: &ConversationDestination,
+        actor_id: &ActorId,
+    ) -> Option<&ConversationChildRuntimeState> {
+        self.conversation_child_states
+            .iter()
+            .find(|state| &state.destination == destination && &state.actor_id == actor_id)
+    }
+
     fn child_state_mut(
         &mut self,
         destination: ConversationDestination,
@@ -640,6 +1104,8 @@ pub enum EngineError {
     MediaSendPermissionDenied(ConversationId),
     #[error("conversation {0:?} does not allow sending polls")]
     PollSendPermissionDenied(ConversationId),
+    #[error(transparent)]
+    MessageRetention(#[from] MessageRetentionError),
     #[error("secret conversations must contain exactly two participants")]
     InvalidSecretConversation,
     #[error("secret conversations only accept encrypted secret content or service messages")]
@@ -654,6 +1120,12 @@ pub enum EngineError {
     StoryNotFound(StoryId),
     #[error("only the story owner may modify story {0:?}")]
     StoryPermissionDenied(StoryId),
+    #[error("Story stealth requires an active entitlement")]
+    StoryStealthEntitlementRequired,
+    #[error("Story stealth activation request is invalid")]
+    InvalidStoryStealthRequest,
+    #[error("Story stealth cooldown is active until {retry_at_ms}")]
+    StoryStealthCooldown { retry_at_ms: i64 },
     #[error(transparent)]
     Story(#[from] StoryError),
     #[error("community {0:?} does not exist")]
@@ -700,6 +1172,8 @@ pub enum EngineError {
     Bot(String),
     #[error("invoice is invalid")]
     InvalidInvoice,
+    #[error("customer information does not satisfy invoice requirements")]
+    InvalidCustomerInfo,
     #[error("invoice {0} does not exist")]
     InvoiceNotFound(String),
     #[error("payment order {0} does not exist")]
@@ -714,6 +1188,28 @@ pub enum EngineError {
     OrderNotRefundable(String),
     #[error(transparent)]
     Wallet(#[from] WalletError),
+    #[error(transparent)]
+    WalletRate(#[from] WalletRateError),
+    #[error(transparent)]
+    WalletOnramp(#[from] WalletOnrampError),
+    #[error("wallet panel is not visible")]
+    WalletPanelNotVisible,
+    #[error(transparent)]
+    WalletExistingBalance(#[from] WalletExistingBalanceError),
+    #[error(transparent)]
+    OutboundTransfer(#[from] OutboundTransferError),
+    #[error(transparent)]
+    WalletAddressDirectory(#[from] WalletAddressDirectoryError),
+    #[error(transparent)]
+    WalletLive(#[from] WalletLiveError),
+    #[error(transparent)]
+    WalletParked(#[from] WalletParkedError),
+    #[error(transparent)]
+    WalletSponsoredFee(#[from] WalletSponsoredFeeError),
+    #[error(transparent)]
+    WalletTransferQuote(#[from] WalletTransferQuoteError),
+    #[error(transparent)]
+    ConnectedApp(#[from] ConnectedAppError),
     #[error("Mini App {0} is not installed")]
     MiniAppNotFound(String),
     #[error("Mini App session {0} does not exist")]
@@ -724,9 +1220,16 @@ pub enum EngineError {
     MiniAppHostActionRequired,
 }
 
+const MAX_RECENT_PARTICIPANT_SUGGESTIONS: usize = 48;
+const MAX_RECENT_OPEN_DESTINATIONS: usize = 32;
+
 #[derive(Debug, Clone, Default)]
 pub struct MessagingEngine {
     state: MessagingState,
+    // Runtime-only canonical navigation projection. This intentionally does not
+    // live in MessagingState: upstream recent-open Thread history is weak and
+    // non-persistent, and restart must not resurrect stale child authority.
+    recent_open_destinations: BTreeMap<ActorId, Vec<ConversationDestination>>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -787,10 +1290,7 @@ fn community_has_access(community: &CommunityState, actor_id: &ActorId) -> bool 
 fn destination_message_conversation_id(
     destination: &ConversationDestination,
 ) -> &ConversationId {
-    match destination.child.as_ref() {
-        Some(ConversationChildIdentity::Conversation { conversation_id }) => conversation_id,
-        _ => &destination.conversation_id,
-    }
+    destination.message_conversation_id()
 }
 
 fn append_community_audit(
@@ -834,6 +1334,69 @@ fn message_content_uses_media(content: &MessageContent) -> bool {
     )
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum SharedMediaKind {
+    Photo,
+    Video,
+    PhotoVideo,
+    MusicFile,
+    File,
+    VoiceFile,
+    Link,
+    Gif,
+    RoundVoiceFile,
+    RoundFile,
+    Pinned,
+    Poll,
+}
+
+fn formatted_text_has_shared_link(text: &crate::message::FormattedText) -> bool {
+    text.entities.iter().any(|entity| {
+        matches!(
+            &entity.kind,
+            TextEntityKind::Url | TextEntityKind::TextUrl(_)
+        )
+    })
+}
+
+fn message_has_shared_link(message: &Message) -> bool {
+    match &message.content {
+        MessageContent::Text { text } => formatted_text_has_shared_link(text),
+        MessageContent::Photo { caption, .. }
+        | MessageContent::Video { caption, .. }
+        | MessageContent::Animation { caption, .. }
+        | MessageContent::Audio { caption, .. }
+        | MessageContent::Voice { caption, .. }
+        | MessageContent::Document { caption, .. } => formatted_text_has_shared_link(caption),
+        MessageContent::Poll { question, .. } => formatted_text_has_shared_link(question),
+        _ => false,
+    }
+}
+
+fn message_matches_shared_media_kind(message: &Message, kind: SharedMediaKind) -> bool {
+    match kind {
+        SharedMediaKind::Photo => matches!(&message.content, MessageContent::Photo { .. }),
+        SharedMediaKind::Video => matches!(&message.content, MessageContent::Video { .. }),
+        SharedMediaKind::PhotoVideo => matches!(
+            &message.content,
+            MessageContent::Photo { .. } | MessageContent::Video { .. }
+        ),
+        SharedMediaKind::MusicFile => matches!(&message.content, MessageContent::Audio { .. }),
+        SharedMediaKind::File => matches!(&message.content, MessageContent::Document { .. }),
+        SharedMediaKind::VoiceFile => matches!(&message.content, MessageContent::Voice { .. }),
+        SharedMediaKind::Link => message_has_shared_link(message),
+        SharedMediaKind::Gif => matches!(&message.content, MessageContent::Animation { .. }),
+        SharedMediaKind::RoundVoiceFile => matches!(
+            &message.content,
+            MessageContent::Voice { .. } | MessageContent::VideoNote { .. }
+        ),
+        SharedMediaKind::RoundFile => matches!(&message.content, MessageContent::VideoNote { .. }),
+        SharedMediaKind::Pinned => message.pinned,
+        SharedMediaKind::Poll => matches!(&message.content, MessageContent::Poll { .. }),
+    }
+}
+
 fn wallet_account_id(actor_id: &ActorId) -> WalletAccountId {
     WalletAccountId(format!("wallet:{}", actor_id.0))
 }
@@ -870,14 +1433,216 @@ impl MessagingEngine {
     pub fn new() -> Self {
         Self::default()
     }
-    pub fn from_state(state: MessagingState) -> Self {
-        Self { state }
+    pub fn from_state(mut state: MessagingState) -> Self {
+        let known_actors = state.actors.keys().cloned().collect::<BTreeSet<_>>();
+        state.recent_participant_suggestions.retain(|owner, recent| {
+            if !known_actors.contains(owner)
+                || recent.len() > MAX_RECENT_PARTICIPANT_SUGGESTIONS
+                || recent.iter().any(|peer| peer == owner || !known_actors.contains(peer))
+            {
+                return false;
+            }
+            let unique = recent.iter().cloned().collect::<BTreeSet<_>>();
+            unique.len() == recent.len()
+        });
+        Self {
+            state,
+            recent_open_destinations: BTreeMap::new(),
+        }
     }
     pub fn state(&self) -> &MessagingState {
         &self.state
     }
+
+    /// Derive the upload-backed shared-media projection directly from canonical
+    /// Message state. Stickers are intentionally excluded: the accepted upstream
+    /// shared-media producer excludes sticker documents from its media index.
+    pub fn shared_media_message_ids(
+        &self,
+        destination: &ConversationDestination,
+        actor_id: &ActorId,
+    ) -> Result<Vec<MessageId>, EngineError> {
+        self.shared_media_message_ids_matching(destination, actor_id, |message| {
+            matches!(
+                &message.content,
+                MessageContent::Photo { .. }
+                    | MessageContent::Video { .. }
+                    | MessageContent::Animation { .. }
+                    | MessageContent::Audio { .. }
+                    | MessageContent::Voice { .. }
+                    | MessageContent::VideoNote { .. }
+                    | MessageContent::Document { .. }
+            )
+        })
+    }
+
+    /// Source-neutral equivalent of tdesktop's typed SharedMedia index.
+    ///
+    /// The projection is rebuilt from canonical Message state rather than stored
+    /// separately, so edit/delete/child-destroy invalidation cannot diverge from
+    /// the message owner. Chat-photo service media and TTL-media exclusion remain
+    /// outside this query until canonical Message exposes those typed semantics.
+    pub fn shared_media_message_ids_for_kind(
+        &self,
+        destination: &ConversationDestination,
+        actor_id: &ActorId,
+        kind: SharedMediaKind,
+    ) -> Result<Vec<MessageId>, EngineError> {
+        self.shared_media_message_ids_matching(destination, actor_id, |message| {
+            message_matches_shared_media_kind(message, kind)
+        })
+    }
+
+    fn shared_media_message_ids_matching(
+        &self,
+        destination: &ConversationDestination,
+        actor_id: &ActorId,
+        predicate: impl Fn(&Message) -> bool,
+    ) -> Result<Vec<MessageId>, EngineError> {
+        if !destination.is_valid() {
+            return Err(EngineError::InvalidConversationChildDestination);
+        }
+        self.require_actor(actor_id)?;
+
+        let child_state = if destination.child.is_some() {
+            Some(
+                self.state
+                    .child_state(destination, actor_id)
+                    .ok_or(EngineError::InvalidConversationChildDestination)?,
+            )
+        } else {
+            None
+        };
+        let conversation_id = destination_message_conversation_id(destination);
+        let mut messages = self
+            .state
+            .messages
+            .get(conversation_id)
+            .into_iter()
+            .flat_map(|messages| messages.values())
+            .filter(|message| !message.deleted && predicate(message))
+            .filter(|message| match destination.child.as_ref() {
+                None => true,
+                Some(ConversationChildIdentity::Topic { root_message_id }) => message
+                    .thread_root_message_id
+                    .as_ref()
+                    .is_some_and(|root| &root.0 == root_message_id),
+                Some(ConversationChildIdentity::SavedSublist { .. }) => child_state
+                    .is_some_and(|child| child.has_authoritative_message(&message.id.0)),
+                Some(ConversationChildIdentity::Conversation { .. }) => true,
+            })
+            .collect::<Vec<_>>();
+        messages.sort_by(|left, right| {
+            left.created_at_ms
+                .cmp(&right.created_at_ms)
+                .then_with(|| left.id.0.cmp(&right.id.0))
+        });
+        Ok(messages
+            .into_iter()
+            .map(|message| message.id.clone())
+            .collect())
+    }
+
+    pub fn recent_participant_suggestions(&self, actor_id: &ActorId) -> &[ActorId] {
+        self.state
+            .recent_participant_suggestions
+            .get(actor_id)
+            .map(Vec::as_slice)
+            .unwrap_or(&[])
+    }
+
+    pub fn note_recent_participant_suggestion(
+        &mut self,
+        actor_id: &ActorId,
+        peer_id: &ActorId,
+    ) -> Result<(), EngineError> {
+        self.require_actor(actor_id)?;
+        self.require_actor(peer_id)?;
+        if actor_id == peer_id {
+            return Err(EngineError::InvalidActor);
+        }
+        let recent = self
+            .state
+            .recent_participant_suggestions
+            .entry(actor_id.clone())
+            .or_default();
+        recent.retain(|item| item != peer_id);
+        recent.insert(0, peer_id.clone());
+        recent.truncate(MAX_RECENT_PARTICIPANT_SUGGESTIONS);
+        Ok(())
+    }
+
+    pub fn remove_recent_participant_suggestion(
+        &mut self,
+        actor_id: &ActorId,
+        peer_id: &ActorId,
+    ) -> Result<(), EngineError> {
+        self.require_actor(actor_id)?;
+        let remove_owner = self
+            .state
+            .recent_participant_suggestions
+            .get_mut(actor_id)
+            .is_some_and(|recent| {
+                recent.retain(|item| item != peer_id);
+                recent.is_empty()
+            });
+        if remove_owner {
+            self.state.recent_participant_suggestions.remove(actor_id);
+        }
+        Ok(())
+    }
+
+    pub fn clear_recent_participant_suggestions(
+        &mut self,
+        actor_id: &ActorId,
+    ) -> Result<(), EngineError> {
+        self.require_actor(actor_id)?;
+        self.state.recent_participant_suggestions.remove(actor_id);
+        Ok(())
+    }
+
+    pub fn recent_open_destinations(
+        &self,
+        actor_id: &ActorId,
+    ) -> &[ConversationDestination] {
+        self.recent_open_destinations
+            .get(actor_id)
+            .map(Vec::as_slice)
+            .unwrap_or(&[])
+    }
     pub fn into_state(self) -> MessagingState {
         self.state
+    }
+
+    fn note_destination_opened(
+        &mut self,
+        actor_id: &ActorId,
+        destination: &ConversationDestination,
+    ) {
+        let recent = self
+            .recent_open_destinations
+            .entry(actor_id.clone())
+            .or_default();
+        recent.retain(|item| item != destination);
+        recent.insert(0, destination.clone());
+        recent.truncate(MAX_RECENT_OPEN_DESTINATIONS);
+    }
+
+    fn remove_recent_destination(
+        &mut self,
+        actor_id: &ActorId,
+        destination: &ConversationDestination,
+    ) {
+        let remove_actor = self
+            .recent_open_destinations
+            .get_mut(actor_id)
+            .is_some_and(|recent| {
+                recent.retain(|item| item != destination);
+                recent.is_empty()
+            });
+        if remove_actor {
+            self.recent_open_destinations.remove(actor_id);
+        }
     }
 
     pub fn execute(&mut self, command: Command) -> Result<Vec<Event>, EngineError> {
@@ -1085,6 +1850,25 @@ impl MessagingEngine {
                 Ok(vec![Event::ConversationNotificationsUpdated {
                     conversation_id,
                     settings,
+                }])
+            }
+            Command::SetConversationMessageRetention {
+                conversation_id,
+                retention_seconds,
+                expected_revision,
+            } => {
+                let conversation = self.require_conversation(&conversation_id)?;
+                let current = ConversationMessageRetention {
+                    policy: conversation
+                        .message_retention_seconds
+                        .map(MessageRetentionPolicy::new)
+                        .transpose()?,
+                    revision: conversation.retention_revision,
+                };
+                let retention = current.change(retention_seconds, expected_revision)?;
+                Ok(vec![Event::ConversationMessageRetentionUpdated {
+                    conversation_id,
+                    retention,
                 }])
             }
             Command::UpsertFolder { folder } => Ok(vec![Event::FolderUpserted { folder }]),
@@ -1344,6 +2128,13 @@ impl MessagingEngine {
                         message_id: local_message_id,
                     });
                 }
+                let expiry_base_ms = scheduled_at_ms.unwrap_or(created_at_ms);
+                let expires_at_ms = match conversation.message_retention_seconds {
+                    Some(seconds) => Some(
+                        MessageRetentionPolicy::new(seconds)?.expires_at_ms(expiry_base_ms)?
+                    ),
+                    None => None,
+                };
                 let message = Message {
                     id: local_message_id,
                     conversation_id,
@@ -1358,6 +2149,7 @@ impl MessagingEngine {
                     created_at_ms,
                     edited_at_ms: None,
                     scheduled_at_ms,
+                    expires_at_ms,
                     silent,
                     protected_content: protected_content || is_secret_content,
                     pinned: false,
@@ -1368,18 +2160,43 @@ impl MessagingEngine {
             Command::ForwardMessage {
                 source_conversation_id,
                 message_id,
-                destination_conversation_id,
+                destination,
                 local_message_id,
                 client_message_id,
                 sender_id,
-                thread_root_message_id,
                 created_at_ms,
                 scheduled_at_ms,
                 silent,
                 privacy,
             } => {
-                let conversation = self.require_conversation(&destination_conversation_id)?;
+                if !destination.is_valid() {
+                    return Err(EngineError::InvalidConversationChildDestination);
+                }
                 self.require_actor(&sender_id)?;
+                if destination.child.is_some() {
+                    self.decide(Command::SetConversationChildDraft {
+                        destination: destination.clone(),
+                        actor_id: sender_id.clone(),
+                        text: String::new(),
+                        reply_to_message_id: None,
+                        updated_at_ms: 0,
+                    })?;
+                    let child = self
+                        .state
+                        .child_state(&destination, &sender_id)
+                        .ok_or(EngineError::InvalidConversationChildDestination)?;
+                    if matches!(
+                        &destination.child,
+                        Some(ConversationChildIdentity::SavedSublist { .. })
+                    ) && !child.authoritative_membership_known
+                    {
+                        return Err(EngineError::ConversationChildMessageMismatch);
+                    }
+                }
+                let destination_conversation_id = destination.message_conversation_id().clone();
+                let thread_root_message_id =
+                    destination.topic_root_message_id().map(MessageId::new);
+                let conversation = self.require_conversation(&destination_conversation_id)?;
                 let original = self
                     .require_message(&source_conversation_id, &message_id)?
                     .clone();
@@ -1571,10 +2388,33 @@ impl MessagingEngine {
                 if privacy.drop_captions {
                     content.clear_caption();
                 }
+                let saved_membership = if matches!(
+                    &destination.child,
+                    Some(ConversationChildIdentity::SavedSublist { .. })
+                ) {
+                    let child = self
+                        .state
+                        .child_state(&destination, &sender_id)
+                        .ok_or(EngineError::InvalidConversationChildDestination)?;
+                    let mut message_ids = child.authoritative_message_ids.clone();
+                    if !message_ids.iter().any(|id| id == &local_message_id.0) {
+                        message_ids.push(local_message_id.0.clone());
+                    }
+                    Some(message_ids)
+                } else {
+                    None
+                };
+                let expiry_base_ms = scheduled_at_ms.unwrap_or(created_at_ms);
+                let expires_at_ms = match conversation.message_retention_seconds {
+                    Some(seconds) => Some(
+                        MessageRetentionPolicy::new(seconds)?.expires_at_ms(expiry_base_ms)?
+                    ),
+                    None => None,
+                };
                 let message = Message {
                     id: local_message_id,
                     conversation_id: destination_conversation_id,
-                    sender_id,
+                    sender_id: sender_id.clone(),
                     content,
                     reply_to_message_id: None,
                     thread_root_message_id,
@@ -1585,12 +2425,21 @@ impl MessagingEngine {
                     created_at_ms,
                     edited_at_ms: None,
                     scheduled_at_ms,
+                    expires_at_ms,
                     silent,
                     protected_content: original.protected_content,
                     pinned: false,
                     deleted: false,
                 };
-                Ok(vec![Event::MessageQueued { message }])
+                let mut events = vec![Event::MessageQueued { message }];
+                if let Some(message_ids) = saved_membership {
+                    events.push(Event::SavedSublistMembershipReconciled {
+                        destination,
+                        actor_id: sender_id,
+                        message_ids,
+                    });
+                }
+                Ok(events)
             }
             Command::AcknowledgeMessage {
                 conversation_id,
@@ -1742,6 +2591,83 @@ impl MessagingEngine {
                     message_id,
                 }])
             }
+            Command::ReconcileSavedSublistParentAccess {
+                conversation_id,
+                actor_id,
+                allowed,
+            } => {
+                // This command is reachable only from the trusted server/native
+                // reconciliation boundary. Parent access can arrive before the
+                // renderer-facing Conversation projection (fresh device/restart),
+                // so requiring a locally materialized actor/community here would
+                // turn ordering into authority. Keep the relation fail-closed at
+                // the client boundary instead: only validated identities may be
+                // persisted, and ordinary child commands still require their
+                // canonical Conversation/Actor projections before use.
+                if !conversation_id.is_valid() || !actor_id.is_valid() {
+                    return Err(EngineError::InvalidConversationChildDestination);
+                }
+                Ok(vec![Event::SavedSublistParentAccessReconciled {
+                    conversation_id,
+                    actor_id,
+                    allowed,
+                }])
+            }
+            Command::ReconcileSavedSublistMembership {
+                destination,
+                actor_id,
+                message_ids,
+            } => {
+                if !destination.is_valid()
+                    || !actor_id.is_valid()
+                    || !matches!(
+                        &destination.child,
+                        Some(ConversationChildIdentity::SavedSublist { .. })
+                    )
+                {
+                    return Err(EngineError::InvalidConversationChildDestination);
+                }
+                // Native/server membership is the authority for this child and can
+                // precede the local parent Message projection. Requiring every
+                // authoritative id to already exist in the local message map made
+                // a fresh sync impossible and incorrectly promoted projection
+                // ordering into truth. The parent relation must already have been
+                // reconciled for this account; renderer/client commands cannot
+                // mint that relation.
+                let self_saved_messages = self
+                    .state
+                    .conversations
+                    .get(&destination.conversation_id)
+                    .is_some_and(|conversation| {
+                        matches!(conversation.kind, ConversationKind::SavedMessages)
+                            && conversation.owner_id.as_ref() == Some(&actor_id)
+                    });
+                let server_parent = self
+                    .state
+                    .saved_sublist_parent_access
+                    .get(&destination.conversation_id)
+                    .is_some_and(|actors| actors.contains(&actor_id));
+                if !self_saved_messages && !server_parent {
+                    return Err(EngineError::InvalidConversationChildDestination);
+                }
+                let message_ids = message_ids
+                    .into_iter()
+                    .map(|message_id| message_id.0)
+                    .collect::<Vec<_>>();
+                let mut validation = ConversationChildRuntimeState::new(
+                    destination.clone(),
+                    actor_id.clone(),
+                )
+                .ok_or(EngineError::InvalidConversationChildDestination)?;
+                if !validation.reconcile_authoritative_message_ids(message_ids.clone()) {
+                    return Err(EngineError::ConversationChildMessageMismatch);
+                }
+                Ok(vec![Event::SavedSublistMembershipReconciled {
+                    destination,
+                    actor_id,
+                    message_ids,
+                }])
+            }
             Command::MarkConversationChildRead {
                 destination,
                 actor_id,
@@ -1788,17 +2714,30 @@ impl MessagingEngine {
                         }
                     }
                     Some(ConversationChildIdentity::SavedSublist { participant_id }) => {
-                        // Telegram SavedSublist is owned either by self Saved Messages or by
-                        // an explicit monoforum parent chat. Fabushi does not yet model the
-                        // monoforum parent relation, so accept only the canonical self
-                        // SavedMessages parent and fail closed for all other parent kinds.
+                        // SavedSublist is valid only under self SavedMessages or an
+                        // explicit server/native-authoritative parent relation for this
+                        // account. Community-ness alone is never sufficient.
                         let self_saved_messages = matches!(
                             conversation.kind,
                             ConversationKind::SavedMessages
                         ) && conversation.owner_id.as_ref() == Some(&actor_id);
+                        let server_parent = self
+                            .state
+                            .saved_sublist_parent_access
+                            .get(&conversation_id)
+                            .is_some_and(|actors| actors.contains(&actor_id));
                         let participant_exists = self.state.actors.contains_key(participant_id);
-                        if !self_saved_messages || !participant_exists {
+                        if (!self_saved_messages && !server_parent) || !participant_exists {
                             return Err(EngineError::InvalidConversationChildDestination);
+                        }
+                        let authoritative_membership = self
+                            .state
+                            .child_state(&destination, &actor_id)
+                            .is_some_and(|child| {
+                                child.has_authoritative_message(message_id.0.as_str())
+                            });
+                        if !authoritative_membership {
+                            return Err(EngineError::ConversationChildMessageMismatch);
                         }
                     }
                     Some(ConversationChildIdentity::Conversation {
@@ -1922,16 +2861,20 @@ impl MessagingEngine {
                         }
                     }
                     Some(ConversationChildIdentity::SavedSublist { participant_id }) => {
-                        // Telegram SavedSublist is owned either by self Saved Messages or by
-                        // an explicit monoforum parent chat. Fabushi does not yet model the
-                        // monoforum parent relation, so accept only the canonical self
-                        // SavedMessages parent and fail closed for all other parent kinds.
+                        // SavedSublist is valid only under self SavedMessages or an
+                        // explicit server/native-authoritative parent relation for this
+                        // account. Community-ness alone is never sufficient.
                         let self_saved_messages = matches!(
                             conversation.kind,
                             ConversationKind::SavedMessages
                         ) && conversation.owner_id.as_ref() == Some(&actor_id);
+                        let server_parent = self
+                            .state
+                            .saved_sublist_parent_access
+                            .get(&conversation_id)
+                            .is_some_and(|actors| actors.contains(&actor_id));
                         let participant_exists = self.state.actors.contains_key(participant_id);
-                        if !self_saved_messages || !participant_exists {
+                        if (!self_saved_messages && !server_parent) || !participant_exists {
                             return Err(EngineError::InvalidConversationChildDestination);
                         }
                     }
@@ -1963,6 +2906,66 @@ impl MessagingEngine {
                         destination_message_conversation_id(&destination),
                         reply_to_message_id,
                     )?;
+                    if matches!(
+                        &destination.child,
+                        Some(ConversationChildIdentity::SavedSublist { .. })
+                    ) {
+                        let authoritative_membership = self
+                            .state
+                            .child_state(&destination, &actor_id)
+                            .is_some_and(|child| {
+                                child.has_authoritative_message(reply_to_message_id.0.as_str())
+                            });
+                        if !authoritative_membership {
+                            return Err(EngineError::ConversationChildMessageMismatch);
+                        }
+                    }
+                }
+                Ok(vec![Event::ConversationChildDraftChanged {
+                    destination,
+                    actor_id,
+                    text,
+                    reply_to_message_id: reply_to_message_id.map(|id| id.0),
+                    updated_at_ms,
+                }])
+            }
+            Command::ReconcileConversationChildDraft {
+                destination,
+                actor_id,
+                text,
+                reply_to_message_id,
+                updated_at_ms,
+            } => {
+                // Reuse the ordinary child authorization/identity path without
+                // requiring a local Message payload for a remotely validated
+                // SavedSublist reply target.
+                self.decide(Command::SetConversationChildDraft {
+                    destination: destination.clone(),
+                    actor_id: actor_id.clone(),
+                    text: String::new(),
+                    reply_to_message_id: None,
+                    updated_at_ms: 0,
+                })?;
+                if let Some(reply_to_message_id) = &reply_to_message_id {
+                    if matches!(
+                        &destination.child,
+                        Some(ConversationChildIdentity::SavedSublist { .. })
+                    ) {
+                        let authoritative_membership = self
+                            .state
+                            .child_state(&destination, &actor_id)
+                            .is_some_and(|child| {
+                                child.has_authoritative_message(reply_to_message_id.0.as_str())
+                            });
+                        if !authoritative_membership {
+                            return Err(EngineError::ConversationChildMessageMismatch);
+                        }
+                    } else {
+                        self.require_message(
+                            destination_message_conversation_id(&destination),
+                            reply_to_message_id,
+                        )?;
+                    }
                 }
                 Ok(vec![Event::ConversationChildDraftChanged {
                     destination,
@@ -1987,17 +2990,6 @@ impl MessagingEngine {
                     reply_to_message_id: None,
                     updated_at_ms: 0,
                 })?;
-                // SavedSublist membership is not derivable from the current canonical
-                // Message shape yet. Never accept arbitrary parent messages into that
-                // child just to populate a page; empty lifecycle snapshots remain valid
-                // until a source-neutral message-to-child relation lands.
-                if matches!(
-                    &destination.child,
-                    Some(ConversationChildIdentity::SavedSublist { .. })
-                ) && !message_ids.is_empty()
-                {
-                    return Err(EngineError::ConversationChildMessageMismatch);
-                }
                 for message_id in &message_ids {
                     self.decide(Command::MarkConversationChildRead {
                         destination: destination.clone(),
@@ -2097,6 +3089,68 @@ impl MessagingEngine {
                     marked_unread,
                 }])
             }
+            Command::ReconcileConversationChildUnreadThings {
+                destination,
+                actor_id,
+                known,
+                mention_message_ids,
+                reaction_message_ids,
+                poll_vote_message_ids,
+                pending_incoming_notification_message_ids,
+            } => {
+                if destination.child.is_none() {
+                    return Err(EngineError::InvalidConversationChildDestination);
+                }
+                // Reuse the canonical destination authorization/identity contract
+                // without producing a draft mutation.
+                self.decide(Command::SetConversationChildDraft {
+                    destination: destination.clone(),
+                    actor_id: actor_id.clone(),
+                    text: String::new(),
+                    reply_to_message_id: None,
+                    updated_at_ms: 0,
+                })?;
+
+                let mut owned_ids = pending_incoming_notification_message_ids.clone();
+                if known {
+                    owned_ids.extend(mention_message_ids.iter().cloned());
+                    owned_ids.extend(reaction_message_ids.iter().cloned());
+                    owned_ids.extend(poll_vote_message_ids.iter().cloned());
+                }
+
+                for message_id in &owned_ids {
+                    self.decide(Command::MarkConversationChildRead {
+                        destination: destination.clone(),
+                        actor_id: actor_id.clone(),
+                        message_id: message_id.clone(),
+                    })?;
+                }
+
+                let mut unread_things = ConversationChildUnreadThings::default();
+                unread_things.reconcile(
+                    known,
+                    mention_message_ids.into_iter().map(|id| id.0).collect(),
+                    reaction_message_ids.into_iter().map(|id| id.0).collect(),
+                    poll_vote_message_ids.into_iter().map(|id| id.0).collect(),
+                );
+                let mut pending = ConversationChildUnreadThings::default();
+                pending.reconcile(
+                    true,
+                    pending_incoming_notification_message_ids
+                        .into_iter()
+                        .map(|id| id.0)
+                        .collect(),
+                    Vec::new(),
+                    Vec::new(),
+                );
+
+                Ok(vec![Event::ConversationChildUnreadThingsReconciled {
+                    destination,
+                    actor_id,
+                    unread_things,
+                    pending_incoming_notification_message_ids: pending.mention_message_ids,
+                }])
+            }
             Command::SetConversationChildNoPaidMessages {
                 destination,
                 actor_id,
@@ -2132,10 +3186,46 @@ impl MessagingEngine {
                     reply_to_message_id: None,
                     updated_at_ms: 0,
                 })?;
-                Ok(vec![Event::ConversationChildDestroyed {
+
+                let mut events = Vec::new();
+                if matches!(
+                    &destination.child,
+                    Some(ConversationChildIdentity::SavedSublist { .. })
+                ) {
+                    // SavedSublist is the only child kind with a trusted,
+                    // server/native-authoritative exact message-membership feed.
+                    // Destruction therefore deletes exactly that set; unknown
+                    // membership fails closed rather than guessing.
+                    let child = self
+                        .state
+                        .child_state(&destination, &actor_id)
+                        .ok_or(EngineError::InvalidConversationChildDestination)?;
+                    if !child.authoritative_membership_known {
+                        return Err(EngineError::ConversationChildMessageMismatch);
+                    }
+                    let message_ids = child
+                        .authoritative_message_ids
+                        .iter()
+                        .cloned()
+                        .map(MessageId::new)
+                        .collect::<Vec<_>>();
+                    if !message_ids.is_empty() {
+                        events.extend(self.decide(Command::DeleteMessages {
+                            conversation_id: destination_message_conversation_id(&destination)
+                                .clone(),
+                            message_ids,
+                        })?);
+                    }
+                }
+
+                // Topic and nested Conversation destruction remains projection
+                // unload. Without an exact authoritative membership feed,
+                // deleting canonical messages would be destructive guessing.
+                events.push(Event::ConversationChildDestroyed {
                     destination,
                     actor_id,
-                }])
+                });
+                Ok(events)
             }
             Command::SetReaction {
                 conversation_id,
@@ -2233,6 +3323,9 @@ impl MessagingEngine {
                     .is_some_and(|expires_at_ms| expires_at_ms <= created_at_ms)
                 {
                     return Err(EngineError::InvoiceExpired(invoice_id));
+                }
+                if !invoice.customer_information_is_valid(customer.as_ref()) {
+                    return Err(EngineError::InvalidCustomerInfo);
                 }
                 if let Some(existing) = self.state.orders.get(&order_id) {
                     if existing.invoice_id == invoice.id && existing.buyer_id == buyer_id {
@@ -2339,6 +3432,804 @@ impl MessagingEngine {
                     wallet.credit(request_id, &account_id, amount, reference, settled_at_ms)?;
                 Ok(vec![Event::WalletChanged { wallet, entry }])
             }
+            Command::SetWalletFiatCurrency { currency } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.rates.set_currency(&currency)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::ApplyWalletRateSnapshot {
+                rates,
+                observed_at_ms,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.rates.apply_snapshot(rates, observed_at_ms)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::MarkWalletRateRefreshFailed { observed_at_ms } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.rates.mark_refresh_failure(observed_at_ms);
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::BeginWalletFunding {
+                address,
+                asset,
+                base_currency,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .onramp
+                    .begin(address, asset, base_currency.as_deref())?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::ResolveWalletFundingProvider {
+                request_id,
+                providers,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.onramp.resolve_provider(request_id, &providers)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::CompleteWalletFunding {
+                request_id,
+                session_url,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .onramp
+                    .complete(request_id, session_url.as_deref())?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::CancelWalletFunding { request_id } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.onramp.cancel(request_id)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::ShowWalletPanel => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.panel.show();
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::MinimizeWalletPanel => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                if !runtime.panel.minimize() {
+                    return Err(EngineError::WalletPanelNotVisible);
+                }
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::CloseWalletPanel => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                if !runtime.panel.close() {
+                    return Err(EngineError::WalletPanelNotVisible);
+                }
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::BeginWalletExistingBalanceRequest => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .panel
+                    .begin_existing_balance_request(runtime.live.generation)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::ApplyWalletExistingBalanceResult { serial, url } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.panel.apply_existing_balance_result(
+                    runtime.live.generation,
+                    serial,
+                    url,
+                )?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::FailWalletExistingBalanceRequest { serial } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.panel.fail_existing_balance_request(serial)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::SetWalletTransactionsVisible { visible } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.panel.set_transactions_visible(visible);
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::JournalOutboundTransfer { record } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.outbound_transfers.prepare(record)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::JournalQuotedOutboundTransfer {
+                record,
+                quote,
+                balance_nano,
+                observed_at_ms,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.journal_quoted_outbound_transfer(
+                    record,
+                    &quote,
+                    balance_nano,
+                    observed_at_ms,
+                )?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::MarkOutboundTransferHandoff {
+                record_id,
+                message_token,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .outbound_transfers
+                    .mark_handoff_possible(&record_id, message_token)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::RecordOutboundTransferLookup { record_id } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.outbound_transfers.note_lookup_attempt(&record_id)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::StopOutboundTransferLookup { record_id } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.outbound_transfers.stop_lookup(&record_id)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::SettleOutboundTransfer {
+                record_id,
+                terminal,
+                confirmed_hash,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .outbound_transfers
+                    .settle(&record_id, terminal, confirmed_hash)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::ReconcileWalletUserAddress {
+                actor_id,
+                serial,
+                address,
+                public_key,
+            } => {
+                self.require_actor(&actor_id)?;
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .address_directory
+                    .apply_user_answer(actor_id, serial, address, public_key)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::ReconcileWalletAddressOwner {
+                address,
+                actor_id,
+                public_key,
+            } => {
+                if let Some(actor_id) = &actor_id {
+                    self.require_actor(actor_id)?;
+                }
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .address_directory
+                    .apply_owner_answer(address, actor_id, public_key)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::SetWalletAddressServiceUnavailable { unavailable } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .address_directory
+                    .set_service_unavailable(unavailable);
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::BeginWalletLiveGeneration => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.live.begin_generation()?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::ReconcileWalletLivePresence {
+                generation,
+                presence,
+                observed_at_ms,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .live
+                    .apply_presence(generation, presence, observed_at_ms)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::MarkWalletLiveStateFailed {
+                generation,
+                observed_at_ms,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .live
+                    .note_state_failure(generation, observed_at_ms)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::MarkWalletStreamResynced {
+                generation,
+                observed_at_ms,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .live
+                    .mark_stream_resync(generation, observed_at_ms)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::StartWalletLiveStream {
+                address,
+                observed_at_ms,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.live.stream.start(&address, observed_at_ms)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::ApplyWalletLiveStreamUrl {
+                generation,
+                observed_at_ms,
+                expires_in_ms,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .live
+                    .stream
+                    .apply_url(generation, observed_at_ms, expires_in_ms)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::MarkWalletLiveStreamConnected {
+                generation,
+                observed_at_ms,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .live
+                    .stream
+                    .connected(generation, observed_at_ms)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::MarkWalletLiveStreamActivity {
+                generation,
+                observed_at_ms,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .live
+                    .stream
+                    .note_activity(generation, observed_at_ms)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::FailWalletLiveStream {
+                generation,
+                observed_at_ms,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.live.stream.fail(generation, observed_at_ms)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::ResumeWalletLiveStream {
+                generation,
+                observed_at_ms,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .live
+                    .stream
+                    .resume_after_backoff(generation, observed_at_ms)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::BeginWalletLiveStreamRenew {
+                generation,
+                observed_at_ms,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .live
+                    .stream
+                    .begin_renew_if_due(generation, observed_at_ms)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::WantWalletLiveStreamRefresh {
+                generation,
+                observed_at_ms,
+                wanted,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .live
+                    .stream
+                    .want_refresh(generation, observed_at_ms, wanted)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::NoteWalletLiveStreamTransaction {
+                generation,
+                observed_at_ms,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .live
+                    .stream
+                    .note_transaction_event(generation, observed_at_ms)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::TakeWalletLiveStreamRefresh {
+                generation,
+                observed_at_ms,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .live
+                    .stream
+                    .take_refresh_if_due(generation, observed_at_ms)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::TakeWalletLiveStreamHistoryRecheck {
+                generation,
+                observed_at_ms,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .live
+                    .stream
+                    .take_history_recheck_if_due(generation, observed_at_ms)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::StopWalletLiveStream => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.live.stream.stop()?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::SpendWalletHistoryPageRequest { generation } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.live.spend_history_page_request(generation)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::RecordWalletHistoryProgress {
+                generation,
+                visible_rows,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.live.note_history_progress(generation, visible_rows)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::RearmWalletHistoryWalk { generation } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.live.rearm_history_walk(generation)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::SyncWalletParkedAddresses {
+                served_address,
+                addresses,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .parked
+                    .sync_addresses(&served_address, &addresses)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::BeginWalletParkedCheck { address, refresh } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .parked
+                    .begin_check(&address, refresh, runtime.live.presence)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::ApplyWalletParkedCheck {
+                address,
+                serial,
+                outcome,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.parked.apply_check(&address, serial, outcome)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::MarkWalletParkedDropFailed { address } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.parked.mark_drop_failed(&address)?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::BeginWalletSponsoredFeeRequest {
+                network_generation,
+                identity,
+                transfer_min_nano,
+                configured_min_nano,
+                observed_at_ms,
+                force,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.sponsored_fees.begin_request(
+                    network_generation,
+                    identity,
+                    transfer_min_nano,
+                    configured_min_nano,
+                    observed_at_ms,
+                    force,
+                )?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::ApplyWalletSponsoredFeeInfo {
+                serial,
+                network_generation,
+                identity,
+                info,
+                observed_at_ms,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.sponsored_fees.apply_info(
+                    serial,
+                    network_generation,
+                    &identity,
+                    info,
+                    observed_at_ms,
+                )?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::FailWalletSponsoredFeeRequest {
+                serial,
+                network_generation,
+                identity,
+                observed_at_ms,
+            } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime.sponsored_fees.fail_request(
+                    serial,
+                    network_generation,
+                    &identity,
+                    observed_at_ms,
+                )?;
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::ResetWalletSponsoredFeeGeneration { network_generation } => {
+                let mut runtime = self.state.wallet.runtime.clone();
+                runtime
+                    .sponsored_fees
+                    .reset_for_network_generation(network_generation);
+                Ok(vec![Event::WalletRuntimeChanged { runtime }])
+            }
+            Command::UpsertConnectedAppSession { session } => {
+                let mut state = self.state.connected_apps.clone();
+                state.upsert_session(session)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::UpdateConnectedAppWalletAddress { address } => {
+                let mut state = self.state.connected_apps.clone();
+                state.update_wallet_address(&address)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::CacheConnectedAppKeyReference {
+                session_id,
+                client_id,
+                reference_id,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.cache_key_reference(session_id, &client_id, &reference_id)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::BeginConnectedAppDisconnect { session_id } => {
+                let mut state = self.state.connected_apps.clone();
+                state.begin_disconnect(session_id)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::DeferConnectedAppClosing { session_id, error } => {
+                let mut state = self.state.connected_apps.clone();
+                state.defer_closing_for_key_error(session_id, error)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::SettleConnectedAppDisconnect { session_id } => {
+                let mut state = self.state.connected_apps.clone();
+                state.settle_disconnect(session_id);
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::BeginConnectedAppConnectFlow {
+                link,
+                ownership_domain,
+                reserved_platform_domain,
+                observed_at_ms,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.begin_connect_flow(
+                    link,
+                    &ownership_domain,
+                    &reserved_platform_domain,
+                    observed_at_ms,
+                )?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::ResolveConnectedAppConnectAccess {
+                client_id,
+                access,
+                observed_at_ms,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.resolve_connect_access(&client_id, access, observed_at_ms)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::PollConnectedAppManifest {
+                client_id,
+                observed_at_ms,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.poll_connect_manifest(&client_id, observed_at_ms)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::AcceptConnectedAppManifest {
+                client_id,
+                manifest,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.accept_connect_manifest(&client_id, manifest)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::PinConnectedAppConnectWallet {
+                client_id,
+                wallet_address,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.pin_connect_wallet(&client_id, &wallet_address)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::RetryConnectedAppConnectSubmit {
+                client_id,
+                error_type,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.retry_connect_submit_failure(&client_id, &error_type)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::BeginConnectedAppSessionRefresh {
+                observed_at_ms,
+                wallet_ready,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.begin_session_refresh(observed_at_ms, wallet_ready)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::ApplyConnectedAppSessionRefresh {
+                generation,
+                sessions,
+                observed_at_ms,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.apply_session_refresh(generation, sessions, observed_at_ms)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::FailConnectedAppSessionRefresh { generation } => {
+                let mut state = self.state.connected_apps.clone();
+                state.fail_session_refresh(generation)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::MarkConnectedAppSessionClosing {
+                session_id,
+                observed_at_ms,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.mark_session_closing(session_id, observed_at_ms)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::AcknowledgeConnectedAppSessionGone {
+                session_id,
+                observed_at_ms,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.acknowledge_session_gone(session_id, observed_at_ms)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::QueueConnectedAppRequest {
+                request,
+                observed_at_ms,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.queue_request(request, observed_at_ms)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::TakeNextConnectedAppRequest { observed_at_ms } => {
+                let mut state = self.state.connected_apps.clone();
+                state.take_next_request(observed_at_ms)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::ChooseConnectedAppRequest { message_id } => {
+                let mut state = self.state.connected_apps.clone();
+                state.choose_request(message_id)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::MarkConnectedAppRequestHandled { message_id } => {
+                let mut state = self.state.connected_apps.clone();
+                state.mark_request_handled_elsewhere(message_id);
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::FinishConnectedAppRequest { message_id, claimed } => {
+                let mut state = self.state.connected_apps.clone();
+                state.finish_request(message_id, claimed)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::StopConnectedAppRequests => {
+                let mut state = self.state.connected_apps.clone();
+                state.stop_requests();
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::ReconcileConnectedAppClaimRecovery {
+                wallet_identity,
+                fates,
+                observed_at_ms,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.reconcile_claim_recovery(wallet_identity, fates, observed_at_ms)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::SettleConnectedAppRecoverySubmission {
+                session_id,
+                message_id,
+                request_id,
+                retry_later,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.settle_recovery_submission(session_id, message_id, &request_id, retry_later)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::ResolveConnectedAppRequest {
+                session_id,
+                message_id,
+                request_id,
+                decision,
+                operation_id,
+                signed_payload,
+                not_sent,
+                answer,
+                observed_at_ms,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.record_claim_with_recovery(
+                    session_id,
+                    message_id,
+                    &request_id,
+                    decision,
+                    operation_id,
+                    signed_payload,
+                    not_sent,
+                    answer,
+                    observed_at_ms,
+                )?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::ResolveConnectedAppWalletRequest {
+                session_id,
+                message_id,
+                request_id,
+                decision,
+                wallet_identity,
+                operation_id,
+                signed_payload,
+                not_sent,
+                answer,
+                observed_at_ms,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.record_wallet_claim_with_recovery(
+                    session_id,
+                    message_id,
+                    &request_id,
+                    decision,
+                    wallet_identity,
+                    operation_id,
+                    signed_payload,
+                    not_sent,
+                    answer,
+                    observed_at_ms,
+                )?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::LinkConnectedAppClaimOperation {
+                session_id,
+                message_id,
+                request_id,
+                operation_id,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.link_claim_operation(session_id, message_id, &request_id, &operation_id)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::RecordConnectedAppClaimHandoff {
+                session_id,
+                message_id,
+                request_id,
+                operation_id,
+                signed_payload,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.record_claim_handoff(
+                    session_id,
+                    message_id,
+                    &request_id,
+                    &operation_id,
+                    &signed_payload,
+                )?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::RecordConnectedAppClaimAnswer {
+                session_id,
+                message_id,
+                request_id,
+                answer,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.record_claim_answer(session_id, message_id, &request_id, answer)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::CloseConnectedAppSession {
+                session_id,
+                closed_at_ms,
+            } => {
+                let mut state = self.state.connected_apps.clone();
+                state.close_session(session_id, closed_at_ms)?;
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::PruneConnectedAppClaims { observed_at_ms } => {
+                let mut state = self.state.connected_apps.clone();
+                state.prune_claims(observed_at_ms);
+                Ok(vec![Event::ConnectedAppStateChanged { state }])
+            }
+            Command::ReconcileEntitlement { entitlement } => {
+                self.require_actor(&entitlement.owner_id)?;
+                if entitlement.id.trim().is_empty()
+                    || entitlement.product_id.trim().is_empty()
+                    || entitlement.starts_at_ms < 0
+                    || entitlement.expires_at_ms.is_some_and(|value| value <= entitlement.starts_at_ms)
+                {
+                    return Err(EngineError::InvalidStoryStealthRequest);
+                }
+                Ok(vec![Event::EntitlementReconciled { entitlement }])
+            }
+            Command::ActivateStoryStealth {
+                actor_id,
+                request_id,
+                activated_at_ms,
+            } => {
+                self.require_actor(&actor_id)?;
+                if request_id.trim().is_empty() {
+                    return Err(EngineError::InvalidStoryStealthRequest);
+                }
+                let current = self
+                    .state
+                    .story_stealth
+                    .get(&actor_id)
+                    .cloned()
+                    .unwrap_or_default();
+                if current.last_activation_request_id.as_deref() == Some(request_id.as_str())
+                    || current.enabled_at(activated_at_ms)
+                {
+                    return Ok(vec![Event::StoryStealthChanged {
+                        actor_id,
+                        state: current,
+                    }]);
+                }
+                if current.cooling_down_at(activated_at_ms) {
+                    return Err(EngineError::StoryStealthCooldown {
+                        retry_at_ms: current.cooldown_till_ms,
+                    });
+                }
+                let entitled = self.state.entitlements.values().any(|entitlement| {
+                    entitlement.is_active_for(
+                        &actor_id,
+                        STORY_STEALTH_PRODUCT_ID,
+                        activated_at_ms,
+                    )
+                });
+                if !entitled {
+                    return Err(EngineError::StoryStealthEntitlementRequired);
+                }
+                let state = StoryStealthState {
+                    enabled_till_ms: activated_at_ms.saturating_add(STORY_STEALTH_ACTIVE_MS),
+                    cooldown_till_ms: activated_at_ms.saturating_add(STORY_STEALTH_COOLDOWN_MS),
+                    last_activation_request_id: Some(request_id),
+                };
+                let since_ms = activated_at_ms.saturating_sub(STORY_STEALTH_RETROACTIVE_MS);
+                let mut events = self
+                    .state
+                    .stories
+                    .values()
+                    .filter_map(|story| {
+                        let mut story = story.clone();
+                        story
+                            .anonymize_recent_view(&actor_id, since_ms)
+                            .then_some(Event::StoryChanged { story })
+                    })
+                    .collect::<Vec<_>>();
+                events.push(Event::StoryStealthChanged { actor_id, state });
+                Ok(events)
+            }
             Command::PublishStory { actor_id, story } => {
                 self.require_actor(&actor_id)?;
                 if story.owner_id != actor_id
@@ -2376,13 +4267,23 @@ impl MessagingEngine {
                 if !story.is_visible_to(&actor_id, false, false) {
                     return Err(EngineError::StoryPermissionDenied(story_id));
                 }
-                story.record_view(actor_id, viewed_at_ms)?;
+                if self
+                    .state
+                    .story_stealth
+                    .get(&actor_id)
+                    .is_some_and(|state| state.enabled_at(viewed_at_ms))
+                {
+                    story.record_anonymous_view(viewed_at_ms)?;
+                } else {
+                    story.record_view(actor_id, viewed_at_ms)?;
+                }
                 Ok(vec![Event::StoryChanged { story }])
             }
             Command::ReactStory {
                 actor_id,
                 story_id,
                 reaction,
+                reacted_at_ms,
             } => {
                 let mut story = self
                     .state
@@ -2393,7 +4294,7 @@ impl MessagingEngine {
                 if !story.is_visible_to(&actor_id, false, false) {
                     return Err(EngineError::StoryPermissionDenied(story_id));
                 }
-                story.react(&actor_id, reaction)?;
+                story.react(&actor_id, reaction, reacted_at_ms)?;
                 Ok(vec![Event::StoryChanged { story }])
             }
             Command::UpdateCommunity {
@@ -3276,6 +5177,16 @@ impl MessagingEngine {
                     conversation.notification_settings = settings;
                 }
             }
+            Event::ConversationMessageRetentionUpdated {
+                conversation_id,
+                retention,
+            } => {
+                if let Some(conversation) = self.state.conversations.get_mut(&conversation_id) {
+                    conversation.message_retention_seconds =
+                        retention.policy.map(|policy| policy.seconds());
+                    conversation.retention_revision = retention.revision;
+                }
+            }
             Event::FolderUpserted { folder } => {
                 self.state.folders.insert(folder.id.clone(), folder);
             }
@@ -3373,11 +5284,60 @@ impl MessagingEngine {
                 conversation_id,
                 message_ids,
             } => {
-                if let Some(messages) = self.state.messages.get_mut(&conversation_id) {
-                    for id in message_ids {
-                        if let Some(message) = messages.get_mut(&id) {
-                            message.deleted = true;
+                for id in message_ids {
+                    let message = self
+                        .state
+                        .messages
+                        .get(&conversation_id)
+                        .and_then(|messages| messages.get(&id))
+                        .cloned();
+                    if let Some(message) = message.as_ref() {
+                        for child in &mut self.state.conversation_child_states {
+                            let exact_member = match child.destination.child.as_ref() {
+                                Some(ConversationChildIdentity::Topic { root_message_id }) => {
+                                    child.destination.conversation_id == conversation_id
+                                        && message
+                                            .thread_root_message_id
+                                            .as_ref()
+                                            .is_some_and(|root| &root.0 == root_message_id)
+                                }
+                                Some(ConversationChildIdentity::SavedSublist { .. }) => {
+                                    child.destination.conversation_id == conversation_id
+                                        && child.has_authoritative_message(&id.0)
+                                }
+                                Some(ConversationChildIdentity::Conversation {
+                                    conversation_id: child_conversation_id,
+                                }) => child_conversation_id == &conversation_id,
+                                None => false,
+                            };
+                            if exact_member {
+                                child.remove_message(&id.0);
+                            }
                         }
+                    }
+                    if let Some(message) = self
+                        .state
+                        .messages
+                        .get_mut(&conversation_id)
+                        .and_then(|messages| messages.get_mut(&id))
+                    {
+                        message.deleted = true;
+                    }
+                    if let Some(conversation) =
+                        self.state.conversations.get_mut(&conversation_id)
+                    {
+                        conversation.pinned_message_ids.retain(|pinned| pinned != &id.0);
+                    }
+                    let remove_poll_bucket = self
+                        .state
+                        .poll_votes
+                        .get_mut(&conversation_id)
+                        .is_some_and(|by_message| {
+                            by_message.remove(&id);
+                            by_message.is_empty()
+                        });
+                    if remove_poll_bucket {
+                        self.state.poll_votes.remove(&conversation_id);
                     }
                 }
             }
@@ -3460,8 +5420,42 @@ impl MessagingEngine {
                         )
                     });
                 if let Some(position) = position {
+                    let pending = self
+                        .state
+                        .conversation_child_states
+                        .iter()
+                        .find(|child| {
+                            child.destination == destination && child.actor_id == actor_id
+                        })
+                        .map(|child| child.pending_incoming_notification_message_ids.clone())
+                        .unwrap_or_default();
+                    let message_conversation_id =
+                        destination_message_conversation_id(&destination).clone();
+                    let clear_ids = self
+                        .state
+                        .messages
+                        .get(&message_conversation_id)
+                        .map(|messages| {
+                            pending
+                                .iter()
+                                .filter_map(|id| {
+                                    let message_id = MessageId(id.clone());
+                                    let message = messages.get(&message_id)?;
+                                    let candidate = ConversationMessagePosition::new(
+                                        message.created_at_ms,
+                                        message.id.0.clone(),
+                                    );
+                                    (candidate <= position).then(|| id.clone())
+                                })
+                                .collect::<BTreeSet<_>>()
+                        })
+                        .unwrap_or_default();
                     if let Some(child) = self.state.child_state_mut(destination, actor_id) {
-                        let _ = child.advance_inbox_read_till(position, None);
+                        if child.advance_inbox_read_till(position, None) {
+                            child
+                                .pending_incoming_notification_message_ids
+                                .retain(|id| !clear_ids.contains(id));
+                        }
                     }
                 }
             }
@@ -3571,8 +5565,12 @@ impl MessagingEngine {
                             child.active = false;
                         }
                     }
+                    self.note_destination_opened(&actor_id, &destination);
                 }
-                if let Some(child) = self.state.child_state_mut(destination, actor_id) {
+                if let Some(child) = self
+                    .state
+                    .child_state_mut(destination.clone(), actor_id.clone())
+                {
                     child.set_active(active);
                 }
             }
@@ -3583,6 +5581,78 @@ impl MessagingEngine {
             } => {
                 if let Some(child) = self.state.child_state_mut(destination, actor_id) {
                     child.marked_unread = marked_unread;
+                }
+            }
+            Event::ConversationChildUnreadThingsReconciled {
+                destination,
+                actor_id,
+                unread_things,
+                pending_incoming_notification_message_ids,
+            } => {
+                if let Some(child) = self.state.child_state_mut(destination, actor_id) {
+                    child.unread_things = unread_things;
+                    child.replace_pending_incoming_notifications(
+                        pending_incoming_notification_message_ids,
+                    );
+                }
+            }
+            Event::SavedSublistMembershipReconciled {
+                destination,
+                actor_id,
+                message_ids,
+            } => {
+                if let Some(child) = self.state.child_state_mut(destination, actor_id) {
+                    let accepted = child.reconcile_authoritative_message_ids(message_ids);
+                    debug_assert!(accepted, "validated SavedSublist membership event");
+                }
+            }
+            Event::SavedSublistParentAccessReconciled {
+                conversation_id,
+                actor_id,
+                allowed,
+            } => {
+                if allowed {
+                    self.state
+                        .saved_sublist_parent_access
+                        .entry(conversation_id)
+                        .or_default()
+                        .insert(actor_id);
+                } else {
+                    let remove_parent = self
+                        .state
+                        .saved_sublist_parent_access
+                        .get_mut(&conversation_id)
+                        .is_some_and(|actors| {
+                            actors.remove(&actor_id);
+                            actors.is_empty()
+                        });
+                    if remove_parent {
+                        self.state.saved_sublist_parent_access.remove(&conversation_id);
+                    }
+                    self.state.conversation_child_states.retain(|child| {
+                        !(child.actor_id == actor_id
+                            && child.destination.conversation_id == conversation_id
+                            && matches!(
+                                child.destination.child,
+                                Some(ConversationChildIdentity::SavedSublist { .. })
+                            ))
+                    });
+                    let remove_actor = self
+                        .recent_open_destinations
+                        .get_mut(&actor_id)
+                        .is_some_and(|recent| {
+                            recent.retain(|destination| {
+                                !(destination.conversation_id == conversation_id
+                                    && matches!(
+                                        &destination.child,
+                                        Some(ConversationChildIdentity::SavedSublist { .. })
+                                    ))
+                            });
+                            recent.is_empty()
+                        });
+                    if remove_actor {
+                        self.recent_open_destinations.remove(&actor_id);
+                    }
                 }
             }
             Event::ConversationChildNoPaidMessagesChanged {
@@ -3601,6 +5671,7 @@ impl MessagingEngine {
                 self.state.conversation_child_states.retain(|child| {
                     child.destination != destination || child.actor_id != actor_id
                 });
+                self.remove_recent_destination(&actor_id, &destination);
             }
             Event::ReactionUpdated {
                 conversation_id,
@@ -3690,6 +5761,18 @@ impl MessagingEngine {
             Event::WalletChanged { wallet, .. } => {
                 self.state.wallet = wallet;
             }
+            Event::WalletRuntimeChanged { runtime } => {
+                self.state.wallet.runtime = runtime;
+            }
+            Event::ConnectedAppStateChanged { state } => {
+                self.state.connected_apps = state;
+            }
+            Event::EntitlementReconciled { entitlement } => {
+                self.state.entitlements.insert(entitlement.id.clone(), entitlement);
+            }
+            Event::StoryStealthChanged { actor_id, state } => {
+                self.state.story_stealth.insert(actor_id, state);
+            }
             Event::StoryChanged { story } => {
                 self.state.stories.insert(story.id.clone(), story);
             }
@@ -3762,5 +5845,1909 @@ impl MessagingEngine {
                 conversation_id: conversation_id.clone(),
                 message_id: message_id.clone(),
             })
+    }
+}
+
+
+#[cfg(test)]
+mod recent_open_history_tests {
+    use super::*;
+
+    #[test]
+    fn recent_participant_suggestions_are_durable_bounded_deduped_and_fail_closed() {
+        let owner = ActorId::new("human:recent-owner");
+        let mut engine = MessagingEngine::new();
+        engine.execute(Command::UpsertActor {
+            actor: Actor::human(owner.0.clone(), "Owner"),
+        }).unwrap();
+        for index in 0..=MAX_RECENT_PARTICIPANT_SUGGESTIONS {
+            let peer = ActorId::new(format!("human:recent-peer:{index}"));
+            engine.execute(Command::UpsertActor {
+                actor: Actor::human(peer.0.clone(), format!("Peer {index}")),
+            }).unwrap();
+            engine.note_recent_participant_suggestion(&owner, &peer).unwrap();
+        }
+        let recent = engine.recent_participant_suggestions(&owner);
+        assert_eq!(recent.len(), MAX_RECENT_PARTICIPANT_SUGGESTIONS);
+        let repeated = ActorId::new("human:recent-peer:5");
+        engine.note_recent_participant_suggestion(&owner, &repeated).unwrap();
+        let recent = engine.recent_participant_suggestions(&owner);
+        assert_eq!(recent.first(), Some(&repeated));
+        assert_eq!(recent.iter().filter(|item| *item == &repeated).count(), 1);
+
+        let restored = MessagingEngine::from_state(engine.state().clone());
+        assert_eq!(restored.recent_participant_suggestions(&owner), recent);
+
+        let mut corrupt = restored.state().clone();
+        corrupt
+            .recent_participant_suggestions
+            .entry(owner.clone())
+            .or_default()
+            .push(ActorId::new("human:missing"));
+        let recovered = MessagingEngine::from_state(corrupt);
+        assert!(recovered.recent_participant_suggestions(&owner).is_empty());
+    }
+
+    #[test]
+    fn recent_participant_remove_and_clear_are_exact_and_account_scoped() {
+        let owner = ActorId::new("human:recent-owner-a");
+        let other = ActorId::new("human:recent-owner-b");
+        let peer = ActorId::new("human:recent-peer");
+        let mut engine = MessagingEngine::new();
+        for actor in [
+            Actor::human(owner.0.clone(), "Owner A"),
+            Actor::human(other.0.clone(), "Owner B"),
+            Actor::human(peer.0.clone(), "Peer"),
+        ] {
+            engine.execute(Command::UpsertActor { actor }).unwrap();
+        }
+        engine.note_recent_participant_suggestion(&owner, &peer).unwrap();
+        engine.note_recent_participant_suggestion(&other, &peer).unwrap();
+        engine.remove_recent_participant_suggestion(&owner, &peer).unwrap();
+        assert!(engine.recent_participant_suggestions(&owner).is_empty());
+        assert_eq!(engine.recent_participant_suggestions(&other), &[peer.clone()]);
+        engine.clear_recent_participant_suggestions(&other).unwrap();
+        assert!(engine.recent_participant_suggestions(&other).is_empty());
+    }
+
+    #[test]
+    fn recent_open_history_is_bounded_deduped_and_move_front() {
+        let actor_id = ActorId::new("human:recent-open");
+        let parent_id = ConversationId::new("conversation:recent-open-parent");
+        let mut engine = MessagingEngine::new();
+
+        for index in 0..=MAX_RECENT_OPEN_DESTINATIONS {
+            let destination = ConversationDestination::nested_conversation(
+                parent_id.clone(),
+                ConversationId::new(format!("conversation:recent-open-child:{index}")),
+            );
+            engine.note_destination_opened(&actor_id, &destination);
+        }
+
+        let recent = engine.recent_open_destinations(&actor_id);
+        assert_eq!(recent.len(), MAX_RECENT_OPEN_DESTINATIONS);
+        assert_eq!(
+            recent.first(),
+            Some(&ConversationDestination::nested_conversation(
+                parent_id.clone(),
+                ConversationId::new(format!(
+                    "conversation:recent-open-child:{}",
+                    MAX_RECENT_OPEN_DESTINATIONS
+                )),
+            ))
+        );
+        assert!(!recent.contains(&ConversationDestination::nested_conversation(
+            parent_id.clone(),
+            ConversationId::new("conversation:recent-open-child:0"),
+        )));
+
+        let existing = ConversationDestination::nested_conversation(
+            parent_id,
+            ConversationId::new("conversation:recent-open-child:5"),
+        );
+        engine.note_destination_opened(&actor_id, &existing);
+        let recent = engine.recent_open_destinations(&actor_id);
+        assert_eq!(recent.len(), MAX_RECENT_OPEN_DESTINATIONS);
+        assert_eq!(recent.first(), Some(&existing));
+        assert_eq!(recent.iter().filter(|item| *item == &existing).count(), 1);
+    }
+
+    #[test]
+    fn deleted_message_cleans_only_authoritative_saved_sublist_membership() {
+        let parent = ConversationId::new("conversation:self");
+        let actor_id = ActorId::new("human:self");
+        let message_id = MessageId::new("message:delete");
+        let mut owned = ConversationChildRuntimeState::new(
+            ConversationDestination::saved_sublist(
+                parent.clone(),
+                ActorId::new("human:owned"),
+            ),
+            actor_id.clone(),
+        )
+        .expect("valid owned child");
+        let mut unrelated = ConversationChildRuntimeState::new(
+            ConversationDestination::saved_sublist(
+                parent.clone(),
+                ActorId::new("human:unrelated"),
+            ),
+            actor_id.clone(),
+        )
+        .expect("valid unrelated child");
+
+        assert!(owned.reconcile_authoritative_message_ids(vec![message_id.0.clone()]));
+        assert!(unrelated.reconcile_authoritative_message_ids(vec![
+            "message:other".into()
+        ]));
+        for child in [&mut owned, &mut unrelated] {
+            assert!(child.pagination.replace_window(
+                child.authoritative_message_ids.clone(),
+                Some(0),
+                Some(0),
+                Some(1),
+            ));
+            child.replace_pending_incoming_notifications(
+                child.authoritative_message_ids.clone(),
+            );
+            child.unread_count = Some(1);
+        }
+
+        let message = Message {
+            id: message_id.clone(),
+            conversation_id: parent.clone(),
+            sender_id: ActorId::new("human:peer"),
+            content: MessageContent::Text {
+                text: crate::message::FormattedText::plain("delete me"),
+            },
+            reply_to_message_id: None,
+            thread_root_message_id: None,
+            forward_origin: None,
+            reply_markup: None,
+            reactions: Vec::new(),
+            delivery_state: DeliveryState::Delivered,
+            created_at_ms: 10,
+            edited_at_ms: None,
+            scheduled_at_ms: None,
+            expires_at_ms: None,
+            silent: false,
+            protected_content: false,
+            pinned: false,
+            deleted: false,
+        };
+
+        let mut state = MessagingState::default();
+        state
+            .messages
+            .entry(parent.clone())
+            .or_default()
+            .insert(message_id.clone(), message);
+        state.conversation_child_states = vec![owned, unrelated];
+        let mut engine = MessagingEngine::from_state(state);
+
+        engine.apply(Event::MessagesDeleted {
+            conversation_id: parent.clone(),
+            message_ids: vec![message_id.clone()],
+        });
+
+        let owned = &engine.state().conversation_child_states[0];
+        assert!(owned.authoritative_message_ids.is_empty());
+        assert!(owned.pagination.message_ids.is_empty());
+        assert!(owned.pending_incoming_notification_message_ids.is_empty());
+        assert!(owned.unread_count.is_none());
+
+        let unrelated = &engine.state().conversation_child_states[1];
+        assert_eq!(unrelated.authoritative_message_ids, vec!["message:other"]);
+        assert_eq!(unrelated.pagination.message_ids, vec!["message:other"]);
+        assert_eq!(
+            unrelated.pending_incoming_notification_message_ids,
+            vec!["message:other"]
+        );
+        assert_eq!(unrelated.unread_count, Some(1));
+        assert!(
+            engine
+                .state()
+                .messages
+                .get(&parent)
+                .and_then(|messages| messages.get(&message_id))
+                .is_some_and(|message| message.deleted)
+        );
+    }
+
+    #[test]
+    fn destroyed_child_event_removes_only_exact_recent_open_destination() {
+        let actor_id = ActorId::new("human:recent-open-owner");
+        let other_actor_id = ActorId::new("human:recent-open-other");
+        let parent_id = ConversationId::new("conversation:recent-open-parent");
+        let destroyed = ConversationDestination::nested_conversation(
+            parent_id.clone(),
+            ConversationId::new("conversation:recent-open-destroyed"),
+        );
+        let sibling = ConversationDestination::nested_conversation(
+            parent_id,
+            ConversationId::new("conversation:recent-open-sibling"),
+        );
+        let mut engine = MessagingEngine::new();
+
+        engine.note_destination_opened(&actor_id, &destroyed);
+        engine.note_destination_opened(&actor_id, &sibling);
+        engine.note_destination_opened(&other_actor_id, &destroyed);
+
+        engine.apply(Event::ConversationChildDestroyed {
+            destination: destroyed.clone(),
+            actor_id: actor_id.clone(),
+        });
+
+        assert_eq!(engine.recent_open_destinations(&actor_id), &[sibling]);
+        assert_eq!(
+            engine.recent_open_destinations(&other_actor_id),
+            &[destroyed],
+            "destroying one account-scoped child must not prune another account's recent-open projection"
+        );
+    }
+
+    #[test]
+    fn recent_open_history_is_runtime_only_across_state_restore() {
+        let actor_id = ActorId::new("human:recent-open");
+        let destination = ConversationDestination::nested_conversation(
+            ConversationId::new("conversation:recent-open-parent"),
+            ConversationId::new("conversation:recent-open-child"),
+        );
+        let mut engine = MessagingEngine::new();
+        engine.note_destination_opened(&actor_id, &destination);
+        assert_eq!(engine.recent_open_destinations(&actor_id), &[destination]);
+
+        let restored = MessagingEngine::from_state(engine.state().clone());
+        assert!(restored.recent_open_destinations(&actor_id).is_empty());
+    }
+
+    #[test]
+    fn authoritative_saved_sublist_draft_reply_uses_membership_without_local_message_payload() {
+        let actor_id = ActorId::new("human:child-draft-owner");
+        let peer_id = ActorId::new("human:child-draft-peer");
+        let parent = ConversationId::new("conversation:child-draft-parent");
+        let destination = ConversationDestination::saved_sublist(
+            parent.clone(),
+            peer_id.clone(),
+        );
+        let reply_id = MessageId::new("human-server-message:7");
+        let mut engine = MessagingEngine::new();
+
+        for actor in [
+            Actor::human(actor_id.0.clone(), "Draft Owner"),
+            Actor::human(peer_id.0.clone(), "Draft Peer"),
+        ] {
+            engine.execute(Command::UpsertActor { actor }).unwrap();
+        }
+        engine
+            .execute(Command::UpsertConversation {
+                conversation: Conversation::direct(
+                    parent.0.clone(),
+                    "Draft Peer",
+                    vec![
+                        Participant {
+                            actor_id: actor_id.clone(),
+                            role: ParticipantRole::Member,
+                            joined_at_ms: 1,
+                            muted_until_ms: None,
+                        },
+                        Participant {
+                            actor_id: peer_id,
+                            role: ParticipantRole::Member,
+                            joined_at_ms: 1,
+                            muted_until_ms: None,
+                        },
+                    ],
+                    1,
+                ),
+            })
+            .unwrap();
+        engine
+            .execute(Command::ReconcileSavedSublistParentAccess {
+                conversation_id: parent,
+                actor_id: actor_id.clone(),
+                allowed: true,
+            })
+            .unwrap();
+        engine
+            .execute(Command::ReconcileSavedSublistMembership {
+                destination: destination.clone(),
+                actor_id: actor_id.clone(),
+                message_ids: vec![reply_id.clone()],
+            })
+            .unwrap();
+
+        assert!(
+            engine
+                .state()
+                .messages
+                .values()
+                .all(|messages| !messages.contains_key(&reply_id)),
+            "test must prove reconciliation does not depend on a local Message payload"
+        );
+        engine
+            .execute(Command::ReconcileConversationChildDraft {
+                destination: destination.clone(),
+                actor_id: actor_id.clone(),
+                text: "cloud draft".into(),
+                reply_to_message_id: Some(reply_id.clone()),
+                updated_at_ms: 42,
+            })
+            .unwrap();
+        let child = engine
+            .state()
+            .child_state(&destination, &actor_id)
+            .expect("authoritative child draft state");
+        assert_eq!(child.draft_text, "cloud draft");
+        assert_eq!(
+            child.draft_reply_to_message_id.as_deref(),
+            Some(reply_id.0.as_str())
+        );
+
+        let rejected = engine.execute(Command::ReconcileConversationChildDraft {
+            destination,
+            actor_id,
+            text: "stale forged reply".into(),
+            reply_to_message_id: Some(MessageId::new("human-server-message:8")),
+            updated_at_ms: 43,
+        });
+        assert_eq!(rejected, Err(EngineError::ConversationChildMessageMismatch));
+    }
+
+    fn shared_media_test_message(
+        id: &str,
+        conversation_id: &ConversationId,
+        thread_root_message_id: Option<&str>,
+        created_at_ms: i64,
+        media: bool,
+    ) -> Message {
+        let content = if media {
+            MessageContent::Photo {
+                media: crate::message::MediaRef {
+                    id: format!("media:{id}"),
+                    file_name: Some(format!("{id}.jpg")),
+                    mime_type: Some("image/jpeg".into()),
+                    size_bytes: Some(128),
+                    width: Some(16),
+                    height: Some(16),
+                    duration_ms: None,
+                    thumbnail_id: None,
+                    local_path: None,
+                    remote_url: None,
+                    content_hash: None,
+                },
+                caption: crate::message::FormattedText::plain(""),
+                spoiler: false,
+            }
+        } else {
+            MessageContent::Text {
+                text: crate::message::FormattedText::plain("not media"),
+            }
+        };
+        Message {
+            id: MessageId::new(id),
+            conversation_id: conversation_id.clone(),
+            sender_id: ActorId::new("human:shared-media-peer"),
+            content,
+            reply_to_message_id: None,
+            thread_root_message_id: thread_root_message_id.map(MessageId::new),
+            forward_origin: None,
+            reply_markup: None,
+            reactions: Vec::new(),
+            delivery_state: DeliveryState::Delivered,
+            created_at_ms,
+            edited_at_ms: None,
+            scheduled_at_ms: None,
+            expires_at_ms: None,
+            silent: false,
+            protected_content: false,
+            pinned: false,
+            deleted: false,
+        }
+    }
+
+    #[test]
+    fn shared_media_projection_is_typed_derived_and_saved_sublist_fail_closed() {
+        let actor_id = ActorId::new("human:shared-media-owner");
+        let parent = ConversationId::new("conversation:shared-media-parent");
+        let root = ConversationDestination {
+            conversation_id: parent.clone(),
+            child: None,
+        };
+        let topic = ConversationDestination::topic(parent.clone(), "topic:42");
+        let saved = ConversationDestination::saved_sublist(
+            parent.clone(),
+            ActorId::new("human:saved-peer"),
+        );
+        let unrelated = ConversationDestination::saved_sublist(
+            parent.clone(),
+            ActorId::new("human:unrelated-peer"),
+        );
+
+        let mut topic_state =
+            ConversationChildRuntimeState::new(topic.clone(), actor_id.clone()).unwrap();
+        assert!(topic_state
+            .pagination
+            .replace_window(vec!["message:topic".into()], Some(0), Some(0), Some(1)));
+        let mut saved_state =
+            ConversationChildRuntimeState::new(saved.clone(), actor_id.clone()).unwrap();
+        assert!(saved_state
+            .reconcile_authoritative_message_ids(vec!["message:saved".into()]));
+        let mut unrelated_state =
+            ConversationChildRuntimeState::new(unrelated.clone(), actor_id.clone()).unwrap();
+        assert!(unrelated_state
+            .reconcile_authoritative_message_ids(vec!["message:other-topic".into()]));
+
+        let mut state = MessagingState::default();
+        state.actors.insert(
+            actor_id.clone(),
+            Actor::human(actor_id.0.clone(), "Shared Media Owner"),
+        );
+        state.conversation_child_states = vec![topic_state, saved_state, unrelated_state];
+        for message in [
+            shared_media_test_message("message:root", &parent, None, 1, true),
+            shared_media_test_message("message:topic", &parent, Some("topic:42"), 2, true),
+            shared_media_test_message("message:other-topic", &parent, Some("topic:99"), 3, true),
+            shared_media_test_message("message:saved", &parent, None, 4, true),
+            shared_media_test_message("message:text", &parent, None, 5, false),
+        ] {
+            state
+                .messages
+                .entry(parent.clone())
+                .or_default()
+                .insert(message.id.clone(), message);
+        }
+        let engine = MessagingEngine::from_state(state);
+
+        assert_eq!(
+            engine.shared_media_message_ids(&root, &actor_id).unwrap(),
+            vec![
+                MessageId::new("message:root"),
+                MessageId::new("message:topic"),
+                MessageId::new("message:other-topic"),
+                MessageId::new("message:saved"),
+            ]
+        );
+        assert_eq!(
+            engine.shared_media_message_ids(&topic, &actor_id).unwrap(),
+            vec![MessageId::new("message:topic")]
+        );
+        assert_eq!(
+            engine.shared_media_message_ids(&saved, &actor_id).unwrap(),
+            vec![MessageId::new("message:saved")]
+        );
+        assert_eq!(
+            engine.shared_media_message_ids(&unrelated, &actor_id).unwrap(),
+            vec![MessageId::new("message:other-topic")]
+        );
+
+        let unknown = ConversationDestination::saved_sublist(
+            parent,
+            ActorId::new("human:unknown-saved-peer"),
+        );
+        assert_eq!(
+            engine.shared_media_message_ids(&unknown, &actor_id),
+            Err(EngineError::InvalidConversationChildDestination),
+            "renderer-visible parent messages must never invent SavedSublist membership"
+        );
+    }
+
+    #[test]
+    fn shared_media_kind_projection_matches_canonical_message_semantics() {
+        let actor_id = ActorId::new("human:shared-kind-owner");
+        let parent = ConversationId::new("conversation:shared-kind");
+        let root = ConversationDestination {
+            conversation_id: parent.clone(),
+            child: None,
+        };
+        let mut state = MessagingState::default();
+        state.actors.insert(
+            actor_id.clone(),
+            Actor::human(actor_id.0.clone(), "Shared Kind Owner"),
+        );
+
+        let mut photo = shared_media_test_message("message:kind-photo", &parent, None, 1, true);
+        photo.pinned = true;
+        let mut linked = shared_media_test_message("message:kind-link", &parent, None, 2, false);
+        linked.content = MessageContent::Text {
+            text: crate::message::FormattedText {
+                text: "Open Fabushi".into(),
+                entities: vec![crate::message::TextEntity {
+                    offset_utf16: 0,
+                    length_utf16: 4,
+                    kind: TextEntityKind::TextUrl("https://example.test".into()),
+                }],
+            },
+        };
+        let mut poll = shared_media_test_message("message:kind-poll", &parent, None, 3, false);
+        poll.content = MessageContent::Poll {
+            question: crate::message::FormattedText::plain("Choose"),
+            options: Vec::new(),
+            anonymous: true,
+            multiple_answers: false,
+            quiz: false,
+        };
+        let mut sticker = shared_media_test_message("message:kind-sticker", &parent, None, 4, false);
+        sticker.content = MessageContent::Sticker {
+            media: crate::message::MediaRef {
+                id: "media:sticker".into(),
+                file_name: None,
+                mime_type: Some("image/webp".into()),
+                size_bytes: Some(64),
+                width: Some(16),
+                height: Some(16),
+                duration_ms: None,
+                thumbnail_id: None,
+                local_path: None,
+                remote_url: None,
+                content_hash: None,
+            },
+            emoji: Some("🙂".into()),
+            set_id: None,
+        };
+
+        for message in [photo, linked, poll, sticker] {
+            state
+                .messages
+                .entry(parent.clone())
+                .or_default()
+                .insert(message.id.clone(), message);
+        }
+        let engine = MessagingEngine::from_state(state);
+
+        assert_eq!(
+            engine
+                .shared_media_message_ids_for_kind(&root, &actor_id, SharedMediaKind::Photo)
+                .unwrap(),
+            vec![MessageId::new("message:kind-photo")]
+        );
+        assert_eq!(
+            engine
+                .shared_media_message_ids_for_kind(&root, &actor_id, SharedMediaKind::PhotoVideo)
+                .unwrap(),
+            vec![MessageId::new("message:kind-photo")]
+        );
+        assert_eq!(
+            engine
+                .shared_media_message_ids_for_kind(&root, &actor_id, SharedMediaKind::Pinned)
+                .unwrap(),
+            vec![MessageId::new("message:kind-photo")]
+        );
+        assert_eq!(
+            engine
+                .shared_media_message_ids_for_kind(&root, &actor_id, SharedMediaKind::Link)
+                .unwrap(),
+            vec![MessageId::new("message:kind-link")]
+        );
+        assert_eq!(
+            engine
+                .shared_media_message_ids_for_kind(&root, &actor_id, SharedMediaKind::Poll)
+                .unwrap(),
+            vec![MessageId::new("message:kind-poll")]
+        );
+        assert_eq!(
+            engine.shared_media_message_ids(&root, &actor_id).unwrap(),
+            vec![MessageId::new("message:kind-photo")],
+            "sticker documents are not part of the accepted upstream shared-media index"
+        );
+    }
+
+    #[test]
+    fn shared_media_deletion_and_child_destroy_invalidate_exact_projection_only() {
+        let actor_id = ActorId::new("human:shared-media-delete-owner");
+        let parent = ConversationId::new("conversation:shared-media-delete-parent");
+        let root = ConversationDestination {
+            conversation_id: parent.clone(),
+            child: None,
+        };
+        let saved = ConversationDestination::saved_sublist(
+            parent.clone(),
+            ActorId::new("human:delete-saved-peer"),
+        );
+        let sibling = ConversationDestination::saved_sublist(
+            parent.clone(),
+            ActorId::new("human:keep-saved-peer"),
+        );
+        let deleted_id = MessageId::new("message:delete-media");
+        let keep_id = MessageId::new("message:keep-media");
+
+        let mut saved_state =
+            ConversationChildRuntimeState::new(saved.clone(), actor_id.clone()).unwrap();
+        assert!(saved_state
+            .reconcile_authoritative_message_ids(vec![deleted_id.0.clone()]));
+        let mut sibling_state =
+            ConversationChildRuntimeState::new(sibling.clone(), actor_id.clone()).unwrap();
+        assert!(sibling_state
+            .reconcile_authoritative_message_ids(vec![keep_id.0.clone()]));
+
+        let mut state = MessagingState::default();
+        state.actors.insert(
+            actor_id.clone(),
+            Actor::human(actor_id.0.clone(), "Shared Media Delete Owner"),
+        );
+        state.conversation_child_states = vec![saved_state, sibling_state];
+        for message in [
+            shared_media_test_message(&deleted_id.0, &parent, None, 1, true),
+            shared_media_test_message(&keep_id.0, &parent, None, 2, true),
+        ] {
+            state
+                .messages
+                .entry(parent.clone())
+                .or_default()
+                .insert(message.id.clone(), message);
+        }
+        let mut engine = MessagingEngine::from_state(state);
+
+        engine.apply(Event::MessagesDeleted {
+            conversation_id: parent.clone(),
+            message_ids: vec![deleted_id],
+        });
+        assert!(engine
+            .shared_media_message_ids(&saved, &actor_id)
+            .unwrap()
+            .is_empty());
+        assert_eq!(
+            engine.shared_media_message_ids(&sibling, &actor_id).unwrap(),
+            vec![keep_id.clone()]
+        );
+        assert_eq!(
+            engine.shared_media_message_ids(&root, &actor_id).unwrap(),
+            vec![keep_id.clone()],
+            "deleted media must disappear from the parent projection without a separate cache invalidation pass"
+        );
+
+        engine.apply(Event::ConversationChildDestroyed {
+            destination: sibling.clone(),
+            actor_id: actor_id.clone(),
+        });
+        assert_eq!(
+            engine.shared_media_message_ids(&sibling, &actor_id),
+            Err(EngineError::InvalidConversationChildDestination)
+        );
+        assert_eq!(
+            engine.shared_media_message_ids(&root, &actor_id).unwrap(),
+            vec![keep_id],
+            "unloading one typed child must not erase parent-global canonical media state"
+        );
+    }
+}
+
+
+#[cfg(test)]
+mod wallet_runtime_command_tests {
+    use super::*;
+
+    #[test]
+    fn parked_wallet_checks_are_ready_gated_stale_safe_and_runtime_only() {
+        let mut engine = MessagingEngine::new();
+        engine.execute(Command::BeginWalletLiveGeneration).unwrap();
+        engine
+            .execute(Command::ReconcileWalletLivePresence {
+                generation: 1,
+                presence: WalletLivePresence::Ready,
+                observed_at_ms: 100,
+            })
+            .unwrap();
+        engine
+            .execute(Command::SyncWalletParkedAddresses {
+                served_address: "EQ-current".into(),
+                addresses: vec!["EQ-current".into(), "EQ-old".into()],
+            })
+            .unwrap();
+        engine
+            .execute(Command::BeginWalletParkedCheck {
+                address: "EQ-old".into(),
+                refresh: false,
+            })
+            .unwrap();
+        let serial = engine
+            .state()
+            .wallet
+            .runtime
+            .parked
+            .checks
+            .get("EQ-old")
+            .and_then(|check| check.request_serial)
+            .unwrap();
+        engine
+            .execute(Command::ApplyWalletParkedCheck {
+                address: "EQ-old".into(),
+                serial,
+                outcome: WalletParkedCheckOutcome::Funded { balance_nano: 42 },
+            })
+            .unwrap();
+        assert_eq!(
+            engine
+                .state()
+                .wallet
+                .runtime
+                .parked
+                .aggregate_balance_nano()
+                .unwrap(),
+            Some(42)
+        );
+
+        let encoded = serde_json::to_string(engine.state()).unwrap();
+        let restored: MessagingState = serde_json::from_str(&encoded).unwrap();
+        assert!(restored.wallet.runtime.parked.checks.is_empty());
+    }
+
+    #[test]
+    fn existing_balance_engine_flow_is_bound_to_panel_and_live_generation() {
+        let mut engine = MessagingEngine::new();
+        engine.execute(Command::ShowWalletPanel).unwrap();
+        assert!(matches!(
+            engine.execute(Command::BeginWalletExistingBalanceRequest),
+            Err(EngineError::WalletExistingBalance(
+                WalletExistingBalanceError::NetworkNotReady
+            ))
+        ));
+
+        engine.execute(Command::BeginWalletLiveGeneration).unwrap();
+        engine
+            .execute(Command::BeginWalletExistingBalanceRequest)
+            .unwrap();
+        let serial = engine
+            .state()
+            .wallet
+            .runtime
+            .panel
+            .existing_balance
+            .in_flight
+            .unwrap()
+            .serial;
+
+        engine.execute(Command::BeginWalletLiveGeneration).unwrap();
+        engine
+            .execute(Command::ApplyWalletExistingBalanceResult {
+                serial,
+                url: Some("https://example.invalid/legacy".into()),
+            })
+            .unwrap();
+        assert_eq!(
+            engine.state().wallet.runtime.panel.existing_balance.url,
+            None
+        );
+        assert!(engine
+            .execute(Command::BeginWalletExistingBalanceRequest)
+            .unwrap()
+            .iter()
+            .any(|event| matches!(event, Event::WalletRuntimeChanged { .. })));
+        assert_eq!(
+            engine
+                .state()
+                .wallet
+                .runtime
+                .panel
+                .existing_balance
+                .in_flight,
+            None
+        );
+
+        engine.execute(Command::CloseWalletPanel).unwrap();
+        assert!(matches!(
+            engine.execute(Command::BeginWalletExistingBalanceRequest),
+            Err(EngineError::WalletExistingBalance(
+                WalletExistingBalanceError::PanelNotOpen
+            ))
+        ));
+    }
+
+    #[test]
+    fn wallet_rate_runtime_commands_are_durable_and_fail_closed() {
+        let mut engine = MessagingEngine::new();
+        engine
+            .execute(Command::SetWalletFiatCurrency {
+                currency: "eur".into(),
+            })
+            .unwrap();
+        engine
+            .execute(Command::ApplyWalletRateSnapshot {
+                rates: BTreeMap::from([
+                    ("EUR".into(), 920_000),
+                    ("USD".into(), 1_000_000),
+                ]),
+                observed_at_ms: 1_000,
+            })
+            .unwrap();
+        assert_eq!(
+            engine.state().wallet.runtime.rates.current_quote_micros(),
+            Some(920_000)
+        );
+        assert!(matches!(
+            engine.execute(Command::SetWalletFiatCurrency {
+                currency: "not-a-currency".into(),
+            }),
+            Err(EngineError::WalletRate(WalletRateError::InvalidCurrency(_)))
+        ));
+    }
+
+    #[test]
+    fn wallet_funding_runtime_fences_replaced_request_generation() {
+        let mut engine = MessagingEngine::new();
+        engine
+            .execute(Command::BeginWalletFunding {
+                address: "first-address".into(),
+                asset: "asset".into(),
+                base_currency: Some("EUR".into()),
+            })
+            .unwrap();
+        let first = engine
+            .state()
+            .wallet
+            .runtime
+            .onramp
+            .active
+            .as_ref()
+            .unwrap()
+            .request_id;
+        engine
+            .execute(Command::BeginWalletFunding {
+                address: "second-address".into(),
+                asset: "asset".into(),
+                base_currency: Some("EUR".into()),
+            })
+            .unwrap();
+        let second = engine
+            .state()
+            .wallet
+            .runtime
+            .onramp
+            .active
+            .as_ref()
+            .unwrap()
+            .request_id;
+
+        assert!(matches!(
+            engine.execute(Command::ResolveWalletFundingProvider {
+                request_id: first,
+                providers: vec![OnrampProviderInfo::new(
+                    "provider-old",
+                    None::<Vec<String>>,
+                )],
+            }),
+            Err(EngineError::WalletOnramp(WalletOnrampError::StaleRequest {
+                expected,
+                received
+            })) if expected == second && received == first
+        ));
+
+        engine
+            .execute(Command::ResolveWalletFundingProvider {
+                request_id: second,
+                providers: vec![OnrampProviderInfo::new(
+                    "provider-current",
+                    Some(vec!["USD".to_string()]),
+                )],
+            })
+            .unwrap();
+        engine
+            .execute(Command::CompleteWalletFunding {
+                request_id: second,
+                session_url: Some("https://example.invalid/funding".into()),
+            })
+            .unwrap();
+        let active = engine.state().wallet.runtime.onramp.active.as_ref().unwrap();
+        assert_eq!(active.provider_id.as_deref(), Some("provider-current"));
+        assert_eq!(
+            active.session_url.as_deref(),
+            Some("https://example.invalid/funding")
+        );
+    }
+
+    #[test]
+    fn wallet_panel_runtime_reuses_single_shipping_surface_generation() {
+        let mut engine = MessagingEngine::new();
+        engine.execute(Command::ShowWalletPanel).unwrap();
+        let generation = engine.state().wallet.runtime.panel.generation;
+        engine.execute(Command::MinimizeWalletPanel).unwrap();
+        engine.execute(Command::ShowWalletPanel).unwrap();
+        assert_eq!(engine.state().wallet.runtime.panel.generation, generation);
+        engine
+            .execute(Command::SetWalletTransactionsVisible { visible: true })
+            .unwrap();
+        assert!(engine.state().wallet.runtime.panel.transactions_visible);
+        engine.execute(Command::CloseWalletPanel).unwrap();
+        assert!(matches!(
+            engine.execute(Command::CloseWalletPanel),
+            Err(EngineError::WalletPanelNotVisible)
+        ));
+    }
+}
+
+
+#[cfg(test)]
+mod connected_app_engine_tests {
+    use super::*;
+    use crate::connected_app::{
+        ConnectedAppClaimDecision, ConnectedAppManifest, ConnectedAppRequest,
+        ConnectedAppRequestKind, ConnectedAppSession, ConnectedAppSessionStatus,
+    };
+
+    fn connected_session() -> ConnectedAppSession {
+        ConnectedAppSession {
+            id: 91,
+            client_id: "app-client".into(),
+            manifest: Some(ConnectedAppManifest {
+                url: "https://app.example/manifest.json".into(),
+                name: "Connected App".into(),
+                icon_url: None,
+            }),
+            status: ConnectedAppSessionStatus::Active,
+            created_at_ms: 10,
+            updated_at_ms: 10,
+        }
+    }
+
+    #[test]
+    fn connected_app_runtime_is_persisted_by_the_canonical_engine() {
+        let mut engine = MessagingEngine::new();
+        engine
+            .execute(Command::UpsertConnectedAppSession {
+                session: connected_session(),
+            })
+            .unwrap();
+        engine
+            .execute(Command::QueueConnectedAppRequest {
+                request: ConnectedAppRequest {
+                    session_id: 91,
+                    message_id: 901,
+                    request_id: "request-1".into(),
+                    method: "sendTransaction".into(),
+                    kind: ConnectedAppRequestKind::SendTransaction,
+                    trace_id: "trace-1".into(),
+                    expires_at_ms: 1_000,
+                },
+                observed_at_ms: 100,
+            })
+            .unwrap();
+        engine
+            .execute(Command::ResolveConnectedAppRequest {
+                session_id: 91,
+                    message_id: 901,
+                request_id: "request-1".into(),
+                decision: ConnectedAppClaimDecision::Confirm,
+                operation_id: String::new(),
+                signed_payload: String::new(),
+                not_sent: vec![7],
+                answer: Vec::new(),
+                observed_at_ms: 200,
+            })
+            .unwrap();
+        engine
+            .execute(Command::LinkConnectedAppClaimOperation {
+                session_id: 91,
+                message_id: 901,
+                request_id: "request-1".into(),
+                operation_id: "operation-1".into(),
+            })
+            .unwrap();
+        engine
+            .execute(Command::RecordConnectedAppClaimHandoff {
+                session_id: 91,
+                message_id: 901,
+                request_id: "request-1".into(),
+                operation_id: "operation-1".into(),
+                signed_payload: "signed-payload".into(),
+            })
+            .unwrap();
+        engine
+            .execute(Command::RecordConnectedAppClaimAnswer {
+                session_id: 91,
+                message_id: 901,
+                request_id: "request-1".into(),
+                answer: vec![1, 2, 3],
+            })
+            .unwrap();
+
+        assert!(engine.state().connected_apps.pending_requests.is_empty());
+        assert_eq!(engine.state().connected_apps.claims.len(), 1);
+        let encoded = serde_json::to_string(engine.state()).unwrap();
+        let restored: MessagingState = serde_json::from_str(&encoded).unwrap();
+        assert_eq!(restored.connected_apps.claims.len(), 1);
+    }
+
+    #[test]
+    fn connected_app_wallet_claim_recovery_is_bound_to_wallet_key() {
+        let mut engine = MessagingEngine::new();
+        engine.execute(Command::UpsertConnectedAppSession {
+            session: connected_session(),
+        }).unwrap();
+        engine.execute(Command::QueueConnectedAppRequest {
+            request: ConnectedAppRequest {
+                session_id: 91,
+                    message_id: 902,
+                request_id: "wallet-request".into(),
+                method: "sendTransaction".into(),
+                kind: ConnectedAppRequestKind::SendTransaction,
+                trace_id: "trace-wallet".into(),
+                expires_at_ms: 1_000,
+            },
+            observed_at_ms: 100,
+        }).unwrap();
+        let wallet = WalletTransferIdentity {
+            network: 1,
+            address: "EQ-wallet".into(),
+            public_key: vec![8; 32],
+            revision: 3,
+        };
+        engine.execute(Command::ResolveConnectedAppWalletRequest {
+            session_id: 91,
+                message_id: 902,
+            request_id: "wallet-request".into(),
+            decision: ConnectedAppClaimDecision::Confirm,
+            wallet_identity: wallet.clone(),
+            operation_id: String::new(),
+            signed_payload: String::new(),
+            not_sent: vec![6],
+            answer: Vec::new(),
+            observed_at_ms: 200,
+        }).unwrap();
+        engine.execute(Command::LinkConnectedAppClaimOperation {
+            session_id: 91,
+                message_id: 902,
+            request_id: "wallet-request".into(),
+            operation_id: "operation-wallet".into(),
+        }).unwrap();
+        engine.execute(Command::RecordConnectedAppClaimHandoff {
+            session_id: 91,
+                message_id: 902,
+            request_id: "wallet-request".into(),
+            operation_id: "operation-wallet".into(),
+            signed_payload: "signed-wallet".into(),
+        }).unwrap();
+        let encoded = serde_json::to_string(engine.state()).unwrap();
+        let restored: MessagingState = serde_json::from_str(&encoded).unwrap();
+        assert_eq!(
+            restored.connected_apps.recoverable_claims_for_wallet(&wallet, 500).len(),
+            1
+        );
+        let another_key = WalletTransferIdentity {
+            public_key: vec![7; 32],
+            ..wallet
+        };
+        assert!(restored
+            .connected_apps
+            .recoverable_claims_for_wallet(&another_key, 500)
+            .is_empty());
+    }
+
+    #[test]
+    fn connected_app_refresh_preserves_local_closing_and_is_runtime_only() {
+        let mut engine = MessagingEngine::new();
+        engine.execute(Command::UpsertConnectedAppSession { session: connected_session() }).unwrap();
+        engine.execute(Command::BeginConnectedAppSessionRefresh { observed_at_ms: 100, wallet_ready: true }).unwrap();
+        let generation = engine.state().connected_apps.session_refresh.generation;
+        engine.execute(Command::MarkConnectedAppSessionClosing { session_id: 91, observed_at_ms: 120 }).unwrap();
+        let mut stale = connected_session();
+        stale.updated_at_ms = 110;
+        engine.execute(Command::ApplyConnectedAppSessionRefresh {
+            generation,
+            sessions: vec![stale],
+            observed_at_ms: 130,
+        }).unwrap();
+        assert_eq!(engine.state().connected_apps.sessions.get(&91).unwrap().status, ConnectedAppSessionStatus::Closing);
+        let encoded = serde_json::to_string(engine.state()).unwrap();
+        let restored: MessagingState = serde_json::from_str(&encoded).unwrap();
+        assert_eq!(restored.connected_apps.session_refresh.generation, 0);
+        assert!(!restored.connected_apps.session_refresh.in_flight);
+    }
+
+    #[test]
+    fn closing_connected_app_session_cancels_owned_pending_requests() {
+        let mut engine = MessagingEngine::new();
+        engine
+            .execute(Command::UpsertConnectedAppSession {
+                session: connected_session(),
+            })
+            .unwrap();
+        engine
+            .execute(Command::QueueConnectedAppRequest {
+                request: ConnectedAppRequest {
+                    session_id: 91,
+                    message_id: 907,
+                    request_id: "request-close".into(),
+                    method: "signData".into(),
+                    kind: ConnectedAppRequestKind::SignData,
+                    trace_id: String::new(),
+                    expires_at_ms: 1_000,
+                },
+                observed_at_ms: 100,
+            })
+            .unwrap();
+        engine
+            .execute(Command::CloseConnectedAppSession {
+                session_id: 91,
+                closed_at_ms: 200,
+            })
+            .unwrap();
+        assert!(engine.state().connected_apps.pending_requests.is_empty());
+        assert!(!engine.state().connected_apps.sessions.contains_key(&91));
+    }
+}
+
+
+#[cfg(test)]
+mod outbound_transfer_engine_tests {
+    use super::*;
+    use crate::wallet::{
+        OutboundTransferHandoff, OutboundTransferRecord, OutboundTransferTerminal,
+    };
+
+    fn transfer() -> OutboundTransferRecord {
+        OutboundTransferRecord {
+            record_id: "transfer-1".into(),
+            network: 1,
+            address: "source-address".into(),
+            public_key: vec![1; 32],
+            operation_id: "operation-1".into(),
+            destination: "destination-address".into(),
+            comment: String::new(),
+            collectible: None,
+            recipient_actor_id: None,
+            served: None,
+            amount_nano: 100_000_000,
+            posted_at_ms: 100,
+            handoff: OutboundTransferHandoff::Preparation,
+            terminal: OutboundTransferTerminal::None,
+            message_token: None,
+            confirmed_hash: None,
+            lookup_attempts: 0,
+            lookup_stopped: false,
+            paired: false,
+            bounce: false,
+        }
+    }
+
+    #[test]
+    fn engine_persists_submission_unknown_before_lookup_or_terminal_settlement() {
+        let mut engine = MessagingEngine::new();
+        engine
+            .execute(Command::JournalOutboundTransfer { record: transfer() })
+            .unwrap();
+        engine
+            .execute(Command::MarkOutboundTransferHandoff {
+                record_id: "transfer-1".into(),
+                message_token: vec![8; 32],
+            })
+            .unwrap();
+        assert_eq!(
+            engine
+                .state()
+                .wallet
+                .runtime
+                .outbound_transfers
+                .submission_unknown()
+                .len(),
+            1
+        );
+
+        engine
+            .execute(Command::RecordOutboundTransferLookup {
+                record_id: "transfer-1".into(),
+            })
+            .unwrap();
+        engine
+            .execute(Command::SettleOutboundTransfer {
+                record_id: "transfer-1".into(),
+                terminal: OutboundTransferTerminal::Confirmed,
+                confirmed_hash: Some(vec![9; 32]),
+            })
+            .unwrap();
+        assert!(engine
+            .state()
+            .wallet
+            .runtime
+            .outbound_transfers
+            .submission_unknown()
+            .is_empty());
+    }
+}
+
+
+#[cfg(test)]
+mod wallet_address_engine_tests {
+    use super::*;
+    use crate::actor::Actor;
+    use crate::wallet::WalletAddressKnowledge;
+
+    fn person(id: &str) -> Actor {
+        Actor::human(id, id)
+    }
+
+    #[test]
+    fn address_reconciliation_is_server_authoritative_and_stale_safe() {
+        let mut engine = MessagingEngine::new();
+        let actor = person("person-address");
+        let actor_id = actor.id.clone();
+        engine.execute(Command::UpsertActor { actor }).unwrap();
+        engine
+            .execute(Command::ReconcileWalletUserAddress {
+                actor_id: actor_id.clone(),
+                serial: 2,
+                address: Some("EQ-current".into()),
+                public_key: vec![4; 32],
+            })
+            .unwrap();
+        engine
+            .execute(Command::ReconcileWalletUserAddress {
+                actor_id: actor_id.clone(),
+                serial: 1,
+                address: Some("EQ-stale".into()),
+                public_key: vec![3; 32],
+            })
+            .unwrap();
+        assert_eq!(
+            engine.state().wallet.runtime.address_directory.known(&actor_id).address,
+            "EQ-current"
+        );
+        engine
+            .execute(Command::SetWalletAddressServiceUnavailable {
+                unavailable: true,
+            })
+            .unwrap();
+        assert_eq!(
+            engine.state().wallet.runtime.address_directory.known(&ActorId("unknown".into())).knowledge,
+            WalletAddressKnowledge::Unknown
+        );
+    }
+}
+
+
+#[cfg(test)]
+mod wallet_quoted_transfer_engine_tests {
+    use super::*;
+    use crate::wallet::{OutboundTransferHandoff, WalletSponsoredFeeState};
+
+    fn identity() -> WalletTransferIdentity {
+        WalletTransferIdentity {
+            network: 1,
+            address: "EQ-wallet".into(),
+            public_key: vec![6; 32],
+            revision: 1,
+        }
+    }
+
+    #[test]
+    fn engine_journals_sponsored_quote_through_single_outbound_owner() {
+        let mut engine = MessagingEngine::new();
+        engine
+            .execute(Command::ResetWalletSponsoredFeeGeneration {
+                network_generation: 6,
+            })
+            .unwrap();
+        let who = identity();
+        engine
+            .execute(Command::BeginWalletSponsoredFeeRequest {
+                network_generation: 6,
+                identity: who.clone(),
+                transfer_min_nano: 100_000_000,
+                configured_min_nano: 100_000_000,
+                observed_at_ms: 1_000,
+                force: false,
+            })
+            .unwrap();
+        let serial = engine
+            .state()
+            .wallet
+            .runtime
+            .sponsored_fees
+            .active_request
+            .as_ref()
+            .unwrap()
+            .serial;
+        engine
+            .execute(Command::ApplyWalletSponsoredFeeInfo {
+                serial,
+                network_generation: 6,
+                identity: who.clone(),
+                info: WalletSponsoredFeeInfo {
+                    relayer_address: "EQ-relayer".into(),
+                    min_amount_nano: 100_000_000,
+                    reset_at_ms: 100_000,
+                    left: 2,
+                    available: true,
+                },
+                observed_at_ms: 2_000,
+            })
+            .unwrap();
+
+        let mut fee_state: WalletSponsoredFeeState =
+            engine.state().wallet.runtime.sponsored_fees.clone();
+        let quote = fee_state
+            .quote_transfer(
+                6,
+                who.clone(),
+                100_000_000,
+                100_000_000,
+                300_000_000,
+                "EQ-destination".into(),
+                25_000_000,
+                2_001,
+            )
+            .unwrap();
+        assert!(quote.paired);
+        let record = OutboundTransferRecord {
+            record_id: "r1".into(),
+            network: who.network,
+            address: who.address.clone(),
+            public_key: who.public_key.clone(),
+            operation_id: "op1".into(),
+            destination: quote.destination.clone(),
+            comment: String::new(),
+            collectible: None,
+            recipient_actor_id: None,
+            served: None,
+            amount_nano: quote.amount_nano,
+            posted_at_ms: 2_001,
+            handoff: OutboundTransferHandoff::Preparation,
+            terminal: OutboundTransferTerminal::None,
+            message_token: None,
+            confirmed_hash: None,
+            lookup_attempts: 0,
+            lookup_stopped: false,
+            paired: true,
+            bounce: false,
+        };
+        engine
+            .execute(Command::JournalQuotedOutboundTransfer {
+                record,
+                quote,
+                balance_nano: 300_000_000,
+                observed_at_ms: 2_002,
+            })
+            .unwrap();
+        assert_eq!(
+            engine.state().wallet.runtime.outbound_transfers.records.len(),
+            1
+        );
+        assert!(
+            engine.state().wallet.runtime.outbound_transfers.records[0].paired
+        );
+    }
+}
+
+#[cfg(test)]
+mod wallet_sponsored_fee_engine_tests {
+    use super::*;
+
+    fn identity(address: &str, revision: u64) -> WalletTransferIdentity {
+        WalletTransferIdentity {
+            network: 1,
+            address: address.into(),
+            public_key: vec![5; 32],
+            revision,
+        }
+    }
+
+    #[test]
+    fn engine_wires_sponsored_fee_request_response_and_failure_fences() {
+        let mut engine = MessagingEngine::new();
+        engine
+            .execute(Command::ResetWalletSponsoredFeeGeneration {
+                network_generation: 7,
+            })
+            .unwrap();
+        let who = identity("EQ-wallet", 4);
+        engine
+            .execute(Command::BeginWalletSponsoredFeeRequest {
+                network_generation: 7,
+                identity: who.clone(),
+                transfer_min_nano: 100_000_000,
+                configured_min_nano: 200_000_000,
+                observed_at_ms: 1_000,
+                force: false,
+            })
+            .unwrap();
+        let serial = engine
+            .state()
+            .wallet
+            .runtime
+            .sponsored_fees
+            .active_request
+            .as_ref()
+            .unwrap()
+            .serial;
+
+        assert_eq!(
+            engine.execute(Command::ApplyWalletSponsoredFeeInfo {
+                serial,
+                network_generation: 8,
+                identity: who.clone(),
+                info: WalletSponsoredFeeInfo {
+                    relayer_address: "EQ-relayer".into(),
+                    min_amount_nano: 300_000_000,
+                    reset_at_ms: 100_000,
+                    left: 1,
+                    available: true,
+                },
+                observed_at_ms: 2_000,
+            }),
+            Err(EngineError::WalletSponsoredFee(
+                WalletSponsoredFeeError::StaleNetworkGeneration {
+                    current: 7,
+                    received: 8,
+                }
+            ))
+        );
+
+        engine
+            .execute(Command::ApplyWalletSponsoredFeeInfo {
+                serial,
+                network_generation: 7,
+                identity: who.clone(),
+                info: WalletSponsoredFeeInfo {
+                    relayer_address: "EQ-relayer".into(),
+                    min_amount_nano: 300_000_000,
+                    reset_at_ms: 100_000,
+                    left: 1,
+                    available: true,
+                },
+                observed_at_ms: 2_000,
+            })
+            .unwrap();
+        assert_eq!(
+            engine.state().wallet.runtime.sponsored_fees.terms.effective_min_nano,
+            300_000_000
+        );
+        assert!(engine.state().wallet.runtime.sponsored_fees.terms.usable);
+
+        engine
+            .execute(Command::BeginWalletSponsoredFeeRequest {
+                network_generation: 7,
+                identity: who.clone(),
+                transfer_min_nano: 100_000_000,
+                configured_min_nano: 200_000_000,
+                observed_at_ms: 17_000,
+                force: true,
+            })
+            .unwrap();
+        let second = engine
+            .state()
+            .wallet
+            .runtime
+            .sponsored_fees
+            .active_request
+            .as_ref()
+            .unwrap()
+            .serial;
+        engine
+            .execute(Command::FailWalletSponsoredFeeRequest {
+                serial: second,
+                network_generation: 7,
+                identity: who,
+                observed_at_ms: 17_001,
+            })
+            .unwrap();
+        assert!(!engine.state().wallet.runtime.sponsored_fees.terms.fresh);
+        assert!(!engine.state().wallet.runtime.sponsored_fees.terms.usable);
+
+        let serialized = serde_json::to_string(engine.state()).unwrap();
+        assert!(!serialized.contains("sponsoredFees"));
+    }
+}
+
+#[cfg(test)]
+mod wallet_live_engine_tests {
+    use super::*;
+
+    #[test]
+    fn engine_fences_stale_wallet_live_generations_and_recovers_from_failures() {
+        let mut engine = MessagingEngine::new();
+        engine.execute(Command::BeginWalletLiveGeneration).unwrap();
+        let first = engine.state().wallet.runtime.live.generation;
+        assert_eq!(first, 1);
+
+        engine
+            .execute(Command::ReconcileWalletLivePresence {
+                generation: first,
+                presence: WalletLivePresence::Ready,
+                observed_at_ms: 1_000,
+            })
+            .unwrap();
+        engine
+            .execute(Command::MarkWalletLiveStateFailed {
+                generation: first,
+                observed_at_ms: 2_000,
+            })
+            .unwrap();
+        assert!(!engine.state().wallet.runtime.live.state_unreachable);
+        engine
+            .execute(Command::MarkWalletLiveStateFailed {
+                generation: first,
+                observed_at_ms: 3_000,
+            })
+            .unwrap();
+        assert!(engine.state().wallet.runtime.live.state_unreachable);
+
+        engine.execute(Command::BeginWalletLiveGeneration).unwrap();
+        let second = engine.state().wallet.runtime.live.generation;
+        assert_eq!(second, 2);
+        assert_eq!(
+            engine.execute(Command::MarkWalletLiveStateFailed {
+                generation: first,
+                observed_at_ms: 4_000,
+            }),
+            Err(EngineError::WalletLive(WalletLiveError::StaleGeneration {
+                current: second,
+                received: first,
+            }))
+        );
+        engine
+            .execute(Command::MarkWalletStreamResynced {
+                generation: second,
+                observed_at_ms: 5_000,
+            })
+            .unwrap();
+        assert!(!engine.state().wallet.runtime.live.stream_resync_due(
+            5_000 + crate::wallet::WALLET_LIVE_STREAM_RESYNC_MS - 1
+        ));
+    }
+
+    #[test]
+    fn engine_stream_runtime_fences_stale_socket_epochs_and_coalesces_refresh() {
+        let mut engine = MessagingEngine::new();
+        engine
+            .execute(Command::StartWalletLiveStream {
+                address: "EQ-wallet".into(),
+                observed_at_ms: 0,
+            })
+            .unwrap();
+        let acquire = engine.state().wallet.runtime.live.stream.generation;
+        engine
+            .execute(Command::ApplyWalletLiveStreamUrl {
+                generation: acquire,
+                observed_at_ms: 10,
+                expires_in_ms: 120_000,
+            })
+            .unwrap();
+        let socket = engine.state().wallet.runtime.live.stream.generation;
+        engine
+            .execute(Command::MarkWalletLiveStreamConnected {
+                generation: socket,
+                observed_at_ms: 20,
+            })
+            .unwrap();
+        engine
+            .execute(Command::NoteWalletLiveStreamTransaction {
+                generation: socket,
+                observed_at_ms: 100,
+            })
+            .unwrap();
+        engine
+            .execute(Command::TakeWalletLiveStreamRefresh {
+                generation: socket,
+                observed_at_ms: 350,
+            })
+            .unwrap();
+        assert_eq!(engine.state().wallet.runtime.live.stream.wanted, WalletStreamRefresh::default());
+        engine
+            .execute(Command::FailWalletLiveStream {
+                generation: socket,
+                observed_at_ms: 400,
+            })
+            .unwrap();
+        assert_eq!(
+            engine.execute(Command::MarkWalletLiveStreamActivity {
+                generation: socket,
+                observed_at_ms: 401,
+            }),
+            Err(EngineError::WalletLive(WalletLiveError::StaleStreamGeneration {
+                current: engine.state().wallet.runtime.live.stream.generation,
+                received: socket,
+            }))
+        );
+        assert_eq!(
+            engine
+                .state()
+                .wallet
+                .runtime
+                .live
+                .stream
+                .keepalive_action(
+                    engine.state().wallet.runtime.live.stream.generation,
+                    401
+                )
+                .unwrap(),
+            WalletStreamKeepalive::None
+        );
+    }
+
+    #[test]
+    fn engine_bounds_hidden_wallet_history_without_persisting_live_authority() {
+        let mut engine = MessagingEngine::new();
+        engine.execute(Command::BeginWalletLiveGeneration).unwrap();
+        let generation = engine.state().wallet.runtime.live.generation;
+        for _ in 0..crate::wallet::WALLET_LIVE_MAX_HIDDEN_PAGES {
+            engine
+                .execute(Command::SpendWalletHistoryPageRequest { generation })
+                .unwrap();
+            engine
+                .execute(Command::RecordWalletHistoryProgress {
+                    generation,
+                    visible_rows: 0,
+                })
+                .unwrap();
+        }
+        assert_eq!(
+            engine.execute(Command::SpendWalletHistoryPageRequest { generation }),
+            Err(EngineError::WalletLive(
+                WalletLiveError::HistoryPageBudgetExhausted
+            ))
+        );
+        assert_eq!(
+            engine.state().wallet.runtime.live.hidden_pages_without_visible_rows,
+            crate::wallet::WALLET_LIVE_MAX_HIDDEN_PAGES
+        );
+        engine
+            .execute(Command::RearmWalletHistoryWalk { generation })
+            .unwrap();
+        assert_eq!(
+            engine.state().wallet.runtime.live.hidden_pages_without_visible_rows,
+            0
+        );
+
+        let serialized = serde_json::to_string(engine.state()).unwrap();
+        let restored: MessagingState = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(restored.wallet.runtime.live.generation, 0);
+    }
+}
+
+#[cfg(test)]
+mod connected_app_source_runtime_engine_tests {
+    use super::*;
+    use crate::connected_app::{
+        ConnectedAppConnectPhase, ConnectedAppLinkKind, CONNECTED_APP_CLIENT_ID_HEX_CHARS,
+    };
+
+    fn source_session() -> ConnectedAppSession {
+        ConnectedAppSession {
+            id: 191,
+            client_id: "app-client-source".into(),
+            manifest: Some(ConnectedAppManifest {
+                url: "https://dapp.example/manifest.json".into(),
+                name: "Dapp".into(),
+                icon_url: None,
+            }),
+            status: crate::connected_app::ConnectedAppSessionStatus::Active,
+            created_at_ms: 10,
+            updated_at_ms: 10,
+        }
+    }
+
+    #[test]
+    fn engine_wires_key_epoch_connect_disconnect_and_runtime_non_persistence() {
+        let mut engine = MessagingEngine::new();
+        engine
+            .execute(Command::UpsertConnectedAppSession {
+                session: source_session(),
+            })
+            .unwrap();
+        engine
+            .execute(Command::UpdateConnectedAppWalletAddress {
+                address: "EQ-one".into(),
+            })
+            .unwrap();
+        engine
+            .execute(Command::CacheConnectedAppKeyReference {
+                session_id: 191,
+                client_id: "app-client-source".into(),
+                reference_id: "vault-ref".into(),
+            })
+            .unwrap();
+        engine
+            .execute(Command::UpdateConnectedAppWalletAddress {
+                address: "EQ-two".into(),
+            })
+            .unwrap();
+        assert!(engine
+            .state()
+            .connected_apps
+            .key_runtime
+            .references
+            .is_empty());
+
+        let client = "c".repeat(CONNECTED_APP_CLIENT_ID_HEX_CHARS);
+        engine
+            .execute(Command::BeginConnectedAppConnectFlow {
+                link: ConnectedAppLink {
+                    kind: ConnectedAppLinkKind::Connect,
+                    client_id: client.clone(),
+                    manifest_url: "https://dapp.example/manifest.json".into(),
+                    proof_payload: None,
+                    trace_id: String::new(),
+                    return_target: String::new(),
+                },
+                ownership_domain: String::new(),
+                reserved_platform_domain: "platform.example".into(),
+                observed_at_ms: 100,
+            })
+            .unwrap();
+        engine
+            .execute(Command::ResolveConnectedAppConnectAccess {
+                client_id: client.clone(),
+                access: ConnectedAppAccess::Allowed,
+                observed_at_ms: 110,
+            })
+            .unwrap();
+        engine
+            .execute(Command::AcceptConnectedAppManifest {
+                client_id: client.clone(),
+                manifest: ConnectedAppManifest {
+                    url: "https://dapp.example/manifest.json".into(),
+                    name: "Dapp".into(),
+                    icon_url: None,
+                },
+            })
+            .unwrap();
+        assert_eq!(
+            engine.state().connected_apps.connect_runtime.flows[&client].phase,
+            ConnectedAppConnectPhase::Confirm
+        );
+
+        engine
+            .execute(Command::MarkConnectedAppSessionClosing {
+                session_id: 191,
+                observed_at_ms: 120,
+            })
+            .unwrap();
+        engine
+            .execute(Command::BeginConnectedAppDisconnect { session_id: 191 })
+            .unwrap();
+        engine
+            .execute(Command::DeferConnectedAppClosing {
+                session_id: 191,
+                error: ConnectedAppKeyError::Locked,
+            })
+            .unwrap();
+        assert!(engine
+            .state()
+            .connected_apps
+            .disconnect_runtime
+            .close_waiting
+            .contains(&191));
+
+        let encoded = serde_json::to_string(engine.state()).unwrap();
+        let restored: MessagingState = serde_json::from_str(&encoded).unwrap();
+        assert!(restored.connected_apps.key_runtime.references.is_empty());
+        assert!(restored.connected_apps.connect_runtime.flows.is_empty());
+        assert!(restored.connected_apps.disconnect_runtime.close_waiting.is_empty());
+    }
+}
+
+#[cfg(test)]
+mod connected_app_request_runtime_engine_tests {
+    use super::*;
+    use crate::connected_app::{
+        ConnectedAppRequestKind, ConnectedAppSessionStatus,
+    };
+
+    fn session() -> ConnectedAppSession {
+        ConnectedAppSession {
+            id: 991,
+            client_id: "request-runtime-engine".into(),
+            manifest: None,
+            status: ConnectedAppSessionStatus::Active,
+            created_at_ms: 1,
+            updated_at_ms: 1,
+        }
+    }
+
+    #[test]
+    fn engine_wires_connected_app_request_runtime_commands() {
+        let mut engine = MessagingEngine::new();
+        engine.execute(Command::UpsertConnectedAppSession { session: session() }).unwrap();
+        engine.execute(Command::QueueConnectedAppRequest {
+            request: ConnectedAppRequest {
+                session_id: 991,
+                message_id: 901,
+                request_id: "engine-request".into(),
+                method: "sendTransaction".into(),
+                kind: ConnectedAppRequestKind::SendTransaction,
+                trace_id: String::new(),
+                expires_at_ms: 10_000,
+            },
+            observed_at_ms: 10,
+        }).unwrap();
+        engine.execute(Command::TakeNextConnectedAppRequest { observed_at_ms: 20 }).unwrap();
+        assert_eq!(
+            engine.state().connected_apps.request_runtime.active.as_ref().map(|entry| entry.message_id),
+            Some(901)
+        );
+        engine.execute(Command::FinishConnectedAppRequest {
+            message_id: 901,
+            claimed: true,
+        }).unwrap();
+        assert!(engine.state().connected_apps.request_runtime.claimed_ids.contains(&901));
+        assert!(engine.state().connected_apps.pending_requests.is_empty());
+    }
+}
+
+
+
+#[cfg(test)]
+mod connected_app_claim_recovery_engine_source_tests {
+    use super::*;
+    use crate::connected_app::{
+        ConnectedAppClaimFate, ConnectedAppManifest, ConnectedAppOperationFate,
+        ConnectedAppRecoverySubmissionKind, ConnectedAppRequestKind, ConnectedAppSessionStatus,
+    };
+
+    #[test]
+    fn engine_rebuilds_and_settles_durable_connected_app_recovery() {
+        let mut engine = MessagingEngine::new();
+        engine.execute(Command::UpsertConnectedAppSession {
+            session: ConnectedAppSession {
+                id: 1991,
+                client_id: "engine-recovery".into(),
+                manifest: Some(ConnectedAppManifest {
+                    url: "https://engine.example/manifest.json".into(),
+                    name: "Engine".into(),
+                    icon_url: None,
+                }),
+                status: ConnectedAppSessionStatus::Active,
+                created_at_ms: 10,
+                updated_at_ms: 10,
+            },
+        }).unwrap();
+        engine.execute(Command::QueueConnectedAppRequest {
+            request: ConnectedAppRequest {
+                session_id: 1991,
+                message_id: 9901,
+                request_id: "engine-recovery-request".into(),
+                method: "sendTransaction".into(),
+                kind: ConnectedAppRequestKind::SendTransaction,
+                trace_id: "trace-engine-recovery".into(),
+                expires_at_ms: 10_000,
+            },
+            observed_at_ms: 100,
+        }).unwrap();
+        let wallet = WalletTransferIdentity {
+            network: 1,
+            address: "EQ-engine-recovery".into(),
+            public_key: vec![8; 32],
+            revision: 1,
+        };
+        engine.execute(Command::TakeNextConnectedAppRequest { observed_at_ms: 150 }).unwrap();
+        engine.execute(Command::ResolveConnectedAppWalletRequest {
+            session_id: 1991,
+            message_id: 9901,
+            request_id: "engine-recovery-request".into(),
+            decision: ConnectedAppClaimDecision::Confirm,
+            wallet_identity: wallet.clone(),
+            operation_id: String::new(),
+            signed_payload: String::new(),
+            not_sent: vec![7],
+            answer: Vec::new(),
+            observed_at_ms: 200,
+        }).unwrap();
+        engine.execute(Command::LinkConnectedAppClaimOperation {
+            session_id: 1991,
+            message_id: 9901,
+            request_id: "engine-recovery-request".into(),
+            operation_id: "operation-engine".into(),
+        }).unwrap();
+        engine.execute(Command::FinishConnectedAppRequest {
+            message_id: 9901,
+            claimed: true,
+        }).unwrap();
+        engine.execute(Command::ReconcileConnectedAppClaimRecovery {
+            wallet_identity: Some(wallet),
+            fates: vec![ConnectedAppClaimFate {
+                session_id: 1991,
+                message_id: 9901,
+                fate: ConnectedAppOperationFate::Unresolved,
+            }],
+            observed_at_ms: 300,
+        }).unwrap();
+        assert_eq!(
+            engine.state().connected_apps.request_runtime.recovery_submissions[&9901].kind,
+            ConnectedAppRecoverySubmissionKind::NotSent
+        );
+        engine.execute(Command::SettleConnectedAppRecoverySubmission {
+            session_id: 1991,
+            message_id: 9901,
+            request_id: "engine-recovery-request".into(),
+            retry_later: false,
+        }).unwrap();
+        assert!(engine.state().connected_apps.claims.is_empty());
     }
 }

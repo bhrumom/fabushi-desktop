@@ -1,0 +1,81 @@
+{
+  "accepted_upstream": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+  "accepted_tree": "6b616494f3465324e749a04dcd1c9d508657a998",
+  "deterministic_order_basis": "non-directory/blob rank in accepted recursive tree",
+  "start": 5860,
+  "end": 5871,
+  "entries": [
+    {
+      "order": 5860,
+      "path": "Telegram/SourceFiles/ui/boxes/about_cocoon_box.cpp",
+      "blob": "4aab8e79a2fbbb0cf7feffffcb6cacf246e0275b",
+      "consumer_symbol": "AboutCocoonBox"
+    },
+    {
+      "order": 5861,
+      "path": "Telegram/SourceFiles/ui/boxes/about_cocoon_box.h",
+      "blob": "1399ca6a9997f7da61f207d488df895558ba6c20",
+      "consumer_symbol": "AboutCocoonBox contract"
+    },
+    {
+      "order": 5862,
+      "path": "Telegram/SourceFiles/ui/boxes/auto_delete_settings.cpp",
+      "blob": "e735f4d8123eb2a77951a7d38e65e77e5b7eab95",
+      "consumer_symbol": "AutoDeleteSettingsBox"
+    },
+    {
+      "order": 5863,
+      "path": "Telegram/SourceFiles/ui/boxes/auto_delete_settings.h",
+      "blob": "0c7e72322838843329a9f07740a8d21fb993348b",
+      "consumer_symbol": "AutoDeleteSettingsBox contract"
+    },
+    {
+      "order": 5864,
+      "path": "Telegram/SourceFiles/ui/boxes/boost_box.cpp",
+      "blob": "19cc0e793a0be0b2e48661a6bd297d6b6cd44810",
+      "consumer_symbol": "BoostBox"
+    },
+    {
+      "order": 5865,
+      "path": "Telegram/SourceFiles/ui/boxes/boost_box.h",
+      "blob": "17353faacd6c8854300192c9c7b9392531fb62c0",
+      "consumer_symbol": "BoostBox contract"
+    },
+    {
+      "order": 5866,
+      "path": "Telegram/SourceFiles/ui/boxes/calendar_box.cpp",
+      "blob": "1e714da1eca2923609d9b15e3a2548931f49597b",
+      "consumer_symbol": "CalendarBox"
+    },
+    {
+      "order": 5867,
+      "path": "Telegram/SourceFiles/ui/boxes/calendar_box.h",
+      "blob": "cf65aee6f68320bea43d6d726077ed8956734fce",
+      "consumer_symbol": "CalendarBox contract"
+    },
+    {
+      "order": 5868,
+      "path": "Telegram/SourceFiles/ui/boxes/calendar_box.style",
+      "blob": "8bc8bc341e3399ae99abf925195d57eb936e5724",
+      "consumer_symbol": "CalendarBox style contract"
+    },
+    {
+      "order": 5869,
+      "path": "Telegram/SourceFiles/ui/boxes/choose_date_time.cpp",
+      "blob": "cbe1668a4487f2a2a04d08c38277c26fa54753e5",
+      "consumer_symbol": "ChooseDateTimeBox"
+    },
+    {
+      "order": 5870,
+      "path": "Telegram/SourceFiles/ui/boxes/choose_date_time.h",
+      "blob": "0d698c75e2ebfa1950bb3604b4088e7b84b65bb8",
+      "consumer_symbol": "ChooseDateTimeBox contract"
+    },
+    {
+      "order": 5871,
+      "path": "Telegram/SourceFiles/ui/boxes/choose_date_time.style",
+      "blob": "3c58910157cc0e5ab14694b5fbe0136200b0058a",
+      "consumer_symbol": "ChooseDateTime style contract"
+    }
+  ]
+}

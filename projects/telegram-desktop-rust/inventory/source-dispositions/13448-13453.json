@@ -1,0 +1,385 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6"
+  },
+  "source_component": {
+    "repository": "nnen/doxygen-theme",
+    "commit": "46111c61a9f49b7a9886127e679d4317478fab1c",
+    "mount": "doxygen-theme"
+  },
+  "exact_head_evidence": {
+    "production_owner_audit_head": "f23d5f2de55f8e58b5dd338cae99186e8a7dd015",
+    "predecessor_source_authority": "38196463543/114640171027 success at 1b906f5802e8bba7ddbd4098ceac4849f4feeec5; artifact 11722994428 supplies accepted recursive ordering only",
+    "status": "Exact-head cccbbaa0833a753b71a2d4ca698fc85eeeb7869b Source authority job 114661446563 exposed omitted nested-gitlink parent provenance beginning at order 13,448; this shard now binds source_identity.parent to the accepted recursive parent without changing disposition or responsibility classification. Descendant validation required."
+  },
+  "accounting": {
+    "recursive_total": 16125,
+    "read_through": 13511,
+    "unread": 2614,
+    "unknown": 15781,
+    "omitted": 0,
+    "unknown_closed": 344
+  },
+  "range": {
+    "first_order": 13448,
+    "last_order": 13453,
+    "entries": 6,
+    "next_order": 13454,
+    "next_source_path": "doc/gh-pages::_formulas.log"
+  },
+  "rows": [
+    {
+      "recursive_order": 13448,
+      "source_path": "doxygen-theme::DoxygenLayout.xml",
+      "source_blob_sha": "8c86dae5cbd19cc9311d17caddaa717e48920b24",
+      "source_identity": {
+        "repository": "nnen/doxygen-theme",
+        "commit": "46111c61a9f49b7a9886127e679d4317478fab1c",
+        "scope": "nested-gitlink",
+        "mount": "doxygen-theme",
+        "path": "DoxygenLayout.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "8c86dae5cbd19cc9311d17caddaa717e48920b24",
+        "size": 6090,
+        "parent": "PJK/libcbor@170bee2b82cdb7b2ed25af301f62cb6efdd40ec1"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "source_symbols": [
+        "<doxygenlayout>",
+        "Doxygen documentation navigation/layout"
+      ],
+      "disposition": "development-only-non-applicable",
+      "upstream_owner": "DoxygenLayout.xml",
+      "responsibility": "Doxygen documentation layout input only; it is not part of shipping Fabushi composition and carries no product behavior.",
+      "responsibilities": [
+        "Doxygen documentation layout input only; it is not part of shipping Fabushi composition and carries no product behavior."
+      ],
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "production_entrypoints": [
+        "none: exact blob is documentation-only and excluded from shipping Fabushi runtime/package"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:nnen/doxygen-theme@46111c61a9f49b7a9886127e679d4317478fab1c:8c86dae5cbd19cc9311d17caddaa717e48920b24",
+        "recursive-authority-predecessor:11722994428:order-13448",
+        "applicability-audit:f23d5f2de55f8e58b5dd338cae99186e8a7dd015"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact blob after explicit per-blob non-applicable classification; release acceptance remains open globally."
+    },
+    {
+      "recursive_order": 13449,
+      "source_path": "doxygen-theme::LICENSE",
+      "source_blob_sha": "cc9abbf534bab2887c1658598278543e672282e9",
+      "source_identity": {
+        "repository": "nnen/doxygen-theme",
+        "commit": "46111c61a9f49b7a9886127e679d4317478fab1c",
+        "scope": "nested-gitlink",
+        "mount": "doxygen-theme",
+        "path": "LICENSE",
+        "mode": "100644",
+        "type": "blob",
+        "object": "cc9abbf534bab2887c1658598278543e672282e9",
+        "size": 35118,
+        "parent": "PJK/libcbor@170bee2b82cdb7b2ed25af301f62cb6efdd40ec1"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "source_symbols": [
+        "GPL license text",
+        "documentation-theme license provenance"
+      ],
+      "disposition": "development-only-non-applicable",
+      "upstream_owner": "LICENSE",
+      "responsibility": "License/provenance text for a documentation-only theme; preserve attribution in source inventory, but this exact blob defines no shipping Fabushi product behavior.",
+      "responsibilities": [
+        "License/provenance text for a documentation-only theme; preserve attribution in source inventory, but this exact blob defines no shipping Fabushi product behavior."
+      ],
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "production_entrypoints": [
+        "none: exact blob is documentation-only and excluded from shipping Fabushi runtime/package"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:nnen/doxygen-theme@46111c61a9f49b7a9886127e679d4317478fab1c:cc9abbf534bab2887c1658598278543e672282e9",
+        "recursive-authority-predecessor:11722994428:order-13449",
+        "applicability-audit:f23d5f2de55f8e58b5dd338cae99186e8a7dd015"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact blob after explicit per-blob non-applicable classification; release acceptance remains open globally."
+    },
+    {
+      "recursive_order": 13450,
+      "source_path": "doxygen-theme::README.md",
+      "source_blob_sha": "6bc71694ffc5c245a2b8a191555fa785cfd49460",
+      "source_identity": {
+        "repository": "nnen/doxygen-theme",
+        "commit": "46111c61a9f49b7a9886127e679d4317478fab1c",
+        "scope": "nested-gitlink",
+        "mount": "doxygen-theme",
+        "path": "README.md",
+        "mode": "100644",
+        "type": "blob",
+        "object": "6bc71694ffc5c245a2b8a191555fa785cfd49460",
+        "size": 1083,
+        "parent": "PJK/libcbor@170bee2b82cdb7b2ed25af301f62cb6efdd40ec1"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "source_symbols": [
+        "Custom Doxygen Theme",
+        "documentation-theme usage instructions"
+      ],
+      "disposition": "development-only-non-applicable",
+      "upstream_owner": "README.md",
+      "responsibility": "Documentation-theme usage/readme input only; this exact blob defines no shipping Fabushi product behavior, state, lifecycle, persistence or UI.",
+      "responsibilities": [
+        "Documentation-theme usage/readme input only; this exact blob defines no shipping Fabushi product behavior, state, lifecycle, persistence or UI."
+      ],
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "production_entrypoints": [
+        "none: exact blob is documentation-only and excluded from shipping Fabushi runtime/package"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:nnen/doxygen-theme@46111c61a9f49b7a9886127e679d4317478fab1c:6bc71694ffc5c245a2b8a191555fa785cfd49460",
+        "recursive-authority-predecessor:11722994428:order-13450",
+        "applicability-audit:f23d5f2de55f8e58b5dd338cae99186e8a7dd015"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact blob after explicit per-blob non-applicable classification; release acceptance remains open globally."
+    },
+    {
+      "recursive_order": 13451,
+      "source_path": "doxygen-theme::customdoxygen.css",
+      "source_blob_sha": "6573a26f7f4b8e5877ffdd7cbc471a6381bd530f",
+      "source_identity": {
+        "repository": "nnen/doxygen-theme",
+        "commit": "46111c61a9f49b7a9886127e679d4317478fab1c",
+        "scope": "nested-gitlink",
+        "mount": "doxygen-theme",
+        "path": "customdoxygen.css",
+        "mode": "100644",
+        "type": "blob",
+        "object": "6573a26f7f4b8e5877ffdd7cbc471a6381bd530f",
+        "size": 25184,
+        "parent": "PJK/libcbor@170bee2b82cdb7b2ed25af301f62cb6efdd40ec1"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "source_symbols": [
+        "Doxygen documentation stylesheet",
+        "documentation presentation selectors"
+      ],
+      "disposition": "development-only-non-applicable",
+      "upstream_owner": "customdoxygen.css",
+      "responsibility": "Doxygen documentation presentation stylesheet only; it is not loaded by the shipping Fabushi product and carries no product behavior.",
+      "responsibilities": [
+        "Doxygen documentation presentation stylesheet only; it is not loaded by the shipping Fabushi product and carries no product behavior."
+      ],
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "production_entrypoints": [
+        "none: exact blob is documentation-only and excluded from shipping Fabushi runtime/package"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:nnen/doxygen-theme@46111c61a9f49b7a9886127e679d4317478fab1c:6573a26f7f4b8e5877ffdd7cbc471a6381bd530f",
+        "recursive-authority-predecessor:11722994428:order-13451",
+        "applicability-audit:f23d5f2de55f8e58b5dd338cae99186e8a7dd015"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact blob after explicit per-blob non-applicable classification; release acceptance remains open globally."
+    },
+    {
+      "recursive_order": 13452,
+      "source_path": "doxygen-theme::metro/DoxygenLayout.xml",
+      "source_blob_sha": "8c86dae5cbd19cc9311d17caddaa717e48920b24",
+      "source_identity": {
+        "repository": "nnen/doxygen-theme",
+        "commit": "46111c61a9f49b7a9886127e679d4317478fab1c",
+        "scope": "nested-gitlink",
+        "mount": "doxygen-theme",
+        "path": "metro/DoxygenLayout.xml",
+        "mode": "100644",
+        "type": "blob",
+        "object": "8c86dae5cbd19cc9311d17caddaa717e48920b24",
+        "size": 6090,
+        "parent": "PJK/libcbor@170bee2b82cdb7b2ed25af301f62cb6efdd40ec1"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "source_symbols": [
+        "<doxygenlayout>",
+        "Doxygen documentation navigation/layout"
+      ],
+      "disposition": "development-only-non-applicable",
+      "upstream_owner": "metro/DoxygenLayout.xml",
+      "responsibility": "Doxygen documentation layout input only; it is not part of shipping Fabushi composition and carries no product behavior.",
+      "responsibilities": [
+        "Doxygen documentation layout input only; it is not part of shipping Fabushi composition and carries no product behavior."
+      ],
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "production_entrypoints": [
+        "none: exact blob is documentation-only and excluded from shipping Fabushi runtime/package"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:nnen/doxygen-theme@46111c61a9f49b7a9886127e679d4317478fab1c:8c86dae5cbd19cc9311d17caddaa717e48920b24",
+        "recursive-authority-predecessor:11722994428:order-13452",
+        "applicability-audit:f23d5f2de55f8e58b5dd338cae99186e8a7dd015"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact blob after explicit per-blob non-applicable classification; release acceptance remains open globally."
+    },
+    {
+      "recursive_order": 13453,
+      "source_path": "doxygen-theme::metro/customdoxygen.css",
+      "source_blob_sha": "bae8cba646b3b0177a7d3986d1dfbdc0b46e19a0",
+      "source_identity": {
+        "repository": "nnen/doxygen-theme",
+        "commit": "46111c61a9f49b7a9886127e679d4317478fab1c",
+        "scope": "nested-gitlink",
+        "mount": "doxygen-theme",
+        "path": "metro/customdoxygen.css",
+        "mode": "100644",
+        "type": "blob",
+        "object": "bae8cba646b3b0177a7d3986d1dfbdc0b46e19a0",
+        "size": 21152,
+        "parent": "PJK/libcbor@170bee2b82cdb7b2ed25af301f62cb6efdd40ec1"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": true,
+      "omitted": false,
+      "source_symbols": [
+        "Doxygen documentation stylesheet",
+        "documentation presentation selectors"
+      ],
+      "disposition": "development-only-non-applicable",
+      "upstream_owner": "metro/customdoxygen.css",
+      "responsibility": "Doxygen documentation presentation stylesheet only; it is not loaded by the shipping Fabushi product and carries no product behavior.",
+      "responsibilities": [
+        "Doxygen documentation presentation stylesheet only; it is not loaded by the shipping Fabushi product and carries no product behavior."
+      ],
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_canonical_owner": "Existing source-provenance / compliance inventory owner",
+      "fabushi_target": "projects/telegram-desktop-rust/inventory/source-dispositions.json",
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/inventory/source-dispositions.json"
+      ],
+      "fabushi_target_symbols": [
+        "recursive source inventory",
+        "explicit applicability disposition"
+      ],
+      "production_entrypoints": [
+        "none: exact blob is documentation-only and excluded from shipping Fabushi runtime/package"
+      ],
+      "tests": [
+        "GitHub Actions Source authority / recursive inventory",
+        "exact blob identity + per-blob applicability audit"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:nnen/doxygen-theme@46111c61a9f49b7a9886127e679d4317478fab1c:bae8cba646b3b0177a7d3986d1dfbdc0b46e19a0",
+        "recursive-authority-predecessor:11722994428:order-13453",
+        "applicability-audit:f23d5f2de55f8e58b5dd338cae99186e8a7dd015"
+      ],
+      "evidence_gap": "No product-implementation gap for this exact blob after explicit per-blob non-applicable classification; release acceptance remains open globally."
+    }
+  ]
+}

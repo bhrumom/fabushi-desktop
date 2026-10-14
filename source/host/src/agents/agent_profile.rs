@@ -11,6 +11,14 @@ pub const SAND_PROFILE_FILENAME: &str = "profile.json";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct SandBotCommand {
+    pub command: String,
+    #[serde(default)]
+    pub description: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SandAgentProfile {
     pub name: String,
     pub description: String,
@@ -62,6 +70,26 @@ pub fn read_sand_profile_file(path: impl AsRef<Path>) -> Option<SandAgentProfile
     })
 }
 
+pub fn read_sand_bot_commands(path: impl AsRef<Path>) -> Vec<SandBotCommand> {
+    parse_profile_json(path.as_ref())
+        .and_then(|profile| profile.get("botCommands").cloned())
+        .and_then(|value| value.as_array().cloned())
+        .unwrap_or_default()
+        .into_iter()
+        .filter_map(|value| serde_json::from_value::<SandBotCommand>(value).ok())
+        .filter_map(|command| {
+            let name = command.command.trim();
+            if name.len() < 2 || !name.starts_with('/') || name.chars().any(char::is_whitespace) {
+                return None;
+            }
+            Some(SandBotCommand {
+                command: name.to_string(),
+                description: command.description.trim().to_string(),
+            })
+        })
+        .collect()
+}
+
 pub fn read_legacy_profile_avatar_field(path: impl AsRef<Path>) -> Option<String> {
     let parsed = parse_profile_json(path.as_ref())?;
     let value = parsed.get("avatar").and_then(Value::as_str)?.trim();
@@ -83,7 +111,13 @@ pub fn write_sand_profile_file(
         avatar_shape: profile.avatar_shape.trim().to_string(),
         avatar_color: profile.avatar_color.trim().to_string(),
     };
-    let mut serialized = serde_json::to_string_pretty(&normalized).map_err(io::Error::other)?;
+    let bot_commands = parse_profile_json(path)
+        .and_then(|profile| profile.get("botCommands").cloned());
+    let mut serialized_value = serde_json::to_value(&normalized).map_err(io::Error::other)?;
+    if let (Some(commands), Some(object)) = (bot_commands, serialized_value.as_object_mut()) {
+        object.insert("botCommands".into(), commands);
+    }
+    let mut serialized = serde_json::to_string_pretty(&serialized_value).map_err(io::Error::other)?;
     serialized.push('\n');
     let millis = SystemTime::now()
         .duration_since(UNIX_EPOCH)

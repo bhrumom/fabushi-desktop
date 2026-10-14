@@ -34,6 +34,7 @@ export function SendMessageTextTranscriptCard(props: TranscriptCardLeafProps) {
       images={message.images}
       isSourceTrusted={true}
       isStreaming={streaming}
+      ownerId={entry.id}
       text={message.content}
     />
   </div>;

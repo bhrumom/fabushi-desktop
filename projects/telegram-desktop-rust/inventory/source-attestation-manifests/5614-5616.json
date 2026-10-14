@@ -1,0 +1,26 @@
+{
+  "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+  "start": 5614,
+  "end": 5616,
+  "entries": [
+    {
+      "order": 5614,
+      "path": "Telegram/SourceFiles/settings/sections/settings_premium.cpp",
+      "blob": "60ac3cbbfcd4b74eda0d3cbca46c969a22878b94",
+      "consumer_symbol": "Settings::Premium"
+    },
+    {
+      "order": 5615,
+      "path": "Telegram/SourceFiles/settings/sections/settings_premium.h",
+      "blob": "894e07c352a941a0ad427916c238a7619ebce3b1",
+      "consumer_symbol": "PremiumId / StartPremiumPayment"
+    },
+    {
+      "order": 5616,
+      "path": "Telegram/SourceFiles/settings/sections/settings_premium.style",
+      "blob": "4949348b7bab710b891c974d22869438ef76abb1",
+      "consumer_symbol": "settingsPremium* style tokens"
+    }
+  ],
+  "accepted_tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97"
+}

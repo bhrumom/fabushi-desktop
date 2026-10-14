@@ -1,0 +1,170 @@
+{
+  "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+  "start": 5184,
+  "end": 5210,
+  "entries": [
+    {
+      "order": 5184,
+      "path": "Telegram/SourceFiles/media/view/media_view_recognition_selection.h",
+      "blob": "c3627e4435f7b9a2a536dd78af1fd42c4353d59b",
+      "consumer_symbol": "Media::View::RecognitionSelection"
+    },
+    {
+      "order": 5185,
+      "path": "Telegram/SourceFiles/media/view/media_view_video_stream.cpp",
+      "blob": "e22ec2f8fc0e0358b6db8a381702211c4f6da4b1",
+      "consumer_symbol": "Media::View::VideoStream"
+    },
+    {
+      "order": 5186,
+      "path": "Telegram/SourceFiles/media/view/media_view_video_stream.h",
+      "blob": "0685e7ac8d381f61309682aae915f3df2dd2a81f",
+      "consumer_symbol": "Media::View::VideoStream"
+    },
+    {
+      "order": 5187,
+      "path": "Telegram/SourceFiles/menu/gift_resale_filter.cpp",
+      "blob": "5926e0ba75e719b34365a08bc15b8e74405591a2",
+      "consumer_symbol": "GiftResaleFilterAction / GiftResaleColorEmoji"
+    },
+    {
+      "order": 5188,
+      "path": "Telegram/SourceFiles/menu/gift_resale_filter.h",
+      "blob": "43a74e4af47a98c673ffb344e4b385f3f3af2179",
+      "consumer_symbol": "GiftResaleFilterAction"
+    },
+    {
+      "order": 5189,
+      "path": "Telegram/SourceFiles/menu/menu_action_with_thumbnail.cpp",
+      "blob": "c3547489797078f3715b9fac82b0b59ef568c86d",
+      "consumer_symbol": "Menu::ActionWithThumbnail"
+    },
+    {
+      "order": 5190,
+      "path": "Telegram/SourceFiles/menu/menu_action_with_thumbnail.h",
+      "blob": "42831204b1935cc0d3e29c60e112621814bdfeb1",
+      "consumer_symbol": "Menu::ActionWithThumbnail"
+    },
+    {
+      "order": 5191,
+      "path": "Telegram/SourceFiles/menu/menu_antispam_validator.cpp",
+      "blob": "ccc1f0cd18ef845e21f5a259255f7eca8d088441",
+      "consumer_symbol": "AntiSpamMenu::AntiSpamValidator"
+    },
+    {
+      "order": 5192,
+      "path": "Telegram/SourceFiles/menu/menu_antispam_validator.h",
+      "blob": "05e0dae2815614e565a88aaec4a3125534fb6fd8",
+      "consumer_symbol": "AntiSpamMenu::AntiSpamValidator"
+    },
+    {
+      "order": 5193,
+      "path": "Telegram/SourceFiles/menu/menu_check_item.cpp",
+      "blob": "f0e5f46f8c2cf0776d2bcfc189acb87e0fdc9272",
+      "consumer_symbol": "Menu::ItemWithCheck"
+    },
+    {
+      "order": 5194,
+      "path": "Telegram/SourceFiles/menu/menu_check_item.h",
+      "blob": "181b4469536d6230eb78aeec3953395c4621eec5",
+      "consumer_symbol": "Menu::ItemWithCheck"
+    },
+    {
+      "order": 5195,
+      "path": "Telegram/SourceFiles/menu/menu_checked_action.cpp",
+      "blob": "57199fb056e5d89b548a326ec8baa87539aa9ed3",
+      "consumer_symbol": "Menu::CheckedAction / ActiveColorAction"
+    },
+    {
+      "order": 5196,
+      "path": "Telegram/SourceFiles/menu/menu_checked_action.h",
+      "blob": "654a0def6f3e372e450b06c9081bee9687d1b915",
+      "consumer_symbol": "Menu::AddCheckedAction / AddActiveColorAction"
+    },
+    {
+      "order": 5197,
+      "path": "Telegram/SourceFiles/menu/menu_dock.cpp",
+      "blob": "932d31ce111ef0541007a5f5789c58c7d6dee63c",
+      "consumer_symbol": "Menu::RefreshDockMenu"
+    },
+    {
+      "order": 5198,
+      "path": "Telegram/SourceFiles/menu/menu_dock.h",
+      "blob": "d7e2982a1f1367cb3f67b811070ab1a9bb5318a9",
+      "consumer_symbol": "Menu::RefreshDockMenu"
+    },
+    {
+      "order": 5199,
+      "path": "Telegram/SourceFiles/menu/menu_emoji_status.cpp",
+      "blob": "80ffdca9ab68586846feafd4045853c855f42c93",
+      "consumer_symbol": "EmojiStatusMenu"
+    },
+    {
+      "order": 5200,
+      "path": "Telegram/SourceFiles/menu/menu_emoji_status.h",
+      "blob": "6c1153d06ea3a91be5e4914ce407e59b917f2bd8",
+      "consumer_symbol": "EmojiStatusMenu"
+    },
+    {
+      "order": 5201,
+      "path": "Telegram/SourceFiles/menu/menu_item_download_files.cpp",
+      "blob": "2d35114a47d12b164a36ca703807892d29115a0d",
+      "consumer_symbol": "Menu::AddDownloadFilesAction"
+    },
+    {
+      "order": 5202,
+      "path": "Telegram/SourceFiles/menu/menu_item_download_files.h",
+      "blob": "7e271f647a21236cc6225c983af8c892134c2243",
+      "consumer_symbol": "Menu::AddDownloadFilesAction"
+    },
+    {
+      "order": 5203,
+      "path": "Telegram/SourceFiles/menu/menu_item_rate_transcribe.cpp",
+      "blob": "b59d062c4a5fa9a7f40674d15620e5e65d112db7",
+      "consumer_symbol": "Menu::RateTranscribe"
+    },
+    {
+      "order": 5204,
+      "path": "Telegram/SourceFiles/menu/menu_item_rate_transcribe.h",
+      "blob": "c1ac40d99a2fb4941f5308970295f68817b5cf21",
+      "consumer_symbol": "Menu::RateTranscribe"
+    },
+    {
+      "order": 5205,
+      "path": "Telegram/SourceFiles/menu/menu_item_rate_transcribe_session.cpp",
+      "blob": "872695ecf0507ac749ecf909ed3bb87d6eb85ba6",
+      "consumer_symbol": "RateTranscribeCallbackFactory / HasRateTranscribeItem"
+    },
+    {
+      "order": 5206,
+      "path": "Telegram/SourceFiles/menu/menu_item_rate_transcribe_session.h",
+      "blob": "92ce16aeb22999c9235c71192102e24389ea7c69",
+      "consumer_symbol": "RateTranscribeCallbackFactory"
+    },
+    {
+      "order": 5207,
+      "path": "Telegram/SourceFiles/menu/menu_mark_as_read.cpp",
+      "blob": "4620f9209c6c14b721f6d9fcf849ce0c9daabcee",
+      "consumer_symbol": "MarkAsReadMenu"
+    },
+    {
+      "order": 5208,
+      "path": "Telegram/SourceFiles/menu/menu_mark_as_read.h",
+      "blob": "16ed26d31c79912c4f0ced2ce701f36ecb34986e",
+      "consumer_symbol": "MarkAsReadMenu"
+    },
+    {
+      "order": 5209,
+      "path": "Telegram/SourceFiles/menu/menu_mute.cpp",
+      "blob": "95e9a0ba38dd01c6b12c9c6c7f05aa43e5c27aa9",
+      "consumer_symbol": "MuteMenu"
+    },
+    {
+      "order": 5210,
+      "path": "Telegram/SourceFiles/menu/menu_mute.h",
+      "blob": "d214af65117aaa89bd822be25b30ac99d547274e",
+      "consumer_symbol": "MuteMenu::Descriptor"
+    }
+  ],
+  "accepted_tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97"
+}

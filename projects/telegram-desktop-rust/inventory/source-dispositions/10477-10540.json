@@ -1,0 +1,1886 @@
+{
+  "format_version": 1,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6"
+  },
+  "range": {
+    "first_order": 10477,
+    "last_order": 10540,
+    "entries": 64
+  },
+  "range_evidence": {
+    "identity_source": {
+      "head_sha": "84250c295a108a9b5f108b6c474cbeff71dc1097",
+      "workflow_run": 38128873892,
+      "job_id": 114438921053,
+      "artifact_id": 11698811298,
+      "artifact_digest": "sha256:278638d19fd8a347cf20681953a9589ec06413033ff72e7cf9e3b4c6b5e1c209",
+      "note": "Exact-head Revision 9 validation/materialization succeeded. Direct reading covers Nimf build/package/settings/daemon activation, AppArmor/user-socket policy, IM activation config, package/license boundaries and generated public input-context/candidate/preedit/service API documentation. Existing Fabushi canonical Composer/platform input implementation was audited; no Nimf runtime gap is proven."
+    }
+  },
+  "rows": [
+    {
+      "recursive_order": 10477,
+      "source_path": "Telegram/ThirdParty/nimf::BUILD.md",
+      "source_blob_sha": "fbea94fb3836ea4d04faf23734f741891731393b",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "BUILD.md",
+        "object": "fbea94fb3836ea4d04faf23734f741891731393b",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3222,
+        "sha256": "243f7d41448d4df51dfc9397e5c785ac0375e1f251b477d8918b49a1a69f671a"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf build/install/product composition",
+      "source_symbols": [
+        "source:BUILD.md"
+      ],
+      "responsibility": "Defines the IM framework product composition, engine/service modules, platform client integrations, build dependencies, packaging/install/uninstall lifecycle and supported Linux input frameworks.",
+      "fabushi_canonical_owner": "Canonical Build/Packaging + Platform Input",
+      "fabushi_target": "Use build/module boundaries as source authority only; Fabushi keeps Electron/Chromium/platform adapters and existing packaging owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10478,
+      "source_path": "Telegram/ThirdParty/nimf::COPYING",
+      "source_blob_sha": "341c30bda4457610db4829294e5d7e526d4c835b",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "COPYING",
+        "object": "341c30bda4457610db4829294e5d7e526d4c835b",
+        "mode": "100644",
+        "type": "blob",
+        "size": 7652,
+        "sha256": "97628afebc60f026f5c2b25d7491c46a5c4ee61f693e7cfa07fbd2c03605979b"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf license/attribution provenance",
+      "source_symbols": [
+        "source:COPYING"
+      ],
+      "responsibility": "Carries LGPL-3+ and third-party attribution/license boundaries for the Nimf framework and bundled Wayland/XIM-derived sources.",
+      "fabushi_canonical_owner": "Canonical License/Compliance",
+      "fabushi_target": "Preserve provenance/license obligations; do not copy upstream implementation merely to satisfy parity.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10479,
+      "source_path": "Telegram/ThirdParty/nimf::Makefile.am",
+      "source_blob_sha": "40e7fa293da315a177c3f6405a45f4745bd88120",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "Makefile.am",
+        "object": "40e7fa293da315a177c3f6405a45f4745bd88120",
+        "mode": "100644",
+        "type": "blob",
+        "size": 603,
+        "sha256": "1a2b40fde929cc75a493630bd51a8bab9237b9aa384a607ec8e9ebdddbd602c4"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf build/install/product composition",
+      "source_symbols": [
+        "source:Makefile.am"
+      ],
+      "responsibility": "Defines the IM framework product composition, engine/service modules, platform client integrations, build dependencies, packaging/install/uninstall lifecycle and supported Linux input frameworks.",
+      "fabushi_canonical_owner": "Canonical Build/Packaging + Platform Input",
+      "fabushi_target": "Use build/module boundaries as source authority only; Fabushi keeps Electron/Chromium/platform adapters and existing packaging owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10480,
+      "source_path": "Telegram/ThirdParty/nimf::NEWS",
+      "source_blob_sha": "d526672ce2c5ef5c3975be46da86abfdecc43ffb",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "NEWS",
+        "object": "d526672ce2c5ef5c3975be46da86abfdecc43ffb",
+        "mode": "120000",
+        "type": "blob",
+        "size": 16,
+        "sha256": "93467241211d3f9d253fb8ad341738fbda5e5d3ade4721326f2bba82525fbaee"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf release/history authority",
+      "source_symbols": [
+        "source:NEWS"
+      ],
+      "responsibility": "Records compatibility, packaging, platform-client, one-instance lifecycle and release changes that identify historical failure/maintenance concerns.",
+      "fabushi_canonical_owner": "Canonical Release/Quality",
+      "fabushi_target": "Treat as maintenance/release evidence only; behavioral claims require the actual source owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10481,
+      "source_path": "Telegram/ThirdParty/nimf::PKGBUILD",
+      "source_blob_sha": "a3e1757da83c19a052c6d5a2a9fda8999b59bf22",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "PKGBUILD",
+        "object": "a3e1757da83c19a052c6d5a2a9fda8999b59bf22",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1488,
+        "sha256": "c1b19105f0c283d59c381f4a38822892684959e56bc3535870296e4e98c7ee13"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf build/install/product composition",
+      "source_symbols": [
+        "source:PKGBUILD"
+      ],
+      "responsibility": "Defines the IM framework product composition, engine/service modules, platform client integrations, build dependencies, packaging/install/uninstall lifecycle and supported Linux input frameworks.",
+      "fabushi_canonical_owner": "Canonical Build/Packaging + Platform Input",
+      "fabushi_target": "Use build/module boundaries as source authority only; Fabushi keeps Electron/Chromium/platform adapters and existing packaging owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10482,
+      "source_path": "Telegram/ThirdParty/nimf::README",
+      "source_blob_sha": "d34e5f4c599c02f13322396cb5eab512726d11cd",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "README",
+        "object": "d34e5f4c599c02f13322396cb5eab512726d11cd",
+        "mode": "100644",
+        "type": "blob",
+        "size": 8083,
+        "sha256": "54f73f1923f81436855101921404e2ebd0d929f0a4c6163cc79c2a7fe4ab0e8b"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf build/install/product composition",
+      "source_symbols": [
+        "source:README"
+      ],
+      "responsibility": "Defines the IM framework product composition, engine/service modules, platform client integrations, build dependencies, packaging/install/uninstall lifecycle and supported Linux input frameworks.",
+      "fabushi_canonical_owner": "Canonical Build/Packaging + Platform Input",
+      "fabushi_target": "Use build/module boundaries as source authority only; Fabushi keeps Electron/Chromium/platform adapters and existing packaging owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10483,
+      "source_path": "Telegram/ThirdParty/nimf::README.md",
+      "source_blob_sha": "adf2af5423dae844d7daefea116d2d29106d9d7b",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "README.md",
+        "object": "adf2af5423dae844d7daefea116d2d29106d9d7b",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6857,
+        "sha256": "76fd5ad46c0730931fa1d329d6a15ea6f5566e229dcc10c9d8ab3de1a7e7d593"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf build/install/product composition",
+      "source_symbols": [
+        "source:README.md"
+      ],
+      "responsibility": "Defines the IM framework product composition, engine/service modules, platform client integrations, build dependencies, packaging/install/uninstall lifecycle and supported Linux input frameworks.",
+      "fabushi_canonical_owner": "Canonical Build/Packaging + Platform Input",
+      "fabushi_target": "Use build/module boundaries as source authority only; Fabushi keeps Electron/Chromium/platform adapters and existing packaging owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10484,
+      "source_path": "Telegram/ThirdParty/nimf::THANKS",
+      "source_blob_sha": "6f9f7ec6216ab03e1ee10495f4c307089d82409f",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "THANKS",
+        "object": "6f9f7ec6216ab03e1ee10495f4c307089d82409f",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1353,
+        "sha256": "6e62e0c33076b4df6b7a216beeb0c58890bb7728290894f0157a3448c35700b0"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf license/attribution provenance",
+      "source_symbols": [
+        "source:THANKS"
+      ],
+      "responsibility": "Carries LGPL-3+ and third-party attribution/license boundaries for the Nimf framework and bundled Wayland/XIM-derived sources.",
+      "fabushi_canonical_owner": "Canonical License/Compliance",
+      "fabushi_target": "Preserve provenance/license obligations; do not copy upstream implementation merely to satisfy parity.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10485,
+      "source_path": "Telegram/ThirdParty/nimf::autogen.sh",
+      "source_blob_sha": "750e6522b5dd6081089f19fbba4f1e2e7e6e0bbb",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "autogen.sh",
+        "object": "750e6522b5dd6081089f19fbba4f1e2e7e6e0bbb",
+        "mode": "100755",
+        "type": "blob",
+        "size": 1424,
+        "sha256": "229d90a372aa0c203d47425358ca2b200f2f50c9e2eed12a054e2a97cd9c419e"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf build/install/product composition",
+      "source_symbols": [
+        "source:autogen.sh"
+      ],
+      "responsibility": "Defines the IM framework product composition, engine/service modules, platform client integrations, build dependencies, packaging/install/uninstall lifecycle and supported Linux input frameworks.",
+      "fabushi_canonical_owner": "Canonical Build/Packaging + Platform Input",
+      "fabushi_target": "Use build/module boundaries as source authority only; Fabushi keeps Electron/Chromium/platform adapters and existing packaging owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10486,
+      "source_path": "Telegram/ThirdParty/nimf::bin/Makefile.am",
+      "source_blob_sha": "d5c7c4ac3026791a6b353b0cb0aac316f2fe0a5b",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "bin/Makefile.am",
+        "object": "d5c7c4ac3026791a6b353b0cb0aac316f2fe0a5b",
+        "mode": "100644",
+        "type": "blob",
+        "size": 59,
+        "sha256": "b9cc05dd359d61dce34561914b1cca45af72784ccaa069da50d9729d96ab1f60"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf input-method source authority",
+      "source_symbols": [
+        "source:bin/Makefile.am"
+      ],
+      "responsibility": "Carries the exact upstream responsibility expressed by bin/Makefile.am.",
+      "fabushi_canonical_owner": "Canonical Composer/Platform Input + Build/Quality",
+      "fabushi_target": "Map applicable behavior into existing Fabushi owners; do not introduce a Nimf daemon/runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10487,
+      "source_path": "Telegram/ThirdParty/nimf::bin/nimf-settings/Makefile.am",
+      "source_blob_sha": "703325eff4b24d24730d63a857d5b2056ea2f2dc",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "bin/nimf-settings/Makefile.am",
+        "object": "703325eff4b24d24730d63a857d5b2056ea2f2dc",
+        "mode": "100644",
+        "type": "blob",
+        "size": 799,
+        "sha256": "d0fd6f264da4123440254e08ba257779ed55ce64542448444de53ffcd2a6b37c"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf settings/control surface",
+      "source_symbols": [
+        "source:bin/nimf-settings/Makefile.am"
+      ],
+      "responsibility": "Builds/documents the settings executable and lifecycle.",
+      "fabushi_canonical_owner": "Canonical Settings + Platform Input",
+      "fabushi_target": "Map settings/state semantics into existing Fabushi Settings owner; do not copy GTK UI or establish a second settings truth.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10488,
+      "source_path": "Telegram/ThirdParty/nimf::bin/nimf-settings/nimf-settings-autostart.desktop.in",
+      "source_blob_sha": "ed8ccd67b7e1a7fbbaa50029584b0984332cecb8",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "bin/nimf-settings/nimf-settings-autostart.desktop.in",
+        "object": "ed8ccd67b7e1a7fbbaa50029584b0984332cecb8",
+        "mode": "100644",
+        "type": "blob",
+        "size": 314,
+        "sha256": "9e17bbecdf7e65d60f7904274edeff2734196eb14634569a6ccf109cc32ade00"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf settings/control surface",
+      "source_symbols": [
+        "source:bin/nimf-settings/nimf-settings-autostart.desktop.in"
+      ],
+      "responsibility": "Defines desktop/autostart integration for the settings surface.",
+      "fabushi_canonical_owner": "Canonical Settings + Platform Input",
+      "fabushi_target": "Map settings/state semantics into existing Fabushi Settings owner; do not copy GTK UI or establish a second settings truth.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10489,
+      "source_path": "Telegram/ThirdParty/nimf::bin/nimf-settings/nimf-settings.1",
+      "source_blob_sha": "cbe3d20f477588c72104663c4c0f50544f01ae37",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "bin/nimf-settings/nimf-settings.1",
+        "object": "cbe3d20f477588c72104663c4c0f50544f01ae37",
+        "mode": "100644",
+        "type": "blob",
+        "size": 555,
+        "sha256": "9f3414b30b4cafc6bb7d273b32db738532d3954bca0a26d98cc32fde038f29b5"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf settings/control surface",
+      "source_symbols": [
+        "source:bin/nimf-settings/nimf-settings.1"
+      ],
+      "responsibility": "Builds/documents the settings executable and lifecycle.",
+      "fabushi_canonical_owner": "Canonical Settings + Platform Input",
+      "fabushi_target": "Map settings/state semantics into existing Fabushi Settings owner; do not copy GTK UI or establish a second settings truth.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10490,
+      "source_path": "Telegram/ThirdParty/nimf::bin/nimf-settings/nimf-settings.c",
+      "source_blob_sha": "aa7b4d54948335168ddfa5c78488921bd508c237",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "bin/nimf-settings/nimf-settings.c",
+        "object": "aa7b4d54948335168ddfa5c78488921bd508c237",
+        "mode": "100644",
+        "type": "blob",
+        "size": 45590,
+        "sha256": "6bc74349e47c53201adae91568c689c867f2349e395b39e35ddf03875354b560"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf settings/control surface",
+      "source_symbols": [
+        "source:bin/nimf-settings/nimf-settings.c"
+      ],
+      "responsibility": "Builds a schema-driven settings UI, synchronizes GSettings changes into controls, manages active/default engines, XKB options and deterministic fallback to the system-keyboard engine.",
+      "fabushi_canonical_owner": "Canonical Settings + Platform Input",
+      "fabushi_target": "Map settings/state semantics into existing Fabushi Settings owner; do not copy GTK UI or establish a second settings truth.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10491,
+      "source_path": "Telegram/ThirdParty/nimf::bin/nimf-settings/nimf-settings.desktop.in",
+      "source_blob_sha": "326d0559abcd25f8169bfc304b4e9c4fd436714f",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "bin/nimf-settings/nimf-settings.desktop.in",
+        "object": "326d0559abcd25f8169bfc304b4e9c4fd436714f",
+        "mode": "100644",
+        "type": "blob",
+        "size": 137,
+        "sha256": "7fbbb794418273ec77eddbb31add564d3589fe47d5ac32579cb4fd95b81251ea"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf settings/control surface",
+      "source_symbols": [
+        "source:bin/nimf-settings/nimf-settings.desktop.in"
+      ],
+      "responsibility": "Defines desktop/autostart integration for the settings surface.",
+      "fabushi_canonical_owner": "Canonical Settings + Platform Input",
+      "fabushi_target": "Map settings/state semantics into existing Fabushi Settings owner; do not copy GTK UI or establish a second settings truth.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10492,
+      "source_path": "Telegram/ThirdParty/nimf::bin/nimf-settings/org.nimf.settings.gschema.xml",
+      "source_blob_sha": "c2c056bd6a4613050b31b6ec5ba8b38f276584a1",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "bin/nimf-settings/org.nimf.settings.gschema.xml",
+        "object": "c2c056bd6a4613050b31b6ec5ba8b38f276584a1",
+        "mode": "100644",
+        "type": "blob",
+        "size": 333,
+        "sha256": "a2583ad4c2cb2b99eff6742344c3c9ae4d32c479955cadacecb75828810686f2"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf settings/control surface",
+      "source_symbols": [
+        "source:bin/nimf-settings/org.nimf.settings.gschema.xml"
+      ],
+      "responsibility": "Defines persistent settings schema for keyboard/XKB and settings-control behavior.",
+      "fabushi_canonical_owner": "Canonical Settings + Platform Input",
+      "fabushi_target": "Map settings/state semantics into existing Fabushi Settings owner; do not copy GTK UI or establish a second settings truth.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10493,
+      "source_path": "Telegram/ThirdParty/nimf::bin/nimf/Makefile.am",
+      "source_blob_sha": "1c786297e713fa9c82e18354149b01b716aae007",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "bin/nimf/Makefile.am",
+        "object": "1c786297e713fa9c82e18354149b01b716aae007",
+        "mode": "100644",
+        "type": "blob",
+        "size": 363,
+        "sha256": "f49c0d1129d941e0f049e31fff53857a2d876131930c241b612508deb4cda21d"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf daemon lifecycle",
+      "source_symbols": [
+        "source:bin/nimf/Makefile.am"
+      ],
+      "responsibility": "Builds/documents the Nimf executable and command-line daemon options.",
+      "fabushi_canonical_owner": "Canonical Platform Input + app lifecycle",
+      "fabushi_target": "Retain lifecycle/fail-clean semantics where applicable; Fabushi must not spawn or recreate a Nimf/Telegram input daemon.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10494,
+      "source_path": "Telegram/ThirdParty/nimf::bin/nimf/nimf.1",
+      "source_blob_sha": "fe903a3a2193f60a866196175ca1a3f561185b5f",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "bin/nimf/nimf.1",
+        "object": "fe903a3a2193f60a866196175ca1a3f561185b5f",
+        "mode": "100644",
+        "type": "blob",
+        "size": 370,
+        "sha256": "f76e0e77cc7ffa55917cbd77e551cf544f609a22ca6c2fd9fe2cb0be8b3faa47"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf daemon lifecycle",
+      "source_symbols": [
+        "source:bin/nimf/nimf.1"
+      ],
+      "responsibility": "Builds/documents the Nimf executable and command-line daemon options.",
+      "fabushi_canonical_owner": "Canonical Platform Input + app lifecycle",
+      "fabushi_target": "Retain lifecycle/fail-clean semantics where applicable; Fabushi must not spawn or recreate a Nimf/Telegram input daemon.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10495,
+      "source_path": "Telegram/ThirdParty/nimf::bin/nimf/nimf.c",
+      "source_blob_sha": "0404c094bc7304d5a7b81161d2d09257b8a42c76",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "bin/nimf/nimf.c",
+        "object": "0404c094bc7304d5a7b81161d2d09257b8a42c76",
+        "mode": "100644",
+        "type": "blob",
+        "size": 7287,
+        "sha256": "dbaef2a7fc636db938b37004a7ede2766324589a114ff81407a7f8ccb99699b2"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf daemon lifecycle",
+      "source_symbols": [
+        "main",
+        "nimf_server_new",
+        "nimf_server_start",
+        "SIGINT/SIGTERM lifecycle"
+      ],
+      "responsibility": "Owns daemon startup/daemonization, single runtime socket cleanup, server construction/start, signal handling, main-loop lifetime, syslog and deterministic teardown.",
+      "fabushi_canonical_owner": "Canonical Platform Input + app lifecycle",
+      "fabushi_target": "Retain lifecycle/fail-clean semantics where applicable; Fabushi must not spawn or recreate a Nimf/Telegram input daemon.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10496,
+      "source_path": "Telegram/ThirdParty/nimf::configure.ac",
+      "source_blob_sha": "c521b43aef51487cdbcc9f66c4222cb1501acd59",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "configure.ac",
+        "object": "c521b43aef51487cdbcc9f66c4222cb1501acd59",
+        "mode": "100644",
+        "type": "blob",
+        "size": 14122,
+        "sha256": "cd4df9b59cd157fb4583d630d0dff5d4648b451eaf1d37772a6745deb6d03af4"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf build/install/product composition",
+      "source_symbols": [
+        "source:configure.ac"
+      ],
+      "responsibility": "Defines the IM framework product composition, engine/service modules, platform client integrations, build dependencies, packaging/install/uninstall lifecycle and supported Linux input frameworks.",
+      "fabushi_canonical_owner": "Canonical Build/Packaging + Platform Input",
+      "fabushi_target": "Use build/module boundaries as source authority only; Fabushi keeps Electron/Chromium/platform adapters and existing packaging owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10497,
+      "source_path": "Telegram/ThirdParty/nimf::data/Makefile.am",
+      "source_blob_sha": "acb9942105b119f7f51b4e3707777cf0552f360c",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "data/Makefile.am",
+        "object": "acb9942105b119f7f51b4e3707777cf0552f360c",
+        "mode": "100644",
+        "type": "blob",
+        "size": 227,
+        "sha256": "e93a1e1cb960f2f7bb0a6f8e34ad1dbfd156ec299e4833f92b94261c0f45c80c"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf input-method source authority",
+      "source_symbols": [
+        "source:data/Makefile.am"
+      ],
+      "responsibility": "Carries the exact upstream responsibility expressed by data/Makefile.am.",
+      "fabushi_canonical_owner": "Canonical Composer/Platform Input + Build/Quality",
+      "fabushi_target": "Map applicable behavior into existing Fabushi owners; do not introduce a Nimf daemon/runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10498,
+      "source_path": "Telegram/ThirdParty/nimf::data/apparmor-abstractions/Makefile.am",
+      "source_blob_sha": "b88d7952fd17ecf24a04ed02ac7d2c85fe07a50b",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "data/apparmor-abstractions/Makefile.am",
+        "object": "b88d7952fd17ecf24a04ed02ac7d2c85fe07a50b",
+        "mode": "100644",
+        "type": "blob",
+        "size": 103,
+        "sha256": "2804d88387bba7e69b3f220db41a138a76fb8c167f3f8c886078eb552ba63c0a"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf IPC security policy",
+      "source_symbols": [
+        "source:data/apparmor-abstractions/Makefile.am"
+      ],
+      "responsibility": "Scopes client IPC to the per-user Nimf Unix stream socket under the runtime directory.",
+      "fabushi_canonical_owner": "Canonical Platform Security/IPC",
+      "fabushi_target": "Preserve least-privilege IPC principles in Fabushi's existing Electron/Host bridges; no Nimf socket is introduced.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10499,
+      "source_path": "Telegram/ThirdParty/nimf::data/apparmor-abstractions/nimf",
+      "source_blob_sha": "bede36267403ae1845b20d59c4daf1dd15e54e89",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "data/apparmor-abstractions/nimf",
+        "object": "bede36267403ae1845b20d59c4daf1dd15e54e89",
+        "mode": "100644",
+        "type": "blob",
+        "size": 172,
+        "sha256": "b65b2b958e4afec3fef6234a9fb8dcd2d1b4e56149c31f990414fb37640e1de0"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf IPC security policy",
+      "source_symbols": [
+        "source:data/apparmor-abstractions/nimf"
+      ],
+      "responsibility": "Scopes client IPC to the per-user Nimf Unix stream socket under the runtime directory.",
+      "fabushi_canonical_owner": "Canonical Platform Security/IPC",
+      "fabushi_target": "Preserve least-privilege IPC principles in Fabushi's existing Electron/Host bridges; no Nimf socket is introduced.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10500,
+      "source_path": "Telegram/ThirdParty/nimf::data/icons/Makefile.am",
+      "source_blob_sha": "f6d9cf62f7c4bc528f17419f06ca19e804131728",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "data/icons/Makefile.am",
+        "object": "f6d9cf62f7c4bc528f17419f06ca19e804131728",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3942,
+        "sha256": "402e33ca7771fbee939856adaaab2a4279db70e0a4d9f578316b6e9c0d536e4c"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf visual/platform resource",
+      "source_symbols": [
+        "source:data/icons/Makefile.am"
+      ],
+      "responsibility": "Builds/install/uninstalls status icons and maintains GTK icon cache across canonical sizes.",
+      "fabushi_canonical_owner": "Canonical Design/Resource + License",
+      "fabushi_target": "Do not copy Nimf branding/assets into Fabushi; only generic state meaning may inform canonical Fabushi components.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10501,
+      "source_path": "Telegram/ThirdParty/nimf::data/icons/scalable/nimf-anthy.svg",
+      "source_blob_sha": "0e96ba4f76a349508966c491b2b6f50886b3604f",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "data/icons/scalable/nimf-anthy.svg",
+        "object": "0e96ba4f76a349508966c491b2b6f50886b3604f",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3011,
+        "sha256": "01b309493a9b1ce51bb186c92f18ca23d94473b2b4f9df0020692685a6e8703e"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf visual/platform resource",
+      "source_symbols": [
+        "source:data/icons/scalable/nimf-anthy.svg"
+      ],
+      "responsibility": "Carries upstream input-method/status visual identity.",
+      "fabushi_canonical_owner": "Canonical Design/Resource + License",
+      "fabushi_target": "Do not copy Nimf branding/assets into Fabushi; only generic state meaning may inform canonical Fabushi components.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10502,
+      "source_path": "Telegram/ThirdParty/nimf::data/icons/scalable/nimf-focus-out.svg",
+      "source_blob_sha": "3648405cb0cb23825c67689fcf1b988e8637a15c",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "data/icons/scalable/nimf-focus-out.svg",
+        "object": "3648405cb0cb23825c67689fcf1b988e8637a15c",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3461,
+        "sha256": "df5ac923ccee886ec1af3e8b344c934d33240e3f3f39609baa61e49349fe7904"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf visual/platform resource",
+      "source_symbols": [
+        "source:data/icons/scalable/nimf-focus-out.svg"
+      ],
+      "responsibility": "Carries upstream input-method/status visual identity.",
+      "fabushi_canonical_owner": "Canonical Design/Resource + License",
+      "fabushi_target": "Do not copy Nimf branding/assets into Fabushi; only generic state meaning may inform canonical Fabushi components.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10503,
+      "source_path": "Telegram/ThirdParty/nimf::data/icons/scalable/nimf-libhangul.svg",
+      "source_blob_sha": "6f145676e2b4fa117aa2ebdc9cf0cae57ef9626b",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "data/icons/scalable/nimf-libhangul.svg",
+        "object": "6f145676e2b4fa117aa2ebdc9cf0cae57ef9626b",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3592,
+        "sha256": "f3b4dc440d41b0f79417a7e3a3a347df05ff995bcb23a8d289dce34ff7889198"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf visual/platform resource",
+      "source_symbols": [
+        "source:data/icons/scalable/nimf-libhangul.svg"
+      ],
+      "responsibility": "Carries upstream input-method/status visual identity.",
+      "fabushi_canonical_owner": "Canonical Design/Resource + License",
+      "fabushi_target": "Do not copy Nimf branding/assets into Fabushi; only generic state meaning may inform canonical Fabushi components.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10504,
+      "source_path": "Telegram/ThirdParty/nimf::data/icons/scalable/nimf-logo.svg",
+      "source_blob_sha": "9afb71d6c9e23a2893a82fc8ed314ccac96b07ab",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "data/icons/scalable/nimf-logo.svg",
+        "object": "9afb71d6c9e23a2893a82fc8ed314ccac96b07ab",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1726,
+        "sha256": "fe239cf2a45dfe68ad29555184ae520589ec4d129bed25f95769ca2659bbd17e"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf visual/platform resource",
+      "source_symbols": [
+        "source:data/icons/scalable/nimf-logo.svg"
+      ],
+      "responsibility": "Carries upstream input-method/status visual identity.",
+      "fabushi_canonical_owner": "Canonical Design/Resource + License",
+      "fabushi_target": "Do not copy Nimf branding/assets into Fabushi; only generic state meaning may inform canonical Fabushi components.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10505,
+      "source_path": "Telegram/ThirdParty/nimf::data/icons/scalable/nimf-rime-simplified.svg",
+      "source_blob_sha": "ea1237dca1d1f1f24b60d5092c32c3a79dac7d9e",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "data/icons/scalable/nimf-rime-simplified.svg",
+        "object": "ea1237dca1d1f1f24b60d5092c32c3a79dac7d9e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2157,
+        "sha256": "814ba61cf1056699404b77e5c87e0f7e6a553b55cf468941264c3db8cf13a595"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf visual/platform resource",
+      "source_symbols": [
+        "source:data/icons/scalable/nimf-rime-simplified.svg"
+      ],
+      "responsibility": "Carries upstream input-method/status visual identity.",
+      "fabushi_canonical_owner": "Canonical Design/Resource + License",
+      "fabushi_target": "Do not copy Nimf branding/assets into Fabushi; only generic state meaning may inform canonical Fabushi components.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10506,
+      "source_path": "Telegram/ThirdParty/nimf::data/icons/scalable/nimf-rime-traditional.svg",
+      "source_blob_sha": "1a968f49bcf96a1f5ae8348d2ebd96cfd30d661a",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "data/icons/scalable/nimf-rime-traditional.svg",
+        "object": "1a968f49bcf96a1f5ae8348d2ebd96cfd30d661a",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2725,
+        "sha256": "a0c6d53de50771128dec485a6bef5da474ae389cdac78a0c3fa59ff42fce05e1"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf visual/platform resource",
+      "source_symbols": [
+        "source:data/icons/scalable/nimf-rime-traditional.svg"
+      ],
+      "responsibility": "Carries upstream input-method/status visual identity.",
+      "fabushi_canonical_owner": "Canonical Design/Resource + License",
+      "fabushi_target": "Do not copy Nimf branding/assets into Fabushi; only generic state meaning may inform canonical Fabushi components.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10507,
+      "source_path": "Telegram/ThirdParty/nimf::data/icons/scalable/nimf-system-keyboard.svg",
+      "source_blob_sha": "c3d25bbf2972a82d80c82cc653b17d4b815db127",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "data/icons/scalable/nimf-system-keyboard.svg",
+        "object": "c3d25bbf2972a82d80c82cc653b17d4b815db127",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4441,
+        "sha256": "695c318c3f40163fd1136ff6006ee2c044cdd148b203ec4a10066d929dbddea3"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf visual/platform resource",
+      "source_symbols": [
+        "source:data/icons/scalable/nimf-system-keyboard.svg"
+      ],
+      "responsibility": "Carries upstream input-method/status visual identity.",
+      "fabushi_canonical_owner": "Canonical Design/Resource + License",
+      "fabushi_target": "Do not copy Nimf branding/assets into Fabushi; only generic state meaning may inform canonical Fabushi components.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10508,
+      "source_path": "Telegram/ThirdParty/nimf::data/im-config/23_nimf.conf",
+      "source_blob_sha": "ca4c96ee2a7463637198752f942018e7ee6aec90",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "data/im-config/23_nimf.conf",
+        "object": "ca4c96ee2a7463637198752f942018e7ee6aec90",
+        "mode": "100644",
+        "type": "blob",
+        "size": 150,
+        "sha256": "a478ac1d83395c08a80fedc7eb8f36e4b5115bdf78d9fb6940523a182626ea3d"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf desktop input-method activation",
+      "source_symbols": [
+        "source:data/im-config/23_nimf.conf"
+      ],
+      "responsibility": "Activates the system input framework through XMODIFIERS/GTK_IM_MODULE/QT_IM_MODULE and phase-specific startup integration.",
+      "fabushi_canonical_owner": "Canonical Platform Input",
+      "fabushi_target": "Electron/Chromium remains the native editable owner; do not override user/system IM environment or install Nimf.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10509,
+      "source_path": "Telegram/ThirdParty/nimf::data/im-config/23_nimf.rc",
+      "source_blob_sha": "e18a1af7aef23df98685533ec3106fd707d22611",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "data/im-config/23_nimf.rc",
+        "object": "e18a1af7aef23df98685533ec3106fd707d22611",
+        "mode": "100644",
+        "type": "blob",
+        "size": 207,
+        "sha256": "1cf3881ead542b949170200178f92e2495e4e7096ced9fd0d94b19bc6868093e"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf desktop input-method activation",
+      "source_symbols": [
+        "source:data/im-config/23_nimf.rc"
+      ],
+      "responsibility": "Activates the system input framework through XMODIFIERS/GTK_IM_MODULE/QT_IM_MODULE and phase-specific startup integration.",
+      "fabushi_canonical_owner": "Canonical Platform Input",
+      "fabushi_target": "Electron/Chromium remains the native editable owner; do not override user/system IM environment or install Nimf.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10510,
+      "source_path": "Telegram/ThirdParty/nimf::data/im-config/Makefile.am",
+      "source_blob_sha": "5ca149dceb356a319e0b4bcc9db32a2fd2eac6f9",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "data/im-config/Makefile.am",
+        "object": "5ca149dceb356a319e0b4bcc9db32a2fd2eac6f9",
+        "mode": "100644",
+        "type": "blob",
+        "size": 117,
+        "sha256": "8ffb57972d85b62734a532b9f2cb9a6d61b1b8bdba1ea6bc5ffdd0de61f356ff"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf desktop input-method activation",
+      "source_symbols": [
+        "source:data/im-config/Makefile.am"
+      ],
+      "responsibility": "Activates the system input framework through XMODIFIERS/GTK_IM_MODULE/QT_IM_MODULE and phase-specific startup integration.",
+      "fabushi_canonical_owner": "Canonical Platform Input",
+      "fabushi_target": "Electron/Chromium remains the native editable owner; do not override user/system IM environment or install Nimf.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10511,
+      "source_path": "Telegram/ThirdParty/nimf::data/imsettings/Makefile.am",
+      "source_blob_sha": "85e82bb7a96cd0c2d5a70c9e9a710e162b082c53",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "data/imsettings/Makefile.am",
+        "object": "85e82bb7a96cd0c2d5a70c9e9a710e162b082c53",
+        "mode": "100644",
+        "type": "blob",
+        "size": 98,
+        "sha256": "4371e9ca5686f54b069495f6e91c490c1acb7ed4b80b9122306206e05de96c53"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf desktop input-method activation",
+      "source_symbols": [
+        "source:data/imsettings/Makefile.am"
+      ],
+      "responsibility": "Activates the system input framework through XMODIFIERS/GTK_IM_MODULE/QT_IM_MODULE and phase-specific startup integration.",
+      "fabushi_canonical_owner": "Canonical Platform Input",
+      "fabushi_target": "Electron/Chromium remains the native editable owner; do not override user/system IM environment or install Nimf.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10512,
+      "source_path": "Telegram/ThirdParty/nimf::data/imsettings/nimf.conf",
+      "source_blob_sha": "1affe82ef4758cf2f0c3cf35e18f8d37bfed6b10",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "data/imsettings/nimf.conf",
+        "object": "1affe82ef4758cf2f0c3cf35e18f8d37bfed6b10",
+        "mode": "100644",
+        "type": "blob",
+        "size": 140,
+        "sha256": "20c4487084077df1d8ecddd83ac5a3fbc77b801d4481fdec6eed255372c0d886"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf desktop input-method activation",
+      "source_symbols": [
+        "source:data/imsettings/nimf.conf"
+      ],
+      "responsibility": "Activates the system input framework through XMODIFIERS/GTK_IM_MODULE/QT_IM_MODULE and phase-specific startup integration.",
+      "fabushi_canonical_owner": "Canonical Platform Input",
+      "fabushi_target": "Electron/Chromium remains the native editable owner; do not override user/system IM environment or install Nimf.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10513,
+      "source_path": "Telegram/ThirdParty/nimf::data/nimf.conf",
+      "source_blob_sha": "a495e947be4c58baed8c1db04f736488db53ef41",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "data/nimf.conf",
+        "object": "a495e947be4c58baed8c1db04f736488db53ef41",
+        "mode": "100644",
+        "type": "blob",
+        "size": 75,
+        "sha256": "cde1b395cdcd9d45632b023615582ece3578da61910a21c17383043253f50204"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf desktop input-method activation",
+      "source_symbols": [
+        "source:data/nimf.conf"
+      ],
+      "responsibility": "Activates the system input framework through XMODIFIERS/GTK_IM_MODULE/QT_IM_MODULE and phase-specific startup integration.",
+      "fabushi_canonical_owner": "Canonical Platform Input",
+      "fabushi_target": "Electron/Chromium remains the native editable owner; do not override user/system IM environment or install Nimf.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10514,
+      "source_path": "Telegram/ThirdParty/nimf::debian/autoreconf.after",
+      "source_blob_sha": "103ccbf6647f9168e07876e5777dea1eb079a383",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "debian/autoreconf.after",
+        "object": "103ccbf6647f9168e07876e5777dea1eb079a383",
+        "mode": "100644",
+        "type": "blob",
+        "size": 43239,
+        "sha256": "9d49e8b5aeb9e5bb38671c3aafd5dbc4045ef3acd3a5d3330a82e9f8800ee729"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf Debian package/release authority",
+      "source_symbols": [
+        "source:debian/autoreconf.after"
+      ],
+      "responsibility": "Carries Debian source format/compat/lint/package metadata.",
+      "fabushi_canonical_owner": "Canonical Packaging/Release/License",
+      "fabushi_target": "Map package/provenance discipline into Fabushi's existing release system; no Nimf packages/modules ship.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10515,
+      "source_path": "Telegram/ThirdParty/nimf::debian/changelog",
+      "source_blob_sha": "71b54ed381fedb64c867d5477bf0a474a3a22381",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "debian/changelog",
+        "object": "71b54ed381fedb64c867d5477bf0a474a3a22381",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3819,
+        "sha256": "747236dc6380172eeb3388e15f89dfe2e89e09eca7d4bdf059474cd7120d4afb"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf release/history authority",
+      "source_symbols": [
+        "source:debian/changelog"
+      ],
+      "responsibility": "Records compatibility, packaging, platform-client, one-instance lifecycle and release changes that identify historical failure/maintenance concerns.",
+      "fabushi_canonical_owner": "Canonical Release/Quality",
+      "fabushi_target": "Treat as maintenance/release evidence only; behavioral claims require the actual source owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10516,
+      "source_path": "Telegram/ThirdParty/nimf::debian/compat",
+      "source_blob_sha": "b4de3947675361a7770d29b8982c407b0ec6b2a0",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "debian/compat",
+        "object": "b4de3947675361a7770d29b8982c407b0ec6b2a0",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3,
+        "sha256": "25d4f2a86deb5e2574bb3210b67bb24fcc4afb19f93a7b65a057daa874a9d18e"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf Debian package/release authority",
+      "source_symbols": [
+        "source:debian/compat"
+      ],
+      "responsibility": "Carries Debian source format/compat/lint/package metadata.",
+      "fabushi_canonical_owner": "Canonical Packaging/Release/License",
+      "fabushi_target": "Map package/provenance discipline into Fabushi's existing release system; no Nimf packages/modules ship.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10517,
+      "source_path": "Telegram/ThirdParty/nimf::debian/control",
+      "source_blob_sha": "683b052bd20c57dae057a067410b948c937a757f",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "debian/control",
+        "object": "683b052bd20c57dae057a067410b948c937a757f",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4135,
+        "sha256": "89d74356b4e4db5ac95ec896c59465fdc8aab451b5f53f061509a680f12240e9"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf Debian package/release authority",
+      "source_symbols": [
+        "source:debian/control"
+      ],
+      "responsibility": "Declares runtime/shared-library/dev/engine package boundaries and exact GTK/Qt/m17n/rime/anthy/libhangul dependencies.",
+      "fabushi_canonical_owner": "Canonical Packaging/Release/License",
+      "fabushi_target": "Map package/provenance discipline into Fabushi's existing release system; no Nimf packages/modules ship.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10518,
+      "source_path": "Telegram/ThirdParty/nimf::debian/copyright",
+      "source_blob_sha": "0abd4ca2ff9019fb85917f251a28a88be6d878d6",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "debian/copyright",
+        "object": "0abd4ca2ff9019fb85917f251a28a88be6d878d6",
+        "mode": "100644",
+        "type": "blob",
+        "size": 10316,
+        "sha256": "fdd7f0a7f1706cab3a7acea5d22b9d5586a24afd6483574abe8e0e45fceaaafd"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf license/attribution provenance",
+      "source_symbols": [
+        "source:debian/copyright"
+      ],
+      "responsibility": "Carries LGPL-3+ and third-party attribution/license boundaries for the Nimf framework and bundled Wayland/XIM-derived sources.",
+      "fabushi_canonical_owner": "Canonical License/Compliance",
+      "fabushi_target": "Preserve provenance/license obligations; do not copy upstream implementation merely to satisfy parity.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10519,
+      "source_path": "Telegram/ThirdParty/nimf::debian/git-build-recipe.manifest",
+      "source_blob_sha": "a6869a139add3d3361a878640b7f3dd891dc67d6",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "debian/git-build-recipe.manifest",
+        "object": "a6869a139add3d3361a878640b7f3dd891dc67d6",
+        "mode": "100644",
+        "type": "blob",
+        "size": 147,
+        "sha256": "022c4ffd24e12584eb05ad3a1746b781bf7d39972d197ac9232f904064e3594f"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf Debian package/release authority",
+      "source_symbols": [
+        "source:debian/git-build-recipe.manifest"
+      ],
+      "responsibility": "Pins historical source provenance for package construction.",
+      "fabushi_canonical_owner": "Canonical Packaging/Release/License",
+      "fabushi_target": "Map package/provenance discipline into Fabushi's existing release system; no Nimf packages/modules ship.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10520,
+      "source_path": "Telegram/ThirdParty/nimf::debian/libnimf1.install",
+      "source_blob_sha": "def65bced6f07280c81bd9029a1411440d732911",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "debian/libnimf1.install",
+        "object": "def65bced6f07280c81bd9029a1411440d732911",
+        "mode": "100644",
+        "type": "blob",
+        "size": 23,
+        "sha256": "4b0fd55c19bfb820f7107c97d922a8700a3c36ce1238d1fde4b7bdceb78c61ae"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf Debian package/release authority",
+      "source_symbols": [
+        "source:debian/libnimf1.install"
+      ],
+      "responsibility": "Assigns runtime, schemas, engine modules, plugins, headers and documentation to deterministic binary packages.",
+      "fabushi_canonical_owner": "Canonical Packaging/Release/License",
+      "fabushi_target": "Map package/provenance discipline into Fabushi's existing release system; no Nimf packages/modules ship.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10521,
+      "source_path": "Telegram/ThirdParty/nimf::debian/nimf-anthy.install",
+      "source_blob_sha": "7867ee0484a2087cffc9c2afb149e35fc055f721",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "debian/nimf-anthy.install",
+        "object": "7867ee0484a2087cffc9c2afb149e35fc055f721",
+        "mode": "100644",
+        "type": "blob",
+        "size": 153,
+        "sha256": "27f15b59b9aa3818258221b460e7ff82dd08e65ab9d47336eaa273c5c2db8af6"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf Debian package/release authority",
+      "source_symbols": [
+        "source:debian/nimf-anthy.install"
+      ],
+      "responsibility": "Assigns runtime, schemas, engine modules, plugins, headers and documentation to deterministic binary packages.",
+      "fabushi_canonical_owner": "Canonical Packaging/Release/License",
+      "fabushi_target": "Map package/provenance discipline into Fabushi's existing release system; no Nimf packages/modules ship.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10522,
+      "source_path": "Telegram/ThirdParty/nimf::debian/nimf-dev.install",
+      "source_blob_sha": "fcf99881f5e74bf68358a942f846b623afac9dfb",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "debian/nimf-dev.install",
+        "object": "fcf99881f5e74bf68358a942f846b623afac9dfb",
+        "mode": "100644",
+        "type": "blob",
+        "size": 71,
+        "sha256": "c0f71b56bf28dad2d27f811c340aefb9155966d6ec9956f158e5c5cf5a61295c"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf Debian package/release authority",
+      "source_symbols": [
+        "source:debian/nimf-dev.install"
+      ],
+      "responsibility": "Assigns runtime, schemas, engine modules, plugins, headers and documentation to deterministic binary packages.",
+      "fabushi_canonical_owner": "Canonical Packaging/Release/License",
+      "fabushi_target": "Map package/provenance discipline into Fabushi's existing release system; no Nimf packages/modules ship.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10523,
+      "source_path": "Telegram/ThirdParty/nimf::debian/nimf-libhangul.install",
+      "source_blob_sha": "c466602b2a1b7fb17d2379f018d290593283d3ee",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "debian/nimf-libhangul.install",
+        "object": "c466602b2a1b7fb17d2379f018d290593283d3ee",
+        "mode": "100644",
+        "type": "blob",
+        "size": 193,
+        "sha256": "d38a04c2553cd369a57f6eaded47ae0e337a2983c2ad36548ac4062fc34e8b1a"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf Debian package/release authority",
+      "source_symbols": [
+        "source:debian/nimf-libhangul.install"
+      ],
+      "responsibility": "Assigns runtime, schemas, engine modules, plugins, headers and documentation to deterministic binary packages.",
+      "fabushi_canonical_owner": "Canonical Packaging/Release/License",
+      "fabushi_target": "Map package/provenance discipline into Fabushi's existing release system; no Nimf packages/modules ship.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10524,
+      "source_path": "Telegram/ThirdParty/nimf::debian/nimf-m17n.install",
+      "source_blob_sha": "87d4aa3bd2382f9e9d455ca7134465de572734af",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "debian/nimf-m17n.install",
+        "object": "87d4aa3bd2382f9e9d455ca7134465de572734af",
+        "mode": "100644",
+        "type": "blob",
+        "size": 151,
+        "sha256": "f89e30e7fc0eaab2ff6c3b942aee5e9d51805630a6ec9ed77a47124961997511"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf Debian package/release authority",
+      "source_symbols": [
+        "source:debian/nimf-m17n.install"
+      ],
+      "responsibility": "Assigns runtime, schemas, engine modules, plugins, headers and documentation to deterministic binary packages.",
+      "fabushi_canonical_owner": "Canonical Packaging/Release/License",
+      "fabushi_target": "Map package/provenance discipline into Fabushi's existing release system; no Nimf packages/modules ship.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10525,
+      "source_path": "Telegram/ThirdParty/nimf::debian/nimf-rime.install",
+      "source_blob_sha": "ef241a0b4a1b469f12aeae7b0d6a64215cc915b5",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "debian/nimf-rime.install",
+        "object": "ef241a0b4a1b469f12aeae7b0d6a64215cc915b5",
+        "mode": "100644",
+        "type": "blob",
+        "size": 150,
+        "sha256": "a5dcd43683777deafc6074aab38e6c8dc462438802072dc0d2618f9d8f413610"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf Debian package/release authority",
+      "source_symbols": [
+        "source:debian/nimf-rime.install"
+      ],
+      "responsibility": "Assigns runtime, schemas, engine modules, plugins, headers and documentation to deterministic binary packages.",
+      "fabushi_canonical_owner": "Canonical Packaging/Release/License",
+      "fabushi_target": "Map package/provenance discipline into Fabushi's existing release system; no Nimf packages/modules ship.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10526,
+      "source_path": "Telegram/ThirdParty/nimf::debian/nimf.install",
+      "source_blob_sha": "b2090a268307616ca366790c8d1d5a09a3361715",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "debian/nimf.install",
+        "object": "b2090a268307616ca366790c8d1d5a09a3361715",
+        "mode": "100644",
+        "type": "blob",
+        "size": 633,
+        "sha256": "1ade22580b4c91e5596193803a0b4a66e32c0eaefe4e08bd4b8b75919f8a85f1"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf Debian package/release authority",
+      "source_symbols": [
+        "source:debian/nimf.install"
+      ],
+      "responsibility": "Assigns runtime, schemas, engine modules, plugins, headers and documentation to deterministic binary packages.",
+      "fabushi_canonical_owner": "Canonical Packaging/Release/License",
+      "fabushi_target": "Map package/provenance discipline into Fabushi's existing release system; no Nimf packages/modules ship.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10527,
+      "source_path": "Telegram/ThirdParty/nimf::debian/rules",
+      "source_blob_sha": "eb52292ee01b977ffb117bba9d7b5f1e07389aea",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "debian/rules",
+        "object": "eb52292ee01b977ffb117bba9d7b5f1e07389aea",
+        "mode": "100755",
+        "type": "blob",
+        "size": 780,
+        "sha256": "87409a4cd48925eafd59d554205815c8c65a805a67c2f4b615f80bd3f7c52931"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf Debian package/release authority",
+      "source_symbols": [
+        "source:debian/rules"
+      ],
+      "responsibility": "Defines autoreconf/configure/install packaging lifecycle and platform install-path adjustments.",
+      "fabushi_canonical_owner": "Canonical Packaging/Release/License",
+      "fabushi_target": "Map package/provenance discipline into Fabushi's existing release system; no Nimf packages/modules ship.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10528,
+      "source_path": "Telegram/ThirdParty/nimf::debian/source/format",
+      "source_blob_sha": "89ae9db8f88b823b6a7eabf55e203658739da122",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "debian/source/format",
+        "object": "89ae9db8f88b823b6a7eabf55e203658739da122",
+        "mode": "100644",
+        "type": "blob",
+        "size": 13,
+        "sha256": "e8e18df40bcd69d6aa404282679186d9b8256ac63a5b4e80d7f081e8a0095a2e"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf Debian package/release authority",
+      "source_symbols": [
+        "source:debian/source/format"
+      ],
+      "responsibility": "Carries Debian source format/compat/lint/package metadata.",
+      "fabushi_canonical_owner": "Canonical Packaging/Release/License",
+      "fabushi_target": "Map package/provenance discipline into Fabushi's existing release system; no Nimf packages/modules ship.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10529,
+      "source_path": "Telegram/ThirdParty/nimf::debian/source/lintian-overrides",
+      "source_blob_sha": "ec6fffb2c73fe85225b86abdfe65764c3dfce5ae",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "debian/source/lintian-overrides",
+        "object": "ec6fffb2c73fe85225b86abdfe65764c3dfce5ae",
+        "mode": "100644",
+        "type": "blob",
+        "size": 23,
+        "sha256": "766d42860fbbefbe11a31fb79692a585dd81cbd021bcc871ea094194e1493a1e"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf Debian package/release authority",
+      "source_symbols": [
+        "source:debian/source/lintian-overrides"
+      ],
+      "responsibility": "Carries Debian source format/compat/lint/package metadata.",
+      "fabushi_canonical_owner": "Canonical Packaging/Release/License",
+      "fabushi_target": "Map package/provenance discipline into Fabushi's existing release system; no Nimf packages/modules ship.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10530,
+      "source_path": "Telegram/ThirdParty/nimf::docs/Makefile.am",
+      "source_blob_sha": "bc99a96e7e6a7a14defdf55b11540d69103b3f59",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "docs/Makefile.am",
+        "object": "bc99a96e7e6a7a14defdf55b11540d69103b3f59",
+        "mode": "100644",
+        "type": "blob",
+        "size": 729,
+        "sha256": "3e1b36bf76127ac11bcc5a10341e2b0d688541c9071723d8c17c5de97d38953f"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf API documentation build",
+      "source_symbols": [
+        "source:docs/Makefile.am"
+      ],
+      "responsibility": "Generates GTK-Doc API documentation from the public libnimf/server/settings source while excluding private implementation headers.",
+      "fabushi_canonical_owner": "Canonical Build/Documentation Quality",
+      "fabushi_target": "Treat generated API docs as source-reading support, not as a shipping implementation.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10531,
+      "source_path": "Telegram/ThirdParty/nimf::docs/html/NimfCandidatable.html",
+      "source_blob_sha": "2843af773327137070e86c9237a107ba0078309c",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "docs/html/NimfCandidatable.html",
+        "object": "2843af773327137070e86c9237a107ba0078309c",
+        "mode": "100644",
+        "type": "blob",
+        "size": 36466,
+        "sha256": "c77b55ffab530720432ddc16625ebbfdeb35a84858f893117e487cd16e3be46e"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf generated API/state-machine documentation",
+      "source_symbols": [
+        "source:docs/html/NimfCandidatable.html"
+      ],
+      "responsibility": "Defines candidate-list visibility, auxiliary text, paging, selection movement/by-index, selected text/index and candidate target ownership.",
+      "fabushi_canonical_owner": "Canonical Composer/Platform Input + Accessibility",
+      "fabushi_target": "Existing Fabushi PromptRichTextEditor already owns DOM compositionstart/update/end, event.isComposing + internal-state submit fencing, focus/preedit lifecycle, old-scope final-input fencing and native input-source status; keep Chromium/platform adapters as the sole IME owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10532,
+      "source_path": "Telegram/ThirdParty/nimf::docs/html/NimfEngine.html",
+      "source_blob_sha": "6b2a7a863313e6ffaf675ab6f97bb4f94c7884ff",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "docs/html/NimfEngine.html",
+        "object": "6b2a7a863313e6ffaf675ab6f97bb4f94c7884ff",
+        "mode": "100644",
+        "type": "blob",
+        "size": 46672,
+        "sha256": "509f114f4c7b79fe361b366ef6c32bccabfeda58af2d1d16a473ba0a26fe5e54"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf generated API/state-machine documentation",
+      "source_symbols": [
+        "source:docs/html/NimfEngine.html"
+      ],
+      "responsibility": "Defines engine event filtering, focus/reset, surrounding-text/cursor state, method changes and engine status lifecycle.",
+      "fabushi_canonical_owner": "Canonical Composer/Platform Input + Accessibility",
+      "fabushi_target": "Existing Fabushi PromptRichTextEditor already owns DOM compositionstart/update/end, event.isComposing + internal-state submit fencing, focus/preedit lifecycle, old-scope final-input fencing and native input-source status; keep Chromium/platform adapters as the sole IME owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10533,
+      "source_path": "Telegram/ThirdParty/nimf::docs/html/NimfIM.html",
+      "source_blob_sha": "4ee7ec38188f30c2e77f831c1defb770b5ff2edc",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "docs/html/NimfIM.html",
+        "object": "4ee7ec38188f30c2e77f831c1defb770b5ff2edc",
+        "mode": "100644",
+        "type": "blob",
+        "size": 32672,
+        "sha256": "c5898ee77be7ee0168908dd3f67545c1f53aa93527868b543aa8908f209100c2"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf generated API/state-machine documentation",
+      "source_symbols": [
+        "source:docs/html/NimfIM.html"
+      ],
+      "responsibility": "Defines input-context focus/filter/reset/cursor/surrounding/use-preedit behavior plus preedit, commit, retrieve/delete-surrounding and beep signals.",
+      "fabushi_canonical_owner": "Canonical Composer/Platform Input + Accessibility",
+      "fabushi_target": "Existing Fabushi PromptRichTextEditor already owns DOM compositionstart/update/end, event.isComposing + internal-state submit fencing, focus/preedit lifecycle, old-scope final-input fencing and native input-source status; keep Chromium/platform adapters as the sole IME owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10534,
+      "source_path": "Telegram/ThirdParty/nimf::docs/html/NimfPreeditable.html",
+      "source_blob_sha": "929c3418ce512d13e102f2c845a75f9147c77d74",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "docs/html/NimfPreeditable.html",
+        "object": "929c3418ce512d13e102f2c845a75f9147c77d74",
+        "mode": "100644",
+        "type": "blob",
+        "size": 15901,
+        "sha256": "d09a126f51c6580f3248a35a6039917b85440bb5fcda133e072dd7df41743533"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf generated API/state-machine documentation",
+      "source_symbols": [
+        "source:docs/html/NimfPreeditable.html"
+      ],
+      "responsibility": "Defines preedit presentation show/hide/visibility/text/cursor lifecycle.",
+      "fabushi_canonical_owner": "Canonical Composer/Platform Input + Accessibility",
+      "fabushi_target": "Existing Fabushi PromptRichTextEditor already owns DOM compositionstart/update/end, event.isComposing + internal-state submit fencing, focus/preedit lifecycle, old-scope final-input fencing and native input-source status; keep Chromium/platform adapters as the sole IME owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10535,
+      "source_path": "Telegram/ThirdParty/nimf::docs/html/NimfServer.html",
+      "source_blob_sha": "a8ec8d367a4bd73b890067dc46d3227b20928bfa",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "docs/html/NimfServer.html",
+        "object": "a8ec8d367a4bd73b890067dc46d3227b20928bfa",
+        "mode": "100644",
+        "type": "blob",
+        "size": 20344,
+        "sha256": "2e691e10ea284a4b02f62ff3b5786d24e582b880529ccd09c19ec08a034e91c5"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf generated API/state-machine documentation",
+      "source_symbols": [
+        "source:docs/html/NimfServer.html"
+      ],
+      "responsibility": "Defines loaded-engine inventory/change lifecycle, shared preedit owner and engine changed/loaded/status/unloaded signals.",
+      "fabushi_canonical_owner": "Canonical Composer/Platform Input + Accessibility",
+      "fabushi_target": "Existing Fabushi PromptRichTextEditor already owns DOM compositionstart/update/end, event.isComposing + internal-state submit fencing, focus/preedit lifecycle, old-scope final-input fencing and native input-source status; keep Chromium/platform adapters as the sole IME owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10536,
+      "source_path": "Telegram/ThirdParty/nimf::docs/html/NimfService.html",
+      "source_blob_sha": "cdd3b5d92ddec25970e244b9adfa61441222a435",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "docs/html/NimfService.html",
+        "object": "cdd3b5d92ddec25970e244b9adfa61441222a435",
+        "mode": "100644",
+        "type": "blob",
+        "size": 15253,
+        "sha256": "38f6c8af1ef5edef7a6d7e2ddb973e910afa671438eeebd8acc8e832b1abe49b"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf generated API/state-machine documentation",
+      "source_symbols": [
+        "source:docs/html/NimfService.html"
+      ],
+      "responsibility": "Defines service start/stop/active/id and engine-change lifecycle.",
+      "fabushi_canonical_owner": "Canonical Composer/Platform Input + Accessibility",
+      "fabushi_target": "Existing Fabushi PromptRichTextEditor already owns DOM compositionstart/update/end, event.isComposing + internal-state submit fencing, focus/preedit lifecycle, old-scope final-input fencing and native input-source status; keep Chromium/platform adapters as the sole IME owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10537,
+      "source_path": "Telegram/ThirdParty/nimf::docs/html/NimfServiceIC.html",
+      "source_blob_sha": "0ff7624d56fcea54a4329bd59927de9f8fc9555a",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "docs/html/NimfServiceIC.html",
+        "object": "0ff7624d56fcea54a4329bd59927de9f8fc9555a",
+        "mode": "100644",
+        "type": "blob",
+        "size": 39802,
+        "sha256": "4b56a38dad18f71f304b6606142d0a07e9b58576cdf4684d22c7d370b3260cd1"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf generated API/state-machine documentation",
+      "source_symbols": [
+        "source:docs/html/NimfServiceIC.html"
+      ],
+      "responsibility": "Defines per-input-context focus, event consumption, surrounding text, cursor, reset, engine changes and preedit/commit/delete/retrieve/beep emissions.",
+      "fabushi_canonical_owner": "Canonical Composer/Platform Input + Accessibility",
+      "fabushi_target": "Existing Fabushi PromptRichTextEditor already owns DOM compositionstart/update/end, event.isComposing + internal-state submit fencing, focus/preedit lifecycle, old-scope final-input fencing and native input-source status; keep Chromium/platform adapters as the sole IME owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10538,
+      "source_path": "Telegram/ThirdParty/nimf::docs/html/abstract-classes.html",
+      "source_blob_sha": "945c730716e06024e29f43d115c48a1c80ecdecb",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "docs/html/abstract-classes.html",
+        "object": "945c730716e06024e29f43d115c48a1c80ecdecb",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2053,
+        "sha256": "5d4a828871331bf7031b22d3650f2101476ae7af0b7a3cb9d19e2e49f27a07b3"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf generated API/state-machine documentation",
+      "source_symbols": [
+        "source:docs/html/abstract-classes.html"
+      ],
+      "responsibility": "Indexes or describes the generated Nimf public API/type/signal surface.",
+      "fabushi_canonical_owner": "Canonical Composer/Platform Input + Accessibility",
+      "fabushi_target": "Existing Fabushi PromptRichTextEditor already owns DOM compositionstart/update/end, event.isComposing + internal-state submit fencing, focus/preedit lifecycle, old-scope final-input fencing and native input-source status; keep Chromium/platform adapters as the sole IME owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10539,
+      "source_path": "Telegram/ThirdParty/nimf::docs/html/annotation-glossary.html",
+      "source_blob_sha": "7214dea14d0d56e4b0fb8ed8ce46fc0c6a90a06b",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "docs/html/annotation-glossary.html",
+        "object": "7214dea14d0d56e4b0fb8ed8ce46fc0c6a90a06b",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2987,
+        "sha256": "cf8afe0fa541d4eb541cff7e4506ccc5f0299ca5eb26f0542b94f60be074554e"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf generated API/state-machine documentation",
+      "source_symbols": [
+        "source:docs/html/annotation-glossary.html"
+      ],
+      "responsibility": "Indexes or describes the generated Nimf public API/type/signal surface.",
+      "fabushi_canonical_owner": "Canonical Composer/Platform Input + Accessibility",
+      "fabushi_target": "Existing Fabushi PromptRichTextEditor already owns DOM compositionstart/update/end, event.isComposing + internal-state submit fencing, focus/preedit lifecycle, old-scope final-input fencing and native input-source status; keep Chromium/platform adapters as the sole IME owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10540,
+      "source_path": "Telegram/ThirdParty/nimf::docs/html/api-index-full.html",
+      "source_blob_sha": "efbd8150b45599e2bdf35acbe76185f53de3ef8c",
+      "source_identity": {
+        "repository": "hamonikr/nimf",
+        "commit": "498ec7ffab3ac140c2469638a14451788f03e798",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/nimf",
+        "path": "docs/html/api-index-full.html",
+        "object": "efbd8150b45599e2bdf35acbe76185f53de3ef8c",
+        "mode": "100644",
+        "type": "blob",
+        "size": 33301,
+        "sha256": "4bc5bbd747717c854fc46fbafa8cd17b22e32b9c83370916cedb65877543c1de"
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "Nimf generated API/state-machine documentation",
+      "source_symbols": [
+        "source:docs/html/api-index-full.html"
+      ],
+      "responsibility": "Indexes or describes the generated Nimf public API/type/signal surface.",
+      "fabushi_canonical_owner": "Canonical Composer/Platform Input + Accessibility",
+      "fabushi_target": "Existing Fabushi PromptRichTextEditor already owns DOM compositionstart/update/end, event.isComposing + internal-state submit fencing, focus/preedit lifecycle, old-scope final-input fencing and native input-source status; keep Chromium/platform adapters as the sole IME owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    }
+  ]
+}

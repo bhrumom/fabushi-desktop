@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { checkRecursiveInventory, checkSourceDispositionPrefix } from './tdrp-recursive-inventory-contract.mjs';
 
 const root = process.cwd();
 const requireAccepted = process.argv.includes('--require-accepted');
@@ -8,12 +9,32 @@ const fail = (ok, msg) => { if (!ok) throw new Error(msg); };
 const read = p => fs.readFile(path.join(root,p),'utf8');
 const readJson = async p => JSON.parse(await read(p));
 
-async function get(url, json=true) {
+const getCache = new Map();
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+async function getUncached(url, json=true) {
   const headers={'User-Agent':'fabushi-tdrp-r9-gate','Accept':'application/vnd.github+json'};
   if (process.env.GITHUB_TOKEN && url.startsWith('https://api.github.com/')) headers.Authorization='Bearer '+process.env.GITHUB_TOKEN;
-  const r=await fetch(url,{headers});
-  fail(r.ok,`GET ${url} -> ${r.status}`);
-  return json ? r.json() : r.text();
+  for (let attempt=0; attempt<4; attempt++) {
+    const r=await fetch(url,{headers});
+    if (r.ok) return json ? r.json() : r.text();
+    const retryable = r.status===403 || r.status===429 || r.status>=500;
+    if (!retryable || attempt===3) {
+      const detail=(await r.text()).slice(0,500);
+      throw new Error(`GET ${url} -> ${r.status}${detail ? `: ${detail}` : ''}`);
+    }
+    const retryAfter=Number(r.headers.get('retry-after'));
+    const delay=Number.isFinite(retryAfter) && retryAfter>0
+      ? Math.min(retryAfter*1000, 30000)
+      : 1000*(2**attempt);
+    await sleep(delay);
+  }
+  throw new Error(`GET ${url} exhausted retries`);
+}
+function get(url, json=true) {
+  const key=(json ? 'json:' : 'text:')+url;
+  if (!getCache.has(key)) getCache.set(key,getUncached(url,json));
+  return getCache.get(key);
 }
 const ghTree=(repo,sha)=>get(`https://api.github.com/repos/${repo}/git/trees/${sha}?recursive=1`);
 function parseGitmodules(raw) {
@@ -62,17 +83,131 @@ async function gitlabRaw(project, sha, file) {
 const lock=await readJson('projects/telegram-desktop-rust/upstream.lock.json');
 const schema=await readJson('projects/telegram-desktop-rust/contracts/parity-ledger.schema.json');
 const spec=await read('docs/specs/telegram-desktop-rust-equivalence-migration.md');
+const fbcSourceOfTruth=await read('projects/fabushi-communication-platform/SOURCE_OF_TRUTH.md');
+const tdrpSourceOfTruth=await read('projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md');
+const tdrpStatus=await read('projects/telegram-desktop-rust/STATUS.md');
+const p0Task=await read('projects/fabushi-communication-platform/management/tasks/P0-product-domain-and-telegram-absorption.md');
+const inventoryIndex=await readJson('projects/telegram-desktop-rust/inventory/index.json');
 const rtm=await read('projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md');
 const ledger=await readJson('projects/telegram-desktop-rust/parity-ledger.json');
 const acquisitionInventory=await readJson('projects/telegram-desktop-rust/inventory/build-time-acquisitions.json');
+const sourceDispositionsIndex=await readJson('projects/telegram-desktop-rust/inventory/source-dispositions.json');
+const sourceDispositions=await (async () => {
+  const shards=sourceDispositionsIndex.shards;
+  if (!Array.isArray(shards)) return {...sourceDispositionsIndex,shardAuthorities:[]};
+  const rows=[];
+  const shardAuthorities=[];
+  let expectedOrder=1;
+  for (const shardRef of shards) {
+    fail(typeof shardRef?.path==='string' && shardRef.path.length>0,'source-dispositions shard path missing');
+    const shard=await readJson(shardRef.path);
+    fail(/^[0-9a-f]{40}$/.test(shard.upstream?.commit||'') && /^[0-9a-f]{40}$/.test(shard.upstream?.tree||''),'source-dispositions shard provenance identity malformed: '+shardRef.path);
+    shardAuthorities.push({path:shardRef.path,commit:shard.upstream.commit,tree:shard.upstream.tree});
+    fail(shard.range?.first_order===expectedOrder,'source-dispositions shard order gap: '+shardRef.path);
+    fail(shard.range?.last_order===shardRef.last_order && shard.range?.first_order===shardRef.first_order,'source-dispositions shard range drift: '+shardRef.path);
+    fail(Array.isArray(shard.rows) && shard.rows.length===shard.range.entries,'source-dispositions shard row count drift: '+shardRef.path);
+    for (const row of shard.rows) {
+      fail(row.recursive_order===expectedOrder,'source-dispositions shard row order drift: '+shardRef.path);
+      rows.push(row);
+      expectedOrder += 1;
+    }
+  }
+  fail(expectedOrder-1===sourceDispositionsIndex.deterministic_recursive_prefix?.last_order,'source-dispositions sharded prefix incomplete');
+  return {...sourceDispositionsIndex,rows,shardAuthorities};
+})();
+const sourceDispositionRebaseline=sourceDispositionsIndex.rebaseline_overrides?.path
+  ? await readJson(sourceDispositionsIndex.rebaseline_overrides.path)
+  : null;
 
 fail(lock.project_id==='TDRP-001' && lock.spec_revision===9,'lock is not TDRP Revision 9');
+const authorityCommit=lock.upstream?.commit;
+const authorityTree=lock.upstream?.tree;
+fail(/^[0-9a-f]{40}$/.test(authorityCommit||''),'lock upstream commit is not exact');
+fail(/^[0-9a-f]{40}$/.test(authorityTree||''),'lock upstream tree is not exact');
+const acceptedAncestorCache=new Map();
+async function acceptedAncestorTree(commit,label) {
+  if (acceptedAncestorCache.has(commit)) return acceptedAncestorCache.get(commit);
+  const promise=(async () => {
+    fail(/^[0-9a-f]{40}$/.test(commit||''),label+' provenance commit is not exact');
+    const object=await get(`https://api.github.com/repos/${lock.upstream.repository}/git/commits/${commit}`);
+    const tree=object.tree?.sha;
+    fail(/^[0-9a-f]{40}$/.test(tree||''),label+' provenance tree is not exact');
+    if (commit!==authorityCommit) {
+      const comparison=await get(`https://api.github.com/repos/${lock.upstream.repository}/compare/${commit}...${authorityCommit}`);
+      fail(comparison.merge_base_commit?.sha===commit && comparison.status==='ahead',
+        label+' provenance commit is not an ancestor of accepted authority');
+    } else {
+      fail(tree===authorityTree,label+' accepted authority tree drift');
+    }
+    return tree;
+  })();
+  acceptedAncestorCache.set(commit,promise);
+  return promise;
+}
+for (const shardAuthority of sourceDispositions.shardAuthorities||[]) {
+  const tree=await acceptedAncestorTree(shardAuthority.commit,'source-dispositions shard '+shardAuthority.path);
+  fail(tree===shardAuthority.tree,'source-dispositions shard provenance tree drift: '+shardAuthority.path);
+}
+const authorityDocs=[
+  ['FBCP SOURCE_OF_TRUTH',fbcSourceOfTruth],
+  ['TDRP SOURCE_OF_TRUTH',tdrpSourceOfTruth],
+  ['P0 task',p0Task],
+  ['TDRP spec',spec],
+];
+for (const [label,document] of authorityDocs) {
+  fail(document.includes(authorityCommit),label+' commit authority differs from lock');
+  fail(document.includes(authorityTree),label+' root-tree authority differs from lock');
+  const authorityPair = document
+    .split(/\n/)
+    .some(line => line.includes(authorityCommit) && line.includes(authorityTree));
+  fail(authorityPair,label+' does not bind the live commit and root tree on one authority statement');
+}
+fail(inventoryIndex.upstream?.commit===authorityCommit,'inventory index upstream commit drift');
+fail(inventoryIndex.upstream?.tree===authorityTree,'inventory index upstream tree drift');
+fail(inventoryIndex.rebaseline?.to_commit===authorityCommit,'inventory rebaseline target differs from live authority');
+fail(inventoryIndex.inventory?.root_non_directory_entries===lock.coverage.root_source_entries_total,'inventory root source count disagrees with lock');
+fail(inventoryIndex.inventory?.recursive_non_directory_entries===lock.coverage.recursive_source_entries_total,'inventory recursive source count disagrees with lock');
+fail(inventoryIndex.inventory?.unknown_minimum===lock.coverage.unknown_minimum,'inventory unknown count disagrees with lock');
+fail(inventoryIndex.inventory?.unread_minimum===lock.coverage.unread_minimum,'inventory unread count disagrees with lock');
+fail(inventoryIndex.inventory?.omitted_known===lock.coverage.omitted_known,'inventory omitted count disagrees with lock');
+const liveReadThrough=inventoryIndex.rebaseline?.current_source_read_through;
+const liveFirstUnreadOrder=inventoryIndex.rebaseline?.first_unread_order;
+const liveFirstUnreadPath=inventoryIndex.rebaseline?.first_unread_path;
+const liveUnread=lock.coverage?.unread_minimum;
+const liveUnknown=lock.coverage?.unknown_minimum;
+const liveOmitted=lock.coverage?.omitted_known;
+const comma=value=>Number(value).toLocaleString('en-US');
+const currentMarker=/<!-- TDRP_CURRENT_SUMMARY read-through=([0-9]+) unread=([0-9]+) unknown=([0-9]+) omitted=([0-9]+) first-unread=([0-9]+) path=([^ ]+) -->/g;
+function validateCurrentSummary(label,document) {
+  const first=document.split(/\n/).find(line=>line.startsWith('Live Revision 9 authority'));
+  fail(typeof first==='string',label+' missing live Revision 9 summary');
+  for (const fragment of [
+    authorityCommit, authorityTree,
+    'read-through='+comma(liveReadThrough),
+    'first unread='+comma(liveFirstUnreadOrder)+' '+liveFirstUnreadPath,
+    'unread='+comma(liveUnread), 'unknown='+comma(liveUnknown), 'omitted='+comma(liveOmitted),
+  ]) fail(first.includes(fragment),label+' live summary drift: '+fragment);
+  const markers=[...document.matchAll(currentMarker)];
+  fail(markers.length===1,label+' must contain exactly one TDRP_CURRENT_SUMMARY marker');
+  const marker=markers[0];
+  fail(Number(marker[1])===liveReadThrough,label+' marker read-through drift');
+  fail(Number(marker[2])===liveUnread,label+' marker unread drift');
+  fail(Number(marker[3])===liveUnknown,label+' marker unknown drift');
+  fail(Number(marker[4])===liveOmitted,label+' marker omitted drift');
+  fail(Number(marker[5])===liveFirstUnreadOrder,label+' marker first-unread order drift');
+  fail(marker[6]===liveFirstUnreadPath,label+' marker first-unread path drift');
+}
+validateCurrentSummary('TDRP STATUS',tdrpStatus);
+validateCurrentSummary('TDRP SOURCE_OF_TRUTH',tdrpSourceOfTruth);
+const expectedCoverageNote='Accepted '+authorityCommit+' tree '+authorityTree+'; exact read-through '+comma(liveReadThrough)+'; unknown='+comma(liveUnknown)+', unread='+comma(liveUnread)+', omitted='+comma(liveOmitted)+'.';
+fail(lock.coverage?.note===expectedCoverageNote,'lock coverage live-summary note drift');
+fail(!lock.coverage?.note?.includes('live authority is now telegramdesktop/tdesktop@e1ed57a44e7c14e0cbb91bcf0f7ec3e408786a39'),'lock coverage note still names historical e1ed57a as live authority');
 fail(schema.properties?.spec_revision?.const===9,'ledger schema is not Revision 9');
 fail(ledger.project_id==='TDRP-001' && ledger.spec_revision===9 && ledger.format_version===3,'ledger instance is not Revision 9');
 fail(ledger.upstream_commit===lock.upstream.commit,'ledger upstream commit does not match accepted baseline identity');
 fail(ledger.coverage?.source_entries_total===lock.coverage.recursive_source_entries_total,'ledger recursive source count does not match lock');
-fail(ledger.coverage?.unknown>=lock.coverage.unknown_minimum,'ledger unknown count understates lock minimum');
-fail(ledger.coverage?.unread>=lock.coverage.unread_minimum,'ledger unread count understates lock minimum');
+fail(ledger.coverage?.unknown===lock.coverage.unknown_minimum,'ledger unknown count disagrees with lock');
+fail(ledger.coverage?.unread===lock.coverage.unread_minimum,'ledger unread count disagrees with lock');
 fail(ledger.coverage?.omitted===lock.coverage.omitted_known,'ledger omitted count disagrees with lock');
 fail(Array.isArray(ledger.rows),'ledger rows must be an array');
 fail(acquisitionInventory.project_id==='TDRP-001' && acquisitionInventory.spec_revision===9,'build-time acquisition inventory is not Revision 9');
@@ -109,6 +244,100 @@ for (const acquisition of acquisitionInventory.immutable_commit_pin_occurrences 
   fail(raw.includes(acquisition.repository),'acquisition repository missing at accepted upstream: '+acquisition.id);
   fail(raw.includes(acquisition.commit),'acquisition commit missing at accepted upstream: '+acquisition.id);
 }
+const actionResolution=acquisitionInventory.github_action_ref_resolutions;
+fail(actionResolution?.accepted_upstream===lock.upstream.commit,'GitHub Action resolver upstream authority drift');
+fail(Array.isArray(actionResolution?.resolutions),'GitHub Action resolver occurrences missing');
+const mutableActionResolutions=actionResolution.resolutions.filter(item=>item.reference_kind==='mutable-ref-resolved-snapshot');
+const actionAuthority=acquisitionInventory.github_action_immutable_authority;
+fail(actionAuthority?.status==='complete-current-top-level-mutable-action-authority-bindings','mutable GitHub Action immutable authority is incomplete');
+fail(actionAuthority.accepted_upstream===lock.upstream.commit,'mutable GitHub Action binding upstream authority drift');
+fail(Array.isArray(actionAuthority.bindings),'mutable GitHub Action bindings missing');
+fail(actionAuthority.mutable_occurrences===mutableActionResolutions.length,'mutable GitHub Action binding occurrence count drift');
+fail(actionAuthority.bindings.length===mutableActionResolutions.length,'mutable GitHub Action bindings do not cover every mutable occurrence');
+fail(actionAuthority.unbound_occurrences===0,'mutable GitHub Action occurrences remain unbound');
+fail(lock.build_time_acquisition_inventory.github_action_immutable_binding_occurrences===actionAuthority.bindings.length,'lock mutable GitHub Action binding occurrence count drift');
+const actionBindingKey=item=>[
+  item.source_path,
+  item.source_line,
+  item.repository,
+  item.action_path||'',
+  item.mutable_ref||item.ref,
+].join(':');
+const mutableResolutionByKey=new Map();
+for (const resolution of mutableActionResolutions) {
+  const key=actionBindingKey(resolution);
+  fail(!mutableResolutionByKey.has(key),'duplicate mutable GitHub Action resolver occurrence: '+key);
+  mutableResolutionByKey.set(key,resolution);
+}
+const actionBindingKeys=new Set();
+const actionBindingUniqueRefs=new Set();
+for (const binding of actionAuthority.bindings) {
+  const key=actionBindingKey(binding);
+  fail(!actionBindingKeys.has(key),'duplicate mutable GitHub Action authority binding: '+key);
+  actionBindingKeys.add(key);
+  const resolution=mutableResolutionByKey.get(key);
+  fail(Boolean(resolution),'mutable GitHub Action binding has no matching resolver occurrence: '+key);
+  fail(binding.raw===resolution.raw,'mutable GitHub Action binding raw source drift: '+key);
+  fail(binding.authority_kind==='fabushi-immutable-override-binding','mutable GitHub Action binding authority kind drift: '+key);
+  fail(binding.source_ref_remains_mutable===true,'mutable GitHub Action binding must explicitly retain source mutability: '+key);
+  fail(/^[0-9a-f]{40}$/.test(binding.authority_commit||''),'mutable GitHub Action binding is not an exact commit: '+key);
+  fail(binding.authority_commit===resolution.resolved_commit,'mutable GitHub Action binding commit differs from resolver evidence: '+key);
+  const sourceUrl='https://raw.githubusercontent.com/'+lock.upstream.repository+'/'+lock.upstream.commit+'/'+binding.source_path;
+  const sourceRaw=await get(sourceUrl,false);
+  const sourceLine=sourceRaw.split(/\r?\n/)[binding.source_line-1]||'';
+  const target=binding.repository+(binding.action_path ? '/'+binding.action_path : '')+'@'+binding.mutable_ref;
+  fail(sourceLine.includes('uses:')&&sourceLine.includes(target),'mutable GitHub Action source occurrence drift: '+key);
+  actionBindingUniqueRefs.add(binding.repository+'@'+binding.mutable_ref);
+}
+fail(actionBindingKeys.size===mutableResolutionByKey.size,'mutable GitHub Action authority does not exactly cover resolver occurrences');
+fail(actionAuthority.mutable_unique_refs===actionBindingUniqueRefs.size,'mutable GitHub Action unique binding count drift');
+fail(lock.build_time_acquisition_inventory.github_action_immutable_binding_unique_refs===actionBindingUniqueRefs.size,'lock mutable GitHub Action unique binding count drift');
+fail(lock.build_time_acquisition_inventory.github_action_mutable_unbound_occurrences===0,'lock reports unbound mutable GitHub Action occurrences');
+
+const cloneResolution=acquisitionInventory.github_clone_ref_resolutions;
+fail(cloneResolution?.accepted_upstream===lock.upstream.commit,'GitHub clone resolver upstream authority drift');
+fail(Array.isArray(cloneResolution?.resolutions),'GitHub clone resolver occurrences missing');
+fail((cloneResolution.unresolved||[]).length===0,'GitHub clone resolver still has unresolved occurrences');
+const cloneAuthority=acquisitionInventory.github_clone_immutable_authority;
+fail(cloneAuthority?.status==='complete-current-literal-github-clone-authority-bindings','literal GitHub clone immutable authority is incomplete');
+fail(cloneAuthority.accepted_upstream===lock.upstream.commit,'GitHub clone binding upstream authority drift');
+fail(Array.isArray(cloneAuthority.bindings),'GitHub clone bindings missing');
+fail(cloneAuthority.mutable_occurrences===cloneResolution.resolutions.length,'GitHub clone binding occurrence count drift');
+fail(cloneAuthority.bindings.length===cloneResolution.resolutions.length,'GitHub clone bindings do not cover every resolved occurrence');
+fail(cloneAuthority.unbound_occurrences===0,'literal GitHub clone occurrences remain unbound');
+fail(lock.build_time_acquisition_inventory.github_clone_immutable_binding_occurrences===cloneAuthority.bindings.length,'lock GitHub clone binding occurrence count drift');
+const cloneBindingKey=item=>[item.source_path,item.source_line,item.repository,item.mutable_ref||item.ref].join(':');
+const cloneResolutionByKey=new Map();
+for (const resolution of cloneResolution.resolutions) {
+  const key=cloneBindingKey(resolution);
+  fail(resolution.status==='resolved-snapshot-source-ref-still-mutable','GitHub clone resolver status drift: '+key);
+  fail(!cloneResolutionByKey.has(key),'duplicate GitHub clone resolver occurrence: '+key);
+  cloneResolutionByKey.set(key,resolution);
+}
+const cloneBindingKeys=new Set();
+const cloneBindingUniqueRefs=new Set();
+for (const binding of cloneAuthority.bindings) {
+  const key=cloneBindingKey(binding);
+  fail(!cloneBindingKeys.has(key),'duplicate GitHub clone authority binding: '+key);
+  cloneBindingKeys.add(key);
+  const resolution=cloneResolutionByKey.get(key);
+  fail(Boolean(resolution),'GitHub clone binding has no matching resolver occurrence: '+key);
+  fail(binding.raw===resolution.raw,'GitHub clone binding raw source drift: '+key);
+  fail(binding.authority_kind==='fabushi-immutable-clone-override-binding','GitHub clone binding authority kind drift: '+key);
+  fail(binding.source_ref_remains_mutable===true,'GitHub clone binding must explicitly retain source mutability: '+key);
+  fail(/^[0-9a-f]{40}$/.test(binding.authority_commit||''),'GitHub clone binding is not an exact commit: '+key);
+  fail(binding.authority_commit===resolution.resolved_commit,'GitHub clone binding commit differs from resolver evidence: '+key);
+  const sourceUrl='https://raw.githubusercontent.com/'+lock.upstream.repository+'/'+lock.upstream.commit+'/'+binding.source_path;
+  const sourceRaw=await get(sourceUrl,false);
+  const sourceLine=sourceRaw.split(/\r?\n/)[binding.source_line-1]||'';
+  fail(sourceLine.includes('git clone')&&sourceLine.includes('-b '+binding.mutable_ref)&&sourceLine.includes('github.com/'+binding.repository),'GitHub clone source occurrence drift: '+key);
+  cloneBindingUniqueRefs.add(binding.repository+'@'+binding.mutable_ref);
+}
+fail(cloneBindingKeys.size===cloneResolutionByKey.size,'GitHub clone authority does not exactly cover resolver occurrences');
+fail(cloneAuthority.mutable_unique_refs===cloneBindingUniqueRefs.size,'GitHub clone unique binding count drift');
+fail(lock.build_time_acquisition_inventory.github_clone_immutable_binding_unique_refs===cloneBindingUniqueRefs.size,'lock GitHub clone unique binding count drift');
+fail(lock.build_time_acquisition_inventory.github_clone_mutable_unbound_occurrences===0,'lock reports unbound GitHub clone occurrences');
+
 const recursiveChildren=acquisitionInventory.recursive_child_inputs || [];
 fail(recursiveChildren.length===lock.build_time_acquisition_inventory.recursive_child_input_occurrences_recorded,'recursive child occurrence count drift');
 const externalScans=acquisitionInventory.external_nested_scans || [];
@@ -147,9 +376,9 @@ const qtReachability=recursiveReachability.qt_superproject;
 fail(qtReachability?.repository==='https://github.com/qt/qt5','Qt reachability authority missing');
 const qtEvidenceByPath=new Map((qtReachability.accepted_upstream_evidence||[]).map(item=>[item.path,item]));
 const expectedQtEvidence=[
-  ['Telegram/build/prepare/prepare.py','9482a53e60386743ae797d75cecc36767cd63646'],
-  ['Telegram/build/docker/centos_env/Dockerfile','5516c448c628d5928d690687ed948d67b5cdaac3'],
-  ['snap/snapcraft.yaml','5cff7cf59aedc430b0a9a2d6d66ab6fe3c29bd9f']
+  ['Telegram/build/prepare/prepare.py','1248e5e6405325dc74fb4f9d211ecddebcf89752'],
+  ['Telegram/build/docker/centos_env/Dockerfile','e6d22fce93363f059e6929bb30f541549065a6c4'],
+  ['snap/snapcraft.yaml','1c37daafffa537bf4861d567e39d9e29026e4426']
 ];
 for (const [sourcePath,blob] of expectedQtEvidence) {
   const evidence=qtEvidenceByPath.get(sourcePath);
@@ -186,7 +415,7 @@ fail(qtRootPolicy.some(rule=>rule.path_exact==='cmake/QtIRGitHelpers.cmake'&&rul
 
 const tgOwtReachability=recursiveReachability.tg_owt;
 fail(tgOwtReachability?.repository==='https://github.com/desktop-app/tg_owt','tg_owt reachability authority missing');
-fail(tgOwtReachability.commit==='e2d0e88d1bde6cc600da5dc92581dc97e4c1e685','tg_owt reachability commit drift');
+fail(tgOwtReachability.commit==='d1cf250ea73de26c4c1f0a3c8173eb2648efbb04','tg_owt reachability commit drift');
 fail(tgOwtReachability.root_candidate_policy_status==='complete-for-current-tg-owt-authority','tg_owt root candidate policy is not fail-closed complete');
 const tgOwtPolicy=tgOwtReachability.root_candidate_disposition_policy||[];
 for (const [kind,value,disposition] of [
@@ -199,11 +428,11 @@ for (const [kind,value,disposition] of [
 const prepareTgOwtStage=prepareQt.match(/stage\('tg_owt',[\s\S]*?\n"""\)/)?.[0]||'';
 const dockerTgOwtStage=dockerQt.match(/git init tg_owt[\s\S]*?rm -rf tg_owt/)?.[0]||'';
 const snapTgOwtStage=snapQt.match(/\n  webrtc:\n[\s\S]*?\n  tlottie:/)?.[0]||snapQt.match(/\n  webrtc:\n[\s\S]*$/)?.[0]||'';
-fail(prepareTgOwtStage.includes('git checkout e2d0e88d1bde6cc600da5dc92581dc97e4c1e685'),'accepted prepare.py tg_owt pin drift');
+fail(prepareTgOwtStage.includes('git checkout d1cf250ea73de26c4c1f0a3c8173eb2648efbb04'),'accepted prepare.py tg_owt pin drift');
 fail(prepareTgOwtStage.includes('git submodule update --init --recursive'),'accepted prepare.py tg_owt recursive submodule build drift');
-fail(dockerTgOwtStage.includes('git fetch --depth=1 origin e2d0e88d1bde6cc600da5dc92581dc97e4c1e685'),'accepted Docker tg_owt pin drift');
+fail(dockerTgOwtStage.includes('git fetch --depth=1 origin d1cf250ea73de26c4c1f0a3c8173eb2648efbb04'),'accepted Docker tg_owt pin drift');
 fail(dockerTgOwtStage.includes('git submodule update --init --recursive --depth=1'),'accepted Docker tg_owt recursive submodule build drift');
-fail(snapTgOwtStage.includes('source-commit: e2d0e88d1bde6cc600da5dc92581dc97e4c1e685'),'accepted Snap tg_owt pin drift');
+fail(snapTgOwtStage.includes('source-commit: d1cf250ea73de26c4c1f0a3c8173eb2648efbb04'),'accepted Snap tg_owt pin drift');
 
 const libjxlReachability=recursiveReachability.libjxl;
 fail(libjxlReachability?.repository==='https://github.com/libjxl/libjxl','libjxl reachability authority missing');
@@ -247,7 +476,7 @@ fail(snapLibavifStage.includes('source-tag: v1.3.0'),'accepted Snap libavif ref 
 
 const adaReachability=recursiveReachability.ada;
 fail(adaReachability?.repository==='https://github.com/ada-url/ada','Ada reachability authority missing');
-fail(adaReachability.commit==='010f7c45aeaff1205452e7da2df8702cf725fb3e','Ada reachability commit drift');
+fail(adaReachability.commit==='6b4612162c34e7ffcee08c03b107b449e07a5683','Ada reachability commit drift');
 fail(adaReachability.root_candidate_policy_status==='complete-for-current-ada-authority','Ada root candidate policy is not fail-closed complete');
 const adaPolicy=adaReachability.root_candidate_disposition_policy||[];
 for (const [kind,value] of [
@@ -262,7 +491,7 @@ for (const [name,stage] of [['prepare.py',prepareAdaStage],['Dockerfile',dockerA
   fail(stage.includes('ADA_TOOLS=OFF'),'accepted Ada build lost ADA_TOOLS=OFF in '+name);
   fail(stage.includes('ADA_INCLUDE_URL_PATTERN=OFF'),'accepted Ada build lost ADA_INCLUDE_URL_PATTERN=OFF in '+name);
 }
-fail(snapAdaStage.includes('source-tag: v3.2.4'),'accepted Snap Ada ref drift');
+fail(snapAdaStage.includes('source-tag: v3.2.9'),'accepted Snap Ada ref drift');
 
 const openalReachability=recursiveReachability.openal_soft;
 fail(openalReachability?.root_candidate_policy_status==='complete-for-current-openal-authorities','OpenAL root candidate policy is not fail-closed complete');
@@ -458,7 +687,7 @@ for (const [kind,value] of [
   ['path_prefix','.github/'],['path_exact','.travis.yml'],['path_exact','README.md'],
   ['path_exact','config.guess'],['path_exact','config.sub'],['path_prefix','test/']
 ]) fail(libsrtpPolicy.some(rule=>rule[kind]===value),'libsrtp acquisition disposition missing: '+value);
-const tgOwtTree=await ghTree('desktop-app/tg_owt','e2d0e88d1bde6cc600da5dc92581dc97e4c1e685');
+const tgOwtTree=await ghTree('desktop-app/tg_owt','d1cf250ea73de26c4c1f0a3c8173eb2648efbb04');
 const libsrtpEntry=(tgOwtTree.tree||[]).find(item=>item.path==='src/third_party/libsrtp');
 fail(libsrtpEntry?.mode==='160000','accepted tg_owt libsrtp path is no longer a gitlink');
 fail(libsrtpEntry.sha==='a566a9cfcd619e8327784aa7cff4a1276dc1e895','accepted tg_owt libsrtp gitlink commit drift');
@@ -513,7 +742,7 @@ fail(!dockerXkbcommonStage.includes('scripts/makekeys'),'accepted xkbcommon buil
 
 const opensslReachability=recursiveReachability.openssl;
 fail(opensslReachability?.repository==='https://github.com/openssl/openssl','OpenSSL reachability authority missing');
-fail(opensslReachability.commit==='a7e992847de83aa36be0c399c89db3fb827b0be2','OpenSSL reachability commit drift');
+fail(opensslReachability.commit==='45e844fa2a14ec92d146bd8f5778ac130b6625fb','OpenSSL reachability commit drift');
 fail(opensslReachability.disposition==='not-reachable-from-accepted-tdesktop-openssl-build','OpenSSL child disposition missing');
 const prepareOpenSslStage=prepareQt.match(/stage\('openssl3',[\s\S]*?\n"""\)/)?.[0]||'';
 const dockerOpenSslStage=dockerQt.match(/FROM builder AS openssl[\s\S]*?\nFROM builder AS xkbcommon/)?.[0]||'';
@@ -524,7 +753,7 @@ for (const [name,stage] of [['prepare.py',prepareOpenSslStage],['Dockerfile',doc
 }
 const opensslTree=await ghTree('openssl/openssl',opensslReachability.commit);
 const expectedOpenSslChildren=opensslReachability.direct_gitlinks_not_fetched||[];
-fail(expectedOpenSslChildren.length===10,'OpenSSL unfetched direct-gitlink accounting drift');
+fail(expectedOpenSslChildren.length===11,'OpenSSL unfetched direct-gitlink accounting drift');
 for (const item of expectedOpenSslChildren) {
   fail(Array.isArray(item)&&item.length===3,'OpenSSL unfetched gitlink record malformed');
   const [childPath,childRepository,childCommit]=item;
@@ -540,12 +769,17 @@ const responsibilityIds=new Set();
 const targetSymbolOwners=new Map();
 for (const row of ledger.rows) {
   for (const key of rowRequired) fail(Object.prototype.hasOwnProperty.call(row,key),'ledger row '+(row.responsibility_id||'<unknown>')+' missing required field '+key);
-  fail(row.source_commit===lock.upstream.commit,'row '+row.responsibility_id+' source commit differs from accepted upstream');
+  const rowProvenanceTree=await acceptedAncestorTree(row.source_commit,'ledger row '+row.responsibility_id);
   fail(!responsibilityIds.has(row.responsibility_id),'duplicate responsibility id '+row.responsibility_id);
   responsibilityIds.add(row.responsibility_id);
   const sourceObject=(await ghTree(lock.upstream.repository,lock.upstream.commit)).tree.find(e=>e.path===row.source_path);
   fail(sourceObject,'row source path absent from accepted upstream tree: '+row.source_path);
   fail(sourceObject.sha===row.source_blob_sha,'row source blob mismatch: '+row.source_path);
+  if (row.source_commit!==authorityCommit) {
+    const historicalSource=(await ghTree(lock.upstream.repository,row.source_commit)).tree.find(e=>e.path===row.source_path);
+    fail(historicalSource?.sha===row.source_blob_sha,'ledger row historical provenance blob mismatch: '+row.source_path);
+    fail(rowProvenanceTree,'ledger row provenance tree missing: '+row.responsibility_id);
+  }
   fail(await fs.stat(path.join(root,row.source_analysis_path)).then(()=>true).catch(()=>false),'row dossier missing: '+row.source_analysis_path);
   fail(row.existing_owner || row.novel_capability===true,'existing-owner-first unresolved for '+row.responsibility_id);
   if (row.novel_capability!==true) {
@@ -555,18 +789,59 @@ for (const row of ledger.rows) {
   fail(!/Telegram(Core|Runtime|Provider|Messaging|Search|Contacts|Media|Workspace|ConversationRoot|MessageStore|DraftStore|ReactionStore)/i.test(parallelRootText),'source-named parallel owner/root detected in '+row.responsibility_id);
   fail(Array.isArray(row.fabushi_target_paths) && row.fabushi_target_paths.length>0,'target path missing for '+row.responsibility_id);
   fail(Array.isArray(row.fabushi_target_symbols) && row.fabushi_target_symbols.length>0,'target symbol missing for '+row.responsibility_id);
-  const targetTexts=[];
+  const targetTexts=new Map();
   for (const targetPath of row.fabushi_target_paths) {
     fail(await fs.stat(path.join(root,targetPath)).then(()=>true).catch(()=>false),'target path missing: '+targetPath);
-    targetTexts.push(await read(targetPath));
+    targetTexts.set(targetPath,await read(targetPath));
   }
-  const combinedTarget=targetTexts.join('\n');
-  for (const symbol of row.fabushi_target_symbols) {
-    fail(combinedTarget.includes(symbol),'target symbol '+symbol+' not found for '+row.responsibility_id);
-    const key=row.fabushi_target_paths.join(',')+'#'+symbol;
-    const prior=targetSymbolOwners.get(key);
-    if (prior && prior!==row.responsibility_id) fail(false,'target symbol has multiple responsibility owners without explicit split: '+key);
-    targetSymbolOwners.set(key,row.responsibility_id);
+  const bindings=Array.isArray(row.fabushi_target_bindings) ? row.fabushi_target_bindings : null;
+  if (bindings) {
+    fail(bindings.length>0,'explicit target bindings must not be empty for '+row.responsibility_id);
+    const boundPaths=new Set();
+    const boundSymbols=new Set();
+    for (const binding of bindings) {
+      fail(row.fabushi_target_paths.includes(binding.path),'bound target path is not declared by '+row.responsibility_id+': '+binding.path);
+      fail(!boundPaths.has(binding.path),'target path is bound more than once inside '+row.responsibility_id+': '+binding.path);
+      boundPaths.add(binding.path);
+      const targetText=targetTexts.get(binding.path);
+      fail(typeof targetText==='string','bound target path missing from loaded targets: '+binding.path);
+      fail(typeof binding.responsibility_scope==='string' && binding.responsibility_scope.trim().length>0,'bound target scope missing for '+row.responsibility_id+': '+binding.path);
+      fail(Array.isArray(binding.symbols) && binding.symbols.length>0,'bound target symbols missing for '+row.responsibility_id+': '+binding.path);
+      for (const symbol of binding.symbols) {
+        fail(row.fabushi_target_symbols.includes(symbol),'bound target symbol is not declared by '+row.responsibility_id+': '+symbol);
+        fail(!boundSymbols.has(symbol),'target symbol is ambiguously bound to multiple paths inside '+row.responsibility_id+': '+symbol);
+        boundSymbols.add(symbol);
+        fail(targetText.includes(symbol),'target symbol '+symbol+' not found in owning path '+binding.path+' for '+row.responsibility_id);
+        const key=binding.path+'#'+symbol;
+        const priors=targetSymbolOwners.get(key)||[];
+        for (const prior of priors) {
+          if (prior.responsibility_id===row.responsibility_id) continue;
+          fail(
+            prior.explicit===true
+              && typeof prior.scope==='string'
+              && prior.scope.length>0
+              && prior.scope!==binding.responsibility_scope,
+            'target path symbol has multiple responsibility owners without explicit distinct responsibility_scope split: '+key
+          );
+        }
+        priors.push({responsibility_id:row.responsibility_id,scope:binding.responsibility_scope,explicit:true});
+        targetSymbolOwners.set(key,priors);
+      }
+    }
+    fail(boundPaths.size===row.fabushi_target_paths.length,'not every target path has an exact binding for '+row.responsibility_id);
+    fail(boundSymbols.size===row.fabushi_target_symbols.length,'not every target symbol has an exact owning-path binding for '+row.responsibility_id);
+  } else {
+    const combinedTarget=[...targetTexts.values()].join('\n');
+    for (const symbol of row.fabushi_target_symbols) {
+      fail(combinedTarget.includes(symbol),'target symbol '+symbol+' not found for '+row.responsibility_id);
+      const key=row.fabushi_target_paths.join(',')+'#'+symbol;
+      const priors=targetSymbolOwners.get(key)||[];
+      for (const prior of priors) {
+        if (prior.responsibility_id!==row.responsibility_id) fail(false,'target symbol has multiple responsibility owners without explicit split: '+key);
+      }
+      priors.push({responsibility_id:row.responsibility_id,scope:null,explicit:false});
+      targetSymbolOwners.set(key,priors);
+    }
   }
   const traceText=rtm+'\n'+await read(row.source_analysis_path);
   for (const id of [...row.requirement_ids,...row.oracle_ids,...row.invariant_ids]) fail(traceText.includes(id),'traceability id '+id+' missing from RTM/dossier for '+row.responsibility_id);
@@ -581,6 +856,7 @@ for (const row of ledger.rows) {
     fail(/ProductShell/i.test(row.composition_root),'Search row must compose under ProductShell: '+row.responsibility_id);
   }
 }
+fail(JSON.stringify(schema).includes('"fabushi_target_bindings"'),'schema missing fabushi_target_bindings');
 for (const field of ['source_symbols','responsibility_id','existing_owner','fabushi_target_symbols','production_entrypoints','composition_root','search_scope','design_system_version','requirement_ids','oracle_ids','invariant_ids','test_execution_evidence']) {
   fail(JSON.stringify(schema).includes('"'+field+'"'),'schema missing '+field);
 }
@@ -670,6 +946,120 @@ recursiveInventory.push(...childEntries.map(e=>({
   path:e.path,mode:e.mode,type:e.type,object:e.sha,size:e.size??null
 })));
 
+const dispositionPrefix=sourceDispositions.deterministic_recursive_prefix;
+fail(sourceDispositions.upstream?.commit===authorityCommit && sourceDispositions.upstream?.tree===authorityTree,'source-dispositions upstream authority drift');
+
+const rebaselineRows=sourceDispositionRebaseline?.rows||[];
+const overrideByOrder=new Map();
+if (sourceDispositionRebaseline) {
+  fail(sourceDispositionRebaseline.from?.commit && sourceDispositionRebaseline.from?.tree,'source-dispositions rebaseline predecessor identity missing');
+  fail(sourceDispositionRebaseline.to?.commit===authorityCommit && sourceDispositionRebaseline.to?.tree===authorityTree,'source-dispositions rebaseline target authority drift');
+  const predecessorTree=await acceptedAncestorTree(sourceDispositionRebaseline.from.commit,'source-dispositions rebaseline predecessor');
+  fail(predecessorTree===sourceDispositionRebaseline.from.tree,'source-dispositions rebaseline predecessor tree drift');
+  const previousEntries=(await ghTree(lock.upstream.repository,sourceDispositionRebaseline.from.commit)).tree.filter(e=>e.type!=='tree');
+  for (const override of rebaselineRows) {
+    fail(Number.isInteger(override.recursive_order) && override.recursive_order>=1 && override.recursive_order<=dispositionPrefix.last_order,'source-dispositions rebaseline override order invalid');
+    fail(!overrideByOrder.has(override.recursive_order),'duplicate source-dispositions rebaseline override order '+override.recursive_order);
+    const recorded=sourceDispositions.rows[override.recursive_order-1];
+    const current=recursiveInventory[override.recursive_order-1];
+    const previous=previousEntries[override.recursive_order-1];
+    fail(recorded?.source_path===override.source_path && current?.scope==='root' && current.path===override.source_path,'source-dispositions rebaseline override path/order drift at '+override.recursive_order);
+    fail(previous?.path===override.source_path,'source-dispositions predecessor order drift at '+override.recursive_order);
+    fail(recorded.source_blob_sha===override.previous_blob_sha && previous.sha===override.previous_blob_sha,'source-dispositions predecessor blob drift at '+override.recursive_order);
+    fail(current.object===override.current_blob_sha && override.current_blob_sha!==override.previous_blob_sha,'source-dispositions current blob override drift at '+override.recursive_order);
+    fail(override.read_complete===true && override.responsibility_reconciled===true && typeof override.responsibility_delta==='string' && override.responsibility_delta.length>0,'source-dispositions override lacks reread/responsibility reconciliation at '+override.recursive_order);
+    overrideByOrder.set(override.recursive_order,override);
+  }
+  const changedInsidePrefix=[];
+  for (let order=1; order<=Math.min(dispositionPrefix.last_order,previousEntries.length); order++) {
+    const current=recursiveInventory[order-1];
+    const previous=previousEntries[order-1];
+    if (current?.scope==='root' && previous?.path===current.path && previous.sha!==current.object) changedInsidePrefix.push(order);
+  }
+  fail(changedInsidePrefix.length===overrideByOrder.size && changedInsidePrefix.every(order=>overrideByOrder.has(order)),
+    'source-dispositions rebaseline overrides do not exactly cover changed accepted root blobs inside read prefix');
+}
+const currentDispositionRows=sourceDispositions.rows.map((row,index) => {
+  const expected=recursiveInventory[index];
+  if (expected?.scope!=='root') return row;
+  const override=overrideByOrder.get(row.recursive_order);
+  const object=override?.current_blob_sha || row.source_blob_sha;
+  return {
+    ...row,
+    source_blob_sha:object,
+    source_identity:row.source_identity ? {...row.source_identity,commit:authorityCommit,object,size:expected.size??null} : row.source_identity,
+  };
+});
+checkSourceDispositionPrefix({
+  rows:currentDispositionRows,
+  prefix:dispositionPrefix,
+  entries:recursiveInventory
+});
+
+
+const sourceDispositionSummary={
+  path:'projects/telegram-desktop-rust/inventory/source-dispositions.json',
+  upstream_commit:authorityCommit,
+  read_through:dispositionPrefix.last_order,
+  unknown_closed:sourceDispositions.rows.filter(row=>row.unknown_closed===true).length,
+  omitted:sourceDispositions.rows.filter(row=>row.omitted===true).length
+};
+for (const [label,summary] of [
+  ['upstream lock',lock.source_disposition_evidence],
+  ['inventory index',inventoryIndex.source_dispositions],
+  ['parity ledger',ledger.source_dispositions]
+]) {
+  fail(summary?.path===sourceDispositionSummary.path,label+' source-dispositions path drift');
+  fail(summary?.upstream_commit===sourceDispositionSummary.upstream_commit,label+' source-dispositions upstream commit drift');
+  fail(summary?.read_through===sourceDispositionSummary.read_through,label+' source-dispositions read-through drift');
+  fail(summary?.unknown_closed===sourceDispositionSummary.unknown_closed,label+' source-dispositions unknown-closed drift');
+  fail(summary?.omitted===sourceDispositionSummary.omitted,label+' source-dispositions omitted drift');
+}
+for (const key of ['deterministic_prefix_closed','development_only_non_applicable']) {
+  fail(inventoryIndex.source_dispositions?.[key]===ledger.source_dispositions?.[key],'source-dispositions summary drift for '+key);
+  fail(lock.source_disposition_evidence?.[key]===inventoryIndex.source_dispositions?.[key],'upstream lock source-dispositions summary drift for '+key);
+}
+
+const reachabilityDir=path.join(root,'artifacts/tdrp-authority');
+const reachabilityBlocks=[];
+try {
+  for (const name of await fs.readdir(reachabilityDir)) {
+    if (!/^source-consumer-reachability-\d+-\d+\.txt$/.test(name)) continue;
+    const lines=(await fs.readFile(path.join(reachabilityDir,name),'utf8')).split(/\r?\n/);
+    let current=null;
+    for (const line of lines) {
+      if (line.startsWith('symbol=')) {
+        current={symbol:line.slice(7),token:null,consumers:[],artifact:name};
+        reachabilityBlocks.push(current);
+      } else if (current && line.startsWith('token=')) {
+        current.token=line.slice(6).replace(/^"/,'').replace(/"$/,'');
+      } else if (current && line.startsWith('Telegram/')) {
+        current.consumers.push(line);
+      }
+    }
+  }
+} catch (error) {
+  if (error?.code!=='ENOENT') throw error;
+}
+if (reachabilityBlocks.length) {
+  for (const row of sourceDispositions.rows) {
+    if (!row.consumer_symbol) continue;
+    const match=/^Telegram\/Resources\/icons\/(.+)\.(?:png|svg)$/i.exec(row.source_path||'');
+    if (!match) continue;
+    const token=match[1].replace(/@(?:2x|3x)$/,'');
+    const proof=reachabilityBlocks.find(block=>block.symbol===row.consumer_symbol && block.token===token && block.consumers.length);
+    if (!proof) continue;
+    fail(row.reachability_status!=='open-no-exact-resource-consumer-proven','exact source consumer evidence contradicts reachability-open disposition at order '+row.recursive_order+': '+row.source_path);
+    fail(Array.isArray(row.consumer_evidence) && row.consumer_evidence.some(line=>proof.consumers.includes(line)),'source-dispositions row lacks exact generated consumer evidence at order '+row.recursive_order+': '+row.source_path);
+  }
+}
+
+const checkedRecursive=checkRecursiveInventory({
+  lock, inventoryIndex, ledger, entries:recursiveInventory,
+  directComponents:directComponentCounts, githubNestedComponents:githubNestedCounts,
+  cppgirTreeEntries:cppTree.length, cppgirNonDirectoryEntries:cppTree.filter(e=>e.type!=='tree').length,
+  cppgirChild:{path:childPath,repository:childRepo,commit:cppNested[0].id,entries:childEntries.length}
+});
 const attrs=await get(`https://raw.githubusercontent.com/${u.repository}/${u.commit}/.gitattributes`,false);
 fail(!/filter=lfs|diff=lfs|merge=lfs/.test(attrs),'Git LFS attributes detected; explicit LFS closure required');
 for (const p of lock.build_time_pin_changes) {
@@ -686,12 +1076,14 @@ await fs.writeFile(path.join(root,'artifacts/tdrp-authority/upstream-recursive-i
   project_id:'TDRP-001',spec_revision:9,root:{repository:u.repository,commit:u.commit,tree:u.tree},
   counts:{entries:recursiveInventory.length,direct_components:directComponentCounts,github_nested_components:githubNestedCounts,
     gitlab_cppgir_entries:cppTree.filter(e=>e.type!=='tree').length,cppgir_child_entries:childEntries.length},
-  entries:recursiveInventory
+  identity_sha256:checkedRecursive.identity_sha256,entries:recursiveInventory
 },null,2)+'\n');
+const targetCommit=process.env.TDRP_TARGET_SHA||process.env.GITHUB_SHA||null;
 const report={
-  project_id:'TDRP-001',spec_revision:9,target_commit:process.env.GITHUB_SHA||null,
+  project_id:'TDRP-001',spec_revision:9,target_commit:targetCommit,
   upstream_commit:u.commit,upstream_tree:u.tree,root_tree_truncated:false,
-  root_entries:tree.length,root_blobs:blobs.length,direct_gitlinks:links.length,recursive_non_directory_entries:recursiveInventory.length,
+  root_entries:tree.length,root_blobs:blobs.length,direct_gitlinks:links.length,recursive_non_directory_entries:checkedRecursive.total,
+  recursive_inventory_breakdown:checkedRecursive.counts,recursive_path_blob_sha256:checkedRecursive.identity_sha256,
   direct_component_counts:directComponentCounts,github_nested_gitlinks:nested,github_nested_component_counts:githubNestedCounts,
   gitlab_cppgir_entries:cppTree.length,cppgir_child:{path:childPath,repository:childRepo,commit:cppNested[0].id,entries:childEntries.length},
   build_time_pin_changes:lock.build_time_pin_changes,build_time_acquisition_inventory:acquisitionInventory.discovery,coverage:lock.coverage,ledger_coverage:ledger.coverage,
@@ -703,7 +1095,7 @@ if (requireAccepted) {
   fail(u.accepted===true,'accepted mode requires upstream.accepted=true');
   fail(lock.acceptance.accepted===true,'accepted mode requires acceptance.accepted=true');
   fail(lock.acceptance.baseline_ready===true,'accepted mode requires baseline_ready=true');
-  fail(ledger.target_commit===(process.env.GITHUB_SHA||ledger.target_commit),'G-EVIDENCE ledger target_commit must equal exact GitHub Actions HEAD');
+  fail(ledger.target_commit===(targetCommit||ledger.target_commit),'G-EVIDENCE ledger target_commit must equal exact tested GitHub Actions HEAD');
   fail(ledger.coverage.unknown===0,'G-INVENTORY unknown must be 0');
   fail(ledger.coverage.unread===0,'G-INVENTORY unread must be 0');
   fail(ledger.coverage.omitted===0,'G-INVENTORY omitted must be 0');

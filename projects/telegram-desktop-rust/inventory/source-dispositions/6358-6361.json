@@ -1,0 +1,158 @@
+{
+  "format_version": 3,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "tree": "9d8fa87ce68c832d2f4c99f372a5bb672463c3e1"
+  },
+  "range": {
+    "first_order": 6358,
+    "last_order": 6361,
+    "entries": 4
+  },
+  "rows": [
+    {
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "tdesktop Wallet transfer-message source authority",
+      "ui_disposition": "Optimistic transfer cards and served transfer updates project through the existing canonical Conversation/Message/Transcript surfaces; no WalletMessageStore or Telegram-derived transcript root is introduced.",
+      "fabushi_canonical_owner": "native/mahayana-messaging canonical Message send/reconciliation owner plus existing Wallet outbound-transfer journal",
+      "platform_differences": "MTProto random-id/history-id mechanics are source authority only; Fabushi must preserve transport identity, stale fencing, deterministic adoption and duplicate refusal in its source-neutral messaging protocol.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "reachability_status": "accepted-tree exact blob read/responsibility-decomposed; generic QueueMessage/AcknowledgeMessage exists but transport/content pairing parity remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained at accepted commit 28ac576967a1026ecc89a927360fa0e138d7c88c; rewrite remains source-neutral.",
+      "notes": "Reading advances deterministic read-through only. The current canonical message owner lacks this file's full random/transport identity, per-draft floor and twin-message reconciliation contract, so no implementation or verification credit is claimed.",
+      "recursive_order": 6358,
+      "source_path": "Telegram/SourceFiles/wallet/wallet_transfer_messages.cpp",
+      "source_blob_sha": "69cfdacd962b23cad6aab961c1f57b704224735b",
+      "responsibility": "Optimistic outgoing wallet-transfer transcript lifecycle: create a local sending service entry, bind a transport identity, retain a per-draft newest-server-message floor, reconcile local identity to the authoritative served message, content/address/comment match fallback, deterministic oldest-match adoption, twin/occupied-id refusal, failure projection refresh and first-incoming-transfer suggestion invalidation.",
+      "state_machine": "Local Pending(client id + transport id + floor) -> authoritative served-id adoption -> Sent; explicit send failure -> Failed; occupied/twin served id either refuses generic promotion or drops only the duplicate local draft; dead/stale entries unregister transport identity; served ids at or below the draft floor cannot adopt it.",
+      "side_effects": "Canonical transcript insertion, transport-id registration/removal, server-id replacement, delivery/failure projection, conversation ranking/suggestion refresh and message index updates.",
+      "failure_cases": "Malformed served address, stale/replayed served id, id at/below floor, occupied target id, dead local draft, identical concurrent drafts, private-comment plaintext leakage, missing repaint/notification after asynchronous failure and transport-id leaks.",
+      "fabushi_target": "Extend existing Message Queue/Acknowledge/DeliveryState ownership with a source-neutral authoritative-send reconciliation contract; retain OutboundTransferJournal as operation fate owner. Current exact-head AcknowledgeMessage only performs explicit local->server id replacement and is partial.",
+      "production_evidence": "Current exact-head generic messaging primitives exist; this responsibility intentionally remains mapped-open pending a canonical transport/content reconciliation implementation and shipping service adapter.",
+      "test_evidence": "Existing QueueMessage/Acknowledge tests are partial only; focused stale-floor, occupied-id, twin-draft, private-comment and failure-refresh production tests are still required.",
+      "consumer_evidence": [
+        "native/mahayana-messaging/src/engine.rs",
+        "native/mahayana-messaging/src/message.rs",
+        "native/mahayana-messaging/src/wallet.rs"
+      ],
+      "source_binary_evidence": {
+        "evidence_status": "accepted-exact-blob-read-current-descendant-actions-required",
+        "accepted_upstream": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+        "verified_blob_sha": "69cfdacd962b23cad6aab961c1f57b704224735b",
+        "file_type": "blob",
+        "recursive_order": 6358
+      }
+    },
+    {
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "tdesktop Wallet transfer-message source authority",
+      "ui_disposition": "Header defines no separate presentation root; its contract belongs to canonical Message send/reconciliation state.",
+      "fabushi_canonical_owner": "native/mahayana-messaging canonical Message send/reconciliation owner",
+      "platform_differences": "FullMsgId/MsgId/randomId types map to Fabushi ConversationId/MessageId/ClientMessageId plus transport authority, not Telegram identifiers.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "reachability_status": "accepted-tree exact blob read/responsibility-decomposed; canonical owner exists but full pairing contract remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained at accepted commit 28ac576967a1026ecc89a927360fa0e138d7c88c; rewrite remains source-neutral.",
+      "notes": "No new owner is justified. The typed registry API is a responsibility contract for the existing Message owner.",
+      "recursive_order": 6359,
+      "source_path": "Telegram/SourceFiles/wallet/wallet_transfer_messages.h",
+      "source_blob_sha": "558c65f8fa48d28578de0cd29c174a46858658b0",
+      "responsibility": "Typed pending-transfer message registry contract for create/drop/fail/refuse-pairing/adopt and per-entry local id, transport identity and server-id floor.",
+      "state_machine": "Registry entries live only while sends are unresolved; every settle/drop/failure/dead-entry path releases transport identity exactly once.",
+      "side_effects": "Defines the command boundary consumed by transfer submission and authoritative message ingestion.",
+      "failure_cases": "Second message truth, leaked transport identities, duplicate settlement and unordered matching.",
+      "fabushi_target": "Represent through canonical Message send/reconciliation commands/events rather than a wallet-specific registry.",
+      "production_evidence": "Existing generic message owner is partial; no verified credit.",
+      "test_evidence": "Focused registry-equivalent messaging tests remain required.",
+      "consumer_evidence": [
+        "native/mahayana-messaging/src/engine.rs",
+        "native/mahayana-messaging/src/message.rs"
+      ],
+      "source_binary_evidence": {
+        "evidence_status": "accepted-exact-blob-read-current-descendant-actions-required",
+        "accepted_upstream": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+        "verified_blob_sha": "558c65f8fa48d28578de0cd29c174a46858658b0",
+        "file_type": "blob",
+        "recursive_order": 6359
+      }
+    },
+    {
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "tdesktop Wallet submitted-transfer persistence source authority",
+      "ui_disposition": "Durable transfer state is domain persistence, not UI; transcript/history projections consume canonical Wallet/Message state.",
+      "fabushi_canonical_owner": "native/mahayana-messaging WalletRuntimeState::outbound_transfers / OutboundTransferJournal",
+      "platform_differences": "Qt QDataStream/account key-value serialization maps to Fabushi durable messaging-state persistence; wire format need not match, but bounds, corruption rejection, uniqueness, privacy and recovery semantics must.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "reachability_status": "accepted-tree exact blob read/responsibility-decomposed; substantial canonical journal implementation exists and this descendant closes strict address-boundary validation, while shipping persistence/recovery evidence remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained at accepted commit 28ac576967a1026ecc89a927360fa0e138d7c88c; rewrite remains source-neutral.",
+      "notes": "This descendant reuses the existing canonical wallet-address validator for source, destination and optional collectible, rejecting whitespace/control-character addresses instead of weakening the storage contract.",
+      "recursive_order": 6360,
+      "source_path": "Telegram/SourceFiles/wallet/wallet_transfer_store.cpp",
+      "source_blob_sha": "56aa034da1c35cb6ee85fa0f36365d0587565adc",
+      "responsibility": "Durable submitted-transfer journal serialization and recovery: version/bounds/corruption/trailing-data rejection, unique network+wallet+publicKey+operation identity, Preparation-before-handoff invariant, submission-unknown recovery, bounded lookup state, terminal outcome/hash validation and privacy-safe served projection.",
+      "state_machine": "Preparation -> Possible only after durable handoff marker/token -> zero or more bounded lookup attempts -> terminal Confirmed/Replaced/SequenceNumberConsumed/Expired/Superseded/Failed/Cancelled; confirmed hash exists only for Confirmed and private served comments persist no plaintext.",
+      "side_effects": "Account-durable write/read of transfer operation fate and served projection used after restart to avoid blind resubmission.",
+      "failure_cases": "Oversized/corrupt/truncated/trailing records, duplicate identity, invalid/noncanonical addresses, malformed key/token/hash, impossible preparation fields, lookup overflow, encrypted-comment plaintext persistence and write failure.",
+      "fabushi_target": "Existing OutboundTransferJournal is the canonical owner. This descendant closes noncanonical source/destination/collectible address acceptance; exact-head Actions plus real durable-store restart/recovery composition are still required before verification.",
+      "production_evidence": "native/mahayana-messaging/src/wallet.rs descendant change strengthens OutboundTransferRecord::validate with canonical address validation.",
+      "test_evidence": "Focused Rust test rejects whitespace/control-character source/destination/collectible addresses; GitHub Actions exact-head result required.",
+      "consumer_evidence": [
+        "native/mahayana-messaging/src/wallet.rs",
+        "native/mahayana-messaging/src/engine.rs"
+      ],
+      "source_binary_evidence": {
+        "evidence_status": "accepted-exact-blob-read-current-descendant-actions-required",
+        "accepted_upstream": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+        "verified_blob_sha": "56aa034da1c35cb6ee85fa0f36365d0587565adc",
+        "file_type": "blob",
+        "recursive_order": 6360
+      }
+    },
+    {
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "tdesktop Wallet submitted-transfer persistence source authority",
+      "ui_disposition": "Typed persistence contract maps to canonical Wallet domain state and introduces no UI owner.",
+      "fabushi_canonical_owner": "native/mahayana-messaging WalletRuntimeState::outbound_transfers / OutboundTransferJournal",
+      "platform_differences": "C++ structs/enums and QDataStream constants map to Rust typed state and bounded durable serialization.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "reachability_status": "accepted-tree exact blob read/responsibility-decomposed; typed canonical counterpart exists but end-to-end persistence evidence remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained at accepted commit 28ac576967a1026ecc89a927360fa0e138d7c88c; rewrite remains source-neutral.",
+      "notes": "The constants and terminal/handoff vocabulary are already represented in the existing owner; this row remains open until same-head persistence/restart/service evidence closes the whole responsibility.",
+      "recursive_order": 6361,
+      "source_path": "Telegram/SourceFiles/wallet/wallet_transfer_store.h",
+      "source_blob_sha": "838547d002769ae5b87959e4438608b6a20b3cbc",
+      "responsibility": "Typed storage limits and transfer journal schema: comment/record/blob/token/lookup bounds, handoff and terminal enums, served projection, recipient/collectible/gasless/bounce metadata and durable read/write API.",
+      "state_machine": "Schema constrains valid persisted states and forbids ambiguous Preparation records from carrying post-handoff/terminal recovery fields.",
+      "side_effects": "Defines the persistence contract consumed by the Wallet owner and restart recovery.",
+      "failure_cases": "Schema drift, unbounded fields, incompatible terminal/hash combinations, duplicate operation identity and unsafe private-comment persistence.",
+      "fabushi_target": "Continue using OutboundTransferRecord/Projection/Journal as the sole source-neutral owner; no second transfer store.",
+      "production_evidence": "Existing typed Rust owner plus descendant strict-address validation; full same-head durable composition remains open.",
+      "test_evidence": "Existing journal serde/recovery/bounds tests plus new address-boundary test are partial until GitHub Actions and shipping restart evidence pass.",
+      "consumer_evidence": [
+        "native/mahayana-messaging/src/wallet.rs",
+        "native/mahayana-messaging/src/engine.rs"
+      ],
+      "source_binary_evidence": {
+        "evidence_status": "accepted-exact-blob-read-current-descendant-actions-required",
+        "accepted_upstream": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+        "verified_blob_sha": "838547d002769ae5b87959e4438608b6a20b3cbc",
+        "file_type": "blob",
+        "recursive_order": 6361
+      }
+    }
+  ]
+}

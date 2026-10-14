@@ -46,7 +46,12 @@ impl<'de> Deserialize<'de> for WebAuthnCeremony {
             return Err(D::Error::custom("WebAuthn ceremony must be a JSON object"));
         };
         let kind = match object.remove("kind") {
-            Some(Value::String(value)) if !value.is_empty() => value,
+            Some(Value::String(value)) if matches!(value.as_str(), "create" | "get") => value,
+            Some(Value::String(_)) => {
+                return Err(D::Error::custom(
+                    "WebAuthn ceremony kind must be create or get",
+                ));
+            }
             _ => return Err(D::Error::custom("WebAuthn ceremony kind is required")),
         };
         let origin = match object.remove("origin") {

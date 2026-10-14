@@ -2,6 +2,7 @@ import type { TranscriptCardEntry } from "../cards/transcript-card/protocol";
 import type { TimelineEventData } from "../cards/timeline-event-registry";
 import type { ToolResultCardSnapshot } from "../tool-results/model";
 import type { SendMessageTextAdjacency, SendMessageTextImage } from "../cards/transcript-card/send-message-text";
+import type { TranscriptDeliveryState } from "./transcript-delivery-state";
 
 export const COMPOSER_ATTACHMENT_LIMIT = 6;
 
@@ -25,17 +26,51 @@ export interface DraftAttachment {
   mimeType?: string;
 }
 
+export interface ComposerDraftCursor {
+  position: number;
+  anchor: number;
+  scroll: number;
+}
+
+export interface ComposerDraftLinkPreview {
+  /** Opaque canonical Resource/Web preview identity. Use a string so 64-bit service ids remain lossless in JavaScript. */
+  id?: string;
+  url: string;
+  forceLargeMedia?: boolean;
+  forceSmallMedia?: boolean;
+  invert?: boolean;
+  manual?: boolean;
+  removed?: boolean;
+}
+
 export interface ComposerDraft {
   prompt: string;
   attachments: DraftAttachment[];
   richText?: string;
   replyToId?: string;
   isFork?: boolean;
+  cursor?: ComposerDraftCursor;
+  linkPreview?: ComposerDraftLinkPreview;
+}
+
+export interface ComposerReplyKeyboardButton {
+  text: string;
+  payload?: string;
+}
+
+export interface ComposerReplyKeyboard {
+  /** Stable identity of the authoritative message that owns this keyboard. */
+  messageId: string;
+  rows: readonly (readonly ComposerReplyKeyboardButton[])[];
+  singleUse?: boolean;
+  persistent?: boolean;
+  forceReply?: boolean;
+  placeholder?: string;
 }
 
 export const COMPOSER_DRAFT_METADATA = {
   slice: "composer-drafts",
-  schemaVersion: 1,
+  schemaVersion: 2,
   scope: "client-persisted",
   accountSensitive: true
 } as const;
@@ -54,14 +89,54 @@ export function areComposerDraftContentsEqual(left: ComposerDraft, right: Compos
     && left.attachments.length === right.attachments.length
     && left.attachments.every((attachment, index) => {
       const candidate = right.attachments[index];
-      return attachment.path === candidate?.path && attachment.name === candidate.name;
+      return attachment.path === candidate?.path
+        && attachment.name === candidate.name
+        && attachment.size === candidate.size
+        && attachment.mimeType === candidate.mimeType;
     });
+}
+
+function areComposerDraftCursorsEqual(left: ComposerDraftCursor | undefined, right: ComposerDraftCursor | undefined): boolean {
+  if (left == null || right == null) return left == null && right == null;
+  return left.position === right.position
+    && left.anchor === right.anchor
+    && left.scroll === right.scroll;
+}
+
+function areComposerDraftLinkPreviewsEqual(left: ComposerDraftLinkPreview | undefined, right: ComposerDraftLinkPreview | undefined): boolean {
+  if (left == null || right == null) return left == null && right == null;
+  return (left.id ?? null) === (right.id ?? null)
+    && left.url === right.url
+    && (left.forceLargeMedia ?? false) === (right.forceLargeMedia ?? false)
+    && (left.forceSmallMedia ?? false) === (right.forceSmallMedia ?? false)
+    && (left.invert ?? false) === (right.invert ?? false)
+    && (left.manual ?? false) === (right.manual ?? false)
+    && (left.removed ?? false) === (right.removed ?? false);
+}
+
+export function composerDraftLinkPreviewUrl(prompt: string): string | null {
+  const match = /https?:\/\/[^\s<>"']+/iu.exec(prompt)?.[0] ?? null;
+  if (match == null) return null;
+  const normalized = match.replace(/[),.!?;:\]}]+$/u, "");
+  return normalized.length > 0 ? normalized : null;
+}
+
+export function reconcileComposerDraftLinkPreview(
+  current: ComposerDraftLinkPreview | undefined,
+  prompt: string,
+): ComposerDraftLinkPreview | undefined {
+  const url = composerDraftLinkPreviewUrl(prompt);
+  if (url == null) return current?.manual === true ? current : undefined;
+  if (current?.url === url) return current;
+  return { url };
 }
 
 export function areComposerDraftsEqual(left: ComposerDraft, right: ComposerDraft): boolean {
   return areComposerDraftContentsEqual(left, right)
     && (left.replyToId ?? null) === (right.replyToId ?? null)
-    && (left.isFork ?? false) === (right.isFork ?? false);
+    && (left.isFork ?? false) === (right.isFork ?? false)
+    && areComposerDraftCursorsEqual(left.cursor, right.cursor)
+    && areComposerDraftLinkPreviewsEqual(left.linkPreview, right.linkPreview);
 }
 
 export function parseComposerDraft(value: unknown): ComposerDraft | null {
@@ -75,13 +150,65 @@ export function parseComposerDraft(value: unknown): ComposerDraft | null {
     || !Array.isArray(candidate.attachments)
   ) return null;
 
+  let cursor: ComposerDraftCursor | undefined;
+  if (candidate.cursor !== undefined) {
+    if (typeof candidate.cursor !== "object" || candidate.cursor == null || Array.isArray(candidate.cursor)) return null;
+    const valueCursor = candidate.cursor as Record<string, unknown>;
+    if (
+      !Number.isSafeInteger(valueCursor.position)
+      || !Number.isSafeInteger(valueCursor.anchor)
+      || !Number.isSafeInteger(valueCursor.scroll)
+      || (valueCursor.position as number) < 0
+      || (valueCursor.anchor as number) < 0
+      || (valueCursor.scroll as number) < 0
+    ) return null;
+    cursor = {
+      position: valueCursor.position as number,
+      anchor: valueCursor.anchor as number,
+      scroll: valueCursor.scroll as number,
+    };
+  }
+
+  let linkPreview: ComposerDraftLinkPreview | undefined;
+  if (candidate.linkPreview !== undefined) {
+    if (typeof candidate.linkPreview !== "object" || candidate.linkPreview == null || Array.isArray(candidate.linkPreview)) return null;
+    const valuePreview = candidate.linkPreview as Record<string, unknown>;
+    if (
+      typeof valuePreview.url !== "string"
+      || (valuePreview.id !== undefined && (typeof valuePreview.id !== "string" || valuePreview.id.length === 0))
+      || (valuePreview.forceLargeMedia !== undefined && typeof valuePreview.forceLargeMedia !== "boolean")
+      || (valuePreview.forceSmallMedia !== undefined && typeof valuePreview.forceSmallMedia !== "boolean")
+      || (valuePreview.invert !== undefined && typeof valuePreview.invert !== "boolean")
+      || (valuePreview.manual !== undefined && typeof valuePreview.manual !== "boolean")
+      || (valuePreview.removed !== undefined && typeof valuePreview.removed !== "boolean")
+    ) return null;
+    linkPreview = {
+      url: valuePreview.url,
+      ...(valuePreview.id === undefined ? {} : { id: valuePreview.id }),
+      ...(valuePreview.forceLargeMedia === undefined ? {} : { forceLargeMedia: valuePreview.forceLargeMedia }),
+      ...(valuePreview.forceSmallMedia === undefined ? {} : { forceSmallMedia: valuePreview.forceSmallMedia }),
+      ...(valuePreview.invert === undefined ? {} : { invert: valuePreview.invert }),
+      ...(valuePreview.manual === undefined ? {} : { manual: valuePreview.manual }),
+      ...(valuePreview.removed === undefined ? {} : { removed: valuePreview.removed }),
+    };
+  }
+
   const attachments: DraftAttachment[] = [];
   for (const valueAttachment of candidate.attachments) {
     if (typeof valueAttachment !== "object" || valueAttachment == null) return null;
     const attachment = valueAttachment as Record<string, unknown>;
-    if (typeof attachment.path !== "string" || typeof attachment.name !== "string") return null;
+    if (
+      typeof attachment.path !== "string"
+      || typeof attachment.name !== "string"
+      || (attachment.mimeType !== undefined && typeof attachment.mimeType !== "string")
+    ) return null;
     const size = typeof attachment.size === "number" && Number.isFinite(attachment.size) ? attachment.size : undefined;
-    attachments.push({ path: attachment.path, name: attachment.name, ...(size === undefined ? {} : { size }) });
+    attachments.push({
+      path: attachment.path,
+      name: attachment.name,
+      ...(size === undefined ? {} : { size }),
+      ...(attachment.mimeType === undefined ? {} : { mimeType: attachment.mimeType }),
+    });
   }
 
   return {
@@ -89,7 +216,9 @@ export function parseComposerDraft(value: unknown): ComposerDraft | null {
     attachments,
     ...(candidate.richText === undefined ? {} : { richText: candidate.richText }),
     ...(candidate.replyToId === undefined ? {} : { replyToId: candidate.replyToId }),
-    ...(candidate.isFork === undefined ? {} : { isFork: candidate.isFork })
+    ...(candidate.isFork === undefined ? {} : { isFork: candidate.isFork }),
+    ...(cursor === undefined ? {} : { cursor }),
+    ...(linkPreview === undefined ? {} : { linkPreview })
   };
 }
 
@@ -212,7 +341,7 @@ export type ConversationAgentLastEntry =
   | { readonly kind: "attachment"; readonly count: number; readonly kinds: Readonly<Record<string, number>> }
   | { readonly kind: "link"; readonly url: string };
 
-export type TranscriptDelivery = "sent" | "pending" | "queued" | "failed";
+export type TranscriptDelivery = TranscriptDeliveryState;
 
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=4719000
 export type TranscriptReplyPreview =
@@ -237,6 +366,8 @@ export interface TranscriptMessage {
   composedAtMs?: number;
   isStreaming?: boolean;
   replyToId?: string;
+  /** Message-bound source-neutral custom keyboard projected into the single Composer owner. */
+  replyKeyboard?: ComposerReplyKeyboard;
   // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=5083971
   reactions?: readonly import("../cards/transcript-card/reaction-actions").TranscriptReaction[];
   myReactions?: ReadonlySet<string>;

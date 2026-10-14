@@ -1,7 +1,11 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ChangeEvent, type CSSProperties, type InputEvent, type InputHTMLAttributes, type KeyboardEvent, type ReactNode, type TextareaHTMLAttributes } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ChangeEvent, type CSSProperties, type InputEvent, type InputHTMLAttributes, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type TextareaHTMLAttributes } from "react";
 
 import "./sand-form-primitives.css";
 import { SandIcon } from "./sand-kit-primitives";
+import { resolveSandTabNavigation, resolveSandTabReorderTarget, type SandTabReorderUpdate } from "./sand-tabs-state";
+
+export { resolveSandTabNavigation, resolveSandTabReorderTarget } from "./sand-tabs-state";
+export type { SandTabReorderState, SandTabReorderUpdate } from "./sand-tabs-state";
 
 // Immutable Mac renderer: index-UbX-y3il.js, SHA-256
 // ef4e9831b65d39633f09c9ad0c083b98b7ebf52e3bb558182aee5bde31f876fa.
@@ -178,6 +182,7 @@ export interface SandTabItem {
   readonly id: string;
   readonly label: ReactNode;
   readonly disabled?: boolean;
+  readonly reorderLocked?: boolean;
 }
 
 export interface SandTabsProps {
@@ -187,35 +192,155 @@ export interface SandTabsProps {
   readonly onValueChange?: (value: string) => void;
   readonly ariaLabel?: string;
   readonly orientation?: "horizontal" | "vertical";
+  readonly overflowScroll?: boolean;
+  readonly reorderable?: boolean;
+  readonly onReorderUpdate?: (update: SandTabReorderUpdate) => void;
+  readonly onContextMenuRequest?: (id: string) => void;
 }
 
-export function resolveSandTabNavigation(items: readonly SandTabItem[], index: number, key: string, orientation: "horizontal" | "vertical" = "horizontal"): string | null {
-  if (items.length === 0) return null;
-  if (key === "Home") return items.find((item) => !item.disabled)?.id ?? null;
-  if (key === "End") return [...items].reverse().find((item) => !item.disabled)?.id ?? null;
-  const forward = orientation === "vertical" ? "ArrowDown" : "ArrowRight";
-  const backward = orientation === "vertical" ? "ArrowUp" : "ArrowLeft";
-  const direction = key === forward ? 1 : key === backward ? -1 : 0;
-  if (direction === 0) return null;
-  for (let step = 1; step <= items.length; step += 1) {
-    const next = (index + direction * step + items.length) % items.length;
-    if (!items[next]?.disabled) return items[next].id;
-  }
-  return null;
-}
-
-export function SandTabs({ items, value: controlledValue, defaultValue, onValueChange, ariaLabel = "Tabs", orientation = "horizontal" }: SandTabsProps): ReactNode {
+export function SandTabs({
+  items,
+  value: controlledValue,
+  defaultValue,
+  onValueChange,
+  ariaLabel = "Tabs",
+  orientation = "horizontal",
+  overflowScroll = false,
+  reorderable = false,
+  onReorderUpdate,
+  onContextMenuRequest,
+}: SandTabsProps): ReactNode {
   const [uncontrolledValue, setUncontrolledValue] = useState(defaultValue ?? items.find((item) => !item.disabled)?.id ?? items[0]?.id ?? "");
+  const tabListRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef(new Map<string, HTMLButtonElement>());
+  const pointerDrag = useRef<{ id: string; from: number; pointerId: number; startX: number; startY: number; started: boolean; target: number } | null>(null);
+  const suppressedClick = useRef<string | null>(null);
+  const [reorderingId, setReorderingId] = useState<string | null>(null);
+  const [reorderTarget, setReorderTarget] = useState<number | null>(null);
   const value = controlledValue ?? uncontrolledValue;
-  const select = (next: string) => { if (controlledValue === undefined) setUncontrolledValue(next); onValueChange?.(next); };
+  const select = (next: string) => {
+    if (controlledValue === undefined) setUncontrolledValue(next);
+    onValueChange?.(next);
+  };
+
+  useLayoutEffect(() => {
+    if (!overflowScroll || !value) return;
+    tabRefs.current.get(value)?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [items, orientation, overflowScroll, value]);
+
+  const emitReorder = (drag: { id: string; from: number; target: number }, state: SandTabReorderUpdate["state"]) => {
+    onReorderUpdate?.({ id: drag.id, oldPosition: drag.from, newPosition: drag.target, state });
+  };
+
+  useEffect(() => () => {
+    const drag = pointerDrag.current;
+    if (drag?.started) {
+      onReorderUpdate?.({ id: drag.id, oldPosition: drag.from, newPosition: drag.from, state: "cancelled" });
+    }
+    pointerDrag.current = null;
+  }, [onReorderUpdate]);
+
   const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    const item = items[index];
     const forward = orientation === "vertical" ? "ArrowDown" : "ArrowRight";
     const backward = orientation === "vertical" ? "ArrowUp" : "ArrowLeft";
-    if (event.key === forward || event.key === backward || event.key === "Home" || event.key === "End") { event.preventDefault(); const next = resolveSandTabNavigation(items, index, event.key, orientation); if (next != null) { select(next); tabRefs.current.get(next)?.focus({ preventScroll: true }); } }
+    if (item != null && reorderable && event.altKey && !item.disabled && !item.reorderLocked && (event.key === forward || event.key === backward)) {
+      const target = resolveSandTabReorderTarget(items, index, index + (event.key === forward ? 1 : -1));
+      if (target !== index) {
+        event.preventDefault();
+        const drag = { id: item.id, from: index, target };
+        emitReorder(drag, "started");
+        emitReorder(drag, "applied");
+      }
+      return;
+    }
+    if (event.key === forward || event.key === backward || event.key === "Home" || event.key === "End") {
+      event.preventDefault();
+      const next = resolveSandTabNavigation(items, index, event.key, orientation);
+      if (next != null) {
+        select(next);
+        tabRefs.current.get(next)?.focus({ preventScroll: true });
+      }
+    }
   };
-  return <div aria-label={ariaLabel} aria-orientation={orientation} role="tablist">
-    {items.map((item, index) => <button aria-selected={item.id === value} disabled={item.disabled} onClick={() => select(item.id)} onKeyDown={(event) => onKeyDown(event, index)} ref={(node) => { if (node == null) tabRefs.current.delete(item.id); else tabRefs.current.set(item.id, node); }} role="tab" tabIndex={item.id === value ? 0 : -1} type="button" key={item.id}>{item.label}</button>)}
+
+  const updatePointerReorder = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    const drag = pointerDrag.current;
+    if (drag == null || drag.pointerId !== event.pointerId) return;
+    if (!drag.started) {
+      if (Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) < 6) return;
+      drag.started = true;
+      setReorderingId(drag.id);
+      emitReorder(drag, "started");
+    }
+    const axis = orientation === "vertical" ? event.clientY : event.clientX;
+    let requested = items.length - 1;
+    for (let index = 0; index < items.length; index += 1) {
+      const node = tabRefs.current.get(items[index]!.id);
+      if (node == null) continue;
+      const rect = node.getBoundingClientRect();
+      const center = orientation === "vertical" ? rect.top + rect.height / 2 : rect.left + rect.width / 2;
+      if (axis < center) { requested = index; break; }
+    }
+    drag.target = resolveSandTabReorderTarget(items, drag.from, requested);
+    setReorderTarget(drag.target);
+    if (overflowScroll) {
+      const list = tabListRef.current;
+      if (list != null) {
+        const rect = list.getBoundingClientRect();
+        const start = orientation === "vertical" ? rect.top : rect.left;
+        const end = orientation === "vertical" ? rect.bottom : rect.right;
+        const amount = axis < start + 24 ? -24 : axis > end - 24 ? 24 : 0;
+        if (amount) list.scrollBy(orientation === "vertical" ? { top: amount, behavior: "auto" } : { left: amount, behavior: "auto" });
+      }
+    }
+  };
+
+  const finishPointerReorder = (event: ReactPointerEvent<HTMLButtonElement>, cancelled: boolean) => {
+    const drag = pointerDrag.current;
+    if (drag == null || drag.pointerId !== event.pointerId) return;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    pointerDrag.current = null;
+    setReorderingId(null);
+    setReorderTarget(null);
+    if (!drag.started) return;
+    suppressedClick.current = drag.id;
+    emitReorder(drag, cancelled || drag.target === drag.from ? "cancelled" : "applied");
+  };
+
+  return <div aria-label={ariaLabel} aria-orientation={orientation} data-overflow-scroll={overflowScroll || undefined} ref={tabListRef} role="tablist">
+    {items.map((item, index) => <button
+      aria-keyshortcuts={reorderable && !item.disabled && !item.reorderLocked ? (orientation === "vertical" ? "Alt+ArrowUp Alt+ArrowDown" : "Alt+ArrowLeft Alt+ArrowRight") : undefined}
+      aria-selected={item.id === value}
+      data-reorder-locked={item.reorderLocked || undefined}
+      data-reorder-target={reorderTarget === index || undefined}
+      data-reordering={reorderingId === item.id || undefined}
+      disabled={item.disabled}
+      draggable={false}
+      onClick={() => {
+        if (suppressedClick.current === item.id) { suppressedClick.current = null; return; }
+        select(item.id);
+      }}
+      onContextMenu={(event) => {
+        if (onContextMenuRequest == null) return;
+        event.preventDefault();
+        onContextMenuRequest(item.id);
+      }}
+      onKeyDown={(event) => onKeyDown(event, index)}
+      onPointerCancel={(event) => finishPointerReorder(event, true)}
+      onPointerDown={(event) => {
+        if (!reorderable || item.disabled || item.reorderLocked || event.button !== 0) return;
+        pointerDrag.current = { id: item.id, from: index, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, started: false, target: index };
+        event.currentTarget.setPointerCapture(event.pointerId);
+      }}
+      onPointerMove={updatePointerReorder}
+      onPointerUp={(event) => finishPointerReorder(event, false)}
+      ref={(node) => { if (node == null) tabRefs.current.delete(item.id); else tabRefs.current.set(item.id, node); }}
+      role="tab"
+      tabIndex={item.id === value ? 0 : -1}
+      type="button"
+      key={item.id}
+    >{item.label}</button>)}
   </div>;
 }
 

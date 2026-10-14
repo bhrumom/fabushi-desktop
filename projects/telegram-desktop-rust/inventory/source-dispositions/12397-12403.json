@@ -1,0 +1,238 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6"
+  },
+  "exact_head_evidence": {
+    "head_sha": "8a07d98aae4497367cb1e1a8d7024e66f8565f30",
+    "rust_desktop_runtime_run": 38183734477,
+    "desktop_chat_parity_run": 38183734505,
+    "source_authority_job": 114601575522,
+    "source_authority_artifact": 11718378603,
+    "source_authority_digest": "sha256:b17afd2552005af0ce12269960ecd64d054b2ccf12e5decb9e420192a190f586",
+    "evidence_status": "exact-source-materialization-current-head-runtime-and-chat-validation-pending"
+  },
+  "accounting": {
+    "read_through": 12403,
+    "unread": 3722,
+    "unknown": 15845,
+    "omitted": 0
+  },
+  "range": {
+    "first_order": 12397,
+    "last_order": 12403,
+    "entries": 7
+  },
+  "rows": [
+    {
+      "recursive_order": 12397,
+      "source_path": "Telegram/codegen::codegen/style/parsed_file.h",
+      "source_blob_sha": "cc45c9aa2bf109947329c1a7d62c528b97ce4545",
+      "source_identity": {
+        "repository": "desktop-app/codegen",
+        "commit": "dbd1d53137cd581cfdbeebe93bcaf54abf55ec74",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/codegen",
+        "mode": "100644",
+        "type": "blob",
+        "path": "codegen/style/parsed_file.h",
+        "object": "cc45c9aa2bf109947329c1a7d62c528b97ce4545",
+        "size": 4554
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "ParsedFile",
+        "GetModifier",
+        "GetSizeModifier"
+      ],
+      "disposition": "applicable-style-parser-build-design-system-mapped-open",
+      "upstream_owner": "desktop-app/codegen style parser",
+      "responsibility": "Preserve strict style-source parsing, include resolution, type/value validation, inheritance/copy semantics, icon constraints and parser failure diagnostics as build-time quality authority.",
+      "fabushi_canonical_owner": "Existing Fabushi Design System + Build/codegen Quality owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners/shipping composition/tests only; no Telegram/codegen parallel visual runtime or alternate design-system truth."
+    },
+    {
+      "recursive_order": 12398,
+      "source_path": "Telegram/codegen::codegen/style/processor.cpp",
+      "source_blob_sha": "325f66cceef17f106870187ca58d1b84d4881925",
+      "source_identity": {
+        "repository": "desktop-app/codegen",
+        "commit": "dbd1d53137cd581cfdbeebe93bcaf54abf55ec74",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/codegen",
+        "mode": "100644",
+        "type": "blob",
+        "path": "codegen/style/processor.cpp",
+        "object": "325f66cceef17f106870187ca58d1b84d4881925",
+        "size": 1968
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Processor::launch",
+        "Processor::write"
+      ],
+      "disposition": "applicable-style-codegen-build-design-system-mapped-open",
+      "upstream_owner": "desktop-app/codegen style processor",
+      "responsibility": "Preserve deterministic style input loading, generation orchestration, write/error propagation and output lifecycle as build-time authority.",
+      "fabushi_canonical_owner": "Existing Fabushi Design System + Build/codegen Quality owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners/shipping composition/tests only; no Telegram/codegen parallel visual runtime or alternate design-system truth."
+    },
+    {
+      "recursive_order": 12399,
+      "source_path": "Telegram/codegen::codegen/style/processor.h",
+      "source_blob_sha": "dd781d6dd3388017f6472d938c8839815c85be2d",
+      "source_identity": {
+        "repository": "desktop-app/codegen",
+        "commit": "dbd1d53137cd581cfdbeebe93bcaf54abf55ec74",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/codegen",
+        "mode": "100644",
+        "type": "blob",
+        "path": "codegen/style/processor.h",
+        "object": "dd781d6dd3388017f6472d938c8839815c85be2d",
+        "size": 949
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Processor"
+      ],
+      "disposition": "applicable-style-codegen-build-design-system-mapped-open",
+      "upstream_owner": "desktop-app/codegen style processor contract",
+      "responsibility": "Preserve the source-neutral style generation processor contract and its input/output ownership boundary.",
+      "fabushi_canonical_owner": "Existing Fabushi Design System + Build/codegen Quality owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners/shipping composition/tests only; no Telegram/codegen parallel visual runtime or alternate design-system truth."
+    },
+    {
+      "recursive_order": 12400,
+      "source_path": "Telegram/codegen::codegen/style/render_svg.cpp",
+      "source_blob_sha": "6f2a9a4c8548f980ae5d82452361513f5a0dd8a2",
+      "source_identity": {
+        "repository": "desktop-app/codegen",
+        "commit": "dbd1d53137cd581cfdbeebe93bcaf54abf55ec74",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/codegen",
+        "mode": "100644",
+        "type": "blob",
+        "path": "codegen/style/render_svg.cpp",
+        "object": "6f2a9a4c8548f980ae5d82452361513f5a0dd8a2",
+        "size": 1036
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "RenderSvg"
+      ],
+      "disposition": "applicable-style-svg-resource-build-mapped-open",
+      "upstream_owner": "desktop-app/codegen SVG renderer",
+      "responsibility": "Preserve deterministic SVG-to-image build transformation, bounded raster sizing and failure handling needed for generated visual resources.",
+      "fabushi_canonical_owner": "Existing Resource/artifact + Fabushi Design System + Build/codegen Quality owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners/shipping composition/tests only; no Telegram/codegen parallel visual runtime or alternate design-system truth."
+    },
+    {
+      "recursive_order": 12401,
+      "source_path": "Telegram/codegen::codegen/style/render_svg.h",
+      "source_blob_sha": "d1879f31e5ba6beed6bd5fc5f2d9bad7b45375a0",
+      "source_identity": {
+        "repository": "desktop-app/codegen",
+        "commit": "dbd1d53137cd581cfdbeebe93bcaf54abf55ec74",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/codegen",
+        "mode": "100644",
+        "type": "blob",
+        "path": "codegen/style/render_svg.h",
+        "object": "d1879f31e5ba6beed6bd5fc5f2d9bad7b45375a0",
+        "size": 387
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "RenderSvg"
+      ],
+      "disposition": "applicable-style-svg-resource-build-mapped-open",
+      "upstream_owner": "desktop-app/codegen SVG renderer contract",
+      "responsibility": "Preserve the SVG resource rendering contract without importing Telegram visual assets or establishing a second visual system.",
+      "fabushi_canonical_owner": "Existing Resource/artifact + Fabushi Design System + Build/codegen Quality owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners/shipping composition/tests only; no Telegram/codegen parallel visual runtime or alternate design-system truth."
+    },
+    {
+      "recursive_order": 12402,
+      "source_path": "Telegram/codegen::codegen/style/structure_types.cpp",
+      "source_blob_sha": "a43e4fdddb3456e0bb39827b468984b0fe2ab6c0",
+      "source_identity": {
+        "repository": "desktop-app/codegen",
+        "commit": "dbd1d53137cd581cfdbeebe93bcaf54abf55ec74",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/codegen",
+        "mode": "100644",
+        "type": "blob",
+        "path": "codegen/style/structure_types.cpp",
+        "object": "a43e4fdddb3456e0bb39827b468984b0fe2ab6c0",
+        "size": 5813
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Value",
+        "DataBase",
+        "DataTypes"
+      ],
+      "disposition": "applicable-style-typed-value-model-build-mapped-open",
+      "upstream_owner": "desktop-app/codegen typed style values",
+      "responsibility": "Preserve typed style value representation, default construction, copy provenance and safe conversions for build-time validation/generation.",
+      "fabushi_canonical_owner": "Existing Fabushi Design System + Build/codegen Quality owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners/shipping composition/tests only; no Telegram/codegen parallel visual runtime or alternate design-system truth."
+    },
+    {
+      "recursive_order": 12403,
+      "source_path": "Telegram/codegen::codegen/style/structure_types.h",
+      "source_blob_sha": "683529df10fc210b89582bf5aed09b6975a08a42",
+      "source_identity": {
+        "repository": "desktop-app/codegen",
+        "commit": "dbd1d53137cd581cfdbeebe93bcaf54abf55ec74",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/codegen",
+        "mode": "100644",
+        "type": "blob",
+        "path": "codegen/style/structure_types.h",
+        "object": "683529df10fc210b89582bf5aed09b6975a08a42",
+        "size": 4745
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "TypeTag",
+        "Type",
+        "Value",
+        "Variable",
+        "StructField",
+        "Struct"
+      ],
+      "disposition": "applicable-style-schema-build-design-system-mapped-open",
+      "upstream_owner": "desktop-app/codegen style schema",
+      "responsibility": "Preserve the style schema/type system for colors, geometry, margins, fonts, icons, structs, explicit/implicit field status and copy provenance as build authority.",
+      "fabushi_canonical_owner": "Existing Fabushi Design System + Build/codegen Quality owner",
+      "fabushi_target": "Extend existing source-neutral canonical owners/shipping composition/tests only; no Telegram/codegen parallel visual runtime or alternate design-system truth."
+    }
+  ]
+}

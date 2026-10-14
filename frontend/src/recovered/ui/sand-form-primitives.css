@@ -159,3 +159,11 @@ label:has([role="switch"]):has(button:disabled) {
     transition-duration: 0ms;
   }
 }
+
+
+[role="tablist"][aria-orientation="vertical"] { align-items: stretch; flex-direction: column; }
+[role="tablist"][data-overflow-scroll="true"] { overflow: auto; overscroll-behavior: contain; scrollbar-width: none; }
+[role="tablist"][data-overflow-scroll="true"]::-webkit-scrollbar { display: none; }
+[role="tab"][data-reordering="true"] { cursor: grabbing; opacity: 0.72; }
+[role="tab"][data-reorder-target="true"] { outline: 2px solid var(--cursor-stroke-focused); outline-offset: -2px; }
+@media (prefers-reduced-motion: reduce) { [role="tab"] { scroll-behavior: auto; } }

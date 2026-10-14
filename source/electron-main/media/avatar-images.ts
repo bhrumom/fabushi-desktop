@@ -18,10 +18,44 @@ export function createAvatarImageEdgePort(deps: AvatarImageDeps) { const report 
 export interface ImageContextActions { copyImage(): void; saveImage(): Promise<void>; copyImageAddress?(): void }
 export function createImageContextActions(options: { srcUrl: string; copyDataImage(bytes: Buffer): boolean; copyImageAt(): void; fetch(url: string): Promise<Response>; save(bytes: Buffer, defaultName: string): Promise<void>; copyText(text: string): void }): ImageContextActions { return { copyImage() { if (options.srcUrl.startsWith("data:")) { const decoded = decodeImageDataUrl(options.srcUrl); if (decoded != null && options.copyDataImage(decoded.bytes)) return; } options.copyImageAt(); }, async saveImage() { let mime: string, bytes: Buffer; if (options.srcUrl.startsWith("data:")) { const decoded = decodeImageDataUrl(options.srcUrl); if (decoded == null) return; ({ mime, bytes } = decoded); } else { let url: URL; try { url = new URL(options.srcUrl); } catch { return; } if (url.protocol !== "http:" && url.protocol !== "https:") return; const response = await options.fetch(options.srcUrl); if (!response.ok) return; bytes = Buffer.from(await response.arrayBuffer()); if (bytes.length === 0) return; mime = response.headers.get("content-type")?.split(";")[0]?.trim() || "image/png"; } await options.save(bytes, `image.${extensionForImageMime(mime)}`); }, ...(options.srcUrl.length === 0 ? {} : { copyImageAddress: () => options.copyText(options.srcUrl) }) }; }
 
-export interface ImageContextMenuParams { srcURL: string; linkURL: string; mediaType: string; selectionText: string; isEditable: boolean; editFlags: Record<string, boolean>; x: number; y: number }
+export interface ImageContextMenuParams {
+  srcURL: string;
+  linkURL: string;
+  mediaType: string;
+  selectionText: string;
+  isEditable: boolean;
+  editFlags: Record<string, boolean>;
+  x: number;
+  y: number;
+  misspelledWord?: string;
+  dictionarySuggestions?: readonly string[];
+}
+
+const MAX_NATIVE_SPELLCHECK_SUGGESTIONS = 5;
+
+export function nativeSpellcheckSuggestions(
+  params: Pick<ImageContextMenuParams, "isEditable" | "misspelledWord" | "dictionarySuggestions">,
+): string[] {
+  if (!params.isEditable || typeof params.misspelledWord !== "string") return [];
+  const misspelledWord = params.misspelledWord.trim();
+  if (misspelledWord.length === 0 || !Array.isArray(params.dictionarySuggestions)) return [];
+  const suggestions: string[] = [];
+  const seen = new Set<string>();
+  for (const raw of params.dictionarySuggestions) {
+    if (typeof raw !== "string") continue;
+    const candidate = raw.trim();
+    if (candidate.length === 0 || candidate === misspelledWord || seen.has(candidate)) continue;
+    seen.add(candidate);
+    suggestions.push(candidate);
+    if (suggestions.length === MAX_NATIVE_SPELLCHECK_SUGGESTIONS) break;
+  }
+  return suggestions;
+}
 export interface ImageContextMenuItem { label?: string; type?: "separator"; accelerator?: string; enabled?: boolean; click?: () => void }
-export function buildImageContextMenuTemplate(contents: { copyImageAt(x: number, y: number): void; undo(): void; redo(): void; cut(): void; copy(): void; paste(): void; selectAll(): void }, params: ImageContextMenuParams, deps: { openExternalUrl(url: string): Promise<unknown>; copyText(text: string): void; imageActions: ImageContextActions }): ImageContextMenuItem[] {
+export function buildImageContextMenuTemplate(contents: { copyImageAt(x: number, y: number): void; undo(): void; redo(): void; cut(): void; copy(): void; paste(): void; selectAll(): void; replaceMisspelling(suggestion: string): void }, params: ImageContextMenuParams, deps: { openExternalUrl(url: string): Promise<unknown>; copyText(text: string): void; imageActions: ImageContextActions }): ImageContextMenuItem[] {
   const sections: ImageContextMenuItem[][] = [];
+  const spellingSuggestions = nativeSpellcheckSuggestions(params);
+  if (spellingSuggestions.length > 0) sections.push(spellingSuggestions.map((candidate) => ({ label: candidate, click: () => contents.replaceMisspelling(candidate) })));
   if (params.linkURL.length > 0) sections.push([{ label: "Open link", click: () => { void deps.openExternalUrl(params.linkURL); } }, { label: "Copy link address", click: () => deps.copyText(params.linkURL) }]);
   if (params.mediaType === "image") { const items: ImageContextMenuItem[] = [{ label: "Copy image", click: deps.imageActions.copyImage }, { label: "Save image…", click: () => { void deps.imageActions.saveImage(); } }]; if (params.srcURL.length > 0 && deps.imageActions.copyImageAddress != null) items.push({ label: "Copy image address", click: deps.imageActions.copyImageAddress }); sections.push(items); }
   if (params.isEditable) sections.push([{ label: "Undo", accelerator: "CmdOrCtrl+Z", enabled: params.editFlags.canUndo === true, click: () => contents.undo() }, { label: "Redo", accelerator: "Shift+CmdOrCtrl+Z", enabled: params.editFlags.canRedo === true, click: () => contents.redo() }, { label: "Cut", accelerator: "CmdOrCtrl+X", enabled: params.editFlags.canCut === true, click: () => contents.cut() }, { label: "Copy", accelerator: "CmdOrCtrl+C", enabled: params.editFlags.canCopy === true, click: () => contents.copy() }, { label: "Paste", accelerator: "CmdOrCtrl+V", enabled: params.editFlags.canPaste === true, click: () => contents.paste() }, { label: "Select All", accelerator: "CmdOrCtrl+A", enabled: params.editFlags.canSelectAll === true, click: () => contents.selectAll() }]); else if (params.selectionText.length > 0) sections.push([{ label: "Copy", accelerator: "CmdOrCtrl+C", click: () => contents.copy() }]);
@@ -48,6 +82,7 @@ export interface ImageContextMenuContents {
   copy(): void;
   paste(): void;
   selectAll(): void;
+  replaceMisspelling(suggestion: string): void;
   readonly session: { fetch(url: string): Promise<ImageContextMenuResponse> };
 }
 
@@ -131,6 +166,10 @@ export function registerImageContextMenu(deps: ImageContextMenuElectronPorts): v
     const hasLink = linkUrl.length > 0;
     const mediaUrl = params.srcURL;
     const hasImage = params.mediaType === "image";
+    const spellingSuggestions = nativeSpellcheckSuggestions(params);
+    if (spellingSuggestions.length > 0) {
+      sections.push(spellingSuggestions.map((candidate) => new deps.MenuItem({ label: candidate, click: () => contents.replaceMisspelling(candidate) })));
+    }
     if (hasLink) {
       sections.push([
         new deps.MenuItem({ label: "Open link", click: () => void deps.openExternalUrl(linkUrl) }),

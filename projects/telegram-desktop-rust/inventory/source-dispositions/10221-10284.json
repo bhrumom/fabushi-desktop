@@ -1,0 +1,1819 @@
+{
+  "format_version": 1,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6"
+  },
+  "range": {
+    "first_order": 10221,
+    "last_order": 10284,
+    "entries": 64
+  },
+  "range_evidence": {
+    "identity_source": {
+      "head_sha": "f810ac1eb2edba61afd6d2f89141d439b3f6e407",
+      "workflow_run": 38124618782,
+      "job_id": 114426354062,
+      "artifact_id": 11696915688,
+      "artifact_digest": "sha256:306a7639eb06e2851ca640b6d6bc48ef5d552d7f194541c1263a42c72e041b9e",
+      "note": "exact identities and all 64 materialized blobs from current-head recursive source-authority artifact; binary GPG trust anchors and libprisma grammars.dat were read as binary/base64 resources rather than mis-decoded UTF-8"
+    }
+  },
+  "rows": [
+    {
+      "recursive_order": 10221,
+      "source_path": "Telegram/ThirdParty/libfido2::src/reset.c",
+      "source_blob_sha": "4e09dbbca5cf968ddb9d728dcc13da88cdfd9264",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/reset.c",
+        "object": "4e09dbbca5cf968ddb9d728dcc13da88cdfd9264",
+        "mode": "100644",
+        "type": "blob",
+        "size": 923
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 ceremony/device lifecycle tail",
+      "source_symbols": [
+        "source:src/reset.c"
+      ],
+      "responsibility": "Completes reset/touch/U2F/monotonic timeout semantics, including bounded retries, state synchronization and user-presence compatibility.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + Host bridge + Settings/platform-device",
+      "fabushi_target": "Preserve bounded ceremony lifetime, cancellation, state refresh and compatibility inside the single source-neutral WebAuthn owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10222,
+      "source_path": "Telegram/ThirdParty/libfido2::src/rs1.c",
+      "source_blob_sha": "7db7f83e7da46089dad37df8a0c3fa2a390ebb33",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/rs1.c",
+        "object": "7db7f83e7da46089dad37df8a0c3fa2a390ebb33",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1412
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 attestation/signature verification boundary",
+      "source_symbols": [
+        "source:src/rs1.c"
+      ],
+      "responsibility": "Defines legacy U2F RSA/SHA1, RS256 and strict TPM attestation verification with exact structure, bounds and constant-time checks.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Security/Crypto dependency",
+      "fabushi_target": "Use audited crypto/platform dependencies and strict typed verification; do not copy or invent cryptographic primitives.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10223,
+      "source_path": "Telegram/ThirdParty/libfido2::src/rs256.c",
+      "source_blob_sha": "8873db4a3c53e04f1f416c7e3501c5bbed684bc1",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/rs256.c",
+        "object": "8873db4a3c53e04f1f416c7e3501c5bbed684bc1",
+        "mode": "100644",
+        "type": "blob",
+        "size": 5845
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 attestation/signature verification boundary",
+      "source_symbols": [
+        "source:src/rs256.c"
+      ],
+      "responsibility": "Defines legacy U2F RSA/SHA1, RS256 and strict TPM attestation verification with exact structure, bounds and constant-time checks.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Security/Crypto dependency",
+      "fabushi_target": "Use audited crypto/platform dependencies and strict typed verification; do not copy or invent cryptographic primitives.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10224,
+      "source_path": "Telegram/ThirdParty/libfido2::src/time.c",
+      "source_blob_sha": "fd0e4e3ca33e4286fbd67114dc5fa605b5ca375f",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/time.c",
+        "object": "fd0e4e3ca33e4286fbd67114dc5fa605b5ca375f",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1406
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 ceremony/device lifecycle tail",
+      "source_symbols": [
+        "source:src/time.c"
+      ],
+      "responsibility": "Completes reset/touch/U2F/monotonic timeout semantics, including bounded retries, state synchronization and user-presence compatibility.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + Host bridge + Settings/platform-device",
+      "fabushi_target": "Preserve bounded ceremony lifetime, cancellation, state refresh and compatibility inside the single source-neutral WebAuthn owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10225,
+      "source_path": "Telegram/ThirdParty/libfido2::src/touch.c",
+      "source_blob_sha": "6844e2c2dbc091d2a1c0060219b2a1d8f5d3fba6",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/touch.c",
+        "object": "6844e2c2dbc091d2a1c0060219b2a1d8f5d3fba6",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2661
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 ceremony/device lifecycle tail",
+      "source_symbols": [
+        "source:src/touch.c"
+      ],
+      "responsibility": "Completes reset/touch/U2F/monotonic timeout semantics, including bounded retries, state synchronization and user-presence compatibility.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + Host bridge + Settings/platform-device",
+      "fabushi_target": "Preserve bounded ceremony lifetime, cancellation, state refresh and compatibility inside the single source-neutral WebAuthn owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10226,
+      "source_path": "Telegram/ThirdParty/libfido2::src/tpm.c",
+      "source_blob_sha": "3e09bca00ffb61fa74eac740dd571aa3a35badfc",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/tpm.c",
+        "object": "3e09bca00ffb61fa74eac740dd571aa3a35badfc",
+        "mode": "100644",
+        "type": "blob",
+        "size": 11307
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 attestation/signature verification boundary",
+      "source_symbols": [
+        "source:src/tpm.c"
+      ],
+      "responsibility": "Defines legacy U2F RSA/SHA1, RS256 and strict TPM attestation verification with exact structure, bounds and constant-time checks.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Security/Crypto dependency",
+      "fabushi_target": "Use audited crypto/platform dependencies and strict typed verification; do not copy or invent cryptographic primitives.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10227,
+      "source_path": "Telegram/ThirdParty/libfido2::src/types.c",
+      "source_blob_sha": "f31f8da12952880b4a481b40067ad2ad7223f905",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/types.c",
+        "object": "f31f8da12952880b4a481b40067ad2ad7223f905",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1511
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 bounded state/parse utilities",
+      "source_symbols": [
+        "source:src/types.c"
+      ],
+      "responsibility": "Defines deterministic typed cleanup and strict numeric parsing for authenticator state.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + Resource/Secrets",
+      "fabushi_target": "Use Rust ownership and strict parse contracts in existing owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10228,
+      "source_path": "Telegram/ThirdParty/libfido2::src/u2f.c",
+      "source_blob_sha": "9a2bd4549a7b718bdb8c0dc70fcd7e01b6d2ba8a",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/u2f.c",
+        "object": "9a2bd4549a7b718bdb8c0dc70fcd7e01b6d2ba8a",
+        "mode": "100644",
+        "type": "blob",
+        "size": 23962
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 ceremony/device lifecycle tail",
+      "source_symbols": [
+        "source:src/u2f.c"
+      ],
+      "responsibility": "Completes reset/touch/U2F/monotonic timeout semantics, including bounded retries, state synchronization and user-presence compatibility.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + Host bridge + Settings/platform-device",
+      "fabushi_target": "Preserve bounded ceremony lifetime, cancellation, state refresh and compatibility inside the single source-neutral WebAuthn owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10229,
+      "source_path": "Telegram/ThirdParty/libfido2::src/util.c",
+      "source_blob_sha": "25281bb51b287759334b9b88f613377995c7a8f3",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/util.c",
+        "object": "25281bb51b287759334b9b88f613377995c7a8f3",
+        "mode": "100644",
+        "type": "blob",
+        "size": 614
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 bounded state/parse utilities",
+      "source_symbols": [
+        "source:src/util.c"
+      ],
+      "responsibility": "Defines deterministic typed cleanup and strict numeric parsing for authenticator state.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + Resource/Secrets",
+      "fabushi_target": "Use Rust ownership and strict parse contracts in existing owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10230,
+      "source_path": "Telegram/ThirdParty/libfido2::src/version.rc.in",
+      "source_blob_sha": "948dfcf50e22b614cabca16cfb9d0f3d3d56dded",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/version.rc.in",
+        "object": "948dfcf50e22b614cabca16cfb9d0f3d3d56dded",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1088
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 platform/build tail",
+      "source_symbols": [
+        "source:src/version.rc.in"
+      ],
+      "responsibility": "Carries source-neutral platform, lifecycle or release responsibility at the WebAuthn boundary.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + Platform/Build",
+      "fabushi_target": "Map into the existing canonical owner without adding a libfido2 runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10231,
+      "source_path": "Telegram/ThirdParty/libfido2::src/webauthn.h",
+      "source_blob_sha": "f0b59d969ac11bb7edcf77cbe2d1fb2b6e4388e7",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/webauthn.h",
+        "object": "f0b59d969ac11bb7edcf77cbe2d1fb2b6e4388e7",
+        "mode": "100644",
+        "type": "blob",
+        "size": 56127
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 Windows WebAuthn projection",
+      "source_symbols": [
+        "source:src/webauthn.h"
+      ],
+      "responsibility": "Defines Windows WebAuthn API versioning, transports, credentials/extensions, cancellation identifiers, timeouts and WinHello adaptation.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Windows platform adapter + Settings/platform-device",
+      "fabushi_target": "Keep WinHello/platform calls behind the existing source-neutral WebAuthn/platform-device boundary with exact cancellation/timeout semantics.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10232,
+      "source_path": "Telegram/ThirdParty/libfido2::src/winhello.c",
+      "source_blob_sha": "30c49c0b0d3bf6cbc1f6330701f56797fb2a5472",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/winhello.c",
+        "object": "30c49c0b0d3bf6cbc1f6330701f56797fb2a5472",
+        "mode": "100644",
+        "type": "blob",
+        "size": 29022
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 Windows WebAuthn projection",
+      "source_symbols": [
+        "source:src/winhello.c"
+      ],
+      "responsibility": "Defines Windows WebAuthn API versioning, transports, credentials/extensions, cancellation identifiers, timeouts and WinHello adaptation.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Windows platform adapter + Settings/platform-device",
+      "fabushi_target": "Keep WinHello/platform calls behind the existing source-neutral WebAuthn/platform-device boundary with exact cancellation/timeout semantics.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10233,
+      "source_path": "Telegram/ThirdParty/libfido2::tools/CMakeLists.txt",
+      "source_blob_sha": "e1f4366c4ef31288fe043be0f78f20d79d79ad14",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "tools/CMakeLists.txt",
+        "object": "e1f4366c4ef31288fe043be0f78f20d79d79ad14",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1820
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 command-line verification/tooling",
+      "source_symbols": [
+        "source:tools/CMakeLists.txt"
+      ],
+      "responsibility": "Defines strict CLI input/output, base64 framing, device discovery, assertion/credential verification, attach/detach helpers and header/build checks.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + existing Coordinator WebAuthn/security",
+      "fabushi_target": "Use as behavior/test authority; do not ship a parallel fido2 CLI product surface.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10234,
+      "source_path": "Telegram/ThirdParty/libfido2::tools/assert_get.c",
+      "source_blob_sha": "c2adb97c55b54455dfa6faa0ab8033131a4c1dec",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "tools/assert_get.c",
+        "object": "c2adb97c55b54455dfa6faa0ab8033131a4c1dec",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6834
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 command-line verification/tooling",
+      "source_symbols": [
+        "source:tools/assert_get.c"
+      ],
+      "responsibility": "Defines strict CLI input/output, base64 framing, device discovery, assertion/credential verification, attach/detach helpers and header/build checks.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + existing Coordinator WebAuthn/security",
+      "fabushi_target": "Use as behavior/test authority; do not ship a parallel fido2 CLI product surface.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10235,
+      "source_path": "Telegram/ThirdParty/libfido2::tools/assert_verify.c",
+      "source_blob_sha": "4cc2e86bff135b744ca3627241a332a852c4309a",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "tools/assert_verify.c",
+        "object": "4cc2e86bff135b744ca3627241a332a852c4309a",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4916
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 command-line verification/tooling",
+      "source_symbols": [
+        "source:tools/assert_verify.c"
+      ],
+      "responsibility": "Defines strict CLI input/output, base64 framing, device discovery, assertion/credential verification, attach/detach helpers and header/build checks.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + existing Coordinator WebAuthn/security",
+      "fabushi_target": "Use as behavior/test authority; do not ship a parallel fido2 CLI product surface.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10236,
+      "source_path": "Telegram/ThirdParty/libfido2::tools/base64.c",
+      "source_blob_sha": "2cfa98ddb25409af8dd3e7fb4785fedc0b00d058",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "tools/base64.c",
+        "object": "2cfa98ddb25409af8dd3e7fb4785fedc0b00d058",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2540
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 command-line verification/tooling",
+      "source_symbols": [
+        "source:tools/base64.c"
+      ],
+      "responsibility": "Defines strict CLI input/output, base64 framing, device discovery, assertion/credential verification, attach/detach helpers and header/build checks.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + existing Coordinator WebAuthn/security",
+      "fabushi_target": "Use as behavior/test authority; do not ship a parallel fido2 CLI product surface.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10237,
+      "source_path": "Telegram/ThirdParty/libfido2::tools/bio.c",
+      "source_blob_sha": "7a1406d70de510f6e3f129ab86f815beeba494cd",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "tools/bio.c",
+        "object": "7a1406d70de510f6e3f129ab86f815beeba494cd",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6480
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 security-key management tools",
+      "source_symbols": [
+        "source:tools/bio.c"
+      ],
+      "responsibility": "Exercises real authenticator management: PIN/UV, retries, resident credentials, biometrics, largeBlob, reset and device configuration with explicit authorization.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + Settings/platform-device + Secrets",
+      "fabushi_target": "Project only policy-approved management capabilities through canonical settings/security owners; preserve PIN secrecy, authorization and fail-closed errors.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10238,
+      "source_path": "Telegram/ThirdParty/libfido2::tools/config.c",
+      "source_blob_sha": "49253e83f3b78a5671cbb0a772be0265475f4bd0",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "tools/config.c",
+        "object": "49253e83f3b78a5671cbb0a772be0265475f4bd0",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4004
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 security-key management tools",
+      "source_symbols": [
+        "source:tools/config.c"
+      ],
+      "responsibility": "Exercises real authenticator management: PIN/UV, retries, resident credentials, biometrics, largeBlob, reset and device configuration with explicit authorization.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + Settings/platform-device + Secrets",
+      "fabushi_target": "Project only policy-approved management capabilities through canonical settings/security owners; preserve PIN secrecy, authorization and fail-closed errors.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10239,
+      "source_path": "Telegram/ThirdParty/libfido2::tools/cred_make.c",
+      "source_blob_sha": "542a0c36a16181f46d4059ff6014d95c305011a2",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "tools/cred_make.c",
+        "object": "542a0c36a16181f46d4059ff6014d95c305011a2",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6486
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 command-line verification/tooling",
+      "source_symbols": [
+        "source:tools/cred_make.c"
+      ],
+      "responsibility": "Defines strict CLI input/output, base64 framing, device discovery, assertion/credential verification, attach/detach helpers and header/build checks.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + existing Coordinator WebAuthn/security",
+      "fabushi_target": "Use as behavior/test authority; do not ship a parallel fido2 CLI product surface.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10240,
+      "source_path": "Telegram/ThirdParty/libfido2::tools/cred_verify.c",
+      "source_blob_sha": "3eae435899dfa603b997fe6484cf61806f3a37bb",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "tools/cred_verify.c",
+        "object": "3eae435899dfa603b997fe6484cf61806f3a37bb",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4140
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 command-line verification/tooling",
+      "source_symbols": [
+        "source:tools/cred_verify.c"
+      ],
+      "responsibility": "Defines strict CLI input/output, base64 framing, device discovery, assertion/credential verification, attach/detach helpers and header/build checks.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + existing Coordinator WebAuthn/security",
+      "fabushi_target": "Use as behavior/test authority; do not ship a parallel fido2 CLI product surface.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10241,
+      "source_path": "Telegram/ThirdParty/libfido2::tools/credman.c",
+      "source_blob_sha": "8baf04f02f141ac3f725f7e3975dca9164eadcf3",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "tools/credman.c",
+        "object": "8baf04f02f141ac3f725f7e3975dca9164eadcf3",
+        "mode": "100644",
+        "type": "blob",
+        "size": 7527
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 security-key management tools",
+      "source_symbols": [
+        "source:tools/credman.c"
+      ],
+      "responsibility": "Exercises real authenticator management: PIN/UV, retries, resident credentials, biometrics, largeBlob, reset and device configuration with explicit authorization.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + Settings/platform-device + Secrets",
+      "fabushi_target": "Project only policy-approved management capabilities through canonical settings/security owners; preserve PIN secrecy, authorization and fail-closed errors.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10242,
+      "source_path": "Telegram/ThirdParty/libfido2::tools/extern.h",
+      "source_blob_sha": "cdff7be312da881d13c0b666fd69dc72514ad67b",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "tools/extern.h",
+        "object": "cdff7be312da881d13c0b666fd69dc72514ad67b",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3426
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 command-line verification/tooling",
+      "source_symbols": [
+        "source:tools/extern.h"
+      ],
+      "responsibility": "Defines strict CLI input/output, base64 framing, device discovery, assertion/credential verification, attach/detach helpers and header/build checks.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + existing Coordinator WebAuthn/security",
+      "fabushi_target": "Use as behavior/test authority; do not ship a parallel fido2 CLI product surface.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10243,
+      "source_path": "Telegram/ThirdParty/libfido2::tools/fido2-assert.c",
+      "source_blob_sha": "351ed4fd387d36b63d1f5004fa5b495445c0dc63",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "tools/fido2-assert.c",
+        "object": "351ed4fd387d36b63d1f5004fa5b495445c0dc63",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1220
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 command-line verification/tooling",
+      "source_symbols": [
+        "source:tools/fido2-assert.c"
+      ],
+      "responsibility": "Defines strict CLI input/output, base64 framing, device discovery, assertion/credential verification, attach/detach helpers and header/build checks.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + existing Coordinator WebAuthn/security",
+      "fabushi_target": "Use as behavior/test authority; do not ship a parallel fido2 CLI product surface.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10244,
+      "source_path": "Telegram/ThirdParty/libfido2::tools/fido2-attach.sh",
+      "source_blob_sha": "ef02db6b9ff0245db1d281c220e1e8df4cd65af6",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "tools/fido2-attach.sh",
+        "object": "ef02db6b9ff0245db1d281c220e1e8df4cd65af6",
+        "mode": "100755",
+        "type": "blob",
+        "size": 334
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 command-line verification/tooling",
+      "source_symbols": [
+        "source:tools/fido2-attach.sh"
+      ],
+      "responsibility": "Defines strict CLI input/output, base64 framing, device discovery, assertion/credential verification, attach/detach helpers and header/build checks.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + existing Coordinator WebAuthn/security",
+      "fabushi_target": "Use as behavior/test authority; do not ship a parallel fido2 CLI product surface.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10245,
+      "source_path": "Telegram/ThirdParty/libfido2::tools/fido2-cred.c",
+      "source_blob_sha": "a819bd118d12cafffec24ccdfb645ef49b054c97",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "tools/fido2-cred.c",
+        "object": "a819bd118d12cafffec24ccdfb645ef49b054c97",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1187
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 command-line verification/tooling",
+      "source_symbols": [
+        "source:tools/fido2-cred.c"
+      ],
+      "responsibility": "Defines strict CLI input/output, base64 framing, device discovery, assertion/credential verification, attach/detach helpers and header/build checks.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + existing Coordinator WebAuthn/security",
+      "fabushi_target": "Use as behavior/test authority; do not ship a parallel fido2 CLI product surface.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10246,
+      "source_path": "Telegram/ThirdParty/libfido2::tools/fido2-detach.sh",
+      "source_blob_sha": "140278fc69936ae40d227b932f6d6e5449efd4e1",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "tools/fido2-detach.sh",
+        "object": "140278fc69936ae40d227b932f6d6e5449efd4e1",
+        "mode": "100755",
+        "type": "blob",
+        "size": 356
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 command-line verification/tooling",
+      "source_symbols": [
+        "source:tools/fido2-detach.sh"
+      ],
+      "responsibility": "Defines strict CLI input/output, base64 framing, device discovery, assertion/credential verification, attach/detach helpers and header/build checks.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + existing Coordinator WebAuthn/security",
+      "fabushi_target": "Use as behavior/test authority; do not ship a parallel fido2 CLI product surface.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10247,
+      "source_path": "Telegram/ThirdParty/libfido2::tools/fido2-token.c",
+      "source_blob_sha": "9b2b070c6833318d94da455b612e3a90961a3886",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "tools/fido2-token.c",
+        "object": "9b2b070c6833318d94da455b612e3a90961a3886",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2317
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 security-key management tools",
+      "source_symbols": [
+        "source:tools/fido2-token.c"
+      ],
+      "responsibility": "Exercises real authenticator management: PIN/UV, retries, resident credentials, biometrics, largeBlob, reset and device configuration with explicit authorization.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + Settings/platform-device + Secrets",
+      "fabushi_target": "Project only policy-approved management capabilities through canonical settings/security owners; preserve PIN secrecy, authorization and fail-closed errors.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10248,
+      "source_path": "Telegram/ThirdParty/libfido2::tools/fido2-unprot.sh",
+      "source_blob_sha": "06b52232c6befbd582861684ce45b0a1d3a821dc",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "tools/fido2-unprot.sh",
+        "object": "06b52232c6befbd582861684ce45b0a1d3a821dc",
+        "mode": "100755",
+        "type": "blob",
+        "size": 3116
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 command-line verification/tooling",
+      "source_symbols": [
+        "source:tools/fido2-unprot.sh"
+      ],
+      "responsibility": "Defines strict CLI input/output, base64 framing, device discovery, assertion/credential verification, attach/detach helpers and header/build checks.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + existing Coordinator WebAuthn/security",
+      "fabushi_target": "Use as behavior/test authority; do not ship a parallel fido2 CLI product surface.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10249,
+      "source_path": "Telegram/ThirdParty/libfido2::tools/include_check.sh",
+      "source_blob_sha": "a9a9873ca7dfebee4f0e38fd4d547c214f639ded",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "tools/include_check.sh",
+        "object": "a9a9873ca7dfebee4f0e38fd4d547c214f639ded",
+        "mode": "100755",
+        "type": "blob",
+        "size": 673
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 command-line verification/tooling",
+      "source_symbols": [
+        "source:tools/include_check.sh"
+      ],
+      "responsibility": "Defines strict CLI input/output, base64 framing, device discovery, assertion/credential verification, attach/detach helpers and header/build checks.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + existing Coordinator WebAuthn/security",
+      "fabushi_target": "Use as behavior/test authority; do not ship a parallel fido2 CLI product surface.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10250,
+      "source_path": "Telegram/ThirdParty/libfido2::tools/largeblob.c",
+      "source_blob_sha": "4cb36549c50d7db7e0b6ce8a9dac25bf0494bb12",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "tools/largeblob.c",
+        "object": "4cb36549c50d7db7e0b6ce8a9dac25bf0494bb12",
+        "mode": "100644",
+        "type": "blob",
+        "size": 14446
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 security-key management tools",
+      "source_symbols": [
+        "source:tools/largeblob.c"
+      ],
+      "responsibility": "Exercises real authenticator management: PIN/UV, retries, resident credentials, biometrics, largeBlob, reset and device configuration with explicit authorization.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + Settings/platform-device + Secrets",
+      "fabushi_target": "Project only policy-approved management capabilities through canonical settings/security owners; preserve PIN secrecy, authorization and fail-closed errors.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10251,
+      "source_path": "Telegram/ThirdParty/libfido2::tools/pin.c",
+      "source_blob_sha": "8b2697ed8e1e64e0f2b6812ef583a64e141c91ac",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "tools/pin.c",
+        "object": "8b2697ed8e1e64e0f2b6812ef583a64e141c91ac",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3195
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 security-key management tools",
+      "source_symbols": [
+        "source:tools/pin.c"
+      ],
+      "responsibility": "Exercises real authenticator management: PIN/UV, retries, resident credentials, biometrics, largeBlob, reset and device configuration with explicit authorization.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + Settings/platform-device + Secrets",
+      "fabushi_target": "Project only policy-approved management capabilities through canonical settings/security owners; preserve PIN secrecy, authorization and fail-closed errors.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10252,
+      "source_path": "Telegram/ThirdParty/libfido2::tools/test.sh",
+      "source_blob_sha": "73b21cba875e79a91ff40df60039817df86c0c6b",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "tools/test.sh",
+        "object": "73b21cba875e79a91ff40df60039817df86c0c6b",
+        "mode": "100755",
+        "type": "blob",
+        "size": 16482
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 command-line verification/tooling",
+      "source_symbols": [
+        "source:tools/test.sh"
+      ],
+      "responsibility": "Defines strict CLI input/output, base64 framing, device discovery, assertion/credential verification, attach/detach helpers and header/build checks.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + existing Coordinator WebAuthn/security",
+      "fabushi_target": "Use as behavior/test authority; do not ship a parallel fido2 CLI product surface.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10253,
+      "source_path": "Telegram/ThirdParty/libfido2::tools/token.c",
+      "source_blob_sha": "b23d59e54bbbff6eda625d792a31f19499810f2b",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "tools/token.c",
+        "object": "b23d59e54bbbff6eda625d792a31f19499810f2b",
+        "mode": "100644",
+        "type": "blob",
+        "size": 17838
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 security-key management tools",
+      "source_symbols": [
+        "source:tools/token.c"
+      ],
+      "responsibility": "Exercises real authenticator management: PIN/UV, retries, resident credentials, biometrics, largeBlob, reset and device configuration with explicit authorization.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + Settings/platform-device + Secrets",
+      "fabushi_target": "Project only policy-approved management capabilities through canonical settings/security owners; preserve PIN secrecy, authorization and fail-closed errors.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10254,
+      "source_path": "Telegram/ThirdParty/libfido2::tools/util.c",
+      "source_blob_sha": "d0004903dda2a36d43be70af9f055642fdcea18a",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "tools/util.c",
+        "object": "d0004903dda2a36d43be70af9f055642fdcea18a",
+        "mode": "100644",
+        "type": "blob",
+        "size": 11427
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 command-line verification/tooling",
+      "source_symbols": [
+        "source:tools/util.c"
+      ],
+      "responsibility": "Defines strict CLI input/output, base64 framing, device discovery, assertion/credential verification, attach/detach helpers and header/build checks.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + existing Coordinator WebAuthn/security",
+      "fabushi_target": "Use as behavior/test authority; do not ship a parallel fido2 CLI product surface.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10255,
+      "source_path": "Telegram/ThirdParty/libfido2::udev/70-u2f.rules",
+      "source_blob_sha": "65750b3946fecbd295f4b37af6d4328f7aa04dc1",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "udev/70-u2f.rules",
+        "object": "65750b3946fecbd295f4b37af6d4328f7aa04dc1",
+        "mode": "100644",
+        "type": "blob",
+        "size": 19548
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 Linux security-key device access",
+      "source_symbols": [
+        "source:udev/70-u2f.rules"
+      ],
+      "responsibility": "Defines deterministic HID VID/PID permission rules, catalog validation and installation.",
+      "fabushi_canonical_owner": "Canonical Linux platform/packaging + Resource/Permissions",
+      "fabushi_target": "Map device permissions and packaging to the canonical Linux platform owner; no product-specific udev owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10256,
+      "source_path": "Telegram/ThirdParty/libfido2::udev/CMakeLists.txt",
+      "source_blob_sha": "abddb80f4d82b10e67d599e146b2f5e4683a9062",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "udev/CMakeLists.txt",
+        "object": "abddb80f4d82b10e67d599e146b2f5e4683a9062",
+        "mode": "100644",
+        "type": "blob",
+        "size": 282
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 Linux security-key device access",
+      "source_symbols": [
+        "source:udev/CMakeLists.txt"
+      ],
+      "responsibility": "Defines deterministic HID VID/PID permission rules, catalog validation and installation.",
+      "fabushi_canonical_owner": "Canonical Linux platform/packaging + Resource/Permissions",
+      "fabushi_target": "Map device permissions and packaging to the canonical Linux platform owner; no product-specific udev owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10257,
+      "source_path": "Telegram/ThirdParty/libfido2::udev/check.sh",
+      "source_blob_sha": "5f2ed131ce341eae0c3b692d706e6b73e700afe2",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "udev/check.sh",
+        "object": "5f2ed131ce341eae0c3b692d706e6b73e700afe2",
+        "mode": "100755",
+        "type": "blob",
+        "size": 861
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 Linux security-key device access",
+      "source_symbols": [
+        "source:udev/check.sh"
+      ],
+      "responsibility": "Defines deterministic HID VID/PID permission rules, catalog validation and installation.",
+      "fabushi_canonical_owner": "Canonical Linux platform/packaging + Resource/Permissions",
+      "fabushi_target": "Map device permissions and packaging to the canonical Linux platform owner; no product-specific udev owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10258,
+      "source_path": "Telegram/ThirdParty/libfido2::udev/fidodevs",
+      "source_blob_sha": "6b88ddedf4d525b3ef198992f9dd17856cebb431",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "udev/fidodevs",
+        "object": "6b88ddedf4d525b3ef198992f9dd17856cebb431",
+        "mode": "100644",
+        "type": "blob",
+        "size": 5874
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 Linux security-key device access",
+      "source_symbols": [
+        "source:udev/fidodevs"
+      ],
+      "responsibility": "Defines deterministic HID VID/PID permission rules, catalog validation and installation.",
+      "fabushi_canonical_owner": "Canonical Linux platform/packaging + Resource/Permissions",
+      "fabushi_target": "Map device permissions and packaging to the canonical Linux platform owner; no product-specific udev owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10259,
+      "source_path": "Telegram/ThirdParty/libfido2::udev/genrules.awk",
+      "source_blob_sha": "3dad667da923543451bf0d82ddb16ec88611f84f",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "udev/genrules.awk",
+        "object": "3dad667da923543451bf0d82ddb16ec88611f84f",
+        "mode": "100755",
+        "type": "blob",
+        "size": 2679
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 Linux security-key device access",
+      "source_symbols": [
+        "source:udev/genrules.awk"
+      ],
+      "responsibility": "Defines deterministic HID VID/PID permission rules, catalog validation and installation.",
+      "fabushi_canonical_owner": "Canonical Linux platform/packaging + Resource/Permissions",
+      "fabushi_target": "Map device permissions and packaging to the canonical Linux platform owner; no product-specific udev owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10260,
+      "source_path": "Telegram/ThirdParty/libfido2::windows/build.ps1",
+      "source_blob_sha": "16de7635f8ec7b68b9c9fd7df81858714ee350a3",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "windows/build.ps1",
+        "object": "16de7635f8ec7b68b9c9fd7df81858714ee350a3",
+        "mode": "100644",
+        "type": "blob",
+        "size": 7891
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 Windows build/release provenance",
+      "source_symbols": [
+        "source:windows/build.ps1"
+      ],
+      "responsibility": "Defines pinned dependency acquisition, signature verification, compiler hardening and x64/x86/ARM release matrices.",
+      "fabushi_canonical_owner": "Canonical Build/Packaging/Release + Supply-chain security",
+      "fabushi_target": "Keep dependency pins/signature verification and multi-architecture packaging under Fabushi release owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10261,
+      "source_path": "Telegram/ThirdParty/libfido2::windows/const.ps1",
+      "source_blob_sha": "889d118edc05bb8c61b87470ba894e527a61cbc8",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "windows/const.ps1",
+        "object": "889d118edc05bb8c61b87470ba894e527a61cbc8",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2128
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 Windows build/release provenance",
+      "source_symbols": [
+        "source:windows/const.ps1"
+      ],
+      "responsibility": "Defines pinned dependency acquisition, signature verification, compiler hardening and x64/x86/ARM release matrices.",
+      "fabushi_canonical_owner": "Canonical Build/Packaging/Release + Supply-chain security",
+      "fabushi_target": "Keep dependency pins/signature verification and multi-architecture packaging under Fabushi release owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10262,
+      "source_path": "Telegram/ThirdParty/libfido2::windows/cygwin.gpg",
+      "source_blob_sha": "1e87237a6e03f9d216427b292a124153aa050223",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "windows/cygwin.gpg",
+        "object": "1e87237a6e03f9d216427b292a124153aa050223",
+        "mode": "100755",
+        "type": "blob",
+        "size": 2193
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 Windows dependency trust anchor",
+      "source_symbols": [
+        "source:windows/cygwin.gpg"
+      ],
+      "responsibility": "Binary OpenPGP trust material used to verify acquired Windows/Cygwin dependency artifacts.",
+      "fabushi_canonical_owner": "Canonical Build/Packaging/Supply-chain security",
+      "fabushi_target": "Treat as provenance/trust-anchor authority; Fabushi must pin and verify external acquisitions through canonical release tooling.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10263,
+      "source_path": "Telegram/ThirdParty/libfido2::windows/cygwin.ps1",
+      "source_blob_sha": "eafc6e0256d348d332b74bca034fb39bf6913a1f",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "windows/cygwin.ps1",
+        "object": "eafc6e0256d348d332b74bca034fb39bf6913a1f",
+        "mode": "100755",
+        "type": "blob",
+        "size": 2404
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 Windows build/release provenance",
+      "source_symbols": [
+        "source:windows/cygwin.ps1"
+      ],
+      "responsibility": "Defines pinned dependency acquisition, signature verification, compiler hardening and x64/x86/ARM release matrices.",
+      "fabushi_canonical_owner": "Canonical Build/Packaging/Release + Supply-chain security",
+      "fabushi_target": "Keep dependency pins/signature verification and multi-architecture packaging under Fabushi release owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10264,
+      "source_path": "Telegram/ThirdParty/libfido2::windows/libressl.gpg",
+      "source_blob_sha": "87d5dada4d6a1313727e0f4be89b47ea79d52403",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "windows/libressl.gpg",
+        "object": "87d5dada4d6a1313727e0f4be89b47ea79d52403",
+        "mode": "100644",
+        "type": "blob",
+        "size": 16425
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 Windows dependency trust anchor",
+      "source_symbols": [
+        "source:windows/libressl.gpg"
+      ],
+      "responsibility": "Binary OpenPGP trust material used to verify acquired Windows/Cygwin dependency artifacts.",
+      "fabushi_canonical_owner": "Canonical Build/Packaging/Supply-chain security",
+      "fabushi_target": "Treat as provenance/trust-anchor authority; Fabushi must pin and verify external acquisitions through canonical release tooling.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10265,
+      "source_path": "Telegram/ThirdParty/libfido2::windows/release.ps1",
+      "source_blob_sha": "8946c525a68d5a9184c587c397c494dc0973aa04",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "windows/release.ps1",
+        "object": "8946c525a68d5a9184c587c397c494dc0973aa04",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3057
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 Windows build/release provenance",
+      "source_symbols": [
+        "source:windows/release.ps1"
+      ],
+      "responsibility": "Defines pinned dependency acquisition, signature verification, compiler hardening and x64/x86/ARM release matrices.",
+      "fabushi_canonical_owner": "Canonical Build/Packaging/Release + Supply-chain security",
+      "fabushi_target": "Keep dependency pins/signature verification and multi-architecture packaging under Fabushi release owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10266,
+      "source_path": "Telegram/ThirdParty/libprisma::.gitattributes",
+      "source_blob_sha": "63081aecb94d894cff0b8f9f2ceacff756442903",
+      "source_identity": {
+        "repository": "desktop-app/libprisma",
+        "commit": "75f26c17308871bee69f69a2831a8af2bc2f3627",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libprisma",
+        "path": ".gitattributes",
+        "object": "63081aecb94d894cff0b8f9f2ceacff756442903",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2549
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libprisma provenance/build/grammar-generation authority",
+      "source_symbols": [
+        "source:.gitattributes"
+      ],
+      "responsibility": "Defines MIT provenance, Prism grammar acquisition/generation, supported-language catalog and reproducible generator dependencies.",
+      "fabushi_canonical_owner": "Canonical Conversation Transcript rendering + Build/Quality + License provenance",
+      "fabushi_target": "Use a maintained source-neutral highlighter dependency, pin/license it, and keep offline renderer packaging reproducible.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10267,
+      "source_path": "Telegram/ThirdParty/libprisma::.github/workflows/build-grammars.yml",
+      "source_blob_sha": "ec564569a230c4f4a973aedde71378f6d18da3f8",
+      "source_identity": {
+        "repository": "desktop-app/libprisma",
+        "commit": "75f26c17308871bee69f69a2831a8af2bc2f3627",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libprisma",
+        "path": ".github/workflows/build-grammars.yml",
+        "object": "ec564569a230c4f4a973aedde71378f6d18da3f8",
+        "mode": "100644",
+        "type": "blob",
+        "size": 658
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libprisma provenance/build/grammar-generation authority",
+      "source_symbols": [
+        "source:.github/workflows/build-grammars.yml"
+      ],
+      "responsibility": "Defines MIT provenance, Prism grammar acquisition/generation, supported-language catalog and reproducible generator dependencies.",
+      "fabushi_canonical_owner": "Canonical Conversation Transcript rendering + Build/Quality + License provenance",
+      "fabushi_target": "Use a maintained source-neutral highlighter dependency, pin/license it, and keep offline renderer packaging reproducible.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10268,
+      "source_path": "Telegram/ThirdParty/libprisma::.gitignore",
+      "source_blob_sha": "addd40b177c3bf3247c0514c9ec79401d42d3b51",
+      "source_identity": {
+        "repository": "desktop-app/libprisma",
+        "commit": "75f26c17308871bee69f69a2831a8af2bc2f3627",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libprisma",
+        "path": ".gitignore",
+        "object": "addd40b177c3bf3247c0514c9ec79401d42d3b51",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6258
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libprisma provenance/build/grammar-generation authority",
+      "source_symbols": [
+        "source:.gitignore"
+      ],
+      "responsibility": "Defines MIT provenance, Prism grammar acquisition/generation, supported-language catalog and reproducible generator dependencies.",
+      "fabushi_canonical_owner": "Canonical Conversation Transcript rendering + Build/Quality + License provenance",
+      "fabushi_target": "Use a maintained source-neutral highlighter dependency, pin/license it, and keep offline renderer packaging reproducible.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10269,
+      "source_path": "Telegram/ThirdParty/libprisma::LICENSE",
+      "source_blob_sha": "1941f980b3a4f3e3828705a9db5fe5c053f505ac",
+      "source_identity": {
+        "repository": "desktop-app/libprisma",
+        "commit": "75f26c17308871bee69f69a2831a8af2bc2f3627",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libprisma",
+        "path": "LICENSE",
+        "object": "1941f980b3a4f3e3828705a9db5fe5c053f505ac",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1065
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libprisma provenance/build/grammar-generation authority",
+      "source_symbols": [
+        "source:LICENSE"
+      ],
+      "responsibility": "Defines MIT provenance, Prism grammar acquisition/generation, supported-language catalog and reproducible generator dependencies.",
+      "fabushi_canonical_owner": "Canonical Conversation Transcript rendering + Build/Quality + License provenance",
+      "fabushi_target": "Use a maintained source-neutral highlighter dependency, pin/license it, and keep offline renderer packaging reproducible.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10270,
+      "source_path": "Telegram/ThirdParty/libprisma::README.md",
+      "source_blob_sha": "f5e307fa29a29333ea1b013f965333fc6a604e2d",
+      "source_identity": {
+        "repository": "desktop-app/libprisma",
+        "commit": "75f26c17308871bee69f69a2831a8af2bc2f3627",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libprisma",
+        "path": "README.md",
+        "object": "f5e307fa29a29333ea1b013f965333fc6a604e2d",
+        "mode": "100644",
+        "type": "blob",
+        "size": 8254
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libprisma provenance/build/grammar-generation authority",
+      "source_symbols": [
+        "source:README.md"
+      ],
+      "responsibility": "Defines MIT provenance, Prism grammar acquisition/generation, supported-language catalog and reproducible generator dependencies.",
+      "fabushi_canonical_owner": "Canonical Conversation Transcript rendering + Build/Quality + License provenance",
+      "fabushi_target": "Use a maintained source-neutral highlighter dependency, pin/license it, and keep offline renderer packaging reproducible.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10271,
+      "source_path": "Telegram/ThirdParty/libprisma::components/prism-tl.js",
+      "source_blob_sha": "9ab1f5c2457136ddd460bc7c4ac3df6b5e33f066",
+      "source_identity": {
+        "repository": "desktop-app/libprisma",
+        "commit": "75f26c17308871bee69f69a2831a8af2bc2f3627",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libprisma",
+        "path": "components/prism-tl.js",
+        "object": "9ab1f5c2457136ddd460bc7c4ac3df6b5e33f066",
+        "mode": "100644",
+        "type": "blob",
+        "size": 876
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libprisma Telegram-language grammar extension",
+      "source_symbols": [
+        "source:components/prism-tl.js"
+      ],
+      "responsibility": "Adds a source-language grammar extension to the Prism model.",
+      "fabushi_canonical_owner": "Canonical Conversation Transcript syntax projection",
+      "fabushi_target": "Treat as language-catalog authority; unsupported grammars remain plain text until deliberately registered in the single highlighter owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10272,
+      "source_path": "Telegram/ThirdParty/libprisma::generate.js",
+      "source_blob_sha": "df26e06101aeeeab891e591b99be4e0623a96832",
+      "source_identity": {
+        "repository": "desktop-app/libprisma",
+        "commit": "75f26c17308871bee69f69a2831a8af2bc2f3627",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libprisma",
+        "path": "generate.js",
+        "object": "df26e06101aeeeab891e591b99be4e0623a96832",
+        "mode": "100644",
+        "type": "blob",
+        "size": 11706
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libprisma grammar generator",
+      "source_symbols": [
+        "source:generate.js"
+      ],
+      "responsibility": "Downloads Prism metadata/components, resolves grammar dependencies and serializes the compact grammar database.",
+      "fabushi_canonical_owner": "Canonical Conversation Transcript syntax projection + Build/Packaging",
+      "fabushi_target": "Prefer pinned npm grammars statically bundled by Vite; prohibit runtime acquisition in shipping renderer.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10273,
+      "source_path": "Telegram/ThirdParty/libprisma::libprisma/Highlight.cpp",
+      "source_blob_sha": "8d5545256d195a0ba273dd70a44d57b8a4125e6f",
+      "source_identity": {
+        "repository": "desktop-app/libprisma",
+        "commit": "75f26c17308871bee69f69a2831a8af2bc2f3627",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libprisma",
+        "path": "libprisma/Highlight.cpp",
+        "object": "8d5545256d195a0ba273dd70a44d57b8a4125e6f",
+        "mode": "100644",
+        "type": "blob",
+        "size": 652
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libprisma syntax tokenizer/highlighter core",
+      "source_symbols": [
+        "source:libprisma/Highlight.cpp"
+      ],
+      "responsibility": "Implements grammar lookup, regex tokenization, greedy rematching, nested token streams, recursion bounds and plain-text fallback.",
+      "fabushi_canonical_owner": "Canonical Conversation Transcript syntax projection",
+      "fabushi_target": "Extend the existing Transcript renderer with one source-neutral syntax projection, bounded input and safe React token rendering; no C++/Telegram highlighter runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10274,
+      "source_path": "Telegram/ThirdParty/libprisma::libprisma/Highlight.h",
+      "source_blob_sha": "a1130e069a54a094ac43a29083ff09b21668cb60",
+      "source_identity": {
+        "repository": "desktop-app/libprisma",
+        "commit": "75f26c17308871bee69f69a2831a8af2bc2f3627",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libprisma",
+        "path": "libprisma/Highlight.h",
+        "object": "a1130e069a54a094ac43a29083ff09b21668cb60",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3258
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libprisma syntax tokenizer/highlighter core",
+      "source_symbols": [
+        "source:libprisma/Highlight.h"
+      ],
+      "responsibility": "Implements grammar lookup, regex tokenization, greedy rematching, nested token streams, recursion bounds and plain-text fallback.",
+      "fabushi_canonical_owner": "Canonical Conversation Transcript syntax projection",
+      "fabushi_target": "Extend the existing Transcript renderer with one source-neutral syntax projection, bounded input and safe React token rendering; no C++/Telegram highlighter runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10275,
+      "source_path": "Telegram/ThirdParty/libprisma::libprisma/LanguageTree.cpp",
+      "source_blob_sha": "1518bcb72a5afc4225f8a823378546928e314228",
+      "source_identity": {
+        "repository": "desktop-app/libprisma",
+        "commit": "75f26c17308871bee69f69a2831a8af2bc2f3627",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libprisma",
+        "path": "libprisma/LanguageTree.cpp",
+        "object": "1518bcb72a5afc4225f8a823378546928e314228",
+        "mode": "100644",
+        "type": "blob",
+        "size": 5163
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libprisma syntax tokenizer/highlighter core",
+      "source_symbols": [
+        "source:libprisma/LanguageTree.cpp"
+      ],
+      "responsibility": "Implements grammar lookup, regex tokenization, greedy rematching, nested token streams, recursion bounds and plain-text fallback.",
+      "fabushi_canonical_owner": "Canonical Conversation Transcript syntax projection",
+      "fabushi_target": "Extend the existing Transcript renderer with one source-neutral syntax projection, bounded input and safe React token rendering; no C++/Telegram highlighter runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10276,
+      "source_path": "Telegram/ThirdParty/libprisma::libprisma/LanguageTree.h",
+      "source_blob_sha": "422a2ff26a55940cdcdaa6b13988cdea65a0a33c",
+      "source_identity": {
+        "repository": "desktop-app/libprisma",
+        "commit": "75f26c17308871bee69f69a2831a8af2bc2f3627",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libprisma",
+        "path": "libprisma/LanguageTree.h",
+        "object": "422a2ff26a55940cdcdaa6b13988cdea65a0a33c",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1349
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libprisma syntax tokenizer/highlighter core",
+      "source_symbols": [
+        "source:libprisma/LanguageTree.h"
+      ],
+      "responsibility": "Implements grammar lookup, regex tokenization, greedy rematching, nested token streams, recursion bounds and plain-text fallback.",
+      "fabushi_canonical_owner": "Canonical Conversation Transcript syntax projection",
+      "fabushi_target": "Extend the existing Transcript renderer with one source-neutral syntax projection, bounded input and safe React token rendering; no C++/Telegram highlighter runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10277,
+      "source_path": "Telegram/ThirdParty/libprisma::libprisma/SyntaxHighlighter.cpp",
+      "source_blob_sha": "69c158bdf7cf6b50678e7fbccd7e448bd352f826",
+      "source_identity": {
+        "repository": "desktop-app/libprisma",
+        "commit": "75f26c17308871bee69f69a2831a8af2bc2f3627",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libprisma",
+        "path": "libprisma/SyntaxHighlighter.cpp",
+        "object": "69c158bdf7cf6b50678e7fbccd7e448bd352f826",
+        "mode": "100644",
+        "type": "blob",
+        "size": 7060
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libprisma syntax tokenizer/highlighter core",
+      "source_symbols": [
+        "source:libprisma/SyntaxHighlighter.cpp"
+      ],
+      "responsibility": "Implements grammar lookup, regex tokenization, greedy rematching, nested token streams, recursion bounds and plain-text fallback.",
+      "fabushi_canonical_owner": "Canonical Conversation Transcript syntax projection",
+      "fabushi_target": "Extend the existing Transcript renderer with one source-neutral syntax projection, bounded input and safe React token rendering; no C++/Telegram highlighter runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10278,
+      "source_path": "Telegram/ThirdParty/libprisma::libprisma/SyntaxHighlighter.h",
+      "source_blob_sha": "a4c981f88be180b3a68f522e8da1fe645a95a47e",
+      "source_identity": {
+        "repository": "desktop-app/libprisma",
+        "commit": "75f26c17308871bee69f69a2831a8af2bc2f3627",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libprisma",
+        "path": "libprisma/SyntaxHighlighter.h",
+        "object": "a4c981f88be180b3a68f522e8da1fe645a95a47e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 757
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libprisma syntax tokenizer/highlighter core",
+      "source_symbols": [
+        "source:libprisma/SyntaxHighlighter.h"
+      ],
+      "responsibility": "Implements grammar lookup, regex tokenization, greedy rematching, nested token streams, recursion bounds and plain-text fallback.",
+      "fabushi_canonical_owner": "Canonical Conversation Transcript syntax projection",
+      "fabushi_target": "Extend the existing Transcript renderer with one source-neutral syntax projection, bounded input and safe React token rendering; no C++/Telegram highlighter runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10279,
+      "source_path": "Telegram/ThirdParty/libprisma::libprisma/TokenList.cpp",
+      "source_blob_sha": "b8832dc2958aa4a6e330edcf92b1514365d55acf",
+      "source_identity": {
+        "repository": "desktop-app/libprisma",
+        "commit": "75f26c17308871bee69f69a2831a8af2bc2f3627",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libprisma",
+        "path": "libprisma/TokenList.cpp",
+        "object": "b8832dc2958aa4a6e330edcf92b1514365d55acf",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1658
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libprisma syntax tokenizer/highlighter core",
+      "source_symbols": [
+        "source:libprisma/TokenList.cpp"
+      ],
+      "responsibility": "Implements grammar lookup, regex tokenization, greedy rematching, nested token streams, recursion bounds and plain-text fallback.",
+      "fabushi_canonical_owner": "Canonical Conversation Transcript syntax projection",
+      "fabushi_target": "Extend the existing Transcript renderer with one source-neutral syntax projection, bounded input and safe React token rendering; no C++/Telegram highlighter runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10280,
+      "source_path": "Telegram/ThirdParty/libprisma::libprisma/TokenList.h",
+      "source_blob_sha": "11e768bfe2a22efee5488c780f94eac0871c431f",
+      "source_identity": {
+        "repository": "desktop-app/libprisma",
+        "commit": "75f26c17308871bee69f69a2831a8af2bc2f3627",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libprisma",
+        "path": "libprisma/TokenList.h",
+        "object": "11e768bfe2a22efee5488c780f94eac0871c431f",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3668
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libprisma syntax tokenizer/highlighter core",
+      "source_symbols": [
+        "source:libprisma/TokenList.h"
+      ],
+      "responsibility": "Implements grammar lookup, regex tokenization, greedy rematching, nested token streams, recursion bounds and plain-text fallback.",
+      "fabushi_canonical_owner": "Canonical Conversation Transcript syntax projection",
+      "fabushi_target": "Extend the existing Transcript renderer with one source-neutral syntax projection, bounded input and safe React token rendering; no C++/Telegram highlighter runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10281,
+      "source_path": "Telegram/ThirdParty/libprisma::libprisma/grammars.dat",
+      "source_blob_sha": "532ed27b68cccc28bc87ea41a7fceb060d3693db",
+      "source_identity": {
+        "repository": "desktop-app/libprisma",
+        "commit": "75f26c17308871bee69f69a2831a8af2bc2f3627",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libprisma",
+        "path": "libprisma/grammars.dat",
+        "object": "532ed27b68cccc28bc87ea41a7fceb060d3693db",
+        "mode": "100644",
+        "type": "blob",
+        "size": 621241
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libprisma generated grammar resource",
+      "source_symbols": [
+        "source:libprisma/grammars.dat"
+      ],
+      "responsibility": "Binary generated grammar database carrying the shipped syntax-language catalog and pattern graph.",
+      "fabushi_canonical_owner": "Canonical Conversation Transcript syntax projection + Resource/Build",
+      "fabushi_target": "Replace the generated C++ grammar database with statically packaged source-neutral renderer grammars; no runtime network grammar fetch.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10282,
+      "source_path": "Telegram/ThirdParty/libprisma::package-lock.json",
+      "source_blob_sha": "1f9a3ba395b2ddca1bcf3408e3d109b186220463",
+      "source_identity": {
+        "repository": "desktop-app/libprisma",
+        "commit": "75f26c17308871bee69f69a2831a8af2bc2f3627",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libprisma",
+        "path": "package-lock.json",
+        "object": "1f9a3ba395b2ddca1bcf3408e3d109b186220463",
+        "mode": "100644",
+        "type": "blob",
+        "size": 550
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libprisma provenance/build/grammar-generation authority",
+      "source_symbols": [
+        "source:package-lock.json"
+      ],
+      "responsibility": "Defines MIT provenance, Prism grammar acquisition/generation, supported-language catalog and reproducible generator dependencies.",
+      "fabushi_canonical_owner": "Canonical Conversation Transcript rendering + Build/Quality + License provenance",
+      "fabushi_target": "Use a maintained source-neutral highlighter dependency, pin/license it, and keep offline renderer packaging reproducible.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10283,
+      "source_path": "Telegram/ThirdParty/libprisma::package.json",
+      "source_blob_sha": "828a9ac18f28f845fe02a18a27112171ae08ad4b",
+      "source_identity": {
+        "repository": "desktop-app/libprisma",
+        "commit": "75f26c17308871bee69f69a2831a8af2bc2f3627",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libprisma",
+        "path": "package.json",
+        "object": "828a9ac18f28f845fe02a18a27112171ae08ad4b",
+        "mode": "100644",
+        "type": "blob",
+        "size": 668
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libprisma provenance/build/grammar-generation authority",
+      "source_symbols": [
+        "source:package.json"
+      ],
+      "responsibility": "Defines MIT provenance, Prism grammar acquisition/generation, supported-language catalog and reproducible generator dependencies.",
+      "fabushi_canonical_owner": "Canonical Conversation Transcript rendering + Build/Quality + License provenance",
+      "fabushi_target": "Use a maintained source-neutral highlighter dependency, pin/license it, and keep offline renderer packaging reproducible.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10284,
+      "source_path": "Telegram/ThirdParty/lz4::.circleci/config.yml",
+      "source_blob_sha": "ae5aa3984f06cbc90f5b6bc347e7e022c2642770",
+      "source_identity": {
+        "repository": "lz4/lz4",
+        "commit": "5ff839680134437dbf4678f3d0c7b371d84f4964",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/lz4",
+        "path": ".circleci/config.yml",
+        "object": "ae5aa3984f06cbc90f5b6bc347e7e022c2642770",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4968
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "LZ4 historical multi-platform quality matrix",
+      "source_symbols": [
+        "source:.circleci/config.yml"
+      ],
+      "responsibility": "Exercises compression library build/test/static-analysis and cross-architecture portability under CI.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + compression dependency owner",
+      "fabushi_target": "Use as quality/portability authority for the canonical compression dependency; do not reproduce obsolete CircleCI infrastructure.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    }
+  ]
+}

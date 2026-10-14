@@ -173,6 +173,13 @@
           },
           "type": "array"
         },
+        "license": {
+          "description": "Publisher-declared license metadata for the resolved local release, when available.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "marketplaceName": {
           "type": "string"
         },

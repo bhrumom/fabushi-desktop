@@ -1,0 +1,1961 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6"
+  },
+  "exact_head_evidence": {
+    "head_sha": "9e19096129b9e5d9c87ff91e9a0645544929d155",
+    "rust_desktop_runtime_run": 38169448756,
+    "desktop_chat_parity_run": 38169449053,
+    "source_authority_job": 114558772727,
+    "rust_host_job": 114558772656,
+    "source_authority_artifact": 11713142724,
+    "source_authority_digest": "sha256:e9667b498b5ab9ce45e0e73e81c6c8665866f7a739ef745f477aa175fa59720f",
+    "rust_desktop_runtime_conclusion": "success",
+    "desktop_chat_parity_conclusion": "success",
+    "rust_host_conclusion": "success"
+  },
+  "accounting": {
+    "read_through": 11692,
+    "unread": 4433,
+    "unknown": 15845,
+    "omitted": 0
+  },
+  "range": {
+    "first_order": 11629,
+    "last_order": 11692,
+    "entries": 64
+  },
+  "rows": [
+    {
+      "recursive_order": 11629,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/RTCCodecSpecificInfoH265+Private.h",
+      "source_blob_sha": "a22d3594f557f7b75ff67f9427bb461b0c9ba5ce",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/RTCCodecSpecificInfoH265+Private.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "a22d3594f557f7b75ff67f9427bb461b0c9ba5ce",
+        "size": 823
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open-canonical-platform-adapter-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin H.265 codec metadata/profile contract",
+      "source_symbols": [
+        "RTCCodecSpecificInfoH265 private bridge"
+      ],
+      "responsibility": "H.265 codec-specific metadata, profile-level identity and Objective-C bridge behavior are applicable codec negotiation boundaries. Browser/WebRTC/platform owners remain canonical; no ObjC codec owner is duplicated.",
+      "fabushi_canonical_owner": "CallSession / WebRTC codec negotiation / platform adapter",
+      "fabushi_target": "Existing CallSession/WebRTC codec negotiation plus thin macOS platform adapter."
+    },
+    {
+      "recursive_order": 11630,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/RTCCodecSpecificInfoH265.h",
+      "source_blob_sha": "82865a9cdb4fe43efe913606a6c05b3c5a659783",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/RTCCodecSpecificInfoH265.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "82865a9cdb4fe43efe913606a6c05b3c5a659783",
+        "size": 1026
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open-canonical-platform-adapter-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin H.265 codec metadata/profile contract",
+      "source_symbols": [
+        "RTCCodecSpecificInfoH265"
+      ],
+      "responsibility": "H.265 codec-specific metadata, profile-level identity and Objective-C bridge behavior are applicable codec negotiation boundaries. Browser/WebRTC/platform owners remain canonical; no ObjC codec owner is duplicated.",
+      "fabushi_canonical_owner": "CallSession / WebRTC codec negotiation / platform adapter",
+      "fabushi_target": "Existing CallSession/WebRTC codec negotiation plus thin macOS platform adapter."
+    },
+    {
+      "recursive_order": 11631,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/RTCCodecSpecificInfoH265.mm",
+      "source_blob_sha": "ec0997d2ed45c5575afe813be4f0671a1ae46db3",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/RTCCodecSpecificInfoH265.mm",
+        "mode": "100644",
+        "type": "blob",
+        "object": "ec0997d2ed45c5575afe813be4f0671a1ae46db3",
+        "size": 981
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open-canonical-platform-adapter-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin H.265 codec metadata/profile contract",
+      "source_symbols": [
+        "RTCCodecSpecificInfoH265 implementation"
+      ],
+      "responsibility": "H.265 codec-specific metadata, profile-level identity and Objective-C bridge behavior are applicable codec negotiation boundaries. Browser/WebRTC/platform owners remain canonical; no ObjC codec owner is duplicated.",
+      "fabushi_canonical_owner": "CallSession / WebRTC codec negotiation / platform adapter",
+      "fabushi_target": "Existing CallSession/WebRTC codec negotiation plus thin macOS platform adapter."
+    },
+    {
+      "recursive_order": 11632,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/RTCH265ProfileLevelId.h",
+      "source_blob_sha": "8e3486d06d4127e9783929fe40bedb33a5c67b2f",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/RTCH265ProfileLevelId.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "8e3486d06d4127e9783929fe40bedb33a5c67b2f",
+        "size": 587
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open-canonical-platform-adapter-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin H.265 codec metadata/profile contract",
+      "source_symbols": [
+        "RTCH265ProfileLevelId"
+      ],
+      "responsibility": "H.265 codec-specific metadata, profile-level identity and Objective-C bridge behavior are applicable codec negotiation boundaries. Browser/WebRTC/platform owners remain canonical; no ObjC codec owner is duplicated.",
+      "fabushi_canonical_owner": "CallSession / WebRTC codec negotiation / platform adapter",
+      "fabushi_target": "Existing CallSession/WebRTC codec negotiation plus thin macOS platform adapter."
+    },
+    {
+      "recursive_order": 11633,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/RTCH265ProfileLevelId.mm",
+      "source_blob_sha": "fe93aceb79818fbf52cf33f2f3befe4db1c9d65e",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/RTCH265ProfileLevelId.mm",
+        "mode": "100644",
+        "type": "blob",
+        "object": "fe93aceb79818fbf52cf33f2f3befe4db1c9d65e",
+        "size": 652
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open-canonical-platform-adapter-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin H.265 codec metadata/profile contract",
+      "source_symbols": [
+        "RTCH265ProfileLevelId implementation"
+      ],
+      "responsibility": "H.265 codec-specific metadata, profile-level identity and Objective-C bridge behavior are applicable codec negotiation boundaries. Browser/WebRTC/platform owners remain canonical; no ObjC codec owner is duplicated.",
+      "fabushi_canonical_owner": "CallSession / WebRTC codec negotiation / platform adapter",
+      "fabushi_target": "Existing CallSession/WebRTC codec negotiation plus thin macOS platform adapter."
+    },
+    {
+      "recursive_order": 11634,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/SQueue.h",
+      "source_blob_sha": "9f45afd273bef87bd2e31d8e7b3628e1444a231f",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/SQueue.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "9f45afd273bef87bd2e31d8e7b3628e1444a231f",
+        "size": 544
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open-canonical-platform-adapter-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin serialized queue/local-object lifecycle",
+      "source_symbols": [
+        "SQueue"
+      ],
+      "responsibility": "Serialized dispatch, queue affinity, sync/async execution and queue-bound object lifetime are portable concurrency rules. Fabushi preserves generation/source fencing in the existing owner rather than importing a second scheduler.",
+      "fabushi_canonical_owner": "Platform concurrency / CallSession media",
+      "fabushi_target": "Existing renderer/platform task queues and CallSession lifecycle owner."
+    },
+    {
+      "recursive_order": 11635,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/SQueue.m",
+      "source_blob_sha": "d5b5553af8107e6a30c4ea5c2e6fcba67a36bb46",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/SQueue.m",
+        "mode": "100644",
+        "type": "blob",
+        "object": "d5b5553af8107e6a30c4ea5c2e6fcba67a36bb46",
+        "size": 3113
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open-canonical-platform-adapter-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin serialized queue/local-object lifecycle",
+      "source_symbols": [
+        "SQueue dispatch implementation"
+      ],
+      "responsibility": "Serialized dispatch, queue affinity, sync/async execution and queue-bound object lifetime are portable concurrency rules. Fabushi preserves generation/source fencing in the existing owner rather than importing a second scheduler.",
+      "fabushi_canonical_owner": "Platform concurrency / CallSession media",
+      "fabushi_target": "Existing renderer/platform task queues and CallSession lifecycle owner."
+    },
+    {
+      "recursive_order": 11636,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/SQueueLocalObject.h",
+      "source_blob_sha": "9276c37c82498cf1ec6c2c1e5f5ddc1b43282bed",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/SQueueLocalObject.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "9276c37c82498cf1ec6c2c1e5f5ddc1b43282bed",
+        "size": 397
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open-canonical-platform-adapter-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin serialized queue/local-object lifecycle",
+      "source_symbols": [
+        "SQueueLocalObject"
+      ],
+      "responsibility": "Serialized dispatch, queue affinity, sync/async execution and queue-bound object lifetime are portable concurrency rules. Fabushi preserves generation/source fencing in the existing owner rather than importing a second scheduler.",
+      "fabushi_canonical_owner": "Platform concurrency / CallSession media",
+      "fabushi_target": "Existing renderer/platform task queues and CallSession lifecycle owner."
+    },
+    {
+      "recursive_order": 11637,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/SQueueLocalObject.m",
+      "source_blob_sha": "0b122013621bb343d2b26253ac4b631b40b51eb8",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/SQueueLocalObject.m",
+        "mode": "100644",
+        "type": "blob",
+        "object": "0b122013621bb343d2b26253ac4b631b40b51eb8",
+        "size": 743
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open-canonical-platform-adapter-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin serialized queue/local-object lifecycle",
+      "source_symbols": [
+        "SQueueLocalObject lifecycle"
+      ],
+      "responsibility": "Serialized dispatch, queue affinity, sync/async execution and queue-bound object lifetime are portable concurrency rules. Fabushi preserves generation/source fencing in the existing owner rather than importing a second scheduler.",
+      "fabushi_canonical_owner": "Platform concurrency / CallSession media",
+      "fabushi_target": "Existing renderer/platform task queues and CallSession lifecycle owner."
+    },
+    {
+      "recursive_order": 11638,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/TGCMIOCapturer.h",
+      "source_blob_sha": "734a3ac6adef07fdf445206308f8d1411a89d712",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/TGCMIOCapturer.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "734a3ac6adef07fdf445206308f8d1411a89d712",
+        "size": 448
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open-canonical-platform-adapter-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "macOS CoreMediaIO capture and pixel-buffer bridge",
+      "source_symbols": [
+        "TGCMIOCapturer"
+      ],
+      "responsibility": "CoreMediaIO device enumeration, start/stop capture, queue ownership and CVPixelBuffer handoff map to the existing media permission/capture adapter; native tgcalls ownership is not retained.",
+      "fabushi_canonical_owner": "Permissions / CallSession / Computer capture / platform adapter",
+      "fabushi_target": "source/electron-main/call-media.ts plus browser MediaStreamTrack and existing platform owner."
+    },
+    {
+      "recursive_order": 11639,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/TGCMIOCapturer.m",
+      "source_blob_sha": "3f81a4b3ae2ba7a95abd69aef3e861aa09594cc0",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/TGCMIOCapturer.m",
+        "mode": "100644",
+        "type": "blob",
+        "object": "3f81a4b3ae2ba7a95abd69aef3e861aa09594cc0",
+        "size": 721
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open-canonical-platform-adapter-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "macOS CoreMediaIO capture and pixel-buffer bridge",
+      "source_symbols": [
+        "TGCMIOCapturer implementation"
+      ],
+      "responsibility": "CoreMediaIO device enumeration, start/stop capture, queue ownership and CVPixelBuffer handoff map to the existing media permission/capture adapter; native tgcalls ownership is not retained.",
+      "fabushi_canonical_owner": "Permissions / CallSession / Computer capture / platform adapter",
+      "fabushi_target": "source/electron-main/call-media.ts plus browser MediaStreamTrack and existing platform owner."
+    },
+    {
+      "recursive_order": 11640,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/TGCMIODevice.h",
+      "source_blob_sha": "fa2b56edb2150211f6df9e2730b12ae124c0c309",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/TGCMIODevice.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "fa2b56edb2150211f6df9e2730b12ae124c0c309",
+        "size": 570
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open-canonical-platform-adapter-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "macOS CoreMediaIO capture and pixel-buffer bridge",
+      "source_symbols": [
+        "TGCMIODevice"
+      ],
+      "responsibility": "CoreMediaIO device enumeration, start/stop capture, queue ownership and CVPixelBuffer handoff map to the existing media permission/capture adapter; native tgcalls ownership is not retained.",
+      "fabushi_canonical_owner": "Permissions / CallSession / Computer capture / platform adapter",
+      "fabushi_target": "source/electron-main/call-media.ts plus browser MediaStreamTrack and existing platform owner."
+    },
+    {
+      "recursive_order": 11641,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/TGCMIODevice.mm",
+      "source_blob_sha": "c778161c8f9fb81fdda8f21feb814cb8b93a6296",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/TGCMIODevice.mm",
+        "mode": "100644",
+        "type": "blob",
+        "object": "c778161c8f9fb81fdda8f21feb814cb8b93a6296",
+        "size": 6204
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open-canonical-platform-adapter-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "macOS CoreMediaIO capture and pixel-buffer bridge",
+      "source_symbols": [
+        "TGCMIODevice start/stop/device enumeration"
+      ],
+      "responsibility": "CoreMediaIO device enumeration, start/stop capture, queue ownership and CVPixelBuffer handoff map to the existing media permission/capture adapter; native tgcalls ownership is not retained.",
+      "fabushi_canonical_owner": "Permissions / CallSession / Computer capture / platform adapter",
+      "fabushi_target": "source/electron-main/call-media.ts plus browser MediaStreamTrack and existing platform owner."
+    },
+    {
+      "recursive_order": 11642,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/TGRTCCVPixelBuffer.h",
+      "source_blob_sha": "31ddcbecf1f00601e5c6c76bc6e49fa6fe42f7b1",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/TGRTCCVPixelBuffer.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "31ddcbecf1f00601e5c6c76bc6e49fa6fe42f7b1",
+        "size": 361
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open-canonical-platform-adapter-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "macOS CoreMediaIO capture and pixel-buffer bridge",
+      "source_symbols": [
+        "TGRTCCVPixelBuffer"
+      ],
+      "responsibility": "CoreMediaIO device enumeration, start/stop capture, queue ownership and CVPixelBuffer handoff map to the existing media permission/capture adapter; native tgcalls ownership is not retained.",
+      "fabushi_canonical_owner": "Permissions / CallSession / Computer capture / platform adapter",
+      "fabushi_target": "source/electron-main/call-media.ts plus browser MediaStreamTrack and existing platform owner."
+    },
+    {
+      "recursive_order": 11643,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/TGRTCCVPixelBuffer.mm",
+      "source_blob_sha": "7d0b718c46721cd9cae91bb3b38b0dc273324cca",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/TGRTCCVPixelBuffer.mm",
+        "mode": "100644",
+        "type": "blob",
+        "object": "7d0b718c46721cd9cae91bb3b38b0dc273324cca",
+        "size": 517
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open-canonical-platform-adapter-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "macOS CoreMediaIO capture and pixel-buffer bridge",
+      "source_symbols": [
+        "TGRTCCVPixelBuffer implementation"
+      ],
+      "responsibility": "CoreMediaIO device enumeration, start/stop capture, queue ownership and CVPixelBuffer handoff map to the existing media permission/capture adapter; native tgcalls ownership is not retained.",
+      "fabushi_canonical_owner": "Permissions / CallSession / Computer capture / platform adapter",
+      "fabushi_target": "source/electron-main/call-media.ts plus browser MediaStreamTrack and existing platform owner."
+    },
+    {
+      "recursive_order": 11644,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/TGRTCDefaultVideoDecoderFactory.h",
+      "source_blob_sha": "7de5cfa86da518b528102c3e16f2904408f11950",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/TGRTCDefaultVideoDecoderFactory.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "7de5cfa86da518b528102c3e16f2904408f11950",
+        "size": 844
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open-canonical-platform-adapter-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin H.264/H.265 video codec factory and VideoToolbox lifecycle",
+      "source_symbols": [
+        "TGRTCDefaultVideoDecoderFactory"
+      ],
+      "responsibility": "Codec factory selection, VideoToolbox session/frame ownership, bitrate/profile negotiation, reset/error/keyframe lifecycle are applicable. 1:1 calls rely on browser WebRTC/platform codecs; group codec/SFU composition remains separately open.",
+      "fabushi_canonical_owner": "CallSession / WebRTC video codec / platform adapter",
+      "fabushi_target": "Existing WebRTC/platform codec owner; no ObjC/C++ codec sidecar."
+    },
+    {
+      "recursive_order": 11645,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/TGRTCDefaultVideoDecoderFactory.mm",
+      "source_blob_sha": "b280c1b335a11c1668c403d4c424f3ccacf4c2db",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/TGRTCDefaultVideoDecoderFactory.mm",
+        "mode": "100644",
+        "type": "blob",
+        "object": "b280c1b335a11c1668c403d4c424f3ccacf4c2db",
+        "size": 3725
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open-canonical-platform-adapter-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin H.264/H.265 video codec factory and VideoToolbox lifecycle",
+      "source_symbols": [
+        "supportedCodecs/createDecoder"
+      ],
+      "responsibility": "Codec factory selection, VideoToolbox session/frame ownership, bitrate/profile negotiation, reset/error/keyframe lifecycle are applicable. 1:1 calls rely on browser WebRTC/platform codecs; group codec/SFU composition remains separately open.",
+      "fabushi_canonical_owner": "CallSession / WebRTC video codec / platform adapter",
+      "fabushi_target": "Existing WebRTC/platform codec owner; no ObjC/C++ codec sidecar."
+    },
+    {
+      "recursive_order": 11646,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/TGRTCDefaultVideoEncoderFactory.h",
+      "source_blob_sha": "04adcd781c9c45581671d40863175380d5b5ac6a",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/TGRTCDefaultVideoEncoderFactory.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "04adcd781c9c45581671d40863175380d5b5ac6a",
+        "size": 1060
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open-canonical-platform-adapter-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin H.264/H.265 video codec factory and VideoToolbox lifecycle",
+      "source_symbols": [
+        "TGRTCDefaultVideoEncoderFactory"
+      ],
+      "responsibility": "Codec factory selection, VideoToolbox session/frame ownership, bitrate/profile negotiation, reset/error/keyframe lifecycle are applicable. 1:1 calls rely on browser WebRTC/platform codecs; group codec/SFU composition remains separately open.",
+      "fabushi_canonical_owner": "CallSession / WebRTC video codec / platform adapter",
+      "fabushi_target": "Existing WebRTC/platform codec owner; no ObjC/C++ codec sidecar."
+    },
+    {
+      "recursive_order": 11647,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/TGRTCDefaultVideoEncoderFactory.mm",
+      "source_blob_sha": "a17f16904dac3292bb76dcc60f03eb3affb46c61",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/TGRTCDefaultVideoEncoderFactory.mm",
+        "mode": "100644",
+        "type": "blob",
+        "object": "a17f16904dac3292bb76dcc60f03eb3affb46c61",
+        "size": 5691
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open-canonical-platform-adapter-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin H.264/H.265 video codec factory and VideoToolbox lifecycle",
+      "source_symbols": [
+        "supportedCodecs/createEncoder"
+      ],
+      "responsibility": "Codec factory selection, VideoToolbox session/frame ownership, bitrate/profile negotiation, reset/error/keyframe lifecycle are applicable. 1:1 calls rely on browser WebRTC/platform codecs; group codec/SFU composition remains separately open.",
+      "fabushi_canonical_owner": "CallSession / WebRTC video codec / platform adapter",
+      "fabushi_target": "Existing WebRTC/platform codec owner; no ObjC/C++ codec sidecar."
+    },
+    {
+      "recursive_order": 11648,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/TGRTCVideoDecoderH264.h",
+      "source_blob_sha": "8f88d6881e6ebd200cf35e9e1a7cae335f7e6815",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/TGRTCVideoDecoderH264.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "8f88d6881e6ebd200cf35e9e1a7cae335f7e6815",
+        "size": 610
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open-canonical-platform-adapter-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin H.264/H.265 video codec factory and VideoToolbox lifecycle",
+      "source_symbols": [
+        "TGRTCVideoDecoderH264"
+      ],
+      "responsibility": "Codec factory selection, VideoToolbox session/frame ownership, bitrate/profile negotiation, reset/error/keyframe lifecycle are applicable. 1:1 calls rely on browser WebRTC/platform codecs; group codec/SFU composition remains separately open.",
+      "fabushi_canonical_owner": "CallSession / WebRTC video codec / platform adapter",
+      "fabushi_target": "Existing WebRTC/platform codec owner; no ObjC/C++ codec sidecar."
+    },
+    {
+      "recursive_order": 11649,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/TGRTCVideoDecoderH264.mm",
+      "source_blob_sha": "52411c124eab2e9cd9a604f2d652fe8f5524795e",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/TGRTCVideoDecoderH264.mm",
+        "mode": "100644",
+        "type": "blob",
+        "object": "52411c124eab2e9cd9a604f2d652fe8f5524795e",
+        "size": 10289
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open-canonical-platform-adapter-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin H.264/H.265 video codec factory and VideoToolbox lifecycle",
+      "source_symbols": [
+        "VideoToolbox H264 decode lifecycle"
+      ],
+      "responsibility": "Codec factory selection, VideoToolbox session/frame ownership, bitrate/profile negotiation, reset/error/keyframe lifecycle are applicable. 1:1 calls rely on browser WebRTC/platform codecs; group codec/SFU composition remains separately open.",
+      "fabushi_canonical_owner": "CallSession / WebRTC video codec / platform adapter",
+      "fabushi_target": "Existing WebRTC/platform codec owner; no ObjC/C++ codec sidecar."
+    },
+    {
+      "recursive_order": 11650,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/TGRTCVideoDecoderH265.h",
+      "source_blob_sha": "7fa2b4337fb5b2e5889dba7f614472a93469b77a",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/TGRTCVideoDecoderH265.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "7fa2b4337fb5b2e5889dba7f614472a93469b77a",
+        "size": 641
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open-canonical-platform-adapter-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin H.264/H.265 video codec factory and VideoToolbox lifecycle",
+      "source_symbols": [
+        "TGRTCVideoDecoderH265"
+      ],
+      "responsibility": "Codec factory selection, VideoToolbox session/frame ownership, bitrate/profile negotiation, reset/error/keyframe lifecycle are applicable. 1:1 calls rely on browser WebRTC/platform codecs; group codec/SFU composition remains separately open.",
+      "fabushi_canonical_owner": "CallSession / WebRTC video codec / platform adapter",
+      "fabushi_target": "Existing WebRTC/platform codec owner; no ObjC/C++ codec sidecar."
+    },
+    {
+      "recursive_order": 11651,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/TGRTCVideoDecoderH265.mm",
+      "source_blob_sha": "137b4f5b3aa7fb7eac6167ccfeb9a1d7c8b76923",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/TGRTCVideoDecoderH265.mm",
+        "mode": "100644",
+        "type": "blob",
+        "object": "137b4f5b3aa7fb7eac6167ccfeb9a1d7c8b76923",
+        "size": 11970
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open-canonical-platform-adapter-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin H.264/H.265 video codec factory and VideoToolbox lifecycle",
+      "source_symbols": [
+        "VideoToolbox H265 decode lifecycle"
+      ],
+      "responsibility": "Codec factory selection, VideoToolbox session/frame ownership, bitrate/profile negotiation, reset/error/keyframe lifecycle are applicable. 1:1 calls rely on browser WebRTC/platform codecs; group codec/SFU composition remains separately open.",
+      "fabushi_canonical_owner": "CallSession / WebRTC video codec / platform adapter",
+      "fabushi_target": "Existing WebRTC/platform codec owner; no ObjC/C++ codec sidecar."
+    },
+    {
+      "recursive_order": 11652,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/TGRTCVideoEncoderH264.h",
+      "source_blob_sha": "e045a9dd2cd6b82616e087d534f1b23614e7f850",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/TGRTCVideoEncoderH264.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "e045a9dd2cd6b82616e087d534f1b23614e7f850",
+        "size": 677
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open-canonical-platform-adapter-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin H.264/H.265 video codec factory and VideoToolbox lifecycle",
+      "source_symbols": [
+        "TGRTCVideoEncoderH264"
+      ],
+      "responsibility": "Codec factory selection, VideoToolbox session/frame ownership, bitrate/profile negotiation, reset/error/keyframe lifecycle are applicable. 1:1 calls rely on browser WebRTC/platform codecs; group codec/SFU composition remains separately open.",
+      "fabushi_canonical_owner": "CallSession / WebRTC video codec / platform adapter",
+      "fabushi_target": "Existing WebRTC/platform codec owner; no ObjC/C++ codec sidecar."
+    },
+    {
+      "recursive_order": 11653,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/TGRTCVideoEncoderH264.mm",
+      "source_blob_sha": "b478e41c5c318e3198590576965fbab783b5d8b3",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/TGRTCVideoEncoderH264.mm",
+        "mode": "100644",
+        "type": "blob",
+        "object": "b478e41c5c318e3198590576965fbab783b5d8b3",
+        "size": 34413
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open-canonical-platform-adapter-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin H.264/H.265 video codec factory and VideoToolbox lifecycle",
+      "source_symbols": [
+        "H264 encoder session/bitrate/keyframe lifecycle"
+      ],
+      "responsibility": "Codec factory selection, VideoToolbox session/frame ownership, bitrate/profile negotiation, reset/error/keyframe lifecycle are applicable. 1:1 calls rely on browser WebRTC/platform codecs; group codec/SFU composition remains separately open.",
+      "fabushi_canonical_owner": "CallSession / WebRTC video codec / platform adapter",
+      "fabushi_target": "Existing WebRTC/platform codec owner; no ObjC/C++ codec sidecar."
+    },
+    {
+      "recursive_order": 11654,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/TGRTCVideoEncoderH265.h",
+      "source_blob_sha": "6fbe79f1c489ba9cf758d94a28602e736d22907d",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/TGRTCVideoEncoderH265.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "6fbe79f1c489ba9cf758d94a28602e736d22907d",
+        "size": 1353
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open-canonical-platform-adapter-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin H.264/H.265 video codec factory and VideoToolbox lifecycle",
+      "source_symbols": [
+        "TGRTCVideoEncoderH265"
+      ],
+      "responsibility": "Codec factory selection, VideoToolbox session/frame ownership, bitrate/profile negotiation, reset/error/keyframe lifecycle are applicable. 1:1 calls rely on browser WebRTC/platform codecs; group codec/SFU composition remains separately open.",
+      "fabushi_canonical_owner": "CallSession / WebRTC video codec / platform adapter",
+      "fabushi_target": "Existing WebRTC/platform codec owner; no ObjC/C++ codec sidecar."
+    },
+    {
+      "recursive_order": 11655,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/TGRTCVideoEncoderH265.mm",
+      "source_blob_sha": "ede64932575fc388329b241ac8893749349a603b",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/TGRTCVideoEncoderH265.mm",
+        "mode": "100644",
+        "type": "blob",
+        "object": "ede64932575fc388329b241ac8893749349a603b",
+        "size": 22961
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open-canonical-platform-adapter-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin H.264/H.265 video codec factory and VideoToolbox lifecycle",
+      "source_symbols": [
+        "H265 encoder session/bitrate/keyframe lifecycle"
+      ],
+      "responsibility": "Codec factory selection, VideoToolbox session/frame ownership, bitrate/profile negotiation, reset/error/keyframe lifecycle are applicable. 1:1 calls rely on browser WebRTC/platform codecs; group codec/SFU composition remains separately open.",
+      "fabushi_canonical_owner": "CallSession / WebRTC video codec / platform adapter",
+      "fabushi_target": "Existing WebRTC/platform codec owner; no ObjC/C++ codec sidecar."
+    },
+    {
+      "recursive_order": 11656,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/VideoCMIOCapture.h",
+      "source_blob_sha": "2b63af3bd5feb60ed6202d074f99833b8091bde1",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/VideoCMIOCapture.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "2b63af3bd5feb60ed6202d074f99833b8091bde1",
+        "size": 493
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-human-call-core-presentation-production-partial",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin camera/CMIO capture lifecycle and capturer interface",
+      "source_symbols": [
+        "VideoCMIOCapture"
+      ],
+      "responsibility": "Camera/CMIO capture start-stop, device switching, pause/active/fatal signaling, source ownership and frame adaptation map to existing HumanCallControls plus call-media adapter. Shipping camera lifecycle now projects mute/unmute state and performs one generation-fenced preferred-device reacquire attempt after unexpected track termination; successful recovery rebinds the owned track/sender and failed recovery disables video without looping.",
+      "fabushi_canonical_owner": "CallSession / Permissions / Resource / platform adapter",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx and source/electron-main/call-media.ts."
+    },
+    {
+      "recursive_order": 11657,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/VideoCMIOCapture.mm",
+      "source_blob_sha": "4bf0f75171cba704931b7a8550f4abdec28f18f9",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/VideoCMIOCapture.mm",
+        "mode": "100644",
+        "type": "blob",
+        "object": "4bf0f75171cba704931b7a8550f4abdec28f18f9",
+        "size": 7693
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-human-call-core-presentation-production-partial",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin camera/CMIO capture lifecycle and capturer interface",
+      "source_symbols": [
+        "VideoCMIOCapture start/stop/frame callback"
+      ],
+      "responsibility": "Camera/CMIO capture start-stop, device switching, pause/active/fatal signaling, source ownership and frame adaptation map to existing HumanCallControls plus call-media adapter. Shipping camera lifecycle now projects mute/unmute state and performs one generation-fenced preferred-device reacquire attempt after unexpected track termination; successful recovery rebinds the owned track/sender and failed recovery disables video without looping.",
+      "fabushi_canonical_owner": "CallSession / Permissions / Resource / platform adapter",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx and source/electron-main/call-media.ts."
+    },
+    {
+      "recursive_order": 11658,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/VideoCameraCapturer.h",
+      "source_blob_sha": "4ada4ba9077e1d7a20b682c21c6097e0e5df8d68",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/VideoCameraCapturer.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "4ada4ba9077e1d7a20b682c21c6097e0e5df8d68",
+        "size": 1287
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-human-call-core-presentation-production-partial",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin camera/CMIO capture lifecycle and capturer interface",
+      "source_symbols": [
+        "VideoCameraCapturer"
+      ],
+      "responsibility": "Camera/CMIO capture start-stop, device switching, pause/active/fatal signaling, source ownership and frame adaptation map to existing HumanCallControls plus call-media adapter. Shipping camera lifecycle now projects mute/unmute state and performs one generation-fenced preferred-device reacquire attempt after unexpected track termination; successful recovery rebinds the owned track/sender and failed recovery disables video without looping.",
+      "fabushi_canonical_owner": "CallSession / Permissions / Resource / platform adapter",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx and source/electron-main/call-media.ts."
+    },
+    {
+      "recursive_order": 11659,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/VideoCameraCapturer.mm",
+      "source_blob_sha": "68af2e64e8ba190aab6d0f02f9e8cee4be065460",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/VideoCameraCapturer.mm",
+        "mode": "100644",
+        "type": "blob",
+        "object": "68af2e64e8ba190aab6d0f02f9e8cee4be065460",
+        "size": 36341
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-human-call-core-presentation-production-partial",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin camera/CMIO capture lifecycle and capturer interface",
+      "source_symbols": [
+        "VideoCameraCapturer state/pause/active/fatal"
+      ],
+      "responsibility": "Camera/CMIO capture start-stop, device switching, pause/active/fatal signaling, source ownership and frame adaptation map to existing HumanCallControls plus call-media adapter. Shipping camera lifecycle now projects mute/unmute state and performs one generation-fenced preferred-device reacquire attempt after unexpected track termination; successful recovery rebinds the owned track/sender and failed recovery disables video without looping.",
+      "fabushi_canonical_owner": "CallSession / Permissions / Resource / platform adapter",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx and source/electron-main/call-media.ts."
+    },
+    {
+      "recursive_order": 11660,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/VideoCameraCapturerMac.h",
+      "source_blob_sha": "1fb092386f0d488e7623df2d4d9a30f80c373a81",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/VideoCameraCapturerMac.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "1fb092386f0d488e7623df2d4d9a30f80c373a81",
+        "size": 1279
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-human-call-core-presentation-production-partial",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin camera/CMIO capture lifecycle and capturer interface",
+      "source_symbols": [
+        "VideoCameraCapturerMac"
+      ],
+      "responsibility": "Camera/CMIO capture start-stop, device switching, pause/active/fatal signaling, source ownership and frame adaptation map to existing HumanCallControls plus call-media adapter. Shipping camera lifecycle now projects mute/unmute state and performs one generation-fenced preferred-device reacquire attempt after unexpected track termination; successful recovery rebinds the owned track/sender and failed recovery disables video without looping.",
+      "fabushi_canonical_owner": "CallSession / Permissions / Resource / platform adapter",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx and source/electron-main/call-media.ts."
+    },
+    {
+      "recursive_order": 11661,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/VideoCameraCapturerMac.mm",
+      "source_blob_sha": "048047c112a7f1baae46bf09120d44fdd2f89f78",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/VideoCameraCapturerMac.mm",
+        "mode": "100644",
+        "type": "blob",
+        "object": "048047c112a7f1baae46bf09120d44fdd2f89f78",
+        "size": 25830
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-human-call-core-presentation-production-partial",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin camera/CMIO capture lifecycle and capturer interface",
+      "source_symbols": [
+        "VideoCameraCapturerMac state/pause/active/fatal"
+      ],
+      "responsibility": "Camera/CMIO capture start-stop, device switching, pause/active/fatal signaling, source ownership and frame adaptation map to existing HumanCallControls plus call-media adapter. Shipping camera lifecycle now projects mute/unmute state and performs one generation-fenced preferred-device reacquire attempt after unexpected track termination; successful recovery rebinds the owned track/sender and failed recovery disables video without looping.",
+      "fabushi_canonical_owner": "CallSession / Permissions / Resource / platform adapter",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx and source/electron-main/call-media.ts."
+    },
+    {
+      "recursive_order": 11662,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/VideoCaptureView.h",
+      "source_blob_sha": "7e59673912629d8f3c0245f224a9ba734aa742bb",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/VideoCaptureView.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "7e59673912629d8f3c0245f224a9ba734aa742bb",
+        "size": 970
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-human-call-core-presentation-production-partial",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin camera/CMIO capture lifecycle and capturer interface",
+      "source_symbols": [
+        "VideoCaptureView"
+      ],
+      "responsibility": "Camera/CMIO capture start-stop, device switching, pause/active/fatal signaling, source ownership and frame adaptation map to existing HumanCallControls plus call-media adapter. This slice adds camera MediaStreamTrack mute/unmute/ended projection with stale-stream fencing and teardown reset.",
+      "fabushi_canonical_owner": "CallSession / Permissions / Resource / platform adapter",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx and source/electron-main/call-media.ts."
+    },
+    {
+      "recursive_order": 11663,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/VideoCaptureView.mm",
+      "source_blob_sha": "73ee7c3752cc9d8469234cbff0a0ac5035aa5cc1",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/VideoCaptureView.mm",
+        "mode": "100644",
+        "type": "blob",
+        "object": "73ee7c3752cc9d8469234cbff0a0ac5035aa5cc1",
+        "size": 7045
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-human-call-core-presentation-production-partial",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin camera/CMIO capture lifecycle and capturer interface",
+      "source_symbols": [
+        "VideoCaptureView frame/view lifecycle"
+      ],
+      "responsibility": "Camera/CMIO capture start-stop, device switching, pause/active/fatal signaling, source ownership and frame adaptation map to existing HumanCallControls plus call-media adapter. This slice adds camera MediaStreamTrack mute/unmute/ended projection with stale-stream fencing and teardown reset.",
+      "fabushi_canonical_owner": "CallSession / Permissions / Resource / platform adapter",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx and source/electron-main/call-media.ts."
+    },
+    {
+      "recursive_order": 11664,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/VideoCapturerInterfaceImpl.h",
+      "source_blob_sha": "3ab56e4e53481a3ede463f10d4e55a4c1b2b9e55",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/VideoCapturerInterfaceImpl.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "3ab56e4e53481a3ede463f10d4e55a4c1b2b9e55",
+        "size": 1419
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-human-call-core-presentation-production-partial",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin camera/CMIO capture lifecycle and capturer interface",
+      "source_symbols": [
+        "VideoCapturerInterfaceImpl"
+      ],
+      "responsibility": "Camera/CMIO capture start-stop, device switching, pause/active/fatal signaling, source ownership and frame adaptation map to existing HumanCallControls plus call-media adapter. This slice adds camera MediaStreamTrack mute/unmute/ended projection with stale-stream fencing and teardown reset.",
+      "fabushi_canonical_owner": "CallSession / Permissions / Resource / platform adapter",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx and source/electron-main/call-media.ts."
+    },
+    {
+      "recursive_order": 11665,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/VideoCapturerInterfaceImpl.mm",
+      "source_blob_sha": "fb1074db166d985297fe1dd28a9df11249f9b41d",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/VideoCapturerInterfaceImpl.mm",
+        "mode": "100644",
+        "type": "blob",
+        "object": "fb1074db166d985297fe1dd28a9df11249f9b41d",
+        "size": 18133
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-human-call-core-presentation-production-partial",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin camera/CMIO capture lifecycle and capturer interface",
+      "source_symbols": [
+        "VideoCapturerInterfaceImpl source/device/state lifecycle"
+      ],
+      "responsibility": "Camera/CMIO capture start-stop, device switching, pause/active/fatal signaling, source ownership and frame adaptation map to existing HumanCallControls plus call-media adapter. This slice adds camera MediaStreamTrack mute/unmute/ended projection with stale-stream fencing and teardown reset.",
+      "fabushi_canonical_owner": "CallSession / Permissions / Resource / platform adapter",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx and source/electron-main/call-media.ts."
+    },
+    {
+      "recursive_order": 11666,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/VideoMetalView.h",
+      "source_blob_sha": "0c9377d40d0183e0b6fb93eb42607da03f08564b",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/VideoMetalView.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "0c9377d40d0183e0b6fb93eb42607da03f08564b",
+        "size": 1074
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open-canonical-platform-adapter-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin Metal/sample-buffer video rendering",
+      "source_symbols": [
+        "VideoMetalView"
+      ],
+      "responsibility": "Renderer sink attach/detach, pixel format conversion, view/layer lifetime, queue serialization and frame-size/rotation projection map to browser/Electron video elements and existing presentation owner.",
+      "fabushi_canonical_owner": "Transcript/CallSession media presentation / platform adapter",
+      "fabushi_target": "Existing HumanCallControls/browser video element and thin platform rendering adapter."
+    },
+    {
+      "recursive_order": 11667,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/VideoMetalView.mm",
+      "source_blob_sha": "c9c1af0e057e849c0242f697edb530d940a661a5",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/VideoMetalView.mm",
+        "mode": "100644",
+        "type": "blob",
+        "object": "c9c1af0e057e849c0242f697edb530d940a661a5",
+        "size": 14958
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open-canonical-platform-adapter-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin Metal/sample-buffer video rendering",
+      "source_symbols": [
+        "VideoRendererAdapterImpl",
+        "VideoMetalView"
+      ],
+      "responsibility": "Renderer sink attach/detach, pixel format conversion, view/layer lifetime, queue serialization and frame-size/rotation projection map to browser/Electron video elements and existing presentation owner.",
+      "fabushi_canonical_owner": "Transcript/CallSession media presentation / platform adapter",
+      "fabushi_target": "Existing HumanCallControls/browser video element and thin platform rendering adapter."
+    },
+    {
+      "recursive_order": 11668,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/VideoMetalViewMac.h",
+      "source_blob_sha": "222f0335ec02826b70941f73570ad64f98ebc789",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/VideoMetalViewMac.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "222f0335ec02826b70941f73570ad64f98ebc789",
+        "size": 1194
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open-canonical-platform-adapter-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin Metal/sample-buffer video rendering",
+      "source_symbols": [
+        "VideoMetalViewMac"
+      ],
+      "responsibility": "Renderer sink attach/detach, pixel format conversion, view/layer lifetime, queue serialization and frame-size/rotation projection map to browser/Electron video elements and existing presentation owner.",
+      "fabushi_canonical_owner": "Transcript/CallSession media presentation / platform adapter",
+      "fabushi_target": "Existing HumanCallControls/browser video element and thin platform rendering adapter."
+    },
+    {
+      "recursive_order": 11669,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/VideoMetalViewMac.mm",
+      "source_blob_sha": "4ef86306fd3b22713c1531c04f48c74bf09e539a",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/VideoMetalViewMac.mm",
+        "mode": "100644",
+        "type": "blob",
+        "object": "4ef86306fd3b22713c1531c04f48c74bf09e539a",
+        "size": 14972
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open-canonical-platform-adapter-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin Metal/sample-buffer video rendering",
+      "source_symbols": [
+        "VideoRendererAdapterImpl",
+        "VideoMetalView macOS"
+      ],
+      "responsibility": "Renderer sink attach/detach, pixel format conversion, view/layer lifetime, queue serialization and frame-size/rotation projection map to browser/Electron video elements and existing presentation owner.",
+      "fabushi_canonical_owner": "Transcript/CallSession media presentation / platform adapter",
+      "fabushi_target": "Existing HumanCallControls/browser video element and thin platform rendering adapter."
+    },
+    {
+      "recursive_order": 11670,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/VideoSampleBufferView.h",
+      "source_blob_sha": "fdc6de7dd593d77ba34c84c29ee7a622bb1040da",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/VideoSampleBufferView.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "fdc6de7dd593d77ba34c84c29ee7a622bb1040da",
+        "size": 1071
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open-canonical-platform-adapter-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin Metal/sample-buffer video rendering",
+      "source_symbols": [
+        "VideoSampleBufferView"
+      ],
+      "responsibility": "Renderer sink attach/detach, pixel format conversion, view/layer lifetime, queue serialization and frame-size/rotation projection map to browser/Electron video elements and existing presentation owner.",
+      "fabushi_canonical_owner": "Transcript/CallSession media presentation / platform adapter",
+      "fabushi_target": "Existing HumanCallControls/browser video element and thin platform rendering adapter."
+    },
+    {
+      "recursive_order": 11671,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/VideoSampleBufferView.mm",
+      "source_blob_sha": "c7adb53bb7b6064cec2838b46aff8a4ebd120891",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/VideoSampleBufferView.mm",
+        "mode": "100644",
+        "type": "blob",
+        "object": "c7adb53bb7b6064cec2838b46aff8a4ebd120891",
+        "size": 26553
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open-canonical-platform-adapter-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin Metal/sample-buffer video rendering",
+      "source_symbols": [
+        "VideoRendererAdapterImpl",
+        "CopyVideoFrameToNV12PixelBuffer"
+      ],
+      "responsibility": "Renderer sink attach/detach, pixel format conversion, view/layer lifetime, queue serialization and frame-size/rotation projection map to browser/Electron video elements and existing presentation owner.",
+      "fabushi_canonical_owner": "Transcript/CallSession media presentation / platform adapter",
+      "fabushi_target": "Existing HumanCallControls/browser video element and thin platform rendering adapter."
+    },
+    {
+      "recursive_order": 11672,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/VideoSampleBufferViewMac.h",
+      "source_blob_sha": "e5099426eec5a93af1ed58cbb9753bb764b44aa3",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/VideoSampleBufferViewMac.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "e5099426eec5a93af1ed58cbb9753bb764b44aa3",
+        "size": 986
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open-canonical-platform-adapter-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin Metal/sample-buffer video rendering",
+      "source_symbols": [
+        "VideoSampleBufferViewMac"
+      ],
+      "responsibility": "Renderer sink attach/detach, pixel format conversion, view/layer lifetime, queue serialization and frame-size/rotation projection map to browser/Electron video elements and existing presentation owner.",
+      "fabushi_canonical_owner": "Transcript/CallSession media presentation / platform adapter",
+      "fabushi_target": "Existing HumanCallControls/browser video element and thin platform rendering adapter."
+    },
+    {
+      "recursive_order": 11673,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/VideoSampleBufferViewMac.mm",
+      "source_blob_sha": "33d8672c50049db2551927bef21aa37a8afc1944",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/VideoSampleBufferViewMac.mm",
+        "mode": "100644",
+        "type": "blob",
+        "object": "33d8672c50049db2551927bef21aa37a8afc1944",
+        "size": 14500
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "mapped-open-canonical-platform-adapter-replacement",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "Darwin Metal/sample-buffer video rendering",
+      "source_symbols": [
+        "VideoRendererAdapterImpl",
+        "VideoSampleBufferView macOS"
+      ],
+      "responsibility": "Renderer sink attach/detach, pixel format conversion, view/layer lifetime, queue serialization and frame-size/rotation projection map to browser/Electron video elements and existing presentation owner.",
+      "fabushi_canonical_owner": "Transcript/CallSession media presentation / platform adapter",
+      "fabushi_target": "Existing HumanCallControls/browser video element and thin platform rendering adapter."
+    },
+    {
+      "recursive_order": 11674,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/h264_encoder_impl.cpp",
+      "source_blob_sha": "08a7d7dc20093c74e1699278fdf35bdada0b2528",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/h264_encoder_impl.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "08a7d7dc20093c74e1699278fdf35bdada0b2528",
+        "size": 12284
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-group-video-call-production-gap",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "H.264 encoder and H.265 NALU rewrite/packetization",
+      "source_symbols": [
+        "H264EncoderX264Impl",
+        "NumberOfThreads"
+      ],
+      "responsibility": "Encoder thread/bitrate/keyframe semantics and H.265 Annex-B/AVCC parameter-set rewriting are applicable media transport rules. Browser WebRTC covers 1:1; verified multi-party codec/SFU composition and real group E2E remain open.",
+      "fabushi_canonical_owner": "CallSession / WebRTC media-network",
+      "fabushi_target": "Existing CallSession/WebRTC owner; group media service/codec composition evidence open."
+    },
+    {
+      "recursive_order": 11675,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/h264_encoder_impl.h",
+      "source_blob_sha": "13169ed1b34b500654cdaa591f12cc05c1e6ad44",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/h264_encoder_impl.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "13169ed1b34b500654cdaa591f12cc05c1e6ad44",
+        "size": 2299
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-group-video-call-production-gap",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "H.264 encoder and H.265 NALU rewrite/packetization",
+      "source_symbols": [
+        "H264EncoderX264Impl"
+      ],
+      "responsibility": "Encoder thread/bitrate/keyframe semantics and H.265 Annex-B/AVCC parameter-set rewriting are applicable media transport rules. Browser WebRTC covers 1:1; verified multi-party codec/SFU composition and real group E2E remain open.",
+      "fabushi_canonical_owner": "CallSession / WebRTC media-network",
+      "fabushi_target": "Existing CallSession/WebRTC owner; group media service/codec composition evidence open."
+    },
+    {
+      "recursive_order": 11676,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/h265_nalu_rewriter.cc",
+      "source_blob_sha": "b6750a63113f1af84af2643d1dc33227ce663daf",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/h265_nalu_rewriter.cc",
+        "mode": "100644",
+        "type": "blob",
+        "object": "b6750a63113f1af84af2643d1dc33227ce663daf",
+        "size": 14009
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-group-video-call-production-gap",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "H.264 encoder and H.265 NALU rewrite/packetization",
+      "source_symbols": [
+        "H265AnnexBBufferReader",
+        "H265AvccBufferWriter"
+      ],
+      "responsibility": "Encoder thread/bitrate/keyframe semantics and H.265 Annex-B/AVCC parameter-set rewriting are applicable media transport rules. Browser WebRTC covers 1:1; verified multi-party codec/SFU composition and real group E2E remain open.",
+      "fabushi_canonical_owner": "CallSession / WebRTC media-network",
+      "fabushi_target": "Existing CallSession/WebRTC owner; group media service/codec composition evidence open."
+    },
+    {
+      "recursive_order": 11677,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/h265_nalu_rewriter.h",
+      "source_blob_sha": "f1851e4c411fdf367ed9a268a5c17ab4e57ed8d5",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/h265_nalu_rewriter.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "f1851e4c411fdf367ed9a268a5c17ab4e57ed8d5",
+        "size": 2039
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-group-video-call-production-gap",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "H.264 encoder and H.265 NALU rewrite/packetization",
+      "source_symbols": [
+        "H265 NALU rewrite API"
+      ],
+      "responsibility": "Encoder thread/bitrate/keyframe semantics and H.265 Annex-B/AVCC parameter-set rewriting are applicable media transport rules. Browser WebRTC covers 1:1; verified multi-party codec/SFU composition and real group E2E remain open.",
+      "fabushi_canonical_owner": "CallSession / WebRTC media-network",
+      "fabushi_target": "Existing CallSession/WebRTC owner; group media service/codec composition evidence open."
+    },
+    {
+      "recursive_order": 11678,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/iOS/CallAudioTone.h",
+      "source_blob_sha": "619a868eff83cfd26bba6bb8274aa1e5e8ce76c6",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/iOS/CallAudioTone.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "619a868eff83cfd26bba6bb8274aa1e5e8ce76c6",
+        "size": 913
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "applicable-human-call-audio-feedback-implemented-awaiting-descendant-evidence",
+      "unknown_closed": false,
+      "omitted": false,
+      "upstream_owner": "tgcalls call audio tone playback state",
+      "source_symbols": [
+        "CallAudioTone"
+      ],
+      "responsibility": "Portable call-tone sample ownership is implemented in shipping HumanCallControls with Fabushi-owned Int16 samples, 48 kHz rate, finite loops, playback-offset accounting, ringing start, transition/terminal stop, teardown, blocked-audio alert and explicit retry. unknown_closed remains false until descendant exact-head and packaged audible/restart acceptance.",
+      "fabushi_canonical_owner": "Existing HumanCallControls / CallSession / Resource-audio owner",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx; human-call-controls.contract.test.ts; desktop/e2e/mahayana-agent-workbench.spec.ts"
+    },
+    {
+      "recursive_order": 11679,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/iOS/RTCAudioSession+Configuration.mm",
+      "source_blob_sha": "81b595db91d67c7dd55d7d9c47dc0ed9bb65719a",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/iOS/RTCAudioSession+Configuration.mm",
+        "mode": "100644",
+        "type": "blob",
+        "object": "81b595db91d67c7dd55d7d9c47dc0ed9bb65719a",
+        "size": 6930
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
+      "omitted": false,
+      "upstream_owner": "tgcalls iOS audio-session/audio-device implementation",
+      "source_symbols": [
+        "RTCAudioSession configuration category"
+      ],
+      "responsibility": "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
+      "fabushi_canonical_owner": "Platform boundary evidence only",
+      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts.",
+      "responsibilities": [
+        "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:81b595db91d67c7dd55d7d9c47dc0ed9bb65719a",
+        "byte-audit:recomputed-git-blob=81b595db91d67c7dd55d7d9c47dc0ed9bb65719a;byte_length=6930;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/darwin/iOS/RTCAudioSession+Configuration.mm; target=Fabushi Desktop; platform-specific ios implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
+    },
+    {
+      "recursive_order": 11680,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/iOS/RTCAudioSession+Private.h",
+      "source_blob_sha": "02578c3ce16b73e33c2002dd39c968789822b41c",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/iOS/RTCAudioSession+Private.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "02578c3ce16b73e33c2002dd39c968789822b41c",
+        "size": 3786
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
+      "omitted": false,
+      "upstream_owner": "tgcalls iOS audio-session/audio-device implementation",
+      "source_symbols": [
+        "RTCAudioSession private contract"
+      ],
+      "responsibility": "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
+      "fabushi_canonical_owner": "Platform boundary evidence only",
+      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts.",
+      "responsibilities": [
+        "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:02578c3ce16b73e33c2002dd39c968789822b41c",
+        "byte-audit:recomputed-git-blob=02578c3ce16b73e33c2002dd39c968789822b41c;byte_length=3786;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/darwin/iOS/RTCAudioSession+Private.h; target=Fabushi Desktop; platform-specific ios implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
+    },
+    {
+      "recursive_order": 11681,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/iOS/RTCAudioSession.h",
+      "source_blob_sha": "bcaecd639429d463d8e977acdad531acb444b9a1",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/iOS/RTCAudioSession.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "bcaecd639429d463d8e977acdad531acb444b9a1",
+        "size": 11716
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
+      "omitted": false,
+      "upstream_owner": "tgcalls iOS audio-session/audio-device implementation",
+      "source_symbols": [
+        "RTCAudioSession"
+      ],
+      "responsibility": "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
+      "fabushi_canonical_owner": "Platform boundary evidence only",
+      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts.",
+      "responsibilities": [
+        "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:bcaecd639429d463d8e977acdad531acb444b9a1",
+        "byte-audit:recomputed-git-blob=bcaecd639429d463d8e977acdad531acb444b9a1;byte_length=11716;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/darwin/iOS/RTCAudioSession.h; target=Fabushi Desktop; platform-specific ios implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
+    },
+    {
+      "recursive_order": 11682,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/iOS/RTCAudioSession.mm",
+      "source_blob_sha": "2528f71c844376ccd3ade0d98bdae495dae1466f",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/iOS/RTCAudioSession.mm",
+        "mode": "100644",
+        "type": "blob",
+        "object": "2528f71c844376ccd3ade0d98bdae495dae1466f",
+        "size": 32025
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
+      "omitted": false,
+      "upstream_owner": "tgcalls iOS audio-session/audio-device implementation",
+      "source_symbols": [
+        "RTCAudioSession singleton/delegate/lock lifecycle"
+      ],
+      "responsibility": "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
+      "fabushi_canonical_owner": "Platform boundary evidence only",
+      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts.",
+      "responsibilities": [
+        "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:2528f71c844376ccd3ade0d98bdae495dae1466f",
+        "byte-audit:recomputed-git-blob=2528f71c844376ccd3ade0d98bdae495dae1466f;byte_length=32025;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/darwin/iOS/RTCAudioSession.mm; target=Fabushi Desktop; platform-specific ios implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
+    },
+    {
+      "recursive_order": 11683,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/iOS/RTCAudioSessionConfiguration.h",
+      "source_blob_sha": "81826958742bb3d5040a1966f3d60c3c63e3eaad",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/iOS/RTCAudioSessionConfiguration.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "81826958742bb3d5040a1966f3d60c3c63e3eaad",
+        "size": 1805
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
+      "omitted": false,
+      "upstream_owner": "tgcalls iOS audio-session/audio-device implementation",
+      "source_symbols": [
+        "RTCAudioSessionConfiguration"
+      ],
+      "responsibility": "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
+      "fabushi_canonical_owner": "Platform boundary evidence only",
+      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts.",
+      "responsibilities": [
+        "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:81826958742bb3d5040a1966f3d60c3c63e3eaad",
+        "byte-audit:recomputed-git-blob=81826958742bb3d5040a1966f3d60c3c63e3eaad;byte_length=1805;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/darwin/iOS/RTCAudioSessionConfiguration.h; target=Fabushi Desktop; platform-specific ios implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
+    },
+    {
+      "recursive_order": 11684,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/iOS/RTCAudioSessionConfiguration.mm",
+      "source_blob_sha": "2389c3d3d28e794d74dc25f1c55ff7bff702ec30",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/iOS/RTCAudioSessionConfiguration.mm",
+        "mode": "100644",
+        "type": "blob",
+        "object": "2389c3d3d28e794d74dc25f1c55ff7bff702ec30",
+        "size": 6213
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
+      "omitted": false,
+      "upstream_owner": "tgcalls iOS audio-session/audio-device implementation",
+      "source_symbols": [
+        "RTCAudioSessionConfiguration defaults"
+      ],
+      "responsibility": "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
+      "fabushi_canonical_owner": "Platform boundary evidence only",
+      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts.",
+      "responsibilities": [
+        "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:2389c3d3d28e794d74dc25f1c55ff7bff702ec30",
+        "byte-audit:recomputed-git-blob=2389c3d3d28e794d74dc25f1c55ff7bff702ec30;byte_length=6213;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/darwin/iOS/RTCAudioSessionConfiguration.mm; target=Fabushi Desktop; platform-specific ios implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
+    },
+    {
+      "recursive_order": 11685,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/iOS/RTCNativeAudioSessionDelegateAdapter.h",
+      "source_blob_sha": "6a75f014790e0397bfbba28bbedb63e470e54bbc",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/iOS/RTCNativeAudioSessionDelegateAdapter.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "6a75f014790e0397bfbba28bbedb63e470e54bbc",
+        "size": 997
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
+      "omitted": false,
+      "upstream_owner": "tgcalls iOS audio-session/audio-device implementation",
+      "source_symbols": [
+        "RTCNativeAudioSessionDelegateAdapter"
+      ],
+      "responsibility": "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
+      "fabushi_canonical_owner": "Platform boundary evidence only",
+      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts.",
+      "responsibilities": [
+        "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:6a75f014790e0397bfbba28bbedb63e470e54bbc",
+        "byte-audit:recomputed-git-blob=6a75f014790e0397bfbba28bbedb63e470e54bbc;byte_length=997;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/darwin/iOS/RTCNativeAudioSessionDelegateAdapter.h; target=Fabushi Desktop; platform-specific ios implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
+    },
+    {
+      "recursive_order": 11686,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/iOS/RTCNativeAudioSessionDelegateAdapter.mm",
+      "source_blob_sha": "daddf314a43c4f8af8c2d96299de02f01db7e8cf",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/iOS/RTCNativeAudioSessionDelegateAdapter.mm",
+        "mode": "100644",
+        "type": "blob",
+        "object": "daddf314a43c4f8af8c2d96299de02f01db7e8cf",
+        "size": 3273
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
+      "omitted": false,
+      "upstream_owner": "tgcalls iOS audio-session/audio-device implementation",
+      "source_symbols": [
+        "RTCNativeAudioSessionDelegateAdapter implementation"
+      ],
+      "responsibility": "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
+      "fabushi_canonical_owner": "Platform boundary evidence only",
+      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts.",
+      "responsibilities": [
+        "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:daddf314a43c4f8af8c2d96299de02f01db7e8cf",
+        "byte-audit:recomputed-git-blob=daddf314a43c4f8af8c2d96299de02f01db7e8cf;byte_length=3273;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/darwin/iOS/RTCNativeAudioSessionDelegateAdapter.mm; target=Fabushi Desktop; platform-specific ios implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
+    },
+    {
+      "recursive_order": 11687,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/iOS/tgcalls_audio_device_ios.h",
+      "source_blob_sha": "cfb07f07673d3b8c5b0e9fe1480a3b3ba369107a",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/iOS/tgcalls_audio_device_ios.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "cfb07f07673d3b8c5b0e9fe1480a3b3ba369107a",
+        "size": 14250
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
+      "omitted": false,
+      "upstream_owner": "tgcalls iOS audio-session/audio-device implementation",
+      "source_symbols": [
+        "AudioDeviceIOS"
+      ],
+      "responsibility": "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
+      "fabushi_canonical_owner": "Platform boundary evidence only",
+      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts.",
+      "responsibilities": [
+        "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:cfb07f07673d3b8c5b0e9fe1480a3b3ba369107a",
+        "byte-audit:recomputed-git-blob=cfb07f07673d3b8c5b0e9fe1480a3b3ba369107a;byte_length=14250;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/darwin/iOS/tgcalls_audio_device_ios.h; target=Fabushi Desktop; platform-specific ios implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
+    },
+    {
+      "recursive_order": 11688,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/iOS/tgcalls_audio_device_ios.mm",
+      "source_blob_sha": "8b74e01a863eb257cf3faa17e3c734e503928e9a",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/iOS/tgcalls_audio_device_ios.mm",
+        "mode": "100644",
+        "type": "blob",
+        "object": "8b74e01a863eb257cf3faa17e3c734e503928e9a",
+        "size": 42983
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
+      "omitted": false,
+      "upstream_owner": "tgcalls iOS audio-session/audio-device implementation",
+      "source_symbols": [
+        "AudioDeviceIOS interruption/route/play-record lifecycle"
+      ],
+      "responsibility": "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
+      "fabushi_canonical_owner": "Platform boundary evidence only",
+      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts.",
+      "responsibilities": [
+        "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:8b74e01a863eb257cf3faa17e3c734e503928e9a",
+        "byte-audit:recomputed-git-blob=8b74e01a863eb257cf3faa17e3c734e503928e9a;byte_length=42983;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/darwin/iOS/tgcalls_audio_device_ios.mm; target=Fabushi Desktop; platform-specific ios implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
+    },
+    {
+      "recursive_order": 11689,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/iOS/tgcalls_audio_device_module_ios.h",
+      "source_blob_sha": "4684193345cd80c36fa2f2f7f57f9ebf29e5839b",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/iOS/tgcalls_audio_device_module_ios.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "4684193345cd80c36fa2f2f7f57f9ebf29e5839b",
+        "size": 5901
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
+      "omitted": false,
+      "upstream_owner": "tgcalls iOS audio-session/audio-device implementation",
+      "source_symbols": [
+        "AudioDeviceModuleIOS"
+      ],
+      "responsibility": "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
+      "fabushi_canonical_owner": "Platform boundary evidence only",
+      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts.",
+      "responsibilities": [
+        "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:4684193345cd80c36fa2f2f7f57f9ebf29e5839b",
+        "byte-audit:recomputed-git-blob=4684193345cd80c36fa2f2f7f57f9ebf29e5839b;byte_length=5901;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/darwin/iOS/tgcalls_audio_device_module_ios.h; target=Fabushi Desktop; platform-specific ios implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
+    },
+    {
+      "recursive_order": 11690,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/iOS/tgcalls_audio_device_module_ios.mm",
+      "source_blob_sha": "33c2a0f463050cfb9c1ccda098e5b93a3acdce5f",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/iOS/tgcalls_audio_device_module_ios.mm",
+        "mode": "100644",
+        "type": "blob",
+        "object": "33c2a0f463050cfb9c1ccda098e5b93a3acdce5f",
+        "size": 23396
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
+      "omitted": false,
+      "upstream_owner": "tgcalls iOS audio-session/audio-device implementation",
+      "source_symbols": [
+        "CreateAudioDeviceModule",
+        "AudioDeviceModuleIOS"
+      ],
+      "responsibility": "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
+      "fabushi_canonical_owner": "Platform boundary evidence only",
+      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts.",
+      "responsibilities": [
+        "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:33c2a0f463050cfb9c1ccda098e5b93a3acdce5f",
+        "byte-audit:recomputed-git-blob=33c2a0f463050cfb9c1ccda098e5b93a3acdce5f;byte_length=23396;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/darwin/iOS/tgcalls_audio_device_module_ios.mm; target=Fabushi Desktop; platform-specific ios implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
+    },
+    {
+      "recursive_order": 11691,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/iOS/tgcalls_voice_processing_audio_unit.h",
+      "source_blob_sha": "a647de6a6682c14bd7c9e884783dd9adf797c2f7",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/iOS/tgcalls_voice_processing_audio_unit.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "a647de6a6682c14bd7c9e884783dd9adf797c2f7",
+        "size": 6301
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
+      "omitted": false,
+      "upstream_owner": "tgcalls iOS audio-session/audio-device implementation",
+      "source_symbols": [
+        "VoiceProcessingAudioUnit",
+        "State"
+      ],
+      "responsibility": "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
+      "fabushi_canonical_owner": "Platform boundary evidence only",
+      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts.",
+      "responsibilities": [
+        "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:a647de6a6682c14bd7c9e884783dd9adf797c2f7",
+        "byte-audit:recomputed-git-blob=a647de6a6682c14bd7c9e884783dd9adf797c2f7;byte_length=6301;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/darwin/iOS/tgcalls_voice_processing_audio_unit.h; target=Fabushi Desktop; platform-specific ios implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
+    },
+    {
+      "recursive_order": 11692,
+      "source_path": "Telegram/ThirdParty/tgcalls::tgcalls/platform/darwin/iOS/tgcalls_voice_processing_audio_unit.mm",
+      "source_blob_sha": "3f05be9bffd368a12fa00016dd5bf83ea6dd36bc",
+      "source_identity": {
+        "repository": "TelegramMessenger/tgcalls",
+        "commit": "1c236c09f8d8569fead14bd68000618a52051225",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/tgcalls",
+        "path": "tgcalls/platform/darwin/iOS/tgcalls_voice_processing_audio_unit.mm",
+        "mode": "100644",
+        "type": "blob",
+        "object": "3f05be9bffd368a12fa00016dd5bf83ea6dd36bc",
+        "size": 21193
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "disposition": "development-only-non-applicable",
+      "unknown_closed": true,
+      "omitted": false,
+      "upstream_owner": "tgcalls iOS audio-session/audio-device implementation",
+      "source_symbols": [
+        "VoiceProcessingAudioUnit initialize/start/stop/retry callbacks"
+      ],
+      "responsibility": "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner.",
+      "fabushi_canonical_owner": "Platform boundary evidence only",
+      "fabushi_target": "No Desktop iOS shipping owner; portable audio lifecycle maps to existing CallSession/platform audio contracts.",
+      "responsibilities": [
+        "Exact tgcalls ios platform-specific implementation audited as non-shipping for Fabushi Desktop. Portable call lifecycle/media responsibilities remain open in canonical desktop call/platform owners; this mobile/fake adapter is not a desktop runtime owner."
+      ],
+      "current_head_evidence": [
+        "direct-source-read:TelegramMessenger/tgcalls@1c236c09f8d8569fead14bd68000618a52051225:3f05be9bffd368a12fa00016dd5bf83ea6dd36bc",
+        "byte-audit:recomputed-git-blob=3f05be9bffd368a12fa00016dd5bf83ea6dd36bc;byte_length=21193;format=platform-source",
+        "platform-reachability-audit:path=tgcalls/platform/darwin/iOS/tgcalls_voice_processing_audio_unit.mm; target=Fabushi Desktop; platform-specific ios implementation excluded without excluding portable call responsibility"
+      ],
+      "evidence_gap": "No implementation gap for this exact non-shipping object; applicable platform/call product responsibilities remain governed by their canonical rows and release evidence."
+    }
+  ]
+}

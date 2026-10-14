@@ -4,7 +4,6 @@ import {
   createContext,
   isValidElement,
   useContext,
-  useEffect,
   useRef,
   useState,
   type FocusEvent,
@@ -18,6 +17,7 @@ import { classifySendMessageTextUrl } from "./send-message-text";
 import type { TranscriptMessage } from "../../workspace/model";
 import type { TranscriptThreadSummary } from "./thread-summary-controller";
 import { ThreadAffordance } from "./thread-affordance";
+import { SandContextMenu, SandMenuContent, SandMenuItem, SandMenuRoot, SandMenuTrigger } from "../../../../ui/sand-floating-primitives";
 
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=5084871 (message action eligibility/labels)
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=5086012 (mCn action anchor, selectors, focus lifecycle)
@@ -127,6 +127,20 @@ export function transcriptReplyActionLabel(entry: TranscriptCardActionEntry): st
   return `Reply to ${bounded.length > 0 ? bounded : "Agent"} message`;
 }
 
+export interface TranscriptInlineCopyProjection {
+  readonly text: string;
+  readonly label: "Copy Link" | "Copy Email" | "Copy Text";
+}
+
+export function projectTranscriptInlineCopyTarget(target: EventTarget | null): TranscriptInlineCopyProjection | null {
+  if (!(target instanceof Element)) return null;
+  const source = target.closest("[data-transcript-copy-text]");
+  const text = source?.getAttribute("data-transcript-copy-text");
+  const label = source?.getAttribute("data-transcript-copy-label");
+  if (text == null || text.length === 0 || (label !== "Copy Link" && label !== "Copy Email" && label !== "Copy Text")) return null;
+  return { text, label };
+}
+
 export function isMessageContextTargetExcluded(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return false;
   if (target.closest('a[href], img, input, textarea, [contenteditable]:not([contenteditable="false"]), [role="textbox"], .sand-attachment__image-button') != null) return true;
@@ -205,37 +219,26 @@ export function TranscriptCardActionAnchor({ entry, children, onCopy, isReadOnly
   const effectiveOnCopy = onCopy ?? clipboardCopyForEntry(entry);
   const anchorRef = useRef<HTMLElement | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [contextMenuPoint, setContextMenuPoint] = useState<{ x: number; y: number } | null>(null);
   const [reactionMenuOpen, setReactionMenuOpen] = useState(false);
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    const onPointerDown = (event: globalThis.PointerEvent) => {
-      if (!(event.target instanceof Node) || anchorRef.current?.contains(event.target)) return;
-      setMenuOpen(false);
-    };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      event.preventDefault();
-      setMenuOpen(false);
-      restoreTranscriptActionFocus(anchorRef.current);
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [menuOpen]);
+  const [inlineCopy, setInlineCopy] = useState<TranscriptInlineCopyProjection | null>(null);
 
   if (!isTranscriptCardActionEntry(entry)) return <>{children}</>;
 
   const effectiveReadOnly = isReadOnly ?? context?.isReadOnly ?? false;
   const effectiveThreadRootId = threadRootId ?? context?.threadRootId ?? null;
   const isThreadActionVisible = context != null && !effectiveReadOnly && effectiveThreadRootId == null;
-  const hasContextActions = context != null && (!effectiveReadOnly || isThreadActionVisible || effectiveOnCopy != null);
+  const hasStaticMenuActions = isThreadActionVisible || effectiveOnCopy != null || !effectiveReadOnly;
+  const hasContextActions = context != null && (hasStaticMenuActions || entry.kind === "send-message" && entry.message.type === "widget");
   const hasReactionActions = renderReactionActions != null && !effectiveReadOnly && isDeliveryActionable;
   if (!hasContextActions && !hasReactionActions) return <>{children}</>;
 
+  const closeMenus = (restoreFocus: boolean) => {
+    setMenuOpen(false);
+    setContextMenuPoint(null);
+    setInlineCopy(null);
+    if (restoreFocus) restoreTranscriptActionFocus(anchorRef.current);
+  };
   const reactionActions = hasReactionActions
     ? renderReactionActions({
       entry,
@@ -244,7 +247,11 @@ export function TranscriptCardActionAnchor({ entry, children, onCopy, isReadOnly
       isDeliveryActionable,
       onOpenChange: (open) => {
         setReactionMenuOpen(open);
-        if (open) setMenuOpen(false);
+        if (open) {
+          setMenuOpen(false);
+          setContextMenuPoint(null);
+          setInlineCopy(null);
+        }
       },
     })
     : null;
@@ -253,7 +260,13 @@ export function TranscriptCardActionAnchor({ entry, children, onCopy, isReadOnly
     armTranscriptActionFocus(anchorRef.current, target instanceof Element ? target : null);
   };
   const copy = () => {
-    setMenuOpen(false);
+    const projection = inlineCopy;
+    closeMenus(true);
+    if (projection != null) {
+      if (typeof navigator === "undefined" || navigator.clipboard == null) return;
+      swallowCopyFailure(() => navigator.clipboard.writeText(projection.text));
+      return;
+    }
     if (effectiveOnCopy != null) swallowCopyFailure(effectiveOnCopy);
   };
   const child = Children.only(children);
@@ -265,18 +278,35 @@ export function TranscriptCardActionAnchor({ entry, children, onCopy, isReadOnly
     anchorRef.current = element;
     if (typeof childRef === "function") childRef(element);
   };
-  const actionClassName = [childProps.className, "sand-message-action-anchor", menuOpen || reactionMenuOpen ? "sand-message-action-anchor--menu-open" : undefined].filter(Boolean).join(" ");
+  const actionClassName = [childProps.className, "sand-message-action-anchor", menuOpen || contextMenuPoint != null || reactionMenuOpen ? "sand-message-action-anchor--menu-open" : undefined].filter(Boolean).join(" ");
+
+  const menuItems = <>
+    {isThreadActionVisible ? <SandMenuItem index={0} onSelect={() => { context.onThread(entry.id); closeMenus(true); }}><span aria-hidden="true" data-icon-name="chat-bubbles" />Start a thread</SandMenuItem> : null}
+    {inlineCopy == null && effectiveOnCopy == null ? null : <SandMenuItem index={1} onSelect={copy}><span aria-hidden="true" data-icon-name="copy" />{inlineCopy?.label ?? "Copy"}</SandMenuItem>}
+  </>;
+
   const actionToolbar = (
     <div aria-label={transcriptMessageActionsLabel(entry)} className="sand-message-hover-actions" role="toolbar">
       {reactionActions}
       {isThreadActionVisible ? <button aria-label={transcriptReplyActionLabel(entry)} className="sand-message-hover-actions__button" onClick={() => context.onReply(entry.id)} type="button"><span aria-hidden="true" data-icon-name={messageRole(entry) === "user" ? "arrow-u-up-right" : "arrow-u-up-left"} /></button> : null}
-      {context == null ? null : <button aria-expanded={menuOpen} aria-haspopup="menu" aria-label="More message actions" className="sand-message-hover-actions__button" onClick={() => { rememberFocus(document.activeElement); setReactionMenuOpen(false); setMenuOpen((open) => !open); }} type="button">
-        <span aria-hidden="true" data-icon-name="dots-3-horizontal" />
-      </button>}
-      {menuOpen && context != null ? <div aria-label="More message actions" role="menu">
-        {isThreadActionVisible ? <button className="sand-message-hover-actions__button" onClick={() => { context.onThread(entry.id); setMenuOpen(false); }} role="menuitem" type="button"><span aria-hidden="true" data-icon-name="chat-bubbles" />Start a thread</button> : null}
-        {effectiveOnCopy == null ? null : <button className="sand-message-hover-actions__button" onClick={copy} role="menuitem" type="button"><span aria-hidden="true" data-icon-name="copy" />Copy</button>}
-      </div> : null}
+      {context == null || !hasStaticMenuActions ? null : <SandMenuRoot
+        onOpenChange={(open) => {
+          setMenuOpen(open);
+          if (open) {
+            setContextMenuPoint(null);
+            setInlineCopy(null);
+            setReactionMenuOpen(false);
+          }
+        }}
+        open={menuOpen}
+        placement="top-end"
+        returnFocus
+      >
+        <SandMenuTrigger><button aria-label="More message actions" className="sand-message-hover-actions__button" onClick={() => { rememberFocus(document.activeElement); setInlineCopy(null); setReactionMenuOpen(false); }} type="button">
+          <span aria-hidden="true" data-icon-name="dots-3-horizontal" />
+        </button></SandMenuTrigger>
+        <SandMenuContent ariaLabel="More message actions">{menuItems}</SandMenuContent>
+      </SandMenuRoot>}
     </div>
   );
   const threadSummary = context != null && context.threadRootId == null && !effectiveReadOnly
@@ -287,17 +317,9 @@ export function TranscriptCardActionAnchor({ entry, children, onCopy, isReadOnly
     : <ThreadAffordance onOpen={context.openThread} role={messageRole(entry)} summary={threadSummary} />;
   const childElement = cloneElement(childWithProps, {
     className: actionClassName,
-    onContextMenu: (event) => {
-      childProps.onContextMenu?.(event);
-      if (isMessageContextTargetExcluded(event.target)) return;
-      event.preventDefault();
-      rememberFocus(event.target);
-      setReactionMenuOpen(false);
-      setMenuOpen(true);
-    },
     onFocusCapture: (event) => {
       childProps.onFocusCapture?.(event);
-      if (!menuOpen) rememberFocus(event.target);
+      if (!menuOpen && contextMenuPoint == null) rememberFocus(event.target);
     },
     onPointerEnter: (event) => {
       childProps.onPointerEnter?.(event);
@@ -306,5 +328,23 @@ export function TranscriptCardActionAnchor({ entry, children, onCopy, isReadOnly
     ref: setAnchor,
   }, childProps.children, threadAffordance, actionToolbar);
 
-  return childElement;
+  if (!hasContextActions) return childElement;
+  return <SandContextMenu
+    ariaLabel="Message actions"
+    content={menuItems}
+    onOpenChange={(point) => {
+      setContextMenuPoint(point);
+      if (point == null) setInlineCopy(null);
+    }}
+    open={contextMenuPoint}
+    shouldOpen={(event) => {
+      const projectedInlineCopy = projectTranscriptInlineCopyTarget(event.target);
+      if (projectedInlineCopy == null && isMessageContextTargetExcluded(event.target)) return false;
+      rememberFocus(event.target);
+      setInlineCopy(projectedInlineCopy);
+      setMenuOpen(false);
+      setReactionMenuOpen(false);
+      return true;
+    }}
+  >{childElement}</SandContextMenu>;
 }

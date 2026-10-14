@@ -1,0 +1,44 @@
+{
+  "accepted_upstream": "5b81fa35aaa8d24e14ec9603e5929d324850d9c9",
+  "start": 5085,
+  "end": 5090,
+  "entries": [
+    {
+      "order": 5085,
+      "path": "Telegram/SourceFiles/media/player/media_player_instance.h",
+      "blob": "cf491d92a8ed19da81e376077077b900d97754de",
+      "consumer_symbol": "media_player_instance"
+    },
+    {
+      "order": 5086,
+      "path": "Telegram/SourceFiles/media/player/media_player_listen_tracker.cpp",
+      "blob": "6ca1718a0c10c890028f281cdfa14221d1d0e1f0",
+      "consumer_symbol": "media_player_listen_tracker"
+    },
+    {
+      "order": 5087,
+      "path": "Telegram/SourceFiles/media/player/media_player_listen_tracker.h",
+      "blob": "5ffc1d4eab3990c7063b79b38941700ff3aa6909",
+      "consumer_symbol": "media_player_listen_tracker"
+    },
+    {
+      "order": 5088,
+      "path": "Telegram/SourceFiles/media/player/media_player_panel.cpp",
+      "blob": "3aa54512db5e1cc4417bfe30440ff3a6e110316c",
+      "consumer_symbol": "media_player_panel"
+    },
+    {
+      "order": 5089,
+      "path": "Telegram/SourceFiles/media/player/media_player_panel.h",
+      "blob": "6df3d14f3299df109804d17d4d73b7348c59a0e1",
+      "consumer_symbol": "media_player_panel"
+    },
+    {
+      "order": 5090,
+      "path": "Telegram/SourceFiles/media/player/media_player_volume_controller.cpp",
+      "blob": "51818c7d111d8592015d049f4231c95f10f86200",
+      "consumer_symbol": "media_player_volume_controller"
+    }
+  ],
+  "accepted_tree": "7539504ec9294b9c1ca03332570127b8b69ad201"
+}

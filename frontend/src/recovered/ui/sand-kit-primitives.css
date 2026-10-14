@@ -194,3 +194,29 @@
     transition-duration: 0ms;
   }
 }
+
+
+.ui-button-label[data-two-line="true"] {
+  align-items: center;
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  line-height: 1.1;
+  min-width: 0;
+  pointer-events: none;
+}
+
+.ui-button-label__title,
+.ui-button-label__subtitle {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-button-label__subtitle {
+  font-size: .82em;
+  opacity: .72;
+}

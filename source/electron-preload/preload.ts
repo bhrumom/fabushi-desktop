@@ -139,8 +139,13 @@ export function createDesktopPreloadBridge(options: {
     async openExternal(url: string) { await edge("openExternal", { url }); },
     async openCloudAgent(bcId: string) { await edge("openCloudAgent", { bcId }); },
     stageAttachmentBytes: async (filename: string, bytes: Uint8Array) => normalizeStagedAttachmentNativeResult(await edge("stageAttachmentBytes", { filename, bytesBase64: encodeAttachmentBytesForNative(bytes) })),
-    commitStagedAttachments: async (paths: readonly string[], filenames: readonly string[]) => normalizeCommittedAttachmentNativeResult(await edge("commitStagedAttachments", {
+    commitStagedAttachments: async (
+      paths: readonly string[],
+      filenames: readonly string[],
+      scope?: { readonly kind: "human-conversation"; readonly conversationId: string },
+    ) => normalizeCommittedAttachmentNativeResult(await edge("commitStagedAttachments", {
       items: paths.map((path, index) => ({ path, ...(filenames[index] ? { name: filenames[index] } : {}) })),
+      ...(scope == null ? {} : { scope }),
     })),
     async discardStagedAttachment(path: string) { await edge("discardStagedAttachment", { path }); },
     mcp: {
@@ -184,6 +189,7 @@ export function createDesktopPreloadBridge(options: {
     callMedia: {
       requestPermissions: (input: { audio: boolean; video: boolean }) => edge("requestCallMediaPermissions", input),
       listDisplaySources: () => edge("listCallDisplaySources"),
+      getDisplayCapturePolicy: () => edge("getCallDisplayCapturePolicy"),
       getPreferences: () => edge("getCallMediaPreferences"),
       setPreferences: (preferences: unknown) => edge("setCallMediaPreferences", { preferences }),
     },
@@ -259,6 +265,13 @@ export function createDesktopPreloadBridge(options: {
     uiPreferences: {
       get: () => edge("getUiPreferences"),
       set: (preferences: unknown) => edge("setUiPreferences", { preferences }),
+    },
+    accessibility: {
+      get: () => edge("getAccessibilityState"),
+      onChanged: (listener: (state: { screenReader: boolean }) => void) => subscribe("accessibility-support-changed", listener),
+    },
+    platformInput: {
+      get: () => edge("getPlatformInputState"),
     },
     autoReviewInstructions: {
       get: () => edge("getAutoReviewInstructions"),

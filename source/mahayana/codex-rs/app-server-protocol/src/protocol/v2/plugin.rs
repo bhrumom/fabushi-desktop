@@ -658,6 +658,8 @@ pub struct PluginDetail {
     pub summary: PluginSummary,
     pub share_url: Option<String>,
     pub description: Option<String>,
+    /// Publisher-declared license metadata for the resolved local release, when available.
+    pub license: Option<String>,
     pub skills: Vec<SkillSummary>,
     pub hooks: Vec<PluginHookSummary>,
     pub apps: Vec<AppSummary>,

@@ -100,6 +100,7 @@ export function createProductionAttachmentGatewayBinding(
           nativeImage: electron.nativeImage,
           readPortableDimensions: (buffer) => readWebpOrHeicDimensions(buffer),
           servableImageMimeFromPath: (value) => servableImageMimeFromPath(value) ?? null,
+          previewByteCap: ATTACHMENT_PREVIEW_BYTE_CAP,
         }),
         fetchLinkMetadata: async ({ cacheDir, url }) => {
           const fetchLinkMetadata = context.coordinatorLegs.legs.fetchLinkMetadata;

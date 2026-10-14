@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   DESKTOP_BRIDGE_TOP_LEVEL_KEYS,
+  createCanonicalRecentParticipantSelectionRequest,
   hasDesktopBridge,
   requireDesktopBridge,
 } from "./desktop-bridge.ts";
@@ -13,6 +14,7 @@ test("desktop bridge contract exposes the frozen top-level preload surface exact
     "mcp",
     "cursorAccount",
     "experiments",
+    "accessibility",
     "foreverBox",
     "telemetry",
     "localToolPermission",
@@ -49,3 +51,18 @@ test("desktop bridge guard is deliberately structural and fail-closed on missing
   assert.equal(hasDesktopBridge([]), false);
   assert.throws(() => requireDesktopBridge({}), /desktop preload bridge is unavailable/i);
 });
+
+test("canonical Recent Peers selection payload is normalized and fail-closed", () => {
+  assert.deepEqual(createCanonicalRecentParticipantSelectionRequest("  agent:canonical  "), {
+    selectionId: "agent:canonical",
+  });
+  assert.throws(
+    () => createCanonicalRecentParticipantSelectionRequest("   "),
+    /requires a valid selectionId/i,
+  );
+  assert.throws(
+    () => createCanonicalRecentParticipantSelectionRequest("agent:\u0000bad"),
+    /requires a valid selectionId/i,
+  );
+});
+

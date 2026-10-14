@@ -36,6 +36,45 @@ impl GatewayApi for TestApi {
             })),
             method if matches!(
                 method,
+                "listHumanConversations"
+                    | "syncHumanConversations"
+                    | "syncHumanConversation"
+                    | "getHumanConversationRetention"
+                    | "setHumanConversationRetention"
+                    | "createHumanConversation"
+                    | "searchHumanRecipients"
+                    | "forwardHumanMessage"
+                    | "sendHumanMessage"
+                    | "reactHumanMessage"
+                    | "getHumanConversationTranscript"
+                    | "getHumanConversationTranscriptTail"
+                    | "searchHumanMessages"
+                    | "getCallTransportIdentity"
+                    | "getCallTransportLease"
+                    | "getCallIceServers"
+                    | "listCallMediaSessions"
+                    | "createCallMediaSession"
+                    | "discoverCallMediaPublications"
+                    | "publishCallMedia"
+                    | "acknowledgeCallMediaPublication"
+                    | "subscribeCallMedia"
+                    | "answerCallMediaSubscription"
+                    | "updateCallMediaSubscriptionLayer"
+                    | "closeCallMediaSession"
+                    | "syncHumanCalls"
+                    | "createCallSession"
+                    | "getCallSession"
+                    | "listCallSessions"
+                    | "transitionCallSession"
+                    | "updateCallMedia"
+                    | "sendCallSignal"
+                    | "listCallSignals"
+            ) => Ok(json!({
+                "method": method,
+                "args": args,
+            })),
+            method if matches!(
+                method,
                 "runner.acceptRoutedPrompt"
                     | "runner.startRoutedProvider"
                     | "runner.cancelRoutedProvider"
@@ -378,6 +417,72 @@ fn gateway_carries_explicit_fabushi_extensions_without_widening_unknown_methods(
         );
         assert_eq!(json_body(&response)["method"], method);
     }
+}
+
+#[test]
+fn gateway_admits_explicit_canonical_human_and_call_owner_methods() {
+    let server = start_gateway_server(GatewayServerDeps {
+        api: Arc::new(TestApi),
+        events: GatewayEventHub::default(),
+        local_exec: None,
+        webauthn: None,
+        config: config(None),
+        started_at: 777,
+    })
+    .expect("gateway server");
+    let port = server.port();
+
+    let methods = [
+        "listHumanConversations",
+        "syncHumanConversations",
+        "syncHumanConversation",
+        "getHumanConversationRetention",
+        "setHumanConversationRetention",
+        "createHumanConversation",
+        "searchHumanRecipients",
+        "forwardHumanMessage",
+        "sendHumanMessage",
+        "reactHumanMessage",
+        "getHumanConversationTranscript",
+        "getHumanConversationTranscriptTail",
+        "searchHumanMessages",
+        "getCallTransportIdentity",
+        "getCallTransportLease",
+        "getCallIceServers",
+        "listCallMediaSessions",
+        "createCallMediaSession",
+        "discoverCallMediaPublications",
+        "publishCallMedia",
+        "acknowledgeCallMediaPublication",
+        "subscribeCallMedia",
+        "answerCallMediaSubscription",
+        "updateCallMediaSubscriptionLayer",
+        "closeCallMediaSession",
+        "syncHumanCalls",
+        "createCallSession",
+        "getCallSession",
+        "listCallSessions",
+        "transitionCallSession",
+        "updateCallMedia",
+        "sendCallSignal",
+        "listCallSignals",
+    ];
+
+    for method in methods {
+        let response = request(
+            port,
+            &format!(
+                "POST /api/{method} HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type: application/json\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{{}}"
+            ),
+        );
+        assert!(
+            response.starts_with("HTTP/1.1 200 OK"),
+            "{method} was not admitted through the explicit canonical Human/Call boundary: {response}"
+        );
+        assert_eq!(json_body(&response)["method"], method);
+    }
+
+    server.close();
 }
 
 #[test]

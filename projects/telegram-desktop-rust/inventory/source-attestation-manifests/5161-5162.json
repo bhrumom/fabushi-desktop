@@ -1,0 +1,20 @@
+{
+  "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+  "start": 5161,
+  "end": 5162,
+  "entries": [
+    {
+      "order": 5161,
+      "path": "Telegram/SourceFiles/media/view/media_view_overlay_raster.cpp",
+      "blob": "96191417734cdb34355dfd79f6e19359bb28c94c",
+      "consumer_symbol": "Media::View::OverlayWidget::RendererSW"
+    },
+    {
+      "order": 5162,
+      "path": "Telegram/SourceFiles/media/view/media_view_overlay_raster.h",
+      "blob": "7a75930cd33226596ea34cd225c6211fa5cec6e6",
+      "consumer_symbol": "Media::View::OverlayWidget::RendererSW"
+    }
+  ],
+  "accepted_tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97"
+}

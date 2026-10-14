@@ -1,0 +1,62 @@
+{
+  "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+  "start": 5065,
+  "end": 5073,
+  "entries": [
+    {
+      "order": 5065,
+      "path": "Telegram/SourceFiles/media/clip/media_clip_implementation.h",
+      "blob": "be5daf47b2b78eace52d002e5ca0953009d8b8e0",
+      "consumer_symbol": "media_clip_implementation"
+    },
+    {
+      "order": 5066,
+      "path": "Telegram/SourceFiles/media/clip/media_clip_reader.cpp",
+      "blob": "bf4ef6f2a3960b0cb4194d87c8c2ba5c20fac664",
+      "consumer_symbol": "media_clip_reader"
+    },
+    {
+      "order": 5067,
+      "path": "Telegram/SourceFiles/media/clip/media_clip_reader.h",
+      "blob": "d67f467a16693236b806512a9e7d0e671330ff88",
+      "consumer_symbol": "media_clip_reader"
+    },
+    {
+      "order": 5068,
+      "path": "Telegram/SourceFiles/media/media_audio_waveform.cpp",
+      "blob": "5d08b59f5353956756b236544d23417089f4b80e",
+      "consumer_symbol": "media_audio_waveform"
+    },
+    {
+      "order": 5069,
+      "path": "Telegram/SourceFiles/media/media_audio_waveform.h",
+      "blob": "7e132e3c3d362ad01a88c1386cb5a2fb407570ef",
+      "consumer_symbol": "media_audio_waveform"
+    },
+    {
+      "order": 5070,
+      "path": "Telegram/SourceFiles/media/media_common.h",
+      "blob": "6cfb6290ce9df59f16220192916ef3bfd6750bb7",
+      "consumer_symbol": "media_common"
+    },
+    {
+      "order": 5071,
+      "path": "Telegram/SourceFiles/media/media_video_canvas.cpp",
+      "blob": "3adebe10fec8b70a69b0aeb888e3c50050018055",
+      "consumer_symbol": "media_video_canvas"
+    },
+    {
+      "order": 5072,
+      "path": "Telegram/SourceFiles/media/media_video_canvas.h",
+      "blob": "403bbacdbb746ba5f6edc0fe2d6a17d30addb1e2",
+      "consumer_symbol": "media_video_canvas"
+    },
+    {
+      "order": 5073,
+      "path": "Telegram/SourceFiles/media/media_video_encode.cpp",
+      "blob": "cbe23f283713e9d1dc47217d5650d6755f974db6",
+      "consumer_symbol": "media_video_encode"
+    }
+  ],
+  "accepted_tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97"
+}

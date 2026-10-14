@@ -1,0 +1,51 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "tree": "9d8fa87ce68c832d2f4c99f372a5bb672463c3e1"
+  },
+  "range": {
+    "first_order": 5773,
+    "last_order": 5773,
+    "entries": 1
+  },
+  "rows": [
+    {
+      "recursive_order": 5773,
+      "source_path": "Telegram/SourceFiles/test/test_console_lock.h",
+      "source_blob_sha": "ebedfbd08c3a3319cbceefcc226a3b5ec755d398",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Public fresh console-lock evidence contract for Windows WTS and macOS CGSession readings, four-state classification/privacy-safe raw diagnostics, and Windows-only ConsoleLockGate while macOS consumers may use locked() as evidence without globally skipping.",
+      "upstream_owner": "tdesktop task-test harness / console-lock interface contract",
+      "state_machine": "fresh read request -> NotApplicable|Unlocked|Locked|Unknown -> locked() iff Locked -> text diagnostics -> skip gate only when Locked",
+      "side_effects": "Interface/test-evidence contract only; no product mutation, no clipboard/content capture, no credential access.",
+      "failure_cases": "Unknown API/metadata state must not be promoted to unlocked; NotApplicable must not gate; legacy Windows reversed flags remain unknown at implementation boundary; diagnostics must not expose user/domain/window-station names.",
+      "ui_disposition": "TEST/EVIDENCE ONLY. No Telegram-derived production UI. Reuse Fabushi professional cross-platform test/evidence harness.",
+      "fabushi_canonical_owner": "Canonical cross-platform desktop test precondition/privacy evidence harness",
+      "fabushi_target": "MAPPED OPEN.",
+      "platform_differences": "Windows supplies WTS session metadata through the implementation. Non-Windows is explicit NotApplicable. The public contract must preserve Unknown and never infer unlock from inability to read.",
+      "production_evidence": "Exact live 65e23ba7 changed-prefix blob re-read/reconciled; reading alone gives no new shipping/release credit.",
+      "test_evidence": "Fresh exact-descendant GitHub Actions evidence required; predecessor b0400d/b0d1fe5e runs remain historical-only.",
+      "disposition": "mapped-open-test-harness",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_evidence": [],
+      "reachability_status": "accepted-tree exact blob responsibility proven; professional test-harness closure open",
+      "license_and_provenance": "tdesktop provenance retained.",
+      "notes": "Changed accepted-prefix blob explicitly re-read under live 65e23ba7; classification retained only after responsibility re-decomposition; omitted remains false.",
+      "consumer_symbol": "ConsoleLockState / ConsoleLockReading / ConsoleLockText / ConsoleLockGate",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-required",
+        "accepted_upstream": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+        "verified_blob_sha": "ebedfbd08c3a3319cbceefcc226a3b5ec755d398",
+        "file_type": "blob",
+        "recursive_order": 5773,
+        "byte_size": 7487
+      }
+    }
+  ]
+}

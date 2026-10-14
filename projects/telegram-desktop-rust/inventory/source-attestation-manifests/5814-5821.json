@@ -1,0 +1,57 @@
+{
+  "accepted_upstream": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
+  "accepted_tree": "e279373aec283ebfcc6e3bb7385e51205acd84a2",
+  "deterministic_order_basis": "non-directory/blob rank in accepted recursive tree",
+  "start": 5814,
+  "end": 5821,
+  "entries": [
+    {
+      "order": 5814,
+      "path": "Telegram/SourceFiles/test/test_probe.cpp",
+      "blob": "6ca5f1b4973ade1c6450cb7a17da7628d849ebcb",
+      "consumer_symbol": "test_probe"
+    },
+    {
+      "order": 5815,
+      "path": "Telegram/SourceFiles/test/test_probe.h",
+      "blob": "23af29f6c755cb1868caa7d3faa4e05a0edceafd",
+      "consumer_symbol": "test_probe"
+    },
+    {
+      "order": 5816,
+      "path": "Telegram/SourceFiles/test/test_rpc_fixture.cpp",
+      "blob": "7158950389df5408cfd4d6bcb0eb85202d56d09b",
+      "consumer_symbol": "test_rpc_fixture"
+    },
+    {
+      "order": 5817,
+      "path": "Telegram/SourceFiles/test/test_rpc_fixture.h",
+      "blob": "efe02efb43d4c9560e726fce900b8b3a2aa9ed57",
+      "consumer_symbol": "test_rpc_fixture"
+    },
+    {
+      "order": 5818,
+      "path": "Telegram/SourceFiles/test/test_rpc_retry.cpp",
+      "blob": "996a92c440c40f8156a72b5bcc003f11b4b2f068",
+      "consumer_symbol": "test_rpc_retry"
+    },
+    {
+      "order": 5819,
+      "path": "Telegram/SourceFiles/test/test_rpc_retry.h",
+      "blob": "92a263fdc756ad08f75cd8e3609932223798099e",
+      "consumer_symbol": "test_rpc_retry"
+    },
+    {
+      "order": 5820,
+      "path": "Telegram/SourceFiles/test/test_runner.cpp",
+      "blob": "eaf5276fa12a9166339fbc74c37f215afaa1c141",
+      "consumer_symbol": "test_runner"
+    },
+    {
+      "order": 5821,
+      "path": "Telegram/SourceFiles/test/test_runner.h",
+      "blob": "619097699fc85895d5502628a434eb8619420d44",
+      "consumer_symbol": "test_runner"
+    }
+  ]
+}

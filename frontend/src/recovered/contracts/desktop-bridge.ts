@@ -8,6 +8,20 @@ export interface ThemeState {
 }
 export type DesktopUiDirection = "auto" | "ltr" | "rtl";
 export interface DesktopUiPreferences { locale: string; direction: DesktopUiDirection; reducedMotion: boolean; highContrast: boolean; textScale: number; }
+export interface DesktopAccessibilityState { screenReader: boolean; }
+export interface DesktopPlatformInputValue { readonly kind: "known" | "unknown"; readonly value?: string; }
+export interface DesktopPlatformInputState {
+  readonly method: DesktopPlatformInputValue;
+  readonly language: DesktopPlatformInputValue;
+  readonly width: DesktopPlatformInputValue;
+  readonly scriptVariant: DesktopPlatformInputValue;
+  readonly preedit: DesktopPlatformInputValue;
+  readonly candidate: DesktopPlatformInputValue;
+  readonly focus: "focused" | "blurred" | "unknown";
+  readonly lifecycle: "idle" | "focus" | "blur" | "composition-start" | "composition-update" | "composition-end" | "unknown";
+  readonly sampledAt: number;
+  readonly source: "native-platform";
+}
 export interface DesktopCallMediaPreferences { microphoneId: string | null; cameraId: string | null; }
 
 export type CursorAuthStatus =
@@ -117,6 +131,11 @@ export type AttachmentBytesResult =
 export type StagedAttachmentResult =
   | { ok: true; path: string }
   | { ok: false; reason: "empty" | "too-large" | "failed" };
+
+export type DesktopAttachmentCommitScope = {
+  kind: "human-conversation";
+  conversationId: string;
+};
 
 export interface AvatarFileSelection {
   dataUrl: string;
@@ -273,6 +292,7 @@ export const DESKTOP_BRIDGE_TOP_LEVEL_KEYS = [
   "transcribeAudio",
   "cursorAccount",
   "experiments",
+  "accessibility",
   "platform",
   "isDev",
   "getWindowState",
@@ -459,6 +479,13 @@ export interface DesktopCallMediaBridge {
     camera: "granted" | "denied" | "prompt" | "not-requested";
   }>;
   listDisplaySources(): Promise<Array<{ id: string; name: string; displayId?: string }>>;
+  getDisplayCapturePolicy(): Promise<{
+    platform: "aix" | "android" | "darwin" | "freebsd" | "haiku" | "linux" | "openbsd" | "sunos" | "win32" | "cygwin" | "netbsd";
+    systemAudio: "supported" | "best-effort" | "unsupported";
+    adapter: "electron-desktop-loopback" | "coreaudio-tap" | "pipewire-portal" | "none";
+    permission: "os-media-capture" | "portal" | "none";
+    reason: string;
+  }>;
 }
 
 export interface DesktopBridge {
@@ -473,6 +500,7 @@ export interface DesktopBridge {
   commitStagedAttachments(
     paths: readonly string[],
     filenames: readonly string[],
+    scope?: DesktopAttachmentCommitScope,
   ): Promise<string[] | null>;
   discardStagedAttachment(path: string): Promise<void>;
   readonly mcp: McpDesktopBridge;
@@ -526,6 +554,13 @@ export interface DesktopBridge {
   readonly uiPreferences: {
     get(): Promise<DesktopUiPreferences>;
     set(preferences: DesktopUiPreferences): Promise<DesktopUiPreferences>;
+  };
+  readonly accessibility: {
+    get(): Promise<DesktopAccessibilityState>;
+    onChanged(listener: BridgeListener<DesktopAccessibilityState>): Unsubscribe;
+  };
+  readonly platformInput: {
+    get(): Promise<DesktopPlatformInputState>;
   };
   readonly autoReviewInstructions: {
     get(): Promise<DesktopAutoReviewInstructions>;
@@ -592,3 +627,18 @@ export function requireDesktopBridge(value: unknown): DesktopBridge {
   }
   return value;
 }
+
+export interface CanonicalRecentParticipantSelectionRequest {
+  readonly selectionId: string;
+}
+
+export function createCanonicalRecentParticipantSelectionRequest(
+  selectionId: string,
+): CanonicalRecentParticipantSelectionRequest {
+  const normalized = selectionId.trim();
+  if (normalized.length === 0 || normalized.length > 512 || /[\u0000-\u001f\u007f]/u.test(normalized)) {
+    throw new Error("canonical recent participant selection requires a valid selectionId");
+  }
+  return { selectionId: normalized };
+}
+

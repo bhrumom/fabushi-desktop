@@ -1,0 +1,2342 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6"
+  },
+  "source_component": {
+    "repository": "desktop-app/cmake_helpers",
+    "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+    "mount": "cmake"
+  },
+  "exact_head_evidence": {
+    "production_owner_audit_head": "6c7250d84a5346ed4bc75dab36e2407baa83a841",
+    "predecessor_source_authority": "38196463543/114640171027 success at 1b906f5802e8bba7ddbd4098ceac4849f4feeec5",
+    "status": "direct source read/decomposition complete; accounting descendant exact-head validation required"
+  },
+  "accounting": {
+    "recursive_total": 16125,
+    "read_through": 13447,
+    "unread": 2678,
+    "unknown": 15845,
+    "omitted": 0,
+    "unknown_closed": 280
+  },
+  "range": {
+    "first_order": 13411,
+    "last_order": 13447,
+    "entries": 37,
+    "next_order": 13448,
+    "next_source_path": "doxygen-theme::DoxygenLayout.xml"
+  },
+  "rows": [
+    {
+      "recursive_order": 13411,
+      "source_path": "cmake::external/tde2e/CMakeLists.txt",
+      "source_blob_sha": "b9f0dd5b611920dea4e3ef44b34c1b2cf7f67a74",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "external/tde2e/CMakeLists.txt",
+        "mode": "100644",
+        "type": "blob",
+        "object": "b9f0dd5b611920dea4e3ef44b34c1b2cf7f67a74",
+        "size": 1270
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "CMakeLists.txt",
+        "desktop E2E",
+        "Chat parity acceptance"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "external/tde2e/CMakeLists.txt",
+      "responsibility": "Upstream E2E support dependency is test authority only and maps to Fabushi focused/Electron/packaged acceptance without retaining Telegram runtime.",
+      "responsibilities": [
+        "Upstream E2E support dependency is test authority only and maps to Fabushi focused/Electron/packaged acceptance without retaining Telegram runtime."
+      ],
+      "existing_owner_candidates": [
+        "desktop/e2e",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "chosen_owner": "Existing E2E / acceptance test owner",
+      "fabushi_canonical_owner": "Existing E2E / acceptance test owner",
+      "fabushi_target": "desktop/e2e, .github/workflows/desktop-chat-parity-ci.yml",
+      "fabushi_target_paths": [
+        "desktop/e2e",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "fabushi_target_symbols": [
+        "desktop E2E",
+        "Chat parity acceptance"
+      ],
+      "production_entrypoints": [
+        "desktop/e2e",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:b9f0dd5b611920dea4e3ef44b34c1b2cf7f67a74",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13412,
+      "source_path": "cmake::external/tdesktop_rust/CMakeLists.txt",
+      "source_blob_sha": "ab5a2c84ca918b5e0b67628865f8ce800a627292",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "external/tdesktop_rust/CMakeLists.txt",
+        "mode": "100644",
+        "type": "blob",
+        "object": "ab5a2c84ca918b5e0b67628865f8ce800a627292",
+        "size": 2246
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "CMakeLists.txt",
+        "Fabushi Host runtime",
+        "Rust desktop runtime gate"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "external/tdesktop_rust/CMakeLists.txt",
+      "responsibility": "Single-staticlib runtime/allocator/panic-link constraint is build authority only; Fabushi keeps its own Rust Host runtime and never links tdesktop product runtime.",
+      "responsibilities": [
+        "Single-staticlib runtime/allocator/panic-link constraint is build authority only; Fabushi keeps its own Rust Host runtime and never links tdesktop product runtime."
+      ],
+      "existing_owner_candidates": [
+        "source/host",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing Rust Host + Build/Packaging owner",
+      "fabushi_canonical_owner": "Existing Rust Host + Build/Packaging owner",
+      "fabushi_target": "source/host, .github/workflows/rust-desktop-runtime.yml",
+      "fabushi_target_paths": [
+        "source/host",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "fabushi_target_symbols": [
+        "Fabushi Host runtime",
+        "Rust desktop runtime gate"
+      ],
+      "production_entrypoints": [
+        "source/host",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:ab5a2c84ca918b5e0b67628865f8ce800a627292",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13413,
+      "source_path": "cmake::external/tlottie/CMakeLists.txt",
+      "source_blob_sha": "0d3714cbd61edc21ed09280a273bbce826d4ac54",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "external/tlottie/CMakeLists.txt",
+        "mode": "100644",
+        "type": "blob",
+        "object": "0d3714cbd61edc21ed09280a273bbce826d4ac54",
+        "size": 1142
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "CMakeLists.txt",
+        "attachment manager",
+        "Transcript media renderer"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "external/tlottie/CMakeLists.txt",
+      "responsibility": "Animation decode/render dependency maps to canonical Resource/Transcript media presentation; no upstream Rust runtime owner is retained.",
+      "responsibilities": [
+        "Animation decode/render dependency maps to canonical Resource/Transcript media presentation; no upstream Rust runtime owner is retained."
+      ],
+      "existing_owner_candidates": [
+        "source/electron-main/attachments/attachment-manager.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card"
+      ],
+      "chosen_owner": "Existing Resource / Transcript media owner",
+      "fabushi_canonical_owner": "Existing Resource / Transcript media owner",
+      "fabushi_target": "source/electron-main/attachments/attachment-manager.ts, frontend/src/recovered/features/conversation/cards/transcript-card",
+      "fabushi_target_paths": [
+        "source/electron-main/attachments/attachment-manager.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card"
+      ],
+      "fabushi_target_symbols": [
+        "attachment manager",
+        "Transcript media renderer"
+      ],
+      "production_entrypoints": [
+        "source/electron-main/attachments/attachment-manager.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:0d3714cbd61edc21ed09280a273bbce826d4ac54",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13414,
+      "source_path": "cmake::external/tmc/CMakeLists.txt",
+      "source_blob_sha": "45b310ad289b43f354014c29ba7eae0c39e8a502",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "external/tmc/CMakeLists.txt",
+        "mode": "100644",
+        "type": "blob",
+        "object": "45b310ad289b43f354014c29ba7eae0c39e8a502",
+        "size": 738
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "CMakeLists.txt",
+        "desktop dependency composition",
+        "runtime matrix"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "external/tmc/CMakeLists.txt",
+      "responsibility": "Third-party library/build responsibility maps to existing canonical Build/Packaging owner; no Telegram-specific runtime owner is retained.",
+      "responsibilities": [
+        "Third-party library/build responsibility maps to existing canonical Build/Packaging owner; no Telegram-specific runtime owner is retained."
+      ],
+      "existing_owner_candidates": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing Build / Packaging owner",
+      "fabushi_canonical_owner": "Existing Build / Packaging owner",
+      "fabushi_target": "desktop/package.json, .github/workflows/rust-desktop-runtime.yml",
+      "fabushi_target_paths": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "fabushi_target_symbols": [
+        "desktop dependency composition",
+        "runtime matrix"
+      ],
+      "production_entrypoints": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:45b310ad289b43f354014c29ba7eae0c39e8a502",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13415,
+      "source_path": "cmake::external/ton/CMakeLists.txt",
+      "source_blob_sha": "9223913536ebd511337e50637932ae9e45a01ff5",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "external/ton/CMakeLists.txt",
+        "mode": "100644",
+        "type": "blob",
+        "object": "9223913536ebd511337e50637932ae9e45a01ff5",
+        "size": 1738
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "CMakeLists.txt",
+        "canonical commerce/payment surfaces",
+        "security/service contracts"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "external/ton/CMakeLists.txt",
+      "responsibility": "Wallet/payment protocol and generated binding responsibility must be evaluated against canonical commerce/payment owners; upstream TON runtime is not retained.",
+      "responsibilities": [
+        "Wallet/payment protocol and generated binding responsibility must be evaluated against canonical commerce/payment owners; upstream TON runtime is not retained."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src",
+        "source/host/src"
+      ],
+      "chosen_owner": "Existing canonical commerce/payment + Security owners",
+      "fabushi_canonical_owner": "Existing canonical commerce/payment + Security owners",
+      "fabushi_target": "frontend/src, source/host/src",
+      "fabushi_target_paths": [
+        "frontend/src",
+        "source/host/src"
+      ],
+      "fabushi_target_symbols": [
+        "canonical commerce/payment surfaces",
+        "security/service contracts"
+      ],
+      "production_entrypoints": [
+        "frontend/src",
+        "source/host/src"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:9223913536ebd511337e50637932ae9e45a01ff5",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13416,
+      "source_path": "cmake::external/variant/CMakeLists.txt",
+      "source_blob_sha": "b4e27fabe6f49a7e57345511e1ca7f50bebc7a5e",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "external/variant/CMakeLists.txt",
+        "mode": "100644",
+        "type": "blob",
+        "object": "b4e27fabe6f49a7e57345511e1ca7f50bebc7a5e",
+        "size": 769
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "CMakeLists.txt",
+        "desktop dependency composition",
+        "runtime matrix"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "external/variant/CMakeLists.txt",
+      "responsibility": "Third-party library/build responsibility maps to existing canonical Build/Packaging owner; no Telegram-specific runtime owner is retained.",
+      "responsibilities": [
+        "Third-party library/build responsibility maps to existing canonical Build/Packaging owner; no Telegram-specific runtime owner is retained."
+      ],
+      "existing_owner_candidates": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing Build / Packaging owner",
+      "fabushi_canonical_owner": "Existing Build / Packaging owner",
+      "fabushi_target": "desktop/package.json, .github/workflows/rust-desktop-runtime.yml",
+      "fabushi_target_paths": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "fabushi_target_symbols": [
+        "desktop dependency composition",
+        "runtime matrix"
+      ],
+      "production_entrypoints": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:b4e27fabe6f49a7e57345511e1ca7f50bebc7a5e",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13417,
+      "source_path": "cmake::external/vpx/CMakeLists.txt",
+      "source_blob_sha": "099ca6788bcf449e93b711f262675e02758ffe82",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "external/vpx/CMakeLists.txt",
+        "mode": "100644",
+        "type": "blob",
+        "object": "099ca6788bcf449e93b711f262675e02758ffe82",
+        "size": 1691
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "CMakeLists.txt",
+        "HumanCallMedia",
+        "call media adapter",
+        "CallSession"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "external/vpx/CMakeLists.txt",
+      "responsibility": "Human Call media/session dependency contract",
+      "responsibilities": [
+        "Human Call media/session dependency contract"
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call media/session owner",
+      "fabushi_canonical_owner": "Existing Human Call media/session owner",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/electron-main/call-media.ts, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "HumanCallMedia",
+        "call media adapter",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:099ca6788bcf449e93b711f262675e02758ffe82",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13418,
+      "source_path": "cmake::external/wallet_engine/CMakeLists.txt",
+      "source_blob_sha": "c73fab4c317308971a56c06dede40e669e6d2a91",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "external/wallet_engine/CMakeLists.txt",
+        "mode": "100644",
+        "type": "blob",
+        "object": "c73fab4c317308971a56c06dede40e669e6d2a91",
+        "size": 2566
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "CMakeLists.txt",
+        "canonical commerce/payment surfaces",
+        "security/service contracts"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "external/wallet_engine/CMakeLists.txt",
+      "responsibility": "Wallet/payment protocol and generated binding responsibility must be evaluated against canonical commerce/payment owners; upstream TON runtime is not retained.",
+      "responsibilities": [
+        "Wallet/payment protocol and generated binding responsibility must be evaluated against canonical commerce/payment owners; upstream TON runtime is not retained."
+      ],
+      "existing_owner_candidates": [
+        "frontend/src",
+        "source/host/src"
+      ],
+      "chosen_owner": "Existing canonical commerce/payment + Security owners",
+      "fabushi_canonical_owner": "Existing canonical commerce/payment + Security owners",
+      "fabushi_target": "frontend/src, source/host/src",
+      "fabushi_target_paths": [
+        "frontend/src",
+        "source/host/src"
+      ],
+      "fabushi_target_symbols": [
+        "canonical commerce/payment surfaces",
+        "security/service contracts"
+      ],
+      "production_entrypoints": [
+        "frontend/src",
+        "source/host/src"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:c73fab4c317308971a56c06dede40e669e6d2a91",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13419,
+      "source_path": "cmake::external/webrtc/CMakeLists.txt",
+      "source_blob_sha": "c4a05307ed1e0deebc221607c91ff3700bb76e46",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "external/webrtc/CMakeLists.txt",
+        "mode": "100644",
+        "type": "blob",
+        "object": "c4a05307ed1e0deebc221607c91ff3700bb76e46",
+        "size": 2769
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "CMakeLists.txt",
+        "HumanCallMedia",
+        "call media adapter",
+        "CallSession"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "external/webrtc/CMakeLists.txt",
+      "responsibility": "Human Call media/session dependency contract",
+      "responsibilities": [
+        "Human Call media/session dependency contract"
+      ],
+      "existing_owner_candidates": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "chosen_owner": "Existing Human Call media/session owner",
+      "fabushi_canonical_owner": "Existing Human Call media/session owner",
+      "fabushi_target": "frontend/src/production/human-call-media.tsx, source/electron-main/call-media.ts, source/host/src/extensions/session/call_session.rs",
+      "fabushi_target_paths": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "fabushi_target_symbols": [
+        "HumanCallMedia",
+        "call media adapter",
+        "CallSession"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/human-call-media.tsx",
+        "source/electron-main/call-media.ts",
+        "source/host/src/extensions/session/call_session.rs"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:c4a05307ed1e0deebc221607c91ff3700bb76e46",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13420,
+      "source_path": "cmake::external/xxhash/CMakeLists.txt",
+      "source_blob_sha": "9c2d02bf3c6e7fcf4ce532705b4b68b03b40a981",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "external/xxhash/CMakeLists.txt",
+        "mode": "100644",
+        "type": "blob",
+        "object": "9c2d02bf3c6e7fcf4ce532705b4b68b03b40a981",
+        "size": 1001
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "CMakeLists.txt",
+        "resource integrity",
+        "update integrity"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "external/xxhash/CMakeLists.txt",
+      "responsibility": "Compression/hash dependency provenance maps to existing Resource/storage/update integrity owners.",
+      "responsibilities": [
+        "Compression/hash dependency provenance maps to existing Resource/storage/update integrity owners."
+      ],
+      "existing_owner_candidates": [
+        "source/electron-main/attachments",
+        "source/electron-main/update"
+      ],
+      "chosen_owner": "Existing Resource / Storage / Updater integrity owner",
+      "fabushi_canonical_owner": "Existing Resource / Storage / Updater integrity owner",
+      "fabushi_target": "source/electron-main/attachments, source/electron-main/update",
+      "fabushi_target_paths": [
+        "source/electron-main/attachments",
+        "source/electron-main/update"
+      ],
+      "fabushi_target_symbols": [
+        "resource integrity",
+        "update integrity"
+      ],
+      "production_entrypoints": [
+        "source/electron-main/attachments",
+        "source/electron-main/update"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:9c2d02bf3c6e7fcf4ce532705b4b68b03b40a981",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13421,
+      "source_path": "cmake::external/zlib/CMakeLists.txt",
+      "source_blob_sha": "a5e31c9fbc2e037b54de170a7f8398856f351648",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "external/zlib/CMakeLists.txt",
+        "mode": "100644",
+        "type": "blob",
+        "object": "a5e31c9fbc2e037b54de170a7f8398856f351648",
+        "size": 1312
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "CMakeLists.txt",
+        "resource integrity",
+        "update integrity"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "external/zlib/CMakeLists.txt",
+      "responsibility": "Compression/hash dependency provenance maps to existing Resource/storage/update integrity owners.",
+      "responsibilities": [
+        "Compression/hash dependency provenance maps to existing Resource/storage/update integrity owners."
+      ],
+      "existing_owner_candidates": [
+        "source/electron-main/attachments",
+        "source/electron-main/update"
+      ],
+      "chosen_owner": "Existing Resource / Storage / Updater integrity owner",
+      "fabushi_canonical_owner": "Existing Resource / Storage / Updater integrity owner",
+      "fabushi_target": "source/electron-main/attachments, source/electron-main/update",
+      "fabushi_target_paths": [
+        "source/electron-main/attachments",
+        "source/electron-main/update"
+      ],
+      "fabushi_target_symbols": [
+        "resource integrity",
+        "update integrity"
+      ],
+      "production_entrypoints": [
+        "source/electron-main/attachments",
+        "source/electron-main/update"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:a5e31c9fbc2e037b54de170a7f8398856f351648",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13422,
+      "source_path": "cmake::generate_target.cmake",
+      "source_blob_sha": "228bdd8f0b4491b4428010e515f53665f0f60220",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "generate_target.cmake",
+        "mode": "100644",
+        "type": "blob",
+        "object": "228bdd8f0b4491b4428010e515f53665f0f60220",
+        "size": 928
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "generate_target.cmake",
+        "desktop build composition",
+        "runtime matrix",
+        "release packaging"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "generate_target.cmake",
+      "responsibility": "Cross-platform compile/link/resource/version/special-target hardening and deterministic build composition map to existing Build/Packaging/Release owners.",
+      "responsibilities": [
+        "Cross-platform compile/link/resource/version/special-target hardening and deterministic build composition map to existing Build/Packaging/Release owners."
+      ],
+      "existing_owner_candidates": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "chosen_owner": "Existing Build / Packaging / Release owner",
+      "fabushi_canonical_owner": "Existing Build / Packaging / Release owner",
+      "fabushi_target": "desktop/package.json, .github/workflows/rust-desktop-runtime.yml, .github/workflows/release-macos-main.yml",
+      "fabushi_target_paths": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "fabushi_target_symbols": [
+        "desktop build composition",
+        "runtime matrix",
+        "release packaging"
+      ],
+      "production_entrypoints": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:228bdd8f0b4491b4428010e515f53665f0f60220",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13423,
+      "source_path": "cmake::init_target.cmake",
+      "source_blob_sha": "f2a089f43e6dc67a8b038f9e799ae0dc8f22f1a8",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "init_target.cmake",
+        "mode": "100644",
+        "type": "blob",
+        "object": "f2a089f43e6dc67a8b038f9e799ae0dc8f22f1a8",
+        "size": 3460
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "init_target.cmake",
+        "desktop build composition",
+        "runtime matrix",
+        "release packaging"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "init_target.cmake",
+      "responsibility": "Cross-platform compile/link/resource/version/special-target hardening and deterministic build composition map to existing Build/Packaging/Release owners.",
+      "responsibilities": [
+        "Cross-platform compile/link/resource/version/special-target hardening and deterministic build composition map to existing Build/Packaging/Release owners."
+      ],
+      "existing_owner_candidates": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "chosen_owner": "Existing Build / Packaging / Release owner",
+      "fabushi_canonical_owner": "Existing Build / Packaging / Release owner",
+      "fabushi_target": "desktop/package.json, .github/workflows/rust-desktop-runtime.yml, .github/workflows/release-macos-main.yml",
+      "fabushi_target_paths": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "fabushi_target_symbols": [
+        "desktop build composition",
+        "runtime matrix",
+        "release packaging"
+      ],
+      "production_entrypoints": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:f2a089f43e6dc67a8b038f9e799ae0dc8f22f1a8",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13424,
+      "source_path": "cmake::linux_allocation_tracer/CMakeLists.txt",
+      "source_blob_sha": "ddac091a9740bd6451969ca5ba9ee7da33eee3e5",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "linux_allocation_tracer/CMakeLists.txt",
+        "mode": "100644",
+        "type": "blob",
+        "object": "ddac091a9740bd6451969ca5ba9ee7da33eee3e5",
+        "size": 777
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "CMakeLists.txt",
+        "pressure profiler",
+        "desktop telemetry"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "linux_allocation_tracer/CMakeLists.txt",
+      "responsibility": "Allocation interception, trace parsing, corrupt-record handling and memory-pressure diagnostics map to existing telemetry/profiling owners.",
+      "responsibilities": [
+        "Allocation interception, trace parsing, corrupt-record handling and memory-pressure diagnostics map to existing telemetry/profiling owners."
+      ],
+      "existing_owner_candidates": [
+        "source/host/src/extensions/telemetry/pressure_cpu_profiler.rs",
+        "source/electron-main/telemetry"
+      ],
+      "chosen_owner": "Existing Telemetry / pressure-profiler owner",
+      "fabushi_canonical_owner": "Existing Telemetry / pressure-profiler owner",
+      "fabushi_target": "source/host/src/extensions/telemetry/pressure_cpu_profiler.rs, source/electron-main/telemetry",
+      "fabushi_target_paths": [
+        "source/host/src/extensions/telemetry/pressure_cpu_profiler.rs",
+        "source/electron-main/telemetry"
+      ],
+      "fabushi_target_symbols": [
+        "pressure profiler",
+        "desktop telemetry"
+      ],
+      "production_entrypoints": [
+        "source/host/src/extensions/telemetry/pressure_cpu_profiler.rs",
+        "source/electron-main/telemetry"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:ddac091a9740bd6451969ca5ba9ee7da33eee3e5",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13425,
+      "source_path": "cmake::linux_allocation_tracer/linux_allocation_trace_reader.cpp",
+      "source_blob_sha": "d78f8f10582be359290b51cdad6dde3cf62d04b7",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "linux_allocation_tracer/linux_allocation_trace_reader.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "d78f8f10582be359290b51cdad6dde3cf62d04b7",
+        "size": 6111
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "linux_allocation_trace_reader.cpp",
+        "pressure profiler",
+        "desktop telemetry"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "linux_allocation_tracer/linux_allocation_trace_reader.cpp",
+      "responsibility": "Allocation interception, trace parsing, corrupt-record handling and memory-pressure diagnostics map to existing telemetry/profiling owners.",
+      "responsibilities": [
+        "Allocation interception, trace parsing, corrupt-record handling and memory-pressure diagnostics map to existing telemetry/profiling owners."
+      ],
+      "existing_owner_candidates": [
+        "source/host/src/extensions/telemetry/pressure_cpu_profiler.rs",
+        "source/electron-main/telemetry"
+      ],
+      "chosen_owner": "Existing Telemetry / pressure-profiler owner",
+      "fabushi_canonical_owner": "Existing Telemetry / pressure-profiler owner",
+      "fabushi_target": "source/host/src/extensions/telemetry/pressure_cpu_profiler.rs, source/electron-main/telemetry",
+      "fabushi_target_paths": [
+        "source/host/src/extensions/telemetry/pressure_cpu_profiler.rs",
+        "source/electron-main/telemetry"
+      ],
+      "fabushi_target_symbols": [
+        "pressure profiler",
+        "desktop telemetry"
+      ],
+      "production_entrypoints": [
+        "source/host/src/extensions/telemetry/pressure_cpu_profiler.rs",
+        "source/electron-main/telemetry"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:d78f8f10582be359290b51cdad6dde3cf62d04b7",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13426,
+      "source_path": "cmake::linux_allocation_tracer/linux_allocation_tracer.cpp",
+      "source_blob_sha": "99a88fdd94390b99fc224109d1622b1c69a1fc31",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "linux_allocation_tracer/linux_allocation_tracer.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "99a88fdd94390b99fc224109d1622b1c69a1fc31",
+        "size": 4636
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "linux_allocation_tracer.cpp",
+        "pressure profiler",
+        "desktop telemetry"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "linux_allocation_tracer/linux_allocation_tracer.cpp",
+      "responsibility": "Allocation interception, trace parsing, corrupt-record handling and memory-pressure diagnostics map to existing telemetry/profiling owners.",
+      "responsibilities": [
+        "Allocation interception, trace parsing, corrupt-record handling and memory-pressure diagnostics map to existing telemetry/profiling owners."
+      ],
+      "existing_owner_candidates": [
+        "source/host/src/extensions/telemetry/pressure_cpu_profiler.rs",
+        "source/electron-main/telemetry"
+      ],
+      "chosen_owner": "Existing Telemetry / pressure-profiler owner",
+      "fabushi_canonical_owner": "Existing Telemetry / pressure-profiler owner",
+      "fabushi_target": "source/host/src/extensions/telemetry/pressure_cpu_profiler.rs, source/electron-main/telemetry",
+      "fabushi_target_paths": [
+        "source/host/src/extensions/telemetry/pressure_cpu_profiler.rs",
+        "source/electron-main/telemetry"
+      ],
+      "fabushi_target_symbols": [
+        "pressure profiler",
+        "desktop telemetry"
+      ],
+      "production_entrypoints": [
+        "source/host/src/extensions/telemetry/pressure_cpu_profiler.rs",
+        "source/electron-main/telemetry"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:99a88fdd94390b99fc224109d1622b1c69a1fc31",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13427,
+      "source_path": "cmake::linux_allocation_tracer/linux_allocation_tracer.h",
+      "source_blob_sha": "90c71f868130782434706d28ac68e508d20a8e56",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "linux_allocation_tracer/linux_allocation_tracer.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "90c71f868130782434706d28ac68e508d20a8e56",
+        "size": 806
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "linux_allocation_tracer.h",
+        "pressure profiler",
+        "desktop telemetry"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "linux_allocation_tracer/linux_allocation_tracer.h",
+      "responsibility": "Allocation interception, trace parsing, corrupt-record handling and memory-pressure diagnostics map to existing telemetry/profiling owners.",
+      "responsibilities": [
+        "Allocation interception, trace parsing, corrupt-record handling and memory-pressure diagnostics map to existing telemetry/profiling owners."
+      ],
+      "existing_owner_candidates": [
+        "source/host/src/extensions/telemetry/pressure_cpu_profiler.rs",
+        "source/electron-main/telemetry"
+      ],
+      "chosen_owner": "Existing Telemetry / pressure-profiler owner",
+      "fabushi_canonical_owner": "Existing Telemetry / pressure-profiler owner",
+      "fabushi_target": "source/host/src/extensions/telemetry/pressure_cpu_profiler.rs, source/electron-main/telemetry",
+      "fabushi_target_paths": [
+        "source/host/src/extensions/telemetry/pressure_cpu_profiler.rs",
+        "source/electron-main/telemetry"
+      ],
+      "fabushi_target_symbols": [
+        "pressure profiler",
+        "desktop telemetry"
+      ],
+      "production_entrypoints": [
+        "source/host/src/extensions/telemetry/pressure_cpu_profiler.rs",
+        "source/electron-main/telemetry"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:90c71f868130782434706d28ac68e508d20a8e56",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13428,
+      "source_path": "cmake::nice_target_sources.cmake",
+      "source_blob_sha": "aa24595dc1a623b849760b5dc93292d6a5ce300c",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "nice_target_sources.cmake",
+        "mode": "100644",
+        "type": "blob",
+        "object": "aa24595dc1a623b849760b5dc93292d6a5ce300c",
+        "size": 3795
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "nice_target_sources.cmake",
+        "desktop build composition",
+        "runtime matrix",
+        "release packaging"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "nice_target_sources.cmake",
+      "responsibility": "Cross-platform compile/link/resource/version/special-target hardening and deterministic build composition map to existing Build/Packaging/Release owners.",
+      "responsibilities": [
+        "Cross-platform compile/link/resource/version/special-target hardening and deterministic build composition map to existing Build/Packaging/Release owners."
+      ],
+      "existing_owner_candidates": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "chosen_owner": "Existing Build / Packaging / Release owner",
+      "fabushi_canonical_owner": "Existing Build / Packaging / Release owner",
+      "fabushi_target": "desktop/package.json, .github/workflows/rust-desktop-runtime.yml, .github/workflows/release-macos-main.yml",
+      "fabushi_target_paths": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "fabushi_target_symbols": [
+        "desktop build composition",
+        "runtime matrix",
+        "release packaging"
+      ],
+      "production_entrypoints": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:aa24595dc1a623b849760b5dc93292d6a5ce300c",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13429,
+      "source_path": "cmake::nuget.cmake",
+      "source_blob_sha": "e89d796729d0f3f8fbc89f65516884a8cd3c857d",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "nuget.cmake",
+        "mode": "100644",
+        "type": "blob",
+        "object": "e89d796729d0f3f8fbc89f65516884a8cd3c857d",
+        "size": 5035
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "nuget.cmake",
+        "webview preload isolation",
+        "packaging/runtime matrix"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "nuget.cmake",
+      "responsibility": "Pinned WebView2 acquisition and architecture-specific static loader linkage inform canonical MiniApp/Web sandbox packaging; no second WebView runtime.",
+      "responsibilities": [
+        "Pinned WebView2 acquisition and architecture-specific static loader linkage inform canonical MiniApp/Web sandbox packaging; no second WebView runtime."
+      ],
+      "existing_owner_candidates": [
+        "source/electron-preload/preload-webview.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing MiniApp/Web sandbox + Packaging owner",
+      "fabushi_canonical_owner": "Existing MiniApp/Web sandbox + Packaging owner",
+      "fabushi_target": "source/electron-preload/preload-webview.ts, .github/workflows/rust-desktop-runtime.yml",
+      "fabushi_target_paths": [
+        "source/electron-preload/preload-webview.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "fabushi_target_symbols": [
+        "webview preload isolation",
+        "packaging/runtime matrix"
+      ],
+      "production_entrypoints": [
+        "source/electron-preload/preload-webview.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:e89d796729d0f3f8fbc89f65516884a8cd3c857d",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13430,
+      "source_path": "cmake::options.cmake",
+      "source_blob_sha": "6291e4dbb7381fed4d3148097a412ed08144faf9",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "options.cmake",
+        "mode": "100644",
+        "type": "blob",
+        "object": "6291e4dbb7381fed4d3148097a412ed08144faf9",
+        "size": 727
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "options.cmake",
+        "desktop build composition",
+        "runtime matrix",
+        "release packaging"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "options.cmake",
+      "responsibility": "Cross-platform compile/link/resource/version/special-target hardening and deterministic build composition map to existing Build/Packaging/Release owners.",
+      "responsibilities": [
+        "Cross-platform compile/link/resource/version/special-target hardening and deterministic build composition map to existing Build/Packaging/Release owners."
+      ],
+      "existing_owner_candidates": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "chosen_owner": "Existing Build / Packaging / Release owner",
+      "fabushi_canonical_owner": "Existing Build / Packaging / Release owner",
+      "fabushi_target": "desktop/package.json, .github/workflows/rust-desktop-runtime.yml, .github/workflows/release-macos-main.yml",
+      "fabushi_target_paths": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "fabushi_target_symbols": [
+        "desktop build composition",
+        "runtime matrix",
+        "release packaging"
+      ],
+      "production_entrypoints": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:6291e4dbb7381fed4d3148097a412ed08144faf9",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13431,
+      "source_path": "cmake::options_linux.cmake",
+      "source_blob_sha": "c5f9a9501bc419ee4b02f075325dc6885391d9fe",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "options_linux.cmake",
+        "mode": "100644",
+        "type": "blob",
+        "object": "c5f9a9501bc419ee4b02f075325dc6885391d9fe",
+        "size": 2025
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "options_linux.cmake",
+        "desktop build composition",
+        "runtime matrix",
+        "release packaging"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "options_linux.cmake",
+      "responsibility": "Cross-platform compile/link/resource/version/special-target hardening and deterministic build composition map to existing Build/Packaging/Release owners.",
+      "responsibilities": [
+        "Cross-platform compile/link/resource/version/special-target hardening and deterministic build composition map to existing Build/Packaging/Release owners."
+      ],
+      "existing_owner_candidates": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "chosen_owner": "Existing Build / Packaging / Release owner",
+      "fabushi_canonical_owner": "Existing Build / Packaging / Release owner",
+      "fabushi_target": "desktop/package.json, .github/workflows/rust-desktop-runtime.yml, .github/workflows/release-macos-main.yml",
+      "fabushi_target_paths": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "fabushi_target_symbols": [
+        "desktop build composition",
+        "runtime matrix",
+        "release packaging"
+      ],
+      "production_entrypoints": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:c5f9a9501bc419ee4b02f075325dc6885391d9fe",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13432,
+      "source_path": "cmake::options_mac.cmake",
+      "source_blob_sha": "095323779376f06762f09cefab8a21f8378e1b5c",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "options_mac.cmake",
+        "mode": "100644",
+        "type": "blob",
+        "object": "095323779376f06762f09cefab8a21f8378e1b5c",
+        "size": 2119
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "options_mac.cmake",
+        "desktop build composition",
+        "runtime matrix",
+        "release packaging"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "options_mac.cmake",
+      "responsibility": "Cross-platform compile/link/resource/version/special-target hardening and deterministic build composition map to existing Build/Packaging/Release owners.",
+      "responsibilities": [
+        "Cross-platform compile/link/resource/version/special-target hardening and deterministic build composition map to existing Build/Packaging/Release owners."
+      ],
+      "existing_owner_candidates": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "chosen_owner": "Existing Build / Packaging / Release owner",
+      "fabushi_canonical_owner": "Existing Build / Packaging / Release owner",
+      "fabushi_target": "desktop/package.json, .github/workflows/rust-desktop-runtime.yml, .github/workflows/release-macos-main.yml",
+      "fabushi_target_paths": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "fabushi_target_symbols": [
+        "desktop build composition",
+        "runtime matrix",
+        "release packaging"
+      ],
+      "production_entrypoints": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:095323779376f06762f09cefab8a21f8378e1b5c",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13433,
+      "source_path": "cmake::options_win.cmake",
+      "source_blob_sha": "dd86342fd436cc09b1c29c10eac6e91179e52b51",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "options_win.cmake",
+        "mode": "100644",
+        "type": "blob",
+        "object": "dd86342fd436cc09b1c29c10eac6e91179e52b51",
+        "size": 4798
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "options_win.cmake",
+        "desktop build composition",
+        "runtime matrix",
+        "release packaging"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "options_win.cmake",
+      "responsibility": "Cross-platform compile/link/resource/version/special-target hardening and deterministic build composition map to existing Build/Packaging/Release owners.",
+      "responsibilities": [
+        "Cross-platform compile/link/resource/version/special-target hardening and deterministic build composition map to existing Build/Packaging/Release owners."
+      ],
+      "existing_owner_candidates": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "chosen_owner": "Existing Build / Packaging / Release owner",
+      "fabushi_canonical_owner": "Existing Build / Packaging / Release owner",
+      "fabushi_target": "desktop/package.json, .github/workflows/rust-desktop-runtime.yml, .github/workflows/release-macos-main.yml",
+      "fabushi_target_paths": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "fabushi_target_symbols": [
+        "desktop build composition",
+        "runtime matrix",
+        "release packaging"
+      ],
+      "production_entrypoints": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:dd86342fd436cc09b1c29c10eac6e91179e52b51",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13434,
+      "source_path": "cmake::run_cmake.py",
+      "source_blob_sha": "6e00fb485fb341421a84c1ca155edefa65e1a4a5",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "run_cmake.py",
+        "mode": "100644",
+        "type": "blob",
+        "object": "6e00fb485fb341421a84c1ca155edefa65e1a4a5",
+        "size": 2756
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "run_cmake.py",
+        "desktop build composition",
+        "runtime matrix",
+        "release packaging"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "run_cmake.py",
+      "responsibility": "Cross-platform compile/link/resource/version/special-target hardening and deterministic build composition map to existing Build/Packaging/Release owners.",
+      "responsibilities": [
+        "Cross-platform compile/link/resource/version/special-target hardening and deterministic build composition map to existing Build/Packaging/Release owners."
+      ],
+      "existing_owner_candidates": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "chosen_owner": "Existing Build / Packaging / Release owner",
+      "fabushi_canonical_owner": "Existing Build / Packaging / Release owner",
+      "fabushi_target": "desktop/package.json, .github/workflows/rust-desktop-runtime.yml, .github/workflows/release-macos-main.yml",
+      "fabushi_target_paths": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "fabushi_target_symbols": [
+        "desktop build composition",
+        "runtime matrix",
+        "release packaging"
+      ],
+      "production_entrypoints": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:6e00fb485fb341421a84c1ca155edefa65e1a4a5",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13435,
+      "source_path": "cmake::target_compile_options_if_exists.cmake",
+      "source_blob_sha": "76282c6b08255cade4ec3789ed9c47f5b18b25d5",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "target_compile_options_if_exists.cmake",
+        "mode": "100644",
+        "type": "blob",
+        "object": "76282c6b08255cade4ec3789ed9c47f5b18b25d5",
+        "size": 1777
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "target_compile_options_if_exists.cmake",
+        "desktop build composition",
+        "runtime matrix",
+        "release packaging"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "target_compile_options_if_exists.cmake",
+      "responsibility": "Cross-platform compile/link/resource/version/special-target hardening and deterministic build composition map to existing Build/Packaging/Release owners.",
+      "responsibilities": [
+        "Cross-platform compile/link/resource/version/special-target hardening and deterministic build composition map to existing Build/Packaging/Release owners."
+      ],
+      "existing_owner_candidates": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "chosen_owner": "Existing Build / Packaging / Release owner",
+      "fabushi_canonical_owner": "Existing Build / Packaging / Release owner",
+      "fabushi_target": "desktop/package.json, .github/workflows/rust-desktop-runtime.yml, .github/workflows/release-macos-main.yml",
+      "fabushi_target_paths": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "fabushi_target_symbols": [
+        "desktop build composition",
+        "runtime matrix",
+        "release packaging"
+      ],
+      "production_entrypoints": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:76282c6b08255cade4ec3789ed9c47f5b18b25d5",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13436,
+      "source_path": "cmake::target_link_frameworks.cmake",
+      "source_blob_sha": "cec0a958b385aa10f3a8de4ab4741adf56f429c3",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "target_link_frameworks.cmake",
+        "mode": "100644",
+        "type": "blob",
+        "object": "cec0a958b385aa10f3a8de4ab4741adf56f429c3",
+        "size": 1818
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "target_link_frameworks.cmake",
+        "desktop build composition",
+        "runtime matrix",
+        "release packaging"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "target_link_frameworks.cmake",
+      "responsibility": "Cross-platform compile/link/resource/version/special-target hardening and deterministic build composition map to existing Build/Packaging/Release owners.",
+      "responsibilities": [
+        "Cross-platform compile/link/resource/version/special-target hardening and deterministic build composition map to existing Build/Packaging/Release owners."
+      ],
+      "existing_owner_candidates": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "chosen_owner": "Existing Build / Packaging / Release owner",
+      "fabushi_canonical_owner": "Existing Build / Packaging / Release owner",
+      "fabushi_target": "desktop/package.json, .github/workflows/rust-desktop-runtime.yml, .github/workflows/release-macos-main.yml",
+      "fabushi_target_paths": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "fabushi_target_symbols": [
+        "desktop build composition",
+        "runtime matrix",
+        "release packaging"
+      ],
+      "production_entrypoints": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:cec0a958b385aa10f3a8de4ab4741adf56f429c3",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13437,
+      "source_path": "cmake::target_link_options_if_exists.cmake",
+      "source_blob_sha": "cabd8b33c2e739eba931ee1bfefecbfd6d383106",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "target_link_options_if_exists.cmake",
+        "mode": "100644",
+        "type": "blob",
+        "object": "cabd8b33c2e739eba931ee1bfefecbfd6d383106",
+        "size": 1758
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "target_link_options_if_exists.cmake",
+        "desktop build composition",
+        "runtime matrix",
+        "release packaging"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "target_link_options_if_exists.cmake",
+      "responsibility": "Cross-platform compile/link/resource/version/special-target hardening and deterministic build composition map to existing Build/Packaging/Release owners.",
+      "responsibilities": [
+        "Cross-platform compile/link/resource/version/special-target hardening and deterministic build composition map to existing Build/Packaging/Release owners."
+      ],
+      "existing_owner_candidates": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "chosen_owner": "Existing Build / Packaging / Release owner",
+      "fabushi_canonical_owner": "Existing Build / Packaging / Release owner",
+      "fabushi_target": "desktop/package.json, .github/workflows/rust-desktop-runtime.yml, .github/workflows/release-macos-main.yml",
+      "fabushi_target_paths": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "fabushi_target_symbols": [
+        "desktop build composition",
+        "runtime matrix",
+        "release packaging"
+      ],
+      "production_entrypoints": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:cabd8b33c2e739eba931ee1bfefecbfd6d383106",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13438,
+      "source_path": "cmake::target_prepare_qrc.cmake",
+      "source_blob_sha": "68c3f44c7b350fade14d6492f5ea93bbcc58d0d6",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "target_prepare_qrc.cmake",
+        "mode": "100644",
+        "type": "blob",
+        "object": "68c3f44c7b350fade14d6492f5ea93bbcc58d0d6",
+        "size": 3209
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "target_prepare_qrc.cmake",
+        "desktop build composition",
+        "runtime matrix",
+        "release packaging"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "target_prepare_qrc.cmake",
+      "responsibility": "Cross-platform compile/link/resource/version/special-target hardening and deterministic build composition map to existing Build/Packaging/Release owners.",
+      "responsibilities": [
+        "Cross-platform compile/link/resource/version/special-target hardening and deterministic build composition map to existing Build/Packaging/Release owners."
+      ],
+      "existing_owner_candidates": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "chosen_owner": "Existing Build / Packaging / Release owner",
+      "fabushi_canonical_owner": "Existing Build / Packaging / Release owner",
+      "fabushi_target": "desktop/package.json, .github/workflows/rust-desktop-runtime.yml, .github/workflows/release-macos-main.yml",
+      "fabushi_target_paths": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "fabushi_target_symbols": [
+        "desktop build composition",
+        "runtime matrix",
+        "release packaging"
+      ],
+      "production_entrypoints": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:68c3f44c7b350fade14d6492f5ea93bbcc58d0d6",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13439,
+      "source_path": "cmake::validate_d3d_compiler.cmake",
+      "source_blob_sha": "6c23f8d31c05d1d4f376cc8c96a36d3530063ee0",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "validate_d3d_compiler.cmake",
+        "mode": "100644",
+        "type": "blob",
+        "object": "6c23f8d31c05d1d4f376cc8c96a36d3530063ee0",
+        "size": 2402
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "validate_d3d_compiler.cmake",
+        "Windows platform adapter",
+        "package integrity gate"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "validate_d3d_compiler.cmake",
+      "responsibility": "Windows GPU/D3D loader must verify compiler version/hash and fail closed before dynamic resolution; maps to platform graphics/security boundary.",
+      "responsibilities": [
+        "Windows GPU/D3D loader must verify compiler version/hash and fail closed before dynamic resolution; maps to platform graphics/security boundary."
+      ],
+      "existing_owner_candidates": [
+        "source/electron-main",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing Platform/GPU + Security owner",
+      "fabushi_canonical_owner": "Existing Platform/GPU + Security owner",
+      "fabushi_target": "source/electron-main, .github/workflows/rust-desktop-runtime.yml",
+      "fabushi_target_paths": [
+        "source/electron-main",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "fabushi_target_symbols": [
+        "Windows platform adapter",
+        "package integrity gate"
+      ],
+      "production_entrypoints": [
+        "source/electron-main",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:6c23f8d31c05d1d4f376cc8c96a36d3530063ee0",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13440,
+      "source_path": "cmake::validate_d3d_compiler.py",
+      "source_blob_sha": "c6a783e3dcc933f7b9f73e2e8f3833b3adf02c32",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "validate_d3d_compiler.py",
+        "mode": "100644",
+        "type": "blob",
+        "object": "c6a783e3dcc933f7b9f73e2e8f3833b3adf02c32",
+        "size": 1201
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "validate_d3d_compiler.py",
+        "Windows platform adapter",
+        "package integrity gate"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "validate_d3d_compiler.py",
+      "responsibility": "Windows GPU/D3D loader must verify compiler version/hash and fail closed before dynamic resolution; maps to platform graphics/security boundary.",
+      "responsibilities": [
+        "Windows GPU/D3D loader must verify compiler version/hash and fail closed before dynamic resolution; maps to platform graphics/security boundary."
+      ],
+      "existing_owner_candidates": [
+        "source/electron-main",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing Platform/GPU + Security owner",
+      "fabushi_canonical_owner": "Existing Platform/GPU + Security owner",
+      "fabushi_target": "source/electron-main, .github/workflows/rust-desktop-runtime.yml",
+      "fabushi_target_paths": [
+        "source/electron-main",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "fabushi_target_symbols": [
+        "Windows platform adapter",
+        "package integrity gate"
+      ],
+      "production_entrypoints": [
+        "source/electron-main",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:c6a783e3dcc933f7b9f73e2e8f3833b3adf02c32",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13441,
+      "source_path": "cmake::validate_special_target.cmake",
+      "source_blob_sha": "a63c2d628d321fd72a814cd7c02e2d9f04f7d126",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "validate_special_target.cmake",
+        "mode": "100644",
+        "type": "blob",
+        "object": "a63c2d628d321fd72a814cd7c02e2d9f04f7d126",
+        "size": 2989
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "validate_special_target.cmake",
+        "desktop build composition",
+        "runtime matrix",
+        "release packaging"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "validate_special_target.cmake",
+      "responsibility": "Cross-platform compile/link/resource/version/special-target hardening and deterministic build composition map to existing Build/Packaging/Release owners.",
+      "responsibilities": [
+        "Cross-platform compile/link/resource/version/special-target hardening and deterministic build composition map to existing Build/Packaging/Release owners."
+      ],
+      "existing_owner_candidates": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "chosen_owner": "Existing Build / Packaging / Release owner",
+      "fabushi_canonical_owner": "Existing Build / Packaging / Release owner",
+      "fabushi_target": "desktop/package.json, .github/workflows/rust-desktop-runtime.yml, .github/workflows/release-macos-main.yml",
+      "fabushi_target_paths": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "fabushi_target_symbols": [
+        "desktop build composition",
+        "runtime matrix",
+        "release packaging"
+      ],
+      "production_entrypoints": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:a63c2d628d321fd72a814cd7c02e2d9f04f7d126",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13442,
+      "source_path": "cmake::variables.cmake",
+      "source_blob_sha": "d1f5ec859e5ec1777a9e4b1b4f369f99c22625c2",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "variables.cmake",
+        "mode": "100644",
+        "type": "blob",
+        "object": "d1f5ec859e5ec1777a9e4b1b4f369f99c22625c2",
+        "size": 4179
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "variables.cmake",
+        "desktop build composition",
+        "runtime matrix",
+        "release packaging"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "variables.cmake",
+      "responsibility": "Cross-platform compile/link/resource/version/special-target hardening and deterministic build composition map to existing Build/Packaging/Release owners.",
+      "responsibilities": [
+        "Cross-platform compile/link/resource/version/special-target hardening and deterministic build composition map to existing Build/Packaging/Release owners."
+      ],
+      "existing_owner_candidates": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "chosen_owner": "Existing Build / Packaging / Release owner",
+      "fabushi_canonical_owner": "Existing Build / Packaging / Release owner",
+      "fabushi_target": "desktop/package.json, .github/workflows/rust-desktop-runtime.yml, .github/workflows/release-macos-main.yml",
+      "fabushi_target_paths": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "fabushi_target_symbols": [
+        "desktop build composition",
+        "runtime matrix",
+        "release packaging"
+      ],
+      "production_entrypoints": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:d1f5ec859e5ec1777a9e4b1b4f369f99c22625c2",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13443,
+      "source_path": "cmake::version.cmake",
+      "source_blob_sha": "4412d7f678be4d9515b654ad1599fe13a567ac46",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "version.cmake",
+        "mode": "100644",
+        "type": "blob",
+        "object": "4412d7f678be4d9515b654ad1599fe13a567ac46",
+        "size": 2597
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "version.cmake",
+        "desktop build composition",
+        "runtime matrix",
+        "release packaging"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "version.cmake",
+      "responsibility": "Cross-platform compile/link/resource/version/special-target hardening and deterministic build composition map to existing Build/Packaging/Release owners.",
+      "responsibilities": [
+        "Cross-platform compile/link/resource/version/special-target hardening and deterministic build composition map to existing Build/Packaging/Release owners."
+      ],
+      "existing_owner_candidates": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "chosen_owner": "Existing Build / Packaging / Release owner",
+      "fabushi_canonical_owner": "Existing Build / Packaging / Release owner",
+      "fabushi_target": "desktop/package.json, .github/workflows/rust-desktop-runtime.yml, .github/workflows/release-macos-main.yml",
+      "fabushi_target_paths": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "fabushi_target_symbols": [
+        "desktop build composition",
+        "runtime matrix",
+        "release packaging"
+      ],
+      "production_entrypoints": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:4412d7f678be4d9515b654ad1599fe13a567ac46",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13444,
+      "source_path": "cmake::win_directx_helper/CMakeLists.txt",
+      "source_blob_sha": "a5e766faa88939cc769fa222680e8f8c7abe6ac2",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "win_directx_helper/CMakeLists.txt",
+        "mode": "100644",
+        "type": "blob",
+        "object": "a5e766faa88939cc769fa222680e8f8c7abe6ac2",
+        "size": 816
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "CMakeLists.txt",
+        "Windows platform adapter",
+        "package integrity gate"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "win_directx_helper/CMakeLists.txt",
+      "responsibility": "Windows GPU/D3D loader must verify compiler version/hash and fail closed before dynamic resolution; maps to platform graphics/security boundary.",
+      "responsibilities": [
+        "Windows GPU/D3D loader must verify compiler version/hash and fail closed before dynamic resolution; maps to platform graphics/security boundary."
+      ],
+      "existing_owner_candidates": [
+        "source/electron-main",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing Platform/GPU + Security owner",
+      "fabushi_canonical_owner": "Existing Platform/GPU + Security owner",
+      "fabushi_target": "source/electron-main, .github/workflows/rust-desktop-runtime.yml",
+      "fabushi_target_paths": [
+        "source/electron-main",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "fabushi_target_symbols": [
+        "Windows platform adapter",
+        "package integrity gate"
+      ],
+      "production_entrypoints": [
+        "source/electron-main",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:a5e766faa88939cc769fa222680e8f8c7abe6ac2",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13445,
+      "source_path": "cmake::win_directx_helper/modules/x64/d3d/d3dcompiler_47.dll",
+      "source_blob_sha": "80489b89f29338fd3cb52cb3c58d97f2e39c107b",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "win_directx_helper/modules/x64/d3d/d3dcompiler_47.dll",
+        "mode": "100644",
+        "type": "blob",
+        "object": "80489b89f29338fd3cb52cb3c58d97f2e39c107b",
+        "size": 4916840
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "d3dcompiler_47.dll",
+        "Windows platform adapter",
+        "package integrity gate"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "win_directx_helper/modules/x64/d3d/d3dcompiler_47.dll",
+      "responsibility": "Windows GPU/D3D loader must verify compiler version/hash and fail closed before dynamic resolution; maps to platform graphics/security boundary.",
+      "responsibilities": [
+        "Windows GPU/D3D loader must verify compiler version/hash and fail closed before dynamic resolution; maps to platform graphics/security boundary."
+      ],
+      "existing_owner_candidates": [
+        "source/electron-main",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing Platform/GPU + Security owner",
+      "fabushi_canonical_owner": "Existing Platform/GPU + Security owner",
+      "fabushi_target": "source/electron-main, .github/workflows/rust-desktop-runtime.yml",
+      "fabushi_target_paths": [
+        "source/electron-main",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "fabushi_target_symbols": [
+        "Windows platform adapter",
+        "package integrity gate"
+      ],
+      "production_entrypoints": [
+        "source/electron-main",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:80489b89f29338fd3cb52cb3c58d97f2e39c107b",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13446,
+      "source_path": "cmake::win_directx_helper/modules/x86/d3d/d3dcompiler_47.dll",
+      "source_blob_sha": "803e8f0a883d38b1176b9c06d46c97e4ad84ffe2",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "win_directx_helper/modules/x86/d3d/d3dcompiler_47.dll",
+        "mode": "100644",
+        "type": "blob",
+        "object": "803e8f0a883d38b1176b9c06d46c97e4ad84ffe2",
+        "size": 4127224
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "d3dcompiler_47.dll",
+        "Windows platform adapter",
+        "package integrity gate"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "win_directx_helper/modules/x86/d3d/d3dcompiler_47.dll",
+      "responsibility": "Windows GPU/D3D loader must verify compiler version/hash and fail closed before dynamic resolution; maps to platform graphics/security boundary.",
+      "responsibilities": [
+        "Windows GPU/D3D loader must verify compiler version/hash and fail closed before dynamic resolution; maps to platform graphics/security boundary."
+      ],
+      "existing_owner_candidates": [
+        "source/electron-main",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing Platform/GPU + Security owner",
+      "fabushi_canonical_owner": "Existing Platform/GPU + Security owner",
+      "fabushi_target": "source/electron-main, .github/workflows/rust-desktop-runtime.yml",
+      "fabushi_target_paths": [
+        "source/electron-main",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "fabushi_target_symbols": [
+        "Windows platform adapter",
+        "package integrity gate"
+      ],
+      "production_entrypoints": [
+        "source/electron-main",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:803e8f0a883d38b1176b9c06d46c97e4ad84ffe2",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    },
+    {
+      "recursive_order": 13447,
+      "source_path": "cmake::win_directx_helper/win_directx_helper.cpp",
+      "source_blob_sha": "0d496fa6a2da0282c2580390162ab00add52c2f0",
+      "source_identity": {
+        "repository": "desktop-app/cmake_helpers",
+        "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+        "scope": "direct-gitlink",
+        "mount": "cmake",
+        "path": "win_directx_helper/win_directx_helper.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "0d496fa6a2da0282c2580390162ab00add52c2f0",
+        "size": 7581
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "win_directx_helper.cpp",
+        "Windows platform adapter",
+        "package integrity gate"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "win_directx_helper/win_directx_helper.cpp",
+      "responsibility": "Windows GPU/D3D loader must verify compiler version/hash and fail closed before dynamic resolution; maps to platform graphics/security boundary.",
+      "responsibilities": [
+        "Windows GPU/D3D loader must verify compiler version/hash and fail closed before dynamic resolution; maps to platform graphics/security boundary."
+      ],
+      "existing_owner_candidates": [
+        "source/electron-main",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "chosen_owner": "Existing Platform/GPU + Security owner",
+      "fabushi_canonical_owner": "Existing Platform/GPU + Security owner",
+      "fabushi_target": "source/electron-main, .github/workflows/rust-desktop-runtime.yml",
+      "fabushi_target_paths": [
+        "source/electron-main",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "fabushi_target_symbols": [
+        "Windows platform adapter",
+        "package integrity gate"
+      ],
+      "production_entrypoints": [
+        "source/electron-main",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "tests": [
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "exact-head packaged/platform acceptance where applicable"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422:0d496fa6a2da0282c2580390162ab00add52c2f0",
+        "production-owner-audit:6c7250d84a5346ed4bc75dab36e2407baa83a841"
+      ],
+      "evidence_gap": "Mapped-open until applicable production behavior and exact-head acceptance are independently verified."
+    }
+  ]
+}

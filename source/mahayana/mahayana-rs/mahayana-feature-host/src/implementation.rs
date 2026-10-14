@@ -74,6 +74,7 @@ use mahayana_host_protocol::AutoReviewBehavior;
 use mahayana_host_protocol::AutoReviewRule;
 use mahayana_host_protocol::AutomationSummary;
 use mahayana_host_protocol::AutomationTrigger;
+use mahayana_host_protocol::BotCommandSummary;
 use mahayana_host_protocol::BotSummary;
 use mahayana_host_protocol::COMPUTER_CONTROL_PROTOCOL_VERSION;
 use mahayana_host_protocol::CapabilitySummary;
@@ -1808,6 +1809,7 @@ impl FeatureHostController {
                     name,
                     description: clamp_block(&description, 2000),
                     title: title.trim().to_string(),
+                    commands: Vec::new(),
                     hidden: false,
                     avatar: sanitize_avatar_data_url(avatar)?,
                     avatar_shape: clean_optional_string(avatar_shape),
@@ -1901,6 +1903,7 @@ impl FeatureHostController {
                     name: clone_name,
                     description: source.description,
                     title: source.title,
+                    commands: source.commands,
                     hidden: false,
                     avatar: source.avatar,
                     avatar_shape: source.avatar_shape,
@@ -6119,6 +6122,9 @@ impl FeatureHostController {
                         bots.push(bot.clone());
                     }
                 }
+                for bot in &bots {
+                    self.persist_agent_manifest(bot)?;
+                }
                 state.events.push_back(HostEvent::BotListed {
                     timestamp: timestamp(),
                     bots,
@@ -9118,6 +9124,7 @@ fn project_grok_agent(bot: &BotSummary) -> Value {
         "name": bot.name.clone(),
         "description": bot.description.clone(),
         "title": bot.title.clone(),
+        "botCommands": bot.commands.clone(),
         "avatarDataUrl": bot.avatar.clone(),
         "avatarShape": bot.avatar_shape.clone(),
         "avatarColor": bot.avatar_color.clone(),
@@ -9895,6 +9902,13 @@ fn default_skills() -> BTreeMap<String, SkillSummary> {
     .collect()
 }
 
+fn default_bot_commands() -> Vec<BotCommandSummary> {
+    vec![BotCommandSummary {
+        command: "/help".into(),
+        description: "Show this Bot's capabilities and example requests.".into(),
+    }]
+}
+
 fn default_bots() -> BTreeMap<String, BotSummary> {
     [
         BotSummary {
@@ -9903,6 +9917,7 @@ fn default_bots() -> BTreeMap<String, BotSummary> {
             name: "大乘助手".into(),
             description: "General-purpose Mahayana assistant.".into(),
             title: String::new(),
+            commands: default_bot_commands(),
             hidden: false,
             avatar: None,
             avatar_shape: None,
@@ -9919,6 +9934,7 @@ fn default_bots() -> BTreeMap<String, BotSummary> {
             name: "Research Bot".into(),
             description: "Source verification and research synthesis.".into(),
             title: String::new(),
+            commands: default_bot_commands(),
             hidden: false,
             avatar: None,
             avatar_shape: None,
@@ -9935,6 +9951,7 @@ fn default_bots() -> BTreeMap<String, BotSummary> {
             name: "Incident Bot".into(),
             description: "Incident triage and operational coordination.".into(),
             title: String::new(),
+            commands: default_bot_commands(),
             hidden: true,
             avatar: None,
             avatar_shape: None,
@@ -13045,6 +13062,7 @@ fn persist_fabu_agent_manifest(agent_dir: &Path, bot: &BotSummary) -> Result<(),
         "name": bot.name,
         "description": bot.description,
         "title": bot.title.trim(),
+        "botCommands": bot.commands.clone(),
         "avatarShape": bot.avatar_shape.clone().unwrap_or_default(),
         "avatarColor": bot.avatar_color.clone().unwrap_or_default(),
     });
@@ -13884,6 +13902,7 @@ mod tests {
                     name: "Research Bot".into(),
                     description: String::new(),
                     title: String::new(),
+                    commands: Vec::new(),
                     hidden: false,
                     avatar: None,
                     avatar_shape: None,
@@ -13903,6 +13922,7 @@ mod tests {
                     name: "Incident Bot".into(),
                     description: String::new(),
                     title: String::new(),
+                    commands: Vec::new(),
                     hidden: false,
                     avatar: None,
                     avatar_shape: None,

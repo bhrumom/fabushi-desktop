@@ -1,0 +1,68 @@
+{
+  "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+  "start": 5391,
+  "end": 5400,
+  "entries": [
+    {
+      "order": 5391,
+      "path": "Telegram/SourceFiles/platform/linux/integration_linux.h",
+      "blob": "11b203214a0f6ce2dc248d575a3bbb2fb14fee98",
+      "consumer_symbol": "Platform::CreateIntegration"
+    },
+    {
+      "order": 5392,
+      "path": "Telegram/SourceFiles/platform/linux/launcher_linux.cpp",
+      "blob": "1414bad71e0417da957b9934df3787160be07f49",
+      "consumer_symbol": "Platform::Launcher / launchUpdater / installProtectedUpdate"
+    },
+    {
+      "order": 5393,
+      "path": "Telegram/SourceFiles/platform/linux/launcher_linux.h",
+      "blob": "cc7c6b15466ed13f163bbc1512bcd6447f2c461e",
+      "consumer_symbol": "Platform::Launcher contract"
+    },
+    {
+      "order": 5394,
+      "path": "Telegram/SourceFiles/platform/linux/main_window_linux.cpp",
+      "blob": "5c09c6b57acbec40159b84d1bd52380c002a6db6",
+      "consumer_symbol": "Platform::MainWindow"
+    },
+    {
+      "order": 5395,
+      "path": "Telegram/SourceFiles/platform/linux/main_window_linux.h",
+      "blob": "4a5ba8f7fa2246f6bac4a9e21cb3d66081ee0bc9",
+      "consumer_symbol": "Platform::MainWindow contract"
+    },
+    {
+      "order": 5396,
+      "path": "Telegram/SourceFiles/platform/linux/notifications_manager_linux.cpp",
+      "blob": "a22951015adf6da9aea3e2b3613fefa142552138",
+      "consumer_symbol": "Platform::Notifications::Manager"
+    },
+    {
+      "order": 5397,
+      "path": "Telegram/SourceFiles/platform/linux/notifications_manager_linux.h",
+      "blob": "d2e740750f463a2cfcaacd7d43aa8f5e89f96bb5",
+      "consumer_symbol": "Platform native notification contract"
+    },
+    {
+      "order": 5398,
+      "path": "Telegram/SourceFiles/platform/linux/org.freedesktop.Notifications.xml",
+      "blob": "c969a61f9bb819a711f81d2005f5a445aa6fb7bf",
+      "consumer_symbol": "org.freedesktop.Notifications interface"
+    },
+    {
+      "order": 5399,
+      "path": "Telegram/SourceFiles/platform/linux/org.freedesktop.login1.Manager.xml",
+      "blob": "0059cb783fac801becff7cdc4c453756068b6e27",
+      "consumer_symbol": "org.freedesktop.login1.Manager::PrepareForSleep"
+    },
+    {
+      "order": 5400,
+      "path": "Telegram/SourceFiles/platform/linux/org.freedesktop.portal.Flatpak.xml",
+      "blob": "4f2139355af455e91ffffcbfaa1a2b0f15530cfe",
+      "consumer_symbol": "org.freedesktop.portal.Flatpak"
+    }
+  ],
+  "accepted_tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97"
+}

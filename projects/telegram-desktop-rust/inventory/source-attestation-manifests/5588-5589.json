@@ -1,0 +1,20 @@
+{
+  "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+  "start": 5588,
+  "end": 5589,
+  "entries": [
+    {
+      "order": 5588,
+      "path": "Telegram/SourceFiles/settings/sections/settings_chat.cpp",
+      "blob": "0f48c2eaa80a66cf280abd50fd6d137e9d8dd7be",
+      "consumer_symbol": "ChatId"
+    },
+    {
+      "order": 5589,
+      "path": "Telegram/SourceFiles/settings/sections/settings_chat.h",
+      "blob": "e7ff6f1cf013e60bce2a20f7aadeca4efa2b5bc6",
+      "consumer_symbol": "ChatId"
+    }
+  ],
+  "accepted_tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97"
+}

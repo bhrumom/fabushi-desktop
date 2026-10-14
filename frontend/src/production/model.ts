@@ -2,6 +2,7 @@ import type {
   ConversationAgentSummary,
   ConversationAgentLastEntry,
   ConversationTranscriptEntry,
+  ComposerReplyKeyboard,
   DraftAttachment,
   TranscriptMessage,
   TranscriptLocalToolPermission,
@@ -17,6 +18,7 @@ import { projectSendMessageText, type SendMessageTextAdjacency } from "../recove
 import { projectTimelineEvent } from "../recovered/features/conversation/cards/timeline-event-registry";
 import { projectTranscriptReactions } from "../recovered/features/conversation/cards/transcript-card/reaction-actions";
 import type { TranscriptThreadSummary } from "../recovered/features/conversation/cards/transcript-card/thread-summary-controller";
+import { normalizeTranscriptDelivery } from "../recovered/features/conversation/workspace/transcript-delivery-state";
 
 export type { DeepLinkInfo } from "../recovered/features/deep-links/overlay/model";
 
@@ -25,7 +27,13 @@ export type { DeepLinkInfo } from "../recovered/features/deep-links/overlay/mode
 // @evidence src/app/dist/renderer/assets/view-DPSBrvyV.js#SHA256=5bf28224da62a9042885e9da60e3fce82ed544846f470241ed6bcf4e12e64040
 
 /** Raw agent fields consumed by the renderer's local-group gate. */
+export interface RendererBotCommand {
+  readonly command: string;
+  readonly description: string;
+}
+
 export interface RendererAgentRaw extends Record<string, unknown> {
+  readonly botCommands?: readonly RendererBotCommand[];
   readonly isSharedRoom?: boolean;
   readonly sharedRoomId?: string | null;
 }
@@ -79,6 +87,58 @@ function numberValue(value: unknown, fallback: number): number {
 
 function stringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === "string") : [];
+}
+
+export function projectRendererBotCommands(value: unknown): RendererBotCommand[] {
+  if (!Array.isArray(value)) return [];
+  const commands: RendererBotCommand[] = [];
+  const seen = new Set<string>();
+  for (const entry of value) {
+    if (!isRecord(entry) || typeof entry.command !== "string") continue;
+    const command = entry.command.trim();
+    if (command.length < 2 || !command.startsWith("/") || /\s/.test(command) || seen.has(command)) continue;
+    seen.add(command);
+    commands.push({
+      command,
+      description: typeof entry.description === "string" ? entry.description.trim() : ""
+    });
+    if (commands.length === 32) break;
+  }
+  return commands;
+}
+
+export function projectComposerReplyKeyboard(value: unknown, messageId: string): ComposerReplyKeyboard | null {
+  if (!isRecord(value) || messageId.length === 0) return null;
+  const rawRows = Array.isArray(value.rows) ? value.rows : Array.isArray(value.keyboard) ? value.keyboard : null;
+  if (rawRows == null || rawRows.length === 0 || rawRows.length > 12) return null;
+  const rows: ComposerReplyKeyboard["rows"][number][] = [];
+  for (const rawRow of rawRows) {
+    if (!Array.isArray(rawRow) || rawRow.length === 0 || rawRow.length > 8) return null;
+    const row: { text: string; payload?: string }[] = [];
+    for (const rawButton of rawRow) {
+      if (!isRecord(rawButton) || typeof rawButton.text !== "string") return null;
+      const text = rawButton.text.trim();
+      if (text.length === 0 || text.length > 256) return null;
+      const payload = typeof rawButton.payload === "string"
+        ? rawButton.payload
+        : typeof rawButton.data === "string"
+          ? rawButton.data
+          : undefined;
+      row.push({ text, ...(payload == null || payload.length === 0 ? {} : { payload }) });
+    }
+    rows.push(row);
+  }
+  const placeholder = typeof value.placeholder === "string" && value.placeholder.trim().length > 0
+    ? value.placeholder.trim().slice(0, 256)
+    : undefined;
+  return {
+    messageId,
+    rows,
+    ...(value.singleUse === true ? { singleUse: true } : {}),
+    ...(value.persistent === true ? { persistent: true } : {}),
+    ...(value.forceReply === true ? { forceReply: true } : {}),
+    ...(placeholder == null ? {} : { placeholder }),
+  };
 }
 
 function parseLastEntryKinds(value: unknown): Readonly<Record<string, number>> | null {
@@ -323,11 +383,11 @@ function messageText(entry: Record<string, unknown>): string | null {
 }
 
 function transcriptDelivery(entry: Record<string, unknown>): TranscriptMessage["delivery"] {
-  const candidate = entry.delivery ?? entry.status;
-  if (candidate === "pending" || candidate === "queued" || candidate === "failed" || candidate === "sent") return candidate;
-  if (entry.pending === true || entry.isPending === true) return "pending";
-  if (entry.failed === true || entry.isFailed === true) return "failed";
-  return undefined;
+  return normalizeTranscriptDelivery(
+    entry.delivery ?? entry.status,
+    entry.pending === true || entry.isPending === true,
+    entry.failed === true || entry.isFailed === true,
+  );
 }
 
 function transcriptStreaming(entry: Record<string, unknown>): boolean {
@@ -521,6 +581,9 @@ export function projectTranscriptEntry(value: unknown, index: number, agentName:
   if (text == null) return null;
   const attachments = attachmentsFromEntry(value);
   const role = value.kind === "send-message" || value.role === "assistant" ? "assistant" : "user";
+  const replyKeyboard = role === "assistant"
+    ? projectComposerReplyKeyboard(value.replyMarkup ?? value.replyKeyboard ?? message?.replyMarkup, id)
+    : null;
   return {
     kind: "message",
     id,
@@ -535,6 +598,7 @@ export function projectTranscriptEntry(value: unknown, index: number, agentName:
     ...(composedAtMs == null ? {} : { composedAtMs }),
     ...(transcriptStreaming(value) ? { isStreaming: true } : {}),
     ...(transcriptReplyToId(value) == null ? {} : { replyToId: transcriptReplyToId(value) }),
+    ...(replyKeyboard == null ? {} : { replyKeyboard }),
     ...transcriptReactionFields(value)
   };
 }

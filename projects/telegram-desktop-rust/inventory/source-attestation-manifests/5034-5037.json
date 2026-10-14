@@ -1,0 +1,32 @@
+{
+  "accepted_upstream": "5b81fa35aaa8d24e14ec9603e5929d324850d9c9",
+  "start": 5034,
+  "end": 5037,
+  "entries": [
+    {
+      "order": 5034,
+      "path": "Telegram/SourceFiles/main/session/send_as_peers.h",
+      "blob": "df09f6b4616cbf31cbf958c0523dea2df74701ff",
+      "consumer_symbol": "send_as_peers"
+    },
+    {
+      "order": 5035,
+      "path": "Telegram/SourceFiles/main/session/session_show.cpp",
+      "blob": "1f740d441385950d8dbcdab4761e9bf626cec9f7",
+      "consumer_symbol": "session_show"
+    },
+    {
+      "order": 5036,
+      "path": "Telegram/SourceFiles/main/session/session_show.h",
+      "blob": "16f8e6f9136725de93615ef54366d67579da54c9",
+      "consumer_symbol": "session_show"
+    },
+    {
+      "order": 5037,
+      "path": "Telegram/SourceFiles/mainwidget.cpp",
+      "blob": "5c210ca99d83d6c8a7639215e7cc2c1e776489da",
+      "consumer_symbol": "MainWidget"
+    }
+  ],
+  "accepted_tree": "7539504ec9294b9c1ca03332570127b8b69ad201"
+}

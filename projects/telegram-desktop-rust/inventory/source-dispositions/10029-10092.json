@@ -1,0 +1,1819 @@
+{
+  "format_version": 1,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6"
+  },
+  "range": {
+    "first_order": 10029,
+    "last_order": 10092,
+    "entries": 64
+  },
+  "range_evidence": {
+    "identity_source": {
+      "head_sha": "53166126816c059a99298b28d4b3d8c2ca204910",
+      "workflow_run": 38119139308,
+      "job_id": 114410128913,
+      "artifact_id": 11693708963,
+      "artifact_digest": "sha256:29a6feb40f3cbaa28f932d822bab4242821378bba701bdfbba1fb18f26a35542",
+      "note": "exact identities and materialized exact blobs from current-head recursive source-authority artifact; each materialized blob carries verified git object identity"
+    }
+  },
+  "rows": [
+    {
+      "recursive_order": 10029,
+      "source_path": "Telegram/ThirdParty/libfido2::.github/workflows/macos_builds.yml",
+      "source_blob_sha": "5d4bc4def3bbea615f089b3a153d117563e65be4",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": ".github/workflows/macos_builds.yml",
+        "object": "5d4bc4def3bbea615f089b3a153d117563e65be4",
+        "mode": "100644",
+        "type": "blob",
+        "size": 766
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 cross-platform build/security CI",
+      "source_symbols": [
+        "source:.github/workflows/macos_builds.yml"
+      ],
+      "responsibility": "Exercises macOS/OpenSSL3/ShellCheck/Windows compiler, architecture, static/dynamic and analysis matrices for the real authenticator stack.",
+      "fabushi_canonical_owner": "Canonical Fabushi Build/Quality/Release + existing Coordinator WebAuthn/security owner",
+      "fabushi_target": "Preserve applicable exact-head platform/compiler/security-helper gates in canonical GitHub Actions and packaging; do not introduce a second runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10030,
+      "source_path": "Telegram/ThirdParty/libfido2::.github/workflows/openssl3.yml",
+      "source_blob_sha": "44ad0901c7c179202347df7f248b75897090ef97",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": ".github/workflows/openssl3.yml",
+        "object": "44ad0901c7c179202347df7f248b75897090ef97",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1336
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 cross-platform build/security CI",
+      "source_symbols": [
+        "source:.github/workflows/openssl3.yml"
+      ],
+      "responsibility": "Exercises macOS/OpenSSL3/ShellCheck/Windows compiler, architecture, static/dynamic and analysis matrices for the real authenticator stack.",
+      "fabushi_canonical_owner": "Canonical Fabushi Build/Quality/Release + existing Coordinator WebAuthn/security owner",
+      "fabushi_target": "Preserve applicable exact-head platform/compiler/security-helper gates in canonical GitHub Actions and packaging; do not introduce a second runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10031,
+      "source_path": "Telegram/ThirdParty/libfido2::.github/workflows/shellcheck.yml",
+      "source_blob_sha": "ccfab45e665c3bb26d033eb4ddcb69f091be67cd",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": ".github/workflows/shellcheck.yml",
+        "object": "ccfab45e665c3bb26d033eb4ddcb69f091be67cd",
+        "mode": "100644",
+        "type": "blob",
+        "size": 553
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 cross-platform build/security CI",
+      "source_symbols": [
+        "source:.github/workflows/shellcheck.yml"
+      ],
+      "responsibility": "Exercises macOS/OpenSSL3/ShellCheck/Windows compiler, architecture, static/dynamic and analysis matrices for the real authenticator stack.",
+      "fabushi_canonical_owner": "Canonical Fabushi Build/Quality/Release + existing Coordinator WebAuthn/security owner",
+      "fabushi_target": "Preserve applicable exact-head platform/compiler/security-helper gates in canonical GitHub Actions and packaging; do not introduce a second runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10032,
+      "source_path": "Telegram/ThirdParty/libfido2::.github/workflows/windows_builds.yml",
+      "source_blob_sha": "2df9cdb0c125713ebdb82a9330ae1465840100c4",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": ".github/workflows/windows_builds.yml",
+        "object": "2df9cdb0c125713ebdb82a9330ae1465840100c4",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1112
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 cross-platform build/security CI",
+      "source_symbols": [
+        "source:.github/workflows/windows_builds.yml"
+      ],
+      "responsibility": "Exercises macOS/OpenSSL3/ShellCheck/Windows compiler, architecture, static/dynamic and analysis matrices for the real authenticator stack.",
+      "fabushi_canonical_owner": "Canonical Fabushi Build/Quality/Release + existing Coordinator WebAuthn/security owner",
+      "fabushi_target": "Preserve applicable exact-head platform/compiler/security-helper gates in canonical GitHub Actions and packaging; do not introduce a second runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10033,
+      "source_path": "Telegram/ThirdParty/libfido2::.gitignore",
+      "source_blob_sha": "87caa9a1a2fac6d0b27a5a7410cf765a69466ebf",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": ".gitignore",
+        "object": "87caa9a1a2fac6d0b27a5a7410cf765a69466ebf",
+        "mode": "100644",
+        "type": "blob",
+        "size": 100
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 repository hygiene",
+      "source_symbols": [
+        "source:.gitignore"
+      ],
+      "responsibility": "Excludes generated build, fuzz corpus/report and output state from source authority.",
+      "fabushi_canonical_owner": "Canonical Fabushi Build/Quality/Release",
+      "fabushi_target": "Keep generated/test outputs out of source truth and release provenance.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10034,
+      "source_path": "Telegram/ThirdParty/libfido2::CMakeLists.txt",
+      "source_blob_sha": "1c97a09daee7ab2467606ddd3db8576de35dd31b",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "CMakeLists.txt",
+        "object": "1c97a09daee7ab2467606ddd3db8576de35dd31b",
+        "mode": "100644",
+        "type": "blob",
+        "size": 16506
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 build and platform feature matrix",
+      "source_symbols": [
+        "source:CMakeLists.txt"
+      ],
+      "responsibility": "Defines version, PIE/stack-protector, dependency discovery, Windows Hello/HID/PCSC/NFC feature gates, fuzz/test/tool/man install composition and supported platform branches.",
+      "fabushi_canonical_owner": "Canonical Fabushi Build/Packaging/Platform + existing Coordinator WebAuthn/security owner",
+      "fabushi_target": "Reproduce only applicable hardened shipping helper/platform-adapter closure with pinned dependency provenance; no Telegram/libfido2 sidecar owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10035,
+      "source_path": "Telegram/ThirdParty/libfido2::LICENSE",
+      "source_blob_sha": "62f584be02dd06d5043d86abff816332e8aee5a5",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "LICENSE",
+        "object": "62f584be02dd06d5043d86abff816332e8aee5a5",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1361
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 license/provenance",
+      "source_symbols": [
+        "source:LICENSE"
+      ],
+      "responsibility": "Carries BSD-2-Clause redistribution obligations for source and binary use.",
+      "fabushi_canonical_owner": "Canonical Fabushi Build/Release compliance",
+      "fabushi_target": "Preserve legally required license/notice provenance in packaged dependency records.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10036,
+      "source_path": "Telegram/ThirdParty/libfido2::NEWS",
+      "source_blob_sha": "44b3346a2cf7a7a377da2e9b0ccb545428e69514",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "NEWS",
+        "object": "44b3346a2cf7a7a377da2e9b0ccb545428e69514",
+        "mode": "100644",
+        "type": "blob",
+        "size": 11938
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 behavior/security release authority",
+      "source_symbols": [
+        "source:NEWS"
+      ],
+      "responsibility": "Records mature authenticator semantics including PUAT, timeout/cancel, PIN/UV, resident credentials, credProtect, enterprise attestation, largeBlob, biometric/credential management, strict CBOR and transport fixes.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Platform/Settings/Quality owners",
+      "fabushi_target": "Use the changelog as behavior/regression authority for source-neutral WebAuthn/security-key flows; implementation and exact-head evidence remain required.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10037,
+      "source_path": "Telegram/ThirdParty/libfido2::README.adoc",
+      "source_blob_sha": "b4b996bb523c02be13e2c317df3be47e995b1d3c",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "README.adoc",
+        "object": "b4b996bb523c02be13e2c317df3be47e995b1d3c",
+        "mode": "100644",
+        "type": "blob",
+        "size": 5714
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 deployment/runtime dependency contract",
+      "source_symbols": [
+        "source:README.adoc"
+      ],
+      "responsibility": "Documents supported transports, udev/device access, runtime dependencies, safe DLL placement and build-time customization.",
+      "fabushi_canonical_owner": "Canonical Fabushi Packaging/Release + Platform/security adapters",
+      "fabushi_target": "Co-stage/sign only required authenticator helper/runtime dependencies with safe permissions and platform-specific access contracts.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10038,
+      "source_path": "Telegram/ThirdParty/libfido2::SECURITY.md",
+      "source_blob_sha": "8071bc9a460ac83d76d75f98e54abd8d8713f5c0",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "SECURITY.md",
+        "object": "8071bc9a460ac83d76d75f98e54abd8d8713f5c0",
+        "mode": "100644",
+        "type": "blob",
+        "size": 199
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 security reporting contract",
+      "source_symbols": [
+        "source:SECURITY.md"
+      ],
+      "responsibility": "Defines the upstream private security-reporting path.",
+      "fabushi_canonical_owner": "Canonical Fabushi Security/Quality governance",
+      "fabushi_target": "Preserve a source-neutral vulnerability reporting and sensitive-debug-data policy; no runtime owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10039,
+      "source_path": "Telegram/ThirdParty/libfido2::examples/CMakeLists.txt",
+      "source_blob_sha": "e1115dcfad54393964c8ff29180beba44082892e",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "examples/CMakeLists.txt",
+        "object": "e1115dcfad54393964c8ff29180beba44082892e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1901
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 example composition",
+      "source_symbols": [
+        "source:examples/CMakeLists.txt"
+      ],
+      "responsibility": "Builds/documents device, credential, assertion, PIN, biometric, largeBlob and selection flows as executable usage authority.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Settings/Platform owners",
+      "fabushi_target": "Map example behavior to existing WebAuthn ceremony and security-key management owners, not to a second example/runtime surface.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10040,
+      "source_path": "Telegram/ThirdParty/libfido2::examples/README.adoc",
+      "source_blob_sha": "5ed99a680978371f03136a2105348778c4377ba7",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "examples/README.adoc",
+        "object": "5ed99a680978371f03136a2105348778c4377ba7",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4250
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 example composition",
+      "source_symbols": [
+        "source:examples/README.adoc"
+      ],
+      "responsibility": "Builds/documents device, credential, assertion, PIN, biometric, largeBlob and selection flows as executable usage authority.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Settings/Platform owners",
+      "fabushi_target": "Map example behavior to existing WebAuthn ceremony and security-key management owners, not to a second example/runtime surface.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10041,
+      "source_path": "Telegram/ThirdParty/libfido2::examples/assert.c",
+      "source_blob_sha": "32ba97b2fca37afab99b8e74941f5b805cda9525",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "examples/assert.c",
+        "object": "32ba97b2fca37afab99b8e74941f5b805cda9525",
+        "mode": "100644",
+        "type": "blob",
+        "size": 8738
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 assertion ceremony",
+      "source_symbols": [
+        "source:examples/assert.c"
+      ],
+      "responsibility": "Performs assertion allow-list/resident-key selection, algorithm choice, hmac-secret/largeBlob extensions, UP/UV, timeout/cancel, U2F fallback and local signature verification.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security owner",
+      "fabushi_target": "Extend the existing ceremony/signer path with strict fail-closed result validation, cancellation and verification semantics; hardware capability closure stays open until packaged evidence.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10042,
+      "source_path": "Telegram/ThirdParty/libfido2::examples/bio.c",
+      "source_blob_sha": "741293fe741e0e73b3e5334fc77bf1b5eb58b28e",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "examples/bio.c",
+        "object": "741293fe741e0e73b3e5334fc77bf1b5eb58b28e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 5268
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 biometric enrollment lifecycle",
+      "source_symbols": [
+        "source:examples/bio.c"
+      ],
+      "responsibility": "Uses scoped PIN/UV authorization to enroll, continue, enumerate, rename and remove authenticator biometric templates with cancellation.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Settings/Platform device-management owner",
+      "fabushi_target": "Expose only source-neutral security-key management where product policy permits; keep one consent/lifecycle owner and fail closed on cancellation/errors.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10043,
+      "source_path": "Telegram/ThirdParty/libfido2::examples/cred.c",
+      "source_blob_sha": "91a3a5d99297729985dec72972304dec57abfd91",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "examples/cred.c",
+        "object": "91a3a5d99297729985dec72972304dec57abfd91",
+        "mode": "100644",
+        "type": "blob",
+        "size": 9316
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 credential creation and attestation",
+      "source_symbols": [
+        "source:examples/cred.c"
+      ],
+      "responsibility": "Creates credentials with algorithm, exclude list, resident/UV, credProtect, hmac-secret, largeBlob, enterprise attestation, timeout/cancel and verifies attestation/self-attestation.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security owner",
+      "fabushi_target": "Preserve creation policy and verification semantics in the canonical ceremony owner; no custom cryptography or second credential store.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10044,
+      "source_path": "Telegram/ThirdParty/libfido2::examples/extern.h",
+      "source_blob_sha": "5cffd7fbf882534b8ccce80defa076fdf5e78942",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "examples/extern.h",
+        "object": "5cffd7fbf882534b8ccce80defa076fdf5e78942",
+        "mode": "100644",
+        "type": "blob",
+        "size": 879
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 example utility API contract",
+      "source_symbols": [
+        "source:examples/extern.h"
+      ],
+      "responsibility": "Declares strict blob and public-key serialization helpers used by credential/assertion examples.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical secure-storage/platform adapters",
+      "fabushi_target": "Keep serialization ownership explicit and bounded; reuse vetted crypto/key types rather than reimplementing algorithms.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10045,
+      "source_path": "Telegram/ThirdParty/libfido2::examples/info.c",
+      "source_blob_sha": "a10a50cffb37377d02e11cf4d1a51d08c67ac9a2",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "examples/info.c",
+        "object": "a10a50cffb37377d02e11cf4d1a51d08c67ac9a2",
+        "mode": "100644",
+        "type": "blob",
+        "size": 8503
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "authenticator capability discovery",
+      "source_symbols": [
+        "source:examples/info.c"
+      ],
+      "responsibility": "Projects authenticator protocol versions, extensions, transports, algorithms, AAGUID/options/certifications, firmware, limits, PIN policy, resident capacity and UV state.",
+      "fabushi_canonical_owner": "Canonical Settings/security-key diagnostics + existing Coordinator WebAuthn/platform owner",
+      "fabushi_target": "Provide capability-gated UI/diagnostics from the canonical authenticator adapter without exposing unsupported actions.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10046,
+      "source_path": "Telegram/ThirdParty/libfido2::examples/largeblob.c",
+      "source_blob_sha": "745d33275943f56207017c57a12ba0a628b3c2b4",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "examples/largeblob.c",
+        "object": "745d33275943f56207017c57a12ba0a628b3c2b4",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6579
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "authenticator largeBlob lifecycle",
+      "source_symbols": [
+        "source:examples/largeblob.c"
+      ],
+      "responsibility": "Creates a resident credential, obtains scoped authorization, writes/reads/removes associated largeBlob data and cleans up allocations.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical secure-storage/platform owner",
+      "fabushi_target": "Preserve authorization scope, lifecycle and cleanup if largeBlob-backed product behavior is applicable; never fake success.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10047,
+      "source_path": "Telegram/ThirdParty/libfido2::examples/manifest.c",
+      "source_blob_sha": "c2b3bf19137b7045868b3702455b3cffb575baf2",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "examples/manifest.c",
+        "object": "c2b3bf19137b7045868b3702455b3cffb575baf2",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1027
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "authenticator device enumeration",
+      "source_symbols": [
+        "source:examples/manifest.c"
+      ],
+      "responsibility": "Enumerates configured authenticators and stable device metadata.",
+      "fabushi_canonical_owner": "Canonical Platform/device discovery + existing Coordinator WebAuthn owner",
+      "fabushi_target": "Use one platform adapter for available authenticators and permission-gated metadata.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10048,
+      "source_path": "Telegram/ThirdParty/libfido2::examples/reset.c",
+      "source_blob_sha": "767a162b6f63edff3b36fcde2da545ae92290b48",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "examples/reset.c",
+        "object": "767a162b6f63edff3b36fcde2da545ae92290b48",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1012
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "authenticator destructive reset",
+      "source_symbols": [
+        "source:examples/reset.c"
+      ],
+      "responsibility": "Opens a device, performs reset, cancels on failure and closes resources deterministically.",
+      "fabushi_canonical_owner": "Canonical Settings/security-key management + existing Coordinator WebAuthn owner",
+      "fabushi_target": "Require explicit destructive confirmation/authorization and fail closed; preserve deterministic teardown.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10049,
+      "source_path": "Telegram/ThirdParty/libfido2::examples/retries.c",
+      "source_blob_sha": "a0610fe13903c56bfd22ff08320b83aa60a672a7",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "examples/retries.c",
+        "object": "a0610fe13903c56bfd22ff08320b83aa60a672a7",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1007
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "authenticator PIN retry/lockout state",
+      "source_symbols": [
+        "source:examples/retries.c"
+      ],
+      "responsibility": "Reads remaining PIN attempts before lockout.",
+      "fabushi_canonical_owner": "Canonical Settings/security-key management + existing Coordinator WebAuthn owner",
+      "fabushi_target": "Surface retry/lockout state through the existing PIN prompt/status contract without logging secrets.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10050,
+      "source_path": "Telegram/ThirdParty/libfido2::examples/select.c",
+      "source_blob_sha": "008eb2e99b8fe43c9523380e56fabd295a8432b1",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "examples/select.c",
+        "object": "008eb2e99b8fe43c9523380e56fabd295a8432b1",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4705
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "multi-authenticator touch selection",
+      "source_symbols": [
+        "source:examples/select.c"
+      ],
+      "responsibility": "Opens multiple authenticators, starts touch detection concurrently, selects the touched device, times out and cancels/closes all losers.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical device-selection UX",
+      "fabushi_target": "Preserve bounded selection, timeout, cancellation and cleanup in one ceremony/device owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10051,
+      "source_path": "Telegram/ThirdParty/libfido2::examples/setpin.c",
+      "source_blob_sha": "72e08e4b908872b662e58816714a9a52d1b017d0",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "examples/setpin.c",
+        "object": "72e08e4b908872b662e58816714a9a52d1b017d0",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1161
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "authenticator PIN set/change lifecycle",
+      "source_symbols": [
+        "source:examples/setpin.c"
+      ],
+      "responsibility": "Sets or changes authenticator PIN against a selected device.",
+      "fabushi_canonical_owner": "Canonical Settings/security-key management + existing Coordinator WebAuthn owner",
+      "fabushi_target": "Use explicit secure UI/consent and secret-safe transport; no persisted plaintext PIN.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10052,
+      "source_path": "Telegram/ThirdParty/libfido2::examples/util.c",
+      "source_blob_sha": "0c0c77a94001e6d72f9476dfd1a1f6d690bc1850",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "examples/util.c",
+        "object": "0c0c77a94001e6d72f9476dfd1a1f6d690bc1850",
+        "mode": "100644",
+        "type": "blob",
+        "size": 7057
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "secure example serialization utilities",
+      "source_symbols": [
+        "source:examples/util.c"
+      ],
+      "responsibility": "Implements strict numeric parsing, exact blob I/O, private blob mode 0600 and vetted OpenSSL public-key conversion/read/write helpers.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical secure-storage/platform owner",
+      "fabushi_target": "Carry bounded I/O, permissions and key ownership semantics into shipping helpers; do not invent cryptography.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10053,
+      "source_path": "Telegram/ThirdParty/libfido2::fuzz/CMakeLists.txt",
+      "source_blob_sha": "0bf4bfbf05a570975e556e292fcd14256ed5d43f",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "fuzz/CMakeLists.txt",
+        "object": "0bf4bfbf05a570975e556e292fcd14256ed5d43f",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3155
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 fuzz/coverage build system",
+      "source_symbols": [
+        "source:fuzz/CMakeLists.txt"
+      ],
+      "responsibility": "Builds dedicated fuzz targets, sanitizer-compatible dependencies/corpora and coverage reporting under bounded resources.",
+      "fabushi_canonical_owner": "Canonical Fabushi Security/Quality CI + existing Coordinator WebAuthn/security owner",
+      "fabushi_target": "Add adversarial exact-head quality gates for the shipping WebAuthn/helper boundary, including sanitizer/fuzz coverage where applicable.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10054,
+      "source_path": "Telegram/ThirdParty/libfido2::fuzz/Dockerfile",
+      "source_blob_sha": "af137dcb1f203e4d6a0e2055da6e39ab4bd91ed5",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "fuzz/Dockerfile",
+        "object": "af137dcb1f203e4d6a0e2055da6e39ab4bd91ed5",
+        "mode": "100644",
+        "type": "blob",
+        "size": 634
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 fuzz/coverage build system",
+      "source_symbols": [
+        "source:fuzz/Dockerfile"
+      ],
+      "responsibility": "Builds dedicated fuzz targets, sanitizer-compatible dependencies/corpora and coverage reporting under bounded resources.",
+      "fabushi_canonical_owner": "Canonical Fabushi Security/Quality CI + existing Coordinator WebAuthn/security owner",
+      "fabushi_target": "Add adversarial exact-head quality gates for the shipping WebAuthn/helper boundary, including sanitizer/fuzz coverage where applicable.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10055,
+      "source_path": "Telegram/ThirdParty/libfido2::fuzz/Makefile",
+      "source_blob_sha": "e524f92249dddfd5f2b1831c2cde16d81d276242",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "fuzz/Makefile",
+        "object": "e524f92249dddfd5f2b1831c2cde16d81d276242",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3017
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 fuzz/coverage build system",
+      "source_symbols": [
+        "source:fuzz/Makefile"
+      ],
+      "responsibility": "Builds dedicated fuzz targets, sanitizer-compatible dependencies/corpora and coverage reporting under bounded resources.",
+      "fabushi_canonical_owner": "Canonical Fabushi Security/Quality CI + existing Coordinator WebAuthn/security owner",
+      "fabushi_target": "Add adversarial exact-head quality gates for the shipping WebAuthn/helper boundary, including sanitizer/fuzz coverage where applicable.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10056,
+      "source_path": "Telegram/ThirdParty/libfido2::fuzz/README",
+      "source_blob_sha": "427625c6e71484cb19399ed27a1e5647732a6000",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "fuzz/README",
+        "object": "427625c6e71484cb19399ed27a1e5647732a6000",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1983
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 fuzz/coverage build system",
+      "source_symbols": [
+        "source:fuzz/README"
+      ],
+      "responsibility": "Builds dedicated fuzz targets, sanitizer-compatible dependencies/corpora and coverage reporting under bounded resources.",
+      "fabushi_canonical_owner": "Canonical Fabushi Security/Quality CI + existing Coordinator WebAuthn/security owner",
+      "fabushi_target": "Add adversarial exact-head quality gates for the shipping WebAuthn/helper boundary, including sanitizer/fuzz coverage where applicable.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10057,
+      "source_path": "Telegram/ThirdParty/libfido2::fuzz/build-coverage",
+      "source_blob_sha": "6cc5041a1db2286fbd3c9a33aca03911c2d6ff29",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "fuzz/build-coverage",
+        "object": "6cc5041a1db2286fbd3c9a33aca03911c2d6ff29",
+        "mode": "100755",
+        "type": "blob",
+        "size": 1146
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 fuzz/coverage build system",
+      "source_symbols": [
+        "source:fuzz/build-coverage"
+      ],
+      "responsibility": "Builds dedicated fuzz targets, sanitizer-compatible dependencies/corpora and coverage reporting under bounded resources.",
+      "fabushi_canonical_owner": "Canonical Fabushi Security/Quality CI + existing Coordinator WebAuthn/security owner",
+      "fabushi_target": "Add adversarial exact-head quality gates for the shipping WebAuthn/helper boundary, including sanitizer/fuzz coverage where applicable.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10058,
+      "source_path": "Telegram/ThirdParty/libfido2::fuzz/clock.c",
+      "source_blob_sha": "bd758ea1a49793f06f34e76d67d713f8e3a8d5a3",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "fuzz/clock.c",
+        "object": "bd758ea1a49793f06f34e76d67d713f8e3a8d5a3",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1795
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "timeout/clock fault injection",
+      "source_symbols": [
+        "source:fuzz/clock.c"
+      ],
+      "responsibility": "Injects monotonic clock drift, discontinuities and clock/usleep failures.",
+      "fabushi_canonical_owner": "Canonical Security/Quality CI for WebAuthn/timeout owners",
+      "fabushi_target": "Test cancellation, timeout and retry code against discontinuous/erroring clocks without changing production time ownership.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10059,
+      "source_path": "Telegram/ThirdParty/libfido2::fuzz/dummy.h",
+      "source_blob_sha": "fc4bfc5ada4bcb15c51919ed5b3fccda3bb2a6d6",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "fuzz/dummy.h",
+        "object": "fc4bfc5ada4bcb15c51919ed5b3fccda3bb2a6d6",
+        "mode": "100644",
+        "type": "blob",
+        "size": 7667
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "authenticator deterministic fuzz fixtures",
+      "source_symbols": [
+        "source:fuzz/dummy.h"
+      ],
+      "responsibility": "Provides deterministic credential, transport and netlink fixtures for adversarial tests.",
+      "fabushi_canonical_owner": "Canonical Security/Quality CI",
+      "fabushi_target": "Use source-neutral fixtures only in tests; no production fake authenticator.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10060,
+      "source_path": "Telegram/ThirdParty/libfido2::fuzz/export.gnu",
+      "source_blob_sha": "0b63bdf755fcc3a71a5ccb842ec97f252a0eb88b",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "fuzz/export.gnu",
+        "object": "0b63bdf755fcc3a71a5ccb842ec97f252a0eb88b",
+        "mode": "100644",
+        "type": "blob",
+        "size": 8095
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 public API/export authority",
+      "source_symbols": [
+        "source:fuzz/export.gnu"
+      ],
+      "responsibility": "Enumerates the stable exported authenticator API and function relationships used for ABI/documentation coverage.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + existing WebAuthn/platform boundary",
+      "fabushi_target": "Maintain explicit supported helper/platform API surface and compatibility tests rather than leaking an upstream ABI into product architecture.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10061,
+      "source_path": "Telegram/ThirdParty/libfido2::fuzz/functions.txt",
+      "source_blob_sha": "38fbac8f1f2fadf9b44da3da663604ffd4c65432",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "fuzz/functions.txt",
+        "object": "38fbac8f1f2fadf9b44da3da663604ffd4c65432",
+        "mode": "100644",
+        "type": "blob",
+        "size": 83763
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 public API/export authority",
+      "source_symbols": [
+        "source:fuzz/functions.txt"
+      ],
+      "responsibility": "Enumerates the stable exported authenticator API and function relationships used for ABI/documentation coverage.",
+      "fabushi_canonical_owner": "Canonical Build/Quality + existing WebAuthn/platform boundary",
+      "fabushi_target": "Maintain explicit supported helper/platform API surface and compatibility tests rather than leaking an upstream ABI into product architecture.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10062,
+      "source_path": "Telegram/ThirdParty/libfido2::fuzz/fuzz_assert.c",
+      "source_blob_sha": "abdce3b74bb4b67644506963570526fa9bfc1c22",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "fuzz/fuzz_assert.c",
+        "object": "abdce3b74bb4b67644506963570526fa9bfc1c22",
+        "mode": "100644",
+        "type": "blob",
+        "size": 13623
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "adversarial assertion ceremony",
+      "source_symbols": [
+        "source:fuzz/fuzz_assert.c"
+      ],
+      "responsibility": "Fuzzes assertion parsing, allow lists, extensions, reallocations, PUAT, cancellation and signature verification across malformed inputs/failures.",
+      "fabushi_canonical_owner": "Canonical Security/Quality CI + existing Coordinator WebAuthn owner",
+      "fabushi_target": "Require fail-closed bounded parsing and cleanup for assertion ceremonies; wire into exact-head adversarial tests.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10063,
+      "source_path": "Telegram/ThirdParty/libfido2::fuzz/fuzz_attobj.c",
+      "source_blob_sha": "774143586f94d618c90921bccaa629085fdac27d",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "fuzz/fuzz_attobj.c",
+        "object": "774143586f94d618c90921bccaa629085fdac27d",
+        "mode": "100644",
+        "type": "blob",
+        "size": 10787
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "adversarial attestation-object parsing",
+      "source_symbols": [
+        "source:fuzz/fuzz_attobj.c"
+      ],
+      "responsibility": "Fuzzes malformed attestation object decode and verification.",
+      "fabushi_canonical_owner": "Canonical Security/Quality CI + existing Coordinator WebAuthn owner",
+      "fabushi_target": "Reject malformed attestation data without partial success or stale state.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10064,
+      "source_path": "Telegram/ThirdParty/libfido2::fuzz/fuzz_bio.c",
+      "source_blob_sha": "12b38a0aa6dada7cf1c9db5a5697ebe7cbace1bf",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "fuzz/fuzz_bio.c",
+        "object": "12b38a0aa6dada7cf1c9db5a5697ebe7cbace1bf",
+        "mode": "100644",
+        "type": "blob",
+        "size": 10793
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "adversarial biometric management",
+      "source_symbols": [
+        "source:fuzz/fuzz_bio.c"
+      ],
+      "responsibility": "Fuzzes biometric info/enrollment/template lifecycle, PIN/UV capabilities and scoped authorization.",
+      "fabushi_canonical_owner": "Canonical Security/Quality CI + WebAuthn/Settings device owner",
+      "fabushi_target": "Exercise fail-closed biometric management state transitions where applicable.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10065,
+      "source_path": "Telegram/ThirdParty/libfido2::fuzz/fuzz_cred.c",
+      "source_blob_sha": "296cc076533a3bd9a9f05f3669073723d474d7ee",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "fuzz/fuzz_cred.c",
+        "object": "296cc076533a3bd9a9f05f3669073723d474d7ee",
+        "mode": "100644",
+        "type": "blob",
+        "size": 14283
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "adversarial credential creation",
+      "source_symbols": [
+        "source:fuzz/fuzz_cred.c"
+      ],
+      "responsibility": "Fuzzes credential fields/extensions/attestation verification, touch, PUAT, repeated allocation paths and cancellation.",
+      "fabushi_canonical_owner": "Canonical Security/Quality CI + existing Coordinator WebAuthn owner",
+      "fabushi_target": "Exercise the canonical creation/verification path under malformed inputs, allocation failures and cancellation.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10066,
+      "source_path": "Telegram/ThirdParty/libfido2::fuzz/fuzz_credman.c",
+      "source_blob_sha": "a608ddfe76552beef03731bfadf132fc1e2ce1b9",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "fuzz/fuzz_credman.c",
+        "object": "a608ddfe76552beef03731bfadf132fc1e2ce1b9",
+        "mode": "100644",
+        "type": "blob",
+        "size": 9994
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "adversarial resident-credential management",
+      "source_symbols": [
+        "source:fuzz/fuzz_credman.c"
+      ],
+      "responsibility": "Fuzzes credential metadata, RP enumeration, resident credential update/delete and permission-aware management.",
+      "fabushi_canonical_owner": "Canonical Security/Quality CI + WebAuthn/Settings credential-management owner",
+      "fabushi_target": "Preserve bounded enumeration/update/delete, authorization and stale-state fencing if credential management is exposed.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10067,
+      "source_path": "Telegram/ThirdParty/libfido2::fuzz/fuzz_hid.c",
+      "source_blob_sha": "5555f01a98823f0ee67ea1232bd15fafd1ea6b2d",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "fuzz/fuzz_hid.c",
+        "object": "5555f01a98823f0ee67ea1232bd15fafd1ea6b2d",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6061
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "adversarial HID/device enumeration",
+      "source_symbols": [
+        "source:fuzz/fuzz_hid.c"
+      ],
+      "responsibility": "Fuzzes HID report parsing and authenticator discovery metadata.",
+      "fabushi_canonical_owner": "Canonical Security/Quality CI + Platform device adapter",
+      "fabushi_target": "Bound report parsing/device metadata and fail closed on malformed transport data.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10068,
+      "source_path": "Telegram/ThirdParty/libfido2::fuzz/fuzz_largeblob.c",
+      "source_blob_sha": "7137465ea0a98bfe620ba2fee2288e1952d13daa",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "fuzz/fuzz_largeblob.c",
+        "object": "7137465ea0a98bfe620ba2fee2288e1952d13daa",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6406
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "adversarial largeBlob management",
+      "source_symbols": [
+        "source:fuzz/fuzz_largeblob.c"
+      ],
+      "responsibility": "Fuzzes largeBlob get/set/remove/array operations under scoped authorization.",
+      "fabushi_canonical_owner": "Canonical Security/Quality CI + WebAuthn/security owner",
+      "fabushi_target": "Exercise authorization, bounds, cleanup and error propagation for applicable largeBlob behavior.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10069,
+      "source_path": "Telegram/ThirdParty/libfido2::fuzz/fuzz_mgmt.c",
+      "source_blob_sha": "98330cd6902bedd51246b73527f66d633ed78c89",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "fuzz/fuzz_mgmt.c",
+        "object": "98330cd6902bedd51246b73527f66d633ed78c89",
+        "mode": "100644",
+        "type": "blob",
+        "size": 13840
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "adversarial authenticator management",
+      "source_symbols": [
+        "source:fuzz/fuzz_mgmt.c"
+      ],
+      "responsibility": "Fuzzes capability/config info, PIN/UV retries, reset, minimum PIN, always-UV and enterprise-attestation configuration.",
+      "fabushi_canonical_owner": "Canonical Security/Quality CI + WebAuthn/Settings device-management owner",
+      "fabushi_target": "Exercise management state and destructive/configuration operations under malformed/failing transports.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10070,
+      "source_path": "Telegram/ThirdParty/libfido2::fuzz/fuzz_netlink.c",
+      "source_blob_sha": "51455aefee38db5e560d39d9c705056c118f4fcb",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "fuzz/fuzz_netlink.c",
+        "object": "51455aefee38db5e560d39d9c705056c118f4fcb",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3367
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "adversarial Linux NFC/netlink transport",
+      "source_symbols": [
+        "source:fuzz/fuzz_netlink.c"
+      ],
+      "responsibility": "Fuzzes NFC target discovery and power control through netlink.",
+      "fabushi_canonical_owner": "Canonical Security/Quality CI + Platform authenticator adapter",
+      "fabushi_target": "Keep Linux NFC transport failure handling inside the platform adapter; no new product owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10071,
+      "source_path": "Telegram/ThirdParty/libfido2::fuzz/fuzz_pcsc.c",
+      "source_blob_sha": "4649f73b247c9ca8af179180730440897d536515",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "fuzz/fuzz_pcsc.c",
+        "object": "4649f73b247c9ca8af179180730440897d536515",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6370
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "adversarial PCSC transport",
+      "source_symbols": [
+        "source:fuzz/fuzz_pcsc.c"
+      ],
+      "responsibility": "Fuzzes smart-card authenticator discovery/open/read/write/close and protocol/length contracts.",
+      "fabushi_canonical_owner": "Canonical Security/Quality CI + Platform authenticator adapter",
+      "fabushi_target": "Preserve bounded PCSC transport lifecycle where supported; isolate it behind the canonical platform adapter.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10072,
+      "source_path": "Telegram/ThirdParty/libfido2::fuzz/libfuzzer.c",
+      "source_blob_sha": "d712aa6d55eacb4bb54dff4bb8e5eecda270ebe7",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "fuzz/libfuzzer.c",
+        "object": "d712aa6d55eacb4bb54dff4bb8e5eecda270ebe7",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4748
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libFuzzer driver lifecycle",
+      "source_symbols": [
+        "source:fuzz/libfuzzer.c"
+      ],
+      "responsibility": "Owns fuzz input execution, deterministic mutation hooks and corpus lifecycle.",
+      "fabushi_canonical_owner": "Canonical Security/Quality CI",
+      "fabushi_target": "Keep fuzz driver strictly test-only and reproducible.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10073,
+      "source_path": "Telegram/ThirdParty/libfido2::fuzz/mutator_aux.c",
+      "source_blob_sha": "fd41b609e279ced2c524c8f8e12a008543376397",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "fuzz/mutator_aux.c",
+        "object": "fd41b609e279ced2c524c8f8e12a008543376397",
+        "mode": "100644",
+        "type": "blob",
+        "size": 5729
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "bounded fuzz transport/mutator utilities",
+      "source_symbols": [
+        "source:fuzz/mutator_aux.c"
+      ],
+      "responsibility": "Bounds CBOR strings/blobs, mutates structured inputs, injects deterministic I/O failures, and enforces HID/NFC packet-size/timeouts.",
+      "fabushi_canonical_owner": "Canonical Security/Quality CI + WebAuthn/platform boundary",
+      "fabushi_target": "Translate these invariants into adversarial tests for bounded input, I/O failure, timeout and cleanup.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10074,
+      "source_path": "Telegram/ThirdParty/libfido2::fuzz/mutator_aux.h",
+      "source_blob_sha": "5ad566140a8e7878ddf5f4853db74ac4aaf72c6a",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "fuzz/mutator_aux.h",
+        "object": "5ad566140a8e7878ddf5f4853db74ac4aaf72c6a",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3014
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "bounded fuzz transport/mutator utilities",
+      "source_symbols": [
+        "source:fuzz/mutator_aux.h"
+      ],
+      "responsibility": "Bounds CBOR strings/blobs, mutates structured inputs, injects deterministic I/O failures, and enforces HID/NFC packet-size/timeouts.",
+      "fabushi_canonical_owner": "Canonical Security/Quality CI + WebAuthn/platform boundary",
+      "fabushi_target": "Translate these invariants into adversarial tests for bounded input, I/O failure, timeout and cleanup.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10075,
+      "source_path": "Telegram/ThirdParty/libfido2::fuzz/pcsc.c",
+      "source_blob_sha": "390d2c02234044ba1ff2838fbcf98bb663a34b59",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "fuzz/pcsc.c",
+        "object": "390d2c02234044ba1ff2838fbcf98bb663a34b59",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3977
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "adversarial PCSC transport",
+      "source_symbols": [
+        "source:fuzz/pcsc.c"
+      ],
+      "responsibility": "Fuzzes smart-card authenticator discovery/open/read/write/close and protocol/length contracts.",
+      "fabushi_canonical_owner": "Canonical Security/Quality CI + Platform authenticator adapter",
+      "fabushi_target": "Preserve bounded PCSC transport lifecycle where supported; isolate it behind the canonical platform adapter.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10076,
+      "source_path": "Telegram/ThirdParty/libfido2::fuzz/preload-fuzz.c",
+      "source_blob_sha": "f18848dda34ca1a62ab96abf1a34d81ed99b3fd1",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "fuzz/preload-fuzz.c",
+        "object": "f18848dda34ca1a62ab96abf1a34d81ed99b3fd1",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1980
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "AFL transport input interposition",
+      "source_symbols": [
+        "source:fuzz/preload-fuzz.c"
+      ],
+      "responsibility": "Feeds fuzzed device input through an interposed test transport.",
+      "fabushi_canonical_owner": "Canonical Security/Quality CI",
+      "fabushi_target": "Test-only fault/corpus path; never ship an interposed fake transport.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10077,
+      "source_path": "Telegram/ThirdParty/libfido2::fuzz/preload-snoop.c",
+      "source_blob_sha": "34d57ade82f9e009e35abb27207e41b4adb87676",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "fuzz/preload-snoop.c",
+        "object": "34d57ade82f9e009e35abb27207e41b4adb87676",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4205
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "real-device corpus capture harness",
+      "source_symbols": [
+        "source:fuzz/preload-snoop.c"
+      ],
+      "responsibility": "Snoops HID input/output into corpus files for security fuzzing.",
+      "fabushi_canonical_owner": "Canonical Security/Quality governance",
+      "fabushi_target": "Treat captured authenticator traffic as sensitive test data; prohibit this snooping behavior in production logging/telemetry.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10078,
+      "source_path": "Telegram/ThirdParty/libfido2::fuzz/prng.c",
+      "source_blob_sha": "7e8d85cbb7af3857e068f418e584dc52b5eb85a9",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "fuzz/prng.c",
+        "object": "7e8d85cbb7af3857e068f418e584dc52b5eb85a9",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3947
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "deterministic unbiased fuzz randomness",
+      "source_symbols": [
+        "source:fuzz/prng.c"
+      ],
+      "responsibility": "Provides deterministic seeded pseudo-randomness and unbiased bounded sampling for fault injection.",
+      "fabushi_canonical_owner": "Canonical Security/Quality CI",
+      "fabushi_target": "Test-only reproducibility; production randomness continues to use vetted platform cryptographic RNG.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10079,
+      "source_path": "Telegram/ThirdParty/libfido2::fuzz/report.tgz",
+      "source_blob_sha": "cc5d6959f42e4e1cb16956323b76d4f2733bb8bc",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "fuzz/report.tgz",
+        "object": "cc5d6959f42e4e1cb16956323b76d4f2733bb8bc",
+        "mode": "100644",
+        "type": "blob",
+        "size": 384171
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 coverage evidence",
+      "source_symbols": [
+        "source:fuzz/report.tgz"
+      ],
+      "responsibility": "Carries the fuzz coverage report and per-file summary (93.51% regions, 95.71% functions, 92.16% lines in this pinned artifact).",
+      "fabushi_canonical_owner": "Canonical Security/Quality evidence owner",
+      "fabushi_target": "Use as upstream maturity/gap evidence only; Fabushi still needs exact-head coverage/adversarial evidence for its own shipping code.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10080,
+      "source_path": "Telegram/ThirdParty/libfido2::fuzz/summary.txt",
+      "source_blob_sha": "8b088887994337ddc38db68c8c65e01daa3745ba",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "fuzz/summary.txt",
+        "object": "8b088887994337ddc38db68c8c65e01daa3745ba",
+        "mode": "100644",
+        "type": "blob",
+        "size": 9521
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 coverage evidence",
+      "source_symbols": [
+        "source:fuzz/summary.txt"
+      ],
+      "responsibility": "Carries the fuzz coverage report and per-file summary (93.51% regions, 95.71% functions, 92.16% lines in this pinned artifact).",
+      "fabushi_canonical_owner": "Canonical Security/Quality evidence owner",
+      "fabushi_target": "Use as upstream maturity/gap evidence only; Fabushi still needs exact-head coverage/adversarial evidence for its own shipping code.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10081,
+      "source_path": "Telegram/ThirdParty/libfido2::fuzz/udev.c",
+      "source_blob_sha": "b3a195f32903370ac9b325bd77ed4c948c6482f2",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "fuzz/udev.c",
+        "object": "b3a195f32903370ac9b325bd77ed4c948c6482f2",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6775
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "adversarial Linux udev/HID discovery",
+      "source_symbols": [
+        "source:fuzz/udev.c"
+      ],
+      "responsibility": "Fuzzes udev enumeration, metadata/refcount teardown and hidraw ioctl/report descriptor boundaries.",
+      "fabushi_canonical_owner": "Canonical Security/Quality CI + Platform authenticator adapter",
+      "fabushi_target": "Exercise Linux device discovery/refcount/ioctl boundaries without creating a second device subsystem.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10082,
+      "source_path": "Telegram/ThirdParty/libfido2::fuzz/uniform_random.c",
+      "source_blob_sha": "357091c3c2f16508307291e54329baf1a3008950",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "fuzz/uniform_random.c",
+        "object": "357091c3c2f16508307291e54329baf1a3008950",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1795
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "deterministic unbiased fuzz randomness",
+      "source_symbols": [
+        "source:fuzz/uniform_random.c"
+      ],
+      "responsibility": "Provides deterministic seeded pseudo-randomness and unbiased bounded sampling for fault injection.",
+      "fabushi_canonical_owner": "Canonical Security/Quality CI",
+      "fabushi_target": "Test-only reproducibility; production randomness continues to use vetted platform cryptographic RNG.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10083,
+      "source_path": "Telegram/ThirdParty/libfido2::fuzz/wiredata_fido2.h",
+      "source_blob_sha": "083ffda00e49c10463a12714c7efcdfdd8dcf746",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "fuzz/wiredata_fido2.h",
+        "object": "083ffda00e49c10463a12714c7efcdfdd8dcf746",
+        "mode": "100644",
+        "type": "blob",
+        "size": 37435
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "FIDO2/U2F wire corpus authority",
+      "source_symbols": [
+        "source:fuzz/wiredata_fido2.h"
+      ],
+      "responsibility": "Provides realistic CTAP/FIDO2 and U2F transport frames for parser/state-machine fuzzing.",
+      "fabushi_canonical_owner": "Canonical Security/Quality CI + WebAuthn/platform boundary",
+      "fabushi_target": "Use protocol corpora as adversarial test inputs only; do not retain Telegram/libfido2 as shipping protocol owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10084,
+      "source_path": "Telegram/ThirdParty/libfido2::fuzz/wiredata_u2f.h",
+      "source_blob_sha": "3be22d34b6c2ed88ca2e321fd08ceed172199c33",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "fuzz/wiredata_u2f.h",
+        "object": "3be22d34b6c2ed88ca2e321fd08ceed172199c33",
+        "mode": "100644",
+        "type": "blob",
+        "size": 7327
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "FIDO2/U2F wire corpus authority",
+      "source_symbols": [
+        "source:fuzz/wiredata_u2f.h"
+      ],
+      "responsibility": "Provides realistic CTAP/FIDO2 and U2F transport frames for parser/state-machine fuzzing.",
+      "fabushi_canonical_owner": "Canonical Security/Quality CI + WebAuthn/platform boundary",
+      "fabushi_target": "Use protocol corpora as adversarial test inputs only; do not retain Telegram/libfido2 as shipping protocol owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10085,
+      "source_path": "Telegram/ThirdParty/libfido2::fuzz/wrap.c",
+      "source_blob_sha": "fba1a7495bd4f5d183d6e31d302d0269f0ce3412",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "fuzz/wrap.c",
+        "object": "fba1a7495bd4f5d183d6e31d302d0269f0ce3412",
+        "mode": "100644",
+        "type": "blob",
+        "size": 9346
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "deterministic dependency fault injection",
+      "source_symbols": [
+        "source:fuzz/wrap.c"
+      ],
+      "responsibility": "Injects deterministic failures across allocation, crypto, CBOR, transport and compression calls using an explicit wrapped-symbol surface.",
+      "fabushi_canonical_owner": "Canonical Security/Quality CI + WebAuthn/platform boundary",
+      "fabushi_target": "Add fault-path tests so allocation/crypto/transport failures cannot produce partial success, leaks or stale ceremony state.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10086,
+      "source_path": "Telegram/ThirdParty/libfido2::fuzz/wrapped.sym",
+      "source_blob_sha": "219a0d8b8f46159ee4241dcdb7659a8c64cd89f4",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "fuzz/wrapped.sym",
+        "object": "219a0d8b8f46159ee4241dcdb7659a8c64cd89f4",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1737
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "deterministic dependency fault injection",
+      "source_symbols": [
+        "source:fuzz/wrapped.sym"
+      ],
+      "responsibility": "Injects deterministic failures across allocation, crypto, CBOR, transport and compression calls using an explicit wrapped-symbol surface.",
+      "fabushi_canonical_owner": "Canonical Security/Quality CI + WebAuthn/platform boundary",
+      "fabushi_target": "Add fault-path tests so allocation/crypto/transport failures cannot produce partial success, leaks or stale ceremony state.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10087,
+      "source_path": "Telegram/ThirdParty/libfido2::man/CMakeLists.txt",
+      "source_blob_sha": "3f3f79f92f7130ca14960e72a17c8845ec47e8fe",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "man/CMakeLists.txt",
+        "object": "3f3f79f92f7130ca14960e72a17c8845ec47e8fe",
+        "mode": "100644",
+        "type": "blob",
+        "size": 16831
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "API documentation/export conformance",
+      "source_symbols": [
+        "source:man/CMakeLists.txt"
+      ],
+      "responsibility": "Generates/lints/installs man pages and fails when documented names, aliases, exports or prototypes drift.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release",
+      "fabushi_target": "Keep shipping helper/API docs and exported surface mechanically consistent where an external helper interface exists.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10088,
+      "source_path": "Telegram/ThirdParty/libfido2::man/NOTES",
+      "source_blob_sha": "5cba43663b7f4a8667e8bb21a5a183fd403d1f08",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "man/NOTES",
+        "object": "5cba43663b7f4a8667e8bb21a5a183fd403d1f08",
+        "mode": "100644",
+        "type": "blob",
+        "size": 234
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "documentation reproducibility contract",
+      "source_symbols": [
+        "source:man/NOTES"
+      ],
+      "responsibility": "Pins the mandoc expectation for reproducible generated partial documentation.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release",
+      "fabushi_target": "Use reproducible documentation tooling where generated docs are shipped; no runtime owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10089,
+      "source_path": "Telegram/ThirdParty/libfido2::man/check.sh",
+      "source_blob_sha": "cf978473290efb44471fcce1cbfc093d518b2083",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "man/check.sh",
+        "object": "cf978473290efb44471fcce1cbfc093d518b2083",
+        "mode": "100755",
+        "type": "blob",
+        "size": 1833
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "API documentation/export conformance",
+      "source_symbols": [
+        "source:man/check.sh"
+      ],
+      "responsibility": "Generates/lints/installs man pages and fails when documented names, aliases, exports or prototypes drift.",
+      "fabushi_canonical_owner": "Canonical Build/Quality/Release",
+      "fabushi_target": "Keep shipping helper/API docs and exported surface mechanically consistent where an external helper interface exists.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10090,
+      "source_path": "Telegram/ThirdParty/libfido2::man/dyc.css",
+      "source_blob_sha": "1ff5b593e8d2efca8ee32b986165c2adae005bc1",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "man/dyc.css",
+        "object": "1ff5b593e8d2efca8ee32b986165c2adae005bc1",
+        "mode": "100644",
+        "type": "blob",
+        "size": 589
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "documentation presentation stylesheet",
+      "source_symbols": [
+        "source:man/dyc.css"
+      ],
+      "responsibility": "Styles generated upstream API documentation only.",
+      "fabushi_canonical_owner": "Canonical documentation/build owner",
+      "fabushi_target": "Pure documentation presentation; no Fabushi product UI or design-system responsibility is inherited.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10091,
+      "source_path": "Telegram/ThirdParty/libfido2::man/eddsa_pk_new.3",
+      "source_blob_sha": "428d724a45eeed83b6ed957e01703d6403485834",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "man/eddsa_pk_new.3",
+        "object": "428d724a45eeed83b6ed957e01703d6403485834",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3656
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "EdDSA public-key ownership/conversion contract",
+      "source_symbols": [
+        "source:man/eddsa_pk_new.3"
+      ],
+      "responsibility": "Defines allocation/free and no-retained-reference conversion semantics between COSE EdDSA and vetted OpenSSL EVP keys.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical crypto dependency boundary",
+      "fabushi_target": "Preserve explicit key lifetime/ownership with vetted crypto libraries; do not implement custom EdDSA.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10092,
+      "source_path": "Telegram/ThirdParty/libfido2::man/es256_pk_new.3",
+      "source_blob_sha": "7d6be4d6223c18d97b4a25b832d83307d8611c61",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "man/es256_pk_new.3",
+        "object": "7d6be4d6223c18d97b4a25b832d83307d8611c61",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4002
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "ES256 public-key ownership/conversion contract",
+      "source_symbols": [
+        "source:man/es256_pk_new.3"
+      ],
+      "responsibility": "Defines allocation/free, uncompressed-point/coordinate parsing and no-retained-reference conversion semantics for COSE ES256/OpenSSL keys.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical crypto dependency boundary",
+      "fabushi_target": "Preserve strict key parsing/lifetime with vetted crypto libraries; do not implement custom ECDSA.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    }
+  ]
+}

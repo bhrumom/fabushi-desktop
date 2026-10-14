@@ -1,0 +1,2923 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6"
+  },
+  "exact_head_evidence": {
+    "source_repository": "desktop-app/lib_ui",
+    "source_commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+    "production_owner_audit_head": "7d1fcf83444040521a01d97a3e1bd2570522d222",
+    "parent_source_authority_run": 38195100566,
+    "parent_source_authority_job": 114635964356,
+    "evidence_status": "direct source read/decomposition complete; accounting descendant exact-head Actions required before this shard can validate current-head closure"
+  },
+  "accounting": {
+    "recursive_total": 16125,
+    "read_through": 13274,
+    "unread": 2851,
+    "unknown": 15845,
+    "omitted": 0,
+    "unknown_closed": 280
+  },
+  "range": {
+    "first_order": 13229,
+    "last_order": 13274,
+    "entries": 46,
+    "next_order": 13275
+  },
+  "rows": [
+    {
+      "recursive_order": 13229,
+      "source_path": "Telegram/lib_ui::ui/widgets/menu/menu_add_action_callback_factory.cpp",
+      "source_blob_sha": "f5f4bab47bf05fb37fd60211fae0a00dce93d0f8",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/menu/menu_add_action_callback_factory.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "f5f4bab47bf05fb37fd60211fae0a00dce93d0f8",
+        "size": 3420
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Menu::CreateAddActionCallback"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/menu/menu_add_action_callback_factory.cpp",
+      "responsibility": "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics.",
+      "responsibilities": [
+        "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics."
+      ],
+      "existing_owner_candidates": [
+        "SandMenu",
+        "SandPopover",
+        "SandContextMenu",
+        "SandMenuItem"
+      ],
+      "chosen_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_canonical_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-floating-primitives.tsx, frontend/src/recovered/ui/sand-menu-item.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandMenuContent",
+        "SandMenuItem",
+        "SandContextMenu",
+        "FloatingRoot"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:f5f4bab47bf05fb37fd60211fae0a00dce93d0f8",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13230,
+      "source_path": "Telegram/lib_ui::ui/widgets/menu/menu_add_action_callback_factory.h",
+      "source_blob_sha": "b84b2280f22ff5d4ee0009c5c65ce0f4c004d99b",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/menu/menu_add_action_callback_factory.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "b84b2280f22ff5d4ee0009c5c65ce0f4c004d99b",
+        "size": 697
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Menu::CreateAddActionCallback"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/menu/menu_add_action_callback_factory.h",
+      "responsibility": "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics.",
+      "responsibilities": [
+        "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics."
+      ],
+      "existing_owner_candidates": [
+        "SandMenu",
+        "SandPopover",
+        "SandContextMenu",
+        "SandMenuItem"
+      ],
+      "chosen_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_canonical_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-floating-primitives.tsx, frontend/src/recovered/ui/sand-menu-item.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandMenuContent",
+        "SandMenuItem",
+        "SandContextMenu",
+        "FloatingRoot"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:b84b2280f22ff5d4ee0009c5c65ce0f4c004d99b",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13231,
+      "source_path": "Telegram/lib_ui::ui/widgets/menu/menu_common.cpp",
+      "source_blob_sha": "badc14c32ab6fa4615593397f5915d5ac10077b6",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/menu/menu_common.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "badc14c32ab6fa4615593397f5915d5ac10077b6",
+        "size": 625
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Menu::CreateAction",
+        "Ui::Menu::TriggeredSource"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/menu/menu_common.cpp",
+      "responsibility": "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics.",
+      "responsibilities": [
+        "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics."
+      ],
+      "existing_owner_candidates": [
+        "SandMenu",
+        "SandPopover",
+        "SandContextMenu",
+        "SandMenuItem"
+      ],
+      "chosen_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_canonical_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-floating-primitives.tsx, frontend/src/recovered/ui/sand-menu-item.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandMenuContent",
+        "SandMenuItem",
+        "SandContextMenu",
+        "FloatingRoot"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:badc14c32ab6fa4615593397f5915d5ac10077b6",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13232,
+      "source_path": "Telegram/lib_ui::ui/widgets/menu/menu_common.h",
+      "source_blob_sha": "f4e6cf8671261b97127ed920fc5a1d0ec6427c33",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/menu/menu_common.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "f4e6cf8671261b97127ed920fc5a1d0ec6427c33",
+        "size": 617
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Menu::CreateAction",
+        "Ui::Menu::TriggeredSource"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/menu/menu_common.h",
+      "responsibility": "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics.",
+      "responsibilities": [
+        "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics."
+      ],
+      "existing_owner_candidates": [
+        "SandMenu",
+        "SandPopover",
+        "SandContextMenu",
+        "SandMenuItem"
+      ],
+      "chosen_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_canonical_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-floating-primitives.tsx, frontend/src/recovered/ui/sand-menu-item.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandMenuContent",
+        "SandMenuItem",
+        "SandContextMenu",
+        "FloatingRoot"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:f4e6cf8671261b97127ed920fc5a1d0ec6427c33",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13233,
+      "source_path": "Telegram/lib_ui::ui/widgets/menu/menu_item_base.cpp",
+      "source_blob_sha": "0787e80cf0e895492651723e4ea9a48bee22b922",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/menu/menu_item_base.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "0787e80cf0e895492651723e4ea9a48bee22b922",
+        "size": 5051
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Menu::ItemBase"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/menu/menu_item_base.cpp",
+      "responsibility": "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics.",
+      "responsibilities": [
+        "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics."
+      ],
+      "existing_owner_candidates": [
+        "SandMenu",
+        "SandPopover",
+        "SandContextMenu",
+        "SandMenuItem"
+      ],
+      "chosen_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_canonical_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-floating-primitives.tsx, frontend/src/recovered/ui/sand-menu-item.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandMenuContent",
+        "SandMenuItem",
+        "SandContextMenu",
+        "FloatingRoot"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:0787e80cf0e895492651723e4ea9a48bee22b922",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13234,
+      "source_path": "Telegram/lib_ui::ui/widgets/menu/menu_item_base.h",
+      "source_blob_sha": "7b329a1dac19379370e503c782a4f18abf6d2033",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/menu/menu_item_base.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "7b329a1dac19379370e503c782a4f18abf6d2033",
+        "size": 2211
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Menu::ItemBase"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/menu/menu_item_base.h",
+      "responsibility": "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics.",
+      "responsibilities": [
+        "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics."
+      ],
+      "existing_owner_candidates": [
+        "SandMenu",
+        "SandPopover",
+        "SandContextMenu",
+        "SandMenuItem"
+      ],
+      "chosen_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_canonical_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-floating-primitives.tsx, frontend/src/recovered/ui/sand-menu-item.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandMenuContent",
+        "SandMenuItem",
+        "SandContextMenu",
+        "FloatingRoot"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:7b329a1dac19379370e503c782a4f18abf6d2033",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13235,
+      "source_path": "Telegram/lib_ui::ui/widgets/menu/menu_multiline_action.cpp",
+      "source_blob_sha": "db27772483e0a9134957e13f32afb3ce7fae8d01",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/menu/menu_multiline_action.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "db27772483e0a9134957e13f32afb3ce7fae8d01",
+        "size": 3148
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Menu::MultilineAction"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/menu/menu_multiline_action.cpp",
+      "responsibility": "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics.",
+      "responsibilities": [
+        "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics."
+      ],
+      "existing_owner_candidates": [
+        "SandMenu",
+        "SandPopover",
+        "SandContextMenu",
+        "SandMenuItem"
+      ],
+      "chosen_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_canonical_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-floating-primitives.tsx, frontend/src/recovered/ui/sand-menu-item.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandMenuContent",
+        "SandMenuItem",
+        "SandContextMenu",
+        "FloatingRoot"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:db27772483e0a9134957e13f32afb3ce7fae8d01",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13236,
+      "source_path": "Telegram/lib_ui::ui/widgets/menu/menu_multiline_action.h",
+      "source_blob_sha": "448fad281102a7b1d1796d681b7315c5000431ce",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/menu/menu_multiline_action.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "448fad281102a7b1d1796d681b7315c5000431ce",
+        "size": 1514
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Menu::MultilineAction"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/menu/menu_multiline_action.h",
+      "responsibility": "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics.",
+      "responsibilities": [
+        "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics."
+      ],
+      "existing_owner_candidates": [
+        "SandMenu",
+        "SandPopover",
+        "SandContextMenu",
+        "SandMenuItem"
+      ],
+      "chosen_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_canonical_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-floating-primitives.tsx, frontend/src/recovered/ui/sand-menu-item.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandMenuContent",
+        "SandMenuItem",
+        "SandContextMenu",
+        "FloatingRoot"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:448fad281102a7b1d1796d681b7315c5000431ce",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13237,
+      "source_path": "Telegram/lib_ui::ui/widgets/menu/menu_separator.cpp",
+      "source_blob_sha": "981d609d9a1d34c78df2beb9b21d853b4174fcad",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/menu/menu_separator.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "981d609d9a1d34c78df2beb9b21d853b4174fcad",
+        "size": 1194
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Menu::Separator"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/menu/menu_separator.cpp",
+      "responsibility": "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics.",
+      "responsibilities": [
+        "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics."
+      ],
+      "existing_owner_candidates": [
+        "SandMenu",
+        "SandPopover",
+        "SandContextMenu",
+        "SandMenuItem"
+      ],
+      "chosen_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_canonical_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-floating-primitives.tsx, frontend/src/recovered/ui/sand-menu-item.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandMenuContent",
+        "SandMenuItem",
+        "SandContextMenu",
+        "FloatingRoot"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:981d609d9a1d34c78df2beb9b21d853b4174fcad",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13238,
+      "source_path": "Telegram/lib_ui::ui/widgets/menu/menu_separator.h",
+      "source_blob_sha": "9c06a86aef2d12f6c3e8c9aed790d38a8720efb9",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/menu/menu_separator.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "9c06a86aef2d12f6c3e8c9aed790d38a8720efb9",
+        "size": 1013
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Menu::Separator"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/menu/menu_separator.h",
+      "responsibility": "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics.",
+      "responsibilities": [
+        "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics."
+      ],
+      "existing_owner_candidates": [
+        "SandMenu",
+        "SandPopover",
+        "SandContextMenu",
+        "SandMenuItem"
+      ],
+      "chosen_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_canonical_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-floating-primitives.tsx, frontend/src/recovered/ui/sand-menu-item.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandMenuContent",
+        "SandMenuItem",
+        "SandContextMenu",
+        "FloatingRoot"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:9c06a86aef2d12f6c3e8c9aed790d38a8720efb9",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13239,
+      "source_path": "Telegram/lib_ui::ui/widgets/menu/menu_toggle.cpp",
+      "source_blob_sha": "ed337871d920dd322ed4de058e553365a500821c",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/menu/menu_toggle.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "ed337871d920dd322ed4de058e553365a500821c",
+        "size": 1789
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Menu::Toggle"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/menu/menu_toggle.cpp",
+      "responsibility": "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics.",
+      "responsibilities": [
+        "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics."
+      ],
+      "existing_owner_candidates": [
+        "SandMenu",
+        "SandPopover",
+        "SandContextMenu",
+        "SandMenuItem"
+      ],
+      "chosen_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_canonical_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-floating-primitives.tsx, frontend/src/recovered/ui/sand-menu-item.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandMenuContent",
+        "SandMenuItem",
+        "SandContextMenu",
+        "FloatingRoot"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:ed337871d920dd322ed4de058e553365a500821c",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13240,
+      "source_path": "Telegram/lib_ui::ui/widgets/menu/menu_toggle.h",
+      "source_blob_sha": "16d33980f7adc1eaa4aaa379833fce820ae30268",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/menu/menu_toggle.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "16d33980f7adc1eaa4aaa379833fce820ae30268",
+        "size": 920
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Menu::Toggle"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/menu/menu_toggle.h",
+      "responsibility": "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics.",
+      "responsibilities": [
+        "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics."
+      ],
+      "existing_owner_candidates": [
+        "SandMenu",
+        "SandPopover",
+        "SandContextMenu",
+        "SandMenuItem"
+      ],
+      "chosen_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_canonical_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-floating-primitives.tsx, frontend/src/recovered/ui/sand-menu-item.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandMenuContent",
+        "SandMenuItem",
+        "SandContextMenu",
+        "FloatingRoot"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:16d33980f7adc1eaa4aaa379833fce820ae30268",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13241,
+      "source_path": "Telegram/lib_ui::ui/widgets/pill_tabs.cpp",
+      "source_blob_sha": "68aa17d0c9f8bb1bb4a5ae47c1f99b1338aad674",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/pill_tabs.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "68aa17d0c9f8bb1bb4a5ae47c1f99b1338aad674",
+        "size": 4947
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::PillTabs"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/pill_tabs.cpp",
+      "responsibility": "Tab selection, keyboard navigation, responsive overflow/reorder and accessibility semantics.",
+      "responsibilities": [
+        "Tab selection, keyboard navigation, responsive overflow/reorder and accessibility semantics."
+      ],
+      "existing_owner_candidates": [
+        "SandTabs",
+        "Design System"
+      ],
+      "chosen_owner": "Existing canonical Tabs owner",
+      "fabushi_canonical_owner": "Existing canonical Tabs owner",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandTabs",
+        "SandTabPanel"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:68aa17d0c9f8bb1bb4a5ae47c1f99b1338aad674",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13242,
+      "source_path": "Telegram/lib_ui::ui/widgets/pill_tabs.h",
+      "source_blob_sha": "02505173fb71dca4bfc4ebda4ffa628993af0e6e",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/pill_tabs.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "02505173fb71dca4bfc4ebda4ffa628993af0e6e",
+        "size": 1382
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::PillTabs"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/pill_tabs.h",
+      "responsibility": "Tab selection, keyboard navigation, responsive overflow/reorder and accessibility semantics.",
+      "responsibilities": [
+        "Tab selection, keyboard navigation, responsive overflow/reorder and accessibility semantics."
+      ],
+      "existing_owner_candidates": [
+        "SandTabs",
+        "Design System"
+      ],
+      "chosen_owner": "Existing canonical Tabs owner",
+      "fabushi_canonical_owner": "Existing canonical Tabs owner",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandTabs",
+        "SandTabPanel"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:02505173fb71dca4bfc4ebda4ffa628993af0e6e",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13243,
+      "source_path": "Telegram/lib_ui::ui/widgets/popup_menu.cpp",
+      "source_blob_sha": "cb2983eabcd9569118c542db50b7b547cecf0331",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/popup_menu.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "cb2983eabcd9569118c542db50b7b547cecf0331",
+        "size": 41433
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::PopupMenu"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/popup_menu.cpp",
+      "responsibility": "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics.",
+      "responsibilities": [
+        "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics."
+      ],
+      "existing_owner_candidates": [
+        "SandMenu",
+        "SandPopover",
+        "SandContextMenu",
+        "SandMenuItem"
+      ],
+      "chosen_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_canonical_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-floating-primitives.tsx, frontend/src/recovered/ui/sand-menu-item.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandMenuContent",
+        "SandMenuItem",
+        "SandContextMenu",
+        "FloatingRoot"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:cb2983eabcd9569118c542db50b7b547cecf0331",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13244,
+      "source_path": "Telegram/lib_ui::ui/widgets/popup_menu.h",
+      "source_blob_sha": "6b63e683106f5baf71881156f2ed573b2f24ab0f",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/popup_menu.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "6b63e683106f5baf71881156f2ed573b2f24ab0f",
+        "size": 9197
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::PopupMenu"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/popup_menu.h",
+      "responsibility": "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics.",
+      "responsibilities": [
+        "Menu/dropdown action selection, keyboard navigation, submenu/dismissal/focus-return/outside-click/disabled/a11y/lifetime semantics."
+      ],
+      "existing_owner_candidates": [
+        "SandMenu",
+        "SandPopover",
+        "SandContextMenu",
+        "SandMenuItem"
+      ],
+      "chosen_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_canonical_owner": "Existing canonical SandMenu/SandPopover/MenuItem floating-surface owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-floating-primitives.tsx, frontend/src/recovered/ui/sand-menu-item.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandMenuContent",
+        "SandMenuItem",
+        "SandContextMenu",
+        "FloatingRoot"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-menu-item.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:6b63e683106f5baf71881156f2ed573b2f24ab0f",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13245,
+      "source_path": "Telegram/lib_ui::ui/widgets/rp_window.cpp",
+      "source_blob_sha": "9946cde57d574b8bf809e5461434bd725480b4ea",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/rp_window.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "9946cde57d574b8bf809e5461434bd725480b4ea",
+        "size": 3412
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::RpWindow"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/rp_window.cpp",
+      "responsibility": "Native window/title/non-client hit-test/fullscreen/resize/input/gesture/lifecycle semantics through thin source-neutral platform adapters.",
+      "responsibilities": [
+        "Native window/title/non-client hit-test/fullscreen/resize/input/gesture/lifecycle semantics through thin source-neutral platform adapters."
+      ],
+      "existing_owner_candidates": [
+        "Electron BrowserWindow/platform adapter",
+        "Window Chrome",
+        "platform-input"
+      ],
+      "chosen_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform-input owners",
+      "fabushi_canonical_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform-input owners",
+      "fabushi_target": "source/electron-main/window-chrome.ts, source/shared/window-chrome.ts, source/electron-main/platform-input.ts, frontend/src/recovered/features/window-chrome/view.tsx",
+      "fabushi_target_paths": [
+        "source/electron-main/window-chrome.ts",
+        "source/shared/window-chrome.ts",
+        "source/electron-main/platform-input.ts",
+        "frontend/src/recovered/features/window-chrome/view.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "windowChromeOptions",
+        "attachWindowStateBroadcast",
+        "attachWindowFocusForwarding",
+        "WindowChrome"
+      ],
+      "production_entrypoints": [
+        "source/electron-main/window-chrome.ts",
+        "source/shared/window-chrome.ts",
+        "source/electron-main/platform-input.ts",
+        "frontend/src/recovered/features/window-chrome/view.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:9946cde57d574b8bf809e5461434bd725480b4ea",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13246,
+      "source_path": "Telegram/lib_ui::ui/widgets/rp_window.h",
+      "source_blob_sha": "54d565ba926dd67df742f263c515671c47e296e2",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/rp_window.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "54d565ba926dd67df742f263c515671c47e296e2",
+        "size": 2777
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::RpWindow"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/rp_window.h",
+      "responsibility": "Native window/title/non-client hit-test/fullscreen/resize/input/gesture/lifecycle semantics through thin source-neutral platform adapters.",
+      "responsibilities": [
+        "Native window/title/non-client hit-test/fullscreen/resize/input/gesture/lifecycle semantics through thin source-neutral platform adapters."
+      ],
+      "existing_owner_candidates": [
+        "Electron BrowserWindow/platform adapter",
+        "Window Chrome",
+        "platform-input"
+      ],
+      "chosen_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform-input owners",
+      "fabushi_canonical_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform-input owners",
+      "fabushi_target": "source/electron-main/window-chrome.ts, source/shared/window-chrome.ts, source/electron-main/platform-input.ts, frontend/src/recovered/features/window-chrome/view.tsx",
+      "fabushi_target_paths": [
+        "source/electron-main/window-chrome.ts",
+        "source/shared/window-chrome.ts",
+        "source/electron-main/platform-input.ts",
+        "frontend/src/recovered/features/window-chrome/view.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "windowChromeOptions",
+        "attachWindowStateBroadcast",
+        "attachWindowFocusForwarding",
+        "WindowChrome"
+      ],
+      "production_entrypoints": [
+        "source/electron-main/window-chrome.ts",
+        "source/shared/window-chrome.ts",
+        "source/electron-main/platform-input.ts",
+        "frontend/src/recovered/features/window-chrome/view.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:54d565ba926dd67df742f263c515671c47e296e2",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13247,
+      "source_path": "Telegram/lib_ui::ui/widgets/scroll_area.cpp",
+      "source_blob_sha": "bf4af8e28694cdd2154cda30e031e6a28ec19472",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/scroll_area.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "bf4af8e28694cdd2154cda30e031e6a28ec19472",
+        "size": 26768
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::ScrollArea",
+        "Ui::ScrollBar",
+        "Ui::ScrollToRequest"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/scroll_area.cpp",
+      "responsibility": "Scroll bounds, axis-lock, wheel/touch/kinetic/elastic temporal semantics, scrollbar visibility and scroll-to behavior.",
+      "responsibilities": [
+        "Scroll bounds, axis-lock, wheel/touch/kinetic/elastic temporal semantics, scrollbar visibility and scroll-to behavior."
+      ],
+      "existing_owner_candidates": [
+        "Chromium native scroll",
+        "horizontal-scroll-state",
+        "canonical list/transcript scroll"
+      ],
+      "chosen_owner": "Existing canonical scroll/input state + Chromium scrolling owner",
+      "fabushi_canonical_owner": "Existing canonical scroll/input state + Chromium scrolling owner",
+      "fabushi_target": "frontend/src/recovered/features/conversation/workspace/horizontal-scroll-state.ts, frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/features/conversation/workspace/horizontal-scroll-state.ts",
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "updateHorizontalScrollWheelLock",
+        "normalizeHorizontalScrollWheelDelta",
+        "Transcript"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/horizontal-scroll-state.ts",
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:bf4af8e28694cdd2154cda30e031e6a28ec19472",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13248,
+      "source_path": "Telegram/lib_ui::ui/widgets/scroll_area.h",
+      "source_blob_sha": "a05ab78b40b2f3af5c4d3b3ff8795cb9b01f9893",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/scroll_area.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "a05ab78b40b2f3af5c4d3b3ff8795cb9b01f9893",
+        "size": 7979
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::ScrollArea",
+        "Ui::ScrollBar",
+        "Ui::ScrollToRequest"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/scroll_area.h",
+      "responsibility": "Scroll bounds, axis-lock, wheel/touch/kinetic/elastic temporal semantics, scrollbar visibility and scroll-to behavior.",
+      "responsibilities": [
+        "Scroll bounds, axis-lock, wheel/touch/kinetic/elastic temporal semantics, scrollbar visibility and scroll-to behavior."
+      ],
+      "existing_owner_candidates": [
+        "Chromium native scroll",
+        "horizontal-scroll-state",
+        "canonical list/transcript scroll"
+      ],
+      "chosen_owner": "Existing canonical scroll/input state + Chromium scrolling owner",
+      "fabushi_canonical_owner": "Existing canonical scroll/input state + Chromium scrolling owner",
+      "fabushi_target": "frontend/src/recovered/features/conversation/workspace/horizontal-scroll-state.ts, frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/features/conversation/workspace/horizontal-scroll-state.ts",
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "updateHorizontalScrollWheelLock",
+        "normalizeHorizontalScrollWheelDelta",
+        "Transcript"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/horizontal-scroll-state.ts",
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:a05ab78b40b2f3af5c4d3b3ff8795cb9b01f9893",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13249,
+      "source_path": "Telegram/lib_ui::ui/widgets/separate_panel.cpp",
+      "source_blob_sha": "b80de8c698cde3e5b16c17a73b775ded0aa523e5",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/separate_panel.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "b80de8c698cde3e5b16c17a73b775ded0aa523e5",
+        "size": 46987
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::SeparatePanel",
+        "Ui::SeparatePanel::ResizeEdge"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/separate_panel.cpp",
+      "responsibility": "Native window/title/non-client hit-test/fullscreen/resize/input/gesture/lifecycle semantics through thin source-neutral platform adapters.",
+      "responsibilities": [
+        "Native window/title/non-client hit-test/fullscreen/resize/input/gesture/lifecycle semantics through thin source-neutral platform adapters."
+      ],
+      "existing_owner_candidates": [
+        "Electron BrowserWindow/platform adapter",
+        "Window Chrome",
+        "platform-input"
+      ],
+      "chosen_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform-input owners",
+      "fabushi_canonical_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform-input owners",
+      "fabushi_target": "source/electron-main/window-chrome.ts, source/shared/window-chrome.ts, source/electron-main/platform-input.ts, frontend/src/recovered/features/window-chrome/view.tsx",
+      "fabushi_target_paths": [
+        "source/electron-main/window-chrome.ts",
+        "source/shared/window-chrome.ts",
+        "source/electron-main/platform-input.ts",
+        "frontend/src/recovered/features/window-chrome/view.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "windowChromeOptions",
+        "attachWindowStateBroadcast",
+        "attachWindowFocusForwarding",
+        "WindowChrome"
+      ],
+      "production_entrypoints": [
+        "source/electron-main/window-chrome.ts",
+        "source/shared/window-chrome.ts",
+        "source/electron-main/platform-input.ts",
+        "frontend/src/recovered/features/window-chrome/view.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:b80de8c698cde3e5b16c17a73b775ded0aa523e5",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13250,
+      "source_path": "Telegram/lib_ui::ui/widgets/separate_panel.h",
+      "source_blob_sha": "bcabc035160857ded289f30c8ca07aa6f619aeb5",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/separate_panel.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "bcabc035160857ded289f30c8ca07aa6f619aeb5",
+        "size": 7867
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::SeparatePanel",
+        "Ui::SeparatePanel::ResizeEdge"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/separate_panel.h",
+      "responsibility": "Native window/title/non-client hit-test/fullscreen/resize/input/gesture/lifecycle semantics through thin source-neutral platform adapters.",
+      "responsibilities": [
+        "Native window/title/non-client hit-test/fullscreen/resize/input/gesture/lifecycle semantics through thin source-neutral platform adapters."
+      ],
+      "existing_owner_candidates": [
+        "Electron BrowserWindow/platform adapter",
+        "Window Chrome",
+        "platform-input"
+      ],
+      "chosen_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform-input owners",
+      "fabushi_canonical_owner": "Existing Electron BrowserWindow + canonical Window Chrome/platform-input owners",
+      "fabushi_target": "source/electron-main/window-chrome.ts, source/shared/window-chrome.ts, source/electron-main/platform-input.ts, frontend/src/recovered/features/window-chrome/view.tsx",
+      "fabushi_target_paths": [
+        "source/electron-main/window-chrome.ts",
+        "source/shared/window-chrome.ts",
+        "source/electron-main/platform-input.ts",
+        "frontend/src/recovered/features/window-chrome/view.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "windowChromeOptions",
+        "attachWindowStateBroadcast",
+        "attachWindowFocusForwarding",
+        "WindowChrome"
+      ],
+      "production_entrypoints": [
+        "source/electron-main/window-chrome.ts",
+        "source/shared/window-chrome.ts",
+        "source/electron-main/platform-input.ts",
+        "frontend/src/recovered/features/window-chrome/view.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:bcabc035160857ded289f30c8ca07aa6f619aeb5",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13251,
+      "source_path": "Telegram/lib_ui::ui/widgets/shadow.cpp",
+      "source_blob_sha": "d6f416bc4d661a4673b7f4607dba1ea1dc9a9600",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/shadow.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "d6f416bc4d661a4673b7f4607dba1ea1dc9a9600",
+        "size": 11855
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::PlainShadow",
+        "Ui::BoxShadow"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/shadow.cpp",
+      "responsibility": "Source-neutral UI/platform behavior retained through the existing canonical owner.",
+      "responsibilities": [
+        "Source-neutral UI/platform behavior retained through the existing canonical owner."
+      ],
+      "existing_owner_candidates": [
+        "canonical Design System/component owner"
+      ],
+      "chosen_owner": "Existing canonical UI/platform owner",
+      "fabushi_canonical_owner": "Existing canonical UI/platform owner",
+      "fabushi_target": "frontend/src/production/ProductionRenderer.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "ProductionRenderer"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:d6f416bc4d661a4673b7f4607dba1ea1dc9a9600",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13252,
+      "source_path": "Telegram/lib_ui::ui/widgets/shadow.h",
+      "source_blob_sha": "add327563936a2bf1c3f50f672f40511513d25df",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/shadow.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "add327563936a2bf1c3f50f672f40511513d25df",
+        "size": 2723
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::PlainShadow",
+        "Ui::BoxShadow"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/shadow.h",
+      "responsibility": "Source-neutral UI/platform behavior retained through the existing canonical owner.",
+      "responsibilities": [
+        "Source-neutral UI/platform behavior retained through the existing canonical owner."
+      ],
+      "existing_owner_candidates": [
+        "canonical Design System/component owner"
+      ],
+      "chosen_owner": "Existing canonical UI/platform owner",
+      "fabushi_canonical_owner": "Existing canonical UI/platform owner",
+      "fabushi_target": "frontend/src/production/ProductionRenderer.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "ProductionRenderer"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:add327563936a2bf1c3f50f672f40511513d25df",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13253,
+      "source_path": "Telegram/lib_ui::ui/widgets/side_bar_button.cpp",
+      "source_blob_sha": "76339720150d28c870ff64e7b594ea4e09161f5f",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/side_bar_button.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "76339720150d28c870ff64e7b594ea4e09161f5f",
+        "size": 10712
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::SideBarButton"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/side_bar_button.cpp",
+      "responsibility": "Primary navigation button label/badge/lock/selection/accessibility behavior under the single ProductShell.",
+      "responsibilities": [
+        "Primary navigation button label/badge/lock/selection/accessibility behavior under the single ProductShell."
+      ],
+      "existing_owner_candidates": [
+        "ProductShell primary navigation",
+        "canonical Button"
+      ],
+      "chosen_owner": "Existing ProductShell navigation + canonical Button owner",
+      "fabushi_canonical_owner": "Existing ProductShell navigation + canonical Button owner",
+      "fabushi_target": "frontend/src/production/ProductionRenderer.tsx, frontend/src/recovered/ui/button-state.ts",
+      "fabushi_target_paths": [
+        "frontend/src/production/ProductionRenderer.tsx",
+        "frontend/src/recovered/ui/button-state.ts"
+      ],
+      "fabushi_target_symbols": [
+        "ProductionRenderer",
+        "resolveButtonInteractionState"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/ProductionRenderer.tsx",
+        "frontend/src/recovered/ui/button-state.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:76339720150d28c870ff64e7b594ea4e09161f5f",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13254,
+      "source_path": "Telegram/lib_ui::ui/widgets/side_bar_button.h",
+      "source_blob_sha": "5e9e3dc821a5592fdc6791e69841cda82ea9c4e7",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/side_bar_button.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "5e9e3dc821a5592fdc6791e69841cda82ea9c4e7",
+        "size": 3688
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::SideBarButton"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/side_bar_button.h",
+      "responsibility": "Primary navigation button label/badge/lock/selection/accessibility behavior under the single ProductShell.",
+      "responsibilities": [
+        "Primary navigation button label/badge/lock/selection/accessibility behavior under the single ProductShell."
+      ],
+      "existing_owner_candidates": [
+        "ProductShell primary navigation",
+        "canonical Button"
+      ],
+      "chosen_owner": "Existing ProductShell navigation + canonical Button owner",
+      "fabushi_canonical_owner": "Existing ProductShell navigation + canonical Button owner",
+      "fabushi_target": "frontend/src/production/ProductionRenderer.tsx, frontend/src/recovered/ui/button-state.ts",
+      "fabushi_target_paths": [
+        "frontend/src/production/ProductionRenderer.tsx",
+        "frontend/src/recovered/ui/button-state.ts"
+      ],
+      "fabushi_target_symbols": [
+        "ProductionRenderer",
+        "resolveButtonInteractionState"
+      ],
+      "production_entrypoints": [
+        "frontend/src/production/ProductionRenderer.tsx",
+        "frontend/src/recovered/ui/button-state.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:5e9e3dc821a5592fdc6791e69841cda82ea9c4e7",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13255,
+      "source_path": "Telegram/lib_ui::ui/widgets/time_input.cpp",
+      "source_blob_sha": "7be4b1e0ba7fdba2b913f3014b69fa561f282df0",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/time_input.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "7be4b1e0ba7fdba2b913f3014b69fa561f282df0",
+        "size": 9875
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::TimeInput",
+        "Ui::ValidateTime"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/time_input.cpp",
+      "responsibility": "Editable input value/focus/error/submit/IME/clipboard/format/link/selection/accessibility/typed validation semantics under canonical field/composer owners.",
+      "responsibilities": [
+        "Editable input value/focus/error/submit/IME/clipboard/format/link/selection/accessibility/typed validation semantics under canonical field/composer owners."
+      ],
+      "existing_owner_candidates": [
+        "SandTextField/SandTextarea",
+        "RichTextEditor",
+        "platform input composition state",
+        "Composer"
+      ],
+      "chosen_owner": "Existing canonical TextField/Composer/input-composition owners",
+      "fabushi_canonical_owner": "Existing canonical TextField/Composer/input-composition owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx, frontend/src/recovered/features/conversation/workspace/input-composition-state.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "frontend/src/recovered/features/conversation/workspace/input-composition-state.ts"
+      ],
+      "fabushi_target_symbols": [
+        "SandTextField",
+        "SandTextarea",
+        "RichTextEditor",
+        "promptEditorKeyAction"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "frontend/src/recovered/features/conversation/workspace/input-composition-state.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:7be4b1e0ba7fdba2b913f3014b69fa561f282df0",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13256,
+      "source_path": "Telegram/lib_ui::ui/widgets/time_input.h",
+      "source_blob_sha": "3bd9aec46ce2385a33c23298972dab4ceb9ba800",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/time_input.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "3bd9aec46ce2385a33c23298972dab4ceb9ba800",
+        "size": 2262
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::TimeInput",
+        "Ui::ValidateTime"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/time_input.h",
+      "responsibility": "Editable input value/focus/error/submit/IME/clipboard/format/link/selection/accessibility/typed validation semantics under canonical field/composer owners.",
+      "responsibilities": [
+        "Editable input value/focus/error/submit/IME/clipboard/format/link/selection/accessibility/typed validation semantics under canonical field/composer owners."
+      ],
+      "existing_owner_candidates": [
+        "SandTextField/SandTextarea",
+        "RichTextEditor",
+        "platform input composition state",
+        "Composer"
+      ],
+      "chosen_owner": "Existing canonical TextField/Composer/input-composition owners",
+      "fabushi_canonical_owner": "Existing canonical TextField/Composer/input-composition owners",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx, frontend/src/recovered/features/conversation/workspace/input-composition-state.ts",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "frontend/src/recovered/features/conversation/workspace/input-composition-state.ts"
+      ],
+      "fabushi_target_symbols": [
+        "SandTextField",
+        "SandTextarea",
+        "RichTextEditor",
+        "promptEditorKeyAction"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "frontend/src/recovered/features/conversation/workspace/input-composition-state.ts"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:3bd9aec46ce2385a33c23298972dab4ceb9ba800",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13257,
+      "source_path": "Telegram/lib_ui::ui/widgets/tooltip.cpp",
+      "source_blob_sha": "34c09098bcc7281b06da0756fbd8b558291f1374",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/tooltip.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "34c09098bcc7281b06da0756fbd8b558291f1374",
+        "size": 16367
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Tooltip",
+        "Ui::ImportantTooltip"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/tooltip.cpp",
+      "responsibility": "Transient status/tooltip timing, visibility, positioning, dismissal, focus and accessibility lifecycle.",
+      "responsibilities": [
+        "Transient status/tooltip timing, visibility, positioning, dismissal, focus and accessibility lifecycle."
+      ],
+      "existing_owner_candidates": [
+        "canonical Toast",
+        "SandTooltip",
+        "floating surface lifecycle"
+      ],
+      "chosen_owner": "Existing canonical Toast/Tooltip/floating-surface owner",
+      "fabushi_canonical_owner": "Existing canonical Toast/Tooltip/floating-surface owner",
+      "fabushi_target": "frontend/src/recovered/ui/sand-floating-primitives.tsx, frontend/src/recovered/ui/sand-status-primitives.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-status-primitives.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandTooltip",
+        "FloatingRoot",
+        "canonical status surfaces"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-status-primitives.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:34c09098bcc7281b06da0756fbd8b558291f1374",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13258,
+      "source_path": "Telegram/lib_ui::ui/widgets/tooltip.h",
+      "source_blob_sha": "4519660e2bd040bfc7b652b05990c04d4b722241",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/tooltip.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "4519660e2bd040bfc7b652b05990c04d4b722241",
+        "size": 3908
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Tooltip",
+        "Ui::ImportantTooltip"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/tooltip.h",
+      "responsibility": "Transient status/tooltip timing, visibility, positioning, dismissal, focus and accessibility lifecycle.",
+      "responsibilities": [
+        "Transient status/tooltip timing, visibility, positioning, dismissal, focus and accessibility lifecycle."
+      ],
+      "existing_owner_candidates": [
+        "canonical Toast",
+        "SandTooltip",
+        "floating surface lifecycle"
+      ],
+      "chosen_owner": "Existing canonical Toast/Tooltip/floating-surface owner",
+      "fabushi_canonical_owner": "Existing canonical Toast/Tooltip/floating-surface owner",
+      "fabushi_target": "frontend/src/recovered/ui/sand-floating-primitives.tsx, frontend/src/recovered/ui/sand-status-primitives.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-status-primitives.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandTooltip",
+        "FloatingRoot",
+        "canonical status surfaces"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-floating-primitives.tsx",
+        "frontend/src/recovered/ui/sand-status-primitives.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:4519660e2bd040bfc7b652b05990c04d4b722241",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13259,
+      "source_path": "Telegram/lib_ui::ui/widgets/widgets.style",
+      "source_blob_sha": "8b8df7d77594ea6f813f4e040767344c899b8aae",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/widgets/widgets.style",
+        "mode": "100644",
+        "type": "blob",
+        "object": "8b8df7d77594ea6f813f4e040767344c899b8aae",
+        "size": 35299
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "style::WidgetStyles"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/widgets/widgets.style",
+      "responsibility": "Semantic color/font/icon/scale/RTL/layout/wrap/motion/reorder behavior through Fabushi tokens and canonical components, not Qt presentation runtime.",
+      "responsibilities": [
+        "Semantic color/font/icon/scale/RTL/layout/wrap/motion/reorder behavior through Fabushi tokens and canonical components, not Qt presentation runtime."
+      ],
+      "existing_owner_candidates": [
+        "Design System",
+        "canonical component/layout primitives",
+        "Chromium CSS/DOM renderer"
+      ],
+      "chosen_owner": "Existing Fabushi Design System + canonical layout/motion primitives",
+      "fabushi_canonical_owner": "Existing Fabushi Design System + canonical layout/motion primitives",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/ui/sand-kit-primitives.tsx, frontend/src/production/ProductionRenderer.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandTextField",
+        "canonical semantic components",
+        "ProductionRenderer"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:8b8df7d77594ea6f813f4e040767344c899b8aae",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13260,
+      "source_path": "Telegram/lib_ui::ui/wrap/fade_wrap.cpp",
+      "source_blob_sha": "d5ec5b211407e8d2c4ecbbb994d39b172dab244c",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/wrap/fade_wrap.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "d5ec5b211407e8d2c4ecbbb994d39b172dab244c",
+        "size": 3010
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::FadeWrap",
+        "Ui::FadeShadow"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/wrap/fade_wrap.cpp",
+      "responsibility": "Semantic color/font/icon/scale/RTL/layout/wrap/motion/reorder behavior through Fabushi tokens and canonical components, not Qt presentation runtime.",
+      "responsibilities": [
+        "Semantic color/font/icon/scale/RTL/layout/wrap/motion/reorder behavior through Fabushi tokens and canonical components, not Qt presentation runtime."
+      ],
+      "existing_owner_candidates": [
+        "Design System",
+        "canonical component/layout primitives",
+        "Chromium CSS/DOM renderer"
+      ],
+      "chosen_owner": "Existing Fabushi Design System + canonical layout/motion primitives",
+      "fabushi_canonical_owner": "Existing Fabushi Design System + canonical layout/motion primitives",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/ui/sand-kit-primitives.tsx, frontend/src/production/ProductionRenderer.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandTextField",
+        "canonical semantic components",
+        "ProductionRenderer"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:d5ec5b211407e8d2c4ecbbb994d39b172dab244c",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13261,
+      "source_path": "Telegram/lib_ui::ui/wrap/fade_wrap.h",
+      "source_blob_sha": "e9584443d14c8cba951eb6530cd204ac80f89e27",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/wrap/fade_wrap.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "e9584443d14c8cba951eb6530cd204ac80f89e27",
+        "size": 3198
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::FadeWrap",
+        "Ui::FadeShadow"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/wrap/fade_wrap.h",
+      "responsibility": "Semantic color/font/icon/scale/RTL/layout/wrap/motion/reorder behavior through Fabushi tokens and canonical components, not Qt presentation runtime.",
+      "responsibilities": [
+        "Semantic color/font/icon/scale/RTL/layout/wrap/motion/reorder behavior through Fabushi tokens and canonical components, not Qt presentation runtime."
+      ],
+      "existing_owner_candidates": [
+        "Design System",
+        "canonical component/layout primitives",
+        "Chromium CSS/DOM renderer"
+      ],
+      "chosen_owner": "Existing Fabushi Design System + canonical layout/motion primitives",
+      "fabushi_canonical_owner": "Existing Fabushi Design System + canonical layout/motion primitives",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/ui/sand-kit-primitives.tsx, frontend/src/production/ProductionRenderer.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandTextField",
+        "canonical semantic components",
+        "ProductionRenderer"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:e9584443d14c8cba951eb6530cd204ac80f89e27",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13262,
+      "source_path": "Telegram/lib_ui::ui/wrap/follow_slide_wrap.cpp",
+      "source_blob_sha": "ae9fd6f5ceffb34fdac66871676ff6eed7359078",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/wrap/follow_slide_wrap.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "ae9fd6f5ceffb34fdac66871676ff6eed7359078",
+        "size": 1176
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::FollowSlideWrap"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/wrap/follow_slide_wrap.cpp",
+      "responsibility": "Semantic color/font/icon/scale/RTL/layout/wrap/motion/reorder behavior through Fabushi tokens and canonical components, not Qt presentation runtime.",
+      "responsibilities": [
+        "Semantic color/font/icon/scale/RTL/layout/wrap/motion/reorder behavior through Fabushi tokens and canonical components, not Qt presentation runtime."
+      ],
+      "existing_owner_candidates": [
+        "Design System",
+        "canonical component/layout primitives",
+        "Chromium CSS/DOM renderer"
+      ],
+      "chosen_owner": "Existing Fabushi Design System + canonical layout/motion primitives",
+      "fabushi_canonical_owner": "Existing Fabushi Design System + canonical layout/motion primitives",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/ui/sand-kit-primitives.tsx, frontend/src/production/ProductionRenderer.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandTextField",
+        "canonical semantic components",
+        "ProductionRenderer"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:ae9fd6f5ceffb34fdac66871676ff6eed7359078",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13263,
+      "source_path": "Telegram/lib_ui::ui/wrap/follow_slide_wrap.h",
+      "source_blob_sha": "3e59b9fa81370edf6aa2732287837ec96c0e7437",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/wrap/follow_slide_wrap.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "3e59b9fa81370edf6aa2732287837ec96c0e7437",
+        "size": 1155
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::FollowSlideWrap"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/wrap/follow_slide_wrap.h",
+      "responsibility": "Semantic color/font/icon/scale/RTL/layout/wrap/motion/reorder behavior through Fabushi tokens and canonical components, not Qt presentation runtime.",
+      "responsibilities": [
+        "Semantic color/font/icon/scale/RTL/layout/wrap/motion/reorder behavior through Fabushi tokens and canonical components, not Qt presentation runtime."
+      ],
+      "existing_owner_candidates": [
+        "Design System",
+        "canonical component/layout primitives",
+        "Chromium CSS/DOM renderer"
+      ],
+      "chosen_owner": "Existing Fabushi Design System + canonical layout/motion primitives",
+      "fabushi_canonical_owner": "Existing Fabushi Design System + canonical layout/motion primitives",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/ui/sand-kit-primitives.tsx, frontend/src/production/ProductionRenderer.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandTextField",
+        "canonical semantic components",
+        "ProductionRenderer"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:3e59b9fa81370edf6aa2732287837ec96c0e7437",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13264,
+      "source_path": "Telegram/lib_ui::ui/wrap/padding_wrap.cpp",
+      "source_blob_sha": "26727c7ce0459dafa1d7afaf51257486c2c3e161",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/wrap/padding_wrap.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "26727c7ce0459dafa1d7afaf51257486c2c3e161",
+        "size": 1758
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::PaddingWrap"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/wrap/padding_wrap.cpp",
+      "responsibility": "Semantic color/font/icon/scale/RTL/layout/wrap/motion/reorder behavior through Fabushi tokens and canonical components, not Qt presentation runtime.",
+      "responsibilities": [
+        "Semantic color/font/icon/scale/RTL/layout/wrap/motion/reorder behavior through Fabushi tokens and canonical components, not Qt presentation runtime."
+      ],
+      "existing_owner_candidates": [
+        "Design System",
+        "canonical component/layout primitives",
+        "Chromium CSS/DOM renderer"
+      ],
+      "chosen_owner": "Existing Fabushi Design System + canonical layout/motion primitives",
+      "fabushi_canonical_owner": "Existing Fabushi Design System + canonical layout/motion primitives",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/ui/sand-kit-primitives.tsx, frontend/src/production/ProductionRenderer.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandTextField",
+        "canonical semantic components",
+        "ProductionRenderer"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:26727c7ce0459dafa1d7afaf51257486c2c3e161",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13265,
+      "source_path": "Telegram/lib_ui::ui/wrap/padding_wrap.h",
+      "source_blob_sha": "d1a073060174b515bb19516db93c91cbd311ecb6",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/wrap/padding_wrap.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "d1a073060174b515bb19516db93c91cbd311ecb6",
+        "size": 1507
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::PaddingWrap"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/wrap/padding_wrap.h",
+      "responsibility": "Semantic color/font/icon/scale/RTL/layout/wrap/motion/reorder behavior through Fabushi tokens and canonical components, not Qt presentation runtime.",
+      "responsibilities": [
+        "Semantic color/font/icon/scale/RTL/layout/wrap/motion/reorder behavior through Fabushi tokens and canonical components, not Qt presentation runtime."
+      ],
+      "existing_owner_candidates": [
+        "Design System",
+        "canonical component/layout primitives",
+        "Chromium CSS/DOM renderer"
+      ],
+      "chosen_owner": "Existing Fabushi Design System + canonical layout/motion primitives",
+      "fabushi_canonical_owner": "Existing Fabushi Design System + canonical layout/motion primitives",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/ui/sand-kit-primitives.tsx, frontend/src/production/ProductionRenderer.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandTextField",
+        "canonical semantic components",
+        "ProductionRenderer"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:d1a073060174b515bb19516db93c91cbd311ecb6",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13266,
+      "source_path": "Telegram/lib_ui::ui/wrap/slide_wrap.cpp",
+      "source_blob_sha": "0c868a892b741e9ea77d833b4388a13b5a8cb866",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/wrap/slide_wrap.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "0c868a892b741e9ea77d833b4388a13b5a8cb866",
+        "size": 4587
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::SlideWrap",
+        "Ui::MultiSlideTracker"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/wrap/slide_wrap.cpp",
+      "responsibility": "Semantic color/font/icon/scale/RTL/layout/wrap/motion/reorder behavior through Fabushi tokens and canonical components, not Qt presentation runtime.",
+      "responsibilities": [
+        "Semantic color/font/icon/scale/RTL/layout/wrap/motion/reorder behavior through Fabushi tokens and canonical components, not Qt presentation runtime."
+      ],
+      "existing_owner_candidates": [
+        "Design System",
+        "canonical component/layout primitives",
+        "Chromium CSS/DOM renderer"
+      ],
+      "chosen_owner": "Existing Fabushi Design System + canonical layout/motion primitives",
+      "fabushi_canonical_owner": "Existing Fabushi Design System + canonical layout/motion primitives",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/ui/sand-kit-primitives.tsx, frontend/src/production/ProductionRenderer.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandTextField",
+        "canonical semantic components",
+        "ProductionRenderer"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:0c868a892b741e9ea77d833b4388a13b5a8cb866",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13267,
+      "source_path": "Telegram/lib_ui::ui/wrap/slide_wrap.h",
+      "source_blob_sha": "021c14a6f5514983fcedeb908cf9cb9367dd14b7",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/wrap/slide_wrap.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "021c14a6f5514983fcedeb908cf9cb9367dd14b7",
+        "size": 3829
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::SlideWrap",
+        "Ui::MultiSlideTracker"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/wrap/slide_wrap.h",
+      "responsibility": "Semantic color/font/icon/scale/RTL/layout/wrap/motion/reorder behavior through Fabushi tokens and canonical components, not Qt presentation runtime.",
+      "responsibilities": [
+        "Semantic color/font/icon/scale/RTL/layout/wrap/motion/reorder behavior through Fabushi tokens and canonical components, not Qt presentation runtime."
+      ],
+      "existing_owner_candidates": [
+        "Design System",
+        "canonical component/layout primitives",
+        "Chromium CSS/DOM renderer"
+      ],
+      "chosen_owner": "Existing Fabushi Design System + canonical layout/motion primitives",
+      "fabushi_canonical_owner": "Existing Fabushi Design System + canonical layout/motion primitives",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/ui/sand-kit-primitives.tsx, frontend/src/production/ProductionRenderer.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandTextField",
+        "canonical semantic components",
+        "ProductionRenderer"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:021c14a6f5514983fcedeb908cf9cb9367dd14b7",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13268,
+      "source_path": "Telegram/lib_ui::ui/wrap/table_layout.cpp",
+      "source_blob_sha": "82823cf285bdc19adf0ad6f0465293e2d719f855",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/wrap/table_layout.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "82823cf285bdc19adf0ad6f0465293e2d719f855",
+        "size": 8571
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::TableLayout"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/wrap/table_layout.cpp",
+      "responsibility": "Semantic color/font/icon/scale/RTL/layout/wrap/motion/reorder behavior through Fabushi tokens and canonical components, not Qt presentation runtime.",
+      "responsibilities": [
+        "Semantic color/font/icon/scale/RTL/layout/wrap/motion/reorder behavior through Fabushi tokens and canonical components, not Qt presentation runtime."
+      ],
+      "existing_owner_candidates": [
+        "Design System",
+        "canonical component/layout primitives",
+        "Chromium CSS/DOM renderer"
+      ],
+      "chosen_owner": "Existing Fabushi Design System + canonical layout/motion primitives",
+      "fabushi_canonical_owner": "Existing Fabushi Design System + canonical layout/motion primitives",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/ui/sand-kit-primitives.tsx, frontend/src/production/ProductionRenderer.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandTextField",
+        "canonical semantic components",
+        "ProductionRenderer"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:82823cf285bdc19adf0ad6f0465293e2d719f855",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13269,
+      "source_path": "Telegram/lib_ui::ui/wrap/table_layout.h",
+      "source_blob_sha": "c7e877bd3a85f4938dac1604a91045cf06b2c5a1",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/wrap/table_layout.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "c7e877bd3a85f4938dac1604a91045cf06b2c5a1",
+        "size": 2364
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::TableLayout"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/wrap/table_layout.h",
+      "responsibility": "Semantic color/font/icon/scale/RTL/layout/wrap/motion/reorder behavior through Fabushi tokens and canonical components, not Qt presentation runtime.",
+      "responsibilities": [
+        "Semantic color/font/icon/scale/RTL/layout/wrap/motion/reorder behavior through Fabushi tokens and canonical components, not Qt presentation runtime."
+      ],
+      "existing_owner_candidates": [
+        "Design System",
+        "canonical component/layout primitives",
+        "Chromium CSS/DOM renderer"
+      ],
+      "chosen_owner": "Existing Fabushi Design System + canonical layout/motion primitives",
+      "fabushi_canonical_owner": "Existing Fabushi Design System + canonical layout/motion primitives",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/ui/sand-kit-primitives.tsx, frontend/src/production/ProductionRenderer.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandTextField",
+        "canonical semantic components",
+        "ProductionRenderer"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:c7e877bd3a85f4938dac1604a91045cf06b2c5a1",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13270,
+      "source_path": "Telegram/lib_ui::ui/wrap/vertical_layout.cpp",
+      "source_blob_sha": "b7d863aafa4773db1e71025929e7c02f17349906",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/wrap/vertical_layout.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "b7d863aafa4773db1e71025929e7c02f17349906",
+        "size": 7843
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::VerticalLayout"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/wrap/vertical_layout.cpp",
+      "responsibility": "Semantic color/font/icon/scale/RTL/layout/wrap/motion/reorder behavior through Fabushi tokens and canonical components, not Qt presentation runtime.",
+      "responsibilities": [
+        "Semantic color/font/icon/scale/RTL/layout/wrap/motion/reorder behavior through Fabushi tokens and canonical components, not Qt presentation runtime."
+      ],
+      "existing_owner_candidates": [
+        "Design System",
+        "canonical component/layout primitives",
+        "Chromium CSS/DOM renderer"
+      ],
+      "chosen_owner": "Existing Fabushi Design System + canonical layout/motion primitives",
+      "fabushi_canonical_owner": "Existing Fabushi Design System + canonical layout/motion primitives",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/ui/sand-kit-primitives.tsx, frontend/src/production/ProductionRenderer.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandTextField",
+        "canonical semantic components",
+        "ProductionRenderer"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:b7d863aafa4773db1e71025929e7c02f17349906",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13271,
+      "source_path": "Telegram/lib_ui::ui/wrap/vertical_layout.h",
+      "source_blob_sha": "075341c86e77388b8c78113a275f63ee3c7ec0a8",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/wrap/vertical_layout.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "075341c86e77388b8c78113a275f63ee3c7ec0a8",
+        "size": 2978
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::VerticalLayout"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/wrap/vertical_layout.h",
+      "responsibility": "Semantic color/font/icon/scale/RTL/layout/wrap/motion/reorder behavior through Fabushi tokens and canonical components, not Qt presentation runtime.",
+      "responsibilities": [
+        "Semantic color/font/icon/scale/RTL/layout/wrap/motion/reorder behavior through Fabushi tokens and canonical components, not Qt presentation runtime."
+      ],
+      "existing_owner_candidates": [
+        "Design System",
+        "canonical component/layout primitives",
+        "Chromium CSS/DOM renderer"
+      ],
+      "chosen_owner": "Existing Fabushi Design System + canonical layout/motion primitives",
+      "fabushi_canonical_owner": "Existing Fabushi Design System + canonical layout/motion primitives",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/ui/sand-kit-primitives.tsx, frontend/src/production/ProductionRenderer.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandTextField",
+        "canonical semantic components",
+        "ProductionRenderer"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:075341c86e77388b8c78113a275f63ee3c7ec0a8",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13272,
+      "source_path": "Telegram/lib_ui::ui/wrap/vertical_layout_reorder.cpp",
+      "source_blob_sha": "536c2983933c9b59f6c6cfedb94bc7e6fbaa2173",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/wrap/vertical_layout_reorder.cpp",
+        "mode": "100644",
+        "type": "blob",
+        "object": "536c2983933c9b59f6c6cfedb94bc7e6fbaa2173",
+        "size": 9448
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::VerticalLayoutReorder"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/wrap/vertical_layout_reorder.cpp",
+      "responsibility": "Semantic color/font/icon/scale/RTL/layout/wrap/motion/reorder behavior through Fabushi tokens and canonical components, not Qt presentation runtime.",
+      "responsibilities": [
+        "Semantic color/font/icon/scale/RTL/layout/wrap/motion/reorder behavior through Fabushi tokens and canonical components, not Qt presentation runtime."
+      ],
+      "existing_owner_candidates": [
+        "Design System",
+        "canonical component/layout primitives",
+        "Chromium CSS/DOM renderer"
+      ],
+      "chosen_owner": "Existing Fabushi Design System + canonical layout/motion primitives",
+      "fabushi_canonical_owner": "Existing Fabushi Design System + canonical layout/motion primitives",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/ui/sand-kit-primitives.tsx, frontend/src/production/ProductionRenderer.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandTextField",
+        "canonical semantic components",
+        "ProductionRenderer"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:536c2983933c9b59f6c6cfedb94bc7e6fbaa2173",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13273,
+      "source_path": "Telegram/lib_ui::ui/wrap/vertical_layout_reorder.h",
+      "source_blob_sha": "a7fa0781cddee65416bc7449d5e7747f5b23f643",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/wrap/vertical_layout_reorder.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "a7fa0781cddee65416bc7449d5e7747f5b23f643",
+        "size": 2481
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::VerticalLayoutReorder"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/wrap/vertical_layout_reorder.h",
+      "responsibility": "Semantic color/font/icon/scale/RTL/layout/wrap/motion/reorder behavior through Fabushi tokens and canonical components, not Qt presentation runtime.",
+      "responsibilities": [
+        "Semantic color/font/icon/scale/RTL/layout/wrap/motion/reorder behavior through Fabushi tokens and canonical components, not Qt presentation runtime."
+      ],
+      "existing_owner_candidates": [
+        "Design System",
+        "canonical component/layout primitives",
+        "Chromium CSS/DOM renderer"
+      ],
+      "chosen_owner": "Existing Fabushi Design System + canonical layout/motion primitives",
+      "fabushi_canonical_owner": "Existing Fabushi Design System + canonical layout/motion primitives",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/ui/sand-kit-primitives.tsx, frontend/src/production/ProductionRenderer.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandTextField",
+        "canonical semantic components",
+        "ProductionRenderer"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:a7fa0781cddee65416bc7449d5e7747f5b23f643",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    },
+    {
+      "recursive_order": 13274,
+      "source_path": "Telegram/lib_ui::ui/wrap/wrap.h",
+      "source_blob_sha": "1441ed1ec0479c2ea92c2fe3dbb4a09ef97dd490",
+      "source_identity": {
+        "repository": "desktop-app/lib_ui",
+        "commit": "91ff4463899f23f4227bc4cbbdbe7696d479b9bd",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/lib_ui",
+        "path": "ui/wrap/wrap.h",
+        "mode": "100644",
+        "type": "blob",
+        "object": "1441ed1ec0479c2ea92c2fe3dbb4a09ef97dd490",
+        "size": 4379
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "unknown_closed": false,
+      "omitted": false,
+      "source_symbols": [
+        "Ui::Wrap",
+        "Ui::OverrideMargins"
+      ],
+      "disposition": "mapped-open",
+      "upstream_owner": "ui/wrap/wrap.h",
+      "responsibility": "Semantic color/font/icon/scale/RTL/layout/wrap/motion/reorder behavior through Fabushi tokens and canonical components, not Qt presentation runtime.",
+      "responsibilities": [
+        "Semantic color/font/icon/scale/RTL/layout/wrap/motion/reorder behavior through Fabushi tokens and canonical components, not Qt presentation runtime."
+      ],
+      "existing_owner_candidates": [
+        "Design System",
+        "canonical component/layout primitives",
+        "Chromium CSS/DOM renderer"
+      ],
+      "chosen_owner": "Existing Fabushi Design System + canonical layout/motion primitives",
+      "fabushi_canonical_owner": "Existing Fabushi Design System + canonical layout/motion primitives",
+      "fabushi_target": "frontend/src/recovered/ui/sand-form-primitives.tsx, frontend/src/recovered/ui/sand-kit-primitives.tsx, frontend/src/production/ProductionRenderer.tsx",
+      "fabushi_target_paths": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "SandTextField",
+        "canonical semantic components",
+        "ProductionRenderer"
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/ui/sand-form-primitives.tsx",
+        "frontend/src/recovered/ui/sand-kit-primitives.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "tests": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "source/electron-main/foundations.test.ts",
+        "frontend/src/recovered/features/window-chrome/model.contract.test.ts",
+        "Desktop Chat Parity / Rust desktop runtime exact-head rerun required on accounting descendant"
+      ],
+      "current_head_evidence": [
+        "direct-source-read:desktop-app/lib_ui@91ff4463899f23f4227bc4cbbdbe7696d479b9bd:1441ed1ec0479c2ea92c2fe3dbb4a09ef97dd490",
+        "production-owner-audit:7d1fcf83444040521a01d97a3e1bd2570522d222",
+        "source-authority-parent:38195100566/114635964356=success"
+      ]
+    }
+  ]
+}

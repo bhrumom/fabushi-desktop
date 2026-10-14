@@ -603,13 +603,37 @@ export function settingsCopy(locale: string): SettingsCopy {
   return COPY[resolveSettingsLocale(locale).key];
 }
 
-export function formatAccessibilityPreferenceCount(locale: string, count: number): string {
-  const safeCount = Math.max(0, Math.trunc(count));
+export type LocalizedPluralCategory = "zero" | "one" | "two" | "few" | "many" | "other";
+
+export type LocalizedCountForms = Readonly<
+  Partial<Record<LocalizedPluralCategory, string>> & { readonly other: string }
+>;
+
+function safeIntlLocale(locale: string): string {
+  try {
+    return Intl.getCanonicalLocales(locale)[0] ?? "en-US";
+  } catch {
+    return "en-US";
+  }
+}
+
+export function formatLocalizedCount(locale: string, count: number, forms: LocalizedCountForms): string {
+  const safeCount = Number.isFinite(count) ? Math.max(0, Math.trunc(count)) : 0;
   const resolved = resolveSettingsLocale(locale);
-  const formatted = new Intl.NumberFormat(resolved.locale).format(safeCount);
-  const category = new Intl.PluralRules(resolved.locale).select(safeCount);
+  const intlLocale = safeIntlLocale(resolved.locale);
+  const formatted = new Intl.NumberFormat(intlLocale).format(safeCount);
+  const category = new Intl.PluralRules(intlLocale).select(safeCount) as LocalizedPluralCategory;
+  const template = forms[category] ?? forms.other;
+  return template.split("{count}").join(formatted);
+}
+
+export function formatAccessibilityPreferenceCount(locale: string, count: number): string {
+  const resolved = resolveSettingsLocale(locale);
   const copy = COPY[resolved.key];
-  return (category === "one" ? copy.accessibilityCountOne : copy.accessibilityCountOther).replace("{count}", formatted);
+  return formatLocalizedCount(resolved.locale, count, {
+    one: copy.accessibilityCountOne,
+    other: copy.accessibilityCountOther,
+  });
 }
 
 export function applyDesktopUiPreferencesToDocument(

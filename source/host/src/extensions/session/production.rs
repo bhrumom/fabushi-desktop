@@ -1,10 +1,21 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Condvar, Mutex, OnceLock};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
+
+use fabushi_messaging_core::{
+    Actor as MessagingActor, ActorId as MessagingActorId,
+    ClientCommand as MessagingClientCommand, ClientEnvelope as MessagingClientEnvelope,
+    FABUSHI_MESSAGING_PROTOCOL_VERSION, FileBlobStore as MessagingFileBlobStore,
+    JsonFileStateStore as MessagingJsonFileStateStore, MediaResolveCoordinator,
+    MediaResolveLease, MediaResolvePriority, MediaResolveState, MessagingService,
+    RequestContext as MessagingRequestContext, ServerEnvelope as MessagingServerEnvelope,
+    ServerEvent as MessagingServerEvent, Story as MessagingStory, StoryId as MessagingStoryId,
+};
 
 use crate::agent_isolation::{
     AgentWorkerPool, ProductionAgentStoreWorkerBackend,
@@ -82,10 +93,24 @@ use super::session_mutations::set_agent_avatar_bytes as mutate_agent_avatar_byte
 use super::production_agent_store::{ProductionAgentStore, ProductionWorkerBlobStore};
 use super::native_messaging::{
     FabushiNativeMessagingClient, FabushiRemoteHumanAttachment, FabushiRemoteHumanCall,
-    FabushiRemoteHumanCallEvent, FabushiRemoteHumanMessage, fabushi_identity_text,
+    FabushiRemoteConversationChildDraft, FabushiRemoteHumanCallEvent,
+    FabushiRemoteHumanCallMediaSession, FabushiRemoteHumanMessage, fabushi_identity_text,
 };
 
 pub const PRODUCTION_BLOB_BUSY_TIMEOUT_MS: u64 = 5_000;
+pub const REMOTE_RESOURCE_RESOLVE_MAX_IN_FLIGHT: usize = 10;
+pub const REMOTE_RESOURCE_RESOLVE_DEADLINE_MS: i64 = 60_000;
+const REMOTE_RESOURCE_RESOLVE_WAIT: Duration = Duration::from_millis(10);
+static MESSAGING_PROJECTION_IO_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+
+fn current_resource_time_ms() -> i64 {
+    let millis = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis();
+    millis.min(i64::MAX as u128) as i64
+}
+
 
 pub type ProductionAgentWorkerPool = AgentWorkerPool<ProductionAgentStoreWorkerBackend>;
 
@@ -105,6 +130,21 @@ pub struct PreparedAgentBlobStore {
 pub enum FallbackSession {
     Existing(PreparedAgentBlobStore),
     Created(MaterializedAgentRecord),
+}
+
+#[derive(Debug, Default)]
+struct SavedSublistAuthoritySyncState {
+    generation: u64,
+    in_flight: bool,
+    refresh_pending: bool,
+    waiters: usize,
+    last_error: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum SavedSublistAuthoritySyncAdmission {
+    Leader(u64),
+    Follower,
 }
 
 pub struct ProductionMaterializedSession {
@@ -158,7 +198,54 @@ pub struct ProductionSessionWorkers {
     native_messaging_error: Option<String>,
     call_session_store: Option<Arc<CallSessionStore>>,
     call_session_store_error: Option<String>,
+    remote_resource_resolver: Mutex<MediaResolveCoordinator>,
+    // Runtime-only request lifecycle per shipping Human conversation. One leader
+    // owns the remote sync while concurrent callers coalesce as waiters; generation
+    // fencing prevents an older settlement from overwriting a newer refresh.
+    // Restart intentionally begins a fresh epoch and does not create a second
+    // persistent message/child store.
+    saved_sublist_authority_generations: Mutex<BTreeMap<String, SavedSublistAuthoritySyncState>>,
+    saved_sublist_authority_changed: Condvar,
     busy_timeout_ms: u64,
+}
+
+fn resolve_human_reply_target_id(
+    existing: &[serde_json::Value],
+    reply_to_id: Option<&str>,
+) -> Result<Option<String>, String> {
+    let Some(reply_id) = reply_to_id
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    else {
+        return Ok(None);
+    };
+    if existing.iter().any(|entry| {
+        entry.get("id").and_then(serde_json::Value::as_str) == Some(reply_id)
+    }) {
+        return Ok(Some(reply_id.to_string()));
+    }
+
+    let nonce = reply_id
+        .strip_prefix("pending-")
+        .or_else(|| reply_id.strip_prefix("human-message:"))
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| "sendHumanMessage reply target is not in this Human conversation".to_string())?;
+    let mut matches = existing.iter().filter(|entry| {
+        entry.get("clientNonce").and_then(serde_json::Value::as_str) == Some(nonce)
+    });
+    let Some(entry) = matches.next() else {
+        return Err("sendHumanMessage reply target is not in this Human conversation".into());
+    };
+    if matches.next().is_some() {
+        return Err("sendHumanMessage reply target clientNonce is ambiguous in this Human conversation".into());
+    }
+    let canonical_id = entry
+        .get("id")
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| "sendHumanMessage reply target is not in this Human conversation".to_string())?;
+    Ok(Some(canonical_id.to_string()))
 }
 
 impl ProductionSessionWorkers {
@@ -313,6 +400,12 @@ impl ProductionSessionWorkers {
             native_messaging_error,
             call_session_store,
             call_session_store_error,
+            remote_resource_resolver: Mutex::new(
+                MediaResolveCoordinator::new(REMOTE_RESOURCE_RESOLVE_MAX_IN_FLIGHT)
+                    .expect("remote resource resolve budget is non-zero"),
+            ),
+            saved_sublist_authority_generations: Mutex::new(BTreeMap::new()),
+            saved_sublist_authority_changed: Condvar::new(),
             busy_timeout_ms,
         }
     }
@@ -542,6 +635,202 @@ impl ProductionSessionWorkers {
             "userId": identity.user_id,
             "deviceId": identity.device_id,
         }))
+    }
+
+    fn shipping_call_media_client(
+        &self,
+    ) -> Result<(&FabushiNativeMessagingClient, String), String> {
+        let local_human_id = self.local_human_id()?.to_string();
+        let client = self
+            .shipping_native_messaging()?
+            .ok_or_else(|| "shipping Human call media transport requires native messaging".to_string())?;
+        let identity = client.identity()?;
+        if identity.user_id != local_human_id {
+            return Err("Fabushi call credential identity does not match active Human identity".into());
+        }
+        Ok((client, identity.device_id))
+    }
+
+    pub fn list_call_media_sessions(
+        &self,
+        call_id: &str,
+    ) -> Result<Vec<FabushiRemoteHumanCallMediaSession>, String> {
+        let local = self.authorized_call_session(call_id)?;
+        let (client, device_id) = self.shipping_call_media_client()?;
+        let media_sessions = client.list_human_call_media_sessions(call_id)?;
+        for media_session in &media_sessions {
+            if media_session.call_id != local.id
+                || media_session.device_id != device_id
+                || media_session.generation > local.generation
+            {
+                return Err("Fabushi call media recovery escaped the canonical CallSession/device fence".into());
+            }
+        }
+        Ok(media_sessions)
+    }
+
+    pub fn create_call_media_session(
+        &self,
+        call_id: &str,
+        client_session_id: &str,
+        generation: u64,
+        purpose: &str,
+    ) -> Result<FabushiRemoteHumanCallMediaSession, String> {
+        let local = self.authorized_call_session(call_id)?;
+        if generation != local.generation {
+            return Err("createCallMediaSession generation is stale".into());
+        }
+        let (client, device_id) = self.shipping_call_media_client()?;
+        let media_session = client.create_human_call_media_session(
+            call_id,
+            client_session_id,
+            generation,
+            purpose,
+        )?;
+        if media_session.call_id != local.id
+            || media_session.device_id != device_id
+            || media_session.generation != local.generation
+        {
+            return Err("Fabushi call media allocation escaped the canonical CallSession/device fence".into());
+        }
+        Ok(media_session)
+    }
+
+    fn current_call_media_client(
+        &self,
+        call_id: &str,
+        generation: u64,
+    ) -> Result<&FabushiNativeMessagingClient, String> {
+        let local = self.authorized_call_session(call_id)?;
+        if local.generation != generation {
+            return Err("Human call media generation is stale".into());
+        }
+        self.shipping_call_media_client().map(|(client, _)| client)
+    }
+
+    pub fn discover_call_media_publications(
+        &self,
+        call_id: &str,
+    ) -> Result<serde_json::Value, String> {
+        let local = self.authorized_call_session(call_id)?;
+        let (client, _) = self.shipping_call_media_client()?;
+        let response = client.discover_human_call_media_publications(call_id)?;
+        if response.get("generation").and_then(serde_json::Value::as_u64) != Some(local.generation) {
+            return Err("Fabushi call publication discovery returned a stale generation".into());
+        }
+        Ok(response)
+    }
+
+    pub fn publish_call_media(
+        &self,
+        call_id: &str,
+        media_session_id: &str,
+        client_operation_id: &str,
+        generation: u64,
+        session_description: &serde_json::Value,
+        publications: &serde_json::Value,
+    ) -> Result<serde_json::Value, String> {
+        let client = self.current_call_media_client(call_id, generation)?;
+        client.publish_human_call_media(
+            call_id,
+            media_session_id,
+            client_operation_id,
+            generation,
+            session_description,
+            publications,
+        )
+    }
+
+    pub fn acknowledge_call_media_publication(
+        &self,
+        call_id: &str,
+        media_session_id: &str,
+        client_operation_id: &str,
+        generation: u64,
+    ) -> Result<serde_json::Value, String> {
+        let client = self.current_call_media_client(call_id, generation)?;
+        client.acknowledge_human_call_media_publication(
+            call_id,
+            media_session_id,
+            client_operation_id,
+            generation,
+        )
+    }
+
+    pub fn subscribe_call_media(
+        &self,
+        call_id: &str,
+        media_session_id: &str,
+        client_operation_id: &str,
+        generation: u64,
+        subscriptions: &serde_json::Value,
+    ) -> Result<serde_json::Value, String> {
+        let client = self.current_call_media_client(call_id, generation)?;
+        client.subscribe_human_call_media(
+            call_id,
+            media_session_id,
+            client_operation_id,
+            generation,
+            subscriptions,
+        )
+    }
+
+    pub fn answer_call_media_subscription(
+        &self,
+        call_id: &str,
+        media_session_id: &str,
+        client_operation_id: &str,
+        generation: u64,
+        session_description: &serde_json::Value,
+    ) -> Result<serde_json::Value, String> {
+        let client = self.current_call_media_client(call_id, generation)?;
+        client.answer_human_call_media_subscription(
+            call_id,
+            media_session_id,
+            client_operation_id,
+            generation,
+            session_description,
+        )
+    }
+
+    pub fn update_call_media_subscription_layer(
+        &self,
+        call_id: &str,
+        media_session_id: &str,
+        subscription_id: &str,
+        client_mutation_id: &str,
+        generation: u64,
+        simulcast: &serde_json::Value,
+    ) -> Result<serde_json::Value, String> {
+        let client = self.current_call_media_client(call_id, generation)?;
+        client.update_human_call_media_subscription_layer(
+            call_id,
+            media_session_id,
+            subscription_id,
+            client_mutation_id,
+            generation,
+            simulcast,
+        )
+    }
+
+    pub fn close_call_media_session(
+        &self,
+        call_id: &str,
+        media_session_id: &str,
+        client_teardown_id: &str,
+        generation: u64,
+    ) -> Result<serde_json::Value, String> {
+        let local = self.authorized_call_session(call_id)?;
+        if generation > local.generation {
+            return Err("closeCallMediaSession generation is ahead of canonical CallSession".into());
+        }
+        let (client, _) = self.shipping_call_media_client()?;
+        client.close_human_call_media_session(
+            call_id,
+            media_session_id,
+            client_teardown_id,
+            generation,
+        )
     }
 
     pub fn call_ice_servers(&self) -> Result<serde_json::Value, String> {
@@ -1890,10 +2179,22 @@ impl ProductionSessionWorkers {
             .ok_or_else(|| "Human conversation is missing its peer identity".to_string())
     }
 
-    fn materialize_remote_human_attachment(
+    fn lock_remote_resource_resolver(
+        &self,
+    ) -> Result<std::sync::MutexGuard<'_, MediaResolveCoordinator>, String> {
+        self.remote_resource_resolver
+            .lock()
+            .map_err(|_| "remote Human attachment resolver lock was poisoned".to_string())
+    }
+
+    fn materialize_remote_human_attachment_with_fetch<F>(
         &self,
         attachment: &FabushiRemoteHumanAttachment,
-    ) -> Result<serde_json::Value, String> {
+        fetch: F,
+    ) -> Result<serde_json::Value, String>
+    where
+        F: FnOnce(&str, u64) -> Result<Vec<u8>, String>,
+    {
         let resource_id = attachment.resource_id.trim();
         if resource_id.is_empty()
             || resource_id.len() > 128
@@ -1916,7 +2217,7 @@ impl ProductionSessionWorkers {
             })
             .take(255)
             .collect::<String>();
-        if name.trim().is_empty() {
+        if name.trim().is_empty() || matches!(name.as_str(), "." | "..") {
             name = "attachment".into();
         }
         let resource_root = self
@@ -1924,38 +2225,175 @@ impl ProductionSessionWorkers {
             .join("human-message-resources")
             .join(resource_id);
         fs::create_dir_all(&resource_root).map_err(|error| {
-            format!(
-                "remote Human attachment directory could not be created: {error}"
-            )
+            format!("remote Human attachment directory could not be created: {error}")
         })?;
         let path = resource_root.join(name);
-        let ready = fs::metadata(&path)
-            .ok()
-            .is_some_and(|metadata| metadata.is_file() && metadata.len() == attachment.size);
-        if !ready {
-            let client = self
-                .shipping_native_messaging()?
-                .ok_or_else(|| "remote Human attachment requires shipping native messaging".to_string())?;
-            let bytes = client.download_direct_message_resource(resource_id, attachment.size)?;
-            let temporary_path = resource_root.join(".download.tmp");
-            fs::write(&temporary_path, &bytes).map_err(|error| {
-                format!("remote Human attachment could not be staged: {error}")
-            })?;
-            if let Err(error) = fs::rename(&temporary_path, &path) {
-                let _ = fs::remove_file(&temporary_path);
-                return Err(format!(
-                    "remote Human attachment could not be committed atomically: {error}"
-                ));
-            }
+        let projection = || {
+            serde_json::json!({
+                "path": path.to_string_lossy(),
+                "name": attachment.name,
+                "size": attachment.size,
+                "mimeType": attachment.content_type,
+                "resourceId": attachment.resource_id,
+                "remoteCreatedAt": attachment.created_at,
+            })
+        };
+        let existing = fs::metadata(&path).ok();
+        if existing
+            .as_ref()
+            .is_some_and(|metadata| metadata.is_file() && metadata.len() == attachment.size)
+        {
+            return Ok(projection());
         }
-        Ok(serde_json::json!({
-            "path": path.to_string_lossy(),
-            "name": attachment.name,
-            "size": attachment.size,
-            "mimeType": attachment.content_type,
-            "resourceId": attachment.resource_id,
-            "remoteCreatedAt": attachment.created_at,
-        }))
+        let needs_refresh = if let Some(metadata) = existing {
+            if !metadata.is_file() {
+                return Err("remote Human attachment destination is not a file".into());
+            }
+            match fs::remove_file(&path) {
+                Ok(()) => true,
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => false,
+                Err(error) => {
+                    return Err(format!(
+                        "stale remote Human attachment could not be removed: {error}"
+                    ));
+                }
+            }
+        } else {
+            false
+        };
+
+        let generation = {
+            let mut resolver = self.lock_remote_resource_resolver()?;
+            let _ = resolver.expire(current_resource_time_ms());
+            let result = if needs_refresh {
+                resolver.refresh(resource_id, MediaResolvePriority::UserVisible)
+            } else {
+                resolver.enqueue(resource_id, MediaResolvePriority::UserVisible)
+            };
+            result.map_err(|error| error.to_string())?
+        };
+        let wait_started = Instant::now();
+        let lease = loop {
+            if fs::metadata(&path)
+                .ok()
+                .is_some_and(|metadata| metadata.is_file() && metadata.len() == attachment.size)
+            {
+                return Ok(projection());
+            }
+            let now_ms = current_resource_time_ms();
+            let mut resolver = self.lock_remote_resource_resolver()?;
+            let expired = resolver.expire(now_ms);
+            if expired
+                .iter()
+                .any(|lease| lease.media_id == resource_id && lease.generation == generation)
+            {
+                return Err("remote Human attachment resolve deadline expired".into());
+            }
+            if resolver.generation(resource_id) != Some(generation) {
+                return Err("remote Human attachment resolve generation became stale".into());
+            }
+            match resolver.state(resource_id) {
+                Some(MediaResolveState::Queued) => {
+                    if let Some(lease) = resolver
+                        .start_if_next(
+                            resource_id,
+                            generation,
+                            now_ms,
+                            REMOTE_RESOURCE_RESOLVE_DEADLINE_MS,
+                        )
+                        .map_err(|error| error.to_string())?
+                    {
+                        break lease;
+                    }
+                }
+                Some(MediaResolveState::Flight) => {}
+                Some(MediaResolveState::Done) => {
+                    return Err("remote Human attachment resolved without a durable file".into());
+                }
+                Some(MediaResolveState::Failed) => {
+                    return Err("remote Human attachment resolve failed".into());
+                }
+                Some(MediaResolveState::Cancelled) => {
+                    return Err("remote Human attachment resolve was cancelled".into());
+                }
+                None => {
+                    return Err("remote Human attachment resolve state disappeared".into());
+                }
+            }
+            drop(resolver);
+            if wait_started.elapsed()
+                >= Duration::from_millis(REMOTE_RESOURCE_RESOLVE_DEADLINE_MS as u64)
+            {
+                let mut resolver = self.lock_remote_resource_resolver()?;
+                let _ = resolver.cancel_generation(resource_id, generation);
+                return Err("remote Human attachment queue deadline expired".into());
+            }
+            std::thread::sleep(REMOTE_RESOURCE_RESOLVE_WAIT);
+        };
+
+        let bytes = match fetch(resource_id, attachment.size) {
+            Ok(bytes) => bytes,
+            Err(error) => {
+                let mut resolver = self.lock_remote_resource_resolver()?;
+                let _ = resolver.fail(&lease);
+                return Err(error);
+            }
+        };
+        if bytes.len() as u64 != attachment.size {
+            let mut resolver = self.lock_remote_resource_resolver()?;
+            let _ = resolver.fail(&lease);
+            return Err(format!(
+                "remote Human attachment body length mismatch: expected {}, received {}",
+                attachment.size,
+                bytes.len()
+            ));
+        }
+
+        let temporary_path = resource_root.join(format!(".download.{}.tmp", lease.generation));
+        if let Err(error) = fs::write(&temporary_path, &bytes) {
+            let mut resolver = self.lock_remote_resource_resolver()?;
+            let _ = resolver.fail(&lease);
+            return Err(format!("remote Human attachment could not be staged: {error}"));
+        }
+
+        let mut resolver = self.lock_remote_resource_resolver()?;
+        let _ = resolver.expire(current_resource_time_ms());
+        if !resolver.is_current_flight(&lease) {
+            drop(resolver);
+            let _ = fs::remove_file(&temporary_path);
+            return Err("remote Human attachment completion was stale or cancelled".into());
+        }
+        if let Err(error) = fs::rename(&temporary_path, &path) {
+            let _ = resolver.fail(&lease);
+            drop(resolver);
+            let _ = fs::remove_file(&temporary_path);
+            return Err(format!(
+                "remote Human attachment could not be committed atomically: {error}"
+            ));
+        }
+        if !resolver.complete(&lease) {
+            drop(resolver);
+            let _ = fs::remove_file(&path);
+            return Err("remote Human attachment settlement became stale".into());
+        }
+        Ok(projection())
+    }
+
+    fn materialize_remote_human_attachment(
+        &self,
+        attachment: &FabushiRemoteHumanAttachment,
+    ) -> Result<serde_json::Value, String> {
+        self.materialize_remote_human_attachment_with_fetch(
+            attachment,
+            |resource_id, expected_size| {
+                let client = self
+                    .shipping_native_messaging()?
+                    .ok_or_else(|| {
+                        "remote Human attachment requires shipping native messaging".to_string()
+                    })?;
+                client.download_direct_message_resource(resource_id, expected_size)
+            },
+        )
     }
 
     fn materialize_remote_human_message(
@@ -1982,9 +2420,13 @@ impl ProductionSessionWorkers {
             "authorId": sender_id,
             "content": remote.text,
             "timestampMs": timestamp_ms,
-            "delivery": "sent",
+            "delivery": if remote.delivery_state.as_deref() == Some("scheduled") { "scheduled" } else { "sent" },
             "remoteMessageId": remote_id,
             "remoteCreatedAt": remote.created_at,
+            "silent": remote.silent,
+            "scheduledAtMs": remote.scheduled_at_ms,
+            "deliveredAt": remote.delivered_at,
+            "expiresAtMs": remote.expires_at_ms,
         });
         let object = entry
             .as_object_mut()
@@ -2004,6 +2446,14 @@ impl ProductionSessionWorkers {
             .filter(|value| !value.is_empty())
         {
             object.insert("clientNonce".into(), serde_json::json!(client_nonce));
+        }
+        if let Some(destination) = remote.destination.as_ref() {
+            object.insert(
+                "destination".into(),
+                serde_json::to_value(destination).map_err(|error| {
+                    format!("remote Human destination could not be projected: {error}")
+                })?,
+            );
         }
         if let Some(read_at) = remote
             .read_at
@@ -2143,9 +2593,294 @@ impl ProductionSessionWorkers {
         Ok(entry)
     }
 
+    fn begin_saved_sublist_authority_generation(
+        &self,
+        conversation_id: &str,
+    ) -> Result<SavedSublistAuthoritySyncAdmission, String> {
+        let mut states = self
+            .saved_sublist_authority_generations
+            .lock()
+            .map_err(|_| "SavedSublist authority generation lock is poisoned".to_string())?;
+        loop {
+            {
+                let state = states.entry(conversation_id.to_string()).or_default();
+                if state.in_flight {
+                    state.refresh_pending = true;
+                    state.waiters = state
+                        .waiters
+                        .checked_add(1)
+                        .ok_or_else(|| "SavedSublist authority waiter count overflowed".to_string())?;
+                    return Ok(SavedSublistAuthoritySyncAdmission::Follower);
+                }
+                if state.waiters == 0 {
+                    let next = state
+                        .generation
+                        .checked_add(1)
+                        .ok_or_else(|| "SavedSublist authority generation overflowed".to_string())?;
+                    state.generation = next;
+                    state.in_flight = true;
+                    state.refresh_pending = false;
+                    state.last_error = None;
+                    return Ok(SavedSublistAuthoritySyncAdmission::Leader(next));
+                }
+            }
+            states = self
+                .saved_sublist_authority_changed
+                .wait(states)
+                .map_err(|_| "SavedSublist authority generation lock is poisoned".to_string())?;
+        }
+    }
+
+    fn wait_for_saved_sublist_authority_generation(
+        &self,
+        conversation_id: &str,
+    ) -> Result<(), String> {
+        let mut states = self
+            .saved_sublist_authority_generations
+            .lock()
+            .map_err(|_| "SavedSublist authority generation lock is poisoned".to_string())?;
+        loop {
+            let completed = {
+                let state = states
+                    .get_mut(conversation_id)
+                    .ok_or_else(|| "SavedSublist authority coalesced request lost its state".to_string())?;
+                if state.in_flight {
+                    None
+                } else {
+                    if state.waiters == 0 {
+                        return Err("SavedSublist authority coalesced request lost its waiter".into());
+                    }
+                    state.waiters -= 1;
+                    let result = match state.last_error.as_ref() {
+                        Some(error) => Err(error.clone()),
+                        None => Ok(()),
+                    };
+                    Some((result, state.waiters == 0))
+                }
+            };
+            if let Some((result, drained)) = completed {
+                if drained {
+                    self.saved_sublist_authority_changed.notify_all();
+                }
+                return result;
+            }
+            states = self
+                .saved_sublist_authority_changed
+                .wait(states)
+                .map_err(|_| "SavedSublist authority generation lock is poisoned".to_string())?;
+        }
+    }
+
+    fn complete_saved_sublist_authority_generation(
+        &self,
+        conversation_id: &str,
+        generation: u64,
+        error: Option<String>,
+    ) -> Result<Option<u64>, String> {
+        let mut states = self
+            .saved_sublist_authority_generations
+            .lock()
+            .map_err(|_| "SavedSublist authority generation lock is poisoned".to_string())?;
+        let state = states
+            .get_mut(conversation_id)
+            .ok_or_else(|| "SavedSublist authority leader lost its state".to_string())?;
+        if !state.in_flight || state.generation != generation {
+            return Err("SavedSublist authority leader generation is stale".into());
+        }
+        if error.is_none() && state.refresh_pending {
+            let next = match state.generation.checked_add(1) {
+                Some(next) => next,
+                None => {
+                    let overflow = "SavedSublist authority generation overflowed".to_string();
+                    state.in_flight = false;
+                    state.refresh_pending = false;
+                    state.last_error = Some(overflow.clone());
+                    self.saved_sublist_authority_changed.notify_all();
+                    return Err(overflow);
+                }
+            };
+            state.generation = next;
+            state.refresh_pending = false;
+            state.last_error = None;
+            return Ok(Some(next));
+        }
+        state.in_flight = false;
+        state.refresh_pending = false;
+        state.last_error = error;
+        self.saved_sublist_authority_changed.notify_all();
+        Ok(None)
+    }
+
+    fn reconcile_saved_sublist_authority_from_transcript(
+        &self,
+        conversation_id: &str,
+        generation: u64,
+        entries: &[serde_json::Value],
+    ) -> Result<bool, String> {
+        let actor_id = self.story_actor_id()?;
+        let mut memberships: BTreeMap<
+            String,
+            (
+                fabushi_messaging_core::ConversationDestination,
+                BTreeSet<fabushi_messaging_core::MessageId>,
+            ),
+        > = BTreeMap::new();
+
+        for entry in entries {
+            let Some(destination_value) = entry.get("destination") else {
+                continue;
+            };
+            let destination =
+                serde_json::from_value::<fabushi_messaging_core::ConversationDestination>(
+                    destination_value.clone(),
+                )
+                .map_err(|error| {
+                    format!("server-authoritative SavedSublist destination was invalid: {error}")
+                })?;
+            if !matches!(
+                destination.child.as_ref(),
+                Some(fabushi_messaging_core::ConversationChildIdentity::SavedSublist { .. })
+            ) {
+                continue;
+            }
+            if !destination.is_valid() {
+                return Err(
+                    "server-authoritative SavedSublist destination failed canonical validation"
+                        .into(),
+                );
+            }
+            let Some(remote_message_id) = entry
+                .get("remoteMessageId")
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+            else {
+                // Renderer/local pending state is never SavedSublist authority.
+                continue;
+            };
+            let expected_entry_id = format!("human-server-message:{remote_message_id}");
+            if entry.get("id").and_then(serde_json::Value::as_str)
+                != Some(expected_entry_id.as_str())
+            {
+                return Err(
+                    "server-authoritative SavedSublist transcript identity did not match remote message id"
+                        .into(),
+                );
+            }
+            let message_id = expected_entry_id.as_str();
+            let key = serde_json::to_string(&destination).map_err(|error| {
+                format!("SavedSublist authority destination could not be keyed: {error}")
+            })?;
+            memberships
+                .entry(key)
+                .or_insert_with(|| (destination, BTreeSet::new()))
+                .1
+                .insert(fabushi_messaging_core::MessageId::new(message_id));
+        }
+
+        if memberships.is_empty() {
+            return Ok(true);
+        }
+
+        let _guard = MESSAGING_PROJECTION_IO_LOCK
+            .get_or_init(|| Mutex::new(()))
+            .lock()
+            .map_err(|_| "canonical messaging projection storage lock is poisoned".to_string())?;
+        // Hold the generation guard across the durable canonical write. If a newer
+        // sync started before this settlement reached the lock, this response is
+        // stale and must retire without overwriting newer authority.
+        let generations = self
+            .saved_sublist_authority_generations
+            .lock()
+            .map_err(|_| "SavedSublist authority generation lock is poisoned".to_string())?;
+        if !generations.get(conversation_id).is_some_and(|state| {
+            state.in_flight && state.generation == generation
+        }) {
+            return Ok(false);
+        }
+        let root = self.agents_root.join("_messaging");
+        let mut service = MessagingService::load_with_blob_store(
+            MessagingJsonFileStateStore::new(root.join("snapshot.json")),
+            MessagingFileBlobStore::new(root.join("blobs")),
+        )
+        .map_err(|error| {
+            format!("canonical SavedSublist authority service could not load: {error}")
+        })?;
+        let server_time_ms = Self::story_server_time_ms();
+
+        for (_, (destination, message_ids)) in memberships {
+            service
+                .reconcile_saved_sublist_parent_access(
+                    destination.conversation_id.clone(),
+                    actor_id.clone(),
+                    true,
+                    server_time_ms,
+                )
+                .map_err(|error| {
+                    format!(
+                        "canonical SavedSublist parent-access reconciliation failed: {error}"
+                    )
+                })?;
+            service
+                .reconcile_saved_sublist_membership(
+                    destination,
+                    actor_id.clone(),
+                    message_ids.into_iter().collect(),
+                    server_time_ms,
+                )
+                .map_err(|error| {
+                    format!("canonical SavedSublist membership reconciliation failed: {error}")
+                })?;
+        }
+        Ok(true)
+    }
+
     pub fn sync_human_conversation(
         &self,
         conversation_id: &str,
+    ) -> Result<Vec<serde_json::Value>, String> {
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        if !self.metadata_has_local_human(&metadata)? {
+            return Err("local Human identity is not a conversation participant".into());
+        }
+        let Some(client) = self.shipping_native_messaging()? else {
+            return owner.get_transcript_entries().map_err(|error| error.to_string());
+        };
+        let local_human_id = self.local_human_id()?.to_string();
+        let identity = client.identity()?;
+        if identity.user_id != local_human_id {
+            return Err(format!(
+                "Fabushi native messaging credential user {} does not match active Human identity {}",
+                identity.user_id, local_human_id
+            ));
+        }
+
+        match self.begin_saved_sublist_authority_generation(conversation_id)? {
+            SavedSublistAuthoritySyncAdmission::Follower => {
+                self.wait_for_saved_sublist_authority_generation(conversation_id)?;
+                owner.get_transcript_entries().map_err(|error| error.to_string())
+            }
+            SavedSublistAuthoritySyncAdmission::Leader(mut generation) => loop {
+                let result =
+                    self.sync_human_conversation_generation(conversation_id, generation);
+                let error = result.as_ref().err().cloned();
+                match self.complete_saved_sublist_authority_generation(
+                    conversation_id,
+                    generation,
+                    error,
+                )? {
+                    Some(next_generation) => generation = next_generation,
+                    None => return result,
+                }
+            },
+        }
+    }
+
+    fn sync_human_conversation_generation(
+        &self,
+        conversation_id: &str,
+        saved_sublist_authority_generation: u64,
     ) -> Result<Vec<serde_json::Value>, String> {
         const PAGE_LIMIT: usize = 200;
         const MAX_GAP_PAGES: usize = 32;
@@ -2159,6 +2894,13 @@ impl ProductionSessionWorkers {
             return owner.get_transcript_entries().map_err(|error| error.to_string());
         };
         let local_human_id = self.local_human_id()?.to_string();
+        let identity = client.identity()?;
+        if identity.user_id != local_human_id {
+            return Err(format!(
+                "Fabushi native messaging credential user {} does not match active Human identity {}",
+                identity.user_id, local_human_id
+            ));
+        }
         let pending = owner
             .get_transcript_entries()
             .map_err(|error| error.to_string())?
@@ -2179,7 +2921,9 @@ impl ProductionSessionWorkers {
             let reply_to_id = entry.get("replyToId").and_then(serde_json::Value::as_str);
             let composed_at_ms = entry.get("composedAtMs").and_then(serde_json::Value::as_f64);
             let attachments = entry.get("attachments").and_then(serde_json::Value::as_array).cloned().unwrap_or_default();
-            let _ = self.append_human_message(conversation_id, text, client_nonce, composed_at_ms, reply_to_id, &attachments);
+            let silent = entry.get("silent").and_then(serde_json::Value::as_bool).unwrap_or(false);
+            let scheduled_at_ms = entry.get("scheduledAtMs").and_then(serde_json::Value::as_i64);
+            let _ = self.append_human_message(conversation_id, text, client_nonce, composed_at_ms, reply_to_id, &attachments, silent, scheduled_at_ms);
         }
         let peer_human_id = self.peer_human_id_from_metadata(&metadata)?;
         let existing = owner
@@ -2214,6 +2958,11 @@ impl ProductionSessionWorkers {
             for (index, remote) in page.iter().enumerate().rev() {
                 let remote_id = fabushi_identity_text(&remote.id)?;
                 if known_remote_ids.contains(&remote_id) {
+                    // The overlap row is not immutable: read receipts, reactions,
+                    // and scheduled -> delivered can advance under the same remote id.
+                    // Refresh it through the single durable transcript owner before
+                    // using it as the bounded-history stop marker.
+                    self.materialize_remote_human_message(&owner, remote)?;
                     overlap_at = Some(index);
                     break;
                 }
@@ -2258,7 +3007,329 @@ impl ProductionSessionWorkers {
                 self.materialize_remote_human_message(&owner, &remote)?;
             }
         }
-        owner.get_transcript_entries().map_err(|error| error.to_string())
+        let entries = owner
+            .get_transcript_entries()
+            .map_err(|error| error.to_string())?;
+        let _ = self.reconcile_saved_sublist_authority_from_transcript(
+            conversation_id,
+            saved_sublist_authority_generation,
+            &entries,
+        )?;
+        Ok(entries)
+    }
+
+    pub fn get_human_conversation_retention(
+        &self,
+        conversation_id: &str,
+    ) -> Result<serde_json::Value, String> {
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        if !self.metadata_has_local_human(&metadata)? {
+            return Err("local Human identity is not a conversation participant".into());
+        }
+        let peer_human_id = self.peer_human_id_from_metadata(&metadata)?;
+        let client = self
+            .shipping_native_messaging()?
+            .ok_or_else(|| "Human message retention requires shipping native messaging".to_string())?;
+        let retention = client.get_direct_message_retention(&peer_human_id)?;
+        if retention.conversation_id != conversation_id {
+            return Err("Fabushi Human retention backend returned a mismatched conversation id".into());
+        }
+        Ok(serde_json::json!({
+            "conversationId": retention.conversation_id,
+            "retentionSeconds": retention.retention_seconds,
+            "revision": retention.revision,
+        }))
+    }
+
+    pub fn set_human_conversation_retention(
+        &self,
+        conversation_id: &str,
+        retention_seconds: Option<u32>,
+        expected_revision: u64,
+    ) -> Result<serde_json::Value, String> {
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        if !self.metadata_has_local_human(&metadata)? {
+            return Err("local Human identity is not a conversation participant".into());
+        }
+        let peer_human_id = self.peer_human_id_from_metadata(&metadata)?;
+        let client = self
+            .shipping_native_messaging()?
+            .ok_or_else(|| "Human message retention requires shipping native messaging".to_string())?;
+        let retention = client.set_direct_message_retention(
+            &peer_human_id,
+            retention_seconds,
+            expected_revision,
+        )?;
+        if retention.conversation_id != conversation_id
+            || retention.retention_seconds != retention_seconds
+            || retention.revision != expected_revision.saturating_add(1)
+        {
+            return Err("Fabushi Human retention backend returned mismatched canonical state".into());
+        }
+        Ok(serde_json::json!({
+            "conversationId": retention.conversation_id,
+            "retentionSeconds": retention.retention_seconds,
+            "revision": retention.revision,
+        }))
+    }
+
+
+    fn canonical_saved_sublist_destination(
+        conversation_id: &str,
+        peer_human_id: &str,
+    ) -> fabushi_messaging_core::ConversationDestination {
+        fabushi_messaging_core::ConversationDestination::saved_sublist(
+            fabushi_messaging_core::ConversationId::new(conversation_id),
+            MessagingActorId::new(peer_human_id),
+        )
+    }
+
+    fn reconcile_remote_saved_sublist_draft(
+        &self,
+        conversation_id: &str,
+        peer_human_id: &str,
+        peer_display_name: &str,
+        remote: &FabushiRemoteConversationChildDraft,
+    ) -> Result<(), String> {
+        if remote.destination.conversation_id.0 != conversation_id {
+            return Err("Fabushi ConversationChild draft backend returned a mismatched conversation id".into());
+        }
+        let expected = Self::canonical_saved_sublist_destination(conversation_id, peer_human_id);
+        if remote.destination != expected {
+            return Err("Fabushi ConversationChild draft backend returned a mismatched SavedSublist identity".into());
+        }
+
+        let actor_id = self.story_actor_id()?;
+        let peer_actor_id = MessagingActorId::new(peer_human_id);
+        let _guard = MESSAGING_PROJECTION_IO_LOCK
+            .get_or_init(|| Mutex::new(()))
+            .lock()
+            .map_err(|_| "canonical messaging projection storage lock is poisoned".to_string())?;
+        let root = self.agents_root.join("_messaging");
+        let mut service = MessagingService::load_with_blob_store(
+            MessagingJsonFileStateStore::new(root.join("snapshot.json")),
+            MessagingFileBlobStore::new(root.join("blobs")),
+        )
+        .map_err(|error| {
+            format!("canonical ConversationChild draft service could not load: {error}")
+        })?;
+        let now_ms = Self::story_server_time_ms();
+        let identity = self
+            .shipping_native_messaging()?
+            .ok_or_else(|| "ConversationChild draft sync requires shipping native messaging".to_string())?
+            .identity()?;
+        if identity.user_id != self.local_human_id()? {
+            return Err("ConversationChild draft credential identity does not match active Human identity".into());
+        }
+        let context = |request_id: String| MessagingRequestContext {
+            request_id,
+            device_id: identity.device_id.clone(),
+            actor_id: actor_id.clone(),
+            session_id: "desktop-conversation-child-draft".into(),
+            sent_at_ms: now_ms,
+        };
+
+        if !service.engine().state().actors.contains_key(&actor_id) {
+            service
+                .handle(
+                    MessagingClientEnvelope {
+                        protocol_version: FABUSHI_MESSAGING_PROTOCOL_VERSION,
+                        context: context(format!("child-draft-owner:{}", Uuid::new_v4().simple())),
+                        command: MessagingClientCommand::UpsertProfile {
+                            actor: MessagingActor::human(actor_id.0.clone(), "Fabushi Human"),
+                        },
+                    },
+                    now_ms,
+                )
+                .map_err(|error| format!("canonical child-draft owner projection failed: {error}"))?;
+        }
+        if !service.engine().state().actors.contains_key(&peer_actor_id) {
+            service
+                .handle(
+                    MessagingClientEnvelope {
+                        protocol_version: FABUSHI_MESSAGING_PROTOCOL_VERSION,
+                        context: context(format!("child-draft-peer:{}", Uuid::new_v4().simple())),
+                        command: MessagingClientCommand::UpsertProfile {
+                            actor: MessagingActor::human(
+                                peer_actor_id.0.clone(),
+                                peer_display_name,
+                            ),
+                        },
+                    },
+                    now_ms,
+                )
+                .map_err(|error| format!("canonical child-draft peer projection failed: {error}"))?;
+        }
+        if !service
+            .engine()
+            .state()
+            .conversations
+            .contains_key(&remote.destination.conversation_id)
+        {
+            let participants = vec![
+                fabushi_messaging_core::Participant {
+                    actor_id: actor_id.clone(),
+                    role: fabushi_messaging_core::ParticipantRole::Member,
+                    joined_at_ms: now_ms,
+                    muted_until_ms: None,
+                },
+                fabushi_messaging_core::Participant {
+                    actor_id: peer_actor_id,
+                    role: fabushi_messaging_core::ParticipantRole::Member,
+                    joined_at_ms: now_ms,
+                    muted_until_ms: None,
+                },
+            ];
+            service
+                .handle(
+                    MessagingClientEnvelope {
+                        protocol_version: FABUSHI_MESSAGING_PROTOCOL_VERSION,
+                        context: context(format!("child-draft-conversation:{}", Uuid::new_v4().simple())),
+                        command: MessagingClientCommand::CreateConversation {
+                            conversation: fabushi_messaging_core::Conversation::direct(
+                                conversation_id,
+                                peer_display_name,
+                                participants,
+                                now_ms,
+                            ),
+                        },
+                    },
+                    now_ms,
+                )
+                .map_err(|error| format!("canonical child-draft conversation projection failed: {error}"))?;
+        }
+        service
+            .reconcile_saved_sublist_parent_access(
+                remote.destination.conversation_id.clone(),
+                actor_id.clone(),
+                true,
+                now_ms,
+            )
+            .map_err(|error| {
+                format!("canonical SavedSublist parent-access reconciliation failed: {error}")
+            })?;
+        let reply_to_message_id = remote.reply_to_message_id.as_ref().map(|id| {
+            let canonical = if id.starts_with("human-server-message:") {
+                id.clone()
+            } else {
+                format!("human-server-message:{id}")
+            };
+            fabushi_messaging_core::MessageId::new(canonical)
+        });
+        service
+            .reconcile_conversation_child_draft(
+                remote.destination.clone(),
+                actor_id,
+                remote.text.clone(),
+                reply_to_message_id,
+                now_ms,
+            )
+            .map_err(|error| {
+                format!("canonical ConversationChild draft reconciliation failed: {error}")
+            })
+    }
+
+    pub fn get_human_saved_sublist_draft(
+        &self,
+        conversation_id: &str,
+    ) -> Result<serde_json::Value, String> {
+        // Refresh server-owned messages first so any reply target has an exact
+        // authoritative SavedSublist membership snapshot before draft projection.
+        let _ = self.sync_human_conversation(conversation_id)?;
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        if !self.metadata_has_local_human(&metadata)? {
+            return Err("local Human identity is not a conversation participant".into());
+        }
+        let peer_human_id = self.peer_human_id_from_metadata(&metadata)?;
+        let peer_display_name = metadata
+            .get("title")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .unwrap_or(peer_human_id.as_str());
+        let client = self
+            .shipping_native_messaging()?
+            .ok_or_else(|| "SavedSublist draft sync requires shipping native messaging".to_string())?;
+        let remote = client.get_conversation_child_draft(&peer_human_id)?;
+        self.reconcile_remote_saved_sublist_draft(
+            conversation_id,
+            &peer_human_id,
+            peer_display_name,
+            &remote,
+        )?;
+        let canonical_reply = remote.reply_to_message_id.as_ref().map(|id| {
+            if id.starts_with("human-server-message:") {
+                id.clone()
+            } else {
+                format!("human-server-message:{id}")
+            }
+        });
+        Ok(serde_json::json!({
+            "destination": remote.destination,
+            "text": remote.text,
+            "replyToMessageId": canonical_reply,
+            "revision": remote.revision,
+            "updatedAt": remote.updated_at,
+        }))
+    }
+
+    pub fn set_human_saved_sublist_draft(
+        &self,
+        conversation_id: &str,
+        text: &str,
+        reply_to_message_id: Option<&str>,
+        expected_revision: u64,
+    ) -> Result<serde_json::Value, String> {
+        let _ = self.sync_human_conversation(conversation_id)?;
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        if !self.metadata_has_local_human(&metadata)? {
+            return Err("local Human identity is not a conversation participant".into());
+        }
+        let peer_human_id = self.peer_human_id_from_metadata(&metadata)?;
+        let peer_display_name = metadata
+            .get("title")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .unwrap_or(peer_human_id.as_str());
+        let destination = Self::canonical_saved_sublist_destination(
+            conversation_id,
+            &peer_human_id,
+        );
+        let client = self
+            .shipping_native_messaging()?
+            .ok_or_else(|| "SavedSublist draft mutation requires shipping native messaging".to_string())?;
+        let remote = client.set_conversation_child_draft(
+            &peer_human_id,
+            &destination,
+            text,
+            reply_to_message_id,
+            expected_revision,
+        )?;
+        self.reconcile_remote_saved_sublist_draft(
+            conversation_id,
+            &peer_human_id,
+            peer_display_name,
+            &remote,
+        )?;
+        let canonical_reply = remote.reply_to_message_id.as_ref().map(|id| {
+            if id.starts_with("human-server-message:") {
+                id.clone()
+            } else {
+                format!("human-server-message:{id}")
+            }
+        });
+        Ok(serde_json::json!({
+            "destination": remote.destination,
+            "text": remote.text,
+            "replyToMessageId": canonical_reply,
+            "revision": remote.revision,
+            "updatedAt": remote.updated_at,
+        }))
     }
 
     pub fn sync_human_conversations(&self) -> Result<Vec<serde_json::Value>, String> {
@@ -2465,6 +3536,107 @@ impl ProductionSessionWorkers {
         Ok(conversations)
     }
 
+    fn human_share_requirements(
+        source_entry: &serde_json::Value,
+    ) -> fabushi_messaging_core::RecipientSearchRequirements {
+        fabushi_messaging_core::RecipientSearchRequirements {
+            require_media: source_entry
+                .get("attachments")
+                .and_then(serde_json::Value::as_array)
+                .is_some_and(|attachments| !attachments.is_empty()),
+            source_protected_content: source_entry
+                .get("protectedContent")
+                .and_then(serde_json::Value::as_bool)
+                .unwrap_or(false),
+            ..fabushi_messaging_core::RecipientSearchRequirements::default()
+        }
+    }
+
+    fn authorize_human_share_destination(
+        &self,
+        conversation_id: &str,
+        requirements: fabushi_messaging_core::RecipientSearchRequirements,
+    ) -> Result<(), String> {
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        let local_human_id = self.local_human_id()?;
+        let sender_is_participant = metadata
+            .get("participantIds")
+            .and_then(serde_json::Value::as_array)
+            .is_some_and(|ids| ids.iter().any(|id| id.as_str() == Some(local_human_id)));
+        if !fabushi_messaging_core::recipient_search_authorized(
+            fabushi_messaging_core::RecipientAuthorizationInput::direct_default(
+                sender_is_participant,
+            ),
+            requirements,
+        ) {
+            return Err(
+                "share destination is no longer authorized for the canonical content requirements"
+                    .into(),
+            );
+        }
+        Ok(())
+    }
+
+    fn authorize_canonical_forward_destination(
+        &self,
+        destination: &fabushi_messaging_core::ConversationDestination,
+        requirements: fabushi_messaging_core::RecipientSearchRequirements,
+    ) -> Result<String, String> {
+        if !destination.is_valid() {
+            return Err("forward destination is not a valid canonical ConversationDestination".into());
+        }
+        let transport_conversation_id = destination.message_conversation_id().0.clone();
+        self.authorize_human_share_destination(&transport_conversation_id, requirements)?;
+        if destination.child.is_none() {
+            return Ok(transport_conversation_id);
+        }
+
+        let actor_id = self.story_actor_id()?;
+        let _guard = MESSAGING_PROJECTION_IO_LOCK
+            .get_or_init(|| Mutex::new(()))
+            .lock()
+            .map_err(|_| "canonical messaging projection storage lock is poisoned".to_string())?;
+        let root = self.agents_root.join("_messaging");
+        let service = MessagingService::load_with_blob_store(
+            MessagingJsonFileStateStore::new(root.join("snapshot.json")),
+            MessagingFileBlobStore::new(root.join("blobs")),
+        )
+        .map_err(|error| format!("canonical forward authority could not load: {error}"))?;
+        let child = service
+            .engine()
+            .state()
+            .conversation_child_states
+            .iter()
+            .find(|state| state.destination == *destination && state.actor_id == actor_id)
+            .ok_or_else(|| {
+                "forward destination has no authoritative child state for the active account"
+                    .to_string()
+            })?;
+        if matches!(
+            destination.child.as_ref(),
+            Some(fabushi_messaging_core::ConversationChildIdentity::SavedSublist { .. })
+        ) {
+            let parent_access = service
+                .engine()
+                .state()
+                .saved_sublist_parent_access
+                .get(&destination.conversation_id)
+                .is_some_and(|actors| actors.contains(&actor_id));
+            if !parent_access {
+                return Err(
+                    "SavedSublist forwarding requires authoritative parent access".into(),
+                );
+            }
+            if !child.authoritative_membership_known {
+                return Err(
+                    "SavedSublist forwarding requires authoritative child membership".into(),
+                );
+            }
+        }
+        Ok(transport_conversation_id)
+    }
+
     pub fn search_human_recipients(
         &self,
         source_conversation_id: &str,
@@ -2492,22 +3664,12 @@ impl ProductionSessionWorkers {
         {
             return Err("recipient search source must be a settled canonical message".into());
         }
-        let requirements = fabushi_messaging_core::RecipientSearchRequirements {
-            require_media: source_entry
-                .get("attachments")
-                .and_then(serde_json::Value::as_array)
-                .is_some_and(|attachments| !attachments.is_empty()),
-            source_protected_content: source_entry
-                .get("protectedContent")
-                .and_then(serde_json::Value::as_bool)
-                .unwrap_or(false),
-            ..fabushi_messaging_core::RecipientSearchRequirements::default()
-        };
+        let requirements = Self::human_share_requirements(&source_entry);
         let local_human_id = self.local_human_id()?;
         let normalized_query = query.trim().to_lowercase();
-        let mut recipients = self
-            .list_human_conversations()?
-            .into_iter()
+        let conversations = self.list_human_conversations()?;
+        let mut recipients = conversations
+            .iter()
             .filter(|conversation| {
                 let sender_is_participant = conversation
                     .get("participantIds")
@@ -2541,7 +3703,103 @@ impl ProductionSessionWorkers {
                     });
                 title_matches || participant_matches
             })
+            .cloned()
             .collect::<Vec<_>>();
+
+        for recipient in &mut recipients {
+            let Some(conversation_id) = recipient
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .map(str::to_owned)
+            else {
+                continue;
+            };
+            let label = recipient
+                .get("title")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("Human conversation")
+                .to_string();
+            if let Some(object) = recipient.as_object_mut() {
+                object.insert(
+                    "forwardDestination".into(),
+                    serde_json::json!({ "conversationId": conversation_id, "child": null }),
+                );
+                object.insert("forwardLabel".into(), serde_json::Value::String(label));
+            }
+        }
+
+        // Typed children already belong to the canonical Messaging owner. Snapshot
+        // them under the shared projection lock, then apply the exact send-time
+        // authorization guard before exposing them to renderer search.
+        let actor_id = self.story_actor_id()?;
+        let child_destinations = {
+            let _guard = MESSAGING_PROJECTION_IO_LOCK
+                .get_or_init(|| Mutex::new(()))
+                .lock()
+                .map_err(|_| "canonical messaging projection storage lock is poisoned".to_string())?;
+            let root = self.agents_root.join("_messaging");
+            let service = MessagingService::load_with_blob_store(
+                MessagingJsonFileStateStore::new(root.join("snapshot.json")),
+                MessagingFileBlobStore::new(root.join("blobs")),
+            )
+            .map_err(|error| format!("canonical forward recipient authority could not load: {error}"))?;
+            service
+                .engine()
+                .state()
+                .conversation_child_states
+                .iter()
+                .filter(|state| state.actor_id == actor_id && state.destination.child.is_some())
+                .map(|state| state.destination.clone())
+                .collect::<Vec<_>>()
+        };
+
+        for destination in child_destinations {
+            if self
+                .authorize_canonical_forward_destination(&destination, requirements)
+                .is_err()
+            {
+                continue;
+            }
+            let transport_conversation_id = destination.message_conversation_id().0.as_str();
+            let Some(base) = conversations.iter().find(|conversation| {
+                conversation.get("id").and_then(serde_json::Value::as_str)
+                    == Some(transport_conversation_id)
+            }) else {
+                continue;
+            };
+            let base_title = base
+                .get("title")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("Human conversation");
+            let label = match destination.child.as_ref() {
+                Some(fabushi_messaging_core::ConversationChildIdentity::Topic {
+                    root_message_id,
+                }) => format!("{base_title} · Topic {root_message_id}"),
+                Some(fabushi_messaging_core::ConversationChildIdentity::SavedSublist {
+                    participant_id,
+                }) => format!("{base_title} · Saved {}", participant_id.0),
+                Some(fabushi_messaging_core::ConversationChildIdentity::Conversation {
+                    conversation_id,
+                }) => format!("{base_title} · Conversation {}", conversation_id.0),
+                None => base_title.to_string(),
+            };
+            if !normalized_query.is_empty()
+                && !label.to_lowercase().contains(&normalized_query)
+            {
+                continue;
+            }
+            let mut recipient = base.clone();
+            if let Some(object) = recipient.as_object_mut() {
+                object.insert(
+                    "forwardDestination".into(),
+                    serde_json::to_value(&destination).map_err(|error| {
+                        format!("canonical forward destination could not be encoded: {error}")
+                    })?,
+                );
+                object.insert("forwardLabel".into(), serde_json::Value::String(label));
+            }
+            recipients.push(recipient);
+        }
 
         recipients.sort_by(|left, right| {
             let left_updated = left
@@ -2556,9 +3814,15 @@ impl ProductionSessionWorkers {
                 .partial_cmp(&left_updated)
                 .unwrap_or(std::cmp::Ordering::Equal)
                 .then_with(|| {
-                    left.get("title")
+                    left.get("forwardLabel")
                         .and_then(serde_json::Value::as_str)
-                        .cmp(&right.get("title").and_then(serde_json::Value::as_str))
+                        .or_else(|| left.get("title").and_then(serde_json::Value::as_str))
+                        .cmp(
+                            &right
+                                .get("forwardLabel")
+                                .and_then(serde_json::Value::as_str)
+                                .or_else(|| right.get("title").and_then(serde_json::Value::as_str)),
+                        )
                 })
                 .then_with(|| {
                     left.get("id")
@@ -2574,7 +3838,7 @@ impl ProductionSessionWorkers {
         &self,
         source_conversation_id: &str,
         source_entry_id: &str,
-        destination_conversation_ids: &[String],
+        destination_values: &[serde_json::Value],
         client_nonce: &str,
         drop_sender_names: bool,
         drop_captions: bool,
@@ -2583,19 +3847,31 @@ impl ProductionSessionWorkers {
         if client_nonce.is_empty() || client_nonce.len() > 200 {
             return Err("forwardHumanMessage requires a valid clientNonce".into());
         }
-        if destination_conversation_ids.is_empty() {
+        if destination_values.is_empty() {
             return Err("forwardHumanMessage requires at least one destination".into());
         }
 
         let mut seen_destinations = BTreeSet::new();
         let mut destinations = Vec::new();
-        for destination in destination_conversation_ids {
-            let destination = destination.trim();
-            if destination.is_empty() {
-                return Err("forwardHumanMessage destination id must not be empty".into());
+        for value in destination_values {
+            let destination =
+                serde_json::from_value::<fabushi_messaging_core::ConversationDestination>(
+                    value.clone(),
+                )
+                .map_err(|error| {
+                    format!("forwardHumanMessage destination is not canonical: {error}")
+                })?;
+            if !destination.is_valid() {
+                return Err(
+                    "forwardHumanMessage destination is not a valid ConversationDestination"
+                        .into(),
+                );
             }
-            if seen_destinations.insert(destination.to_string()) {
-                destinations.push(destination.to_string());
+            let key = serde_json::to_string(&destination).map_err(|error| {
+                format!("forwardHumanMessage destination could not be encoded: {error}")
+            })?;
+            if seen_destinations.insert(key) {
+                destinations.push(destination);
             }
         }
         if destinations.len() > 32 {
@@ -2627,6 +3903,7 @@ impl ProductionSessionWorkers {
             return Err("forwardHumanMessage source is protected and cannot be forwarded".into());
         }
 
+        let requirements = Self::human_share_requirements(&source_entry);
         let source_text = source_entry
             .get("content")
             .and_then(serde_json::Value::as_str)
@@ -2678,30 +3955,47 @@ impl ProductionSessionWorkers {
         }
 
         let mut settlement = Vec::with_capacity(destinations.len());
-        for destination_conversation_id in destinations {
+        for destination in destinations {
             let mut digest = Sha256::new();
             digest.update(client_nonce.as_bytes());
             digest.update([0]);
-            digest.update(destination_conversation_id.as_bytes());
+            digest.update(
+                serde_json::to_vec(&destination)
+                    .map_err(|error| format!("forwardHumanMessage destination could not be encoded: {error}"))?,
+            );
             let destination_nonce = format!("human-forward-{:x}", digest.finalize());
 
-            match self.append_human_message_with_context(
-                &destination_conversation_id,
-                forwarded_text,
-                &destination_nonce,
-                None,
-                None,
-                &attachments,
-                Some(&forward_context),
-            ) {
+            let authorized_conversation_id =
+                self.authorize_canonical_forward_destination(&destination, requirements);
+            let send_result = authorized_conversation_id.as_ref().map_err(Clone::clone).and_then(
+                |destination_conversation_id| {
+                    self.append_human_message_with_context(
+                        destination_conversation_id,
+                        forwarded_text,
+                        &destination_nonce,
+                        None,
+                        None,
+                        &attachments,
+                        false,
+                        None,
+                        Some(&forward_context),
+                        Some(&destination),
+                    )
+                },
+            );
+            let settlement_conversation_id = authorized_conversation_id
+                .unwrap_or_else(|_| destination.message_conversation_id().0.clone());
+            match send_result {
                 Ok(entry) => settlement.push(serde_json::json!({
-                    "conversationId": destination_conversation_id,
+                    "destination": destination,
+                    "conversationId": settlement_conversation_id,
                     "clientNonce": destination_nonce,
                     "status": "sent",
                     "entry": entry,
                 })),
                 Err(error) => settlement.push(serde_json::json!({
-                    "conversationId": destination_conversation_id,
+                    "destination": destination,
+                    "conversationId": settlement_conversation_id,
                     "clientNonce": destination_nonce,
                     "status": "failed",
                     "error": error,
@@ -2727,6 +4021,8 @@ impl ProductionSessionWorkers {
         composed_at_ms: Option<f64>,
         reply_to_id: Option<&str>,
         attachments: &[serde_json::Value],
+        silent: bool,
+        scheduled_at_ms: Option<i64>,
     ) -> Result<serde_json::Value, String> {
         self.append_human_message_with_context(
             conversation_id,
@@ -2735,6 +4031,9 @@ impl ProductionSessionWorkers {
             composed_at_ms,
             reply_to_id,
             attachments,
+            silent,
+            scheduled_at_ms,
+            None,
             None,
         )
     }
@@ -2747,7 +4046,10 @@ impl ProductionSessionWorkers {
         composed_at_ms: Option<f64>,
         reply_to_id: Option<&str>,
         attachments: &[serde_json::Value],
+        silent: bool,
+        scheduled_at_ms: Option<i64>,
         forward_context: Option<&serde_json::Value>,
+        route_destination: Option<&fabushi_messaging_core::ConversationDestination>,
     ) -> Result<serde_json::Value, String> {
         let sender_id = self.local_human_id()?;
         let text = text.trim();
@@ -2761,6 +4063,9 @@ impl ProductionSessionWorkers {
         if client_nonce.len() > 200 {
             return Err("sendHumanMessage clientNonce is too long".into());
         }
+        if scheduled_at_ms.is_some_and(|value| value <= 0 || value > 9_007_199_254_740_991) {
+            return Err("sendHumanMessage scheduledAtMs must be a positive JavaScript-safe integer".into());
+        }
         let owner = self.open_human_conversation_db_owner(conversation_id)?;
         let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
         let is_participant = metadata
@@ -2773,16 +4078,7 @@ impl ProductionSessionWorkers {
         let existing = owner
             .get_transcript_entries()
             .map_err(|error| error.to_string())?;
-        let normalized_reply = reply_to_id
-            .map(str::trim)
-            .filter(|value| !value.is_empty());
-        if let Some(reply_id) = normalized_reply {
-            if !existing.iter().any(|entry| {
-                entry.get("id").and_then(serde_json::Value::as_str) == Some(reply_id)
-            }) {
-                return Err("sendHumanMessage reply target is not in this Human conversation".into());
-            }
-        }
+        let normalized_reply = resolve_human_reply_target_id(&existing, reply_to_id)?;
         let normalized_attachments = attachments
             .iter()
             .map(|attachment| {
@@ -2816,7 +4112,7 @@ impl ProductionSessionWorkers {
         }) {
             let same_sender = entry.get("authorId").and_then(serde_json::Value::as_str) == Some(sender_id);
             let same_text = entry.get("content").and_then(serde_json::Value::as_str) == Some(text);
-            let same_reply = entry.get("replyToId").and_then(serde_json::Value::as_str) == normalized_reply;
+            let same_reply = entry.get("replyToId").and_then(serde_json::Value::as_str) == normalized_reply.as_deref();
             let same_attachments = match entry.get("attachments").and_then(serde_json::Value::as_array) {
                 Some(values) => values.len() == normalized_attachments.len()
                     && values.iter().zip(normalized_attachments.iter()).all(|(current, requested)| {
@@ -2826,8 +4122,15 @@ impl ProductionSessionWorkers {
                 None => normalized_attachments.is_empty(),
             };
             let same_forward_context = entry.get("forwardContext") == forward_context;
-            if !(same_sender && same_text && same_reply && same_attachments && same_forward_context) {
-                return Err("sendHumanMessage clientNonce already identifies different content or forward context".into());
+            let route_value = route_destination
+                .map(serde_json::to_value)
+                .transpose()
+                .map_err(|error| format!("sendHumanMessage destination could not be encoded: {error}"))?;
+            let same_route = entry.get("destination") == route_value.as_ref();
+            let same_silent = entry.get("silent").and_then(serde_json::Value::as_bool).unwrap_or(false) == silent;
+            let same_schedule = entry.get("scheduledAtMs").and_then(serde_json::Value::as_i64) == scheduled_at_ms;
+            if !(same_sender && same_text && same_reply && same_attachments && same_forward_context && same_route && same_silent && same_schedule) {
+                return Err("sendHumanMessage clientNonce already identifies different content, forward context, or destination".into());
             }
             if entry.get("remoteMessageId").is_some()
                 || entry.get("delivery").and_then(serde_json::Value::as_str) == Some("sent")
@@ -2857,11 +4160,19 @@ impl ProductionSessionWorkers {
                     "composedAtMs": composed_at_ms,
                     "timestampMs": timestamp_ms,
                     "delivery": "pending",
+                    "silent": silent,
+                    "scheduledAtMs": scheduled_at_ms,
                 });
                 let object = entry.as_object_mut().expect("Human pending message must be an object");
-                if let Some(reply_id) = normalized_reply { object.insert("replyToId".into(), serde_json::json!(reply_id)); }
+                if let Some(reply_id) = normalized_reply.as_deref() { object.insert("replyToId".into(), serde_json::json!(reply_id)); }
                 if !normalized_attachments.is_empty() { object.insert("attachments".into(), serde_json::Value::Array(normalized_attachments.clone())); }
                 if let Some(context) = forward_context { object.insert("forwardContext".into(), context.clone()); }
+                if let Some(destination) = route_destination {
+                    object.insert(
+                        "destination".into(),
+                        serde_json::to_value(destination).expect("canonical destination serializes"),
+                    );
+                }
                 entry
             });
             if !existing.iter().any(|entry| entry.get("id") == pending_entry.get("id"))
@@ -2873,6 +4184,7 @@ impl ProductionSessionWorkers {
             let dispatch_result = (|| -> Result<serde_json::Value, String> {
                 let peer_human_id = self.peer_human_id_from_metadata(&metadata)?;
                 let remote_reply_to_id = normalized_reply
+                    .as_deref()
                     .map(|reply_id| {
                         owner
                             .get_transcript_entries()
@@ -2922,7 +4234,7 @@ impl ProductionSessionWorkers {
                     .map_err(|error| error.to_string())?
                     .ok_or_else(|| "Human pending send disappeared before dispatch".to_string())?;
 
-                let remote = client.send_direct_message(&peer_human_id, text, client_nonce, remote_reply_to_id.as_deref(), &uploaded)?;
+                let remote = client.send_direct_message(&peer_human_id, text, client_nonce, remote_reply_to_id.as_deref(), &uploaded, silent, scheduled_at_ms, route_destination)?;
                 let remote_sender = fabushi_identity_text(&remote.sender_user_id)?;
                 let remote_recipient = fabushi_identity_text(&remote.recipient_user_id)?;
                 let remote_reply_matches = match (&remote_reply_to_id, &remote.reply_to_message_id) {
@@ -2936,6 +4248,9 @@ impl ProductionSessionWorkers {
                     || remote_recipient != peer_human_id
                     || remote.text.trim() != text
                     || remote.client_request_id.as_deref() != Some(client_nonce)
+                    || remote.silent != silent
+                    || remote.scheduled_at_ms != scheduled_at_ms
+                    || remote.destination.as_ref() != route_destination
                     || !remote_reply_matches
                     || remote_resources != uploaded_resources
                 {
@@ -2961,6 +4276,9 @@ impl ProductionSessionWorkers {
             return dispatch_result;
         }
 
+        if scheduled_at_ms.is_some() {
+            return Err("scheduled Human messages require the canonical server transport".into());
+        }
         let mut entry = serde_json::json!({
             "id": format!("human-message:{client_nonce}"),
             "kind": "message",
@@ -2972,6 +4290,8 @@ impl ProductionSessionWorkers {
             "composedAtMs": composed_at_ms,
             "timestampMs": timestamp_ms,
             "delivery": "sent",
+            "silent": silent,
+            "scheduledAtMs": scheduled_at_ms,
         });
         let object = entry
             .as_object_mut()
@@ -2987,6 +4307,13 @@ impl ProductionSessionWorkers {
         }
         if let Some(context) = forward_context {
             object.insert("forwardContext".into(), context.clone());
+        }
+        if let Some(destination) = route_destination {
+            object.insert(
+                "destination".into(),
+                serde_json::to_value(destination)
+                    .map_err(|error| format!("sendHumanMessage destination could not be encoded: {error}"))?,
+            );
         }
         if !owner
             .append_transcript_entry(&entry)
@@ -3104,6 +4431,304 @@ impl ProductionSessionWorkers {
             return Err("Human handoff Agent activity metadata was not durably updated".into());
         }
         Ok(entry)
+    }
+
+    fn stable_recent_participant_actor_id(
+        namespace: &str,
+        canonical_id: &str,
+    ) -> MessagingActorId {
+        let digest = Sha256::digest(canonical_id.as_bytes());
+        let fingerprint = digest[..16]
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>();
+        MessagingActorId::new(format!("{namespace}:{fingerprint}"))
+    }
+
+    fn recent_participant_actor_for_selection(
+        &self,
+        selection_id: &str,
+    ) -> Result<MessagingActor, String> {
+        let selection_id = selection_id.trim();
+        if selection_id.is_empty()
+            || selection_id.len() > 512
+            || selection_id.chars().any(char::is_control)
+        {
+            return Err("canonical participant selection id is invalid".into());
+        }
+        let local_human_id = self.local_human_id()?;
+        if selection_id == local_human_id {
+            return Err("canonical participant selection cannot target the active identity".into());
+        }
+
+        if let Some(agent) = self.summarize_agent_by_id(selection_id, None)? {
+            if agent.is_group {
+                return Err("Recent Peers only accepts an atomic participant selection".into());
+            }
+            return Ok(MessagingActor::assistant(
+                Self::stable_recent_participant_actor_id("assistant:agent", &agent.id).0,
+                agent.name,
+            ));
+        }
+
+        let owner = self.open_human_conversation_db_owner(selection_id)?;
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        if !self.metadata_has_local_human(&metadata)? {
+            return Err("local Human identity is not a participant in the selected conversation".into());
+        }
+        let peer_human_id = self.peer_human_id_from_metadata(&metadata)?;
+        if peer_human_id == local_human_id {
+            return Err("canonical participant selection cannot target the active identity".into());
+        }
+        let display_name = metadata
+            .get("title")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .unwrap_or(peer_human_id.as_str())
+            .to_string();
+        Ok(MessagingActor::human(
+            Self::stable_recent_participant_actor_id("human:peer", &peer_human_id).0,
+            display_name,
+        ))
+    }
+
+    pub fn note_recent_participant_suggestion(
+        &self,
+        selection_id: &str,
+    ) -> Result<serde_json::Value, String> {
+        let peer_actor = self.recent_participant_actor_for_selection(selection_id)?;
+        let peer_actor_id = peer_actor.id.clone();
+        let owner_id = self.story_actor_id()?;
+        if peer_actor_id == owner_id {
+            return Err("canonical participant selection cannot target the active identity".into());
+        }
+
+        if let Some(client) = self.shipping_native_messaging()? {
+            let identity = client.identity()?;
+            if identity.user_id != self.local_human_id()? {
+                return Err(
+                    "Recent Peers credential identity does not match active Human identity".into(),
+                );
+            }
+        }
+
+        let _guard = MESSAGING_PROJECTION_IO_LOCK
+            .get_or_init(|| Mutex::new(()))
+            .lock()
+            .map_err(|_| "canonical messaging projection storage lock is poisoned".to_string())?;
+        let root = self.agents_root.join("_messaging");
+        let mut service = MessagingService::load_with_blob_store(
+            MessagingJsonFileStateStore::new(root.join("snapshot.json")),
+            MessagingFileBlobStore::new(root.join("blobs")),
+        )
+        .map_err(|error| format!("canonical Recent Peers service could not load: {error}"))?;
+        let now_ms = Self::story_server_time_ms();
+
+        service
+            .note_recent_participant_selection(
+                MessagingActor::human(owner_id.0.clone(), "Fabushi Human"),
+                peer_actor,
+                now_ms,
+            )
+            .map_err(|error| format!("canonical Recent Peers persistence failed: {error}"))?;
+        let recent_participant_actor_ids = service
+            .engine()
+            .recent_participant_suggestions(&owner_id)
+            .iter()
+            .map(|actor_id| actor_id.0.clone())
+            .collect::<Vec<_>>();
+        Ok(serde_json::json!({
+            "applied": true,
+            "ownerId": owner_id.0,
+            "peerId": peer_actor_id.0,
+            "recentParticipantActorIds": recent_participant_actor_ids,
+        }))
+    }
+
+    fn story_actor_id(&self) -> Result<MessagingActorId, String> {
+        let account_id = self.local_human_id()?;
+        let digest = Sha256::digest(account_id.as_bytes());
+        let fingerprint = digest[..16]
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>();
+        Ok(MessagingActorId::new(format!("human:account:{fingerprint}")))
+    }
+
+    fn story_server_time_ms() -> i64 {
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .ok()
+            .and_then(|duration| i64::try_from(duration.as_millis()).ok())
+            .unwrap_or(i64::MAX)
+    }
+
+    fn execute_story_messaging(
+        &self,
+        command: MessagingClientCommand,
+    ) -> Result<Vec<MessagingServerEnvelope>, String> {
+        let _guard = MESSAGING_PROJECTION_IO_LOCK
+            .get_or_init(|| Mutex::new(()))
+            .lock()
+            .map_err(|_| "canonical messaging projection storage lock is poisoned".to_string())?;
+        let actor_id = self.story_actor_id()?;
+        let device_id = match self.shipping_native_messaging()? {
+            Some(client) => {
+                let identity = client.identity()?;
+                if identity.user_id != self.local_human_id()? {
+                    return Err("Story credential identity does not match active Human identity".into());
+                }
+                identity.device_id
+            }
+            None => "desktop-local".to_string(),
+        };
+        let root = self.agents_root.join("_messaging");
+        let mut service = MessagingService::load_with_blob_store(
+            MessagingJsonFileStateStore::new(root.join("snapshot.json")),
+            MessagingFileBlobStore::new(root.join("blobs")),
+        )
+        .map_err(|error| format!("canonical Story service could not load: {error}"))?;
+        let now_ms = Self::story_server_time_ms();
+        let context = |request_id: String| MessagingRequestContext {
+            request_id,
+            device_id: device_id.clone(),
+            actor_id: actor_id.clone(),
+            session_id: "desktop-story-surface".into(),
+            sent_at_ms: now_ms,
+        };
+        if !service.engine().state().actors.contains_key(&actor_id) {
+            service.handle(
+                MessagingClientEnvelope {
+                    protocol_version: FABUSHI_MESSAGING_PROTOCOL_VERSION,
+                    context: context(format!("story-actor:{}", Uuid::new_v4().simple())),
+                    command: MessagingClientCommand::UpsertProfile {
+                        actor: MessagingActor::human(actor_id.0.clone(), "Fabushi Human"),
+                    },
+                },
+                now_ms,
+            ).map_err(|error| format!("canonical Story actor projection failed: {error}"))?;
+        }
+        service.handle(
+            MessagingClientEnvelope {
+                protocol_version: FABUSHI_MESSAGING_PROTOCOL_VERSION,
+                context: context(format!("story-command:{}", Uuid::new_v4().simple())),
+                command,
+            },
+            now_ms,
+        ).map_err(|error| format!("canonical Story command failed: {error}"))
+    }
+
+    fn project_story_for_surface(&self, story: MessagingStory) -> Result<serde_json::Value, String> {
+        let actor_id = self.story_actor_id()?;
+        let can_delete = story.owner_id == actor_id;
+        let my_reaction = story
+            .views
+            .get(&actor_id)
+            .and_then(|view| view.reaction.clone());
+        let mut value = serde_json::to_value(story)
+            .map_err(|error| format!("canonical Story projection serialization failed: {error}"))?;
+        let object = value
+            .as_object_mut()
+            .ok_or_else(|| "canonical Story projection was not an object".to_string())?;
+        object.insert("canDelete".into(), serde_json::Value::Bool(can_delete));
+        object.insert(
+            "myReaction".into(),
+            my_reaction.map_or(serde_json::Value::Null, serde_json::Value::String),
+        );
+        Ok(value)
+    }
+
+    pub fn story_stealth_status(&self) -> Result<serde_json::Value, String> {
+        let responses = self.execute_story_messaging(MessagingClientCommand::StoryStealthStatus)?;
+        responses
+            .into_iter()
+            .find_map(|envelope| match envelope.event {
+                MessagingServerEvent::StoryStealthStatus { state, entitled } => {
+                    Some(serde_json::json!({ "state": state, "entitled": entitled }))
+                }
+                _ => None,
+            })
+            .ok_or_else(|| "canonical Story stealth status returned no projection".to_string())
+    }
+
+    pub fn activate_story_stealth(&self, request_id: &str) -> Result<serde_json::Value, String> {
+        let request_id = request_id.trim();
+        if request_id.is_empty() || request_id.len() > 160 {
+            return Err("activateStoryStealth requires a valid requestId".into());
+        }
+        let responses = self.execute_story_messaging(MessagingClientCommand::ActivateStoryStealth {
+            request_id: request_id.to_string(),
+        })?;
+        responses
+            .into_iter()
+            .find_map(|envelope| match envelope.event {
+                MessagingServerEvent::StoryStealthChanged { state } => serde_json::to_value(state).ok(),
+                _ => None,
+            })
+            .ok_or_else(|| "canonical Story stealth activation returned no state projection".to_string())
+    }
+
+    pub fn list_stories(&self, limit: usize) -> Result<Vec<serde_json::Value>, String> {
+        let responses = self.execute_story_messaging(MessagingClientCommand::ListStories {
+            limit: u32::try_from(limit.clamp(1, 500)).unwrap_or(500),
+        })?;
+        let stories = responses.into_iter().find_map(|envelope| match envelope.event {
+            MessagingServerEvent::StoriesSnapshot { stories } => Some(stories),
+            _ => None,
+        }).ok_or_else(|| "canonical Story projection returned no StoriesSnapshot".to_string())?;
+        stories.into_iter()
+            .map(|story| self.project_story_for_surface(story))
+            .collect()
+    }
+
+    pub fn view_story(&self, story_id: &str) -> Result<serde_json::Value, String> {
+        let story_id = story_id.trim();
+        if story_id.is_empty() || story_id.len() > 160 {
+            return Err("viewStory requires a valid Story id".into());
+        }
+        let responses = self.execute_story_messaging(MessagingClientCommand::ViewStory {
+            story_id: MessagingStoryId(story_id.to_string()),
+        })?;
+        let story = responses.into_iter().find_map(|envelope| match envelope.event {
+            MessagingServerEvent::StoryChanged { story } => Some(story),
+            _ => None,
+        }).ok_or_else(|| "canonical Story view returned no StoryChanged projection".to_string())?;
+        self.project_story_for_surface(story)
+    }
+
+    pub fn react_story(&self, story_id: &str, reaction: Option<&str>) -> Result<serde_json::Value, String> {
+        let story_id = story_id.trim();
+        if story_id.is_empty() || story_id.len() > 160 {
+            return Err("reactStory requires a valid Story id".into());
+        }
+        let reaction = reaction.map(str::trim).filter(|value| !value.is_empty()).map(str::to_string);
+        if reaction.as_ref().is_some_and(|value| value.as_bytes().len() > 32) {
+            return Err("Story reaction exceeds the 32-byte surface limit".into());
+        }
+        let responses = self.execute_story_messaging(MessagingClientCommand::ReactStory {
+            story_id: MessagingStoryId(story_id.to_string()),
+            reaction,
+        })?;
+        let story = responses.into_iter().find_map(|envelope| match envelope.event {
+            MessagingServerEvent::StoryChanged { story } => Some(story),
+            _ => None,
+        }).ok_or_else(|| "canonical Story reaction returned no StoryChanged projection".to_string())?;
+        self.project_story_for_surface(story)
+    }
+
+    pub fn delete_story(&self, story_id: &str) -> Result<bool, String> {
+        let story_id = story_id.trim();
+        if story_id.is_empty() || story_id.len() > 160 {
+            return Err("deleteStory requires a valid Story id".into());
+        }
+        let responses = self.execute_story_messaging(MessagingClientCommand::DeleteStory {
+            story_id: MessagingStoryId(story_id.to_string()),
+        })?;
+        Ok(responses.into_iter().any(|envelope| matches!(
+            envelope.event,
+            MessagingServerEvent::StoryDeleted { story_id: deleted } if deleted.0 == story_id
+        )))
     }
 
     pub fn toggle_human_message_reaction(
@@ -3485,6 +5110,9 @@ impl ProductionSessionWorkers {
     }
 
     fn shutdown_inner(&self, checkpoint: bool) {
+        if let Ok(mut resolver) = self.remote_resource_resolver.lock() {
+            let _ = resolver.cancel_all();
+        }
         let agent_stores = self
             .agent_store_owners
             .lock()
@@ -3527,6 +5155,244 @@ mod sharebox_shipping_tests {
     }
 
     #[test]
+    fn shipping_saved_sublist_server_authority_reconciles_durably_and_survives_restart() {
+        let root =
+            std::env::temp_dir().join(format!("fabushi-saved-authority-{}", Uuid::new_v4()));
+        let workers = test_workers(&root);
+        let destination = fabushi_messaging_core::ConversationDestination::saved_sublist(
+            fabushi_messaging_core::ConversationId::new("saved:self"),
+            fabushi_messaging_core::ActorId::new("human:peer"),
+        );
+        let entries = vec![
+            serde_json::json!({
+                "id": "human-server-message:7",
+                "kind": "message",
+                "remoteMessageId": "7",
+                "destination": serde_json::to_value(&destination).unwrap(),
+            }),
+            serde_json::json!({
+                "id": "human-server-message:8",
+                "kind": "message",
+                "remoteMessageId": "8",
+                "destination": serde_json::to_value(&destination).unwrap(),
+            }),
+        ];
+
+        let first_generation = match workers
+            .begin_saved_sublist_authority_generation("saved:self")
+            .unwrap()
+        {
+            SavedSublistAuthoritySyncAdmission::Leader(generation) => generation,
+            SavedSublistAuthoritySyncAdmission::Follower => {
+                panic!("first SavedSublist authority request must lead")
+            }
+        };
+        assert!(workers
+            .reconcile_saved_sublist_authority_from_transcript(
+                "saved:self",
+                first_generation,
+                &entries,
+            )
+            .unwrap());
+
+        // A concurrent duplicate joins the in-flight request instead of launching
+        // a parallel authority write. Its refresh intent is folded into exactly
+        // one next generation before the waiter is released.
+        assert_eq!(
+            workers
+                .begin_saved_sublist_authority_generation("saved:self")
+                .unwrap(),
+            SavedSublistAuthoritySyncAdmission::Follower
+        );
+        let current_generation = workers
+            .complete_saved_sublist_authority_generation(
+                "saved:self",
+                first_generation,
+                None,
+            )
+            .unwrap()
+            .expect("coalesced refresh should advance one generation");
+
+        let stale_only = vec![serde_json::json!({
+            "id": "human-server-message:9",
+            "kind": "message",
+            "remoteMessageId": "9",
+            "destination": serde_json::to_value(&destination).unwrap(),
+        })];
+        assert!(!workers
+            .reconcile_saved_sublist_authority_from_transcript(
+                "saved:self",
+                first_generation,
+                &stale_only,
+            )
+            .unwrap());
+
+        let untrusted_local_only = vec![serde_json::json!({
+            "id": "pending-local-only",
+            "kind": "message",
+            "destination": serde_json::to_value(&destination).unwrap(),
+        })];
+        assert!(workers
+            .reconcile_saved_sublist_authority_from_transcript(
+                "saved:self",
+                current_generation,
+                &untrusted_local_only,
+            )
+            .unwrap());
+        assert_eq!(
+            workers
+                .complete_saved_sublist_authority_generation(
+                    "saved:self",
+                    current_generation,
+                    None,
+                )
+                .unwrap(),
+            None
+        );
+        workers
+            .wait_for_saved_sublist_authority_generation("saved:self")
+            .unwrap();
+
+        let actor_id = workers.story_actor_id().unwrap();
+        let messaging_root = root.join("_messaging");
+        let load = || {
+            MessagingService::load_with_blob_store(
+                MessagingJsonFileStateStore::new(messaging_root.join("snapshot.json")),
+                MessagingFileBlobStore::new(messaging_root.join("blobs")),
+            )
+            .unwrap()
+        };
+        let service = load();
+        let state = service.engine().state();
+        assert!(
+            state
+                .saved_sublist_parent_access
+                .get(&destination.conversation_id)
+                .is_some_and(|actors| actors.contains(&actor_id))
+        );
+        let child = state
+            .conversation_child_states
+            .iter()
+            .find(|child| child.destination == destination && child.actor_id == actor_id)
+            .unwrap();
+        assert!(child.authoritative_membership_known);
+        assert_eq!(
+            child.authoritative_message_ids,
+            vec![
+                "human-server-message:7".to_string(),
+                "human-server-message:8".to_string(),
+            ]
+        );
+        drop(service);
+
+        let restarted = load();
+        let restarted_child = restarted
+            .engine()
+            .state()
+            .conversation_child_states
+            .iter()
+            .find(|child| child.destination == destination && child.actor_id == actor_id)
+            .unwrap();
+        assert!(restarted_child.authoritative_membership_known);
+        assert_eq!(
+            restarted_child.authoritative_message_ids,
+            vec![
+                "human-server-message:7".to_string(),
+                "human-server-message:8".to_string(),
+            ]
+        );
+        drop(restarted);
+        workers.shutdown();
+        let _ = fs::remove_dir_all(root);
+    }
+
+    fn seed_forward_child_authorities_with_parent_access(
+        workers: &ProductionSessionWorkers,
+        destinations: &[(fabushi_messaging_core::ConversationDestination, bool)],
+        saved_parent_access: bool,
+    ) {
+        let actor_id = workers.story_actor_id().unwrap();
+        let mut state = fabushi_messaging_core::MessagingState::default();
+        for (destination, membership_known) in destinations {
+            let mut child = fabushi_messaging_core::ConversationChildRuntimeState::new(
+                destination.clone(),
+                actor_id.clone(),
+            )
+            .unwrap();
+            if *membership_known {
+                assert!(child.reconcile_authoritative_message_ids(Vec::new()));
+            }
+            if saved_parent_access
+                && matches!(
+                    destination.child.as_ref(),
+                    Some(fabushi_messaging_core::ConversationChildIdentity::SavedSublist { .. })
+                )
+            {
+                state
+                    .saved_sublist_parent_access
+                    .entry(destination.conversation_id.clone())
+                    .or_default()
+                    .insert(actor_id.clone());
+            }
+            state.conversation_child_states.push(child);
+        }
+        let snapshot = fabushi_messaging_core::MessagingSnapshot::new(state, 0, 1);
+        let snapshot_path = workers.agents_root.join("_messaging").join("snapshot.json");
+        fs::create_dir_all(snapshot_path.parent().unwrap()).unwrap();
+        fs::write(snapshot_path, serde_json::to_vec(&snapshot).unwrap()).unwrap();
+    }
+
+    fn seed_forward_child_authorities(
+        workers: &ProductionSessionWorkers,
+        destinations: &[(fabushi_messaging_core::ConversationDestination, bool)],
+    ) {
+        seed_forward_child_authorities_with_parent_access(workers, destinations, true);
+    }
+
+    #[test]
+    fn human_reply_target_aliases_follow_durable_settlement_identity() {
+        let entries = vec![serde_json::json!({
+            "id": "human-server-message:7",
+            "kind": "message",
+            "clientNonce": "root-nonce",
+            "remoteMessageId": 7
+        })];
+
+        assert_eq!(
+            resolve_human_reply_target_id(&entries, Some("human-server-message:7"))
+                .unwrap()
+                .as_deref(),
+            Some("human-server-message:7")
+        );
+        assert_eq!(
+            resolve_human_reply_target_id(&entries, Some("pending-root-nonce"))
+                .unwrap()
+                .as_deref(),
+            Some("human-server-message:7")
+        );
+        assert_eq!(
+            resolve_human_reply_target_id(&entries, Some("human-message:root-nonce"))
+                .unwrap()
+                .as_deref(),
+            Some("human-server-message:7")
+        );
+        assert_eq!(
+            resolve_human_reply_target_id(&entries, Some("pending-other"))
+                .unwrap_err(),
+            "sendHumanMessage reply target is not in this Human conversation"
+        );
+        assert_eq!(resolve_human_reply_target_id(&entries, None).unwrap(), None);
+
+        let ambiguous = vec![
+            serde_json::json!({ "id": "human-server-message:7", "clientNonce": "root-nonce" }),
+            serde_json::json!({ "id": "human-server-message:8", "clientNonce": "root-nonce" }),
+        ];
+        assert!(resolve_human_reply_target_id(&ambiguous, Some("pending-root-nonce"))
+            .unwrap_err()
+            .contains("ambiguous"));
+    }
+
+    #[test]
     fn shipping_human_forward_reuses_session_owner_across_retry_and_restart() {
         let root = std::env::temp_dir().join(format!("fabushi-forward-{}", Uuid::new_v4()));
         let workers = test_workers(&root);
@@ -3535,7 +5401,7 @@ mod sharebox_shipping_tests {
         let beta = conversation_id(&workers.create_human_conversation("human-beta", "Beta").unwrap());
 
         let source_entry = workers
-            .append_human_message(&source, "forward me", "source-nonce", Some(10.0), None, &[])
+            .append_human_message(&source, "forward me", "source-nonce", Some(10.0), None, &[], false, None)
             .unwrap();
         let source_entry_id = source_entry.get("id").and_then(serde_json::Value::as_str).unwrap();
 
@@ -3546,7 +5412,11 @@ mod sharebox_shipping_tests {
         assert_eq!(search[0].get("id").and_then(serde_json::Value::as_str), Some(beta.as_str()));
 
         let missing = "human-direct-does-not-exist".to_string();
-        let destinations = vec![alpha.clone(), missing.clone(), alpha.clone()];
+        let destinations = vec![
+            serde_json::json!({ "conversationId": alpha, "child": null }),
+            serde_json::json!({ "conversationId": missing, "child": null }),
+            serde_json::json!({ "conversationId": alpha, "child": null }),
+        ];
         let first = workers
             .forward_human_message(&source, source_entry_id, &destinations, "forward-request-1", false, true)
             .unwrap();
@@ -3554,6 +5424,33 @@ mod sharebox_shipping_tests {
         assert_eq!(settlement.len(), 2, "duplicate destinations must collapse before fan-out");
         assert_eq!(settlement[0].get("status").and_then(serde_json::Value::as_str), Some("sent"));
         assert_eq!(settlement[1].get("status").and_then(serde_json::Value::as_str), Some("failed"));
+
+        let child_blocked = workers
+            .forward_human_message(
+                &source,
+                source_entry_id,
+                &[serde_json::json!({
+                    "conversationId": alpha,
+                    "child": {
+                        "kind": "topic",
+                        "rootMessageId": "topic:unsupported",
+                    },
+                })],
+                "forward-child-blocked",
+                false,
+                false,
+            )
+            .unwrap();
+        assert_eq!(
+            child_blocked.pointer("/destinations/0/status").and_then(serde_json::Value::as_str),
+            Some("failed"),
+        );
+        assert_eq!(
+            child_blocked.pointer("/destinations/0/destination/child/kind").and_then(serde_json::Value::as_str),
+            Some("topic"),
+        );
+        assert!(child_blocked.pointer("/destinations/0/error").and_then(serde_json::Value::as_str)
+            .is_some_and(|error| error.contains("no authoritative child state")));
 
         let alpha_entries = workers.read_human_conversation_transcript(&alpha).unwrap();
         assert_eq!(alpha_entries.len(), 1);
@@ -3573,7 +5470,14 @@ mod sharebox_shipping_tests {
         assert_eq!(workers.read_human_conversation_transcript(&alpha).unwrap().len(), 1);
 
         let changed = workers
-            .forward_human_message(&source, source_entry_id, &[alpha.clone()], "forward-request-1", false, false)
+            .forward_human_message(
+                &source,
+                source_entry_id,
+                &[serde_json::json!({ "conversationId": alpha, "child": null })],
+                "forward-request-1",
+                false,
+                false,
+            )
             .unwrap();
         assert_eq!(
             changed.pointer("/destinations/0/status").and_then(serde_json::Value::as_str),
@@ -3586,7 +5490,14 @@ mod sharebox_shipping_tests {
 
         let restarted = test_workers(&root);
         let replay_after_restart = restarted
-            .forward_human_message(&source, source_entry_id, &[alpha.clone()], "forward-request-1", false, true)
+            .forward_human_message(
+                &source,
+                source_entry_id,
+                &[serde_json::json!({ "conversationId": alpha, "child": null })],
+                "forward-request-1",
+                false,
+                true,
+            )
             .unwrap();
         assert_eq!(
             replay_after_restart.pointer("/destinations/0/status").and_then(serde_json::Value::as_str),
@@ -3594,6 +5505,262 @@ mod sharebox_shipping_tests {
         );
         assert_eq!(restarted.read_human_conversation_transcript(&alpha).unwrap().len(), 1);
         restarted.shutdown();
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn shipping_human_forward_accepts_authoritative_typed_children_and_fails_closed_when_stale() {
+        let root = std::env::temp_dir().join(format!("fabushi-forward-children-{}", Uuid::new_v4()));
+        let workers = test_workers(&root);
+        let source = conversation_id(&workers.create_human_conversation("human-source", "Source").unwrap());
+        let alpha = conversation_id(&workers.create_human_conversation("human-alpha", "Alpha").unwrap());
+        let beta = conversation_id(&workers.create_human_conversation("human-beta", "Beta").unwrap());
+        let source_entry = workers
+            .append_human_message(&source, "typed forward", "typed-source", Some(10.0), None, &[], false, None)
+            .unwrap();
+        let source_entry_id = source_entry.get("id").and_then(serde_json::Value::as_str).unwrap();
+
+        let topic = fabushi_messaging_core::ConversationDestination::topic(
+            fabushi_messaging_core::ConversationId::new(alpha.clone()),
+            "message:topic-root",
+        );
+        let saved = fabushi_messaging_core::ConversationDestination::saved_sublist(
+            fabushi_messaging_core::ConversationId::new(alpha.clone()),
+            fabushi_messaging_core::ActorId::new("human-alpha"),
+        );
+        let nested = fabushi_messaging_core::ConversationDestination::nested_conversation(
+            fabushi_messaging_core::ConversationId::new(alpha.clone()),
+            fabushi_messaging_core::ConversationId::new(beta.clone()),
+        );
+        seed_forward_child_authorities(
+            &workers,
+            &[
+                (topic.clone(), false),
+                (saved.clone(), true),
+                (nested.clone(), false),
+            ],
+        );
+
+        let searchable = workers
+            .search_human_recipients(&source, source_entry_id, "", 50)
+            .unwrap();
+        for kind in ["topic", "savedSublist", "conversation"] {
+            assert!(
+                searchable.iter().any(|recipient| {
+                    recipient
+                        .pointer("/forwardDestination/child/kind")
+                        .and_then(serde_json::Value::as_str)
+                        == Some(kind)
+                }),
+                "authorized typed child {kind} must be discoverable before forwarding"
+            );
+        }
+        assert!(searchable.iter().any(|recipient| {
+            recipient
+                .pointer("/forwardDestination/child/kind")
+                .and_then(serde_json::Value::as_str)
+                == Some("savedSublist")
+                && recipient
+                    .get("forwardLabel")
+                    .and_then(serde_json::Value::as_str)
+                    .is_some_and(|label| label.contains("Saved human-alpha"))
+        }));
+
+        let result = workers
+            .forward_human_message(
+                &source,
+                source_entry_id,
+                &[
+                    serde_json::to_value(&topic).unwrap(),
+                    serde_json::to_value(&saved).unwrap(),
+                    serde_json::to_value(&nested).unwrap(),
+                ],
+                "typed-children-success",
+                false,
+                false,
+            )
+            .unwrap();
+        let settlements = result.get("destinations").and_then(serde_json::Value::as_array).unwrap();
+        assert_eq!(settlements.len(), 3);
+        assert!(settlements.iter().all(|item| {
+            item.get("status").and_then(serde_json::Value::as_str) == Some("sent")
+        }));
+
+        let alpha_entries = workers.read_human_conversation_transcript(&alpha).unwrap();
+        assert_eq!(alpha_entries.len(), 2);
+        assert_eq!(
+            alpha_entries[0].pointer("/destination/child/kind").and_then(serde_json::Value::as_str),
+            Some("topic"),
+        );
+        assert_eq!(
+            alpha_entries[1].pointer("/destination/child/kind").and_then(serde_json::Value::as_str),
+            Some("savedSublist"),
+        );
+        let beta_entries = workers.read_human_conversation_transcript(&beta).unwrap();
+        assert_eq!(beta_entries.len(), 1);
+        assert_eq!(
+            beta_entries[0].pointer("/destination/child/kind").and_then(serde_json::Value::as_str),
+            Some("conversation"),
+        );
+
+        seed_forward_child_authorities(&workers, &[(saved.clone(), true), (nested.clone(), false)]);
+        let stale = workers
+            .forward_human_message(
+                &source,
+                source_entry_id,
+                &[serde_json::to_value(&topic).unwrap()],
+                "typed-child-stale",
+                false,
+                false,
+            )
+            .unwrap();
+        assert_eq!(
+            stale.pointer("/destinations/0/status").and_then(serde_json::Value::as_str),
+            Some("failed"),
+        );
+        assert!(stale.pointer("/destinations/0/error").and_then(serde_json::Value::as_str)
+            .is_some_and(|error| error.contains("no authoritative child state")));
+
+        seed_forward_child_authorities_with_parent_access(
+            &workers,
+            &[(saved.clone(), true)],
+            false,
+        );
+        let missing_parent_access = workers
+            .forward_human_message(
+                &source,
+                source_entry_id,
+                &[serde_json::to_value(&saved).unwrap()],
+                "typed-saved-no-parent-access",
+                false,
+                false,
+            )
+            .unwrap();
+        assert_eq!(
+            missing_parent_access.pointer("/destinations/0/status").and_then(serde_json::Value::as_str),
+            Some("failed"),
+        );
+        assert!(missing_parent_access.pointer("/destinations/0/error").and_then(serde_json::Value::as_str)
+            .is_some_and(|error| error.contains("authoritative parent access")));
+        let hidden_without_parent = workers
+            .search_human_recipients(&source, source_entry_id, "Saved", 50)
+            .unwrap();
+        assert!(
+            hidden_without_parent.iter().all(|recipient| {
+                recipient
+                    .pointer("/forwardDestination/child/kind")
+                    .and_then(serde_json::Value::as_str)
+                    != Some("savedSublist")
+            }),
+            "SavedSublist without authoritative parent access must be filtered before renderer exposure"
+        );
+
+        seed_forward_child_authorities(&workers, &[(saved.clone(), false)]);
+        let missing_membership = workers
+            .forward_human_message(
+                &source,
+                source_entry_id,
+                &[serde_json::to_value(&saved).unwrap()],
+                "typed-saved-no-membership",
+                false,
+                false,
+            )
+            .unwrap();
+        assert_eq!(
+            missing_membership.pointer("/destinations/0/status").and_then(serde_json::Value::as_str),
+            Some("failed"),
+        );
+        assert!(missing_membership.pointer("/destinations/0/error").and_then(serde_json::Value::as_str)
+            .is_some_and(|error| error.contains("authoritative child membership")));
+        let hidden_without_membership = workers
+            .search_human_recipients(&source, source_entry_id, "Saved", 50)
+            .unwrap();
+        assert!(
+            hidden_without_membership.iter().all(|recipient| {
+                recipient
+                    .pointer("/forwardDestination/child/kind")
+                    .and_then(serde_json::Value::as_str)
+                    != Some("savedSublist")
+            }),
+            "SavedSublist without authoritative membership must be filtered before renderer exposure"
+        );
+
+        workers.shutdown();
+        let _ = fs::remove_dir_all(root);
+    }
+
+    fn remote_resource_fixture(resource_id: &str) -> FabushiRemoteHumanAttachment {
+        FabushiRemoteHumanAttachment {
+            resource_id: resource_id.to_string(),
+            name: "proof.bin".to_string(),
+            content_type: "application/octet-stream".to_string(),
+            size: 4,
+            created_at: "2026-10-10T00:00:00Z".to_string(),
+        }
+    }
+
+    #[test]
+    fn shipping_resource_refresh_rejects_the_old_generation_before_commit() {
+        let root = std::env::temp_dir().join(format!("fabushi-resource-refresh-{}", Uuid::new_v4()));
+        let workers = test_workers(&root);
+        let attachment = remote_resource_fixture("resource-refresh");
+
+        let stale = workers.materialize_remote_human_attachment_with_fetch(
+            &attachment,
+            |resource_id, _| {
+                workers
+                    .remote_resource_resolver
+                    .lock()
+                    .unwrap()
+                    .refresh(resource_id, MediaResolvePriority::UserVisible)
+                    .unwrap();
+                Ok(vec![1, 2, 3, 4])
+            },
+        );
+        assert!(stale
+            .unwrap_err()
+            .contains("stale or cancelled"));
+        let durable = root
+            .join("human-message-resources")
+            .join("resource-refresh")
+            .join("proof.bin");
+        assert!(!durable.exists(), "stale generation must not publish bytes");
+
+        let recovered = workers
+            .materialize_remote_human_attachment_with_fetch(&attachment, |_, _| {
+                Ok(vec![4, 3, 2, 1])
+            })
+            .expect("fresh generation should recover");
+        assert_eq!(
+            recovered.get("resourceId").and_then(serde_json::Value::as_str),
+            Some("resource-refresh")
+        );
+        assert_eq!(fs::read(&durable).unwrap(), [4_u8, 3, 2, 1]);
+        workers.shutdown();
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn shipping_resource_teardown_fences_late_fetch_completion() {
+        let root = std::env::temp_dir().join(format!("fabushi-resource-teardown-{}", Uuid::new_v4()));
+        let workers = test_workers(&root);
+        let attachment = remote_resource_fixture("resource-teardown");
+
+        let late = workers.materialize_remote_human_attachment_with_fetch(
+            &attachment,
+            |_, _| {
+                workers.shutdown();
+                Ok(vec![1, 2, 3, 4])
+            },
+        );
+        assert!(late
+            .unwrap_err()
+            .contains("stale or cancelled"));
+        assert!(!root
+            .join("human-message-resources")
+            .join("resource-teardown")
+            .join("proof.bin")
+            .exists());
         let _ = fs::remove_dir_all(root);
     }
 }

@@ -44,15 +44,17 @@ jobs:
           if (!(lock.coverage.unknown_minimum > 0 && lock.coverage.unread_minimum > 0)) throw new Error('source closure must not fabricate semantic coverage');
           NODE
       - name: Discover build-time acquisition candidates at exact upstream
+        if: ${{ always() }}
         shell: bash
         run: |
           set -euo pipefail
+          mkdir -p artifacts/tdrp-authority
+          : > artifacts/tdrp-authority/build-time-acquisition-candidates.txt
           upstream_sha="$(node -p "require('./projects/telegram-desktop-rust/upstream.lock.json').upstream.commit")"
           work="$RUNNER_TEMP/tdesktop-acquisition-scan"
           git clone --filter=blob:none --no-checkout https://github.com/telegramdesktop/tdesktop.git "$work"
           git -C "$work" checkout --detach "$upstream_sha"
           test "$(git -C "$work" rev-parse HEAD)" = "$upstream_sha"
-          mkdir -p artifacts/tdrp-authority
           (
             cd "$work"
             grep -RInE --exclude-dir=.git --exclude='*.patch' --exclude='*.diff' \
@@ -114,6 +116,7 @@ jobs:
           node scripts/discover-tdrp-root-tool-authority.mjs
 
       - name: Upload source-authority evidence
+        if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
           name: tdrp-revision9-authority-${{ github.sha }}

@@ -1,0 +1,161 @@
+{
+  "format_version": 3,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "tree": "9d8fa87ce68c832d2f4c99f372a5bb672463c3e1"
+  },
+  "range": {
+    "first_order": 6389,
+    "last_order": 6392,
+    "entries": 4
+  },
+  "rows": [
+    {
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "tdesktop Window section/session source authority",
+      "ui_disposition": "Qt widget/painting/slide implementation is presentation-specific; routing, focus, permission, search, theme/resource and send behavior remains applicable and must use Fabushi canonical components.",
+      "fabushi_canonical_owner": "existing ProductShell/ConversationWorkspace/Navigation/Search/Permissions/Composer/Resource/Message owners",
+      "platform_differences": "Qt section/widget mechanics map to typed route/workspace/component state; product state/lifecycle and async stale fencing remain source-neutral.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "reachability_status": "accepted exact blob read/responsibility-decomposed; canonical owner candidates exist; complete production/evidence remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c",
+      "notes": "No mechanical SectionWidget port. Responsibility is split into existing owners.",
+      "recursive_order": 6389,
+      "source_path": "Telegram/SourceFiles/window/section_memento.h",
+      "source_blob_sha": "d139928a9996a6333e541a5db9c77e64056b41fd",
+      "responsibility": "Section navigation memento/layer contract: recreate canonical section in a target column/geometry, optional instant/layer presentation, and topic/sublist remove-request ownership.",
+      "state_machine": "Navigation/media async state must preserve exact conversation/thread identity and reject stale/destroyed targets.",
+      "side_effects": "Workspace routing/focus/theme/resource/send/permission projections.",
+      "failure_cases": "Stale async target, wrong thread/topic, duplicate send, ephemeral reply violation, lost reply metadata, permission drift and focus/navigation resurrection.",
+      "fabushi_target": "Existing ProductShell/canonical routing/workspace history owner must carry serializable route identity and removal lifecycle; no Telegram Section root.",
+      "production_evidence": "Existing canonical Fabushi owners inspected; no verified credit claimed for open slices.",
+      "test_evidence": "Focused workspace/send/theme regression and exact-head Actions remain required.",
+      "consumer_evidence": [
+        "frontend/src",
+        "native/mahayana-messaging/src",
+        "source/electron-main"
+      ],
+      "source_binary_evidence": {
+        "evidence_status": "accepted-exact-blob-read-current-descendant-actions-required",
+        "accepted_upstream": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+        "verified_blob_sha": "d139928a9996a6333e541a5db9c77e64056b41fd",
+        "file_type": "blob",
+        "recursive_order": 6389
+      }
+    },
+    {
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "tdesktop Window section/session source authority",
+      "ui_disposition": "Qt widget/painting/slide implementation is presentation-specific; routing, focus, permission, search, theme/resource and send behavior remains applicable and must use Fabushi canonical components.",
+      "fabushi_canonical_owner": "existing ProductShell/ConversationWorkspace/Navigation/Search/Permissions/Composer/Resource/Message owners",
+      "platform_differences": "Qt section/widget mechanics map to typed route/workspace/component state; product state/lifecycle and async stale fencing remain source-neutral.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "reachability_status": "accepted exact blob read/responsibility-decomposed; canonical owner candidates exist; complete production/evidence remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c",
+      "notes": "No mechanical SectionWidget port. Responsibility is split into existing owners.",
+      "recursive_order": 6390,
+      "source_path": "Telegram/SourceFiles/window/section_widget.cpp",
+      "source_blob_sha": "1c11463f2104cfffed4938c7bec6af73cad633cf",
+      "responsibility": "Canonical section behavior beyond presentation: peer/theme/wallpaper resolution with async media and stale-safe reactive updates, show-transition lifecycle/focus restoration, size-shift semantics, premium-send/reaction permission/error handling and background state.",
+      "state_machine": "Navigation/media async state must preserve exact conversation/thread identity and reject stale/destroyed targets.",
+      "side_effects": "Workspace routing/focus/theme/resource/send/permission projections.",
+      "failure_cases": "Stale async target, wrong thread/topic, duplicate send, ephemeral reply violation, lost reply metadata, permission drift and focus/navigation resurrection.",
+      "fabushi_target": "Existing ProductShell/ConversationWorkspace/theme/resource/permission owners are canonical. Qt animation/painting is presentation-specific, but theme resolution, focus/navigation lifecycle and reaction/send gating remain applicable.",
+      "production_evidence": "Existing canonical Fabushi owners inspected; no verified credit claimed for open slices.",
+      "test_evidence": "Focused workspace/send/theme regression and exact-head Actions remain required.",
+      "consumer_evidence": [
+        "frontend/src",
+        "native/mahayana-messaging/src",
+        "source/electron-main"
+      ],
+      "source_binary_evidence": {
+        "evidence_status": "accepted-exact-blob-read-current-descendant-actions-required",
+        "accepted_upstream": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+        "verified_blob_sha": "1c11463f2104cfffed4938c7bec6af73cad633cf",
+        "file_type": "blob",
+        "recursive_order": 6390
+      }
+    },
+    {
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "tdesktop Window section/session source authority",
+      "ui_disposition": "Qt widget/painting/slide implementation is presentation-specific; routing, focus, permission, search, theme/resource and send behavior remains applicable and must use Fabushi canonical components.",
+      "fabushi_canonical_owner": "existing ProductShell/ConversationWorkspace/Navigation/Search/Permissions/Composer/Resource/Message owners",
+      "platform_differences": "Qt section/widget mechanics map to typed route/workspace/component state; product state/lifecycle and async stale fencing remain source-neutral.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "reachability_status": "accepted exact blob read/responsibility-decomposed; canonical owner candidates exist; complete production/evidence remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c",
+      "notes": "No mechanical SectionWidget port. Responsibility is split into existing owners.",
+      "recursive_order": 6391,
+      "source_path": "Telegram/SourceFiles/window/section_widget.h",
+      "source_blob_sha": "55f6de72ab0b6716a9ee6f143fb4d641eaef7764",
+      "responsibility": "Typed workspace section contract: active chat, embedded search, report-message selection, theme toggle, close prevention, bot command/single-use keyboard, send-file confirmation, memento identity, focus/remove requests and layered geometry.",
+      "state_machine": "Navigation/media async state must preserve exact conversation/thread identity and reject stale/destroyed targets.",
+      "side_effects": "Workspace routing/focus/theme/resource/send/permission projections.",
+      "failure_cases": "Stale async target, wrong thread/topic, duplicate send, ephemeral reply violation, lost reply metadata, permission drift and focus/navigation resurrection.",
+      "fabushi_target": "Map each responsibility to existing ConversationWorkspace/Search/Permissions/Composer/Navigation owners rather than one SectionWidget port.",
+      "production_evidence": "Existing canonical Fabushi owners inspected; no verified credit claimed for open slices.",
+      "test_evidence": "Focused workspace/send/theme regression and exact-head Actions remain required.",
+      "consumer_evidence": [
+        "frontend/src",
+        "native/mahayana-messaging/src",
+        "source/electron-main"
+      ],
+      "source_binary_evidence": {
+        "evidence_status": "accepted-exact-blob-read-current-descendant-actions-required",
+        "accepted_upstream": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+        "verified_blob_sha": "55f6de72ab0b6716a9ee6f143fb4d641eaef7764",
+        "file_type": "blob",
+        "recursive_order": 6391
+      }
+    },
+    {
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "tdesktop Window section/session source authority",
+      "ui_disposition": "Qt widget/painting/slide implementation is presentation-specific; routing, focus, permission, search, theme/resource and send behavior remains applicable and must use Fabushi canonical components.",
+      "fabushi_canonical_owner": "existing ProductShell/ConversationWorkspace/Navigation/Search/Permissions/Composer/Resource/Message owners",
+      "platform_differences": "Qt section/widget mechanics map to typed route/workspace/component state; product state/lifecycle and async stale fencing remain source-neutral.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "reachability_status": "accepted exact blob read/responsibility-decomposed; canonical owner candidates exist; complete production/evidence remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop@28ac576967a1026ecc89a927360fa0e138d7c88c",
+      "notes": "No mechanical SectionWidget port. Responsibility is split into existing owners.",
+      "recursive_order": 6392,
+      "source_path": "Telegram/SourceFiles/window/session/window_session_media.cpp",
+      "source_blob_sha": "24b4d6b07dbd99c2fd7893d55337ffdd7d4b36c7",
+      "responsibility": "Draw-to-reply media flow: resolve exact thread/topic/sublist from message identity or active/separate window fallback, edit image, re-resolve after async edit, protect ephemeral reply constraints, use canonical send-file limits/checks/payment approval, preserve reply/thread metadata, avoid clearing draft, and send grouped media once.",
+      "state_machine": "Navigation/media async state must preserve exact conversation/thread identity and reject stale/destroyed targets.",
+      "side_effects": "Workspace routing/focus/theme/resource/send/permission projections.",
+      "failure_cases": "Stale async target, wrong thread/topic, duplicate send, ephemeral reply violation, lost reply metadata, permission drift and focus/navigation resurrection.",
+      "fabushi_target": "Existing Resource/Composer/Message send/Conversation thread owners must absorb draw-to-reply; async result must re-resolve target and ephemeral/multi-send/payment guards before handoff.",
+      "production_evidence": "Existing canonical Fabushi owners inspected; no verified credit claimed for open slices.",
+      "test_evidence": "Focused workspace/send/theme regression and exact-head Actions remain required.",
+      "consumer_evidence": [
+        "frontend/src",
+        "native/mahayana-messaging/src",
+        "source/electron-main"
+      ],
+      "source_binary_evidence": {
+        "evidence_status": "accepted-exact-blob-read-current-descendant-actions-required",
+        "accepted_upstream": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+        "verified_blob_sha": "24b4d6b07dbd99c2fd7893d55337ffdd7d4b36c7",
+        "file_type": "blob",
+        "recursive_order": 6392
+      }
+    }
+  ]
+}

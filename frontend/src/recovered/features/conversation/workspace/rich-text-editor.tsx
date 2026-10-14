@@ -6,9 +6,11 @@ import { useEditor, EditorContent, type EditorContentProps } from "@tiptap/react
 import { StarterKit } from "@tiptap/starter-kit";
 import { Suggestion, type SuggestionMatch, type SuggestionOptions } from "@tiptap/suggestion";
 import { Plugin, PluginKey, TextSelection } from "@tiptap/pm/state";
-import { useEffect, useMemo, useRef, type RefObject } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import type { EmojiEntry } from "../cards/transcript-card/emoji-catalog";
+import type { ComposerDraftCursor } from "./model";
 import type { EditorMcpSuggestion, EditorMentionSuggestion, EditorSuggestionEntry, EditorWorkflowSuggestion } from "./editor-suggestion-provider";
+import { compositionOnlyInputStatus, isCurrentPlatformInputSample, mergeNativePlatformInputStatus, promptEditorKeyAction, shouldHoldScopeFenceDuringComposition, type NativePlatformInputStatusSnapshot, type PlatformInputStatusSnapshot } from "./input-composition-state";
 
 // Immutable editor closure: e9n/hft in index-UbX-y3il.js. The package graph
 // is intentionally owned by B6; this leaf only imports the released graph.
@@ -76,19 +78,22 @@ export interface PromptEditorControls {
   focus(): void;
   blur(): void;
   clear(): void;
-  restore(value: { readonly prompt: string; readonly richText?: string }): void;
+  restore(value: { readonly prompt: string; readonly richText?: string; readonly cursor?: ComposerDraftCursor }): void;
   insertText(value: string): void;
   getJSON(): Record<string, unknown>;
+  getCursor(): ComposerDraftCursor;
 }
 
 export interface PromptEditorChange {
   readonly prompt: string;
   readonly richText?: string;
+  readonly cursor: ComposerDraftCursor;
 }
 
 export interface PromptRichTextEditorProps {
   readonly prompt: string;
   readonly richText?: string;
+  readonly cursor?: ComposerDraftCursor;
   readonly scopeKey?: string;
   readonly clearGeneration?: number;
   readonly disabled?: boolean;
@@ -99,6 +104,8 @@ export interface PromptRichTextEditorProps {
   onSubmit(): void | Promise<void>;
   onEscape(): void;
   onPasteFiles(files: File[]): void;
+  onInputStatusChange?(status: PlatformInputStatusSnapshot): void;
+  readonly platformInput?: { get(): Promise<NativePlatformInputStatusSnapshot> };
   onControls?(controls: PromptEditorControls | null): void;
 }
 
@@ -702,24 +709,97 @@ function isPromptEditingTarget(target: EventTarget | null): boolean {
   return target.isContentEditable || target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement;
 }
 
+export function promptEditorCursor(editor: Editor): ComposerDraftCursor {
+  return {
+    position: editor.state.selection.head,
+    anchor: editor.state.selection.anchor,
+    scroll: Math.max(0, Math.round(editor.view.dom.scrollTop)),
+  };
+}
+
+function promptEditorCursorsEqual(left: ComposerDraftCursor, right: ComposerDraftCursor): boolean {
+  return left.position === right.position && left.anchor === right.anchor && left.scroll === right.scroll;
+}
+
+export function restorePromptEditorCursor(editor: Editor, cursor: ComposerDraftCursor): void {
+  const max = Math.max(1, editor.state.doc.content.size - 1);
+  const clamp = (value: number) => Math.max(1, Math.min(max, value));
+  editor.view.dispatch(editor.state.tr.setSelection(TextSelection.create(editor.state.doc, clamp(cursor.anchor), clamp(cursor.position))));
+  editor.view.dom.scrollTop = Math.max(0, cursor.scroll);
+}
+
 // Immutable r9n global clipboard bridge: when focus is outside the prompt,
 // Cmd/Ctrl+V restores editor focus and document paste inserts text or stages
 // files; focused editor paste remains owned by ProseMirror's native path.
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=4742034
 // @evidence recovered/frontend/app/assets/index-UbX-y3il.js#byteOffset=5953061
 
-export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGeneration = 0, disabled = false, placeholder, providers, canSubmit, onChange, onSubmit, onEscape, onPasteFiles, onControls }: PromptRichTextEditorProps) {
-  const callbacks = useRef({ canSubmit, onChange, onSubmit, onEscape, onPasteFiles });
-  callbacks.current = { canSubmit, onChange, onSubmit, onEscape, onPasteFiles };
+export function PromptRichTextEditor({ prompt, richText, cursor, scopeKey = "", clearGeneration = 0, disabled = false, placeholder, providers, canSubmit, onChange, onSubmit, onEscape, onPasteFiles, onInputStatusChange, onControls, platformInput }: PromptRichTextEditorProps) {
+  const callbacks = useRef({ canSubmit, onChange, onSubmit, onEscape, onPasteFiles, onInputStatusChange });
+  callbacks.current = { canSubmit, onChange, onSubmit, onEscape, onPasteFiles, onInputStatusChange };
   const extensions = useMemo(() => createPromptEditorExtensions(placeholder, providers), [placeholder, providers]);
   const initialContent = useMemo(() => promptEditorContent(prompt, richText), []);
   const previousExternalContent = useRef({ prompt, richText });
   const clearFence = useRef<{ generation: number; before: string } | null>(null);
   const scopeFence = useRef<{ scopeKey: string; before: string } | null>(null);
   const compositionActive = useRef(false);
+  const compositionScopeFence = useRef<string | null>(null);
+  const compositionGeneration = useRef(0);
+  const inputFocus = useRef<"focused" | "blurred" | "unknown">("unknown");
+  const [compositionSettlementGeneration, setCompositionSettlementGeneration] = useState(0);
   const emittedChangeSerial = useRef(0);
   const observedScopeKey = useRef(scopeKey);
   const observedClearGeneration = useRef(clearGeneration);
+  const platformInputRef = useRef(platformInput);
+  platformInputRef.current = platformInput;
+  const nativeInputRequestSerial = useRef(0);
+  const lastInputStatus = useRef<PlatformInputStatusSnapshot>(compositionOnlyInputStatus(false));
+  const cursorRestoreFence = useRef(false);
+  const emitEditorChange = useCallback((current: Editor): void => {
+    if (cursorRestoreFence.current || scopeFence.current != null || compositionActive.current) return;
+    const text = promptEditorText(current);
+    const json = current.isEmpty ? undefined : JSON.stringify(current.getJSON());
+    emittedChangeSerial.current += 1;
+    callbacks.current.onChange({
+      prompt: text,
+      ...(json == null ? {} : { richText: json }),
+      cursor: promptEditorCursor(current),
+    });
+  }, []);
+  const restoreExternalCursor = useCallback((current: Editor, value: ComposerDraftCursor): void => {
+    cursorRestoreFence.current = true;
+    const preserveEditorFocus = current.view.hasFocus();
+    restorePromptEditorCursor(current, value);
+    if (preserveEditorFocus) current.view.focus();
+    queueMicrotask(() => { cursorRestoreFence.current = false; });
+  }, []);
+  const emitInputStatus = (status: PlatformInputStatusSnapshot): void => {
+    lastInputStatus.current = status;
+    callbacks.current.onInputStatusChange?.(status);
+    const requestSerial = ++nativeInputRequestSerial.current;
+    const adapter = platformInputRef.current;
+    if (adapter == null) return;
+    const request = {
+      scopeKey: observedScopeKey.current,
+      generation: status.generation,
+      requestSerial,
+    };
+    void adapter.get().then((native) => {
+      const current = {
+        scopeKey: observedScopeKey.current,
+        generation: compositionGeneration.current,
+        requestSerial: nativeInputRequestSerial.current,
+      };
+      if (!isCurrentPlatformInputSample(request, current)) return;
+      const dom = lastInputStatus.current;
+      if (dom.generation !== request.generation) return;
+      const merged = mergeNativePlatformInputStatus(dom, native);
+      lastInputStatus.current = merged;
+      callbacks.current.onInputStatusChange?.(merged);
+    }).catch(() => {
+      // Native capability probes are optional and fail closed to typed unknown.
+    });
+  };
   const editor = useEditor({
     extensions,
     content: initialContent,
@@ -730,35 +810,84 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
       attributes: {
         class: "sand-prompt-field",
         dir: "auto",
-        spellcheck: "false",
+        // Delegate spelling feedback to Chromium/Electron's platform-backed
+        // spellchecker. This extends the canonical text-input owner without
+        // introducing a Hunspell/Telegram runtime or a second dictionary truth.
+        spellcheck: "true",
         "aria-label": "Prompt",
         "aria-multiline": "true",
         role: "textbox"
       },
       handleDOMEvents: {
-        compositionstart: () => {
+        focus: () => {
+          inputFocus.current = "focused";
+          emitInputStatus(compositionOnlyInputStatus(compositionActive.current, {
+            focus: "focused",
+            lifecycle: "focus",
+            generation: compositionGeneration.current,
+          }));
+          return false;
+        },
+        blur: () => {
+          inputFocus.current = "blurred";
+          emitInputStatus(compositionOnlyInputStatus(compositionActive.current, {
+            focus: "blurred",
+            lifecycle: "blur",
+            generation: compositionGeneration.current,
+          }));
+          return false;
+        },
+        compositionstart: (_view, event) => {
           compositionActive.current = true;
+          compositionGeneration.current += 1;
+          const data = event instanceof CompositionEvent ? event.data : "";
+          emitInputStatus(compositionOnlyInputStatus(true, {
+            focus: inputFocus.current,
+            lifecycle: "composition-start",
+            generation: compositionGeneration.current,
+            preeditPresent: data.length > 0,
+          }));
+          compositionScopeFence.current = null;
           scopeFence.current = null;
           return false;
         },
-        compositionend: () => {
+        compositionupdate: (_view, event) => {
+          const data = event instanceof CompositionEvent ? event.data : "";
+          emitInputStatus(compositionOnlyInputStatus(true, {
+            focus: inputFocus.current,
+            lifecycle: "composition-update",
+            generation: compositionGeneration.current,
+            preeditPresent: data.length > 0,
+          }));
+          return false;
+        },
+        compositionend: (_view, event) => {
+          const data = event instanceof CompositionEvent ? event.data : "";
           compositionActive.current = false;
+          emitInputStatus(compositionOnlyInputStatus(false, {
+            focus: inputFocus.current,
+            lifecycle: "composition-end",
+            generation: compositionGeneration.current,
+            preeditPresent: data.length > 0,
+          }));
+          setCompositionSettlementGeneration((generation) => generation + 1);
           return false;
         },
         beforeinput: () => {
-          // A real browser edit is the ownership handoff from the old scope to
-          // the newly selected Agent. Release the scope fence before TipTap
-          // creates the corresponding transaction so onUpdate can persist it.
+          // A real browser edit normally hands ownership from the old scope to
+          // the newly selected Agent. Do not perform that handoff for the tail
+          // of a composition that began in the previous scope.
+          if (shouldHoldScopeFenceDuringComposition(compositionScopeFence.current)) return false;
           scopeFence.current = null;
           return false;
         },
         input: (view) => {
           // Programmatic browser drivers and some IME/contenteditable paths can
           // commit the DOM before ProseMirror has emitted the corresponding
-          // transaction. Release the stale Agent-scope fence immediately, then
-          // rescue the canonical change only when onUpdate did not already emit
-          // it. This keeps visible DOM, TipTap state and persisted draft aligned
-          // without duplicating ordinary keyboard transactions.
+          // transaction. Keep an old-scope IME composition fenced through its
+          // final input event; reconciliation after compositionend restores the
+          // new scope's canonical external content.
+          if (shouldHoldScopeFenceDuringComposition(compositionScopeFence.current)) return false;
           const fenced = scopeFence.current;
           scopeFence.current = null;
           if (fenced != null) {
@@ -783,7 +912,12 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
               emittedChangeSerial.current += 1;
               callbacks.current.onChange({
                 prompt: nextPrompt,
-                ...(nextPrompt.length === 0 ? {} : { richText: nextJson })
+                ...(nextPrompt.length === 0 ? {} : { richText: nextJson }),
+                cursor: {
+                  position: view.state.selection.head,
+                  anchor: view.state.selection.anchor,
+                  scroll: Math.max(0, Math.round((view.dom as HTMLElement).scrollTop)),
+                },
               });
             }, 0);
           }
@@ -791,13 +925,13 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
         }
       },
       handleKeyDown: (_view, event) => {
-        if (event.isComposing || compositionActive.current) return false;
-        if (event.key === "Escape") {
+        const action = promptEditorKeyAction(event, compositionActive.current);
+        if (action === "escape") {
           event.preventDefault();
           callbacks.current.onEscape();
           return true;
         }
-        if (event.key === "Enter" && !event.shiftKey) {
+        if (action === "submit") {
           event.preventDefault();
           if (callbacks.current.canSubmit) void callbacks.current.onSubmit();
           return true;
@@ -832,10 +966,10 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
       // does not guarantee a `uiEvent` transaction meta for ordinary typing,
       // so using that meta here can swallow every real keystroke indefinitely.
       if (scopeFence.current != null) return;
-      const text = promptEditorText(current);
-      const json = current.isEmpty ? undefined : JSON.stringify(current.getJSON());
-      emittedChangeSerial.current += 1;
-      callbacks.current.onChange({ prompt: text, ...(json == null ? {} : { richText: json }) });
+      emitEditorChange(current);
+    },
+    onSelectionUpdate: ({ editor: current }) => {
+      emitEditorChange(current);
     }
   });
 
@@ -847,8 +981,12 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
   }
   if (observedScopeKey.current !== scopeKey) {
     observedScopeKey.current = scopeKey;
+    nativeInputRequestSerial.current += 1;
     clearFence.current = null;
-    if (editor != null) scopeFence.current = { scopeKey, before: JSON.stringify(editor.getJSON()) };
+    if (editor != null) {
+      scopeFence.current = { scopeKey, before: JSON.stringify(editor.getJSON()) };
+      compositionScopeFence.current = compositionActive.current ? scopeKey : null;
+    }
   }
 
   useEffect(() => {
@@ -888,23 +1026,44 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
 
   useEffect(() => {
     if (editor == null || compositionActive.current) return;
+    const settlingCompositionScope = compositionScopeFence.current;
+    const settleCompositionScopeFence = () => {
+      if (settlingCompositionScope == null || compositionScopeFence.current !== settlingCompositionScope) return;
+      compositionScopeFence.current = null;
+      if (scopeFence.current?.scopeKey === settlingCompositionScope) scopeFence.current = null;
+    };
     const previous = previousExternalContent.current;
     previousExternalContent.current = { prompt, richText };
     const expected = promptEditorContent(prompt, richText);
-    if (JSON.stringify(editor.getJSON()) === JSON.stringify(expected)) return;
+    if (JSON.stringify(editor.getJSON()) === JSON.stringify(expected)) {
+      if (cursor != null && !promptEditorCursorsEqual(promptEditorCursor(editor), cursor)) restoreExternalCursor(editor, cursor);
+      // ProseMirror state can already match while the contenteditable DOM still
+      // contains the final native IME composition from the previous scope.
+      // Re-applying canonical external content forces DOM/state convergence
+      // before releasing the old-scope composition fence.
+      if (settlingCompositionScope != null) editor.commands.setContent(expected, { emitUpdate: false });
+      settleCompositionScopeFence();
+      return;
+    }
     const wasPopulated = previous.prompt.length > 0 || (previous.richText?.length ?? 0) > 0;
     const isEmpty = prompt.length === 0 && (richText == null || richText.length === 0);
     if (wasPopulated && isEmpty) {
       clearFence.current = { generation: clearGeneration, before: JSON.stringify(editor.getJSON()) };
-      editor.chain().command(({ tr }) => {
+      const preserveEditorFocus = editor.view.hasFocus();
+      const clear = editor.chain().command(({ tr }) => {
         tr.setMeta("sand-field-cleared", true);
         return true;
-      }).clearContent(false).focus("end").run();
+      }).clearContent(false);
+      if (preserveEditorFocus) clear.focus("end");
+      clear.run();
+      settleCompositionScopeFence();
       return;
     }
     editor.commands.setContent(expected, { emitUpdate: false });
-    editor.commands.focus("end");
-  }, [clearGeneration, editor, prompt, richText, scopeKey]);
+    if (cursor != null) restoreExternalCursor(editor, cursor);
+    else editor.commands.focus("end");
+    settleCompositionScopeFence();
+  }, [clearGeneration, compositionSettlementGeneration, cursor?.anchor, cursor?.position, cursor?.scroll, editor, prompt, restoreExternalCursor, richText, scopeKey]);
 
   useEffect(() => {
     if (editor == null) return;
@@ -913,9 +1072,16 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
       blur: () => editor.view.dom.blur(),
       clear: () => {
         clearFence.current = { generation: clearGeneration, before: JSON.stringify(editor.getJSON()) };
-        editor.chain().command(({ tr }) => { tr.setMeta("sand-field-cleared", true); return true; }).clearContent(false).focus("end").run();
+        const preserveEditorFocus = editor.view.hasFocus();
+        const clear = editor.chain().command(({ tr }) => { tr.setMeta("sand-field-cleared", true); return true; }).clearContent(false);
+        if (preserveEditorFocus) clear.focus("end");
+        clear.run();
       },
-      restore: (value) => { editor.commands.setContent(promptEditorContent(value.prompt, value.richText), { emitUpdate: false }); editor.commands.focus("end"); },
+      restore: (value) => {
+        editor.commands.setContent(promptEditorContent(value.prompt, value.richText), { emitUpdate: false });
+        if (value.cursor != null) restoreExternalCursor(editor, value.cursor);
+        else editor.commands.focus("end");
+      },
       insertText: (value) => {
         // Dictation/voice insertion is also a user-owned edit even though it is
         // applied through editor commands rather than a DOM beforeinput event.
@@ -924,11 +1090,20 @@ export function PromptRichTextEditor({ prompt, richText, scopeKey = "", clearGen
         const needsSpace = before.length > 0 && !/\s$/.test(before) && !/^\s/.test(value);
         editor.chain().focus().insertContent(`${needsSpace ? " " : ""}${value}`).run();
       },
-      getJSON: () => editor.getJSON() as Record<string, unknown>
+      getJSON: () => editor.getJSON() as Record<string, unknown>,
+      getCursor: () => promptEditorCursor(editor),
     };
     onControls?.(controls);
     return () => onControls?.(null);
-  }, [editor, onControls]);
+  }, [editor, onControls, restoreExternalCursor]);
+
+  useEffect(() => {
+    if (editor == null) return;
+    const dom = editor.view.dom;
+    const onScroll = () => emitEditorChange(editor);
+    dom.addEventListener("scroll", onScroll, { passive: true });
+    return () => dom.removeEventListener("scroll", onScroll);
+  }, [editor, emitEditorChange]);
 
   const contentProps: EditorContentProps = { editor };
   return <EditorContent {...contentProps} />;

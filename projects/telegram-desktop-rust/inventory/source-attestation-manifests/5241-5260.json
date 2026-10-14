@@ -1,0 +1,128 @@
+{
+  "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+  "start": 5241,
+  "end": 5260,
+  "entries": [
+    {
+      "order": 5241,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_dc_key_creator.cpp",
+      "blob": "13c57454f14b814b5923ea253048fb881ad8cf03",
+      "consumer_symbol": "MTP::details::DcKeyCreator"
+    },
+    {
+      "order": 5242,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_dc_key_creator.h",
+      "blob": "744a18ace5315806fd4d15be9e6b8d1b8283fc5f",
+      "consumer_symbol": "MTP::details::DcKeyCreator"
+    },
+    {
+      "order": 5243,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_dcenter.cpp",
+      "blob": "ef0df612db798338d166f47087bb35c1d29ff72b",
+      "consumer_symbol": "MTP::details::Dcenter"
+    },
+    {
+      "order": 5244,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_dcenter.h",
+      "blob": "651dcf171544745efc0b5d53afd8af4a57fa5a88",
+      "consumer_symbol": "MTP::details::Dcenter"
+    },
+    {
+      "order": 5245,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_domain_resolver.cpp",
+      "blob": "eeac8f6a8e2df67967ea7b536fb165e2f8d983e9",
+      "consumer_symbol": "MTP::details::DomainResolver"
+    },
+    {
+      "order": 5246,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_domain_resolver.h",
+      "blob": "cb1979bbbf0454135c8668ed1e5013da85d1dedc",
+      "consumer_symbol": "MTP::details::DomainResolver"
+    },
+    {
+      "order": 5247,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_dump_to_text.cpp",
+      "blob": "a6250bbd41942873cda107b3102b41309d92f86a",
+      "consumer_symbol": "MTP::details::DumpToText"
+    },
+    {
+      "order": 5248,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_dump_to_text.h",
+      "blob": "61c47665e7aed3b1641fd87613723ae2b7cf18ac",
+      "consumer_symbol": "MTP::details::DumpToTextBuffer"
+    },
+    {
+      "order": 5249,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_received_ids_manager.cpp",
+      "blob": "20bade0c4c6634d20d124d26e750554e3bd5c8c2",
+      "consumer_symbol": "MTP::details::ReceivedIdsManager"
+    },
+    {
+      "order": 5250,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_received_ids_manager.h",
+      "blob": "8f7dfbb9d11ba348af9f7d16921fc283792505d1",
+      "consumer_symbol": "MTP::details::ReceivedIdsManager"
+    },
+    {
+      "order": 5251,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_rsa_public_key.cpp",
+      "blob": "312c8b1ddb3145d5ec3180323e8d72d50c35e526",
+      "consumer_symbol": "MTP::details::RSAPublicKey"
+    },
+    {
+      "order": 5252,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_rsa_public_key.h",
+      "blob": "86978061d7e7368d60fd2d76e46196f06dd36135",
+      "consumer_symbol": "MTP::details::RSAPublicKey"
+    },
+    {
+      "order": 5253,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_serialized_request.cpp",
+      "blob": "f4ff13192b9bfe7827069fc990a60629e18bae08",
+      "consumer_symbol": "MTP::details::SerializedRequest"
+    },
+    {
+      "order": 5254,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_serialized_request.h",
+      "blob": "7d8d42605e20a3899610acc12e4258c7d838f184",
+      "consumer_symbol": "MTP::details::SerializedRequest"
+    },
+    {
+      "order": 5255,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_tcp_socket.cpp",
+      "blob": "b3130fd706b7cbfa33f7c9f54ac5e87abe9c3e10",
+      "consumer_symbol": "MTP::details::TcpSocket"
+    },
+    {
+      "order": 5256,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_tcp_socket.h",
+      "blob": "453e2eaac735fb5697a22cdebb4eb8573d738521",
+      "consumer_symbol": "MTP::details::TcpSocket"
+    },
+    {
+      "order": 5257,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_tls_socket.cpp",
+      "blob": "e7562e3ca1a1da03f5d368085d5e61d887ab3f16",
+      "consumer_symbol": "MTP::details::TlsSocket"
+    },
+    {
+      "order": 5258,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_tls_socket.h",
+      "blob": "d4a90083ead17f27fcacc219129935a148132608",
+      "consumer_symbol": "MTP::details::TlsSocket"
+    },
+    {
+      "order": 5259,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_web_proxy_socket.cpp",
+      "blob": "9aa05e7034031310de4aa9d410fbb15d21c63ee8",
+      "consumer_symbol": "MTP::details::WebProxySocket"
+    },
+    {
+      "order": 5260,
+      "path": "Telegram/SourceFiles/mtproto/details/mtproto_web_proxy_socket.h",
+      "blob": "02ed27b77d4ff606b3e1cb548a60e4f2c2ca11f0",
+      "consumer_symbol": "MTP::details::WebProxySocket"
+    }
+  ],
+  "accepted_tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97"
+}

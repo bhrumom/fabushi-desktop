@@ -1,0 +1,26 @@
+{
+  "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+  "start": 5581,
+  "end": 5583,
+  "entries": [
+    {
+      "order": 5581,
+      "path": "Telegram/SourceFiles/settings/sections/settings_advanced.h",
+      "blob": "ceed08440fb2f897b14693545b4e2f8e8401f0ea",
+      "consumer_symbol": "Advanced settings route/contracts"
+    },
+    {
+      "order": 5582,
+      "path": "Telegram/SourceFiles/settings/sections/settings_blocked_peers.cpp",
+      "blob": "f06bb447090fd1bfa1a10e68c0606235677c5f3e",
+      "consumer_symbol": "Blocked peers management"
+    },
+    {
+      "order": 5583,
+      "path": "Telegram/SourceFiles/settings/sections/settings_blocked_peers.h",
+      "blob": "d520ced1687a5e9b882f8ecb04aa2ea8789bedcc",
+      "consumer_symbol": "Blocked peers settings route"
+    }
+  ],
+  "accepted_tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97"
+}

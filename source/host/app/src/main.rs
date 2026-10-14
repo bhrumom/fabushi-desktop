@@ -10734,11 +10734,25 @@ fn dispatch_gateway_call(
     host: &UnifiedAppHost,
     forever_box: &ForeverBoxService,
     attachments: &AttachmentsService,
+    transcript_manager: &TranscriptManager,
     method: &str,
     args: serde_json::Value,
 ) -> Result<serde_json::Value, GatewayCommandError> {
     if let Some(result) = attachments.dispatch_gateway(method, &args) {
         return result.map_err(GatewayCommandError::Internal);
+    }
+
+    // HostLane is the owner-thread fallback for gateway calls that could not be
+    // completed on the concurrent GatewayApi surface. Keep the canonical
+    // Session/Transcript owner ahead of the legacy Grok compatibility fallback:
+    // the compatibility dispatcher reports an unknown method as an error rather
+    // than Ok(None), so running it first would prevent valid session-owned Human
+    // messaging/call methods from ever reaching their production owner.
+    if let Some(result) = transcript_manager.dispatch_session_gateway_call(method, &args) {
+        return result.map_err(|error| match error {
+            SessionGatewayError::BadRequest(message) => GatewayCommandError::BadRequest(message),
+            SessionGatewayError::Internal(message) => GatewayCommandError::Internal(message),
+        });
     }
 
     match host.grok_gateway_call(method, args.clone()) {
@@ -12778,7 +12792,14 @@ fn main() {
     while let Ok(request) = host_rx.recv() {
         match request {
             HostLaneRequest::Gateway { method, args, reply } => {
-                let _ = reply.send(dispatch_gateway_call(&host, &forever_box, &attachments_service, &method, args));
+                let _ = reply.send(dispatch_gateway_call(
+                    &host,
+                    &forever_box,
+                    &attachments_service,
+                    &transcript_manager,
+                    &method,
+                    args,
+                ));
             }
             HostLaneRequest::StdinClosed => break,
             HostLaneRequest::Stdin(line) => {

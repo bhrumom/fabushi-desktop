@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { chmod, mkdtemp, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { realClock, type Clock } from "../../internal/scheduling.js";
 import { SAND_PRODUCT_DISPLAY_NAME } from "../../shared/product-name.js";
@@ -21,10 +21,19 @@ export type UpdateDisabledReason = "disabled-by-env" | "lab-build" | "not-packag
 export type SandUpdateState = { type: "disabled"; reason: UpdateDisabledReason } | { type: "idle"; lastCheck?: unknown } | { type: "checking" } | { type: "available" | "staging" | "ready"; version: string; lastCheck?: unknown } | { type: "downloading"; version: string; progress: number | null };
 
 interface SquirrelPort { on(event: string, listener: (...args: any[]) => void): void; setFeedURL(options: { url: string }): void; checkForUpdates(): void; quitAndInstall(): void }
+export interface ReleaseUpdaterPort {
+  autoDownload: boolean;
+  autoInstallOnAppQuit: boolean;
+  allowPrerelease: boolean;
+  channel?: string | null;
+  checkForUpdates(): Promise<{ readonly updateInfo?: { readonly version?: string } } | null>;
+  downloadUpdate(): Promise<unknown>;
+  quitAndInstall(isSilent?: boolean, isForceRunAfter?: boolean): void;
+}
 interface WindowsPort { verifySignature(path: string): Promise<void>; quit(): void; installOnQuit(path: string, options: { forceRun: boolean; onSpawnError(error: unknown): void }): void }
 interface ApplyMarkerPort { peek(): UpdateApplyMarker | null; recordStaged(input: any): void; recordRequested(input: any): void; recordSpawned(): void; recordSpawnFailed(error: unknown): void; clear(): void }
 export interface SandUpdateServiceOptions {
-  readonly currentVersion: string; readonly buildDefaultTrack: SandUpdateTrack | null; readonly disabledReason?: UpdateDisabledReason | null; readonly squirrel?: SquirrelPort | null; readonly windows?: WindowsPort | null; readonly tempDir: string; readonly machineId: string; readonly feedBaseUrl?: string; readonly platform?: NodeJS.Platform; readonly arch?: string;
+  readonly currentVersion: string; readonly currentSourceSha?: string; readonly buildDefaultTrack: SandUpdateTrack | null; readonly disabledReason?: UpdateDisabledReason | null; readonly squirrel?: SquirrelPort | null; readonly windows?: WindowsPort | null; readonly releaseUpdater?: ReleaseUpdaterPort | null; readonly quitForReleaseUpdate?: () => void; readonly allowReleasePrerelease?: boolean; readonly tempDir: string; readonly machineId: string; readonly feedBaseUrl?: string; readonly platform?: NodeJS.Platform; readonly arch?: string;
   readonly getTrackOverride: () => SandUpdateTrack | null | undefined; readonly persistTrackOverride: (track: SandUpdateTrack | null) => void; readonly getReleaseTrackGate?: () => { managedTrack?: SandUpdateTrack | undefined; unlockInternalTracks: boolean }; readonly hasLiveExperimentBootstrap?: () => boolean; readonly getFlagsAgeMs?: () => number | undefined; readonly getMinimumVersion?: () => unknown;
   readonly getAutoUpdateWhenIdleOptIn?: () => boolean; readonly persistAutoUpdateWhenIdleOptIn?: (enabled: boolean) => void; readonly getAutoUpdateWhenIdleGateEnabled?: () => boolean; readonly idleRelaunchSignals?: any;
   readonly onStatusChange: (status: any) => void; readonly reportOutcome?: (report: any) => void; readonly reportCheck?: (report: any) => void; readonly reportApply?: (report: any) => void; readonly applyMarker?: ApplyMarkerPort; readonly log?: (message: string) => void; readonly fetchImpl?: typeof fetch;
@@ -40,7 +49,14 @@ export class SandUpdateService {
 
   constructor(private readonly options: SandUpdateServiceOptions) {
     this.clock = options.clock ?? realClock; this.now = options.now ?? Date.now; this.feedServer = options.feedServer ?? new SquirrelFeedServer();
-    this.updatePlatform = resolveUpdatePlatform(options.platform ?? process.platform, options.arch ?? process.arch); this.responseKind = updateResponseKind(this.updatePlatform); this.state = options.disabledReason != null ? { type: "disabled", reason: options.disabledReason } : { type: "idle" };
+    const platform = options.platform ?? process.platform;
+    const arch = options.arch ?? process.arch;
+    this.updatePlatform = platform === "linux" ? `linux-${arch === "arm64" ? "arm64" : "x64"}` : resolveUpdatePlatform(platform, arch);
+    this.responseKind = updateResponseKind(this.updatePlatform); this.state = options.disabledReason != null ? { type: "disabled", reason: options.disabledReason } : { type: "idle" };
+    if (options.releaseUpdater != null) {
+      options.releaseUpdater.autoDownload = false;
+      options.releaseUpdater.autoInstallOnAppQuit = false;
+    }
     options.squirrel?.on("update-downloaded", () => this.onSquirrelStaged()); options.squirrel?.on("error", (...args) => this.onSquirrelError(args[0] instanceof Error ? args[0].message : String(args[0]), "failed")); options.squirrel?.on("update-not-available", () => this.onSquirrelError("Squirrel declined the staged update (update-not-available)", "declined"));
   }
   start(): void { this.settleApplyMarker(); if (this.state.type === "disabled") { this.emitCheckReport({ action: "result", seq: ++this.checkSeq, trigger: "startup", track: this.effectiveTrack(), result: "disabled", error: updateDisabledError(this.state.reason) }); return; } this.initialArm = this.clock.schedule(this.options.initialCheckDelayMs ?? DEFAULT_INITIAL_CHECK_DELAY_MS, () => { void this.checkForUpdates({ trigger: "startup" }); }); this.scheduleNextPeriodicCheck(); }
@@ -51,33 +67,135 @@ export class SandUpdateService {
   private scheduleNextPeriodicCheck(): void { if (this.isDisposed || this.state.type === "disabled") return; this.clearPeriodicArm(); this.periodicArm = this.clock.schedule(this.nextPeriodicDelayMs(), () => { this.scheduleNextPeriodicCheck(); if (this.periodicTickInFlight) return; this.periodicTickInFlight = true; void runPeriodicIdleApplyTick({ isDisposed: () => this.isDisposed, refreshFeed: () => this.checkForUpdates({ trigger: "periodic" }).then(() => undefined), applyWhenIdle: () => tryApplyStagedWhenIdle({ updateReady: this.state.type === "ready", optInEnabled: this.options.getAutoUpdateWhenIdleOptIn?.() ?? false, gateEnabled: this.options.getAutoUpdateWhenIdleGateEnabled?.() ?? false, signals: this.options.idleRelaunchSignals, stillReady: () => this.state.type === "ready", quitAndInstall: () => this.quitAndInstall(), ...(this.options.log === undefined ? {} : { log: this.options.log }) }), cancelRearm: () => this.clearPeriodicArm(), ...(this.options.log === undefined ? {} : { log: this.options.log }) }).finally(() => { this.periodicTickInFlight = false; }); }); }
   nextPeriodicDelayMs(): number { const interval = this.options.checkIntervalMs ?? DEFAULT_CHECK_INTERVAL_MS; const ceiling = this.options.checkIntervalJitterMs ?? DEFAULT_CHECK_INTERVAL_JITTER_MS; return ceiling <= 0 ? interval : interval + Math.floor((this.options.random ?? Math.random)() * ceiling); }
   dispose(): void { this.isDisposed = true; this.initialArm?.dispose(); this.clearPeriodicArm(); this.clearStagingTimer(); this.checkAbort?.abort(); this.feedServer.stop(); if (this.stagingDir != null && !this.installerLaunched && this.stagedInstallerPath == null && this.stagedZipPath == null) void rm(this.stagingDir, { recursive: true, force: true }).catch((error) => this.failure("staging-cleanup", error)); }
-  getStatus(): any { const gate = this.releaseTrackGate(); const currentTrack = this.effectiveTrack(); return { state: this.state, currentVersion: this.options.currentVersion, currentTrack, trackOverride: this.options.getTrackOverride(), buildDefaultTrack: this.options.buildDefaultTrack, availableTracks: availableUpdateTracks({ unlockInternalTracks: gate.unlockInternalTracks, effectiveTrack: currentTrack }), isTrackManagedByPolicy: gate.managedTrack != null, isBelowMinimumVersion: this.isBelowMinimumVersion(), autoUpdateWhenIdleOptIn: this.options.getAutoUpdateWhenIdleOptIn?.() ?? false, autoUpdateWhenIdleGateEnabled: this.options.getAutoUpdateWhenIdleGateEnabled?.() ?? false }; }
+  getStatus(): any { const gate = this.releaseTrackGate(); const currentTrack = this.effectiveTrack(); return { state: this.state, currentVersion: this.options.currentVersion, ...(this.options.currentSourceSha === undefined ? {} : { currentSourceSha: this.options.currentSourceSha }), currentTrack, trackOverride: this.options.getTrackOverride(), buildDefaultTrack: this.options.buildDefaultTrack, availableTracks: availableUpdateTracks({ unlockInternalTracks: gate.unlockInternalTracks, effectiveTrack: currentTrack }), isTrackManagedByPolicy: gate.managedTrack != null, isBelowMinimumVersion: this.isBelowMinimumVersion(), autoUpdateWhenIdleOptIn: this.options.getAutoUpdateWhenIdleOptIn?.() ?? false, autoUpdateWhenIdleGateEnabled: this.options.getAutoUpdateWhenIdleGateEnabled?.() ?? false }; }
   setAutoUpdateWhenIdleOptIn(enabled: boolean): any { this.options.persistAutoUpdateWhenIdleOptIn?.(enabled); const status = this.getStatus(); this.options.onStatusChange(status); return status; }
   isBelowMinimumVersion(): boolean { if (this.state.type === "disabled") return false; if (this.backendRequiresUpdate) return true; const minimum = this.options.getMinimumVersion?.(); return typeof minimum === "string" && minimum.length > 0 && parseVersion(minimum) != null && parseVersion(this.options.currentVersion) != null && compareVersions(this.options.currentVersion, minimum) < 0; }
   noteMinimumVersionMayHaveChanged(): void { if (this.isDisposed || this.state.type === "disabled") return; this.emitStatus(); if (this.isBelowMinimumVersion() && this.state.type === "idle") void this.checkForUpdates({ trigger: "min_version" }); }
   noteBackendUpdateRequirement(required: boolean): void { if (this.isDisposed || this.state.type === "disabled" || this.backendRequiresUpdate === required) return; this.backendRequiresUpdate = required; this.emitStatus(); if (required && this.state.type === "idle") void this.checkForUpdates({ trigger: "backend_gate" }); }
   noteReleaseTrackGateMayHaveChanged(): void { if (this.isDisposed || this.state.type === "disabled") return; const gate = this.releaseTrackGate(); const override = this.options.getTrackOverride(); if (override != null && gate.managedTrack == null && this.options.hasLiveExperimentBootstrap?.() === true && !selectableUpdateTracks(gate.unlockInternalTracks).includes(override)) { void this.setTrackOverride("stable").catch((error) => this.options.log?.(`Release-track drain failed: ${message(error)}`)); return; } const effective = this.effectiveTrack(); const previous = this.notedEffectiveTrack; this.notedEffectiveTrack = effective; if (previous != null && previous !== effective) { void this.retargetForTrackChange().catch((error) => this.options.log?.(`Release-track re-target failed: ${message(error)}`)); return; } this.emitStatus(); }
   async checkForUpdates(input: { trigger: string }): Promise<any> {
+    if (this.options.releaseUpdater != null) return await this.checkForReleaseUpdates(input);
     if (this.checkAbort != null || this.state.type !== "idle" && this.state.type !== "ready") return this.getStatus(); const abort = new AbortController(); this.checkAbort = abort; const track = this.effectiveTrack(); const explicit = input.trigger === "explicit"; const seq = ++this.checkSeq; const started = this.now(); this.emitCheckReport({ action: "started", seq, trigger: input.trigger, track }); const emit = (result: any) => this.emitCheckReport({ action: "result", seq, trigger: input.trigger, track, durationMs: this.now() - started, ...result }); let emitted = false; if (this.state.type === "idle") this.setState({ type: "checking" }); let attemptedVersion: string | undefined;
     try { const manifest = await this.fetchUpdate(track, abort.signal); if (!abort.signal.aborted) { if (manifest == null || !this.shouldApplyOffer(manifest.version)) { emit(manifest == null ? { result: "no_update" } : { result: "up_to_date", targetVersion: manifest.version }); emitted = true; if (this.stagedVersion == null) this.setState({ type: "idle", lastCheck: { at: this.now(), result: "up-to-date" } }); else this.setState({ type: "ready", version: this.stagedVersion }); } else { attemptedVersion = manifest.version; emit({ result: "offer", targetVersion: manifest.version }); emitted = true; this.attemptTrack = track; this.setState({ type: "available", version: manifest.version }); await this.downloadAndStage(manifest, track, abort.signal); } } }
     catch (error) { if (!abort.signal.aborted) { const text = message(error); this.options.log?.(`Update check failed (track: ${track}, trigger: ${input.trigger}): ${text}`); if (attemptedVersion !== undefined) this.emitOutcome("failed", error instanceof Error ? error.constructor.name : undefined); else { emit({ result: "error", error: classifyUpdateCheckError(error), errorClass: error instanceof Error ? error.constructor.name : undefined }); emitted = true; } this.feedServer.stop(); if (this.stagedVersion == null) this.setState({ type: "idle", lastCheck: { at: this.now(), result: "error", errorMessage: text } }); else if (explicit) this.setState({ type: "ready", version: this.stagedVersion, lastCheck: { at: this.now(), result: "error", errorMessage: text } }); else if (this.state.type !== "ready") this.setState({ type: "ready", version: this.stagedVersion }); } }
     finally { if (abort.signal.aborted && !emitted && attemptedVersion === undefined) emit({ result: "error", error: updateError("SAND-E0504") }); if (this.checkAbort === abort) { this.checkAbort = null; if (abort.signal.aborted) this.foldTransientStateToParked(); } } return this.getStatus();
   }
+  private async checkForReleaseUpdates(input: { trigger: string }): Promise<any> {
+    if (this.checkAbort != null || this.state.type !== "idle" && this.state.type !== "ready") return this.getStatus();
+    const updater = this.options.releaseUpdater;
+    if (updater == null) return this.getStatus();
+    const abort = new AbortController();
+    this.checkAbort = abort;
+    const track = this.effectiveTrack();
+    const explicit = input.trigger === "explicit";
+    const seq = ++this.checkSeq;
+    const started = this.now();
+    this.emitCheckReport({ action: "started", seq, trigger: input.trigger, track });
+    if (this.state.type === "idle") this.setState({ type: "checking" });
+    updater.channel = track === "stable" ? null : track;
+    updater.allowPrerelease = track !== "stable" || this.options.allowReleasePrerelease === true;
+    let attemptedVersion: string | undefined;
+    try {
+      const result = await updater.checkForUpdates();
+      if (abort.signal.aborted) return this.getStatus();
+      const version = result?.updateInfo?.version;
+      if (typeof version !== "string" || version.length === 0) {
+        this.emitCheckReport({ action: "result", seq, trigger: input.trigger, track, durationMs: this.now() - started, result: "no_update" });
+        this.setState(this.stagedVersion == null ? { type: "idle", lastCheck: { at: this.now(), result: "up-to-date" } } : { type: "ready", version: this.stagedVersion });
+        return this.getStatus();
+      }
+      if (!this.shouldApplyOffer(version)) {
+        this.emitCheckReport({ action: "result", seq, trigger: input.trigger, track, durationMs: this.now() - started, result: "up_to_date", targetVersion: version });
+        this.setState(this.stagedVersion == null ? { type: "idle", lastCheck: { at: this.now(), result: "up-to-date" } } : { type: "ready", version: this.stagedVersion });
+        return this.getStatus();
+      }
+      attemptedVersion = version;
+      this.attemptTrack = track;
+      this.emitCheckReport({ action: "result", seq, trigger: input.trigger, track, durationMs: this.now() - started, result: "offer", targetVersion: version });
+      this.setState({ type: "available", version });
+      this.setState({ type: "downloading", version, progress: null });
+      await updater.downloadUpdate();
+      if (abort.signal.aborted || this.effectiveTrack() !== track) {
+        if (!abort.signal.aborted) this.setState(this.parkedState());
+        return this.getStatus();
+      }
+      this.invalidatePendingApply(version);
+      this.stagedVersion = version;
+      this.stagedAtMs = this.now();
+      this.recordApplyStaged(version);
+      this.emitOutcome("staged");
+      this.setState({ type: "ready", version });
+    } catch (error) {
+      if (!abort.signal.aborted) {
+        const text = message(error);
+        this.options.log?.(`Release update check failed (track: ${track}, trigger: ${input.trigger}): ${text}`);
+        if (attemptedVersion !== undefined) this.emitOutcome("failed", error instanceof Error ? error.constructor.name : undefined);
+        else this.emitCheckReport({ action: "result", seq, trigger: input.trigger, track, durationMs: this.now() - started, result: "error", error: classifyUpdateCheckError(error), errorClass: error instanceof Error ? error.constructor.name : undefined });
+        this.setState(this.stagedVersion == null ? { type: "idle", lastCheck: { at: this.now(), result: "error", errorMessage: text } } : explicit ? { type: "ready", version: this.stagedVersion, lastCheck: { at: this.now(), result: "error", errorMessage: text } } : { type: "ready", version: this.stagedVersion });
+      }
+    } finally {
+      if (this.checkAbort === abort) this.checkAbort = null;
+    }
+    return this.getStatus();
+  }
   private foldTransientStateToParked(): void { if (["checking", "available", "downloading"].includes(this.state.type)) { this.feedServer.stop(); this.setState(this.parkedState()); } }
   private parkedState(): SandUpdateState { return this.stagedVersion != null ? { type: "ready", version: this.stagedVersion } : { type: "idle" }; }
   async setTrackOverride(track: SandUpdateTrack | null): Promise<any> { const previous = this.effectiveTrack(); this.options.persistTrackOverride(track); if (this.state.type === "disabled" || this.effectiveTrack() === previous) { this.emitStatus(); return this.getStatus(); } return await this.retargetForTrackChange(); }
   private async retargetForTrackChange(): Promise<any> { this.notedEffectiveTrack = this.effectiveTrack(); if (["checking", "available", "downloading"].includes(this.state.type)) { this.checkAbort?.abort(); this.checkAbort = null; this.feedServer.stop(); this.setState(this.parkedState()); } else { if (this.state.type === "ready") { this.checkAbort?.abort(); this.checkAbort = null; } this.emitStatus(); } return this.state.type === "idle" || this.state.type === "ready" ? await this.checkForUpdates({ trigger: "track_change" }) : this.getStatus(); }
-  quitAndInstall(): boolean { if (this.state.type !== "ready") return false; if (this.responseKind === "iupdate") { if (this.stagedInstallerPath == null || this.forceRunOnQuit) return false; this.recordApplyRequested(this.state.version); this.forceRunOnQuit = true; this.options.windows?.quit(); return true; } if (this.options.squirrel == null) return false; this.recordApplyRequested(this.state.version); this.options.squirrel.quitAndInstall(); return true; }
-  private applyMechanism(): "nsis" | "squirrel" { return this.responseKind === "iupdate" ? "nsis" : "squirrel"; }
+  quitAndInstall(): boolean {
+    if (this.state.type !== "ready") return false;
+    if (this.options.releaseUpdater != null) {
+      if (this.stagedVersion == null || this.forceRunOnQuit || this.options.quitForReleaseUpdate == null) return false;
+      this.recordApplyRequested(this.state.version);
+      this.forceRunOnQuit = true;
+      this.options.quitForReleaseUpdate();
+      return true;
+    }
+    if (this.responseKind === "iupdate") { if (this.stagedInstallerPath == null || this.forceRunOnQuit) return false; this.recordApplyRequested(this.state.version); this.forceRunOnQuit = true; this.options.windows?.quit(); return true; }
+    if (this.options.squirrel == null) return false; this.recordApplyRequested(this.state.version); this.options.squirrel.quitAndInstall(); return true;
+  }
+  private applyMechanism(): "nsis" | "squirrel" | "appimage" {
+    if (this.options.releaseUpdater != null && (this.options.platform ?? process.platform) === "linux") return "appimage";
+    return this.responseKind === "iupdate" ? "nsis" : "squirrel";
+  }
   private settleApplyMarker(): void { const marker = this.options.applyMarker?.peek(); if (marker == null) return; for (const report of decideUpdateApplySettlement(marker, this.options.currentVersion, this.now())) this.options.reportApply?.(report); this.options.applyMarker?.clear(); }
   private recordApplyRequested(targetVersion: string): void { const mechanism = this.applyMechanism(); this.options.applyMarker?.recordRequested({ mechanism, targetVersion, fromVersion: this.options.currentVersion }); this.options.reportApply?.({ outcome: "requested", mechanism, targetVersion }); }
-  applyStagedOnQuit(): void { if (this.stagedInstallerPath == null || !this.forceRunOnQuit) return; const path = this.stagedInstallerPath; this.stagedInstallerPath = null; this.installerLaunched = true; this.options.applyMarker?.recordSpawned(); this.options.windows?.installOnQuit(path, { forceRun: true, onSpawnError: (error) => this.options.applyMarker?.recordSpawnFailed(error) }); }
-  willRunStagedInstallerOnQuit(): boolean { return this.stagedInstallerPath != null && this.forceRunOnQuit; }
+  applyStagedOnQuit(): void {
+    if (this.options.releaseUpdater != null) {
+      if (this.stagedVersion == null || !this.forceRunOnQuit) return;
+      this.forceRunOnQuit = false;
+      this.installerLaunched = true;
+      this.options.applyMarker?.recordSpawned();
+      try {
+        this.options.releaseUpdater.quitAndInstall(false, true);
+      } catch (error) {
+        this.options.applyMarker?.recordSpawnFailed(error);
+        throw error;
+      }
+      return;
+    }
+    if (this.stagedInstallerPath == null || !this.forceRunOnQuit) return; const path = this.stagedInstallerPath; this.stagedInstallerPath = null; this.installerLaunched = true; this.options.applyMarker?.recordSpawned(); this.options.windows?.installOnQuit(path, { forceRun: true, onSpawnError: (error) => this.options.applyMarker?.recordSpawnFailed(error) });
+  }
+  willRunStagedInstallerOnQuit(): boolean {
+    if (this.options.releaseUpdater != null) return this.stagedVersion != null && this.forceRunOnQuit;
+    return this.stagedInstallerPath != null && this.forceRunOnQuit;
+  }
   private releaseTrackGate() { return this.options.getReleaseTrackGate?.() ?? { managedTrack: undefined, unlockInternalTracks: false }; }
   private effectiveTrack(): SandUpdateTrack { const managedTrack = this.releaseTrackGate().managedTrack; const userOverride = this.options.getTrackOverride(); return resolveEffectiveTrack({ ...(managedTrack === undefined ? {} : { managedTrack }), ...(userOverride == null ? {} : { userOverride }), buildDefault: this.options.buildDefaultTrack }); }
   shouldApplyOffer(offerVersion: string): boolean { const baseline = this.stagedVersion ?? this.options.currentVersion; if (isNewerVersion(offerVersion, baseline)) return true; const offerTrack = parseVersion(offerVersion)?.prerelease[0]; const currentTrack = parseVersion(this.options.currentVersion)?.prerelease[0]; if (this.stagedVersion == null && offerVersion !== this.options.currentVersion && offerTrack != null && offerTrack !== currentTrack) return true; return NIGHTLY_UPDATE_TRACK_DISABLED && this.stagedVersion == null && isPrerelease(this.options.currentVersion) && !isPrerelease(offerVersion) && offerVersion !== this.options.currentVersion; }
   private async fetchUpdate(track: SandUpdateTrack, signal: AbortSignal): Promise<any | null> { const url = buildUpdateRequestUrl(this.options.feedBaseUrl ?? DEFAULT_UPDATE_BASE_URL, track, this.options.currentVersion, this.options.machineId, this.updatePlatform); const response = await (this.options.fetchImpl ?? fetch)(url, { redirect: "follow", signal, headers: { "cache-control": "no-cache" } }); if (response.status === 204) return null; if (!response.ok) throw new UpdateHttpStatusError(response.status, url); return parseUpdateResponse(await response.json(), this.responseKind); }
-  private async ensureStagingDir(): Promise<string> { this.stagingDir ??= await mkdtemp(join(this.options.tempDir, "sand-update-")); return this.stagingDir; }
+  private async ensureStagingDir(): Promise<string> {
+    if (this.stagingDir != null) return this.stagingDir;
+    const directory = await mkdtemp(join(this.options.tempDir, "sand-update-"));
+    try {
+      await chmod(directory, 0o700);
+    } catch (error) {
+      await rm(directory, { recursive: true, force: true }).catch((cleanupError) => this.failure("staging-cleanup", cleanupError));
+      throw error;
+    }
+    this.stagingDir = directory;
+    return directory;
+  }
   private async downloadAndStage(manifest: any, track: SandUpdateTrack, signal: AbortSignal): Promise<void> { const path = join(await this.ensureStagingDir(), `sand-update-${manifest.version}.${this.responseKind === "iupdate" ? "exe" : "zip"}`); let last = -1; this.setState({ type: "downloading", version: manifest.version, progress: null }); await downloadAndVerify({ url: manifest.url, ...(manifest.sha256 === undefined ? {} : { sha256: manifest.sha256 }), destinationPath: path, ...(this.options.fetchImpl === undefined ? {} : { fetchImpl: this.options.fetchImpl }), signal, onProgress: ({ receivedBytes, totalBytes }) => { if (totalBytes == null || signal.aborted) return; const progress = Math.min(receivedBytes / totalBytes, 1); if (progress - last >= PROGRESS_EMIT_STEP) { last = progress; this.setState({ type: "downloading", version: manifest.version, progress }); } }, reportCleanupFailure: (error) => this.failure("download-cleanup", error) }); if (signal.aborted || this.effectiveTrack() !== track) { await this.removeFile(path, "download-cleanup"); if (!signal.aborted) this.setState(this.parkedState()); return; } if (this.responseKind === "iupdate") return await this.stageWindowsInstaller(manifest.version, path, signal, track); if (this.options.squirrel == null) { await this.removeFile(path, "download-cleanup"); throw new SandUpdateApplyError("Update downloaded and verified, but applying updates requires Squirrel.Mac (macOS only)."); } this.setState({ type: "staging", version: manifest.version }); this.stagedZipPath = path; const feedUrl = await this.feedServer.start({ version: manifest.version, zipPath: path, ...(manifest.name === undefined ? {} : { releaseName: manifest.name }), ...(manifest.pubDate === undefined ? {} : { pubDate: manifest.pubDate }) }); this.options.squirrel.setFeedURL({ url: feedUrl }); this.stagedVersion = null; this.stagedAtMs = null; this.invalidatePendingApply(manifest.version); this.options.squirrel.checkForUpdates(); this.startStagingTimeout(manifest.version); }
   private async stageWindowsInstaller(version: string, path: string, signal: AbortSignal, track: SandUpdateTrack): Promise<void> { const windows = this.options.windows; if (windows == null) { await this.removeFile(path, "installer-cleanup"); throw new SandUpdateApplyError("Update downloaded, but no installer backend is available to apply it on this platform."); } this.setState({ type: "staging", version }); try { await windows.verifySignature(path); } catch (error) { await this.removeFile(path, "installer-cleanup"); throw new SandUpdateApplyError(`Installer signature verification failed: ${message(error)}`); } if (signal.aborted || this.effectiveTrack() !== track) { await this.removeFile(path, "installer-cleanup"); if (!signal.aborted) this.setState(this.parkedState()); return; } if (this.stagedInstallerPath != null && this.stagedInstallerPath !== path) void this.removeFile(this.stagedInstallerPath, "staged-cleanup"); this.invalidatePendingApply(version); this.stagedInstallerPath = path; this.stagedVersion = version; this.stagedAtMs = this.now(); this.recordApplyStaged(version); this.emitOutcome("staged"); this.setState({ type: "ready", version }); }
   private invalidatePendingApply(supersedingVersion: string): void { const marker = this.options.applyMarker?.peek(); if (marker != null && marker.phase !== "staged") this.options.reportApply?.({ outcome: "superseded_during_confirm", mechanism: marker.mechanism, targetVersion: marker.targetVersion, fromVersion: marker.fromVersion, phase: marker.phase, supersedingVersion }); this.options.applyMarker?.clear(); }

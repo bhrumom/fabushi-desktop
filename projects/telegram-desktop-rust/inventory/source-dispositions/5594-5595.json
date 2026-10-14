@@ -1,0 +1,90 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "tree": "9d8fa87ce68c832d2f4c99f372a5bb672463c3e1"
+  },
+  "range": {
+    "first_order": 5594,
+    "last_order": 5595,
+    "entries": 2
+  },
+  "rows": [
+    {
+      "recursive_order": 5594,
+      "source_path": "Telegram/SourceFiles/settings/sections/settings_global_ttl.cpp",
+      "source_blob_sha": "3a22266764ef7fe1496a9fd89d5853afe93bd34a",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Global conversation auto-delete/retention policy: server-authoritative default history TTL, first-enable confirmation, custom periods, eligible existing-chat selection and per-peer bulk TTL application",
+      "upstream_owner": "Telegram self-destruct API + per-peer history TTL + privacy settings section",
+      "state_machine": "load authoritative default TTL -> choose off/predefined/custom -> confirm first enable -> server update -> reactive default reconciliation; apply-to-existing -> enumerate/filter eligible peers -> user selection -> snapshot current default TTL -> independently mutate selected peer TTLs -> apply returned updates",
+      "side_effects": "Mutates account default retention policy and selected conversation history TTLs; filters self/replies/verify-code/contacts-no-chats/ineligible peers; opens confirmation/custom/picker surfaces and applies server updates. No second retention truth is allowed.",
+      "failure_cases": "account changes after selection; peer becomes ineligible or permission changes before send; default TTL changes between picker open/apply; one peer fails while others succeed; duplicate retry; server default rejects but radio remains optimistic; stale update mutates replacement account; cancellation/teardown leaves pending work; inaccessible radio/picker",
+      "ui_disposition": "Reuse canonical Settings/Privacy/ProfileSection/Radio/Button/Dialog/Picker/ListRow/Toast/Loading/Error primitives with canonical focus/keyboard/a11y/light-dark/responsive states.",
+      "fabushi_canonical_owner": "Canonical Privacy/Retention + Conversation policy + account-scoped messaging service owner",
+      "fabushi_target": "MAPPED OPEN. Implement source-neutral retention policy and per-conversation overrides in canonical Conversation/Privacy owners; no Telegram TTL subsystem.",
+      "platform_differences": "MTProto self-destruct/history-TTL methods map to Fabushi server retention contracts; Qt peer picker maps to canonical Participant/Conversation picker with typed eligibility and stale-result fencing.",
+      "production_evidence": "Exact live-source read proves policy and bulk-application responsibilities only; Fabushi server/runtime exact-head evidence remains required.",
+      "test_evidence": "HIGH risk: unit/property/server-contract/integration/fault/security/a11y/E2E for default reconciliation, first-enable cancel, custom TTL, account switch, stale eligibility, permission change, bulk partial failure/retry/idempotency, default change during picker, keyboard/focus/light-dark/responsive.",
+      "disposition": "mapped-open-canonical-retention-auto-delete",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "GlobalTTLId",
+      "consumer_evidence": [
+        "Telegram/SourceFiles/settings/sections/settings_global_ttl.cpp:124:void TTLChatsBoxController::rowClicked(not_null<PeerListRow*> row) {",
+        "Telegram/SourceFiles/settings/sections/settings_global_ttl.cpp:575:Type GlobalTTLId() {",
+        "Telegram/SourceFiles/settings/sections/settings_global_ttl.cpp:447:peer->session().api().request(MTPmessages_SetHistoryTTL("
+      ],
+      "reachability_status": "accepted-tree retention settings responsibility proven; canonical implementation/evidence closure open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no source-named TTL runtime retained.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+        "verified_blob_sha": "3a22266764ef7fe1496a9fd89d5853afe93bd34a",
+        "file_type": "blob",
+        "recursive_order": 5594
+      },
+      "notes": "Complete exact-source read at live authority. Unknown remains open; omitted=false."
+    },
+    {
+      "recursive_order": 5595,
+      "source_path": "Telegram/SourceFiles/settings/sections/settings_global_ttl.h",
+      "source_blob_sha": "6484c81b829bb59278f5480034c93d7e4796863c",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Public global retention/auto-delete Settings route contract",
+      "upstream_owner": "Telegram global TTL settings interface",
+      "state_machine": "caller resolves GlobalTTL route -> canonical Privacy/Retention owner projects account-scoped policy and per-conversation application",
+      "side_effects": "Exports route contract only; policy/server state stays in canonical owners.",
+      "failure_cases": "route bypasses canonical retention policy owner; duplicate retention truth; account scoping or accessibility composition lost",
+      "ui_disposition": "Expose through canonical Settings/Privacy route only; no source-named TTL component.",
+      "fabushi_canonical_owner": "Canonical Settings routing + Privacy/Retention owner",
+      "fabushi_target": "MAPPED OPEN. Preserve typed route semantics through canonical settings registration.",
+      "platform_differences": "C++ Settings Type becomes canonical route registration.",
+      "production_evidence": "Header read proves route surface only; exact-head implementation/evidence remains open.",
+      "test_evidence": "MEDIUM risk: route/account ownership, navigation/focus and accessibility contract evidence required.",
+      "disposition": "mapped-open-canonical-retention-auto-delete-interface",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "GlobalTTLId",
+      "consumer_evidence": [
+        "Telegram/SourceFiles/settings/sections/settings_global_ttl.h:18:[[nodiscard]] Type GlobalTTLId();",
+        "Telegram/SourceFiles/settings/sections/settings_global_ttl.cpp:575:Type GlobalTTLId() {"
+      ],
+      "reachability_status": "accepted-tree public retention settings route proven; canonical implementation/evidence closure open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no source-named TTL interface retained.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+        "verified_blob_sha": "6484c81b829bb59278f5480034c93d7e4796863c",
+        "file_type": "blob",
+        "recursive_order": 5595
+      },
+      "notes": "Complete exact-source header read at live authority. Unknown remains open; omitted=false."
+    }
+  ]
+}

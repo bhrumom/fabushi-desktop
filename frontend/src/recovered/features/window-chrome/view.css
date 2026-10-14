@@ -7,8 +7,24 @@
   left: 0;
   height: 52px;
   z-index: 4999;
+  pointer-events: none;
   -webkit-app-region: drag;
   app-region: drag;
+}
+
+/* Window dragging belongs to the visible titlebar surfaces, not to a transparent
+ * pointer-intercepting cover above application controls. Interactive descendants
+ * explicitly opt out so buttons/inputs retain normal pointer and keyboard use. */
+.sand-agents-sidebar__header,
+.sand-chat-header {
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+.sand-agents-sidebar__header :is(button, a, input, select, textarea, [role="button"], [contenteditable="true"]),
+.sand-chat-header :is(button, a, input, select, textarea, [role="button"], [contenteditable="true"]) {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
 }
 
 .sand-window-controls {

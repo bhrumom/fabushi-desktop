@@ -1,0 +1,7 @@
+# Settings Information complete read — orders 5596-5597
+
+Accepted upstream: `863cf10d9f34fb0b1b35b35da1bda75acfc58d2e` / tree `5030985204963cbbd362ced7412d231b04ebd0cc`. Exact blobs: implementation `8982b515b5a30600f5565c3b7e81dc5218c96950`; header `54435faa2f1a8d156d5da3501a9e9b0c13b96bae`.
+
+The complete section was read. It composes canonical identity/profile metadata and multi-account lifecycle rather than owning either. Profile responsibilities include optimistic local avatar projection followed by upload, name/phone/username, birthday and privacy link, personal channel/color, Chat Automation, and Bio with premium/default length limits, one-second debounce, submit-save, remote-update reconciliation and mandatory teardown flush. Account responsibilities include add/limit checks, active/other account badges, guarded switch, separate-window activation, context-menu logout/mark-read/copy, drag reorder with persisted account order, and rebuild on account/session/max-account changes.
+
+Production closure remains open for avatar failure/rollback and account fencing, Bio save/remote conflict races, frozen/edit flows, birthday privacy and Business account scope, delayed switch to removed accounts, reorder and lock-limit transitions, logout correctness, unread/premium badge continuity, and keyboard/focus/a11y/light-dark/responsive behavior. Both rows remain `mapped-open`; unknown remains 15,844 and omitted remains 0. Read-through becomes 5,597/16,123; first unread is 5,598 `settings_local_passcode.cpp`.

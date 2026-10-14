@@ -131,7 +131,7 @@ export interface SandInferenceOptions {
 }
 export function createSandInferenceInterceptor(options: SandInferenceOptions): Interceptor {
   return (next) => async (request) => {
-    const [auth, machineId] = await Promise.all(["authMode" in options ? Promise.resolve({ mode: options.authMode } as const) : options.getAccessToken({ backendUrl: options.backendUrl }).then((accessToken) => ({ mode: "required" as const, accessToken })), options.getMachineId()]);
+    const [auth, machineId] = await Promise.all([options.authMode === "anonymous" ? Promise.resolve({ mode: "anonymous" as const }) : options.getAccessToken({ backendUrl: options.backendUrl }).then((accessToken) => ({ mode: "required" as const, accessToken })), options.getMachineId()]);
     const privacyLookup = request.service.typeName === "aiserver.v1.DashboardService" && request.method.name === "GetUserPrivacyMode";
     const resolveGhostMode = options.resolveGhostModeHeader ?? ((lookup: PrivacyLookupOptions) => resolveSandGhostModeHeader(lookup, options.fetchPrivacyMode ?? fetchSandPrivacyMode));
     const ghostMode = auth.mode === "anonymous" || privacyLookup ? "true" : await resolveGhostMode({ backendUrl: options.backendUrl, accessToken: auth.accessToken, machineId });

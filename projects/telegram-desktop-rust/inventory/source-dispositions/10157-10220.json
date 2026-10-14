@@ -1,0 +1,1819 @@
+{
+  "format_version": 1,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6"
+  },
+  "range": {
+    "first_order": 10157,
+    "last_order": 10220,
+    "entries": 64
+  },
+  "range_evidence": {
+    "identity_source": {
+      "head_sha": "8cd23e6ec07d69b186be674947ac45ce38f3453a",
+      "workflow_run": 38123961987,
+      "job_id": 114424363470,
+      "artifact_id": 11695949458,
+      "artifact_digest": "sha256:fa16db976f759301292bf23dd454bed9f6e70ad386c772333bfbb93c0b329291",
+      "note": "exact identities and materialized blobs from current-head recursive source-authority artifact; each row is cross-checked against Yubico/libfido2 pinned git tree"
+    }
+  },
+  "rows": [
+    {
+      "recursive_order": 10157,
+      "source_path": "Telegram/ThirdParty/libfido2::regress/es384.c",
+      "source_blob_sha": "b55ce015e17a2d58728fef19dd945017f05359ab",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "regress/es384.c",
+        "object": "b55ce015e17a2d58728fef19dd945017f05359ab",
+        "mode": "100644",
+        "type": "blob",
+        "size": 5838
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 public-key algorithm regression",
+      "source_symbols": [
+        "source:regress/es384.c"
+      ],
+      "responsibility": "Exercises vetted ES384/RS256 key construction, conversion, round-trip and invalid-key failure behavior.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Security/Crypto dependency + Build/Quality",
+      "fabushi_target": "Keep algorithm/key validation behind audited platform/Rust cryptography and cover malformed/invalid-key behavior without custom crypto.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10158,
+      "source_path": "Telegram/ThirdParty/libfido2::regress/extern.h",
+      "source_blob_sha": "8bab9d4ae667d7c0bdc0f2ac008e247bc9d6318b",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "regress/extern.h",
+        "object": "8bab9d4ae667d7c0bdc0f2ac008e247bc9d6318b",
+        "mode": "100644",
+        "type": "blob",
+        "size": 432
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 regression declarations",
+      "source_symbols": [
+        "source:regress/extern.h"
+      ],
+      "responsibility": "Defines the shared regression-suite contract used to exercise WebAuthn crypto, parser, transport and lifecycle invariants.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + Build/Quality",
+      "fabushi_target": "Use as regression authority for the existing source-neutral WebAuthn owner; do not ship a libfido2 test/runtime owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10159,
+      "source_path": "Telegram/ThirdParty/libfido2::regress/mock.c",
+      "source_blob_sha": "cfaeffc9a3d98135451e7f876f79d1b70622e409",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "regress/mock.c",
+        "object": "cfaeffc9a3d98135451e7f876f79d1b70622e409",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3337
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 mock authenticator transport",
+      "source_symbols": [
+        "source:regress/mock.c"
+      ],
+      "responsibility": "Exercises exact HID-style report lengths, nonce/framing, bounded allocation, simulated waits/timeouts and deterministic transport reset.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Host bridge + Build/Quality",
+      "fabushi_target": "Preserve bounded framing, timeout/cancel and deterministic teardown in the existing signer/provider lifecycle.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10160,
+      "source_path": "Telegram/ThirdParty/libfido2::regress/rs256.c",
+      "source_blob_sha": "c1e1e01c69cc2ac9a8095ef4423db419c87f152e",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "regress/rs256.c",
+        "object": "c1e1e01c69cc2ac9a8095ef4423db419c87f152e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 5961
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 public-key algorithm regression",
+      "source_symbols": [
+        "source:regress/rs256.c"
+      ],
+      "responsibility": "Exercises vetted ES384/RS256 key construction, conversion, round-trip and invalid-key failure behavior.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Security/Crypto dependency + Build/Quality",
+      "fabushi_target": "Keep algorithm/key validation behind audited platform/Rust cryptography and cover malformed/invalid-key behavior without custom crypto.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10161,
+      "source_path": "Telegram/ThirdParty/libfido2::src/CMakeLists.txt",
+      "source_blob_sha": "948706bce68ee824f74c3711babf8b7bb094893a",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/CMakeLists.txt",
+        "object": "948706bce68ee824f74c3711babf8b7bb094893a",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3985
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 build and export composition",
+      "source_symbols": [
+        "source:src/CMakeLists.txt"
+      ],
+      "responsibility": "Defines the exact core source set, optional transport/crypto features, symbol visibility and cross-platform library composition.",
+      "fabushi_canonical_owner": "Canonical Build/Packaging/Release + existing Coordinator WebAuthn/security",
+      "fabushi_target": "Retain only required source-neutral dependency/provenance and packaged-helper composition; do not embed a parallel libfido2 runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10162,
+      "source_path": "Telegram/ThirdParty/libfido2::src/aes256.c",
+      "source_blob_sha": "fb1b776e51aecf3c5cb174e759bf4b183b91629f",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/aes256.c",
+        "object": "fb1b776e51aecf3c5cb174e759bf4b183b91629f",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6499
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 vetted cryptographic primitive boundary",
+      "source_symbols": [
+        "source:src/aes256.c"
+      ],
+      "responsibility": "Implements WebAuthn encryption/key-agreement/signature or key-conversion behavior with strict invalid-input and cleanup boundaries.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Security/Crypto dependency",
+      "fabushi_target": "Delegate to audited platform/Rust cryptography through the existing WebAuthn boundary; never reimplement these primitives ad hoc.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10163,
+      "source_path": "Telegram/ThirdParty/libfido2::src/assert.c",
+      "source_blob_sha": "2bab040c73cd2ee96012915d4ae13f0a3cdc47f8",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/assert.c",
+        "object": "2bab040c73cd2ee96012915d4ae13f0a3cdc47f8",
+        "mode": "100644",
+        "type": "blob",
+        "size": 27214
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 assertion ceremony core",
+      "source_symbols": [
+        "source:src/assert.c"
+      ],
+      "responsibility": "Owns assertion allow-list/resident flow, RP/client-data/authdata/signature binding, UP/UV/extensions, timeout budget and strict verification.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + Host bridge",
+      "fabushi_target": "Strengthen the existing assertion/signing lifecycle, including bounded lifetime and cancellation, without adding a FIDO-specific owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10164,
+      "source_path": "Telegram/ThirdParty/libfido2::src/authkey.c",
+      "source_blob_sha": "761562b26a1ed4f7a1477d0b4ac24292e8115f27",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/authkey.c",
+        "object": "761562b26a1ed4f7a1477d0b4ac24292e8115f27",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2342
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 authenticator key-agreement state",
+      "source_symbols": [
+        "source:src/authkey.c"
+      ],
+      "responsibility": "Owns ephemeral authenticator key-agreement material and validation used by PIN/UV and encrypted CTAP exchanges.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Secrets/Security",
+      "fabushi_target": "Keep key material inside the existing audited signer/security boundary with bounded lifetime and no custom key store.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10165,
+      "source_path": "Telegram/ThirdParty/libfido2::src/bio.c",
+      "source_blob_sha": "78030e058a33ef789c0ebd2d1ae70341eed0fa74",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/bio.c",
+        "object": "78030e058a33ef789c0ebd2d1ae70341eed0fa74",
+        "mode": "100644",
+        "type": "blob",
+        "size": 18755
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 biometric management",
+      "source_symbols": [
+        "source:src/bio.c"
+      ],
+      "responsibility": "Defines authenticator biometric info/enrollment/template lifecycle, authorization, progress and failure semantics.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Settings/platform-device",
+      "fabushi_target": "Extend the single platform-device/WebAuthn management owner only where product policy permits; preserve cancellation and authorization.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10166,
+      "source_path": "Telegram/ThirdParty/libfido2::src/blob.c",
+      "source_blob_sha": "b431f49a00fc9a304caf9a6cfa18198e1f3f0f06",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/blob.c",
+        "object": "b431f49a00fc9a304caf9a6cfa18198e1f3f0f06",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2316
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 bounded blob/buffer ownership",
+      "source_symbols": [
+        "source:src/blob.c"
+      ],
+      "responsibility": "Defines allocation, replacement, copy/free and bounded byte-buffer ownership used for sensitive protocol state.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Resource/Secrets",
+      "fabushi_target": "Use Rust ownership and explicit secret-lifetime controls in existing owners; reject unbounded/invalid lengths.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10167,
+      "source_path": "Telegram/ThirdParty/libfido2::src/blob.h",
+      "source_blob_sha": "72471859551386a2e18046168786d9feb36f9849",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/blob.h",
+        "object": "72471859551386a2e18046168786d9feb36f9849",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1022
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 bounded blob/buffer ownership",
+      "source_symbols": [
+        "source:src/blob.h"
+      ],
+      "responsibility": "Defines allocation, replacement, copy/free and bounded byte-buffer ownership used for sensitive protocol state.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Resource/Secrets",
+      "fabushi_target": "Use Rust ownership and explicit secret-lifetime controls in existing owners; reject unbounded/invalid lengths.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10168,
+      "source_path": "Telegram/ThirdParty/libfido2::src/buf.c",
+      "source_blob_sha": "42b6df1c24f101332bb90a2d1c653ce6c35397dd",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/buf.c",
+        "object": "42b6df1c24f101332bb90a2d1c653ce6c35397dd",
+        "mode": "100644",
+        "type": "blob",
+        "size": 618
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 bounded blob/buffer ownership",
+      "source_symbols": [
+        "source:src/buf.c"
+      ],
+      "responsibility": "Defines allocation, replacement, copy/free and bounded byte-buffer ownership used for sensitive protocol state.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Resource/Secrets",
+      "fabushi_target": "Use Rust ownership and explicit secret-lifetime controls in existing owners; reject unbounded/invalid lengths.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10169,
+      "source_path": "Telegram/ThirdParty/libfido2::src/cbor.c",
+      "source_blob_sha": "fb4982b30ead85e4d05df0aa06bc001492d68e41",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/cbor.c",
+        "object": "fb4982b30ead85e4d05df0aa06bc001492d68e41",
+        "mode": "100644",
+        "type": "blob",
+        "size": 40874
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 CTAP CBOR codec boundary",
+      "source_symbols": [
+        "source:src/cbor.c"
+      ],
+      "responsibility": "Encodes and decodes typed CTAP/WebAuthn maps with strict field, type, size, extension and error validation.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical protocol/security boundary",
+      "fabushi_target": "Keep strict typed parsing/serialization inside the existing helper/provider boundary with bounded input and fail-closed errors.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10170,
+      "source_path": "Telegram/ThirdParty/libfido2::src/compress.c",
+      "source_blob_sha": "3be6fd52fc3f4d0c1c0b5c583863fd23faa9499f",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/compress.c",
+        "object": "3be6fd52fc3f4d0c1c0b5c583863fd23faa9499f",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3964
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 vetted cryptographic primitive boundary",
+      "source_symbols": [
+        "source:src/compress.c"
+      ],
+      "responsibility": "Implements WebAuthn encryption/key-agreement/signature or key-conversion behavior with strict invalid-input and cleanup boundaries.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Security/Crypto dependency",
+      "fabushi_target": "Delegate to audited platform/Rust cryptography through the existing WebAuthn boundary; never reimplement these primitives ad hoc.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10171,
+      "source_path": "Telegram/ThirdParty/libfido2::src/config.c",
+      "source_blob_sha": "06117a145ab6beee55f14fb2b15663bdd44207ef",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/config.c",
+        "object": "06117a145ab6beee55f14fb2b15663bdd44207ef",
+        "mode": "100644",
+        "type": "blob",
+        "size": 5668
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 authenticator configuration",
+      "source_symbols": [
+        "source:src/config.c"
+      ],
+      "responsibility": "Defines authorized authenticator configuration operations and typed capability/error contracts.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Settings/platform-device",
+      "fabushi_target": "Expose only policy-approved source-neutral device settings through the existing platform-device owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10172,
+      "source_path": "Telegram/ThirdParty/libfido2::src/cred.c",
+      "source_blob_sha": "80178c709c829dd79843b473f865edb1e6668056",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/cred.c",
+        "object": "80178c709c829dd79843b473f865edb1e6668056",
+        "mode": "100644",
+        "type": "blob",
+        "size": 31868
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 credential ceremony core",
+      "source_symbols": [
+        "source:src/cred.c"
+      ],
+      "responsibility": "Owns credential creation/exclusion, attestation/authdata, resident/credProtect/enterprise options, PIN/UV and timeout/error behavior.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + Host bridge",
+      "fabushi_target": "Strengthen the existing creation ceremony/helper result path without a second credential store or custom crypto.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10173,
+      "source_path": "Telegram/ThirdParty/libfido2::src/credman.c",
+      "source_blob_sha": "0af3fcfa68666c5b93a5bd3641e51bd4bda9fa0d",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/credman.c",
+        "object": "0af3fcfa68666c5b93a5bd3641e51bd4bda9fa0d",
+        "mode": "100644",
+        "type": "blob",
+        "size": 18112
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 resident credential management",
+      "source_symbols": [
+        "source:src/credman.c"
+      ],
+      "responsibility": "Defines discoverable credential enumeration/delete/update metadata lifecycle with authorization and bounded iteration.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Settings/platform-device",
+      "fabushi_target": "Route any product-exposed credential management through the existing security-key/platform-device owner with explicit authorization.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10174,
+      "source_path": "Telegram/ThirdParty/libfido2::src/dev.c",
+      "source_blob_sha": "473132663451be36e6d704ffa839e139e70ff42a",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/dev.c",
+        "object": "473132663451be36e6d704ffa839e139e70ff42a",
+        "mode": "100644",
+        "type": "blob",
+        "size": 13603
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 authenticator device lifecycle",
+      "source_symbols": [
+        "source:src/dev.c"
+      ],
+      "responsibility": "Owns device open/init/close, manifest discovery, timeout budget, explicit cancel, touch capability and transport lifecycle.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + Host bridge + canonical Settings/platform-device",
+      "fabushi_target": "Preserve bounded ceremony lifetime, cancellation and deterministic teardown in the existing spawned signer/provider runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10175,
+      "source_path": "Telegram/ThirdParty/libfido2::src/diff_exports.sh",
+      "source_blob_sha": "2e15cd0c5b9b7bf6d064aeb19337cdc74094faf3",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/diff_exports.sh",
+        "object": "2e15cd0c5b9b7bf6d064aeb19337cdc74094faf3",
+        "mode": "100755",
+        "type": "blob",
+        "size": 679
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 ABI/build provenance",
+      "source_symbols": [
+        "source:src/diff_exports.sh"
+      ],
+      "responsibility": "Defines exported API/package metadata consistency across toolchains and release builds.",
+      "fabushi_canonical_owner": "Canonical Build/Packaging/Release",
+      "fabushi_target": "Keep packaged helper/dependency provenance and cross-platform export consistency under existing release owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10176,
+      "source_path": "Telegram/ThirdParty/libfido2::src/ecdh.c",
+      "source_blob_sha": "29d75592d008abc539ccbd0a0702afa1c3e0d16d",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/ecdh.c",
+        "object": "29d75592d008abc539ccbd0a0702afa1c3e0d16d",
+        "mode": "100644",
+        "type": "blob",
+        "size": 5166
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 vetted cryptographic primitive boundary",
+      "source_symbols": [
+        "source:src/ecdh.c"
+      ],
+      "responsibility": "Implements WebAuthn encryption/key-agreement/signature or key-conversion behavior with strict invalid-input and cleanup boundaries.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Security/Crypto dependency",
+      "fabushi_target": "Delegate to audited platform/Rust cryptography through the existing WebAuthn boundary; never reimplement these primitives ad hoc.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10177,
+      "source_path": "Telegram/ThirdParty/libfido2::src/eddsa.c",
+      "source_blob_sha": "bdb53b188cdb316e1f4443a400c47bd3d76ef1ff",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/eddsa.c",
+        "object": "bdb53b188cdb316e1f4443a400c47bd3d76ef1ff",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4793
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 vetted cryptographic primitive boundary",
+      "source_symbols": [
+        "source:src/eddsa.c"
+      ],
+      "responsibility": "Implements WebAuthn encryption/key-agreement/signature or key-conversion behavior with strict invalid-input and cleanup boundaries.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Security/Crypto dependency",
+      "fabushi_target": "Delegate to audited platform/Rust cryptography through the existing WebAuthn boundary; never reimplement these primitives ad hoc.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10178,
+      "source_path": "Telegram/ThirdParty/libfido2::src/err.c",
+      "source_blob_sha": "3a6f3e0a61245dbc0faf15f531238ee4e9337418",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/err.c",
+        "object": "3a6f3e0a61245dbc0faf15f531238ee4e9337418",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4316
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 typed error contract",
+      "source_symbols": [
+        "source:src/err.c"
+      ],
+      "responsibility": "Defines stable device/protocol/transport error identities and caller-visible failure mapping.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + Host bridge",
+      "fabushi_target": "Map failures to source-neutral typed WebAuthn errors without leaking transport internals or silently accepting malformed success.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10179,
+      "source_path": "Telegram/ThirdParty/libfido2::src/es256.c",
+      "source_blob_sha": "17efb0ad2c16d04a4a3db6077a86859db75a6058",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/es256.c",
+        "object": "17efb0ad2c16d04a4a3db6077a86859db75a6058",
+        "mode": "100644",
+        "type": "blob",
+        "size": 11433
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 vetted cryptographic primitive boundary",
+      "source_symbols": [
+        "source:src/es256.c"
+      ],
+      "responsibility": "Implements WebAuthn encryption/key-agreement/signature or key-conversion behavior with strict invalid-input and cleanup boundaries.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Security/Crypto dependency",
+      "fabushi_target": "Delegate to audited platform/Rust cryptography through the existing WebAuthn boundary; never reimplement these primitives ad hoc.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10180,
+      "source_path": "Telegram/ThirdParty/libfido2::src/es384.c",
+      "source_blob_sha": "013d285ef7f019ac026d974dab116df38409c986",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/es384.c",
+        "object": "013d285ef7f019ac026d974dab116df38409c986",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6313
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 vetted cryptographic primitive boundary",
+      "source_symbols": [
+        "source:src/es384.c"
+      ],
+      "responsibility": "Implements WebAuthn encryption/key-agreement/signature or key-conversion behavior with strict invalid-input and cleanup boundaries.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Security/Crypto dependency",
+      "fabushi_target": "Delegate to audited platform/Rust cryptography through the existing WebAuthn boundary; never reimplement these primitives ad hoc.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10181,
+      "source_path": "Telegram/ThirdParty/libfido2::src/export.gnu",
+      "source_blob_sha": "4d70af5f4f198b8881a495720eda6b1e1d6bb6ce",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/export.gnu",
+        "object": "4d70af5f4f198b8881a495720eda6b1e1d6bb6ce",
+        "mode": "100644",
+        "type": "blob",
+        "size": 7829
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 ABI/build provenance",
+      "source_symbols": [
+        "source:src/export.gnu"
+      ],
+      "responsibility": "Defines exported API/package metadata consistency across toolchains and release builds.",
+      "fabushi_canonical_owner": "Canonical Build/Packaging/Release",
+      "fabushi_target": "Keep packaged helper/dependency provenance and cross-platform export consistency under existing release owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10182,
+      "source_path": "Telegram/ThirdParty/libfido2::src/export.llvm",
+      "source_blob_sha": "1a7c5c6dcf61cebd4063f2146e5b2f5fe87283e0",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/export.llvm",
+        "object": "1a7c5c6dcf61cebd4063f2146e5b2f5fe87283e0",
+        "mode": "100644",
+        "type": "blob",
+        "size": 7204
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 ABI/build provenance",
+      "source_symbols": [
+        "source:src/export.llvm"
+      ],
+      "responsibility": "Defines exported API/package metadata consistency across toolchains and release builds.",
+      "fabushi_canonical_owner": "Canonical Build/Packaging/Release",
+      "fabushi_target": "Keep packaged helper/dependency provenance and cross-platform export consistency under existing release owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10183,
+      "source_path": "Telegram/ThirdParty/libfido2::src/export.msvc",
+      "source_blob_sha": "248c04e82ba1659b531f3ec7d9a696561128fa5f",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/export.msvc",
+        "object": "248c04e82ba1659b531f3ec7d9a696561128fa5f",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6913
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 ABI/build provenance",
+      "source_symbols": [
+        "source:src/export.msvc"
+      ],
+      "responsibility": "Defines exported API/package metadata consistency across toolchains and release builds.",
+      "fabushi_canonical_owner": "Canonical Build/Packaging/Release",
+      "fabushi_target": "Keep packaged helper/dependency provenance and cross-platform export consistency under existing release owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10184,
+      "source_path": "Telegram/ThirdParty/libfido2::src/extern.h",
+      "source_blob_sha": "e478e6282cad45df5e578e110375ab9b6215c9ee",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/extern.h",
+        "object": "e478e6282cad45df5e578e110375ab9b6215c9ee",
+        "mode": "100644",
+        "type": "blob",
+        "size": 11593
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 internal protocol/state contract",
+      "source_symbols": [
+        "source:src/extern.h"
+      ],
+      "responsibility": "Defines shared CTAP commands, device state, capability flags, message sizes, nonces, timeouts, credentials and protocol ownership.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + Host bridge + canonical Settings/platform-device",
+      "fabushi_target": "Represent only the needed typed state in existing source-neutral owners; preserve bounds, capability checks and lifecycle invariants.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10185,
+      "source_path": "Telegram/ThirdParty/libfido2::src/fallthrough.h",
+      "source_blob_sha": "bdfd30fd63eb9711ab879aeb88d019c9ee66476e",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/fallthrough.h",
+        "object": "bdfd30fd63eb9711ab879aeb88d019c9ee66476e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 484
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 portability/layout contract",
+      "source_symbols": [
+        "source:src/fallthrough.h"
+      ],
+      "responsibility": "Provides compiler/packed-layout portability required for exact protocol framing across supported platforms.",
+      "fabushi_canonical_owner": "Canonical Platform + Build/Packaging",
+      "fabushi_target": "Use Rust/platform layout guarantees and existing adapters; do not retain C portability shims as a parallel runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10186,
+      "source_path": "Telegram/ThirdParty/libfido2::src/fido.h",
+      "source_blob_sha": "6f13d8f9a6fb92629c6595b7efa7d25d6299d533",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/fido.h",
+        "object": "6f13d8f9a6fb92629c6595b7efa7d25d6299d533",
+        "mode": "100644",
+        "type": "blob",
+        "size": 15939
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 internal protocol/state contract",
+      "source_symbols": [
+        "source:src/fido.h"
+      ],
+      "responsibility": "Defines shared CTAP commands, device state, capability flags, message sizes, nonces, timeouts, credentials and protocol ownership.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + Host bridge + canonical Settings/platform-device",
+      "fabushi_target": "Represent only the needed typed state in existing source-neutral owners; preserve bounds, capability checks and lifecycle invariants.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10187,
+      "source_path": "Telegram/ThirdParty/libfido2::src/fido/bio.h",
+      "source_blob_sha": "acd667e741baf2df80eaa776829286c4cd8ecc99",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/fido/bio.h",
+        "object": "acd667e741baf2df80eaa776829286c4cd8ecc99",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4977
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 biometric management",
+      "source_symbols": [
+        "source:src/fido/bio.h"
+      ],
+      "responsibility": "Defines authenticator biometric info/enrollment/template lifecycle, authorization, progress and failure semantics.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Settings/platform-device",
+      "fabushi_target": "Extend the single platform-device/WebAuthn management owner only where product policy permits; preserve cancellation and authorization.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10188,
+      "source_path": "Telegram/ThirdParty/libfido2::src/fido/config.h",
+      "source_blob_sha": "bf7eb3416f079151a54c4ecd90cda98e45f1e221",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/fido/config.h",
+        "object": "bf7eb3416f079151a54c4ecd90cda98e45f1e221",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2160
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 authenticator configuration",
+      "source_symbols": [
+        "source:src/fido/config.h"
+      ],
+      "responsibility": "Defines authorized authenticator configuration operations and typed capability/error contracts.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Settings/platform-device",
+      "fabushi_target": "Expose only policy-approved source-neutral device settings through the existing platform-device owner.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10189,
+      "source_path": "Telegram/ThirdParty/libfido2::src/fido/credman.h",
+      "source_blob_sha": "00bf9935b456051a1d3d61b90b6e2c50581fdd3b",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/fido/credman.h",
+        "object": "00bf9935b456051a1d3d61b90b6e2c50581fdd3b",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3911
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 resident credential management",
+      "source_symbols": [
+        "source:src/fido/credman.h"
+      ],
+      "responsibility": "Defines discoverable credential enumeration/delete/update metadata lifecycle with authorization and bounded iteration.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Settings/platform-device",
+      "fabushi_target": "Route any product-exposed credential management through the existing security-key/platform-device owner with explicit authorization.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10190,
+      "source_path": "Telegram/ThirdParty/libfido2::src/fido/eddsa.h",
+      "source_blob_sha": "d3184d4083992fc6e95361145a7c53ed03cc2e74",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/fido/eddsa.h",
+        "object": "d3184d4083992fc6e95361145a7c53ed03cc2e74",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2484
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 public-key API surface",
+      "source_symbols": [
+        "source:src/fido/eddsa.h"
+      ],
+      "responsibility": "Defines supported WebAuthn key types and strict construction/conversion/verification contracts.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Security/Crypto dependency",
+      "fabushi_target": "Keep vetted crypto dependency interfaces behind the existing WebAuthn security boundary.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10191,
+      "source_path": "Telegram/ThirdParty/libfido2::src/fido/err.h",
+      "source_blob_sha": "1b0ff7cff1ae4266474b5a69ce4357205a385182",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/fido/err.h",
+        "object": "1b0ff7cff1ae4266474b5a69ce4357205a385182",
+        "mode": "100644",
+        "type": "blob",
+        "size": 3939
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 typed error contract",
+      "source_symbols": [
+        "source:src/fido/err.h"
+      ],
+      "responsibility": "Defines stable device/protocol/transport error identities and caller-visible failure mapping.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + Host bridge",
+      "fabushi_target": "Map failures to source-neutral typed WebAuthn errors without leaking transport internals or silently accepting malformed success.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10192,
+      "source_path": "Telegram/ThirdParty/libfido2::src/fido/es256.h",
+      "source_blob_sha": "71fae0b95cdec2ad7c3de94a7a2dfb6f8eb238da",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/fido/es256.h",
+        "object": "71fae0b95cdec2ad7c3de94a7a2dfb6f8eb238da",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2425
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 public-key API surface",
+      "source_symbols": [
+        "source:src/fido/es256.h"
+      ],
+      "responsibility": "Defines supported WebAuthn key types and strict construction/conversion/verification contracts.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Security/Crypto dependency",
+      "fabushi_target": "Keep vetted crypto dependency interfaces behind the existing WebAuthn security boundary.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10193,
+      "source_path": "Telegram/ThirdParty/libfido2::src/fido/es384.h",
+      "source_blob_sha": "8418573fd0b260daaba708702a54ac844bd13d24",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/fido/es384.h",
+        "object": "8418573fd0b260daaba708702a54ac844bd13d24",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2065
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 public-key API surface",
+      "source_symbols": [
+        "source:src/fido/es384.h"
+      ],
+      "responsibility": "Defines supported WebAuthn key types and strict construction/conversion/verification contracts.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Security/Crypto dependency",
+      "fabushi_target": "Keep vetted crypto dependency interfaces behind the existing WebAuthn security boundary.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10194,
+      "source_path": "Telegram/ThirdParty/libfido2::src/fido/param.h",
+      "source_blob_sha": "decde2c9085aba52c988350d319a38cfcab31b6d",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/fido/param.h",
+        "object": "decde2c9085aba52c988350d319a38cfcab31b6d",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6170
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 internal protocol/state contract",
+      "source_symbols": [
+        "source:src/fido/param.h"
+      ],
+      "responsibility": "Defines shared CTAP commands, device state, capability flags, message sizes, nonces, timeouts, credentials and protocol ownership.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + Host bridge + canonical Settings/platform-device",
+      "fabushi_target": "Represent only the needed typed state in existing source-neutral owners; preserve bounds, capability checks and lifecycle invariants.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10195,
+      "source_path": "Telegram/ThirdParty/libfido2::src/fido/rs256.h",
+      "source_blob_sha": "8ff35c1282b2b5f4aa405e38792ffe1ee91f597a",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/fido/rs256.h",
+        "object": "8ff35c1282b2b5f4aa405e38792ffe1ee91f597a",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2065
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 public-key API surface",
+      "source_symbols": [
+        "source:src/fido/rs256.h"
+      ],
+      "responsibility": "Defines supported WebAuthn key types and strict construction/conversion/verification contracts.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Security/Crypto dependency",
+      "fabushi_target": "Keep vetted crypto dependency interfaces behind the existing WebAuthn security boundary.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10196,
+      "source_path": "Telegram/ThirdParty/libfido2::src/fido/types.h",
+      "source_blob_sha": "158738d5696fb2526c62d402d11ea275364ddfd3",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/fido/types.h",
+        "object": "158738d5696fb2526c62d402d11ea275364ddfd3",
+        "mode": "100644",
+        "type": "blob",
+        "size": 13647
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 internal protocol/state contract",
+      "source_symbols": [
+        "source:src/fido/types.h"
+      ],
+      "responsibility": "Defines shared CTAP commands, device state, capability flags, message sizes, nonces, timeouts, credentials and protocol ownership.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + Host bridge + canonical Settings/platform-device",
+      "fabushi_target": "Represent only the needed typed state in existing source-neutral owners; preserve bounds, capability checks and lifecycle invariants.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10197,
+      "source_path": "Telegram/ThirdParty/libfido2::src/hid.c",
+      "source_blob_sha": "662bd44adfca6771c5eb0025299a055e29a17edf",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/hid.c",
+        "object": "662bd44adfca6771c5eb0025299a055e29a17edf",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4097
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 cross-platform HID transport",
+      "source_symbols": [
+        "source:src/hid.c"
+      ],
+      "responsibility": "Implements CTAP HID framing/discovery/open/read/write/cancel behavior and platform-specific device I/O boundaries.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + Host bridge + canonical Platform/Resource",
+      "fabushi_target": "Keep transport behind the single source-neutral signer/platform adapter and require packaged helper plus three-platform evidence.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10198,
+      "source_path": "Telegram/ThirdParty/libfido2::src/hid_freebsd.c",
+      "source_blob_sha": "2bbe80b5349c9d634a96547633371d583df1a5f2",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/hid_freebsd.c",
+        "object": "2bbe80b5349c9d634a96547633371d583df1a5f2",
+        "mode": "100644",
+        "type": "blob",
+        "size": 7591
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 cross-platform HID transport",
+      "source_symbols": [
+        "source:src/hid_freebsd.c"
+      ],
+      "responsibility": "Implements CTAP HID framing/discovery/open/read/write/cancel behavior and platform-specific device I/O boundaries.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + Host bridge + canonical Platform/Resource",
+      "fabushi_target": "Keep transport behind the single source-neutral signer/platform adapter and require packaged helper plus three-platform evidence.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10199,
+      "source_path": "Telegram/ThirdParty/libfido2::src/hid_hidapi.c",
+      "source_blob_sha": "fed6f69a223726b052a2314abd414f6b2a2baba0",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/hid_hidapi.c",
+        "object": "fed6f69a223726b052a2314abd414f6b2a2baba0",
+        "mode": "100644",
+        "type": "blob",
+        "size": 4964
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 cross-platform HID transport",
+      "source_symbols": [
+        "source:src/hid_hidapi.c"
+      ],
+      "responsibility": "Implements CTAP HID framing/discovery/open/read/write/cancel behavior and platform-specific device I/O boundaries.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + Host bridge + canonical Platform/Resource",
+      "fabushi_target": "Keep transport behind the single source-neutral signer/platform adapter and require packaged helper plus three-platform evidence.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10200,
+      "source_path": "Telegram/ThirdParty/libfido2::src/hid_linux.c",
+      "source_blob_sha": "cc6957ac8c31ae3693831734f890defe521c8934",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/hid_linux.c",
+        "object": "cc6957ac8c31ae3693831734f890defe521c8934",
+        "mode": "100644",
+        "type": "blob",
+        "size": 8768
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 cross-platform HID transport",
+      "source_symbols": [
+        "source:src/hid_linux.c"
+      ],
+      "responsibility": "Implements CTAP HID framing/discovery/open/read/write/cancel behavior and platform-specific device I/O boundaries.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + Host bridge + canonical Platform/Resource",
+      "fabushi_target": "Keep transport behind the single source-neutral signer/platform adapter and require packaged helper plus three-platform evidence.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10201,
+      "source_path": "Telegram/ThirdParty/libfido2::src/hid_netbsd.c",
+      "source_blob_sha": "df85282e5fe4aa06e22b9300dd49471190045631",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/hid_netbsd.c",
+        "object": "df85282e5fe4aa06e22b9300dd49471190045631",
+        "mode": "100644",
+        "type": "blob",
+        "size": 7744
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 cross-platform HID transport",
+      "source_symbols": [
+        "source:src/hid_netbsd.c"
+      ],
+      "responsibility": "Implements CTAP HID framing/discovery/open/read/write/cancel behavior and platform-specific device I/O boundaries.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + Host bridge + canonical Platform/Resource",
+      "fabushi_target": "Keep transport behind the single source-neutral signer/platform adapter and require packaged helper plus three-platform evidence.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10202,
+      "source_path": "Telegram/ThirdParty/libfido2::src/hid_openbsd.c",
+      "source_blob_sha": "2d08aca42aeefa00f65210b1025ddf3424523976",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/hid_openbsd.c",
+        "object": "2d08aca42aeefa00f65210b1025ddf3424523976",
+        "mode": "100644",
+        "type": "blob",
+        "size": 6387
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 cross-platform HID transport",
+      "source_symbols": [
+        "source:src/hid_openbsd.c"
+      ],
+      "responsibility": "Implements CTAP HID framing/discovery/open/read/write/cancel behavior and platform-specific device I/O boundaries.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + Host bridge + canonical Platform/Resource",
+      "fabushi_target": "Keep transport behind the single source-neutral signer/platform adapter and require packaged helper plus three-platform evidence.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10203,
+      "source_path": "Telegram/ThirdParty/libfido2::src/hid_osx.c",
+      "source_blob_sha": "41e9d1715bb67ec42986a8b4ccde8e1cebfe112e",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/hid_osx.c",
+        "object": "41e9d1715bb67ec42986a8b4ccde8e1cebfe112e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 13121
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 cross-platform HID transport",
+      "source_symbols": [
+        "source:src/hid_osx.c"
+      ],
+      "responsibility": "Implements CTAP HID framing/discovery/open/read/write/cancel behavior and platform-specific device I/O boundaries.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + Host bridge + canonical Platform/Resource",
+      "fabushi_target": "Keep transport behind the single source-neutral signer/platform adapter and require packaged helper plus three-platform evidence.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10204,
+      "source_path": "Telegram/ThirdParty/libfido2::src/hid_unix.c",
+      "source_blob_sha": "e53882d79e86a6779be4e45264d448603d93e0c1",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/hid_unix.c",
+        "object": "e53882d79e86a6779be4e45264d448603d93e0c1",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1441
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 cross-platform HID transport",
+      "source_symbols": [
+        "source:src/hid_unix.c"
+      ],
+      "responsibility": "Implements CTAP HID framing/discovery/open/read/write/cancel behavior and platform-specific device I/O boundaries.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + Host bridge + canonical Platform/Resource",
+      "fabushi_target": "Keep transport behind the single source-neutral signer/platform adapter and require packaged helper plus three-platform evidence.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10205,
+      "source_path": "Telegram/ThirdParty/libfido2::src/hid_win.c",
+      "source_blob_sha": "bc98a1701b0d71d76b06ca0d73c65b4ba08957ef",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/hid_win.c",
+        "object": "bc98a1701b0d71d76b06ca0d73c65b4ba08957ef",
+        "mode": "100644",
+        "type": "blob",
+        "size": 12779
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 cross-platform HID transport",
+      "source_symbols": [
+        "source:src/hid_win.c"
+      ],
+      "responsibility": "Implements CTAP HID framing/discovery/open/read/write/cancel behavior and platform-specific device I/O boundaries.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + Host bridge + canonical Platform/Resource",
+      "fabushi_target": "Keep transport behind the single source-neutral signer/platform adapter and require packaged helper plus three-platform evidence.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10206,
+      "source_path": "Telegram/ThirdParty/libfido2::src/info.c",
+      "source_blob_sha": "eed364d1f8539eccfb412b1c663ed76fbfba6c9e",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/info.c",
+        "object": "eed364d1f8539eccfb412b1c663ed76fbfba6c9e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 18483
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 authenticator capability discovery",
+      "source_symbols": [
+        "source:src/info.c"
+      ],
+      "responsibility": "Parses getInfo capabilities, versions, algorithms, transports, limits, options and extension support with strict typing/bounds.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Settings/platform-device",
+      "fabushi_target": "Project only typed capabilities needed by the existing WebAuthn/platform-device owner; malformed info fails closed.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10207,
+      "source_path": "Telegram/ThirdParty/libfido2::src/io.c",
+      "source_blob_sha": "a9715b5b4bf80f1c2526920d42690d4f9fb15771",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/io.c",
+        "object": "a9715b5b4bf80f1c2526920d42690d4f9fb15771",
+        "mode": "100644",
+        "type": "blob",
+        "size": 7898
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 framed I/O timeout lifecycle",
+      "source_symbols": [
+        "source:src/io.c"
+      ],
+      "responsibility": "Carries one mutable timeout budget across writes, reads, keepalive filtering, continuation sequencing and exact frame-length checks.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + Host bridge",
+      "fabushi_target": "Apply a bounded ceremony deadline to the existing spawned helper/provider path and preserve remote cancellation/teardown.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10208,
+      "source_path": "Telegram/ThirdParty/libfido2::src/iso7816.c",
+      "source_blob_sha": "5bba10697ee42e2de60eb784e42c6d1f4df861d3",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/iso7816.c",
+        "object": "5bba10697ee42e2de60eb784e42c6d1f4df861d3",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1532
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 ISO7816 APDU framing",
+      "source_symbols": [
+        "source:src/iso7816.c"
+      ],
+      "responsibility": "Builds bounded smart-card APDUs with exact length fields, overflow checks and zeroizing/freeing ownership.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Platform/Security",
+      "fabushi_target": "Keep APDU/device details behind vetted platform/helper adapters with strict length and cleanup semantics.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10209,
+      "source_path": "Telegram/ThirdParty/libfido2::src/iso7816.h",
+      "source_blob_sha": "7545719c6f1b5cd450038c1406ac23545b292273",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/iso7816.h",
+        "object": "7545719c6f1b5cd450038c1406ac23545b292273",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1073
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 ISO7816 APDU framing",
+      "source_symbols": [
+        "source:src/iso7816.h"
+      ],
+      "responsibility": "Builds bounded smart-card APDUs with exact length fields, overflow checks and zeroizing/freeing ownership.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Platform/Security",
+      "fabushi_target": "Keep APDU/device details behind vetted platform/helper adapters with strict length and cleanup semantics.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10210,
+      "source_path": "Telegram/ThirdParty/libfido2::src/largeblob.c",
+      "source_blob_sha": "837acbf790d5ecf5b846db95d932765d29821e5b",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/largeblob.c",
+        "object": "837acbf790d5ecf5b846db95d932765d29821e5b",
+        "mode": "100644",
+        "type": "blob",
+        "size": 21673
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 largeBlob lifecycle",
+      "source_symbols": [
+        "source:src/largeblob.c"
+      ],
+      "responsibility": "Defines chunked largeBlob read/write, integrity digest, authenticated encryption, size/capability constraints and failure cleanup.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Secrets/Persistence + Settings/platform-device",
+      "fabushi_target": "Use only an audited existing security-key capability path; no second blob store or custom crypto.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10211,
+      "source_path": "Telegram/ThirdParty/libfido2::src/libfido2.pc.in",
+      "source_blob_sha": "03d0606679541dca35c301a3c5da0c624017c750",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/libfido2.pc.in",
+        "object": "03d0606679541dca35c301a3c5da0c624017c750",
+        "mode": "100644",
+        "type": "blob",
+        "size": 306
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 ABI/build provenance",
+      "source_symbols": [
+        "source:src/libfido2.pc.in"
+      ],
+      "responsibility": "Defines exported API/package metadata consistency across toolchains and release builds.",
+      "fabushi_canonical_owner": "Canonical Build/Packaging/Release",
+      "fabushi_target": "Keep packaged helper/dependency provenance and cross-platform export consistency under existing release owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10212,
+      "source_path": "Telegram/ThirdParty/libfido2::src/log.c",
+      "source_blob_sha": "e54f8fca6b90f5f40f5557965c4f773621e5761e",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/log.c",
+        "object": "e54f8fca6b90f5f40f5557965c4f773621e5761e",
+        "mode": "100644",
+        "type": "blob",
+        "size": 2256
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 diagnostics boundary",
+      "source_symbols": [
+        "source:src/log.c"
+      ],
+      "responsibility": "Defines diagnostic formatting and binary tracing hooks whose activation must not leak sensitive ceremony/device payloads.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Telemetry/Diagnostics",
+      "fabushi_target": "Keep production helper diagnostics bounded/redacted; unstructured helper stderr is not promoted into user-visible or telemetry secrets.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10213,
+      "source_path": "Telegram/ThirdParty/libfido2::src/netlink.c",
+      "source_blob_sha": "2a9216c3905807dc3b010d0ce2d7873a6abfc792",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/netlink.c",
+        "object": "2a9216c3905807dc3b010d0ce2d7873a6abfc792",
+        "mode": "100644",
+        "type": "blob",
+        "size": 16428
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 Linux device discovery",
+      "source_symbols": [
+        "source:src/netlink.c"
+      ],
+      "responsibility": "Uses Linux netlink device events/discovery with bounded message parsing and explicit resource teardown.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Platform/Resource",
+      "fabushi_target": "Keep Linux discovery behind the single packaged signer/platform adapter and source-neutral device lifecycle.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10214,
+      "source_path": "Telegram/ThirdParty/libfido2::src/netlink.h",
+      "source_blob_sha": "c600b522196ab4793283557212320b51bf6b2573",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/netlink.h",
+        "object": "c600b522196ab4793283557212320b51bf6b2573",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1031
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 Linux device discovery",
+      "source_symbols": [
+        "source:src/netlink.h"
+      ],
+      "responsibility": "Uses Linux netlink device events/discovery with bounded message parsing and explicit resource teardown.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Platform/Resource",
+      "fabushi_target": "Keep Linux discovery behind the single packaged signer/platform adapter and source-neutral device lifecycle.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10215,
+      "source_path": "Telegram/ThirdParty/libfido2::src/nfc.c",
+      "source_blob_sha": "f2f65a237d3ee97820587a6e5a7c6e73701a8326",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/nfc.c",
+        "object": "f2f65a237d3ee97820587a6e5a7c6e73701a8326",
+        "mode": "100644",
+        "type": "blob",
+        "size": 7315
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 NFC transport",
+      "source_symbols": [
+        "source:src/nfc.c"
+      ],
+      "responsibility": "Implements NFC authenticator discovery, APDU exchange, timeout/cancel and Linux device integration.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Platform/Resource",
+      "fabushi_target": "Keep NFC behind the single optional source-neutral platform adapter; require real platform evidence before claiming support.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10216,
+      "source_path": "Telegram/ThirdParty/libfido2::src/nfc_linux.c",
+      "source_blob_sha": "5fe363077e78e49a1ab30b7e17d3d88307434dd0",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/nfc_linux.c",
+        "object": "5fe363077e78e49a1ab30b7e17d3d88307434dd0",
+        "mode": "100644",
+        "type": "blob",
+        "size": 7664
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 NFC transport",
+      "source_symbols": [
+        "source:src/nfc_linux.c"
+      ],
+      "responsibility": "Implements NFC authenticator discovery, APDU exchange, timeout/cancel and Linux device integration.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Platform/Resource",
+      "fabushi_target": "Keep NFC behind the single optional source-neutral platform adapter; require real platform evidence before claiming support.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10217,
+      "source_path": "Telegram/ThirdParty/libfido2::src/packed.h",
+      "source_blob_sha": "5f53ae565b7571a11b3aa8a1a2295d2907d51b26",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/packed.h",
+        "object": "5f53ae565b7571a11b3aa8a1a2295d2907d51b26",
+        "mode": "100644",
+        "type": "blob",
+        "size": 581
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 portability/layout contract",
+      "source_symbols": [
+        "source:src/packed.h"
+      ],
+      "responsibility": "Provides compiler/packed-layout portability required for exact protocol framing across supported platforms.",
+      "fabushi_canonical_owner": "Canonical Platform + Build/Packaging",
+      "fabushi_target": "Use Rust/platform layout guarantees and existing adapters; do not retain C portability shims as a parallel runtime.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10218,
+      "source_path": "Telegram/ThirdParty/libfido2::src/pcsc.c",
+      "source_blob_sha": "d7bd6c65ed606aca7d6d38b677aabe035d1fd280",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/pcsc.c",
+        "object": "d7bd6c65ed606aca7d6d38b677aabe035d1fd280",
+        "mode": "100644",
+        "type": "blob",
+        "size": 8724
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 PCSC smart-card transport",
+      "source_symbols": [
+        "source:src/pcsc.c"
+      ],
+      "responsibility": "Implements PC/SC authenticator discovery/open/read/write/cancel and error/timeout behavior.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Platform/Resource",
+      "fabushi_target": "Keep PCSC behind the single source-neutral platform adapter and require real packaged/platform evidence.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10219,
+      "source_path": "Telegram/ThirdParty/libfido2::src/pin.c",
+      "source_blob_sha": "f79f10823fb17c4a35e238abc12f8c60a88ca038",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/pin.c",
+        "object": "f79f10823fb17c4a35e238abc12f8c60a88ca038",
+        "mode": "100644",
+        "type": "blob",
+        "size": 17160
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 PIN/UV lifecycle",
+      "source_symbols": [
+        "source:src/pin.c"
+      ],
+      "responsibility": "Owns PIN validation/change, retry counts, UV retry state, PIN/UV auth tokens, permissions, encrypted exchange and timeout handling.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Secrets + Settings/platform-device",
+      "fabushi_target": "Preserve PIN secrecy, retry/block state, permissions, bounded ceremony lifetime and cancellation in existing WebAuthn owners.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    },
+    {
+      "recursive_order": 10220,
+      "source_path": "Telegram/ThirdParty/libfido2::src/random.c",
+      "source_blob_sha": "377843b4215ea6d1d0361a688c3d273eb83328c3",
+      "source_identity": {
+        "repository": "Yubico/libfido2",
+        "commit": "b974e7cf2ee7392134cc12c08b76a068cf250dd8",
+        "scope": "direct-gitlink",
+        "mount": "Telegram/ThirdParty/libfido2",
+        "path": "src/random.c",
+        "object": "377843b4215ea6d1d0361a688c3d273eb83328c3",
+        "mode": "100644",
+        "type": "blob",
+        "size": 1789
+      },
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "libfido2 cryptographic randomness",
+      "source_symbols": [
+        "source:src/random.c"
+      ],
+      "responsibility": "Requires operating-system CSPRNG output and fails closed when exact random bytes cannot be obtained.",
+      "fabushi_canonical_owner": "Existing Coordinator WebAuthn/security + canonical Security/Crypto dependency + Platform",
+      "fabushi_target": "Use operating-system/audited Rust CSPRNG only; never invent randomness or silently downgrade.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false
+    }
+  ]
+}

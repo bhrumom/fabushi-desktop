@@ -16,6 +16,7 @@ use crate::miniapp::{
     MiniAppGrant, MiniAppManifest, MiniAppRequest, MiniAppResponse, MiniAppSession,
 };
 use crate::payment::{CustomerInfo, Invoice, PaymentOrder};
+use crate::story::StoryStealthState;
 use crate::search::{RecipientSearchRequirements, SearchQuery, SearchResult};
 use crate::story::{Story, StoryId};
 use crate::wallet::{LedgerEntry, WalletAccount};
@@ -116,6 +117,11 @@ pub enum ClientCommand {
         conversation_id: ConversationId,
         settings: NotificationSettings,
     },
+    SetConversationMessageRetention {
+        conversation_id: ConversationId,
+        retention_seconds: Option<u32>,
+        expected_revision: u64,
+    },
     UpsertFolder {
         folder: ConversationFolder,
     },
@@ -145,10 +151,8 @@ pub enum ClientCommand {
     ForwardMessage {
         source_conversation_id: ConversationId,
         message_id: MessageId,
-        destination_conversation_id: ConversationId,
+        destination: ConversationDestination,
         client_message_id: ClientMessageId,
-        #[serde(default)]
-        thread_root_message_id: Option<MessageId>,
         #[serde(default)]
         scheduled_at_ms: Option<i64>,
         #[serde(default)]
@@ -265,6 +269,13 @@ pub enum ClientCommand {
         request_id: String,
     },
     WalletStatus,
+    StoryStealthStatus,
+    ActivateStoryStealth {
+        request_id: String,
+    },
+    ListStories {
+        limit: u32,
+    },
     PublishStory {
         story: Story,
     },
@@ -414,6 +425,11 @@ pub enum ServerEvent {
     ConversationChanged {
         conversation: Conversation,
     },
+    ConversationMessageRetentionChanged {
+        conversation_id: ConversationId,
+        retention_seconds: Option<u32>,
+        revision: u64,
+    },
     ConversationParticipantChanged {
         conversation: Conversation,
         removed_actor_id: Option<ActorId>,
@@ -480,6 +496,16 @@ pub enum ServerEvent {
     WalletStatus {
         account: Option<WalletAccount>,
         recent_entries: Vec<LedgerEntry>,
+    },
+    StoryStealthStatus {
+        state: StoryStealthState,
+        entitled: bool,
+    },
+    StoryStealthChanged {
+        state: StoryStealthState,
+    },
+    StoriesSnapshot {
+        stories: Vec<Story>,
     },
     StoryChanged {
         story: Story,

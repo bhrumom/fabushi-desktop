@@ -1,0 +1,160 @@
+{
+  "format_version": 3,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "tree": "9d8fa87ce68c832d2f4c99f372a5bb672463c3e1"
+  },
+  "range": {
+    "first_order": 6340,
+    "last_order": 6343,
+    "entries": 4
+  },
+  "rows": [
+    {
+      "recursive_order": 6340,
+      "source_path": "Telegram/SourceFiles/wallet/wallet_session.cpp",
+      "source_blob_sha": "7000a36395819deea9ca8ba0cce227ff0e535f32",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "tdesktop Wallet source authority",
+      "ui_disposition": "UI projection must reuse canonical Fabushi shell/design-system owners; no Telegram-derived Wallet app/runtime is introduced.",
+      "fabushi_canonical_owner": "native/mahayana-messaging canonical Wallet/Payments/ConnectedApp owners plus existing Host/network/storage/security/UI owners",
+      "platform_differences": "Qt, MTProto and Telegram service bindings are source authority only; Fabushi keeps product/state semantics and uses source-neutral Rust plus existing thin platform/service adapters.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "reachability_status": "accepted-tree exact blob read/decomposed; partial canonical production implementation exists; full shipping/service/UI/release closure remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained at accepted commit 65e23ba7137ea4129b6bc1b2616104a1f59495ef; rewrite remains source-neutral.",
+      "notes": "Reading advances deterministic read-through only. unknown is not decremented until every responsibility has production/service/UI/current-head evidence.",
+      "responsibility": "Wallet session orchestration across custody availability/identity revision, backup/recovery/key rotation, state polling and failure latches, gasless terms, legacy/parked balances, history/collectibles/preview, send/submission recovery, comment decryption scopes, panel lifecycle and TonConnect integration",
+      "state_machine": "single Session owner coordinates network generation + custody/signing identity + list/send/preview/rotation lifecycles; all async callbacks are revision/generation/request fenced and teardown cancels owned work",
+      "side_effects": "Remote state/history/collectible/gasless/preview/send/TonConnect requests; durable custody/submission state; wallet panel and comment-decrypt projections.",
+      "failure_cases": "unreadable/absent wallet, stale network or wallet identity revision, partial backup/rotation, unreachable state/history, expired quote, ambiguous submission, failed legacy/parked balance lookup, stale preview/decrypt/TonConnect callbacks",
+      "fabushi_target": "Existing Rust owners: wallet.rs WalletRuntimeState/WalletLiveState/WalletParkedState/WalletPanelState/outbound journal/address/security states; engine.rs canonical commands; connected_app.rs claims. This slice adds parked discovery, panel-scoped legacy-balance lookup and claim recovery hardening. Remaining 6340 responsibilities include concrete remote adapters, full history/collectibles/preview/rotation/send/TonConnect shipping composition and UI evidence.",
+      "production_evidence": "27d46f3b653952d768d11aefa26951e04894cec6 includes parked balance state, legacy balance panel fencing, recovery-safe ConnectedApp claim schema and Wallet live-stream state. Predecessor 507e73dea79d8bd57cb2eca487864ef520b32aa5 canonical messaging artifact 11662962449 sha256:8b9549bd1a6353077547d8980363cc4c9a8c16b9ff9badfd78187fa3f6df6ed5; descendant exact-head Actions required.",
+      "test_evidence": "focused wallet/engine/connected-app Rust tests are wired into canonical messaging GitHub Actions; current accounting descendant requires fresh exact-head evidence",
+      "consumer_evidence": [
+        "native/mahayana-messaging/src/wallet.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "native/mahayana-messaging/src/connected_app.rs",
+        "native/mahayana-messaging/src/service.rs"
+      ],
+      "source_binary_evidence": {
+        "evidence_status": "accepted-exact-blob-read-current-descendant-actions-required",
+        "accepted_upstream": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+        "verified_blob_sha": "7000a36395819deea9ca8ba0cce227ff0e535f32",
+        "file_type": "blob",
+        "recursive_order": 6340
+      }
+    },
+    {
+      "recursive_order": 6341,
+      "source_path": "Telegram/SourceFiles/wallet/wallet_session.h",
+      "source_blob_sha": "44773fb34a523ac57175068d354463153ede9495",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "tdesktop Wallet source authority",
+      "ui_disposition": "UI projection must reuse canonical Fabushi shell/design-system owners; no Telegram-derived Wallet app/runtime is introduced.",
+      "fabushi_canonical_owner": "native/mahayana-messaging canonical Wallet/Payments/ConnectedApp owners plus existing Host/network/storage/security/UI owners",
+      "platform_differences": "Qt, MTProto and Telegram service bindings are source authority only; Fabushi keeps product/state semantics and uses source-neutral Rust plus existing thin platform/service adapters.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "reachability_status": "accepted-tree exact blob read/decomposed; partial canonical production implementation exists; full shipping/service/UI/release closure remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained at accepted commit 65e23ba7137ea4129b6bc1b2616104a1f59495ef; rewrite remains source-neutral.",
+      "notes": "Reading advances deterministic read-through only. unknown is not decremented until every responsibility has production/service/UI/current-head evidence.",
+      "responsibility": "Typed Wallet Session public/private contract defining Presence, custody/account/send/preview/rotation/parked/list states, request identities, TransferWalletIdentity, lifecycle timers, network generation and ownership of Engine/Rates/Onramp/UserAddresses/TransferMessages/TonConnect/Stream",
+      "state_machine": "public typed contracts plus one session-scoped owner; private state proves single ownership for polling, signing readiness, stream/list/send/preview/rotation/decrypt and panel lifecycles",
+      "side_effects": "Defines security/network/persistence ownership seams consumed by wallet session implementation and downstream UI/service adapters.",
+      "failure_cases": "owner split, stale generation/revision, duplicated request truth, persistence mismatch or teardown leaks would violate the header contract",
+      "fabushi_target": "Existing source-neutral Rust WalletRuntimeState and typed sub-states in wallet.rs/connected_app.rs; no second Session/Wallet runtime. Current implementation is partial and service/UI composition remains open.",
+      "production_evidence": "27d46f3b653952d768d11aefa26951e04894cec6 maps the live/parked/panel/claims portions into canonical Rust owners; current accounting descendant requires fresh Actions.",
+      "test_evidence": "canonical messaging tests cover implemented Rust sub-states; full header responsibility closure remains open",
+      "consumer_evidence": [
+        "native/mahayana-messaging/src/wallet.rs",
+        "native/mahayana-messaging/src/engine.rs",
+        "native/mahayana-messaging/src/connected_app.rs"
+      ],
+      "source_binary_evidence": {
+        "evidence_status": "accepted-exact-blob-read-current-descendant-actions-required",
+        "accepted_upstream": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+        "verified_blob_sha": "44773fb34a523ac57175068d354463153ede9495",
+        "file_type": "blob",
+        "recursive_order": 6341
+      }
+    },
+    {
+      "recursive_order": 6342,
+      "source_path": "Telegram/SourceFiles/wallet/wallet_stream.cpp",
+      "source_blob_sha": "f33d914994f52803b176d2d1d05d127cff1208b7",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "tdesktop Wallet source authority",
+      "ui_disposition": "UI projection must reuse canonical Fabushi shell/design-system owners; no Telegram-derived Wallet app/runtime is introduced.",
+      "fabushi_canonical_owner": "native/mahayana-messaging canonical Wallet/Payments/ConnectedApp owners plus existing Host/network/storage/security/UI owners",
+      "platform_differences": "Qt, MTProto and Telegram service bindings are source authority only; Fabushi keeps product/state semantics and uses source-neutral Rust plus existing thin platform/service adapters.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "reachability_status": "accepted-tree exact blob read/decomposed; partial canonical production implementation exists; full shipping/service/UI/release closure remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained at accepted commit 65e23ba7137ea4129b6bc1b2616104a1f59495ef; rewrite remains source-neutral.",
+      "notes": "Reading advances deterministic read-through only. unknown is not decremented until every responsibility has production/service/UI/current-head evidence.",
+      "responsibility": "Real-time wallet event stream lifecycle: address-scoped start/stop, URL acquisition and renewal, socket epoch fencing, subscribe/ping, activity/stall detection, capped retry backoff with stable reset, event filtering, 250ms refresh coalescing and 3s/10s transaction-history rechecks",
+      "state_machine": "Idle -> Acquiring -> Connecting -> Live -> Backoff -> Acquiring; stop/address change invalidates epochs; retry delays 0.5/1/2/4/8/15/30s, live >60s resets backoff, keepalive 10s and stall 30s",
+      "side_effects": "Requests stream URLs, opens WebSocket, sends subscribe/ping, emits state/history/collectibles refresh requests.",
+      "failure_cases": "stale URL/socket callbacks, malformed endpoint, acquire/socket failure, silent stall, expired URL, duplicate event bursts and provider event-before-history race",
+      "fabushi_target": "wallet.rs::WalletLiveState.stream + engine.rs WalletLiveStream commands own deterministic lifecycle at 27d46f3b653952d768d11aefa26951e04894cec6. Missing: concrete existing Host/network adapter that acquires Fabushi service endpoint, drives WebSocket and proves real E2E.",
+      "production_evidence": "27d46f3b653952d768d11aefa26951e04894cec6 adds source-neutral WalletStreamState under existing WalletLiveState; exact-head Actions were queued when accounting was prepared.",
+      "test_evidence": "focused state/engine tests cover stale epoch, retry/stable reset, keepalive stall, renew, refresh coalescing and double history recheck; exact-head GitHub Actions pending",
+      "consumer_evidence": [
+        "native/mahayana-messaging/src/wallet.rs",
+        "native/mahayana-messaging/src/engine.rs"
+      ],
+      "source_binary_evidence": {
+        "evidence_status": "accepted-exact-blob-read-implementation-present-actions-required",
+        "accepted_upstream": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+        "verified_blob_sha": "f33d914994f52803b176d2d1d05d127cff1208b7",
+        "file_type": "blob",
+        "recursive_order": 6342
+      }
+    },
+    {
+      "recursive_order": 6343,
+      "source_path": "Telegram/SourceFiles/wallet/wallet_stream.h",
+      "source_blob_sha": "52f2861176ae20428934d99bbcdeaf4a6bb67b7a",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "upstream_owner": "tdesktop Wallet source authority",
+      "ui_disposition": "UI projection must reuse canonical Fabushi shell/design-system owners; no Telegram-derived Wallet app/runtime is introduced.",
+      "fabushi_canonical_owner": "native/mahayana-messaging canonical Wallet/Payments/ConnectedApp owners plus existing Host/network/storage/security/UI owners",
+      "platform_differences": "Qt, MTProto and Telegram service bindings are source authority only; Fabushi keeps product/state semantics and uses source-neutral Rust plus existing thin platform/service adapters.",
+      "disposition": "mapped-open",
+      "unknown_closed": false,
+      "omitted": false,
+      "reachability_status": "accepted-tree exact blob read/decomposed; partial canonical production implementation exists; full shipping/service/UI/release closure remains open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained at accepted commit 65e23ba7137ea4129b6bc1b2616104a1f59495ef; rewrite remains source-neutral.",
+      "notes": "Reading advances deterministic read-through only. unknown is not decremented until every responsibility has production/service/UI/current-head evidence.",
+      "responsibility": "Public stream contract and owned state for StreamRefresh(state/history/collectibles), health, address, WebSocket/timers, generation, retry attempt, message IDs and history recheck lifecycle",
+      "state_machine": "single stream instance owns timers/socket/generation and reports healthy only in Live state",
+      "side_effects": "Defines the sole lifecycle boundary used by Wallet Session for live refresh events.",
+      "failure_cases": "parallel stream owners, timer/socket lifetime leaks or stale generation callbacks",
+      "fabushi_target": "wallet.rs::WalletStreamState/WalletStreamRefresh nested under canonical WalletLiveState, driven through engine.rs; Host/network adapter remains open.",
+      "production_evidence": "27d46f3b653952d768d11aefa26951e04894cec6 implements the state contract without creating a Telegram-derived runtime; exact-head Actions pending.",
+      "test_evidence": "focused WalletStreamState and engine tests in canonical messaging gate; current accounting descendant requires fresh evidence",
+      "consumer_evidence": [
+        "native/mahayana-messaging/src/wallet.rs",
+        "native/mahayana-messaging/src/engine.rs"
+      ],
+      "source_binary_evidence": {
+        "evidence_status": "accepted-exact-blob-read-implementation-present-actions-required",
+        "accepted_upstream": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+        "verified_blob_sha": "52f2861176ae20428934d99bbcdeaf4a6bb67b7a",
+        "file_type": "blob",
+        "recursive_order": 6343
+      }
+    }
+  ]
+}

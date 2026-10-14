@@ -224,67 +224,87 @@ where
 
     let wave_size = wave_size.max(1);
     let concurrency = concurrency.max(1);
-    let queue = Mutex::new(VecDeque::<WorkItem>::new());
+
+    struct WaveState<WorkItem, ErrorType> {
+        queue: VecDeque<WorkItem>,
+        done: bool,
+        failure: Option<ErrorType>,
+    }
+
+    let state = Mutex::new(WaveState {
+        queue: VecDeque::<WorkItem>::new(),
+        done: false,
+        failure: None::<ErrorType>,
+    });
     let wake = Condvar::new();
-    let failed = AtomicBool::new(false);
-    let done = AtomicBool::new(false);
-    let failure = Mutex::new(None::<ErrorType>);
 
     thread::scope(|scope| {
         scope.spawn(|| {
             let mut next = 0usize;
-            while next < items.len() && !failed.load(Ordering::Acquire) {
+            while next < items.len() {
+                {
+                    let state = state.lock().expect("wave state lock");
+                    if state.failure.is_some() {
+                        return;
+                    }
+                }
+
                 let end = (next + wave_size).min(items.len());
                 let prepared = match prepare_wave(&items[next..end]) {
                     Ok(prepared) => prepared,
                     Err(error) => {
-                        if !failed.swap(true, Ordering::AcqRel) {
-                            *failure.lock().expect("wave prepare failure lock") = Some(error);
+                        let mut state = state.lock().expect("wave state lock");
+                        if state.failure.is_none() {
+                            state.failure = Some(error);
                         }
                         wake.notify_all();
                         return;
                     }
                 };
                 next = end;
+
                 for work_item in prepared {
-                    let mut pending = queue.lock().expect("wave queue lock");
-                    while pending.len() >= wave_size && !failed.load(Ordering::Acquire) {
-                        pending = wake.wait(pending).expect("wave queue wait");
+                    let mut state = state.lock().expect("wave queue lock");
+                    while state.queue.len() >= wave_size && state.failure.is_none() {
+                        state = wake.wait(state).expect("wave queue wait");
                     }
-                    if failed.load(Ordering::Acquire) {
+                    if state.failure.is_some() {
                         wake.notify_all();
                         return;
                     }
-                    pending.push_back(work_item);
+                    state.queue.push_back(work_item);
                     wake.notify_all();
                 }
             }
-            done.store(true, Ordering::Release);
+
+            let mut state = state.lock().expect("wave state lock");
+            state.done = true;
             wake.notify_all();
         });
 
         for _ in 0..concurrency {
             scope.spawn(|| loop {
                 let work_item = {
-                    let mut pending = queue.lock().expect("wave worker queue lock");
+                    let mut state = state.lock().expect("wave worker queue lock");
                     loop {
-                        if failed.load(Ordering::Acquire) {
+                        if state.failure.is_some() {
                             return;
                         }
-                        if let Some(work_item) = pending.pop_front() {
+                        if let Some(work_item) = state.queue.pop_front() {
                             wake.notify_all();
                             break work_item;
                         }
-                        if done.load(Ordering::Acquire) {
+                        if state.done {
                             return;
                         }
-                        pending = wake.wait(pending).expect("wave worker wait");
+                        state = wake.wait(state).expect("wave worker wait");
                     }
                 };
 
                 if let Err(error) = process(work_item) {
-                    if !failed.swap(true, Ordering::AcqRel) {
-                        *failure.lock().expect("wave process failure lock") = Some(error);
+                    let mut state = state.lock().expect("wave state lock");
+                    if state.failure.is_none() {
+                        state.failure = Some(error);
                     }
                     wake.notify_all();
                     return;
@@ -293,7 +313,7 @@ where
         }
     });
 
-    match failure.into_inner().expect("wave failure mutex") {
+    match state.into_inner().expect("wave state mutex").failure {
         Some(error) => Err(error),
         None => Ok(()),
     }

@@ -157,9 +157,8 @@ fn forward_retries_are_idempotent_and_option_conflicts_fail_closed() {
     let forward = || ClientCommand::ForwardMessage {
         source_conversation_id: ConversationId::new("chat:source"),
         message_id: source_message_id.clone(),
-        destination_conversation_id: ConversationId::new("chat:destination"),
+        destination: ConversationDestination::root(ConversationId::new("chat:destination")),
         client_message_id: ClientMessageId("client:forward-idempotent".into()),
-        thread_root_message_id: None,
         scheduled_at_ms: Some(50),
         silent: true,
         privacy: ForwardPrivacy::default(),
@@ -201,9 +200,8 @@ fn forward_retries_are_idempotent_and_option_conflicts_fail_closed() {
                 ClientCommand::ForwardMessage {
                     source_conversation_id: ConversationId::new("chat:source"),
                     message_id: source_message_id.clone(),
-                    destination_conversation_id: ConversationId::new("chat:destination"),
+                    destination: ConversationDestination::root(ConversationId::new("chat:destination")),
                     client_message_id: ClientMessageId("client:forward-idempotent".into()),
-                    thread_root_message_id: None,
                     scheduled_at_ms: Some(50),
                     silent: false,
                     privacy: ForwardPrivacy::default(),
@@ -225,9 +223,8 @@ fn forward_retries_are_idempotent_and_option_conflicts_fail_closed() {
                 ClientCommand::ForwardMessage {
                     source_conversation_id: ConversationId::new("chat:source"),
                     message_id: source_message_id,
-                    destination_conversation_id: ConversationId::new("chat:destination"),
+                    destination: ConversationDestination::root(ConversationId::new("chat:destination")),
                     client_message_id: ClientMessageId("client:forward-idempotent".into()),
-                    thread_root_message_id: None,
                     scheduled_at_ms: Some(50),
                     silent: true,
                     privacy: ForwardPrivacy {

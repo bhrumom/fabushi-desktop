@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
@@ -188,4 +189,36 @@ test("workspace and expanded picker handoffs fail closed without required owners
     ...handoff,
     scope: { accountSlot: "slot", agentId: null },
   } as never), null);
+});
+
+
+test("conversation floating controls keep pointer ownership while visible titlebars retain drag", () => {
+  const workspaceCss = readFileSync(new URL("./conversation/workspace/view.css", import.meta.url), "utf8");
+  const chromeCss = readFileSync(new URL("./window-chrome/view.css", import.meta.url), "utf8");
+  const pickerSource = readFileSync(new URL("./conversation/cards/transcript-card/reaction-picker.tsx", import.meta.url), "utf8");
+  const floatingSource = readFileSync(new URL("../ui/sand-floating-primitives.tsx", import.meta.url), "utf8");
+  const rendererSource = readFileSync(new URL("../../production/ProductionRenderer.tsx", import.meta.url), "utf8");
+
+  const composerLayer = Number(workspaceCss.match(/\.sand-chat-input-dock\s*\{[^}]*z-index:\s*(\d+);/s)?.[1]);
+  const dragLayer = Number(chromeCss.match(/\.sand-cover-drag\s*\{[^}]*z-index:\s*(\d+);/s)?.[1]);
+  const reactionLayer = Number(pickerSource.match(/MESSAGE_REACTION_POPOVER_Z_INDEX\s*=\s*(\d+);/)?.[1]);
+  assert.equal(reactionLayer > composerLayer, true);
+  assert.equal(reactionLayer > dragLayer, true);
+  assert.match(pickerSource, /<SandPopover[\s\S]{0,800}contentStyle=\{\{ zIndex: MESSAGE_REACTION_POPOVER_Z_INDEX \}\}[\s\S]{0,600}open=\{open\}[\s\S]{0,300}returnFocus/);
+  assert.match(floatingSource, /if \(!context\.open\) return null;[\s\S]{0,1200}createPortal\(surface, document\.body\)/);
+
+  assert.match(chromeCss, /\.sand-cover-drag\s*\{[^}]*pointer-events:\s*none;/s);
+  assert.match(chromeCss, /\.sand-agents-sidebar__header,[\s\S]{0,120}\.sand-chat-header\s*\{[^}]*app-region:\s*drag;/s);
+  assert.match(chromeCss, /\.sand-chat-header :is\([^)]*button[^)]*\)[\s\S]{0,100}app-region:\s*no-drag;/s);
+  assert.match(chromeCss, /\.sand-window-controls button\s*\{[^}]*app-region:\s*no-drag;/s);
+  assert.doesNotMatch(chromeCss, /\.sand-window-controls\s*\{[^}]*pointer-events:\s*none;/s);
+  assert.match(workspaceCss, /\.sand-chat-find\s*\{[^}]*z-index:\s*4;[^}]*flex:\s*0 0 auto;[^}]*app-region:\s*no-drag;/s);
+  assert.doesNotMatch(workspaceCss, /\.sand-chat-find\s*\{[^}]*pointer-events:\s*none/s);
+  assert.doesNotMatch(workspaceCss, /\.sand-chat-input-dock\s*\{[^}]*pointer-events:\s*none/s);
+
+  const flexFill = 'style={{ display: "flex", flex: "1 1 0", flexDirection: "column", minHeight: 0, minWidth: 0, width: "100%" }}';
+  const collapsingColumn = 'style={{ display: "flex", flexDirection: "column", minHeight: 0, minWidth: 0, width: "100%" }}';
+  assert.equal(rendererSource.split(flexFill).length - 1, 2);
+  assert.equal(rendererSource.includes(collapsingColumn), false);
+  assert.match(chromeCss, /\.sand-cover-drag\s*\{[^}]*pointer-events:\s*none;[^}]*app-region:\s*drag;/s);
 });

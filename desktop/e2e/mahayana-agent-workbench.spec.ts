@@ -1,5 +1,6 @@
 import { _electron as electron, expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -94,10 +95,17 @@ type E2eHumanMessage = {
 
 type E2eHumanResource = E2eHumanAttachment & { bytes: Buffer };
 
+type E2eHumanRetention = {
+  conversationId: string;
+  retentionSeconds: number | null;
+  revision: number;
+};
+
 let e2eHumanMessages: E2eHumanMessage[] = [];
 let e2eHumanMessageSequence = 1;
 let e2eHumanResourceSequence = 1;
 let e2eHumanResources = new Map<string, E2eHumanResource>();
+let e2eHumanRetentions = new Map<string, E2eHumanRetention>();
 let e2eLoginDeviceSequence = 1;
 const e2eObservedSocialDeviceIds = new Set<string>();
 
@@ -109,6 +117,28 @@ function isE2eSocialDeviceId(value: unknown): value is string {
   if (typeof value !== 'string' || !/^fabushi-e2e-device(?:-\d+)?$/u.test(value)) return false;
   e2eObservedSocialDeviceIds.add(value);
   return true;
+}
+
+function canonicalE2eHumanConversationId(peerHumanId: string): string {
+  const participants = ['fabushi-e2e-account', peerHumanId].sort();
+  const digest = createHash('sha256');
+  for (const participant of participants) {
+    const bytes = Buffer.from(participant, 'utf8');
+    const length = Buffer.alloc(8);
+    length.writeBigUInt64BE(BigInt(bytes.length));
+    digest.update(length);
+    digest.update(bytes);
+  }
+  return `human-direct-${digest.digest('hex')}`;
+}
+
+function e2eHumanRetentionForPeer(peerHumanId: string): E2eHumanRetention {
+  const conversationId = canonicalE2eHumanConversationId(peerHumanId);
+  const existing = e2eHumanRetentions.get(conversationId);
+  if (existing != null) return existing;
+  const created: E2eHumanRetention = { conversationId, retentionSeconds: null, revision: 0 };
+  e2eHumanRetentions.set(conversationId, created);
+  return created;
 }
 
 function parseE2eMultipartFile(contentType: string | undefined, body: Buffer): { name: string; contentType: string; bytes: Buffer } | null {
@@ -234,7 +264,20 @@ async function ensureE2eAuthBackend(): Promise<string> {
         }
         response.setHeader('content-type', 'application/json');
         response.statusCode = 200;
-        response.end(JSON.stringify({ success: true, data: { friends: [] } }));
+        response.end(JSON.stringify({ success: true, data: { friends: [{
+          id: 'friend-human-parity-peer-e2e',
+          userId: 'human-parity-peer-e2e',
+          username: 'human-parity-peer-e2e',
+          displayName: 'Human Parity Peer',
+          avatarUrl: null,
+          status: 'accepted',
+        }] } }));
+        return;
+      }
+      if (requestUrl.pathname === '/api/social/calls' && request.method === 'GET') {
+        response.setHeader('content-type', 'application/json');
+        response.statusCode = 200;
+        response.end(JSON.stringify({ success: true, calls: [] }));
         return;
       }
       if (requestUrl.pathname === '/api/social/message-resources' && request.method === 'POST') {
@@ -289,6 +332,74 @@ async function ensureE2eAuthBackend(): Promise<string> {
         response.setHeader('content-length', String(resource.bytes.length));
         response.statusCode = 200;
         response.end(resource.bytes);
+        return;
+      }
+      if (requestUrl.pathname === '/api/social/message-retention' && request.method === 'GET') {
+        if (request.headers.authorization !== `Bearer ${token}`
+          || !isE2eSocialDeviceId(request.headers['x-fabushi-device-id'])) {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 401;
+          response.end(JSON.stringify({ success: false, error: 'invalid-social-credential' }));
+          return;
+        }
+        const peerHumanId = requestUrl.searchParams.get('contactId')?.trim() ?? '';
+        if (peerHumanId.length === 0) {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 400;
+          response.end(JSON.stringify({ success: false, error: 'missing-retention-contact' }));
+          return;
+        }
+        response.setHeader('content-type', 'application/json');
+        response.statusCode = 200;
+        response.end(JSON.stringify({ success: true, retention: e2eHumanRetentionForPeer(peerHumanId) }));
+        return;
+      }
+      if (requestUrl.pathname === '/api/social/message-retention' && request.method === 'PUT') {
+        if (request.headers.authorization !== `Bearer ${token}`
+          || !isE2eSocialDeviceId(request.headers['x-fabushi-device-id'])) {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 401;
+          response.end(JSON.stringify({ success: false, error: 'invalid-social-credential' }));
+          return;
+        }
+        const body = JSON.parse((await readRequestBody(request)).toString('utf8')) as {
+          targetUserId?: unknown;
+          retentionSeconds?: unknown;
+          expectedRevision?: unknown;
+        };
+        const peerHumanId = typeof body.targetUserId === 'string' ? body.targetUserId.trim() : '';
+        const retentionSeconds = body.retentionSeconds;
+        const expectedRevision = body.expectedRevision;
+        if (peerHumanId.length === 0
+          || typeof expectedRevision !== 'number'
+          || !Number.isSafeInteger(expectedRevision)
+          || expectedRevision < 0
+          || (retentionSeconds !== null
+            && (typeof retentionSeconds !== 'number'
+              || !Number.isSafeInteger(retentionSeconds)
+              || retentionSeconds <= 0
+              || retentionSeconds > 0xffffffff))) {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 400;
+          response.end(JSON.stringify({ success: false, error: 'invalid-retention-mutation' }));
+          return;
+        }
+        const current = e2eHumanRetentionForPeer(peerHumanId);
+        if (current.revision !== expectedRevision) {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 409;
+          response.end(JSON.stringify({ success: false, error: '消息保留策略版本已过期', retention: current }));
+          return;
+        }
+        const next: E2eHumanRetention = {
+          conversationId: current.conversationId,
+          retentionSeconds: retentionSeconds == null ? null : retentionSeconds,
+          revision: current.revision + 1,
+        };
+        e2eHumanRetentions.set(next.conversationId, next);
+        response.setHeader('content-type', 'application/json');
+        response.statusCode = 200;
+        response.end(JSON.stringify({ success: true, retention: next }));
         return;
       }
       if (requestUrl.pathname === '/api/social/messages' && request.method === 'GET') {
@@ -415,7 +526,7 @@ async function ensureE2eAuthBackend(): Promise<string> {
         const isSelfHosted = body.includes(Buffer.from('自建 Bot', 'utf8'));
         const text = isSelfHosted
           ? '收到：自建 Bot 请规划步骤'
-          : '收到：请分析这个任务';
+          : '收到：请分析这个任务\n\n```typescript\nconst answer: number = 42;\n```';
         const providerRequest = JSON.parse(body.toString('utf8')) as { input?: unknown };
         const isToolContinuation = Array.isArray(providerRequest.input)
           && providerRequest.input.some((item) => item != null
@@ -487,7 +598,7 @@ async function ensureE2eAuthBackend(): Promise<string> {
         const isSelfHosted = body.includes(Buffer.from('自建 Bot', 'utf8'));
         const text = isSelfHosted
           ? '收到：自建 Bot 请规划步骤'
-          : '收到：请分析这个任务';
+          : '收到：请分析这个任务\n\n```typescript\nconst answer: number = 42;\n```';
         response.setHeader('content-type', 'application/connect+proto');
         response.statusCode = 200;
         response.end(Buffer.concat([
@@ -524,8 +635,36 @@ test.afterAll(async () => {
   });
 });
 
+async function reserveLoopbackPort(): Promise<number> {
+  const server = createServer();
+  await new Promise<void>((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', resolve);
+  });
+  const address = server.address();
+  if (address == null || typeof address === 'string') {
+    server.close();
+    throw new Error('Focused Electron box exec-daemon port reservation did not bind a TCP address.');
+  }
+  const port = address.port;
+  await new Promise<void>((resolve, reject) => {
+    server.close((error) => error == null ? resolve() : reject(error));
+  });
+  return port;
+}
+
 async function launchDesktopApp(appDataDir: string): Promise<ElectronApplication> {
   const e2eAuthBackendUrl = await ensureE2eAuthBackend();
+  // A focused suite may run more than one shipping Electron instance at once
+  // to prove cross-device convergence. Each Host owns its managed box
+  // exec-daemon, so give every process an isolated loopback endpoint instead
+  // of letting the second process collide with the production default :1337.
+  const boxExecDaemonPort = await reserveLoopbackPort();
+  // Development builds also expose a loopback dev-control server. A focused
+  // multi-device acceptance launches two shipping Electron instances on one
+  // CI host, so isolate that optional per-process owner as well instead of
+  // letting the second instance collide with the default :62150 endpoint.
+  const devControlPort = await reserveLoopbackPort();
   // Exercise the shipping Fabushi account -> private Host credential ->
   // Responses transport chain. The browser-first login below owns the token;
   // focused acceptance must not seed a parallel Cursor inference credential.
@@ -545,6 +684,8 @@ async function launchDesktopApp(appDataDir: string): Promise<ElectronApplication
       FABUSHI_API_BASE_URL: e2eAuthBackendUrl,
       FABUSHI_RESPONSES_URL: `${e2eAuthBackendUrl}/v1/ai/responses`,
       SAND_CURSOR_WEBSITE_URL: e2eAuthBackendUrl,
+      SAND_BOX_EXEC_DAEMON_PORT: String(boxExecDaemonPort),
+      SAND_DEV_CONTROL_PORT: String(devControlPort),
       SAND_DISABLE_SENTRY: '1',
       FABUSHI_FEATURE_HOST_MODE: process.env.FABUSHI_FEATURE_HOST_MODE || 'test',
       MAHAYANA_APP_HOST_BIN: process.env.MAHAYANA_APP_HOST_BIN || '',
@@ -657,6 +798,53 @@ async function completeBrowserLogin(page: Page): Promise<void> {
   await expect(primary).toBeVisible({ timeout: 15_000 });
 }
 
+async function readRecentParticipantSuggestions(
+  appDataDir: string,
+): Promise<Record<string, readonly string[]>> {
+  const snapshots: string[] = [];
+  const walk = async (directory: string, depth: number): Promise<void> => {
+    if (depth > 12) return;
+    let entries;
+    try {
+      entries = await readdir(directory, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      const candidate = path.join(directory, entry.name);
+      if (entry.isDirectory()) {
+        await walk(candidate, depth + 1);
+      } else if (
+        entry.isFile()
+        && entry.name === 'snapshot.json'
+        && path.basename(directory) === '_messaging'
+      ) {
+        snapshots.push(candidate);
+      }
+    }
+  };
+  await walk(appDataDir, 0);
+
+  let emptyProjection: Record<string, readonly string[]> = {};
+  for (const snapshotPath of snapshots) {
+    try {
+      const parsed = JSON.parse(await readFile(snapshotPath, 'utf8')) as {
+        state?: { recentParticipantSuggestions?: unknown };
+      };
+      const candidate = parsed.state?.recentParticipantSuggestions;
+      if (candidate == null || typeof candidate !== 'object' || Array.isArray(candidate)) continue;
+      const projection = candidate as Record<string, readonly string[]>;
+      emptyProjection = projection;
+      if (Object.values(projection).some((items) => Array.isArray(items) && items.length > 0)) {
+        return projection;
+      }
+    } catch {
+      // A concurrently replaced snapshot is retried by expect.poll.
+    }
+  }
+  return emptyProjection;
+}
+
 async function openMahayanaConversation(page: Page): Promise<void> {
   const peer = page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: 'New chat', exact: true });
   await expect(peer).toBeVisible({ timeout: 15_000 });
@@ -668,6 +856,7 @@ async function openMahayanaConversation(page: Page): Promise<void> {
   // while that transition owns the busy state, so acceptance must wait for
   // the same actionable contract a user sees instead of racing visibility.
   await expect(prompt).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
+  await expect(prompt).toHaveAttribute('spellcheck', 'true');
 }
 
 async function createSelfHostedBotAcceptanceChannel(page: Page): Promise<{ conversationId: string; peerTestId: string }> {
@@ -760,6 +949,62 @@ async function expectHermesAssistantTurn(page: Page, expectedText: string): Prom
   return turn;
 }
 
+test('canonical participant search selection persists Recent Peers through the shipping renderer and Host', async () => {
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-recent-peers-e2e-'));
+  let app: ElectronApplication | null = null;
+
+  try {
+    app = await launchDesktopApp(appDataDir);
+    let page = await app.firstWindow();
+    await completeBrowserLogin(page);
+
+    const openPalette = async (): Promise<void> => {
+      await page.keyboard.press(process.platform === 'darwin' ? 'Meta+K' : 'Control+K');
+      await expect(page.getByRole('dialog', { name: 'Search' })).toBeVisible();
+    };
+
+    await openPalette();
+    const palette = page.getByRole('dialog', { name: 'Search' });
+    await palette.getByRole('combobox').fill('New chat');
+    const participant = palette.getByRole('option').filter({ hasText: 'New chat' }).first();
+    await expect(participant).toBeVisible();
+    await participant.click();
+    await expect(page.getByRole('textbox', { name: 'Prompt' })).toHaveAttribute(
+      'contenteditable',
+      'true',
+      { timeout: 15_000 },
+    );
+
+    await expect.poll(async () => {
+      const projection = await readRecentParticipantSuggestions(appDataDir);
+      return Object.values(projection).reduce((count, items) => count + items.length, 0);
+    }, { timeout: 15_000 }).toBeGreaterThan(0);
+
+    const beforeCancel = await readRecentParticipantSuggestions(appDataDir);
+    await openPalette();
+    await palette.getByRole('combobox').fill('New chat');
+    await page.keyboard.press('Escape');
+    await expect(palette).toBeHidden();
+    await expect.poll(
+      async () => JSON.stringify(await readRecentParticipantSuggestions(appDataDir)),
+      { timeout: 3_000 },
+    ).toBe(JSON.stringify(beforeCancel));
+
+    await app.close();
+    app = null;
+    app = await launchDesktopApp(appDataDir);
+    page = await app.firstWindow();
+    await completeBrowserLogin(page);
+    const afterRestart = await readRecentParticipantSuggestions(appDataDir);
+    expect(
+      Object.values(afterRestart).reduce((count, items) => count + items.length, 0),
+    ).toBeGreaterThan(0);
+  } finally {
+    if (app != null) await app.close();
+    await rm(appDataDir, { recursive: true, force: true });
+  }
+});
+
 test('Mahayana renders one Hermes-style assistant turn instead of a completion Workbench card', async () => {
   const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-mahayana-assistant-turn-'));
   let app: ElectronApplication | null = null;
@@ -797,6 +1042,11 @@ test('Mahayana renders one Hermes-style assistant turn instead of a completion W
     await page.waitForTimeout(1_000);
     await expect(turn).toHaveCount(1);
     await expect(turn.getByRole('group', { name: 'Agent message' })).toContainText('收到：请分析这个任务');
+    await expect(turn).not.toHaveAttribute('aria-busy', 'true', { timeout: 10_000 });
+    const highlightedCode = turn.locator('pre.sand-code-block code.language-typescript[data-syntax-highlighted="true"]');
+    await expect(highlightedCode).toContainText('const answer: number = 42;');
+    await expect(highlightedCode.locator('.token.keyword').filter({ hasText: 'const' })).toHaveCount(1);
+    await expect(highlightedCode.locator('.token.number').filter({ hasText: '42' })).toHaveCount(1);
     await expect(page.getByRole('button', { name: 'New Human chat', exact: true })).toHaveCount(0);
     await expect(promptInput).toBeVisible();
   } finally {
@@ -806,7 +1056,7 @@ test('Mahayana renders one Hermes-style assistant turn instead of a completion W
 });
 
 
-test('Human reply, attachment, reaction, and search stay on the shipping conversation contracts', async () => {
+test('Human reply, attachment, reaction, and search stay on the shipping conversation contracts', async ({}, testInfo) => {
   e2eHumanMessages = [];
   e2eHumanMessageSequence = 1;
   e2eHumanResourceSequence = 1;
@@ -820,14 +1070,42 @@ test('Human reply, attachment, reaction, and search stay on the shipping convers
     app = await launchDesktopApp(appDataDir);
     let page = await app.firstWindow();
     await completeBrowserLogin(page);
-    await openMahayanaConversation(page);
-    await page.getByRole('button', { name: 'New Human chat', exact: true }).click();
-    const dialog = page.getByRole('dialog', { name: 'New Human chat' });
-    await dialog.getByRole('textbox', { name: 'Human identity' }).fill('human-parity-peer-e2e');
-    await dialog.getByRole('textbox', { name: 'Conversation title' }).fill('Human Parity Peer');
-    await dialog.getByRole('button', { name: 'Create', exact: true }).click();
+    const humanPeer = page.getByRole('region', { name: 'Agent list' })
+      .getByRole('button', { name: 'Human Parity Peer', exact: true });
+    await expect(humanPeer).toBeVisible({ timeout: 15_000 });
+    await humanPeer.click();
 
     const prompt = page.getByRole('textbox', { name: 'Prompt' });
+    await expect(prompt).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
+    await expect(prompt).toHaveAttribute('spellcheck', 'true');
+
+    // Chromium remains the live preedit/focus/lifecycle owner. The native
+    // bridge may enrich that state only with OS-observed input-source truth;
+    // fields the platform cannot expose remain typed unknown and are never
+    // inferred from navigator/browser locale.
+    const nativeInputState = await page.evaluate(async () => await window.desktop!.platformInput.get());
+    expect(nativeInputState.source).toBe('native-platform');
+    expect(nativeInputState.width).toEqual({ kind: 'unknown' });
+    expect(nativeInputState.scriptVariant).toEqual({ kind: 'unknown' });
+    expect(nativeInputState.candidate).toEqual({ kind: 'unknown' });
+    await prompt.focus();
+    await prompt.evaluate((element) => {
+      element.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true, data: '' }));
+      element.dispatchEvent(new CompositionEvent('compositionupdate', { bubbles: true, data: '輸' }));
+    });
+    const inputStatus = page.getByTestId('input-composition-status');
+    await expect(inputStatus).toContainText('Composing text.');
+    await expect(inputStatus).toContainText('Preedit signal: active.');
+    if (nativeInputState.method.kind === 'known') {
+      await expect(inputStatus).toContainText(`Input method: ${nativeInputState.method.value}`);
+    } else {
+      await expect(inputStatus).toContainText('Input method, language, width mode, script variant, and candidate state are not reported by the native platform adapter.');
+    }
+    await prompt.evaluate((element) => {
+      element.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: '輸' }));
+    });
+    await expect(inputStatus).toHaveCount(0);
+
     const rootText = 'Human parity root for reply search.';
     await prompt.pressSequentially(rootText);
     await page.getByRole('button', { name: 'Send message' }).click();
@@ -835,8 +1113,10 @@ test('Human reply, attachment, reaction, and search stay on the shipping convers
     await expect(rootTurn).toBeVisible({ timeout: 10_000 });
     await expect(rootTurn).not.toHaveAttribute('data-pending', { timeout: 15_000 });
 
-    await rootTurn.hover();
-    await rootTurn.getByRole('button', { name: 'Reply to your message' }).click();
+    const replyAction = rootTurn.getByRole('button', { name: 'Reply to your message' });
+    await replyAction.focus();
+    await expect(replyAction).toBeFocused();
+    await page.keyboard.press('Enter');
     await expect(page.getByRole('button', { name: 'Cancel reply' })).toBeVisible();
 
     await page.locator('input.sand-prompt-file-input').setInputFiles({
@@ -861,8 +1141,50 @@ test('Human reply, attachment, reaction, and search stay on the shipping convers
     const uploadedResource = [...e2eHumanResources.values()].find((resource) => resource.name === attachmentName);
     expect(uploadedResource?.bytes.equals(attachmentBytes)).toBe(true);
 
-    await replyTurn.hover();
-    await replyTurn.getByRole('button', { name: 'Add reaction' }).click();
+    const mediaAttachmentName = 'phase1-human-preview.png';
+    const mediaAttachmentBytes = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Zl/0AAAAASUVORK5CYII=', 'base64');
+    await page.locator('input.sand-prompt-file-input').setInputFiles({
+      name: mediaAttachmentName,
+      mimeType: 'image/png',
+      buffer: mediaAttachmentBytes,
+    });
+    // setInputFiles only starts the canonical attachment-staging path. Wait for
+    // the Composer-owned staged attachment projection before sending so this
+    // acceptance proves the real staging boundary instead of racing it.
+    await expect(
+      page.getByRole('list', { name: 'Attachments' })
+        .getByRole('listitem', { name: mediaAttachmentName }),
+    ).toBeVisible({ timeout: 10_000 });
+    const mediaText = 'Human media preview window chrome evidence.';
+    await prompt.pressSequentially(mediaText);
+    await page.getByRole('button', { name: 'Send message' }).click();
+    const mediaTurn = page.getByRole('article').filter({ hasText: mediaText }).last();
+    await expect(mediaTurn).toBeVisible({ timeout: 10_000 });
+    await expect(mediaTurn).not.toHaveAttribute('data-pending', { timeout: 15_000 });
+    const previewTrigger = mediaTurn.getByRole('button', { name: 'Media preview' });
+    await expect(previewTrigger).toBeVisible({ timeout: 10_000 });
+    await previewTrigger.focus();
+    await expect(previewTrigger).toBeFocused();
+    await page.keyboard.press('Enter');
+    const mediaDialog = page.getByRole('dialog', { name: 'Media preview' });
+    await expect(mediaDialog).toBeVisible();
+    const closeMedia = mediaDialog.getByRole('button', { name: 'Close media preview' });
+    await expect(closeMedia).toBeVisible();
+    await expect(closeMedia).toHaveClass(/sand-kit-icon-button/u);
+    await closeMedia.focus();
+    await expect(closeMedia).toBeFocused();
+    await testInfo.attach('media-viewer-canonical-window-chrome', {
+      body: await mediaDialog.screenshot(),
+      contentType: 'image/png',
+    });
+    await page.keyboard.press('Enter');
+    await expect(mediaDialog).toHaveCount(0);
+    await expect(previewTrigger).toBeFocused();
+
+    const reactionAction = replyTurn.getByRole('button', { name: 'Add reaction' });
+    await reactionAction.focus();
+    await expect(reactionAction).toBeFocused();
+    await page.keyboard.press('Enter');
     await page.getByRole('button', { name: 'React with 👍' }).click();
     await expect(replyTurn.getByRole('button', { name: /You reacted with 👍/u })).toBeVisible();
     await expect.poll(() => e2eHumanMessages[1]?.reactions).toEqual([
@@ -903,12 +1225,10 @@ test('shipping Human Forward uses the canonical picker and survives restart', as
   const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-human-forward-e2e-'));
   let app: ElectronApplication | null = null;
 
-  const createHumanConversation = async (page: Page, humanId: string, title: string): Promise<void> => {
-    await page.getByRole('button', { name: 'New Human chat', exact: true }).click();
-    const dialog = page.getByRole('dialog', { name: 'New Human chat' });
-    await dialog.getByRole('textbox', { name: 'Human identity' }).fill(humanId);
-    await dialog.getByRole('textbox', { name: 'Conversation title' }).fill(title);
-    await dialog.getByRole('button', { name: 'Create', exact: true }).click();
+  const switchToAgentConversation = async (page: Page): Promise<void> => {
+    const agent = page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: 'New chat', exact: true });
+    await expect(agent).toBeVisible({ timeout: 15_000 });
+    await agent.click();
     await expect(page.getByRole('textbox', { name: 'Prompt' })).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
   };
 
@@ -968,11 +1288,12 @@ test('shipping Human Forward uses the canonical picker and survives restart', as
   }
 });
 
-test('two shipping Electron device sessions converge one Human conversation through canonical remote sync', async () => {
+test('two shipping Electron device sessions converge one Human conversation and retention policy through canonical remote sync', async () => {
   e2eHumanMessages = [];
   e2eHumanMessageSequence = 1;
   e2eHumanResourceSequence = 1;
   e2eHumanResources = new Map<string, E2eHumanResource>();
+  e2eHumanRetentions = new Map<string, E2eHumanRetention>();
   e2eObservedSocialDeviceIds.clear();
 
   const appDataDirA = await mkdtemp(path.join(tmpdir(), 'fabushi-human-convergence-a-'));
@@ -1016,22 +1337,65 @@ test('two shipping Electron device sessions converge one Human conversation thro
     await completeBrowserLogin(pageB);
     await openMahayanaConversation(pageB);
 
-    const convergencePeerId = 'human-convergence-peer-e2e';
-    const convergenceTitle = 'Human Convergence Peer';
-    await createHumanConversation(pageA, convergencePeerId, convergenceTitle);
-    await createHumanConversation(pageB, convergencePeerId, convergenceTitle);
+    // The shipping Messages shell no longer exposes the retired "New Human chat"
+    // test-only surface. Both devices consume the same canonical Human direct
+    // conversation from remote sync, then exercise retention and message
+    // convergence against that server-authoritative identity.
+    const convergencePeerId = 'human-parity-peer-e2e';
+    const convergenceTitle = 'Human Parity Peer';
+    await reopenConversation(pageA, convergenceTitle);
+    await reopenConversation(pageB, convergenceTitle);
+
+    const openRetentionDialog = async (page: Page, expectedLabel: string): Promise<Locator> => {
+      const sendOptions = page.getByRole('button', { name: 'Send options' });
+      await expect(sendOptions).toBeEnabled();
+      await sendOptions.click();
+      const retentionItem = page.getByRole('menuitem', { name: `Message retention · ${expectedLabel}`, exact: true });
+      await expect(retentionItem).toBeVisible();
+      await retentionItem.click();
+      const dialog = page.getByRole('dialog', { name: 'Message retention' });
+      await expect(dialog).toBeVisible();
+      return dialog;
+    };
+
+    const initialRetentionB = await openRetentionDialog(pageB, 'Off');
+    await initialRetentionB.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await expect(initialRetentionB).toBeHidden();
+
+    const retentionA = await openRetentionDialog(pageA, 'Off');
+    await retentionA.getByRole('button', { name: '1 day', exact: true }).click();
+    await expect(retentionA).toBeHidden();
+    await pageA.getByRole('button', { name: 'Send options' }).click();
+    await expect(pageA.getByRole('menuitem', { name: 'Message retention · 1 day', exact: true })).toBeVisible();
+    await pageA.keyboard.press('Escape');
+
+    const staleRetentionB = await openRetentionDialog(pageB, 'Off');
+    await staleRetentionB.getByRole('button', { name: '7 days', exact: true }).click();
+    await expect(staleRetentionB.getByRole('button', { name: '1 day', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await staleRetentionB.getByRole('button', { name: '7 days', exact: true }).click();
+    await expect(staleRetentionB).toBeHidden();
+
+    await openMahayanaConversation(pageA);
+    await reopenConversation(pageA, convergenceTitle);
+    await pageA.getByRole('button', { name: 'Send options' }).click();
+    await expect(pageA.getByRole('menuitem', { name: 'Message retention · 7 days', exact: true })).toBeVisible();
+    await pageA.keyboard.press('Escape');
+
+    const canonicalRetention = e2eHumanRetentionForPeer(convergencePeerId);
+    expect(canonicalRetention.retentionSeconds).toBe(604_800);
+    expect(canonicalRetention.revision).toBe(2);
 
     const fromA = 'Dual-device Human convergence from Electron device A.';
     await sendHumanTurn(pageA, fromA);
 
-    await createHumanConversation(pageB, 'human-convergence-switch-b-e2e', 'Human Convergence Switch B');
+    await openMahayanaConversation(pageB);
     await reopenConversation(pageB, convergenceTitle);
     await expect(pageB.getByRole('article').filter({ hasText: fromA }).last()).toBeVisible({ timeout: 15_000 });
 
     const fromB = 'Dual-device Human convergence from Electron device B.';
     await sendHumanTurn(pageB, fromB);
 
-    await createHumanConversation(pageA, 'human-convergence-switch-a-e2e', 'Human Convergence Switch A');
+    await openMahayanaConversation(pageA);
     await reopenConversation(pageA, convergenceTitle);
     await expect(pageA.getByRole('article').filter({ hasText: fromA }).last()).toBeVisible({ timeout: 15_000 });
     await expect(pageA.getByRole('article').filter({ hasText: fromB }).last()).toBeVisible({ timeout: 15_000 });
@@ -1042,6 +1406,81 @@ test('two shipping Electron device sessions converge one Human conversation thro
     await appA?.close().catch(() => undefined);
     await rm(appDataDirB, { recursive: true, force: true });
     await rm(appDataDirA, { recursive: true, force: true });
+  }
+});
+
+test('cross-conversation IME composition tail stays fenced to its original shipping Composer scope', async () => {
+  e2eHumanMessages = [];
+  e2eHumanMessageSequence = 1;
+  e2eHumanResourceSequence = 1;
+  e2eHumanResources = new Map<string, E2eHumanResource>();
+
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-ime-scope-fence-'));
+  let app: ElectronApplication | null = null;
+
+  const createHumanConversation = async (page: Page, humanId: string, title: string): Promise<void> => {
+    await page.getByRole('button', { name: 'New Human chat', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'New Human chat' });
+    await dialog.getByRole('textbox', { name: 'Human identity' }).fill(humanId);
+    await dialog.getByRole('textbox', { name: 'Conversation title' }).fill(title);
+    await dialog.getByRole('button', { name: 'Create', exact: true }).click();
+    await expect(page.getByRole('textbox', { name: 'Prompt' })).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
+  };
+
+  const openConversation = async (page: Page, title: string): Promise<void> => {
+    const peer = page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: title, exact: true });
+    await expect(peer).toBeVisible({ timeout: 15_000 });
+    await peer.click();
+    await expect(page.getByRole('textbox', { name: 'Prompt' })).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
+  };
+
+  try {
+    app = await launchDesktopApp(appDataDir);
+    const page = await app.firstWindow();
+    await completeBrowserLogin(page);
+    await openMahayanaConversation(page);
+
+    await createHumanConversation(page, 'human-ime-source-e2e', 'IME Source');
+    await createHumanConversation(page, 'human-ime-destination-e2e', 'IME Destination');
+    await openConversation(page, 'IME Source');
+
+    let prompt = page.getByRole('textbox', { name: 'Prompt' });
+    const sourceDraft = 'source draft survives an interrupted composition';
+    await prompt.pressSequentially(sourceDraft);
+    await expect(prompt).toContainText(sourceDraft);
+
+    // This synthetic start drives the same shipping TipTap composition handler
+    // exercised by the localization/IME acceptance below, but intentionally
+    // changes canonical conversation scope before compositionend.
+    await prompt.dispatchEvent('compositionstart', { data: '旧' });
+    await openConversation(page, 'IME Destination');
+
+    prompt = page.getByRole('textbox', { name: 'Prompt' });
+    await prompt.focus();
+    await page.keyboard.insertText('stale-tail-from-source-ime');
+    await prompt.dispatchEvent('compositionend', { data: '旧' });
+
+    // compositionend must settle the new scope back to its canonical external
+    // draft instead of accepting the old-scope native input tail.
+    await expect.poll(async () => (await prompt.textContent()) ?? '').toBe('');
+    await expect(page.getByRole('button', { name: 'Send message' })).toBeDisabled();
+
+    const destinationDraft = 'destination draft is independent';
+    await prompt.pressSequentially(destinationDraft);
+    await expect(prompt).toContainText(destinationDraft);
+
+    await openConversation(page, 'IME Source');
+    prompt = page.getByRole('textbox', { name: 'Prompt' });
+    await expect(prompt).toContainText(sourceDraft);
+    await expect(prompt).not.toContainText('stale-tail-from-source-ime');
+
+    await openConversation(page, 'IME Destination');
+    prompt = page.getByRole('textbox', { name: 'Prompt' });
+    await expect(prompt).toContainText(destinationDraft);
+    await expect(prompt).not.toContainText('stale-tail-from-source-ime');
+  } finally {
+    await app?.close().catch(() => undefined);
+    await rm(appDataDir, { recursive: true, force: true });
   }
 });
 
@@ -1334,6 +1773,11 @@ test('Human call surface exposes the shipping WebRTC and Electron media bridge',
     await expect(page.getByRole('group', { name: 'Human call controls' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Start voice call' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Start video call' })).toBeVisible();
+    const callSurface = page.getByRole('group', { name: 'Human call controls' });
+    await expect(callSurface).toHaveAttribute('data-call-tone-state', 'idle');
+    await expect(callSurface).toHaveAttribute('data-call-tone-sample-rate', '48000');
+    await expect(callSurface).toHaveAttribute('data-call-tone-loop-count', '60');
+    await expect(callSurface).toHaveAttribute('data-call-tone-offset-samples', '0');
     const capability = await page.evaluate(async () => {
       const candidate = window as unknown as {
         desktop: {
@@ -1345,19 +1789,43 @@ test('Human call surface exposes the shipping WebRTC and Electron media bridge',
           };
         };
       };
+      const audioContext = new AudioContext({ sampleRate: 48_000 });
+      const toneBuffer = audioContext.createBuffer(1, 48_000, 48_000);
+      const toneSource = audioContext.createBufferSource();
+      toneSource.buffer = toneBuffer;
+      toneSource.connect(audioContext.destination);
+      const webAudio = {
+        contextSampleRate: audioContext.sampleRate,
+        bufferSampleRate: toneBuffer.sampleRate,
+        hasBufferSource: typeof audioContext.createBufferSource === 'function',
+      };
+      toneSource.disconnect();
+      await audioContext.close();
       return {
         hasPeerConnection: typeof RTCPeerConnection === 'function',
+        webAudio,
+        hasPeerConnectionStats: typeof RTCPeerConnection.prototype.getStats === 'function',
         hasGetUserMedia: typeof navigator.mediaDevices?.getUserMedia === 'function',
         permissionProbe: await candidate.desktop.callMedia.requestPermissions({ audio: false, video: false }),
         hasDisplaySourceBridge: typeof candidate.desktop.callMedia.listDisplaySources === 'function',
+        displaySources: await candidate.desktop.callMedia.listDisplaySources(),
         preferencesRoundTrip: await candidate.desktop.callMedia
           .setPreferences({ microphoneId: 'call-mic-e2e', cameraId: 'call-camera-e2e' })
           .then(() => candidate.desktop.callMedia.getPreferences()),
       };
     });
     expect(capability.hasPeerConnection).toBe(true);
+    expect(capability.hasPeerConnectionStats).toBe(true);
     expect(capability.hasGetUserMedia).toBe(true);
+    expect(capability.webAudio.bufferSampleRate).toBe(48_000);
+    expect(capability.webAudio.hasBufferSource).toBe(true);
+    expect(capability.webAudio.contextSampleRate).toBeGreaterThan(0);
     expect(capability.hasDisplaySourceBridge).toBe(true);
+    expect(Array.isArray(capability.displaySources)).toBe(true);
+    for (const source of capability.displaySources as Array<{ id?: unknown; name?: unknown }>) {
+      expect(typeof source.id).toBe('string');
+      expect(typeof source.name).toBe('string');
+    }
     expect(capability.permissionProbe).toEqual({ microphone: 'not-requested', camera: 'not-requested' });
     expect(capability.preferencesRoundTrip).toEqual({ microphoneId: 'call-mic-e2e', cameraId: 'call-camera-e2e' });
   } finally {

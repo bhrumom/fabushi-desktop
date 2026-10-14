@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type DragEvent, type FormEvent } from "react";
-import { COMPOSER_ATTACHMENT_LIMIT, attachmentBasename, formatAttachmentBytes, inferAttachmentKind, isComposerDraftEmpty, type ComposerDraft, type DraftAttachment } from "./model";
+import { COMPOSER_ATTACHMENT_LIMIT, attachmentBasename, formatAttachmentBytes, inferAttachmentKind, isComposerDraftEmpty, reconcileComposerDraftLinkPreview, type ComposerDraft, type ComposerDraftLinkPreview, type ComposerReplyKeyboard, type ComposerReplyKeyboardButton, type DraftAttachment } from "./model";
 import { useVoiceSession, VoiceWaveform, type VoiceTranscriber } from "./voice";
 import { ComposerReplyPill, replyComposerPlaceholder, type ComposerReplyTarget } from "./reply-preview";
-import { PromptRichTextEditor, type PromptEditorControls, type PromptEditorProviders } from "./rich-text-editor";
-import { SandIcon, SandIconButton } from "../../../ui/sand-kit-primitives";
+import { PromptRichTextEditor, type PromptEditorChange, type PromptEditorControls, type PromptEditorProviders } from "./rich-text-editor";
+import { compositionOnlyInputStatus, platformInputStatusText, type NativePlatformInputStatusSnapshot, type PlatformInputStatusSnapshot } from "./input-composition-state";
+import { SandButton, SandIcon, SandIconButton } from "../../../ui/sand-kit-primitives";
+import { SandMenuContent, SandMenuItem, SandMenuRoot, SandMenuTrigger } from "../../../ui/sand-floating-primitives";
 import { SandSpinner } from "../../../ui/sand-status-primitives";
 
 // Immutable Mac voice carriers: index-UbX-y3il.js#byteOffset=4538599 (recording
@@ -16,21 +18,23 @@ const PROMPT_MIC_PAYLOAD_CLASS = "sand-prompt-mic sand-2lah0s sand-jbqb8w sand-u
 const PROMPT_SEND_CLASS = "sand-prompt-send sand-2lah0s sand-mak4db sand-1tc92z3 sand-1hc1fzr sand-1p5hr7d sand-1lfpgzf sand-1ypdohk";
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=4540240 (Nl.glyphShown/glyphHidden opacity+scale classes)
 // @evidence recovered/frontend/app/assets/index-UbX-y3il.js#byteOffset=5705592 (Windows prompt glyph state classes)
-const COMPOSER_GLYPH_VISIBLE_CLASS = "sand-1hc1fzr sand-3oybdh";
-const COMPOSER_GLYPH_HIDDEN_CLASS = "sand-g01cxk sand-1a33avv";
 const RECORDING_CHIP_CLASS = "sand-recording-chip sand-9f619 sand-3nfvp2 sand-pkkfsy sand-1th6cxs sand-f6zju3 sand-16b7oty sand-cnij5n sand-o7x2bt sand-2lah0s sand-c342km sand-ng3xce sand-1i4c3av sand-i07v4r sand-1kj6vsg sand-1ypdohk sand-1k57tk5 sand-784prv sand-1t137rt sand-9v5kkp sand-1uczgqu sand-1725o6r sand-omy3lu";
 
-function ComposerGlyph({ name, hidden = false }: { readonly name: "mic" | "arrow-up"; readonly hidden?: boolean }) {
-  return <SandIcon className={hidden ? COMPOSER_GLYPH_HIDDEN_CLASS : COMPOSER_GLYPH_VISIBLE_CLASS} name={name} size="sm" style={{ lineHeight: 1 }} variant="filled" />;
-}
 
 // Immutable prompt editor keyboard contract: Escape cancels an active voice
 // session or blurs the prompt when no voice session is active.
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=4738296 (e9n prompt editor; UTF-8 region SHA-256 0a96b805946245180330a9bffda0053e11015e9c8fe850dfa62361ab85acee35)
 // @evidence recovered/frontend/app/assets/index-UbX-y3il.js#byteOffset=5948419 (e9n prompt editor; UTF-8 region SHA-256 6f8b718ba4e43704baea5078c9498184b98f82a3ad84d47bf1e5a9f516988f07)
 
+export interface ComposerBotCommand {
+  readonly command: string;
+  readonly description: string;
+}
+
 export interface ConversationComposerProps {
   draft: ComposerDraft;
+  botCommands?: readonly ComposerBotCommand[];
+  replyKeyboard?: ComposerReplyKeyboard;
   disabled?: boolean;
   notice?: string | null;
   placeholder?: string;
@@ -38,12 +42,22 @@ export interface ConversationComposerProps {
   onChange(draft: ComposerDraft): void;
   onStageFiles(files: File[]): void | Promise<void>;
   onSubmit(): void | Promise<void>;
+  onSendSilently?(): void | Promise<void>;
+  onScheduleSend?(): void;
+  onConfigureRetention?(): void;
+  retentionLabel?: string;
+  onExchangeStash?(): void;
+  onSendStash?(): void | Promise<void>;
+  onRemoveStash?(): void | Promise<void>;
+  canExchangeStash?: boolean;
+  hasStash?: boolean;
   onRemoveAttachment?(attachment: DraftAttachment): void | Promise<void>;
   replyTarget?: ComposerReplyTarget;
   onClearReplyTarget?(): void;
   editorProviders?: PromptEditorProviders;
   scopeKey?: string;
   acceptedSendGeneration?: number;
+  platformInput?: { get(): Promise<NativePlatformInputStatusSnapshot> };
 }
 
 export function extractClipboardFiles(items: DataTransferItemList | null | undefined): File[] {
@@ -68,11 +82,13 @@ export function selectComposerFiles(files: readonly File[], existingCount: numbe
   return files.slice(0, remaining);
 }
 
-export function ConversationComposer({ acceptedSendGeneration = 0, draft, disabled = false, notice, placeholder = "Ask anything, or drop a file.", transcribeAudio, onChange, onClearReplyTarget, onRemoveAttachment, onStageFiles, onSubmit, replyTarget, editorProviders, scopeKey }: ConversationComposerProps) {
+export function ConversationComposer({ acceptedSendGeneration = 0, botCommands = [], replyKeyboard, canExchangeStash = false, draft, disabled = false, hasStash = false, notice, placeholder = "Ask anything, or drop a file.", transcribeAudio, onChange, onClearReplyTarget, onConfigureRetention, onExchangeStash, onRemoveAttachment, onRemoveStash, onScheduleSend, onSendSilently, onSendStash, onStageFiles, onSubmit, retentionLabel, replyTarget, editorProviders, scopeKey, platformInput }: ConversationComposerProps) {
   const fileInput = useRef<HTMLInputElement>(null);
   const editorControls = useRef<PromptEditorControls | null>(null);
   const dragDepth = useRef(0);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [hiddenReplyKeyboardMessageId, setHiddenReplyKeyboardMessageId] = useState<string | null>(null);
+  const [inputStatus, setInputStatus] = useState<PlatformInputStatusSnapshot>(() => compositionOnlyInputStatus(false));
   const draftRef = useRef(draft);
   const hasPayload = !isComposerDraftEmpty(draft);
   draftRef.current = draft;
@@ -81,6 +97,13 @@ export function ConversationComposer({ acceptedSendGeneration = 0, draft, disabl
   const voiceBusy = voice.isRecording || voice.isProcessing || voice.isActivating;
   const canSend = hasPayload && !disabled && !voiceBusy;
   const atLimit = draft.attachments.length >= COMPOSER_ATTACHMENT_LIMIT;
+  const showBotCommands = botCommands.length > 0 && !hasPayload && replyTarget == null;
+  const showReplyKeyboard = replyKeyboard != null && hiddenReplyKeyboardMessageId !== replyKeyboard.messageId;
+  const editorPlaceholder = replyTarget != null
+    ? replyComposerPlaceholder(replyTarget.preview)
+    : showReplyKeyboard && replyKeyboard.forceReply
+      ? replyKeyboard.placeholder ?? "Reply…"
+      : placeholder;
 
   useEffect(() => voice.controller.onFinal((text) => {
     editorControls.current?.insertText(text);
@@ -97,6 +120,17 @@ export function ConversationComposer({ acceptedSendGeneration = 0, draft, disabl
     if (acceptedSendGeneration > 0) editorControls.current?.clear();
   }, [acceptedSendGeneration]);
 
+  useEffect(() => {
+    if (onExchangeStash == null) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || !event.shiftKey || event.key.toLowerCase() !== "y" || !canExchangeStash || disabled || voiceBusy) return;
+      event.preventDefault();
+      onExchangeStash();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [canExchangeStash, disabled, onExchangeStash, voiceBusy]);
+
   const cancelVoiceAndRefocus = useCallback(() => {
     voice.handleCancelClick();
     const focusEditor = () => editorControls.current?.focus();
@@ -108,13 +142,38 @@ export function ConversationComposer({ acceptedSendGeneration = 0, draft, disabl
     editorControls.current = controls;
   }, []);
 
-  const onEditorChange = useCallback((change: { readonly prompt: string; readonly richText?: string }) => {
+  const onEditorChange = useCallback((change: PromptEditorChange) => {
+    const current = draftRef.current;
     onChange({
-      ...draftRef.current,
+      ...current,
       prompt: change.prompt,
-      richText: change.richText
+      richText: change.richText,
+      cursor: change.cursor,
+      linkPreview: reconcileComposerDraftLinkPreview(current.linkPreview, change.prompt),
     });
   }, [onChange]);
+
+  const updateLinkPreview = useCallback((patch: Partial<ComposerDraftLinkPreview>) => {
+    const current = draftRef.current;
+    if (current.linkPreview == null) return;
+    onChange({
+      ...current,
+      linkPreview: { ...current.linkPreview, ...patch, manual: true },
+    });
+  }, [onChange]);
+
+  const insertBotCommand = useCallback((command: string) => {
+    editorControls.current?.insertText(command);
+    editorControls.current?.focus();
+  }, []);
+
+  const selectReplyKeyboardButton = useCallback((button: ComposerReplyKeyboardButton) => {
+    editorControls.current?.insertText(button.payload ?? button.text);
+    editorControls.current?.focus();
+    if (replyKeyboard?.singleUse === true && replyKeyboard.persistent !== true) {
+      setHiddenReplyKeyboardMessageId(replyKeyboard.messageId);
+    }
+  }, [replyKeyboard]);
 
   const stageFiles = useCallback((files: readonly File[]) => {
     const accepted = selectComposerFiles(files, draft.attachments.length);
@@ -163,6 +222,21 @@ export function ConversationComposer({ acceptedSendGeneration = 0, draft, disabl
         {isDragOver ? <div aria-hidden="true" className="sand-chat-drop-overlay"><div className="sand-chat-drop-overlay__badge">Drop files to add to chat</div></div> : null}
         {notice ? <p aria-live="polite" className="sand-prompt-attachment-notice" role="status">{notice}</p> : null}
         {replyTarget == null || onClearReplyTarget == null ? null : <ComposerReplyPill onClear={onClearReplyTarget} target={replyTarget} />}
+        {draft.linkPreview == null ? null : (
+          <div className="sand-prompt-link-preview" data-removed={draft.linkPreview.removed || undefined} data-testid="composer-link-preview">
+            <span><strong>{draft.linkPreview.removed ? "Link preview hidden" : "Link preview"}</strong><small>{draft.linkPreview.url}</small></span>
+            <SandMenuRoot placement="top-start">
+              <SandMenuTrigger><SandIconButton aria-label="Link preview options" icon="more" shape="circle" size="lg" type="button" variant="default" /></SandMenuTrigger>
+              <SandMenuContent ariaLabel="Link preview options">
+                <SandMenuItem index={0} onSelect={() => updateLinkPreview({ forceLargeMedia: true, forceSmallMedia: false, removed: false })}>Large media</SandMenuItem>
+                <SandMenuItem index={1} onSelect={() => updateLinkPreview({ forceLargeMedia: false, forceSmallMedia: true, removed: false })}>Small media</SandMenuItem>
+                <SandMenuItem index={2} onSelect={() => updateLinkPreview({ invert: true, removed: false })}>Show above text</SandMenuItem>
+                <SandMenuItem index={3} onSelect={() => updateLinkPreview({ invert: false, removed: false })}>Show below text</SandMenuItem>
+                <SandMenuItem index={4} onSelect={() => updateLinkPreview({ removed: !draft.linkPreview?.removed })}>{draft.linkPreview.removed ? "Restore preview" : "Hide preview"}</SandMenuItem>
+              </SandMenuContent>
+            </SandMenuRoot>
+          </div>
+        )}
         {draft.attachments.length > 0 ? (
           <div aria-label="Attachments" className="sand-prompt-attachments" role="list">
             {draft.attachments.map((attachment, index) => {
@@ -180,6 +254,7 @@ export function ConversationComposer({ acceptedSendGeneration = 0, draft, disabl
         <PromptRichTextEditor
           canSubmit={canSend}
           clearGeneration={acceptedSendGeneration}
+          cursor={draft.cursor}
           disabled={disabled}
           onChange={onEditorChange}
           onControls={receiveEditorControls}
@@ -188,16 +263,54 @@ export function ConversationComposer({ acceptedSendGeneration = 0, draft, disabl
             else editorControls.current?.blur();
           }}
           onPasteFiles={stageFiles}
+          onInputStatusChange={setInputStatus}
           onSubmit={onSubmit}
-          placeholder={replyTarget == null ? placeholder : replyComposerPlaceholder(replyTarget.preview)}
+          placeholder={editorPlaceholder}
           prompt={draft.prompt}
           providers={editorProviders}
+          platformInput={platformInput}
           richText={draft.richText}
           scopeKey={scopeKey}
         />
         {voice.isRecording || voice.isActivating ? <span aria-live="polite" className="sand-prompt-voice-status" role="status">Listening…</span> : null}
+        {platformInputStatusText(inputStatus) == null ? null : <p aria-live="polite" className="fabushi-input-status" data-testid="input-composition-status" role="status">{platformInputStatusText(inputStatus)}</p>}
+        {!showReplyKeyboard || replyKeyboard == null ? null : <div aria-label="Bot keyboard" className="sand-prompt-actions-row" data-message-id={replyKeyboard.messageId} role="group">
+          <div>
+            {replyKeyboard.rows.map((row, rowIndex) => <div key={`${replyKeyboard.messageId}:row:${rowIndex}`} role="group">
+              {row.map((button, buttonIndex) => <SandButton disabled={disabled || voiceBusy} key={`${rowIndex}:${buttonIndex}:${button.text}`} onClick={() => selectReplyKeyboardButton(button)} size="sm" type="button" variant="secondary">{button.text}</SandButton>)}
+            </div>)}
+          </div>
+          <SandIconButton aria-label="Hide bot keyboard" disabled={disabled || voiceBusy} icon="close" onClick={() => setHiddenReplyKeyboardMessageId(replyKeyboard.messageId)} shape="circle" size="lg" type="button" variant="default" />
+        </div>}
+        {replyKeyboard == null || showReplyKeyboard ? null : <div className="sand-prompt-actions-row">
+          <SandIconButton aria-label="Show bot keyboard" disabled={disabled || voiceBusy} icon="keyboard" onClick={() => setHiddenReplyKeyboardMessageId(null)} shape="circle" size="lg" type="button" variant="default" />
+        </div>}
         <div className="sand-prompt-actions-row">
+          {!showBotCommands ? null : <SandMenuRoot placement="top-start">
+            <SandMenuTrigger><SandIconButton aria-label="Bot commands" disabled={disabled || voiceBusy} icon="more" shape="circle" size="lg" type="button" variant="default" /></SandMenuTrigger>
+            <SandMenuContent ariaLabel="Bot commands">
+              {botCommands.map((command, index) => <SandMenuItem index={index} key={command.command} onSelect={() => insertBotCommand(command.command)}>
+                {command.command}{command.description.length === 0 ? "" : ` · ${command.description}`}
+              </SandMenuItem>)}
+            </SandMenuContent>
+          </SandMenuRoot>}
           <SandIconButton aria-label="Attach file" className={PROMPT_ATTACH_CLASS} disabled={disabled || atLimit || voiceBusy} icon="plus" onClick={() => fileInput.current?.click()} shape="circle" size="lg" type="button" variant="default" />
+          {onExchangeStash == null ? null : <SandIconButton aria-label={hasStash ? "Swap saved draft" : "Store draft"} disabled={disabled || !canExchangeStash || voiceBusy} icon="arrow-swap" onClick={onExchangeStash} shape="circle" size="lg" title={`${hasStash ? "Swap saved draft" : "Store draft"} (Ctrl+Shift+Y)`} type="button" variant="default" />}
+          {onSendSilently == null && onScheduleSend == null && onConfigureRetention == null ? null : <SandMenuRoot placement="top-start">
+            <SandMenuTrigger><SandIconButton aria-label="Send options" disabled={disabled || voiceBusy || (onConfigureRetention == null && !hasPayload)} icon="more" shape="circle" size="lg" type="button" variant="default" /></SandMenuTrigger>
+            <SandMenuContent ariaLabel="Send options">
+              {onSendSilently == null ? null : <SandMenuItem disabled={disabled || voiceBusy || !hasPayload} index={0} onSelect={() => { void onSendSilently(); }}>Send silently</SandMenuItem>}
+              {onScheduleSend == null ? null : <SandMenuItem disabled={disabled || voiceBusy || !hasPayload} index={1} onSelect={onScheduleSend}>Schedule send…</SandMenuItem>}
+              {onConfigureRetention == null ? null : <SandMenuItem disabled={disabled || voiceBusy} index={2} onSelect={onConfigureRetention}>Message retention{retentionLabel == null ? "" : ` · ${retentionLabel}`}</SandMenuItem>}
+            </SandMenuContent>
+          </SandMenuRoot>}
+          {!hasStash || onSendStash == null || onRemoveStash == null ? null : <SandMenuRoot placement="top-start">
+            <SandMenuTrigger><SandIconButton aria-label="Saved draft actions" disabled={disabled || voiceBusy} icon="more" shape="circle" size="lg" type="button" variant="default" /></SandMenuTrigger>
+            <SandMenuContent ariaLabel="Saved draft actions">
+              <SandMenuItem disabled={disabled || voiceBusy} index={0} onSelect={() => { void onSendStash(); }}>Send saved draft</SandMenuItem>
+              <SandMenuItem disabled={disabled || voiceBusy} index={1} onSelect={() => { void onRemoveStash(); }}>Remove saved draft</SandMenuItem>
+            </SandMenuContent>
+          </SandMenuRoot>}
           <span className="sand-prompt-actions-trailing sand-prompt-cta-cluster sand-78zum5 sand-6s0dn4 sand-2lah0s">
             {voice.isRecording ? <button aria-label="Stop dictation" className={RECORDING_CHIP_CLASS} onClick={() => voice.handleStopClick()} onKeyDown={(event) => {
               if (event.key === "Escape") {
@@ -210,7 +323,7 @@ export function ConversationComposer({ acceptedSendGeneration = 0, draft, disabl
               <span className="sand-recording-chip__waveform sand-1xp8n7a sand-18gnavp sand-2lah0s sand-78zum5 sand-6s0dn4"><VoiceWaveform stream={voice.stream} /></span>
             </button> : voice.isProcessing ? <span aria-label="Transcribing voice input…" className="sand-prompt-voice-processing sand-2lah0s sand-16w9d4f sand-1th6cxs sand-78zum5 sand-6s0dn4 sand-l56j7k" role="status"><SandSpinner ariaLabel="Transcribing voice input…" size={18} />Transcribing…</span> : <>
               {hasPayload ? <SandIconButton aria-label="Start voice input" className={PROMPT_MIC_PAYLOAD_CLASS} disabled={disabled || voiceBusy} icon="mic" onClick={() => voice.handleMicClick()} shape="circle" size="lg" type="button" variant="default" /> : null}
-              {hasPayload ? <button aria-label="Send message" className={PROMPT_SEND_CLASS} disabled={!canSend} type="submit"><span className="sand-1n2onr6 sand-1kky2od sand-lup9mm"><ComposerGlyph hidden={hasPayload} name="mic" /><ComposerGlyph hidden={!hasPayload} name="arrow-up" /></span></button> : <SandIconButton aria-label="Start voice input" className={PROMPT_MIC_EMPTY_CLASS} disabled={disabled} icon="mic" onClick={() => voice.handleMicClick()} shape="circle" size="lg" type="button" variant="default" />}
+              {hasPayload ? <SandIconButton aria-label="Send message" className={PROMPT_SEND_CLASS} disabled={!canSend} icon="arrow-up" shape="circle" size="lg" type="submit" variant="default" /> : <SandIconButton aria-label="Start voice input" className={PROMPT_MIC_EMPTY_CLASS} disabled={disabled} icon="mic" onClick={() => voice.handleMicClick()} shape="circle" size="lg" type="button" variant="default" />}
             </>}
           </span>
         </div>

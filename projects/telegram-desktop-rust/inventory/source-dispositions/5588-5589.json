@@ -1,0 +1,89 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "tree": "9d8fa87ce68c832d2f4c99f372a5bb672463c3e1"
+  },
+  "range": {
+    "first_order": 5588,
+    "last_order": 5589,
+    "entries": 2
+  },
+  "rows": [
+    {
+      "recursive_order": 5588,
+      "source_path": "Telegram/SourceFiles/settings/sections/settings_chat.cpp",
+      "source_blob_sha": "0f48c2eaa80a66cf280abd50fd6d137e9d8dd7be",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Chat settings aggregation across theme/accent/background, quick dialog action, stickers/emoji, message send/reaction, sensitive content, archive/export, local/data storage, auto-download and support-mode preferences",
+      "upstream_owner": "Telegram chat settings section delegating to theme/storage/privacy/download/support/message owners",
+      "state_machine": "settings route -> project current canonical state -> mutate only owning subsystem -> persist/reload where required; theme/background file selection -> preview/apply; storage/download/export routes -> canonical specialized owners; privacy/archive/support settings remain account-scoped and capability-gated",
+      "side_effects": "Persists appearance/message/support preferences, routes to archive/storage/download/export/privacy subflows, opens theme/background files and previews, updates quick actions and reaction/message behavior. It must not become a second Theme, Storage, Privacy, Composer or Support truth.",
+      "failure_cases": "theme/apply leaves split state; custom file failure corrupts prior theme; account/session switch leaks support/privacy state; storage/export/download route bypasses canonical owner; sensitive-content/archive mutation diverges from server; quick-action/send settings diverge from composer; stale async background/cloud-theme work applies after teardown; keyboard/a11y/responsive regressions",
+      "ui_disposition": "Reuse canonical Settings/ProfileSection/ListRow/Switch/Radio/Button/Dialog/Picker/LoadingState/ErrorState plus existing Theme, Storage, Download, Privacy, Composer/Reaction and Support surfaces. Source-specific Qt controls are adapters only.",
+      "fabushi_canonical_owner": "Canonical Settings shell + Theme/Appearance + Storage/Download/Export + Privacy/Archive + Composer/Reaction + Support account-scoped owners",
+      "fabushi_target": "MAPPED OPEN. Existing source-neutral owners remain canonical; missing Advanced/Chat settings semantics must be added there rather than introducing Telegram Chat settings runtime.",
+      "platform_differences": "Qt theme/background painters and file dialogs map to canonical Electron/web/native theme/file-picker adapters; persistence and account/server truth stay in canonical stores/services.",
+      "production_evidence": "Exact 2,902-line source read proves the aggregate responsibility surface. Existing Fabushi settings slices are partial and same-head production/server evidence is still required before closure.",
+      "test_evidence": "HIGH risk: unit/contract/integration/fault/security/a11y/E2E for theme/background rollback, file failures, storage/download/export routing, account switch, sensitive/archive reconciliation, support scope, quick-action/send behavior, keyboard/focus/light-dark/responsive state.",
+      "disposition": "mapped-open-canonical-chat-settings-router",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "ChatId",
+      "consumer_evidence": [
+        "Telegram/SourceFiles/settings/sections/settings_chat.cpp:1298:void BuildChatSectionContent(SectionBuilder &builder) {",
+        "Telegram/SourceFiles/settings/sections/settings_chat.cpp:2898:Type ChatId() {"
+      ],
+      "reachability_status": "accepted-tree chat settings responsibility proven; canonical implementation/evidence closure open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no source-named chat settings owner retained.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+        "verified_blob_sha": "0f48c2eaa80a66cf280abd50fd6d137e9d8dd7be",
+        "file_type": "blob",
+        "recursive_order": 5588
+      },
+      "notes": "Complete exact-source read at live authority. Unknown remains open; omitted=false."
+    },
+    {
+      "recursive_order": 5589,
+      "source_path": "Telegram/SourceFiles/settings/sections/settings_chat.h",
+      "source_blob_sha": "e7ff6f1cf013e60bce2a20f7aadeca4efa2b5bc6",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Public Chat settings composition helpers for data storage, auto-download, themes/background, quick action, sticker/emoji, message/archive/export/sensitive/support surfaces",
+      "upstream_owner": "Telegram chat settings interface",
+      "state_machine": "callers compose canonical settings sections/helpers -> owning subsystem handles state/persistence/lifetime; ChatId routes to the aggregate section",
+      "side_effects": "Exports composition contracts only; no independent state owner.",
+      "failure_cases": "helper bypasses canonical owner; duplicate persistence path; caller applies helper outside account/window lifetime; inconsistent route/search highlight or accessibility behavior",
+      "ui_disposition": "Expose through canonical typed settings composition and existing controls; no source-named ChatSettings component.",
+      "fabushi_canonical_owner": "Canonical Settings composition/routing interfaces",
+      "fabushi_target": "MAPPED OPEN. Preserve helper responsibilities via source-neutral typed composition interfaces.",
+      "platform_differences": "Qt VerticalLayout/controller helpers become canonical React/settings composition functions and platform adapters.",
+      "production_evidence": "Header read proves public composition surface only; exact-head implementation/evidence closure remains open.",
+      "test_evidence": "MEDIUM risk: route/composition ownership, lifetime/account fencing and keyboard/a11y search/highlight contracts required.",
+      "disposition": "mapped-open-canonical-chat-settings-interface",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "ChatId",
+      "consumer_evidence": [
+        "Telegram/SourceFiles/settings/sections/settings_chat.h:17:[[nodiscard]] Type ChatId();",
+        "Telegram/SourceFiles/settings/sections/settings_chat.cpp:2898:Type ChatId() {"
+      ],
+      "reachability_status": "accepted-tree public chat-settings composition contract proven; canonical implementation/evidence closure open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no source-named chat settings owner retained.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+        "verified_blob_sha": "e7ff6f1cf013e60bce2a20f7aadeca4efa2b5bc6",
+        "file_type": "blob",
+        "recursive_order": 5589
+      },
+      "notes": "Complete exact-source header read at live authority. Unknown remains open; omitted=false."
+    }
+  ]
+}

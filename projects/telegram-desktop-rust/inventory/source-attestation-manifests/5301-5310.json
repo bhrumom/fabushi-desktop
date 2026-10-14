@@ -1,0 +1,68 @@
+{
+  "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+  "start": 5301,
+  "end": 5310,
+  "entries": [
+    {
+      "order": 5301,
+      "path": "Telegram/SourceFiles/overview/overview_layout.cpp",
+      "blob": "ceae87bc8148b76426a3e1e9d427f99f04659429",
+      "consumer_symbol": "Overview::Layout::{ItemBase,RadialProgressItem,Photo,Video,Voice,Document,Link,Gif}"
+    },
+    {
+      "order": 5302,
+      "path": "Telegram/SourceFiles/overview/overview_layout.h",
+      "blob": "c6aba8cac455f3e01805ab835fc6968d5b8c142c",
+      "consumer_symbol": "Overview::Layout item contracts"
+    },
+    {
+      "order": 5303,
+      "path": "Telegram/SourceFiles/overview/overview_layout_delegate.h",
+      "blob": "0d016974b102bedf989f9a65a10a48f0587bed62",
+      "consumer_symbol": "Overview::Layout::Delegate"
+    },
+    {
+      "order": 5304,
+      "path": "Telegram/SourceFiles/passport/passport.style",
+      "blob": "df494e425fcd317c372953b9c1ae98c869ecf1ef",
+      "consumer_symbol": "Passport style"
+    },
+    {
+      "order": 5305,
+      "path": "Telegram/SourceFiles/passport/passport_edit_identity_box.cpp",
+      "blob": "18be2ad425d6bc7590fcb69b4c8d3e1c60b0f815",
+      "consumer_symbol": "Passport::IdentityBox / ScanButton"
+    },
+    {
+      "order": 5306,
+      "path": "Telegram/SourceFiles/passport/passport_edit_identity_box.h",
+      "blob": "377a7dbf8182ee9798aa373f98cc88122bb754ff",
+      "consumer_symbol": "Passport::IdentityBox contract"
+    },
+    {
+      "order": 5307,
+      "path": "Telegram/SourceFiles/passport/passport_encryption.cpp",
+      "blob": "82c4466b05d57d26d2a637225c4b544b933fb9bb",
+      "consumer_symbol": "Passport crypto functions"
+    },
+    {
+      "order": 5308,
+      "path": "Telegram/SourceFiles/passport/passport_encryption.h",
+      "blob": "522e34f5a7e03b775451db30522a1d94d072a0ab",
+      "consumer_symbol": "Passport encryption public contract"
+    },
+    {
+      "order": 5309,
+      "path": "Telegram/SourceFiles/passport/passport_form_controller.cpp",
+      "blob": "e27dad38083a1c86d14871db776fe45f9ccf2818",
+      "consumer_symbol": "Passport::FormController"
+    },
+    {
+      "order": 5310,
+      "path": "Telegram/SourceFiles/passport/passport_form_controller.h",
+      "blob": "6a3e65bd535b853e6734aa4b57bc47602f0980c7",
+      "consumer_symbol": "Passport::FormController state contract"
+    }
+  ],
+  "accepted_tree": "4ddb5182fc1ae238e4dc62a396614614b5b35f97"
+}

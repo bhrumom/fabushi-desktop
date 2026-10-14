@@ -1,0 +1,105 @@
+{
+  "format_version": 1,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "from": {
+    "commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "tree": "9d8fa87ce68c832d2f4c99f372a5bb672463c3e1"
+  },
+  "to": {
+    "commit": "6fed91ffab9861771a75f29df65031b3c80b6941",
+    "tree": "4cf9e0e1830ff8569e3264d07062d8ff94dbb4f6"
+  },
+  "rows": [
+    {
+      "recursive_order": 3155,
+      "source_path": "Telegram/Resources/uwp/AppX/AppxManifest.xml",
+      "previous_blob_sha": "bac5785d2ae4240264577d97444187090e9bbdb7",
+      "current_blob_sha": "7636e50ea7c18c6146b8005e0ed0c5d4049eac25",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Version-only packaging identity advanced 7.3.0.0→7.3.1.0; Fabushi keeps its own package identity/version owner and exact release metadata coherence."
+    },
+    {
+      "recursive_order": 3201,
+      "source_path": "Telegram/Resources/winrc/Telegram.rc",
+      "previous_blob_sha": "d3ab29c8f583ed0645f4a0de344530180eaa3265",
+      "current_blob_sha": "62080c78d82a7bc8e921f2e83f5827816f058a39",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Windows executable version resource advanced 7.3.0.0→7.3.1.0; source-neutral responsibility remains coherent signed package/file/product version metadata."
+    },
+    {
+      "recursive_order": 3202,
+      "source_path": "Telegram/Resources/winrc/Updater.rc",
+      "previous_blob_sha": "5064d9df4282b377272b583071c00de207039abd",
+      "current_blob_sha": "e6ce9158c1ecad8ce25f4d17287676ba057ae8d3",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Windows updater version resource advanced 7.3.0.0→7.3.1.0; Fabushi updater/package metadata must remain release-candidate coherent."
+    },
+    {
+      "recursive_order": 3766,
+      "source_path": "Telegram/SourceFiles/core/version.h",
+      "previous_blob_sha": "84ea0f90963b3a8a8dc3f9595b4e3d37dbf8dedf",
+      "current_blob_sha": "2de28811834786f129ce0afaf509025ff6c7499f",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Application semantic/build version advanced to 7.3.1; responsibility remains one canonical product-version authority projected into runtime and packaging."
+    },
+    {
+      "recursive_order": 4521,
+      "source_path": "Telegram/SourceFiles/history/view/media/history_view_photo.cpp",
+      "previous_blob_sha": "44beb4ffa87e94f18184f0e3b7fb5d46b2dd9396",
+      "current_blob_sha": "4a563307fe671139f6113e093351e4363fe72ebc",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Webpage photo enlarge affordance was factored into owned state with hit-testing plus press/release ripple lifecycle; eligibility still excludes sponsored/editor/non-suggested/small media. Applicable Fabushi responsibility is canonical media-action eligibility, pointer pressed-state lifecycle, repaint ownership, and purchased-tag geometry coexistence—not Telegram UI."
+    },
+    {
+      "recursive_order": 4522,
+      "source_path": "Telegram/SourceFiles/history/view/media/history_view_photo.h",
+      "previous_blob_sha": "8bb536d269f75a00a04f40828ba8da7cc10ed364",
+      "current_blob_sha": "2724cbfafca3611757e0192433ad297cc92c6122",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Photo interface now owns enlarge interaction state and clickHandlerPressedChanged lifecycle; map to the existing Transcript/media interaction owner without a second media root."
+    },
+    {
+      "recursive_order": 5166,
+      "source_path": "Telegram/SourceFiles/media/view/media_view_overlay_widget.cpp",
+      "previous_blob_sha": "e35f67119323850a3cea450548566186c8a2231c",
+      "current_blob_sha": "2acbe80457cfc7d760ece77229ad2513b3fb2e41",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Media viewer application event filter now claims Save/SaveAs so competing shortcuts cannot consume Ctrl+S before the viewer handles save; applicable responsibility is shortcut arbitration/ownership in canonical media viewer."
+    },
+    {
+      "recursive_order": 5943,
+      "source_path": "Telegram/SourceFiles/ui/chat/chat.style",
+      "previous_blob_sha": "b67008036a5f969406aa2c6968eb5c33d2b15c08",
+      "current_blob_sha": "3f7770b717542a5a7764f4633b3c687156ddbb02",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Adds ripple opacity token for the enlarge affordance; presentation value itself is not copied, while semantic pressed-feedback state stays under the Fabushi design system."
+    },
+    {
+      "recursive_order": 6541,
+      "source_path": "Telegram/build/version",
+      "previous_blob_sha": "70a670e4f8e31cebfaae55d32955ee1eb0100c12",
+      "current_blob_sha": "d4ba8dcf4b570db34a4489a329fecc755a5d338b",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "Build version metadata advanced to 7.3.1; responsibility remains deterministic release-version propagation."
+    },
+    {
+      "recursive_order": 6627,
+      "source_path": "changelog.txt",
+      "previous_blob_sha": "bf82383b02717265acac50035c2ce3000afdac7a",
+      "current_blob_sha": "0a15fcb270fe88cf5d607e2b60be50ca32eeaf72",
+      "read_complete": true,
+      "responsibility_reconciled": true,
+      "responsibility_delta": "7.3.1 release notes add wallet Windows Hello/passcode, copy-restricted downloads, theme date colors, and photo-editor Link fixes; these are provenance/regression cues and do not by themselves mark any Fabushi capability complete."
+    }
+  ]
+}

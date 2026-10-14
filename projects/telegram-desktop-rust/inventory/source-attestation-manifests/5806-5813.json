@@ -1,0 +1,57 @@
+{
+  "accepted_upstream": "b0d1fe5e08c963402b8b71648c70a2bf68e6fab2",
+  "accepted_tree": "e279373aec283ebfcc6e3bb7385e51205acd84a2",
+  "deterministic_order_basis": "non-directory/blob rank in accepted recursive tree",
+  "start": 5806,
+  "end": 5813,
+  "entries": [
+    {
+      "order": 5806,
+      "path": "Telegram/SourceFiles/test/test_notify_override.cpp",
+      "blob": "3a5db0374721b08da7b4892dec73e246ffba5ccc",
+      "consumer_symbol": "test_notify_override"
+    },
+    {
+      "order": 5807,
+      "path": "Telegram/SourceFiles/test/test_notify_override.h",
+      "blob": "c0e751aaed7465cf34fe5b1a4a85db564ad6f79f",
+      "consumer_symbol": "test_notify_override"
+    },
+    {
+      "order": 5808,
+      "path": "Telegram/SourceFiles/test/test_open_handoff.cpp",
+      "blob": "6e105071f4269a535a82669f092a5d8828ddef51",
+      "consumer_symbol": "test_open_handoff"
+    },
+    {
+      "order": 5809,
+      "path": "Telegram/SourceFiles/test/test_open_handoff.h",
+      "blob": "98716cca78980aeb35f8094f551aa9c999209965",
+      "consumer_symbol": "test_open_handoff"
+    },
+    {
+      "order": 5810,
+      "path": "Telegram/SourceFiles/test/test_panel.cpp",
+      "blob": "e74f7d7a9a812ffe3215f1ad08f80c57b3ec1857",
+      "consumer_symbol": "test_panel"
+    },
+    {
+      "order": 5811,
+      "path": "Telegram/SourceFiles/test/test_panel.h",
+      "blob": "5687a44e1503fbd2cd8e65f54c757cbe8dd71efa",
+      "consumer_symbol": "test_panel"
+    },
+    {
+      "order": 5812,
+      "path": "Telegram/SourceFiles/test/test_post_paint.cpp",
+      "blob": "5425aec01d884ae40ebc95cfb9c50222021b24f9",
+      "consumer_symbol": "test_post_paint"
+    },
+    {
+      "order": 5813,
+      "path": "Telegram/SourceFiles/test/test_post_paint.h",
+      "blob": "f423046fa7d469cc76304ae28512dd06c33200ae",
+      "consumer_symbol": "test_post_paint"
+    }
+  ]
+}

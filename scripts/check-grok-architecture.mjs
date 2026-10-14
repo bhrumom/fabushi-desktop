@@ -34,6 +34,13 @@ if (semanticAdaptations.schemaVersion !== 1 || !Array.isArray(semanticAdaptation
 
 const adaptationRefs = new Set();
 const baseRowsByReference = new Map((manifestBase.modules ?? []).map((row) => [row.referencePath, row]));
+const UNDECLARED_BASE_PARITY_MODE = 'unlocked-semantic';
+
+function baseParityMode(row) {
+  return typeof row.parityMode === 'string'
+    ? row.parityMode
+    : UNDECLARED_BASE_PARITY_MODE;
+}
 for (const adaptation of semanticAdaptations.adaptations) {
   if (
     typeof adaptation.referencePath !== 'string'
@@ -60,8 +67,9 @@ for (const adaptation of semanticAdaptations.adaptations) {
   if (baseRow.status !== 'implemented') {
     fail(`semantic adaptation cannot finalize non-implemented row: ${adaptation.referencePath} is ${baseRow.status}`);
   }
-  if (baseRow.parityMode !== adaptation.expectedBaseParityMode) {
-    fail(`semantic adaptation base mode changed for ${adaptation.referencePath}: expected ${adaptation.expectedBaseParityMode}, found ${baseRow.parityMode}`);
+  const actualBaseParityMode = baseParityMode(baseRow);
+  if (actualBaseParityMode !== adaptation.expectedBaseParityMode) {
+    fail(`semantic adaptation base mode changed for ${adaptation.referencePath}: expected ${adaptation.expectedBaseParityMode}, found ${actualBaseParityMode}`);
   }
   if (!['typescript-port', 'rust-adaptation'].includes(adaptation.parityMode)) {
     fail(`unsupported semantic adaptation mode ${adaptation.parityMode} for ${adaptation.referencePath}`);

@@ -25,3 +25,32 @@ fn data_url_pixel_guard_and_resize_fallback_match_frozen_behavior(){
  assert_eq!(bound_preview_image_data_url(Some(&original),&bounds,|_,_,_|None).as_deref(),Some(original.as_str()));
  let huge=url(&png(6000,5000));assert_eq!(bound_preview_image_data_url(Some(&huge),&bounds,|_,_,_|Some("bad".into())),None);
 }
+
+fn iso_box(kind:&[u8;4],body:&[u8])->Vec<u8>{
+ let size=u32::try_from(body.len()+8).expect("box size");
+ let mut out=Vec::with_capacity(body.len()+8);
+ out.extend_from_slice(&size.to_be_bytes());out.extend_from_slice(kind);out.extend_from_slice(body);out
+}
+fn full_box(kind:&[u8;4],payload:&[u8])->Vec<u8>{
+ let mut body=vec![0,0,0,0];body.extend_from_slice(payload);iso_box(kind,&body)
+}
+
+#[test]
+fn bmff_clean_aperture_is_applied_before_rotation(){
+ let mut ftyp_body=b"avif".to_vec();ftyp_body.extend_from_slice(&0u32.to_be_bytes());
+ let mut bytes=iso_box(b"ftyp",&ftyp_body);
+ let mut ispe_payload=Vec::new();ispe_payload.extend_from_slice(&800u32.to_be_bytes());ispe_payload.extend_from_slice(&600u32.to_be_bytes());
+ let ispe=full_box(b"ispe",&ispe_payload);
+ let mut clap_payload=Vec::new();
+ for value in [400u32,1,300,1,0,1,0,1] {clap_payload.extend_from_slice(&value.to_be_bytes());}
+ let clap=iso_box(b"clap",&clap_payload);let irot=iso_box(b"irot",&[1]);
+ let mut ipco_body=Vec::new();ipco_body.extend_from_slice(&ispe);ipco_body.extend_from_slice(&clap);ipco_body.extend_from_slice(&irot);
+ let ipco=iso_box(b"ipco",&ipco_body);
+ let mut ipma_body=vec![0,0,0,0];ipma_body.extend_from_slice(&1u32.to_be_bytes());ipma_body.extend_from_slice(&1u16.to_be_bytes());ipma_body.push(3);ipma_body.extend_from_slice(&[1,2,3]);
+ let ipma=iso_box(b"ipma",&ipma_body);
+ let mut iprp_body=Vec::new();iprp_body.extend_from_slice(&ipco);iprp_body.extend_from_slice(&ipma);
+ let iprp=iso_box(b"iprp",&iprp_body);let pitm=full_box(b"pitm",&1u16.to_be_bytes());
+ let mut meta_body=vec![0,0,0,0];meta_body.extend_from_slice(&pitm);meta_body.extend_from_slice(&iprp);
+ bytes.extend_from_slice(&iso_box(b"meta",&meta_body));
+ assert_eq!(read_heic_dimensions(&bytes),Some(ImageSize{width:300,height:400}));
+}

@@ -16,6 +16,7 @@ export default defineConfig({
       'react-dom': path.resolve(here, 'node_modules/react-dom'),
       'lucide-react': path.resolve(here, 'node_modules/lucide-react'),
       '@tiptap': path.resolve(here, 'node_modules/@tiptap'),
+      prismjs: path.resolve(here, 'node_modules/prismjs'),
     },
     dedupe: ['react', 'react-dom'],
   },

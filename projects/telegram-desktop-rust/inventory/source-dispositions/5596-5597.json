@@ -1,0 +1,92 @@
+{
+  "format_version": 2,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "28ac576967a1026ecc89a927360fa0e138d7c88c",
+    "tree": "9d8fa87ce68c832d2f4c99f372a5bb672463c3e1"
+  },
+  "range": {
+    "first_order": 5596,
+    "last_order": 5597,
+    "entries": 2
+  },
+  "rows": [
+    {
+      "recursive_order": 5596,
+      "source_path": "Telegram/SourceFiles/settings/sections/settings_information.cpp",
+      "source_blob_sha": "8982b515b5a30600f5565c3b7e81dc5218c96950",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Identity/Profile and multi-account settings composition: profile photo upload/optimistic preview, name/phone/username/birthday/privacy/personal-channel/color/chat-automation, bio debounce+flush, account add/switch/new-window/reorder/logout/limits, unread/premium badge projection",
+      "upstream_owner": "Telegram Information settings + Main Domain accounts + profile/user APIs",
+      "state_machine": "current account profile -> edit/upload/save with owner-scoped async work; bio current -> local edit -> 1s debounce or submit/teardown flush -> authoritative profile update reconciliation; account list -> domain/session changes -> rebuild -> guarded switch/new window/reorder/logout; privacy/business/profile projections track current account",
+      "side_effects": "Uploads avatar/video/markup, mutates bio/name/username/profile metadata/privacy/business routes, adds/activates/logs out/reorders accounts, persists account order, copies profile fields, projects unread/premium badges. Canonical Identity/Profile and Account/Session owners remain sole truth.",
+      "failure_cases": "stale avatar success overwrites replacement account; optimistic photo never rolls back; remote bio update races unsaved local edit; teardown loses pending bio save; duplicate account activation; delayed switch targets removed account; reorder persists missing/locked account order; logout wrong account; privacy/chatbot/channel state leaks across account; unread badge stale; inaccessible context/reorder/edit controls",
+      "ui_disposition": "Reuse canonical Settings/ProfileSection/Avatar/TextField/TextArea/ListRow/Button/IconButton/Badge/Dialog/ContextMenu plus canonical account switcher, keyboard/focus/a11y/light-dark/responsive contracts.",
+      "fabushi_canonical_owner": "Canonical Identity/Profile + Account/Session + Privacy + Business/Automation owners",
+      "fabushi_target": "MAPPED OPEN. Extend existing source-neutral owners and account-scoped services; no Telegram Information or alternate account store.",
+      "platform_differences": "Qt userpic/popup/reorder mechanics map to canonical React/Electron components and typed account/session operations; identity/server authorization remains canonical backend truth.",
+      "production_evidence": "Exact live-source read proves responsibilities only; current Fabushi identity/account/business owners still need exact-head fault/recovery/security/UI evidence.",
+      "test_evidence": "HIGH risk: unit/server-contract/integration/fault/security/a11y/E2E for avatar failure/account switch, bio debounce/flush/remote conflict, username/name/frozen state, birthday privacy, automation/channel scope, account add/limit/switch/new-window/reorder/logout and unread badge.",
+      "disposition": "mapped-open-canonical-identity-profile-account-settings",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "InformationId",
+      "consumer_evidence": [
+        "Telegram/SourceFiles/settings/sections/settings_information.cpp:728:self->session().api().saveSelfBio(",
+        "Telegram/SourceFiles/settings/sections/settings_information.cpp:1108:Core::App().settings().setAccountsOrder(order);",
+        "Telegram/SourceFiles/settings/sections/settings_information.cpp:1141:Core::App().domain().maybeActivate(account);",
+        "Telegram/SourceFiles/settings/sections/settings_information.cpp:1444:Type InformationId() {"
+      ],
+      "reachability_status": "accepted-tree information/profile/account responsibility proven; canonical implementation/evidence closure open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no source-named information/account runtime retained.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+        "verified_blob_sha": "8982b515b5a30600f5565c3b7e81dc5218c96950",
+        "file_type": "blob",
+        "recursive_order": 5596
+      },
+      "notes": "Complete exact-source read at live authority. Unknown remains open; omitted=false."
+    },
+    {
+      "recursive_order": 5597,
+      "source_path": "Telegram/SourceFiles/settings/sections/settings_information.h",
+      "source_blob_sha": "54435faa2f1a8d156d5da3501a9e9b0c13b96bae",
+      "read_complete": true,
+      "responsibility_decomposition_complete": true,
+      "responsibility": "Public Information route, account-list events, local avatar projection and reusable unread-badge contracts",
+      "upstream_owner": "Telegram Information settings interface",
+      "state_machine": "callers resolve Information route or compose account list/profile/badge helpers -> canonical Identity/Account owners retain state and lifecycle",
+      "side_effects": "Exports route/composition/helper contracts only; no independent identity/account state.",
+      "failure_cases": "helper bypasses canonical account owner; local photo projection escapes account lifetime; account close/add events outlive surface; unread badge creates divergent state",
+      "ui_disposition": "Expose via canonical typed Settings/Profile/Account/Badge components; source-named helper types remain upstream evidence only.",
+      "fabushi_canonical_owner": "Canonical Settings routing + Identity/Profile + Account/Session + Badge projection owners",
+      "fabushi_target": "MAPPED OPEN. Preserve semantic helper contracts via source-neutral APIs.",
+      "platform_differences": "C++ QPointer/rpl helper lifetimes map to canonical typed component lifetimes/cancellation.",
+      "production_evidence": "Header read proves public surface only; same-head implementation/evidence remains required.",
+      "test_evidence": "MEDIUM risk: route/account binding, helper lifecycle, local avatar projection, close/add account events and badge a11y evidence required.",
+      "disposition": "mapped-open-canonical-information-interface",
+      "unknown_closed": false,
+      "omitted": false,
+      "consumer_symbol": "InformationId",
+      "consumer_evidence": [
+        "Telegram/SourceFiles/settings/sections/settings_information.h:30:[[nodiscard]] Type InformationId();",
+        "Telegram/SourceFiles/settings/sections/settings_information.h:36:AccountsEvents SetupAccounts(",
+        "Telegram/SourceFiles/settings/sections/settings_information.h:40:void UpdatePhotoLocally(not_null<UserData*> user, const QImage &image);"
+      ],
+      "reachability_status": "accepted-tree public information settings contract proven; canonical implementation/evidence closure open",
+      "license_and_provenance": "telegramdesktop/tdesktop provenance retained; no source-named information interface retained.",
+      "source_binary_evidence": {
+        "evidence_status": "live-github-tree-bound-current-head-actions-pending",
+        "accepted_upstream": "811b83a1cc5f61bd4238ab3ebfcbee6302078014",
+        "verified_blob_sha": "54435faa2f1a8d156d5da3501a9e9b0c13b96bae",
+        "file_type": "blob",
+        "recursive_order": 5597
+      },
+      "notes": "Complete exact-source header read at live authority. Unknown remains open; omitted=false."
+    }
+  ]
+}

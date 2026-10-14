@@ -1,6 +1,7 @@
 import { createCoordinatorControlServer } from "./coordinator-control-server.js";
 
 export const COORDINATOR_SERVICE_NAME = "sand-node-agent-coordinator";
+export const COORDINATOR_GRACEFUL_EXIT_TIMEOUT_MS = 5_000;
 
 function createDeferred<T>(): {
   readonly promise: Promise<T>;
@@ -52,6 +53,7 @@ export interface LaunchCoordinatorDependencies {
   readonly onProblem: (problem: string) => void;
   readonly processConfig: unknown;
   readonly reportFailure?: (leg: string, error: unknown) => void;
+  readonly gracefulExitTimeoutMs?: number;
 }
 
 export function launchCoordinator(
@@ -84,15 +86,28 @@ export function launchCoordinator(
   let exited = false;
   const { promise: processExited, resolve: resolveExited } =
     createDeferred<{ readonly code: number | null }>();
-  let controlSettlementObserved = false;
-  void server.settled.then(() => {
-    controlSettlementObserved = true;
-  });
+  let forceKillTimer: ReturnType<typeof setTimeout> | undefined;
+  const clearForceKillTimer = () => {
+    if (forceKillTimer === undefined) return;
+    clearTimeout(forceKillTimer);
+    forceKillTimer = undefined;
+  };
+  const armForceKillTimer = () => {
+    if (exited || forceKillTimer !== undefined) return;
+    const timeoutMs = dependencies.gracefulExitTimeoutMs ?? COORDINATOR_GRACEFUL_EXIT_TIMEOUT_MS;
+    forceKillTimer = setTimeout(() => {
+      forceKillTimer = undefined;
+      if (!exited) child.kill();
+    }, timeoutMs);
+    const timer = forceKillTimer as unknown as { unref?: () => void };
+    timer.unref?.();
+  };
 
   child.on("exit", (code) => {
     if (exited) return;
     exited = true;
     resolveExited({ code });
+    clearForceKillTimer();
     server.handlePortClosed();
     controlChannel.port2.close();
     dataChannel.port2.close();
@@ -109,12 +124,8 @@ export function launchCoordinator(
       if (disposeRequested || exited) return;
       disposeRequested = true;
       server.dispose();
-      if (controlSettlementObserved) {
-        child.kill();
-        return;
-      }
       void server.settled.then(() => {
-        if (!exited) child.kill();
+        if (!exited) armForceKillTimer();
       });
     },
   };

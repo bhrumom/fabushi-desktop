@@ -54,6 +54,7 @@ import {
 import { computeUpdateDisabledReason } from "./update/update-gate.js";
 import { createUpdateTelemetryRelay } from "./update/update-telemetry.js";
 import { createUpdateServiceWiring } from "./update/update-wiring.js";
+import type { ReleaseUpdaterPort } from "./update/sand-update-service.js";
 import { SandSettingsStore } from "../shared/node/settings/sand-settings-store.js";
 import { isSandUpdateTrack } from "../shared/update-track.js";
 import { delay } from "../shared/node/async.js";
@@ -101,6 +102,7 @@ export interface ElectronSettingsProviderPorts {
 
 export interface ElectronUpdaterInstallerProviderPorts {
   readonly electron: Parameters<typeof createUpdateServiceWiring>[0]["electron"];
+  readonly releaseUpdater?: ReleaseUpdaterPort;
   readonly env?: NodeJS.ProcessEnv;
   readonly platform?: NodeJS.Platform;
 }
@@ -112,6 +114,9 @@ export interface ElectronNotificationsProviderPorts {
       readonly body: string;
       readonly silent: boolean;
       readonly urgency: "critical" | "normal";
+      readonly hasReply?: boolean;
+      readonly replyPlaceholder?: string;
+      readonly actions?: readonly { readonly type: "button"; readonly text: string }[];
     }): DesktopNotificationPort;
     isSupported(): boolean;
   };
@@ -319,6 +324,7 @@ export function createProductionUpdaterInstallerBinding(
       const getHostStatus = coordinatorHostStatus(context);
       const updateService = createUpdateServiceWiring({
         currentVersion: context.resources.metadata.version,
+        ...(context.resources.metadata.sourceSha === undefined ? {} : { currentSourceSha: context.resources.metadata.sourceSha }),
         buildDefaultTrack: isSandUpdateTrack(context.resources.metadata.sandTrack)
           ? context.resources.metadata.sandTrack
           : null,
@@ -326,11 +332,14 @@ export function createProductionUpdaterInstallerBinding(
           envDisabled: env.SAND_DISABLE_UPDATES === "1",
           isLabBuild: context.resources.metadata.sandLab,
           hasDevFeedOverride: (env.SAND_UPDATE_FEED_BASE_URL?.length ?? 0) > 0,
+          releaseUpdaterAvailable: ports.releaseUpdater != null,
+          supportsLinuxAppImage: platform === "linux" && (env.APPIMAGE?.length ?? 0) > 0,
           isPackaged: context.native.app.isPackaged,
           platform,
         }),
         machineId: context.machineId,
         electron: ports.electron,
+        ...(ports.releaseUpdater == null ? {} : { releaseUpdater: ports.releaseUpdater }),
         settingsStore: context.settings.settingsStore,
         getExperimentService: () => {
           try { return context.requireExperiments(); }
@@ -390,12 +399,14 @@ export function createElectronProductionUpdaterInstallerBinding(): UpdaterInstal
     readonly autoUpdater: ElectronUpdaterInstallerProviderPorts["electron"]["autoUpdater"];
     readonly powerMonitor: ElectronUpdaterInstallerProviderPorts["electron"]["powerMonitor"];
   };
+  const releaseUpdaterModule = require("electron-updater") as { readonly autoUpdater: ReleaseUpdaterPort };
   return createProductionUpdaterInstallerBinding({
     electron: {
       app: electron.app,
       autoUpdater: electron.autoUpdater,
       powerMonitor: electron.powerMonitor,
     },
+    releaseUpdater: releaseUpdaterModule.autoUpdater,
     env: process.env,
     platform: process.platform,
   });
@@ -422,6 +433,8 @@ export function createProductionNotificationsBinding(
         isSupported: () => ports.Notification.isSupported(),
         createNotification: (options) => new ports.Notification(options),
         openAgent: (agentId) => context.requireMainEdge().emit("focus-agent", { id: agentId }),
+        reportActionFailure: (operation, error) =>
+          reportDesktopEdgeFailure("os-notification-action", operation, error),
       });
       const dockBadge = new SandDockBadgeManager({
         setBadgeCount: (count) => { ports.app.setBadgeCount(count); },

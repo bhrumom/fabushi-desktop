@@ -1098,6 +1098,7 @@ impl PluginRequestProcessor {
                     },
                     share_url: None,
                     description: outcome.plugin.description,
+                    license: outcome.plugin.license,
                     skills: plugin_skills_to_info(
                         &visible_skills,
                         &outcome.plugin.disabled_skill_paths,
@@ -2263,6 +2264,7 @@ fn remote_plugin_detail_to_info(
         summary: remote_plugin_summary_to_info(detail.summary),
         share_url: detail.share_url,
         description: detail.description,
+        license: None,
         skills: detail
             .skills
             .into_iter()

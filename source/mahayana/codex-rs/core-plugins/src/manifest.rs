@@ -31,6 +31,8 @@ struct RawPluginManifest {
     #[serde(default)]
     description: Option<String>,
     #[serde(default)]
+    license: Option<String>,
+    #[serde(default)]
     keywords: Vec<String>,
     #[serde(default)]
     runtime_variants: Vec<RawPluginRuntimeVariant>,
@@ -196,6 +198,7 @@ pub(crate) fn parse_plugin_manifest_uri(
         name: raw_name,
         version,
         description,
+        license,
         keywords,
         runtime_variants,
         skills,
@@ -212,6 +215,10 @@ pub(crate) fn parse_plugin_manifest_uri(
     let version = version.and_then(|version| {
         let version = version.trim();
         (!version.is_empty()).then(|| version.to_string())
+    });
+    let license = license.and_then(|license| {
+        let license = license.trim();
+        (!license.is_empty()).then(|| license.to_string())
     });
     let interface = interface.and_then(|interface| {
         let RawPluginManifestInterface {
@@ -292,6 +299,7 @@ pub(crate) fn parse_plugin_manifest_uri(
         name,
         version,
         description,
+        license,
         keywords,
         runtime_variants: runtime_variants
             .into_iter()
@@ -739,6 +747,31 @@ mod tests {
     }
 
     #[test]
+    fn plugin_manifest_reads_trimmed_license_and_drops_blank() {
+        let tmp = tempdir().expect("tempdir");
+        let plugin_root = tmp.path().join("demo-plugin");
+        fs::create_dir_all(plugin_root.join(".codex-plugin")).expect("create manifest dir");
+        let manifest_path = plugin_root.join(".codex-plugin/plugin.json");
+
+        fs::write(
+            &manifest_path,
+            r#"{"name":"demo-plugin","license":" Apache-2.0 "}"#,
+        )
+        .expect("write licensed manifest");
+        assert_eq!(
+            load_manifest(&plugin_root).license,
+            Some("Apache-2.0".to_string())
+        );
+
+        fs::write(
+            &manifest_path,
+            r#"{"name":"demo-plugin","license":"   "}"#,
+        )
+        .expect("write blank license manifest");
+        assert_eq!(load_manifest(&plugin_root).license, None);
+    }
+
+    #[test]
     fn plugin_manifest_reads_keywords() {
         let tmp = tempdir().expect("tempdir");
         let plugin_root = tmp.path().join("demo-plugin");
@@ -971,6 +1004,7 @@ mod tests {
                 name: "demo-plugin".to_string(),
                 version: None,
                 description: None,
+                license: None,
                 keywords: Vec::new(),
                 runtime_variants: Vec::new(),
                 paths: PluginManifestPaths {

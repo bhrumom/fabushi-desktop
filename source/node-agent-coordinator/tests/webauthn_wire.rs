@@ -58,3 +58,18 @@ fn ceremony_authoritative_kind_and_origin_cannot_be_shadowed_by_payload() {
     assert_eq!(encoded["origin"], "https://login.example.test");
     assert_eq!(encoded["optionsJson"], "{}");
 }
+
+
+#[test]
+fn ceremony_rejects_unknown_kind_instead_of_downgrading_to_get() {
+    let error = serde_json::from_value::<WebAuthnCeremony>(serde_json::json!({
+        "kind": "future-unknown",
+        "origin": "https://example.test",
+        "rpId": "example.test",
+    }))
+    .expect_err("unknown ceremony kinds must fail closed");
+    assert!(
+        error.to_string().contains("must be create or get"),
+        "unexpected error: {error}"
+    );
+}

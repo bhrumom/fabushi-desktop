@@ -2,8 +2,9 @@
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=782731 (transcript-card declaration validation)
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=784036 (card metadata projection)
 
-import { projectTranscriptReactions, type TranscriptReaction } from "./reaction-actions";
-import { projectSendMessageText, type SendMessageTextImage } from "./send-message-text";
+import { projectTranscriptReactions, type TranscriptReaction } from "./reaction-actions.ts";
+import { projectSendMessageText, type SendMessageTextImage } from "./send-message-text.ts";
+import { projectRichMessageAction, type RichMessageAction } from "./url-card.ts";
 
 export const TRANSCRIPT_CARD_ENTRY_KIND = "send-message" as const;
 
@@ -30,11 +31,15 @@ export interface TranscriptCardScope {
   agentId: string | null;
 }
 
+export const MAX_WIDGET_OPTION_LABEL_CODE_UNITS = 4096;
+
 export interface WidgetOption {
   label: string;
   value?: string;
   description?: string;
   style?: "default" | "primary" | "danger";
+  disabled?: boolean;
+  action?: RichMessageAction;
 }
 
 export interface WidgetPrompt {
@@ -246,14 +251,20 @@ function projectWidget(value: Record<string, unknown>): WidgetCardMessage | null
   if (!nonEmptyString(widget.prompt) || !Array.isArray(widget.options) || widget.options.length < 1 || widget.options.length > 6) return null;
   const options: WidgetOption[] = [];
   for (const optionValue of widget.options) {
-    if (!isRecord(optionValue) || !nonEmptyString(optionValue.label)) return null;
+    if (!isRecord(optionValue) || !nonEmptyString(optionValue.label) || optionValue.label.length > MAX_WIDGET_OPTION_LABEL_CODE_UNITS) return null;
     const style = optionValue.style;
+    const disabled = optionalBoolean(optionValue.disabled);
+    if (optionValue.disabled !== undefined && disabled === undefined) return null;
     if (style !== undefined && style !== "default" && style !== "primary" && style !== "danger") return null;
+    const action = optionValue.action === undefined ? undefined : projectRichMessageAction(optionValue.action);
+    if (action === null) return null;
     options.push({
       label: optionValue.label,
       ...(optionalString(optionValue.value) == null ? {} : { value: optionalString(optionValue.value) }),
       ...(optionalString(optionValue.description) == null ? {} : { description: optionalString(optionValue.description) }),
       ...(style === undefined ? {} : { style }),
+      ...(disabled === undefined ? {} : { disabled }),
+      ...(action === undefined ? {} : { action }),
     });
   }
   return {

@@ -1,4 +1,4 @@
-use crate::actor::{ActorId, ActorKind, ParticipantRole, Presence, PresenceStatus};
+use crate::actor::{Actor, ActorId, ActorKind, ParticipantRole, Presence, PresenceStatus};
 use crate::blob_store::{BlobStoreError, FileBlobStore};
 use crate::bot::BotInvocation;
 use crate::community::{CommunityState, MemberStatus};
@@ -12,7 +12,8 @@ use crate::message::{
     ClientMessageId, DeliveryState, Message, MessageContent, MessageId, PendingPresenceSend,
     PresenceSendTrigger,
 };
-use crate::payment::Money;
+use crate::payment::{Entitlement, Money};
+use crate::story::STORY_STEALTH_PRODUCT_ID;
 use crate::protocol::{
     ClientCommand, ClientEnvelope, ServerEnvelope, ServerEvent, FABUSHI_MESSAGING_PROTOCOL_VERSION,
 };
@@ -117,8 +118,202 @@ impl<S: MessagingStateStore> MessagingService<S> {
         &self.engine
     }
 
+    /// Persist one canonical participant actor projection in the same durable
+    /// owner used by Recent Peers. Projection-only mutations intentionally do
+    /// not advance the server event cursor or journal.
+    pub fn upsert_recent_participant_actor_projection(
+        &mut self,
+        actor: Actor,
+        now_ms: i64,
+    ) -> Result<(), MessagingServiceError> {
+        self.persist_recent_projection_mutation(now_ms, move |engine| {
+            engine.execute(Command::UpsertActor { actor }).map(|_| ())
+        })
+    }
+
+    /// Atomically project both canonical participant actors and move the peer
+    /// to the front of the account-scoped Recent Peers list. The whole
+    /// selection is one cursor-neutral persistence transaction.
+    pub fn note_recent_participant_selection(
+        &mut self,
+        owner: Actor,
+        peer: Actor,
+        now_ms: i64,
+    ) -> Result<(), MessagingServiceError> {
+        let owner_id = owner.id.clone();
+        let peer_id = peer.id.clone();
+        self.persist_recent_projection_mutation(now_ms, move |engine| {
+            if !engine.state().actors.contains_key(&owner_id) {
+                engine.execute(Command::UpsertActor { actor: owner })?;
+            }
+            if !engine.state().actors.contains_key(&peer_id) {
+                engine.execute(Command::UpsertActor { actor: peer })?;
+            }
+            engine.note_recent_participant_suggestion(&owner_id, &peer_id)
+        })
+    }
+
     pub fn cursor(&self) -> u64 {
         self.cursor
+    }
+
+    /// Install or revoke the server/native-authoritative account relation that
+    /// permits SavedSublist children under a non-self parent Conversation.
+    /// This intentionally has no client protocol command.
+    pub fn reconcile_saved_sublist_parent_access(
+        &mut self,
+        conversation_id: ConversationId,
+        actor_id: ActorId,
+        allowed: bool,
+        server_time_ms: i64,
+    ) -> Result<(), MessagingServiceError> {
+        self.persist_authoritative_reconciliation(
+            Command::ReconcileSavedSublistParentAccess {
+                conversation_id,
+                actor_id,
+                allowed,
+            },
+            server_time_ms,
+        )
+    }
+
+    /// Replace the trusted server/native membership snapshot for one SavedSublist.
+    /// This is deliberately not part of ClientCommand; only the canonical sync/feed
+    /// side may assert child ownership for parent messages.
+    pub fn reconcile_saved_sublist_membership(
+        &mut self,
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        message_ids: Vec<MessageId>,
+        server_time_ms: i64,
+    ) -> Result<(), MessagingServiceError> {
+        self.persist_authoritative_reconciliation(
+            Command::ReconcileSavedSublistMembership {
+                destination,
+                actor_id,
+                message_ids,
+            },
+            server_time_ms,
+        )
+    }
+
+    /// Persist a server-authoritative typed-child draft into the existing
+    /// ConversationChildRuntimeState owner. The remote service owns conflict
+    /// fencing/revisions; this local projection never creates a second draft store.
+    pub fn reconcile_conversation_child_draft(
+        &mut self,
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        text: String,
+        reply_to_message_id: Option<MessageId>,
+        server_time_ms: i64,
+    ) -> Result<(), MessagingServiceError> {
+        self.persist_authoritative_reconciliation(
+            Command::ReconcileConversationChildDraft {
+                destination,
+                actor_id,
+                text,
+                reply_to_message_id,
+                updated_at_ms: server_time_ms,
+            },
+            server_time_ms,
+        )
+    }
+
+    /// Authoritative reconciliation is one durable transaction. A failed store
+    /// write must not leave trusted access/membership visible only in memory or
+    /// advance the cursor beyond the last durable snapshot.
+    fn persist_authoritative_reconciliation(
+        &mut self,
+        command: Command,
+        server_time_ms: i64,
+    ) -> Result<(), MessagingServiceError> {
+        let previous_engine = self.engine.clone();
+        let previous_cursor = self.cursor;
+        let events = match self.engine.execute(command) {
+            Ok(events) => events,
+            Err(error) => {
+                self.engine = previous_engine;
+                self.cursor = previous_cursor;
+                return Err(error.into());
+            }
+        };
+        self.cursor = self
+            .cursor
+            .saturating_add(u64::try_from(events.len()).unwrap_or(u64::MAX));
+        if let Err(error) = self.persist(server_time_ms) {
+            self.engine = previous_engine;
+            self.cursor = previous_cursor;
+            return Err(error);
+        }
+        Ok(())
+    }
+
+    pub fn reconcile_entitlement(
+        &mut self,
+        entitlement: Entitlement,
+        server_time_ms: i64,
+    ) -> Result<(), MessagingServiceError> {
+        let events = self.engine.execute(Command::ReconcileEntitlement { entitlement })?;
+        self.cursor = self
+            .cursor
+            .saturating_add(u64::try_from(events.len()).unwrap_or(u64::MAX));
+        self.persist(server_time_ms)
+    }
+
+    /// Persist one account-scoped ordinary recent participant suggestion.
+    /// This is local durable projection state, not a server-authoritative event,
+    /// so it intentionally does not advance the event cursor or journal.
+    pub fn note_recent_participant_suggestion(
+        &mut self,
+        actor_id: ActorId,
+        peer_id: ActorId,
+        now_ms: i64,
+    ) -> Result<(), MessagingServiceError> {
+        self.persist_recent_projection_mutation(now_ms, |engine| {
+            engine.note_recent_participant_suggestion(&actor_id, &peer_id)
+        })
+    }
+
+    pub fn remove_recent_participant_suggestion(
+        &mut self,
+        actor_id: ActorId,
+        peer_id: ActorId,
+        now_ms: i64,
+    ) -> Result<(), MessagingServiceError> {
+        self.persist_recent_projection_mutation(now_ms, |engine| {
+            engine.remove_recent_participant_suggestion(&actor_id, &peer_id)
+        })
+    }
+
+    pub fn clear_recent_participant_suggestions(
+        &mut self,
+        actor_id: ActorId,
+        now_ms: i64,
+    ) -> Result<(), MessagingServiceError> {
+        self.persist_recent_projection_mutation(now_ms, |engine| {
+            engine.clear_recent_participant_suggestions(&actor_id)
+        })
+    }
+
+    fn persist_recent_projection_mutation<F>(
+        &mut self,
+        now_ms: i64,
+        mutate: F,
+    ) -> Result<(), MessagingServiceError>
+    where
+        F: FnOnce(&mut MessagingEngine) -> Result<(), EngineError>,
+    {
+        let previous_engine = self.engine.clone();
+        if let Err(error) = mutate(&mut self.engine) {
+            self.engine = previous_engine;
+            return Err(error.into());
+        }
+        if let Err(error) = self.persist(now_ms) {
+            self.engine = previous_engine;
+            return Err(error);
+        }
+        Ok(())
     }
 
     pub fn into_store(self) -> S {
@@ -140,6 +335,7 @@ impl<S: MessagingStateStore> MessagingService<S> {
         let actor_id = envelope.context.actor_id;
         let command = envelope.command;
         self.validate_command_authorization(&actor_id, &command)?;
+        self.settle_expired_messages(&actor_id, server_time_ms)?;
         match command {
             ClientCommand::BeginBlobUpload { metadata } => {
                 let status = self.blob_store()?.begin_upload(&metadata)?;
@@ -182,6 +378,12 @@ impl<S: MessagingStateStore> MessagingService<S> {
             }
             ClientCommand::WalletStatus => {
                 Ok(vec![self.wallet_status_envelope(&actor_id, server_time_ms)])
+            }
+            ClientCommand::StoryStealthStatus => {
+                Ok(vec![self.story_stealth_status_envelope(&actor_id, server_time_ms)])
+            }
+            ClientCommand::ListStories { limit } => {
+                Ok(vec![self.stories_snapshot_envelope(&actor_id, limit, server_time_ms)])
             }
             ClientCommand::Sync { cursor, limit } => {
                 self.mark_direct_messages_delivered(&actor_id, server_time_ms)?;
@@ -248,10 +450,19 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     return Ok(replay);
                 }
 
+                let previous_engine = self.engine.clone();
+                let previous_cursor = self.cursor;
                 let commands = self.project_command(&actor_id, command, server_time_ms);
                 let mut events = Vec::new();
                 for command in commands {
-                    events.extend(self.engine.execute(command)?);
+                    match self.engine.execute(command) {
+                        Ok(command_events) => events.extend(command_events),
+                        Err(error) => {
+                            self.engine = previous_engine.clone();
+                            self.cursor = previous_cursor;
+                            return Err(error.into());
+                        }
+                    }
                 }
                 if events.is_empty() {
                     return Ok(Vec::new());
@@ -281,7 +492,11 @@ impl<S: MessagingStateStore> MessagingService<S> {
                         }),
                 );
                 let journal = self.journal_entries(&actor_id, &responses);
-                self.persist_with_events(server_time_ms, &journal)?;
+                if let Err(error) = self.persist_with_events(server_time_ms, &journal) {
+                    self.engine = previous_engine;
+                    self.cursor = previous_cursor;
+                    return Err(error);
+                }
                 Ok(responses)
             }
         }
@@ -378,6 +593,51 @@ impl<S: MessagingStateStore> MessagingService<S> {
         let journal = self.journal_entries(actor_id, &responses);
         self.persist_with_events(server_time_ms, &journal)?;
         Ok(responses)
+    }
+
+    fn settle_expired_messages(
+        &mut self,
+        initiator: &ActorId,
+        server_time_ms: i64,
+    ) -> Result<(), MessagingServiceError> {
+        let expired = self
+            .engine
+            .state()
+            .messages
+            .iter()
+            .filter_map(|(conversation_id, messages)| {
+                let ids = messages
+                    .values()
+                    .filter(|message| {
+                        !message.deleted
+                            && message
+                                .expires_at_ms
+                                .is_some_and(|expires_at_ms| expires_at_ms <= server_time_ms)
+                    })
+                    .map(|message| message.id.clone())
+                    .collect::<Vec<_>>();
+                (!ids.is_empty()).then(|| (conversation_id.clone(), ids))
+            })
+            .collect::<Vec<_>>();
+        if expired.is_empty() {
+            return Ok(());
+        }
+
+        let mut events = Vec::new();
+        for (conversation_id, message_ids) in expired {
+            events.extend(self.engine.execute(Command::DeleteMessages {
+                conversation_id,
+                message_ids,
+            })?);
+        }
+        self.cursor = self.cursor.saturating_add(events.len() as u64);
+        let responses = events
+            .into_iter()
+            .filter_map(|event| self.project_event(initiator, event, server_time_ms))
+            .collect::<Vec<_>>();
+        let journal = self.journal_entries(initiator, &responses);
+        self.persist_with_events(server_time_ms, &journal)?;
+        Ok(())
     }
 
     fn search_envelope(
@@ -710,6 +970,21 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 let Some(existing) = existing else {
                     return Ok(None);
                 };
+                if existing.deleted
+                    && existing
+                        .expires_at_ms
+                        .is_some_and(|expires_at_ms| expires_at_ms <= server_time_ms)
+                {
+                    return Ok(Some(vec![ServerEnvelope {
+                        protocol_version: FABUSHI_MESSAGING_PROTOCOL_VERSION,
+                        cursor: Some(self.cursor.to_string()),
+                        server_time_ms,
+                        event: ServerEvent::MessagesDeleted {
+                            conversation_id: conversation_id.clone(),
+                            message_ids: vec![existing.id.clone()],
+                        },
+                    }]));
+                }
                 // The stable/legacy lookup key already binds this replay to the authenticated
                 // actor + client_message_id, without extending the canonical Message schema.
                 if &existing.sender_id != actor_id
@@ -797,13 +1072,15 @@ impl<S: MessagingStateStore> MessagingService<S> {
             ClientCommand::ForwardMessage {
                 source_conversation_id,
                 message_id,
-                destination_conversation_id,
+                destination,
                 client_message_id,
-                thread_root_message_id,
                 scheduled_at_ms,
                 silent,
                 privacy,
             } => {
+                let destination_conversation_id = destination.message_conversation_id();
+                let thread_root_message_id =
+                    destination.topic_root_message_id().map(MessageId::new);
                 let stable_id = stable_message_id(actor_id, client_message_id);
                 let legacy_id = MessageId::new(format!("local:{}", client_message_id.0));
                 let existing = self
@@ -849,7 +1126,8 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     || expected_content
                         .as_ref()
                         .is_some_and(|content| &existing.content != content)
-                    || &existing.thread_root_message_id != thread_root_message_id
+                    || existing.thread_root_message_id.as_ref()
+                        != thread_root_message_id.as_ref()
                     || &existing.scheduled_at_ms != scheduled_at_ms
                     || &existing.silent != silent
                 {
@@ -1026,6 +1304,9 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 self.authorized_community(actor_id, conversation_id)?;
             }
             ClientCommand::UpdateConversationInfo {
+                conversation_id, ..
+            }
+            | ClientCommand::SetConversationMessageRetention {
                 conversation_id, ..
             }
             | ClientCommand::SetConversationParticipant {
@@ -1309,6 +1590,56 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 account,
                 recent_entries,
             },
+        }
+    }
+
+    fn story_stealth_status_envelope(
+        &self,
+        actor_id: &ActorId,
+        server_time_ms: i64,
+    ) -> ServerEnvelope {
+        let state = self
+            .engine
+            .state()
+            .story_stealth
+            .get(actor_id)
+            .cloned()
+            .unwrap_or_default();
+        let entitled = self.engine.state().entitlements.values().any(|entitlement| {
+            entitlement.is_active_for(actor_id, STORY_STEALTH_PRODUCT_ID, server_time_ms)
+        });
+        ServerEnvelope {
+            protocol_version: FABUSHI_MESSAGING_PROTOCOL_VERSION,
+            cursor: Some(self.cursor.to_string()),
+            server_time_ms,
+            event: ServerEvent::StoryStealthStatus { state, entitled },
+        }
+    }
+
+    fn stories_snapshot_envelope(
+        &self,
+        actor_id: &ActorId,
+        limit: u32,
+        server_time_ms: i64,
+    ) -> ServerEnvelope {
+        let max_items = usize::try_from(limit.max(1)).unwrap_or(usize::MAX);
+        let stories = self
+            .engine
+            .state()
+            .stories
+            .values()
+            .filter(|story| {
+                (story.pinned_to_profile || story.expires_at_ms > server_time_ms)
+                    && story.is_visible_to(actor_id, false, false)
+            })
+            .take(max_items)
+            .cloned()
+            .collect();
+        ServerEnvelope {
+            protocol_version: FABUSHI_MESSAGING_PROTOCOL_VERSION,
+            cursor: Some(self.cursor.to_string()),
+            server_time_ms,
+            event: ServerEvent::StoriesSnapshot { stories },
         }
     }
 
@@ -1664,6 +1995,10 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     .iter()
                     .filter_map(|id| state.messages.get(id))
                     .flat_map(|messages| messages.values())
+                    // Full snapshots are authoritative live state. Tombstones stay
+                    // durable in the canonical store/journal for replay fencing, but
+                    // must never be re-projected as message content after delete/expiry.
+                    .filter(|message| !message.deleted)
                     .take(max_items)
                     .map(|message| self.project_message_for_actor(actor_id, message))
                     .collect(),
@@ -1923,6 +2258,15 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 conversation_id,
                 settings,
             }],
+            ClientCommand::SetConversationMessageRetention {
+                conversation_id,
+                retention_seconds,
+                expected_revision,
+            } => vec![Command::SetConversationMessageRetention {
+                conversation_id,
+                retention_seconds,
+                expected_revision,
+            }],
             ClientCommand::UpsertFolder { folder } => vec![Command::UpsertFolder { folder }],
             ClientCommand::DeleteFolder { folder_id } => vec![Command::DeleteFolder { folder_id }],
             ClientCommand::SendMessage {
@@ -1987,20 +2331,18 @@ impl<S: MessagingStateStore> MessagingService<S> {
             ClientCommand::ForwardMessage {
                 source_conversation_id,
                 message_id,
-                destination_conversation_id,
+                destination,
                 client_message_id,
-                thread_root_message_id,
                 scheduled_at_ms,
                 silent,
                 privacy,
             } => vec![Command::ForwardMessage {
                 source_conversation_id,
                 message_id,
-                destination_conversation_id,
+                destination,
                 local_message_id: stable_message_id(actor_id, &client_message_id),
                 client_message_id,
                 sender_id: actor_id.clone(),
-                thread_root_message_id,
                 created_at_ms: now_ms,
                 scheduled_at_ms,
                 silent,
@@ -2211,7 +2553,16 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 request_id,
                 refunded_at_ms: now_ms,
             }],
-            ClientCommand::WalletStatus => Vec::new(),
+            ClientCommand::WalletStatus
+            | ClientCommand::StoryStealthStatus
+            | ClientCommand::ListStories { .. } => Vec::new(),
+            ClientCommand::ActivateStoryStealth { request_id } => {
+                vec![Command::ActivateStoryStealth {
+                    actor_id: actor_id.clone(),
+                    request_id,
+                    activated_at_ms: now_ms,
+                }]
+            }
             ClientCommand::PublishStory { story } => vec![Command::PublishStory {
                 actor_id: actor_id.clone(),
                 story,
@@ -2229,6 +2580,7 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 actor_id: actor_id.clone(),
                 story_id,
                 reaction,
+                reacted_at_ms: now_ms,
             }],
             ClientCommand::UpdateCommunity { community } => vec![Command::UpdateCommunity {
                 actor_id: actor_id.clone(),
@@ -2425,6 +2777,14 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     ),
                     removed_actor_id: Some(removed_actor_id),
                 })?,
+            Event::ConversationMessageRetentionUpdated {
+                conversation_id,
+                retention,
+            } => ServerEvent::ConversationMessageRetentionChanged {
+                conversation_id,
+                retention_seconds: retention.policy.map(|policy| policy.seconds()),
+                revision: retention.revision,
+            },
             Event::ConversationArchived {
                 conversation_id, ..
             }
@@ -2542,11 +2902,27 @@ impl<S: MessagingStateStore> MessagingService<S> {
             | Event::ConversationChildPinnedChanged { .. }
             | Event::ConversationChildActiveChanged { .. }
             | Event::ConversationChildMarkedUnreadChanged { .. }
+            | Event::ConversationChildUnreadThingsReconciled { .. }
+            | Event::SavedSublistParentAccessReconciled { .. }
+            | Event::SavedSublistMembershipReconciled { .. }
             | Event::ConversationChildNoPaidMessagesChanged { .. }
             | Event::ConversationChildDestroyed { .. } => return None,
             Event::InvoiceCreated { invoice } => ServerEvent::InvoiceChanged { invoice },
             Event::OrderUpserted { order } => ServerEvent::OrderChanged { order },
-            Event::WalletChanged { .. } => return None,
+            // Wallet ledger/runtime state is native/server authority. The
+            // renderer receives purpose-built payment/order events rather than
+            // the private durable wallet state, key-protection metadata, rate
+            // cache, funding-session lifecycle or local panel state.
+            Event::WalletChanged { .. }
+            | Event::WalletRuntimeChanged { .. }
+            | Event::ConnectedAppStateChanged { .. } => return None,
+            Event::EntitlementReconciled { .. } => return None,
+            Event::StoryStealthChanged { actor_id: changed_actor_id, state } => {
+                if &changed_actor_id != actor_id {
+                    return None;
+                }
+                ServerEvent::StoryStealthChanged { state }
+            }
             Event::StoryChanged { story } => ServerEvent::StoryChanged { story },
             Event::StoryDeleted { story_id } => ServerEvent::StoryDeleted { story_id },
             Event::CommunityChanged { community } => ServerEvent::CommunityChanged {
@@ -2724,6 +3100,12 @@ impl<S: MessagingStateStore> MessagingService<S> {
             }
             ServerEvent::MessagesDeleted {
                 conversation_id, ..
+            } => {
+                audience.clear();
+                self.extend_conversation_id_audience(&mut audience, conversation_id);
+            }
+            ServerEvent::ConversationMessageRetentionChanged {
+                conversation_id, ..
             }
             | ServerEvent::ReadChanged {
                 conversation_id, ..
@@ -2773,7 +3155,10 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     audience.insert(session.actor_id.clone());
                 }
             }
-            ServerEvent::SyncBatch { .. }
+            ServerEvent::StoryStealthStatus { .. }
+            | ServerEvent::StoryStealthChanged { .. }
+            | ServerEvent::StoriesSnapshot { .. }
+            | ServerEvent::SyncBatch { .. }
             | ServerEvent::SearchResults { .. }
             | ServerEvent::FolderChanged { .. }
             | ServerEvent::FolderDeleted { .. }
@@ -2866,5 +3251,664 @@ impl<S: MessagingStateStore> MessagingService<S> {
         let snapshot = MessagingSnapshot::new(self.engine.state().clone(), self.cursor, now_ms);
         self.store.save(&snapshot)?;
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod recent_participant_suggestion_service_tests {
+    use super::*;
+    use crate::actor::Actor;
+    use crate::store::{MemoryStateStore, MessagingStateStore};
+
+    #[derive(Debug)]
+    struct FailOnceStateStore {
+        inner: MemoryStateStore,
+        fail_next_save: bool,
+    }
+
+    impl MessagingStateStore for FailOnceStateStore {
+        fn load(&self) -> Result<Option<MessagingSnapshot>, StoreError> {
+            self.inner.load()
+        }
+
+        fn save(&mut self, snapshot: &MessagingSnapshot) -> Result<(), StoreError> {
+            if self.fail_next_save {
+                self.fail_next_save = false;
+                return Err(StoreError::Io(std::io::Error::other(
+                    "injected recent-projection persistence failure",
+                )));
+            }
+            self.inner.save(snapshot)
+        }
+    }
+
+    #[test]
+    fn recent_participant_suggestions_persist_without_server_journal_cursor() {
+        let owner = ActorId::new("human:recent-owner");
+        let peer = ActorId::new("human:recent-peer");
+        let mut state = crate::engine::MessagingState::default();
+        state.actors.insert(owner.clone(), Actor::human(owner.0.clone(), "Owner"));
+        state.actors.insert(peer.clone(), Actor::human(peer.0.clone(), "Peer"));
+        let mut store = MemoryStateStore::default();
+        store
+            .save(&MessagingSnapshot::new(state, 41, 100))
+            .expect("seed messaging snapshot");
+
+        let mut service = MessagingService::load(store).expect("load seeded service");
+        service
+            .note_recent_participant_suggestion(owner.clone(), peer.clone(), 110)
+            .expect("persist recent suggestion");
+        assert_eq!(service.cursor(), 41);
+        assert_eq!(service.engine().recent_participant_suggestions(&owner), &[peer.clone()]);
+
+        let store = service.into_store();
+        let persisted = store.snapshot().expect("persisted snapshot");
+        assert_eq!(persisted.cursor, 41);
+        assert_eq!(
+            persisted.state.recent_participant_suggestions.get(&owner),
+            Some(&vec![peer.clone()])
+        );
+
+        let restored = MessagingService::load(store).expect("restore service");
+        assert_eq!(restored.cursor(), 41);
+        assert_eq!(restored.engine().recent_participant_suggestions(&owner), &[peer]);
+    }
+
+    #[test]
+    fn recent_participant_persistence_failure_rolls_back_and_retry_commits_exactly_once() {
+        let owner = ActorId::new("human:recent-owner-retry");
+        let peer = ActorId::new("human:recent-peer-retry");
+        let mut state = crate::engine::MessagingState::default();
+        state.actors.insert(owner.clone(), Actor::human(owner.0.clone(), "Owner"));
+        state.actors.insert(peer.clone(), Actor::human(peer.0.clone(), "Peer"));
+
+        let mut inner = MemoryStateStore::default();
+        inner
+            .save(&MessagingSnapshot::new(state, 17, 100))
+            .expect("seed messaging snapshot");
+        let store = FailOnceStateStore {
+            inner,
+            fail_next_save: true,
+        };
+
+        let mut service = MessagingService::load(store).expect("load seeded service");
+        assert!(matches!(
+            service.note_recent_participant_suggestion(owner.clone(), peer.clone(), 110),
+            Err(MessagingServiceError::Store(StoreError::Io(_)))
+        ));
+        assert!(
+            service.engine().recent_participant_suggestions(&owner).is_empty(),
+            "failed persistence must restore the exact pre-mutation engine state"
+        );
+        assert_eq!(service.cursor(), 17);
+
+        service
+            .note_recent_participant_suggestion(owner.clone(), peer.clone(), 120)
+            .expect("retry recent suggestion");
+        assert_eq!(
+            service.engine().recent_participant_suggestions(&owner),
+            &[peer.clone()]
+        );
+        assert_eq!(service.cursor(), 17);
+
+        let store = service.into_store();
+        let persisted = store.inner.snapshot().expect("persisted retry snapshot");
+        assert_eq!(
+            persisted.state.recent_participant_suggestions.get(&owner),
+            Some(&vec![peer.clone()])
+        );
+        let restored =
+            MessagingService::load(store.inner).expect("restore service after retry");
+        assert_eq!(restored.engine().recent_participant_suggestions(&owner), &[peer]);
+    }
+
+    #[test]
+    fn saved_sublist_parent_access_persistence_failure_rolls_back_and_retry_commits_exactly_once() {
+        let owner = ActorId::new("human:saved-parent-owner");
+        let conversation_id = ConversationId::new("group:saved-parent");
+        let mut state = crate::engine::MessagingState::default();
+        state
+            .actors
+            .insert(owner.clone(), Actor::human(owner.0.clone(), "Owner"));
+        let mut conversation = Conversation::direct(
+            conversation_id.0.clone(),
+            "Saved parent",
+            vec![crate::actor::Participant {
+                actor_id: owner.clone(),
+                role: ParticipantRole::Owner,
+                joined_at_ms: 1,
+                muted_until_ms: None,
+            }],
+            1,
+        );
+        conversation.kind = ConversationKind::Group;
+        conversation.owner_id = Some(owner.clone());
+        state
+            .conversations
+            .insert(conversation_id.clone(), conversation);
+        state.communities.insert(
+            conversation_id.clone(),
+            crate::community::CommunityState::new(conversation_id.clone()),
+        );
+
+        let mut inner = MemoryStateStore::default();
+        inner
+            .save(&MessagingSnapshot::new(state, 13, 100))
+            .expect("seed SavedSublist parent authority state");
+        let store = FailOnceStateStore {
+            inner,
+            fail_next_save: true,
+        };
+        let mut service =
+            MessagingService::load(store).expect("load SavedSublist parent authority state");
+
+        assert!(matches!(
+            service.reconcile_saved_sublist_parent_access(
+                conversation_id.clone(),
+                owner.clone(),
+                true,
+                110,
+            ),
+            Err(MessagingServiceError::Store(StoreError::Io(_)))
+        ));
+        assert_eq!(service.cursor(), 13);
+        assert!(
+            !service
+                .engine()
+                .state()
+                .saved_sublist_parent_access
+                .get(&conversation_id)
+                .is_some_and(|actors| actors.contains(&owner)),
+            "failed persistence must not leave non-durable SavedSublist parent access"
+        );
+
+        service
+            .reconcile_saved_sublist_parent_access(
+                conversation_id.clone(),
+                owner.clone(),
+                true,
+                120,
+            )
+            .expect("retry SavedSublist parent authority");
+        assert_eq!(service.cursor(), 14);
+        assert!(
+            service
+                .engine()
+                .state()
+                .saved_sublist_parent_access
+                .get(&conversation_id)
+                .is_some_and(|actors| actors.contains(&owner))
+        );
+
+        let store = service.into_store();
+        let persisted = store.inner.snapshot().expect("persisted parent authority");
+        assert_eq!(persisted.cursor, 14);
+        assert!(
+            persisted
+                .state
+                .saved_sublist_parent_access
+                .get(&conversation_id)
+                .is_some_and(|actors| actors.contains(&owner))
+        );
+        let restored =
+            MessagingService::load(store.inner).expect("restore SavedSublist parent authority");
+        assert_eq!(restored.cursor(), 14);
+        assert!(
+            restored
+                .engine()
+                .state()
+                .saved_sublist_parent_access
+                .get(&conversation_id)
+                .is_some_and(|actors| actors.contains(&owner))
+        );
+    }
+
+    #[test]
+    fn saved_sublist_membership_persistence_failure_rolls_back_and_retry_commits_exactly_once() {
+        let owner = ActorId::new("human:saved-membership-owner");
+        let participant = ActorId::new("human:saved-membership-peer");
+        let conversation_id = ConversationId::new("saved:saved-membership");
+        let message_id = MessageId::new("message:saved-membership");
+        let destination =
+            ConversationDestination::saved_sublist(conversation_id.clone(), participant.clone());
+
+        let mut state = crate::engine::MessagingState::default();
+        state
+            .actors
+            .insert(owner.clone(), Actor::human(owner.0.clone(), "Owner"));
+        state.actors.insert(
+            participant.clone(),
+            Actor::human(participant.0.clone(), "Saved peer"),
+        );
+        let mut conversation = Conversation::direct(
+            conversation_id.0.clone(),
+            "Saved membership",
+            vec![crate::actor::Participant {
+                actor_id: owner.clone(),
+                role: ParticipantRole::Owner,
+                joined_at_ms: 1,
+                muted_until_ms: None,
+            }],
+            1,
+        );
+        conversation.kind = ConversationKind::SavedMessages;
+        conversation.owner_id = Some(owner.clone());
+        state
+            .conversations
+            .insert(conversation_id.clone(), conversation);
+        state
+            .saved_sublist_parent_access
+            .entry(conversation_id.clone())
+            .or_default()
+            .insert(owner.clone());
+        state
+            .messages
+            .entry(conversation_id.clone())
+            .or_default()
+            .insert(
+                message_id.clone(),
+                Message {
+                    id: message_id.clone(),
+                    conversation_id: conversation_id.clone(),
+                    sender_id: owner.clone(),
+                    content: MessageContent::Text {
+                        text: crate::message::FormattedText::plain("owned child message"),
+                    },
+                    reply_to_message_id: None,
+                    thread_root_message_id: None,
+                    forward_origin: None,
+                    reply_markup: None,
+                    reactions: Vec::new(),
+                    delivery_state: DeliveryState::Delivered,
+                    created_at_ms: 2,
+                    edited_at_ms: None,
+                    scheduled_at_ms: None,
+                    expires_at_ms: None,
+                    silent: false,
+                    protected_content: false,
+                    pinned: false,
+                    deleted: false,
+                },
+            );
+
+        let mut inner = MemoryStateStore::default();
+        inner
+            .save(&MessagingSnapshot::new(state, 21, 100))
+            .expect("seed SavedSublist membership authority state");
+        let store = FailOnceStateStore {
+            inner,
+            fail_next_save: true,
+        };
+        let mut service =
+            MessagingService::load(store).expect("load SavedSublist membership authority state");
+
+        assert!(matches!(
+            service.reconcile_saved_sublist_membership(
+                destination.clone(),
+                owner.clone(),
+                vec![message_id.clone()],
+                110,
+            ),
+            Err(MessagingServiceError::Store(StoreError::Io(_)))
+        ));
+        assert_eq!(service.cursor(), 21);
+        assert!(
+            service
+                .engine()
+                .state()
+                .conversation_child_states
+                .iter()
+                .find(|child| child.destination == destination && child.actor_id == owner)
+                .is_none(),
+            "failed persistence must restore unknown SavedSublist membership"
+        );
+
+        service
+            .reconcile_saved_sublist_membership(
+                destination.clone(),
+                owner.clone(),
+                vec![message_id.clone()],
+                120,
+            )
+            .expect("retry SavedSublist membership authority");
+        assert_eq!(service.cursor(), 22);
+        assert!(
+            service
+                .engine()
+                .state()
+                .conversation_child_states
+                .iter()
+                .find(|child| child.destination == destination && child.actor_id == owner)
+                .is_some_and(|child| {
+                    child.authoritative_membership_known
+                        && child.has_authoritative_message(message_id.0.as_str())
+                })
+        );
+
+        let store = service.into_store();
+        let persisted = store.inner.snapshot().expect("persisted membership authority");
+        assert_eq!(persisted.cursor, 22);
+        let restored =
+            MessagingService::load(store.inner).expect("restore SavedSublist membership authority");
+        assert_eq!(restored.cursor(), 22);
+        assert!(
+            restored
+                .engine()
+                .state()
+                .conversation_child_states
+                .iter()
+                .find(|child| child.destination == destination && child.actor_id == owner)
+                .is_some_and(|child| {
+                    child.authoritative_membership_known
+                        && child.has_authoritative_message(message_id.0.as_str())
+                })
+        );
+    }
+
+    #[test]
+    fn saved_sublist_destroy_persistence_failure_rolls_back_and_retry_commits_exactly_once() {
+        let owner = ActorId::new("human:saved-destroy-owner");
+        let participant = ActorId::new("human:saved-destroy-peer");
+        let conversation_id = ConversationId::new("saved:saved-destroy");
+        let message_id = MessageId::new("message:saved-destroy");
+        let destination = ConversationDestination::saved_sublist(
+            conversation_id.clone(),
+            participant.clone(),
+        );
+
+        let mut state = crate::engine::MessagingState::default();
+        state.actors.insert(owner.clone(), Actor::human(owner.0.clone(), "Owner"));
+        state.actors.insert(
+            participant.clone(),
+            Actor::human(participant.0.clone(), "Saved peer"),
+        );
+        let mut conversation = Conversation::direct(
+            conversation_id.0.clone(),
+            "Saved destroy",
+            vec![crate::actor::Participant {
+                actor_id: owner.clone(),
+                role: ParticipantRole::Owner,
+                joined_at_ms: 1,
+                muted_until_ms: None,
+            }],
+            1,
+        );
+        conversation.kind = ConversationKind::SavedMessages;
+        conversation.owner_id = Some(owner.clone());
+        state.conversations.insert(conversation_id.clone(), conversation);
+        state.messages.entry(conversation_id.clone()).or_default().insert(
+            message_id.clone(),
+            Message {
+                id: message_id.clone(),
+                conversation_id: conversation_id.clone(),
+                sender_id: owner.clone(),
+                content: MessageContent::Text {
+                    text: crate::message::FormattedText::plain("owned child message"),
+                },
+                reply_to_message_id: None,
+                thread_root_message_id: None,
+                forward_origin: None,
+                reply_markup: None,
+                reactions: Vec::new(),
+                delivery_state: DeliveryState::Delivered,
+                created_at_ms: 2,
+                edited_at_ms: None,
+                scheduled_at_ms: None,
+                expires_at_ms: None,
+                silent: false,
+                protected_content: false,
+                pinned: false,
+                deleted: false,
+            },
+        );
+        let mut child = crate::conversation::ConversationChildRuntimeState::new(
+            destination.clone(),
+            owner.clone(),
+        )
+        .expect("valid SavedSublist child");
+        assert!(child.reconcile_authoritative_message_ids(vec![message_id.0.clone()]));
+        state.conversation_child_states.push(child);
+
+        let mut inner = MemoryStateStore::default();
+        inner
+            .save(&MessagingSnapshot::new(state, 9, 100))
+            .expect("seed SavedSublist destruction state");
+        let store = FailOnceStateStore {
+            inner,
+            fail_next_save: true,
+        };
+        let mut service = MessagingService::load(store).expect("load SavedSublist destruction state");
+        let envelope = |request_id: &str| {
+            ClientEnvelope::new(
+                crate::protocol::RequestContext {
+                    request_id: request_id.into(),
+                    device_id: "desktop:saved-destroy".into(),
+                    actor_id: owner.clone(),
+                    session_id: "session:saved-destroy".into(),
+                    sent_at_ms: 100,
+                },
+                ClientCommand::DestroyConversationChild {
+                    destination: destination.clone(),
+                },
+            )
+        };
+
+        assert!(matches!(
+            service.handle(envelope("request:saved-destroy-fail"), 110),
+            Err(MessagingServiceError::Store(StoreError::Io(_)))
+        ));
+        assert_eq!(service.cursor(), 9);
+        assert!(
+            service
+                .engine()
+                .state()
+                .conversation_child_states
+                .iter()
+                .any(|child| child.destination == destination && child.actor_id == owner)
+        );
+        assert!(!service.engine().state().messages[&conversation_id][&message_id].deleted);
+
+        service
+            .handle(envelope("request:saved-destroy-retry"), 120)
+            .expect("retry exact SavedSublist destruction");
+        assert_eq!(service.cursor(), 11);
+        assert!(
+            service
+                .engine()
+                .state()
+                .conversation_child_states
+                .iter()
+                .all(|child| child.destination != destination || child.actor_id != owner)
+        );
+        assert!(service.engine().state().messages[&conversation_id][&message_id].deleted);
+
+        let store = service.into_store();
+        let persisted = store.inner.snapshot().expect("persisted SavedSublist destruction");
+        assert_eq!(persisted.cursor, 11);
+        assert!(persisted.state.messages[&conversation_id][&message_id].deleted);
+        let restored = MessagingService::load(store.inner).expect("restore SavedSublist destruction");
+        assert_eq!(restored.cursor(), 11);
+        assert!(restored.engine().state().messages[&conversation_id][&message_id].deleted);
+    }
+
+    #[test]
+    fn atomic_recent_selection_rolls_back_actor_projection_on_mutation_and_persistence_failure() {
+        let owner = Actor::human("human:atomic-owner", "Atomic Owner");
+        let peer = Actor::human("human:atomic-peer", "Atomic Peer");
+        let owner_id = owner.id.clone();
+        let peer_id = peer.id.clone();
+
+        let store = FailOnceStateStore {
+            inner: MemoryStateStore::default(),
+            fail_next_save: true,
+        };
+        let mut service = MessagingService::load(store).expect("load empty service");
+
+        assert!(matches!(
+            service.note_recent_participant_selection(owner.clone(), peer.clone(), 10),
+            Err(MessagingServiceError::Store(StoreError::Io(_)))
+        ));
+        assert!(!service.engine().state().actors.contains_key(&owner_id));
+        assert!(!service.engine().state().actors.contains_key(&peer_id));
+        assert!(
+            service
+                .engine()
+                .recent_participant_suggestions(&owner_id)
+                .is_empty()
+        );
+        assert_eq!(service.cursor(), 0);
+
+        service
+            .note_recent_participant_selection(owner.clone(), peer.clone(), 20)
+            .expect("retry atomic recent selection");
+        assert!(service.engine().state().actors.contains_key(&owner_id));
+        assert!(service.engine().state().actors.contains_key(&peer_id));
+        assert_eq!(
+            service.engine().recent_participant_suggestions(&owner_id),
+            &[peer_id.clone()]
+        );
+        assert_eq!(service.cursor(), 0);
+
+        let mut mutation_service =
+            MessagingService::load(MemoryStateStore::default()).expect("load mutation service");
+        let self_actor = Actor::human("human:atomic-self", "Atomic Self");
+        let self_id = self_actor.id.clone();
+        assert!(matches!(
+            mutation_service.note_recent_participant_selection(
+                self_actor.clone(),
+                self_actor,
+                30,
+            ),
+            Err(MessagingServiceError::Engine(EngineError::InvalidActor))
+        ));
+        assert!(
+            !mutation_service
+                .engine()
+                .state()
+                .actors
+                .contains_key(&self_id),
+            "mutation failure must restore actor projection as well as recent ordering"
+        );
+        assert_eq!(mutation_service.cursor(), 0);
+    }
+
+    #[test]
+    fn recent_participant_interleaved_accounts_remain_isolated_across_restart() {
+        let owner_a = ActorId::new("human:recent-owner-a");
+        let owner_b = ActorId::new("human:recent-owner-b");
+        let peer_a = ActorId::new("human:recent-peer-a");
+        let peer_b = ActorId::new("human:recent-peer-b");
+        let mut state = crate::engine::MessagingState::default();
+        for actor in [
+            Actor::human(owner_a.0.clone(), "Owner A"),
+            Actor::human(owner_b.0.clone(), "Owner B"),
+            Actor::human(peer_a.0.clone(), "Peer A"),
+            Actor::human(peer_b.0.clone(), "Peer B"),
+        ] {
+            state.actors.insert(actor.id.clone(), actor);
+        }
+
+        let mut store = MemoryStateStore::default();
+        store
+            .save(&MessagingSnapshot::new(state, 31, 100))
+            .expect("seed messaging snapshot");
+        let mut service = MessagingService::load(store).expect("load seeded service");
+
+        service
+            .note_recent_participant_suggestion(owner_a.clone(), peer_a.clone(), 110)
+            .expect("owner A first suggestion");
+        service
+            .note_recent_participant_suggestion(owner_b.clone(), peer_b.clone(), 111)
+            .expect("owner B first suggestion");
+        service
+            .note_recent_participant_suggestion(owner_a.clone(), peer_b.clone(), 112)
+            .expect("owner A move-to-front suggestion");
+        service
+            .note_recent_participant_suggestion(owner_b.clone(), peer_a.clone(), 113)
+            .expect("owner B move-to-front suggestion");
+        service
+            .remove_recent_participant_suggestion(owner_a.clone(), peer_a.clone(), 114)
+            .expect("owner A removes only own peer");
+
+        assert_eq!(
+            service.engine().recent_participant_suggestions(&owner_a),
+            &[peer_b.clone()]
+        );
+        assert_eq!(
+            service.engine().recent_participant_suggestions(&owner_b),
+            &[peer_a.clone(), peer_b.clone()]
+        );
+        assert_eq!(service.cursor(), 31);
+
+        let store = service.into_store();
+        let restored = MessagingService::load(store).expect("restore interleaved accounts");
+        assert_eq!(
+            restored.engine().recent_participant_suggestions(&owner_a),
+            &[peer_b.clone()]
+        );
+        assert_eq!(
+            restored.engine().recent_participant_suggestions(&owner_b),
+            &[peer_a, peer_b]
+        );
+        assert_eq!(restored.cursor(), 31);
+    }
+
+    #[test]
+    fn recent_participant_remove_and_clear_persistence_failures_restore_account_scope() {
+        let owner = ActorId::new("human:recent-owner-rollback");
+        let other = ActorId::new("human:recent-owner-other");
+        let peer = ActorId::new("human:recent-peer-rollback");
+        let mut state = crate::engine::MessagingState::default();
+        for actor in [
+            Actor::human(owner.0.clone(), "Owner"),
+            Actor::human(other.0.clone(), "Other"),
+            Actor::human(peer.0.clone(), "Peer"),
+        ] {
+            state.actors.insert(actor.id.clone(), actor);
+        }
+        state
+            .recent_participant_suggestions
+            .insert(owner.clone(), vec![peer.clone()]);
+        state
+            .recent_participant_suggestions
+            .insert(other.clone(), vec![peer.clone()]);
+
+        let mut inner = MemoryStateStore::default();
+        inner
+            .save(&MessagingSnapshot::new(state, 23, 100))
+            .expect("seed messaging snapshot");
+        let store = FailOnceStateStore {
+            inner,
+            fail_next_save: true,
+        };
+        let mut service = MessagingService::load(store).expect("load seeded service");
+
+        assert!(matches!(
+            service.remove_recent_participant_suggestion(owner.clone(), peer.clone(), 110),
+            Err(MessagingServiceError::Store(StoreError::Io(_)))
+        ));
+        assert_eq!(
+            service.engine().recent_participant_suggestions(&owner),
+            &[peer.clone()]
+        );
+        assert_eq!(
+            service.engine().recent_participant_suggestions(&other),
+            &[peer.clone()]
+        );
+
+        service.store.fail_next_save = true;
+        assert!(matches!(
+            service.clear_recent_participant_suggestions(owner.clone(), 120),
+            Err(MessagingServiceError::Store(StoreError::Io(_)))
+        ));
+        assert_eq!(
+            service.engine().recent_participant_suggestions(&owner),
+            &[peer.clone()]
+        );
+        assert_eq!(
+            service.engine().recent_participant_suggestions(&other),
+            &[peer]
+        );
+        assert_eq!(service.cursor(), 23);
     }
 }

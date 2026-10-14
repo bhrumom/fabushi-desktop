@@ -288,6 +288,46 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
             .list_agents()
             .and_then(|agents| serde_json::to_value(agents).map_err(|error| error.to_string()))
             .map_err(SessionGatewayError::internal),
+        "noteRecentParticipantSuggestion" => required_string(args, "selectionId").and_then(|selection_id| {
+            session
+                .note_recent_participant_suggestion(selection_id)
+                .map_err(SessionGatewayError::internal)
+        }),
+        "getStoryStealthStatus" => session
+            .story_stealth_status()
+            .map_err(SessionGatewayError::internal),
+        "activateStoryStealth" => required_string(args, "requestId").and_then(|request_id| {
+            session
+                .activate_story_stealth(request_id)
+                .map_err(SessionGatewayError::internal)
+        }),
+        "listStories" => {
+            let limit = args
+                .get("limit")
+                .and_then(Value::as_u64)
+                .and_then(|value| usize::try_from(value).ok())
+                .unwrap_or(100);
+            session
+                .list_stories(limit)
+                .map(Value::Array)
+                .map_err(SessionGatewayError::internal)
+        },
+        "viewStory" => required_string(args, "storyId").and_then(|story_id| {
+            session.view_story(story_id).map_err(SessionGatewayError::internal)
+        }),
+        "reactStory" => required_string(args, "storyId").and_then(|story_id| {
+            optional_string(args, "reaction").and_then(|reaction| {
+                session
+                    .react_story(story_id, reaction)
+                    .map_err(SessionGatewayError::internal)
+            })
+        }),
+        "deleteStory" => required_string(args, "storyId").and_then(|story_id| {
+            session
+                .delete_story(story_id)
+                .map(|deleted| json!({ "storyId": story_id, "deleted": deleted }))
+                .map_err(SessionGatewayError::internal)
+        }),
         "searchAgents" => optional_string(args, "query").and_then(|query| {
             let limit = args
                 .get("limit")
@@ -330,6 +370,52 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                 .map(Value::Array)
                 .map_err(SessionGatewayError::internal)
         }),
+        "getHumanConversationRetention" => required_string(args, "conversationId").and_then(|conversation_id| {
+            session
+                .get_human_conversation_retention(conversation_id)
+                .map_err(SessionGatewayError::internal)
+        }),
+        "setHumanConversationRetention" => required_string(args, "conversationId").and_then(|conversation_id| {
+            let retention_seconds = match args.get("retentionSeconds") {
+                None | Some(Value::Null) => None,
+                Some(value) => Some(
+                    value
+                        .as_u64()
+                        .and_then(|value| u32::try_from(value).ok())
+                        .filter(|value| *value > 0)
+                        .ok_or_else(|| SessionGatewayError::bad("retentionSeconds must be null or a positive u32"))?,
+                ),
+            };
+            let expected_revision = required_u64(args, "expectedRevision")?;
+            session
+                .set_human_conversation_retention(
+                    conversation_id,
+                    retention_seconds,
+                    expected_revision,
+                )
+                .map_err(SessionGatewayError::internal)
+        }),
+        "getHumanSavedSublistDraft" => required_string(args, "conversationId").and_then(|conversation_id| {
+            session
+                .get_human_saved_sublist_draft(conversation_id)
+                .map_err(SessionGatewayError::internal)
+        }),
+        "setHumanSavedSublistDraft" => required_string(args, "conversationId").and_then(|conversation_id| {
+            let text = optional_string(args, "text")?.unwrap_or_default();
+            if text.chars().count() > 4000 {
+                return Err(SessionGatewayError::bad("SavedSublist draft text exceeds 4000 characters"));
+            }
+            let reply_to_message_id = optional_string(args, "replyToMessageId")?;
+            let expected_revision = required_u64(args, "expectedRevision")?;
+            session
+                .set_human_saved_sublist_draft(
+                    conversation_id,
+                    text,
+                    reply_to_message_id,
+                    expected_revision,
+                )
+                .map_err(SessionGatewayError::internal)
+        }),
         "createHumanConversation" => required_string(args, "peerHumanId").and_then(|peer_human_id| {
             let local_human_id = session.local_human_id().map_err(SessionGatewayError::internal)?;
             if let Some(requested) = optional_string(args, "localHumanId")? {
@@ -358,13 +444,17 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
         }),
         "forwardHumanMessage" => required_string(args, "sourceConversationId").and_then(|source_conversation_id| {
             required_string(args, "sourceEntryId").and_then(|source_entry_id| {
-                let destination_conversation_ids = required_string_array(args, "destinationConversationIds")?;
+                let destinations = args
+                    .get("destinations")
+                    .and_then(Value::as_array)
+                    .cloned()
+                    .ok_or_else(|| SessionGatewayError::bad("missing or invalid destinations"))?;
                 required_string(args, "clientNonce").and_then(|client_nonce| {
                     session
                         .forward_human_message(
                             source_conversation_id,
                             source_entry_id,
-                            &destination_conversation_ids,
+                            &destinations,
                             client_nonce,
                             optional_bool(args, "dropSenderNames")?.unwrap_or(false),
                             optional_bool(args, "dropCaptions")?.unwrap_or(false),
@@ -382,6 +472,11 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
             }
             let text = optional_string(args, "text")?.unwrap_or_default();
             let reply_to_id = optional_string(args, "replyToId")?;
+            let silent = optional_bool(args, "silent")?.unwrap_or(false);
+            let scheduled_at_ms = optional_i64(args, "scheduledAtMs");
+            if scheduled_at_ms.is_some_and(|value| value <= 0 || value > 9_007_199_254_740_991) {
+                return Err(SessionGatewayError::bad("scheduledAtMs must be a positive JavaScript-safe integer"));
+            }
             let attachments = match args.get("attachments") {
                 None | Some(Value::Null) => Vec::new(),
                 Some(Value::Array(values)) => values.clone(),
@@ -396,6 +491,8 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                         optional_f64(args, "composedAtMs"),
                         reply_to_id,
                         &attachments,
+                        silent,
+                        scheduled_at_ms,
                     )
                     .map_err(SessionGatewayError::internal)
             })
@@ -459,6 +556,149 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
         "getCallIceServers" => session
             .call_ice_servers()
             .map_err(SessionGatewayError::internal),
+        "listCallMediaSessions" => required_string(args, "callId").and_then(|call_id| {
+            session
+                .list_call_media_sessions(call_id)
+                .and_then(|sessions| serde_json::to_value(sessions).map_err(|error| error.to_string()))
+                .map_err(SessionGatewayError::internal)
+        }),
+        "createCallMediaSession" => required_string(args, "callId").and_then(|call_id| {
+            required_string(args, "clientSessionId").and_then(|client_session_id| {
+                required_u64(args, "generation").and_then(|generation| {
+                    required_string(args, "purpose").and_then(|purpose| {
+                        session
+                            .create_call_media_session(
+                                call_id,
+                                client_session_id,
+                                generation,
+                                purpose,
+                            )
+                            .and_then(|media_session| serde_json::to_value(media_session).map_err(|error| error.to_string()))
+                            .map_err(SessionGatewayError::internal)
+                    })
+                })
+            })
+        }),
+        "discoverCallMediaPublications" => required_string(args, "callId").and_then(|call_id| {
+            session
+                .discover_call_media_publications(call_id)
+                .map_err(SessionGatewayError::internal)
+        }),
+        "publishCallMedia" => required_string(args, "callId").and_then(|call_id| {
+            required_string(args, "mediaSessionId").and_then(|media_session_id| {
+                required_string(args, "clientOperationId").and_then(|client_operation_id| {
+                    required_u64(args, "generation").and_then(|generation| {
+                        let session_description = args.get("sessionDescription")
+                            .ok_or_else(|| SessionGatewayError::bad("missing sessionDescription"))?;
+                        let publications = args.get("publications")
+                            .ok_or_else(|| SessionGatewayError::bad("missing publications"))?;
+                        session
+                            .publish_call_media(
+                                call_id,
+                                media_session_id,
+                                client_operation_id,
+                                generation,
+                                session_description,
+                                publications,
+                            )
+                            .map_err(SessionGatewayError::internal)
+                    })
+                })
+            })
+        }),
+        "acknowledgeCallMediaPublication" => required_string(args, "callId").and_then(|call_id| {
+            required_string(args, "mediaSessionId").and_then(|media_session_id| {
+                required_string(args, "clientOperationId").and_then(|client_operation_id| {
+                    required_u64(args, "generation").and_then(|generation| {
+                        session
+                            .acknowledge_call_media_publication(
+                                call_id,
+                                media_session_id,
+                                client_operation_id,
+                                generation,
+                            )
+                            .map_err(SessionGatewayError::internal)
+                    })
+                })
+            })
+        }),
+        "subscribeCallMedia" => required_string(args, "callId").and_then(|call_id| {
+            required_string(args, "mediaSessionId").and_then(|media_session_id| {
+                required_string(args, "clientOperationId").and_then(|client_operation_id| {
+                    required_u64(args, "generation").and_then(|generation| {
+                        let subscriptions = args.get("subscriptions")
+                            .ok_or_else(|| SessionGatewayError::bad("missing subscriptions"))?;
+                        session
+                            .subscribe_call_media(
+                                call_id,
+                                media_session_id,
+                                client_operation_id,
+                                generation,
+                                subscriptions,
+                            )
+                            .map_err(SessionGatewayError::internal)
+                    })
+                })
+            })
+        }),
+        "answerCallMediaSubscription" => required_string(args, "callId").and_then(|call_id| {
+            required_string(args, "mediaSessionId").and_then(|media_session_id| {
+                required_string(args, "clientOperationId").and_then(|client_operation_id| {
+                    required_u64(args, "generation").and_then(|generation| {
+                        let session_description = args.get("sessionDescription")
+                            .ok_or_else(|| SessionGatewayError::bad("missing sessionDescription"))?;
+                        session
+                            .answer_call_media_subscription(
+                                call_id,
+                                media_session_id,
+                                client_operation_id,
+                                generation,
+                                session_description,
+                            )
+                            .map_err(SessionGatewayError::internal)
+                    })
+                })
+            })
+        }),
+        "updateCallMediaSubscriptionLayer" => required_string(args, "callId").and_then(|call_id| {
+            required_string(args, "mediaSessionId").and_then(|media_session_id| {
+                required_string(args, "subscriptionId").and_then(|subscription_id| {
+                    required_string(args, "clientMutationId").and_then(|client_mutation_id| {
+                        required_u64(args, "generation").and_then(|generation| {
+                            let simulcast = args.get("simulcast")
+                                .ok_or_else(|| SessionGatewayError::bad("missing simulcast"))?;
+                            session
+                                .update_call_media_subscription_layer(
+                                    call_id,
+                                    media_session_id,
+                                    subscription_id,
+                                    client_mutation_id,
+                                    generation,
+                                    simulcast,
+                                )
+                                .map_err(SessionGatewayError::internal)
+                        })
+                    })
+                })
+            })
+        }),
+        "closeCallMediaSession" => required_string(args, "callId").and_then(|call_id| {
+            required_string(args, "mediaSessionId").and_then(|media_session_id| {
+                required_string(args, "clientTeardownId").and_then(|client_teardown_id| {
+                    required_u64(args, "generation").and_then(|generation| {
+                        session
+                            .close_call_media_session(
+                                call_id,
+                                media_session_id,
+                                client_teardown_id,
+                                generation,
+                            )
+                            .map_err(SessionGatewayError::internal)
+                    })
+                })
+            })
+        }),
+
         "syncHumanCalls" => session
             .sync_human_calls()
             .and_then(|calls| serde_json::to_value(calls).map_err(|error| error.to_string()))

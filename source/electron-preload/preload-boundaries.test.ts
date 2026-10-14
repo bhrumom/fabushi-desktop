@@ -6,6 +6,7 @@ import {
   resolveHostToBoxSync,
 } from "./box-vnc-clipboard-paste.js";
 import { createViewerVisibilityGate } from "./box-vnc-visibility-gate.js";
+import { installDialogStubs, type BrowserWindowPort } from "./preload-browser-base.js";
 import {
   EDGE_HANDLER_FAILED,
   EDGE_UNKNOWN_METHOD,
@@ -20,6 +21,7 @@ import {
   isMainMethod,
 } from "./main-rpc-runtime.js";
 import {
+  createDesktopPreloadBridge,
   encodeAttachmentBytesForNative,
   normalizeCommittedAttachmentNativeResult,
   normalizeStagedAttachmentNativeResult,
@@ -118,8 +120,64 @@ test("main RPC runtime exposes the frozen shared registry", () => {
   assert.equal(isMainMethod("definitelyNotMain"), false);
   assert.equal(MAIN_RPC_METHOD_TABLE.openExternal.args, "object");
   assert.equal(MAIN_RPC_METHOD_TABLE.getWindowState.args, "none");
+  assert.equal(MAIN_RPC_METHOD_TABLE.getPlatformInputState.args, "none");
 });
 
+
+test("accessibility preload bridge uses the trusted main RPC and cleans up the live screen-reader subscription", async () => {
+  const handlers = new Map<string, (payload: unknown) => void>();
+  const stopped: string[] = [];
+  const calls: string[] = [];
+  const mainEdge = {
+    async getAccessibilityState() { calls.push("getAccessibilityState"); return { screenReader: true }; },
+    subscribe(subscriptions: Record<string, (payload: unknown) => void>) {
+      const [event, listener] = Object.entries(subscriptions)[0]!;
+      handlers.set(event, listener);
+      return () => stopped.push(event);
+    }
+  };
+  const bridge = createDesktopPreloadBridge({
+    ipc: { invoke: async () => null, sendSync: () => null, send: () => {}, on: () => {}, off: () => {} },
+    webFrame: { getZoomFactor: () => 1 },
+    mainEdge: mainEdge as never,
+    initialState: { experimentSnapshot: {}, themeState: { preference: "system", resolved: "light" }, egressTunnelEnabled: false, webauthnProxyEnabled: false, egressTunnelStatus: null }
+  });
+  assert.deepEqual(await bridge.accessibility.get(), { screenReader: true });
+  const states: unknown[] = [];
+  const stop = bridge.accessibility.onChanged((state: unknown) => states.push(state));
+  handlers.get("accessibility-support-changed")?.({ screenReader: false });
+  assert.deepEqual(states, [{ screenReader: false }]);
+  stop();
+  assert.deepEqual(stopped, ["accessibility-support-changed"]);
+  assert.deepEqual(calls, ["getAccessibilityState"]);
+});
+
+test("platform-input preload bridge exposes only the trusted main RPC snapshot", async () => {
+  const calls: string[] = [];
+  const nativeState = {
+    method: { kind: "known", value: "com.apple.keylayout.US" },
+    language: { kind: "unknown" },
+    width: { kind: "unknown" },
+    scriptVariant: { kind: "unknown" },
+    preedit: { kind: "unknown" },
+    candidate: { kind: "unknown" },
+    focus: "unknown",
+    lifecycle: "unknown",
+    sampledAt: 42,
+    source: "native-platform",
+  };
+  const bridge = createDesktopPreloadBridge({
+    ipc: { invoke: async () => null, sendSync: () => null, send: () => {}, on: () => {}, off: () => {} },
+    webFrame: { getZoomFactor: () => 1 },
+    mainEdge: {
+      async getPlatformInputState() { calls.push("getPlatformInputState"); return nativeState; },
+      subscribe() { return () => {}; },
+    } as never,
+    initialState: { experimentSnapshot: {}, themeState: { preference: "system", resolved: "light" }, egressTunnelEnabled: false, webauthnProxyEnabled: false, egressTunnelStatus: null },
+  });
+  assert.deepEqual(await bridge.platformInput.get(), nativeState);
+  assert.deepEqual(calls, ["getPlatformInputState"]);
+});
 
 test("attachment preload bridge normalizes native staging and commit contracts", () => {
   assert.equal(encodeAttachmentBytesForNative(new Uint8Array([65, 66, 67])), "QUJD");
@@ -133,4 +191,21 @@ test("attachment preload bridge normalizes native staging and commit contracts",
     "/committed/2-plain.txt",
   ]), ["/committed/1-agent-notes.txt", "/committed/2-plain.txt"]);
   assert.equal(normalizeCommittedAttachmentNativeResult([{ name: "missing-path.txt" }]), null);
+});
+
+
+test("embedded browser dialog stubs fail closed instead of auto-consenting", () => {
+  const calls: string[] = [];
+  const windowPort: BrowserWindowPort = {
+    alert(..._values: unknown[]) { calls.push("alert-original"); },
+    confirm(..._values: unknown[]) { calls.push("confirm-original"); return true; },
+    prompt(..._values: unknown[]) { calls.push("prompt-original"); return "secret"; },
+    addEventListener() {},
+  };
+  installDialogStubs(windowPort);
+  assert.equal(windowPort.alert("blocked"), undefined);
+  assert.equal(windowPort.confirm("approve privileged action?"), false);
+  assert.equal(windowPort.prompt("enter secret"), null);
+  assert.deepEqual(calls, []);
+  assert.equal(windowPort.__sandDialogOverridesApplied, true);
 });

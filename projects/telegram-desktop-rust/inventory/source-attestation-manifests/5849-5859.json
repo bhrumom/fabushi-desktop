@@ -1,0 +1,75 @@
+{
+  "accepted_upstream": "65e23ba7137ea4129b6bc1b2616104a1f59495ef",
+  "accepted_tree": "6b616494f3465324e749a04dcd1c9d508657a998",
+  "deterministic_order_basis": "non-directory/blob rank in accepted recursive tree",
+  "start": 5849,
+  "end": 5859,
+  "entries": [
+    {
+      "order": 5849,
+      "path": "Telegram/SourceFiles/tests/test_main.cpp",
+      "blob": "ba1ac4268d10c463c7c07b993d49b4cb945e5dc3",
+      "consumer_symbol": "Test::App event-loop harness"
+    },
+    {
+      "order": 5850,
+      "path": "Telegram/SourceFiles/tests/test_main.h",
+      "blob": "4723e70d8f2d40460759bfc3d7340242da7f1b5e",
+      "consumer_symbol": "Test::App contract"
+    },
+    {
+      "order": 5851,
+      "path": "Telegram/SourceFiles/tests/test_text.cpp",
+      "blob": "05bf6ce58fd436d7b48f6826b6141fda52bacc74",
+      "consumer_symbol": "Ui::Text evidence suite"
+    },
+    {
+      "order": 5852,
+      "path": "Telegram/SourceFiles/tests/test_update_unpack.cpp",
+      "blob": "0692094ea42e838d0bf3b7f23c31c13eda4b1ace",
+      "consumer_symbol": "Core::Updates unpack evidence"
+    },
+    {
+      "order": 5853,
+      "path": "Telegram/SourceFiles/tests/test_update_verify.cpp",
+      "blob": "be99b63c8c7152a92a3ebc9dfaf4d72b42bd1490",
+      "consumer_symbol": "Core::Updates trust evidence"
+    },
+    {
+      "order": 5854,
+      "path": "Telegram/SourceFiles/tests/test_updater_win.cpp",
+      "blob": "0602e8c11d0d96d8626c05b022941e781f588301",
+      "consumer_symbol": "Windows updater process evidence"
+    },
+    {
+      "order": 5855,
+      "path": "Telegram/SourceFiles/tray.cpp",
+      "blob": "6abba928c810bb81d6981deeae25030e4bd7a24e",
+      "consumer_symbol": "Core::Tray"
+    },
+    {
+      "order": 5856,
+      "path": "Telegram/SourceFiles/tray.h",
+      "blob": "65d882b60bcc4621546519ddf53e286a2142f4b1",
+      "consumer_symbol": "Core::Tray contract"
+    },
+    {
+      "order": 5857,
+      "path": "Telegram/SourceFiles/tray_accounts_menu.cpp",
+      "blob": "f247df09c7164e43804e86a4360cf90f19ec2c80",
+      "consumer_symbol": "Core::TrayAccountsMenu"
+    },
+    {
+      "order": 5858,
+      "path": "Telegram/SourceFiles/tray_accounts_menu.h",
+      "blob": "2d24931dfb23904c66f160a421e9819b18ae7031",
+      "consumer_symbol": "Core::TrayAccountsMenu contract"
+    },
+    {
+      "order": 5859,
+      "path": "Telegram/SourceFiles/tray_accounts_menu_dummy.cpp",
+      "blob": "1e135ed6fc92cb58c42ac0916187190690ea48f4",
+      "consumer_symbol": "Core::TrayAccountsMenu unsupported-platform adapter"
+    }
+  ]
+}

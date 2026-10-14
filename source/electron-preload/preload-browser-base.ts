@@ -164,7 +164,7 @@ export function installWebAuthnPolyfill(options: {
 export function installDialogStubs(windowPort: BrowserWindowPort | null): void {
   if (windowPort == null || windowPort.__sandDialogOverridesApplied === true) return;
   windowPort.alert = function sandAlertStub(): void {};
-  windowPort.confirm = function sandConfirmStub(): true { return true; };
+  windowPort.confirm = function sandConfirmStub(): false { return false; };
   windowPort.prompt = function sandPromptStub(): null { return null; };
   windowPort.__sandDialogOverridesApplied = true;
 }

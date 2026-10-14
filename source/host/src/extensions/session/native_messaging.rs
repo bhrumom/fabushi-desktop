@@ -4,7 +4,7 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-use reqwest::blocking::Client;
+use reqwest::{Method, blocking::Client};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use url::Url;
@@ -62,7 +62,17 @@ pub struct FabushiRemoteHumanMessage {
     pub read_at: Option<String>,
     #[serde(default)]
     pub is_outgoing: bool,
+    #[serde(default)]
+    pub silent: bool,
+    pub scheduled_at_ms: Option<i64>,
+    pub delivery_state: Option<String>,
+    pub delivered_at: Option<String>,
     pub reply_to_message_id: Option<Value>,
+    pub destination: Option<fabushi_messaging_core::ConversationDestination>,
+    pub expires_at_ms: Option<i64>,
+    pub expired_at_ms: Option<i64>,
+    #[serde(default)]
+    pub expired: bool,
     #[serde(default)]
     pub attachments: Vec<FabushiRemoteHumanAttachment>,
     #[serde(default)]
@@ -149,6 +159,57 @@ struct ListEnvelope {
     error: Option<String>,
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct FabushiRemoteMessageRetention {
+    pub conversation_id: String,
+    pub retention_seconds: Option<u32>,
+    pub revision: u64,
+}
+
+#[derive(Debug, Deserialize)]
+struct RetentionEnvelope {
+    success: bool,
+    retention: Option<FabushiRemoteMessageRetention>,
+    error: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct SetRetentionRequest<'a> {
+    target_user_id: &'a str,
+    retention_seconds: Option<u32>,
+    expected_revision: u64,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct FabushiRemoteConversationChildDraft {
+    pub destination: fabushi_messaging_core::ConversationDestination,
+    pub text: String,
+    pub reply_to_message_id: Option<String>,
+    pub revision: u64,
+    pub updated_at: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ConversationChildDraftEnvelope {
+    success: bool,
+    draft: Option<FabushiRemoteConversationChildDraft>,
+    error: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct SetConversationChildDraftRequest<'a> {
+    target_user_id: &'a str,
+    destination: &'a fabushi_messaging_core::ConversationDestination,
+    text: &'a str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    reply_to_message_id: Option<&'a str>,
+    expected_revision: u64,
+}
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct SendAttachmentRequest<'a> {
@@ -163,6 +224,11 @@ struct SendRequest<'a> {
     client_request_id: &'a str,
     #[serde(skip_serializing_if = "Option::is_none")]
     reply_to_message_id: Option<&'a str>,
+    silent: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    scheduled_at_ms: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    destination: Option<&'a fabushi_messaging_core::ConversationDestination>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     attachments: Vec<SendAttachmentRequest<'a>>,
 }
@@ -230,6 +296,101 @@ struct CallIceEnvelope {
     ice_servers: Vec<FabushiCallIceServer>,
     ttl_seconds: Option<u64>,
     error: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct FabushiRemoteHumanCallMediaSession {
+    pub media_session_id: String,
+    pub call_id: String,
+    pub user_id: Value,
+    pub device_id: String,
+    pub generation: u64,
+    pub purpose: String,
+    pub status: String,
+    pub mutation_state: Option<String>,
+    #[serde(default)]
+    pub cleanup_required: bool,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct CreateCallMediaSessionRequest<'a> {
+    client_session_id: &'a str,
+    generation: u64,
+    purpose: &'a str,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CallMediaSessionEnvelope {
+    success: bool,
+    media_session: Option<FabushiRemoteHumanCallMediaSession>,
+    #[serde(default)]
+    media_sessions: Vec<FabushiRemoteHumanCallMediaSession>,
+    error: Option<String>,
+}
+
+
+fn validate_human_call_media_session(
+    media_session: &FabushiRemoteHumanCallMediaSession,
+    expected_call_id: &str,
+    expected_generation_and_purpose: Option<(u64, &str)>,
+) -> Result<(), String> {
+    let media_session_id = required_trimmed(&media_session.media_session_id, "media session id")?;
+    if media_session_id.len() > 128
+        || !media_session_id
+            .chars()
+            .all(|character| character.is_ascii_alphanumeric() || matches!(character, '.' | '_' | ':' | '-'))
+    {
+        return Err("Fabushi Human call media session id is invalid".into());
+    }
+    if media_session.call_id != expected_call_id {
+        return Err("Fabushi Human call media backend returned a mismatched call id".into());
+    }
+    if !matches!(media_session.purpose.as_str(), "publish" | "subscribe")
+        || !matches!(media_session.status.as_str(), "pending" | "ready" | "uncertain" | "failed" | "closed")
+    {
+        return Err("Fabushi Human call media backend returned an invalid session state".into());
+    }
+    if let Some((generation, purpose)) = expected_generation_and_purpose {
+        if media_session.generation != generation || media_session.purpose != purpose {
+            return Err("Fabushi Human call media backend returned a mismatched session generation or purpose".into());
+        }
+    }
+    if media_session.cleanup_required
+        && (media_session.mutation_state.as_deref() != Some("retired")
+            || media_session.status == "closed")
+    {
+        return Err("Fabushi Human call media backend returned an invalid cleanup projection".into());
+    }
+    Ok(())
+}
+
+fn reject_privileged_call_media_fields(value: &Value) -> Result<(), String> {
+    match value {
+        Value::Object(object) => {
+            for (key, nested) in object {
+                if matches!(
+                    key.as_str(),
+                    "providerSessionId" | "provider_session_id" | "appSecret" | "app_secret"
+                        | "authorization" | "Authorization"
+                ) {
+                    return Err("Fabushi call media response leaked a privileged provider field".into());
+                }
+                reject_privileged_call_media_fields(nested)?;
+            }
+        }
+        Value::Array(values) => {
+            for nested in values {
+                reject_privileged_call_media_fields(nested)?;
+            }
+        }
+        _ => {}
+    }
+    Ok(())
 }
 
 fn valid_call_ice_urls(value: &Value) -> bool {
@@ -415,6 +576,9 @@ impl FabushiNativeMessagingClient {
         client_request_id: &str,
         reply_to_message_id: Option<&str>,
         attachments: &[FabushiRemoteHumanAttachment],
+        silent: bool,
+        scheduled_at_ms: Option<i64>,
+        destination: Option<&fabushi_messaging_core::ConversationDestination>,
     ) -> Result<FabushiRemoteHumanMessage, String> {
         let peer_human_id = required_trimmed(peer_human_id, "peer Human id")?;
         let text = text.trim();
@@ -424,6 +588,9 @@ impl FabushiNativeMessagingClient {
             .filter(|value| !value.is_empty());
         if text.is_empty() && attachments.is_empty() {
             return Err("Fabushi Human message requires text or attachments".into());
+        }
+        if scheduled_at_ms.is_some_and(|value| value <= 0 || value > 9_007_199_254_740_991) {
+            return Err("Fabushi Human message scheduledAtMs must be a positive JavaScript-safe integer".into());
         }
         let credentials = read_credentials(&self.credential_path)?;
         let response = self
@@ -440,6 +607,9 @@ impl FabushiNativeMessagingClient {
                 text,
                 client_request_id,
                 reply_to_message_id,
+                silent,
+                scheduled_at_ms,
+                destination,
                 attachments: attachments
                     .iter()
                     .map(|attachment| SendAttachmentRequest {
@@ -565,6 +735,193 @@ impl FabushiNativeMessagingClient {
         Ok(envelope.data.map(|data| data.friends).unwrap_or_default())
     }
 
+    pub fn get_direct_message_retention(
+        &self,
+        peer_human_id: &str,
+    ) -> Result<FabushiRemoteMessageRetention, String> {
+        let peer_human_id = required_trimmed(peer_human_id, "peer Human id")?;
+        let credentials = read_credentials(&self.credential_path)?;
+        let mut url = self.endpoint("/api/social/message-retention")?;
+        url.query_pairs_mut().append_pair("contactId", peer_human_id);
+        let response = self
+            .client
+            .get(url)
+            .bearer_auth(required_trimmed(&credentials.access_token, "accessToken")?)
+            .header(
+                "x-fabushi-device-id",
+                required_trimmed(&credentials.device_id, "deviceId")?,
+            )
+            .header("accept", "application/json")
+            .send()
+            .map_err(|error| format!("Fabushi Human retention sync failed: {error}"))?;
+        let status = response.status();
+        let body = response
+            .text()
+            .map_err(|error| format!("Fabushi Human retention response could not be read: {error}"))?;
+        let envelope: RetentionEnvelope = serde_json::from_str(&body).map_err(|error| {
+            format!(
+                "Fabushi Human retention response was invalid JSON (HTTP {}): {error}",
+                status.as_u16()
+            )
+        })?;
+        if !status.is_success() || !envelope.success {
+            return Err(format!(
+                "Fabushi Human retention sync was rejected (HTTP {}): {}",
+                status.as_u16(),
+                envelope.error.unwrap_or_else(|| "unknown backend error".into())
+            ));
+        }
+        envelope
+            .retention
+            .ok_or_else(|| "Fabushi Human retention response omitted the canonical policy.".to_string())
+    }
+
+    pub fn set_direct_message_retention(
+        &self,
+        peer_human_id: &str,
+        retention_seconds: Option<u32>,
+        expected_revision: u64,
+    ) -> Result<FabushiRemoteMessageRetention, String> {
+        let peer_human_id = required_trimmed(peer_human_id, "peer Human id")?;
+        if retention_seconds == Some(0) {
+            return Err("Fabushi Human retention seconds must be positive when present".into());
+        }
+        let credentials = read_credentials(&self.credential_path)?;
+        let response = self
+            .client
+            .request(Method::PUT, self.endpoint("/api/social/message-retention")?)
+            .bearer_auth(required_trimmed(&credentials.access_token, "accessToken")?)
+            .header(
+                "x-fabushi-device-id",
+                required_trimmed(&credentials.device_id, "deviceId")?,
+            )
+            .header("accept", "application/json")
+            .json(&SetRetentionRequest {
+                target_user_id: peer_human_id,
+                retention_seconds,
+                expected_revision,
+            })
+            .send()
+            .map_err(|error| format!("Fabushi Human retention mutation failed: {error}"))?;
+        let status = response.status();
+        let body = response
+            .text()
+            .map_err(|error| format!("Fabushi Human retention mutation response could not be read: {error}"))?;
+        let envelope: RetentionEnvelope = serde_json::from_str(&body).map_err(|error| {
+            format!(
+                "Fabushi Human retention mutation response was invalid JSON (HTTP {}): {error}",
+                status.as_u16()
+            )
+        })?;
+        if !status.is_success() || !envelope.success {
+            return Err(format!(
+                "Fabushi Human retention mutation was rejected (HTTP {}): {}",
+                status.as_u16(),
+                envelope.error.unwrap_or_else(|| "unknown backend error".into())
+            ));
+        }
+        envelope
+            .retention
+            .ok_or_else(|| "Fabushi Human retention mutation omitted the canonical policy.".to_string())
+    }
+
+    pub fn get_conversation_child_draft(
+        &self,
+        peer_human_id: &str,
+    ) -> Result<FabushiRemoteConversationChildDraft, String> {
+        let peer_human_id = required_trimmed(peer_human_id, "peer Human id")?;
+        let credentials = read_credentials(&self.credential_path)?;
+        let mut url = self.endpoint("/api/social/conversation-child-draft")?;
+        url.query_pairs_mut().append_pair("contactId", peer_human_id);
+        let response = self
+            .client
+            .get(url)
+            .bearer_auth(required_trimmed(&credentials.access_token, "accessToken")?)
+            .header(
+                "x-fabushi-device-id",
+                required_trimmed(&credentials.device_id, "deviceId")?,
+            )
+            .header("accept", "application/json")
+            .send()
+            .map_err(|error| format!("Fabushi ConversationChild draft sync failed: {error}"))?;
+        let status = response.status();
+        let body = response
+            .text()
+            .map_err(|error| format!("Fabushi ConversationChild draft response could not be read: {error}"))?;
+        let envelope: ConversationChildDraftEnvelope = serde_json::from_str(&body).map_err(|error| {
+            format!(
+                "Fabushi ConversationChild draft response was invalid JSON (HTTP {}): {error}",
+                status.as_u16()
+            )
+        })?;
+        if !status.is_success() || !envelope.success {
+            return Err(format!(
+                "Fabushi ConversationChild draft sync was rejected (HTTP {}): {}",
+                status.as_u16(),
+                envelope.error.unwrap_or_else(|| "unknown backend error".into())
+            ));
+        }
+        envelope
+            .draft
+            .ok_or_else(|| "Fabushi ConversationChild draft response omitted the canonical draft.".to_string())
+    }
+
+    pub fn set_conversation_child_draft(
+        &self,
+        peer_human_id: &str,
+        destination: &fabushi_messaging_core::ConversationDestination,
+        text: &str,
+        reply_to_message_id: Option<&str>,
+        expected_revision: u64,
+    ) -> Result<FabushiRemoteConversationChildDraft, String> {
+        let peer_human_id = required_trimmed(peer_human_id, "peer Human id")?;
+        if !destination.is_valid() || destination.child.is_none() {
+            return Err("Fabushi ConversationChild draft requires a valid typed destination".into());
+        }
+        if text.chars().count() > 4000 {
+            return Err("Fabushi ConversationChild draft exceeds the backend text limit".into());
+        }
+        let credentials = read_credentials(&self.credential_path)?;
+        let response = self
+            .client
+            .request(Method::PUT, self.endpoint("/api/social/conversation-child-draft")?)
+            .bearer_auth(required_trimmed(&credentials.access_token, "accessToken")?)
+            .header(
+                "x-fabushi-device-id",
+                required_trimmed(&credentials.device_id, "deviceId")?,
+            )
+            .header("accept", "application/json")
+            .json(&SetConversationChildDraftRequest {
+                target_user_id: peer_human_id,
+                destination,
+                text,
+                reply_to_message_id,
+                expected_revision,
+            })
+            .send()
+            .map_err(|error| format!("Fabushi ConversationChild draft mutation failed: {error}"))?;
+        let status = response.status();
+        let body = response
+            .text()
+            .map_err(|error| format!("Fabushi ConversationChild draft mutation response could not be read: {error}"))?;
+        let envelope: ConversationChildDraftEnvelope = serde_json::from_str(&body).map_err(|error| {
+            format!(
+                "Fabushi ConversationChild draft mutation response was invalid JSON (HTTP {}): {error}",
+                status.as_u16()
+            )
+        })?;
+        if !status.is_success() || !envelope.success {
+            return Err(format!(
+                "Fabushi ConversationChild draft mutation was rejected (HTTP {}): {}",
+                status.as_u16(),
+                envelope.error.unwrap_or_else(|| "unknown backend error".into())
+            ));
+        }
+        envelope
+            .draft
+            .ok_or_else(|| "Fabushi ConversationChild draft mutation omitted the canonical draft.".to_string())
+    }
+
     pub fn list_direct_messages(
         &self,
         peer_human_id: &str,
@@ -611,6 +968,333 @@ impl FabushiNativeMessagingClient {
             ));
         }
         Ok(envelope.data.map(|data| data.messages).unwrap_or_default())
+    }
+
+    pub fn list_human_call_media_sessions(
+        &self,
+        call_id: &str,
+    ) -> Result<Vec<FabushiRemoteHumanCallMediaSession>, String> {
+        let call_id = required_trimmed(call_id, "call id")?;
+        let encoded_call_id: String =
+            url::form_urlencoded::byte_serialize(call_id.as_bytes()).collect();
+        let credentials = read_credentials(&self.credential_path)?;
+        let response = self
+            .client
+            .get(self.endpoint(&format!(
+                "/api/social/calls/{encoded_call_id}/media/sessions"
+            ))?)
+            .bearer_auth(required_trimmed(&credentials.access_token, "accessToken")?)
+            .header(
+                "x-fabushi-device-id",
+                required_trimmed(&credentials.device_id, "deviceId")?,
+            )
+            .header("accept", "application/json")
+            .send()
+            .map_err(|error| format!("Fabushi Human call media recovery failed: {error}"))?;
+        let status = response.status();
+        let body = response
+            .text()
+            .map_err(|error| format!("Fabushi Human call media recovery response could not be read: {error}"))?;
+        let envelope: CallMediaSessionEnvelope = serde_json::from_str(&body).map_err(|error| {
+            format!(
+                "Fabushi Human call media recovery response was invalid JSON (HTTP {}): {error}",
+                status.as_u16()
+            )
+        })?;
+        if !status.is_success() || !envelope.success {
+            return Err(format!(
+                "Fabushi Human call media recovery was rejected (HTTP {}): {}",
+                status.as_u16(),
+                envelope.error.unwrap_or_else(|| "unknown backend error".into())
+            ));
+        }
+        if envelope.media_session.is_some() {
+            return Err("Fabushi Human call media recovery returned an unexpected singular session".into());
+        }
+        for media_session in &envelope.media_sessions {
+            validate_human_call_media_session(media_session, call_id, None)?;
+        }
+        Ok(envelope.media_sessions)
+    }
+
+    pub fn create_human_call_media_session(
+        &self,
+        call_id: &str,
+        client_session_id: &str,
+        generation: u64,
+        purpose: &str,
+    ) -> Result<FabushiRemoteHumanCallMediaSession, String> {
+        let call_id = required_trimmed(call_id, "call id")?;
+        let client_session_id = required_trimmed(client_session_id, "media client session id")?;
+        let purpose = required_trimmed(purpose, "media session purpose")?;
+        if !matches!(purpose, "publish" | "subscribe") {
+            return Err("Fabushi Human call media session purpose is invalid".into());
+        }
+        let encoded_call_id: String =
+            url::form_urlencoded::byte_serialize(call_id.as_bytes()).collect();
+        let credentials = read_credentials(&self.credential_path)?;
+        let response = self
+            .client
+            .post(self.endpoint(&format!(
+                "/api/social/calls/{encoded_call_id}/media/sessions"
+            ))?)
+            .bearer_auth(required_trimmed(&credentials.access_token, "accessToken")?)
+            .header(
+                "x-fabushi-device-id",
+                required_trimmed(&credentials.device_id, "deviceId")?,
+            )
+            .header("accept", "application/json")
+            .json(&CreateCallMediaSessionRequest {
+                client_session_id,
+                generation,
+                purpose,
+            })
+            .send()
+            .map_err(|error| format!("Fabushi Human call media session allocation failed: {error}"))?;
+        let status = response.status();
+        let body = response
+            .text()
+            .map_err(|error| format!("Fabushi Human call media session response could not be read: {error}"))?;
+        let envelope: CallMediaSessionEnvelope = serde_json::from_str(&body).map_err(|error| {
+            format!(
+                "Fabushi Human call media session response was invalid JSON (HTTP {}): {error}",
+                status.as_u16()
+            )
+        })?;
+        if !status.is_success() || !envelope.success {
+            return Err(format!(
+                "Fabushi Human call media session allocation was rejected (HTTP {}): {}",
+                status.as_u16(),
+                envelope.error.unwrap_or_else(|| "unknown backend error".into())
+            ));
+        }
+        let media_session = envelope
+            .media_session
+            .ok_or_else(|| "Fabushi Human call media session response omitted the session.".to_string())?;
+        validate_human_call_media_session(
+            &media_session,
+            call_id,
+            Some((generation, purpose)),
+        )?;
+        Ok(media_session)
+    }
+
+    fn call_media_json(
+        &self,
+        method: Method,
+        path: &str,
+        body: Option<Value>,
+        action: &str,
+    ) -> Result<Value, String> {
+        let credentials = read_credentials(&self.credential_path)?;
+        let mut request = self
+            .client
+            .request(method, self.endpoint(path)?)
+            .bearer_auth(required_trimmed(&credentials.access_token, "accessToken")?)
+            .header(
+                "x-fabushi-device-id",
+                required_trimmed(&credentials.device_id, "deviceId")?,
+            )
+            .header("accept", "application/json");
+        if let Some(body) = body {
+            request = request.json(&body);
+        }
+        let response = request
+            .send()
+            .map_err(|error| format!("Fabushi Human call media {action} failed: {error}"))?;
+        let status = response.status();
+        let body = response
+            .text()
+            .map_err(|error| format!("Fabushi Human call media {action} response could not be read: {error}"))?;
+        let payload: Value = serde_json::from_str(&body).map_err(|error| {
+            format!(
+                "Fabushi Human call media {action} response was invalid JSON (HTTP {}): {error}",
+                status.as_u16()
+            )
+        })?;
+        reject_privileged_call_media_fields(&payload)?;
+        let success = payload.get("success").and_then(Value::as_bool) == Some(true);
+        if !status.is_success() || !success {
+            let error = payload
+                .get("error")
+                .and_then(Value::as_str)
+                .unwrap_or("unknown backend error");
+            return Err(format!(
+                "Fabushi Human call media {action} was rejected (HTTP {}): {error}",
+                status.as_u16()
+            ));
+        }
+        Ok(payload)
+    }
+
+    pub fn discover_human_call_media_publications(
+        &self,
+        call_id: &str,
+    ) -> Result<Value, String> {
+        let call_id = required_trimmed(call_id, "call id")?;
+        let encoded_call_id: String =
+            url::form_urlencoded::byte_serialize(call_id.as_bytes()).collect();
+        self.call_media_json(
+            Method::GET,
+            &format!("/api/social/calls/{encoded_call_id}/media/publications"),
+            None,
+            "publication discovery",
+        )
+    }
+
+    pub fn publish_human_call_media(
+        &self,
+        call_id: &str,
+        media_session_id: &str,
+        client_operation_id: &str,
+        generation: u64,
+        session_description: &Value,
+        publications: &Value,
+    ) -> Result<Value, String> {
+        let call_id = required_trimmed(call_id, "call id")?;
+        let media_session_id = required_trimmed(media_session_id, "media session id")?;
+        let client_operation_id = required_trimmed(client_operation_id, "media operation id")?;
+        let call: String = url::form_urlencoded::byte_serialize(call_id.as_bytes()).collect();
+        let session: String =
+            url::form_urlencoded::byte_serialize(media_session_id.as_bytes()).collect();
+        self.call_media_json(
+            Method::POST,
+            &format!("/api/social/calls/{call}/media/sessions/{session}/publications"),
+            Some(serde_json::json!({
+                "clientOperationId": client_operation_id,
+                "generation": generation,
+                "sessionDescription": session_description,
+                "publications": publications,
+            })),
+            "publication",
+        )
+    }
+
+    pub fn acknowledge_human_call_media_publication(
+        &self,
+        call_id: &str,
+        media_session_id: &str,
+        client_operation_id: &str,
+        generation: u64,
+    ) -> Result<Value, String> {
+        let call: String =
+            url::form_urlencoded::byte_serialize(required_trimmed(call_id, "call id")?.as_bytes()).collect();
+        let session: String = url::form_urlencoded::byte_serialize(
+            required_trimmed(media_session_id, "media session id")?.as_bytes(),
+        ).collect();
+        let operation: String = url::form_urlencoded::byte_serialize(
+            required_trimmed(client_operation_id, "media operation id")?.as_bytes(),
+        ).collect();
+        self.call_media_json(
+            Method::POST,
+            &format!("/api/social/calls/{call}/media/sessions/{session}/operations/{operation}/applied"),
+            Some(serde_json::json!({ "generation": generation })),
+            "publication acknowledgement",
+        )
+    }
+
+    pub fn subscribe_human_call_media(
+        &self,
+        call_id: &str,
+        media_session_id: &str,
+        client_operation_id: &str,
+        generation: u64,
+        subscriptions: &Value,
+    ) -> Result<Value, String> {
+        let call: String =
+            url::form_urlencoded::byte_serialize(required_trimmed(call_id, "call id")?.as_bytes()).collect();
+        let session: String = url::form_urlencoded::byte_serialize(
+            required_trimmed(media_session_id, "media session id")?.as_bytes(),
+        ).collect();
+        self.call_media_json(
+            Method::POST,
+            &format!("/api/social/calls/{call}/media/sessions/{session}/subscriptions"),
+            Some(serde_json::json!({
+                "clientOperationId": required_trimmed(client_operation_id, "media operation id")?,
+                "generation": generation,
+                "subscriptions": subscriptions,
+            })),
+            "subscription",
+        )
+    }
+
+    pub fn answer_human_call_media_subscription(
+        &self,
+        call_id: &str,
+        media_session_id: &str,
+        client_operation_id: &str,
+        generation: u64,
+        session_description: &Value,
+    ) -> Result<Value, String> {
+        let call: String =
+            url::form_urlencoded::byte_serialize(required_trimmed(call_id, "call id")?.as_bytes()).collect();
+        let session: String = url::form_urlencoded::byte_serialize(
+            required_trimmed(media_session_id, "media session id")?.as_bytes(),
+        ).collect();
+        let operation: String = url::form_urlencoded::byte_serialize(
+            required_trimmed(client_operation_id, "media operation id")?.as_bytes(),
+        ).collect();
+        self.call_media_json(
+            Method::POST,
+            &format!("/api/social/calls/{call}/media/sessions/{session}/operations/{operation}/answer"),
+            Some(serde_json::json!({
+                "generation": generation,
+                "sessionDescription": session_description,
+            })),
+            "subscription answer",
+        )
+    }
+
+    pub fn update_human_call_media_subscription_layer(
+        &self,
+        call_id: &str,
+        media_session_id: &str,
+        subscription_id: &str,
+        client_mutation_id: &str,
+        generation: u64,
+        simulcast: &Value,
+    ) -> Result<Value, String> {
+        let call: String =
+            url::form_urlencoded::byte_serialize(required_trimmed(call_id, "call id")?.as_bytes()).collect();
+        let session: String = url::form_urlencoded::byte_serialize(
+            required_trimmed(media_session_id, "media session id")?.as_bytes(),
+        ).collect();
+        let subscription: String = url::form_urlencoded::byte_serialize(
+            required_trimmed(subscription_id, "media subscription id")?.as_bytes(),
+        ).collect();
+        self.call_media_json(
+            Method::POST,
+            &format!("/api/social/calls/{call}/media/sessions/{session}/subscriptions/{subscription}/layer"),
+            Some(serde_json::json!({
+                "clientMutationId": required_trimmed(client_mutation_id, "media layer mutation id")?,
+                "generation": generation,
+                "simulcast": simulcast,
+            })),
+            "subscription layer update",
+        )
+    }
+
+    pub fn close_human_call_media_session(
+        &self,
+        call_id: &str,
+        media_session_id: &str,
+        client_teardown_id: &str,
+        generation: u64,
+    ) -> Result<Value, String> {
+        let call: String =
+            url::form_urlencoded::byte_serialize(required_trimmed(call_id, "call id")?.as_bytes()).collect();
+        let session: String = url::form_urlencoded::byte_serialize(
+            required_trimmed(media_session_id, "media session id")?.as_bytes(),
+        ).collect();
+        self.call_media_json(
+            Method::POST,
+            &format!("/api/social/calls/{call}/media/sessions/{session}/close"),
+            Some(serde_json::json!({
+                "clientTeardownId": required_trimmed(client_teardown_id, "media teardown id")?,
+                "generation": generation,
+            })),
+            "session teardown",
+        )
     }
 
     pub fn get_human_call_ice_servers(

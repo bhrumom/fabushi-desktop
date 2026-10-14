@@ -569,21 +569,26 @@ fn has_disk_space_for_large_object(destination: &Path, object_bytes: u64) -> boo
         .unwrap_or(false)
 }
 
-fn report_progress(
+fn record_completed_file(
     options: &BoxStoreDownloadOptions,
     state: &Mutex<BoxStoreDownloadSummary>,
     total: usize,
+    bytes: u64,
 ) {
-    let Some(callback) = options.on_progress.as_ref() else {
-        return;
+    let progress = {
+        let mut summary = state.lock().expect("download summary lock");
+        summary.files = summary.files.saturating_add(1);
+        summary.bytes = summary.bytes.saturating_add(bytes);
+        BoxStoreDownloadProgress {
+            files: summary.files,
+            bytes: summary.bytes,
+            verified: summary.verified,
+            total,
+        }
     };
-    let summary = state.lock().expect("download summary lock").clone();
-    callback(BoxStoreDownloadProgress {
-        files: summary.files,
-        bytes: summary.bytes,
-        verified: summary.verified,
-        total,
-    });
+    if let Some(callback) = options.on_progress.as_ref() {
+        callback(progress);
+    }
 }
 
 fn record_failure(state: &Mutex<BoxStoreDownloadSummary>, failure: String) {
@@ -642,13 +647,12 @@ fn restore_small_group(
                     write
                 })();
                 match result {
-                    Ok(()) => {
-                        let mut summary = state.lock().expect("download summary lock");
-                        summary.files = summary.files.saturating_add(1);
-                        summary.bytes = summary.bytes.saturating_add(blob.len() as u64);
-                        drop(summary);
-                        report_progress(options, state, planned.manifest.len());
-                    }
+                    Ok(()) => record_completed_file(
+                        options,
+                        state,
+                        planned.manifest.len(),
+                        blob.len() as u64,
+                    ),
                     Err(error) => record_failure(state, format!("{rel_path}: {error}")),
                 }
             }
@@ -747,11 +751,7 @@ fn restore_large_group(
         if restored_source.is_none() {
             restored_source = Some(destination.clone());
         }
-        let mut summary = state.lock().expect("download summary lock");
-        summary.files = summary.files.saturating_add(1);
-        summary.bytes = summary.bytes.saturating_add(group.size);
-        drop(summary);
-        report_progress(options, state, planned.manifest.len());
+        record_completed_file(options, state, planned.manifest.len(), group.size);
     }
 }
 
@@ -876,13 +876,12 @@ impl PackExtractionSink for DownloadPackSink {
             {
                 let mut summary = self.summary.lock().expect("download summary lock");
                 summary.verified = summary.verified.saturating_add(1);
-                summary.files = summary.files.saturating_add(1);
-                summary.bytes = summary.bytes.saturating_add(group.size);
             }
-            report_progress(
+            record_completed_file(
                 &self.options,
                 self.summary.as_ref(),
                 self.manifest.len(),
+                group.size,
             );
         }
         Ok(())
@@ -1208,13 +1207,12 @@ fn run_download_phase(
                             continue;
                         };
                         match apply_file_metadata(destination, entry, options.owner, None) {
-                            Ok(()) => {
-                                let mut summary = state.lock().expect("download summary lock");
-                                summary.files = summary.files.saturating_add(1);
-                                summary.bytes = summary.bytes.saturating_add(group.size);
-                                drop(summary);
-                                report_progress(options, state, planned.manifest.len());
-                            }
+                            Ok(()) => record_completed_file(
+                                options,
+                                state,
+                                planned.manifest.len(),
+                                group.size,
+                            ),
                             Err(error) => record_failure(state, format!("{rel_path}: {error}")),
                         }
                     } else {
@@ -1628,11 +1626,11 @@ pub fn download_manifest(
 
                 match restored {
                     Ok(()) => {
-                        let mut summary = state.lock().expect("download summary lock");
-                        summary.verified = summary.verified.saturating_add(1);
-                        summary.files = summary.files.saturating_add(1);
-                        drop(summary);
-                        report_progress(&options, &state, manifest.len());
+                        {
+                            let mut summary = state.lock().expect("download summary lock");
+                            summary.verified = summary.verified.saturating_add(1);
+                        }
+                        record_completed_file(&options, &state, manifest.len(), 0);
                     }
                     Err(error) => record_failure(&state, format!("{rel_path}: {error}")),
                 }

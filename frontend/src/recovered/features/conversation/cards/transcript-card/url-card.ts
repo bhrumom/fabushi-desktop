@@ -81,6 +81,143 @@ export function normalizeLinkUrl(value: unknown): string | null {
   }
 }
 
+export type TranscriptExternalCopyLabel = "Copy Link" | "Copy Email";
+export type TranscriptLinkKind = "web" | "email" | "anchor" | "local" | "custom";
+
+export interface TranscriptLinkProjection {
+  readonly kind: TranscriptLinkKind;
+  readonly href: string;
+  readonly copyText: string;
+  readonly copyLabel: TranscriptExternalCopyLabel;
+  readonly tooltip: string | null;
+  readonly external: boolean;
+}
+
+
+export interface TranscriptExternalLinkProjection {
+  readonly href: string;
+  readonly copyText: string;
+  readonly copyLabel: TranscriptExternalCopyLabel;
+  readonly tooltip: string | null;
+}
+
+function normalizedMailtoAddress(value: string): string | null {
+  if (!/^mailto:/iu.test(value)) return null;
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol !== "mailto:") return null;
+    let address = parsed.pathname;
+    try {
+      address = decodeURIComponent(address);
+    } catch {
+      return null;
+    }
+    while (address.startsWith("/")) address = address.slice(1);
+    address = address.trim();
+    return address.length > 0 ? address : null;
+  } catch {
+    return null;
+  }
+}
+
+export function projectTranscriptExternalLink(value: unknown, renderedText?: string): TranscriptExternalLinkProjection | null {
+  if (typeof value !== "string" || value.trim().length === 0) return null;
+  const web = normalizeLinkUrl(value);
+  if (web != null) {
+    const rendered = renderedText?.trim();
+    const tooltip = rendered == null || rendered.length === 0 || normalizeLinkUrl(rendered) === web ? null : web;
+    return { href: web, copyText: web, copyLabel: "Copy Link", tooltip };
+  }
+  const email = normalizedMailtoAddress(value);
+  if (email == null) return null;
+  const rendered = renderedText?.trim();
+  return {
+    href: `mailto:${email}`,
+    copyText: email,
+    copyLabel: "Copy Email",
+    tooltip: rendered == null || rendered.length === 0 || rendered === email ? null : email,
+  };
+}
+
+/** Preserves typed link identity while only web/email links can cross the desktop external-open boundary. */
+export function projectTranscriptLink(value: unknown, renderedText?: string): TranscriptLinkProjection | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (trimmed.length === 0) return null;
+  const external = projectTranscriptExternalLink(trimmed, renderedText);
+  if (external != null) {
+    return {
+      kind: /^mailto:/iu.test(trimmed) ? "email" : "web",
+      ...external,
+      external: true,
+    };
+  }
+  const rendered = renderedText?.trim();
+  const projection = (kind: Exclude<TranscriptLinkKind, "web" | "email">): TranscriptLinkProjection => ({
+    kind,
+    href: trimmed,
+    copyText: trimmed,
+    copyLabel: "Copy Link",
+    tooltip: rendered == null || rendered.length === 0 || rendered === trimmed ? null : trimmed,
+    external: false,
+  });
+  if (trimmed.startsWith("#") && trimmed.length > 1) return projection("anchor");
+  if (/^(?:\.\.?\/|\/)/u.test(trimmed)) return projection("local");
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol.length > 1) return projection("custom");
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+export type RichMessageActionKind = "open-url" | "authorize-url" | "copy-text";
+
+export interface RichMessageAction {
+  readonly kind: RichMessageActionKind;
+  readonly data: string;
+}
+
+export function projectRichMessageAction(value: unknown): RichMessageAction | null {
+  if (!isRecord(value) || typeof value.data !== "string" || value.data.trim().length === 0) return null;
+  if (value.kind !== "open-url" && value.kind !== "authorize-url" && value.kind !== "copy-text") return null;
+  return { kind: value.kind, data: value.data };
+}
+
+export interface RichMessageActionAffordance {
+  readonly tooltip: string;
+  readonly copyText: string;
+  readonly copyLabel: "Copy Link" | "Copy Text";
+  readonly normalizedUrl: string | null;
+}
+
+/**
+ * Source-neutral projection for rich-message actions. URL actions preserve the
+ * exact encoded payload for disclosure/copy while the canonical URL owner is
+ * the only authority allowed to normalize a URL for opening.
+ */
+export function projectRichMessageActionAffordance(
+  action: RichMessageAction,
+  elidedLabel = "",
+): RichMessageActionAffordance {
+  const normalizedUrl = action.kind === "copy-text" ? null : normalizeLinkUrl(action.data);
+  if (action.kind === "copy-text") {
+    return {
+      tooltip: `Copy text:\n${action.data}`,
+      copyText: action.data,
+      copyLabel: "Copy Text",
+      normalizedUrl,
+    };
+  }
+  return {
+    tooltip: elidedLabel.length > 0 ? `${elidedLabel}\n\n${action.data}` : action.data,
+    copyText: action.data,
+    copyLabel: "Copy Link",
+    normalizedUrl,
+  };
+}
+
 interface RichTextDocument {
   readonly type?: unknown;
   readonly content?: readonly RichTextNode[];

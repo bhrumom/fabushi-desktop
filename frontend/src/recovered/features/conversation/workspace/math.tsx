@@ -1,47 +1,26 @@
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js
 // @evidence src/app/dist/renderer/assets/katex-DHMw6HUq.js
 import { useEffect, useState } from "react";
+import {
+  SHARED_ASSISTANT_MATH_MARKUP_CACHE,
+  loadShippedKatexRuntime,
+  type KatexRuntimeLoader,
+} from "./math-runtime";
 
-export const KATEX_ASSET = "/upstream/assets/katex-DHMw6HUq.js";
-
-export interface KatexRuntime {
-  renderToString(expression: string, options: { displayMode: boolean; throwOnError: boolean; strict?: "ignore" }): string;
-}
-
-interface KatexRuntimeModule {
-  default?: KatexRuntime;
-  renderToString?: KatexRuntime["renderToString"];
-}
-
-export type KatexRuntimeLoader = () => Promise<KatexRuntime>;
-
-export async function loadShippedKatexRuntime(): Promise<KatexRuntime> {
-  const module = await import(/* @vite-ignore */ KATEX_ASSET) as KatexRuntimeModule;
-  if (module.default != null) return module.default;
-  if (module.renderToString != null) return { renderToString: module.renderToString };
-  throw new Error("Shipped KaTeX runtime is unavailable.");
-}
-
-function escapeHtml(value: string): string {
-  return value.replace(/[&<>"']/gu, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character] ?? character);
-}
+export {
+  KATEX_ASSET,
+  createAssistantMathMarkupCache,
+  loadShippedKatexRuntime,
+  renderKatexMarkup,
+} from "./math-runtime";
+export type {
+  AssistantMathMarkupCache,
+  KatexRuntime,
+  KatexRuntimeLoader,
+} from "./math-runtime";
 
 function decodeHtml(value: string): string {
   return value.replace(/&quot;|&#39;|&amp;|&lt;|&gt;/gu, (entity) => ({ "&quot;": '"', "&#39;": "'", "&amp;": "&", "&lt;": "<", "&gt;": ">" })[entity] ?? entity);
-}
-
-export function renderKatexMarkup(runtime: KatexRuntime, expression: string, displayMode: boolean): string {
-  try {
-    return runtime.renderToString(expression, { displayMode, throwOnError: true });
-  } catch (error) {
-    try {
-      return runtime.renderToString(expression, { displayMode, strict: "ignore", throwOnError: false });
-    } catch {
-      const opening = ["<", "span class=\"katex-error\" style=\"color:#cc0000\" title=\""].join("");
-      const closing = ["\">", escapeHtml(expression), "<", "/span", ">"].join("");
-      return [opening, escapeHtml(String(error)), closing].join("");
-    }
-  }
 }
 
 export interface AssistantMathSegment {
@@ -90,8 +69,7 @@ export function AssistantMath({ expression, displayMode, loadRuntime = loadShipp
   useEffect(() => {
     let active = true;
     setMarkup(null);
-    void loadRuntime().then((runtime) => {
-      const next = renderKatexMarkup(runtime, expression, displayMode);
+    void SHARED_ASSISTANT_MATH_MARKUP_CACHE.load(loadRuntime, expression, displayMode).then((next) => {
       if (active) setMarkup(next);
     }).catch(() => {
       if (active) setMarkup(null);
