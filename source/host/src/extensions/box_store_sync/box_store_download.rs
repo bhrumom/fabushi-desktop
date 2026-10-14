@@ -873,17 +873,21 @@ impl PackExtractionSink for DownloadPackSink {
                     .remove(rel_path);
                 continue;
             }
-            {
+            let progress = {
                 let mut summary = self.summary.lock().expect("download summary lock");
                 summary.verified = summary.verified.saturating_add(1);
                 summary.files = summary.files.saturating_add(1);
                 summary.bytes = summary.bytes.saturating_add(group.size);
+                summary.clone()
+            };
+            if let Some(callback) = self.options.on_progress.as_ref() {
+                callback(BoxStoreDownloadProgress {
+                    files: progress.files,
+                    bytes: progress.bytes,
+                    verified: progress.verified,
+                    total: self.manifest.len(),
+                });
             }
-            report_progress(
-                &self.options,
-                self.summary.as_ref(),
-                self.manifest.len(),
-            );
         }
         Ok(())
     }
