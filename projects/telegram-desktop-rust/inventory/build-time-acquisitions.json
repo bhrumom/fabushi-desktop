@@ -1635,8 +1635,8 @@
     },
     "ada": {
       "repository": "https://github.com/ada-url/ada",
-      "commit": "010f7c45aeaff1205452e7da2df8702cf725fb3e",
-      "ref": "v3.2.4",
+      "commit": "6b4612162c34e7ffcee08c03b107b449e07a5683",
+      "ref": "v3.2.9",
       "build_entries": [
         "Telegram/build/prepare/prepare.py",
         "Telegram/build/docker/centos_env/Dockerfile",
@@ -1645,15 +1645,15 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "evidence": "Clones ada v3.2.4 and configures ADA_TESTING=OFF, ADA_TOOLS=OFF, ADA_INCLUDE_URL_PATTERN=OFF before building/installing."
+          "evidence": "Clones ada v3.2.9 and configures ADA_TESTING=OFF, ADA_TOOLS=OFF, ADA_INCLUDE_URL_PATTERN=OFF before building/installing."
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "evidence": "Clones ada v3.2.4 shallow and configures ADA_TESTING=OFF, ADA_TOOLS=OFF, ADA_INCLUDE_URL_PATTERN=OFF."
+          "evidence": "Clones ada v3.2.9 shallow and configures ADA_TESTING=OFF, ADA_TOOLS=OFF, ADA_INCLUDE_URL_PATTERN=OFF."
         },
         {
           "path": "snap/snapcraft.yaml",
-          "evidence": "Pins ada v3.2.4 and passes ADA_TESTING=OFF, ADA_TOOLS=OFF, ADA_INCLUDE_URL_PATTERN=OFF."
+          "evidence": "Pins ada v3.2.9 and passes ADA_TESTING=OFF, ADA_TOOLS=OFF, ADA_INCLUDE_URL_PATTERN=OFF."
         }
       ],
       "root_candidate_disposition_policy": [
