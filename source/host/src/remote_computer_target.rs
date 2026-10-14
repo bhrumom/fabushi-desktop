@@ -29,6 +29,23 @@ pub enum RemoteComputerTargetError {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RemoteServiceClientGrant {
+    pub device_id: String,
+    pub client_id: String,
+    client_token: String,
+    pub connection_id: String,
+    pub delegation_id: String,
+    pub request_id: String,
+    pub reconciled: bool,
+}
+
+impl RemoteServiceClientGrant {
+    pub fn client_token(&self) -> &str {
+        &self.client_token
+    }
+}
+
 pub struct ClaimedRemoteOperation {
     pub request_id: String,
     pub session_id: String,
@@ -149,6 +166,57 @@ impl FabushiCoreTargetClient {
             return Err(RemoteComputerTargetError::InvalidResponse);
         }
         serde_json::from_slice(&bytes).map_err(|_| RemoteComputerTargetError::InvalidResponse)
+    }
+
+    pub fn grant_service_client(
+        &self,
+        connection_id: &str,
+        delegation_id: &str,
+        request_id: &str,
+        label: &str,
+    ) -> Result<RemoteServiceClientGrant, RemoteComputerTargetError> {
+        if connection_id.trim().is_empty()
+            || delegation_id.trim().is_empty()
+            || request_id.trim().is_empty()
+            || label.trim().is_empty()
+        {
+            return Err(RemoteComputerTargetError::InvalidResponse);
+        }
+        let (credential, device_secret) = self.authority()?;
+        let response = self.post_json(
+            &credential,
+            self.endpoint(&["v1", "computers", &credential.device_id, "sessions", "grant"])?,
+            json!({
+                "deviceSecret": device_secret,
+                "connectionId": connection_id,
+                "delegationId": delegation_id,
+                "requestId": request_id,
+                "label": label
+            }),
+        )?;
+        if response.get("deviceId").and_then(Value::as_str) != Some(credential.device_id.as_str())
+            || response.get("connectionId").and_then(Value::as_str) != Some(connection_id)
+            || response.get("delegationId").and_then(Value::as_str) != Some(delegation_id)
+            || response.get("requestId").and_then(Value::as_str) != Some(request_id)
+            || response.get("serviceBound").and_then(Value::as_bool) != Some(true)
+            || response.get("targetGranted").and_then(Value::as_bool) != Some(true)
+        {
+            return Err(RemoteComputerTargetError::IdentityMismatch);
+        }
+        let client_id = required_text(&response, "clientId")?;
+        let client_token = required_text(&response, "clientToken")?;
+        if client_token.len() < 48 || client_token.len() > 256 {
+            return Err(RemoteComputerTargetError::InvalidResponse);
+        }
+        Ok(RemoteServiceClientGrant {
+            device_id: credential.device_id,
+            client_id,
+            client_token,
+            connection_id: connection_id.to_string(),
+            delegation_id: delegation_id.to_string(),
+            request_id: request_id.to_string(),
+            reconciled: response.get("reconciled").and_then(Value::as_bool).unwrap_or(false),
+        })
     }
 
     pub fn activate_session(&self, session_id: &str) -> Result<Value, RemoteComputerTargetError> {
