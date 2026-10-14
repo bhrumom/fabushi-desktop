@@ -186,6 +186,35 @@ impl OwnedNetworkWorker {
         Ok(session_id)
     }
 
+    pub fn stream_listen(
+        &mut self,
+        target_peer: &str,
+        local_port: u16,
+        timeout_ms: u64,
+    ) -> Result<String, String> {
+        let request_id = format!("stream-listen-{}", Uuid::new_v4().simple());
+        let session_id = format!("stream-{}", Uuid::new_v4().simple());
+        let request = serde_json::to_string(&NetworkWorkerStreamRequest {
+            kind: "streamListen",
+            request_id: &request_id,
+            session_id: &session_id,
+            target_peer: Some(target_peer),
+            target_port: Some(local_port),
+            data_b64: None,
+            max_bytes: None,
+            timeout_ms: Some(timeout_ms),
+        })
+        .map_err(|error| format!("could not serialize network worker listen request: {error}"))?;
+        self.send_private_request(&request)?;
+        let event = self.wait_for_response(&request_id, timeout_ms.saturating_add(1_000))?;
+        if event.get("type").and_then(Value::as_str) != Some("streamAccepted")
+            || event.get("sessionId").and_then(Value::as_str) != Some(session_id.as_str())
+        {
+            return Err("network worker emitted invalid listen response".into());
+        }
+        Ok(session_id)
+    }
+
     pub fn stream_write(
         &mut self,
         session_id: &str,
@@ -265,6 +294,29 @@ impl OwnedNetworkWorker {
             data,
             eof: event.get("eof").and_then(Value::as_bool).unwrap_or(false),
         })
+    }
+
+    pub fn stream_cancel(&mut self, session_id: &str) -> Result<(), String> {
+        let request_id = format!("stream-cancel-{}", Uuid::new_v4().simple());
+        let request = serde_json::to_string(&NetworkWorkerStreamRequest {
+            kind: "streamCancel",
+            request_id: &request_id,
+            session_id,
+            target_peer: None,
+            target_port: None,
+            data_b64: None,
+            max_bytes: None,
+            timeout_ms: None,
+        })
+        .map_err(|error| format!("could not serialize network worker cancel request: {error}"))?;
+        self.send_private_request(&request)?;
+        let event = self.wait_for_response(&request_id, NETWORK_WORKER_STATUS_TIMEOUT_MS)?;
+        if event.get("type").and_then(Value::as_str) != Some("streamCancelled")
+            || event.get("sessionId").and_then(Value::as_str) != Some(session_id)
+        {
+            return Err("network worker emitted invalid cancel response".into());
+        }
+        Ok(())
     }
 
     pub fn stream_close(&mut self, session_id: &str) -> Result<(), String> {
