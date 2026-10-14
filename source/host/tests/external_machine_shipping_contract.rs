@@ -1,3 +1,8 @@
+const EXTERNAL_MACHINE_EXECUTOR: &str =
+    include_str!("../src/runner/host_external_machine_dependencies.rs");
+const EXTERNAL_MACHINE_TOOLS: &str =
+    include_str!("../src/runner/tools/sand_external_machine_tools.rs");
+
 const SHIPPING_HOST_MAIN: &str = include_str!("../app/src/main.rs");
 
 #[test]
@@ -14,4 +19,24 @@ fn shipping_host_consumes_external_machine_through_runner_bridge() {
             "shipping Host is missing external-machine production binding: {needle}"
         );
     }
+}
+
+#[test]
+fn shipping_terminal_surfaces_stable_identity_and_unknown_outcome_without_retry_guidance() {
+    for needle in [
+        "\"requestId\": result.request_id.clone()",
+        "\"operationId\": result.request_id",
+        "\"outcomeUnknown\": result.outcome_unknown",
+        "\"stdoutTruncated\": result.stdout_truncated",
+        "\"stderrTruncated\": result.stderr_truncated",
+    ] {
+        assert!(
+            EXTERNAL_MACHINE_EXECUTOR.contains(needle),
+            "shipping external-machine result is missing terminal recovery field: {needle}"
+        );
+    }
+    assert!(
+        EXTERNAL_MACHINE_TOOLS.contains("never automatically retried after a lost result"),
+        "terminal tool description must forbid blind replay after outcome_unknown"
+    );
 }

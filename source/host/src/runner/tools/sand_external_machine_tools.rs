@@ -70,7 +70,7 @@ fn definitions() -> Vec<RoutedToolDefinition> {
             name: SAND_EXTERNAL_SHELL_TOOL_NAME.into(),
             provider_identifier: EXTERNAL_MACHINE_TOOL_PROVIDER.into(),
             tool_name: SAND_EXTERNAL_SHELL_TOOL_NAME.into(),
-            description: Some("Run a shell command on the user's connected computer.".into()),
+            description: Some("Run a shell command on the user's connected computer. Output is bounded and reports truncation. Commands are never automatically retried after a lost result; requestId/operationId stay stable and outcomeUnknown is true when execution may have happened without a confirmed exit.".into()),
             input_schema: json!({
                 "type":"object","additionalProperties":false,"required":["command"],
                 "properties":{"command":{"type":"string","minLength":1},"workingDirectory":{"type":"string"}}
