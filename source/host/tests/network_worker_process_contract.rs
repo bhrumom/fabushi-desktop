@@ -77,7 +77,7 @@ while IFS= read -r request; do
   case "$request" in
     *'"type":"status"'*)
       request_id="$(printf '%s' "$request" | sed -n 's/.*"requestId":"\([^"]*\)".*/\1/p')"
-      printf '%s\n' "{\"type\":\"status\",\"requestId\":\"$request_id\",\"backendState\":\"Running\",\"tailscaleIps\":[\"100.64.0.10\"]}"
+      printf '%s\n' "{{\"type\":\"status\",\"requestId\":\"$request_id\",\"backendState\":\"Running\",\"tailscaleIps\":[\"100.64.0.10\"]}}"
       ;;
     *'"type":"shutdown"'*) printf '%s\n' '{{"type":"shutdown"}}'; exit 0 ;;
   esac
