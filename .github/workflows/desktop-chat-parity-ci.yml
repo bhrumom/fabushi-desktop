@@ -6,6 +6,7 @@ on:
     paths:
       - "desktop/**"
       - "frontend/**"
+      - "source/product/fabushi/**"
       - "projects/grok-fabu-parity/architecture-semantic-adaptations.json"
       - ".github/workflows/desktop-chat-parity-ci.yml"
   pull_request:
@@ -13,6 +14,7 @@ on:
     paths:
       - "desktop/**"
       - "frontend/**"
+      - "source/product/fabushi/**"
       - "projects/desktop-chat-streaming-parity/**"
       - "projects/grok-fabu-parity/architecture-semantic-adaptations.json"
       - "scripts/check-grok-architecture.mjs"
@@ -137,6 +139,7 @@ jobs:
           .tmp-grok-electron/source/electron-main/coordinator/coordinator-runtime.test.js
           .tmp-grok-electron/source/electron-main/coordinator/coordinator-executors.test.js
           .tmp-grok-electron/source/electron-main/local-exec/local-exec-daemon-protocol.test.js
+          .tmp-grok-electron/source/product/fabushi/remote-target-availability.contract.test.js
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.97.1
