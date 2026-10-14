@@ -251,8 +251,8 @@ impl RemoteComputerNativeExecutor for HostComputerRemoteExecutor {
     ) -> RemoteComputerNativeOutcome {
         if operation.tool_name == "Screenshot" {
             return RemoteComputerNativeOutcome::Failed(json!({
-                "code": "sensitive_result_required",
-                "message": "Remote Screenshot must use the authenticated native sensitive-result executor.",
+                "code": "sensitive_result_channel_unavailable",
+                "message": "This legacy Host Computer adapter cannot transfer remote screenshots; use the authenticated native sensitive-result executor.",
                 "retryable": false,
             }));
         }
