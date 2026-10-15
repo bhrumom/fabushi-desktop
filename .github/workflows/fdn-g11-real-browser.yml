@@ -1,0 +1,53 @@
+name: FDN G11 real browser
+on:
+  pull_request:
+    paths:
+      - source/host/src/runner/tools/sand_browser_driver_source.rs
+      - source/host/src/runner/tools/sand_browser_tools.rs
+      - .github/scripts/fdn-g11-real-browser.mjs
+      - .github/workflows/fdn-g11-real-browser.yml
+      - docs/specs/fdn-g11-real-browser-actions.md
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: fdn-g11-real-browser-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      EXACT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ env.EXACT_SHA }}
+          persist-credentials: false
+      - name: Bind exact source
+        run: test "$(git rev-parse HEAD)" = "$EXACT_SHA"
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - name: Install pinned isolated browser runtime
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/g11-runtime"
+          cd "$RUNNER_TEMP/g11-runtime"
+          npm install --ignore-scripts --save-exact playwright-core@1.62.1
+          npx playwright-core install --with-deps chromium
+          sudo mkdir -p /workspace
+          sudo chown "$(id -u):$(id -g)" /workspace
+      - name: Run real shipping driver in managed browser environment
+        env:
+          G11_RUNTIME: ${{ runner.temp }}/g11-runtime
+          G11_EVIDENCE: ${{ runner.temp }}/g11-evidence
+        run: node .github/scripts/fdn-g11-real-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fdn-g11-real-browser-${{ env.EXACT_SHA }}
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/g11-evidence/
+            ${{ runner.temp }}/g11-runtime/package-lock.json

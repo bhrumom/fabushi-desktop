@@ -383,6 +383,9 @@ pub struct BrowserToolSpec {
 pub fn browser_tool_specs() -> Vec<BrowserToolSpec> {
     vec![
         spec("BROWSER_NAVIGATE", "browser_navigate", "navigate", "Navigate the box browser to a URL. By default reuses your tab; set newTab: true to open in a new tab. Returns the resulting page state with a screenshot.", &["url"], &[], true, false),
+        spec("BROWSER_REFRESH", "browser_refresh", "refresh", "Refresh the exact claimed browser tab. Requires the current expectedGeneration and returns a new generation after navigation.", &[], &[], true, false),
+        spec("BROWSER_BACK", "browser_back", "back", "Navigate the exact claimed browser tab backward in history. Requires the current expectedGeneration and returns a new generation.", &[], &[], true, false),
+        spec("BROWSER_FORWARD", "browser_forward", "forward", "Navigate the exact claimed browser tab forward in history. Requires the current expectedGeneration and returns a new generation.", &[], &[], true, false),
         spec("BROWSER_SNAPSHOT", "browser_snapshot", "snapshot", "Capture a structured snapshot of the current page with ref handles for interactive elements.", &[], &[], false, false),
         spec("BROWSER_CLICK", "browser_click", "click", "Click an element by ref from browser_snapshot.", &["ref"], &[], true, false),
         spec("BROWSER_MOUSE_CLICK_XY", "browser_mouse_click_xy", "mouse_click_xy", "Click at viewport coordinates.", &["x","y"], &[], true, false),
