@@ -378,12 +378,17 @@ impl LocalExecControl for CoordinatorLocalExecControl {
         &mut self,
         request: SpawnLocalExecDaemonRequest,
     ) -> Result<LocalExecProcessIdentity, LocalExecSupervisorError> {
+        let SpawnLocalExecDaemonRequest { mut env, log_path } = request;
+        env.insert(
+            "MAHAYANA_APP_HOST_BIN".into(),
+            self.state.host_bin.to_string_lossy().into_owned(),
+        );
         let value = control_command(
             &self.state,
             "spawnLocalExecDaemon",
             json!({
-                "env": request.env,
-                "logPath": request.log_path.to_string_lossy(),
+                "env": env,
+                "logPath": log_path.to_string_lossy(),
             }),
         )
         .map_err(local_exec_error)?;
