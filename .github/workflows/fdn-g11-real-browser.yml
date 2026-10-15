@@ -66,8 +66,8 @@ jobs:
           npx playwright-core install --with-deps chromium
           sudo mkdir -p /workspace
           sudo chown "$(id -u):$(id -g)" /workspace
-          mkdir -p /tmp/.sand-browser
-          ln -s "$RUNNER_TEMP/g11-runtime/node_modules" /tmp/.sand-browser/node_modules
+          mkdir -p /workspace/.sand-browser
+          ln -s "$RUNNER_TEMP/g11-runtime/node_modules" /workspace/.sand-browser/node_modules
       - name: Run real shipping driver in managed browser environment
         env:
           G11_RUNTIME: ${{ runner.temp }}/g11-runtime

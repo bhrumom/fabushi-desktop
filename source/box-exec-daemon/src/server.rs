@@ -69,6 +69,45 @@ pub struct LoadMcpServersResponse {
 }
 
 #[derive(Clone, PartialEq, prost::Message)]
+pub struct WriteArgs {
+    #[prost(string, tag = "1")]
+    pub path: String,
+    #[prost(string, tag = "3")]
+    pub tool_call_id: String,
+    #[prost(bytes = "vec", tag = "5")]
+    pub file_bytes: Vec<u8>,
+}
+#[derive(Clone, PartialEq, prost::Message)]
+pub struct WriteResult {
+    #[prost(oneof = "write_result::Result", tags = "1, 5, 6")]
+    pub result: Option<write_result::Result>,
+}
+pub mod write_result {
+    use super::*;
+    #[derive(Clone, PartialEq, Oneof)]
+    pub enum Result {
+        #[prost(message, tag = "1")]
+        Success(WriteSuccess),
+        #[prost(message, tag = "5")]
+        Error(WriteFailure),
+        #[prost(message, tag = "6")]
+        Rejected(WriteFailure),
+    }
+}
+#[derive(Clone, PartialEq, prost::Message)]
+pub struct WriteSuccess {
+    #[prost(string, tag = "1")]
+    pub path: String,
+}
+#[derive(Clone, PartialEq, prost::Message)]
+pub struct WriteFailure {
+    #[prost(string, tag = "1")]
+    pub path: String,
+    #[prost(string, tag = "2")]
+    pub reason: String,
+}
+
+#[derive(Clone, PartialEq, prost::Message)]
 pub struct ReadArgs {
     #[prost(string, tag = "1")]
     pub path: String,
@@ -441,7 +480,7 @@ pub struct ExecServerMessage {
     pub id: u32,
     #[prost(string, tag = "15")]
     pub exec_id: String,
-    #[prost(oneof = "exec_server_message::Message", tags = "2, 7, 29, 14, 16, 23, 52")]
+    #[prost(oneof = "exec_server_message::Message", tags = "2, 3, 7, 29, 14, 16, 23, 52")]
     pub message: Option<exec_server_message::Message>,
 }
 pub mod exec_server_message {
@@ -450,6 +489,8 @@ pub mod exec_server_message {
     pub enum Message {
         #[prost(message, tag = "2")]
         ShellArgs(ShellArgs),
+        #[prost(message, tag = "3")]
+        WriteArgs(WriteArgs),
         #[prost(message, tag = "7")]
         ReadArgs(ReadArgs),
         #[prost(message, tag = "29")]
@@ -473,7 +514,7 @@ pub struct ExecClientMessage {
     pub exec_id: String,
     #[prost(int32, optional, tag = "39")]
     pub local_execution_time_ms: Option<i32>,
-    #[prost(oneof = "exec_client_message::Message", tags = "2, 7, 29, 14, 16, 23, 55")]
+    #[prost(oneof = "exec_client_message::Message", tags = "2, 3, 7, 29, 14, 16, 23, 55")]
     pub message: Option<exec_client_message::Message>,
 }
 pub mod exec_client_message {
@@ -482,6 +523,8 @@ pub mod exec_client_message {
     pub enum Message {
         #[prost(message, tag = "2")]
         ShellResult(ShellResult),
+        #[prost(message, tag = "3")]
+        WriteResult(WriteResult),
         #[prost(message, tag = "7")]
         ReadResult(ReadResult),
         #[prost(message, tag = "29")]
@@ -689,6 +732,20 @@ impl BoxExecRuntime {
             Err(format!(
                 "Resolved path escapes configured roots: {requested}"
             ))
+        }
+    }
+
+    pub fn write(&self, args: &WriteArgs) -> WriteResult {
+        if args.file_bytes.len() > 8 * 1024 * 1024 {
+            return WriteResult { result: Some(write_result::Result::Rejected(WriteFailure {path:args.path.clone(),reason:"Write exceeds 8MiB limit".into()})) };
+        }
+        let target=match self.resolve_path(&args.path) {
+            Ok(target)=>target,
+            Err(_)=>return WriteResult {result:Some(write_result::Result::Rejected(WriteFailure {path:args.path.clone(),reason:"Write path outside workspace".into()}))},
+        };
+        match crate::workspace_write::write(&self.workspace_root,&target,&args.file_bytes) {
+            Ok(())=>WriteResult {result:Some(write_result::Result::Success(WriteSuccess {path:args.path.clone()}))},
+            Err(reason)=>WriteResult {result:Some(write_result::Result::Rejected(WriteFailure {path:args.path.clone(),reason}))},
         }
     }
 
@@ -1476,6 +1533,9 @@ impl BoxExecRuntime {
         let id = request.id;
         let exec_id = request.exec_id.clone();
         match request.message {
+            Some(exec_server_message::Message::WriteArgs(args)) => {
+                emit(client_message(id,&exec_id,exec_client_message::Message::WriteResult(self.write(&args)),None))?;
+            }
             Some(exec_server_message::Message::ReadArgs(args)) => {
                 emit(client_message(
                     id,
@@ -1887,7 +1947,11 @@ fn serve_connection(
             )
         }
         "/agent.v1.ExecService/Exec" => {
-            let request = ExecServerMessage::decode(request.body.as_slice())
+            let payload=match exec_request_body(&request) {
+                Ok(payload)=>payload,
+                Err(reason)=>return write_http_response(&mut stream,400,"text/plain",reason.as_bytes(),&[]),
+            };
+            let request = ExecServerMessage::decode(payload)
                 .map_err(|error| error.to_string())?;
             write_connect_stream(&mut stream, runtime, request)
         }
@@ -1915,6 +1979,20 @@ struct HttpRequest {
     path: String,
     headers: HashMap<String, String>,
     body: Vec<u8>,
+}
+
+fn exec_request_body(request: &HttpRequest) -> Result<&[u8], &'static str> {
+    let content_type=request.headers.get("content-type").map(|value|value.split(';').next().unwrap_or("").trim());
+    match content_type {
+        Some("application/proto")=>Ok(&request.body),
+        Some("application/connect+proto")=> {
+            if request.body.len()<5 || request.body[0]!=0 {return Err("invalid Connect data envelope");}
+            let size=u32::from_be_bytes(request.body[1..5].try_into().map_err(|_|"invalid Connect length")?) as usize;
+            if size==0 || size>16*1024*1024 || size!=request.body.len()-5 {return Err("invalid Connect data length");}
+            Ok(&request.body[5..])
+        }
+        _=>Err("unsupported Exec content type"),
+    }
 }
 
 fn read_http_request(stream: &mut TcpStream) -> Result<HttpRequest, String> {
@@ -1955,6 +2033,7 @@ fn read_http_request(stream: &mut TcpStream) -> Result<HttpRequest, String> {
         .get("content-length")
         .and_then(|value| value.parse::<usize>().ok())
         .unwrap_or_default();
+    if content_length>16*1024*1024 {return Err("HTTP request body exceeds 16MiB".into());}
     let expected = header_end.saturating_add(content_length);
     while data.len() < expected {
         let count = stream.read(&mut chunk).map_err(|error| error.to_string())?;
@@ -2319,6 +2398,58 @@ mod tests {
             std::env::vars().collect(),
         );
         (root, runtime)
+    }
+
+    #[test]
+    fn exec_connect_envelope_is_exact_and_bare_proto_stays_compatible() {
+        let payload=ExecServerMessage {id:7,exec_id:"wire".into(),message:Some(exec_server_message::Message::ReadArgs(ReadArgs {path:"/workspace/a".into(),tool_call_id:"t".into(),offset:None,limit:None,encoding_hint:None}))}.encode_to_vec();
+        let request=|body:Vec<u8>,content:&str|HttpRequest {method:"POST".into(),path:"/agent.v1.ExecService/Exec".into(),headers:HashMap::from([("content-type".into(),content.into())]),body};
+        assert_eq!(exec_request_body(&request(payload.clone(),"application/proto")).unwrap(),payload);
+        let mut framed=vec![0];framed.extend_from_slice(&(payload.len() as u32).to_be_bytes());framed.extend_from_slice(&payload);
+        assert_eq!(exec_request_body(&request(framed.clone(),"application/connect+proto")).unwrap(),payload);
+        let mut wrong_flag=framed.clone();wrong_flag[0]=1;
+        let mut trailing=framed.clone();trailing.push(0);
+        let mut bad_length=framed.clone();bad_length[4]=0;
+        for body in [vec![],vec![0,0,0,0,0],wrong_flag,trailing,bad_length] {
+            assert!(exec_request_body(&request(body,"application/connect+proto")).is_err());
+        }
+        assert!(exec_request_body(&request(payload,"application/json")).is_err());
+    }
+
+    #[test]
+    fn frozen_write_tags_dispatch_actual_atomic_bytes_and_replace() {
+        let (_root,runtime)=runtime();
+        let args=WriteArgs {path:"/workspace/wire.txt".into(),tool_call_id:"tool".into(),file_bytes:b"wire".to_vec()};
+        let encoded=args.encode_to_vec();assert!(encoded.windows(2).any(|bytes|bytes==[0x1a,4]));assert!(encoded.windows(2).any(|bytes|bytes==[0x2a,4]));
+        let request=ExecServerMessage {id:9,exec_id:"write".into(),message:Some(exec_server_message::Message::WriteArgs(args.clone()))};
+        let output=runtime.execute(request);
+        assert!(matches!(&output[0].element,Some(exec_stream_element::Element::ExecClientMessage(ExecClientMessage {message:Some(exec_client_message::Message::WriteResult(WriteResult {result:Some(write_result::Result::Success(_))})),..}))));
+        assert_eq!(fs::read(runtime.workspace_root.join("wire.txt")).unwrap(),b"wire");
+        assert!(matches!(runtime.write(&WriteArgs {file_bytes:b"replace".to_vec(),..args}).result,Some(write_result::Result::Success(_))));
+        assert_eq!(fs::read(runtime.workspace_root.join("wire.txt")).unwrap(),b"replace");
+        assert!(!fs::read_dir(&runtime.workspace_root).unwrap().any(|entry|entry.unwrap().file_name().to_string_lossy().starts_with(".fabushi-write-")));
+    }
+
+    #[test]
+    fn write_rejects_escape_symlink_parent_target_and_oversize_without_side_effects() {
+        let (root,runtime)=runtime();let outside=root.path().join("outside");fs::create_dir(&outside).unwrap();fs::write(outside.join("protected"),b"original").unwrap();
+        symlink(&outside,runtime.workspace_root.join("linked-parent")).unwrap();
+        symlink(outside.join("protected"),runtime.workspace_root.join("linked-file")).unwrap();
+        for (path,bytes) in [("/workspace/linked-parent/protected",b"overwrite".to_vec()),("/workspace/linked-file",b"overwrite".to_vec()),("/workspace/../outside/protected",b"overwrite".to_vec()),("/workspace/large",vec![0;8*1024*1024+1])] {
+            assert!(matches!(runtime.write(&WriteArgs {path:path.into(),tool_call_id:"deny".into(),file_bytes:bytes}).result,Some(write_result::Result::Rejected(_))));
+        }
+        assert_eq!(fs::read(outside.join("protected")).unwrap(),b"original");assert!(!runtime.workspace_root.join("large").exists());
+        assert!(!fs::read_dir(&runtime.workspace_root).unwrap().any(|entry|entry.unwrap().file_name().to_string_lossy().starts_with(".fabushi-write-")));
+    }
+
+    #[test]
+    fn write_parent_symlink_replacement_cannot_redirect_to_outside_file() {
+        let (root,runtime)=runtime();let outside=root.path().join("outside");fs::create_dir(&outside).unwrap();fs::write(outside.join("protected"),b"original").unwrap();
+        let parent=runtime.workspace_root.join("parent");let held=runtime.workspace_root.join("held");fs::create_dir(&parent).unwrap();
+        let attack_parent=parent.clone();let attack_held=held.clone();let attack_outside=outside.clone();
+        let attacker=std::thread::spawn(move || {for _ in 0..100 {if fs::rename(&attack_parent,&attack_held).is_ok() {let _=symlink(&attack_outside,&attack_parent);std::thread::yield_now();let _=fs::remove_file(&attack_parent);let _=fs::rename(&attack_held,&attack_parent);}}});
+        for _ in 0..100 {let _=runtime.write(&WriteArgs {path:"/workspace/parent/protected".into(),tool_call_id:"race".into(),file_bytes:b"inside".to_vec()});}
+        attacker.join().unwrap();assert_eq!(fs::read(outside.join("protected")).unwrap(),b"original");
     }
 
     #[test]

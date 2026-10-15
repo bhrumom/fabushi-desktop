@@ -56,7 +56,7 @@ try {
   const display = 77;
   const cdpPort = 9222 + display;
   if (hostBridge) { report.bridgeBinarySha256 = sha(readFileSync(hostBridge)); report.boxDaemonBinarySha256 = sha(readFileSync(process.env.G11_BOX_DAEMON_BIN)); }
-  rmSync(`/tmp/.sand-browser/views-${display}.json`, { force: true });
+  rmSync(`/workspace/.sand-browser/views-${display}.json`, { force: true });
   browserProcess = spawn(chromium.executablePath(), ['--headless=new', '--no-sandbox', '--disable-dev-shm-usage', '--remote-debugging-address=127.0.0.1', `--remote-debugging-port=${cdpPort}`, `--user-data-dir=${profile}`, 'about:blank'], { stdio: 'ignore' });
   for (let attempt = 0; attempt < 100; attempt++) {
     try { if ((await fetch(`http://127.0.0.1:${cdpPort}/json/version`)).ok) break; } catch {}
@@ -94,7 +94,7 @@ try {
     const observer = await chromium.connectOverCDP(`http://127.0.0.1:${cdpPort}`);
     try {
       const ctx = observer.contexts()[0];
-      const state = JSON.parse(readFileSync(`/tmp/.sand-browser/views-${display}.json`));
+      const state = JSON.parse(readFileSync(`/workspace/.sand-browser/views-${display}.json`));
       for (const page of ctx.pages()) {
         const session = await ctx.newCDPSession(page);
         const { targetInfo } = await session.send('Target.getTargetInfo'); await session.detach();
@@ -147,7 +147,7 @@ try {
   await check('same-URL tabs retain distinct exact target claims', async () => {
     const secondary = ok(await call({ op: 'navigate', newTab: true, viewId: 'secondary', url: origin + '/two' }));
     const primary = await snapshot();
-    const refs = JSON.parse(readFileSync(`/tmp/.sand-browser/views-${display}.json`));
+    const refs = JSON.parse(readFileSync(`/workspace/.sand-browser/views-${display}.json`));
     assert.notEqual(refs.views.primary, refs.views.secondary);
     assert.notEqual(primary.generation, secondary.generation);
     denied(await call({ op: 'refresh', viewId: 'primary', expectedGeneration: secondary.generation }), /Stale browser view/);

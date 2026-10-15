@@ -29,7 +29,7 @@ struct ActionsResources {
 fn failure(message: &str) -> ProviderSessionError { ProviderSessionError::Tool(message.into()) }
 fn driver_path(path: &str) -> Result<(), ProviderSessionError> {
     let path=Path::new(path);
-    if !path.starts_with("/tmp/.sand-browser") || path.components().any(|part| matches!(part,std::path::Component::ParentDir)) {
+    if !path.starts_with("/workspace/.sand-browser") || path.components().any(|part| matches!(part,std::path::Component::ParentDir)) {
         return Err(failure("Actions browser resource path denied"));
     }
     Ok(())
@@ -85,7 +85,7 @@ pub fn run()->Result<(),Box<dyn std::error::Error>> {
     let listener=TcpListener::bind(("127.0.0.1",0))?;
     let daemon_port=listener.local_addr()?.port();drop(listener);
     let token=uuid::Uuid::new_v4().to_string();
-    let terminals=Path::new("/tmp/.sand-browser").join(format!("daemon-terminals-{}",uuid::Uuid::new_v4()));
+    let terminals=Path::new("/workspace/.sand-browser").join(format!("daemon-terminals-{}",uuid::Uuid::new_v4()));
     let mut daemon=start_box_exec_daemon_process(BoxExecDaemonProcessOptions {executable_path:executable.into(),host:"127.0.0.1".into(),port:daemon_port,auth_token:token.clone(),workspace_root:"/workspace".into(),terminals_directory:terminals.clone(),start_timeout_ms:5000,stop_timeout_ms:2000}).map_err(|_|"real Box daemon startup/authentication failed")?;
     if daemon.pid==0 {return Err("missing real daemon PID".into());}
     let transport=ProductionBoxTransport::from_endpoint(&BoxEndpoint::new("127.0.0.1",daemon_port,token));
@@ -96,7 +96,7 @@ pub fn run()->Result<(),Box<dyn std::error::Error>> {
     let bridge=SandBrowserToolBridge::new(Arc::new(NoDelegate),Arc::new(executor));
     let tool=bridge.list_tools()?.into_iter().find(|tool|tool.name==spec.name).ok_or("missing routed tool")?;
     let mut result=bridge.call_tool(&tool,args,"g11-actions")?;
-    let stdout=fs::read_to_string("/tmp/.sand-browser/result-g11-actions.txt")?;
+    let stdout=fs::read_to_string("/workspace/.sand-browser/result-g11-actions.txt")?;
     let line=stdout.lines().rev().find_map(|line|line.strip_prefix("__SAND_BROWSER_RESULT__")).ok_or("missing actual driver result")?;
     let raw:Value=serde_json::from_str(line)?;
     let image=result.as_object_mut().ok_or("bridge result object")?.remove("imageB64");
