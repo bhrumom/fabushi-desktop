@@ -67,7 +67,7 @@ try {
   const context = browser.contexts()[0];
   async function call(request) {
     if (hostBridge) {
-      const { stdout } = await exec(hostBridge, [Buffer.from(JSON.stringify(request)).toString('base64')], { timeout: 100000, maxBuffer: 2 * 1024 * 1024 });
+      const { stdout } = await exec(hostBridge, [Buffer.from(JSON.stringify(request)).toString('base64')], { timeout: 130000, maxBuffer: 2 * 1024 * 1024 });
       const result = JSON.parse(stdout);
       const { bridge, driver, io } = result;
       assert.equal(result.boxRpc, "authenticated-connect-protobuf");

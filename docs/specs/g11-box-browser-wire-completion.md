@@ -40,6 +40,14 @@ browser, external Box provider or packaged/extension claim.
   Reject line ranges for binary data. Bound files to8MiB before allocation and
   return a structured invalid-file response on excess. Verify exact binary bytes
   and range/size rejection, plus real PNG retrieval through the shipping client.
+- BW06: Run38699218529 passes11/12 actual Rust/Box cases, but history loses its
+  RPC response at the fixed15s transport idle deadline while the shipping driver
+  permits bounded25s navigation stages. Keep Control/unary deadline15s and give
+  Exec stream reads a bounded120s idle deadline, accommodating the driver's total
+  connect/navigation/load/screenshot/cleanup budget. This does not extend account
+  grants, execution leases or caller cancellation, and never retries a lost call.
+  The test watchdog must exceed that transport bound. Require the real history
+  and existing mutation/recovery/daemon cancellation contracts before accepting.
 
 ## Architecture, strategy and interfaces
 Host generated_production.rs remains the client wire authority. BoxExecRuntime
@@ -52,7 +60,7 @@ Test-only Actions adapter follows production paths and must not translate around
 or hide unsupported RPCs. No new schema, auth system or external credential.
 
 ## Failure, acceptance and delivery
-AC1: BW01–05 focused/whole-owner CI pass; actual direct and Rust/Box12-case suites
+AC1: BW01–06 focused/whole-owner CI pass; actual direct and Rust/Box12-case suites
 pass with actual screenshots and hashes. AC2: exact-main evidence recorded.
 External hosted Box, signed extension/native messaging and packaged release remain
 independent. Any missing/failed case blocks; do not weaken workspace guard.
