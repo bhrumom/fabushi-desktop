@@ -1,0 +1,82 @@
+name: FDN G12 native file production E2E
+
+on:
+  pull_request:
+    paths:
+      - "source/host/local-exec/local-exec-machine.ts"
+      - "source/host/local-exec/local-exec-provider.ts"
+      - "source/host/local-exec/local-exec-native-file-access.ts"
+      - "source/host/src/extensions/local_exec/native_file_sandbox.rs"
+      - "source/host/src/extensions/local_exec/mod.rs"
+      - "source/host/app/src/main.rs"
+      - "source/host/tests/native_local_exec_file_sandbox_contract.rs"
+      - "source/node-agent-coordinator/src/main.rs"
+      - "source/node-agent-coordinator/tests/local_exec_shipping_contract.rs"
+      - "projects/grok-fabu-parity/architecture-semantic-adaptations.json"
+      - ".github/workflows/fdn-g12-native-file-e2e.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fdn-g12-native-file-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  native-file:
+    name: Native file no-follow E2E / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-2025]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - name: Bind exact tested HEAD
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            expected="${{ github.event.pull_request.head.sha }}"
+          else
+            expected="${{ github.sha }}"
+          fi
+          test "$actual" = "$expected"
+          echo "Exact tested HEAD: $actual" >> "$GITHUB_STEP_SUMMARY"
+      - name: Reclaim Ubuntu hosted-runner disk headroom
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL || true
+          sudo apt-get clean
+          if command -v docker >/dev/null 2>&1; then
+            docker system prune --all --force --volumes || true
+          fi
+          df -h "$GITHUB_WORKSPACE"
+      - name: Install Linux native desktop dependencies
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: source/host -> target
+          shared-key: fdn-g12-native-file-${{ matrix.os }}-1.97.1
+      - name: Execute native no-follow file acceptance
+        shell: bash
+        run: >-
+          cargo test --manifest-path source/host/Cargo.toml
+          --test native_local_exec_file_sandbox_contract
+          -- --nocapture
