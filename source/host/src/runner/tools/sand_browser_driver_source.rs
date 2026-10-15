@@ -707,7 +707,7 @@ const OPS = {
   back: async ({ request, context, state }) => {
     const { page, viewId } = await resolvePage(request, context, state);
     const previousUrl = page.url();
-    const response = await page.goBack({ waitUntil: "domcontentloaded", timeout: NAVIGATE_TIMEOUT_MS });
+    const response = await page.goBack({ waitUntil: "commit", timeout: NAVIGATE_TIMEOUT_MS });
     await page.waitForLoadState("load", { timeout: 5000 }).catch(() => {});
     if (response === null && page.url() === previousUrl) {
       throw new Error("No previous browser history entry is available for this tab.");
@@ -718,7 +718,7 @@ const OPS = {
   forward: async ({ request, context, state }) => {
     const { page, viewId } = await resolvePage(request, context, state);
     const previousUrl = page.url();
-    const response = await page.goForward({ waitUntil: "domcontentloaded", timeout: NAVIGATE_TIMEOUT_MS });
+    const response = await page.goForward({ waitUntil: "commit", timeout: NAVIGATE_TIMEOUT_MS });
     await page.waitForLoadState("load", { timeout: 5000 }).catch(() => {});
     if (response === null && page.url() === previousUrl) {
       throw new Error("No forward browser history entry is available for this tab.");
@@ -1039,32 +1039,20 @@ const OPS = {
   },
   cdp: async ({ request, context, state }) => {
     const method = typeof request.method === "string" ? request.method : "";
-    const deniedPrefixes = [
-      "Browser.",
-      "Target.",
-      "Storage.",
-      "SystemInfo.",
-      "Security.",
-      "Input.",
-      "Tethering.",
-      "Cast.",
-    ];
-    const deniedMethods = [
-      "Network.setCookie",
-      "Network.setCookies",
-      "Network.getCookies",
-      "Network.getAllCookies",
-      "Network.deleteCookies",
-      "Network.clearBrowserCookies",
-      "Network.clearBrowserCache",
-    ];
-    if (
-      method.length === 0 ||
-      deniedPrefixes.some((p) => method.startsWith(p)) ||
-      deniedMethods.includes(method)
-    ) {
+    // CDP is a narrow observation surface. A denylist cannot fence indirect
+    // secret reads such as Runtime.evaluate(document.cookie) or response bodies.
+    const allowedMethods = new Set([
+      "Page.getLayoutMetrics",
+      "Page.captureScreenshot",
+      "DOM.getBoxModel",
+      "DOM.getContentQuads",
+      "DOM.getNodeForLocation",
+      "Accessibility.getFullAXTree",
+      "Accessibility.getPartialAXTree",
+    ]);
+    if (!allowedMethods.has(method)) {
       throw new Error(
-        "CDP method " + JSON.stringify(method) + " is denied. Browser-wide, storage, cookie, cache, permission, target-management, and input commands are not allowed; use the dedicated browser tools instead."
+        "CDP method " + JSON.stringify(method) + " is denied. Only explicit geometry, accessibility and screenshot observation commands are allowed; use dedicated browser tools for interaction."
       );
     }
     const { page, viewId } = await resolvePage(request, context, state);

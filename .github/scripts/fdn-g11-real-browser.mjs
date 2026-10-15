@@ -72,6 +72,19 @@ try {
   }
   const ok = result => { assert.equal(result.ok, true, result.error); return result; };
   const denied = (result, pattern) => { assert.equal(result.ok, false, 'unsafe action was accepted'); assert.match(result.error, pattern); };
+  async function observePrimary(fn) {
+    const observer = await chromium.connectOverCDP(`http://127.0.0.1:${cdpPort}`);
+    try {
+      const ctx = observer.contexts()[0];
+      const state = JSON.parse(readFileSync(`/tmp/.sand-browser/views-${display}.json`));
+      for (const page of ctx.pages()) {
+        const session = await ctx.newCDPSession(page);
+        const { targetInfo } = await session.send('Target.getTargetInfo'); await session.detach();
+        if (targetInfo.targetId === state.views.primary) return await fn(page);
+      }
+      throw new Error('Exact claimed target missing from real observer');
+    } finally { await observer.close(); }
+  }
   let current;
   const snapshot = async extra => ok(await call({ op: 'snapshot', viewId: 'primary', ...extra }));
   const refFor = (snap, label) => {
@@ -104,6 +117,8 @@ try {
     current = ok(await call({ op: 'forward', viewId: 'primary', expectedGeneration: backGeneration }));
     assert.equal(current.url, origin + '/two'); assert.notEqual(current.generation, backGeneration);
   });
+  const reset = ok(await call({ op: 'snapshot', viewId: 'primary' }));
+  current = ok(await call({ op: 'navigate', viewId: 'primary', expectedGeneration: reset.generation, url: origin + '/two' }));
   await check('stale and missing generation reject with zero navigation', async () => {
     const before = await snapshot();
     for (const expectedGeneration of [undefined, 'stale-generation']) {
@@ -123,17 +138,9 @@ try {
   await check('iframe snapshot fill and exact frame targeting', async () => {
     const snap = await snapshot({ frameName: 'fixture-frame', frameUrl: origin + '/frame' });
     ok(await call({ op: 'fill', viewId: 'primary', expectedGeneration: snap.generation, frameName: 'fixture-frame', frameUrl: origin + '/frame', ref: refFor(snap, 'Frame input'), value: 'g11-frame-value' }));
-    const page = context.pages().find(page => page.url() === origin + '/two' && page.frames().some(frame => frame.name() === 'fixture-frame' && !frame.isDetached()));
-    // Resolve exact target rather than relying on ordering among identical URLs.
-    const state = JSON.parse(readFileSync(`/tmp/.sand-browser/views-${display}.json`));
-    let primaryPage;
-    for (const candidate of context.pages()) {
-      const session = await context.newCDPSession(candidate);
-      const { targetInfo } = await session.send('Target.getTargetInfo'); await session.detach();
-      if (targetInfo.targetId === state.views.primary) primaryPage = candidate;
-    }
-    assert.ok(page && primaryPage);
-    assert.equal(await primaryPage.frame({ name: 'fixture-frame' }).getByLabel('Frame input').inputValue(), 'g11-frame-value');
+    await observePrimary(async page => {
+      assert.equal(await page.frame({ name: 'fixture-frame' }).getByLabel('Frame input').inputValue(), 'g11-frame-value');
+    });
     denied(await call({ op: 'snapshot', viewId: 'primary', frameName: 'missing-frame' }), /No browser frame/);
   });
   await check('tracked real download bytes path and digest', async () => {
@@ -153,13 +160,10 @@ try {
     const upload = filePath => call({ op: 'upload_file', viewId: 'primary', expectedGeneration: snap.generation, ref, filePath });
     ok(await upload('/workspace/g11-allowed.txt'));
     for (const file of ['/tmp/g11-outside.txt', '/workspace/g11-escape', '/workspace/g11-large.bin']) denied(await upload(file), /escapes|limit/);
-    const uploaded = await call({ op: 'cdp', viewId: 'primary', expectedGeneration: snap.generation, method: 'Runtime.evaluate', params: { expression: 'document.querySelector("input[type=file]").files[0].name', returnByValue: true } });
-    if (uploaded.ok) assert.ok(uploaded.data.includes('g11-allowed.txt'));
-    // Observe without depending on whether general script CDP is exposed.
-    let fileNames = [];
-    for (const page of context.pages().filter(p => p.url() === origin + '/two')) fileNames.push(await page.locator('input[type=file]').evaluate(input => input.files[0]?.name));
-    assert.ok(fileNames.includes('g11-allowed.txt'));
-    assert.ok(!fileNames.includes('g11-outside.txt') && !fileNames.includes('g11-large.bin'));
+    await observePrimary(async page => {
+      const file = await page.locator('input[type=file]').evaluate(input => ({ name: input.files[0]?.name, size: input.files[0]?.size }));
+      assert.equal(file.name, 'g11-allowed.txt'); assert.equal(file.size, Buffer.byteLength('allowed-upload'));
+    });
   });
   await check('cookie storage and browser-profile CDP export is denied', async () => {
     const snap = await snapshot();

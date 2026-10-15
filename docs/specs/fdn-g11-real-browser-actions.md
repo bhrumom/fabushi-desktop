@@ -64,3 +64,15 @@ Keep JSON evidence artifact on success or failure; no raw browser profile is upl
 User request 2026-10-15: complete backend production inputs and real G11 browser/box
 Actions environment. Inspected #91 HEAD 126d4e4ad56bba5d466d08b87b322018df0108f6;
 no registered Desktop self-hosted runners. Parent FDN R12/R13/R19/R20 and G11 apply.
+
+## Real-browser findings and authorized repair
+Actions38663228665 executed12 cases:8 passed,4 failed. The indirect synthetic-cookie
+probe proves the generic CDP Runtime.evaluate path bypasses the privacy fence.
+G11-R08: Replace the CDP denylist as authority with an explicit read-only geometry /
+accessibility / screenshot allowlist; reject Runtime, storage, network-body and
+profile/browser/target methods before sending CDP. Preserve Page.getLayoutMetrics.
+G11-R09: History navigation must handle BFCache restores: wait for navigation commit,
+then the existing bounded load wait, rather than requiring a DOMContentLoaded event
+which restored documents may not emit. Failed navigation must not authorize stale
+state. Observe via fresh CDP connection to avoid retaining stale harness frame objects.
+These repairs extend the existing driver owner; no separate execution engine.
