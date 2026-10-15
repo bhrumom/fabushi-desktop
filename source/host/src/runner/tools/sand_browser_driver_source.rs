@@ -677,6 +677,30 @@ function clickOptionsFor(args) {
   return options;
 }
 
+async function navigateHistory(request, context, state, direction) {
+  const { page, viewId } = await resolvePage(request, context, state);
+  const session = await context.newCDPSession(page);
+  try {
+    const history = await session.send("Page.getNavigationHistory");
+    const entry = history.entries[history.currentIndex + direction];
+    if (!entry) {
+      throw new Error(direction < 0 ? "No previous browser history entry is available for this tab." : "No forward browser history entry is available for this tab.");
+    }
+    // Fence old refs before dispatch: response loss or a restored document must
+    // not leave an already-used generation valid. Never retry this dispatch.
+    await bumpViewGeneration(request.display, state, viewId);
+    await Promise.race([
+      session.send("Page.navigateToHistoryEntry", { entryId: entry.id }),
+      sleep(NAVIGATE_TIMEOUT_MS).then(() => { throw new Error("Browser history navigation outcome is unknown; take a fresh snapshot before continuing."); }),
+    ]);
+    await page.waitForURL(entry.url, { waitUntil: "commit", timeout: NAVIGATE_TIMEOUT_MS });
+    await page.waitForLoadState("load", { timeout: 5000 }).catch(() => {});
+    return { page, viewId, summary: direction < 0 ? "Navigated back in the current tab" : "Navigated forward in the current tab" };
+  } finally {
+    await Promise.race([session.detach().catch(() => {}), sleep(1000)]);
+  }
+}
+
 const OPS = {
   navigate: async ({ request, context, state }) => {
     if (request.newTab === true) {
@@ -705,26 +729,10 @@ const OPS = {
     return { page, viewId, summary: "Refreshed the current tab" };
   },
   back: async ({ request, context, state }) => {
-    const { page, viewId } = await resolvePage(request, context, state);
-    const previousUrl = page.url();
-    const response = await page.goBack({ waitUntil: "commit", timeout: NAVIGATE_TIMEOUT_MS });
-    await page.waitForLoadState("load", { timeout: 5000 }).catch(() => {});
-    if (response === null && page.url() === previousUrl) {
-      throw new Error("No previous browser history entry is available for this tab.");
-    }
-    await bumpViewGeneration(request.display, state, viewId);
-    return { page, viewId, summary: "Navigated back in the current tab" };
+    return navigateHistory(request, context, state, -1);
   },
   forward: async ({ request, context, state }) => {
-    const { page, viewId } = await resolvePage(request, context, state);
-    const previousUrl = page.url();
-    const response = await page.goForward({ waitUntil: "commit", timeout: NAVIGATE_TIMEOUT_MS });
-    await page.waitForLoadState("load", { timeout: 5000 }).catch(() => {});
-    if (response === null && page.url() === previousUrl) {
-      throw new Error("No forward browser history entry is available for this tab.");
-    }
-    await bumpViewGeneration(request.display, state, viewId);
-    return { page, viewId, summary: "Navigated forward in the current tab" };
+    return navigateHistory(request, context, state, 1);
   },
   snapshot: async ({ request, context, state }) => {
     const { page, viewId } = await resolvePage(request, context, state);
@@ -1125,7 +1133,7 @@ async function run(request) {
     }
     if (result.page !== undefined) {
       out.url = result.page.url();
-      out.title = await result.page.title().catch(() => "");
+      out.title = await Promise.race([result.page.title().catch(() => ""), sleep(2000).then(() => "")]);
       if (typeof request.screenshotPath === "string" && request.screenshotPath.length > 0) {
         mkdirSync(STATE_DIR, { recursive: true });
         await result.page
@@ -1142,7 +1150,7 @@ async function run(request) {
     }
     return out;
   } finally {
-    await browser.close().catch(() => {});
+    await Promise.race([browser.close().catch(() => {}), sleep(2000)]);
   }
 }
 

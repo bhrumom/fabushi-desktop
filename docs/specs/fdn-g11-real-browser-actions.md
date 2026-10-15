@@ -76,3 +76,8 @@ then the existing bounded load wait, rather than requiring a DOMContentLoaded ev
 which restored documents may not emit. Failed navigation must not authorize stale
 state. Observe via fresh CDP connection to avoid retaining stale harness frame objects.
 These repairs extend the existing driver owner; no separate execution engine.
+History repair follow-up: second real run38663478961 passed11/12, with history
+still reaching90s watchdog. Use exact claimed page CDP history entry IDs for one
+navigation dispatch, observe the selected URL with bounded waits, never replay
+uncertain navigation. Bound title observation and CDP disconnect so a restored
+page cannot hide the operation result behind an unbounded cleanup await.
