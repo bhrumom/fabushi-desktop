@@ -199,7 +199,7 @@ fn browser_invocation_projects_display_cdp_view_and_screenshot_path() {
         .screenshot_path
         .as_deref()
         .is_some_and(|path| path.contains("toolcall1")));
-    assert!(invocation.shell_command.starts_with("node /tmp/.sand-browser/driver-v2.mjs "));
+    assert!(invocation.shell_command.starts_with("node /workspace/.sand-browser/driver-v2.mjs "));
     assert!(!invocation.encoded_request.is_empty());
 
     assert_eq!(sanitize_for_box_path("tool/call:1"), "toolcall1");
@@ -586,14 +586,14 @@ fn production_browser_executor_uses_only_host_box_port() {
 
     let writes = port.writes.lock().expect("writes");
     assert_eq!(writes.len(), 1);
-    assert_eq!(writes[0].path, "/tmp/.sand-browser/driver-v2.mjs");
+    assert_eq!(writes[0].path, "/workspace/.sand-browser/driver-v2.mjs");
     assert!(writes[0].data.len() > 35_000);
     drop(writes);
 
     let shells = port.shells.lock().expect("shells");
-    assert!(shells.iter().any(|request| request.command.contains("mkdir -p /tmp/.sand-browser")));
+    assert!(shells.iter().any(|request| request.command.contains("mkdir -p /workspace/.sand-browser")));
     assert!(shells.iter().any(|request| {
-        request.command.contains("node /tmp/.sand-browser/driver-v2.mjs")
+        request.command.contains("node /workspace/.sand-browser/driver-v2.mjs")
             && request.command.contains("result-browsercall1.txt")
     }));
     let guarded = guarded_shells.lock().expect("guarded shells");

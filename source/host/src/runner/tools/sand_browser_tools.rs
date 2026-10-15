@@ -676,7 +676,7 @@ impl ProductionBrowserToolExecutor {
     fn ensure_driver_uploaded(&self, tool_call_id: &str) -> Result<(), ProviderSessionError> {
         self.ensure_shell_success(
             self.execute_shell(RunnerBoxShellRequest {
-                command: format!("mkdir -p {SAND_BROWSER_DRIVER_BOX_DIR}"),
+                command: format!("mkdir -p {SAND_BROWSER_DRIVER_BOX_DIR} && chmod 700 {SAND_BROWSER_DRIVER_BOX_DIR}"),
                 working_directory: "/workspace".into(),
                 tool_call_id: format!("{tool_call_id}:browser-driver-dir"),
                 is_background: false,

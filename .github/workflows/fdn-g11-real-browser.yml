@@ -7,6 +7,8 @@ on:
       - .github/scripts/fdn-g11-real-browser.mjs
       - .github/workflows/fdn-g11-real-browser.yml
       - docs/specs/fdn-g11-real-browser-actions.md
+      - docs/specs/fdn-g11-host-browser-actions.md
+      - source/host/examples/fdn_browser_actions.rs
   workflow_dispatch:
 permissions:
   contents: read
@@ -17,6 +19,10 @@ jobs:
   browser:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        execution: [direct-driver, rust-resource]
     env:
       EXACT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
@@ -29,6 +35,28 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 24
+      - uses: dtolnay/rust-toolchain@stable
+        if: matrix.execution == 'rust-resource'
+        with:
+          toolchain: 1.97.1
+      - uses: Swatinem/rust-cache@v2
+        if: matrix.execution == 'rust-resource'
+        with:
+          workspaces: source/host -> target
+          shared-key: desktop-restored-rust-1.97.1
+      - name: Install existing Host native compile dependencies
+        if: matrix.execution == 'rust-resource'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
+      - name: Build exact shipping Rust browser bridge example
+        if: matrix.execution == 'rust-resource'
+        run: |
+          cargo build --manifest-path source/box-exec-daemon/Cargo.toml --bin box-exec-daemon
+          echo "G11_BOX_DAEMON_BIN=$GITHUB_WORKSPACE/source/box-exec-daemon/target/debug/box-exec-daemon" >> "$GITHUB_ENV"
+          cargo generate-lockfile --manifest-path source/host/Cargo.toml
+          cargo build --manifest-path source/host/Cargo.toml --example fdn_browser_actions --locked
+          echo "G11_HOST_BRIDGE_BIN=$GITHUB_WORKSPACE/source/host/target/debug/examples/fdn_browser_actions" >> "$GITHUB_ENV"
       - name: Install pinned isolated browser runtime
         run: |
           set -euo pipefail
@@ -38,6 +66,8 @@ jobs:
           npx playwright-core install --with-deps chromium
           sudo mkdir -p /workspace
           sudo chown "$(id -u):$(id -g)" /workspace
+          mkdir -p /workspace/.sand-browser
+          ln -s "$RUNNER_TEMP/g11-runtime/node_modules" /workspace/.sand-browser/node_modules
       - name: Run real shipping driver in managed browser environment
         env:
           G11_RUNTIME: ${{ runner.temp }}/g11-runtime
@@ -46,8 +76,10 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: fdn-g11-real-browser-${{ env.EXACT_SHA }}
+          name: fdn-g11-real-browser-${{ env.EXACT_SHA }}-${{ matrix.execution }}
           if-no-files-found: error
           path: |
             ${{ runner.temp }}/g11-evidence/
             ${{ runner.temp }}/g11-runtime/package-lock.json
+            source/host/Cargo.lock
+            source/box-exec-daemon/Cargo.lock

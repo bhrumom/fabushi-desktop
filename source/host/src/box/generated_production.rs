@@ -32,6 +32,8 @@ pub const CONNECT_PROTOCOL_VERSION: &str = "1";
 pub const CONNECT_STREAM_CONTENT_TYPE: &str = "application/connect+proto";
 pub const CONNECT_STREAM_END_FLAG: u8 = 0x02;
 pub const PRODUCTION_BOX_RPC_TIMEOUT_MS: u64 = 15_000;
+/// Exec calls can contain bounded browser navigation stages longer than unary RPC.
+pub const PRODUCTION_BOX_EXEC_TIMEOUT_MS: u64 = 120_000;
 
 #[derive(Debug)]
 pub enum ProductionBoxTransportError {
@@ -1501,7 +1503,7 @@ fn send_connect_server_stream(
         ProductionBoxTransportError::InvalidBaseUrl("box transport base URL has no port".into())
     })?;
 
-    let timeout = Duration::from_millis(PRODUCTION_BOX_RPC_TIMEOUT_MS);
+    let timeout = Duration::from_millis(PRODUCTION_BOX_EXEC_TIMEOUT_MS);
     let mut stream = TcpStream::connect((host, port))?;
     stream.set_read_timeout(Some(timeout))?;
     stream.set_write_timeout(Some(timeout))?;

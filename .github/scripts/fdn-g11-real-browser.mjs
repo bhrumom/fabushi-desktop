@@ -12,10 +12,11 @@ import { pathToFileURL } from 'node:url';
 const exec = promisify(execFile);
 const runtime = process.env.G11_RUNTIME;
 const evidence = process.env.G11_EVIDENCE;
+const hostBridge = process.env.G11_HOST_BRIDGE_BIN;
 mkdirSync(evidence, { recursive: true });
 const report = { sourceSha: process.env.EXACT_SHA, runId: process.env.GITHUB_RUN_ID,
   command: 'node .github/scripts/fdn-g11-real-browser.mjs', environment: 'GitHub Actions ubuntu-24.04; disposable managed Chromium; loopback CDP',
-  scope: 'shipping driver only; outer Rust Host/box transport and extension not exercised', cases: [] };
+  scope: hostBridge ? 'shipping Rust browser bridge/executor with actual authenticated Box Connect RPC Shell/Write/Read; external Box service, extension and package not exercised' : 'shipping driver only; outer Rust Host/box transport and extension not exercised', cases: [] };
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 let browserProcess, browser, server;
 async function check(name, fn) {
@@ -53,8 +54,9 @@ try {
   const origin = `http://127.0.0.1:${server.address().port}`;
   const profile = join(runtime, 'disposable-profile');
   const display = 77;
-  const cdpPort = 9477;
-  rmSync(`/tmp/.sand-browser/views-${display}.json`, { force: true });
+  const cdpPort = 9222 + display;
+  if (hostBridge) { report.bridgeBinarySha256 = sha(readFileSync(hostBridge)); report.boxDaemonBinarySha256 = sha(readFileSync(process.env.G11_BOX_DAEMON_BIN)); }
+  rmSync(`/workspace/.sand-browser/views-${display}.json`, { force: true });
   browserProcess = spawn(chromium.executablePath(), ['--headless=new', '--no-sandbox', '--disable-dev-shm-usage', '--remote-debugging-address=127.0.0.1', `--remote-debugging-port=${cdpPort}`, `--user-data-dir=${profile}`, 'about:blank'], { stdio: 'ignore' });
   for (let attempt = 0; attempt < 100; attempt++) {
     try { if ((await fetch(`http://127.0.0.1:${cdpPort}/json/version`)).ok) break; } catch {}
@@ -64,6 +66,22 @@ try {
   report.chromiumVersion = browser.version();
   const context = browser.contexts()[0];
   async function call(request) {
+    if (hostBridge) {
+      const { stdout } = await exec(hostBridge, [Buffer.from(JSON.stringify(request)).toString('base64')], { timeout: 130000, maxBuffer: 2 * 1024 * 1024 });
+      const result = JSON.parse(stdout);
+      const { bridge, driver, io } = result;
+      assert.equal(result.boxRpc, "authenticated-connect-protobuf");
+      assert.equal(bridge.isError, !driver.ok);
+      for (const key of ['viewId', 'generation', 'frameName', 'frameUrl']) assert.equal(bridge[key] ?? null, driver[key] ?? null);
+      if (driver.ok) {
+        if (driver.data) assert.ok(bridge.text.includes(driver.data));
+        if (driver.url) assert.ok(bridge.text.includes(driver.url));
+        if (driver.screenshot) { assert.ok(result.imageBytes > 100); assert.match(result.imageSha256, /^[a-f0-9]{64}$/); }
+      } else assert.equal(bridge.text, driver.error);
+      assert.equal(io.shell, 2); assert.equal(io.write, 1); assert.ok(io.read >= 1); assert.equal(io.safety, io.shell);
+      report.resourceCalls = (report.resourceCalls || 0) + io.shell + io.write + io.read;
+      return driver;
+    }
     const args = { display, cdpPort, ...request };
     const { stdout, stderr } = await exec(process.execPath, [driverPath, Buffer.from(JSON.stringify(args)).toString('base64')], { timeout: 100000, maxBuffer: 1024 * 1024 });
     const line = stdout.split('\n').find(line => line.startsWith('__SAND_BROWSER_RESULT__'));
@@ -76,7 +94,7 @@ try {
     const observer = await chromium.connectOverCDP(`http://127.0.0.1:${cdpPort}`);
     try {
       const ctx = observer.contexts()[0];
-      const state = JSON.parse(readFileSync(`/tmp/.sand-browser/views-${display}.json`));
+      const state = JSON.parse(readFileSync(`/workspace/.sand-browser/views-${display}.json`));
       for (const page of ctx.pages()) {
         const session = await ctx.newCDPSession(page);
         const { targetInfo } = await session.send('Target.getTargetInfo'); await session.detach();
@@ -129,7 +147,7 @@ try {
   await check('same-URL tabs retain distinct exact target claims', async () => {
     const secondary = ok(await call({ op: 'navigate', newTab: true, viewId: 'secondary', url: origin + '/two' }));
     const primary = await snapshot();
-    const refs = JSON.parse(readFileSync(`/tmp/.sand-browser/views-${display}.json`));
+    const refs = JSON.parse(readFileSync(`/workspace/.sand-browser/views-${display}.json`));
     assert.notEqual(refs.views.primary, refs.views.secondary);
     assert.notEqual(primary.generation, secondary.generation);
     denied(await call({ op: 'refresh', viewId: 'primary', expectedGeneration: secondary.generation }), /Stale browser view/);
@@ -195,6 +213,6 @@ try {
   report.executed = report.cases.length; report.skipped = 0;
   report.exitCode = report.setupFailure || report.failed || report.executed !== 12 ? 1 : 0;
   writeFileSync(join(evidence, 'results.json'), JSON.stringify(report, null, 2));
-  if (process.env.GITHUB_STEP_SUMMARY) writeFileSync(process.env.GITHUB_STEP_SUMMARY, `G11 ${report.sourceSha}: ${report.passed} passed, ${report.failed} failed, ${report.executed} executed; exit ${report.exitCode}. Setup: ${report.setupFailure || 'ok'}. Shipping driver only; outer Host/box and extension remain separate.\n`, { flag: 'a' });
+  if (process.env.GITHUB_STEP_SUMMARY) writeFileSync(process.env.GITHUB_STEP_SUMMARY, `G11 ${report.sourceSha}: ${report.passed} passed, ${report.failed} failed, ${report.executed} executed; exit ${report.exitCode}. Setup: ${report.setupFailure || 'ok'}. ${report.scope}.\n`, { flag: 'a' });
   process.exitCode = report.exitCode;
 }
