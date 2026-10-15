@@ -52,6 +52,8 @@ jobs:
       - name: Build exact shipping Rust browser bridge example
         if: matrix.execution == 'rust-resource'
         run: |
+          cargo build --manifest-path source/box-exec-daemon/Cargo.toml --bin box-exec-daemon
+          echo "G11_BOX_DAEMON_BIN=$GITHUB_WORKSPACE/source/box-exec-daemon/target/debug/box-exec-daemon" >> "$GITHUB_ENV"
           cargo generate-lockfile --manifest-path source/host/Cargo.toml
           cargo build --manifest-path source/host/Cargo.toml --example fdn_browser_actions --locked
           echo "G11_HOST_BRIDGE_BIN=$GITHUB_WORKSPACE/source/host/target/debug/examples/fdn_browser_actions" >> "$GITHUB_ENV"
@@ -80,3 +82,4 @@ jobs:
             ${{ runner.temp }}/g11-evidence/
             ${{ runner.temp }}/g11-runtime/package-lock.json
             source/host/Cargo.lock
+            source/box-exec-daemon/Cargo.lock

@@ -14,8 +14,10 @@ remote Box server, Host RPC deployment, signed extension/native messaging or pac
 - HB01: Actions only, exact Desktop HEAD, same pinned Chromium/Playwright and all
   existing12 real observation/security assertions. Keep direct-driver suite too.
 - HB02: A nonshipping Cargo example uses the production bridge/executor and the
-  embedded driver. Its Actions resource port actually creates files, executes the
-  generated Node command and reads real results/screenshots. No canned successes.
+  embedded driver. Its Actions resource port delegates through the existing
+  ProductionBoxResourceAccessor/Connect protobuf RPC to a real box-exec-daemon,
+  creating files, executing generated Node commands and reading real results and
+  screenshots. No canned successes or second RPC implementation.
 - HB03: Driver responses remain authoritative runtime observations. Compare bridge
   error, view/generation/frame and rendered text against actual driver result.
   Require actual Shell/Write/Read counts and shell-safety callback invocation.
@@ -26,20 +28,26 @@ remote Box server, Host RPC deployment, signed extension/native messaging or pac
 - HB05: Preserve artifacts for direct and Rust modes separately, source/driver/
   browser/module/binary hashes, commands and executed/failed/skipped counts.
   A missing Rust binary, malformed result or failed case is failure, never skip.
+- HB06: Build the canonical daemon at the same exact source. Start/close it with
+  the existing Host supervisor on an unused loopback port and fresh in-memory
+  ephemeral token. Require successful authenticated supervisor handshake and
+  positive PID; close after each call. Record daemon binary digest without token.
 
 ## Architecture, interfaces and plan
 Existing Node harness owns synthetic fixtures and independent page observation.
 An optional exact-built Cargo example receives synthetic base64 JSON arguments,
 resolves existing browser tool specs, invokes production dispatch and returns both
-bridge projection and actual on-disk driver result. This is a test-only resource
+bridge projection and actual on-disk driver result. Production resource accessor
+and supervisor own the actual daemon protocol/lifecycle. This is a test-only resource
 adapter, not another browser engine/authorization owner. Production code unchanged.
 Spec -> example + dual-mode harness/workflow -> Actions build and12 cases per mode
 -> exact main run -> evidence review. Existing Rust contracts remain required.
 
 ## Failure, acceptance and release
-AC1: HB01–05,12/12 direct and12/12 Rust mode, actual image/read/write/shell and
-fence/privacy cases pass exact source. AC2: real remote Box RPC, signed extension,
-native messaging, packaged runtime and full G11 remain explicitly separate gates.
+AC1: HB01–06,12/12 direct and12/12 Rust mode, actual image/read/write/shell and
+fence/privacy cases pass exact source, including actual loopback Box Connect RPC.
+AC2: externally hosted Box service, signed extension/native messaging, packaged
+runtime and full G11 remain explicitly separate gates.
 Keep callback execution evidence separate from production approval-policy proof.
 No migration or production deployment; revert example/harness mode to roll back.
 Artifacts contain synthetic fixture evidence only, no browser profile or secrets.

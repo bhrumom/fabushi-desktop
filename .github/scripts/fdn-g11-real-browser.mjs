@@ -16,7 +16,7 @@ const hostBridge = process.env.G11_HOST_BRIDGE_BIN;
 mkdirSync(evidence, { recursive: true });
 const report = { sourceSha: process.env.EXACT_SHA, runId: process.env.GITHUB_RUN_ID,
   command: 'node .github/scripts/fdn-g11-real-browser.mjs', environment: 'GitHub Actions ubuntu-24.04; disposable managed Chromium; loopback CDP',
-  scope: hostBridge ? 'shipping Rust browser bridge/executor with actual Actions Shell/Write/Read; remote Box RPC, extension and package not exercised' : 'shipping driver only; outer Rust Host/box transport and extension not exercised', cases: [] };
+  scope: hostBridge ? 'shipping Rust browser bridge/executor with actual authenticated Box Connect RPC Shell/Write/Read; external Box service, extension and package not exercised' : 'shipping driver only; outer Rust Host/box transport and extension not exercised', cases: [] };
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 let browserProcess, browser, server;
 async function check(name, fn) {
@@ -55,7 +55,7 @@ try {
   const profile = join(runtime, 'disposable-profile');
   const display = 77;
   const cdpPort = 9222 + display;
-  if (hostBridge) report.bridgeBinarySha256 = sha(readFileSync(hostBridge));
+  if (hostBridge) { report.bridgeBinarySha256 = sha(readFileSync(hostBridge)); report.boxDaemonBinarySha256 = sha(readFileSync(process.env.G11_BOX_DAEMON_BIN)); }
   rmSync(`/tmp/.sand-browser/views-${display}.json`, { force: true });
   browserProcess = spawn(chromium.executablePath(), ['--headless=new', '--no-sandbox', '--disable-dev-shm-usage', '--remote-debugging-address=127.0.0.1', `--remote-debugging-port=${cdpPort}`, `--user-data-dir=${profile}`, 'about:blank'], { stdio: 'ignore' });
   for (let attempt = 0; attempt < 100; attempt++) {
@@ -70,6 +70,7 @@ try {
       const { stdout } = await exec(hostBridge, [Buffer.from(JSON.stringify(request)).toString('base64')], { timeout: 100000, maxBuffer: 2 * 1024 * 1024 });
       const result = JSON.parse(stdout);
       const { bridge, driver, io } = result;
+      assert.equal(result.boxRpc, "authenticated-connect-protobuf");
       assert.equal(bridge.isError, !driver.ok);
       for (const key of ['viewId', 'generation', 'frameName', 'frameUrl']) assert.equal(bridge[key] ?? null, driver[key] ?? null);
       if (driver.ok) {
