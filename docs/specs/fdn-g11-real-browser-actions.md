@@ -81,3 +81,23 @@ still reaching90s watchdog. Use exact claimed page CDP history entry IDs for one
 navigation dispatch, observe the selected URL with bounded waits, never replay
 uncertain navigation. Bound title observation and CDP disconnect so a restored
 page cannot hide the operation result behind an unbounded cleanup await.
+
+## Requirement-to-evidence review (2026-10-15)
+Implementation source7a13f38106f69aa20f823d0c0e693126cd40ca4f; Actions38663830233;
+real Chromium151.0.7922.34 / Playwright1.62.1;12 executed,12 passed,0 failed/skipped,
+exit0. Driver SHA256 b53b17183bc970ee72b28c34d925881f026ba99fecc7e777c14a8fcb7d4b319e.
+Subsequent source-marker contract correction changes no driver behavior. Exact final
+HEAD browser and Rust workflow results must be checked before integrating #91.
+
+| Requirement / AC | Status | Evidence / boundary |
+| --- | --- | --- |
+| G11-R01 | passed | Hosted ubuntu24.04; disposable synthetic profile; workflow has no secrets |
+| G11-R02 | passed | Exact checkout/extracted literal driver and pinned dependency lock in artifact |
+| G11-R03 | passed | Cases1–5 actual navigation/history/stale-generation and zero navigation rejection |
+| G11-R04 | passed | Cases6/12 same-URL distinct target IDs and stale generation after close/reuse |
+| G11-R05 | passed | Cases7–9 actual iframe, downloaded bytes/digest, allowed upload and three denied paths |
+| G11-R06/R08 | passed | Cases10/11 direct and Runtime.evaluate cookie export reject; explicit CDP allowlist |
+| G11-R07 | passed | results.json includes commands/counts/exits/hash/source/version; failed artifacts retained |
+| G11-R09 | passed | Real BFCache-capable history succeeds; one exact-entry dispatch; bounded observation/disconnect |
+| AC-1/2/3 | passed | 38663830233 artifact; final HEAD still requires rerun before integration |
+| AC-4 | blocked | Signed extension/native-messaging, outer Rust Host/box RPC and packaged acceptance not exercised |

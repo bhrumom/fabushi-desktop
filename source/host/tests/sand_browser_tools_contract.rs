@@ -388,10 +388,10 @@ fn browser_history_navigation_is_generation_fenced_and_rotates_the_claim() {
         "refresh: async ({ request, context, state }) => {",
         "await page.reload({ waitUntil: \"domcontentloaded\", timeout: NAVIGATE_TIMEOUT_MS });",
         "back: async ({ request, context, state }) => {",
-        "await page.goBack({ waitUntil: \"domcontentloaded\", timeout: NAVIGATE_TIMEOUT_MS });",
+        "return navigateHistory(request, context, state, -1);",
         "No previous browser history entry is available for this tab.",
         "forward: async ({ request, context, state }) => {",
-        "await page.goForward({ waitUntil: \"domcontentloaded\", timeout: NAVIGATE_TIMEOUT_MS });",
+        "return navigateHistory(request, context, state, 1);",
         "No forward browser history entry is available for this tab.",
         "await bumpViewGeneration(request.display, state, viewId);",
     ] {
