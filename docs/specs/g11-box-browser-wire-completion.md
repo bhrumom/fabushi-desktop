@@ -33,6 +33,13 @@ browser, external Box provider or packaged/extension claim.
   frozen Write tags, actual file bytes, overwrite, symlink/escape/size rejection,
   no orphan staging. Full existing daemon/Host tests plus actual12 browser cases
   through production accessor/daemon are mandatory on exact PR and merged main.
+- BW05: Actual framed RPC now executes navigation, but run38698699437 shows no
+  screenshot bytes: daemon Read always lossily decodes binary as UTF8. When no
+  encoding hint is supplied, return frozen Data field5 for invalid UTF8 or NUL
+  bytes; retain Content for normal text and explicit text encoding behavior.
+  Reject line ranges for binary data. Bound files to8MiB before allocation and
+  return a structured invalid-file response on excess. Verify exact binary bytes
+  and range/size rejection, plus real PNG retrieval through the shipping client.
 
 ## Architecture, strategy and interfaces
 Host generated_production.rs remains the client wire authority. BoxExecRuntime
@@ -45,7 +52,7 @@ Test-only Actions adapter follows production paths and must not translate around
 or hide unsupported RPCs. No new schema, auth system or external credential.
 
 ## Failure, acceptance and delivery
-AC1: BW01–04 focused/whole-owner CI pass; actual direct and Rust/Box12-case suites
+AC1: BW01–05 focused/whole-owner CI pass; actual direct and Rust/Box12-case suites
 pass with actual screenshots and hashes. AC2: exact-main evidence recorded.
 External hosted Box, signed extension/native messaging and packaged release remain
 independent. Any missing/failed case blocks; do not weaken workspace guard.

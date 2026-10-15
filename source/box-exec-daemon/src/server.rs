@@ -776,6 +776,9 @@ impl BoxExecRuntime {
                     "Path is not a regular file".into(),
                 ));
             }
+            if info.len()>8*1024*1024 {
+                return Err(ReadFailure::Invalid(args.path.clone(),"Read exceeds 8MiB limit".into()));
+            }
             let encoding = args.encoding_hint.as_deref().unwrap_or("utf8");
             if !matches!(encoding, "utf8" | "utf-8" | "latin1") {
                 return Err(ReadFailure::Invalid(
@@ -785,6 +788,12 @@ impl BoxExecRuntime {
             }
             let data = fs::read(&canonical)
                 .map_err(|error| ReadFailure::Io(error, args.path.clone()))?;
+            if args.encoding_hint.is_none() && (data.contains(&0) || std::str::from_utf8(&data).is_err()) {
+                if args.offset.is_some() || args.limit.is_some() {
+                    return Err(ReadFailure::Invalid(args.path.clone(),"Line ranges unsupported for binary reads".into()));
+                }
+                return Ok(ReadSuccess {path:args.path.clone(),file_size:data.len() as i64,output:Some(read_success::Output::Data(data)),total_lines:0,truncated:false,output_blob_id:None,range_applied:false});
+            }
             let text = if encoding == "latin1" {
                 data.iter().map(|byte| char::from(*byte)).collect::<String>()
             } else {
@@ -2398,6 +2407,19 @@ mod tests {
             std::env::vars().collect(),
         );
         (root, runtime)
+    }
+
+    #[test]
+    fn binary_read_preserves_bytes_and_rejects_ranges_and_oversize() {
+        let (_root,runtime)=runtime();let bytes=b"\x89PNG\r\n\x1a\n\x00\xff";
+        fs::write(runtime.workspace_root.join("image.png"),bytes).unwrap();
+        let args=ReadArgs {path:"/workspace/image.png".into(),tool_call_id:"binary".into(),offset:None,limit:None,encoding_hint:None};
+        let result=runtime.read(&args);let Some(read_result::Result::Success(result))=result.result else {panic!("binary read rejected")};
+        assert_eq!(result.output,Some(read_success::Output::Data(bytes.to_vec())));
+        assert!(!result.truncated);assert_eq!(result.file_size,bytes.len() as i64);
+        assert!(matches!(runtime.read(&ReadArgs {limit:Some(1),..args.clone()}).result,Some(read_result::Result::InvalidFile(_))));
+        let file=File::create(runtime.workspace_root.join("large")).unwrap();file.set_len(8*1024*1024+1).unwrap();
+        assert!(matches!(runtime.read(&ReadArgs {path:"/workspace/large".into(),..args}).result,Some(read_result::Result::InvalidFile(_))));
     }
 
     #[test]
