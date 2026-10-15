@@ -48,3 +48,10 @@ Artifacts contain synthetic fixture evidence only, no browser profile or secrets
 User2026-10-15 asks finishing actual browser/box Actions environment. DesktopPR91
 merged8148bfb9 and main run38670570956 passed driver-only12 cases; current
 ProductionBrowserToolExecutor/RunnerBoxResourcePort inspected before this spec.
+
+## Actual environment findings
+First run38696505701 direct mode passed12 cases; Rust mode failed during compile
+because wayland-client development metadata was absent. Install the same Linux
+native development packages already declared by the canonical pressure-profiler
+workflow before building Host. No product requirement is weakened; the next
+exact-head run must build and execute actual Rust/browser cases.

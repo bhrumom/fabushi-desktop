@@ -44,6 +44,11 @@ jobs:
         with:
           workspaces: source/host -> target
           shared-key: desktop-restored-rust-1.97.1
+      - name: Install existing Host native compile dependencies
+        if: matrix.execution == 'rust-resource'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
       - name: Build exact shipping Rust browser bridge example
         if: matrix.execution == 'rust-resource'
         run: |
