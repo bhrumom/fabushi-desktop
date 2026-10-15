@@ -193,6 +193,7 @@ pub struct GatewayLocalExecShellResult {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum GatewayLocalExecOperationStatus {
+    Accepted,
     Running,
     Completed,
     Cancelled,
@@ -233,6 +234,7 @@ struct GatewayLocalExecActiveOperation {
     agent_id: Option<String>,
     bridge_request_id: String,
     cancellation: LocalExecCancellationHandle,
+    started: bool,
     cancel_requested: bool,
 }
 
@@ -614,12 +616,15 @@ impl GatewayLocalExecManager {
                 "local-exec operation journal contains duplicate operationId records; execution is disabled",
             ));
         }
-        let mut recovered_running = false;
+        let mut recovered_uncertain = false;
         for record in &mut journal.records {
-            if record.status == GatewayLocalExecOperationStatus::Running {
+            if matches!(
+                record.status,
+                GatewayLocalExecOperationStatus::Accepted | GatewayLocalExecOperationStatus::Running
+            ) {
                 record.status = GatewayLocalExecOperationStatus::OutcomeUnknown;
                 record.settled_at_ms = Some(Self::now_ms());
-                recovered_running = true;
+                recovered_uncertain = true;
             }
         }
         if journal.records.len() > limit.max(1) {
@@ -627,7 +632,7 @@ impl GatewayLocalExecManager {
             journal.records.drain(..keep_from);
         }
         let history = journal.records.into_iter().collect::<VecDeque<_>>();
-        if recovered_running {
+        if recovered_uncertain {
             Self::persist_operation_history(path, &history).map_err(|error| {
                 SandLocalExecError::new(format!(
                     "local-exec process-death recovery could not persist outcome_unknown state; execution is disabled: {error}"
@@ -755,7 +760,11 @@ impl GatewayLocalExecManager {
                 operation_id: operation_id.clone(),
                 agent_id: active.agent_id.clone(),
                 bridge_request_id: active.bridge_request_id.clone(),
-                status: GatewayLocalExecOperationStatus::Running,
+                status: if active.started {
+                    GatewayLocalExecOperationStatus::Running
+                } else {
+                    GatewayLocalExecOperationStatus::Accepted
+                },
                 exit_code: None,
                 aborted: false,
                 stdout: String::new(),
@@ -767,7 +776,7 @@ impl GatewayLocalExecManager {
         }
         Self::persist_operation_history(&self.operation_journal_path, &records).map_err(|error| {
             let message = format!(
-                "local-exec operation journal persistence failed closed: {error}"
+                "local-exec operation journal persistence is fail-closed: {error}"
             );
             self.set_operation_journal_error(message.clone());
             SandLocalExecError::new(message)
@@ -786,7 +795,11 @@ impl GatewayLocalExecManager {
                 operation_id: operation_id.to_string(),
                 agent_id: active.agent_id,
                 bridge_request_id: active.bridge_request_id,
-                status: GatewayLocalExecOperationStatus::Running,
+                status: if active.started {
+                    GatewayLocalExecOperationStatus::Running
+                } else {
+                    GatewayLocalExecOperationStatus::Accepted
+                },
                 exit_code: None,
                 aborted: false,
                 stdout: String::new(),
@@ -884,6 +897,7 @@ impl GatewayLocalExecManager {
                 agent_id: agent_id.map(str::to_string),
                 bridge_request_id: cancellation.request_id().to_string(),
                 cancellation,
+                started: false,
                 cancel_requested: false,
             },
         );
@@ -894,6 +908,30 @@ impl GatewayLocalExecManager {
                 .unwrap_or_else(|poisoned| poisoned.into_inner())
                 .remove(operation_id);
             return Err(error);
+        }
+        Ok(())
+    }
+
+    fn mark_operation_started(&self, operation_id: &str) -> Result<(), SandLocalExecError> {
+        let changed = {
+            let mut active = self
+                .active_operations
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            let operation = active.get_mut(operation_id).ok_or_else(|| {
+                SandLocalExecError::new(format!(
+                    "local-exec operationId disappeared before started journal: {operation_id}"
+                ))
+            })?;
+            if operation.started {
+                false
+            } else {
+                operation.started = true;
+                true
+            }
+        };
+        if changed {
+            self.persist_operation_snapshot()?;
         }
         Ok(())
     }
@@ -1058,9 +1096,11 @@ impl GatewayLocalExecManager {
                         match decoded.payload() {
                             ProductionExecClientPayload::ShellStream(event) => match event {
                                 ProductionShellStreamEvent::Stdout(data) => {
+                                    self.mark_operation_started(tool_call_id)?;
                                     result.stdout_truncated |= append_bounded_shell_output(&mut result.stdout, data);
                                 }
                                 ProductionShellStreamEvent::Stderr(data) => {
+                                    self.mark_operation_started(tool_call_id)?;
                                     result.stderr_truncated |= append_bounded_shell_output(&mut result.stderr, data);
                                 }
                                 ProductionShellStreamEvent::Exit { code, cwd, aborted } => {
@@ -1086,8 +1126,10 @@ impl GatewayLocalExecManager {
                                     return Err(SandLocalExecError::new(reason.clone()));
                                 }
                                 ProductionShellStreamEvent::Start
-                                | ProductionShellStreamEvent::Backgrounded
-                                | ProductionShellStreamEvent::Other => {}
+                                | ProductionShellStreamEvent::Backgrounded => {
+                                    self.mark_operation_started(tool_call_id)?;
+                                }
+                                ProductionShellStreamEvent::Other => {}
                             },
                             ProductionExecClientPayload::ReadResult(_)
                             | ProductionExecClientPayload::Other => {}
@@ -1377,6 +1419,32 @@ mod operation_journal_fail_closed_tests {
         let error = GatewayLocalExecManager::load_operation_history(&path, 8)
             .expect_err("unknown version must fail closed");
         assert!(error.message.contains("unsupported"));
+        let _ = fs::remove_file(path);
+    }
+
+    #[test]
+    fn accepted_start_ambiguity_recovers_durably_as_outcome_unknown() {
+        let path = unique_test_path("accepted-recovery");
+        let mut history = VecDeque::new();
+        history.push_back(test_record(
+            "operation-accepted-ambiguous",
+            GatewayLocalExecOperationStatus::Accepted,
+        ));
+        GatewayLocalExecManager::persist_operation_history(&path, &history)
+            .expect("persist accepted journal");
+
+        let recovered = GatewayLocalExecManager::load_operation_history(&path, 8)
+            .expect("recover accepted journal");
+        let record = recovered.front().expect("accepted record");
+        assert_eq!(record.status, GatewayLocalExecOperationStatus::OutcomeUnknown);
+        assert!(record.settled_at_ms.is_some());
+
+        let second = GatewayLocalExecManager::load_operation_history(&path, 8)
+            .expect("re-read accepted recovery");
+        assert_eq!(
+            second.front().expect("accepted record").status,
+            GatewayLocalExecOperationStatus::OutcomeUnknown
+        );
         let _ = fs::remove_file(path);
     }
 
