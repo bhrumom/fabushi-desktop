@@ -1,0 +1,34 @@
+name: Native Mini App management contract
+on:
+  pull_request:
+    paths:
+      - 'source/electron-main/mcp/miniapp-management*'
+      - 'source/electron-main/mcp/miniapp-production*'
+      - 'source/electron-main/adapters/mcp-oauth.ts'
+      - 'source/product/fabushi/fabushi-account-*'
+      - 'source/electron-main/startup/desktop-user-data-bootstrap*'
+      - 'source/electron-preload/preload.ts'
+      - 'frontend/src/recovered/features/plugins/overlay/miniapp-management.tsx'
+      - '.github/workflows/miniapp-management-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'source/electron-main/mcp/miniapp-management*'
+      - 'source/electron-main/mcp/miniapp-production*'
+      - 'source/product/fabushi/fabushi-account-*'
+      - 'source/electron-main/startup/desktop-user-data-bootstrap*'
+      - '.github/workflows/miniapp-management-ci.yml'
+permissions:
+  contents: read
+jobs:
+  native-intents:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - run: npx --yes tsx@4.21.0 --test source/electron-main/mcp/miniapp-management.contract.test.ts source/electron-main/mcp/miniapp-production.contract.test.ts source/product/fabushi/fabushi-account-service.contract.test.ts source/electron-main/startup/desktop-user-data-bootstrap.contract.test.ts

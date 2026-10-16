@@ -28,6 +28,8 @@ import {
   type PluginPrivateSkillSyncSource
 } from "./desktop";
 import { PluginsDialogShell } from "./view";
+import { MiniAppPublisher } from "./miniapp-publisher";
+import { MiniAppManagement } from "./miniapp-management";
 import { publishSurfaceNotice, type PluginsNoticeEvent } from "../../../contracts/surface-notice";
 
 export interface PluginsDesktopSurfaceProps {
@@ -278,6 +280,8 @@ export function PluginsDesktopSurface({ bridge, githubAuth, activeAgentId = null
     return (
       <div aria-label="Plugins" aria-modal="true" className="sand-plugins-dialog" role="dialog">
         <button aria-label="Close" className="sand-plugins-dialog__close" onClick={onClose} type="button">×</button>
+        <MiniAppManagement bridge={bridge} />
+        <MiniAppPublisher bridge={bridge} />
         <div aria-live="polite" role={error == null ? "status" : "alert"}>
           {error == null ? "Loading the marketplace…" : error}
           {error == null ? null : <button onClick={() => void load()} type="button">Retry</button>}
@@ -293,6 +297,7 @@ export function PluginsDesktopSurface({ bridge, githubAuth, activeAgentId = null
     : [...privateSkillEnableSnapshot.skills];
   return (
     <PluginsDialogShell
+      publisherPanel={<><MiniAppManagement bridge={bridge} /><MiniAppPublisher bridge={bridge} /></>}
       catalog={snapshot.catalog}
       githubAuth={githubAuth}
       initialQuery={initialQuery}

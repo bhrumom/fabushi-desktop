@@ -104,6 +104,7 @@ export function createFabushiProductionAccountOAuthBinding(): ElectronProduction
           machineId: context.machineId,
           hostAccessCredentialFile,
           hostRemoteComputerCredentialFile: context.env[FABUSHI_REMOTE_COMPUTER_DEVICE_CREDENTIAL_FILE_ENV],
+          fetchImpl: context.native.net?.fetch.bind(context.native.net) ?? globalThis.fetch,
         }),
         fetchProfile: async () => null,
         updateProfileName: async () => {},

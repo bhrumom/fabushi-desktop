@@ -1,3 +1,5 @@
+import { isAbsolute, join, resolve } from "node:path";
+import { mkdirSync } from "node:fs";
 import {
   resolveSandDataRootOverride,
   resolveSandUserDataDir,
@@ -6,6 +8,10 @@ import {
 } from "../../shared/node/sand-data-root.js";
 import { applyStartupDataRootMigration, resolveExistingSandProductionRootDir, type DataRootSettlement } from "./startup-data-root-migration.js";
 import { applyWindowsUserDataMigration, isWindowsUpdatedLaunch } from "./windows-user-data-migration.js";
+
+export const SAND_APP_DATA_DIR_ENV = "SAND_APP_DATA_DIR";
+export const SAND_TEMP_DIR_ENV = "SAND_TEMP_DIR";
+const FABUSHI_HOST_APP_DATA_ENV = "FABUSHI_APP_DATA";
 
 export const STRANDED_USER_DATA_REASONS = new Set([
   "canonical-marked",
@@ -26,7 +32,7 @@ export const STRANDED_DATA_ROOT_REASONS = new Set([
 
 export interface DesktopBootstrapApp {
   readonly isPackaged: boolean;
-  setPath(name: "userData" | "sessionData", path: string): void;
+  setPath(name: "appData" | "userData" | "sessionData" | "temp", path: string): void;
   getPath(name: "appData" | "userData"): string;
 }
 
@@ -44,8 +50,27 @@ export function bootstrapDesktopUserData(options: DesktopUserDataBootstrapOption
   const argv = options.argv ?? process.argv;
   const env = options.env ?? process.env;
   const platform = options.platform ?? process.platform;
+  const appDataOverride = env[SAND_APP_DATA_DIR_ENV]?.trim();
+  if (appDataOverride != null && appDataOverride.length > 0) {
+    if (!isAbsolute(appDataOverride)) throw new Error(`${SAND_APP_DATA_DIR_ENV} must be an absolute path.`);
+    const path = resolve(appDataOverride);
+    mkdirSync(path, { recursive: true });
+    options.app.setPath("appData", path);
+    // Keep the existing Host RuntimeStore and profile/data-root owners on the
+    // same explicitly selected disposable volume.
+    env[FABUSHI_HOST_APP_DATA_ENV] = join(path, "fabushi-runtime");
+    env[SAND_DATA_ROOT_ENV] = join(path, "sand-data");
+  }
+  const tempOverride = env[SAND_TEMP_DIR_ENV]?.trim();
+  if (tempOverride != null && tempOverride.length > 0) {
+    if (!isAbsolute(tempOverride)) throw new Error(`${SAND_TEMP_DIR_ENV} must be an absolute path.`);
+    const path = resolve(tempOverride);
+    mkdirSync(path, { recursive: true });
+    options.app.setPath("temp", path);
+  }
   const isolatedUserDataDir = resolveSandUserDataDir(argv, env, options.cwd ?? process.cwd());
   if (isolatedUserDataDir != null) {
+    mkdirSync(isolatedUserDataDir, { recursive: true });
     env[SAND_USER_DATA_DIR_ENV] = isolatedUserDataDir;
     options.app.setPath("userData", isolatedUserDataDir);
     options.app.setPath("sessionData", isolatedUserDataDir);

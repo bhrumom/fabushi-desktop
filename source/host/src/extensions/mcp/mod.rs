@@ -9,3 +9,4 @@ pub mod production;
 
 pub mod coordinator_relay;
 pub mod production_box_state;
+pub mod installable_package;

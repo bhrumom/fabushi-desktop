@@ -3,6 +3,23 @@ use mahayana_host_runtime::gateway_protocol::{
     is_grok_gateway_command, parse_command_args, slim_command_result, slim_event,
 };
 use serde_json::json;
+use mahayana_host_runtime::host_gateway_api::{
+    FABUSHI_NATIVE_MINIAPP_GATEWAY_METHODS, HostGatewayOwner, host_gateway_owner,
+};
+
+#[test]
+fn native_mini_app_extensions_preserve_frozen_inventory_and_mcp_owner() {
+    assert_eq!(
+        FABUSHI_NATIVE_MINIAPP_GATEWAY_METHODS,
+        &["listApprovedMiniApps", "listInstalledMiniApps", "installApprovedMiniApp",
+            "getInstalledMiniAppResources", "uninstallMiniApp"]
+    );
+    for method in FABUSHI_NATIVE_MINIAPP_GATEWAY_METHODS {
+        assert!(!GROK_GATEWAY_COMMANDS.contains(method));
+        assert!(is_grok_gateway_command(method));
+        assert_eq!(host_gateway_owner(method), Some(HostGatewayOwner::Mcp));
+    }
+}
 
 #[test]
 fn gateway_protocol_parses_empty_and_json_command_args() {

@@ -67,5 +67,5 @@ export async function handleSandMediaRequest(request: Request): Promise<Response
 function electronMediaProtocol(): SandMediaProtocol {
   return (require("electron") as { readonly protocol: SandMediaProtocol }).protocol;
 }
-export function registerSandMediaScheme(protocol: SandMediaProtocol = electronMediaProtocol()): void { protocol.registerSchemesAsPrivileged([{ scheme: SAND_MEDIA_SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } }]); }
+export function registerSandMediaScheme(protocol: SandMediaProtocol = electronMediaProtocol(), additionalSchemes: readonly unknown[] = []): void { protocol.registerSchemesAsPrivileged([{ scheme: SAND_MEDIA_SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } }, ...additionalSchemes]); }
 export function registerSandMediaProtocol(protocol: SandMediaProtocol = electronMediaProtocol()): void { protocol.handle(SAND_MEDIA_SCHEME, handleSandMediaRequest); }

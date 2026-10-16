@@ -1,0 +1,73 @@
+name: Isolated Mini App Electron window
+on:
+  pull_request:
+    paths:
+      - 'source/electron-main/mcp/miniapp-window.ts'
+      - 'source/electron-main/mcp/miniapp-window.contract.test.ts'
+      - 'docs/specs/desktop-miniapp-window.md'
+      - '.github/workflows/miniapp-window-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'source/electron-main/mcp/miniapp-window.ts'
+      - 'source/electron-main/mcp/miniapp-window.contract.test.ts'
+      - '.github/workflows/miniapp-window-ci.yml'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  electron-window:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Install the pinned Desktop Electron runtime
+        run: npm ci --prefix desktop
+      - name: Materialize the lockfile-pinned Electron binary
+        run: |
+          if ! test -x desktop/node_modules/electron/dist/electron; then
+            node desktop/node_modules/electron/install.js
+          fi
+          test -x desktop/node_modules/electron/dist/electron
+      - name: Configure the exact Electron binary's runner-local sandbox
+        run: |
+          test "$(id -u)" -ne 0
+          if [ -f desktop/node_modules/electron/dist/chrome-sandbox ]; then
+            sudo chown root:root desktop/node_modules/electron/dist/chrome-sandbox
+            sudo chmod 4755 desktop/node_modules/electron/dist/chrome-sandbox
+          fi
+          binary="$GITHUB_WORKSPACE/desktop/node_modules/electron/dist/electron"
+          test -x "$binary"
+          if [ -e /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]; then
+            printf 'abi <abi/4.0>,\ninclude <tunables/global>\nprofile fabushi-miniapp-gha "%s" flags=(unconfined) {\n  userns,\n}\n' "$binary" | sudo apparmor_parser -r /dev/stdin
+          fi
+      - name: Resolve the locked Desktop packages for the repository-level test module
+        run: ln -s "$GITHUB_WORKSPACE/desktop/node_modules" "$GITHUB_WORKSPACE/node_modules"
+      - name: Bundle the production window module for the Electron main process
+        run: ./desktop/node_modules/.bin/esbuild source/electron-main/mcp/miniapp-window.ts --bundle --platform=node --format=cjs --external:electron --outfile="$RUNNER_TEMP/miniapp-window.cjs"
+      - name: Download the immutable signed Dandelion interoperability fixture
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for attempt in 1 2 3; do
+            if gh api repos/bhrumom/fabushi-backend/actions/artifacts/11797530939/zip > signed-delivery.zip; then break; fi
+            if [ "$attempt" = 3 ]; then exit 1; fi
+            sleep 3
+          done
+          echo 'b4fb72cfcdec50acd4c4a648f44699813c3b31cbbd0080445a6057fb4578c64e  signed-delivery.zip' | sha256sum -c -
+          unzip signed-delivery.zip global-dandelion-0.1.0.fabapp -d signed-delivery
+          echo 'de10e02115415908f827723457817e51cb4f39aa5ca68798da824fecc483118a  signed-delivery/global-dandelion-0.1.0.fabapp' | sha256sum -c -
+          unzip signed-delivery/global-dandelion-0.1.0.fabapp -d "$RUNNER_TEMP/dandelion-signed-fixture"
+      - name: Run contract and actual Electron isolation tests
+        env:
+          DEBUG: 'pw:browser*'
+          FABUSHI_MINIAPP_ELECTRON: '1'
+          FABUSHI_MINIAPP_WINDOW_BUNDLE: ${{ runner.temp }}/miniapp-window.cjs
+          FABUSHI_DANDELION_SIGNED_FIXTURE: ${{ runner.temp }}/dandelion-signed-fixture
+        run: timeout --signal=TERM --kill-after=10s 240s xvfb-run -a npx --yes tsx@4.21.0 --test source/electron-main/mcp/miniapp-window.contract.test.ts

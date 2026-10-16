@@ -16,6 +16,10 @@ import { DashboardService } from "../../packages/proto/generated/aiserver/v1/das
 import { createSandCursorBackendClient } from "../../shared/node/cursor-backend/cursor-inference.js";
 import { reportDesktopEdgeFailure, reportDesktopEdgeFailureClass } from "../desktop-edge-failures.js";
 import { requireFunction, requireObject } from "./provider-guards.js";
+import { registerMiniAppPublisher } from "../mcp/miniapp-publisher.js";
+import { registerProductionMiniApps } from "../mcp/miniapp-production.js";
+import { constants } from "node:fs";
+import { open } from "node:fs/promises";
 
 type McpRuntimeDeps = Parameters<typeof createMcpRuntime<DesktopMcpManagerFacade>>[0];
 
@@ -303,6 +307,8 @@ export function createProductionMcpOAuthAdapter(
         log: (message) => console.info(message),
       });
       let desktopHandle: ReturnType<typeof registerMcpDesktopIpc> | undefined;
+      let publisherHandle: ReturnType<typeof registerMiniAppPublisher> | undefined;
+      let miniAppHandle: ReturnType<typeof registerProductionMiniApps> | undefined;
       let disposed = false;
       return {
         async openExternalUrl(value) {
@@ -412,6 +418,31 @@ export function createProductionMcpOAuthAdapter(
           const desktopDeps = { ...ports.resolveDesktopDeps(context, runtime.ensureMcpManager), ...rootPorts?.desktop } as McpDesktopDeps;
           requireObject(desktopDeps, "mcpOAuth.desktopDeps");
           desktopHandle = registerMcpDesktopIpc({ ...desktopDeps, ipc, getManager: runtime.ensureMcpManager });
+          miniAppHandle = registerProductionMiniApps(context, ipc);
+          publisherHandle = registerMiniAppPublisher({
+            ipc, trustedSender: context.getTrustedContents,
+            accessToken: async () => (await context.requireAccount().getAuthService()).getValidAccessToken({ backendUrl: "https://api.ombhrum.com" }),
+            fetch: context.native.net?.fetch.bind(context.native.net) ?? globalThis.fetch,
+            selectPackage: async () => {
+              if (!context.native.dialog) throw new Error("PUBLISHER_FILE_DIALOG_UNAVAILABLE");
+              const selected = await context.native.dialog.showOpenDialog({ properties: ["openFile"], filters: [{ name: "Fabushi signed Mini App", extensions: ["fabapp"] }] });
+              if (selected.canceled || selected.filePaths.length === 0) return null;
+              const file = await open(selected.filePaths[0]!, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
+              try {
+                const stat = await file.stat();
+                if (!stat.isFile() || stat.size <= 0 || stat.size > 25 * 1024 * 1024) throw new Error("PUBLISHER_PACKAGE_LIMIT");
+                const bytes = new Uint8Array(stat.size);
+                let offset = 0;
+                while (offset < bytes.length) {
+                  const read = await file.read(bytes, offset, bytes.length - offset, offset);
+                  if (read.bytesRead === 0) throw new Error("PUBLISHER_PACKAGE_CHANGED");
+                  offset += read.bytesRead;
+                }
+                if ((await file.stat()).size !== bytes.length) throw new Error("PUBLISHER_PACKAGE_CHANGED");
+                return bytes;
+              } finally { await file.close(); }
+            },
+          });
           let registrationDisposed = false;
           return {
             async dispose() {
@@ -428,6 +459,10 @@ export function createProductionMcpOAuthAdapter(
           if (disposed) return;
           disposed = true;
           const current = desktopHandle;
+          publisherHandle?.dispose();
+          publisherHandle = undefined;
+          miniAppHandle?.dispose();
+          miniAppHandle = undefined;
           desktopHandle = undefined;
           const failures: unknown[] = [];
           try { await runtime.dispose(); } catch (error) { failures.push(error); }

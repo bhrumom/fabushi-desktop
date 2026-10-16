@@ -29,3 +29,4 @@ pub use supervisor::{
     CoordinatorCrash, CoordinatorSupervisor, GatewayState, HostGeneration,
     PendingRequest, RequestSettlement, ResyncSnapshot,
 };
+pub mod miniapp_management_relay;

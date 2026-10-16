@@ -573,6 +573,7 @@ function coordinatorAttachmentReader(context: ProductionServiceContext): {
  */
 export function createProductionMediaProtocolBinding(
   ports: ElectronMediaProtocolProviderPorts,
+  additionalSchemes: readonly unknown[] = [],
 ): MediaProtocolBinding {
   requireFunction(
     ports?.protocol?.registerSchemesAsPrivileged,
@@ -587,7 +588,7 @@ export function createProductionMediaProtocolBinding(
       if (schemeRegistered) {
         throw new Error("Electron production media scheme is already registered.");
       }
-      registerSandMediaScheme(ports.protocol);
+      registerSandMediaScheme(ports.protocol, additionalSchemes);
       schemeRegistered = true;
     },
     register(context: ProductionServiceContext) {
@@ -631,9 +632,9 @@ export function createProductionMediaProtocolBinding(
 }
 
 /** Manifest-call export. Electron remains a real bare runtime dependency. */
-export function createElectronProductionMediaProtocolBinding(): MediaProtocolBinding {
+export function createElectronProductionMediaProtocolBinding(additionalSchemes: readonly unknown[] = []): MediaProtocolBinding {
   const electron = require("electron") as {
     readonly protocol: ElectronMediaProtocolProviderPorts["protocol"];
   };
-  return createProductionMediaProtocolBinding({ protocol: electron.protocol });
+  return createProductionMediaProtocolBinding({ protocol: electron.protocol }, additionalSchemes);
 }
