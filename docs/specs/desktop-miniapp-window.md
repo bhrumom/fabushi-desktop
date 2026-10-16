@@ -136,3 +136,12 @@ All execution remains GitHub Actions-only; missing evidence stays blocked. The
 signed packaged client, real account switch and offline cold-launch gate remains
 independent and mandatory.
 
+Actual crash injection may use SIGKILL only on the current renderer OS PID read
+from the sole test-owned BrowserWindow, cross-checked against that same Electron
+instance's Tab metrics, positive/not-main PID and the mini-app scheme. Never take
+the PID from page input or signal a process group. Observe render-process-gone
+before teardown and require killed/crashed, destroyed window, unregistered
+protocol and recovered retained data. This replaces Chromium's fatal crash-helper
+path that hung under the Actions debugger; it does not simulate teardown, relax
+the sandbox, extend the timeout or replace native account acceptance.
+

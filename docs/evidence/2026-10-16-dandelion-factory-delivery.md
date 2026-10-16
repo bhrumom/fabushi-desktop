@@ -66,6 +66,22 @@ Independent review additionally required explicit CI issuer provenance and
 logout/current-status race fencing. These repairs must pass new exact-source
 contracts before integration; historical green checks do not cover them.
 
+Follow-up98a9b9151ede9616195b7756d60d32e6c8386724 passed24 native-intent/account/RAM
+contracts with0 failures/0 skips (38857164311), including explicit issuer and
+logout racing. All three OS pressure jobs and focused Electron chat also passed.
+Strict product tsc exposed a type-only dependency into the Cursor implementation;
+the unchanged auth types were extracted to one neutral existing-owner contract,
+with old imports re-exported, not compiler suppression. Source8f029a3aba7426040aa64248feae4cd74ed3629b
+passed strict product/renderer CI. Its verifier executed34 package tests,34 passed,
+0 failed,0 ignored (38858166792), but the job failed formatting and therefore did
+not execute its later focused issuer steps. Independent review found an earlier
+EOCD fallback and ZIP64-boundary gap in that initial physical directory pass;
+the local follow-up now binds central/local offsets, validates extra TLVs and
+contiguous members/data descriptors, with additional adversarial tests.
+The real renderer loss case remains failed at8f (38858166875); follow-up uses only
+the test-owned renderer PID rather than the debugger-hanging Chromium fatal path.
+Private8f candidate38858163596 is in progress and cannot accept these later fixes.
+
 ## Requirement-to-evidence review
 
 | Criteria | Status and evidence |

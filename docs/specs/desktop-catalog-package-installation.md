@@ -128,6 +128,12 @@ data ranges. Compare physical count with the library's count. The initial100MiB,
 10001-entry format supports ordinary single-disk ZIP32 only; reject ZIP64 marker
 values, multidisk, prefixed/self-extracting archives and trailing/gapped central
 data rather than guessing. Malformed input must return Archive, never panic.
+Bind every decoded member to its validated central-header and local-header
+offset, not count alone: the library may fall back to an earlier EOCD after a
+malformed final directory. Parse bounded central/local extra TLVs, reject ZIP64
+tag0x0001 and every size sentinel, and require local members (including a
+validated12/16-byte data descriptor when flag3 is set) to cover the pre-directory
+region contiguously. No orphan local files or alternate directory may hide there.
 
 GitHub Actions only, exact head. DCI-01..04 require real signature fixture and
 adversarial packages (duplicate JSON/ZIP, path, key/app/digest swaps, MIME, native,

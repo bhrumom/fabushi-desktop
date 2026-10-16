@@ -307,8 +307,28 @@ fn canonical(value: &Value) -> Result<Vec<u8>, PackageError> {
     serde_json::to_vec(&sorted(value)).map_err(|_| PackageError::Manifest)
 }
 
+#[derive(Debug, PartialEq, Eq)]
+struct PhysicalZipEntry {
+    central_start: usize,
+    local_start: usize,
+}
+
+fn validate_zip32_extra(bytes: &[u8]) -> Result<(), PackageError> {
+    let mut remaining = bytes;
+    while !remaining.is_empty() {
+        let header = remaining.get(..4).ok_or(PackageError::Archive)?;
+        let tag = u16::from_le_bytes([header[0], header[1]]);
+        let size = usize::from(u16::from_le_bytes([header[2], header[3]]));
+        if tag == 1 {
+            return Err(PackageError::Archive);
+        }
+        remaining = remaining.get(4 + size..).ok_or(PackageError::Archive)?;
+    }
+    Ok(())
+}
+
 // Read physical entries before a ZIP library can collapse its name index.
-fn physical_zip_entries(bytes: &[u8]) -> Result<usize, PackageError> {
+fn physical_zip_entries(bytes: &[u8]) -> Result<Vec<PhysicalZipEntry>, PackageError> {
     let u16_at = |offset: usize| -> Result<usize, PackageError> {
         let end = offset.checked_add(2).ok_or(PackageError::Archive)?;
         let raw = bytes.get(offset..end).ok_or(PackageError::Archive)?;
@@ -344,6 +364,7 @@ fn physical_zip_entries(bytes: &[u8]) -> Result<usize, PackageError> {
     let mut cursor = directory;
     let mut names = BTreeSet::new();
     let mut ranges = Vec::with_capacity(count);
+    let mut entries = Vec::with_capacity(count);
     for _ in 0..count {
         let fixed_end = cursor.checked_add(46).ok_or(PackageError::Archive)?;
         let fixed = bytes.get(cursor..fixed_end).ok_or(PackageError::Archive)?;
@@ -362,18 +383,28 @@ fn physical_zip_entries(bytes: &[u8]) -> Result<usize, PackageError> {
         if member_end > eocd {
             return Err(PackageError::Archive);
         }
-        let raw_name = bytes.get(fixed_end..name_end).ok_or(PackageError::Archive)?;
+        let extra = bytes
+            .get(name_end..extra_end)
+            .ok_or(PackageError::Archive)?;
+        validate_zip32_extra(extra)?;
+        let raw_name = bytes
+            .get(fixed_end..name_end)
+            .ok_or(PackageError::Archive)?;
         let name = std::str::from_utf8(raw_name).map_err(|_| PackageError::Archive)?;
         if !safe_path(name) || !names.insert(name.to_ascii_lowercase()) {
             return Err(PackageError::Archive);
         }
         let local = u32_at(cursor + 42)?;
         let local_fixed_end = local.checked_add(30).ok_or(PackageError::Archive)?;
-        let local_header = bytes.get(local..local_fixed_end).ok_or(PackageError::Archive)?;
+        let local_header = bytes
+            .get(local..local_fixed_end)
+            .ok_or(PackageError::Archive)?;
         let compressed = u32_at(cursor + 20)?;
         if local_header.get(..4) != Some(b"PK\x03\x04")
             || compressed == u32::MAX as usize
             || u32_at(cursor + 24)? == u32::MAX as usize
+            || u32_at(local + 18)? == u32::MAX as usize
+            || u32_at(local + 22)? == u32::MAX as usize
             || u16_at(local + 6)? != u16_at(cursor + 8)?
             || u16_at(local + 8)? != u16_at(cursor + 10)?
         {
@@ -391,14 +422,50 @@ fn physical_zip_entries(bytes: &[u8]) -> Result<usize, PackageError> {
         if bytes.get(local_fixed_end..local_name_end) != Some(raw_name) || data_end > directory {
             return Err(PackageError::Archive);
         }
-        ranges.push((local, data_end));
+        let local_extra = bytes
+            .get(local_name_end..data_start)
+            .ok_or(PackageError::Archive)?;
+        validate_zip32_extra(local_extra)?;
+        let record_end = if u16_at(local + 6)? & 8 != 0 {
+            let descriptor = if bytes.get(data_end..data_end + 4) == Some(b"PK\x07\x08") {
+                data_end + 4
+            } else {
+                data_end
+            };
+            let descriptor_end = descriptor.checked_add(12).ok_or(PackageError::Archive)?;
+            if descriptor_end > directory
+                || u32_at(descriptor)? != u32_at(cursor + 16)?
+                || u32_at(descriptor + 4)? != compressed
+                || u32_at(descriptor + 8)? != u32_at(cursor + 24)?
+            {
+                return Err(PackageError::Archive);
+            }
+            descriptor_end
+        } else {
+            if u32_at(local + 14)? != u32_at(cursor + 16)?
+                || u32_at(local + 18)? != compressed
+                || u32_at(local + 22)? != u32_at(cursor + 24)?
+            {
+                return Err(PackageError::Archive);
+            }
+            data_end
+        };
+        ranges.push((local, record_end));
+        entries.push(PhysicalZipEntry {
+            central_start: cursor,
+            local_start: local,
+        });
         cursor = member_end;
     }
     ranges.sort_unstable();
-    if cursor != eocd || ranges.windows(2).any(|pair| pair[0].1 > pair[1].0) {
+    if cursor != eocd
+        || ranges.first().map(|range| range.0) != Some(0)
+        || ranges.last().map(|range| range.1) != Some(directory)
+        || ranges.windows(2).any(|pair| pair[0].1 != pair[1].0)
+    {
         return Err(PackageError::Archive);
     }
-    Ok(count)
+    Ok(entries)
 }
 
 pub fn verify_catalog_bundle(
@@ -412,10 +479,10 @@ pub fn verify_catalog_bundle(
     if package_digest != policy.package_sha256 || policy.trust_epoch == 0 {
         return Err(PackageError::Authorization);
     }
-    let physical_count = physical_zip_entries(bytes)?;
+    let physical_entries = physical_zip_entries(bytes)?;
     let mut archive =
         zip::ZipArchive::new(Cursor::new(bytes)).map_err(|_| PackageError::Archive)?;
-    if archive.len() != physical_count {
+    if archive.len() != physical_entries.len() {
         return Err(PackageError::Archive);
     }
     let mut expanded = 0u64;
@@ -423,6 +490,11 @@ pub fn verify_catalog_bundle(
     let mut resources = BTreeMap::new();
     for index in 0..archive.len() {
         let mut file = archive.by_index(index).map_err(|_| PackageError::Archive)?;
+        if file.central_header_start() != physical_entries[index].central_start as u64
+            || file.header_start() != physical_entries[index].local_start as u64
+        {
+            return Err(PackageError::Archive);
+        }
         let name = file.name().map_err(|_| PackageError::Archive)?.into_owned();
         let mode = file.unix_mode().unwrap_or(0o100644);
         if !safe_path(&name)
@@ -851,7 +923,10 @@ mod tests {
     #[test]
     fn physical_directory_rejects_truncation_forged_counts_offsets_and_local_name_swaps() {
         let (control, _) = fixture(|_| {}, HTML);
-        assert_eq!(physical_zip_entries(&control), Ok(2));
+        assert_eq!(
+            physical_zip_entries(&control).map(|entries| entries.len()),
+            Ok(2)
+        );
         for length in 0..control.len() {
             assert!(physical_zip_entries(&control[..length]).is_err());
         }
@@ -871,6 +946,69 @@ mod tests {
         let mut data = control.clone();
         data[central + 20..central + 24].copy_from_slice(&u32::MAX.to_le_bytes());
         assert_eq!(physical_zip_entries(&data), Err(PackageError::Archive));
+        for offset in [18, 22] {
+            let mut data = control.clone();
+            data[offset..offset + 4].copy_from_slice(&u32::MAX.to_le_bytes());
+            assert_eq!(physical_zip_entries(&data), Err(PackageError::Archive));
+        }
+        assert_eq!(validate_zip32_extra(&[]), Ok(()));
+        assert_eq!(validate_zip32_extra(&[255, 255, 1, 0, 7]), Ok(()));
+        for extra in [&[1, 0, 0, 0][..], &[1, 0], &[255, 255, 2, 0, 7]] {
+            assert_eq!(validate_zip32_extra(extra), Err(PackageError::Archive));
+        }
+    }
+
+    #[test]
+    fn verifies_zip32_data_descriptor_and_rejects_descriptor_crc_tampering() {
+        let (control, mut policy) = fixture(|_| {}, HTML);
+        let central = central_members(&control);
+        let first = central[0];
+        let size = u32::from_le_bytes(control[first + 20..first + 24].try_into().unwrap());
+        let header_size = 30
+            + usize::from(u16::from_le_bytes(control[26..28].try_into().unwrap()))
+            + usize::from(u16::from_le_bytes(control[28..30].try_into().unwrap()));
+        let data_end = header_size + size as usize;
+        let mut descriptor = b"PK\x07\x08".to_vec();
+        descriptor.extend_from_slice(&control[first + 16..first + 28]);
+        let mut data = control.clone();
+        data[6] |= 8;
+        data[first + 8] |= 8;
+        data.splice(data_end..data_end, descriptor);
+        for original in central {
+            let offset = original + 16;
+            let local = u32::from_le_bytes(data[offset + 42..offset + 46].try_into().unwrap());
+            if local as usize >= data_end {
+                data[offset + 42..offset + 46].copy_from_slice(&(local + 16).to_le_bytes());
+            }
+        }
+        let end = data.len() - 22;
+        data[end + 16..end + 20].copy_from_slice(&((first + 16) as u32).to_le_bytes());
+        policy.package_sha256 = digest(&data);
+        assert!(verify_catalog_bundle(&data, &policy).is_ok());
+        data[data_end + 4] ^= 1;
+        policy.package_sha256 = digest(&data);
+        assert_eq!(
+            verify_catalog_bundle(&data, &policy).err(),
+            Some(PackageError::Archive)
+        );
+    }
+
+    #[test]
+    fn rejects_an_alternate_directory_after_an_earlier_eocd() {
+        let (control, mut policy) = fixture(|_| {}, HTML);
+        let first = central_members(&control)[0];
+        let end = control.len() - 22;
+        let mut data = control.clone();
+        data.extend_from_slice(&control[first..end]);
+        let new_end = data.len();
+        data.extend_from_slice(&control[end..]);
+        data[new_end + 16..new_end + 20].copy_from_slice(&(control.len() as u32).to_le_bytes());
+        policy.package_sha256 = digest(&data);
+        // Equal entry count cannot make the earlier directory a valid fallback.
+        assert_eq!(
+            verify_catalog_bundle(&data, &policy).err(),
+            Some(PackageError::Archive)
+        );
     }
 
     #[test]

@@ -414,17 +414,30 @@ test("actual Electron uses the isolated protocol and blocks real network, worker
     assert.equal(prefs.webSecurity, true);
     assert.equal(prefs.preload, undefined);
     await accountB.evaluate(() => localStorage.setItem("crash-recovery", "retained"));
-    await app.evaluate(({ BrowserWindow }) => {
-      const contents = BrowserWindow.getAllWindows()[0].webContents;
+    await app.evaluate(({ app, BrowserWindow }) => {
+      const windows = BrowserWindow.getAllWindows();
+      if (windows.length !== 1) throw new Error("Crash injection requires exactly one owned test window");
+      const contents = windows[0].webContents;
+      const rendererPid = contents.getOSProcessId();
+      // Resolve and signal only this test Electron instance's current renderer,
+      // never a PID supplied by page content, a process group, or the main process.
+      if (!Number.isSafeInteger(rendererPid) || rendererPid <= 0 || rendererPid === process.pid
+        || !contents.getURL().startsWith("fabushi-miniapp://")
+        || !app.getAppMetrics().some((metric) => metric.pid === rendererPid && metric.type === "Tab")) {
+        throw new Error("Crash injection target is not this test window's owned renderer");
+      }
       globalThis.__crashedSession = contents.session;
       globalThis.__rendererCrashObserved = false;
       // Observe before the production listener destroys this WebContents.
-      contents.prependOnceListener("render-process-gone", () => {
+      contents.prependOnceListener("render-process-gone", (_event, details) => {
+        globalThis.__rendererCrashReason = details.reason;
         globalThis.__rendererCrashObserved = true;
       });
-      // Do not keep this Playwright main-process evaluation pending across the
-      // renderer crash. Observe the event in a separate evaluation below.
-      contents.forcefullyCrashRenderer();
+      // forcefullyCrashRenderer can enter Chromium's fatal/crash-reporting path
+      // without promptly exiting under the CI debugger. SIGKILL gives a genuine
+      // renderer process loss; the production render-process-gone handler must
+      // still perform teardown. Keep the evaluation synchronous across the kill.
+      process.kill(rendererPid, "SIGKILL");
     });
     const crashDeadline = Date.now() + 10_000;
     let crashObserved = false;
@@ -433,6 +446,8 @@ test("actual Electron uses the isolated protocol and blocks real network, worker
       if (!crashObserved) await new Promise((resolve) => setTimeout(resolve, 50));
     }
     assert.equal(crashObserved, true, "Electron must report the actual renderer crash");
+    assert.ok(["killed", "crashed"].includes(await app.evaluate(() => globalThis.__rendererCrashReason)),
+      "the renderer must terminate abnormally, not close cleanly");
     assert.equal(await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length), 0);
     assert.equal(await app.evaluate(async () => globalThis.__crashedSession.protocol.isProtocolHandled("fabushi-miniapp")), false);
     await app.evaluate(async () => { await globalThis.__open(globalThis.__snapshotFor('org.fabushi.global-dandelion', 'd'.repeat(64), 8)); });
