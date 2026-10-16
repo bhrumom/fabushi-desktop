@@ -102,6 +102,17 @@ separate narrowly reviewed Host grant adapter; no executable bundled in .fabapp.
 
 ## Verification, release and evidence
 
+Dependency recovery,2026-10-16: exact-source Actions6fe39a6 failed dependency
+resolution because zip2.4.2 was yanked. The canonical sparse crates.io index
+`https://index.crates.io/3/z/zip` now lists zip9.0.3 as its only non-yanked
+release (Rust minimum1.88, below the required1.97.1 toolchain). Pin9.0.3 with
+default features disabled and only deflate enabled. Do not force a withdrawn
+version or relax any DCI ZIP validation to obtain a build. Compile all existing
+read/write adapters and rerun real signed-package interoperability and every
+adversarial fixture, especially duplicates, special modes and deflate inflation.
+API adaptations, if needed, remain inside this verifier/test owner. Source of
+truth remains this spec, not the dependency's permissive extraction defaults.
+
 GitHub Actions only, exact head. DCI-01..04 require real signature fixture and
 adversarial packages (duplicate JSON/ZIP, path, key/app/digest swaps, MIME, native,
 bombs, missing/unlisted/corrupt resources, unsupported policy). DCI-05 requires

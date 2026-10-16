@@ -742,7 +742,10 @@ mod tests {
             .into_iter()
             .map(|offset| &data[offset + 46..offset + 56])
             .collect();
-        assert_eq!(names.iter().filter(|name| **name == b"index.html").count(), 2);
+        assert_eq!(
+            names.iter().filter(|name| **name == b"index.html").count(),
+            2
+        );
         policy.package_sha256 = digest(&data);
         assert!(matches!(
             verify_catalog_bundle(&data, &policy),

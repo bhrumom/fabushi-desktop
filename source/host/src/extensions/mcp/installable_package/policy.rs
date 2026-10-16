@@ -66,8 +66,8 @@ impl CatalogClient {
     pub fn production_from_environment() -> Result<Self, ProofError> {
         // Marketplace reads are public and issuer-independent. Never inherit
         // the authenticated Native account endpoint or its bearer context.
-        let mut origin = Url::parse("https://api.ombhrum.com")
-            .map_err(|_| ProofError::Malformed)?;
+        let mut origin =
+            Url::parse("https://api.ombhrum.com").map_err(|_| ProofError::Malformed)?;
         origin.set_path("");
         let client = reqwest::blocking::Client::builder()
             .https_only(true)
@@ -850,7 +850,10 @@ mod tests {
     #[test]
     fn production_catalog_origin_is_independent_of_native_auth_issuer() {
         let client = CatalogClient::production_from_environment().unwrap();
-        assert_eq!(client.origin.origin().ascii_serialization(), "https://api.ombhrum.com");
+        assert_eq!(
+            client.origin.origin().ascii_serialization(),
+            "https://api.ombhrum.com"
+        );
     }
     use ed25519_dalek::{Signer, SigningKey};
 
