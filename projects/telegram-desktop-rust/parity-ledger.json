@@ -2,12 +2,12 @@
   "format_version": 3,
   "project_id": "TDRP-001",
   "spec_revision": 9,
-  "upstream_commit": "c317da960b2664962aeb17892adbd6dda59c98fe",
+  "upstream_commit": "b16daff6df63e8a812bc2b52a04ff243f67a7d3f",
   "target_commit": "34d19cc79a6821698a45017ebe89ce3b0722d073",
   "coverage": {
-    "source_entries_total": 15788,
-    "unknown": 15788,
-    "unread": 15761,
+    "source_entries_total": 15795,
+    "unknown": 15795,
+    "unread": 15768,
     "omitted": 0,
     "responsibilities_total": 10,
     "unmapped_responsibilities": 0
@@ -15,7 +15,7 @@
   "rows": [
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "c317da960b2664962aeb17892adbd6dda59c98fe",
+      "source_commit": "b16daff6df63e8a812bc2b52a04ff243f67a7d3f",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -268,7 +268,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "c317da960b2664962aeb17892adbd6dda59c98fe",
+      "source_commit": "b16daff6df63e8a812bc2b52a04ff243f67a7d3f",
       "source_path": "Telegram/SourceFiles/boxes/url_auth_box.cpp",
       "source_blob_sha": "3e5e383b928f646dd8f16560cb90fc1a5745bdb7",
       "source_kind": "source",
@@ -513,7 +513,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "c317da960b2664962aeb17892adbd6dda59c98fe",
+      "source_commit": "b16daff6df63e8a812bc2b52a04ff243f67a7d3f",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -737,7 +737,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "c317da960b2664962aeb17892adbd6dda59c98fe",
+      "source_commit": "b16daff6df63e8a812bc2b52a04ff243f67a7d3f",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -969,7 +969,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "c317da960b2664962aeb17892adbd6dda59c98fe",
+      "source_commit": "b16daff6df63e8a812bc2b52a04ff243f67a7d3f",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -1184,7 +1184,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "c317da960b2664962aeb17892adbd6dda59c98fe",
+      "source_commit": "b16daff6df63e8a812bc2b52a04ff243f67a7d3f",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -1439,7 +1439,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "c317da960b2664962aeb17892adbd6dda59c98fe",
+      "source_commit": "b16daff6df63e8a812bc2b52a04ff243f67a7d3f",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -1687,7 +1687,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "c317da960b2664962aeb17892adbd6dda59c98fe",
+      "source_commit": "b16daff6df63e8a812bc2b52a04ff243f67a7d3f",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -1909,7 +1909,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "c317da960b2664962aeb17892adbd6dda59c98fe",
+      "source_commit": "b16daff6df63e8a812bc2b52a04ff243f67a7d3f",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -2161,7 +2161,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "c317da960b2664962aeb17892adbd6dda59c98fe",
+      "source_commit": "b16daff6df63e8a812bc2b52a04ff243f67a7d3f",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
