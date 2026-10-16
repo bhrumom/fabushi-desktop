@@ -8,28 +8,28 @@
     "repository": "telegramdesktop/tdesktop",
     "url": "https://github.com/telegramdesktop/tdesktop",
     "discovery_ref": "refs/heads/dev",
-    "commit": "c317da960b2664962aeb17892adbd6dda59c98fe",
-    "tree": "c3cb760798f61e436c949aa19e33ccdc4f077cf9",
-    "committed_at": "2026-10-14T17:51:11Z",
+    "commit": "b16daff6df63e8a812bc2b52a04ff243f67a7d3f",
+    "tree": "673b8c7335ca98bd920a48a951dccc9052b77911",
+    "committed_at": "2026-10-15T12:48:06Z",
     "accepted": false
   },
   "previous_historical_baseline": {
-    "commit": "fad667c6d71c5e965a9da71e48dc1ab82ba0568d",
+    "commit": "c317da960b2664962aeb17892adbd6dda59c98fe",
     "evidence_status": "historical-only",
-    "reason": "Upstream dev advanced by one commit modifying five Telegram/SourceFiles paths. Root inventory cardinality and all direct gitlinks are unchanged; predecessor evidence remains historical-only."
+    "reason": "Upstream dev advanced by 16 commits and 36 files from the predecessor c317da9 baseline. The root tree gains seven net-new non-directory entries (six under Telegram/SourceFiles), while all 36 direct gitlink pins and build-time acquisition source paths remain unchanged. All c317-era Actions/artifacts are predecessor evidence only."
   },
   "observed_root_inventory": {
     "tree_truncated": false,
-    "entry_count": 6990,
-    "blob_count": 6658,
+    "entry_count": 6997,
+    "blob_count": 6665,
     "direct_gitlink_count": 36,
-    "sourcefiles_blob_count": 3258,
+    "sourcefiles_blob_count": 3264,
     "resource_blob_count": 3122,
-    "root_non_directory_count": 6694
+    "root_non_directory_count": 6701
   },
   "delta_from_previous_baseline": {
-    "ahead_by": 1,
-    "changed_paths": 5
+    "ahead_by": 16,
+    "changed_paths": 36
   },
   "direct_gitlinks": [
     {
@@ -255,12 +255,12 @@
     "pointer_scan_required_in_github_actions": true
   },
   "coverage": {
-    "root_source_entries_total": 6694,
-    "recursive_source_entries_total": 15788,
-    "unknown_minimum": 15788,
-    "unread_minimum": 15761,
+    "root_source_entries_total": 6701,
+    "recursive_source_entries_total": 15795,
+    "unknown_minimum": 15795,
+    "unread_minimum": 15768,
     "omitted_known": 0,
-    "note": "Revision 9 rebaseline in progress for c317da960b2664962aeb17892adbd6dda59c98fe. Root and recursive authority shape are unchanged from fad667c6d71c5e965a9da71e48dc1ab82ba0568d; the upstream delta modifies five Telegram/SourceFiles paths. The reviewed url_auth_box.cpp responsibility changed blob identity and is refreshed in the parity ledger; build-time acquisition paths are unchanged. Full source closure remains open and current-head Actions must revalidate live pins and recursive authority."
+    "note": "Revision 9 rebaseline in progress for telegramdesktop/tdesktop@b16daff6df63e8a812bc2b52a04ff243f67a7d3f (tree 673b8c7335ca98bd920a48a951dccc9052b77911). The dev branch is 16 commits / 36 files ahead of c317da9; seven net-new non-directory entries are present, six under Telegram/SourceFiles. Direct gitlinks and build-time acquisition source paths are unchanged. Full source closure remains open and current-head Actions must revalidate live root/recursive authority and acquisition evidence."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -274,7 +274,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Rebaseline to telegramdesktop/tdesktop@c317da960b2664962aeb17892adbd6dda59c98fe remains unaccepted pending current-head GitHub Actions provenance. The five-path upstream source delta is explicitly re-read; the affected reviewed url_auth_box.cpp row is rebound to its new blob while predecessor evidence remains historical-only."
+    "note": "Rebaseline to telegramdesktop/tdesktop@b16daff6df63e8a812bc2b52a04ff243f67a7d3f remains unaccepted pending current-head GitHub Actions provenance. The 36-file upstream delta is explicitly inventoried; predecessor c317da9 evidence is historical-only."
   },
   "baseline_identity_evidence": {
     "status": "pending-current-head-revalidation",
