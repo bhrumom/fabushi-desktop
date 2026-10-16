@@ -1,9 +1,11 @@
 use std::collections::BTreeMap;
 use std::env;
-use std::path::Path;
+use std::fs;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
+use serde::Deserialize;
 use thiserror::Error;
 
 use crate::host_secret_store::get_or_create_host_machine_id;
@@ -20,6 +22,68 @@ pub const EXPIRY_LEEWAY_MS: u64 = 30_000;
 pub const FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV: &str = "FABUSHI_HOST_ACCESS_CREDENTIAL_FILE";
 pub const SAND_SHORTLIVED_CREDS_WAITING_MESSAGE: &str =
     "Waiting for an inference credential. Fabushi's computer renews this automatically (no desktop required); this resolves on its own shortly.";
+
+pub const FABUSHI_CORE_CREDENTIAL_WAITING_MESSAGE: &str =
+    "Fabushi first-party Core credential is unavailable or expired.";
+
+#[derive(Clone, PartialEq, Eq)]
+pub struct FabushiCoreCredential {
+    access_token: String,
+    pub expires_at_ms: u64,
+    pub session_id: String,
+    pub device_id: String,
+    pub user_id: String,
+}
+
+impl std::fmt::Debug for FabushiCoreCredential {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("FabushiCoreCredential")
+            .field("access_token", &"<redacted>")
+            .field("expires_at_ms", &self.expires_at_ms)
+            .field("session_id", &self.session_id)
+            .field("device_id", &self.device_id)
+            .field("user_id", &self.user_id)
+            .finish()
+    }
+}
+
+impl FabushiCoreCredential {
+    pub fn access_token(&self) -> &str {
+        &self.access_token
+    }
+}
+
+pub trait FabushiCoreCredentialProvider: Send + Sync {
+    fn get_fabushi_core_credential(
+        &self,
+    ) -> Result<FabushiCoreCredential, FabushiCoreCredentialError>;
+}
+
+#[derive(Debug, Error, Clone, PartialEq, Eq)]
+#[error("{message}")]
+pub struct FabushiCoreCredentialError {
+    message: String,
+}
+
+impl FabushiCoreCredentialError {
+    fn unavailable() -> Self {
+        Self {
+            message: FABUSHI_CORE_CREDENTIAL_WAITING_MESSAGE.into(),
+        }
+    }
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct FabushiCoreCredentialFile {
+    version: u32,
+    access_token: String,
+    expires_at_ms: u64,
+    session_id: String,
+    device_id: String,
+    user_id: serde_json::Value,
+}
 
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 #[error("{message}")]
@@ -150,9 +214,18 @@ pub struct HostAuthService {
     last_renewal_event: Arc<Mutex<Option<HostAuthRenewalEvent>>>,
     renewer: Mutex<Option<SandInferenceCredentialRenewer>>,
     has_renewal_credential: bool,
+    product_credential_file: Option<PathBuf>,
     machine_id: MachineIdProvider,
     now_ms: Arc<dyn Fn() -> u64 + Send + Sync>,
     log: AuthLog,
+}
+
+impl FabushiCoreCredentialProvider for HostAuthService {
+    fn get_fabushi_core_credential(
+        &self,
+    ) -> Result<FabushiCoreCredential, FabushiCoreCredentialError> {
+        HostAuthService::get_fabushi_core_credential(self)
+    }
 }
 
 impl HostAuthService {
@@ -282,6 +355,7 @@ impl HostAuthService {
             last_renewal_event,
             renewer: Mutex::new(Some(renewer)),
             has_renewal_credential,
+            product_credential_file: product_token_file.map(PathBuf::from),
             machine_id: options.machine_id,
             now_ms: options.now_ms,
             log: options.log,
@@ -329,6 +403,43 @@ impl HostAuthService {
 
     pub fn get_machine_id(&self) -> Result<String, std::io::Error> {
         (self.machine_id)()
+    }
+
+    /// Read the current first-party Fabushi product credential on demand.
+    ///
+    /// The Electron account owner atomically replaces this file on refresh/account
+    /// switch. Host deliberately does not cache it so an old account identity cannot
+    /// survive a replacement. This credential is never a Cursor/Sand renewal source.
+    pub fn get_fabushi_core_credential(
+        &self,
+    ) -> Result<FabushiCoreCredential, FabushiCoreCredentialError> {
+        let path = self
+            .product_credential_file
+            .as_deref()
+            .ok_or_else(FabushiCoreCredentialError::unavailable)?;
+        let raw = fs::read_to_string(path).map_err(|_| FabushiCoreCredentialError::unavailable())?;
+        let parsed: FabushiCoreCredentialFile =
+            serde_json::from_str(&raw).map_err(|_| FabushiCoreCredentialError::unavailable())?;
+        if parsed.version != 1
+            || parsed.access_token.trim().is_empty()
+            || parsed.session_id.trim().is_empty()
+            || parsed.device_id.trim().is_empty()
+            || (self.now_ms)() >= parsed.expires_at_ms.saturating_sub(EXPIRY_LEEWAY_MS)
+        {
+            return Err(FabushiCoreCredentialError::unavailable());
+        }
+        let user_id = match parsed.user_id {
+            serde_json::Value::String(value) if !value.trim().is_empty() => value,
+            serde_json::Value::Number(value) => value.to_string(),
+            _ => return Err(FabushiCoreCredentialError::unavailable()),
+        };
+        Ok(FabushiCoreCredential {
+            access_token: parsed.access_token,
+            expires_at_ms: parsed.expires_at_ms,
+            session_id: parsed.session_id,
+            device_id: parsed.device_id,
+            user_id,
+        })
     }
 
     pub fn subscribe_to_renewal(&self, listener: RenewalListener) -> u64 {

@@ -8,12 +8,14 @@ on:
       - 'docs/specs/macos-ticket-validation-retry.md'
       - '.github/scripts/miniapp-release-evidence*'
       - '.github/scripts/miniapp-save-report.applescript'
+      - '.github/scripts/promote-miniapp-candidate*'
   push:
     branches: [main]
     paths:
       - '.github/scripts/validate-apple-ticket*'
       - '.github/scripts/miniapp-release-evidence*'
       - '.github/scripts/miniapp-save-report.applescript'
+      - '.github/scripts/promote-miniapp-candidate*'
       - '.github/workflows/release-macos-main.yml'
 permissions:
   contents: read
@@ -30,3 +32,4 @@ jobs:
           node-version: '24'
       - run: node --test .github/scripts/validate-apple-ticket.test.mjs
       - run: node --test .github/scripts/miniapp-release-evidence.test.mjs
+      - run: node --test .github/scripts/promote-miniapp-candidate.test.mjs

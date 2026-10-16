@@ -4,7 +4,8 @@ use std::time::Duration;
 
 use mahayana_host_runtime::extensions::local_exec::gateway_local_exec_sand_box::{
     DEFAULT_MAX_LOCAL_EXEC_FILE_BYTES, GatewayLocalExecFailureReport,
-    GatewayLocalExecSandBox, GatewayLocalToolGate, GatewayLocalToolScope,
+    GatewayLocalExecOperationStatus, GatewayLocalExecSandBox,
+    GatewayLocalToolGate, GatewayLocalToolScope,
     create_bridge_user_computers, local_exec_file_too_large_message,
 };
 use mahayana_host_runtime::extensions::local_exec::local_exec_failure_classifier::LocalExecFailureClass;
@@ -84,7 +85,7 @@ fn sandbox_projects_provider_state_and_user_computers() {
 }
 
 #[test]
-fn upload_and_download_enforce_gate_and_use_frozen_frames() {
+fn upload_and_download_enforce_gate_and_use_staged_frames() {
     let (bridge, _registration, receive) = bridge_with_provider();
     let gate = Arc::new(FakeGate::default());
     let sandbox = GatewayLocalExecSandBox::new(bridge.clone(), gate.clone());
@@ -93,26 +94,59 @@ fn upload_and_download_enforce_gate_and_use_frozen_frames() {
     let upload = thread::spawn(move || {
         upload_box.upload_file(Some("agent-1"), "/tmp/a.txt", b"hello")
     });
-    let upload_frame = receive.recv_timeout(Duration::from_secs(1)).expect("upload frame");
-    assert_eq!(upload_frame["kind"], "upload");
-    assert_eq!(upload_frame["path"], "/tmp/a.txt");
-    assert_eq!(upload_frame["bytesBase64"], "aGVsbG8=");
-    assert_eq!(upload_frame["approvalId"], "approval-1");
-    bridge.submit_responses(json!({
-        "frames": [{
-            "kind": "file",
-            "requestId": upload_frame["requestId"]
-        }]
-    }));
-    upload.join().expect("upload thread").expect("upload");
-    // The frozen bridge sends a terminal cancel from request cleanup even
-    // after a successful file response. Consume and verify that lifecycle
-    // frame before the next independent request.
-    let upload_cancel = receive
+
+    let upload_start = receive
         .recv_timeout(Duration::from_secs(1))
-        .expect("upload cleanup cancel");
-    assert_eq!(upload_cancel["kind"], "cancel");
-    assert_eq!(upload_cancel["requestId"], upload_frame["requestId"]);
+        .expect("upload-start frame");
+    assert_eq!(upload_start["kind"], "upload-start");
+    assert_eq!(upload_start["path"], "/tmp/a.txt");
+    assert_eq!(upload_start["totalBytes"], 5);
+    assert_eq!(
+        upload_start["sha256"],
+        "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+    );
+    assert_eq!(upload_start["approvalId"], "approval-1");
+    let transfer_id = upload_start["transferId"]
+        .as_str()
+        .expect("transfer id")
+        .to_string();
+    bridge.submit_responses(json!({"frames":[{
+        "kind":"file","requestId":upload_start["requestId"]
+    }]}));
+    let start_cancel = receive.recv_timeout(Duration::from_secs(1)).expect("upload-start cleanup cancel");
+    assert_eq!(start_cancel["kind"], "cancel");
+    assert_eq!(start_cancel["requestId"], upload_start["requestId"]);
+
+    let upload_chunk = receive
+        .recv_timeout(Duration::from_secs(1))
+        .expect("upload-chunk frame");
+    assert_eq!(upload_chunk["kind"], "upload-chunk");
+    assert_eq!(upload_chunk["transferId"], transfer_id);
+    assert_eq!(upload_chunk["path"], "/tmp/a.txt");
+    assert_eq!(upload_chunk["offset"], 0);
+    assert_eq!(upload_chunk["bytesBase64"], "aGVsbG8=");
+    assert_eq!(upload_chunk["approvalId"], "approval-1");
+    bridge.submit_responses(json!({"frames":[{
+        "kind":"file","requestId":upload_chunk["requestId"]
+    }]}));
+    let chunk_cancel = receive.recv_timeout(Duration::from_secs(1)).expect("upload-chunk cleanup cancel");
+    assert_eq!(chunk_cancel["kind"], "cancel");
+    assert_eq!(chunk_cancel["requestId"], upload_chunk["requestId"]);
+
+    let upload_commit = receive
+        .recv_timeout(Duration::from_secs(1))
+        .expect("upload-commit frame");
+    assert_eq!(upload_commit["kind"], "upload-commit");
+    assert_eq!(upload_commit["transferId"], transfer_id);
+    assert_eq!(upload_commit["path"], "/tmp/a.txt");
+    assert_eq!(upload_commit["approvalId"], "approval-1");
+    bridge.submit_responses(json!({"frames":[{
+        "kind":"file","requestId":upload_commit["requestId"]
+    }]}));
+    upload.join().expect("upload thread").expect("upload");
+    let commit_cancel = receive.recv_timeout(Duration::from_secs(1)).expect("upload-commit cleanup cancel");
+    assert_eq!(commit_cancel["kind"], "cancel");
+    assert_eq!(commit_cancel["requestId"], upload_commit["requestId"]);
 
     let download_box = sandbox.clone();
     let download = thread::spawn(move || {
@@ -122,13 +156,11 @@ fn upload_and_download_enforce_gate_and_use_frozen_frames() {
     assert_eq!(download_frame["kind"], "download");
     assert_eq!(download_frame["path"], "/tmp/b.txt");
     assert_eq!(download_frame["approvalId"], "approval-1");
-    bridge.submit_responses(json!({
-        "frames": [{
-            "kind": "file",
-            "requestId": download_frame["requestId"],
-            "bytesBase64": "d29ybGQ="
-        }]
-    }));
+    bridge.submit_responses(json!({"frames":[{
+        "kind":"file",
+        "requestId":download_frame["requestId"],
+        "bytesBase64":"d29ybGQ="
+    }]}));
     assert_eq!(
         download.join().expect("download thread").expect("download"),
         b"world"
@@ -327,4 +359,69 @@ fn exec_manager_reports_control_throw_with_frozen_failure_classification() {
             conversation_id: Some("agent-telemetry".into()),
         }]
     );
+}
+
+
+#[test]
+fn exec_manager_journals_stable_operation_id_and_cancels_provider_request() {
+    let (bridge, _registration, receive) = bridge_with_provider();
+    let gate = Arc::new(FakeGate::default());
+    let manager = GatewayLocalExecSandBox::new(bridge.clone(), gate)
+        .remote_resource_accessor()
+        .manager();
+
+    let shell_manager = Arc::clone(&manager);
+    let shell = thread::spawn(move || {
+        shell_manager.execute_shell(
+            &GatewayLocalToolScope {
+                agent_id: Some("agent-journal".into()),
+                tool_call_id: Some("operation-stable-1".into()),
+                action: Some("run-command".into()),
+            },
+            "sleep 30",
+            "/tmp",
+            "operation-stable-1",
+        )
+    });
+
+    let exec = receive
+        .recv_timeout(Duration::from_secs(1))
+        .expect("exec frame");
+    let bridge_request_id = exec["requestId"]
+        .as_str()
+        .expect("bridge request id")
+        .to_string();
+    let active = manager
+        .operation_for_agent("agent-journal", "operation-stable-1")
+        .expect("active operation");
+    assert_eq!(active.operation_id, "operation-stable-1");
+    assert_eq!(active.agent_id.as_deref(), Some("agent-journal"));
+    assert_eq!(active.bridge_request_id, bridge_request_id);
+    assert_eq!(active.status, GatewayLocalExecOperationStatus::Running);
+    assert!(manager.operation_for_agent("other-agent", "operation-stable-1").is_none());
+    assert!(!manager.cancel_operation_for_agent("other-agent", "operation-stable-1"));
+
+    assert!(manager.cancel_operation_for_agent("agent-journal", "operation-stable-1"));
+    assert!(!manager.cancel_operation("missing-operation"));
+    let cancel = receive
+        .recv_timeout(Duration::from_secs(1))
+        .expect("provider cancel");
+    assert_eq!(cancel["kind"], "cancel");
+    assert_eq!(cancel["requestId"], bridge_request_id);
+
+    bridge.submit_responses(json!({"frames":[{
+        "kind":"control",
+        "requestId":bridge_request_id,
+        "message":{"streamClose":{"id":1}}
+    }]}));
+    let result = shell.join().expect("shell thread").expect("cancelled shell");
+    assert_eq!(result.exit_code, None);
+
+    let settled = manager
+        .operation_for_agent("agent-journal", "operation-stable-1")
+        .expect("settled operation");
+    assert_eq!(settled.status, GatewayLocalExecOperationStatus::Cancelled);
+    assert_eq!(settled.bridge_request_id, bridge_request_id);
+    assert_eq!(manager.operation_history_for_agent("agent-journal").len(), 1);
+    assert!(manager.operation_history_for_agent("other-agent").is_empty());
 }

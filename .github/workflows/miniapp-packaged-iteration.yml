@@ -59,6 +59,7 @@ jobs:
           ./node_modules/.bin/tsc --noEmit --strict --skipLibCheck --target ES2022 --module NodeNext --moduleResolution NodeNext --esModuleInterop e2e/miniapp-packaged-acceptance.spec.ts
           /usr/bin/osacompile -o "$RUNNER_TEMP/miniapp-save-report.scpt" ../.github/scripts/miniapp-save-report.applescript
           node --test ../.github/scripts/miniapp-release-evidence.test.mjs
+          node --test ../.github/scripts/promote-miniapp-candidate.test.mjs
       - name: Provision the existing bounded production CI account, never the publisher
         env:
           FABUSHI_CI_TEST_USERNAME: ${{ secrets.FABUSHI_CI_TEST_USERNAME }}

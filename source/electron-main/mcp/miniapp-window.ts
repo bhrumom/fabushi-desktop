@@ -179,9 +179,14 @@ function isAllowedReportExport(appId: string, item: MiniAppDownloadItem, content
   try {
     const blob = new URL(item.getURL());
     const filename = item.getFilename();
-    return appId === "org.fabushi.global-dandelion" && contents === owner && item.hasUserGesture() && blob.protocol === "blob:" && matchesOrigin(new URL(blob.pathname), origin)
+    const expectedFilename = appId === "org.fabushi.global-dandelion"
+      ? "global-dandelion-local-report.json"
+      : appId === "org.fabushi.chatgpt-auto-confirm"
+        ? "chatgpt-auto-confirm-local-report.json"
+        : null;
+    return expectedFilename !== null && contents === owner && item.hasUserGesture() && blob.protocol === "blob:" && matchesOrigin(new URL(blob.pathname), origin)
       && item.getMimeType().split(";")[0]?.trim().toLowerCase() === "application/json"
-      && filename === "global-dandelion-local-report.json"
+      && filename === expectedFilename
       && item.getTotalBytes() > 0 && item.getTotalBytes() <= MAX_REPORT_BYTES
       && item.getReceivedBytes() >= 0 && item.getReceivedBytes() <= MAX_REPORT_BYTES;
   } catch { return false; }

@@ -5,6 +5,8 @@ on:
       - 'source/host/src/extensions/mcp/installable_package.rs'
       - 'source/host/src/extensions/mcp/installable_package/**'
       - 'source/host/Cargo.toml'
+      - 'source/host/src/extensions/session/native_messaging.rs'
+      - 'source/host/src/extensions/inference/provider_session.rs'
       - 'docs/specs/desktop-catalog-package-installation.md'
       - '.github/workflows/miniapp-host-ci.yml'
   push:
@@ -13,6 +15,8 @@ on:
       - 'source/host/src/extensions/mcp/installable_package.rs'
       - 'source/host/src/extensions/mcp/installable_package/**'
       - 'source/host/Cargo.toml'
+      - 'source/host/src/extensions/session/native_messaging.rs'
+      - 'source/host/src/extensions/inference/provider_session.rs'
 permissions:
   contents: read
   actions: read
@@ -59,6 +63,10 @@ jobs:
           FABUSHI_PRODUCTION_TRUST_FIXTURE: ${{ github.workspace }}/signed-fixture/production-trust.json
           FABUSHI_APPROVED_PUBLIC_ACCEPTANCE: '1'
         run: cargo test --manifest-path source/host/Cargo.toml --lib installable_package
+      - name: Verify native issuer scope and fail-closed authenticated transport contracts
+        run: |
+          cargo test --manifest-path source/host/Cargo.toml --lib extensions::session::native_messaging::tests
+          cargo test --manifest-path source/host/Cargo.toml --lib fabushi_inference_rejects_cross_issuer_targets_before_bearer_dispatch
       - uses: actions/upload-artifact@v4
         if: always()
         with:

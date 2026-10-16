@@ -147,9 +147,9 @@ const qtReachability=recursiveReachability.qt_superproject;
 fail(qtReachability?.repository==='https://github.com/qt/qt5','Qt reachability authority missing');
 const qtEvidenceByPath=new Map((qtReachability.accepted_upstream_evidence||[]).map(item=>[item.path,item]));
 const expectedQtEvidence=[
-  ['Telegram/build/prepare/prepare.py','9482a53e60386743ae797d75cecc36767cd63646'],
-  ['Telegram/build/docker/centos_env/Dockerfile','5516c448c628d5928d690687ed948d67b5cdaac3'],
-  ['snap/snapcraft.yaml','5cff7cf59aedc430b0a9a2d6d66ab6fe3c29bd9f']
+  ['Telegram/build/prepare/prepare.py','698ccd839591d4497ff5a932885f45724f95b890'],
+  ['Telegram/build/docker/centos_env/Dockerfile','126b74a759c4e09a51a37e951fa694c407b2a747'],
+  ['snap/snapcraft.yaml','824d6a30f1d4b85a29eece886bc1c1e2f42f59d4']
 ];
 for (const [sourcePath,blob] of expectedQtEvidence) {
   const evidence=qtEvidenceByPath.get(sourcePath);
@@ -186,7 +186,7 @@ fail(qtRootPolicy.some(rule=>rule.path_exact==='cmake/QtIRGitHelpers.cmake'&&rul
 
 const tgOwtReachability=recursiveReachability.tg_owt;
 fail(tgOwtReachability?.repository==='https://github.com/desktop-app/tg_owt','tg_owt reachability authority missing');
-fail(tgOwtReachability.commit==='e2d0e88d1bde6cc600da5dc92581dc97e4c1e685','tg_owt reachability commit drift');
+fail(tgOwtReachability.commit==='07fb35bc33b3e79125a1beab7690e830f183f5d8','tg_owt reachability commit drift');
 fail(tgOwtReachability.root_candidate_policy_status==='complete-for-current-tg-owt-authority','tg_owt root candidate policy is not fail-closed complete');
 const tgOwtPolicy=tgOwtReachability.root_candidate_disposition_policy||[];
 for (const [kind,value,disposition] of [
@@ -199,11 +199,11 @@ for (const [kind,value,disposition] of [
 const prepareTgOwtStage=prepareQt.match(/stage\('tg_owt',[\s\S]*?\n"""\)/)?.[0]||'';
 const dockerTgOwtStage=dockerQt.match(/git init tg_owt[\s\S]*?rm -rf tg_owt/)?.[0]||'';
 const snapTgOwtStage=snapQt.match(/\n  webrtc:\n[\s\S]*?\n  tlottie:/)?.[0]||snapQt.match(/\n  webrtc:\n[\s\S]*$/)?.[0]||'';
-fail(prepareTgOwtStage.includes('git checkout e2d0e88d1bde6cc600da5dc92581dc97e4c1e685'),'accepted prepare.py tg_owt pin drift');
+fail(prepareTgOwtStage.includes('git checkout 07fb35bc33b3e79125a1beab7690e830f183f5d8'),'accepted prepare.py tg_owt pin drift');
 fail(prepareTgOwtStage.includes('git submodule update --init --recursive'),'accepted prepare.py tg_owt recursive submodule build drift');
-fail(dockerTgOwtStage.includes('git fetch --depth=1 origin e2d0e88d1bde6cc600da5dc92581dc97e4c1e685'),'accepted Docker tg_owt pin drift');
+fail(dockerTgOwtStage.includes('git fetch --depth=1 origin 07fb35bc33b3e79125a1beab7690e830f183f5d8'),'accepted Docker tg_owt pin drift');
 fail(dockerTgOwtStage.includes('git submodule update --init --recursive --depth=1'),'accepted Docker tg_owt recursive submodule build drift');
-fail(snapTgOwtStage.includes('source-commit: e2d0e88d1bde6cc600da5dc92581dc97e4c1e685'),'accepted Snap tg_owt pin drift');
+fail(snapTgOwtStage.includes('source-commit: 07fb35bc33b3e79125a1beab7690e830f183f5d8'),'accepted Snap tg_owt pin drift');
 
 const libjxlReachability=recursiveReachability.libjxl;
 fail(libjxlReachability?.repository==='https://github.com/libjxl/libjxl','libjxl reachability authority missing');
@@ -246,9 +246,16 @@ for (const [name,stage] of [['prepare.py',prepareLibavifStage],['Dockerfile',doc
 fail(snapLibavifStage.includes('source-tag: v1.3.0'),'accepted Snap libavif ref drift');
 
 const adaReachability=recursiveReachability.ada;
-fail(adaReachability?.repository==='https://github.com/ada-url/ada','Ada reachability authority missing');
-fail(adaReachability.commit==='010f7c45aeaff1205452e7da2df8702cf725fb3e','Ada reachability commit drift');
-fail(adaReachability.root_candidate_policy_status==='complete-for-current-ada-authority','Ada root candidate policy is not fail-closed complete');
+fail(Array.isArray(adaReachability?.observed_authorities),'Ada reachability authority set missing');
+const expectedAdaAuthorities=new Set([
+  'https://github.com/ada-url/ada@010f7c45aeaff1205452e7da2df8702cf725fb3e',
+  'https://github.com/ada-url/ada@6b4612162c34e7ffcee08c03b107b449e07a5683',
+]);
+for (const authority of adaReachability.observed_authorities||[]) {
+  expectedAdaAuthorities.delete(authority.repository+'@'+authority.commit);
+}
+fail(expectedAdaAuthorities.size===0,'Ada observed authority set drift');
+fail(adaReachability.root_candidate_policy_status==='complete-for-current-ada-authorities','Ada root candidate policy is not fail-closed complete');
 const adaPolicy=adaReachability.root_candidate_disposition_policy||[];
 for (const [kind,value] of [
   ['path_prefix','.github/'],['path_prefix','cmake/'],['path_prefix','benchmarks/'],
@@ -262,7 +269,7 @@ for (const [name,stage] of [['prepare.py',prepareAdaStage],['Dockerfile',dockerA
   fail(stage.includes('ADA_TOOLS=OFF'),'accepted Ada build lost ADA_TOOLS=OFF in '+name);
   fail(stage.includes('ADA_INCLUDE_URL_PATTERN=OFF'),'accepted Ada build lost ADA_INCLUDE_URL_PATTERN=OFF in '+name);
 }
-fail(snapAdaStage.includes('source-tag: v3.2.4'),'accepted Snap Ada ref drift');
+fail(snapAdaStage.includes('source-tag: v3.2.9'),'accepted Snap Ada ref drift');
 
 const openalReachability=recursiveReachability.openal_soft;
 fail(openalReachability?.root_candidate_policy_status==='complete-for-current-openal-authorities','OpenAL root candidate policy is not fail-closed complete');
@@ -458,7 +465,7 @@ for (const [kind,value] of [
   ['path_prefix','.github/'],['path_exact','.travis.yml'],['path_exact','README.md'],
   ['path_exact','config.guess'],['path_exact','config.sub'],['path_prefix','test/']
 ]) fail(libsrtpPolicy.some(rule=>rule[kind]===value),'libsrtp acquisition disposition missing: '+value);
-const tgOwtTree=await ghTree('desktop-app/tg_owt','e2d0e88d1bde6cc600da5dc92581dc97e4c1e685');
+const tgOwtTree=await ghTree('desktop-app/tg_owt','07fb35bc33b3e79125a1beab7690e830f183f5d8');
 const libsrtpEntry=(tgOwtTree.tree||[]).find(item=>item.path==='src/third_party/libsrtp');
 fail(libsrtpEntry?.mode==='160000','accepted tg_owt libsrtp path is no longer a gitlink');
 fail(libsrtpEntry.sha==='a566a9cfcd619e8327784aa7cff4a1276dc1e895','accepted tg_owt libsrtp gitlink commit drift');
@@ -703,11 +710,11 @@ if (requireAccepted) {
   fail(u.accepted===true,'accepted mode requires upstream.accepted=true');
   fail(lock.acceptance.accepted===true,'accepted mode requires acceptance.accepted=true');
   fail(lock.acceptance.baseline_ready===true,'accepted mode requires baseline_ready=true');
-  fail(ledger.target_commit===(process.env.GITHUB_SHA||ledger.target_commit),'G-EVIDENCE ledger target_commit must equal exact GitHub Actions HEAD');
   fail(ledger.coverage.unknown===0,'G-INVENTORY unknown must be 0');
   fail(ledger.coverage.unread===0,'G-INVENTORY unread must be 0');
   fail(ledger.coverage.omitted===0,'G-INVENTORY omitted must be 0');
   fail(ledger.coverage.unmapped_responsibilities===0,'G-TRACEABILITY unmapped responsibilities must be 0');
+  fail(ledger.target_commit===(process.env.GITHUB_SHA||ledger.target_commit),'G-EVIDENCE ledger target_commit must equal exact GitHub Actions HEAD');
   fail(ledger.rows.length>0,'G-FILE/G-TRACEABILITY ledger cannot be empty at closure');
 }
 console.log(JSON.stringify(report,null,2));

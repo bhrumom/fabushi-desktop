@@ -7,17 +7,17 @@ Responsibility: `TDRP-R9-EXTERNAL-URL-AUTH-CONTEXT-001`
 ## Source authority
 
 - Repository: `telegramdesktop/tdesktop`
-- Commit: `72b3b71c3d6e450e5ef94a3112dd750a0168aa0b`
+- Commit: `c317da960b2664962aeb17892adbd6dda59c98fe`
 - Primary source path: `Telegram/SourceFiles/boxes/url_auth_box.cpp`
-- Blob: `f68ea15d650a07ed52839020fb46711012b288ae`
+- Blob: `3e5e383b928f646dd8f16560cb90fc1a5745bdb7`
 - Relevant source symbols: `AcceptedUrlContext`, `ActivateButton`, `ActivateUrl`, `RequestButton`, `RequestUrl`
-- Related behavior was cross-read in `core/click_handler_types.cpp` and `core/ui_integration.cpp` to understand stripping and dispatch semantics.
+- Related behavior was cross-read in `core/click_handler_types.cpp` and `core/ui_integration.cpp` to understand stripping and dispatch semantics. At `c317da960b2664962aeb17892adbd6dda59c98fe`, Telegram additionally passes `ClickHandlerContext` into hidden URL activation and derives trusted domains from per-account `AppConfig`; this delta was re-read as an upstream policy change, not as permission to weaken Fabushi's exact-origin accepted-auth boundary.
 
 This dossier covers only the accepted-auth-context / foreign web-auth token security responsibility. It does **not** mark those complete source files read or migrated.
 
 ## Source behavior
 
-The accepted upstream separates ordinary external URL activation from server-accepted login URLs. Ordinary links remove foreign web-login credential parameters before dispatch. A server-returned accepted URL receives a privileged context that permits the server-issued login parameters to survive the final open.
+The accepted upstream separates ordinary external URL activation from server-accepted login URLs. The current upstream also makes its trusted-domain policy account-configurable, while preserving the distinction between an ordinary hidden URL and context-aware handling. Ordinary links remove foreign web-login credential parameters before dispatch. A server-returned accepted URL receives a privileged context that permits the server-issued login parameters to survive the final open.
 
 The source recognizes credential parameter names rather than values, handles case-insensitive names, repeatedly percent-decodes the parameter name with a bounded loop, handles leading question marks, and sanitizes query and fragment parameter forms. This prevents an arbitrary message/link from carrying a login credential that could authenticate the user into a sender-controlled account.
 

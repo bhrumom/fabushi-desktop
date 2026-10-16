@@ -1,6 +1,7 @@
 import { chromium, expect, test, type Browser, type Locator, type Page } from '@playwright/test';
 import { execFileSync, spawn, type ChildProcess } from 'node:child_process';
-import { mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { lstat, mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -14,6 +15,24 @@ const appId = 'org.fabushi.global-dandelion';
 const packageDigest = 'de10e02115415908f827723457817e51cb4f39aa5ca68798da824fecc483118a';
 const preferenceKey = 'global-dandelion-display-v1';
 const maxInputBytes = 16 * 1024 * 1024;
+const harnessSource = process.env.FABUSHI_MINIAPP_HARNESS_SOURCE || process.env.GITHUB_SHA || sourceSha;
+
+async function verifyCiBootstrapInput(sessionPath: string): Promise<void> {
+  expect(sessionPath, 'ordinary CI session bootstrap input is required').toBeTruthy();
+  const info = await lstat(sessionPath);
+  expect(info.mode & 0o777, 'bootstrap transport must be owner-private').toBe(0o600);
+  expect(info.uid).toBe(process.getuid!());
+  if (process.env.FABUSHI_CI_SESSION_DELIVERY === 'private-fifo') {
+    expect(process.env.FABUSHI_ACCOUNT_ENVIRONMENT).toBe('ci-isolated');
+    expect(sessionPath.startsWith(`${process.env.DFC_RAM_VOLUME}/factory-private/`)).toBe(true);
+    expect(info.isFIFO(), 'factory credentials must not become a disk JSON session').toBe(true);
+  } else {
+    expect(process.env.FABUSHI_CI_SESSION_DELIVERY || 'private-file').toBe('private-file');
+    expect(info.isFile()).toBe(true);
+    expect(info.size).toBeGreaterThan(0);
+    expect(info.size).toBeLessThanOrEqual(64 * 1024);
+  }
+}
 
 type Target = { readonly id?: string; readonly type?: string; readonly url?: string };
 type NetworkService = { readonly name: string; readonly wasEnabled: boolean };
@@ -57,7 +76,7 @@ async function waitForRenderer(appDataDir: string): Promise<{ page: Page; browse
   throw new Error(`Signed production renderer did not become available: ${lastError}`);
 }
 
-async function launchSignedApp(appDataDir: string): Promise<{ process: ChildProcess; browser: Browser; page: Page }> {
+async function launchSignedApp(appDataDir: string, ciSessionFile = process.env.FABUSHI_CI_ACCOUNT_SESSION_FILE): Promise<{ process: ChildProcess; browser: Browser; page: Page }> {
   const child = spawn(executable, ['--remote-debugging-address=127.0.0.1', '--remote-debugging-port=0'], {
     env: {
       ...process.env,
@@ -66,6 +85,7 @@ async function launchSignedApp(appDataDir: string): Promise<{ process: ChildProc
       OBF_SOURCE_SHA: sourceSha,
       FABUSHI_FEATURE_HOST_MODE: 'production',
       FABUSHI_E2E: '0',
+      FABUSHI_CI_ACCOUNT_SESSION_FILE: ciSessionFile,
     },
     stdio: ['ignore', 'ignore', 'ignore'],
   });
@@ -353,10 +373,7 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
     expect(process.env.FABUSHI_E2E || '').not.toBe('1');
     const ciSessionPath = process.env.FABUSHI_CI_ACCOUNT_SESSION_FILE?.trim() || '';
     expect(ciSessionPath, 'reuse the workflow-provisioned production CI account session').toBeTruthy();
-    const ciSessionStat = await stat(ciSessionPath);
-    expect(ciSessionStat.isFile()).toBe(true);
-    expect(ciSessionStat.size).toBeGreaterThan(0);
-    expect(ciSessionStat.size).toBeLessThanOrEqual(64 * 1024);
+    await verifyCiBootstrapInput(ciSessionPath);
     const fixtureDir = await mkdtemp(path.join(tmpdir(), 'fabushi-miniapp-fixture-'));
     const inputFile = path.join(fixtureDir, 'mu07-packet-fixture.txt');
     const fixtureBytes = Buffer.from(('FABUSHI MU-07 offline packet acceptance\n0123456789abcdef\n').repeat(256), 'ascii');
@@ -372,7 +389,7 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
     const evidence = {
       sourceSha,
       binarySource: sourceSha,
-      harnessSource: process.env.GITHUB_SHA || sourceSha,
+      harnessSource,
       appId,
       version: '0.1.0',
       packageDigest,
@@ -479,6 +496,88 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
           await rm(fixtureDir, { recursive: true, force: true });
         }
       }
+    }
+  });
+
+  test('real account departure and two-account installed code and browser data isolation', async () => {
+    test.skip(process.env.MINIAPP_ACCOUNT_SWITCH_ACCEPTANCE !== '1', 'Fixed-binary diagnostics do not claim the shipping real-account-switch gate.');
+    test.setTimeout(12 * 60_000);
+    expect(process.platform).toBe('darwin');
+    expect(process.env.GITHUB_ACTIONS).toBe('true');
+    expect(process.env.FABUSHI_ACCOUNT_ENVIRONMENT, 'factory identities must remain in the explicit isolated issuer namespace').toBe('ci-isolated');
+    expect(process.env.FABUSHI_API_BASE_URL).toBe('https://fabushi-ci-isolated-auth.bhrumom.workers.dev');
+    expect(process.env.FABUSHI_CI_SESSION_DELIVERY).toBe('private-fifo');
+    const sessionA = process.env.FABUSHI_CI_ACCOUNT_SESSION_FILE?.trim() || '';
+    const sessionB = process.env.FABUSHI_CI_SECOND_ACCOUNT_SESSION_FILE?.trim() || '';
+    for (const sessionPath of [sessionA, sessionB]) {
+      expect(sessionPath, 'two real protected CI sessions are required; no publisher-session fallback').toBeTruthy();
+      await verifyCiBootstrapInput(sessionPath);
+    }
+    const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-miniapp-account-isolation-'));
+    await mkdir(evidenceRoot, { recursive: true });
+    const evidenceDir = await mkdtemp(path.join(evidenceRoot, 'account-switch-'));
+    let app: Awaited<ReturnType<typeof launchSignedApp>> | null = null;
+    const accountReference = async (page: Page): Promise<string> => {
+      const id = await page.evaluate(async () => {
+        const bridge = (window as typeof window & { desktop?: { cursorAccount?: { getStatus?: () => Promise<{ kind?: string; authId?: string }> } } }).desktop;
+        const status = await bridge?.cursorAccount?.getStatus?.();
+        if (status?.kind !== 'logged-in' || !status.authId) throw new Error('Real native account identity is unavailable.');
+        return status.authId;
+      });
+      return createHash('sha256').update(id).digest('hex');
+    };
+    try {
+      app = await launchSignedApp(appDataDir, sessionA);
+      await waitForProductionLogin(app.page);
+      const accountA = await accountReference(app.page);
+      let catalog = await refreshUntilCatalogItem(app.page);
+      await catalog.row.getByRole('button', { name: '安装并验证', exact: true }).click();
+      await expect(catalog.row).toContainText('已安装', { timeout: 90_000 });
+      await catalog.row.getByRole('button', { name: '打开', exact: true }).click();
+      let mini = await findMiniAppPage(app.browser);
+      const originA = new URL(mini.url()).host;
+      await setAndVerifyDisplayPreference(mini, true);
+      await app.page.bringToFront();
+      await catalog.dialog.getByRole('button', { name: 'Close', exact: true }).click();
+      await app.page.getByRole('button', { name: 'Account', exact: true }).click();
+      await app.page.getByText('Settings', { exact: true }).click();
+      await app.page.getByRole('dialog', { name: 'Fabushi settings' }).getByRole('button', { name: 'Sign Out', exact: true }).click();
+      await expect.poll(() => mini.isClosed(), { timeout: 30_000, message: 'real native account departure must destroy the live mini-app window' }).toBe(true);
+      await expect.poll(async () => app!.page.evaluate(async () => {
+        const bridge = (window as typeof window & { desktop?: { cursorAccount?: { getStatus?: () => Promise<{ kind?: string }> } } }).desktop;
+        return (await bridge?.cursorAccount?.getStatus?.())?.kind;
+      }), { timeout: 30_000, message: 'Native logout must not replay the cached CI bootstrap session' }).toBe('logged-out');
+      await quitSignedApp(app.process, app.browser);
+      app = await launchSignedApp(appDataDir, sessionB);
+      await waitForProductionLogin(app.page);
+      const accountB = await accountReference(app.page);
+      expect(accountB, 'the second session must belong to another real account').not.toBe(accountA);
+      catalog = await refreshUntilCatalogItem(app.page);
+      await expect(catalog.row).toContainText('未安装');
+      await catalog.row.getByRole('button', { name: '安装并验证', exact: true }).click();
+      await expect(catalog.row).toContainText('已安装', { timeout: 90_000 });
+      await catalog.row.getByRole('button', { name: '打开', exact: true }).click();
+      mini = await findMiniAppPage(app.browser);
+      expect(new URL(mini.url()).host).not.toBe(originA);
+      expect(await mini.evaluate((key) => localStorage.getItem(key), preferenceKey), 'B must not see A browser data').toBeNull();
+      await app.page.bringToFront();
+      await catalog.row.getByRole('button', { name: '移除代码，保留数据', exact: true }).click();
+      await expect.poll(() => mini.isClosed(), { timeout: 90_000 }).toBe(true);
+      await quitSignedApp(app.process, app.browser);
+      app = await launchSignedApp(appDataDir, sessionA);
+      await waitForProductionLogin(app.page);
+      expect(await accountReference(app.page)).toBe(accountA);
+      catalog = await refreshUntilCatalogItem(app.page);
+      await expect(catalog.row).toContainText('已安装');
+      await catalog.row.getByRole('button', { name: '打开', exact: true }).click();
+      mini = await findMiniAppPage(app.browser);
+      expect(new URL(mini.url()).host).toBe(originA);
+      await setAndVerifyDisplayPreference(mini, false);
+      await writeFile(path.join(evidenceDir, 'returned-account-A.png'), await mini.screenshot());
+      await writeFile(path.join(evidenceDir, 'account-isolation.json'), JSON.stringify({ sourceSha, harnessSource, issuerEnvironment: 'ci-isolated', sessionDelivery: 'private-fifo', accountA, accountB, realDepartureClosedWindow: true, distinctInstallations: true, distinctOrigins: true, retainedAccountASetting: true }, null, 2));
+    } finally {
+      if (app) await quitSignedApp(app.process, app.browser);
+      await rm(appDataDir, { recursive: true, force: true });
     }
   });
 });

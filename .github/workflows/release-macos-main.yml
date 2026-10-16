@@ -17,6 +17,18 @@ on:
         required: false
         default: false
         type: boolean
+      promote_existing_candidate:
+        description: Publish only the immutable main candidate already accepted by production and isolated factory gates.
+        type: boolean
+        default: false
+      accepted_candidate_run_id:
+        type: string
+      accepted_candidate_artifact_id:
+        type: string
+      accepted_candidate_archive_sha256:
+        type: string
+      factory_acceptance_run_id:
+        type: string
   push:
     branches: [main]
     paths:
@@ -40,14 +52,35 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  promote:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.promote_existing_candidate }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Verify exact binary, all gates and factory cleanup before immutable promotion
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PROMOTION_SOURCE_SHA: ${{ inputs.source_sha }}
+          PROMOTION_CANDIDATE_RUN_ID: ${{ inputs.accepted_candidate_run_id }}
+          PROMOTION_ARTIFACT_ID: ${{ inputs.accepted_candidate_artifact_id }}
+          PROMOTION_ARCHIVE_SHA256: ${{ inputs.accepted_candidate_archive_sha256 }}
+          PROMOTION_FACTORY_RUN_ID: ${{ inputs.factory_acceptance_run_id }}
+          PROMOTION_PUBLISH: ${{ inputs.publish_release }}
+          PROMOTION_DIAGNOSTIC: ${{ inputs.iterate_existing_miniapp_candidate }}
+        run: node .github/scripts/promote-miniapp-candidate.mjs
   miniapp-iteration:
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.iterate_existing_miniapp_candidate }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.iterate_existing_miniapp_candidate && !inputs.promote_existing_candidate }}
     uses: ./.github/workflows/miniapp-packaged-iteration.yml
     secrets:
       FABUSHI_CI_TEST_USERNAME: ${{ secrets.FABUSHI_CI_TEST_USERNAME }}
       FABUSHI_CI_TEST_PASSWORD: ${{ secrets.FABUSHI_CI_TEST_PASSWORD }}
   publish:
-    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.iterate_existing_miniapp_candidate }}
+    if: ${{ github.event_name != 'workflow_dispatch' || (!inputs.iterate_existing_miniapp_candidate && !inputs.promote_existing_candidate) }}
     name: Build, notarize, and publish macOS arm64
     runs-on: macos-15
     timeout-minutes: 180
@@ -109,6 +142,16 @@ jobs:
             exit 1
           fi
 
+      - name: Private builds cannot bypass immutable factory-bound promotion
+        env:
+          REQUEST_PUBLIC_RELEASE: ${{ inputs.publish_release }}
+        run: |
+          set -euo pipefail
+          if [ "$REQUEST_PUBLIC_RELEASE" = true ]; then
+            echo "::error::Public release requires promote_existing_candidate and exact binary-bound factory proof; rebuilding cannot substitute for accepted bytes."
+            exit 1
+          fi
+
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
@@ -142,6 +185,7 @@ jobs:
           npx playwright test e2e/miniapp-packaged-acceptance.spec.ts --list
           /usr/bin/osacompile -o "$RUNNER_TEMP/miniapp-save-report.scpt" ../.github/scripts/miniapp-save-report.applescript
           node --test ../.github/scripts/miniapp-release-evidence.test.mjs
+          node --test ../.github/scripts/promote-miniapp-candidate.test.mjs
 
       - name: Validate Fabushi product adapter contracts
         shell: bash
@@ -212,8 +256,26 @@ jobs:
           src="$RUNNER_TEMP/whisper-cpp"
           build="$RUNNER_TEMP/whisper-build"
           rm -rf "$src" "$build"
-          git clone --filter=blob:none --no-checkout "$repo" "$src"
-          git -C "$src" checkout --detach "$commit"
+          fetched=false
+          for attempt in 1 2 3; do
+            rm -rf "$src"
+            git init -q "$src"
+            git -C "$src" remote add origin "$repo"
+            if git -C "$src" -c http.version=HTTP/1.1 fetch --depth=1 --filter=blob:none origin "$commit"; then
+              git -C "$src" checkout --detach FETCH_HEAD
+              if [[ "$(git -C "$src" rev-parse HEAD)" == "$commit" ]]; then
+                fetched=true
+                break
+              fi
+            fi
+            echo "::warning::offline ASR exact-source fetch attempt $attempt failed for $commit"
+            sleep $((attempt * 2))
+          done
+          if [[ "$fetched" != "true" ]]; then
+            echo "::error::failed to fetch pinned offline ASR commit $commit after 3 attempts"
+            exit 1
+          fi
+          test "$(git -C "$src" rev-parse HEAD)" = "$commit"
           cmake -S "$src" -B "$build"             -DWHISPER_BUILD_TESTS=OFF             -DWHISPER_BUILD_EXAMPLES=ON             -DWHISPER_BUILD_SERVER=OFF             -DBUILD_SHARED_LIBS=OFF             -DGGML_NATIVE=OFF
           cmake --build "$build" --config Release --parallel 2
           binary="$(find "$build" -type f -name whisper-cli -perm -111 -print -quit)"
@@ -418,7 +480,7 @@ jobs:
       - name: Run approved Mini App installed and OS-offline lifecycle acceptance
         working-directory: desktop
         shell: bash
-        timeout-minutes: 30
+        timeout-minutes: 40
         env:
           MINIAPP_REAL_ACCEPTANCE: '1'
           MINIAPP_EVIDENCE_DIR: ${{ runner.temp }}/fabushi-miniapp-acceptance
@@ -495,20 +557,5 @@ jobs:
           retention-days: 90
           compression-level: 0
 
-      - name: Publish GitHub prerelease
-        if: ${{ (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/package-macos-') || startsWith(github.event.head_commit.message, 'release:'))) || (github.event_name == 'workflow_dispatch' && inputs.publish_release) }}
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ steps.source.outputs.tag }}
-          VERSION: ${{ steps.source.outputs.version }}
-          SOURCE_SHA: ${{ steps.source.outputs.sha }}
-        run: |
-          set -euo pipefail
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release delete "$TAG" --yes --cleanup-tag
-          fi
-          gh release create "$TAG"             desktop/release/*.dmg             desktop/release/*.zip             desktop/release/*.blockmap             desktop/release/latest-mac.yml             desktop/release/SHA256SUMS.txt             --target "$SOURCE_SHA"             --title "Fabushi macOS $VERSION — ${SOURCE_SHA:0:12}"             --notes "Signed and Apple-notarized macOS arm64 installer built from exact fabushi-desktop commit \`$SOURCE_SHA\`."             --prerelease
-          url="$(gh release view "$TAG" --json url -q .url)"
-          echo "### Published" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Release: $url" >> "$GITHUB_STEP_SUMMARY"
+      - name: Keep accepted installer private until binary-bound factory promotion
+        run: echo 'Candidate retained as immutable Actions artifact; public promotion requires matching factory acceptance and zero-residue evidence.' >> "$GITHUB_STEP_SUMMARY"

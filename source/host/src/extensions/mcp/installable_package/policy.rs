@@ -64,19 +64,10 @@ pub struct CatalogClient {
 
 impl CatalogClient {
     pub fn production_from_environment() -> Result<Self, ProofError> {
-        let origin_value = std::env::var("FABUSHI_API_BASE_URL")
-            .unwrap_or_else(|_| "https://api.ombhrum.com".to_string());
-        let mut origin = Url::parse(&origin_value).map_err(|_| ProofError::Malformed)?;
-        if origin.scheme() != "https"
-            || origin.host_str() != Some("api.ombhrum.com")
-            || origin.port().is_some_and(|port| port != 443)
-            || !origin.username().is_empty()
-            || origin.password().is_some()
-            || origin.query().is_some()
-            || origin.fragment().is_some()
-        {
-            return Err(ProofError::Authorization);
-        }
+        // Marketplace reads are public and issuer-independent. Never inherit
+        // the authenticated Native account endpoint or its bearer context.
+        let mut origin = Url::parse("https://api.ombhrum.com")
+            .map_err(|_| ProofError::Malformed)?;
         origin.set_path("");
         let client = reqwest::blocking::Client::builder()
             .https_only(true)
@@ -855,6 +846,12 @@ fn ensure_revocations_retained(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn production_catalog_origin_is_independent_of_native_auth_issuer() {
+        let client = CatalogClient::production_from_environment().unwrap();
+        assert_eq!(client.origin.origin().ascii_serialization(), "https://api.ombhrum.com");
+    }
     use ed25519_dalek::{Signer, SigningKey};
 
     fn signed_fixture(expired: bool, revoked_release_key: bool) -> (String, TrustAnchor) {

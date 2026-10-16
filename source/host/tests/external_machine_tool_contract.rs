@@ -5,7 +5,9 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
 };
 use mahayana_host_runtime::runner::routed_provider_runtime::RoutedToolBridge;
 use mahayana_host_runtime::runner::tools::sand_external_machine_tools::{
-    ExternalMachineExecutor, ExternalMachineReadArgs, ExternalMachineShellArgs,
+    EXTERNAL_SHELL_CANCEL_TOOL_NAME, EXTERNAL_SHELL_HISTORY_TOOL_NAME,
+    EXTERNAL_SHELL_STATUS_TOOL_NAME, ExternalMachineExecutor, ExternalMachineReadArgs,
+    ExternalMachineShellArgs,
 };
 use mahayana_host_runtime::runner::tools::turn_toolset::{
     TurnToolsetDependencies, TurnToolsetRole, build_turn_toolset,
@@ -57,6 +59,21 @@ impl ExternalMachineExecutor for FakeExternalMachine {
         ));
         Ok(json!({"success":{"path":args.path,"content":"hello"}}))
     }
+
+    fn operation_status(&self, operation_id: &str) -> Result<Value, ProviderSessionError> {
+        self.calls.lock().expect("calls").push(format!("status:{operation_id}"));
+        Ok(json!({"operationId":operation_id,"status":"running"}))
+    }
+
+    fn operation_history(&self) -> Result<Value, ProviderSessionError> {
+        self.calls.lock().expect("calls").push("history".into());
+        Ok(json!([{"operationId":"shell-call","status":"completed"}]))
+    }
+
+    fn cancel_operation(&self, operation_id: &str) -> Result<Value, ProviderSessionError> {
+        self.calls.lock().expect("calls").push(format!("cancel:{operation_id}"));
+        Ok(json!({"operationId":operation_id,"cancelRequested":true}))
+    }
 }
 
 #[test]
@@ -72,6 +89,9 @@ fn turn_toolset_consumes_external_shell_and_read_executor() {
     let tools = bridge.list_tools().expect("tools");
     assert!(tools.iter().any(|tool| tool.name == SAND_EXTERNAL_SHELL_TOOL_NAME));
     assert!(tools.iter().any(|tool| tool.name == SAND_EXTERNAL_READ_TOOL_NAME));
+    assert!(tools.iter().any(|tool| tool.name == EXTERNAL_SHELL_STATUS_TOOL_NAME));
+    assert!(tools.iter().any(|tool| tool.name == EXTERNAL_SHELL_HISTORY_TOOL_NAME));
+    assert!(tools.iter().any(|tool| tool.name == EXTERNAL_SHELL_CANCEL_TOOL_NAME));
     assert!(tools.iter().any(|tool| tool.name == "base_tool"));
 
     let shell = tools.iter().find(|tool| tool.name == SAND_EXTERNAL_SHELL_TOOL_NAME).unwrap();
@@ -89,11 +109,31 @@ fn turn_toolset_consumes_external_shell_and_read_executor() {
         "read-call",
     ).expect("read result");
     assert_eq!(read_result["success"]["content"], "hello");
+
+    let status = tools.iter().find(|tool| tool.name == EXTERNAL_SHELL_STATUS_TOOL_NAME).unwrap();
+    let status_result = bridge
+        .call_tool(status, json!({"operationId":"shell-call"}), "status-call")
+        .expect("status result");
+    assert_eq!(status_result["status"], "running");
+
+    let history = tools.iter().find(|tool| tool.name == EXTERNAL_SHELL_HISTORY_TOOL_NAME).unwrap();
+    let history_result = bridge.call_tool(history, json!({}), "history-call").expect("history");
+    assert_eq!(history_result[0]["operationId"], "shell-call");
+
+    let cancel = tools.iter().find(|tool| tool.name == EXTERNAL_SHELL_CANCEL_TOOL_NAME).unwrap();
+    let cancel_result = bridge
+        .call_tool(cancel, json!({"operationId":"shell-call"}), "cancel-call")
+        .expect("cancel result");
+    assert_eq!(cancel_result["cancelRequested"], true);
+
     assert_eq!(
         executor.calls.lock().expect("calls").as_slice(),
         &[
             "shell:pwd:/tmp:shell-call".to_string(),
             "read:/tmp/a.txt:Some(2):Some(5):read-call".to_string(),
+            "status:shell-call".to_string(),
+            "history".to_string(),
+            "cancel:shell-call".to_string(),
         ]
     );
 }
@@ -139,4 +179,7 @@ fn box_scoped_subagent_does_not_receive_external_machine_tools() {
     let tools = bridge.list_tools().expect("tools");
     assert!(tools.iter().all(|tool| tool.name != SAND_EXTERNAL_SHELL_TOOL_NAME));
     assert!(tools.iter().all(|tool| tool.name != SAND_EXTERNAL_READ_TOOL_NAME));
+    assert!(tools.iter().all(|tool| tool.name != EXTERNAL_SHELL_STATUS_TOOL_NAME));
+    assert!(tools.iter().all(|tool| tool.name != EXTERNAL_SHELL_HISTORY_TOOL_NAME));
+    assert!(tools.iter().all(|tool| tool.name != EXTERNAL_SHELL_CANCEL_TOOL_NAME));
 }

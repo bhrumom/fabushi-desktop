@@ -154,3 +154,19 @@ canonical factory accounts remain isolated, explicitly issuer-namespaced and
 memory/FIFO-only, never labelled production identities. Production MU-07/chat
 remain separate. No second auth owner or weakened account-switch criterion.
 
+## Observed fixed-binary lifecycle acceptance (2026-10-16)
+
+Actions38830168249 passed the complete single-account MU-07 case using actual
+signed binarySource=e62ea0f0f335a5acbbc90852e1f2ba75cab03424 and
+harnessSource=4cf6215d7dbdbcc440f18a32fd76e13c84bc2f66. Actual acceptance.json
+records online install, OS-network-disabled whole-process cold launch and online
+reinstall; both Wasm/report checks passed, code removal closed the active instance,
+and the one settings entry survived. Each actual report verifies14592bytes in13
+packets. Artifact12016473349,869477bytes,archiveSHA256
+1db619af4df126759670b7cd390e677a776db505d5cc0dad027d602bb1b35939.
+
+This passes only the historical binary's complete single-account lifecycle.
+New product code, canonical-main integration, factory account switching and public
+promotion remain blocked until their own exact-source/binary evidence. Do not
+reuse this historical success as acceptance of subsequent product revisions.
+

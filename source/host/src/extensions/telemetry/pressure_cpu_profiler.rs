@@ -403,6 +403,31 @@ impl ProductionCpuProfilerBackend {
     }
 
     #[cfg(target_os = "macos")]
+    fn ensure_macos_sample_artifact(path: &Path) -> Result<(), String> {
+        if Self::validate_non_empty_artifact(path, "macOS sample").is_ok() {
+            return Ok(());
+        }
+
+        let _ = fs::remove_file(path);
+        let status = Command::new("/usr/bin/sample")
+            .arg(std::process::id().to_string())
+            .arg("1")
+            .arg("10")
+            .arg("-file")
+            .arg(path)
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+            .map_err(|error| format!("could not run macOS sample fallback: {error}"))?;
+        if !status.success() {
+            return Err(format!(
+                "macOS sample fallback failed with status {status}"
+            ));
+        }
+        Self::validate_non_empty_artifact(path, "macOS sample")
+    }
+
+    #[cfg(target_os = "macos")]
     fn start_platform(state: &mut ProductionCpuProfilerState) -> Result<(), String> {
         let path = Self::fresh_capture_path("sample.txt");
         let child = Command::new("/usr/bin/sample")
@@ -561,7 +586,7 @@ impl ProductionCpuProfilerBackend {
             .capture_path
             .take()
             .ok_or_else(|| "macOS sample output path is missing".to_string())?;
-        if let Err(error) = Self::validate_non_empty_artifact(&path, "macOS sample") {
+        if let Err(error) = Self::ensure_macos_sample_artifact(&path) {
             let _ = fs::remove_file(&path);
             return Err(error);
         }

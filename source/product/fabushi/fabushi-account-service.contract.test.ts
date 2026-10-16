@@ -1,12 +1,17 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import test from "node:test";
 
 import {
   DEFAULT_FABUSHI_API_BASE_URL,
   DEFAULT_FABUSHI_RESPONSES_URL,
+  FABUSHI_CI_ISOLATED_AUTH_BASE_URL,
   normalizeFabushiApiBaseUrl,
   normalizeFabushiCiSession,
   normalizeFabushiSession,
+  nativeAuthIdForIssuer,
+  nativeRemoteComputerDeviceScope,
+  isProductionFabushiIssuer,
 } from "./fabushi-account-policy.js";
 
 function boundedCiSession(overrides: Record<string, unknown> = {}) {
@@ -57,6 +62,56 @@ test("Fabushi API origin policy is HTTPS-first and rejects credential/query smug
   assert.throws(() => normalizeFabushiApiBaseUrl("https://user:secret@api.ombhrum.com"), /credentials/);
   assert.throws(() => normalizeFabushiApiBaseUrl("https://api.ombhrum.com?token=secret"), /query/);
   assert.throws(() => normalizeFabushiApiBaseUrl("https://api.ombhrum.com/#secret"), /fragment/);
+  assert.equal(normalizeFabushiApiBaseUrl(FABUSHI_CI_ISOLATED_AUTH_BASE_URL), FABUSHI_CI_ISOLATED_AUTH_BASE_URL);
+  assert.throws(() => normalizeFabushiApiBaseUrl("https://fabushi-ci-isolated-auth.bhrumom.workers.dev.evil.test"), /approved/);
+  assert.throws(() => normalizeFabushiApiBaseUrl("https://untrusted.example"), /approved/);
+});
+
+test("Native authId preserves production identity and issuer-qualifies equal isolated user IDs", () => {
+  const rawUserId = "123";
+  const prodAuthId = nativeAuthIdForIssuer(rawUserId, DEFAULT_FABUSHI_API_BASE_URL);
+  const isolatedAuthId = nativeAuthIdForIssuer(rawUserId, FABUSHI_CI_ISOLATED_AUTH_BASE_URL);
+  const expectedIsolatedAuthId = `fabushi-ci-isolated:v1:${createHash("sha256")
+    .update(`fabushi-native-auth-id-v1\0${FABUSHI_CI_ISOLATED_AUTH_BASE_URL}\0${rawUserId}`, "utf8")
+    .digest("hex")}`;
+  assert.equal(prodAuthId, rawUserId);
+  assert.equal(isolatedAuthId, expectedIsolatedAuthId);
+  assert.match(isolatedAuthId, /^fabushi-ci-isolated:v1:[0-9a-f]{64}$/u);
+  assert.equal(isolatedAuthId, nativeAuthIdForIssuer(rawUserId, FABUSHI_CI_ISOLATED_AUTH_BASE_URL));
+  assert.notEqual(
+    createHash("sha256").update(prodAuthId).digest("hex"),
+    createHash("sha256").update(isolatedAuthId).digest("hex"),
+  );
+});
+
+test("FDN device-secret scope preserves production keys and separates equal IDs by issuer", () => {
+  const previousProductionScope = createHash("sha256")
+    .update("123\0device-a", "utf8")
+    .digest("hex");
+  assert.equal(isProductionFabushiIssuer(DEFAULT_FABUSHI_API_BASE_URL), true);
+  assert.equal(isProductionFabushiIssuer(FABUSHI_CI_ISOLATED_AUTH_BASE_URL), false);
+  assert.equal(
+    nativeRemoteComputerDeviceScope("123", DEFAULT_FABUSHI_API_BASE_URL, "device-a"),
+    previousProductionScope,
+  );
+  assert.notEqual(
+    nativeRemoteComputerDeviceScope("123", DEFAULT_FABUSHI_API_BASE_URL, "device-a"),
+    nativeRemoteComputerDeviceScope("123", FABUSHI_CI_ISOLATED_AUTH_BASE_URL, "device-a"),
+  );
+});
+
+test("session issuer is bound by the Native owner and missing stored issuer remains production-only", () => {
+  assert.equal(normalizeFabushiCiSession(boundedCiSession(), {
+    issuer: FABUSHI_CI_ISOLATED_AUTH_BASE_URL,
+    bindMissingIssuer: true,
+  })?.issuer, FABUSHI_CI_ISOLATED_AUTH_BASE_URL);
+  assert.equal(normalizeFabushiCiSession(boundedCiSession({ issuer: DEFAULT_FABUSHI_API_BASE_URL }), {
+    issuer: FABUSHI_CI_ISOLATED_AUTH_BASE_URL,
+    bindMissingIssuer: true,
+  }), null);
+  assert.equal(normalizeFabushiSession(boundedCiSession(), {
+    issuer: FABUSHI_CI_ISOLATED_AUTH_BASE_URL,
+  }), null);
 });
 
 

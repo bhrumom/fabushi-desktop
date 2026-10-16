@@ -279,16 +279,20 @@
       "referencePath": "source/electron-main/startup/desktop-user-data-bootstrap.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "95b67e98e09038a32935b4d51f9cf41173986fa2",
+      "targetBlobSha": "089200ea0477712de5d7d4edf3331181032df50a",
       "behavioralEvidence": [
         "source/electron-main/startup/desktop-user-data-bootstrap.ts",
-        "source/shared/node/sand-data-root.ts"
+        "source/shared/node/sand-data-root.ts",
+        "docs/specs/desktop-miniapp-factory-acceptance.md"
       ],
       "testEvidence": [
         "source/electron-main/foundations.test.ts",
-        ".github/workflows/rust-desktop-runtime.yml"
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/electron-main/startup/desktop-user-data-bootstrap.contract.test.ts",
+        ".github/workflows/miniapp-management-ci.yml",
+        "desktop/e2e/miniapp-packaged-acceptance.spec.ts"
       ],
-      "rationale": "Preserves Grok desktop user-data bootstrap semantics while moving Fabushi data-root helpers from legacy Host TypeScript into the shared Node layer, so Electron startup no longer depends on a parallel Host implementation."
+      "rationale": "Preserves Grok desktop user-data bootstrap semantics while moving Fabushi data-root helpers from legacy Host TypeScript into the shared Node layer, so Electron startup no longer depends on a parallel Host implementation. MFA-04 extends this same pre-ready owner with explicit absolute appData/temp overrides and pins the existing Host RuntimeStore and shared profile root beneath the selected appData. Ordinary startup defaults and the existing userData/sessionData owner remain unchanged; no parallel credential store or database is added. The isolated factory consumer selects its verified disposable RAM volume. Focused bootstrap contracts and signed account-transition acceptance remain mandatory."
     },
     {
       "referencePath": "source/electron-main/startup/startup-data-root-migration.ts",
@@ -1283,6 +1287,21 @@
         ".github/workflows/release-macos-main.yml"
       ],
       "rationale": "DCI-07 and DMW-03 remove the process-wide no-sandbox switch, which would defeat the requested untrusted Mini App isolation even when a new window requests sandbox=true. All existing main startup, singleton, window/preload, GPU and lifecycle behavior remains intact; this does not globally force trusted first-party windows into a different preload mode or change Human calls/browser networking. Each downloaded app uses its own sandboxed no-preload window and partition. Actual Electron and same-source signed package gates must prove this security adaptation; no frozen inventory or reference blob is rewritten."
+    },
+    {
+      "referencePath": "source/host/local-exec/local-exec-provider.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "870e2ec06486602e916df3c619b6e8544f1e3911",
+      "behavioralEvidence": [
+        "source/host/local-exec/local-exec-provider.ts",
+        "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/gateway_local_exec_sand_box_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "FDN-001 G12 extends the existing shipping local-exec provider and Host sender with an explicitly staged upload-start/upload-chunk/upload-commit protocol instead of retaining the frozen single-frame upload. The same existing permission approval is propagated across all stages, chunks are bounded and transfer-bound, and commit remains fail-closed. This prerequisite records the intentional shipping protocol adaptation; stronger handle-relative/no-follow filesystem race closure remains a separate pending prerequisite."
     }
   ]
 }

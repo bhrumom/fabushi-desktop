@@ -21,6 +21,7 @@ pub const SAND_COMPUTER_MAX_FOLLOW_UP_ACTIONS: usize = 9;
 pub enum ComputerActionName {
     Screenshot,
     Click,
+    DoubleClick,
     Move,
     Drag,
     Type,
@@ -34,6 +35,7 @@ impl ComputerActionName {
         match self {
             Self::Screenshot => "screenshot",
             Self::Click => "click",
+            Self::DoubleClick => "doubleClick",
             Self::Move => "move",
             Self::Drag => "drag",
             Self::Type => "type",
@@ -110,6 +112,7 @@ pub struct ComputerActionArgs {
     pub amount: Option<i64>,
     pub duration_ms: Option<u64>,
     pub description: Option<String>,
+    pub snapshot_generation: Option<u64>,
     pub then_actions: Vec<ComputerActionArgs>,
 }
 
@@ -130,6 +133,7 @@ impl ComputerActionArgs {
             amount: None,
             duration_ms: None,
             description: None,
+            snapshot_generation: None,
             then_actions: Vec::new(),
         }
     }
@@ -159,6 +163,11 @@ pub fn validate_computer_action(
     args: &ComputerActionArgs,
     auto_review_mode: Option<SandAutoReviewMode>,
 ) -> Result<(), SandComputerToolInputError> {
+    if args.snapshot_generation == Some(0) {
+        return Err(SandComputerToolInputError(
+            "Computer snapshotGeneration must be a positive observation generation.".to_string(),
+        ));
+    }
     if args.then_actions.len() > SAND_COMPUTER_MAX_FOLLOW_UP_ACTIONS {
         return Err(SandComputerToolInputError(format!(
             "Computer then supports at most {SAND_COMPUTER_MAX_FOLLOW_UP_ACTIONS} follow-up actions."
@@ -209,8 +218,16 @@ fn validate_single_action(
             "Click count must be between 1 and 3.".to_string(),
         ));
     }
+    if args.action == ComputerActionName::DoubleClick && args.count.is_some() {
+        return Err(SandComputerToolInputError(
+            "Double Click has a fixed click count of 2 and does not accept count.".to_string(),
+        ));
+    }
     if auto_review_mode == Some(SandAutoReviewMode::Enforce)
-        && matches!(args.action, ComputerActionName::Click | ComputerActionName::Drag)
+        && matches!(
+            args.action,
+            ComputerActionName::Click | ComputerActionName::DoubleClick | ComputerActionName::Drag
+        )
         && args
             .description
             .as_deref()
@@ -218,7 +235,7 @@ fn validate_single_action(
             .is_none_or(str::is_empty)
     {
         return Err(SandComputerToolInputError(
-            "Click and drag require description: a concise statement of the intended UI target and purpose."
+            "Click, Double Click, and drag require description: a concise statement of the intended UI target and purpose."
                 .to_string(),
         ));
     }
@@ -247,6 +264,14 @@ pub fn to_action(args: &ComputerActionArgs) -> Result<ComputerProtocolAction, Sa
                 "coordinate": coordinate(args),
                 "button": args.button.unwrap_or(MouseButtonInput::Left).generated_name(),
                 "count": args.count.unwrap_or(1),
+            }),
+        ),
+        ComputerActionName::DoubleClick => (
+            "click",
+            json!({
+                "coordinate": coordinate(args),
+                "button": args.button.unwrap_or(MouseButtonInput::Left).generated_name(),
+                "count": 2,
             }),
         ),
         ComputerActionName::Move => (
@@ -323,6 +348,12 @@ pub fn to_reported_action(args: &ComputerActionArgs) -> Option<ReportedComputerA
             y: args.y?,
             button: args.button.unwrap_or(MouseButtonInput::Left).user_name().to_string(),
             count: args.count.unwrap_or(1),
+        }),
+        ComputerActionName::DoubleClick => Some(ReportedComputerAction::Click {
+            x: args.x?,
+            y: args.y?,
+            button: args.button.unwrap_or(MouseButtonInput::Left).user_name().to_string(),
+            count: 2,
         }),
         _ => None,
     }
@@ -472,6 +503,9 @@ pub fn to_exact_action_value(args: &ComputerActionArgs) -> Value {
     }
     if let Some(amount) = args.amount { object.insert("amount".into(), Value::from(amount)); }
     if let Some(duration_ms) = args.duration_ms { object.insert("durationMs".into(), Value::from(duration_ms)); }
+    if let Some(snapshot_generation) = args.snapshot_generation {
+        object.insert("snapshotGeneration".into(), Value::from(snapshot_generation));
+    }
     Value::Object(object)
 }
 
@@ -488,6 +522,7 @@ fn parse_action_name(value: &str) -> Result<ComputerActionName, ProviderSessionE
     match value {
         "screenshot" => Ok(ComputerActionName::Screenshot),
         "click" => Ok(ComputerActionName::Click),
+        "doubleClick" => Ok(ComputerActionName::DoubleClick),
         "move" => Ok(ComputerActionName::Move),
         "drag" => Ok(ComputerActionName::Drag),
         "type" => Ok(ComputerActionName::Type),
@@ -498,6 +533,12 @@ fn parse_action_name(value: &str) -> Result<ComputerActionName, ProviderSessionE
             "Computer action is unsupported: {other}"
         ))),
     }
+}
+
+pub fn parse_remote_computer_action(
+    value: &Value,
+) -> Result<ComputerActionArgs, ProviderSessionError> {
+    parse_computer_action(value, true)
 }
 
 fn parse_computer_action(
@@ -513,6 +554,19 @@ fn parse_computer_action(
         .ok_or_else(|| ProviderSessionError::Tool("Computer action is required".into()))
         .and_then(parse_action_name)?;
     let mut args = ComputerActionArgs::simple(action);
+    args.snapshot_generation = match object.get("snapshotGeneration") {
+        None | Some(Value::Null) => None,
+        Some(value) => Some(value.as_u64().filter(|value| *value > 0).ok_or_else(|| {
+            ProviderSessionError::Tool(
+                "Computer snapshotGeneration must be a positive integer".into(),
+            )
+        })?),
+    };
+    if !allow_followups && args.snapshot_generation.is_some() {
+        return Err(ProviderSessionError::Tool(
+            "Computer snapshotGeneration is only allowed on the primary action".into(),
+        ));
+    }
     args.x = parse_i64(object, "x")?;
     args.y = parse_i64(object, "y")?;
     args.x2 = parse_i64(object, "x2")?;
@@ -604,7 +658,7 @@ pub fn computer_tool_definitions() -> Vec<RoutedToolDefinition> {
                 "additionalProperties":false,
                 "required":["action"],
                 "properties":{
-                    "action":{"type":"string","enum":["screenshot","click","move","drag","type","key","scroll","wait"]},
+                    "action":{"type":"string","enum":["screenshot","click","doubleClick","move","drag","type","key","scroll","wait"]},
                     "x":{"type":"integer"},"y":{"type":"integer"},
                     "x2":{"type":"integer"},"y2":{"type":"integer"},
                     "path":{"type":"array","items":{"type":"object","required":["x","y"],"properties":{"x":{"type":"integer"},"y":{"type":"integer"}}}},
@@ -614,6 +668,7 @@ pub fn computer_tool_definitions() -> Vec<RoutedToolDefinition> {
                     "direction":{"type":"string","enum":["up","down","left","right"]},
                     "amount":{"type":"integer"},
                     "durationMs":{"type":"integer","minimum":0,"maximum":SAND_COMPUTER_MAX_WAIT_MS},
+                    "snapshotGeneration":{"type":"integer","minimum":1},
                     "description":{"type":"string"},
                     "then":{"type":"array","minItems":1,"maxItems":SAND_COMPUTER_MAX_FOLLOW_UP_ACTIONS,"items":{"type":"object"}}
                 }

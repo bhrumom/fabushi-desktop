@@ -5,6 +5,8 @@ on:
       - 'source/electron-main/mcp/miniapp-management*'
       - 'source/electron-main/mcp/miniapp-production*'
       - 'source/electron-main/adapters/mcp-oauth.ts'
+      - 'source/product/fabushi/fabushi-account-*'
+      - 'source/electron-main/startup/desktop-user-data-bootstrap*'
       - 'source/electron-preload/preload.ts'
       - 'frontend/src/recovered/features/plugins/overlay/miniapp-management.tsx'
       - '.github/workflows/miniapp-management-ci.yml'
@@ -13,6 +15,8 @@ on:
     paths:
       - 'source/electron-main/mcp/miniapp-management*'
       - 'source/electron-main/mcp/miniapp-production*'
+      - 'source/product/fabushi/fabushi-account-*'
+      - 'source/electron-main/startup/desktop-user-data-bootstrap*'
       - '.github/workflows/miniapp-management-ci.yml'
 permissions:
   contents: read
@@ -27,4 +31,4 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
-      - run: npx --yes tsx@4.21.0 --test source/electron-main/mcp/miniapp-management.contract.test.ts source/electron-main/mcp/miniapp-production.contract.test.ts
+      - run: npx --yes tsx@4.21.0 --test source/electron-main/mcp/miniapp-management.contract.test.ts source/electron-main/mcp/miniapp-production.contract.test.ts source/product/fabushi/fabushi-account-service.contract.test.ts source/electron-main/startup/desktop-user-data-bootstrap.contract.test.ts

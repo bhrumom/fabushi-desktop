@@ -211,11 +211,13 @@ for (const authority of libavif.observed_authorities||[]) {
 }
 
 const ada=rules.ada;
-auditRootCandidates(
-  keyOf(ada.repository,ada.commit),
-  ada.root_candidate_disposition_policy,
-  {requireComplete:ada.root_candidate_policy_status==='complete-for-current-ada-authority',scope:'ada-root-candidates'}
-);
+for (const authority of ada.observed_authorities||[]) {
+  auditRootCandidates(
+    keyOf(authority.repository,authority.commit),
+    ada.root_candidate_disposition_policy,
+    {requireComplete:ada.root_candidate_policy_status==='complete-for-current-ada-authorities',scope:'ada-root-candidates-'+authority.ref}
+  );
+}
 
 const openalSoft=rules.openal_soft;
 for (const authority of openalSoft.observed_authorities||[]) {

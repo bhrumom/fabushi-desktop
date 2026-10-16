@@ -1100,6 +1100,9 @@ fn shipping_human_send_uploads_attachment_and_binds_reply_to_server_identity() {
     fs::write(&attachment_path, [1_u8, 2, 3, 4]).expect("attachment fixture");
 
     let (base_url, server) = spawn_remote_reply_attachment_server();
+    fs::write(&credential_path, serde_json::json!({
+        "accessToken": "fixture-token", "deviceId": "device-a", "userId": 1, "issuer": &base_url
+    }).to_string()).expect("issuer-bound fixture credential");
     let client = Arc::new(
         FabushiNativeMessagingClient::new(&base_url, &credential_path)
             .expect("shipping messaging client"),
@@ -1300,6 +1303,9 @@ fn shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reuploa
     let attachment_path = root.join("resume.pdf");
     fs::write(&attachment_path, [5_u8, 6, 7, 8]).expect("attachment fixture");
     let (base_url, server) = spawn_ambiguous_human_send_server();
+    fs::write(&credential_path, serde_json::json!({
+        "accessToken": "fixture-token", "deviceId": "device-a", "userId": 1, "issuer": &base_url
+    }).to_string()).expect("issuer-bound fixture credential");
 
     let make_runtime = || {
         let client = Arc::new(
@@ -1417,6 +1423,9 @@ fn shipping_human_reaction_toggles_backend_truth_and_updates_canonical_transcrip
     }
 
     let (base_url, server) = spawn_remote_reaction_server();
+    fs::write(&credential_path, serde_json::json!({
+        "accessToken": "fixture-token", "deviceId": "device-a", "userId": 1, "issuer": &base_url
+    }).to_string()).expect("issuer-bound fixture credential");
     let client = Arc::new(
         FabushiNativeMessagingClient::new(&base_url, &credential_path)
             .expect("shipping messaging client"),
@@ -1535,6 +1544,9 @@ fn shipping_human_sync_recovers_multi_device_gap_until_known_remote_overlap() {
     }
 
     let (base_url, server) = spawn_remote_history_server();
+    fs::write(&credential_path, serde_json::json!({
+        "accessToken": "fixture-token", "deviceId": "device-a", "userId": 1, "issuer": &base_url
+    }).to_string()).expect("issuer-bound fixture credential");
     let client = Arc::new(
         FabushiNativeMessagingClient::new(&base_url, &credential_path)
             .expect("shipping messaging client"),
@@ -1667,6 +1679,9 @@ fn shipping_call_ice_credentials_remain_host_owned_and_device_scoped() {
     }
 
     let (base_url, server) = spawn_call_ice_server();
+    fs::write(&credential_path, serde_json::json!({
+        "accessToken": "fixture-token", "deviceId": "device-a", "userId": 1, "issuer": &base_url
+    }).to_string()).expect("issuer-bound fixture credential");
     let client = Arc::new(
         FabushiNativeMessagingClient::new(&base_url, &credential_path)
             .expect("shipping call ICE client"),
@@ -1849,6 +1864,9 @@ fn shipping_call_session_uses_backend_ordering_then_materializes_canonical_owner
     }
 
     let (base_url, server) = spawn_remote_call_server(11);
+    fs::write(&credential_path, serde_json::json!({
+        "accessToken": "fixture-token", "deviceId": "device-a", "userId": 1, "issuer": &base_url
+    }).to_string()).expect("issuer-bound fixture credential");
     let client = Arc::new(
         FabushiNativeMessagingClient::new(&base_url, &credential_path)
             .expect("shipping call client"),
@@ -2041,6 +2059,9 @@ fn shipping_call_discovery_materializes_incoming_call_into_canonical_human_scope
         fs::set_permissions(&credential_path, permissions).expect("private credential");
     }
     let (base_url, server) = spawn_incoming_call_discovery_server();
+    fs::write(&credential_path, serde_json::json!({
+        "accessToken": "fixture-token", "deviceId": "device-a", "userId": 1, "issuer": &base_url
+    }).to_string()).expect("issuer-bound fixture credential");
     let client = Arc::new(
         FabushiNativeMessagingClient::new(&base_url, &credential_path)
             .expect("incoming call client"),

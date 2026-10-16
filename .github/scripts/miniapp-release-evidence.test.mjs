@@ -25,3 +25,13 @@ test('diagnostic fixture uses the existing protected CI device identity contract
   assert.ok(iteration.includes('DEVICE_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}-macos-app'));
   assert.ok(iteration.includes('5d75920308fa17f5000308df1a0153309eb8e9ab'));
 });
+test('shipping promotion requires immutable factory evidence rather than static account passwords', () => {
+  assert.match(workflow, /promote_existing_candidate/u);
+  assert.match(workflow, /factory_acceptance_run_id/u);
+  assert.match(workflow, /promote-miniapp-candidate\.mjs/u);
+  assert.doesNotMatch(workflow, /FABUSHI_CI_SECOND_TEST_(USERNAME|PASSWORD)/u);
+  assert.doesNotMatch(workflow, /gh release (create|delete)/u);
+  const harness = readFileSync(new URL('../../desktop/e2e/miniapp-packaged-acceptance.spec.ts', import.meta.url), 'utf8');
+  assert.match(harness, /second session must belong to another real account/u);
+  assert.match(harness, /real native account departure must destroy/u);
+});
