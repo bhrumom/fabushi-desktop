@@ -1297,19 +1297,46 @@
       "rationale": "DCI-07 and DMW-03 remove the process-wide no-sandbox switch, which would defeat the requested untrusted Mini App isolation even when a new window requests sandbox=true. All existing main startup, singleton, window/preload, GPU and lifecycle behavior remains intact; this does not globally force trusted first-party windows into a different preload mode or change Human calls/browser networking. Each downloaded app uses its own sandboxed no-preload window and partition. Actual Electron and same-source signed package gates must prove this security adaptation; no frozen inventory or reference blob is rewritten."
     },
     {
+      "referencePath": "source/host/local-exec/local-exec-machine.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "863c8ab5e02744cfd380e478c8be5db6a3ce7f55",
+      "behavioralEvidence": [
+        "source/host/local-exec/local-exec-machine.ts",
+        "source/host/local-exec/local-exec-provider.ts"
+      ],
+      "testEvidence": [
+        "source/node-agent-coordinator/tests/local_exec_shipping_contract.rs",
+        "source/host/tests/native_local_exec_file_sandbox_contract.rs",
+        ".github/workflows/fdn-g12-native-file-e2e.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "FDN-001 G12 hardens the existing frozen local-exec path owner rather than creating a parallel file service. Authorized file paths are canonicalized through the nearest-existing real path and rejected when they escape the configured root or cross a filesystem/mount device boundary. This intentionally changes the frozen reference-copy semantics to a reviewed Fabushi TypeScript adaptation; the shipping provider now delegates the actual read/write/staged-commit boundary to the Mahayana Host native file helper, which walks Unix paths with directory handles plus openat/O_NOFOLLOW and Windows paths with RootDirectory-relative NtCreateFile plus FILE_OPEN_REPARSE_POINT; canonical realpath remains only a policy preflight, not the TOCTOU security boundary."
+    },
+    {
       "referencePath": "source/host/local-exec/local-exec-provider.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "870e2ec06486602e916df3c619b6e8544f1e3911",
+      "targetBlobSha": "1a66f5facc282abac4d0c568074c89629b5dd4c7",
       "behavioralEvidence": [
         "source/host/local-exec/local-exec-provider.ts",
+        "source/host/local-exec/local-exec-machine.ts",
+        "source/shared/node/atomic-write.ts",
         "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs"
       ],
       "testEvidence": [
-        "source/host/tests/gateway_local_exec_sand_box_contract.rs",
-        ".github/workflows/rust-desktop-runtime.yml"
+        "source/node-agent-coordinator/tests/local_exec_shipping_contract.rs",
+        "source/host/tests/native_local_exec_file_sandbox_contract.rs",
+        ".github/workflows/fdn-g12-native-file-e2e.yml",
+        "source/host/src/extensions/local_exec/native_file_sandbox.rs",
+        "source/host/src/extensions/local_exec/mod.rs",
+        "source/host/app/src/main.rs",
+        "source/node-agent-coordinator/src/main.rs",
+        "source/host/tests/native_local_exec_file_sandbox_contract.rs",
+        "source/host/tests/native_local_exec_file_sandbox_contract.rs",
+        "source/host/tests/native_local_exec_file_sandbox_contract.rs"
       ],
-      "rationale": "FDN-001 G12 extends the existing shipping local-exec provider and Host sender with an explicitly staged upload-start/upload-chunk/upload-commit protocol instead of retaining the frozen single-frame upload. The same existing permission approval is propagated across all stages, chunks are bounded and transfer-bound, and commit remains fail-closed. This prerequisite records the intentional shipping protocol adaptation; stronger handle-relative/no-follow filesystem race closure remains a separate pending prerequisite."
+      "rationale": "FDN-001 G12 extends the existing shipping local-exec file provider with bounded production safety semantics: canonical path fencing, SHA-256/version conflicts, disk peak-space preflight, and an explicitly chunked upload-start/upload-chunk/upload-commit protocol. Chunks are staged in the target directory with offset/size checks and fsync, hashed incrementally, revalidated against the starting file version/path, and atomically renamed only at commit. The provider keeps the established permission/approval and response transport; the actual filesystem boundary is now enforced by the shipping Mahayana Host native handle-relative/no-follow helper, with cross-platform symlink/reparse swap, traversal, conflict, hash, ENOSPC and atomic-commit acceptance in GitHub Actions."
     }
   ]
 }

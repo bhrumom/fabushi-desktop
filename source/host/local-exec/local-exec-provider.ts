@@ -1,7 +1,5 @@
-import { createHash, randomBytes } from "node:crypto";
-import { open, readFile, rename, statfs, unlink } from "node:fs/promises";
 import { hostname } from "node:os";
-import { basename, dirname, join } from "node:path";
+import { join } from "node:path";
 
 import type { JsonValue } from "@bufbuild/protobuf";
 
@@ -14,8 +12,8 @@ import {
   localExecFileTooLargeMessage, localExecUploadFrameTooLargeMessage, maxLocalExecUploadFrameBytes
 } from "../../shared/local-exec-gateway.js";
 import { describeLocalExec, type LocalExecMessage, type SandLocalToolRequest } from "../../shared/local-tool-permission-machinery.js";
-import { writeFileAtomic } from "../../shared/node/atomic-write.js";
-import { containPath, regularFileSizeBytes, resolveLocalExecRoot } from "./local-exec-machine.js";
+import { containPath, resolveLocalExecRoot } from "./local-exec-machine.js";
+import { ProductionNativeLocalExecFileAccess, type NativeLocalExecFileAccess } from "./local-exec-native-file-access.js";
 import type { LocalExecConnection } from "./local-exec-daemon-protocol.js";
 
 export class SandLocalExecStreamError extends Error {}
@@ -78,6 +76,7 @@ export interface SandLocalExecProviderOptions {
   readonly onApprovalRetired?: (approvalId: string) => Promise<void> | void;
   readonly isLocalUseBlocked?: (request: { readonly approvalId?: string; readonly describes?: SandLocalToolRequest; readonly terminalsFolder: string }) => Promise<string | undefined> | string | undefined;
   readonly onInflightChange?: (count: number) => void;
+  readonly fileAccess?: NativeLocalExecFileAccess;
 }
 
 export function withLocalExecAuth(headers: Record<string, string>, connection: LocalExecConnection): Record<string, string> {
@@ -90,7 +89,8 @@ export function isSameLocalExecConnection(a: LocalExecConnection, b: LocalExecCo
 export class SandLocalExecProvider {
   readonly root: string; readonly terminalsFolder: string; readonly computerId: string; readonly computerLabel: string; readonly maxFileBytes: number; readonly maxUploadFrameBytes: number;
   private readonly fetcher: typeof fetch; private closed = false; private abortController?: AbortController; private nextExecId = 1; private readonly inflight = new Map<string, { execId: number; controller: AbortController }>();
-  private readonly uploads = new Map<string, { path: string; target: string; staging: string; totalBytes: number; receivedBytes: number; expectedSha256: string; startingVersion?: string; hasher: ReturnType<typeof createHash> }>();
+  private readonly uploads = new Map<string, { path: string; target: string; totalBytes: number; receivedBytes: number; expectedSha256: string; startingVersion?: string; overwrite: boolean }>();
+  private readonly fileAccess: NativeLocalExecFileAccess;
   private readonly outbox: LocalExecResponseFrame[] = []; private flushing = false; private providerId: string | undefined;
   private readonly dataPostDeadline = createDeadlinePolicy(realClock, { name: "local-exec-data-post", timeoutMs: SAND_LOCAL_EXEC_DATA_POST_TIMEOUT_MS });
   private readonly controlPostDeadline = createDeadlinePolicy(realClock, { name: "local-exec-control-post", timeoutMs: SAND_LOCAL_EXEC_CONTROL_POST_TIMEOUT_MS });
@@ -103,14 +103,15 @@ export class SandLocalExecProvider {
     this.root = options.root ?? resolveLocalExecRoot(); this.terminalsFolder = join(this.root, "terminals");
     const host = hostname().trim(); this.computerId = options.computerId?.trim() || host || DEFAULT_SAND_COMPUTER_ID; this.computerLabel = options.computerLabel?.trim() || host || "this computer";
     this.maxFileBytes = options.maxFileBytes ?? DEFAULT_MAX_LOCAL_EXEC_FILE_BYTES; this.maxUploadFrameBytes = maxLocalExecUploadFrameBytes(this.maxFileBytes); this.fetcher = options.fetch ?? fetch;
+    this.fileAccess = options.fileAccess ?? new ProductionNativeLocalExecFileAccess({ root: this.root });
   }
   start(): void { void this.runLoop(); }
   close(): void {
     this.closed = true;
     this.abortController?.abort();
     for (const entry of this.inflight.values()) entry.controller.abort();
-    for (const upload of this.uploads.values()) void unlink(upload.staging).catch(() => {});
     this.uploads.clear();
+    this.fileAccess.close();
   }
   private enqueue(frame: LocalExecResponseFrame): void { this.outbox.push(frame); void this.flush(); }
   private async postBatch(frames: readonly LocalExecResponseFrame[], deadline = this.dataPostDeadline): Promise<boolean> {
@@ -159,18 +160,10 @@ export class SandLocalExecProvider {
   private refuse(requestId: string, kind: "exec" | "upload" | "upload-start" | "upload-chunk" | "upload-commit" | "download", reason: string): void { if (kind === "exec") this.enqueue({ kind: "control", requestId, message: this.options.executor.throwControl(reason) }); else this.enqueue({ kind: "file-error", requestId, error: reason }); }
   private async handleExec(requestId: string, json: JsonValue): Promise<void> { let message: LocalExecDecodedMessage; try { message = this.options.executor.decodeServerMessage(json); } catch (error) { this.enqueue({ kind: "control", requestId, message: this.options.executor.throwControl(errorMessage(error)) }); return; } const execId = this.nextExecId++; message.id = execId; const controller = new AbortController(); this.inflight.set(requestId, { execId, controller }); this.options.onInflightChange?.(this.inflight.size); try { for await (const output of this.options.executor.execute(message, controller.signal)) this.enqueue({ kind: output.kind, requestId, message: output.message }); } finally { this.inflight.delete(requestId); this.options.onInflightChange?.(this.inflight.size); } }
   private handleCancel(requestId: string): void { const entry = this.inflight.get(requestId); if (entry == null) return; this.options.executor.cancel(entry.execId); entry.controller.abort(); }
-  private sha256(data: Uint8Array): string { return createHash("sha256").update(data).digest("hex"); }
-  private async currentFileVersion(target: string): Promise<string | undefined> {
-    try { return this.sha256(await readFile(target)); }
-    catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined; throw error; }
+  private atomicHeadroomBytes(): number {
+    return Math.min(this.maxFileBytes, 8 * 1024 * 1024);
   }
-  private async assertPeakSpaceAvailable(target: string, incomingBytes: number): Promise<void> {
-    const stats = await statfs(dirname(target), { bigint: true });
-    const available = stats.bavail * stats.bsize;
-    const headroom = BigInt(Math.min(this.maxFileBytes, 8 * 1024 * 1024));
-    const required = BigInt(incomingBytes) + headroom;
-    if (available < required) throw new Error(`Insufficient disk space for atomic file commit: need at least ${required} bytes free, have ${available}`);
-  }
+
   private async handleUpload(frame: Extract<LocalExecRequestFrame, { kind: "upload" }>): Promise<void> {
     const { requestId, path, bytesBase64 } = frame;
     try {
@@ -178,19 +171,17 @@ export class SandLocalExecProvider {
       if (approximate > this.maxFileBytes) { this.enqueue({ kind: "file-error", requestId, error: localExecFileTooLargeMessage(approximate, this.maxFileBytes) }); return; }
       const data = Buffer.from(bytesBase64, "base64");
       if (data.length > this.maxFileBytes) { this.enqueue({ kind: "file-error", requestId, error: localExecFileTooLargeMessage(data.length, this.maxFileBytes) }); return; }
-      const digest = this.sha256(data);
-      if (frame.sha256 !== undefined && frame.sha256.toLowerCase() !== digest) throw new Error("Upload SHA-256 did not match the declared digest");
       const target = await containPath({ root: this.root, path });
-      const currentVersion = await this.currentFileVersion(target);
-      if (frame.overwrite === false && currentVersion !== undefined) throw new Error("File already exists and overwrite=false");
-      if (frame.expectedVersion !== undefined && frame.expectedVersion !== currentVersion) throw new Error("File version conflict: expectedVersion does not match the current file");
-      await this.assertPeakSpaceAvailable(target, data.length);
-      const revalidatedTarget = await containPath({ root: this.root, path });
-      if (revalidatedTarget !== target) throw new Error("File path changed during authorization; refusing a possible symlink or mount race");
-      await writeFileAtomic(target, data);
-      const committedTarget = await containPath({ root: this.root, path });
-      if (committedTarget !== target) throw new Error("File path changed during atomic commit; result cannot be trusted");
-      this.enqueue({ kind: "file", requestId, sha256: digest, version: digest, size: data.length });
+      const committed = await this.fileAccess.writeAtomic({
+        target,
+        bytesBase64,
+        ...(frame.sha256 === undefined ? {} : { sha256: frame.sha256 }),
+        ...(frame.expectedVersion === undefined ? {} : { expectedVersion: frame.expectedVersion }),
+        overwrite: frame.overwrite !== false,
+        maxBytes: this.maxFileBytes,
+        headroomBytes: this.atomicHeadroomBytes(),
+      });
+      this.enqueue({ kind: "file", requestId, sha256: committed.sha256, version: committed.version, size: committed.size });
     } catch (error) { this.enqueue({ kind: "file-error", requestId, error: errorMessage(error) }); }
   }
 
@@ -198,8 +189,9 @@ export class SandLocalExecProvider {
     const upload = this.uploads.get(transferId);
     if (upload === undefined) return;
     this.uploads.delete(transferId);
-    await unlink(upload.staging).catch(() => {});
+    await this.fileAccess.abortUpload({ target: upload.target, transferId }).catch(() => {});
   }
+
   private async handleUploadStart(frame: Extract<LocalExecRequestFrame, { kind: "upload-start" }>): Promise<void> {
     const { requestId, transferId, path, totalBytes } = frame;
     try {
@@ -207,23 +199,31 @@ export class SandLocalExecProvider {
       if (!/^[0-9a-fA-F]{64}$/.test(frame.sha256)) throw new Error("Upload SHA-256 is invalid");
       if (this.uploads.has(transferId)) throw new Error("Upload transferId is already active");
       const target = await containPath({ root: this.root, path });
-      const startingVersion = await this.currentFileVersion(target);
-      if (frame.overwrite === false && startingVersion !== undefined) throw new Error("File already exists and overwrite=false");
-      if (frame.expectedVersion !== undefined && frame.expectedVersion !== startingVersion) throw new Error("File version conflict: expectedVersion does not match the current file");
-      await this.assertPeakSpaceAvailable(target, totalBytes);
-      const revalidatedTarget = await containPath({ root: this.root, path });
-      if (revalidatedTarget !== target) throw new Error("File path changed during authorization; refusing a possible symlink or mount race");
-      const staging = join(dirname(target), `.${basename(target)}.${randomBytes(8).toString("hex")}.upload`);
-      const handle = await open(staging, "wx");
-      await handle.sync();
-      await handle.close();
-      this.uploads.set(transferId, { path, target, staging, totalBytes, receivedBytes: 0, expectedSha256: frame.sha256.toLowerCase(), startingVersion, hasher: createHash("sha256") });
+      const started = await this.fileAccess.startUpload({
+        target,
+        transferId,
+        totalBytes,
+        ...(frame.expectedVersion === undefined ? {} : { expectedVersion: frame.expectedVersion }),
+        overwrite: frame.overwrite !== false,
+        maxBytes: this.maxFileBytes,
+        headroomBytes: this.atomicHeadroomBytes(),
+      });
+      this.uploads.set(transferId, {
+        path,
+        target,
+        totalBytes,
+        receivedBytes: 0,
+        expectedSha256: frame.sha256.toLowerCase(),
+        ...(started.startingVersion === undefined ? {} : { startingVersion: started.startingVersion }),
+        overwrite: frame.overwrite !== false,
+      });
       this.enqueue({ kind: "file", requestId, size: 0 });
     } catch (error) {
       await this.cleanupUpload(transferId);
       this.enqueue({ kind: "file-error", requestId, error: errorMessage(error) });
     }
   }
+
   private async handleUploadChunk(frame: Extract<LocalExecRequestFrame, { kind: "upload-chunk" }>): Promise<void> {
     const { requestId, transferId, path, offset, bytesBase64 } = frame;
     try {
@@ -237,21 +237,17 @@ export class SandLocalExecProvider {
       if (data.length > LOCAL_EXEC_UPLOAD_CHUNK_BYTES || upload.receivedBytes + data.length > upload.totalBytes) throw new Error("Upload chunk exceeds the declared transfer size");
       const revalidatedTarget = await containPath({ root: this.root, path });
       if (revalidatedTarget !== upload.target) throw new Error("File path changed during chunk transfer; refusing a possible symlink or mount race");
-      const handle = await open(upload.staging, "r+");
-      try {
-        await handle.write(data, 0, data.length, offset);
-        await handle.sync();
-      } finally {
-        await handle.close();
-      }
-      upload.hasher.update(data);
-      upload.receivedBytes += data.length;
+      const written = await this.fileAccess.writeChunk({ target: upload.target, transferId, offset, bytesBase64 });
+      const expectedSize = upload.receivedBytes + data.length;
+      if (written.size !== expectedSize) throw new Error("Native file helper returned an unexpected staging size");
+      upload.receivedBytes = written.size;
       this.enqueue({ kind: "file", requestId, size: upload.receivedBytes });
     } catch (error) {
       await this.cleanupUpload(transferId);
       this.enqueue({ kind: "file-error", requestId, error: errorMessage(error) });
     }
   }
+
   private async handleUploadCommit(frame: Extract<LocalExecRequestFrame, { kind: "upload-commit" }>): Promise<void> {
     const { requestId, transferId, path } = frame;
     const upload = this.uploads.get(transferId);
@@ -259,18 +255,20 @@ export class SandLocalExecProvider {
     this.uploads.delete(transferId);
     try {
       if (upload.receivedBytes !== upload.totalBytes) throw new Error("Upload commit refused because not all declared bytes were received");
-      const digest = upload.hasher.digest("hex");
-      if (digest !== upload.expectedSha256) throw new Error("Upload SHA-256 did not match the declared digest");
       const target = await containPath({ root: this.root, path });
       if (target !== upload.target) throw new Error("File path changed during chunk transfer; refusing a possible symlink or mount race");
-      const currentVersion = await this.currentFileVersion(target);
-      if (currentVersion !== upload.startingVersion) throw new Error("File version changed during chunk transfer");
-      await rename(upload.staging, target);
-      const committedTarget = await containPath({ root: this.root, path });
-      if (committedTarget !== target) throw new Error("File path changed during atomic commit; result cannot be trusted");
-      this.enqueue({ kind: "file", requestId, sha256: digest, version: digest, size: upload.receivedBytes });
+      const committed = await this.fileAccess.commitUpload({
+        target: upload.target,
+        transferId,
+        totalBytes: upload.totalBytes,
+        sha256: upload.expectedSha256,
+        ...(upload.startingVersion === undefined ? {} : { startingVersion: upload.startingVersion }),
+        overwrite: upload.overwrite,
+        maxBytes: this.maxFileBytes,
+      });
+      this.enqueue({ kind: "file", requestId, sha256: committed.sha256, version: committed.version, size: committed.size });
     } catch (error) {
-      await unlink(upload.staging).catch(() => {});
+      await this.fileAccess.abortUpload({ target: upload.target, transferId }).catch(() => {});
       this.enqueue({ kind: "file-error", requestId, error: errorMessage(error) });
     }
   }
@@ -278,13 +276,8 @@ export class SandLocalExecProvider {
   private async handleDownload(requestId: string, path: string): Promise<void> {
     try {
       const target = await containPath({ root: this.root, path });
-      const size = await regularFileSizeBytes(target);
-      if (size !== undefined && size > this.maxFileBytes) { this.enqueue({ kind: "file-error", requestId, error: localExecFileTooLargeMessage(size, this.maxFileBytes) }); return; }
-      const data = await readFile(target);
-      const revalidatedTarget = await containPath({ root: this.root, path });
-      if (revalidatedTarget !== target) throw new Error("File path changed during read; refusing a possible symlink or mount race");
-      const digest = this.sha256(data);
-      this.enqueue({ kind: "file", requestId, bytesBase64: data.toString("base64"), sha256: digest, version: digest, size: data.length });
+      const file = await this.fileAccess.read({ target, maxBytes: this.maxFileBytes });
+      this.enqueue({ kind: "file", requestId, bytesBase64: file.bytesBase64, sha256: file.sha256, version: file.version, size: file.size });
     } catch (error) { this.enqueue({ kind: "file-error", requestId, error: errorMessage(error) }); }
   }
 }

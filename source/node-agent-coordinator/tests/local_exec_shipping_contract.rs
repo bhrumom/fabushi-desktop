@@ -139,3 +139,116 @@ fn shipping_local_exec_daemon_composes_the_frozen_provider_machine_approvals_and
         "local-exec invariant violation log",
     );
 }
+
+#[test]
+fn shipping_local_exec_file_owner_enforces_canonical_versioned_atomic_boundaries() {
+    let machine = read("host/local-exec/local-exec-machine.ts");
+    for marker in [
+        "realpathNearestExisting",
+        "rootStats.dev !== nearestStats.dev",
+        "crosses a filesystem or mount boundary",
+    ] {
+        assert_contains(&machine, marker, "frozen local-exec path owner");
+    }
+
+    let provider = read("host/local-exec/local-exec-provider.ts");
+    for marker in [
+        "expectedVersion",
+        "overwrite === false",
+        "Upload SHA-256 did not match",
+        "assertPeakSpaceAvailable",
+        "possible symlink or mount race",
+        "version: digest",
+        "\"upload-start\"",
+        "\"upload-chunk\"",
+        "\"upload-commit\"",
+        "LOCAL_EXEC_UPLOAD_CHUNK_BYTES",
+        "upload.hasher.update(data)",
+        "upload.receivedBytes !== upload.totalBytes",
+        "File version changed during chunk transfer",
+        "this.fileAccess.commitUpload",
+    ] {
+        assert_contains(&provider, marker, "frozen local-exec file provider");
+    }
+}
+
+
+#[test]
+fn shipping_local_exec_gateway_chunks_uploads_before_provider_atomic_commit() {
+    let gateway = read("host/src/extensions/local_exec/gateway_local_exec_sand_box.rs");
+    for marker in [
+        "const CHUNK_BYTES: usize = 256 * 1024",
+        "Sha256::digest(data)",
+        "Uuid::new_v4().to_string()",
+        "\"kind\": \"upload-start\"",
+        "data.chunks(CHUNK_BYTES)",
+        "\"kind\": \"upload-chunk\"",
+        "\"offset\": index * CHUNK_BYTES",
+        "\"kind\": \"upload-commit\"",
+    ] {
+        assert_contains(&gateway, marker, "shipping local-exec chunk sender");
+    }
+}
+
+
+#[test]
+fn shipping_local_exec_file_owner_routes_through_the_native_handle_relative_helper() {
+    let provider = read("host/local-exec/local-exec-provider.ts");
+    for marker in [
+        "ProductionNativeLocalExecFileAccess",
+        "this.fileAccess.writeAtomic",
+        "this.fileAccess.startUpload",
+        "this.fileAccess.writeChunk",
+        "this.fileAccess.commitUpload",
+        "this.fileAccess.read",
+    ] {
+        assert_contains(&provider, marker, "shipping local-exec file provider");
+    }
+
+    let client = read("host/local-exec/local-exec-native-file-access.ts");
+    for marker in [
+        "MAHAYANA_APP_HOST_BIN",
+        "--local-exec-file-sandbox",
+        "FABUSHI_LOCAL_EXEC_FILE_ROOT",
+        "windowsHide: true",
+    ] {
+        assert_contains(&client, marker, "native file helper client");
+    }
+
+    let native = read("host/src/extensions/local_exec/native_file_sandbox.rs");
+    for marker in [
+        "libc::openat",
+        "libc::O_NOFOLLOW",
+        "libc::renameat",
+        "NtCreateFile",
+        "FILE_OPEN_REPARSE_POINT",
+        "SetFileInformationByHandle",
+        "handle_native_file_request",
+    ] {
+        assert_contains(&native, marker, "native file helper owner");
+    }
+
+    let app = read("host/app/src/main.rs");
+    assert_contains(
+        &app,
+        "LOCAL_EXEC_FILE_SANDBOX_ARG",
+        "shipping Mahayana Host native file entry",
+    );
+    assert_contains(
+        &app,
+        "execute_production_native_file_request_from_env",
+        "shipping Mahayana Host native file entry",
+    );
+
+    let coordinator = read("node-agent-coordinator/src/main.rs");
+    assert_contains(
+        &coordinator,
+        "\"MAHAYANA_APP_HOST_BIN\".into()",
+        "Mahayana Coordinator local-exec spawn",
+    );
+    assert_contains(
+        &coordinator,
+        "self.state.host_bin.to_string_lossy().into_owned()",
+        "Mahayana Coordinator local-exec spawn",
+    );
+}

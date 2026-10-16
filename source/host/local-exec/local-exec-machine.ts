@@ -50,14 +50,19 @@ export async function containPath(args: { readonly root: string; readonly path: 
   if (escapesRoot(args.root, resolved)) {
     throw new SandLocalExecPathError(`Path is outside the allowed local-exec root and was refused: ${args.path}`);
   }
-  let realRoot: string;
-  try { realRoot = await realpathNearestExisting(args.root); }
-  catch { return resolved; }
+  const realRoot = await realpathNearestExisting(args.root);
   const realResolved = await realpathNearestExisting(resolved);
   if (escapesRoot(realRoot, realResolved)) {
     throw new SandLocalExecPathError(`Path resolves through a symlink to outside the allowed local-exec root and was refused: ${args.path}`);
   }
-  return resolved;
+  const [rootStats, nearestStats] = await Promise.all([
+    stat(realRoot),
+    stat(await realpathNearestExisting(resolve(realResolved, ".."))),
+  ]);
+  if (rootStats.dev !== nearestStats.dev) {
+    throw new SandLocalExecPathError(`Path crosses a filesystem or mount boundary outside the authorized local-exec filesystem and was refused: ${args.path}`);
+  }
+  return realResolved;
 }
 
 /**
