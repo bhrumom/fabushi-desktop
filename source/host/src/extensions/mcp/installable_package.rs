@@ -1086,6 +1086,16 @@ mod tests {
         policy.package_sha256 = digest(&data);
         assert!(matches!(
             verify_catalog_bundle(&data, &policy),
+            Err(PackageError::Archive)
+        ));
+        // Match both headers so the second case reaches the expansion budget,
+        // rather than being rejected earlier as an inconsistent physical ZIP.
+        let local_offset = &data[central + 42..central + 46];
+        let local = u32::from_le_bytes(local_offset.try_into().unwrap()) as usize;
+        data[local + 22..local + 26].copy_from_slice(&declared);
+        policy.package_sha256 = digest(&data);
+        assert!(matches!(
+            verify_catalog_bundle(&data, &policy),
             Err(PackageError::Limit)
         ));
 
