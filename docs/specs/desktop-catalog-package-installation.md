@@ -120,6 +120,14 @@ research workspace unchanged unless an actual shipping build resolves it.
 The Linux Host verifier now includes main's native Computer dependency; install
 the same Wayland/PipeWire/EGL/GBM/DRM/XKB development prerequisites already used by
 canonical-main Linux pressure CI, never disable the native dependency to pass.
+Actions98a9 demonstrated that zip9 indexes duplicate names rather than rejecting
+them. DCI-03 therefore requires a bounded physical central-directory pass before
+the library builds its name index: exact EOCD/directory/count bounds, raw safe
+unique names, matching local-header names/flags/methods and non-overlapping member
+data ranges. Compare physical count with the library's count. The initial100MiB,
+10001-entry format supports ordinary single-disk ZIP32 only; reject ZIP64 marker
+values, multidisk, prefixed/self-extracting archives and trailing/gapped central
+data rather than guessing. Malformed input must return Archive, never panic.
 
 GitHub Actions only, exact head. DCI-01..04 require real signature fixture and
 adversarial packages (duplicate JSON/ZIP, path, key/app/digest swaps, MIME, native,

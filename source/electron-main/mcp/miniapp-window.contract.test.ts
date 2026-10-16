@@ -418,7 +418,8 @@ test("actual Electron uses the isolated protocol and blocks real network, worker
       const contents = BrowserWindow.getAllWindows()[0].webContents;
       globalThis.__crashedSession = contents.session;
       globalThis.__rendererCrashObserved = false;
-      contents.once("render-process-gone", () => {
+      // Observe before the production listener destroys this WebContents.
+      contents.prependOnceListener("render-process-gone", () => {
         globalThis.__rendererCrashObserved = true;
       });
       // Do not keep this Playwright main-process evaluation pending across the

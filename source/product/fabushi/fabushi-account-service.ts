@@ -2,8 +2,7 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
 import { dirname } from "node:path";
 
-import type { AuthServicePort } from "../../electron-main/account/cursor-auth-wiring.js";
-import type { SandAuthStatus } from "../../electron-main/account/cursor-auth.js";
+import type { AuthServicePort, SandAuthStatus } from "../../electron-main/account/auth-service-contract.js";
 import { settleOptionalRemoteComputerTarget } from "./remote-target-availability.js";
 import { deleteSecret, readSecret, writeSecret } from "../../electron-main/secrets/secret-store.js";
 

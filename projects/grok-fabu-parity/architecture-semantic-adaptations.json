@@ -900,31 +900,39 @@
       "referencePath": "source/electron-main/account/cursor-auth-wiring.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "41d55e676a84664249a11e134b3d2c3aa7c838b2",
+      "targetBlobSha": "21cea3702d46d78002ed550786c0ab0c83ef830a",
       "behavioralEvidence": [
         "source/electron-main/account/cursor-auth-wiring.ts",
-        "source/shared/product-name.ts"
+        "source/shared/product-name.ts",
+        "source/electron-main/account/auth-service-contract.ts",
+        "docs/specs/desktop-miniapp-factory-acceptance.md"
       ],
       "testEvidence": [
         "desktop/e2e/grok-parity.spec.ts",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/product/fabushi/fabushi-account-service.contract.test.ts",
+        ".github/workflows/miniapp-management-ci.yml"
       ],
-      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+      "rationale": "Preserves frozen account wiring and Fabushi product copy. MFA-TS-01..03 moves only the existing AuthServicePort and SandAuthStatus definitions into the same account owner's implementation-free contract and re-exports the old import path. Every type field and method remains unchanged, with one definition and no runtime implementation, factory or credential authority in the contract. This prevents product-policy type checking from depending on the unrelated Cursor implementation graph without suppressing strict compilation. Existing wiring and runtime behavior remain unchanged; focused real-service race/issuer contracts, strict product tsc and packaged gates remain mandatory."
     },
     {
       "referencePath": "source/electron-main/account/cursor-auth.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "c2e4c95306f8822adb22176d594b488e9717b28f",
+      "targetBlobSha": "2e70b891f524daf8a4ef04d443d6158a83b4ca08",
       "behavioralEvidence": [
         "source/electron-main/account/cursor-auth.ts",
-        "source/shared/product-name.ts"
+        "source/shared/product-name.ts",
+        "source/electron-main/account/auth-service-contract.ts",
+        "docs/specs/desktop-miniapp-factory-acceptance.md"
       ],
       "testEvidence": [
         "desktop/e2e/grok-parity.spec.ts",
-        ".github/workflows/desktop-chat-parity-ci.yml"
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/product/fabushi/fabushi-account-service.contract.test.ts",
+        ".github/workflows/miniapp-management-ci.yml"
       ],
-      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+      "rationale": "Preserves frozen Cursor authentication behavior and Fabushi product copy. MFA-TS-01..03 extracts only the unchanged SandAuthStatus type to the existing account owner's neutral auth-service-contract and type-re-exports it from this compatibility module. The single type definition has no implementation imports, runtime state or authentication owner. No credential, login, logout or provider behavior changes here. Strict product-policy tsc and existing account/Electron regression gates verify the extraction rather than suppressing dependencies or weakening types."
     },
     {
       "referencePath": "source/electron-main/dev/dev-controls-window.ts",

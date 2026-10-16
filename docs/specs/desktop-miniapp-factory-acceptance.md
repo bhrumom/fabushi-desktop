@@ -180,3 +180,42 @@ is introduced.
 Provenance: user2026-10-16 says account factory exists and requests remaining work;
 Backend hosted-ci-account-factory.md §20 and isolated-ci-account-factory.md §21;
 factory README; existing DMW real-account-switch criterion and MU-07.
+
+## Neutral native auth type seam
+
+Context: the 98a9 native-intent contracts passed, including logout races and
+missing-issuer rejection, but strict product-policy TypeScript compilation follows
+FabushiAuthService's type-only imports into Cursor authentication implementation,
+protobuf and image dependencies. A type-only import still participates in the
+compiler's dependency graph. Suppressing those errors or weakening compilation
+does not establish a valid account-service boundary.
+
+- MFA-TS-01: extract the existing `SandAuthStatus` union and `AuthServicePort`
+  interface, with every field, optional member and method signature unchanged,
+  into `source/electron-main/account/auth-service-contract.ts`. That module has
+  no implementation imports, runtime state, credential access or service factory.
+  It is the single definition of these types within the existing Native account
+  owner, not another authentication owner.
+- MFA-TS-02: `cursor-auth.ts` imports and type-re-exports `SandAuthStatus` from
+  that contract; `cursor-auth-wiring.ts` imports its required contract types and
+  type-re-exports `AuthServicePort`. Existing caller import paths remain valid.
+  FabushiAuthService imports both types directly from the neutral contract.
+  No session, issuer, logout, token, login or wiring behavior changes.
+- MFA-TS-03: scope is the new contract, the two compatibility modules,
+  FabushiAuthService imports only, and this appended spec section. Preserve all
+  concurrent edits. Do not change tests, tsconfig, compiler strictness, frozen
+  inventory, workflows or dependency versions for this extraction.
+- MFA-TS-AC-01: source review confirms exact type-shape preservation, one canonical
+  definition, compatibility type exports, and no implementation dependency from
+  the neutral contract. Record the two protected compatibility-module Git blob
+  SHAs for the existing semantic-adaptation records; the parent owns those rows.
+- MFA-TS-AC-02: GitHub Actions must run the existing strict product-policy tsc and
+  native-intent/account-service contracts against the integrated source. Missing
+  types or failed checks remain blocked. Local executable verification is forbidden.
+
+Migration requires no data changes: existing imports remain compatible. Rollback
+restores the definitions/imports together, without changing account state or
+relaxing the compiler. Acceptance remains pending Actions evidence; the earlier
+24 passing native-intent contracts do not prove this new extraction. Provenance:
+user2026-10-16 continuation requirement, parent-agent bounded implementation plan
+and exact98a9 Actions tsc dependency failure.
