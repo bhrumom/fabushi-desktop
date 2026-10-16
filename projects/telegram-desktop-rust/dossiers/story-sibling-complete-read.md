@@ -1,7 +1,7 @@
 # Story sibling source-completeness dossier
 
 Authority: TDRP-001 Revision 9  
-Accepted upstream: `telegramdesktop/tdesktop@72b3b71c3d6e450e5ef94a3112dd750a0168aa0b`  
+Accepted upstream: `telegramdesktop/tdesktop@b16daff6df63e8a812bc2b52a04ff243f67a7d3f`  
 Status: read-complete / responsibility mapping open
 
 ## Exact source entries
