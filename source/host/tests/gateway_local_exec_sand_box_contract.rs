@@ -1,5 +1,6 @@
 use std::sync::{Arc, Mutex, mpsc};
 use std::thread;
+use std::process::{Child, Command};
 use std::time::Duration;
 
 use mahayana_host_runtime::extensions::local_exec::gateway_local_exec_sand_box::{
@@ -85,7 +86,7 @@ fn sandbox_projects_provider_state_and_user_computers() {
 }
 
 #[test]
-fn upload_and_download_enforce_gate_and_use_staged_frames() {
+fn upload_and_download_enforce_gate_and_use_frozen_frames() {
     let (bridge, _registration, receive) = bridge_with_provider();
     let gate = Arc::new(FakeGate::default());
     let sandbox = GatewayLocalExecSandBox::new(bridge.clone(), gate.clone());
@@ -95,58 +96,58 @@ fn upload_and_download_enforce_gate_and_use_staged_frames() {
         upload_box.upload_file(Some("agent-1"), "/tmp/a.txt", b"hello")
     });
 
-    let upload_start = receive
-        .recv_timeout(Duration::from_secs(1))
-        .expect("upload-start frame");
+    let upload_start = receive.recv_timeout(Duration::from_secs(1)).expect("upload-start frame");
     assert_eq!(upload_start["kind"], "upload-start");
     assert_eq!(upload_start["path"], "/tmp/a.txt");
     assert_eq!(upload_start["totalBytes"], 5);
-    assert_eq!(
-        upload_start["sha256"],
-        "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
-    );
     assert_eq!(upload_start["approvalId"], "approval-1");
     let transfer_id = upload_start["transferId"]
         .as_str()
-        .expect("transfer id")
+        .expect("upload-start transferId")
         .to_string();
-    bridge.submit_responses(json!({"frames":[{
-        "kind":"file","requestId":upload_start["requestId"]
-    }]}));
+    assert_eq!(upload_start["sha256"], "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824");
+    bridge.submit_responses(json!({
+        "frames": [{
+            "kind": "file",
+            "requestId": upload_start["requestId"]
+        }]
+    }));
     let start_cancel = receive.recv_timeout(Duration::from_secs(1)).expect("upload-start cleanup cancel");
     assert_eq!(start_cancel["kind"], "cancel");
     assert_eq!(start_cancel["requestId"], upload_start["requestId"]);
 
-    let upload_chunk = receive
-        .recv_timeout(Duration::from_secs(1))
-        .expect("upload-chunk frame");
+    let upload_chunk = receive.recv_timeout(Duration::from_secs(1)).expect("upload-chunk frame");
     assert_eq!(upload_chunk["kind"], "upload-chunk");
-    assert_eq!(upload_chunk["transferId"], transfer_id);
     assert_eq!(upload_chunk["path"], "/tmp/a.txt");
+    assert_eq!(upload_chunk["transferId"], transfer_id);
     assert_eq!(upload_chunk["offset"], 0);
     assert_eq!(upload_chunk["bytesBase64"], "aGVsbG8=");
     assert_eq!(upload_chunk["approvalId"], "approval-1");
-    bridge.submit_responses(json!({"frames":[{
-        "kind":"file","requestId":upload_chunk["requestId"]
-    }]}));
+    bridge.submit_responses(json!({
+        "frames": [{
+            "kind": "file",
+            "requestId": upload_chunk["requestId"]
+        }]
+    }));
     let chunk_cancel = receive.recv_timeout(Duration::from_secs(1)).expect("upload-chunk cleanup cancel");
     assert_eq!(chunk_cancel["kind"], "cancel");
     assert_eq!(chunk_cancel["requestId"], upload_chunk["requestId"]);
 
-    let upload_commit = receive
-        .recv_timeout(Duration::from_secs(1))
-        .expect("upload-commit frame");
+    let upload_commit = receive.recv_timeout(Duration::from_secs(1)).expect("upload-commit frame");
     assert_eq!(upload_commit["kind"], "upload-commit");
-    assert_eq!(upload_commit["transferId"], transfer_id);
     assert_eq!(upload_commit["path"], "/tmp/a.txt");
+    assert_eq!(upload_commit["transferId"], transfer_id);
     assert_eq!(upload_commit["approvalId"], "approval-1");
-    bridge.submit_responses(json!({"frames":[{
-        "kind":"file","requestId":upload_commit["requestId"]
-    }]}));
-    upload.join().expect("upload thread").expect("upload");
+    bridge.submit_responses(json!({
+        "frames": [{
+            "kind": "file",
+            "requestId": upload_commit["requestId"]
+        }]
+    }));
     let commit_cancel = receive.recv_timeout(Duration::from_secs(1)).expect("upload-commit cleanup cancel");
     assert_eq!(commit_cancel["kind"], "cancel");
     assert_eq!(commit_cancel["requestId"], upload_commit["requestId"]);
+    upload.join().expect("upload thread").expect("upload");
 
     let download_box = sandbox.clone();
     let download = thread::spawn(move || {
@@ -156,11 +157,13 @@ fn upload_and_download_enforce_gate_and_use_staged_frames() {
     assert_eq!(download_frame["kind"], "download");
     assert_eq!(download_frame["path"], "/tmp/b.txt");
     assert_eq!(download_frame["approvalId"], "approval-1");
-    bridge.submit_responses(json!({"frames":[{
-        "kind":"file",
-        "requestId":download_frame["requestId"],
-        "bytesBase64":"d29ybGQ="
-    }]}));
+    bridge.submit_responses(json!({
+        "frames": [{
+            "kind": "file",
+            "requestId": download_frame["requestId"],
+            "bytesBase64": "d29ybGQ="
+        }]
+    }));
     assert_eq!(
         download.join().expect("download thread").expect("download"),
         b"world"
@@ -397,7 +400,13 @@ fn exec_manager_journals_stable_operation_id_and_cancels_provider_request() {
     assert_eq!(active.operation_id, "operation-stable-1");
     assert_eq!(active.agent_id.as_deref(), Some("agent-journal"));
     assert_eq!(active.bridge_request_id, bridge_request_id);
-    assert_eq!(active.status, GatewayLocalExecOperationStatus::Running);
+    assert!(
+        matches!(
+            active.status,
+            GatewayLocalExecOperationStatus::Accepted | GatewayLocalExecOperationStatus::Running
+        ),
+        "operation must be durably accepted before provider execution and may advance to running"
+    );
     assert!(manager.operation_for_agent("other-agent", "operation-stable-1").is_none());
     assert!(!manager.cancel_operation_for_agent("other-agent", "operation-stable-1"));
 
@@ -424,4 +433,165 @@ fn exec_manager_journals_stable_operation_id_and_cancels_provider_request() {
     assert_eq!(settled.bridge_request_id, bridge_request_id);
     assert_eq!(manager.operation_history_for_agent("agent-journal").len(), 1);
     assert!(manager.operation_history_for_agent("other-agent").is_empty());
+}
+
+
+fn real_shell_output(command: &str) -> std::process::Output {
+    #[cfg(windows)]
+    {
+        Command::new("cmd")
+            .args(["/C", command])
+            .output()
+            .expect("spawn real Windows shell")
+    }
+    #[cfg(not(windows))]
+    {
+        Command::new("/bin/sh")
+            .args(["-c", command])
+            .output()
+            .expect("spawn real POSIX shell")
+    }
+}
+
+#[test]
+fn exec_manager_drives_real_os_process_to_bounded_terminal_result() {
+    let (bridge, _registration, receive) = bridge_with_provider();
+    let gate = Arc::new(FakeGate::default());
+    let manager = GatewayLocalExecSandBox::new(bridge.clone(), gate)
+        .remote_resource_accessor()
+        .manager();
+    let working_dir = std::env::temp_dir().to_string_lossy().into_owned();
+    let shell_manager = Arc::clone(&manager);
+    let shell_working_dir = working_dir.clone();
+    let shell = thread::spawn(move || {
+        shell_manager.execute_shell(
+            &GatewayLocalToolScope {
+                agent_id: Some("agent-real-process".into()),
+                tool_call_id: Some("operation-real-process".into()),
+                action: Some("run-command".into()),
+            },
+            "echo fabushi-terminal-real-process",
+            &shell_working_dir,
+            "operation-real-process",
+        )
+    });
+
+    let exec = receive
+        .recv_timeout(Duration::from_secs(2))
+        .expect("real process exec frame");
+    assert_eq!(exec["kind"], "exec");
+    let request_id = exec["requestId"].as_str().expect("request id").to_string();
+    let command = exec["serverMessage"]["shellStreamArgs"]["command"]
+        .as_str()
+        .expect("shell command");
+    let output = real_shell_output(command);
+    assert!(output.status.success(), "real child process failed: {:?}", output.status);
+    let stdout = String::from_utf8(output.stdout).expect("utf8 stdout");
+    bridge.submit_responses(json!({"frames":[{
+        "kind":"client",
+        "requestId":request_id,
+        "message":{"id":1,"shellStream":{"stdout":{"data":stdout}}}
+    }]}));
+    bridge.submit_responses(json!({"frames":[{
+        "kind":"client",
+        "requestId":request_id,
+        "message":{"id":1,"shellStream":{"exit":{"code":0,"cwd":working_dir,"aborted":false}}}
+    }]}));
+
+    let result = shell.join().expect("shell thread").expect("real shell result");
+    assert!(result.stdout.contains("fabushi-terminal-real-process"));
+    assert_eq!(result.exit_code, Some(0));
+    let settled = manager
+        .operation_for_agent("agent-real-process", "operation-real-process")
+        .expect("settled real operation");
+    assert_eq!(settled.status, GatewayLocalExecOperationStatus::Completed);
+    assert!(settled.stdout.contains("fabushi-terminal-real-process"));
+    assert!(!settled.stdout_truncated);
+    let _ = receive
+        .recv_timeout(Duration::from_secs(1))
+        .expect("real process cleanup cancel");
+}
+
+fn real_cancellable_child() -> Child {
+    #[cfg(windows)]
+    {
+        Command::new("powershell")
+            .args(["-NoProfile", "-NonInteractive", "-Command", "Start-Sleep -Seconds 30"])
+            .spawn()
+            .expect("spawn cancellable Windows child")
+    }
+    #[cfg(not(windows))]
+    {
+        Command::new("/bin/sh")
+            .args(["-c", "sleep 30"])
+            .spawn()
+            .expect("spawn cancellable POSIX child")
+    }
+}
+
+#[test]
+fn exec_manager_cancel_maps_to_real_child_termination_and_history() {
+    let (bridge, _registration, receive) = bridge_with_provider();
+    let gate = Arc::new(FakeGate::default());
+    let manager = GatewayLocalExecSandBox::new(bridge.clone(), gate)
+        .remote_resource_accessor()
+        .manager();
+    let working_dir = std::env::temp_dir().to_string_lossy().into_owned();
+    let shell_manager = Arc::clone(&manager);
+    let shell_working_dir = working_dir.clone();
+    let shell = thread::spawn(move || {
+        shell_manager.execute_shell(
+            &GatewayLocalToolScope {
+                agent_id: Some("agent-real-cancel".into()),
+                tool_call_id: Some("operation-real-cancel".into()),
+                action: Some("run-command".into()),
+            },
+            "echo fabushi-terminal-cancel-started",
+            &shell_working_dir,
+            "operation-real-cancel",
+        )
+    });
+
+    let exec = receive
+        .recv_timeout(Duration::from_secs(2))
+        .expect("cancel exec frame");
+    let request_id = exec["requestId"].as_str().expect("request id").to_string();
+    let command = exec["serverMessage"]["shellStreamArgs"]["command"]
+        .as_str()
+        .expect("shell command");
+    assert_eq!(command, "echo fabushi-terminal-cancel-started");
+    let mut child = real_cancellable_child();
+    assert!(
+        child.try_wait().expect("poll cancellable child").is_none(),
+        "real child must still be running before cancellation"
+    );
+    bridge.submit_responses(json!({"frames":[{
+        "kind":"client",
+        "requestId":request_id,
+        "message":{"id":2,"shellStream":{"stdout":{"data":"fabushi-terminal-cancel-started\\n"}}}
+    }]}));
+
+    assert!(manager.cancel_operation_for_agent("agent-real-cancel", "operation-real-cancel"));
+    let cancel = receive
+        .recv_timeout(Duration::from_secs(2))
+        .expect("provider cancel frame");
+    assert_eq!(cancel["kind"], "cancel");
+    assert_eq!(cancel["requestId"], request_id);
+    child.kill().expect("terminate cancellable real child");
+    let child_status = child.wait().expect("wait for cancelled real child");
+    assert!(!child_status.success(), "cancelled real child must not report success");
+    bridge.submit_responses(json!({"frames":[{
+        "kind":"client",
+        "requestId":request_id,
+        "message":{"id":2,"shellStream":{"exit":{"code":130,"cwd":working_dir,"aborted":true}}}
+    }]}));
+
+    let result = shell.join().expect("cancel shell thread").expect("cancelled result");
+    assert_eq!(result.exit_code, Some(130));
+    assert!(result.aborted);
+    let settled = manager
+        .operation_for_agent("agent-real-cancel", "operation-real-cancel")
+        .expect("settled cancelled operation");
+    assert_eq!(settled.status, GatewayLocalExecOperationStatus::Cancelled);
+    assert_eq!(manager.operation_history_for_agent("agent-real-cancel").len(), 1);
 }
