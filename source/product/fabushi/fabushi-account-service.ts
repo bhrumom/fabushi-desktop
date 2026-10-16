@@ -99,6 +99,8 @@ export class FabushiAuthService implements AuthServicePort {
   private loginAbort: AbortController | undefined;
   private loginAttempt: BrowserAttempt | undefined;
   private operationEpoch = 0;
+  private logoutInProgress = false;
+  private readonly activeOperations = new Set<Promise<unknown>>();
   private ciSessionPromise: Promise<FabushiSession | null> | undefined;
   private ciSessionDisabled = false;
   private refreshPromise: Promise<FabushiSession | null> | undefined;
@@ -120,6 +122,17 @@ export class FabushiAuthService implements AuthServicePort {
 
   private emit(status: SandAuthStatus): void {
     for (const listener of this.listeners) listener(status);
+  }
+
+  private isOperationCurrent(epoch: number): boolean {
+    return !this.logoutInProgress && this.operationEpoch === epoch;
+  }
+
+  private trackOperation<T>(operation: Promise<T>): Promise<T> {
+    let tracked: Promise<T>;
+    tracked = operation.finally(() => this.activeOperations.delete(tracked));
+    this.activeOperations.add(tracked);
+    return tracked;
   }
 
   private async requestJson(path: string, init: RequestInit = {}): Promise<unknown> {
@@ -269,21 +282,28 @@ export class FabushiAuthService implements AuthServicePort {
       if (this.remoteComputerHeartbeatIdentity !== identity || this.remoteComputerHeartbeatTimer != null) return;
       this.remoteComputerHeartbeatTimer = setTimeout(() => {
         this.remoteComputerHeartbeatTimer = undefined;
-        void (async () => {
+        const epoch = this.operationEpoch;
+        void this.trackOperation((async () => {
           try {
             const session = await this.currentSession();
-            if (session == null || this.remoteComputerAccountIdentity(session) !== identity) {
+            if (!this.isOperationCurrent(epoch)
+              || session == null
+              || this.remoteComputerAccountIdentity(session) !== identity) {
               this.stopRemoteComputerHeartbeat();
               return;
             }
             await this.remoteComputerHeartbeat(session);
+            if (!this.isOperationCurrent(epoch)) return;
           } catch {
+            if (!this.isOperationCurrent(epoch)) return;
             this.remoteComputerRegisteredIdentity = undefined;
             await this.clearHostRemoteComputerCredential();
           } finally {
-            if (this.remoteComputerHeartbeatIdentity === identity && this.remoteComputerHeartbeatTimer == null) scheduleNext();
+            if (this.isOperationCurrent(epoch)
+              && this.remoteComputerHeartbeatIdentity === identity
+              && this.remoteComputerHeartbeatTimer == null) scheduleNext();
           }
-        })();
+        })());
       }, REMOTE_COMPUTER_HEARTBEAT_MS);
       this.remoteComputerHeartbeatTimer.unref?.();
     };
@@ -361,7 +381,8 @@ export class FabushiAuthService implements AuthServicePort {
     return { ...session, username, user: body };
   }
 
-  private async refreshSession(session: FabushiSession): Promise<FabushiSession | null> {
+  private async refreshSession(session: FabushiSession, epoch: number): Promise<FabushiSession | null> {
+    if (!this.isOperationCurrent(epoch)) return null;
     if (session.refreshToken == null) return null;
     if (this.refreshPromise != null) return await this.refreshPromise;
     this.refreshPromise = (async () => {
@@ -369,6 +390,7 @@ export class FabushiAuthService implements AuthServicePort {
         method: "POST",
         body: JSON.stringify({ refreshToken: session.refreshToken, deviceId: session.deviceId }),
       });
+      if (!this.isOperationCurrent(epoch)) return null;
       const next = normalizeFabushiSession(raw, { issuer: session.issuer, bindMissingIssuer: true });
       if (next == null
         || next.deviceId !== session.deviceId
@@ -376,11 +398,16 @@ export class FabushiAuthService implements AuthServicePort {
         throw new Error("Fabushi refreshed account session failed identity validation.");
       }
       const verified = await this.resolveIdentity(next);
+      if (!this.isOperationCurrent(epoch)) return null;
       await this.saveStoredSession(verified);
+      if (!this.isOperationCurrent(epoch)) return null;
       await this.settleRemoteComputerTarget(verified);
+      if (!this.isOperationCurrent(epoch)) return null;
       await this.writeHostCredential(verified);
+      if (!this.isOperationCurrent(epoch)) return null;
       return verified;
     })().catch(async (error) => {
+      if (!this.isOperationCurrent(epoch)) return null;
       await this.clearStoredSession().catch(() => {});
       await this.clearHostCredential();
       await this.clearHostRemoteComputerCredential();
@@ -393,12 +420,22 @@ export class FabushiAuthService implements AuthServicePort {
     return await this.refreshPromise;
   }
 
-  private async currentSession(): Promise<FabushiSession | null> {
+  private currentSession(): Promise<FabushiSession | null> {
+    if (this.logoutInProgress) return Promise.resolve(null);
+    const epoch = this.operationEpoch;
+    return this.trackOperation(this.resolveCurrentSession(epoch));
+  }
+
+  private async resolveCurrentSession(epoch: number): Promise<FabushiSession | null> {
     const ci = await this.readCiSession();
+    if (!this.isOperationCurrent(epoch)) return null;
     let session = ci ?? await this.readStoredSession();
+    if (!this.isOperationCurrent(epoch)) return null;
     if (session == null) {
       await this.clearHostCredential();
+      if (!this.isOperationCurrent(epoch)) return null;
       await this.clearHostRemoteComputerCredential();
+      if (!this.isOperationCurrent(epoch)) return null;
       this.remoteComputerRegisteredIdentity = undefined;
       this.stopRemoteComputerHeartbeat();
       return null;
@@ -406,24 +443,32 @@ export class FabushiAuthService implements AuthServicePort {
     if (session.accessTokenExpiresAt <= this.now() + REFRESH_LEEWAY_MS) {
       if (ci != null || session.refreshToken == null) {
         await this.clearHostCredential();
+        if (!this.isOperationCurrent(epoch)) return null;
         await this.clearHostRemoteComputerCredential();
+        if (!this.isOperationCurrent(epoch)) return null;
         this.remoteComputerRegisteredIdentity = undefined;
         this.stopRemoteComputerHeartbeat();
         return null;
       }
-      session = await this.refreshSession(session);
+      session = await this.refreshSession(session, epoch);
+      if (!this.isOperationCurrent(epoch)) return null;
       if (session == null) return null;
     }
+    if (!this.isOperationCurrent(epoch)) return null;
     await this.settleRemoteComputerTarget(session);
+    if (!this.isOperationCurrent(epoch)) return null;
     await this.writeHostCredential(session);
-    return session;
+    return this.isOperationCurrent(epoch) ? session : null;
   }
 
   async getStatus(): Promise<SandAuthStatus> {
+    const epoch = this.operationEpoch;
     try {
       const session = await this.currentSession();
+      if (!this.isOperationCurrent(epoch)) return { kind: "logged-out" };
       return session == null ? { kind: "logged-out" } : statusFromSession(session);
     } catch (error) {
+      if (!this.isOperationCurrent(epoch)) return { kind: "logged-out" };
       return { kind: "logged-out", errorMessage: error instanceof Error ? error.message : "Fabushi sign-in is unavailable." };
     }
   }
@@ -438,14 +483,17 @@ export class FabushiAuthService implements AuthServicePort {
         throw new Error("Refusing to send a Fabushi account token to a non-Fabushi backend.");
       }
     }
+    const epoch = this.operationEpoch;
     const session = await this.currentSession();
-    if (session == null) throw new Error("Sign in to Fabushi to continue.");
+    if (!this.isOperationCurrent(epoch) || session == null) throw new Error("Sign in to Fabushi to continue.");
     return session.accessToken;
   }
 
   async peekAccessToken(): Promise<string | null> {
+    const epoch = this.operationEpoch;
     try {
       const session = await this.currentSession();
+      if (!this.isOperationCurrent(epoch)) return null;
       return session?.issuer === this.baseUrl && session.issuer !== FABUSHI_CI_ISOLATED_AUTH_BASE_URL
         ? session.accessToken
         : null;
@@ -473,12 +521,18 @@ export class FabushiAuthService implements AuthServicePort {
     return { attemptId, loginUrl, pollSecret, expiresAt, pollAfterMs };
   }
 
-  async login(): Promise<SandAuthStatus> {
+  login(): Promise<SandAuthStatus> {
+    if (this.logoutInProgress) return Promise.resolve({ kind: "logged-out" });
     this.loginAbort?.abort();
     const epoch = ++this.operationEpoch;
     const controller = new AbortController();
     this.loginAbort = controller;
     this.emit({ kind: "logging-in" });
+    return this.trackOperation(this.runLogin(epoch, controller));
+  }
+
+  private async runLogin(epoch: number, controller: AbortController): Promise<SandAuthStatus> {
+    if (!this.isOperationCurrent(epoch) || controller.signal.aborted) return await this.getStatus();
     try {
       const start = this.parseBrowserAttempt(await this.requestJson("/api/auth/browser/start", {
         method: "POST",
@@ -487,7 +541,7 @@ export class FabushiAuthService implements AuthServicePort {
       }));
       this.loginAttempt = start;
       await this.options.openExternal(start.loginUrl);
-      while (!controller.signal.aborted && epoch === this.operationEpoch && this.now() < start.expiresAt) {
+      while (!controller.signal.aborted && this.isOperationCurrent(epoch) && this.now() < start.expiresAt) {
         const result = await this.requestJson(`/api/auth/browser/attempts/${encodeURIComponent(start.attemptId)}`, {
           method: "POST",
           body: JSON.stringify({ pollSecret: start.pollSecret }),
@@ -499,13 +553,16 @@ export class FabushiAuthService implements AuthServicePort {
           const session = normalizeFabushiSession(result.session, { issuer: this.baseUrl, bindMissingIssuer: true });
           if (session == null) throw new Error("Fabushi browser sign-in returned an invalid durable session.");
           const verified = await this.resolveIdentity(session);
-          if (epoch !== this.operationEpoch || controller.signal.aborted) return await this.getStatus();
+          if (!this.isOperationCurrent(epoch) || controller.signal.aborted) return await this.getStatus();
           await this.saveStoredSession(verified);
+          if (!this.isOperationCurrent(epoch) || controller.signal.aborted) return await this.getStatus();
           await this.settleRemoteComputerTarget(verified);
+          if (!this.isOperationCurrent(epoch) || controller.signal.aborted) return await this.getStatus();
           await this.writeHostCredential(verified);
+          if (!this.isOperationCurrent(epoch) || controller.signal.aborted) return await this.getStatus();
           const status = statusFromSession(verified);
           this.emit(status);
-          return status;
+          return this.isOperationCurrent(epoch) ? status : { kind: "logged-out" };
         }
         if (state === "failed" || state === "expired" || state === "cancelled") {
           throw new Error(`Fabushi browser sign-in ${state}.`);
@@ -514,7 +571,7 @@ export class FabushiAuthService implements AuthServicePort {
       }
       throw new Error("Fabushi browser sign-in timed out.");
     } catch (error) {
-      if (epoch !== this.operationEpoch || controller.signal.aborted) return await this.getStatus();
+      if (!this.isOperationCurrent(epoch) || controller.signal.aborted) return await this.getStatus();
       const status: SandAuthStatus = { kind: "logged-out", errorMessage: error instanceof Error ? error.message : "Fabushi sign-in failed." };
       this.emit(status);
       return status;
@@ -525,7 +582,7 @@ export class FabushiAuthService implements AuthServicePort {
   }
 
   async cancelLogin(): Promise<SandAuthStatus> {
-    ++this.operationEpoch;
+    if (!this.logoutInProgress) ++this.operationEpoch;
     this.loginAbort?.abort();
     this.loginAbort = undefined;
     const attempt = this.loginAttempt;
@@ -542,26 +599,38 @@ export class FabushiAuthService implements AuthServicePort {
   }
 
   async logout(): Promise<SandAuthStatus> {
-    ++this.operationEpoch;
+    const selectedCiBootstrap = !this.ciSessionDisabled
+      && Boolean(this.options.env[FABUSHI_CI_ACCOUNT_SESSION_FILE_ENV]?.trim());
+    this.ciSessionDisabled = true;
+    this.logoutInProgress = true;
+    const logoutEpoch = ++this.operationEpoch;
     this.loginAbort?.abort();
     this.loginAbort = undefined;
-    const session = await this.currentSession().catch(() => null);
-    this.ciSessionDisabled = true;
-    await this.clearStoredSession().catch(() => {});
-    await this.clearHostCredential();
-    await this.clearHostRemoteComputerCredential();
-    this.remoteComputerRegisteredIdentity = undefined;
-    this.stopRemoteComputerHeartbeat();
-    if (session?.refreshToken != null) {
-      void this.requestJson("/api/auth/logout", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${session.accessToken}` },
-        body: JSON.stringify({ refreshToken: session.refreshToken, deviceId: session.deviceId }),
-      }).catch(() => {});
+    const pendingOperations = [...this.activeOperations];
+    try {
+      await Promise.allSettled(pendingOperations);
+      // CI bootstrap has precedence over stored sessions. Its refreshless
+      // token is revoked by the existing CI lease owner, never by selecting an
+      // unrelated stored account after disabling bootstrap.
+      const session = selectedCiBootstrap ? null : await this.readStoredSession().catch(() => null);
+      await this.clearStoredSession().catch(() => {});
+      await this.clearHostCredential();
+      await this.clearHostRemoteComputerCredential();
+      this.remoteComputerRegisteredIdentity = undefined;
+      this.stopRemoteComputerHeartbeat();
+      if (session?.refreshToken != null) {
+        void this.requestJson("/api/auth/logout", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${session.accessToken}` },
+          body: JSON.stringify({ refreshToken: session.refreshToken, deviceId: session.deviceId }),
+        }).catch(() => {});
+      }
+      const status: SandAuthStatus = { kind: "logged-out" };
+      this.emit(status);
+      return status;
+    } finally {
+      if (this.operationEpoch === logoutEpoch) this.logoutInProgress = false;
     }
-    const status: SandAuthStatus = { kind: "logged-out" };
-    this.emit(status);
-    return status;
   }
 
   async revokeForAccountRefusal(): Promise<{ readonly kind: "completed"; readonly status: SandAuthStatus }> {

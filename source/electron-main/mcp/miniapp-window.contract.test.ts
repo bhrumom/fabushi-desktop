@@ -414,14 +414,24 @@ test("actual Electron uses the isolated protocol and blocks real network, worker
     assert.equal(prefs.webSecurity, true);
     assert.equal(prefs.preload, undefined);
     await accountB.evaluate(() => localStorage.setItem("crash-recovery", "retained"));
-    await app.evaluate(async ({ BrowserWindow }) => {
+    await app.evaluate(({ BrowserWindow }) => {
       const contents = BrowserWindow.getAllWindows()[0].webContents;
       globalThis.__crashedSession = contents.session;
-      await new Promise<void>((resolve) => {
-        contents.once("render-process-gone", () => setImmediate(resolve));
-        contents.forcefullyCrashRenderer();
+      globalThis.__rendererCrashObserved = false;
+      contents.once("render-process-gone", () => {
+        globalThis.__rendererCrashObserved = true;
       });
+      // Do not keep this Playwright main-process evaluation pending across the
+      // renderer crash. Observe the event in a separate evaluation below.
+      contents.forcefullyCrashRenderer();
     });
+    const crashDeadline = Date.now() + 10_000;
+    let crashObserved = false;
+    while (!crashObserved && Date.now() < crashDeadline) {
+      crashObserved = await app.evaluate(() => globalThis.__rendererCrashObserved === true);
+      if (!crashObserved) await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    assert.equal(crashObserved, true, "Electron must report the actual renderer crash");
     assert.equal(await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length), 0);
     assert.equal(await app.evaluate(async () => globalThis.__crashedSession.protocol.isProtocolHandled("fabushi-miniapp")), false);
     await app.evaluate(async () => { await globalThis.__open(globalThis.__snapshotFor('org.fabushi.global-dandelion', 'd'.repeat(64), 8)); });

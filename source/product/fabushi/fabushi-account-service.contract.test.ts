@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import test from "node:test";
 
+import { FabushiAuthService } from "./fabushi-account-service.js";
 import {
   DEFAULT_FABUSHI_API_BASE_URL,
   DEFAULT_FABUSHI_RESPONSES_URL,
@@ -16,6 +17,7 @@ import {
 
 function boundedCiSession(overrides: Record<string, unknown> = {}) {
   return {
+    issuer: DEFAULT_FABUSHI_API_BASE_URL,
     accessToken: "access-only-token",
     accessTokenExpiresAt: Date.now() + 10 * 60_000,
     sessionId: "ci-runner:run-123",
@@ -42,6 +44,21 @@ test("Fabushi CI session accepts only the bounded refresh-token-free GitHub Acti
     refreshToken: "must-not-enter-packaged-acceptance",
     refreshTokenExpiresAt: Date.now() + 60 * 60_000,
   })), null);
+});
+
+test("Fabushi CI session rejects missing issuer even when a caller offers to bind it", () => {
+  const missingIssuer = boundedCiSession();
+  delete (missingIssuer as Record<string, unknown>).issuer;
+
+  assert.equal(normalizeFabushiCiSession(missingIssuer), null);
+  assert.equal(normalizeFabushiCiSession(missingIssuer, {
+    issuer: DEFAULT_FABUSHI_API_BASE_URL,
+    bindMissingIssuer: true,
+  }), null);
+  assert.equal(normalizeFabushiCiSession(missingIssuer, {
+    issuer: FABUSHI_CI_ISOLATED_AUTH_BASE_URL,
+    bindMissingIssuer: true,
+  }), null);
 });
 
 test("Fabushi durable sessions require a refresh token but CI normalization deliberately does not", () => {
@@ -104,6 +121,10 @@ test("session issuer is bound by the Native owner and missing stored issuer rema
   assert.equal(normalizeFabushiCiSession(boundedCiSession(), {
     issuer: FABUSHI_CI_ISOLATED_AUTH_BASE_URL,
     bindMissingIssuer: true,
+  }), null);
+  assert.equal(normalizeFabushiCiSession(boundedCiSession({ issuer: FABUSHI_CI_ISOLATED_AUTH_BASE_URL }), {
+    issuer: FABUSHI_CI_ISOLATED_AUTH_BASE_URL,
+    bindMissingIssuer: true,
   })?.issuer, FABUSHI_CI_ISOLATED_AUTH_BASE_URL);
   assert.equal(normalizeFabushiCiSession(boundedCiSession({ issuer: DEFAULT_FABUSHI_API_BASE_URL }), {
     issuer: FABUSHI_CI_ISOLATED_AUTH_BASE_URL,
@@ -114,6 +135,111 @@ test("session issuer is bound by the Native owner and missing stored issuer rema
   }), null);
 });
 
+test("logout fences an in-flight current-session read before stale status or Host credential write", async () => {
+  interface RaceSession {
+    issuer: string;
+    accessToken: string;
+    accessTokenExpiresAt: number;
+    sessionId: string;
+    deviceId: string;
+    username: string;
+    userId: string;
+  }
+  interface ServiceProbe {
+    operationEpoch: number;
+    ciSessionDisabled: boolean;
+    logoutInProgress: boolean;
+    readCiSession(): Promise<null>;
+    readStoredSession(): Promise<RaceSession | null>;
+    settleRemoteComputerTarget(session: RaceSession): Promise<void>;
+    writeHostCredential(session: RaceSession): Promise<void>;
+    clearStoredSession(): Promise<void>;
+    clearHostCredential(): Promise<void>;
+    clearHostRemoteComputerCredential(): Promise<void>;
+    stopRemoteComputerHeartbeat(): void;
+  }
+
+  const session: RaceSession = {
+    issuer: DEFAULT_FABUSHI_API_BASE_URL,
+    accessToken: "race-test-access-token",
+    accessTokenExpiresAt: Date.now() + 10 * 60_000,
+    sessionId: "browser:race-test",
+    deviceId: "device-race-test",
+    username: "race@example.com",
+    userId: "race-user",
+  };
+  const service = new FabushiAuthService({
+    openExternal: () => {},
+    env: {},
+    machineId: "device-race-test",
+    hostAccessCredentialFile: "/tmp/fabushi-auth-race-contract.json",
+  });
+  const probe = service as unknown as ServiceProbe;
+  let storedSession: RaceSession | null = session;
+  let credentialWrites = 0;
+  let credentialClears = 0;
+  let clearStarted = false;
+  let enterSettlement!: () => void;
+  let releaseSettlement!: () => void;
+  const settlementEntered = new Promise<void>((resolve) => { enterSettlement = resolve; });
+  const settlementGate = new Promise<void>((resolve) => { releaseSettlement = resolve; });
+  probe.readCiSession = async () => null;
+  probe.readStoredSession = async () => storedSession;
+  probe.settleRemoteComputerTarget = async () => {
+    enterSettlement();
+    await settlementGate;
+  };
+  probe.writeHostCredential = async () => { credentialWrites += 1; };
+  probe.clearStoredSession = async () => { clearStarted = true; storedSession = null; };
+  probe.clearHostCredential = async () => { credentialClears += 1; };
+  probe.clearHostRemoteComputerCredential = async () => {};
+  probe.stopRemoteComputerHeartbeat = () => {};
+
+  const statusPromise = service.getStatus();
+  await settlementEntered;
+  const tokenPromise = service.getValidAccessToken().then(() => "unexpected-token", () => "denied");
+  const epochBeforeLogout = probe.operationEpoch;
+  const logoutPromise = service.logout();
+
+  assert.equal(probe.ciSessionDisabled, true);
+  assert.equal(probe.operationEpoch, epochBeforeLogout + 1);
+  assert.equal(probe.logoutInProgress, true);
+  assert.equal(clearStarted, false, "logout must drain pre-fence work before final cleanup");
+  releaseSettlement();
+
+  const [status, logoutStatus, tokenResult] = await Promise.all([statusPromise, logoutPromise, tokenPromise]);
+  assert.equal(status.kind, "logged-out");
+  assert.equal(logoutStatus.kind, "logged-out");
+  assert.equal(tokenResult, "denied");
+  assert.equal(credentialWrites, 0, "stale currentSession must not write a Host credential");
+  assert.ok(credentialClears > 0, "logout must perform final Host credential cleanup");
+  assert.equal((await service.getStatus()).kind, "logged-out");
+});
+
+
+test("CI logout never selects an unrelated stored session for server revocation", async () => {
+  const service = new FabushiAuthService({
+    openExternal: () => {},
+    env: { FABUSHI_CI_ACCOUNT_SESSION_FILE: "/private-ram/ordinary.pipe" },
+    machineId: "device-ci-revocation-contract",
+    hostAccessCredentialFile: "/private-ram/credential.json",
+  });
+  const probe = service as unknown as {
+    readStoredSession(): Promise<null>;
+    clearStoredSession(): Promise<void>;
+    clearHostCredential(): Promise<void>;
+    clearHostRemoteComputerCredential(): Promise<void>;
+    stopRemoteComputerHeartbeat(): void;
+  };
+  let storedReads = 0;
+  probe.readStoredSession = async () => { storedReads += 1; return null; };
+  probe.clearStoredSession = async () => {};
+  probe.clearHostCredential = async () => {};
+  probe.clearHostRemoteComputerCredential = async () => {};
+  probe.stopRemoteComputerHeartbeat = () => {};
+  assert.equal((await service.logout()).kind, "logged-out");
+  assert.equal(storedReads, 0, "an inactive stored session must not be selected for CI logout");
+});
 
 test("Fabushi production Responses URL targets the deployed Codex-compatible first-party adapter", () => {
   assert.equal(

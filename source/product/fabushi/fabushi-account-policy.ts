@@ -143,6 +143,7 @@ export function normalizeFabushiCiSession(
   value: unknown,
   options: { readonly issuer?: string; readonly bindMissingIssuer?: boolean } = {},
 ): FabushiSession | null {
+  if (!isRecord(value) || boundedText(value.issuer, 512) == null) return null;
   const session = normalizeFabushiSession(value, { allowRefreshless: true, ...options });
   if (
     session == null

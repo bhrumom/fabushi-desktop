@@ -48,6 +48,10 @@ acceptance remains a separate mandatory gate, not replaced by isolated auth.
   Native logout disables CI bootstrap for the remainder of that process; a
   subsequent account-status read must not replay its cached bootstrap session.
   A fresh process may deliberately bootstrap the next ordinary account.
+  Logout synchronously advances the existing operation epoch, denies new session
+  reads/login, aborts login work and drains tracked in-flight session/login work
+  before final credential cleanup. Async refresh/settlement/write and status/token
+  projection recheck the epoch; stale work may not resurrect a logged-out session.
 - MFA-06: normal lease cleanup executes in finally with fresh same-run OIDC,
   verifies returned remaining=0, and independently checks both delivered A/B
   sessions reject with 401. Ambiguous
@@ -99,6 +103,11 @@ https://api.ombhrum.com and isolated
 https://fabushi-ci-isolated-auth.bhrumom.workers.dev; local loopback remains a
 development-only transport and cannot carry a production/isolated credential.
 Legacy credentials without issuer metadata are production-only.
+CI bootstrap inputs, unlike legacy stored credentials, require an explicit issuer
+that matches the configured Native origin. The fixed-source production CI login
+producer stamps its known exact production origin before delivery; the factory
+producer already supplies the isolated origin. Never infer a bootstrap issuer
+from a missing field. Ordinary stored-session production compatibility remains.
 
 For the packaged acceptance RAM volume, Electron's existing startup bootstrap
 sets appData and temporary paths before consumers initialize, and sets the

@@ -414,7 +414,7 @@ jobs:
         env:
           FABUSHI_CI_TEST_USERNAME: ${{ secrets.FABUSHI_CI_TEST_USERNAME }}
           FABUSHI_CI_TEST_PASSWORD: ${{ secrets.FABUSHI_CI_TEST_PASSWORD }}
-          FABUSHI_API_BASE_URL: ${{ vars.FABUSHI_API_BASE_URL || 'https://api.ombhrum.com' }}
+          FABUSHI_API_BASE_URL: https://api.ombhrum.com
           DEVICE_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}-macos-app
         run: |
           set -euo pipefail
@@ -431,6 +431,9 @@ jobs:
           export FABUSHI_CI_ACCOUNT_SESSION_FILE="$app_session_dir/session.json"
           node "$support/chatgpt-vps-control/scripts/login-ci-test-account.mjs"
           node "$support/chatgpt-vps-control/scripts/export-ci-app-account-session.mjs"
+          umask 077
+          jq -ce --arg issuer "$FABUSHI_API_BASE_URL" '. + {issuer: $issuer}' "$FABUSHI_CI_ACCOUNT_SESSION_FILE" > "$app_session_dir/issuer-bound.json"
+          mv "$app_session_dir/issuer-bound.json" "$FABUSHI_CI_ACCOUNT_SESSION_FILE"
           chmod 600 "$FABUSHI_CI_ACCOUNT_SESSION_FILE"
           jq -e '.provider == "github-actions" and .ciRunner == true and (.refreshToken | not)' "$FABUSHI_CI_ACCOUNT_SESSION_FILE" >/dev/null
           rm -f "$FABUSHI_ACCOUNT_SESSION_FILE"

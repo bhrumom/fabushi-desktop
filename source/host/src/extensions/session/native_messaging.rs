@@ -1117,6 +1117,7 @@ mod native_account_scope_tests {
         unix_now_ms, validate_base_url, FabushiIdentityVerificationError,
         FabushiNativeCredentialClaim, FabushiNativeMessagingClient,
         CI_ISOLATED_FABUSHI_AUTH_BASE_URL, DEFAULT_FABUSHI_API_BASE_URL,
+        ISOLATED_AUTH_ID_DOMAIN, sha256_hex,
     };
     use std::fs;
 
