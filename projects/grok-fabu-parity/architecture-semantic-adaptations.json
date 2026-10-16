@@ -1317,7 +1317,7 @@
       "referencePath": "source/host/local-exec/local-exec-provider.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "1a66f5facc282abac4d0c568074c89629b5dd4c7",
+      "targetBlobSha": "56a4905d142e12d1be8f642697861f401d57cfc3",
       "behavioralEvidence": [
         "source/host/local-exec/local-exec-provider.ts",
         "source/host/local-exec/local-exec-machine.ts",
