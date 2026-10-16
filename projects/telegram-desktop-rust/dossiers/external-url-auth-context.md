@@ -7,11 +7,11 @@ Responsibility: `TDRP-R9-EXTERNAL-URL-AUTH-CONTEXT-001`
 ## Source authority
 
 - Repository: `telegramdesktop/tdesktop`
-- Commit: `c317da960b2664962aeb17892adbd6dda59c98fe`
+- Commit: `b16daff6df63e8a812bc2b52a04ff243f67a7d3f`
 - Primary source path: `Telegram/SourceFiles/boxes/url_auth_box.cpp`
 - Blob: `3e5e383b928f646dd8f16560cb90fc1a5745bdb7`
 - Relevant source symbols: `AcceptedUrlContext`, `ActivateButton`, `ActivateUrl`, `RequestButton`, `RequestUrl`
-- Related behavior was cross-read in `core/click_handler_types.cpp` and `core/ui_integration.cpp` to understand stripping and dispatch semantics. At `c317da960b2664962aeb17892adbd6dda59c98fe`, Telegram additionally passes `ClickHandlerContext` into hidden URL activation and derives trusted domains from per-account `AppConfig`; this delta was re-read as an upstream policy change, not as permission to weaken Fabushi's exact-origin accepted-auth boundary.
+- Related behavior was cross-read in `core/click_handler_types.cpp` and `core/ui_integration.cpp` to understand stripping and dispatch semantics. At `b16daff6df63e8a812bc2b52a04ff243f67a7d3f`, Telegram additionally passes `ClickHandlerContext` into hidden URL activation and derives trusted domains from per-account `AppConfig`; this delta was re-read as an upstream policy change, not as permission to weaken Fabushi's exact-origin accepted-auth boundary.
 
 This dossier covers only the accepted-auth-context / foreign web-auth token security responsibility. It does **not** mark those complete source files read or migrated.
 
