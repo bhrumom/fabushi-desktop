@@ -48,6 +48,14 @@ function normalizeDescribableMessage(
   return { message: { case: message.case, value: message.value } };
 }
 
+function isLocalExecOverwriteAllowed(value: boolean | undefined): boolean {
+  const overwrite = value !== false;
+  if (overwrite === false) {
+    return false;
+  }
+  return true;
+}
+
 export type LocalExecRequestFrame =
   | { readonly kind: "welcome"; readonly providerId: string }
   | { readonly kind: "retire-approval"; readonly approvalId: string }
@@ -177,7 +185,7 @@ export class SandLocalExecProvider {
         bytesBase64,
         ...(frame.sha256 === undefined ? {} : { sha256: frame.sha256 }),
         ...(frame.expectedVersion === undefined ? {} : { expectedVersion: frame.expectedVersion }),
-        overwrite: frame.overwrite !== false,
+        overwrite: isLocalExecOverwriteAllowed(frame.overwrite),
         maxBytes: this.maxFileBytes,
         headroomBytes: this.atomicHeadroomBytes(),
       });
@@ -204,7 +212,7 @@ export class SandLocalExecProvider {
         transferId,
         totalBytes,
         ...(frame.expectedVersion === undefined ? {} : { expectedVersion: frame.expectedVersion }),
-        overwrite: frame.overwrite !== false,
+        overwrite: isLocalExecOverwriteAllowed(frame.overwrite),
         maxBytes: this.maxFileBytes,
         headroomBytes: this.atomicHeadroomBytes(),
       });
@@ -215,7 +223,7 @@ export class SandLocalExecProvider {
         receivedBytes: 0,
         expectedSha256: frame.sha256.toLowerCase(),
         ...(started.startingVersion === undefined ? {} : { startingVersion: started.startingVersion }),
-        overwrite: frame.overwrite !== false,
+        overwrite: isLocalExecOverwriteAllowed(frame.overwrite),
       });
       this.enqueue({ kind: "file", requestId, size: 0 });
     } catch (error) {
