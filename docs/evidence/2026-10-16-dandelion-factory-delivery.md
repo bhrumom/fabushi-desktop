@@ -113,3 +113,40 @@ and MU-07; existing Backend factory consumer on that same source/archive; finall
 zero residue and both-token rejection; verify and promote original accepted bytes.
 No rebuild may substitute for the accepted artifact. Native hardware/hotplug,
 network transfer and independent-human gates remain separate and unclaimed.
+
+## Subsequent exact-source integration and first factory UI failure
+
+PR64 source b075942a65e7543d52b07767d1b03cacb4fed2f0 passed all13 scoped source
+jobs. Verifier38859197203 ran36 package tests,5 issuer/scope tests and1 inference
+target test, all passed with0 failures/ignored. Actual Electron window38859197229
+passed loss/recovery and signed Wasm. Rust runtime38859197181 passed, including
+1877 Host Runner tests. Signed/private package38859772720 passed ordinary packaged
+chat1test and production MU-07 lifecycle1test; the independent factory case was
+not claimed by that single-account job. Artifact12029224362 SHA256
+ae50bc4b7665bce5b270c1c44be7b86736a873883d5dafe004df4122651775e7.
+
+PR64 merged normally as e875a19b03b11d0de8eae5cbb671076d0b4cf638. Its tree is
+identical to reviewed b075. Main push signed run38862104769 passed chat1test and
+MU-071test with full signed/notarized installed execution. All13 scoped source
+jobs passed on e875. Installer artifact12029833740,333301682bytes,archiveSHA256
+420b95f0de59470db9f8d55f235196d1a5fbceab00c7c448085f6d8b1d28dc60.
+This does not claim every unrelated research workflow passed: TDRP source authority
+38862104766 failed because its upstream dev advanced, requiring rebaseline. Later
+independent main commits12a4e29819592e3a7e32f7435cb0cf2e3cc53848 include that
+rebaseline and FDN work; they are not silently substituted for the e875 candidate.
+
+Backend main signed factory38895539025 FAILED. The real installed e875 binary
+passed candidate provenance/codesign/Gatekeeper, accepted factory source, ordinary
+distinct accounts and RAM/FIFO delivery. First account A remained on signed-in
+onboarding hand-off beyond90 seconds before reaching the install UI. Therefore
+MFA-05 / MFA-AC2 / DFC-05 / DFC-AC2 remain BLOCKED, not passed. No source-level
+root cause is inferred solely from the timeout. A/B/A assertions did not execute.
+
+Finally cleanup succeeded: zeroOwnedResidueAndRevocation=true and
+revokedSessionCount=2, so both delivered sessions independently rejected with401.
+The report remains overall FAIL, assertionCount3,harnessExitCode1,
+failureCodeDFC_SIGNED_UI_FAILED. Evidence12044176080,982bytes,archiveSHA256
+a40a60f961eaea3440d63e3d87892138dc0dc8f0c36b265dfb52134efc48164f.
+No public Desktop promotion occurred. The next step is bounded read-only factory
+UI/process diagnostics under Backend DFC-D01..05, not skipping onboarding, adding
+credentials or accepting the historical single-account result as account isolation.
