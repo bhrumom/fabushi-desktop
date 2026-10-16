@@ -112,6 +112,14 @@ read/write adapters and rerun real signed-package interoperability and every
 adversarial fixture, especially duplicates, special modes and deflate inflation.
 API adaptations, if needed, remain inside this verifier/test owner. Source of
 truth remains this spec, not the dependency's permissive extraction defaults.
+The same Actions build also resolves the existing Mahayana plugin-runtime's
+workspace ZIP dependency; move that existing dependency to9.0.3 as well while
+explicitly retaining its old2.4 default codec feature set (not the new ppmd
+default). No new plugin format or owner is introduced. Keep the imported Codex
+research workspace unchanged unless an actual shipping build resolves it.
+The Linux Host verifier now includes main's native Computer dependency; install
+the same Wayland/PipeWire/EGL/GBM/DRM/XKB development prerequisites already used by
+canonical-main Linux pressure CI, never disable the native dependency to pass.
 
 GitHub Actions only, exact head. DCI-01..04 require real signature fixture and
 adversarial packages (duplicate JSON/ZIP, path, key/app/digest swaps, MIME, native,

@@ -36,6 +36,10 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: source/host -> target
+      - name: Install canonical Linux native Computer build prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
       - name: Download immutable production-signed interoperability fixture
         env:
           GH_TOKEN: ${{ github.token }}

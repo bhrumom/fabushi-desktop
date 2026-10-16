@@ -328,7 +328,7 @@ pub fn verify_catalog_bundle(
     let mut resources = BTreeMap::new();
     for index in 0..archive.len() {
         let mut file = archive.by_index(index).map_err(|_| PackageError::Archive)?;
-        let name = file.name().to_string();
+        let name = file.name().map_err(|_| PackageError::Archive)?.into_owned();
         let mode = file.unix_mode().unwrap_or(0o100644);
         if !safe_path(&name)
             || !names.insert(name.to_ascii_lowercase())
@@ -799,7 +799,7 @@ mod tests {
             let mut member = source.by_index(index).unwrap();
             writer
                 .start_file(
-                    member.name(),
+                    member.name().unwrap(),
                     SimpleFileOptions::default()
                         .compression_method(zip::CompressionMethod::Deflated)
                         .unix_permissions(0o644),
