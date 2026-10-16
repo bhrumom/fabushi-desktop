@@ -70,6 +70,7 @@ impl ProductionExternalMachineExecutor {
         json!({
             "operationId": record.operation_id,
             "status": match record.status {
+                GatewayLocalExecOperationStatus::Accepted => "accepted",
                 GatewayLocalExecOperationStatus::Running => "running",
                 GatewayLocalExecOperationStatus::Completed => "completed",
                 GatewayLocalExecOperationStatus::Cancelled => "cancelled",

@@ -40,3 +40,21 @@ fn shipping_terminal_surfaces_stable_identity_and_unknown_outcome_without_retry_
         "terminal tool description must forbid blind replay after outcome_unknown"
     );
 }
+
+
+#[test]
+fn shipping_terminal_projects_accepted_running_and_terminal_journal_states() {
+    for needle in [
+        "GatewayLocalExecOperationStatus::Accepted => \"accepted\"",
+        "GatewayLocalExecOperationStatus::Running => \"running\"",
+        "GatewayLocalExecOperationStatus::Completed => \"completed\"",
+        "GatewayLocalExecOperationStatus::Cancelled => \"cancelled\"",
+        "GatewayLocalExecOperationStatus::OutcomeUnknown => \"outcome_unknown\"",
+        "GatewayLocalExecOperationStatus::Failed => \"failed\"",
+    ] {
+        assert!(
+            EXTERNAL_MACHINE_EXECUTOR.contains(needle),
+            "shipping terminal status projection is missing: {needle}"
+        );
+    }
+}
