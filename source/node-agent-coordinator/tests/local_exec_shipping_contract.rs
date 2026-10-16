@@ -154,19 +154,17 @@ fn shipping_local_exec_file_owner_enforces_canonical_versioned_atomic_boundaries
     let provider = read("host/local-exec/local-exec-provider.ts");
     for marker in [
         "expectedVersion",
-        "overwrite === false",
-        "Upload SHA-256 did not match",
-        "assertPeakSpaceAvailable",
-        "possible symlink or mount race",
-        "version: digest",
-        "\"upload-start\"",
-        "\"upload-chunk\"",
-        "\"upload-commit\"",
-        "LOCAL_EXEC_UPLOAD_CHUNK_BYTES",
-        "upload.hasher.update(data)",
-        "upload.receivedBytes !== upload.totalBytes",
-        "File version changed during chunk transfer",
+        "isLocalExecOverwriteAllowed",
+        "overwrite: isLocalExecOverwriteAllowed(frame.overwrite)",
+        "ProductionNativeLocalExecFileAccess",
+        "atomicHeadroomBytes",
+        "this.fileAccess.writeAtomic",
+        "this.fileAccess.startUpload",
+        "this.fileAccess.writeChunk",
         "this.fileAccess.commitUpload",
+        "LOCAL_EXEC_UPLOAD_CHUNK_BYTES",
+        "upload.receivedBytes !== upload.totalBytes",
+        "File path changed during chunk transfer; refusing a possible symlink or mount race",
     ] {
         assert_contains(&provider, marker, "frozen local-exec file provider");
     }
