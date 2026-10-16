@@ -2,8 +2,8 @@
 
 Status: read-complete / responsibility closure open  
 Project: TDRP-001 Revision 9  
-Accepted upstream: `telegramdesktop/tdesktop@72b3b71c3d6e450e5ef94a3112dd750a0168aa0b`
-Rebaseline inheritance: source entries cited below retain the same blob/content hashes on `72b3b71c3d6e450e5ef94a3112dd750a0168aa0b`; read status is inherited by blob identity, while execution evidence must be reacquired on the current Fabushi HEAD.
+Accepted upstream: `telegramdesktop/tdesktop@b16daff6df63e8a812bc2b52a04ff243f67a7d3f`
+Rebaseline inheritance: source entries cited below retain the same blob/content hashes on `b16daff6df63e8a812bc2b52a04ff243f67a7d3f`; read status is inherited by blob identity, while execution evidence must be reacquired on the current Fabushi HEAD.
 
 ## Exact source identities
 
