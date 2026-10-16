@@ -51,8 +51,7 @@ on run argv
       set pathField to text field 1 of goSheet
       if (value of attribute "AXIdentifier" of pathField) is not "PathTextField" then error "REPORT_DIRECTORY_FIELD_MISMATCH"
       click pathField
-      keystroke "a" using {command down}
-      keystroke reportDirectory
+      set value of pathField to reportDirectory
       set directoryInputReady to false
       repeat 100 times
         set enteredDirectory to value of pathField

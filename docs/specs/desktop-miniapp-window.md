@@ -120,3 +120,19 @@ real file selection, Rust packet verification and JSON export with no Node/prelo
 This is package/window interoperability, not a claim of genuine marketplace
 installation or native OS file/save dialog acceptance; those remain packaged gates.
 
+## Focused lifecycle verification plan (2026-10-14)
+
+DMW-T-LIFE-01 (DMW-05): exercise the existing factory's renderer-gone callback,
+account teardown, explicit instance close and factory disposal with an active
+allowed report. Assert forced destruction, exactly-once cancellation, protocol
+unregistration, persistent deny handlers, stale-generation rejection and fresh
+instance recovery. Deliver late download callbacks after teardown and prove they
+cannot affect a replacement instance. Also exercise report size growth and
+single-active-report release through injected DownloadItem events.
+These are deterministic injected-port lifecycle contracts, not real renderer
+crash or native account acceptance. The actual Electron Actions suite additionally
+forces a renderer crash and checks teardown/reopen using the production factory.
+All execution remains GitHub Actions-only; missing evidence stays blocked. The
+signed packaged client, real account switch and offline cold-launch gate remains
+independent and mandatory.
+

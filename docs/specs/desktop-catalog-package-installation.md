@@ -126,3 +126,23 @@ recorded as implemented/verified. No missing gate is treated as passed.
 References: offline-first-installable-mini-app-platform.md,
 fabushi-plugins-marketplace-owner-inventory.md, current Host/Electron source;
 Global Dandelion PR #2 and backend protected-signing delivery PRs #30..34.
+
+## Focused adversarial verification plan (2026-10-14)
+
+DCI-T-ZIP-01 (DCI-03 / AC-1): add verifier-level fixtures for identical ZIP
+member names, Unix symlink/FIFO/device/socket/directory modes, executable regular
+files, a genuinely deflated >100:1 resource, declared expanded-size overflow of
+the policy limit, and missing manifest-listed content. Rebind each mutated archive
+digest in the synthetic trusted authorization so rejection cannot be attributed
+to an unrelated outer digest mismatch. Assert fixture metadata and the expected
+Archive/Limit/Integrity rejection; keep a valid signed control package. ZIP header
+mutation is test-only and never introduces another production parser or owner.
+Only GitHub Actions may execute these cases. Added tests are pending until the
+exact changed source runs there; existing release criteria remain unchanged.
+Static review of the locked zip 2.4.2 reader shows SharedBuilder::build inserts
+central entries into an IndexMap by name before ZipArchive::len/by_index. The
+current verifier checks duplicates only after that step. DCI-T-ZIP-01 therefore
+includes an expected defect-revealing identical-name case; keep its rejection
+assertion. Any production repair must stay in the existing verifier owner and
+inspect central-directory multiplicity before that lossy view. No production
+repair or passing execution is claimed by this test-only change.

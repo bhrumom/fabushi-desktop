@@ -89,3 +89,32 @@ file-picker, filesystem and stream exceptions must not send paths, credentials,
 upstream diagnostics or selected file contents to Renderer. HTTP failures retain
 only the numeric status; network uncertainty still forbids automatic write retry.
 
+## Focused publisher verification plan (2026-10-14)
+
+MP-T-EDGE-01 (MP-03/05): injected ports cover cancelled selection with no writes,
+empty/25MiB/25MiB+1 byte selection limits (the inclusive limit must proceed to
+digest validation), disposal and account/token changes during selection, response
+reading and each draft/upload/submit boundary. Assert no next mutation or retry
+after a fence fails, and no duplicate publication while one selection is pending.
+MP-T-BOUND-01 (MP-04/05): validate namespace syntax/128-character boundary,
+bounded response streaming and cancellation, malformed JSON/safe HTTP errors,
+immutable-release conflicts and frozen states using the existing injected fetch.
+Use the immutable signed fixture where publication must reach mutations; never
+fake its digest or production approval. Execution is GitHub Actions-only and
+results remain pending until exact-source evidence exists.
+
+The publisher port exposes bytes, not file metadata. OS regular-file, symlink and
+pre-read size checks belong to the existing native file-selection adapter. A
+follow-up in that owner must test a cancelled dialog, directory/special/symlink
+selection and stat/read-size or file-change races with temporary fixtures on an
+Actions runner, preserving the 25MiB bound before reading. These byte-port tests
+do not satisfy that OS boundary or packaged first-party UI acceptance.
+The actual adapter is `source/electron-main/adapters/mcp-oauth.ts`'s
+`selectPackage` closure: O_NOFOLLOW/open, handle.stat().isFile(), bounded read and
+post-read size comparison. Test that closure through its existing composition
+ports first; if unavailable, propose a narrow helper in that same adapter owner,
+not a new publisher/file service. The namespace fixture also rejects trailing LF:
+the current JavaScript `$` anchor may accept that terminator. Keep the strict
+assertion and record any Actions failure for the existing publisher owner rather
+than silently relaxing namespace syntax.
+

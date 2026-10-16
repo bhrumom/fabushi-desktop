@@ -124,4 +124,33 @@ before confirming navigation. Diagnostic traces contain fixed stage names; the
 sole additional field may be a bounded GoToWindow PathTextField readback beginning
 with `/Users/runner/`, identifying only the disposable public-fixture destination.
 Do not capture other account/window text or clipboard contents.
+Actions38545046892 observed a76-character destination becoming74 characters in
+PathTextField. Use native AX value replacement on that exact identified control
+and verify readback, instead of racing per-character keyboard events. This changes
+only the Actions Save-panel controller; normal application download policy remains.
+
+## Real account transition gate
+
+The DMW signed-client real-account-switch gate is mandatory for this preview,
+not deferred to mobile/full OMA. Add a separate packaged case using two distinct
+real ordinary CI accounts through the existing bounded session bootstrap. Never
+read either session's contents in the test, substitute synthetic auth, or export
+the publisher's session. Require second-account configuration explicitly before
+shipping; missing credentials are `not-configured`, not a skipped passing gate.
+The fixed-binary diagnostic job remains a single-account MU-07 harness diagnostic,
+not the shipping account-switch gate.
+
+Account A installs/opens and saves the actual app preference; genuine Settings
+Sign Out must destroy its live mini-app window. Restart the whole app with the
+same disposable app-data and bounded account B bootstrap. Native auth scope must
+actually differ; B must initially have no A installation or preference, and its
+installed app must use a different origin. Removing B code must close B's live
+window. Restart as A and require its own installation, origin and preference to
+remain intact. Record only hashed public account references and bounded evidence,
+never credential contents. Existing contract tests retain late-result fencing.
+The user's2026-10-16 account-factory instruction supersedes the earlier static
+second-password provisioning plan. Follow desktop-miniapp-factory-acceptance.md:
+canonical factory accounts remain isolated, explicitly issuer-namespaced and
+memory/FIFO-only, never labelled production identities. Production MU-07/chat
+remain separate. No second auth owner or weakened account-switch criterion.
 

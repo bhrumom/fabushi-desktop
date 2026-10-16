@@ -689,6 +689,164 @@ mod tests {
             assert!(verify_catalog_bundle(&data, &policy).is_err());
         }
     }
+    // Test-only ZIP metadata mutation. ZipWriter forbids duplicate names and
+    // normalizes Unix types, so mutate an otherwise valid, signed fixture.
+    fn central_members(bytes: &[u8]) -> Vec<usize> {
+        let end = bytes.len() - 22; // Fixtures have no archive comment or ZIP64.
+        assert_eq!(&bytes[end..end + 4], b"PK\x05\x06");
+        let count = u16::from_le_bytes(bytes[end + 10..end + 12].try_into().unwrap());
+        let directory_offset = &bytes[end + 16..end + 20];
+        let mut offset = u32::from_le_bytes(directory_offset.try_into().unwrap()) as usize;
+        let mut members = Vec::new();
+        for _ in 0..count {
+            assert_eq!(&bytes[offset..offset + 4], b"PK\x01\x02");
+            members.push(offset);
+            let lengths: usize = [28, 30, 32]
+                .iter()
+                .map(|field| {
+                    let size = &bytes[offset + *field..offset + *field + 2];
+                    usize::from(u16::from_le_bytes(size.try_into().unwrap()))
+                })
+                .sum();
+            offset += 46 + lengths;
+        }
+        assert_eq!(offset, end);
+        members
+    }
+
+    #[test]
+    fn rejects_identical_zip_members_with_matching_outer_digest() {
+        let (control, mut policy) = fixture(|_| {}, HTML);
+        assert!(verify_catalog_bundle(&control, &policy).is_ok());
+        let mut source = zip::ZipArchive::new(Cursor::new(control)).unwrap();
+        let mut manifest = Vec::new();
+        source
+            .by_name("manifest.json")
+            .unwrap()
+            .read_to_end(&mut manifest)
+            .unwrap();
+        let mut data = archive(vec![
+            ("manifest.json".into(), manifest),
+            ("index.html".into(), HTML.to_vec()),
+            ("other.html".into(), HTML.to_vec()),
+        ]);
+        let central = central_members(&data)[2];
+        let local_offset = &data[central + 42..central + 46];
+        let local = u32::from_le_bytes(local_offset.try_into().unwrap()) as usize;
+        assert_eq!(&data[central + 46..central + 56], b"other.html");
+        assert_eq!(&data[local + 30..local + 40], b"other.html");
+        data[central + 46..central + 56].copy_from_slice(b"index.html");
+        data[local + 30..local + 40].copy_from_slice(b"index.html");
+        // Inspect raw central names: a ZIP reader may deduplicate its name index.
+        let names: Vec<_> = central_members(&data)
+            .into_iter()
+            .map(|offset| &data[offset + 46..offset + 56])
+            .collect();
+        assert_eq!(names.iter().filter(|name| **name == b"index.html").count(), 2);
+        policy.package_sha256 = digest(&data);
+        assert!(matches!(
+            verify_catalog_bundle(&data, &policy),
+            Err(PackageError::Archive)
+        ));
+    }
+
+    #[test]
+    fn rejects_symlink_special_and_executable_zip_members() {
+        for mode in [
+            0o120777u32,
+            0o010644,
+            0o020644,
+            0o060644,
+            0o140644,
+            0o040755,
+            0o100755,
+        ] {
+            let (mut data, mut policy) = fixture(|_| {}, HTML);
+            assert!(verify_catalog_bundle(&data, &policy).is_ok());
+            let central = central_members(&data)[1];
+            data[central + 5] = 3; // Unix creator: external attributes carry st_mode.
+            data[central + 38..central + 42].copy_from_slice(&(mode << 16).to_le_bytes());
+            let mut inspected = zip::ZipArchive::new(Cursor::new(&data)).unwrap();
+            assert_eq!(inspected.by_index(1).unwrap().unix_mode(), Some(mode));
+            policy.package_sha256 = digest(&data);
+            assert!(
+                matches!(
+                    verify_catalog_bundle(&data, &policy),
+                    Err(PackageError::Archive)
+                ),
+                "mode {mode:o}"
+            );
+        }
+    }
+
+    #[test]
+    fn rejects_actual_deflate_inflation_bomb_before_resource_verification() {
+        let resource = vec![0u8; 64 * 1024];
+        let (control, mut policy) = fixture(
+            |manifest| {
+                manifest["files"]["index.html"]["sha256"] = Value::String(digest(&resource));
+                manifest["files"]["index.html"]["bytes"] = serde_json::json!(resource.len());
+            },
+            &resource,
+        );
+        assert!(verify_catalog_bundle(&control, &policy).is_ok());
+        let mut source = zip::ZipArchive::new(Cursor::new(control)).unwrap();
+        let mut writer = ZipWriter::new(Cursor::new(Vec::new()));
+        for index in 0..source.len() {
+            let mut member = source.by_index(index).unwrap();
+            writer
+                .start_file(
+                    member.name(),
+                    SimpleFileOptions::default()
+                        .compression_method(zip::CompressionMethod::Deflated)
+                        .unix_permissions(0o644),
+                )
+                .unwrap();
+            std::io::copy(&mut member, &mut writer).unwrap();
+        }
+        let data = writer.finish().unwrap().into_inner();
+        let mut inspected = zip::ZipArchive::new(Cursor::new(&data)).unwrap();
+        let member = inspected.by_name("index.html").unwrap();
+        assert_eq!(member.compression(), zip::CompressionMethod::Deflated);
+        assert!(member.size() > member.compressed_size() * 100);
+        policy.package_sha256 = digest(&data);
+        assert!(matches!(
+            verify_catalog_bundle(&data, &policy),
+            Err(PackageError::Limit)
+        ));
+    }
+
+    #[test]
+    fn rejects_declared_expansion_limit_and_missing_listed_resource() {
+        let (mut data, mut policy) = fixture(|_| {}, HTML);
+        let central = central_members(&data)[1];
+        let declared = (MAX_EXPANDED as u32 + 1).to_le_bytes();
+        data[central + 24..central + 28].copy_from_slice(&declared);
+        policy.package_sha256 = digest(&data);
+        assert!(matches!(
+            verify_catalog_bundle(&data, &policy),
+            Err(PackageError::Limit)
+        ));
+
+        let (control, mut policy) = fixture(|_| {}, HTML);
+        let mut source = zip::ZipArchive::new(Cursor::new(control)).unwrap();
+        let mut manifest = Vec::new();
+        source
+            .by_name("manifest.json")
+            .unwrap()
+            .read_to_end(&mut manifest)
+            .unwrap();
+        let missing = archive(vec![
+            ("manifest.json".into(), manifest),
+            ("other.html".into(), HTML.to_vec()),
+        ]);
+        policy.package_sha256 = digest(&missing);
+        assert!(matches!(
+            verify_catalog_bundle(&missing, &policy),
+            Err(PackageError::Integrity)
+        ));
+    }
+
     #[test]
     fn strict_versions() {
         for version in ["1.0.0", "1.2.3-alpha.1+build.2"] {

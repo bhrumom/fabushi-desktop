@@ -59,6 +59,7 @@ class FakeWindow implements MiniAppWindow {
     lastWindow = this;
   }
   isDestroyed() { return this.#destroyed; }
+  emitRendererCrash() { for (const listener of this.#listeners.get("render-process-gone") ?? []) listener(); }
   show() {}
   focus() { this.focused = true; }
   close() { this.closed = true; this.#destroyed = true; for (const listener of this.#listeners.get("closed") ?? []) listener(); }
@@ -129,6 +130,7 @@ test("Host resources are copied, bounded, app-scoped, and all non-package reques
   const reportBlob = `blob:fabushi-miniapp://${host}/opaque-id`;
   assert.equal(session.download({ getURL: () => reportBlob, getMimeType: () => "application/json", getFilename: () => "global-dandelion-local-report.json", hasUserGesture: () => true, getTotalBytes: () => 2 * 1024 * 1024 }), true);
   assert.equal(session.download({ getURL: () => reportBlob, getMimeType: () => "application/json", getFilename: () => "global-dandelion-local-report.json", hasUserGesture: () => true }), false);
+  assert.equal(session.download({ getURL: () => reportBlob, getMimeType: () => "application/json", getFilename: () => "chatgpt-auto-confirm-local-report.json", hasUserGesture: () => true }), true);
   const missing = await session.protocolRequest(localRequest(`fabushi-miniapp://${host}/missing.js`));
   assert.equal(missing instanceof Response ? missing.status : 500, 404);
   const foreign = await session.protocolRequest(localRequest("fabushi-miniapp://other-app.app/index.html"));
@@ -149,6 +151,97 @@ test("stale account generations are denied, and account teardown closes windows 
   active = { accountScope: accountA, generation: 5 };
   await assert.rejects(factory.open(launchFor(accountA, 4)), /MINIAPP_STALE_ACCOUNT/);
   factory.closeAll();
+});
+
+test("renderer crash and every teardown cancel an active report and fence the old session", async (t) => {
+  for (const reason of ["renderer-crash", "account-departure", "instance-close", "factory-close"] as const) {
+    await t.test(reason, async () => {
+      const scope = { accountScope: accountA, generation: 4 };
+      const sessions: ReturnType<typeof fakeSession>[] = [];
+      const localFactory = createMiniAppWindowFactory({
+        BrowserWindow: FakeWindow,
+        session: { fromPartition: () => { const session = fakeSession(); sessions.push(session); testSessions.push({ session }); return session; } },
+        currentAccount: () => scope,
+      });
+      try {
+        const instance = await localFactory.open(launchFor());
+        const window = lastWindow!;
+        const session = sessions[0]!;
+        const host = `${createHash("sha256").update(accountA).update("\0").update("org.fabushi.global-dandelion").digest("hex")}.app`;
+        const resourceUrl = `fabushi-miniapp://${host}/index.html`;
+        const callbacks = new Map<string, () => void>();
+        let cancelled = 0;
+        const report = {
+          getURL: () => `blob:fabushi-miniapp://${host}/report`,
+          getFilename: () => "global-dandelion-local-report.json",
+          hasUserGesture: () => true,
+          cancel: () => { cancelled += 1; },
+          on: (event: "updated" | "done", listener: () => void) => { callbacks.set(event, listener); },
+        };
+        assert.equal(session.download(report, window.webContents), false);
+        assert.equal(session.download(report, window.webContents), true, "only one report may be active");
+        if (reason === "renderer-crash") window.emitRendererCrash();
+        else if (reason === "account-departure") { scope.generation = 5; localFactory.closeAccountScope(accountA, 5); }
+        else if (reason === "instance-close") instance.close();
+        else localFactory.closeAll();
+        assert.equal(window.isDestroyed(), true);
+        assert.equal(cancelled, 1);
+        assert.equal(session.protocolRequest(localRequest(resourceUrl)), undefined);
+        assert.equal(await session.networkAllowed(resourceUrl), false, "even the old package origin stays denied");
+        assert.equal(await session.networkAllowed("https://example.com"), false);
+        instance.close();
+        localFactory.closeAll();
+        assert.equal(cancelled, 1, "repeated cleanup is idempotent");
+        if (reason === "account-departure") await assert.rejects(localFactory.open(launchFor()), /MINIAPP_STALE_ACCOUNT/);
+        await localFactory.open(launchFor(accountA, scope.generation));
+        const replacement = sessions.at(-1)!;
+        let replacementCancelled = 0;
+        assert.equal(replacement.download({ ...report, on: () => {}, cancel: () => { replacementCancelled += 1; } }), false);
+        callbacks.get("updated")?.();
+        callbacks.get("done")?.();
+        assert.equal(replacementCancelled, 0, "late events belong only to the destroyed instance");
+        assert.equal(replacement.download(report), true, "old completion must not free the replacement's active slot");
+        localFactory.closeAll();
+        assert.equal(replacementCancelled, 1);
+      } finally { localFactory.closeAll(); }
+    });
+  }
+});
+
+test("report size growth cancels the active item and completion frees its bounded slot", async () => {
+  const session = fakeSession();
+  const localFactory = createMiniAppWindowFactory({
+    BrowserWindow: FakeWindow,
+    session: { fromPartition: () => { testSessions.push({ session }); return session; } },
+    currentAccount: () => ({ accountScope: accountA, generation: 4 }),
+  });
+  try {
+    await localFactory.open(launchFor());
+    const host = `${createHash("sha256").update(accountA).update("\0").update("org.fabushi.global-dandelion").digest("hex")}.app`;
+    const callbacks = new Map<string, () => void>();
+    let received = 0;
+    let cancelled = 0;
+    const report = {
+      getURL: () => `blob:fabushi-miniapp://${host}/report`,
+      getFilename: () => "global-dandelion-local-report.json", hasUserGesture: () => true,
+      getTotalBytes: () => 1024 * 1024, getReceivedBytes: () => received,
+      cancel: () => { cancelled += 1; },
+      on: (event: "updated" | "done", listener: () => void) => { callbacks.set(event, listener); },
+    };
+    assert.equal(session.download(report), false);
+    received = 1024 * 1024;
+    callbacks.get("updated")!();
+    assert.equal(cancelled, 0, "the inclusive limit is allowed");
+    received += 1;
+    callbacks.get("updated")!();
+    assert.equal(cancelled, 1);
+    received = 0;
+    assert.equal(session.download(report), false, "overflow releases the slot");
+    callbacks.get("done")!();
+    assert.equal(session.download(report), false, "completion releases the slot");
+    localFactory.closeAll();
+    assert.equal(cancelled, 2, "the final active item is cancelled at teardown");
+  } finally { localFactory.closeAll(); }
 });
 
 test("actual Electron uses the isolated protocol and blocks real network, worker, WebRTC, popup and navigation attempts", { skip: process.env.FABUSHI_MINIAPP_ELECTRON !== "1", timeout: 120_000 }, async () => {
@@ -320,6 +413,21 @@ test("actual Electron uses the isolated protocol and blocks real network, worker
     assert.equal(prefs.sandbox, true);
     assert.equal(prefs.webSecurity, true);
     assert.equal(prefs.preload, undefined);
+    await accountB.evaluate(() => localStorage.setItem("crash-recovery", "retained"));
+    await app.evaluate(async ({ BrowserWindow }) => {
+      const contents = BrowserWindow.getAllWindows()[0].webContents;
+      globalThis.__crashedSession = contents.session;
+      await new Promise<void>((resolve) => {
+        contents.once("render-process-gone", () => setImmediate(resolve));
+        contents.forcefullyCrashRenderer();
+      });
+    });
+    assert.equal(await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length), 0);
+    assert.equal(await app.evaluate(async () => globalThis.__crashedSession.protocol.isProtocolHandled("fabushi-miniapp")), false);
+    await app.evaluate(async () => { await globalThis.__open(globalThis.__snapshotFor('org.fabushi.global-dandelion', 'd'.repeat(64), 8)); });
+    const recovered = await app.firstWindow();
+    assert.equal(await recovered.evaluate(() => localStorage.getItem("crash-recovery")), "retained");
+    assert.equal(await recovered.evaluate(() => typeof process !== "undefined" || typeof require !== "undefined"), false);
   } finally {
     try {
       if (application) {
