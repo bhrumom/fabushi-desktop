@@ -1,6 +1,6 @@
 # Telegram Desktop → Fabushi 全量等价重写 — Status
 
-Date: 2026-10-07  
+Date: 2026-10-16  
 Spec: TDRP-001 Revision 9  
 Parent: FBCP-001 Revision 7  
 Complete: false
@@ -8,8 +8,8 @@ Complete: false
 | Area | Status | Note |
 | --- | --- | --- |
 | Product role | active | tdesktop is complete source authority, not a runtime/provider |
-| Discovery upstream | observed | `f23c37857220eb84f8559f0901ea26fb304b564b`; not yet accepted baseline |
-| Historical baseline | stale | `33261535a0e747f125e0ed25486f01e556330677`; evidence cannot be inherited |
+| Discovery upstream | observed | `c317da960b2664962aeb17892adbd6dda59c98fe`; not yet accepted baseline |
+| Historical baseline | stale | `historical upstream baselines`; evidence cannot be inherited |
 | Recursive source closure | rebaseline required | current lock/inventory must be reconciled to one exact upstream baseline |
 | File-level inventory | not accepted | must reach unknown=0, unread=0, omitted=0 |
 | Responsibility decomposition | not accepted | every source symbol/responsibility requires traceable destination |
