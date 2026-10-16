@@ -236,8 +236,12 @@ product-session/HTTP adapter consumed by FeatureHost, AppHost and the platform
 lane. Extend that adapter with a read-only Native credential projection. Do not
 create another session store, issuer, login service, memory-auth cache or runtime.
 
-- MFA-H01: only explicit FABUSHI_PRODUCT_MODE=1 selects the Desktop Native
-  credential adapter. Native mode never opens FABUSHI_CI_ACCOUNT_SESSION_FILE;
+- MFA-H01: for this macOS preview (and Unix contract runners), only explicit
+  FABUSHI_PRODUCT_MODE=1 selects the Desktop Native credential adapter. Do not
+  change Windows' existing production/session behavior or claim Windows factory
+  acceptance: the new POSIX private-file adapter is Unix-only until a separate
+  reviewed Windows ACL/handle contract and actual Windows acceptance exist.
+  Native mode never opens FABUSHI_CI_ACCOUNT_SESSION_FILE;
   Native remains its sole consumer. Legacy non-Native/mobile CI regular-file
   behavior and its strict provenance validator remain unchanged. The existing
   bootstrap entry point in Native mode validates the Native hand-off instead of
@@ -263,6 +267,11 @@ create another session store, issuer, login service, memory-auth cache or runtim
   lookalike/subdomain/credentials/redirect or unsupported target fails closed.
   Isolated sessions never reach production messaging/inference/publisher APIs.
   Missing isolated services fail normally, without fallback or synthetic success.
+  The existing MahayanaHost composition must select that same Native target
+  before constructing its product client. Its historical hardcoded production
+  default is not an explicit operator override; do not pass it as one for an
+  isolated Native account. Preserve real explicit-target mismatch rejection and
+  all non-Native constructor behavior. No second Host/product owner is added.
 - MFA-H05: Native mode cannot independently log in, refresh, overwrite or erase
   another Rust-owned session. Existing Desktop Native UI remains the account
   mutation owner; unsupported direct Rust auth mutation fails closed. Non-Native
@@ -277,6 +286,10 @@ create another session store, issuer, login service, memory-auth cache or runtim
   production owners, not a test auth bypass. All thirteen release source gates
   must execute for this shared bootstrap dependency, then signed production and
   actual factory A/B/A must pass again before promotion.
+  Resolve any tracked workspace lockfile repair only in Actions from the exact
+  manifests and existing lock, export its diff for review, and require a clean
+  tracked workspace lock before accepting the source. Do not silently accept a
+  test/build that regenerated a different tracked dependency lock.
 
 Plan: implement/review this narrow read-only adapter and direct regressions;
 extend existing CI path ownership for the shared Rust product dependency;

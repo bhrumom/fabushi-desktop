@@ -2,6 +2,9 @@ name: Isolated Mini App Electron window
 on:
   pull_request:
     paths:
+      - 'source/mahayana/mahayana-rs/mahayana-product/**'
+      - 'source/mahayana/mahayana-rs/mahayana-app-host/**'
+      - 'source/mahayana/mahayana-rs/mahayana-host/**'
       - 'source/electron-main/mcp/miniapp-window.ts'
       - 'source/electron-main/mcp/miniapp-window.contract.test.ts'
       - 'docs/specs/desktop-miniapp-window.md'
@@ -9,6 +12,9 @@ on:
   push:
     branches: [main]
     paths:
+      - 'source/mahayana/mahayana-rs/mahayana-product/**'
+      - 'source/mahayana/mahayana-rs/mahayana-app-host/**'
+      - 'source/mahayana/mahayana-rs/mahayana-host/**'
       - 'source/electron-main/mcp/miniapp-window.ts'
       - 'source/electron-main/mcp/miniapp-window.contract.test.ts'
       - '.github/workflows/miniapp-window-ci.yml'
