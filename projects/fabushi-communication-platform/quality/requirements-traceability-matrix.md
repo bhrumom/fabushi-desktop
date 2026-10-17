@@ -673,3 +673,39 @@ The source-neutral order-58 release responsibility is tracked as `TDRP-R9-RELEAS
 - reviewer: pending-independent-review
 - verdict: MAPPED / RELEASE-ACCEPTANCE-OPEN
 
+
+## Revision 9 conversation turn / ordering / reconciliation oracles
+
+Additive rows for the three normative Conversation oracles. These rows bind the
+lower-layer executable cases that previously did not exist. A row at `IMPLEMENTED`
+is not a release verdict: packaged temporal acceptance, DOM/semantic manifests and
+independent reviewer acceptance remain open.
+
+| requirement_id | risk | oracle_ids | invariant_ids | unit/property | contract/integration | e2e/temporal | ui/visual/a11y | perf/security | regression_ids | evidence_ids | reviewer | verdict |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| TDRP-R9-TURN-TERMINAL-001 | critical | ORA-TURN-001 | TURN-I01; TURN-I02; TURN-I04; TURN-I05; TURN-I07 | `source/host/tests/ora_turn_order_recon_contract.rs` (5 cases) | run_scheduler + run_lifecycle canonical owners | TEMP-TURN-TIMELINE-001 pending (TURN-I03/I06/I08) | — | — | REG-TURN-FINAL-001; REG-TURN-INTERMEDIATE-001; REG-CROSS-CONVERSATION-001 | workflow:39045517400@9011ea38fba5793869e287553057caecb1b196f4; artifact:12105204617 sha256:7a75ee2acd5d1c32dc7f4d90178e79f0491136d14c63e7b085a7a9df844803bd; artifact:12104614934 sha256:92d2f2be4988a90d3278c44e9c22636c0b5662cea8f56c04e317eda8ffc93f23 | pending-independent-review | IMPLEMENTED |
+| TDRP-R9-TRANSCRIPT-ORDER-001 | critical | ORA-ORDER-001 | ORD-I01; ORD-I02; ORD-I03 | `source/host/tests/ora_turn_order_recon_contract.rs` (2 cases) | transcript_entry_ids + send_pipeline canonical owners | E2E-TRANSCRIPT-DOM-ORDER-001 pending (ORD-I04..I07) | UI-TRANSCRIPT-ORDER-001 pending | — | REG-TRANSCRIPT-ORDER-001; REG-TRANSCRIPT-DUP-001 | workflow:39045517400@9011ea38fba5793869e287553057caecb1b196f4; artifact:12105204617 sha256:7a75ee2acd5d1c32dc7f4d90178e79f0491136d14c63e7b085a7a9df844803bd | pending-independent-review | IMPLEMENTED |
+| TDRP-R9-TRANSCRIPT-RECON-001 | critical | ORA-RECON-001 | REC-I01; REC-I04; REC-I05; REC-I07; REC-I08 | `source/host/tests/ora_turn_order_recon_contract.rs` (4 cases) | prompt_acceptance_ledger + send_pipeline canonical owners | FAULT-TRANSCRIPT-RECON-001 pending (REC-I02/I03/I06) | — | SEC-RECON-ACCOUNT-SCOPE-001 (lower layer only) | REG-TRANSCRIPT-REPLACE-001; REG-TRANSCRIPT-DUP-001; REG-CROSS-CONVERSATION-001 | workflow:39045517400@9011ea38fba5793869e287553057caecb1b196f4; artifact:12105204617 sha256:7a75ee2acd5d1c32dc7f4d90178e79f0491136d14c63e7b085a7a9df844803bd | pending-independent-review | IMPLEMENTED |
+
+### ORA-TURN-001 / ORA-ORDER-001 / ORA-RECON-001 execution binding
+
+- Executable cases: `source/host/tests/ora_turn_order_recon_contract.rs` (11 cases).
+- Traceability gate: `scripts/validate-quality-oracles.mjs`; fails closed when a normative
+  invariant has neither an executable case nor a pending disposition with a reason.
+- Gate workflow: `.github/workflows/quality-oracles.yml`; runs a negative control that
+  deletes a pending disposition and requires the gate to reject it, then proves the number
+  of passing cases equals the number of declared `#[test]` cases.
+- Exact-head evidence: workflow `39045517400` at head
+  `9011ea38fba5793869e287553057caecb1b196f4`; traceability, execution and gate jobs all
+  success; artifacts `12104614934`, `12105204617`, `12105442505`.
+- Coverage split at this head: 13 invariants covered, 10 pending. The pending set
+  (`TURN-I03`, `TURN-I06`, `TURN-I08`, `ORD-I04`..`ORD-I07`, `REC-I02`, `REC-I03`,
+  `REC-I06`) requires packaged temporal, renderer-projection, pagination or attachment
+  evidence and must not be declared covered by a state-machine case.
+- Regression note: the first execution attempt at head `e43ca1d3` failed
+  `ora_turn_cancelled_run_emits_no_later_terminal` because the case asserted a watchdog
+  trip with an empty queue. The scheduler correctly refuses to interrupt without queued
+  user work. Root cause was the test premise, not production; the invariant was unchanged
+  and the in-grace non-trip is now asserted explicitly.
+
+No row is `VERIFIED`. `AC-43` and `AC-44` remain open.
