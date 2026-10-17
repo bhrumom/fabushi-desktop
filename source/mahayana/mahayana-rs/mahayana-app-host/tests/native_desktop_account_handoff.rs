@@ -169,7 +169,9 @@ fn child_case(root: &Path, mode: &str) {
         );
         match result {
             Err(error) => assert!(
-                error.to_string().contains("CI account session path must be a regular non-symlink file"),
+                error
+                    .to_string()
+                    .contains("CI account session path must be a regular non-symlink file"),
                 "FIFO session path must fail closed with a path-validation error, got: {error}"
             ),
             Ok(_) => panic!("production AppHost accepted a FIFO CI session path"),
