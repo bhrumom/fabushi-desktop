@@ -227,6 +227,7 @@ impl AppHost {
         let app_data_dir = app_data_dir.into();
         std::fs::create_dir_all(&app_data_dir)
             .map_err(|error| AppHostError::Operation(error.to_string()))?;
+        validate_explicit_ci_account_session_path()?;
         let feature_root = feature_host_root(&app_data_dir);
         let feature = Arc::new(create_feature_host(
             &app_data_dir,
