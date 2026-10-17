@@ -1000,10 +1000,8 @@ mod tests {
                 .guard_request(&format!("{LOOPBACK}/v1/messages"), TOKEN)
                 .is_err()
         );
-        let explicit_production = crate::MahayanaProductClient::new(
-            PRODUCTION_ISSUER,
-            root.join("explicit-prod.json"),
-        );
+        let explicit_production =
+            crate::MahayanaProductClient::new(PRODUCTION_ISSUER, root.join("explicit-prod.json"));
         assert!(explicit_production.effective_api_base_url().is_err());
         std::fs::remove_file(root.join("native")).unwrap();
         assert!(!client.bootstrap_ci_test_account_session().unwrap());
