@@ -1,6 +1,6 @@
 name: Rust desktop runtime
 
-# This workflow path is included in pull_request filters so synchronize emits exact-head PR runtime evidence.
+# Exact-head pull_request runtime evidence is intentionally emitted on synchronize.
 on:
   workflow_dispatch:
   pull_request:
