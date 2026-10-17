@@ -128,16 +128,16 @@ regions:
     nodes:
       - name: 902a
         regionid: 902
-        hostname: 127.0.0.1
+        hostname: fdn-g15-host.test
         ipv4: 127.0.0.1
         stunport: 0
         stunonly: false
-        derpport: 9443
+        derpport: 443
 EOF
 
 cat > "$work_dir/headscale.yaml" <<'EOF'
-server_url: https://fdn-g15-host.test:8443
-listen_addr: 127.0.0.1:8443
+server_url: https://fdn-g15-host.test
+listen_addr: 127.0.0.1:443
 metrics_listen_addr: ""
 grpc_listen_addr: 127.0.0.1:50443
 grpc_allow_insecure: false
@@ -150,7 +150,7 @@ prefixes:
   allocation: random
 derp:
   server:
-    enabled: false
+    enabled: true
     region_id: 902
     region_code: "fabushi-g15-host"
     region_name: "Fabushi G15 Host isolated Actions"
@@ -289,6 +289,10 @@ sudo ip6tables -I OUTPUT 1 -m owner --uid-owner "$uid_value" '!' -d ::1/128 -m c
 # (UPnP/NAT-PMP/PCP), so disable it only in this loopback-only Actions fixture.
 sudo -u "$probe_user" env -i \
   TS_DISABLE_PORTMAPPER=true \
+  # Headscale v0.29.5 merges custom regions while leaving default Tailscale
+  # regions enabled. G15 measures privacy egress, not G05 public DERP routing,
+  # so pin this Actions-only worker to the real embedded loopback DERP.
+  TS_DEBUG_USE_DERP_ADDR=fdn-g15-host.test \
   PATH=/usr/bin:/bin \
   HOME="$work_dir/home" \
   "$worker_exec" <"$work_dir/worker.stdin" >"$worker_protocol" 2>"$worker_log" &
@@ -302,7 +306,7 @@ print(json.dumps({
   "type": "initialize",
   "protocolVersion": 1,
   "hostname": "g15-host-worker",
-  "controlUrl": "https://fdn-g15-host.test:8443",
+  "controlUrl": "https://fdn-g15-host.test",
   "authKey": sys.argv[1],
   "stateDir": sys.argv[2],
   "stateKeyB64": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
@@ -444,7 +448,7 @@ report={
    "diskReserveBytes":{"filesystemTotal":int(os.environ["FDN_G15_HOST_TOTAL_BYTES"]),"minimumAvailableObserved":int(os.environ["FDN_G15_HOST_MIN_AVAILABLE_BYTES"]),"requiredReserve":int(os.environ["FDN_G15_HOST_RESERVE_BYTES"])}
  },
  "egress":{
-   "fixtureApprovedOrigins":["https://fdn-g15-host.test:8443","127.0.0.1 local DERP map"],
+   "fixtureApprovedOrigins":["https://fdn-g15-host.test:443","127.0.0.1 embedded DERP/STUN"],
    "unexpectedWorkerOwnedPacketsRejected":int(os.environ["FDN_G15_HOST_BLOCKED_PACKETS"])
  }
 }
