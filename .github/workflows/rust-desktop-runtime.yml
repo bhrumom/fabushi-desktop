@@ -1,6 +1,6 @@
 name: Rust desktop runtime
 
-# pull_request synchronize runs are the authoritative PR runtime evidence.
+# This workflow path is included in pull_request filters so synchronize emits exact-head PR runtime evidence.
 on:
   workflow_dispatch:
   pull_request:
