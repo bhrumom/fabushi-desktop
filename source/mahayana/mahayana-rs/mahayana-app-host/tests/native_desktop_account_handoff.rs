@@ -6,7 +6,7 @@ use mahayana_app_host::{AppHost, AppHostFeatureMode, HostRequest};
 use serde_json::{Value, json};
 use std::fs::{self, OpenOptions};
 use std::io::Write;
-use std::os::unix::fs::{FileTypeExt, OpenOptionsExt};
+use std::os::unix::fs::{FileTypeExt, OpenOptionsExt, PermissionsExt};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::thread;
@@ -159,6 +159,25 @@ fn expected_isolated_id(user: &str) -> String {
 }
 
 fn child_case(root: &Path, mode: &str) {
+    if mode == "fifo-tripwire" {
+        fs::create_dir_all(root.join("app-host/feature-host/runtime/workspace"))
+            .expect("create product-owned fallback workspace");
+        let result = AppHost::new_with_feature_mode_and_storage_passphrase(
+            root.join("app-host"),
+            AppHostFeatureMode::Production,
+            Some("public-handoff-unit-storage-passphrase".into()),
+        );
+        match result {
+            Err(error) => assert!(
+                error
+                    .to_string()
+                    .contains("CI account session path must be a regular non-symlink file"),
+                "FIFO session path must fail closed with a path-validation error, got: {error}"
+            ),
+            Ok(_) => panic!("production AppHost accepted a FIFO CI session path"),
+        }
+        return;
+    }
     let credential = root.join("native-credential.json");
     let issuer = if mode == "production" {
         PRODUCTION
@@ -293,7 +312,11 @@ fn run_child(root: &Path, mode: &str) {
         )
         .env(
             "FABUSHI_CI_ACCOUNT_SESSION_FILE",
-            root.join("no-reader.pipe"),
+            root.join(if mode == "fifo-tripwire" {
+                "no-reader.pipe"
+            } else {
+                "ci-session.json"
+            }),
         )
         .env("FABUSHI_CI_SESSION_DELIVERY", "private-fifo")
         .env("FABUSHI_APP_DATA", root.join("runtime"))
@@ -324,7 +347,7 @@ fn native_desktop_account_handoff() {
     if let Ok(mode) = std::env::var(CHILD_MODE) {
         assert!(matches!(
             mode.as_str(),
-            "isolated" | "production" | "isolated-return"
+            "isolated" | "production" | "isolated-return" | "fifo-tripwire"
         ));
         let root = PathBuf::from(std::env::var_os(TEST_ROOT).expect("owned test directory"));
         child_case(&root, &mode);
@@ -343,22 +366,54 @@ fn native_desktop_account_handoff() {
     fs::create_dir(root.0.join("tmp")).expect("test temporary directory");
     // No writer exists. A second bootstrap reader would block and fail the
     // bounded subprocess deadline rather than quietly consuming a disk session.
+    let fifo = root.0.join("no-reader.pipe");
     assert!(
         Command::new("/usr/bin/mkfifo")
             .env_clear()
             .args(["-m", "600"])
-            .arg(root.0.join("no-reader.pipe"))
+            .arg(&fifo)
             .status()
             .expect("create test FIFO")
             .success()
     );
-    assert!(
-        fs::symlink_metadata(root.0.join("no-reader.pipe"))
-            .expect("test FIFO metadata")
-            .file_type()
-            .is_fifo()
-    );
-    for mode in ["isolated", "production", "isolated-return"] {
+    let fifo_metadata = fs::symlink_metadata(&fifo).expect("test FIFO metadata");
+    assert!(fifo_metadata.file_type().is_fifo());
+    assert_eq!(fifo_metadata.permissions().mode() & 0o777, 0o600);
+    // The production Host validates the configured session path as a regular
+    // non-symlink file. Keep the dead FIFO as a separate tripwire so an
+    // accidental legacy reader cannot block startup.
+    let ci_session = root.0.join("ci-session.json");
+    let ci_session_sentinel = b"public-ci-session-must-not-be-consumed";
+    let mut ci_session_file = OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .mode(0o600)
+        .open(&ci_session)
+        .expect("create private regular CI session sentinel");
+    ci_session_file
+        .write_all(ci_session_sentinel)
+        .expect("write CI session sentinel");
+    drop(ci_session_file);
+    let ci_session_metadata =
+        fs::symlink_metadata(&ci_session).expect("regular CI session metadata");
+    assert!(ci_session_metadata.file_type().is_file());
+    assert_eq!(ci_session_metadata.permissions().mode() & 0o777, 0o600);
+    for mode in ["isolated", "production", "isolated-return", "fifo-tripwire"] {
+        let started = Instant::now();
         run_child(&root.0, mode);
+        if mode == "fifo-tripwire" {
+            assert!(
+                started.elapsed() < Duration::from_secs(5),
+                "production AppHost must fail closed on the FIFO immediately, not wait for the no-reader timeout"
+            );
+        }
+        assert_eq!(
+            fs::read(&ci_session).expect("CI session sentinel remains"),
+            ci_session_sentinel,
+            "Native credential restoration must not consume the CI session file"
+        );
     }
+    let final_fifo_metadata = fs::symlink_metadata(&fifo).expect("FIFO remains present");
+    assert!(final_fifo_metadata.file_type().is_fifo());
+    assert_eq!(final_fifo_metadata.permissions().mode() & 0o777, 0o600);
 }

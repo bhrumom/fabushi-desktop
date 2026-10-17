@@ -132,6 +132,7 @@ impl PlatformRequestHost {
         let app_data_dir = app_data_dir.into();
         std::fs::create_dir_all(&app_data_dir)
             .map_err(|error| AppHostError::Operation(error.to_string()))?;
+        validate_explicit_ci_account_session_path()?;
         let root = feature_host_root(&app_data_dir);
         std::fs::create_dir_all(&root)
             .map_err(|error| AppHostError::Operation(error.to_string()))?;
@@ -226,6 +227,7 @@ impl AppHost {
         let app_data_dir = app_data_dir.into();
         std::fs::create_dir_all(&app_data_dir)
             .map_err(|error| AppHostError::Operation(error.to_string()))?;
+        validate_explicit_ci_account_session_path()?;
         let feature_root = feature_host_root(&app_data_dir);
         let feature = Arc::new(create_feature_host(
             &app_data_dir,
@@ -1207,6 +1209,42 @@ fn deterministic_test_runtime_call(
         "content": [{"type": "text", "text": text}],
         "structuredContent": structured,
     }))
+}
+
+fn validate_explicit_ci_account_session_path() -> Result<(), AppHostError> {
+    if std::env::var("GITHUB_ACTIONS").ok().as_deref() != Some("true") {
+        return Ok(());
+    }
+    let Some(path) = std::env::var_os("FABUSHI_CI_ACCOUNT_SESSION_FILE")
+        .filter(|value| !value.is_empty())
+    else {
+        return Ok(());
+    };
+    let metadata = std::fs::symlink_metadata(Path::new(&path)).map_err(|error| {
+        AppHostError::Operation(format!(
+            "GitHub Actions test-account bootstrap failed: read CI account session metadata: {error}"
+        ))
+    })?;
+    if metadata.file_type().is_symlink() || !metadata.is_file() {
+        return Err(AppHostError::Operation(
+            "GitHub Actions test-account bootstrap failed: CI account session path must be a regular non-symlink file".into(),
+        ));
+    }
+    if metadata.len() == 0 || metadata.len() > 64 * 1024 {
+        return Err(AppHostError::Operation(
+            "GitHub Actions test-account bootstrap failed: CI account session file has an invalid size".into(),
+        ));
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        if metadata.permissions().mode() & 0o077 != 0 {
+            return Err(AppHostError::Operation(
+                "GitHub Actions test-account bootstrap failed: CI account session file must not be readable by group or other users".into(),
+            ));
+        }
+    }
+    Ok(())
 }
 
 fn configured_feature_host_mode() -> Result<AppHostFeatureMode, AppHostError> {

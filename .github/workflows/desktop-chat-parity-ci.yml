@@ -67,6 +67,8 @@ jobs:
           cache: npm
           cache-dependency-path: desktop/package-lock.json
       - run: npm ci
+      - name: Run signed-in onboarding lifecycle regressions
+        run: node --test ../scripts/onboarding-lifecycle.test.mjs
       - name: Build Grok-shaped Electron runtime
         run: npm run build:electron
       - name: Enforce Agent workspace architecture boundary
