@@ -100,7 +100,9 @@ async function promote() {
   if (!existing) {
     const notes = `Signed/notarized Desktop ${version}, source ${source}. Global Dandelion0.1.0 proprietary offline packet workbench; no native LAN/WAN/hotspot claims. Production chat/install/offline lifecycle: https://github.com/${desktop}/actions/runs/${runId}. Real isolated factory accounts, signed window isolation and zero-residue cleanup: https://github.com/${backend}/actions/runs/${factoryId}. Published bytes are exactly the accepted artifact, with no rebuild. Full native/hardware/mobile OMA acceptance remains separate.`;
     execFileSync('gh', ['release', 'create', tag, ...assets, '--repo', desktop, '--target', source, '--title', `Fabushi macOS ${version} — ${source.slice(0, 12)}`, '--notes', notes, '--prerelease', '--draft'], { stdio: 'inherit' });
-    existing = await api(desktop, `releases/tags/${tag}`);
+    const createdReleases = await api(desktop, 'releases?per_page=100&page=1');
+    existing = createdReleases.find((release) => release.tag_name === tag && release.draft === true);
+    if (!existing) fail('PROMOTION_RELEASE_READBACK_FAILED');
   }
   if (existing.target_commitish !== source || existing.assets.length !== assets.length) fail('PROMOTION_EXISTING_CONFLICT');
   for (const asset of assets) { const name = asset.slice(delivery.length + 1); const digest = `sha256:${await hashFile(asset)}`; if (!existing.assets.some((item) => item.name === name && item.digest === digest)) fail('PROMOTION_EXISTING_CONFLICT'); }
