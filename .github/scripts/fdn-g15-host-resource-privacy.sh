@@ -223,8 +223,10 @@ fi
 uid_value="$(id -u "$probe_user")"
 sudo install -o "$probe_user" -g "$probe_user" -m 0755 "$worker_binary" "$worker_exec"
 sudo chown -R "$probe_user":"$probe_user" "$work_dir/worker-state" "$work_dir/home"
-mkfifo "$work_dir/worker.stdin"
-sudo chown "$probe_user":"$probe_user" "$work_dir/worker.stdin"
+# The runner shell owns both FIFO opens: it connects the child's stdin before
+# sudo changes uid and keeps fd 3 for the private initialize/status stream.
+# Keep the FIFO runner-only so auth material is never exposed via filesystem ACLs.
+mkfifo -m 0600 "$work_dir/worker.stdin"
 
 sudo iptables -I OUTPUT 1 -m owner --uid-owner "$uid_value" '!' -d 127.0.0.0/8 -m comment --comment fdn-g15-host-worker -j REJECT
 sudo ip6tables -I OUTPUT 1 -m owner --uid-owner "$uid_value" '!' -d ::1/128 -m comment --comment fdn-g15-host-worker -j REJECT
