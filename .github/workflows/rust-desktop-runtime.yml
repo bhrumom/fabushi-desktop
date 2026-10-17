@@ -140,6 +140,12 @@ jobs:
       - name: Test ConversationActor and CapabilityBroker ownership
         shell: bash
         run: cargo test -p mahayana-runtime --manifest-path source/mahayana/mahayana-rs/Cargo.toml
+      - name: Test Native-only Desktop credential hand-off on macOS
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-platform-client --lib
+          cargo test --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-app-host --test native_desktop_account_handoff
 
   pressure-profiler-platform:
     name: Pressure profiler / ${{ matrix.os }}

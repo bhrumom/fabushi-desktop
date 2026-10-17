@@ -2,6 +2,9 @@ name: Host catalog Mini App verifier
 on:
   pull_request:
     paths:
+      - 'source/mahayana/mahayana-rs/mahayana-product/**'
+      - 'source/mahayana/mahayana-rs/mahayana-app-host/**'
+      - 'source/mahayana/mahayana-rs/mahayana-host/**'
       - 'source/host/src/extensions/mcp/installable_package.rs'
       - 'source/host/src/extensions/mcp/installable_package/**'
       - 'source/host/Cargo.toml'
@@ -12,6 +15,9 @@ on:
   push:
     branches: [main]
     paths:
+      - 'source/mahayana/mahayana-rs/mahayana-product/**'
+      - 'source/mahayana/mahayana-rs/mahayana-app-host/**'
+      - 'source/mahayana/mahayana-rs/mahayana-host/**'
       - 'source/host/src/extensions/mcp/installable_package.rs'
       - 'source/host/src/extensions/mcp/installable_package/**'
       - 'source/host/Cargo.toml'
@@ -24,6 +30,8 @@ jobs:
   verifier:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    env:
+      CARGO_TARGET_DIR: ${{ github.workspace }}/source/host/target
     steps:
       - uses: actions/checkout@v6
         with:
@@ -53,13 +61,20 @@ jobs:
           unzip signed-delivery.zip global-dandelion-0.1.0.fabapp -d signed-fixture
       - name: Read public production signed trust feed
         run: curl --fail --silent --show-error --retry 2 --max-time 20 https://api.ombhrum.com/v1/extensions/install-trust > signed-fixture/production-trust.json
+      - name: Resolve and check Native product dependencies only on the allowed runner
+        run: cargo check --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-platform-client --lib
+      - name: Require the exact committed Native workspace lock
+        run: git diff --exit-code -- source/mahayana/mahayana-rs/Cargo.lock
       - name: Check canonical formatting without modifying exact source
-        run: rustfmt --check --edition 2024 source/host/src/extensions/mcp/installable_package.rs
+        run: |
+          rustfmt --check --edition 2024 source/host/src/extensions/mcp/installable_package.rs
+          rustfmt --check --edition 2024 source/mahayana/mahayana-rs/mahayana-product/src/native_desktop_session.rs source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs
       - name: Export canonical formatting repair for review
         if: failure()
         run: |
-          rustfmt --edition 2024 source/host/src/extensions/mcp/installable_package.rs
-          git diff -- source/host/src/extensions/mcp/installable_package.rs source/host/src/extensions/mcp/installable_package > "$RUNNER_TEMP/host-miniapp-format.patch"
+          rustfmt --edition 2024 source/host/src/extensions/mcp/installable_package.rs source/mahayana/mahayana-rs/mahayana-product/src/native_desktop_session.rs source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs
+          git diff -- source/host/src/extensions/mcp/installable_package.rs source/host/src/extensions/mcp/installable_package source/mahayana/mahayana-rs/mahayana-product/src/native_desktop_session.rs source/mahayana/mahayana-rs/mahayana-app-host/tests/native_desktop_account_handoff.rs > "$RUNNER_TEMP/host-miniapp-format.patch"
+          git diff -- source/mahayana/mahayana-rs/Cargo.lock > "$RUNNER_TEMP/miniapp-native-lock.patch"
       - name: Verify existing Host library contracts
         if: always()
         env:
@@ -71,12 +86,17 @@ jobs:
         run: |
           cargo test --manifest-path source/host/Cargo.toml --lib native_account_scope_tests
           cargo test --manifest-path source/host/Cargo.toml --lib fabushi_inference_rejects_cross_issuer_targets_before_bearer_dispatch
+      - name: Verify Native credential hand-off without a second CI pipe reader
+        run: |
+          cargo test --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-platform-client --lib
+          cargo test --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-app-host --test native_desktop_account_handoff
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: host-miniapp-verifier-source-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
             ${{ runner.temp }}/host-miniapp-format.patch
+            ${{ runner.temp }}/miniapp-native-lock.patch
             source/host/src/extensions/mcp/installable_package.rs
             source/host/src/extensions/mcp/installable_package/ledger.rs
             source/host/src/extensions/mcp/installable_package/policy.rs

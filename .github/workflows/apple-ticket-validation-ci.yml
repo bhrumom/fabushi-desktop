@@ -2,6 +2,9 @@ name: Apple ticket validation contract
 on:
   pull_request:
     paths:
+      - 'source/mahayana/mahayana-rs/mahayana-product/**'
+      - 'source/mahayana/mahayana-rs/mahayana-app-host/**'
+      - 'source/mahayana/mahayana-rs/mahayana-host/**'
       - '.github/scripts/validate-apple-ticket*'
       - '.github/workflows/apple-ticket-validation-ci.yml'
       - '.github/workflows/release-macos-main.yml'
@@ -12,6 +15,9 @@ on:
   push:
     branches: [main]
     paths:
+      - 'source/mahayana/mahayana-rs/mahayana-product/**'
+      - 'source/mahayana/mahayana-rs/mahayana-app-host/**'
+      - 'source/mahayana/mahayana-rs/mahayana-host/**'
       - '.github/scripts/validate-apple-ticket*'
       - '.github/scripts/miniapp-release-evidence*'
       - '.github/scripts/miniapp-save-report.applescript'
