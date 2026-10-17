@@ -40,7 +40,7 @@ cleanup() {
     exec 3>&- || true
   fi
   if [[ -n "$worker_pid" ]]; then
-    kill "$worker_pid" 2>/dev/null || true
+    sudo kill "$worker_pid" 2>/dev/null || true
   fi
   if [[ -n "$sudo_pid" ]]; then
     wait "$sudo_pid" 2>/dev/null || true
@@ -57,7 +57,7 @@ cleanup() {
   sudo rm -f /usr/local/share/ca-certificates/fabushi-fdn-g15-host.crt >/dev/null 2>&1 || true
   sudo update-ca-certificates --fresh >/dev/null 2>&1 || true
   sudo sed -i '/[[:space:]]fdn-g15-host\.test$/d' /etc/hosts 2>/dev/null || true
-  rm -rf "$work_dir"
+  sudo rm -rf "$work_dir"
 }
 trap cleanup EXIT
 
@@ -310,7 +310,7 @@ total_bytes=0
 
 for _ in $(seq 1 60); do
   sleep 5
-  kill -0 "$worker_pid"
+  sudo kill -0 "$worker_pid"
   rss_kib="$(awk '/^VmRSS:/ {print $2}' "/proc/$worker_pid/status")"
   state_bytes="$(du -sb "$work_dir/worker-state" | awk '{print $1}')"
   log_bytes="$(stat -c %s "$worker_log")"
