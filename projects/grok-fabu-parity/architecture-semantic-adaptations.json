@@ -1337,6 +1337,51 @@
         "source/host/tests/native_local_exec_file_sandbox_contract.rs"
       ],
       "rationale": "FDN-001 G12 extends the existing shipping local-exec file provider with bounded production safety semantics: canonical path fencing, SHA-256/version conflicts, disk peak-space preflight, and an explicitly chunked upload-start/upload-chunk/upload-commit protocol. Chunks are staged in the target directory with offset/size checks and fsync, hashed incrementally, revalidated against the starting file version/path, and atomically renamed only at commit. The provider keeps the established permission/approval and response transport; the actual filesystem boundary is now enforced by the shipping Mahayana Host native handle-relative/no-follow helper, with cross-platform symlink/reparse swap, traversal, conflict, hash, ENOSPC and atomic-commit acceptance in GitHub Actions."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/onboarding/signed-in/model.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "11e0286bea3cbf33751f2da9ba9262485d24be42",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/onboarding/signed-in/model.ts",
+        "frontend/src/recovered/features/onboarding/signed-in/computer-readiness.ts"
+      ],
+      "testEvidence": [
+        "scripts/onboarding-lifecycle.test.mjs",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Preserves the frozen onboarding contract and adds a generation-owned release helper so a settled old create request cannot clear a newer request's in-flight generation. The reference-copy SHA check remains enabled; this entry records the reviewed source adaptation and pins the exact Git blob."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/onboarding/signed-in/computer-readiness.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "729780b5e82e0930b8c241bcf36595e5ec03ac5b",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/onboarding/signed-in/computer-readiness.ts",
+        "frontend/src/recovered/features/onboarding/signed-in/model.ts"
+      ],
+      "testEvidence": [
+        "scripts/onboarding-lifecycle.test.mjs",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "The readiness module retains its fail-open timeout and disposal cancellation contract while its relative model import is tested from a real temporary file URL. The reference-copy SHA check remains enabled; this entry pins the exact target blob as a reviewed TypeScript adaptation."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/onboarding/signed-in/view.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "8bfb333d641273dee0a46aea1b003e425f0f9343",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/onboarding/signed-in/view.tsx",
+        "frontend/src/recovered/features/onboarding/signed-in/model.ts"
+      ],
+      "testEvidence": [
+        "scripts/onboarding-lifecycle.test.mjs",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Production finally delegates generation-slot release to the model helper, which preserves a newer request generation when an older request settles. The architecture gate's reference-copy SHA validation is retained and this record pins the exact target blob."
     }
   ]
 }
