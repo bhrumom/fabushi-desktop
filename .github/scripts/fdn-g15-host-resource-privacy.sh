@@ -287,11 +287,11 @@ sudo ip6tables -I OUTPUT 1 -m owner --uid-owner "$uid_value" '!' -d ::1/128 -m c
 # G15 isolates undeclared telemetry/privacy egress from G05 NAT-traversal
 # behavior. Tailscale's portmapper legitimately probes LAN gateways
 # (UPnP/NAT-PMP/PCP), so disable it only in this loopback-only Actions fixture.
+# Headscale v0.29.5 merges custom regions while leaving default Tailscale
+# regions enabled. G15 measures privacy egress, not G05 public DERP routing,
+# so pin this Actions-only worker to the real embedded loopback DERP.
 sudo -u "$probe_user" env -i \
   TS_DISABLE_PORTMAPPER=true \
-  # Headscale v0.29.5 merges custom regions while leaving default Tailscale
-  # regions enabled. G15 measures privacy egress, not G05 public DERP routing,
-  # so pin this Actions-only worker to the real embedded loopback DERP.
   TS_DEBUG_USE_DERP_ADDR=fdn-g15-host.test \
   PATH=/usr/bin:/bin \
   HOME="$work_dir/home" \
