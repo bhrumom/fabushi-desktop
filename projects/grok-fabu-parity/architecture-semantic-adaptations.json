@@ -419,7 +419,7 @@
       "referencePath": "source/electron-main/main-production-services.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "d68935b8d58104ed011087cc9cb110fd9d821e6b",
+      "targetBlobSha": "cdc388e382f2763c2e0a66fe8fabca00a567e907",
       "behavioralEvidence": [
         "source/electron-main/main-production-services.ts",
         "docs/specs/desktop-miniapp-publisher.md",
@@ -427,7 +427,9 @@
         "source/electron-main/adapters/mcp-oauth.ts",
         "source/electron-main/window-broadcast.ts",
         "docs/specs/desktop-miniapp-management-ui.md",
-        "source/electron-main/mcp/miniapp-production.ts"
+        "source/electron-main/mcp/miniapp-production.ts",
+        "source/product/fabushi/fabushi-official-device-registry.ts",
+        "source/product/fabushi/fabushi-account-adapters.ts"
       ],
       "testEvidence": [
         "source/electron-main/foundations.test.ts",
@@ -436,9 +438,11 @@
         ".github/workflows/miniapp-publisher-ci.yml",
         ".github/workflows/rust-desktop-runtime.yml",
         "source/electron-main/mcp/miniapp-production.contract.test.ts",
-        ".github/workflows/miniapp-management-ci.yml"
+        ".github/workflows/miniapp-management-ci.yml",
+        "source/product/fabushi/fabushi-official-device-registry.contract.test.ts",
+        ".github/workflows/fdn-official-device-registration.yml"
       ],
-      "rationale": "Preserves the frozen Grok production composition while applying two explicit Fabushi product adaptations without moving ownership: the existing Host lifecycle/Plugin Skills SDK-edge surface remains in the single Electron MCP owner, and renderer-scoped BrowserWindow delivery is narrowed at the shipping composition boundary to the trusted main WebContents. The frozen source/electron-main/window-broadcast.ts helper remains byte-identical to Grok for truly global fanout; MCP OAuth completion and dev-control renderer events no longer use that all-window helper in production. Coordinator, Host, Runner, MCP manager, and MainEdge ownership remain unchanged. MP-01..05 additionally routes an optional first-party publisher facet through this same native composition: exact trusted-main sender, current account auth kept internal, bounded OS-selected signed package, account-departure fence and no uncertain-write retry. Backend retains namespace/artifact/review authority; the bridge exposes no reviewer credential, approval or installation runtime. Existing MCP, Coordinator and Host responsibilities are preserved. MU production wiring uses only appId intents and public metadata at the existing MCP owner; Account supplies confirmed authId scope and departure fences, Host retains verification on MainData, and main alone decodes resources into isolated windows. First-party Account and publisher requests use Electron net with no cookies or weakened origin checks."
+      "rationale": "Preserves the frozen Grok production composition while applying two explicit Fabushi product adaptations without moving ownership: the existing Host lifecycle/Plugin Skills SDK-edge surface remains in the single Electron MCP owner, and renderer-scoped BrowserWindow delivery is narrowed at the shipping composition boundary to the trusted main WebContents. The frozen source/electron-main/window-broadcast.ts helper remains byte-identical to Grok for truly global fanout; MCP OAuth completion and dev-control renderer events no longer use that all-window helper in production. Coordinator, Host, Runner, MCP manager, and MainEdge ownership remain unchanged. MP-01..05 additionally routes an optional first-party publisher facet through this same native composition: exact trusted-main sender, current account auth kept internal, bounded OS-selected signed package, account-departure fence and no uncertain-write retry. Backend retains namespace/artifact/review authority; the bridge exposes no reviewer credential, approval or installation runtime. Existing MCP, Coordinator and Host responsibilities are preserved. MU production wiring uses only appId intents and public metadata at the existing MCP owner; Account supplies confirmed authId scope and departure fences, Host retains verification on MainData, and main alone decodes resources into isolated windows. First-party Account and publisher requests use Electron net with no cookies or weakened origin checks. FDN-001 composes the existing Fabushi Account owner with the existing official device registry at this same production composition boundary: packaged Desktop authenticates only its current Fabushi account session on the outbound /agent WebSocket, account epoch/revoke closes stale registration, and the only newly advertised remote tool delegates read-only status to the existing private App Agent Surface. This creates neither a second device database nor a native executor; exact-head Actions enforce account-switch fencing, bearer non-disclosure, read-only preflight and no retry of stale/write-shaped calls."
     },
     {
       "referencePath": "source/electron-main/mcp/desktop-mcp-manager.ts",
