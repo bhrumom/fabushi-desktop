@@ -293,7 +293,7 @@ fn run_child(root: &Path, mode: &str) {
         )
         .env(
             "FABUSHI_CI_ACCOUNT_SESSION_FILE",
-            root.join("no-reader.pipe"),
+            root.join("ci-session.json"),
         )
         .env("FABUSHI_CI_SESSION_DELIVERY", "private-fifo")
         .env("FABUSHI_APP_DATA", root.join("runtime"))
@@ -358,7 +358,18 @@ fn native_desktop_account_handoff() {
             .file_type()
             .is_fifo()
     );
+    // The production Host validates the configured session path as a regular
+    // non-symlink file. Keep the dead FIFO as a separate tripwire so an
+    // accidental legacy reader cannot block startup.
+    let ci_session = root.0.join("ci-session.json");
+    let ci_session_sentinel = b"public-ci-session-must-not-be-consumed";
+    fs::write(&ci_session, ci_session_sentinel).expect("create regular CI session sentinel");
     for mode in ["isolated", "production", "isolated-return"] {
         run_child(&root.0, mode);
+        assert_eq!(
+            fs::read(&ci_session).expect("CI session sentinel remains"),
+            ci_session_sentinel,
+            "Native credential restoration must not consume the CI session file"
+        );
     }
 }
