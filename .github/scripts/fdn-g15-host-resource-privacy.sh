@@ -54,6 +54,8 @@ cleanup() {
   fi
   if [[ -n "$uid_value" ]]; then
     sudo iptables -t nat -D OUTPUT -m owner --uid-owner "$uid_value" -d 169.254.169.254/32 -p tcp --dport 80 -m comment --comment fdn-g15-host-cloud-metadata-sink -j DNAT --to-destination "127.0.0.1:$metadata_sink_port" 2>/dev/null || true
+    sudo iptables -D OUTPUT -m owner --uid-owner "$uid_value" '!' -d 127.0.0.0/8 -m comment --comment fdn-g15-host-worker-diag -j LOG --log-prefix "FDN-G15-HOST4 " 2>/dev/null || true
+    sudo ip6tables -D OUTPUT -m owner --uid-owner "$uid_value" '!' -d ::1/128 -m comment --comment fdn-g15-host-worker-diag -j LOG --log-prefix "FDN-G15-HOST6 " 2>/dev/null || true
     sudo iptables -D OUTPUT -m owner --uid-owner "$uid_value" '!' -d 127.0.0.0/8 -m comment --comment fdn-g15-host-worker -j REJECT 2>/dev/null || true
     sudo ip6tables -D OUTPUT -m owner --uid-owner "$uid_value" '!' -d ::1/128 -m comment --comment fdn-g15-host-worker -j REJECT 2>/dev/null || true
   fi
@@ -276,6 +278,11 @@ sudo iptables -t nat -I OUTPUT 1 -m owner --uid-owner "$uid_value" \
 
 sudo iptables -I OUTPUT 1 -m owner --uid-owner "$uid_value" '!' -d 127.0.0.0/8 -m comment --comment fdn-g15-host-worker -j REJECT
 sudo ip6tables -I OUTPUT 1 -m owner --uid-owner "$uid_value" '!' -d ::1/128 -m comment --comment fdn-g15-host-worker -j REJECT
+# Log only packet headers immediately before the zero-tolerance reject rule so
+# an Actions-only fixture failure identifies the protocol/destination. No
+# payload is logged and production networking remains unchanged.
+sudo iptables -I OUTPUT 1 -m owner --uid-owner "$uid_value" '!' -d 127.0.0.0/8 -m comment --comment fdn-g15-host-worker-diag -j LOG --log-prefix "FDN-G15-HOST4 "
+sudo ip6tables -I OUTPUT 1 -m owner --uid-owner "$uid_value" '!' -d ::1/128 -m comment --comment fdn-g15-host-worker-diag -j LOG --log-prefix "FDN-G15-HOST6 "
 
 # G15 isolates undeclared telemetry/privacy egress from G05 NAT-traversal
 # behavior. Tailscale's portmapper legitimately probes LAN gateways
@@ -381,6 +388,10 @@ delta_ticks=$((end_ticks - start_ticks))
 ipv4_blocked="$(sudo iptables -nvx -L OUTPUT | awk '/fdn-g15-host-worker/ {sum += $1} END {print sum+0}')"
 ipv6_blocked="$(sudo ip6tables -nvx -L OUTPUT | awk '/fdn-g15-host-worker/ {sum += $1} END {print sum+0}')"
 blocked_packets=$((ipv4_blocked + ipv6_blocked))
+if (( blocked_packets != 0 )); then
+  echo "Host G15 unexpected worker-owned packet headers:" >&2
+  sudo dmesg | grep -E 'FDN-G15-HOST[46] ' >&2 || true
+fi
 
 state_limit_bytes=$((20 * 1024 * 1024))
 log_limit_bytes=$((20 * 1024 * 1024))
