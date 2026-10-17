@@ -195,7 +195,10 @@ fn child_case(root: &Path, mode: &str) {
         } else {
             let baseline = count(&host);
             create(&host, BOT_A);
-            assert_eq!(fs::read(&credential).expect("read fixture"), expected_credential);
+            assert_eq!(
+                fs::read(&credential).expect("read fixture"),
+                expected_credential
+            );
 
             let b_credential = replace_native_credential(&credential, ISOLATED, "456");
             assert_eq!(auth(&host)["loggedIn"], true);
@@ -254,7 +257,11 @@ fn child_case(root: &Path, mode: &str) {
     // the public fixture into the legacy Rust account-session persistence path.
     let current = fs::read(&credential).expect("Native fixture remains");
     assert_eq!(current, expected_credential);
-    assert!(!root.join("app-host/feature-host/account-session.json").exists());
+    assert!(
+        !root
+            .join("app-host/feature-host/account-session.json")
+            .exists()
+    );
 }
 
 fn run_child(root: &Path, mode: &str) {
@@ -284,7 +291,10 @@ fn run_child(root: &Path, mode: &str) {
             "FABUSHI_HOST_ACCESS_CREDENTIAL_FILE",
             root.join("native-credential.json"),
         )
-        .env("FABUSHI_CI_ACCOUNT_SESSION_FILE", root.join("no-reader.pipe"))
+        .env(
+            "FABUSHI_CI_ACCOUNT_SESSION_FILE",
+            root.join("no-reader.pipe"),
+        )
         .env("FABUSHI_CI_SESSION_DELIVERY", "private-fifo")
         .env("FABUSHI_APP_DATA", root.join("runtime"))
         .env("SAND_DATA_ROOT", root.join("data"))

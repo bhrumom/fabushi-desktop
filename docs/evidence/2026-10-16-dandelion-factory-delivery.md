@@ -150,3 +150,26 @@ a40a60f961eaea3440d63e3d87892138dc0dc8f0c36b265dfb52134efc48164f.
 No public Desktop promotion occurred. The next step is bounded read-only factory
 UI/process diagnostics under Backend DFC-D01..05, not skipping onboarding, adding
 credentials or accepting the historical single-account result as account isolation.
+
+## Native hand-off follow-up, 2026-10-17
+
+Source inspection located the legacy Rust bootstrap's regular-file requirement:
+it cannot consume the Native-owned FIFO. MFA-H01..06 now govern a read-only
+projection of the existing private Native credential owner; the observational
+diagnostics draft above was deferred before implementation. PR104 source
+15f738f48cc81ff68d2874f1b774da456f63ba33 passed11 of13 scoped jobs. macOS
+rust-host38902142594 passed the complete product library (24 tests,0 failures,
+0 ignored) and the genuine AppHost Native hand-off integration (one parent test
+and three owned child cases). These are synthetic contracts, not signed factory
+acceptance. Electron chat38902142404 failed at roster initialization; still open.
+
+Verifier38902142110 passed36 package tests but failed its committed-lock check
+before the remaining steps. Actions exported artifact12046362962,42848bytes,
+SHA2561aca62a7dc91bddfc1cc11506fb9d7eaddd52891f9b61999c83687eb77e644b3.
+Its reviewed dependency-lock patch resolves the existing exact manifests,
+including the previously unrecorded Host runtime dependencies, ZIP9.0.3 and
+direct rustix1.1.4. No local dependency resolution was run. Its runner-generated
+format-only patch changes the Native adapter and integration test. Applying
+these repairs requires new exact-source CI; the earlier passing jobs are not
+acceptance of the changed lock or source. Signed A/B/A and public promotion
+remain blocked pending that verification and the actual immutable binary run.
