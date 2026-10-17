@@ -11,7 +11,12 @@ fi
 
 actual_sha="$(git rev-parse HEAD)"
 test "$actual_sha" = "$EXPECTED_SHA"
-test "$(git status --porcelain)" = ""
+dirty="$(git status --porcelain)"
+if [[ -n "$dirty" ]]; then
+  echo "G15 Host probe requires a clean source tree; found:" >&2
+  printf '%s\n' "$dirty" >&2
+  exit 1
+fi
 
 evidence_dir="${1:-evidence}"
 mkdir -p "$evidence_dir"
