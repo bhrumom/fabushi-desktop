@@ -4,12 +4,12 @@ import type { ProductionCoordinatorClient } from "../../../../production/coordin
 import { createCoordinatorOnboardingReadiness, type OnboardingComputerReadiness, type OnboardingComputerSnapshot, type OnboardingComputerStatusSource } from "./computer-readiness";
 import {
   advanceSignedInOnboarding, canSubmitOnboardingDraft, CHARACTER_COLORS, CHARACTER_SHAPES, COMPUTER_DEMO_FRAMES, computerDemoFrame,
-  createOnboardingHandOffDwell, DAILY_TOOLS, filterDailyTools, handOffStatus, INITIAL_ONBOARDING_DRAFT, makeOnboardingCreateRequest,
+  completeOnboardingRequestAfterDwell, createOnboardingHandOffDwell, createOnboardingRequestGenerationFence, DAILY_TOOLS, filterDailyTools, handOffStatus, INITIAL_ONBOARDING_DRAFT, makeOnboardingCreateRequest, shouldContinueAfterComputerWait,
   MEET_TYPED_TEXT, normalizeOnboardingDraft, ONBOARDING_DEMO_BEAT_MS,
   ONBOARDING_JOBS, ONBOARDING_JOBS_BEAT_LIMIT, ONBOARDING_JOBS_BEAT_MS, ONBOARDING_MEET_BEAT_MS,
   ONBOARDING_JOB_BUBBLE_Y_OFFSET, ONBOARDING_MEET_DELAY_BEATS, ONBOARDING_STEP_EXIT_MS, onboardingStepIndex, onboardingStepReport,
   onboardingCreateErrorMessage, previousOnboardingStep, SIGNED_IN_INITIAL_STEP, toggleDailyTool, typedMeetText,
-  type OnboardingDraft, type OnboardingStep,
+  type OnboardingDraft, type OnboardingHandOffDwell, type OnboardingStep,
 } from "./model";
 import { avatarTargetFromRect, CHARACTER_TRANSITIONS, isAvatarLandingTransition, scenePlacements, type CharacterPlacement, type OnboardingCharacterState } from "./scene";
 import { flattenSuggestionDescription, selectOnboardingSuggestions, suggestionIdentities, type OnboardingSuggestion, type SuggestionIdentity } from "./suggestions";
@@ -182,40 +182,90 @@ export function SignedInOnboardingStep({ step, draft, dailyTools, meetBeat = 0, 
 
 export function SignedInOnboarding({ bridge, client, accountSlot, computerReadiness, computerStatus, isAccountOnboarded, renderCharacter, onComplete }: SignedInOnboardingProps) {
   const [step, setStep] = useState<OnboardingStep>(SIGNED_IN_INITIAL_STEP), [exitingStep, setExitingStep] = useState<OnboardingStep | null>(null), [draft, setDraft] = useState(INITIAL_ONBOARDING_DRAFT), [dailyTools, setDailyTools] = useState<string[]>([]), [error, setError] = useState<string | null>(null), [computer, setComputer] = useState(EMPTY_COMPUTER), [avatarTarget, setAvatarTarget] = useState<{ x: number; y: number } | null>(null), [isAvatarLanded, setAvatarLanded] = useState(false);
-  const creatingRef = useRef(false), createdAgentRef = useRef<{ accountSlot: string; agentId: string } | null>(null), accountSlotRef = useRef(accountSlot), readinessRef = useRef<OnboardingComputerReadiness | null>(computerReadiness ?? null);
-  const [handOffDwell] = useState(() => createOnboardingHandOffDwell());
-  accountSlotRef.current = accountSlot;
+  const creatingGenerationRef = useRef<number | null>(null);
+  const createdAgentRef = useRef<{ accountSlot: string; client: ProductionCoordinatorClient; agentId: string } | null>(null);
+  const accountSlotRef = useRef(accountSlot), clientRef = useRef(client), readinessPropRef = useRef(computerReadiness), statusRef = useRef(computerStatus);
+  const bridgeRef = useRef(bridge), onboardedProbeRef = useRef(isAccountOnboarded), onCompleteRef = useRef(onComplete);
+  const mountedRef = useRef(false);
+  const requestFenceRef = useRef(createOnboardingRequestGenerationFence());
+  const readinessRef = useRef<OnboardingComputerReadiness | null>(computerReadiness ?? null);
+  const handOffDwellRef = useRef<OnboardingHandOffDwell | null>(null);
+  accountSlotRef.current = accountSlot; clientRef.current = client; readinessPropRef.current = computerReadiness;
+  statusRef.current = computerStatus; bridgeRef.current = bridge; onboardedProbeRef.current = isAccountOnboarded; onCompleteRef.current = onComplete;
   const meetBeat = useSceneBeat(step === "meet", ONBOARDING_MEET_BEAT_MS, ONBOARDING_MEET_DELAY_BEATS + MEET_TYPED_TEXT.length), demoBeat = useSceneBeat(step === "computer-demo", ONBOARDING_DEMO_BEAT_MS, COMPUTER_DEMO_FRAMES.length), jobsBeat = useSceneBeat(step === "jobs", ONBOARDING_JOBS_BEAT_MS, ONBOARDING_JOBS_BEAT_LIMIT);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; requestFenceRef.current.invalidate(); creatingGenerationRef.current = null; handOffDwellRef.current?.cancel(); };
+  }, []);
+  useEffect(() => {
+    const dwell = createOnboardingHandOffDwell();
+    handOffDwellRef.current = dwell;
+    return () => { dwell.cancel(); dwell.dispose(); if (handOffDwellRef.current === dwell) handOffDwellRef.current = null; };
+  }, []);
+  useEffect(() => {
+    requestFenceRef.current.invalidate(); creatingGenerationRef.current = null; handOffDwellRef.current?.cancel();
+    return () => { requestFenceRef.current.invalidate(); creatingGenerationRef.current = null; handOffDwellRef.current?.cancel(); };
+  }, [accountSlot, client, computerReadiness, computerStatus, bridge, isAccountOnboarded, onComplete]);
   useEffect(() => {
     const readiness = computerReadiness ?? (client == null ? null : createCoordinatorOnboardingReadiness(client, computerStatus));
     readinessRef.current = readiness; setComputer(readiness?.getSnapshot() ?? EMPTY_COMPUTER);
-    const unsubscribe = readiness?.subscribe(() => setComputer(readiness.getSnapshot()));
+    const unsubscribe = readiness?.subscribe(() => {
+      if (mountedRef.current && readinessRef.current === readiness && clientRef.current === client && readinessPropRef.current === computerReadiness && statusRef.current === computerStatus) setComputer(readiness.getSnapshot());
+    });
     return () => { unsubscribe?.(); if (readiness !== computerReadiness) readiness?.dispose(); if (readinessRef.current === readiness) readinessRef.current = null; };
   }, [client, computerReadiness, computerStatus]);
   useEffect(() => { bridge.telemetry.reportOnboardingStep(onboardingStepReport(SIGNED_IN_INITIAL_STEP, SIGNED_IN_INITIAL_STEP)); }, [bridge]);
   useEffect(() => { if (exitingStep == null) return; const timer = window.setTimeout(() => setExitingStep(null), ONBOARDING_STEP_EXIT_MS); return () => window.clearTimeout(timer); }, [exitingStep]);
   useEffect(() => { if (step !== "create") { setAvatarTarget(null); setAvatarLanded(false); } }, [step]);
-  useEffect(() => { handOffDwell.cancel(); return () => handOffDwell.cancel(); }, [accountSlot, handOffDwell]);
-  useEffect(() => () => handOffDwell.dispose(), [handOffDwell]);
   const transition = (next: OnboardingStep) => { if (next === step) return; const report = onboardingStepReport(step, next); if (report != null) bridge.telemetry.reportOnboardingStep(report); setExitingStep(step); setStep(next); };
   const attachAvatarSlot = useCallback((node: HTMLDivElement | null) => { if (node == null) { setAvatarTarget(null); setAvatarLanded(false); return; } const rect = node.getBoundingClientRect(); setAvatarTarget(avatarTargetFromRect(rect, { width: window.innerWidth, height: window.innerHeight })); if (prefersReducedMotion()) setAvatarLanded(true); }, []);
   const create = async () => {
-    if (client == null || creatingRef.current) return; const normalizedDraft = normalizeOnboardingDraft(draft); if (!canSubmitOnboardingDraft(normalizedDraft)) return;
-    creatingRef.current = true; setError(null); if (step !== "hand-off") transition("hand-off"); const claimedAccount = accountSlot;
+    if (client == null || creatingGenerationRef.current != null) return;
+    const normalizedDraft = normalizeOnboardingDraft(draft);
+    if (!canSubmitOnboardingDraft(normalizedDraft)) return;
+    const dwell = handOffDwellRef.current;
+    if (dwell == null) return;
+    const generation = requestFenceRef.current.begin();
+    if (generation < 0) return;
+    creatingGenerationRef.current = generation;
+    const claimedAccount = accountSlot, claimedClient = client, claimedReadiness = readinessRef.current;
+    const claimedReadinessProp = computerReadiness, claimedStatus = computerStatus, claimedBridge = bridge;
+    const claimedProbe = isAccountOnboarded, claimedComplete = onComplete;
+    const isRequestCurrent = () => requestFenceRef.current.isCurrent(generation) && mountedRef.current
+      && accountSlotRef.current === claimedAccount && clientRef.current === claimedClient
+      && readinessRef.current === claimedReadiness && readinessPropRef.current === claimedReadinessProp
+      && statusRef.current === claimedStatus && bridgeRef.current === claimedBridge
+      && onboardedProbeRef.current === claimedProbe && onCompleteRef.current === claimedComplete;
+    setError(null); if (step !== "hand-off") transition("hand-off");
     try {
-      await readinessRef.current?.waitForComputer(); if (accountSlotRef.current !== claimedAccount) return;
-      const alreadyOnboarded = await isAccountOnboarded?.() ?? false;
-      if (accountSlotRef.current !== claimedAccount) return;
+      const readinessResult = await claimedReadiness?.waitForComputer();
+      if (!isRequestCurrent() || !shouldContinueAfterComputerWait(readinessResult)) return;
+      const alreadyOnboarded = (await claimedProbe?.()) ?? false;
+      if (!isRequestCurrent()) return;
       if (alreadyOnboarded) {
-        await bridge.onboarding.setSeen(true);
-        await handOffDwell.wait();
-        if (accountSlotRef.current === claimedAccount) onComplete(null);
+        await claimedBridge.onboarding.setSeen(true);
+        if (!isRequestCurrent()) return;
+        const completed = await completeOnboardingRequestAfterDwell(() => dwell.wait(), isRequestCurrent, () => claimedComplete(null));
+        if (!isRequestCurrent() || !completed) return;
         return;
       }
-      if (createdAgentRef.current?.accountSlot !== claimedAccount) createdAgentRef.current = null;
-      if (createdAgentRef.current == null) { const result = await client.call("createAgent", makeOnboardingCreateRequest(normalizedDraft, dailyTools)); if (accountSlotRef.current !== claimedAccount) return; const candidate = result && typeof result === "object" && "agent" in result ? (result as { agent: unknown }).agent : result; const agentId = candidate && typeof candidate === "object" && "id" in candidate && typeof candidate.id === "string" ? candidate.id : null; if (agentId == null) throw new Error("createAgent returned a malformed agent reply"); createdAgentRef.current = { accountSlot: claimedAccount, agentId }; }
-      const agentId = createdAgentRef.current.agentId; await bridge.onboarding.setSeen(true); await handOffDwell.wait(); if (accountSlotRef.current === claimedAccount) onComplete(agentId);
-    } catch (reason) { if (accountSlotRef.current === claimedAccount) setError(onboardingCreateErrorMessage(reason)); } finally { creatingRef.current = false; }
+      if (createdAgentRef.current?.accountSlot !== claimedAccount || createdAgentRef.current.client !== claimedClient) createdAgentRef.current = null;
+      if (createdAgentRef.current == null) {
+        const result = await claimedClient.call("createAgent", makeOnboardingCreateRequest(normalizedDraft, dailyTools));
+        if (!isRequestCurrent()) return;
+        const candidate = result && typeof result === "object" && "agent" in result ? (result as { agent: unknown }).agent : result;
+        const agentId = candidate && typeof candidate === "object" && "id" in candidate && typeof candidate.id === "string" ? candidate.id : null;
+        if (agentId == null) throw new Error("createAgent returned a malformed agent reply");
+        createdAgentRef.current = { accountSlot: claimedAccount, client: claimedClient, agentId };
+      }
+      const agentId = createdAgentRef.current.agentId;
+      await claimedBridge.onboarding.setSeen(true);
+      if (!isRequestCurrent()) return;
+      const completed = await completeOnboardingRequestAfterDwell(() => dwell.wait(), isRequestCurrent, () => claimedComplete(agentId));
+      if (!isRequestCurrent() || !completed) return;
+    } catch (reason) { if (isRequestCurrent()) setError(onboardingCreateErrorMessage(reason)); }
+    finally { if (creatingGenerationRef.current === generation) creatingGenerationRef.current = null; }
   };
   const renderStep = (renderedStep: OnboardingStep) => <SignedInOnboardingStep computer={computer} dailyTools={dailyTools} demoBeat={demoBeat} draft={draft} error={renderedStep === "hand-off" ? error : null} isAvatarLanded={isAvatarLanded} jobsBeat={jobsBeat} meetBeat={meetBeat} onAvatarSlotAttached={attachAvatarSlot} onBack={() => { const previous = previousOnboardingStep(renderedStep); if (previous != null) transition(previous); }} onCreate={() => void create()} onDailyToolsChange={setDailyTools} onDraftChange={setDraft} onForward={() => transition(advanceSignedInOnboarding(renderedStep))} renderCharacter={renderCharacter} step={renderedStep} />;
   const normalizedDraft = useMemo(() => normalizeOnboardingDraft(draft), [draft]);

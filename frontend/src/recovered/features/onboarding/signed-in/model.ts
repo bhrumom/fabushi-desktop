@@ -43,6 +43,31 @@ export const ONBOARDING_JOB_BUBBLE_Y_OFFSET = 50;
 export const ONBOARDING_BOX_PROBE_MS = 2_500;
 export const ONBOARDING_BOX_WAIT_TIMEOUT_MS = 60_000;
 
+export type OnboardingComputerWaitResult = "ready" | "timeout" | "cancelled";
+export interface OnboardingRequestGenerationFence {
+  begin(): number;
+  invalidate(): number;
+  isCurrent(generation: number): boolean;
+  dispose(): void;
+}
+
+/** A monotonic generation prevents an old A request from reviving after A -> B -> A. */
+export function createOnboardingRequestGenerationFence(): OnboardingRequestGenerationFence {
+  let generation = 0;
+  let disposed = false;
+  return {
+    begin() { if (disposed) return -1; generation += 1; return generation; },
+    invalidate() { if (!disposed) generation += 1; return generation; },
+    isCurrent(candidate) { return !disposed && candidate > 0 && candidate === generation; },
+    dispose() { if (disposed) return; disposed = true; generation += 1; },
+  };
+}
+
+/** Preserve the original fail-open deadline; only disposal cancels readiness. */
+export function shouldContinueAfterComputerWait(result: OnboardingComputerWaitResult | undefined): boolean {
+  return result !== "cancelled";
+}
+
 export const MEET_WELCOME_TEXT = "Welcome to Grok Bot";
 export const MEET_TYPED_TEXT = "Hand off any task to your team of agents";
 
@@ -115,43 +140,53 @@ const SYSTEM_DWELL_CLOCK: OnboardingDwellClock = {
   clearTimeout: (handle) => globalThis.clearTimeout(handle as ReturnType<typeof setTimeout>),
 };
 
+export type OnboardingDwellResult = "completed" | "cancelled";
 export interface OnboardingHandOffDwell {
-  wait(): Promise<void>;
+  wait(): Promise<OnboardingDwellResult>;
   cancel(): void;
   dispose(): void;
 }
 
 export function createOnboardingHandOffDwell(clock: OnboardingDwellClock = SYSTEM_DWELL_CLOCK): OnboardingHandOffDwell {
-  const pending = new Map<() => void, unknown>();
+  const pending = new Map<(result: OnboardingDwellResult) => void, unknown>();
   let disposed = false;
-  const settle = (resolve: () => void) => {
+  const settle = (resolve: (result: OnboardingDwellResult) => void, result: OnboardingDwellResult) => {
     if (!pending.has(resolve)) return;
-    const timer = pending.get(resolve);
-    clock.clearTimeout(timer);
+    clock.clearTimeout(pending.get(resolve));
     pending.delete(resolve);
-    resolve();
+    resolve(result);
   };
   return {
     wait() {
-      if (disposed) return Promise.resolve();
-      return new Promise<void>((resolve) => {
+      if (disposed) return Promise.resolve("cancelled");
+      return new Promise<OnboardingDwellResult>((resolve) => {
         const timer = clock.setTimeout(() => {
+          if (!pending.has(resolve)) return;
           pending.delete(resolve);
-          resolve();
+          resolve("completed");
         }, ONBOARDING_HAND_OFF_DWELL_MS);
         pending.set(resolve, timer);
       });
     },
-    cancel() {
-      for (const resolve of [...pending.keys()]) settle(resolve);
-    },
+    cancel() { for (const resolve of [...pending.keys()]) settle(resolve, "cancelled"); },
     dispose() {
       if (disposed) return;
       disposed = true;
-      for (const resolve of [...pending.keys()]) settle(resolve);
+      for (const resolve of [...pending.keys()]) settle(resolve, "cancelled");
       pending.clear();
     },
   };
+}
+
+export async function completeOnboardingRequestAfterDwell(
+  wait: () => Promise<OnboardingDwellResult>,
+  isCurrent: () => boolean,
+  onComplete: () => void,
+): Promise<boolean> {
+  const result = await wait();
+  if (result !== "completed" || !isCurrent()) return false;
+  onComplete();
+  return true;
 }
 
 // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#L20492

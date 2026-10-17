@@ -1,6 +1,6 @@
 import type { ProductionCoordinatorClient } from "../../../../production/coordinator-client";
 import type { ComputerStatusStore } from "../../computer/shell/status-store";
-import { ONBOARDING_BOX_PROBE_MS, ONBOARDING_BOX_WAIT_TIMEOUT_MS } from "./model";
+import { ONBOARDING_BOX_PROBE_MS, ONBOARDING_BOX_WAIT_TIMEOUT_MS, type OnboardingComputerWaitResult } from "./model";
 
 // Immutable anchors: renderer JS bytes 5,441,790-5,442,850 and 5,624,537.
 // The hand-off owner is cancellable at renderer bytes 5,435,131-5,435,982.
@@ -20,7 +20,7 @@ export interface OnboardingComputerStatusSource {
 export interface OnboardingComputerReadiness {
   getSnapshot(): OnboardingComputerSnapshot;
   subscribe(listener: () => void): () => void;
-  waitForComputer(): Promise<void>;
+  waitForComputer(): Promise<OnboardingComputerWaitResult>;
   dispose(): void;
 }
 
@@ -72,7 +72,7 @@ export function createOnboardingComputerReadiness(
   const clock = options.clock ?? SYSTEM_CLOCK;
   const status = options.status ?? CLOSED_STATUS;
   const listeners = new Set<() => void>();
-  const waiters = new Map<() => void, unknown>();
+  const waiters = new Map<(result: OnboardingComputerWaitResult) => void, unknown>();
   let ready = false;
   let disposed = false;
   let polling = false;
@@ -84,12 +84,18 @@ export function createOnboardingComputerReadiness(
     if (retryTimer != null) clock.clearTimeout(retryTimer);
     retryTimer = null;
   };
+  const settleWaiter = (resolve: (result: OnboardingComputerWaitResult) => void, result: OnboardingComputerWaitResult) => {
+    if (!waiters.has(resolve)) return;
+    const deadline = waiters.get(resolve);
+    if (deadline != null) clock.clearTimeout(deadline);
+    waiters.delete(resolve);
+    resolve(result);
+  };
   const settleReady = () => {
     if (ready || disposed) return;
     ready = true;
     stopRetry();
-    for (const resolve of waiters.keys()) resolve();
-    waiters.clear();
+    for (const resolve of [...waiters.keys()]) settleWaiter(resolve, "ready");
     notify();
   };
   const runProbe = async () => {
@@ -128,12 +134,11 @@ export function createOnboardingComputerReadiness(
       };
     },
     waitForComputer() {
-      if (ready || disposed) return Promise.resolve();
-      return new Promise<void>((resolve) => {
-        const finish = () => { clock.clearTimeout(deadline); waiters.delete(onReady); resolve(); };
-        const onReady = () => finish();
-        const deadline = clock.setTimeout(finish, ONBOARDING_BOX_WAIT_TIMEOUT_MS);
-        waiters.set(onReady, deadline);
+      if (disposed) return Promise.resolve("cancelled");
+      if (ready) return Promise.resolve("ready");
+      return new Promise<OnboardingComputerWaitResult>((resolve) => {
+        const deadline = clock.setTimeout(() => settleWaiter(resolve, "timeout"), ONBOARDING_BOX_WAIT_TIMEOUT_MS);
+        waiters.set(resolve, deadline);
       });
     },
     dispose() {
@@ -141,10 +146,7 @@ export function createOnboardingComputerReadiness(
       stopRetry();
       unsubscribeStatus?.();
       unsubscribeStatus = null;
-      for (const [resolve, deadline] of waiters) {
-        clock.clearTimeout(deadline);
-        resolve();
-      }
+      for (const resolve of [...waiters.keys()]) settleWaiter(resolve, "cancelled");
       waiters.clear();
       listeners.clear();
     },
