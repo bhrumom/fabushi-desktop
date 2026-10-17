@@ -2,6 +2,23 @@ name: Rust desktop runtime
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - 'desktop/**'
+      - 'source/**'
+      - 'projects/grok-fabu-parity/architecture-manifest.json'
+      - 'projects/grok-fabu-parity/architecture-semantic-adaptations.json'
+      - 'scripts/check-grok-architecture.mjs'
+      - 'source/mahayana/mahayana-rs/**'
+      - 'source/mahayana/codex-rs/**'
+      - 'native/mahayana-messaging/**'
+      - 'projects/telegram-desktop-rust/**'
+      - '.github/workflows/rust-desktop-runtime.yml'
+      - 'RUST_RUNTIME_SOURCE.md'
+      - 'DESKTOP_SOURCE_CLOSURE.md'
+      - 'frontend/**'
+      - 'chatgpt-vps-control/**'
+      - 'contracts/**'
   push:
     branches: [main, restore/rust-desktop-runtime, refactor/grok-018-architecture-rebuild]
     paths:
