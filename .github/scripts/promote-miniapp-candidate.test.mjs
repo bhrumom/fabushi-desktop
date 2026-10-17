@@ -36,6 +36,9 @@ test('promotion never rebuilds or deletes an existing release on uncertain outco
   assert.doesNotMatch(source, /release', 'delete|--clobber|--cleanup-tag|notarytool|npm.*build/u);
   assert.match(source, /PROMOTION_EXISTING_CONFLICT/u);
   assert.match(source, /artifact\.digest !== `sha256:\$\{archiveSha\}`/u);
+  assert.doesNotMatch(source, /releases\/tags\/\$\{tag\}/u);
+  assert.match(source, /releases\?per_page=100&page=1/u);
+  assert.match(source, /PROMOTION_RELEASE_READBACK_FAILED/u);
 });
 test('published installer checksum manifest exactly covers the immutable delivery assets', () => {
   const digest = 'a'.repeat(64); const other = 'b'.repeat(64);
