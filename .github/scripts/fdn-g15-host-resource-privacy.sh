@@ -32,6 +32,8 @@ sudo_pid=""
 uid_value=""
 auth_key=""
 fifo_fd_open=0
+metadata_sink_pid=""
+metadata_sink_port="8793"
 
 cleanup() {
   set +e
@@ -46,7 +48,12 @@ cleanup() {
     wait "$sudo_pid" 2>/dev/null || true
   fi
   docker rm -f "$container" >/dev/null 2>&1 || true
+  if [[ -n "$metadata_sink_pid" ]]; then
+    kill "$metadata_sink_pid" 2>/dev/null || true
+    wait "$metadata_sink_pid" 2>/dev/null || true
+  fi
   if [[ -n "$uid_value" ]]; then
+    sudo iptables -t nat -D OUTPUT -m owner --uid-owner "$uid_value" -d 169.254.169.254/32 -p tcp --dport 80 -m comment --comment fdn-g15-host-cloud-metadata-sink -j DNAT --to-destination "127.0.0.1:$metadata_sink_port" 2>/dev/null || true
     sudo iptables -D OUTPUT -m owner --uid-owner "$uid_value" '!' -d 127.0.0.0/8 -m comment --comment fdn-g15-host-worker -j REJECT 2>/dev/null || true
     sudo ip6tables -D OUTPUT -m owner --uid-owner "$uid_value" '!' -d ::1/128 -m comment --comment fdn-g15-host-worker -j REJECT 2>/dev/null || true
   fi
@@ -100,7 +107,13 @@ cat > "$work_dir/policy.hujson" <<'EOF'
   "groups": {},
   "tagOwners": {},
   "hosts": {},
-  "acls": []
+  "acls": [],
+  "nodeAttrs": [
+    {
+      "target": ["*"],
+      "attr": ["disable-captive-portal-detection"]
+    }
+  ]
 }
 EOF
 
@@ -228,10 +241,47 @@ sudo chown -R "$probe_user":"$probe_user" "$work_dir/worker-state" "$work_dir/ho
 # Keep the FIFO runner-only so auth material is never exposed via filesystem ACLs.
 mkfifo -m 0600 "$work_dir/worker.stdin"
 
+# GitHub-hosted Ubuntu advertises Azure-style DMI, so pinned Tailscale v1.104.1
+# performs its normal cloud metadata probe before deciding this fixture is not a
+# supported cloud VM. The shipping Desktop worker is not a cloud VM. Redirect
+# only this probe user's metadata request into a loopback 404 sink so G15 keeps
+# zero undeclared egress without weakening the production worker.
+python3 - "$metadata_sink_port" <<'PY' >/dev/null 2>&1 &
+from http.server import BaseHTTPRequestHandler, HTTPServer
+import sys
+
+class Handler(BaseHTTPRequestHandler):
+    def _not_cloud(self):
+        self.send_response(404)
+        self.end_headers()
+    do_GET = _not_cloud
+    do_PUT = _not_cloud
+    def log_message(self, *_):
+        pass
+
+HTTPServer(("127.0.0.1", int(sys.argv[1])), Handler).serve_forever()
+PY
+metadata_sink_pid="$!"
+for _ in $(seq 1 20); do
+  if curl --silent --output /dev/null --max-time 1 -X PUT "http://127.0.0.1:$metadata_sink_port/latest/api/token"; then
+    break
+  fi
+  sleep 0.1
+done
+kill -0 "$metadata_sink_pid"
+sudo iptables -t nat -I OUTPUT 1 -m owner --uid-owner "$uid_value" \
+  -d 169.254.169.254/32 -p tcp --dport 80 \
+  -m comment --comment fdn-g15-host-cloud-metadata-sink \
+  -j DNAT --to-destination "127.0.0.1:$metadata_sink_port"
+
 sudo iptables -I OUTPUT 1 -m owner --uid-owner "$uid_value" '!' -d 127.0.0.0/8 -m comment --comment fdn-g15-host-worker -j REJECT
 sudo ip6tables -I OUTPUT 1 -m owner --uid-owner "$uid_value" '!' -d ::1/128 -m comment --comment fdn-g15-host-worker -j REJECT
 
+# G15 isolates undeclared telemetry/privacy egress from G05 NAT-traversal
+# behavior. Tailscale's portmapper legitimately probes LAN gateways
+# (UPnP/NAT-PMP/PCP), so disable it only in this loopback-only Actions fixture.
 sudo -u "$probe_user" env -i \
+  TS_DISABLE_PORTMAPPER=true \
   PATH=/usr/bin:/bin \
   HOME="$work_dir/home" \
   "$worker_exec" <"$work_dir/worker.stdin" >"$worker_protocol" 2>"$worker_log" &
