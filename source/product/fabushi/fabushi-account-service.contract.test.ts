@@ -250,3 +250,63 @@ test("Fabushi production Responses URL targets the deployed Codex-compatible fir
   assert.equal(endpoint.origin, new URL(DEFAULT_FABUSHI_API_BASE_URL).origin);
   assert.equal(endpoint.pathname, "/codex-deepseek/v1/responses");
 });
+
+
+test("deviceAgentSession exposes only the current production Fabushi account bearer and is epoch-fenced", async () => {
+  interface AgentSessionProbe {
+    operationEpoch: number;
+    currentSession(): Promise<{
+      issuer: string;
+      accessToken: string;
+      accessTokenExpiresAt: number;
+      sessionId: string;
+      deviceId: string;
+      username: string;
+      userId: string;
+    } | null>;
+  }
+
+  const service = new FabushiAuthService({
+    openExternal: () => {},
+    env: {},
+    machineId: "device-agent-session-contract",
+    hostAccessCredentialFile: "/private/fabushi/host-credential.json",
+  });
+  const probe = service as unknown as AgentSessionProbe;
+  const production = {
+    issuer: DEFAULT_FABUSHI_API_BASE_URL,
+    accessToken: "fabushi-production-device-agent-token",
+    accessTokenExpiresAt: Date.now() + 10 * 60_000,
+    sessionId: "browser:agent-session",
+    deviceId: "device-agent-session",
+    username: "agent@example.com",
+    userId: "agent-user",
+  };
+
+  probe.currentSession = async () => production;
+  assert.deepEqual(await service.deviceAgentSession(), {
+    accessToken: production.accessToken,
+    accessTokenExpiresAt: production.accessTokenExpiresAt,
+    deviceId: production.deviceId,
+    sessionId: production.sessionId,
+    username: production.username,
+  });
+
+  probe.currentSession = async () => ({ ...production, issuer: FABUSHI_CI_ISOLATED_AUTH_BASE_URL });
+  assert.equal(
+    await service.deviceAgentSession(),
+    null,
+    "isolated/provider test issuers must not become official device-registry bearers",
+  );
+
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  probe.currentSession = async () => {
+    await gate;
+    return production;
+  };
+  const stale = service.deviceAgentSession();
+  probe.operationEpoch += 1;
+  release();
+  assert.equal(await stale, null, "an account epoch change must fence a stale device-agent bearer");
+});
