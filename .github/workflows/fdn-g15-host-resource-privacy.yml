@@ -58,10 +58,18 @@ jobs:
           set -euo pipefail
           test "$(go env GOVERSION)" = "go1.27.1"
           grep -Fx 'require tailscale.com v1.104.1' go.mod
+          # Reproduce the exact dependency lock sealed by current-main run
+          # 39061262418 artifact 12111532053
+          # (artifact digest sha256:38f62fc58a1e711d64647d45c40d8a4389f9a4875e0990e8bb2a55875eb594f2).
+          go mod tidy
+          test "$(sha256sum go.mod | awk '{print $1}')" = "31a956329d877ddfc7261f19aeccfbf3e06c83e290b7472d1197e72139526c13"
+          test "$(sha256sum go.sum | awk '{print $1}')" = "fff0813e7675eef0c378d524e9c3fa64b39226582b6d2b044cc188eae558fce3"
           go mod verify
           CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o "$RUNNER_TEMP/fabushi-network-worker" .
           test -x "$RUNNER_TEMP/fabushi-network-worker"
-          git diff --exit-code -- go.mod go.sum
+          git restore go.mod
+          rm -f go.sum
+          test "$(git status --porcelain)" = ""
 
       - name: Focused Host supervisor contract
         shell: bash
