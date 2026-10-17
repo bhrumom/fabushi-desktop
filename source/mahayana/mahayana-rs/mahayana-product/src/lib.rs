@@ -776,15 +776,27 @@ impl MahayanaProductClient {
     /// a private file owned by the workflow. Ordinary application launches do
     /// not accept this path, even if an inherited environment variable exists.
     pub fn bootstrap_ci_test_account_session(&self) -> Result<bool, ProductError> {
+        let in_github_actions = env::var(GITHUB_ACTIONS_ENV).ok().as_deref() == Some("true");
+        let ci_session_path =
+            env::var_os(FABUSHI_CI_ACCOUNT_SESSION_FILE_ENV).filter(|value| !value.is_empty());
+
         if native_desktop_session::enabled() {
+            // Native Desktop owns the account credential and must never consume
+            // the legacy CI session payload. When Actions explicitly configures
+            // that path, still validate the filesystem boundary before accepting
+            // startup so a FIFO/device/symlink cannot be smuggled through an
+            // otherwise-unused inherited variable.
+            if in_github_actions
+                && let Some(path) = ci_session_path.as_deref()
+            {
+                validate_ci_account_session_path(Path::new(path))?;
+            }
             return self.native_credential().map(|credential| credential.is_some());
         }
-        if env::var(GITHUB_ACTIONS_ENV).ok().as_deref() != Some("true") {
+        if !in_github_actions {
             return Ok(false);
         }
-        let Some(path) =
-            env::var_os(FABUSHI_CI_ACCOUNT_SESSION_FILE_ENV).filter(|value| !value.is_empty())
-        else {
+        let Some(path) = ci_session_path else {
             return Ok(false);
         };
         load_ci_account_session_file(Path::new(&path), now_seconds())?;
@@ -3162,7 +3174,7 @@ fn validate_ci_account_session(value: Value, now: i64) -> Result<Value, ProductE
     Ok(value)
 }
 
-fn load_ci_account_session_file(path: &Path, now: i64) -> Result<Value, ProductError> {
+fn validate_ci_account_session_path(path: &Path) -> Result<(), ProductError> {
     let metadata = std::fs::symlink_metadata(path).map_err(|error| {
         ProductError::Session(format!("read CI account session metadata: {error}"))
     })?;
@@ -3185,6 +3197,11 @@ fn load_ci_account_session_file(path: &Path, now: i64) -> Result<Value, ProductE
             ));
         }
     }
+    Ok(())
+}
+
+fn load_ci_account_session_file(path: &Path, now: i64) -> Result<Value, ProductError> {
+    validate_ci_account_session_path(path)?;
     let bytes = std::fs::read(path)
         .map_err(|error| ProductError::Session(format!("read CI account session: {error}")))?;
     if bytes.len() as u64 > CI_ACCOUNT_SESSION_MAX_BYTES {
