@@ -3,23 +3,6 @@ name: Rust desktop runtime
 # Exact-head pull_request runtime evidence is intentionally emitted on synchronize.
 on:
   workflow_dispatch:
-  pull_request:
-    paths:
-      - 'desktop/**'
-      - 'source/**'
-      - 'projects/grok-fabu-parity/architecture-manifest.json'
-      - 'projects/grok-fabu-parity/architecture-semantic-adaptations.json'
-      - 'scripts/check-grok-architecture.mjs'
-      - 'source/mahayana/mahayana-rs/**'
-      - 'source/mahayana/codex-rs/**'
-      - 'native/mahayana-messaging/**'
-      - 'projects/telegram-desktop-rust/**'
-      - '.github/workflows/rust-desktop-runtime.yml'
-      - 'RUST_RUNTIME_SOURCE.md'
-      - 'DESKTOP_SOURCE_CLOSURE.md'
-      - 'frontend/**'
-      - 'chatgpt-vps-control/**'
-      - 'contracts/**'
   push:
     branches: [main, restore/rust-desktop-runtime, refactor/grok-018-architecture-rebuild]
     paths:
@@ -38,6 +21,24 @@ on:
       - 'frontend/**'
       - 'chatgpt-vps-control/**'
       - 'contracts/**'
+  pull_request:
+    paths:
+      - 'desktop/**'
+      - 'source/**'
+      - 'projects/grok-fabu-parity/architecture-manifest.json'
+      - 'projects/grok-fabu-parity/architecture-semantic-adaptations.json'
+      - 'scripts/check-grok-architecture.mjs'
+      - 'source/mahayana/mahayana-rs/**'
+      - 'source/mahayana/codex-rs/**'
+      - 'native/mahayana-messaging/**'
+      - 'projects/telegram-desktop-rust/**'
+      - '.github/workflows/rust-desktop-runtime.yml'
+      - 'RUST_RUNTIME_SOURCE.md'
+      - 'DESKTOP_SOURCE_CLOSURE.md'
+      - 'frontend/**'
+      - 'chatgpt-vps-control/**'
+      - 'contracts/**'
+
 permissions:
   contents: read
 
@@ -141,6 +142,12 @@ jobs:
       - name: Test ConversationActor and CapabilityBroker ownership
         shell: bash
         run: cargo test -p mahayana-runtime --manifest-path source/mahayana/mahayana-rs/Cargo.toml
+      - name: Test Native-only Desktop credential hand-off on macOS
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-platform-client --lib
+          cargo test --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-app-host --test native_desktop_account_handoff
 
   pressure-profiler-platform:
     name: Pressure profiler / ${{ matrix.os }}

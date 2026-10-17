@@ -219,3 +219,130 @@ relaxing the compiler. Acceptance remains pending Actions evidence; the earlier
 24 passing native-intent contracts do not prove this new extraction. Provenance:
 user2026-10-16 continuation requirement, parent-agent bounded implementation plan
 and exact98a9 Actions tsc dependency failure.
+
+## Native credential hand-off to the existing Rust product adapter
+
+Observed failure: Backend38895539025 reached Native logged-in but first A stayed
+at onboarding hand-off. Source e875a19 proves AppHost construction invokes
+MahayanaProductClient.bootstrap_ci_test_account_session, whose legacy loader
+requires a regular file and rejects the Native-only FIFO. The same legacy loader
+also requires production CI device/tokenType fields not present in the ordinary
+factory descriptor. Supporting two independent FIFO readers, writing a session
+JSON, skipping onboarding or relaxing provenance is not the solution.
+
+Existing-owner selection: FabushiAuthService owns Desktop login/refresh/logout and
+the private Host credential file. MahayanaProductClient is the existing Rust
+product-session/HTTP adapter consumed by FeatureHost, AppHost and the platform
+lane. Extend that adapter with a read-only Native credential projection. Do not
+create another session store, issuer, login service, memory-auth cache or runtime.
+
+- MFA-H01: for this macOS preview (and Unix contract runners), only explicit
+  FABUSHI_PRODUCT_MODE=1 selects the Desktop Native credential adapter. Do not
+  change Windows' existing production/session behavior or claim Windows factory
+  acceptance: the new POSIX private-file adapter is Unix-only until a separate
+  reviewed Windows ACL/handle contract and actual Windows acceptance exist.
+  Native mode never opens FABUSHI_CI_ACCOUNT_SESSION_FILE;
+  Native remains its sole consumer. Legacy non-Native/mobile CI regular-file
+  behavior and its strict provenance validator remain unchanged. The existing
+  bootstrap entry point in Native mode validates the Native hand-off instead of
+  validating or consuming a CI pipe.
+- MFA-H02: read the existing FABUSHI_HOST_ACCESS_CREDENTIAL_FILE only. Require
+  bounded regular non-symlink private owner600 input, version1, fixed normalized
+  production/isolated issuer, valid bounded access token, unexpired bounded
+  timestamp and nonempty bounded user/session/device IDs. Follow no symlinks;
+  reject malformed/oversized/stale input. No refresh credential, disk persistence
+  or global/per-client session cache. Reread for each session operation so Native
+  logout/removal or account replacement is observed immediately. Missing input
+  yields signed-out; malformed input is an explicit error, never legacy fallback.
+- MFA-H03: normal session projection remains credential-private and exposes only
+  UI-safe account fields. Production stable account id remains raw userId;
+  isolated id uses exactly the existing nativeAuthIdForIssuer formula above.
+  FeatureHost account-boundary/persistence/messaging scope must use that same
+  qualified identity, while authenticated user-info compares the original raw
+  userId. No credential values cross Renderer replies.
+- MFA-H04: every Native-backed authenticated product HTTP request must require
+  the current private credential issuer to equal the configured exact target
+  origin before adding a bearer. The default Desktop target derives from the
+  fixed FABUSHI_API_BASE_URL allowlist; explicit MAHAYANA_API_BASE_URL mismatch,
+  lookalike/subdomain/credentials/redirect or unsupported target fails closed.
+  Isolated sessions never reach production messaging/inference/publisher APIs.
+  Missing isolated services fail normally, without fallback or synthetic success.
+  The existing MahayanaHost composition must select that same Native target
+  before constructing its product client. Its historical hardcoded production
+  default is not an explicit operator override; do not pass it as one for an
+  isolated Native account. Preserve real explicit-target mismatch rejection and
+  all non-Native constructor behavior. No second Host/product owner is added.
+- MFA-H05: Native mode cannot independently log in, refresh, overwrite or erase
+  another Rust-owned session. Existing Desktop Native UI remains the account
+  mutation owner; unsupported direct Rust auth mutation fails closed. Non-Native
+  platform session ownership remains unchanged. No new runtime method is added
+  to the frozen122 inventory.
+- MFA-H06: exact-source Actions contracts prove FIFO is not opened in Native
+  mode, legacy CI negatives remain strict, regular-file privacy/size/symlink/
+  malformed/expiry checks, raw production compatibility, isolated scope formula,
+  reread/logout/account replacement and no-bearer cross-origin rejection. Add a
+  focused AppHost/FeatureHost integration contract using the same Native file
+  and an intentionally unusable FIFO path; countAgents/createAgent use genuine
+  production owners, not a test auth bypass. All thirteen release source gates
+  must execute for this shared bootstrap dependency, then signed production and
+  actual factory A/B/A must pass again before promotion.
+  Resolve any tracked workspace lockfile repair only in Actions from the exact
+  manifests and existing lock, export its diff for review, and require a clean
+  tracked workspace lock before accepting the source. Do not silently accept a
+  test/build that regenerated a different tracked dependency lock.
+
+Plan: implement/review this narrow read-only adapter and direct regressions;
+extend existing CI path ownership for the shared Rust product dependency;
+reverify exact PR source, integrate onto current main without overwriting FDN or
+TDRP work, sign/package main, run production and factory gates, promote only the
+same accepted bytes. Rollback restores the adapter with Native consumer disabled;
+never convert factory sessions into disk JSON or drop account isolation.
+MFA-H-AC1: all H01..06 Actions contracts pass with exact commands/counts/source.
+MFA-H-AC2: production packaged chat/MU-07 and factory A/B/A plus both401/remaining0
+pass the same immutable main binary. Both pending; source diagnosis is not runtime
+acceptance. Backend observational-diagnostics draft is deferred because the
+deterministic FIFO type rejection was located before implementing that observer.
+
+## Development-only Native loopback compatibility
+
+Actions38902142404/38992470610 exposed NATIVE_ISSUER_INVALID before the focused
+chat roster could load. That suite already performs browser login through a
+synthetic loopback backend and the existing Native credential owner. It is not
+production or factory acceptance. Giving a real issuer credential a loopback
+transport, replacing Native auth with a fixture session, or skipping the roster
+would violate the current boundaries.
+
+- MFA-D01: preserve this existing synthetic development transport only in a
+  debug-assertions Rust build with all three exact runtime conditions:
+  GITHUB_ACTIONS=true, FABUSHI_E2E=1, FABUSHI_FEATURE_HOST_MODE=test. The release
+  build's loopback predicate is unconditionally false at compile time; setting
+  runtime flags cannot enable it. No production/isolated allowlist is widened.
+- MFA-D02: development accepts only canonical http://127.0.0.1:<nonzero-port>
+  with root path and no credentials/query/fragment. Reject hostname aliases,
+  non-loopback IPs, port0/default/missing port, path prefixes and HTTPS loopback.
+  Credential issuer, configured Native origin and every explicit override must
+  still match exactly; production/isolated credentials can never be dispatched
+  to loopback or vice versa. Keep all file/privacy/expiry/reread checks unchanged.
+- MFA-D03: match existing Native development authId (raw userId), while retaining
+  the isolated qualified-ID formula and production compatibility. This is a
+  transport policy in the same read-only adapter, not a new auth or runtime owner.
+  No target-less isolated/development token export is enabled. Preserve the real
+  browser-login, Native credential and full roster/chat assertions unchanged.
+- MFA-D04: pure contracts cover every gate including debug=false with all runtime
+  flags enabled, malformed/noncanonical origins and bidirectional cross-issuer
+  mismatch. A subprocess regression uses the existing unusable FIFO and an actual
+  synthetic private Native credential to prove raw development identity and
+  logout/reread without session persistence. Run unchanged focused Electron chat
+  and Agent Network regressions in Actions; signed production/factory acceptance
+  remains on release builds with genuine ordinary accounts.
+
+Plan: extend only Native adapter origin selection/identity and its focused tests;
+review the release compile-time exclusion and credential-target binding; repeat
+all13 source gates. This explicitly refines H02/H04 only for the bounded debug
+synthetic development case. Rollback removes the development policy only, never
+adds localhost to production trust or restores the second FIFO reader.
+MFA-D-AC1: policy/privacy/cross-issuer contracts and unchanged focused Electron
+regressions pass exact source in Actions. MFA-D-AC2: release-source review proves
+runtime flags cannot enable loopback; signed production/factory gates still pass.
+Both pending. Provenance: user2026-10-17 finish-all request and exact-source
+Actions NATIVE_ISSUER_INVALID diagnosis of the existing local auth fixture.
