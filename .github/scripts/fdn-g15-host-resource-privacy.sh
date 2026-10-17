@@ -484,4 +484,18 @@ if grep -nE '"(HTTP_PROXY|HTTPS_PROXY|ALL_PROXY|NO_PROXY|FABUSHI_[A-Z0-9_]*TOKEN
   exit 1
 fi
 
+# Freeze the private protocol stream before sealing evidence. Cleanup also sends
+# shutdown, but doing it only after SHA256SUMS would mutate the protocol file
+# after it had been hashed and make the exact-head seal non-reproducible.
+if [[ "$fifo_fd_open" -eq 1 ]]; then
+  printf '%s\n' '{"type":"shutdown","requestId":"shutdown-g15-host"}' >&3
+  exec 3>&-
+  fifo_fd_open=0
+fi
+if [[ -n "$sudo_pid" ]]; then
+  wait "$sudo_pid"
+  sudo_pid=""
+  worker_pid=""
+fi
+
 sha256sum "$evidence_dir/fdn-g15-host-resource-privacy.json" "$worker_log" "$worker_protocol" > "$evidence_dir/SHA256SUMS"
