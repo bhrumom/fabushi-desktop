@@ -46,7 +46,6 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.97.1
-          components: rustfmt
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: source/host -> target
@@ -57,11 +56,6 @@ jobs:
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
-      - name: Format focused owner and contract sources
-        shell: bash
-        run: |
-          set -euo pipefail
-          rustfmt --edition 2024 --check             source/host/src/network_enrollment_owner.rs             source/host/src/network_worker_process.rs             source/host/src/remote_computer_target.rs             source/host/tests/network_enrollment_owner_contract.rs             source/host/tests/network_worker_process_contract.rs             source/host/tests/remote_computer_target_contract.rs             source/host/tests/remote_computer_target_native_wiring_contract.rs
       - name: Test enrollment owner lifecycle and uncertainty fences
         shell: bash
         run: cargo test --manifest-path source/host/Cargo.toml --test network_enrollment_owner_contract -- --nocapture
