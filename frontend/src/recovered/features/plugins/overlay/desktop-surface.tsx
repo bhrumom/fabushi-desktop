@@ -280,8 +280,6 @@ export function PluginsDesktopSurface({ bridge, githubAuth, activeAgentId = null
     return (
       <div aria-label="Plugins" aria-modal="true" className="sand-plugins-dialog" role="dialog">
         <button aria-label="Close" className="sand-plugins-dialog__close" onClick={onClose} type="button">×</button>
-        <MiniAppManagement bridge={bridge} />
-        <MiniAppPublisher bridge={bridge} />
         <div aria-live="polite" role={error == null ? "status" : "alert"}>
           {error == null ? "Loading the marketplace…" : error}
           {error == null ? null : <button onClick={() => void load()} type="button">Retry</button>}
