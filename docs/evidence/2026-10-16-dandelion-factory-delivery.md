@@ -173,3 +173,15 @@ format-only patch changes the Native adapter and integration test. Applying
 these repairs requires new exact-source CI; the earlier passing jobs are not
 acceptance of the changed lock or source. Signed A/B/A and public promotion
 remain blocked pending that verification and the actual immutable binary run.
+
+At6e72effac40aa68fa95498975877e0e5c2a502ee, verifier38992470704 passed the
+committed-lock and format gates,36 package tests,5 scope tests,1 inference-target
+test,24 product-library tests and the AppHost integration parent/three children,
+all with0 failures/ignored. Artifact12085329991,27443bytes,SHA256
+555aa82a8041df12fb0dc37d5b8e6270eb9e2344bf5af86ef1f08987ed452461.
+Focused chat38992470610 still failed; logs identify NATIVE_ISSUER_INVALID at Host
+initialization, caused by its existing synthetic loopback auth backend. New
+MFA-D01..04 specify a compile-time-debug-only development policy without modifying
+the chat assertions or permitting real issuer credentials over loopback. The
+6e72 rust-host run was cancelled when the spec-first follow-up advanced the PR;
+do not count it as a passing complete runtime gate or reuse it for promotion.

@@ -17,13 +17,43 @@ pub fn enabled() -> bool {
     cfg!(unix) && std::env::var("FABUSHI_PRODUCT_MODE").ok().as_deref() == Some("1")
 }
 
+#[cfg(any(debug_assertions, test))]
+fn development_loopback_flags(
+    github_actions: Option<&str>,
+    fabushi_e2e: Option<&str>,
+    feature_host_mode: Option<&str>,
+) -> bool {
+    github_actions == Some("true") && fabushi_e2e == Some("1") && feature_host_mode == Some("test")
+}
+
+#[cfg(debug_assertions)]
+fn development_loopback_enabled() -> bool {
+    development_loopback_flags(
+        std::env::var("GITHUB_ACTIONS").ok().as_deref(),
+        std::env::var("FABUSHI_E2E").ok().as_deref(),
+        std::env::var("FABUSHI_FEATURE_HOST_MODE").ok().as_deref(),
+    )
+}
+
+#[cfg(not(debug_assertions))]
+fn development_loopback_enabled() -> bool {
+    false
+}
+
 fn invalid(code: &'static str) -> ProductError {
     ProductError::Session(code.into())
 }
 
 pub fn normalize_origin(raw: &str) -> Result<String, ProductError> {
+    normalize_origin_with_loopback(raw, development_loopback_enabled())
+}
+
+fn normalize_origin_with_loopback(raw: &str, allow_loopback: bool) -> Result<String, ProductError> {
     let url = url::Url::parse(raw).map_err(|_| invalid("NATIVE_ISSUER_INVALID"))?;
     let origin = url.origin().ascii_serialization();
+    if allow_loopback && is_development_loopback_origin(raw) {
+        return Ok(origin);
+    }
     if url.scheme() != "https"
         || !url.username().is_empty()
         || url.password().is_some()
@@ -51,9 +81,23 @@ fn resolve_target(
     override_base: Option<&str>,
     explicit_client_base: Option<&str>,
 ) -> Result<String, ProductError> {
-    let origin = normalize_origin(configured)?;
+    resolve_target_with_loopback(
+        configured,
+        override_base,
+        explicit_client_base,
+        development_loopback_enabled(),
+    )
+}
+
+fn resolve_target_with_loopback(
+    configured: &str,
+    override_base: Option<&str>,
+    explicit_client_base: Option<&str>,
+    allow_loopback: bool,
+) -> Result<String, ProductError> {
+    let origin = normalize_origin_with_loopback(configured, allow_loopback)?;
     for candidate in [override_base, explicit_client_base].into_iter().flatten() {
-        if normalize_origin(candidate)? != origin {
+        if normalize_origin_with_loopback(candidate, allow_loopback)? != origin {
             return Err(invalid("NATIVE_TARGET_MISMATCH"));
         }
     }
@@ -97,7 +141,7 @@ impl NativeCredential {
     }
 
     pub fn account_id(&self) -> String {
-        if self.issuer == PRODUCTION_ISSUER {
+        if self.issuer == PRODUCTION_ISSUER || is_development_loopback_origin(&self.issuer) {
             return self.raw_user_id.clone();
         }
         let digest = Sha256::digest(
@@ -186,6 +230,36 @@ impl NativeCredential {
         }
         Ok(())
     }
+}
+
+fn is_development_loopback_origin(origin: &str) -> bool {
+    let Ok(url) = url::Url::parse(origin) else {
+        return false;
+    };
+    let canonical = url.origin().ascii_serialization();
+    let raw_is_canonical = origin == canonical || origin == format!("{canonical}/");
+    url.scheme() == "http"
+        && url.host_str() == Some("127.0.0.1")
+        && url.port().is_some_and(|port| port != 0)
+        && url.username().is_empty()
+        && url.password().is_none()
+        && url.path() == "/"
+        && url.query().is_none()
+        && url.fragment().is_none()
+        && raw_is_canonical
+}
+
+#[cfg(test)]
+fn development_loopback_policy(
+    raw: &str,
+    debug_assertions: bool,
+    github_actions: Option<&str>,
+    fabushi_e2e: Option<&str>,
+    feature_host_mode: Option<&str>,
+) -> bool {
+    debug_assertions
+        && development_loopback_flags(github_actions, fabushi_e2e, feature_host_mode)
+        && is_development_loopback_origin(raw)
 }
 
 fn bounded(value: &str, limit: usize) -> bool {
@@ -439,6 +513,8 @@ mod tests {
 
     #[test]
     fn fixed_origins_and_explicit_overrides_are_bound() {
+        const LOOPBACK: &str = "http://127.0.0.1:49226/";
+
         for bad in [
             "http://api.ombhrum.com",
             "https://api.ombhrum.com.evil.invalid",
@@ -458,6 +534,79 @@ mod tests {
         assert_eq!(
             resolve_target(ISOLATED_ISSUER, None, None).unwrap(),
             ISOLATED_ISSUER
+        );
+
+        assert!(development_loopback_policy(
+            LOOPBACK,
+            true,
+            Some("true"),
+            Some("1"),
+            Some("test")
+        ));
+        assert!(!development_loopback_policy(
+            LOOPBACK,
+            false,
+            Some("true"),
+            Some("1"),
+            Some("test")
+        ));
+        for flags in [
+            (None, Some("1"), Some("test")),
+            (Some("false"), Some("1"), Some("test")),
+            (Some("TRUE"), Some("1"), Some("test")),
+            (Some("true"), None, Some("test")),
+            (Some("true"), Some("0"), Some("test")),
+            (Some("true"), Some("1"), None),
+            (Some("true"), Some("1"), Some("Test")),
+        ] {
+            assert!(!development_loopback_flags(flags.0, flags.1, flags.2));
+        }
+        assert!(development_loopback_flags(
+            Some("true"),
+            Some("1"),
+            Some("test")
+        ));
+        for bad in [
+            "http://127.0.0.1/",
+            "http://127.0.0.1:0/",
+            "http://127.0.0.1:49226/path",
+            "https://127.0.0.1:49226/",
+            "http://localhost:49226/",
+            "http://127.0.0.2:49226/",
+            "http://127.1:49226/",
+            "http://2130706433:49226/",
+            "http://user@127.0.0.1:49226/",
+            "http://127.0.0.1:49226/?query=1",
+            "http://127.0.0.1:49226/#fragment",
+        ] {
+            assert!(!development_loopback_policy(
+                bad,
+                true,
+                Some("true"),
+                Some("1"),
+                Some("test")
+            ));
+            assert!(normalize_origin_with_loopback(bad, true).is_err());
+        }
+        assert_eq!(
+            normalize_origin_with_loopback(LOOPBACK, true).unwrap(),
+            LOOPBACK.trim_end_matches('/')
+        );
+        assert!(
+            resolve_target_with_loopback(LOOPBACK, Some(PRODUCTION_ISSUER), None, true).is_err()
+        );
+        assert!(
+            resolve_target_with_loopback(PRODUCTION_ISSUER, Some(LOOPBACK), None, true).is_err()
+        );
+        assert!(
+            resolve_target_with_loopback(LOOPBACK, None, Some(PRODUCTION_ISSUER), true).is_err()
+        );
+        assert!(
+            resolve_target_with_loopback(PRODUCTION_ISSUER, None, Some(LOOPBACK), true).is_err()
+        );
+        assert_eq!(
+            resolve_target_with_loopback(LOOPBACK, Some(LOOPBACK), None, true).unwrap(),
+            LOOPBACK.trim_end_matches('/')
         );
     }
 
@@ -675,6 +824,59 @@ mod tests {
         std::fs::remove_dir_all(root).unwrap();
     }
 
+    #[cfg(all(unix, debug_assertions))]
+    #[test]
+    fn native_development_client_uses_raw_id_and_rereads_owner_file() {
+        const LOOPBACK: &str = "http://127.0.0.1:49226";
+        let root = temporary_root();
+        let path = root.join("native");
+        let mut value = fixture(LOOPBACK);
+        value["expiresAtMs"] = json!(MAX_SAFE_INTEGER);
+        private_file(&path, &value);
+        let fifo = root.join("native-development-fifo");
+        assert!(
+            std::process::Command::new("mkfifo")
+                .arg(&fifo)
+                .status()
+                .unwrap()
+                .success()
+        );
+        let child = std::process::Command::new(std::env::current_exe().unwrap())
+            .args([
+                "--exact",
+                "native_desktop_session::tests::native_development_client_child",
+                "--nocapture",
+            ])
+            .env("NATIVE_PRODUCT_CONTRACT_CHILD", "1")
+            .env("NATIVE_DEVELOPMENT_CONTRACT_CHILD", "1")
+            .env("FABUSHI_PRODUCT_MODE", "1")
+            .env("FABUSHI_API_BASE_URL", LOOPBACK)
+            .env("FABUSHI_E2E", "1")
+            .env("FABUSHI_FEATURE_HOST_MODE", "test")
+            .env_remove("MAHAYANA_API_BASE_URL")
+            .env("FABUSHI_HOST_ACCESS_CREDENTIAL_FILE", &path)
+            .env("FABUSHI_CI_ACCOUNT_SESSION_FILE", &fifo)
+            .env("GITHUB_ACTIONS", "true")
+            .env("NATIVE_PRODUCT_CONTRACT_ROOT", &root)
+            .spawn()
+            .unwrap();
+        let mut child = child;
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(15);
+        loop {
+            if let Some(status) = child.try_wait().unwrap() {
+                assert!(status.success());
+                break;
+            }
+            if std::time::Instant::now() >= deadline {
+                child.kill().unwrap();
+                let _ = child.wait();
+                panic!("Native development client attempted blocking bootstrap");
+            }
+            std::thread::sleep(std::time::Duration::from_millis(25));
+        }
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
     #[cfg(unix)]
     #[test]
     fn native_client_child() {
@@ -740,6 +942,70 @@ mod tests {
         assert!(client.active_session_token(old_session).is_err());
         assert!(client.get_json("/v1/messages", &[], Some(TOKEN)).is_err());
         std::fs::remove_file(&path).unwrap();
+        assert!(!client.bootstrap_ci_test_account_session().unwrap());
+        assert_eq!(client.auth_status(&json!({})).unwrap()["loggedIn"], false);
+        assert!(client.load_session().unwrap().is_none());
+        assert!(!root.join("session.json").exists());
+    }
+
+    #[cfg(all(unix, debug_assertions))]
+    #[test]
+    fn native_development_client_child() {
+        const LOOPBACK: &str = "http://127.0.0.1:49226";
+        if std::env::var("NATIVE_DEVELOPMENT_CONTRACT_CHILD")
+            .ok()
+            .as_deref()
+            != Some("1")
+        {
+            return;
+        }
+        let root =
+            std::path::PathBuf::from(std::env::var_os("NATIVE_PRODUCT_CONTRACT_ROOT").unwrap());
+        let client = crate::MahayanaProductClient::new_with_default_api_base_url(
+            root.join("session.json"),
+            root.join("surface.json"),
+        );
+        assert!(enabled());
+        assert!(client.bootstrap_ci_test_account_session().unwrap());
+        assert_eq!(
+            client.effective_api_base_url().unwrap(),
+            "http://127.0.0.1:49226"
+        );
+        assert_eq!(client.restore_session().unwrap()["user"]["id"], "42");
+        assert!(client.session_token().is_err());
+        let native = read_current().unwrap().unwrap();
+        assert_eq!(native.account_id(), "42");
+        assert!(
+            native
+                .guard_request(&format!("{PRODUCTION_ISSUER}/v1/messages"), TOKEN)
+                .is_err()
+        );
+        assert!(
+            native
+                .guard_request(&format!("{ISOLATED_ISSUER}/v1/messages"), TOKEN)
+                .is_err()
+        );
+        assert!(
+            native
+                .guard_request(&format!("{LOOPBACK}/v1/messages"), TOKEN)
+                .is_ok()
+        );
+        assert!(
+            credential(PRODUCTION_ISSUER)
+                .guard_request(&format!("{LOOPBACK}/v1/messages"), TOKEN)
+                .is_err()
+        );
+        assert!(
+            credential(ISOLATED_ISSUER)
+                .guard_request(&format!("{LOOPBACK}/v1/messages"), TOKEN)
+                .is_err()
+        );
+        let explicit_production = crate::MahayanaProductClient::new(
+            PRODUCTION_ISSUER,
+            root.join("explicit-prod.json"),
+        );
+        assert!(explicit_production.effective_api_base_url().is_err());
+        std::fs::remove_file(root.join("native")).unwrap();
         assert!(!client.bootstrap_ci_test_account_session().unwrap());
         assert_eq!(client.auth_status(&json!({})).unwrap()["loggedIn"], false);
         assert!(client.load_session().unwrap().is_none());
