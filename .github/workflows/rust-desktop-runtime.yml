@@ -1,6 +1,7 @@
 name: Rust desktop runtime
 
 on:
+  workflow_dispatch:
   push:
     branches: [main, restore/rust-desktop-runtime, refactor/grok-018-architecture-rebuild]
     paths:
