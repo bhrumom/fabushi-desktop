@@ -1,5 +1,7 @@
 import { join } from "node:path";
 
+import { createFabushiOfficialDeviceRegistryService } from "./fabushi-official-device-registry.js";
+
 import {
   createCursorAccountEdgePort,
   type AccountRuntime,
@@ -133,7 +135,39 @@ export function createFabushiProductionAccountOAuthBinding(): ElectronProduction
       // Settle the product session before Coordinator/Host startup so the child
       // process observes both the credential-file path and its first credential.
       await account.getStatus();
-      return account;
+      const registry = createFabushiOfficialDeviceRegistryService({
+        isPackaged: context.native.app.isPackaged,
+        env: context.env,
+        userDataPath: context.native.app.getPath("userData"),
+        deviceName: "Fabushi Desktop",
+        getDeviceAgentSession: async () => {
+          const auth = await account.getAuthService();
+          return typeof auth.deviceAgentSession === "function"
+            ? await auth.deviceAgentSession()
+            : null;
+        },
+        reportFailure: (operation, error) => {
+          context.reportFailure?.("official-device-registry", operation, error);
+        },
+      });
+      const unsubscribeRegistry = account.subscribe(() => { void registry.syncNow(); });
+      registry.start();
+      let disposed = false;
+      return {
+        getStatus: () => account.getStatus(),
+        subscribe: (listener) => account.subscribe(listener),
+        currentAuthStatusFreshness: () => account.currentAuthStatusFreshness(),
+        deliverCursorAuthStatus: (status) => account.deliverCursorAuthStatus(status),
+        revokeForAccountRefusal: () => account.revokeForAccountRefusal(),
+        getAuthService: () => account.getAuthService(),
+        async dispose() {
+          if (disposed) return;
+          disposed = true;
+          unsubscribeRegistry();
+          await registry.stop();
+          await account.dispose();
+        },
+      };
     },
   };
 }

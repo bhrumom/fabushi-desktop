@@ -7,12 +7,15 @@
     "outDir": ".tmp-fabushi-product",
     "strict": true,
     "skipLibCheck": true,
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "declaration": false,
     "sourceMap": false
   },
   "include": [
     "../source/product/fabushi/fabushi-account-policy.ts",
-    "../source/product/fabushi/fabushi-account-service.contract.test.ts"
+    "../source/product/fabushi/fabushi-account-service.contract.test.ts",
+    "../source/product/fabushi/fabushi-official-device-registry.contract.test.ts"
   ]
 }

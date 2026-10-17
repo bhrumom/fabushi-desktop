@@ -182,6 +182,13 @@ export type ProductionAccountStatus = SandAuthStatus;
 export interface ProductionAccountAuthService {
   getValidAccessToken(options?: { readonly backendUrl?: string }): Promise<string>;
   peekAccessToken?(): Promise<string | null>;
+  deviceAgentSession?(): Promise<{
+    readonly accessToken: string;
+    readonly accessTokenExpiresAt: number;
+    readonly deviceId: string;
+    readonly sessionId: string;
+    readonly username: string;
+  } | null>;
   revokeForAccountRefusal(): Promise<{ readonly kind: "completed"; readonly status: ProductionAccountStatus } | { readonly kind: "failed"; readonly status: ProductionAccountStatus; readonly error: unknown }>;
   getStatus(): Promise<ProductionAccountStatus>;
   subscribe(listener: (status: ProductionAccountStatus) => void): () => void;
