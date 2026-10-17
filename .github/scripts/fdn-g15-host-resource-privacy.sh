@@ -312,7 +312,7 @@ for _ in $(seq 1 60); do
   sleep 5
   sudo kill -0 "$worker_pid"
   rss_kib="$(awk '/^VmRSS:/ {print $2}' "/proc/$worker_pid/status")"
-  state_bytes="$(du -sb "$work_dir/worker-state" | awk '{print $1}')"
+  state_bytes="$(sudo du -sb "$work_dir/worker-state" | awk '{print $1}')"
   log_bytes="$(stat -c %s "$worker_log")"
   protocol_bytes="$(stat -c %s "$worker_protocol")"
   read -r fs_total fs_available < <(df -B1 --output=size,avail "$work_dir/worker-state" | tail -n1)
