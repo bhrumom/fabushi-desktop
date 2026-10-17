@@ -1254,7 +1254,7 @@
       "referencePath": "frontend/src/recovered/features/plugins/overlay/desktop-surface.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "7569a30bb16364fe142b532398cf747081c38eb3",
+      "targetBlobSha": "1a1efe486dd1bdabe4e1a93e11d1a430f439cedb",
       "behavioralEvidence": [
         "frontend/src/recovered/features/plugins/overlay/desktop-surface.tsx",
         "frontend/src/recovered/features/plugins/overlay/miniapp-publisher.tsx",

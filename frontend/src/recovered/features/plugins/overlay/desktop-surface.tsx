@@ -275,6 +275,7 @@ export function PluginsDesktopSurface({ bridge, githubAuth, activeAgentId = null
     publishSurfaceNotice({ kind: notice.kind, operation: "plugins-browser-remove", message: notice.text }, onNotice, onStatus);
   };
 
+  // Keep native Mini App production owners mounted across marketplace loading and ready states.
   if (snapshot == null) {
     return (
       <div aria-label="Plugins" aria-modal="true" className="sand-plugins-dialog" role="dialog">
