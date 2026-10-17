@@ -141,7 +141,7 @@
       "referencePath": "source/electron-main/adapters/mcp-oauth.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "909f7fcf51018f93ab95a1473f48a899d8cd3bd0",
+      "targetBlobSha": "ffbc225bfaaccbab7960ff8df31039553efdf1ec",
       "behavioralEvidence": [
         "source/electron-main/adapters/mcp-oauth.ts",
         "docs/specs/desktop-miniapp-publisher.md",
@@ -163,7 +163,10 @@
         "source/host/src/extensions/telemetry/mcp_discovery_telemetry.rs",
         "source/host/src/extensions/telemetry/connector_auth_telemetry.rs",
         "docs/specs/desktop-miniapp-management-ui.md",
-        "source/electron-main/mcp/miniapp-production.ts"
+        "source/electron-main/mcp/miniapp-production.ts",
+        "source/electron-main/mcp/official-mcp-service.ts",
+        "source/shared/node/mcp/fabushi-official-catalog.ts",
+        "source/electron-main/mcp/official-mcp-oauth.ts"
       ],
       "testEvidence": [
         "source/electron-main/foundations.test.ts",
@@ -184,9 +187,11 @@
         "source/host/tests/connector_auth_telemetry_contract.rs",
         "source/host/tests/connector_auth_production_wiring_contract.rs",
         "source/electron-main/mcp/miniapp-production.contract.test.ts",
-        ".github/workflows/miniapp-management-ci.yml"
+        ".github/workflows/miniapp-management-ci.yml",
+        "source/electron-main/mcp/official-mcp.contract.test.ts",
+        ".github/workflows/official-mcp-marketplace.yml"
       ],
-      "rationale": "Preserves Grok MCP/OAuth composition while keeping SandMcpManager as the single Electron/Coordinator-owned MCP manager and the Mahayana Host as the owner of Plugin Skills lifecycle, cache, authenticated startup, refresh, install/uninstall resync, live-reference cleanup, and Skill Publish. The Cursor Dashboard/marketplace-dependent installed-plugin loader stays as a narrow TypeScript SDK edge in Electron Main and is reached only through the existing allowlisted, correlated Mahayana Coordinator MCP relay. This preserves the frozen Grok process and responsibility boundaries while choosing TypeScript for the Cursor Node SDK edge and Rust for Host lifecycle/state; it does not introduce a second MCP manager or collapse Coordinator/Host/Runner. The approved row-62 MCP discovery failure extension now forwards the frozen success/failure/stale/elapsed settlement through a dedicated reportMcpDiscoveryFailed Coordinator main-data request to the unique HostStructuredLogTelemetry owner; generic MCP diagnostics remain separate. MP-01..05 additionally routes an optional first-party publisher facet through this same native composition: exact trusted-main sender, current account auth kept internal, bounded OS-selected signed package, account-departure fence and no uncertain-write retry. Backend retains namespace/artifact/review authority; the bridge exposes no reviewer credential, approval or installation runtime. Existing MCP, Coordinator and Host responsibilities are preserved. MU production wiring uses only appId intents and public metadata at the existing MCP owner; Account supplies confirmed authId scope and departure fences, Host retains verification on MainData, and main alone decodes resources into isolated windows. First-party Account and publisher requests use Electron net with no cookies or weakened origin checks."
+      "rationale": "Preserves Grok MCP/OAuth composition while keeping SandMcpManager as the single Electron/Coordinator-owned MCP manager and the Mahayana Host as the owner of Plugin Skills lifecycle, cache, authenticated startup, refresh, install/uninstall resync, live-reference cleanup, and Skill Publish. The Cursor Dashboard/marketplace-dependent installed-plugin loader stays as a narrow TypeScript SDK edge in Electron Main and is reached only through the existing allowlisted, correlated Mahayana Coordinator MCP relay. This preserves the frozen Grok process and responsibility boundaries while choosing TypeScript for the Cursor Node SDK edge and Rust for Host lifecycle/state; it does not introduce a second MCP manager or collapse Coordinator/Host/Runner. The approved row-62 MCP discovery failure extension now forwards the frozen success/failure/stale/elapsed settlement through a dedicated reportMcpDiscoveryFailed Coordinator main-data request to the unique HostStructuredLogTelemetry owner; generic MCP diagnostics remain separate. MP-01..05 additionally routes an optional first-party publisher facet through this same native composition: exact trusted-main sender, current account auth kept internal, bounded OS-selected signed package, account-departure fence and no uncertain-write retry. Backend retains namespace/artifact/review authority; the bridge exposes no reviewer credential, approval or installation runtime. Existing MCP, Coordinator and Host responsibilities are preserved. MU production wiring uses only appId intents and public metadata at the existing MCP owner; Account supplies confirmed authId scope and departure fences, Host retains verification on MainData, and main alone decodes resources into isolated windows. First-party Account and publisher requests use Electron net with no cookies or weakened origin checks. Current-main official MCP integration preserves the native Fabushi issuer guard, composes the fixed official provider directory/native vault into the existing MCP facade, and treats foreign legacy Dashboard lookup failure as explicit degraded state rather than broadening account-token origins."
     },
     {
       "referencePath": "source/electron-main/attachments/attachment-manager.ts",
@@ -439,7 +444,7 @@
       "referencePath": "source/electron-main/mcp/desktop-mcp-manager.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "7126c5a132a438f7180d0627e6ea8787ecff65ff",
+      "targetBlobSha": "17af10771dfaea32dec8626f5a9e3ab4d5be6ad8",
       "behavioralEvidence": [
         "source/electron-main/mcp/desktop-mcp-manager.ts",
         "source/shared/node/mcp/mcp-manager.ts",
@@ -448,7 +453,10 @@
         "source/shared/rpc/coordinator-main.ts",
         "source/host/src/extensions/mcp/box_mcp_exec.rs",
         "source/shared/node/mcp/mcp-discovery-settlement.ts",
-        "source/host/src/extensions/telemetry/mcp_discovery_telemetry.rs"
+        "source/host/src/extensions/telemetry/mcp_discovery_telemetry.rs",
+        "source/electron-main/mcp/official-mcp-service.ts",
+        "source/shared/node/mcp/fabushi-official-catalog.ts",
+        "source/electron-main/mcp/official-mcp-oauth.ts"
       ],
       "testEvidence": [
         "source/electron-main/foundations.test.ts",
@@ -459,9 +467,11 @@
         "source/shared/node/mcp/mcp-discovery-settlement.contract.test.ts",
         "source/electron-main/mcp/mcp-runtime.contract.test.ts",
         "source/host/tests/mcp_discovery_telemetry_contract.rs",
-        "source/host/tests/mcp_discovery_production_wiring_contract.rs"
+        "source/host/tests/mcp_discovery_production_wiring_contract.rs",
+        "source/electron-main/mcp/official-mcp.contract.test.ts",
+        ".github/workflows/official-mcp-marketplace.yml"
       ],
-      "rationale": "Preserves the Grok SandMcpManager implementation as the single MCP owner while exposing approved Fabushi capabilities through the typed desktop facade: force-refresh catalog options, external-auth completion, and Box MCP server loading/tool discovery/tool execution backed by the existing Coordinator→Host Box path. Manager ownership is not duplicated in Rust Host and the Coordinator/Host/Runner failure boundaries remain independent. The approved row-62 MCP discovery failure extension now forwards the frozen success/failure/stale/elapsed settlement through a dedicated reportMcpDiscoveryFailed Coordinator main-data request to the unique HostStructuredLogTelemetry owner; generic MCP diagnostics remain separate."
+      "rationale": "Preserves the Grok SandMcpManager implementation as the single MCP owner while exposing approved Fabushi capabilities through the typed desktop facade: force-refresh catalog options, external-auth completion, and Box MCP server loading/tool discovery/tool execution backed by the existing Coordinator→Host Box path. Manager ownership is not duplicated in Rust Host and the Coordinator/Host/Runner failure boundaries remain independent. The approved row-62 MCP discovery failure extension now forwards the frozen success/failure/stale/elapsed settlement through a dedicated reportMcpDiscoveryFailed Coordinator main-data request to the unique HostStructuredLogTelemetry owner; generic MCP diagnostics remain separate. Current-main official MCP integration preserves the native Fabushi issuer guard, composes the fixed official provider directory/native vault into the existing MCP facade, and treats foreign legacy Dashboard lookup failure as explicit degraded state rather than broadening account-token origins."
     },
     {
       "referencePath": "source/electron-main/mcp/mcp-runtime.ts",
@@ -1247,7 +1257,9 @@
         "frontend/src/recovered/features/plugins/overlay/miniapp-management.tsx",
         "docs/specs/desktop-miniapp-management-ui.md",
         "docs/specs/desktop-miniapp-publisher.md",
-        "source/electron-main/mcp/miniapp-window.ts"
+        "source/electron-main/mcp/miniapp-window.ts",
+        "source/electron-main/mcp/official-mcp-service.ts",
+        "source/shared/node/mcp/fabushi-official-catalog.ts"
       ],
       "testEvidence": [
         "source/electron-main/mcp/miniapp-publisher.contract.test.ts",
@@ -1255,9 +1267,11 @@
         ".github/workflows/miniapp-management-ci.yml",
         ".github/workflows/miniapp-publisher-ci.yml",
         ".github/workflows/desktop-chat-parity-ci.yml",
-        ".github/workflows/release-macos-main.yml"
+        ".github/workflows/release-macos-main.yml",
+        "source/electron-main/mcp/official-mcp.contract.test.ts",
+        ".github/workflows/official-mcp-marketplace.yml"
       ],
-      "rationale": "Explicit MP-01 exception adds proprietary offline-package publication to the existing Plugins surface, not a separate Mini Apps product root. The recovered connector/skills navigation and lifecycle remain intact. The same publisher panel remains reachable during legacy MCP catalog loading/failure; it owns only transient UI state. Trusted native authentication and fixed package selection own privileged submission; Backend remains namespace, artifact and review authority. No Agent, installation, approval or runtime state moves into React. Contract CI exercises the real signed candidate and account/sender fences; renderer and packaged acceptance remain independent gates. MU-01..05 adds transient management projection in this same dialog, preserving Connector/Skills content. Host owns install state and account isolation; absent native support is explicit, and remove-code retains user data."
+      "rationale": "Explicit MP-01 exception adds proprietary offline-package publication to the existing Plugins surface, not a separate Mini Apps product root. The recovered connector/skills navigation and lifecycle remain intact. The same publisher panel remains reachable during legacy MCP catalog loading/failure; it owns only transient UI state. Trusted native authentication and fixed package selection own privileged submission; Backend remains namespace, artifact and review authority. No Agent, installation, approval or runtime state moves into React. Contract CI exercises the real signed candidate and account/sender fences; renderer and packaged acceptance remain independent gates. MU-01..05 adds transient management projection in this same dialog, preserving Connector/Skills content. Host owns install state and account isolation; absent native support is explicit, and remove-code retains user data. Current-main official MCP integration preserves the native Fabushi issuer guard, composes the fixed official provider directory/native vault into the existing MCP facade, and treats foreign legacy Dashboard lookup failure as explicit degraded state rather than broadening account-token origins."
     },
     {
       "referencePath": "frontend/src/recovered/features/plugins/overlay/view.tsx",
@@ -1337,6 +1351,54 @@
         "source/host/tests/native_local_exec_file_sandbox_contract.rs"
       ],
       "rationale": "FDN-001 G12 extends the existing shipping local-exec file provider with bounded production safety semantics: canonical path fencing, SHA-256/version conflicts, disk peak-space preflight, and an explicitly chunked upload-start/upload-chunk/upload-commit protocol. Chunks are staged in the target directory with offset/size checks and fsync, hashed incrementally, revalidated against the starting file version/path, and atomically renamed only at commit. The provider keeps the established permission/approval and response transport; the actual filesystem boundary is now enforced by the shipping Mahayana Host native handle-relative/no-follow helper, with cross-platform symlink/reparse swap, traversal, conflict, hash, ENOSPC and atomic-commit acceptance in GitHub Actions."
+    },
+    {
+      "referencePath": "source/electron-main/mcp/mcp-desktop.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "4a1b0c1d6c23c6ae7c4d7702e08df49938406c22",
+      "behavioralEvidence": [
+        "source/electron-main/mcp/mcp-desktop.ts",
+        "source/electron-main/mcp/official-mcp-service.ts",
+        "source/shared/node/mcp/fabushi-official-catalog.ts",
+        "source/electron-main/mcp/official-mcp-oauth.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/mcp/official-mcp.contract.test.ts",
+        ".github/workflows/official-mcp-marketplace.yml"
+      ],
+      "rationale": "Preserve all existing MCP IPC, settings sync and permission boundaries while refreshing the canonical Host MCP tool inventory after a tool-disable toggle. Official connector disabled state is stored in its scoped native vault and enforced again at execution. Official provider consent now uses the existing Fabushi account origin through a session-bound broker; native encrypted delivery/refresh/revoke remains on this MCP edge. Existing auth-event broadcast and Host refresh settle the existing Plugins surface, without exposing service tokens in renderer or moving account/Coordinator ownership."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/plugins/overlay/desktop.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "692b4ea24d01a69166c82c6c2458d1d0b3bf6243",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/plugins/overlay/desktop.ts",
+        "source/electron-main/mcp/official-mcp-service.ts",
+        "source/shared/node/mcp/fabushi-official-catalog.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/mcp/official-mcp.contract.test.ts",
+        ".github/workflows/official-mcp-marketplace.yml"
+      ],
+      "rationale": "Preserve existing Plugins projection/install/private-skill flows, while independently settling catalog, effective installs and server inventory. Catalog failure remains fatal; unavailable installed/server state produces an explicit warning and leaves available directory data inspectable. Official provider Add bypasses optional manual credentials and uses the existing install/native-auth/external-opener lifecycle; installed entries expose Connect for retry. Required custom/team setup and native permission, token, account and broker boundaries remain intact. Actions verifies ordering, failure propagation and manual/legacy preservation."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/plugins/overlay/browser.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/plugins/overlay/browser.tsx",
+        "source/electron-main/mcp/official-mcp-service.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/mcp/official-mcp.contract.test.ts",
+        ".github/workflows/official-mcp-marketplace.yml"
+      ],
+      "rationale": " Official provider Add bypasses optional manual credentials and uses the existing install/native-auth/external-opener lifecycle; installed entries expose Connect for retry. Required custom/team setup and native permission, token, account and broker boundaries remain intact. Actions verifies ordering, failure propagation and manual/legacy preservation.",
+      "targetBlobSha": "c7d49ff93d1d0f3df044ae1b67457ed65f7e441c"
     }
   ]
 }

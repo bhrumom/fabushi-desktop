@@ -193,6 +193,7 @@ export interface McpServerSummary {
 
 export interface McpServerState {
   servers: McpServerSummary[];
+  warnings?: string[];
 }
 
 export interface PluginVariableField {
