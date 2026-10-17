@@ -302,3 +302,47 @@ MFA-H-AC2: production packaged chat/MU-07 and factory A/B/A plus both401/remaini
 pass the same immutable main binary. Both pending; source diagnosis is not runtime
 acceptance. Backend observational-diagnostics draft is deferred because the
 deterministic FIFO type rejection was located before implementing that observer.
+
+## Development-only Native loopback compatibility
+
+Actions38902142404/38992470610 exposed NATIVE_ISSUER_INVALID before the focused
+chat roster could load. That suite already performs browser login through a
+synthetic loopback backend and the existing Native credential owner. It is not
+production or factory acceptance. Giving a real issuer credential a loopback
+transport, replacing Native auth with a fixture session, or skipping the roster
+would violate the current boundaries.
+
+- MFA-D01: preserve this existing synthetic development transport only in a
+  debug-assertions Rust build with all three exact runtime conditions:
+  GITHUB_ACTIONS=true, FABUSHI_E2E=1, FABUSHI_FEATURE_HOST_MODE=test. The release
+  build's loopback predicate is unconditionally false at compile time; setting
+  runtime flags cannot enable it. No production/isolated allowlist is widened.
+- MFA-D02: development accepts only canonical http://127.0.0.1:<nonzero-port>
+  with root path and no credentials/query/fragment. Reject hostname aliases,
+  non-loopback IPs, port0/default/missing port, path prefixes and HTTPS loopback.
+  Credential issuer, configured Native origin and every explicit override must
+  still match exactly; production/isolated credentials can never be dispatched
+  to loopback or vice versa. Keep all file/privacy/expiry/reread checks unchanged.
+- MFA-D03: match existing Native development authId (raw userId), while retaining
+  the isolated qualified-ID formula and production compatibility. This is a
+  transport policy in the same read-only adapter, not a new auth or runtime owner.
+  No target-less isolated/development token export is enabled. Preserve the real
+  browser-login, Native credential and full roster/chat assertions unchanged.
+- MFA-D04: pure contracts cover every gate including debug=false with all runtime
+  flags enabled, malformed/noncanonical origins and bidirectional cross-issuer
+  mismatch. A subprocess regression uses the existing unusable FIFO and an actual
+  synthetic private Native credential to prove raw development identity and
+  logout/reread without session persistence. Run unchanged focused Electron chat
+  and Agent Network regressions in Actions; signed production/factory acceptance
+  remains on release builds with genuine ordinary accounts.
+
+Plan: extend only Native adapter origin selection/identity and its focused tests;
+review the release compile-time exclusion and credential-target binding; repeat
+all13 source gates. This explicitly refines H02/H04 only for the bounded debug
+synthetic development case. Rollback removes the development policy only, never
+adds localhost to production trust or restores the second FIFO reader.
+MFA-D-AC1: policy/privacy/cross-issuer contracts and unchanged focused Electron
+regressions pass exact source in Actions. MFA-D-AC2: release-source review proves
+runtime flags cannot enable loopback; signed production/factory gates still pass.
+Both pending. Provenance: user2026-10-17 finish-all request and exact-source
+Actions NATIVE_ISSUER_INVALID diagnosis of the existing local auth fixture.
