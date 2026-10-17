@@ -174,6 +174,16 @@ fn ora_turn_cancelled_run_emits_no_later_terminal() {
         .unwrap();
     let cancelled = scheduler.start_next("agent", 10).expect("active turn");
 
+    // A stuck run is only observable to the watchdog while queued user work is
+    // waiting behind it; without a waiter the scheduler must not interrupt.
+    scheduler
+        .enqueue("agent", queued("successor", RunLane::User, 20))
+        .unwrap();
+    assert!(
+        scheduler.watchdog_tick("agent", 119).is_none(),
+        "the watchdog must not trip inside its grace window"
+    );
+
     let tripped = scheduler.watchdog_tick("agent", 120).expect("watchdog trip");
     assert_eq!(tripped.stage, WatchdogStage::Trip);
     assert_eq!(
@@ -186,9 +196,6 @@ fn ora_turn_cancelled_run_emits_no_later_terminal() {
     assert_eq!(escaped.ack_token.as_deref(), Some("ack-cancelled"));
     assert!(scheduler.active("agent").is_none());
 
-    scheduler
-        .enqueue("agent", queued("successor", RunLane::User, 141))
-        .unwrap();
     let successor = scheduler.start_next("agent", 141).expect("successor turn");
     assert_eq!(successor.task_id, "successor");
 
