@@ -128,7 +128,7 @@ regions:
     nodes:
       - name: 902a
         regionid: 902
-        hostname: fdn-g15-host.test
+        hostname: 127.0.0.1
         ipv4: 127.0.0.1
         stunport: 0
         stunonly: false
@@ -136,7 +136,7 @@ regions:
 EOF
 
 cat > "$work_dir/headscale.yaml" <<'EOF'
-server_url: https://fdn-g15-host.test
+server_url: https://127.0.0.1
 listen_addr: 127.0.0.1:443
 metrics_listen_addr: ""
 grpc_listen_addr: 127.0.0.1:50443
@@ -292,7 +292,7 @@ sudo ip6tables -I OUTPUT 1 -m owner --uid-owner "$uid_value" '!' -d ::1/128 -m c
 # so pin this Actions-only worker to the real embedded loopback DERP.
 sudo -u "$probe_user" env -i \
   TS_DISABLE_PORTMAPPER=true \
-  TS_DEBUG_USE_DERP_ADDR=fdn-g15-host.test \
+  TS_DEBUG_USE_DERP_ADDR=127.0.0.1 \
   PATH=/usr/bin:/bin \
   HOME="$work_dir/home" \
   "$worker_exec" <"$work_dir/worker.stdin" >"$worker_protocol" 2>"$worker_log" &
@@ -306,7 +306,7 @@ print(json.dumps({
   "type": "initialize",
   "protocolVersion": 1,
   "hostname": "g15-host-worker",
-  "controlUrl": "https://fdn-g15-host.test",
+  "controlUrl": "https://127.0.0.1",
   "authKey": sys.argv[1],
   "stateDir": sys.argv[2],
   "stateKeyB64": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
@@ -448,7 +448,7 @@ report={
    "diskReserveBytes":{"filesystemTotal":int(os.environ["FDN_G15_HOST_TOTAL_BYTES"]),"minimumAvailableObserved":int(os.environ["FDN_G15_HOST_MIN_AVAILABLE_BYTES"]),"requiredReserve":int(os.environ["FDN_G15_HOST_RESERVE_BYTES"])}
  },
  "egress":{
-   "fixtureApprovedOrigins":["https://fdn-g15-host.test:443","127.0.0.1 embedded DERP/STUN"],
+   "fixtureApprovedOrigins":["https://127.0.0.1:443","127.0.0.1 embedded DERP/STUN"],
    "unexpectedWorkerOwnedPacketsRejected":int(os.environ["FDN_G15_HOST_BLOCKED_PACKETS"])
  }
 }
