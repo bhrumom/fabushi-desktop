@@ -4,7 +4,7 @@ import type { ProductionCoordinatorClient } from "../../../../production/coordin
 import { createCoordinatorOnboardingReadiness, type OnboardingComputerReadiness, type OnboardingComputerSnapshot, type OnboardingComputerStatusSource } from "./computer-readiness";
 import {
   advanceSignedInOnboarding, canSubmitOnboardingDraft, CHARACTER_COLORS, CHARACTER_SHAPES, COMPUTER_DEMO_FRAMES, computerDemoFrame,
-  completeOnboardingRequestAfterDwell, createOnboardingHandOffDwell, createOnboardingRequestGenerationFence, DAILY_TOOLS, filterDailyTools, handOffStatus, INITIAL_ONBOARDING_DRAFT, makeOnboardingCreateRequest, shouldContinueAfterComputerWait,
+  completeOnboardingRequestAfterDwell, createOnboardingHandOffDwell, createOnboardingRequestGenerationFence, releaseOnboardingCreatingGeneration, DAILY_TOOLS, filterDailyTools, handOffStatus, INITIAL_ONBOARDING_DRAFT, makeOnboardingCreateRequest, shouldContinueAfterComputerWait,
   MEET_TYPED_TEXT, normalizeOnboardingDraft, ONBOARDING_DEMO_BEAT_MS,
   ONBOARDING_JOBS, ONBOARDING_JOBS_BEAT_LIMIT, ONBOARDING_JOBS_BEAT_MS, ONBOARDING_MEET_BEAT_MS,
   ONBOARDING_JOB_BUBBLE_Y_OFFSET, ONBOARDING_MEET_DELAY_BEATS, ONBOARDING_STEP_EXIT_MS, onboardingStepIndex, onboardingStepReport,
@@ -265,7 +265,7 @@ export function SignedInOnboarding({ bridge, client, accountSlot, computerReadin
       const completed = await completeOnboardingRequestAfterDwell(() => dwell.wait(), isRequestCurrent, () => claimedComplete(agentId));
       if (!isRequestCurrent() || !completed) return;
     } catch (reason) { if (isRequestCurrent()) setError(onboardingCreateErrorMessage(reason)); }
-    finally { if (creatingGenerationRef.current === generation) creatingGenerationRef.current = null; }
+    finally { creatingGenerationRef.current = releaseOnboardingCreatingGeneration(creatingGenerationRef.current, generation); }
   };
   const renderStep = (renderedStep: OnboardingStep) => <SignedInOnboardingStep computer={computer} dailyTools={dailyTools} demoBeat={demoBeat} draft={draft} error={renderedStep === "hand-off" ? error : null} isAvatarLanded={isAvatarLanded} jobsBeat={jobsBeat} meetBeat={meetBeat} onAvatarSlotAttached={attachAvatarSlot} onBack={() => { const previous = previousOnboardingStep(renderedStep); if (previous != null) transition(previous); }} onCreate={() => void create()} onDailyToolsChange={setDailyTools} onDraftChange={setDraft} onForward={() => transition(advanceSignedInOnboarding(renderedStep))} renderCharacter={renderCharacter} step={renderedStep} />;
   const normalizedDraft = useMemo(() => normalizeOnboardingDraft(draft), [draft]);

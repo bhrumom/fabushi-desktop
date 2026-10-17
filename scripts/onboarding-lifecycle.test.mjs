@@ -1,16 +1,22 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import test from "node:test";
 const require = createRequire(new URL("../desktop/package.json", import.meta.url));
 const ts = require("typescript");
-const transpile = (source, fileName) => "data:text/javascript;base64," + Buffer.from(ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 }, fileName }).outputText).toString("base64");
+const transpile = (source, fileName) => ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 }, fileName }).outputText;
+const tempDirectory = await mkdtemp(join(tmpdir(), "fabushi-onboarding-lifecycle-"));
 const modelSource = await readFile(new URL("../frontend/src/recovered/features/onboarding/signed-in/model.ts", import.meta.url), "utf8");
-const modelUrl = "data:text/javascript;base64," + Buffer.from(ts.transpileModule(modelSource, { compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 }, fileName: "model.ts" }).outputText).toString("base64");
-const model = await import(modelUrl);
-const readinessSource = (await readFile(new URL("../frontend/src/recovered/features/onboarding/signed-in/computer-readiness.ts", import.meta.url), "utf8")).replace('from "./model";', `from "${modelUrl}";`);
-const readiness = await import(transpile(readinessSource, "computer-readiness.ts"));
+const readinessSource = await readFile(new URL("../frontend/src/recovered/features/onboarding/signed-in/computer-readiness.ts", import.meta.url), "utf8");
+await writeFile(join(tempDirectory, "model.js"), transpile(modelSource, "model.ts"), "utf8");
+await writeFile(join(tempDirectory, "computer-readiness.js"), transpile(readinessSource.replace('from "./model";', 'from "./model.js";'), "computer-readiness.ts"), "utf8");
+const model = await import(pathToFileURL(join(tempDirectory, "model.js")).href);
+const readiness = await import(pathToFileURL(join(tempDirectory, "computer-readiness.js")).href);
 const viewSource = await readFile(new URL("../frontend/src/recovered/features/onboarding/signed-in/view.tsx", import.meta.url), "utf8");
+test.after(async () => { await rm(tempDirectory, { recursive: true, force: true }); });
 class FakeClock {
   nextId = 1; timers = new Map();
   setTimeout(callback, delay) { const id = this.nextId++; this.timers.set(id, { callback, delay }); return id; }
@@ -20,8 +26,7 @@ class FakeClock {
 test("readiness success is explicit", async () => {
   const source = readiness.createOnboardingComputerReadiness(async () => "ignored");
   const unsubscribe = source.subscribe(() => {});
-  assert.equal(await source.waitForComputer(), "ready");
-  unsubscribe(); source.dispose();
+  assert.equal(await source.waitForComputer(), "ready"); unsubscribe(); source.dispose();
 });
 test("60-second timeout preserves fail-open behavior", async () => {
   const clock = new FakeClock();
@@ -29,8 +34,7 @@ test("60-second timeout preserves fail-open behavior", async () => {
   const unsubscribe = source.subscribe(() => {});
   const waiting = source.waitForComputer(); clock.fireDelay(model.ONBOARDING_BOX_WAIT_TIMEOUT_MS);
   const result = await waiting;
-  assert.equal(result, "timeout"); assert.equal(model.shouldContinueAfterComputerWait(result), true);
-  unsubscribe(); source.dispose();
+  assert.equal(result, "timeout"); assert.equal(model.shouldContinueAfterComputerWait(result), true); unsubscribe(); source.dispose();
 });
 test("readiness disposal cancels", async () => {
   const source = readiness.createOnboardingComputerReadiness(() => new Promise(() => {}));
@@ -66,9 +70,15 @@ test("A to B to A does not revive old generation", async () => {
   assert.equal(await model.completeOnboardingRequestAfterDwell(async () => "completed", () => fence.isCurrent(a1), () => { calls++; }), false);
   assert.equal(calls, 0);
 });
+test("old request finally cannot clear a newer request generation", () => {
+  const oldGeneration = 11, newGeneration = 12;
+  assert.equal(model.releaseOnboardingCreatingGeneration(newGeneration, oldGeneration), newGeneration);
+  assert.equal(model.releaseOnboardingCreatingGeneration(oldGeneration, oldGeneration), null);
+});
 test("production view binds async onboarding to generations and explicit results", () => {
   assert.match(viewSource, /createOnboardingRequestGenerationFence/);
   assert.match(viewSource, /shouldContinueAfterComputerWait\(readinessResult\)/);
   assert.match(viewSource, /completeOnboardingRequestAfterDwell/);
+  assert.match(viewSource, /releaseOnboardingCreatingGeneration\(creatingGenerationRef\.current, generation\)/);
   assert.match(viewSource, /if \(!isRequestCurrent\(\)\) return;/);
 });

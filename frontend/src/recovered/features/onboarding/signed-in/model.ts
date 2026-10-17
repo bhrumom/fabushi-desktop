@@ -312,3 +312,8 @@ export function handOffStatus(input: { isComputerReady: boolean; pullPercent: nu
   if (input.computerState === "hibernated") return "Waking your computer…";
   return "Setting up your Grok Bot…";
 }
+
+/** Clear a pending onboarding request only when its generation still owns the slot. */
+export function releaseOnboardingCreatingGeneration(current: number | null, completed: number): number | null {
+  return current === completed ? null : current;
+}
