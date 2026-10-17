@@ -397,7 +397,14 @@ fn native_desktop_account_handoff() {
     assert!(ci_session_metadata.file_type().is_file());
     assert_eq!(ci_session_metadata.permissions().mode() & 0o777, 0o600);
     for mode in ["isolated", "production", "isolated-return", "fifo-tripwire"] {
+        let started = Instant::now();
         run_child(&root.0, mode);
+        if mode == "fifo-tripwire" {
+            assert!(
+                started.elapsed() < Duration::from_secs(5),
+                "production AppHost must fail closed on the FIFO immediately, not wait for the no-reader timeout"
+            );
+        }
         assert_eq!(
             fs::read(&ci_session).expect("CI session sentinel remains"),
             ci_session_sentinel,
