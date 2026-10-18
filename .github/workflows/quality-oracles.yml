@@ -121,7 +121,7 @@ jobs:
           for invariant in REC-I02 REC-I03 REC-I05 REC-I06 REC-I08; do
             grep -F "$invariant" "$log" >/dev/null
           done
-          grep -Eq '^# tests 6
+          grep -Eq "^# tests 6$" "$log"
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: source/host -> target
