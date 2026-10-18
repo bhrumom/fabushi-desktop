@@ -11,6 +11,7 @@ import {
   reconcileTranscriptLiveUpdate,
 } from "./transcript-reconciliation.ts";
 import type { ConversationTranscriptEntry, TranscriptMessage } from "./model.ts";
+import { observeDerivedMediaVisibility } from "./media-visibility.ts";
 
 const PROPERTY_SEED = 0x52454302;
 const NONCE = "nonce-a";
@@ -259,6 +260,79 @@ test("REC-I06 attachment echo replay deduplicates resources and preserves pendin
   assert.equal(entry.delivery, "dispatching");
   assert.equal(entry.text, pendingUser.text);
   assert.deepEqual(entry.attachments, [ATTACHMENT]);
+
+  const settled = reconcileTranscriptLiveAppend(replay, authoritativeUser, { resolvedNonce: NONCE });
+  assert.equal(settled.length, 1);
+  const authoritative = settled[0];
+  assert.ok(authoritative?.kind === "message");
+  assert.equal(authoritative.id, authoritativeUser.id);
+  assert.equal(authoritative.delivery, "sent");
+  assert.deepEqual(authoritative.attachments, [ATTACHMENT]);
+});
+
+test("REC-I06 media Resource lifecycle releases observer leases and fences late visibility listeners", () => {
+  const mediaViewerSource = readFileSync(new URL("./media-viewer.tsx", import.meta.url), "utf8");
+  assert.match(mediaViewerSource, /shouldResolveDerivedMedia\\(kind, isNearViewport\\)/);
+  assert.match(mediaViewerSource, /if \\(!shouldResolve \\|\\| resolveMedia == null\\) \\{\\s*setMedia\\(null\\);\\s*setLoading\\(false\\);/);
+  assert.match(mediaViewerSource, /return \\(\\) => \\{ active = false; \\};/);
+
+  const previousDescriptor = Object.getOwnPropertyDescriptor(globalThis, "IntersectionObserver");
+  const instances: FakeIntersectionObserver[] = [];
+  class FakeIntersectionObserver {
+    readonly observed: Element[] = [];
+    readonly unobserved: Element[] = [];
+    disconnectCount = 0;
+
+    constructor(private readonly callback: IntersectionObserverCallback) {
+      instances.push(this);
+    }
+
+    observe(target: Element): void { this.observed.push(target); }
+    unobserve(target: Element): void { this.unobserved.push(target); }
+    disconnect(): void { this.disconnectCount += 1; }
+    emit(target: Element, isIntersecting: boolean): void {
+      this.callback([{ target, isIntersecting } as IntersectionObserverEntry], this as unknown as IntersectionObserver);
+    }
+  }
+
+  Object.defineProperty(globalThis, "IntersectionObserver", {
+    configurable: true,
+    writable: true,
+    value: FakeIntersectionObserver,
+  });
+  try {
+    const target = {} as Element;
+    const firstEvents: boolean[] = [];
+    const secondEvents: boolean[] = [];
+    const releaseFirst = observeDerivedMediaVisibility(target, "0px 0px 1px 0px", (visible) => firstEvents.push(visible));
+    const releaseSecond = observeDerivedMediaVisibility(target, "0px 0px 1px 0px", (visible) => secondEvents.push(visible));
+    assert.equal(instances.length, 1);
+    const sharedObserver = instances[0]!;
+    assert.deepEqual(sharedObserver.observed, [target]);
+
+    sharedObserver.emit(target, true);
+    assert.deepEqual(firstEvents, [true]);
+    assert.deepEqual(secondEvents, [true]);
+
+    releaseFirst();
+    releaseFirst();
+    sharedObserver.emit(target, false);
+    assert.deepEqual(firstEvents, [true]);
+    assert.deepEqual(secondEvents, [true, false]);
+    assert.equal(sharedObserver.unobserved.length, 0);
+
+    releaseSecond();
+    assert.deepEqual(sharedObserver.unobserved, [target]);
+    assert.equal(sharedObserver.disconnectCount, 1);
+
+    const releaseAfterDispose = observeDerivedMediaVisibility(target, "0px 0px 1px 0px", () => undefined);
+    assert.equal(instances.length, 2);
+    releaseAfterDispose();
+    assert.equal(instances[1]?.disconnectCount, 1);
+  } finally {
+    if (previousDescriptor == null) Reflect.deleteProperty(globalThis, "IntersectionObserver");
+    else Object.defineProperty(globalThis, "IntersectionObserver", previousDescriptor);
+  }
 });
 
 test("REC-I08 account and conversation owner scopes fence identical ids/nonces from cross-scope updates", () => {

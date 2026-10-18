@@ -108,6 +108,399 @@ jobs:
           fi
           test "$actual" = "$expected"
           echo "Exact tested HEAD: $actual" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Run renderer transcript reconciliation contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/quality-oracles
+          log="artifacts/quality-oracles/transcript-reconciliation-node-test.log"
+          node --experimental-strip-types --test --test-reporter=tap frontend/src/recovered/features/conversation/workspace/transcript-reconciliation.contract.test.ts 2>&1 | tee "$log"
+          for invariant in REC-I02 REC-I03 REC-I05 REC-I06 REC-I08; do
+            grep -F "$invariant" "$log" >/dev/null
+          done
+          grep -Eq '^# tests 6
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: source/host -> target
+          shared-key: desktop-restored-rust-1.97.1
+      - name: Run turn, ordering and reconciliation oracle cases
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/quality-oracles
+          cargo test --manifest-path source/host/Cargo.toml \
+            --test ora_turn_order_recon_contract -- --test-threads=1 \
+            2>&1 | tee artifacts/quality-oracles/cargo-test.log
+      - name: Prove every declared oracle case actually executed
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="$(grep -c '^#\[test\]' source/host/tests/ora_turn_order_recon_contract.rs)"
+          passed="$(sed -n 's/^test result: ok\. \([0-9][0-9]*\) passed.*/\1/p' artifacts/quality-oracles/cargo-test.log | tail -n 1)"
+          if [ -z "$passed" ]; then
+            echo "::error::no passing cargo test summary; the oracle suite did not execute"
+            exit 1
+          fi
+          if [ "$expected" != "$passed" ]; then
+            echo "::error::declared $expected oracle case(s) but $passed passed; a case was skipped or filtered"
+            exit 1
+          fi
+          {
+            echo "DECLARED_CASES=$expected"
+            echo "PASSED_CASES=$passed"
+          } >> "$GITHUB_ENV"
+      - name: Record exact-head oracle evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          HEAD_SHA="$(git rev-parse HEAD)" \
+          DECLARED_CASES="$DECLARED_CASES" \
+          PASSED_CASES="$PASSED_CASES" \
+          node -e '
+            const fs = require("node:fs");
+            const crypto = require("node:crypto");
+            const log = fs.readFileSync("artifacts/quality-oracles/cargo-test.log");
+            const nodeLog = fs.readFileSync("artifacts/quality-oracles/transcript-reconciliation-node-test.log");
+            const evidence = {
+              format_version: 1,
+              head_sha: process.env.HEAD_SHA,
+              renderer_contract_suite: "frontend/src/recovered/features/conversation/workspace/transcript-reconciliation.contract.test.ts",
+              renderer_contract_cases: ["REC-I02", "REC-I03", "REC-I05", "REC-I06", "REC-I08"],
+              renderer_contract_test_count: 6,
+              renderer_contract_log_sha256: crypto.createHash("sha256").update(nodeLog).digest("hex"),
+              workflow: process.env.GITHUB_WORKFLOW,
+              run_id: Number(process.env.GITHUB_RUN_ID),
+              run_attempt: Number(process.env.GITHUB_RUN_ATTEMPT),
+              job: process.env.GITHUB_JOB,
+              event: process.env.GITHUB_EVENT_NAME,
+              suite: "source/host/tests/ora_turn_order_recon_contract.rs",
+              oracles: ["ORA-TURN-001", "ORA-ORDER-001", "ORA-RECON-001"],
+              declared_cases: Number(process.env.DECLARED_CASES),
+              passed_cases: Number(process.env.PASSED_CASES),
+              result: "passed",
+              log_sha256: crypto.createHash("sha256").update(log).digest("hex"),
+            };
+            fs.writeFileSync(
+              "artifacts/quality-oracles/execution-evidence.json",
+              JSON.stringify(evidence, null, 2) + "\n",
+            );
+          '
+      - name: Upload execution evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-oracles-execution-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          path: artifacts/quality-oracles
+          if-no-files-found: error
+          retention-days: 90
+
+  gate:
+    name: Oracle gate
+    needs: [traceability, execution]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - name: Download oracle evidence
+        uses: actions/download-artifact@v4
+        with:
+          pattern: quality-oracles-*-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          path: artifacts/quality-oracles
+          merge-multiple: true
+      - name: Bind evidence to the exact tested HEAD
+        shell: bash
+        run: |
+          set -euo pipefail
+          HEAD_SHA="$(git rev-parse HEAD)"
+          node -e '
+            const fs = require("node:fs");
+            const head = process.argv[1];
+            const trace = JSON.parse(fs.readFileSync("artifacts/quality-oracles/traceability.json", "utf8"));
+            const exec = JSON.parse(fs.readFileSync("artifacts/quality-oracles/execution-evidence.json", "utf8"));
+            if (trace.status !== "pass") throw new Error("traceability report is not pass");
+            if (exec.result !== "passed") throw new Error("execution evidence is not passed");
+            if (exec.head_sha !== head) throw new Error("execution evidence HEAD drift: " + exec.head_sha + " != " + head);
+            if (exec.declared_cases !== exec.passed_cases) throw new Error("declared and passed oracle case counts disagree");
+            if (!(exec.passed_cases > 0)) throw new Error("no oracle case executed");
+            if (trace.normative_invariants !== Object.keys(trace.covered).length + Object.keys(trace.pending).length) {
+              throw new Error("traceability accounting does not close over the normative invariant set");
+            }
+            const digests = {};
+            for (const file of ["traceability.json", "execution-evidence.json", "cargo-test.log"]) {
+              const path = "artifacts/quality-oracles/" + file;
+              digests[file] = require("node:crypto").createHash("sha256").update(fs.readFileSync(path)).digest("hex");
+            }
+            fs.writeFileSync(
+              "artifacts/quality-oracles/gate-summary.json",
+              JSON.stringify({ head_sha: head, status: "pass", digests }, null, 2) + "\n",
+            );
+            console.log(JSON.stringify({ head_sha: head, status: "pass", digests }, null, 2));
+          ' "$HEAD_SHA"
+          echo "Oracle gate passed for exact HEAD $HEAD_SHA." >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload gate summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-oracles-gate-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          path: artifacts/quality-oracles/gate-summary.json
+          if-no-files-found: error
+          retention-days: 90
+ "$log"
+          grep -Eq '^# pass 6
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: source/host -> target
+          shared-key: desktop-restored-rust-1.97.1
+      - name: Run turn, ordering and reconciliation oracle cases
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/quality-oracles
+          cargo test --manifest-path source/host/Cargo.toml \
+            --test ora_turn_order_recon_contract -- --test-threads=1 \
+            2>&1 | tee artifacts/quality-oracles/cargo-test.log
+      - name: Prove every declared oracle case actually executed
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="$(grep -c '^#\[test\]' source/host/tests/ora_turn_order_recon_contract.rs)"
+          passed="$(sed -n 's/^test result: ok\. \([0-9][0-9]*\) passed.*/\1/p' artifacts/quality-oracles/cargo-test.log | tail -n 1)"
+          if [ -z "$passed" ]; then
+            echo "::error::no passing cargo test summary; the oracle suite did not execute"
+            exit 1
+          fi
+          if [ "$expected" != "$passed" ]; then
+            echo "::error::declared $expected oracle case(s) but $passed passed; a case was skipped or filtered"
+            exit 1
+          fi
+          {
+            echo "DECLARED_CASES=$expected"
+            echo "PASSED_CASES=$passed"
+          } >> "$GITHUB_ENV"
+      - name: Record exact-head oracle evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          HEAD_SHA="$(git rev-parse HEAD)" \
+          DECLARED_CASES="$DECLARED_CASES" \
+          PASSED_CASES="$PASSED_CASES" \
+          node -e '
+            const fs = require("node:fs");
+            const crypto = require("node:crypto");
+            const log = fs.readFileSync("artifacts/quality-oracles/cargo-test.log");
+            const evidence = {
+              format_version: 1,
+              head_sha: process.env.HEAD_SHA,
+              workflow: process.env.GITHUB_WORKFLOW,
+              run_id: Number(process.env.GITHUB_RUN_ID),
+              run_attempt: Number(process.env.GITHUB_RUN_ATTEMPT),
+              job: process.env.GITHUB_JOB,
+              event: process.env.GITHUB_EVENT_NAME,
+              suite: "source/host/tests/ora_turn_order_recon_contract.rs",
+              oracles: ["ORA-TURN-001", "ORA-ORDER-001", "ORA-RECON-001"],
+              declared_cases: Number(process.env.DECLARED_CASES),
+              passed_cases: Number(process.env.PASSED_CASES),
+              result: "passed",
+              log_sha256: crypto.createHash("sha256").update(log).digest("hex"),
+            };
+            fs.writeFileSync(
+              "artifacts/quality-oracles/execution-evidence.json",
+              JSON.stringify(evidence, null, 2) + "\n",
+            );
+          '
+      - name: Upload execution evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-oracles-execution-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          path: artifacts/quality-oracles
+          if-no-files-found: error
+          retention-days: 90
+
+  gate:
+    name: Oracle gate
+    needs: [traceability, execution]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - name: Download oracle evidence
+        uses: actions/download-artifact@v4
+        with:
+          pattern: quality-oracles-*-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          path: artifacts/quality-oracles
+          merge-multiple: true
+      - name: Bind evidence to the exact tested HEAD
+        shell: bash
+        run: |
+          set -euo pipefail
+          HEAD_SHA="$(git rev-parse HEAD)"
+          node -e '
+            const fs = require("node:fs");
+            const head = process.argv[1];
+            const trace = JSON.parse(fs.readFileSync("artifacts/quality-oracles/traceability.json", "utf8"));
+            const exec = JSON.parse(fs.readFileSync("artifacts/quality-oracles/execution-evidence.json", "utf8"));
+            if (trace.status !== "pass") throw new Error("traceability report is not pass");
+            if (exec.result !== "passed") throw new Error("execution evidence is not passed");
+            if (exec.head_sha !== head) throw new Error("execution evidence HEAD drift: " + exec.head_sha + " != " + head);
+            if (exec.declared_cases !== exec.passed_cases) throw new Error("declared and passed oracle case counts disagree");
+            if (!(exec.passed_cases > 0)) throw new Error("no oracle case executed");
+            if (trace.normative_invariants !== Object.keys(trace.covered).length + Object.keys(trace.pending).length) {
+              throw new Error("traceability accounting does not close over the normative invariant set");
+            }
+            const digests = {};
+            for (const file of ["traceability.json", "execution-evidence.json", "cargo-test.log"]) {
+              const path = "artifacts/quality-oracles/" + file;
+              digests[file] = require("node:crypto").createHash("sha256").update(fs.readFileSync(path)).digest("hex");
+            }
+            fs.writeFileSync(
+              "artifacts/quality-oracles/gate-summary.json",
+              JSON.stringify({ head_sha: head, status: "pass", digests }, null, 2) + "\n",
+            );
+            console.log(JSON.stringify({ head_sha: head, status: "pass", digests }, null, 2));
+          ' "$HEAD_SHA"
+          echo "Oracle gate passed for exact HEAD $HEAD_SHA." >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload gate summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-oracles-gate-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          path: artifacts/quality-oracles/gate-summary.json
+          if-no-files-found: error
+          retention-days: 90
+ "$log"
+          grep -Eq '^# fail 0
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: source/host -> target
+          shared-key: desktop-restored-rust-1.97.1
+      - name: Run turn, ordering and reconciliation oracle cases
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/quality-oracles
+          cargo test --manifest-path source/host/Cargo.toml \
+            --test ora_turn_order_recon_contract -- --test-threads=1 \
+            2>&1 | tee artifacts/quality-oracles/cargo-test.log
+      - name: Prove every declared oracle case actually executed
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="$(grep -c '^#\[test\]' source/host/tests/ora_turn_order_recon_contract.rs)"
+          passed="$(sed -n 's/^test result: ok\. \([0-9][0-9]*\) passed.*/\1/p' artifacts/quality-oracles/cargo-test.log | tail -n 1)"
+          if [ -z "$passed" ]; then
+            echo "::error::no passing cargo test summary; the oracle suite did not execute"
+            exit 1
+          fi
+          if [ "$expected" != "$passed" ]; then
+            echo "::error::declared $expected oracle case(s) but $passed passed; a case was skipped or filtered"
+            exit 1
+          fi
+          {
+            echo "DECLARED_CASES=$expected"
+            echo "PASSED_CASES=$passed"
+          } >> "$GITHUB_ENV"
+      - name: Record exact-head oracle evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          HEAD_SHA="$(git rev-parse HEAD)" \
+          DECLARED_CASES="$DECLARED_CASES" \
+          PASSED_CASES="$PASSED_CASES" \
+          node -e '
+            const fs = require("node:fs");
+            const crypto = require("node:crypto");
+            const log = fs.readFileSync("artifacts/quality-oracles/cargo-test.log");
+            const evidence = {
+              format_version: 1,
+              head_sha: process.env.HEAD_SHA,
+              workflow: process.env.GITHUB_WORKFLOW,
+              run_id: Number(process.env.GITHUB_RUN_ID),
+              run_attempt: Number(process.env.GITHUB_RUN_ATTEMPT),
+              job: process.env.GITHUB_JOB,
+              event: process.env.GITHUB_EVENT_NAME,
+              suite: "source/host/tests/ora_turn_order_recon_contract.rs",
+              oracles: ["ORA-TURN-001", "ORA-ORDER-001", "ORA-RECON-001"],
+              declared_cases: Number(process.env.DECLARED_CASES),
+              passed_cases: Number(process.env.PASSED_CASES),
+              result: "passed",
+              log_sha256: crypto.createHash("sha256").update(log).digest("hex"),
+            };
+            fs.writeFileSync(
+              "artifacts/quality-oracles/execution-evidence.json",
+              JSON.stringify(evidence, null, 2) + "\n",
+            );
+          '
+      - name: Upload execution evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-oracles-execution-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          path: artifacts/quality-oracles
+          if-no-files-found: error
+          retention-days: 90
+
+  gate:
+    name: Oracle gate
+    needs: [traceability, execution]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - name: Download oracle evidence
+        uses: actions/download-artifact@v4
+        with:
+          pattern: quality-oracles-*-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          path: artifacts/quality-oracles
+          merge-multiple: true
+      - name: Bind evidence to the exact tested HEAD
+        shell: bash
+        run: |
+          set -euo pipefail
+          HEAD_SHA="$(git rev-parse HEAD)"
+          node -e '
+            const fs = require("node:fs");
+            const head = process.argv[1];
+            const trace = JSON.parse(fs.readFileSync("artifacts/quality-oracles/traceability.json", "utf8"));
+            const exec = JSON.parse(fs.readFileSync("artifacts/quality-oracles/execution-evidence.json", "utf8"));
+            if (trace.status !== "pass") throw new Error("traceability report is not pass");
+            if (exec.result !== "passed") throw new Error("execution evidence is not passed");
+            if (exec.head_sha !== head) throw new Error("execution evidence HEAD drift: " + exec.head_sha + " != " + head);
+            if (exec.declared_cases !== exec.passed_cases) throw new Error("declared and passed oracle case counts disagree");
+            if (!(exec.passed_cases > 0)) throw new Error("no oracle case executed");
+            if (trace.normative_invariants !== Object.keys(trace.covered).length + Object.keys(trace.pending).length) {
+              throw new Error("traceability accounting does not close over the normative invariant set");
+            }
+            const digests = {};
+            for (const file of ["traceability.json", "execution-evidence.json", "cargo-test.log"]) {
+              const path = "artifacts/quality-oracles/" + file;
+              digests[file] = require("node:crypto").createHash("sha256").update(fs.readFileSync(path)).digest("hex");
+            }
+            fs.writeFileSync(
+              "artifacts/quality-oracles/gate-summary.json",
+              JSON.stringify({ head_sha: head, status: "pass", digests }, null, 2) + "\n",
+            );
+            console.log(JSON.stringify({ head_sha: head, status: "pass", digests }, null, 2));
+          ' "$HEAD_SHA"
+          echo "Oracle gate passed for exact HEAD $HEAD_SHA." >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload gate summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-oracles-gate-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          path: artifacts/quality-oracles/gate-summary.json
+          if-no-files-found: error
+          retention-days: 90
+ "$log"
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.97.1
