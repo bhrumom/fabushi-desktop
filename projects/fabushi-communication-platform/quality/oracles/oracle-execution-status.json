@@ -1,6 +1,10 @@
 {
   "format_version": 1,
-  "oracles": ["ORA-TURN-001", "ORA-ORDER-001", "ORA-RECON-001"],
+  "oracles": [
+    "ORA-TURN-001",
+    "ORA-ORDER-001",
+    "ORA-RECON-001"
+  ],
   "executable_case_file": "source/host/tests/ora_turn_order_recon_contract.rs",
   "gate": "scripts/validate-quality-oracles.mjs",
   "note": "This file is execution status, not an oracle definition. An invariant may be pending only with a concrete missing-evidence reason; it must never be silently dropped.",
@@ -8,12 +12,21 @@
     "TURN-I03": "Terminal-answer survival across settlement, switch-away, reconnect, reload and restart needs the packaged temporal timeline (T0..T10) with a canonical transcript manifest and DOM manifest; lower-layer settlement idempotency is covered by TURN-I01 but cannot prove renderer persistence.",
     "TURN-I06": "Same-turn relative ordering of preamble/tool/result/final requires the packaged transcript projection plus DOM article order; no lower-layer owner exposes the renderer sequence.",
     "TURN-I08": "Terminal semantic payload equality between T5 and T6/T7/T8/T9/T10 requires packaged screenshots plus normalized semantic manifests at each timeline point.",
-    "ORD-I04": "Late baseline/history must not move a newer live entry across logical predecessors; proving it needs the real pagination plus baseline replay path in the packaged app, not the id-minting or scheduler owners.",
+    "ORD-I04": "The deterministic renderer helper contract now exercises late-page insertion and preserves the current live suffix, but packaged pagination/history replay must still prove logical predecessor order and DOM article order on the same release candidate.",
     "ORD-I05": "Deterministic preamble/tool/result/final relative order is a transcript projection property; the canonical ordering owner for that projection is exercised only through the shipping composition.",
     "ORD-I06": "Pagination prepend must preserve relative order, selection and the unread anchor; this needs the packaged scroll/pagination journey with DOM assertions.",
     "ORD-I07": "Switch/reopen/restart semantic order equality requires a packaged restart journey with persisted transcript manifests.",
-    "REC-I02": "Convergence under supported event reorders needs property/state-machine exploration over the full reconciliation pipeline, not only the acceptance-ledger boundary.",
-    "REC-I03": "A baseline must not erase a newer observed live terminal without an explicit tombstone; this requires the real baseline/live race in the packaged app.",
-    "REC-I06": "Attachment echo merge without duplicate or lost delivery requires the attachment resource lifecycle in the shipping composition."
-  }
+    "REC-I02": "A seeded deterministic Node contract now explores 96 supported baseline/live/update/duplicate/replay orderings through the canonical Transcript reconciliation helper, including late-page merge; packaged temporal/renderer projection evidence is still required before this invariant can be closed.",
+    "REC-I03": "A focused Node contract now reproduces baseline-before-live, live-before-baseline, update-before-baseline and stale-stream replay against the canonical helper; packaged timeline evidence must still prove terminal survival through switch/reopen/reconnect/restart and explicit deletion semantics.",
+    "REC-I06": "A focused attachment-echo contract now checks resource dedupe, partial metadata preservation and pending-delivery preservation in the canonical helper; the real attachment Resource lifecycle and packaged shipping-composition evidence remain open."
+  },
+  "renderer_contract_case_file": "frontend/src/recovered/features/conversation/workspace/transcript-reconciliation.contract.test.ts",
+  "renderer_contract_oracles": [
+    "ORD-I04",
+    "REC-I02",
+    "REC-I03",
+    "REC-I05",
+    "REC-I06",
+    "REC-I08"
+  ]
 }

@@ -1,4 +1,4 @@
-import type { ConversationTranscriptEntry, TranscriptMessage } from "./model.ts";
+import type { ConversationTranscriptEntry, DraftAttachment, TranscriptMessage } from "./model.ts";
 
 /**
  * Canonical Transcript reconciliation helpers.
@@ -8,17 +8,42 @@ import type { ConversationTranscriptEntry, TranscriptMessage } from "./model.ts"
  * they are not a second transcript store.
  */
 
+function mergeAttachmentMetadata(current: DraftAttachment, incoming: DraftAttachment): DraftAttachment {
+  const merged: DraftAttachment = {
+    path: incoming.path.length > 0 ? incoming.path : current.path,
+    name: incoming.name.length > 0 ? incoming.name : current.name,
+  };
+  const size = incoming.size ?? current.size;
+  if (size !== undefined) merged.size = size;
+  const mimeType = incoming.mimeType != null && incoming.mimeType.length > 0
+    ? incoming.mimeType
+    : current.mimeType;
+  if (mimeType !== undefined) merged.mimeType = mimeType;
+  return merged;
+}
+
 function mergeTranscriptAttachments(
-  current: TranscriptMessage["attachments"],
-  incoming: TranscriptMessage["attachments"],
+  current: readonly DraftAttachment[] | undefined,
+  incoming: readonly DraftAttachment[] | undefined,
 ): NonNullable<TranscriptMessage["attachments"]> {
   const merged = [...(current ?? [])];
   for (const attachment of incoming ?? []) {
-    const index = merged.findIndex((candidate) => candidate.path === attachment.path);
-    if (index < 0) merged.push(attachment);
-    else merged[index] = { ...merged[index], ...attachment };
+    const index = merged.findIndex((candidate) =>
+      candidate.path === attachment.path
+      && (attachment.path.length > 0 || candidate.name === attachment.name)
+    );
+    if (index < 0) merged.push({ ...attachment });
+    else merged[index] = mergeAttachmentMetadata(merged[index]!, attachment);
   }
   return merged;
+}
+
+function mergeTranscriptText(primary: string, secondary: string, preservePrimary: boolean): string {
+  if (primary.length === 0) return secondary;
+  if (secondary.length === 0) return primary;
+  if (primary.startsWith(secondary)) return primary;
+  if (secondary.startsWith(primary)) return preservePrimary ? primary : secondary;
+  return primary;
 }
 
 export function mergeAuthoritativeTranscriptMessage(
@@ -26,32 +51,40 @@ export function mergeAuthoritativeTranscriptMessage(
   incoming: TranscriptMessage,
   options: { preserveCurrentId?: boolean } = {},
 ): TranscriptMessage {
-  return {
-    ...current,
-    ...incoming,
-    id: options.preserveCurrentId ? current.id : incoming.id,
-    text: incoming.text.length > 0 ? incoming.text : current.text,
-    attachments: mergeTranscriptAttachments(current.attachments, incoming.attachments),
-    clientNonce: incoming.clientNonce ?? current.clientNonce,
-    delivery: incoming.delivery ?? current.delivery,
-    // A durable/final row settles streaming. Absence of isStreaming must not
-    // inherit a stale true value from an earlier optimistic/live projection.
-    isStreaming: incoming.isStreaming === true,
+  // Lifecycle is monotonic. A previously observed terminal row outranks a
+  // stale streaming replay, regardless of whether the caller is reconciling a
+  // baseline, update, or append. Missing/empty fields may still be filled from
+  // the other projection, but the stale replay cannot restore streaming state.
+  const staleStreamingCannotResurrect = current.isStreaming !== true && incoming.isStreaming === true;
+  const primary = staleStreamingCannotResurrect ? current : incoming;
+  const secondary = staleStreamingCannotResurrect ? incoming : current;
+  const merged: TranscriptMessage = {
+    ...secondary,
+    ...primary,
+    id: options.preserveCurrentId || staleStreamingCannotResurrect ? current.id : incoming.id,
+    text: mergeTranscriptText(primary.text, secondary.text, staleStreamingCannotResurrect),
+    attachments: mergeTranscriptAttachments(secondary.attachments, primary.attachments),
+    clientNonce: primary.clientNonce ?? secondary.clientNonce,
+    delivery: staleStreamingCannotResurrect ? current.delivery : incoming.delivery ?? current.delivery,
+    isStreaming: staleStreamingCannotResurrect ? false : incoming.isStreaming === true,
   };
-}
 
-function mergeMonotonicLiveTranscriptMessage(
-  current: TranscriptMessage,
-  incoming: TranscriptMessage,
-  options: { preserveCurrentId?: boolean } = {},
-): TranscriptMessage {
-  if (current.isStreaming !== true && incoming.isStreaming === true) {
-    const merged = mergeAuthoritativeTranscriptMessage(incoming, current, {
-      preserveCurrentId: options.preserveCurrentId,
-    });
-    return options.preserveCurrentId ? { ...merged, id: current.id } : merged;
+  // Empty or truncated projections are not an explicit redaction protocol.
+  // Keep richer serialized content until a versioned redaction contract exists.
+  if ((primary.richText == null || primary.richText.length === 0) && secondary.richText != null && secondary.richText.length > 0) {
+    merged.richText = secondary.richText;
+  } else if (
+    !staleStreamingCannotResurrect
+    && primary.richText != null
+    && secondary.richText != null
+    && secondary.richText.startsWith(primary.richText)
+  ) {
+    merged.richText = secondary.richText;
   }
-  return mergeAuthoritativeTranscriptMessage(current, incoming, options);
+  if ((primary.images?.length ?? 0) === 0 && (secondary.images?.length ?? 0) > 0) {
+    merged.images = secondary.images;
+  }
+  return merged;
 }
 
 export function transcriptEntriesCorrelate(
@@ -61,32 +94,38 @@ export function transcriptEntriesCorrelate(
   if (left.id === right.id) return true;
   return left.kind === "message"
     && right.kind === "message"
+    && left.role === right.role
     && left.clientNonce != null
-    && right.clientNonce != null
+    && left.clientNonce.length > 0
     && left.clientNonce === right.clientNonce;
 }
 
-function correlatedCurrentMessage(
-  current: readonly ConversationTranscriptEntry[],
-  incoming: TranscriptMessage,
-): TranscriptMessage | undefined {
-  return current.find((candidate): candidate is TranscriptMessage =>
-    candidate.kind === "message"
-    && (
-      candidate.id === incoming.id
-      || (incoming.clientNonce != null && candidate.clientNonce === incoming.clientNonce)
-    )
-  );
+function findCorrelatedEntryIndex(
+  entries: readonly ConversationTranscriptEntry[],
+  incoming: ConversationTranscriptEntry,
+): number {
+  const exactIndex = entries.findIndex((candidate) => candidate.id === incoming.id);
+  if (exactIndex >= 0) return exactIndex;
+  if (incoming.kind !== "message" || incoming.clientNonce == null || incoming.clientNonce.length === 0) return -1;
+
+  const matches: number[] = [];
+  entries.forEach((candidate, index) => {
+    if (
+      candidate.kind === "message"
+      && candidate.role === incoming.role
+      && candidate.clientNonce === incoming.clientNonce
+    ) matches.push(index);
+  });
+  return matches.length === 1 ? matches[0]! : -1;
 }
 
 function mergeObservedLiveOverBaseline(
   live: TranscriptMessage,
   baseline: TranscriptMessage,
 ): TranscriptMessage {
-  // Terminal is monotonic: a stale streaming snapshot can never resurrect a
-  // terminal live row. If both rows have the same lifecycle phase, the live
-  // event was observed after this feed subscription began and therefore wins
-  // semantic fields while still inheriting baseline-only metadata.
+  // The live event was observed after this feed subscription began. Terminal
+  // state is monotonic; within the same lifecycle phase the live event wins
+  // semantic fields while inheriting baseline-only metadata.
   if (live.isStreaming === true && baseline.isStreaming !== true) {
     return mergeAuthoritativeTranscriptMessage(live, baseline);
   }
@@ -98,22 +137,43 @@ function reconcileBaseline(
   incoming: readonly ConversationTranscriptEntry[],
   preferObservedLiveIds: ReadonlySet<string>,
 ): ConversationTranscriptEntry[] {
-  const baseline = incoming.map((entry) => {
-    if (entry.kind !== "message") {
-      const previous = current.find((candidate) => candidate.id === entry.id);
-      return previous != null && preferObservedLiveIds.has(previous.id) ? previous : entry;
+  const baseline: ConversationTranscriptEntry[] = [];
+  for (const entry of incoming) {
+    const duplicateIndex = findCorrelatedEntryIndex(baseline, entry);
+    if (duplicateIndex >= 0) {
+      const duplicate = baseline[duplicateIndex]!;
+      if (duplicate.kind === "message" && entry.kind === "message") {
+        baseline[duplicateIndex] = mergeAuthoritativeTranscriptMessage(duplicate, entry);
+      } else if (duplicate.id === entry.id) {
+        baseline[duplicateIndex] = entry;
+      }
+      continue;
     }
-    const previous = correlatedCurrentMessage(current, entry);
-    if (previous == null) return entry;
-    return preferObservedLiveIds.has(previous.id)
-      ? mergeObservedLiveOverBaseline(previous, entry)
-      : mergeAuthoritativeTranscriptMessage(previous, entry);
-  });
+
+    const previousIndex = findCorrelatedEntryIndex(current, entry);
+    if (previousIndex < 0) {
+      baseline.push(entry);
+      continue;
+    }
+
+    const previous = current[previousIndex]!;
+    const preferObservedLive = preferObservedLiveIds.has(previous.id) || preferObservedLiveIds.has(entry.id);
+    if (previous.kind === "message" && entry.kind === "message") {
+      baseline.push(
+        preferObservedLive
+          ? mergeObservedLiveOverBaseline(previous, entry)
+          : mergeAuthoritativeTranscriptMessage(previous, entry),
+      );
+    } else {
+      baseline.push(preferObservedLive ? previous : entry);
+    }
+  }
 
   const unresolvedOptimistic = current.filter((entry): entry is TranscriptMessage =>
     entry.kind === "message"
     && entry.role === "user"
     && entry.clientNonce != null
+    && entry.clientNonce.length > 0
     && entry.id.startsWith("pending-")
     && !incoming.some((incomingEntry) => transcriptEntriesCorrelate(incomingEntry, entry))
   );
@@ -130,8 +190,8 @@ export function reconcileAuthoritativeTranscriptBaseline(
 
 /**
  * A feed append/update may race its initial snapshot. Entries observed before
- * the baseline are explicitly fenced so that a stale correlated baseline
- * cannot overwrite newer live semantic state merely because it shares an id.
+ * the baseline are explicitly fenced so a stale correlated baseline cannot
+ * overwrite newer live semantic state merely because it shares an id/nonce.
  */
 export function reconcileTranscriptFeedBaseline(
   current: readonly ConversationTranscriptEntry[],
@@ -162,14 +222,18 @@ export function reconcileTranscriptLiveUpdate(
   incoming: ConversationTranscriptEntry,
   options: { allowInsert?: boolean } = {},
 ): readonly ConversationTranscriptEntry[] {
-  const index = current.findIndex((entry) => entry.id === incoming.id);
-  if (index < 0) return options.allowInsert === true ? [...current, incoming] : current;
+  const index = findCorrelatedEntryIndex(current, incoming);
+  if (index < 0) {
+    return options.allowInsert === true && incoming.kind === "message" ? [...current, incoming] : current;
+  }
 
-  const previous = current[index];
+  const previous = current[index]!;
   const next = previous.kind === "message" && incoming.kind === "message"
-    ? mergeMonotonicLiveTranscriptMessage(previous, incoming)
+    ? mergeAuthoritativeTranscriptMessage(previous, incoming)
     : incoming;
-  return current.map((entry, entryIndex) => entryIndex === index ? next : entry);
+  const reconciled = [...current];
+  reconciled[index] = next;
+  return reconciled;
 }
 
 export function reconcileTranscriptLiveAppend(
@@ -178,29 +242,46 @@ export function reconcileTranscriptLiveAppend(
   options: { resolvedNonce?: string | null } = {},
 ): readonly ConversationTranscriptEntry[] {
   const incomingMessage = incoming.kind === "message" ? incoming : null;
-  const resolvedNonce = options.resolvedNonce ?? null;
-  const pendingId = resolvedNonce == null ? null : `pending-${resolvedNonce}`;
-  const correlated = incomingMessage == null ? null : current.find((entry): entry is TranscriptMessage =>
-    entry.kind === "message"
-    && (
-      entry.id === incoming.id
-      || (pendingId != null && entry.id === pendingId)
-      || (resolvedNonce != null && entry.clientNonce === resolvedNonce)
-    )
-  );
+  const resolvedNonce = options.resolvedNonce ?? incomingMessage?.clientNonce ?? null;
+  const pendingId = resolvedNonce == null ? null : "pending-" + resolvedNonce;
+  let correlatedIndex = -1;
 
-  if (correlated != null && incomingMessage != null) {
+  if (incomingMessage != null) {
+    correlatedIndex = current.findIndex((entry) =>
+      entry.kind === "message" && entry.id === incomingMessage.id
+    );
+    if (correlatedIndex < 0 && pendingId != null) {
+      correlatedIndex = current.findIndex((entry) =>
+        entry.kind === "message" && entry.id === pendingId
+      );
+    }
+    if (correlatedIndex < 0 && resolvedNonce != null && resolvedNonce.length > 0) {
+      const matches: number[] = [];
+      current.forEach((entry, index) => {
+        if (
+          entry.kind === "message"
+          && entry.role === incomingMessage.role
+          && entry.clientNonce === resolvedNonce
+        ) matches.push(index);
+      });
+      if (matches.length > 1) return current;
+      if (matches.length === 1) correlatedIndex = matches[0]!;
+    }
+  }
+
+  if (correlatedIndex >= 0 && incomingMessage != null) {
+    const correlated = current[correlatedIndex] as TranscriptMessage;
     const isAttachmentEcho = "sourceKind" in incomingMessage && incomingMessage.sourceKind === "user-attachment";
-    const merged = mergeMonotonicLiveTranscriptMessage(correlated, incomingMessage, {
+    const merged = mergeAuthoritativeTranscriptMessage(correlated, incomingMessage, {
       preserveCurrentId: isAttachmentEcho,
     });
     const reconciled: TranscriptMessage = {
       ...merged,
-      ...(isAttachmentEcho ? { delivery: correlated.delivery } : { delivery: "sent" }),
+      ...(isAttachmentEcho ? { delivery: correlated.delivery ?? merged.delivery } : { delivery: "sent" as const }),
     };
-    return current.map((entry) =>
-      entry.kind === "message" && entry.id === correlated.id ? reconciled : entry
-    );
+    const next = [...current];
+    next[correlatedIndex] = reconciled;
+    return next;
   }
 
   if (current.some((entry) => entry.id === incoming.id)) return current;

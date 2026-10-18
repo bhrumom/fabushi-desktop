@@ -4,7 +4,7 @@ Status: implemented lower layer, packaged temporal acceptance open
 Project: FBCP-001 Revision 7 / TDRP-001 Revision 9
 Owners: `source/host/src/extensions/transcript/**` (existing), `source/host/tests/ora_turn_order_recon_contract.rs`
 Gate: `scripts/validate-quality-oracles.mjs`, `.github/workflows/quality-oracles.yml`
-Updated: 2026-10-17
+Updated: 2026-10-18
 
 ## Why this exists
 
@@ -30,10 +30,13 @@ owners that already own this behavior:
 | `extensions::transcript::send_pipeline` | optimistic submit plus authoritative echo resolves to one entry |
 | `extensions::transcript::prompt_acceptance_ledger` | idempotent duplicate application, divergent payload fails closed, reload convergence, account scope |
 | `extensions::transcript::transcript_entry_ids` | a replayed append cannot reuse a committed entry id |
+| `frontend/src/recovered/features/conversation/workspace/transcript-reconciliation.ts` | shipping renderer baseline/live/append/late-page reconciliation, terminal monotonicity and attachment echo merge |
 
 Every case carries machine-readable `// oracle:` and `// regression:` annotations, so
 coverage is derived from the tests themselves rather than from a parallel hand-written
 matrix that can drift.
+
+The shipping renderer now consumes the canonical helper from `ProductionRenderer.tsx`; its Node contract suite uses a fixed seed and checks 96 event-order permutations, terminal-baseline races, partial payloads, attachment echoes and account/conversation owner fencing. These helper-level tests are traceable separately in `oracle-execution-status.json`; they do not substitute for packaged DOM/temporal acceptance.
 
 ## Coverage split
 
@@ -48,6 +51,8 @@ The pending set is not a waiver. Those invariants are properties of the packaged
 timeline (T0..T10), the renderer projection, pagination, or the attachment resource
 lifecycle. They cannot be honestly proven by a state-machine unit test, and they must
 not be declared covered by one.
+
+The renderer contract suite provides focused algorithm evidence for `REC-I02`, `REC-I03`, `REC-I05`, `REC-I06`, `REC-I08` and late-page `ORD-I04`, but the pending entries remain open until same-head packaged acceptance demonstrates the real shipping composition and DOM behavior.
 
 ## Permanent regressions
 

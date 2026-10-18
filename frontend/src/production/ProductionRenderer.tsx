@@ -4,7 +4,14 @@ import type { CoordinatorPortBridge, CursorAuthStatus, DesktopAutoReviewInstruct
 import computerEntrypoint from "../recovered/features/computer/overlay/entrypoint";
 import { ConversationComposer } from "../recovered/features/conversation/workspace/composer";
 import { commitComposerAttachments, stageComposerFiles } from "../recovered/features/conversation/workspace/desktop";
-import { COMPOSER_ATTACHMENT_LIMIT, type ComposerDraft, type ComposerReplyKeyboard, type ConversationTranscriptEntry, type DraftAttachment, type TranscriptMessage } from "../recovered/features/conversation/workspace/model";
+import { COMPOSER_ATTACHMENT_LIMIT, type ComposerDraft, type ComposerReplyKeyboard, type ConversationTranscriptEntry, type DraftAttachment } from "../recovered/features/conversation/workspace/model";
+import {
+  reconcileAuthoritativeTranscriptBaseline,
+  reconcileLateInitialTranscriptPage,
+  reconcileTranscriptFeedBaseline,
+  reconcileTranscriptLiveAppend,
+  reconcileTranscriptLiveUpdate,
+} from "../recovered/features/conversation/workspace/transcript-reconciliation";
 import { composerDraftScopeKey, createComposerDraftPersistence, createComposerDraftStateStore, type ComposerDraftScopeInput } from "../recovered/features/conversation/workspace/draft-state";
 import { createComposerSubmissionQueue, type ComposerSubmission, type ComposerSubmissionQueue } from "../recovered/features/conversation/workspace/submission";
 import { createSendJournalApprovalLifecycle } from "../recovered/features/conversation/workspace/send-journal-approval-lifecycle";
@@ -382,104 +389,6 @@ function optimisticAcknowledgementEntries(nonce: string, attachments: readonly {
     { id: `pending-${nonce}`, kind: "message" as const, clientNonce: nonce },
     ...attachments.map((_, index) => ({ id: `pending-${nonce}:attachment-${index}`, kind: "user-attachment" as const, clientNonce: nonce }))
   ];
-}
-
-function mergeTranscriptAttachments(
-  current: readonly DraftAttachment[] | undefined,
-  incoming: readonly DraftAttachment[] | undefined
-): DraftAttachment[] {
-  const merged = [...(current ?? [])];
-  for (const attachment of incoming ?? []) {
-    const index = merged.findIndex((candidate) => candidate.path === attachment.path);
-    if (index < 0) merged.push(attachment);
-    else merged[index] = { ...merged[index], ...attachment };
-  }
-  return merged;
-}
-
-function mergeAuthoritativeTranscriptMessage(
-  current: TranscriptMessage,
-  incoming: TranscriptMessage,
-  options: { preserveCurrentId?: boolean } = {}
-): TranscriptMessage {
-  return {
-    ...current,
-    ...incoming,
-    id: options.preserveCurrentId ? current.id : incoming.id,
-    text: incoming.text.length > 0 ? incoming.text : current.text,
-    attachments: mergeTranscriptAttachments(current.attachments, incoming.attachments),
-    clientNonce: incoming.clientNonce ?? current.clientNonce,
-    delivery: incoming.delivery ?? current.delivery,
-    // Authoritative transcript projections only carry isStreaming while the
-    // row is actively growing. Absence on the durable/final row therefore
-    // settles the live projection instead of inheriting stale true state from
-    // the optimistic/live entry.
-    isStreaming: incoming.isStreaming === true,
-  };
-}
-
-function transcriptEntriesCorrelate(left: ConversationTranscriptEntry, right: ConversationTranscriptEntry): boolean {
-  if (left.id === right.id) return true;
-  return left.kind === "message"
-    && right.kind === "message"
-    && left.clientNonce != null
-    && right.clientNonce != null
-    && left.clientNonce === right.clientNonce;
-}
-
-function reconcileAuthoritativeTranscriptBaseline(
-  current: readonly ConversationTranscriptEntry[],
-  incoming: readonly ConversationTranscriptEntry[],
-): ConversationTranscriptEntry[] {
-  const baseline = incoming.map((entry) => {
-    if (entry.kind !== "message") return entry;
-    const previous = current.find((candidate): candidate is TranscriptMessage =>
-      candidate.kind === "message"
-      && (
-        candidate.id === entry.id
-        || (entry.clientNonce != null && candidate.clientNonce === entry.clientNonce)
-      )
-    );
-    return previous == null ? entry : mergeAuthoritativeTranscriptMessage(previous, entry);
-  });
-  const unresolvedOptimistic = current.filter((entry): entry is TranscriptMessage =>
-    entry.kind === "message"
-    && entry.role === "user"
-    && entry.clientNonce != null
-    && entry.id.startsWith("pending-")
-    && !incoming.some((incomingEntry) => transcriptEntriesCorrelate(incomingEntry, entry))
-  );
-  return [...baseline, ...unresolvedOptimistic];
-}
-
-/**
- * The transcript feed may deliver an appended/updated event before its initial
- * snapshot when the renderer subscribes during an active turn. A snapshot is
- * authoritative for older history, but it must not erase a newer live event
- * that this exact feed subscription already observed.
- */
-function reconcileTranscriptFeedBaseline(
-  current: readonly ConversationTranscriptEntry[],
-  incoming: readonly ConversationTranscriptEntry[],
-  preBaselineEntryIds: ReadonlySet<string>,
-): ConversationTranscriptEntry[] {
-  const baseline = reconcileAuthoritativeTranscriptBaseline(current, incoming);
-  const arrivedAfterSnapshot = current.filter((entry) =>
-    preBaselineEntryIds.has(entry.id)
-    && !baseline.some((candidate) => transcriptEntriesCorrelate(candidate, entry))
-  );
-  return [...baseline, ...arrivedAfterSnapshot];
-}
-
-function reconcileLateInitialTranscriptPage(
-  current: readonly ConversationTranscriptEntry[],
-  incoming: readonly ConversationTranscriptEntry[],
-): ConversationTranscriptEntry[] {
-  const baseline = reconcileAuthoritativeTranscriptBaseline(current, incoming);
-  const arrivedWhileLoading = current.filter((currentEntry) =>
-    !incoming.some((incomingEntry) => transcriptEntriesCorrelate(incomingEntry, currentEntry))
-  );
-  return [...baseline, ...arrivedWhileLoading];
 }
 
 function moveAgentsToSidebarSection(sections: readonly SidebarSection[], agentIds: readonly string[], sectionId: string): SidebarSection[] | null {
@@ -3177,15 +3086,9 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         rememberPreBaselineFeedEntry(ownerId, projected.id);
         setEntriesByAgent((current) => {
           const existing = current[ownerId] ?? [];
-          if (!existing.some((entry) => entry.id === projected.id)) return current;
-          return {
-            ...current,
-            [ownerId]: existing.map((entry) =>
-              entry.id === projected.id && entry.kind === "message" && projected.kind === "message"
-                ? mergeAuthoritativeTranscriptMessage(entry, projected)
-                : entry.id === projected.id ? projected : entry
-            )
-          };
+          const reconciled = reconcileTranscriptLiveUpdate(existing, projected, { allowInsert: true });
+          if (reconciled === existing) return current;
+          return { ...current, [ownerId]: [...reconciled] };
         });
       },
       onCleared: (ownerId) => {
@@ -3213,24 +3116,12 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       const resolvedNonce = acknowledgementBefore?.nonce ?? clientNonce;
       const acknowledgementEntryKind = event && typeof event === "object" && "kind" in event && event.kind === "user-attachment" ? "user-attachment" as const : "message" as const;
       if (clientNonce != null) acknowledgementController.ingestTranscriptEvent({ accountSlot: acknowledgementScopeRef.current.accountSlot, agentId: ownerId, entry: { id: projected.id, kind: acknowledgementEntryKind, clientNonce } });
-      const projectedMessage = projected.kind === "message" ? projected : null;
-      const projectedAttachments = projectedMessage?.attachments ?? [];
       setEntriesByAgent((current) => {
         const existing = current[ownerId] ?? [];
-        const pendingId = resolvedNonce == null ? null : `pending-${resolvedNonce}`;
-        const correlated = projectedMessage == null ? null : existing.find((entry): entry is TranscriptMessage =>
-          entry.kind === "message"
-          && (
-            entry.id === projected.id
-            || (pendingId != null && entry.id === pendingId)
-            || (resolvedNonce != null && entry.clientNonce === resolvedNonce)
-          )
-        );
-        if (correlated != null && projectedMessage != null) {
-          const isAttachmentEcho = "sourceKind" in projectedMessage && projectedMessage.sourceKind === "user-attachment";
-          const merged = mergeAuthoritativeTranscriptMessage(correlated, projectedMessage, {
-            preserveCurrentId: isAttachmentEcho,
-          });
+        const reconciled = reconcileTranscriptLiveAppend(existing, projected, { resolvedNonce });
+        if (reconciled.length === existing.length && reconciled.every((entry, index) => entry === existing[index])) return current;
+        return { ...current, [ownerId]: [...reconciled] };
+      });
           const reconciled = {
             ...merged,
             ...(isAttachmentEcho ? { delivery: correlated.delivery } : { delivery: "sent" as const }),
