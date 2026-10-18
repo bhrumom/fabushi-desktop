@@ -272,9 +272,9 @@ test("REC-I06 attachment echo replay deduplicates resources and preserves pendin
 
 test("REC-I06 media Resource lifecycle releases observer leases and fences late visibility listeners", () => {
   const mediaViewerSource = readFileSync(new URL("./media-viewer.tsx", import.meta.url), "utf8");
-  assert.match(mediaViewerSource, /shouldResolveDerivedMedia\\(kind, isNearViewport\\)/);
-  assert.match(mediaViewerSource, /if \\(!shouldResolve \\|\\| resolveMedia == null\\) \\{\\s*setMedia\\(null\\);\\s*setLoading\\(false\\);/);
-  assert.match(mediaViewerSource, /return \\(\\) => \\{ active = false; \\};/);
+  assert.match(mediaViewerSource, /shouldResolveDerivedMedia\(kind, isNearViewport\)/);
+  assert.match(mediaViewerSource, /if \(!shouldResolve \|\| resolveMedia == null\) \{\s*setMedia\(null\);\s*setLoading\(false\);/);
+  assert.match(mediaViewerSource, /return \(\) => \{ active = false; \};/);
 
   const previousDescriptor = Object.getOwnPropertyDescriptor(globalThis, "IntersectionObserver");
   const instances: FakeIntersectionObserver[] = [];
