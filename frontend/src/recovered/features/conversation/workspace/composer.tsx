@@ -4,6 +4,7 @@ import { useVoiceSession, VoiceWaveform, type VoiceTranscriber } from "./voice";
 import { ComposerReplyPill, replyComposerPlaceholder, type ComposerReplyTarget } from "./reply-preview";
 import { PromptRichTextEditor, type PromptEditorControls, type PromptEditorProviders } from "./rich-text-editor";
 import { SandIcon, SandIconButton } from "../../../ui/sand-kit-primitives";
+import { SandMenuContent, SandMenuItem, SandMenuRoot, SandMenuTrigger } from "../../../ui/sand-floating-primitives";
 import { SandSpinner } from "../../../ui/sand-status-primitives";
 
 // Immutable Mac voice carriers: index-UbX-y3il.js#byteOffset=4538599 (recording
@@ -38,6 +39,8 @@ export interface ConversationComposerProps {
   onChange(draft: ComposerDraft): void;
   onStageFiles(files: File[]): void | Promise<void>;
   onSubmit(): void | Promise<void>;
+  onSendSilently?(): void | Promise<void>;
+  onScheduleSend?(): void;
   onRemoveAttachment?(attachment: DraftAttachment): void | Promise<void>;
   replyTarget?: ComposerReplyTarget;
   onClearReplyTarget?(): void;
@@ -68,7 +71,7 @@ export function selectComposerFiles(files: readonly File[], existingCount: numbe
   return files.slice(0, remaining);
 }
 
-export function ConversationComposer({ acceptedSendGeneration = 0, draft, disabled = false, notice, placeholder = "Ask anything, or drop a file.", transcribeAudio, onChange, onClearReplyTarget, onRemoveAttachment, onStageFiles, onSubmit, replyTarget, editorProviders, scopeKey }: ConversationComposerProps) {
+export function ConversationComposer({ acceptedSendGeneration = 0, draft, disabled = false, notice, placeholder = "Ask anything, or drop a file.", transcribeAudio, onChange, onClearReplyTarget, onRemoveAttachment, onScheduleSend, onSendSilently, onStageFiles, onSubmit, replyTarget, editorProviders, scopeKey }: ConversationComposerProps) {
   const fileInput = useRef<HTMLInputElement>(null);
   const editorControls = useRef<PromptEditorControls | null>(null);
   const dragDepth = useRef(0);
@@ -198,6 +201,13 @@ export function ConversationComposer({ acceptedSendGeneration = 0, draft, disabl
         {voice.isRecording || voice.isActivating ? <span aria-live="polite" className="sand-prompt-voice-status" role="status">Listening…</span> : null}
         <div className="sand-prompt-actions-row">
           <SandIconButton aria-label="Attach file" className={PROMPT_ATTACH_CLASS} disabled={disabled || atLimit || voiceBusy} icon="plus" onClick={() => fileInput.current?.click()} shape="circle" size="lg" type="button" variant="default" />
+          {onSendSilently == null && onScheduleSend == null ? null : <SandMenuRoot placement="top-start">
+            <SandMenuTrigger><SandIconButton aria-label="Send options" disabled={disabled || voiceBusy || !hasPayload} icon="more" shape="circle" size="lg" type="button" variant="default" /></SandMenuTrigger>
+            <SandMenuContent ariaLabel="Send options">
+              {onSendSilently == null ? null : <SandMenuItem disabled={disabled || voiceBusy || !hasPayload} index={0} onSelect={() => { void onSendSilently(); }}>Send silently</SandMenuItem>}
+              {onScheduleSend == null ? null : <SandMenuItem disabled={disabled || voiceBusy || !hasPayload} index={1} onSelect={onScheduleSend}>Schedule send…</SandMenuItem>}
+            </SandMenuContent>
+          </SandMenuRoot>}
           <span className="sand-prompt-actions-trailing sand-prompt-cta-cluster sand-78zum5 sand-6s0dn4 sand-2lah0s">
             {voice.isRecording ? <button aria-label="Stop dictation" className={RECORDING_CHIP_CLASS} onClick={() => voice.handleStopClick()} onKeyDown={(event) => {
               if (event.key === "Escape") {
