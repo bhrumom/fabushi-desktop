@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -29,10 +30,17 @@ func emit(writer io.Writer, event workerEvent) error {
 	return err
 }
 
+type terminalReadError struct {
+	err error
+}
+
+func (e terminalReadError) Error() string { return "terminal_input_error" }
+func (e terminalReadError) Unwrap() error { return e.err }
+
 func readRequest(scanner *bufio.Scanner) (workerRequest, error) {
 	if !scanner.Scan() {
 		if err := scanner.Err(); err != nil {
-			return workerRequest{}, err
+			return workerRequest{}, terminalReadError{err: err}
 		}
 		return workerRequest{}, io.EOF
 	}
@@ -122,6 +130,10 @@ func run(stdin io.Reader, stdout, stderr io.Writer) int {
 		}
 		if err != nil {
 			_ = emit(stdout, workerEvent{Type: "error", Code: "invalid_request", Message: "network worker request is invalid"})
+			var terminal terminalReadError
+			if errors.As(err, &terminal) {
+				return 6
+			}
 			continue
 		}
 		switch request.Type {
