@@ -27,6 +27,8 @@ fn gateway_protocol_keeps_frozen_command_inventory_and_upgrade_path() {
         FABUSHI_HOST_GATEWAY_METHODS,
         &[
             "noteRecentParticipantSuggestion",
+            "getHumanSavedSublistDraft",
+            "setHumanSavedSublistDraft",
             "getStoryStealthStatus",
             "activateStoryStealth",
             "listStories",
