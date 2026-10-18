@@ -367,3 +367,27 @@ test("REC-I08 account and conversation owner scopes fence identical ids/nonces f
   assert.match(rendererSource, /onAppended:[\s\S]*?reconcileTranscriptLiveAppend\(existing, projected, \{ resolvedNonce \}\)/);
   assert.doesNotMatch(rendererSource, /function (?:mergeTranscriptAttachments|mergeAuthoritativeTranscriptMessage|transcriptEntriesCorrelate|reconcileAuthoritativeTranscriptBaseline|reconcileTranscriptFeedBaseline|reconcileLateInitialTranscriptPage)\s*\(/);
 });
+
+test("REC-I09 stale Human sync failures are fenced without discarding the local transcript read", () => {
+  const rendererSource = readFileSync(new URL("../../../../production/ProductionRenderer.tsx", import.meta.url), "utf8");
+  const syncStart = rendererSource.indexOf('await client.call("syncHumanConversation", { conversationId: agentId });');
+  const localRead = rendererSource.indexOf('page = await client.call("getHumanConversationTranscriptTail", { conversationId: agentId, limit: 200 });', syncStart);
+  assert.ok(syncStart >= 0);
+  assert.ok(localRead > syncStart);
+  const syncAttempt = rendererSource.slice(syncStart, localRead);
+  const catchStart = syncAttempt.indexOf("} catch (error) {");
+  assert.ok(catchStart >= 0);
+  const catchBlock = syncAttempt.slice(catchStart);
+  const notice = catchBlock.indexOf("setNotice(");
+  assert.ok(notice > 0);
+  for (const guard of [
+    "accountScopeGenerationRef.current === accountScopeGeneration",
+    "openAgentRequestGenerationRef.current === requestGeneration",
+    "transportScopeGenerationRef.current === transportScopeGeneration",
+    'accountRef.current?.kind === "logged-in"',
+  ]) {
+    const guardIndex = catchBlock.indexOf(guard);
+    assert.ok(guardIndex >= 0 && guardIndex < notice, `missing pre-notice guard: ${guard}`);
+  }
+  assert.equal(catchBlock.includes("return;"), false);
+});

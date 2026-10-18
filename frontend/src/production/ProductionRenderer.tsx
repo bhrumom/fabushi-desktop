@@ -2921,7 +2921,14 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           try {
             await client.call("syncHumanConversation", { conversationId: agentId });
           } catch (error) {
-            setNotice(error instanceof Error ? `Human sync unavailable: ${error.message}` : `Human sync unavailable: ${String(error)}`);
+            // A newer account/conversation selection or transport epoch can settle while sync is pending.
+            // Keep the local durable transcript read below, but suppress this stale sync failure notice.
+            if (accountScopeGenerationRef.current === accountScopeGeneration
+              && openAgentRequestGenerationRef.current === requestGeneration
+              && transportScopeGenerationRef.current === transportScopeGeneration
+              && accountRef.current?.kind === "logged-in") {
+              setNotice(error instanceof Error ? `Human sync unavailable: ${error.message}` : `Human sync unavailable: ${String(error)}`);
+            }
           }
         }
         page = await client.call("getHumanConversationTranscriptTail", { conversationId: agentId, limit: 200 });
