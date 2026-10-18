@@ -394,7 +394,7 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
             };
             required_string(args, "clientNonce").and_then(|client_nonce| {
                 session
-                    .append_human_message(
+                    .append_human_message_with_delivery(
                         conversation_id,
                         text,
                         client_nonce,
