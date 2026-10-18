@@ -2,7 +2,7 @@ name: Rust desktop runtime
 
 on:
   push:
-    branches: [main, restore/rust-desktop-runtime, refactor/grok-018-architecture-rebuild]
+    branches: [main, work/story-slider-view-coverage-20261008, restore/rust-desktop-runtime, refactor/grok-018-architecture-rebuild]
     paths:
       - 'desktop/**'
       - 'source/**'
@@ -19,6 +19,8 @@ on:
       - 'frontend/**'
       - 'chatgpt-vps-control/**'
       - 'contracts/**'
+  workflow_dispatch:
+
   pull_request:
     paths:
       - 'desktop/**'
