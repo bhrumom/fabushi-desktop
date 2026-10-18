@@ -1,0 +1,128 @@
+name: Diagnose immutable signed Mini App candidate
+on:
+  workflow_dispatch:
+  workflow_call:
+    secrets:
+      FABUSHI_CI_TEST_USERNAME:
+        required: true
+      FABUSHI_CI_TEST_PASSWORD:
+        required: true
+permissions:
+  contents: read
+  actions: read
+jobs:
+  installed-candidate:
+    runs-on: macos-15
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - name: Verify immutable binary provenance independently of harness source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = arm64
+          gh api repos/bhrumom/fabushi-desktop/actions/runs/38506485199 > "$RUNNER_TEMP/binary-run.json"
+          jq -e '.head_sha == "e62ea0f0f335a5acbbc90852e1f2ba75cab03424" and .status == "completed" and .conclusion == "failure"' "$RUNNER_TEMP/binary-run.json" >/dev/null
+          gh api repos/bhrumom/fabushi-desktop/actions/runs/38506485199/jobs > "$RUNNER_TEMP/binary-jobs.json"
+          jq -e '["Build and stage Mahayana desktop host", "Package signed and notarized macOS installer", "Notarize and staple DMG", "Bind packaged candidate executable", "Run real signed packaged acceptance"] as $required | [.jobs[] | select(.id == 115665084575) | .steps[] | select(.conclusion == "success") | .name] as $passed | all($required[]; . as $name | $passed | index($name) != null)' "$RUNNER_TEMP/binary-jobs.json" >/dev/null
+          gh api repos/bhrumom/fabushi-desktop/actions/artifacts/11868294181 > "$RUNNER_TEMP/binary-artifact.json"
+          jq -e '.expired == false and .size_in_bytes == 332595346 and .digest == "sha256:3af95af921aeecc8002dfa0332c8d3677068eb95da02c336cba447a6f6c01301" and .workflow_run.id == 38506485199 and .workflow_run.head_sha == "e62ea0f0f335a5acbbc90852e1f2ba75cab03424"' "$RUNNER_TEMP/binary-artifact.json" >/dev/null
+          gh api repos/bhrumom/fabushi-desktop/actions/artifacts/11868294181/zip > "$RUNNER_TEMP/candidate.zip"
+          echo "3af95af921aeecc8002dfa0332c8d3677068eb95da02c336cba447a6f6c01301  $RUNNER_TEMP/candidate.zip" | shasum -a 256 -c -
+          mkdir "$RUNNER_TEMP/delivery" "$RUNNER_TEMP/application"
+          unzip -q "$RUNNER_TEMP/candidate.zip" -d "$RUNNER_TEMP/delivery"
+          /usr/bin/ditto -xk "$RUNNER_TEMP/delivery/fabushi-1.2.77-macos-arm64.zip" "$RUNNER_TEMP/application"
+          source_app="$(find "$RUNNER_TEMP/application" -maxdepth 1 -type d -name '*.app' -print -quit)"
+          test -n "$source_app"
+          installed_app="/Applications/Fabushi MiniApp Iteration ${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.app"
+          /usr/bin/ditto "$source_app" "$installed_app"
+          codesign --verify --deep --strict --verbose=2 "$installed_app"
+          xcrun stapler validate "$installed_app"
+          spctl --assess --type execute --verbose=4 "$installed_app"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$installed_app/Contents/Info.plist")" = 1.2.77
+          executable_name="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$installed_app/Contents/Info.plist")"
+          echo "FABUSHI_ELECTRON_EXECUTABLE=$installed_app/Contents/MacOS/$executable_name" >> "$GITHUB_ENV"
+      - name: Install locked harness dependencies and compile native save controller
+        run: |
+          npm --prefix desktop ci --prefer-offline --no-audit --no-fund
+          cd desktop
+          ./node_modules/.bin/tsc --noEmit --strict --skipLibCheck --target ES2022 --module NodeNext --moduleResolution NodeNext --esModuleInterop e2e/miniapp-packaged-acceptance.spec.ts
+          /usr/bin/osacompile -o "$RUNNER_TEMP/miniapp-save-report.scpt" ../.github/scripts/miniapp-save-report.applescript
+          node --test ../.github/scripts/miniapp-release-evidence.test.mjs
+          node --test ../.github/scripts/promote-miniapp-candidate.test.mjs
+      - name: Provision the existing bounded production CI account, never the publisher
+        env:
+          FABUSHI_CI_TEST_USERNAME: ${{ secrets.FABUSHI_CI_TEST_USERNAME }}
+          FABUSHI_CI_TEST_PASSWORD: ${{ secrets.FABUSHI_CI_TEST_PASSWORD }}
+          FABUSHI_API_BASE_URL: https://api.ombhrum.com
+          DEVICE_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}-macos-app
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$FABUSHI_CI_TEST_USERNAME"
+          test -n "$FABUSHI_CI_TEST_PASSWORD"
+          support="$RUNNER_TEMP/fabushi-support"
+          git clone --filter=blob:none --no-checkout https://github.com/bhrumom/fabushi.git "$support"
+          git -C "$support" sparse-checkout init --cone
+          git -C "$support" sparse-checkout set chatgpt-vps-control
+          git -C "$support" checkout 5d75920308fa17f5000308df1a0153309eb8e9ab
+          npm --prefix "$support/chatgpt-vps-control" ci --ignore-scripts --prefer-offline --no-audit --no-fund
+          account_dir="$RUNNER_TEMP/miniapp-iteration-private"
+          mkdir "$account_dir"
+          chmod 700 "$account_dir"
+          export FABUSHI_ACCOUNT_SESSION_FILE="$account_dir/login.json"
+          export FABUSHI_CI_ACCOUNT_SESSION_FILE="$account_dir/session.json"
+          node "$support/chatgpt-vps-control/scripts/login-ci-test-account.mjs"
+          node "$support/chatgpt-vps-control/scripts/export-ci-app-account-session.mjs"
+          umask 077
+          jq -ce --arg issuer "$FABUSHI_API_BASE_URL" '. + {issuer: $issuer}' "$FABUSHI_CI_ACCOUNT_SESSION_FILE" > "$account_dir/issuer-bound.json"
+          mv "$account_dir/issuer-bound.json" "$FABUSHI_CI_ACCOUNT_SESSION_FILE"
+          chmod 600 "$FABUSHI_CI_ACCOUNT_SESSION_FILE"
+          jq -e '.provider == "github-actions" and .ciRunner == true and (.refreshToken | not)' "$FABUSHI_CI_ACCOUNT_SESSION_FILE" >/dev/null
+          rm -f "$FABUSHI_ACCOUNT_SESSION_FILE"
+          echo "DEVICE_ID=$DEVICE_ID" >> "$GITHUB_ENV"
+          echo "FABUSHI_CI_ACCOUNT_SESSION_FILE=$FABUSHI_CI_ACCOUNT_SESSION_FILE" >> "$GITHUB_ENV"
+      - name: Exercise real installed package and OS-offline lifecycle
+        working-directory: desktop
+        env:
+          MINIAPP_REAL_ACCEPTANCE: '1'
+          MINIAPP_EVIDENCE_DIR: ${{ runner.temp }}/miniapp-iteration-evidence
+          OBF_SOURCE_SHA: e62ea0f0f335a5acbbc90852e1f2ba75cab03424
+          OBF_EXPECTED_SOURCE_SHA: e62ea0f0f335a5acbbc90852e1f2ba75cab03424
+          FABUSHI_FEATURE_HOST_MODE: production
+          FABUSHI_E2E: '0'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir "$MINIAPP_EVIDENCE_DIR"
+          recorder="$GITHUB_WORKSPACE/desktop/scripts/macos-session-recorder.sh"
+          bash "$recorder" start "$MINIAPP_EVIDENCE_DIR"
+          bash "$recorder" assert-live "$MINIAPP_EVIDENCE_DIR"
+          test_status=0
+          npx playwright test e2e/miniapp-packaged-acceptance.spec.ts --workers=1 || test_status=$?
+          stop_status=0
+          bash "$recorder" stop "$MINIAPP_EVIDENCE_DIR" || stop_status=$?
+          verify_status=0
+          bash "$recorder" verify "$MINIAPP_EVIDENCE_DIR" || verify_status=$?
+          test "$test_status" -eq 0
+          test "$stop_status" -eq 0
+          test "$verify_status" -eq 0
+          find "$MINIAPP_EVIDENCE_DIR" -name acceptance.json -type f -size +0c -print -quit | grep -q .
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: miniapp-binary-e62ea0-harness-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/miniapp-iteration-evidence
+            desktop/test-results
+          if-no-files-found: warn
