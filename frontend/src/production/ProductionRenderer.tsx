@@ -3106,36 +3106,22 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         transcriptPaginationController.reset();
       },
       onAppended: ({ agentId: ownerId, entry: event }) => {
-      if (!isCurrent() || accountRef.current?.kind !== "logged-in") return;
-      const owner = agentsRef.current.find((agent) => agent.id === ownerId);
-      const projected = projectTranscriptEntry(event, entriesByAgentRef.current[ownerId]?.length ?? 0, owner?.name ?? UI_TEXT.title, ownerId);
-      if (projected == null || !ownerId) return;
-      rememberPreBaselineFeedEntry(ownerId, projected.id);
-      const clientNonce = event && typeof event === "object" && "clientNonce" in event && typeof event.clientNonce === "string" ? event.clientNonce : null;
-      const acknowledgementBefore = clientNonce == null ? null : acknowledgementController.getSnapshot().records.find((record) => record.nonce === clientNonce || record.priorNonces.includes(clientNonce));
-      const resolvedNonce = acknowledgementBefore?.nonce ?? clientNonce;
-      const acknowledgementEntryKind = event && typeof event === "object" && "kind" in event && event.kind === "user-attachment" ? "user-attachment" as const : "message" as const;
-      if (clientNonce != null) acknowledgementController.ingestTranscriptEvent({ accountSlot: acknowledgementScopeRef.current.accountSlot, agentId: ownerId, entry: { id: projected.id, kind: acknowledgementEntryKind, clientNonce } });
-      setEntriesByAgent((current) => {
-        const existing = current[ownerId] ?? [];
-        const reconciled = reconcileTranscriptLiveAppend(existing, projected, { resolvedNonce });
-        if (reconciled.length === existing.length && reconciled.every((entry, index) => entry === existing[index])) return current;
-        return { ...current, [ownerId]: [...reconciled] };
-      });
-          const reconciled = {
-            ...merged,
-            ...(isAttachmentEcho ? { delivery: correlated.delivery } : { delivery: "sent" as const }),
-          };
-          return {
-            ...current,
-            [ownerId]: existing.map((entry) =>
-              entry.kind === "message" && entry.id === correlated.id ? reconciled : entry
-            )
-          };
-        }
-        if (existing.some((entry) => entry.id === projected.id)) return current;
-        return { ...current, [ownerId]: [...existing, projected] };
-      });
+        if (!isCurrent() || accountRef.current?.kind !== "logged-in") return;
+        const owner = agentsRef.current.find((agent) => agent.id === ownerId);
+        const projected = projectTranscriptEntry(event, entriesByAgentRef.current[ownerId]?.length ?? 0, owner?.name ?? UI_TEXT.title, ownerId);
+        if (projected == null || !ownerId) return;
+        rememberPreBaselineFeedEntry(ownerId, projected.id);
+        const clientNonce = event && typeof event === "object" && "clientNonce" in event && typeof event.clientNonce === "string" ? event.clientNonce : null;
+        const acknowledgementBefore = clientNonce == null ? null : acknowledgementController.getSnapshot().records.find((record) => record.nonce === clientNonce || record.priorNonces.includes(clientNonce));
+        const resolvedNonce = acknowledgementBefore?.nonce ?? clientNonce;
+        const acknowledgementEntryKind = event && typeof event === "object" && "kind" in event && event.kind === "user-attachment" ? "user-attachment" as const : "message" as const;
+        if (clientNonce != null) acknowledgementController.ingestTranscriptEvent({ accountSlot: acknowledgementScopeRef.current.accountSlot, agentId: ownerId, entry: { id: projected.id, kind: acknowledgementEntryKind, clientNonce } });
+        setEntriesByAgent((current) => {
+          const existing = current[ownerId] ?? [];
+          const reconciled = reconcileTranscriptLiveAppend(existing, projected, { resolvedNonce });
+          if (reconciled.length === existing.length && reconciled.every((entry, index) => entry === existing[index])) return current;
+          return { ...current, [ownerId]: [...reconciled] };
+        });
       }
     }) ?? null;
     return () => {
