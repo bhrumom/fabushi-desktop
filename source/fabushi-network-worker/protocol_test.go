@@ -22,7 +22,6 @@ func validInitializeRequest(t *testing.T) workerRequest {
 	}
 }
 
-
 func TestReadRequestContinuesAfterRecoverableMalformedFrame(t *testing.T) {
 	scanner := bufio.NewScanner(strings.NewReader("{invalid-json}\n{\"type\":\"status\"}\n"))
 	scanner.Buffer(make([]byte, 16), maxControlFrameBytes)
