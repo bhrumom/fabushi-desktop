@@ -801,7 +801,6 @@ fn request_graceful_termination(child: &mut Child) -> Result<(), String> {
     })
 }
 
-
 #[cfg(test)]
 mod network_worker_initialize_debug_tests {
     use super::NetworkWorkerInitialize;
