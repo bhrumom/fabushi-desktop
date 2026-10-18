@@ -249,8 +249,7 @@ jobs:
           name: quality-oracles-gate-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           path: artifacts/quality-oracles/gate-summary.json
           if-no-files-found: error
-          retention-days: 90
- "$log"
+          retention-days: 90 "$log"
           grep -Eq '^# pass 6
       - uses: Swatinem/rust-cache@v2
         with:
@@ -374,8 +373,7 @@ jobs:
           name: quality-oracles-gate-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           path: artifacts/quality-oracles/gate-summary.json
           if-no-files-found: error
-          retention-days: 90
- "$log"
+          retention-days: 90 "$log"
           grep -Eq '^# fail 0
       - uses: Swatinem/rust-cache@v2
         with:
@@ -499,8 +497,7 @@ jobs:
           name: quality-oracles-gate-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           path: artifacts/quality-oracles/gate-summary.json
           if-no-files-found: error
-          retention-days: 90
- "$log"
+          retention-days: 90 "$log"
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.97.1

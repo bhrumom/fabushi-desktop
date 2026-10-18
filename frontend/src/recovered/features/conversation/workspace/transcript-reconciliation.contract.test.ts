@@ -283,7 +283,10 @@ test("REC-I06 media Resource lifecycle releases observer leases and fences late 
     readonly unobserved: Element[] = [];
     disconnectCount = 0;
 
-    constructor(private readonly callback: IntersectionObserverCallback) {
+    private readonly callback: IntersectionObserverCallback;
+
+    constructor(callback: IntersectionObserverCallback) {
+      this.callback = callback;
       instances.push(this);
     }
 
