@@ -4,7 +4,7 @@ import type { CoordinatorPortBridge, CursorAuthStatus, DesktopAutoReviewInstruct
 import computerEntrypoint from "../recovered/features/computer/overlay/entrypoint";
 import { ConversationComposer } from "../recovered/features/conversation/workspace/composer";
 import { commitComposerAttachments, stageComposerFiles } from "../recovered/features/conversation/workspace/desktop";
-import { COMPOSER_ATTACHMENT_LIMIT, type ComposerDraft, type ComposerReplyKeyboard, type ConversationTranscriptEntry, type DraftAttachment } from "../recovered/features/conversation/workspace/model";
+import { COMPOSER_ATTACHMENT_LIMIT, type ComposerDraft, type ComposerReplyKeyboard, type ConversationTranscriptEntry, type DraftAttachment, type TranscriptMessage } from "../recovered/features/conversation/workspace/model";
 import {
   reconcileAuthoritativeTranscriptBaseline,
   reconcileLateInitialTranscriptPage,
