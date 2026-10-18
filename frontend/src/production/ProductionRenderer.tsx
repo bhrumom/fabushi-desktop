@@ -79,6 +79,7 @@ import { createAgentNetworkTrigger } from "../recovered/features/org-chart/works
 import { AccountMenu } from "../recovered/features/account/session/menu";
 import { SandBadge, SandButton, SandIcon, SandIconButton } from "../recovered/ui/sand-kit-primitives";
 import { OverlayDialog } from "../recovered/ui/overlay-primitives";
+import { SandTextField } from "../recovered/ui/sand-form-primitives";
 import { SignInStatus } from "../recovered/features/account/session/sign-in-status";
 import { isRosterPrivacyBlockFailure, PrivacyBlockedDialog } from "../recovered/features/roster/privacy-blocked";
 import { RosterStatus } from "../recovered/features/roster/status";
@@ -964,6 +965,8 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const [transcriptLoadError, setTranscriptLoadError] = useState<TranscriptLoadErrorState | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [scheduleComposerOpen, setScheduleComposerOpen] = useState(false);
+  const [scheduleComposerValue, setScheduleComposerValue] = useState("");
   const [composerClearGeneration, setComposerClearGeneration] = useState(0);
   const [overlay, setOverlay] = useState<AuxiliaryOverlay>(null);
   const [workspaceRoute, setWorkspaceRoute] = useState<WorkspaceRoute>(null);
@@ -1203,7 +1206,9 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         clientNonce: submission.nonce,
         composedAtMs: submission.createdAtMs,
         attachments,
-        ...(submission.replyToId == null ? {} : { replyToId: submission.replyToId })
+        ...(submission.replyToId == null ? {} : { replyToId: submission.replyToId }),
+        ...(submission.silent === true ? { silent: true } : {}),
+        ...(submission.scheduledAtMs == null ? {} : { scheduledAtMs: submission.scheduledAtMs })
       });
       const authoritative = projectTranscriptEntry(result, 0, humanConversation.name, humanConversation.id);
       if (authoritative != null) {
@@ -3515,8 +3520,9 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     }
   };
 
-  const submit = () => {
+  const submit = (options: { readonly silent?: boolean; readonly scheduledAtMs?: number } = {}) => {
     if (activeAgent == null || client == null) return;
+    if ((options.silent === true || options.scheduledAtMs != null) && !activeIsHuman) return;
     const liveDraftSnapshot = activeDraftSnapshotStore.get();
     const liveBaseDraft = liveDraftSnapshot.draft ?? liveDraftSnapshot.recovery ?? EMPTY_DRAFT;
     const liveDraft = replyThreadController.applyReplyToDraft(liveBaseDraft);
@@ -3532,7 +3538,9 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       ...(liveDraft.richText == null ? {} : { richText: liveDraft.richText }),
       attachments,
       createdAtMs: enteredAt,
-      ...(liveDraft.isFork === undefined ? {} : { isFork: liveDraft.isFork })
+      ...(liveDraft.isFork === undefined ? {} : { isFork: liveDraft.isFork }),
+      ...(options.silent === true ? { silent: true } : {}),
+      ...(options.scheduledAtMs == null ? {} : { scheduledAtMs: options.scheduledAtMs })
     });
     const submissionAccountSlot = acknowledgementScopeRef.current.accountSlot;
     const draftIdentity = composerDraftStore.identifyDraft({ agentId: activeAgent.id, draft: liveBaseDraft });
@@ -3561,6 +3569,25 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       setComposerClearGeneration((current) => current + 1);
     });
     setNotice(null);
+  };
+
+  const localDateTimeInputValue = (date: Date) =>
+    new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+
+  const openScheduleComposer = () => {
+    if (!activeIsHuman) return;
+    setScheduleComposerValue(localDateTimeInputValue(new Date(Date.now() + 5 * 60_000)));
+    setScheduleComposerOpen(true);
+  };
+
+  const submitScheduledComposer = () => {
+    const scheduledAtMs = new Date(scheduleComposerValue).getTime();
+    if (!Number.isSafeInteger(scheduledAtMs) || scheduledAtMs <= Date.now()) {
+      setNotice("Choose a future delivery time.");
+      return;
+    }
+    setScheduleComposerOpen(false);
+    submit({ scheduledAtMs });
   };
 
   const removeTranscriptMessage = useCallback((entry: TranscriptMessage) => {
@@ -4175,10 +4202,28 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           </main>
           <div className="sand-chat-input-dock">
             {activeIsHuman ? null : localToolPermissionDock}
-            <ConversationComposer acceptedSendGeneration={composerClearGeneration} disabled={busy || client == null} draft={draft} editorProviders={activeIsHuman ? undefined : editorProviders} notice={notice} onChange={(value) => composerDraftStore.setDraft(activeAgent.id, value)} onClearReplyTarget={clearReplyTarget} onRemoveAttachment={removeAttachment} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} replyTarget={replyTarget} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeAgent.id}`} transcribeAudio={transcribeAudio} />
+            <ConversationComposer acceptedSendGeneration={composerClearGeneration} disabled={busy || client == null} draft={draft} editorProviders={activeIsHuman ? undefined : editorProviders} notice={notice} onChange={(value) => composerDraftStore.setDraft(activeAgent.id, value)} onClearReplyTarget={clearReplyTarget} onRemoveAttachment={removeAttachment} onScheduleSend={activeIsHuman ? openScheduleComposer : undefined} onSendSilently={activeIsHuman ? () => submit({ silent: true }) : undefined} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} replyTarget={replyTarget} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeAgent.id}`} transcribeAudio={transcribeAudio} />
           </div>
         </div>}
       </div>
+
+      <OverlayDialog
+        className="sand-schedule-message-dialog"
+        label="Schedule message"
+        onClose={() => setScheduleComposerOpen(false)}
+        open={scheduleComposerOpen && activeIsHuman}
+      >
+        <form onSubmit={(event) => { event.preventDefault(); submitScheduledComposer(); }}>
+          <header><div><h2>Schedule message</h2><p>The canonical server will keep this message private from the recipient until its due time.</p></div></header>
+          <div className="sand-schedule-message-dialog__body">
+            <SandTextField autoFocus id="scheduled-message-at" label="Deliver at" min={localDateTimeInputValue(new Date(Date.now() + 60_000))} onChange={(event) => setScheduleComposerValue(event.currentTarget.value)} required type="datetime-local" value={scheduleComposerValue} />
+          </div>
+          <footer>
+            <SandButton onClick={() => setScheduleComposerOpen(false)} size="sm" type="button" variant="secondary">Cancel</SandButton>
+            <SandButton disabled={scheduleComposerValue.length === 0} size="sm" type="submit">Schedule</SandButton>
+          </footer>
+        </form>
+      </OverlayDialog>
 
       <ForwardMessageDialog
         forwardMessage={forwardHumanMessage}
