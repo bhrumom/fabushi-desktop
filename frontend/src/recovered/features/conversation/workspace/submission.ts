@@ -16,6 +16,10 @@ export interface ComposerSubmission {
   createdAtMs: number;
   replyToId?: string;
   isFork?: boolean;
+  /** Direct-Human delivery option carried by the existing send journal. */
+  silent?: boolean;
+  /** Positive epoch milliseconds; the canonical server owns due-time activation. */
+  scheduledAtMs?: number;
 }
 
 export interface ComposerSubmissionRecord extends ComposerSubmission {
