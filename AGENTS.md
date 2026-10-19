@@ -157,6 +157,14 @@ Before applying a review-driven fix, the runner must decide every synthesized fi
 
 After any accepted fixes, run a fresh focused re-review of the fix delta plus the affected functions and adjacent callers/consumers, while retaining the complete frozen scope as context. The review loop stops only on convergence, a configured round cap (default ten), demonstrated non-convergence/scope explosion, or a required human product/arbitration decision. A real defect in changed code is never left open merely to save a round.
 
+###### Immutable review-scope snapshots
+
+The frozen review scope must be reconstructible without mutating the developer's real staging state. Bind each review session to one verified repository root, an exact base commit, the starting HEAD, scope mode, and any explicitly included uncommitted state. When the scope is the last N commits, reject ranges that extend beyond repository history instead of silently widening or changing the base.
+
+Every review round snapshots the complete current scope, including untracked paths, through an isolated staging/index or an equivalent read-isolated mechanism; never use the developer's real index as scratch state. Preserve a stable tree identity plus a complete rename-aware, binary-safe diff and changed-path/status manifest against the frozen base. From round two onward also preserve the fix delta against the latest prior round snapshot while keeping the complete frozen-scope diff available to every focused reviewer.
+
+Snapshot acquisition fails closed when repository identity, base, session state, staging isolation, tree creation, or diff generation is unavailable. An empty scope is an explicit terminal no-review result, not a successful review. Session and round snapshot artifacts are repository review evidence; Git implementation details and private-index paths are tooling mechanisms, not a product runtime owner.
+
 ###### Worker/phase effort and model inheritance
 
 Before starting each AI phase or worker, classify the complete assigned scope from the current evidence and select an effort level. This governs development/review execution only; it does not create another product owner, delegation layer, or phase.
