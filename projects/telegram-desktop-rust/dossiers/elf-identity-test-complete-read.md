@@ -1,8 +1,8 @@
 # Complete read — .agents/shared/evidence/elf_identity_test.py
 
 Status: understood; responsibility decomposed; existing-owner production/evidence wiring audited; exact-head verification pending  
-Upstream: `telegramdesktop/tdesktop@fab79561cf8030eade9d0098bc438346b8c39261`  
-Tree: `76afabc085867a9c2e086489270d0ca0d5c9bcac`  
+Upstream: `telegramdesktop/tdesktop@34a86ed1a547ca6d12e25688c6289b60e6b6216c`  
+Tree: `41c7133ce1efab1e68bad4bcace2fea7cc10f24f`  
 Path: `.agents/shared/evidence/elf_identity_test.py`  
 Blob: `a75a29225b6eb70f255848e30026d02523d808f3`  
 Comparator companion: `.agents/shared/evidence/elf_identity.py@70dc54620651e8c6fd9cce6966c9964b1a6c90d7`
