@@ -4,17 +4,17 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "b16daff6df63e8a812bc2b52a04ff243f67a7d3f",
-    "tree": "673b8c7335ca98bd920a48a951dccc9052b77911",
+    "commit": "0a11537c220df35fe59a96aebe413b1e52bc6e47",
+    "tree": "2d737e3da8fd9a36166db27ff56756c99f6c2117",
     "baseline_identity_accepted": false
   },
   "inventory": {
-    "root_non_directory_entries": 6701,
-    "recursive_non_directory_entries": 15795,
+    "root_non_directory_entries": 6703,
+    "recursive_non_directory_entries": 15798,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 15795,
-    "unread_minimum": 15768,
+    "unknown_minimum": 15798,
+    "unread_minimum": 15771,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -41,5 +41,5 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Rebased to telegramdesktop/tdesktop@b16daff6df63e8a812bc2b52a04ff243f67a7d3f (tree 673b8c7335ca98bd920a48a951dccc9052b77911). Compared with c317da9, the root tree adds seven net-new non-directory entries, six under Telegram/SourceFiles, while direct gitlink pins and resource blob count remain unchanged. Recursive non-directory inventory rises from 15,788 to 15,795. Existing read-complete entries retain their blob identities; source closure remains open pending current-head Actions."
+  "note": "Rebased fail-closed to telegramdesktop/tdesktop@0a11537c220df35fe59a96aebe413b1e52bc6e47 (tree 2d737e3da8fd9a36166db27ff56756c99f6c2117). Compared with b16daff, root non-directory entries increase by 2 and recursive non-directory entries by 3; lib_base/lib_ui/lib_webview/cmake pins change, with cmake adding one non-directory entry. All 27 previously read-complete entries retain exact blob identities. unknown=15,798, unread=15,771, omitted=0 pending current-head GitHub Actions."
 }
