@@ -1,9 +1,9 @@
 import { createHash } from "node:crypto";
 import type { MiniAppToolRouter, MiniAppToolScope } from "./miniapp-tools.js";
+import { MINIAPP_TOOL_CHANNEL } from "../../shared/miniapp-tool-contract.js";
 
 export const FABUSHI_MINI_APP_SCHEME = "fabushi-miniapp";
 /** Must stay byte-identical to source/electron-preload/preload-miniapp-tools.ts. */
-const MINIAPP_TOOL_CHANNEL = "fabushi:miniapp-invoke";
 const MAX_RESOURCE_BYTES = 250 * 1024 * 1024;
 const MAX_RESOURCE_COUNT = 10_000;
 const MAX_REPORT_BYTES = 1024 * 1024;

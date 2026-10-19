@@ -5,8 +5,9 @@
  * the network: every call is a request the Main process may refuse.
  */
 import { contextBridge, ipcRenderer } from "electron";
+import { MINIAPP_TOOL_CHANNEL } from "../shared/miniapp-tool-contract.js";
 
-export const MINIAPP_TOOL_CHANNEL = "fabushi:miniapp-invoke";
+export { MINIAPP_TOOL_CHANNEL } from "../shared/miniapp-tool-contract.js";
 
 export interface MiniAppToolBridge {
   invoke(tool: string, args?: Record<string, unknown>): Promise<unknown>;

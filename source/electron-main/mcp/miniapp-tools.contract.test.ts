@@ -8,7 +8,7 @@ import { createDandelionCliBackend } from "./miniapp-cli-backend.js";
 import { registerProductionMiniApps } from "./miniapp-production.js";
 import { createMiniAppToolRouter, MINIAPP_TOOL_CONTRACT, type MiniAppToolBackend, type MiniAppToolScope } from "./miniapp-tools.js";
 import type { MiniAppIpcEvent, MiniAppSession, MiniAppWindow, MiniAppWindowOptions } from "./miniapp-window.js";
-import { MINIAPP_TOOL_CHANNEL } from "../../electron-preload/preload-miniapp-tools.js";
+import { MINIAPP_TOOL_CHANNEL } from "../../shared/miniapp-tool-contract.js";
 import type { ProductionServiceContext } from "../main-production-services.js";
 
 const scope: MiniAppToolScope = {
