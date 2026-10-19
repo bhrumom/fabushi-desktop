@@ -17,7 +17,19 @@ for(const item of archives){
   fail(/^https?:\/\//.test(item.url||''),item.id+' url invalid');
   fail(/^[0-9a-f]{64}$/.test(item.sha256||''),item.id+' sha invalid');
   const bundle=path.join(temp,item.id+'.tar.gz');
-  run('curl',['-fsSL','--retry','3','--connect-timeout','20','--max-time','240','-o',bundle,item.url]);
+  const urls=[item.url];
+  if(item.url.startsWith('https://ftp.gnu.org/pub/gnu/')){
+    urls.push('https://ftpmirror.gnu.org/'+item.url.slice('https://ftp.gnu.org/pub/gnu/'.length));
+  }
+  let fetchedUrl=null;
+  const downloadErrors=[];
+  for(const url of urls){
+    await fs.rm(bundle,{force:true});
+    const downloaded=tryRun('curl',['-fsSL','--retry','3','--connect-timeout','20','--max-time','240','-o',bundle,url]);
+    if(downloaded.status===0){fetchedUrl=url;break;}
+    downloadErrors.push(url+': '+String(downloaded.stderr||'').trim());
+  }
+  fail(fetchedUrl,item.id+' archive download failed across immutable transport candidates\n'+downloadErrors.join('\n'));
   const actual=run('sha256sum',[bundle]).trim().split(/\s+/)[0];
   fail(actual===item.sha256,item.id+' sha256 drift '+actual);
   const listing=run('tar',['-tzf',bundle]).split(/\r?\n/).filter(Boolean);
@@ -31,7 +43,7 @@ for(const item of archives){
   const relLine=line=>line.replaceAll(dir+path.sep,'');
   const select=re=>files.filter(p=>re.test(p));
   reports.push({
-    id:item.id,url:item.url,version:item.version,expected_sha256:item.sha256,actual_sha256:actual,
+    id:item.id,url:item.url,fetched_url:fetchedUrl,transport_candidates:urls,version:item.version,expected_sha256:item.sha256,actual_sha256:actual,
     archive_entries_non_directory:listing.filter(x=>!x.endsWith('/')).length,extracted_files:files.length,
     acquisition_candidates:(grep.stdout||'').split(/\r?\n/).filter(Boolean).map(relLine).sort(),
     patches:select(/\.(patch|diff)$/i),
