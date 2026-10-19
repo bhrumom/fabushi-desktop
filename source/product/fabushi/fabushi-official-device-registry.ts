@@ -39,6 +39,7 @@ export interface FabushiOfficialDeviceRegistryOptions {
   readonly getDeviceAgentSession: () => Promise<FabushiDeviceAgentSession | null>;
   readonly connect?: (url: string, accessToken: string) => OfficialDeviceRegistrySocket;
   readonly surfaceStatus?: () => Promise<unknown>;
+  readonly surfaceCall?: (toolName: string, input: Record<string, unknown>) => Promise<unknown>;
   readonly now?: () => number;
   readonly pollMs?: number;
   readonly heartbeatMs?: number;
