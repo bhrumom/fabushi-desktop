@@ -4,17 +4,17 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "fab79561cf8030eade9d0098bc438346b8c39261",
-    "tree": "76afabc085867a9c2e086489270d0ca0d5c9bcac",
+    "commit": "34a86ed1a547ca6d12e25688c6289b60e6b6216c",
+    "tree": "41c7133ce1efab1e68bad4bcace2fea7cc10f24f",
     "baseline_identity_accepted": false
   },
   "inventory": {
-    "root_non_directory_entries": 6709,
-    "recursive_non_directory_entries": 16194,
+    "root_non_directory_entries": 6717,
+    "recursive_non_directory_entries": 16202,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16186,
-    "unread_minimum": 16159,
+    "unknown_minimum": 16194,
+    "unread_minimum": 16167,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -97,5 +97,5 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live rebaseline candidate telegramdesktop/tdesktop@fab79561cf8030eade9d0098bc438346b8c39261 (tree 76afabc085867a9c2e086489270d0ca0d5c9bcac) remains source-closure open. The eighth ordered recursive inventory entry, .agents/shared/evidence/elf_identity_test.py blob a75a29225b6eb70f255848e30026d02523d808f3, has been read completely. Its independent transform-oracle qualification and evidence-command ownership responsibilities are wired into existing source-neutral Fabushi test strategy/evidence owners. The live lib_base pin adds two previously unseen recursive files, so recursive inventory is 16,194 and counters after this closure are unknown=16,186, unread=16,159, omitted=0. baseline_ready/acceptance.accepted remain false pending full source closure and current-head evidence."
+  "note": "Live rebaseline candidate telegramdesktop/tdesktop@34a86ed1a547ca6d12e25688c6289b60e6b6216c (tree 41c7133ce1efab1e68bad4bcace2fea7cc10f24f) remains source-closure open. The eighth ordered recursive inventory entry, .agents/shared/evidence/elf_identity_test.py blob a75a29225b6eb70f255848e30026d02523d808f3, has been read completely. Its independent transform-oracle qualification and evidence-command ownership responsibilities are wired into existing source-neutral Fabushi test strategy/evidence owners. Latest upstream replaces three legacy premium OBJ resources with nine diamond binaries and adds two shaders, net +8 root/non-directory entries; no direct gitlink changed. Recursive inventory is 16,202 and counters after this closure are unknown=16,194, unread=16,167, omitted=0. baseline_ready/acceptance.accepted remain false pending full source closure and current-head evidence."
 }
