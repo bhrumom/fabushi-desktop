@@ -679,6 +679,8 @@ recursiveInventory.push(...childEntries.map(e=>({
   path:e.path,mode:e.mode,type:e.type,object:e.sha,size:e.size??null
 })));
 
+fail(recursiveInventory.length===lock.coverage.recursive_source_entries_total,`recursive inventory count drift ${recursiveInventory.length} != ${lock.coverage.recursive_source_entries_total}`);
+
 const attrs=await get(`https://raw.githubusercontent.com/${u.repository}/${u.commit}/.gitattributes`,false);
 fail(!/filter=lfs|diff=lfs|merge=lfs/.test(attrs),'Git LFS attributes detected; explicit LFS closure required');
 for (const p of lock.build_time_pin_changes) {

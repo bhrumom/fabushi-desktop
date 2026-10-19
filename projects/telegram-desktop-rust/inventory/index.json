@@ -10,11 +10,11 @@
   },
   "inventory": {
     "root_non_directory_entries": 6703,
-    "recursive_non_directory_entries": 15798,
+    "recursive_non_directory_entries": 16186,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 15798,
-    "unread_minimum": 15771,
+    "unknown_minimum": 16186,
+    "unread_minimum": 16159,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -41,5 +41,5 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Rebased fail-closed to telegramdesktop/tdesktop@0a11537c220df35fe59a96aebe413b1e52bc6e47 (tree 2d737e3da8fd9a36166db27ff56756c99f6c2117). Compared with b16daff, root non-directory entries increase by 2 and recursive non-directory entries by 3; lib_base/lib_ui/lib_webview/cmake pins change, with cmake adding one non-directory entry. All 27 previously read-complete entries retain exact blob identities. unknown=15,798, unread=15,771, omitted=0 pending current-head GitHub Actions."
+  "note": "Fail-closed rebaseline to telegramdesktop/tdesktop@0a11537c220df35fe59a96aebe413b1e52bc6e47 (tree 2d737e3da8fd9a36166db27ff56756c99f6c2117). Exact recursive expansion establishes 16,186 non-directory source entries after including nested gitlink descendants; the earlier 15,798 count omitted 388 reachable entries. All 27 previously read-complete source blobs retain identity, so unknown=16,186, unread=16,159, omitted=0."
 }
