@@ -258,10 +258,10 @@
   "coverage": {
     "root_source_entries_total": 6717,
     "recursive_source_entries_total": 16202,
-    "unknown_minimum": 16187,
-    "unread_minimum": 16160,
+    "unknown_minimum": 16186,
+    "unread_minimum": 16159,
     "omitted_known": 0,
-    "note": "Revision 9 live rebaseline remains in progress for telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a (tree 5151db79560ed40bf3802482fcfb74b950be6c40). Root non-directory inventory remains 6,717 and recursive authority remains 16,202. Direct artifact reading identifies actual 1-based recursive array entry 15 as .agents/shared/scripts/codex_leaf_test.py@2831841e6b131ca2c42688fe24e00b739f825ccb; this one independent source entry is closed to existing source-neutral repository workflow/evidence owners. Earlier progression ordinals are not reinterpreted as artifact-array positions. Counters are unknown=16,187, unread=16,160, omitted=0."
+    "note": "Revision 9 live rebaseline remains in progress for telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a (tree 5151db79560ed40bf3802482fcfb74b950be6c40). Root non-directory inventory remains 6,717 and recursive authority remains 16,202. Direct artifact reading identifies actual 1-based recursive array entry 14 as .agents/shared/scripts/codex_leaf.py@313c4941c61a4ec0e3b3b65cdaa59cc213916fdd and entry 15 as its qualification oracle .agents/shared/scripts/codex_leaf_test.py@2831841e6b131ca2c42688fe24e00b739f825ccb; both are independently closed to existing source-neutral repository workflow/evidence owners. Earlier progression ordinals are not reinterpreted as artifact-array positions. Counters are unknown=16,186, unread=16,159, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -275,7 +275,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Live rebaseline identity for telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a remains source-closure open. Actual recursive artifact array entry 15 .agents/shared/scripts/codex_leaf_test.py is independently mapped to existing source-neutral repository lifecycle / Test Strategy / Test Evidence Contract owners; full closure remains unknown=16,187, unread=16,160, omitted=0, so acceptance remains fail-closed."
+    "note": "Live rebaseline identity for telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a remains source-closure open. Actual recursive artifact array entry 14 .agents/shared/scripts/codex_leaf.py is independently mapped to existing source-neutral repository lifecycle / Test Strategy / Test Evidence Contract owners, alongside the separate entry15 qualification row; full closure remains unknown=16,186, unread=16,159, omitted=0, so acceptance remains fail-closed."
   },
   "baseline_identity_evidence": {
     "status": "pending-current-head-revalidation",
