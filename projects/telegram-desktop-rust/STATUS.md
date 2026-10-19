@@ -8,8 +8,8 @@ Complete: false
 | Area | Status | Note |
 | --- | --- | --- |
 | Product role | active | tdesktop is complete source authority, not a runtime/provider |
-| Discovery upstream | observed | `0a11537c220df35fe59a96aebe413b1e52bc6e47`; fail-closed rebaseline candidate, not accepted |
-| Historical baseline | stale | `b16daff6df63e8a812bc2b52a04ff243f67a7d3f`; predecessor evidence cannot be inherited |
+| Discovery upstream | observed | `1e18da644e37856c9b1d87434bfcd6a2e3d11c57`; fail-closed rebaseline candidate, not accepted |
+| Historical baseline | stale | `0a11537c220df35fe59a96aebe413b1e52bc6e47`; predecessor evidence cannot be inherited |
 | Recursive source closure | rebaseline required | current lock/inventory must be reconciled to one exact upstream baseline |
 | File-level inventory | not accepted | must reach unknown=0, unread=0, omitted=0 |
 | Responsibility decomposition | not accepted | every source symbol/responsibility requires traceable destination |
@@ -31,7 +31,7 @@ This status file records only observed repository state. It is not completion ev
 
 ## 2026-10-19 live authority reconciliation
 
-At Fabushi `main@adce9f7618e80870bd89a2dee6db7f77d6e066a9`, the committed TDRP lock still targeted `b16daff6df63e8a812bc2b52a04ff243f67a7d3f`. Live `telegramdesktop/tdesktop@dev` is now `0a11537c220df35fe59a96aebe413b1e52bc6e47` (tree `2d737e3da8fd9a36166db27ff56756c99f6c2117`), 31 commits / 63 paths ahead. Root non-directory inventory is 6,703. Exact recursive expansion across direct and nested gitlinks establishes 16,186 non-directory source entries; the prior 15,798 figure omitted 388 recursively reachable entries and is rejected. The four changed direct gitlinks are `Telegram/lib_base`, `Telegram/lib_ui`, `Telegram/lib_webview`, and `cmake`; only `cmake` changes recursive cardinality (+1). The 27 previously read-complete source entries retain exact blob identity. Build acquisition authority also changes: `prepare.py` pins `desktop-app/patches` at `11f9322e5f7102ecc0a6dd39abc3682f61ead65f`, Docker/Snap pin it at `4811dda9fcabbf9cd8cab585d4df2379d81edf04`, and `prepare.py` adds an exact-pinned `desktop-app/qt6_windows7_patches` input. This rebaseline remains unaccepted until current-head GitHub Actions proves the reconstructed authority.
+During the 2026-10-19 PR #126 exact-head reconciliation, the preceding lock targeted `0a11537c220df35fe59a96aebe413b1e52bc6e47`. Live `telegramdesktop/tdesktop@dev` is now `1e18da644e37856c9b1d87434bfcd6a2e3d11c57` (tree `30c1d5cce4c1bde962882c1f2ca4b2e51bb03ae6`), 5 commits / 63 paths ahead. Root non-directory inventory is 6,709: five new `Telegram/SourceFiles` entries and one new Resource entry. No direct gitlink pin changed, so the established recursive dependency expansion rises by the same six entries, from 16,186 to 16,192. The three already closed `.agents` entries plus mapped `share_box.cpp` / `url_auth_box.cpp` retain exact blob identity. Of the prior read-complete set, only `Telegram/cmake/td_ui.cmake` changed; its full new blob was reread and the sole delta is inclusion of `boxes/keys_legend.style`, so all 30 prior reads remain valid. Current fail-closed counters are unknown=16,189, unread=16,162, omitted=0. `snap/snapcraft.yaml` changes only by adding the `login-session-observe` permission; immutable build acquisition pins remain unchanged and current-head Actions must regenerate/validate candidate accounting. This rebaseline remains unaccepted until current-head GitHub Actions proves the reconstructed authority.
 
 ## Metrics
 

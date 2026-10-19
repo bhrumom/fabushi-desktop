@@ -3,7 +3,7 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_repository": "telegramdesktop/tdesktop",
-  "upstream_commit": "0a11537c220df35fe59a96aebe413b1e52bc6e47",
+  "upstream_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
   "discovery": {
     "evidence_run_id": 38547900810,
     "evidence_head_sha": "9a3e22f5ab8e3522bb27ff682f29703870e2f802",
@@ -13,7 +13,7 @@
     "candidate_lines_total": 331,
     "immutable_commit_pin_occurrences_classified": 19,
     "candidate_lines_pending_classification": 0,
-    "note": "Current upstream 0a11537c220df35fe59a96aebe413b1e52bc6e47 is 31 commits / 63 paths ahead of b16daff. Live acquisition authority changes materially: desktop-app/patches advances to 4811dda9fcabbf9cd8cab585d4df2379d81edf04 and prepare.py adds the exact-pinned desktop-app/qt6_windows7_patches acquisition. Candidate lines increase 330→331; current-head Actions must regenerate and validate the complete set.",
+    "note": "Current upstream 1e18da644e37856c9b1d87434bfcd6a2e3d11c57 is 5 commits / 63 paths ahead of 0a11537c220df35fe59a96aebe413b1e52bc6e47. snap/snapcraft.yaml adds the non-acquisition permission line login-session-observe before all acquisition candidates; every Snap candidate line anchor is therefore shifted by +1 while immutable acquisition pins and classified cardinality remain 331/19/0. No direct gitlink pin changed.",
     "candidate_lines_classified": 331,
     "disposition_closure_status": "complete",
     "recursive_authority_closure_status": "open",
@@ -169,7 +169,7 @@
     {
       "id": "ACQ-R9-IMMUTABLE-013",
       "source_path": "snap/snapcraft.yaml",
-      "source_line": 126,
+      "source_line": 127,
       "repository": "https://github.com/desktop-app/patches.git",
       "ref_kind": "commit",
       "commit": "4811dda9fcabbf9cd8cab585d4df2379d81edf04",
@@ -180,7 +180,7 @@
     {
       "id": "ACQ-R9-IMMUTABLE-014",
       "source_path": "snap/snapcraft.yaml",
-      "source_line": 324,
+      "source_line": 325,
       "repository": "https://github.com/madler/zlib.git",
       "ref_kind": "commit",
       "commit": "e3dc0a85b7032e98380dec011bc8f2c2ee0d8fca",
@@ -191,7 +191,7 @@
     {
       "id": "ACQ-R9-IMMUTABLE-015",
       "source_path": "snap/snapcraft.yaml",
-      "source_line": 462,
+      "source_line": 463,
       "repository": "https://github.com/tdlib/td.git",
       "ref_kind": "commit",
       "commit": "51743dfd01dff6179e2d8f7095729caa4e2222e9",
@@ -202,7 +202,7 @@
     {
       "id": "ACQ-R9-IMMUTABLE-016",
       "source_path": "snap/snapcraft.yaml",
-      "source_line": 510,
+      "source_line": 511,
       "repository": "https://github.com/dkaraush/tlottie.git",
       "ref_kind": "commit",
       "commit": "92df98dc209bc39b1e567ec74a8c86a0af5239de",
@@ -213,7 +213,7 @@
     {
       "id": "ACQ-R9-IMMUTABLE-017",
       "source_path": "snap/snapcraft.yaml",
-      "source_line": 529,
+      "source_line": 530,
       "repository": "https://github.com/desktop-app/tg_owt.git",
       "ref_kind": "commit",
       "commit": "07fb35bc33b3e79125a1beab7690e830f183f5d8",
@@ -235,7 +235,7 @@
     {
       "id": "ACQ-R9-IMMUTABLE-019",
       "source_path": "snap/snapcraft.yaml",
-      "source_line": 517,
+      "source_line": 518,
       "repository": "https://github.com/i582/wallet-engine.git",
       "ref_kind": "commit",
       "commit": "e59e0d89d7ee90c388bf36e3334c5b276f396697",
@@ -562,13 +562,13 @@
       "disposition": "exact-immutable-input-support",
       "source_path": "snap/snapcraft.yaml",
       "source_lines": [
-        124,
-        322,
-        460,
-        477,
-        508,
-        515,
-        527
+        125,
+        323,
+        461,
+        478,
+        509,
+        516,
+        528
       ],
       "authority_scope": "build-source-authority"
     },
@@ -721,24 +721,24 @@
       "disposition": "mutable-tag-or-branch-input",
       "source_path": "snap/snapcraft.yaml",
       "source_lines": [
-        135,
-        137,
-        149,
-        151,
-        165,
-        167,
-        334,
-        336,
-        349,
-        351,
-        368,
-        370,
-        386,
-        388,
-        396,
-        398,
-        442,
-        444
+        136,
+        138,
+        150,
+        152,
+        166,
+        168,
+        335,
+        337,
+        350,
+        352,
+        369,
+        371,
+        387,
+        389,
+        397,
+        399,
+        443,
+        445
       ],
       "authority_scope": "build-source-authority"
     },
@@ -780,7 +780,7 @@
       "disposition": "self-repository-local-source",
       "source_path": "snap/snapcraft.yaml",
       "source_lines": [
-        39
+        40
       ],
       "authority_scope": "self-repository-source"
     },
@@ -1131,7 +1131,7 @@
   ],
   "recursive_build_reachability": {
     "status": "partial-audited-disposition-open",
-    "accepted_upstream_commit": "0a11537c220df35fe59a96aebe413b1e52bc6e47",
+    "accepted_upstream_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
     "rule": "A recursively discovered repository is source/build authority only when an accepted TDesktop build path actually initializes, downloads, generates, patches, or consumes it. Presence as an unselected superproject gitlink is not sufficient.",
     "qt_superproject": {
       "repository": "https://github.com/qt/qt5",
@@ -1177,7 +1177,7 @@
         },
         {
           "path": "snap/snapcraft.yaml",
-          "blob": "253f302455dfd61e31142d7734d8dcb8ed13b5eb",
+          "blob": "618110dba69e4f18c78fe65f282f1342a631cbfb",
           "evidence": "Snap Qt source-submodules lists only qtbase qtdeclarative qtimageformats qtshadertools qtsvg qtwayland."
         }
       ],
@@ -1274,7 +1274,7 @@
         },
         {
           "path": "snap/snapcraft.yaml",
-          "blob": "253f302455dfd61e31142d7734d8dcb8ed13b5eb",
+          "blob": "618110dba69e4f18c78fe65f282f1342a631cbfb",
           "evidence": "Snap OpenSSL part uses source-tag/plugin make and does not request source-submodules."
         }
       ],

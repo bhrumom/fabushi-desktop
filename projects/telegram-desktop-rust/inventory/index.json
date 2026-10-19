@@ -4,17 +4,17 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "0a11537c220df35fe59a96aebe413b1e52bc6e47",
-    "tree": "2d737e3da8fd9a36166db27ff56756c99f6c2117",
-    "baseline_identity_accepted": true
+    "commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+    "tree": "30c1d5cce4c1bde962882c1f2ca4b2e51bb03ae6",
+    "baseline_identity_accepted": false
   },
   "inventory": {
-    "root_non_directory_entries": 6703,
-    "recursive_non_directory_entries": 16186,
+    "root_non_directory_entries": 6709,
+    "recursive_non_directory_entries": 16192,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16184,
-    "unread_minimum": 16157,
+    "unknown_minimum": 16189,
+    "unread_minimum": 16162,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -86,7 +86,7 @@
         "artifact_digest": "sha256:a5e1383f1a6e51093a92acc383d6bfb52e4e4f9cfec1d99e3739cf92d7b1af33"
       }
     ],
-    "evidence_status": "current-head-baseline-identity-only-source-closure-open",
+    "evidence_status": "historical-only",
     "upstream_commit": "0a11537c220df35fe59a96aebe413b1e52bc6e47"
   },
   "closure_rules": {
@@ -97,5 +97,5 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Baseline identity for telegramdesktop/tdesktop@0a11537c220df35fe59a96aebe413b1e52bc6e47 (tree 2d737e3da8fd9a36166db27ff56756c99f6c2117) is provenance-bound by GitHub Actions run 39267321482 / job 118110183925 / artifact 12193803207. Exact recursive expansion is 16,186 non-directory entries; 27 read-complete blob identities are retained, so unknown=16,184, unread=16,157, omitted=0. Semantic reading and responsibility closure remain open; baseline_ready/acceptance.accepted remain false. The first recursive inventory entry (.agents/shared/build-lock-recovery.md) is now read and mapped as toolchain-equivalent. The second recursive inventory entry (.agents/shared/codex-cli-leaves.md) is now read and mapped as toolchain-equivalent."
+  "note": "Rebaseline candidate telegramdesktop/tdesktop@1e18da644e37856c9b1d87434bfcd6a2e3d11c57 (tree 30c1d5cce4c1bde962882c1f2ca4b2e51bb03ae6) is 5 commits / 63 paths ahead of the predecessor. Root non-directory inventory is 6,709 and, with unchanged direct/nested gitlink pins, recursive non-directory inventory is 16,192. The three closed .agents entries retain exact blob identity; all 30 previously read-complete entries remain read-complete after rereading the only changed read entry, Telegram/cmake/td_ui.cmake. Current counters are unknown=16,189, unread=16,162, omitted=0. Predecessor recursive evidence is historical-only until current-head Actions accepts the new baseline identity; baseline_ready/acceptance.accepted remain false."
 }

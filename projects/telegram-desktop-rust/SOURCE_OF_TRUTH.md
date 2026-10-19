@@ -26,7 +26,7 @@ Parent: FBCP-001 Revision 7
 
 ## Baseline
 
-2026-10-19 live reconciliation 后，当前 fail-closed rebaseline candidate 为 `0a11537c220df35fe59a96aebe413b1e52bc6e47`（tree `2d737e3da8fd9a36166db27ff56756c99f6c2117`）；前一 baseline `b16daff6df63e8a812bc2b52a04ff243f67a7d3f` 与更早历史 baseline 仅作历史证据。当前 source closure 仍 open，baseline_ready/acceptance.accepted 仍必须为 false。
+2026-10-19 live reconciliation 后，当前 fail-closed rebaseline candidate 为 `1e18da644e37856c9b1d87434bfcd6a2e3d11c57`（tree `30c1d5cce4c1bde962882c1f2ca4b2e51bb03ae6`）；前一 baseline `0a11537c220df35fe59a96aebe413b1e52bc6e47` 与更早历史 baseline 仅作历史证据。当前 source closure 仍 open，baseline_ready/acceptance.accepted 仍必须为 false。
 
 accepted baseline 必须在 GitHub Actions 中重新确认，并递归闭合：
 - root tracked files / gitlinks；
