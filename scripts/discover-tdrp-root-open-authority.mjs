@@ -133,11 +133,11 @@ for(const [sourcePath,data] of byPath){
       ref='v'+value;
       authorityNote='resolved from preceding QT assignment in same Docker RUN block';
     }
-    if(sourcePath==='Telegram/build/prepare/prepare.py' && logical.start===1599){
+    if(sourcePath==='Telegram/build/prepare/prepare.py' && logical.start===1609){
       ref='v5.15.19-lts-lgpl';
       authorityNote='qt<6 branch; accepted qt_version.py selects Qt 5.15.19 for legacy Windows path';
     }
-    if(sourcePath==='Telegram/build/prepare/prepare.py' && logical.start===1668){
+    if(sourcePath==='Telegram/build/prepare/prepare.py' && logical.start===1680){
       ref='v6.11.2';
       authorityNote='qt>=6 branch; accepted qt_version.py selects Qt 6.11.2 and this version is not 6.2 LTS';
     }
@@ -156,14 +156,14 @@ for(const sourcePath of ['Telegram/build/prepare/prepare.py']){
     const clone=text.match(/git clone\s+(https?:\/\/[^\s'"]+)/);
     if(!clone) continue;
     const url=cleanToken(clone[1]);
-    if(item.source_line===1067){
+    if(item.source_line===1068){
       const nearby=data.lines.slice(item.source_line,Math.min(data.lines.length,item.source_line+8)).join('\n');
       const checkout=nearby.match(/git checkout\s+([^\s]+)/);
       fail(checkout,'libvpx mutable clone lacks nearby checkout');
       const ref=cleanToken(checkout[1]);
       acquisitions.push({kind:'git-clone-followed-by-checkout',source_path:sourcePath,line_start:item.source_line,line_end:item.source_line+8,repository:url,ref,resolution:resolveRef(url,ref,null),candidate_lines:[item.source_line]});
-    } else if(item.source_line===1417){
-      const windowsCommit=(inventory.resolved_short_ref_contexts||[]).find(x=>x.source_path===sourcePath&&x.source_line===1417)?.resolved_commit;
+    } else if(item.source_line===1418){
+      const windowsCommit=(inventory.resolved_short_ref_contexts||[]).find(x=>x.source_path===sourcePath&&x.source_line===1418)?.resolved_commit;
       fail(/^[0-9a-f]{40}$/.test(windowsCommit||''),'openal Windows checkout full commit missing');
       const macRef='coreaudio_device_uid';
       acquisitions.push({kind:'git-clone-platform-checkouts',source_path:sourcePath,line_start:item.source_line,line_end:item.source_line+20,repository:url,
