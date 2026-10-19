@@ -66,3 +66,8 @@ Implementer 可写 tests，但 release reviewer 必须独立复核。FBCP/TDRP �
 ## Artifact identity and copy provenance
 
 Packaging/release tests treat artifact identity as a first-class contract. A byte-exact staging or installation copy must verify independent source/copy whole-file digests and size, re-check source stability across the copy window, and preserve the machine-readable result with exact-head evidence. Intentional transforms require platform-specific semantic equivalence oracles with paired positive/negative controls and bounded resource behavior; absence of such an oracle is a fail-closed blocker, not permission to infer equivalence from filenames, signatures, normalized hashes, or successful launch. Executable verification remains GitHub-Actions-only.
+
+### Format-transform positive/forbidden controls and report
+
+Any platform-specific executable transformation oracle must be tested with independent accepted controls and paired forbidden mutations that prove protected loader/content/metadata semantics can actually fail. When the real toolchain performs the transform, at least one real-toolchain control is required in addition to synthetic fixtures. Tests must exercise declared parser/resource boundaries and stable-acquisition failures. Passing evidence is a machine-readable exact-head report containing both raw artifact identities, the declared profile/limits, acquisition/stability observations, semantic allowances/comparisons, and the final verdict; optimized/runtime modes that can disable assertions are separately controlled where applicable.
+

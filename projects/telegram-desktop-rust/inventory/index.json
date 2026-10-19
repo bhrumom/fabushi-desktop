@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16192,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16186,
-    "unread_minimum": 16159,
+    "unknown_minimum": 16185,
+    "unread_minimum": 16158,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -97,5 +97,5 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Rebaseline candidate telegramdesktop/tdesktop@1e18da644e37856c9b1d87434bfcd6a2e3d11c57 (tree 30c1d5cce4c1bde962882c1f2ca4b2e51bb03ae6) remains source-closure open. The sixth recursive inventory entry, .agents/shared/evidence/elf-copies.md blob 49fc28d671276e1787753267ae92397266d6bacd, has now been read completely and its applicable artifact-copy identity, stable-acquisition and evidence responsibilities are wired into existing source-neutral Fabushi release packaging and quality/evidence owners. Counters after this actual closure are unknown=16,186, unread=16,159, omitted=0; baseline_ready/acceptance.accepted remain false pending full source closure and current-head evidence."
+  "note": "Rebaseline candidate telegramdesktop/tdesktop@1e18da644e37856c9b1d87434bfcd6a2e3d11c57 (tree 30c1d5cce4c1bde962882c1f2ca4b2e51bb03ae6) remains source-closure open. The seventh recursive inventory entry, .agents/shared/evidence/elf_identity.py blob 70dc54620651e8c6fd9cce6966c9964b1a6c90d7, has now been read completely; its stable bounded acquisition, loader-visible identity, section/debug/static-symbol equivalence, control and machine-readable report responsibilities map to existing source-neutral Fabushi release packaging and quality/evidence owners. Current macOS shipping uses the stronger byte-exact executable-copy path, so no duplicate ELF/Telegram packaging owner is introduced. Counters after this actual closure are unknown=16,185, unread=16,158, omitted=0; baseline_ready/acceptance.accepted remain false pending full source closure and current-head evidence."
 }
