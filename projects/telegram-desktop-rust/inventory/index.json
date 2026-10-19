@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
-    "tree": "7035dc3ed4e06f05a6045a2eedb9bce6335095ee",
+    "commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
+    "tree": "f8d3613b850cee75f156b762ef5399315302120e",
     "baseline_identity_accepted": false
   },
   "inventory": {
@@ -97,5 +97,5 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live rebaseline candidate telegramdesktop/tdesktop@3b1ac7732ddd3033d112865821db38b0e7d959d4 (tree 7035dc3ed4e06f05a6045a2eedb9bce6335095ee) remains source-closure open. The eighth ordered recursive inventory entry, .agents/shared/evidence/elf_identity_test.py blob a75a29225b6eb70f255848e30026d02523d808f3, remains fully read and wired to source-neutral quality/evidence owners. The latest one-commit delta touches only history_view_read_metrics_tracker.cpp and changes no target blob, build acquisition, gitlink or inventory cardinality. Recursive inventory remains 16,202 with unknown=16,194, unread=16,167, omitted=0; baseline_ready/acceptance.accepted remain false."
+  "note": "Live rebaseline candidate telegramdesktop/tdesktop@392b83b3091edaaaf0637ff92526db90ce6542e8 (tree f8d3613b850cee75f156b762ef5399315302120e) remains source-closure open. Entry 8 .agents/shared/evidence/elf_identity_test.py remains blob a75a29225b6eb70f255848e30026d02523d808f3 and fully mapped to source-neutral owners. The latest one-commit delta only updates the Windows openal-soft revision in prepare.py with no cardinality/gitlink/line-number change. Recursive inventory remains 16,202 with unknown=16,194, unread=16,167, omitted=0; baseline_ready/acceptance.accepted remain false."
 }

@@ -2,7 +2,7 @@
   "format_version": 3,
   "project_id": "TDRP-001",
   "spec_revision": 9,
-  "upstream_commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
+  "upstream_commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
   "target_commit": "8a38c08ea0f09e7c6fe7e8d50f776a813611aa6a",
   "coverage": {
     "source_entries_total": 16202,
@@ -15,7 +15,7 @@
   "rows": [
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
+      "source_commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -268,7 +268,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
+      "source_commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
       "source_path": "Telegram/SourceFiles/boxes/url_auth_box.cpp",
       "source_blob_sha": "1fa4309f2091cf148b0b6f249efa029bdc171c53",
       "source_kind": "source",
@@ -513,7 +513,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
+      "source_commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -737,7 +737,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
+      "source_commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -969,7 +969,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
+      "source_commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -1184,7 +1184,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
+      "source_commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -1439,7 +1439,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
+      "source_commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -1687,7 +1687,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
+      "source_commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -1909,7 +1909,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
+      "source_commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -2161,7 +2161,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
+      "source_commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -2430,7 +2430,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
+      "source_commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
       "source_path": ".agents/shared/build-lock-recovery.md",
       "source_blob_sha": "ec75573e7efe74e9c9a344f3e66f2fc43ac7680f",
       "source_kind": "tooling",
@@ -2644,7 +2644,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
+      "source_commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
       "source_path": ".agents/shared/codex-cli-leaves.md",
       "source_blob_sha": "659da44a8083c433c4e9b59ca28f64ba525bfbf8",
       "source_kind": "tooling",
@@ -2868,7 +2868,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
+      "source_commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
       "source_path": ".agents/shared/codex-delegation.md",
       "source_blob_sha": "ed89d2a14344f50034a9363bd9ffe75f7972e652",
       "source_kind": "tooling",
@@ -3081,7 +3081,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
+      "source_commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
       "source_path": ".agents/shared/codex-delegation.md",
       "source_blob_sha": "ed89d2a14344f50034a9363bd9ffe75f7972e652",
       "source_kind": "tooling",
@@ -3294,7 +3294,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
+      "source_commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
       "source_path": ".agents/shared/codex-delegation.md",
       "source_blob_sha": "ed89d2a14344f50034a9363bd9ffe75f7972e652",
       "source_kind": "tooling",
@@ -3507,7 +3507,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
+      "source_commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
       "source_path": ".agents/shared/cross-review/prompts.md",
       "source_blob_sha": "4e155d2bd7e647c12df7b008c279969bfd65e44d",
       "source_kind": "tooling",
@@ -3721,7 +3721,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
+      "source_commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
       "source_path": ".agents/shared/cross-review/prompts.md",
       "source_blob_sha": "4e155d2bd7e647c12df7b008c279969bfd65e44d",
       "source_kind": "tooling",
@@ -3936,7 +3936,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
+      "source_commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
       "source_path": ".agents/shared/cross-review/prompts.md",
       "source_blob_sha": "4e155d2bd7e647c12df7b008c279969bfd65e44d",
       "source_kind": "tooling",
@@ -4152,7 +4152,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
+      "source_commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
       "source_path": ".agents/shared/cross-review/protocol.md",
       "source_blob_sha": "51dabe142d5c3c7247e4050790c4e74b40f35b27",
       "source_kind": "tooling",
@@ -4365,7 +4365,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
+      "source_commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
       "source_path": ".agents/shared/cross-review/protocol.md",
       "source_blob_sha": "51dabe142d5c3c7247e4050790c4e74b40f35b27",
       "source_kind": "tooling",
@@ -4576,7 +4576,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
+      "source_commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
       "source_path": ".agents/shared/cross-review/protocol.md",
       "source_blob_sha": "51dabe142d5c3c7247e4050790c4e74b40f35b27",
       "source_kind": "tooling",
@@ -4790,7 +4790,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
+      "source_commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
       "source_path": ".agents/shared/cross-review/protocol.md",
       "source_blob_sha": "51dabe142d5c3c7247e4050790c4e74b40f35b27",
       "source_kind": "tooling",
@@ -5009,7 +5009,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
+      "source_commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
       "source_path": ".agents/shared/evidence/elf-copies.md",
       "source_blob_sha": "49fc28d671276e1787753267ae92397266d6bacd",
       "source_kind": "tooling",
@@ -5221,7 +5221,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
+      "source_commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
       "source_path": ".agents/shared/evidence/elf-copies.md",
       "source_blob_sha": "49fc28d671276e1787753267ae92397266d6bacd",
       "source_kind": "tooling",
@@ -5433,7 +5433,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
+      "source_commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
       "source_path": ".agents/shared/evidence/elf-copies.md",
       "source_blob_sha": "49fc28d671276e1787753267ae92397266d6bacd",
       "source_kind": "tooling",
@@ -5645,7 +5645,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
+      "source_commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
       "source_path": ".agents/shared/evidence/elf_identity.py",
       "source_blob_sha": "70dc54620651e8c6fd9cce6966c9964b1a6c90d7",
       "source_kind": "tooling",
@@ -5864,7 +5864,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
+      "source_commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
       "source_path": ".agents/shared/evidence/elf_identity.py",
       "source_blob_sha": "70dc54620651e8c6fd9cce6966c9964b1a6c90d7",
       "source_kind": "tooling",
@@ -6083,7 +6083,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
+      "source_commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
       "source_path": ".agents/shared/evidence/elf_identity.py",
       "source_blob_sha": "70dc54620651e8c6fd9cce6966c9964b1a6c90d7",
       "source_kind": "tooling",
@@ -6303,7 +6303,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
+      "source_commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
       "source_path": ".agents/shared/evidence/elf_identity.py",
       "source_blob_sha": "70dc54620651e8c6fd9cce6966c9964b1a6c90d7",
       "source_kind": "tooling",
@@ -6522,7 +6522,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
+      "source_commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
       "source_path": ".agents/shared/evidence/elf_identity.py",
       "source_blob_sha": "70dc54620651e8c6fd9cce6966c9964b1a6c90d7",
       "source_kind": "tooling",
@@ -6741,7 +6741,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
+      "source_commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
       "source_path": ".agents/shared/evidence/elf_identity_test.py",
       "source_blob_sha": "a75a29225b6eb70f255848e30026d02523d808f3",
       "source_kind": "tooling",
@@ -6964,12 +6964,12 @@
       ],
       "coverage_matrix_status": "pending",
       "flake_status": "stable",
-      "notes": "Eighth previously unread recursive source entry, reconciled to live dev 3b1ac7732ddd3033d112865821db38b0e7d959d4. The target blob remains unchanged. The latest one-commit delta is an unrelated product-source edit and leaves recursive=16,202, unknown=16,194, unread=16,167, omitted=0. Exact-head verification pending.",
+      "notes": "Eighth previously unread recursive source entry, reconciled to live dev 392b83b3091edaaaf0637ff92526db90ce6542e8; target blob unchanged. Latest delta only updates Windows openal-soft in prepare.py, leaving recursive=16,202, unknown=16,194, unread=16,167, omitted=0. Exact-head verification pending.",
       "test_execution_evidence": []
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
+      "source_commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
       "source_path": ".agents/shared/evidence/elf_identity_test.py",
       "source_blob_sha": "a75a29225b6eb70f255848e30026d02523d808f3",
       "source_kind": "tooling",
@@ -7189,7 +7189,7 @@
       ],
       "coverage_matrix_status": "pending",
       "flake_status": "stable",
-      "notes": "Eighth previously unread recursive source entry, reconciled to live dev 3b1ac7732ddd3033d112865821db38b0e7d959d4. The target blob remains unchanged. The latest one-commit delta is an unrelated product-source edit and leaves recursive=16,202, unknown=16,194, unread=16,167, omitted=0. Exact-head verification pending.",
+      "notes": "Eighth previously unread recursive source entry, reconciled to live dev 392b83b3091edaaaf0637ff92526db90ce6542e8; target blob unchanged. Latest delta only updates Windows openal-soft in prepare.py, leaving recursive=16,202, unknown=16,194, unread=16,167, omitted=0. Exact-head verification pending.",
       "test_execution_evidence": []
     }
   ]

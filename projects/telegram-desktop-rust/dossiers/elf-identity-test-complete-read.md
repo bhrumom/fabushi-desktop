@@ -1,17 +1,17 @@
 # Complete read — .agents/shared/evidence/elf_identity_test.py
 
 Status: understood; responsibility decomposed; existing-owner production/evidence wiring audited; exact-head verification pending  
-Upstream: `telegramdesktop/tdesktop@3b1ac7732ddd3033d112865821db38b0e7d959d4`  
-Tree: `7035dc3ed4e06f05a6045a2eedb9bce6335095ee`  
+Upstream: `telegramdesktop/tdesktop@392b83b3091edaaaf0637ff92526db90ce6542e8`  
+Tree: `f8d3613b850cee75f156b762ef5399315302120e`  
 Path: `.agents/shared/evidence/elf_identity_test.py`  
 Blob: `a75a29225b6eb70f255848e30026d02523d808f3`  
 Comparator companion: `.agents/shared/evidence/elf_identity.py@70dc54620651e8c6fd9cce6966c9964b1a6c90d7`
 
 ## Live-baseline reconciliation
 
-The original write lease was re-read before modification and repeatedly re-read while GitHub Actions were queued. Live `telegramdesktop/tdesktop@dev` advanced from `1e18da644e37856c9b1d87434bfcd6a2e3d11c57` to `fab79561cf8030eade9d0098bc438346b8c39261`, then to `34a86ed1a547ca6d12e25688c6289b60e6b6216c`, and finally two more commits through `a3f2f9d0a25e1d99be92a017a7c5ef771b199abd` to `3b1ac7732ddd3033d112865821db38b0e7d959d4` (tree `7035dc3ed4e06f05a6045a2eedb9bce6335095ee`). The target test blob remains exactly `a75a29225b6eb70f255848e30026d02523d808f3`.
+The original write lease was re-read before modification and repeatedly re-read while GitHub Actions were queued. Live `telegramdesktop/tdesktop@dev` advanced from `1e18da644e37856c9b1d87434bfcd6a2e3d11c57` to `fab79561cf8030eade9d0098bc438346b8c39261`, then to `34a86ed1a547ca6d12e25688c6289b60e6b6216c`, and finally two more commits through `a3f2f9d0a25e1d99be92a017a7c5ef771b199abd` to `392b83b3091edaaaf0637ff92526db90ce6542e8` (tree `f8d3613b850cee75f156b762ef5399315302120e`). The target test blob remains exactly `a75a29225b6eb70f255848e30026d02523d808f3`.
 
-The earlier deltas advanced `Telegram/lib_base` and `Telegram/lib_ui`, then replaced three legacy premium OBJ resources with nine diamond binaries and two shader files; those changes established the current untruncated root shape of 7,014 total entries, 6,681 blobs, 36 direct gitlinks, 3,271 SourceFiles blobs, 3,129 Resources blobs and 6,717 non-directory root entries. The final two-commit delta to `3b1ac7732ddd3033d112865821db38b0e7d959d4` changes only `.agents/skills/rebase/SKILL.md`, `AGENTS.md`, `Telegram/build/docker/centos_env/Dockerfile`, `Telegram/build/prepare/prepare.py` and `snap/snapcraft.yaml`: it leaves the target blob, root non-directory cardinality and all direct gitlink pins unchanged, while unifying the accepted `desktop-app/patches` build input at `fe957833b84525e634a8d776a7f834ed536d9a21` and applying the new qtsvg patch set in Docker, prepare and Snap paths. Therefore recursive non-directory authority remains 16,202.
+The earlier deltas advanced `Telegram/lib_base` and `Telegram/lib_ui`, then replaced three legacy premium OBJ resources with nine diamond binaries and two shader files; those changes established the current untruncated root shape of 7,014 total entries, 6,681 blobs, 36 direct gitlinks, 3,271 SourceFiles blobs, 3,129 Resources blobs and 6,717 non-directory root entries. The final two-commit delta to `392b83b3091edaaaf0637ff92526db90ce6542e8` changes only `.agents/skills/rebase/SKILL.md`, `AGENTS.md`, `Telegram/build/docker/centos_env/Dockerfile`, `Telegram/build/prepare/prepare.py` and `snap/snapcraft.yaml`: it leaves the target blob, root non-directory cardinality and all direct gitlink pins unchanged, while unifying the accepted `desktop-app/patches` build input at `fe957833b84525e634a8d776a7f834ed536d9a21` and applying the new qtsvg patch set in Docker, prepare and Snap paths. Therefore recursive non-directory authority remains 16,202.
 
 The latest delta's only path under the acquisition scanner's directories is `Telegram/cmake/qrhi_shaders.cmake`; its current content contains no acquisition-like git/curl/wget/URL/GIT_REPOSITORY/GIT_TAG tokens, so the already dispositioned 331/19/0 build-time acquisition accounting remains structurally unchanged pending exact-head Actions revalidation.
 
@@ -88,4 +88,7 @@ This closes exactly one recursive source entry at the live baseline. Reconstruct
 
 ## Live authority reconciliation after validation
 
-While exact-head Actions were running, `dev` advanced one additional commit to `3b1ac7732ddd3033d112865821db38b0e7d959d4` (tree `7035dc3ed4e06f05a6045a2eedb9bce6335095ee`) with a single one-line product-source edit in `Telegram/SourceFiles/history/view/history_view_read_metrics_tracker.cpp`. The target test blob, build/acquisition inputs, direct gitlinks and all inventory cardinalities remain unchanged; the authority validator correctly rejected the prior candidate and required this rebaseline.
+While exact-head Actions were running, `dev` advanced one additional commit to `392b83b3091edaaaf0637ff92526db90ce6542e8` (tree `f8d3613b850cee75f156b762ef5399315302120e`) with a single one-line product-source edit in `Telegram/SourceFiles/history/view/history_view_read_metrics_tracker.cpp`. The target test blob, build/acquisition inputs, direct gitlinks and all inventory cardinalities remain unchanged; the authority validator correctly rejected the prior candidate and required this rebaseline.
+
+
+Live authority then advanced one more commit to `392b83b3091edaaaf0637ff92526db90ce6542e8` (tree `f8d3613b850cee75f156b762ef5399315302120e`) by updating the Windows openal-soft revision in `Telegram/build/prepare/prepare.py`. This is a one-line replacement with no line-count, target-blob, direct-gitlink, root-cardinality or recursive-cardinality change. Because prepare.py is also an accepted Qt reachability evidence file, its exact source blob is rebound to `a26df9ccf61705c431843fe1104334f4cbb0bc23` even though the Qt selection itself is unchanged.
