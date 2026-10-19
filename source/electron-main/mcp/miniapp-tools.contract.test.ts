@@ -393,7 +393,7 @@ test("production desktop bridge runs end-to-end without Electron from preload IP
       assert.equal(caps.ok, true);
       assert.equal(caps.data?.contract, MINIAPP_TOOL_CONTRACT);
       assert.equal(caps.data?.platform, "desktop");
-      assert.deepEqual(caps.data?.capabilities, ["offline", "selection", "transfer", "scan", "hotspot"]);
+      assert.deepEqual(caps.data?.capabilities, ["offline", "selection", "transfer", "scan", "config", "platform", "diagnostics", "hotspot"]);
       assert.deepEqual(caps.data?.targetPools, [{ id: "lan-pool", label: "局域网目标" }]);
 
       // 2. Directory selection via native dialog and canonical root validation.

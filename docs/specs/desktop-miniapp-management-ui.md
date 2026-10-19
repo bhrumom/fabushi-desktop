@@ -17,7 +17,9 @@ Status: implementation, 2026-10-13. Parent DCI/OMA/FPM. Owner existing Plugins.
   no data-delete choice until native consent/export/deletion policy is implemented.
 - MU-05: new offline UI never changes existing MCP/Skills/OAuth owners. Public
   catalog approval does not bypass Host verify/journal or sandbox policy. Native
-  transfer capabilities remain unavailable in the current packet workbench.
+  Native Dandelion capabilities are exposed only through the versioned Host
+  contract and only when the signed descriptor, platform policy and native
+  owner all advertise the same capability; the Web surface never infers them.
 
 Native list response entries: appId/displayName/publisherId/version/packageDigest/
 sizeBytes/offlineCore/installed/supported. `installed` is from actual current-account

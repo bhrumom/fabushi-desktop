@@ -31,6 +31,16 @@ pub mod method {
     pub const UI_SET_TITLE: &str = "ui.setTitle";
     pub const UI_THEME: &str = "ui.theme";
     pub const UI_VIEWPORT: &str = "ui.viewport";
+    pub const DANDELION_CAPABILITIES: &str = "dandelion.capabilities";
+    pub const DANDELION_TRANSFER: &str = "dandelion.transfer";
+    pub const DANDELION_SCAN: &str = "dandelion.scan";
+    pub const DANDELION_STATE: &str = "dandelion.state";
+    pub const DANDELION_CONFIG: &str = "dandelion.config";
+    pub const DANDELION_PLATFORM: &str = "dandelion.platform";
+    pub const DANDELION_HOTSPOT: &str = "dandelion.hotspot";
+    pub const DANDELION_UPDATE: &str = "dandelion.update";
+    pub const DANDELION_DIAGNOSTICS: &str = "dandelion.diagnostics";
+    pub const DANDELION_COMPAT: &str = "dandelion.compat";
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -159,6 +169,15 @@ fn required_permission(method: &str) -> Result<Option<HostPermission>, BridgeErr
         | method::UI_SET_TITLE
         | method::UI_THEME
         | method::UI_VIEWPORT => Some(HostPermission::UiControl),
+        method::DANDELION_CAPABILITIES | method::DANDELION_CONFIG => None,
+        method::DANDELION_TRANSFER => Some(HostPermission::DandelionTransfer),
+        method::DANDELION_SCAN => Some(HostPermission::DandelionScan),
+        method::DANDELION_STATE => Some(HostPermission::DandelionState),
+        method::DANDELION_PLATFORM => Some(HostPermission::DandelionPlatform),
+        method::DANDELION_HOTSPOT => Some(HostPermission::DandelionHotspot),
+        method::DANDELION_UPDATE => Some(HostPermission::DandelionUpdate),
+        method::DANDELION_DIAGNOSTICS => Some(HostPermission::DandelionDiagnostics),
+        method::DANDELION_COMPAT => Some(HostPermission::DandelionCompat),
         _ => return Err(BridgeError::MethodNotFound(method.to_string())),
     };
     Ok(permission)

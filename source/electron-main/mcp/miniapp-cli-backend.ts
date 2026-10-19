@@ -28,6 +28,12 @@ export interface DandelionCliConfig {
   readonly allowedRoots: readonly string[];
   /** Authorized destination pools; empty disables transfer. */
   readonly targetPools: readonly MiniAppTargetPool[];
+  /** Trusted native state directory; never supplied by the renderer. */
+  readonly stateDirectory?: string;
+  /** Trusted native compatibility data directory; never supplied by the renderer. */
+  readonly compatDirectory?: string;
+  /** Optional authenticated receive settings owned by the Host. */
+  readonly receive?: { readonly targetPoolId: string; readonly caFile: string; readonly certificateFile: string; readonly privateKeyFile: string; readonly bind?: string };
   readonly enableHotspot?: boolean;
   readonly enableUpdate?: boolean;
   readonly timeoutMs?: number;
@@ -91,6 +97,8 @@ export function createDandelionCliBackend(
   const selections = new Map<string, { root: string; expiresAt: number }>();
   const operations = new Map<string, Operation>();
   const roots = config.allowedRoots.filter((root) => isAbsolute(root));
+  const stateDirectory = config.stateDirectory && isAbsolute(config.stateDirectory) ? config.stateDirectory : null;
+  const compatDirectory = config.compatDirectory && isAbsolute(config.compatDirectory) ? config.compatDirectory : null;
   // macOS resolves /tmp to /private/tmp; compare real paths on both sides.
   let resolvedRoots: Promise<string[]> | null = null;
   const canonicalRoots = (): Promise<string[]> => {
@@ -146,6 +154,9 @@ export function createDandelionCliBackend(
       const capabilities: MiniAppCapability[] = ["offline", "selection"];
       if (config.targetPools.length > 0 && roots.length > 0) capabilities.push("transfer");
       if (roots.length > 0) capabilities.push("scan");
+      if (stateDirectory) capabilities.push("state");
+      capabilities.push("config", "platform", "diagnostics");
+      if (compatDirectory) capabilities.push("compat");
       if (config.enableHotspot === true) capabilities.push("hotspot");
       if (config.enableUpdate === true) capabilities.push("update");
       return Promise.resolve({ capabilities, platform: "desktop", targetPools: [...config.targetPools] });
@@ -198,6 +209,30 @@ export function createDandelionCliBackend(
       });
       return { operationId };
     },
+    async receive(receiveConfig) {
+      const settings = config.receive;
+      if (!settings || settings.targetPoolId !== receiveConfig.targetPoolId) throw new Error("RECEIVE_DISABLED");
+      pruneOperations();
+      const operationId = randomUUID();
+      const argv = ["receive", "--bind", settings.bind ?? "127.0.0.1:20000", "--ca-file", settings.caFile, "--certificate-file", settings.certificateFile, "--private-key-file", settings.privateKeyFile, "--once", "--json"];
+      const handle = spawnCommand(argv);
+      const timer = setTimeout(() => handle.kill(), timeoutMs);
+      const operation: Operation = { handle, timer, state: "running" };
+      operations.set(operationId, operation);
+      void handle.done.then((result) => {
+        clearTimeout(timer);
+        if (operation.state === "cancelled") return;
+        if (result.code !== 0) {
+          operation.state = "failed";
+          operation.error = (result.stderr || result.stdout).trim().slice(0, 240) || `DANDELION_EXIT_${result.code}`;
+          return;
+        }
+        operation.state = "complete";
+        try { operation.result = result.stdout.trim() ? JSON.parse(result.stdout) : {}; }
+        catch { operation.error = "DANDELION_INVALID_JSON"; operation.state = "failed"; }
+      });
+      return { operationId };
+    },
     async status(operationId) {
       const operation = operations.get(operationId);
       if (!operation) throw new Error("UNKNOWN_OPERATION");
@@ -213,6 +248,24 @@ export function createDandelionCliBackend(
     async scan(mode, rootId) {
       return execute(["scan", mode, "--source", requireSelection(rootId), "--json"]);
     },
+    async state(action) {
+      if (!stateDirectory) throw new Error("STATE_DISABLED");
+      if (action === "inspect") return execute(["state", "inspect", "--directory", stateDirectory, "--json"]);
+      throw new Error("STATE_IMPORT_REQUIRES_NATIVE_FILE_PICKER");
+    },
+    async config(action) {
+      // The native CLI exposes `config check` as the effective/defaulted
+      // configuration view; keep the Mini App contract semantic and avoid a
+      // renderer-visible CLI spelling dependency.
+      void action;
+      return execute(["config", "check", "--json"]);
+    },
+    async platform(action) {
+      const argv = action === "watch"
+        ? ["platform", "watch", "--samples", "5", "--interval-ms", "1000", "--json"]
+        : ["platform", action, "--json"];
+      return execute(argv);
+    },
     async hotspot(action) {
       if (config.enableHotspot !== true) throw new Error("HOTSPOT_DISABLED");
       return execute(action === "plan" ? ["hotspot", "plan", "--json"] : ["hotspot", action, "--confirm", "--json"]);
@@ -220,6 +273,20 @@ export function createDandelionCliBackend(
     async update(action) {
       if (config.enableUpdate !== true) throw new Error("UPDATE_DISABLED");
       return execute(["update", action, "--json"]);
+    },
+    async diagnostics(action) {
+      if (action === "status") {
+        if (!stateDirectory) throw new Error("STATE_DISABLED");
+        return execute(["status", "--directory", stateDirectory, "--json"]);
+      }
+      return execute([action === "selfTest" ? "self-test" : "doctor", "--json"]);
+    },
+    async compat(action, args) {
+      if (!compatDirectory) throw new Error("COMPAT_DISABLED");
+      const file = typeof args.file === "string" ? args.file : null;
+      if (file && !isAbsolute(file)) throw new Error("COMPAT_PATH_INVALID");
+      if (action === "packetInspect") return execute(["compat", "packet-inspect", "--file", file ?? compatDirectory, "--json"]);
+      throw new Error("COMPAT_OPERATION_REQUIRES_NATIVE_ADAPTER");
     },
   };
 }

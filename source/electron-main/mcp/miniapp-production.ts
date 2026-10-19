@@ -29,6 +29,9 @@ function miniAppTooling(context: ProductionServiceContext, ipc: unknown): MiniAp
   const configPath = env.FABUSHI_DANDELION_CONFIG?.trim() ?? "";
   const preloadPath = env.FABUSHI_MINIAPP_PRELOAD?.trim() ?? "";
   const roots = (env.FABUSHI_DANDELION_ROOTS ?? "").split(delimiter).map((item) => item.trim()).filter(Boolean);
+  const stateDirectory = env.FABUSHI_DANDELION_STATE_DIR?.trim() || undefined;
+  const compatDirectory = env.FABUSHI_DANDELION_COMPAT_DIR?.trim() || undefined;
+  let receive: { targetPoolId: string; caFile: string; certificateFile: string; privateKeyFile: string; bind?: string } | undefined;
   if (!binaryPath || !configPath || !preloadPath || roots.length === 0) return undefined;
   let pools: { id: string; label: string }[];
   try {
@@ -37,6 +40,15 @@ function miniAppTooling(context: ProductionServiceContext, ipc: unknown): MiniAp
     pools = parsed.filter((item): item is { id: string; label: string } =>
       typeof item === "object" && item !== null
       && typeof (item as { id?: unknown }).id === "string" && typeof (item as { label?: unknown }).label === "string");
+  } catch { return undefined; }
+  try {
+    const parsed: unknown = JSON.parse(env.FABUSHI_DANDELION_RECEIVE ?? "null");
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      const value = parsed as Record<string, unknown>;
+      if (typeof value.targetPoolId === "string" && typeof value.caFile === "string" && typeof value.certificateFile === "string" && typeof value.privateKeyFile === "string") {
+        receive = { targetPoolId: value.targetPoolId, caFile: value.caFile, certificateFile: value.certificateFile, privateKeyFile: value.privateKeyFile, bind: typeof value.bind === "string" ? value.bind : undefined };
+      }
+    }
   } catch { return undefined; }
   const dialog = (context.native as unknown as { dialog?: MiniAppDialogPort }).dialog;
   if (!dialog) return undefined;
@@ -47,6 +59,7 @@ function miniAppTooling(context: ProductionServiceContext, ipc: unknown): MiniAp
   };
   const backend = createDandelionCliBackend({
     binaryPath, configPath, allowedRoots: roots, targetPools: pools,
+    stateDirectory, compatDirectory, receive,
     enableHotspot: env.FABUSHI_DANDELION_HOTSPOT === "1",
     enableUpdate: env.FABUSHI_DANDELION_UPDATE === "1",
   }, { pick });
