@@ -6,10 +6,10 @@
   "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16187,
-    "unread": 16160,
+    "unknown": 16186,
+    "unread": 16159,
     "omitted": 0,
-    "responsibilities_total": 37,
+    "responsibilities_total": 38,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -8906,6 +8906,282 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral repository-workflow qualification contracts read from telegramdesktop/tdesktop source authority; upstream Python helper/test implementation is not copied into Fabushi shipping runtime.",
       "notes": "Actual 1-based array entry 15 in the current recursive authority artifact is .agents/shared/scripts/codex_leaf_test.py. Earlier migration notes used a different progression ordinal; this closure decrements only one independent source entry to unknown=16,187 and unread=16,160, omitted=0 and does not assert contiguous array entries 1-15 are closed.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
+      "source_path": ".agents/shared/scripts/codex_leaf.py",
+      "source_blob_sha": "313c4941c61a4ec0e3b3b65cdaa59cc213916fdd",
+      "source_kind": "workflow_worker_lifecycle_adapter",
+      "module_id": "tdesktop.codex-leaf-worker-adapter",
+      "responsibility_id": "TDRP-R9-AI-WORKER-ADAPTER-EXECUTION-001",
+      "source_symbols": [
+        "command_check",
+        "command_start",
+        "codex_command",
+        "claim_leaf",
+        "launch_codex",
+        "supervise",
+        "command_wait",
+        "check_leaf",
+        "command_stop",
+        "resumable_thread",
+        "refuse_if_active",
+        "archive",
+        "leaf_activity"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-AI-WORKER-LIFECYCLE",
+        "CAP-AI-WORKER-ADAPTER-EXECUTION",
+        "CAP-TEST-EVIDENCE-GOVERNANCE",
+        "CAP-PROCESS-OWNERSHIP-SAFETY"
+      ],
+      "dependency_ids": [
+        "Fabushi repository AI development lifecycle",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/codex-leaf-complete-read.md",
+      "behavior_contract": "Execute an out-of-process repository AI worker through an availability-gated immutable launch contract and durable fail-closed lifecycle: detached launch is not completion; sanctioned bounded waits stay on the same run; completion is adjudicated from durable transcript/final evidence; stop/timeout/replacement require exact ownership; terminal worker success is followed by independent phase-output validation.",
+      "state_machine": "availability/auth gate -> fallback OR immutable run identity + starting state -> detached runner accepted -> exact owned running worker + durable transcript/final/diagnostics -> bounded same-run wait -> completed+fresh-final => terminal OR causal failure/stopped; runner loss preserves observed worker truth; terminal-only resume/replacement preserves lineage",
+      "side_effects": [
+        "Repository quality/evidence governance only; no shipping product runtime is introduced."
+      ],
+      "failure_cases": [
+        "Unavailable or unauthenticated adapter is treated as success or triggers install/login/global configuration mutation",
+        "Detached runner launch is treated as worker completion",
+        "A bounded still-running wait triggers sleep polling, duplicate start or destructive replacement",
+        "Effective sandbox/effort/model/schema/project-doc/deadline inputs drift from the durable start record",
+        "Launcher/runner loss is promoted to worker failure while the owned worker remains alive",
+        "Terminal success is inferred from missing, empty, stale or incomplete transcript/final evidence",
+        "Replacement or stop acts while ownership is alive/unresolved or affects an unrelated process",
+        "Resume proceeds from an active source or unproved thread identity",
+        "Worker terminal success is treated as proof that required phase artifacts are complete without separate validation"
+      ],
+      "ui_disposition": "Not applicable; repository workflow tooling only.",
+      "non_ui_responsibilities": [
+        "Adapter availability/authentication check and recorded fallback",
+        "Immutable run identity and launch-input capture",
+        "Sandbox/effort/model/output-schema/project-document/deadline command fidelity",
+        "Detached runner versus worker completion separation",
+        "Atomic serialized state and durable transcript/final/diagnostics",
+        "Sanctioned bounded foreground wait on the same run",
+        "Exact POSIX/Windows worker ownership and cleanup",
+        "Runner-loss recovery without duplicate execution",
+        "Resume lineage and terminal-source precondition",
+        "Replacement/archive inactivity proof and all-or-none prior-generation preservation",
+        "Stop/time-limit exact-owned cleanup",
+        "Child-scoped environment compatibility without global mutation",
+        "Independent phase-artifact validation after worker terminal success"
+      ],
+      "platform_delta": "Fabushi absorbs the source-neutral adapter execution/lifecycle/evidence contract into existing repository quality governance. The Python helper, Codex command spelling, POSIX calls and Windows Job Object/file-sharing mechanics remain source-specific instruments.",
+      "existing_owner_candidates": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "projects/fabushi-communication-platform/quality/release-entry-exit-criteria.md"
+      ],
+      "existing_owner": "Fabushi repository AI lifecycle / Test Strategy / Test Evidence Contract",
+      "rejected_existing_owners": [
+        "Shipping Coordinator/Host/Runner own product execution, not repository review-worker orchestration",
+        "Release packaging consumes evidence but does not own external reviewer adapter admission/process/state semantics",
+        "A copied Codex/Telegram workflow runtime would duplicate existing source-neutral repository quality ownership"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Out-of-process AI worker adapter execution",
+        "AI worker adapter execution qualification",
+        "AI worker adapter execution evidence"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The source entry is repository development/review adapter tooling, not shipping product implementation.",
+      "command_event_contracts": [
+        "adapter check -> available/authenticated OR declared fallback with reason",
+        "start -> immutable run/state/launch inputs -> detached runner acceptance only",
+        "wait -> inspect same owned run -> still-running means wait again OR terminal adjudication from transcript/final",
+        "runner lost -> prove worker/writer activity -> remain running/unresolved or reconstruct terminal outcome after worker exit",
+        "stop/timeout -> verify ownership -> bounded exact cleanup -> survivors/probe errors remain non-pass",
+        "replace -> prove prior inactive -> archive complete evidence generation atomically -> start new generation",
+        "resume -> prove source terminal/inactive -> bind durable thread identity -> new run lineage",
+        "terminal worker success -> independently validate required phase artifacts/source effects"
+      ],
+      "state_owner": "Existing Fabushi repository AI workflow/evidence state",
+      "lifecycle_owner": "Existing repository development lifecycle and GitHub Actions evidence review",
+      "persistence_and_restart": "Run state, transcript, final response, stderr, runner diagnostics, launch inputs and resume lineage are durable evidence; terminal outcomes are monotonic and prior generations are archived rather than overwritten.",
+      "concurrency_and_cancellation": "Per-worker mutation is serialized; waits observe one immutable run identity. Stop/timeout/replacement act only on verified owned sessions/process groups/jobs and never authorize duplicate stateful performers.",
+      "security_boundary": "Adapter availability does not authorize installation/login/global mutation; child compatibility changes stay child-scoped. Broad process names, recycled PIDs, foreign groups/jobs, plain readers and failed probes never prove ownership.",
+      "network_service_dependencies": [
+        "GitHub Actions hosted runners",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi quality/release workflow / GitHub Actions",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "Independent exact-head GitHub Actions verification of this source-entry mapping commit is pending."
+      ],
+      "production_entrypoints": [
+        "AGENTS.md -> Out-of-process AI worker adapter execution",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> AI worker adapter execution qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> AI worker adapter execution evidence"
+      ],
+      "production_evidence": [
+        "path:AGENTS.md#Out-of-process AI worker adapter execution",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#AI worker adapter execution qualification",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#AI worker adapter execution evidence"
+      ],
+      "test_evidence": [
+        "dossier:projects/telegram-desktop-rust/dossiers/codex-leaf-complete-read.md",
+        "upstream-codex-leaf:.agents/shared/scripts/codex_leaf.py@313c4941c61a4ec0e3b3b65cdaa59cc213916fdd",
+        "upstream-codex-leaf-tests:.agents/shared/scripts/codex_leaf_test.py@2831841e6b131ca2c42688fe24e00b739f825ccb",
+        "upstream-codex-leaves-doc:.agents/shared/codex-cli-leaves.md@659da44a8083c433c4e9b59ca28f64ba525bfbf8",
+        "upstream-cross-review-command:.claude/commands/cross-review.md@7769d03de798cde66987cd41303d2ea529321361",
+        "upstream-claude-adapter:.claude/ai-workflow-adapter.md@370ff84a1ab4c080b15b601a54162b0630c4f4df",
+        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba",
+        "upstream-phase-effort:.agents/shared/phase-effort.md@dd07a4c611922a29a6892332db98afe76cd58952",
+        "upstream-cross-review-protocol:.agents/shared/cross-review/protocol.md@51dabe142d5c3c7247e4050790c4e74b40f35b27",
+        "upstream-cross-review-prompts:.agents/shared/cross-review/prompts.md@4e155d2bd7e647c12df7b008c279969bfd65e44d"
+      ],
+      "target_commit": "dfb7260e4ceb553f71094f727689dbef40f9978d",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development and quality governance",
+      "composition_slot": "AI worker/reviewer adapter execution and lifecycle evidence",
+      "capability_component": "Source-neutral out-of-process AI worker adapter execution",
+      "variation_axes": [
+        "adapter available vs unavailable",
+        "initial run vs resume vs replacement",
+        "runner present vs runner lost",
+        "worker alive/gone/unresolved",
+        "bounded wait still-running vs terminal",
+        "POSIX process group vs Windows Job Object/file-sharing adapter",
+        "worker terminal success vs incomplete phase output"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi repository AI development lifecycle",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract"
+      ],
+      "duplicate_root_check": "No Codex/Telegram-specific Fabushi workflow runtime or second shipping Agent/Coordinator/Host/Runner owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Detached runner loss never rewrites directly observed worker truth; bounded waits remain on the same run; durable transcript/final state settles terminal truth; archive/resume preserve lineage.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to workflow tooling",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-AI-WORKER-ADAPTER-EXECUTION-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-AI-WORKER-ADAPTER-EXECUTION-001",
+        "ORA-TDRP-AI-WORKER-TERMINAL-001",
+        "ORA-TDRP-AI-WORKER-OWNERSHIP-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-WORKER-LAUNCH-BOUND-001",
+        "INV-TDRP-WORKER-WAIT-SAME-RUN-001",
+        "INV-TDRP-WORKER-TERMINAL-MONOTONIC-001",
+        "INV-TDRP-WORKER-RUNNER-LOSS-NOT-FAILURE-001",
+        "INV-TDRP-WORKER-EXACT-OWNERSHIP-001",
+        "INV-TDRP-WORKER-REPLACE-ATOMIC-001",
+        "INV-TDRP-WORKER-RESUME-LINEAGE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-AI-WORKER-ADAPTER-EXECUTION-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-AI-WORKER-ADAPTER-LIFECYCLE-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-WORKER-ADAPTER-UNAVAILABLE-001",
+        "FAULT-TDRP-WORKER-RUNNER-LOSS-001",
+        "FAULT-TDRP-WORKER-STATE-WRITE-001",
+        "FAULT-TDRP-WORKER-ARCHIVE-ROLLBACK-001",
+        "FAULT-TDRP-WORKER-OWNERSHIP-PROBE-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-WORKER-PROCESS-OWNERSHIP-001",
+        "SEC-TDRP-WORKER-CHILD-ENV-NO-GLOBAL-MUTATION-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-AI-WORKER-ADAPTER-EXECUTION-001"
+      ],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "codex-leaf-production-helper",
+        "codex-leaf-lifecycle-source-suite",
+        "runner-loss-and-resume-fixtures",
+        "posix-windows-process-ownership-controls"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral repository-workflow adapter contracts read from telegramdesktop/tdesktop source authority; upstream Python implementation is not copied into Fabushi shipping runtime.",
+      "notes": "Actual 1-based array entry 14 in the current recursive authority artifact is .agents/shared/scripts/codex_leaf.py. This closure decrements only one independent source entry to unknown=16,186 and unread=16,159, omitted=0; entry15 remains independently represented by its qualification row and older progression ordinals are not treated as array positions.",
       "test_execution_evidence": []
     }
   ]
