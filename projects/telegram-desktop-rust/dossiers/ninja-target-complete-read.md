@@ -37,3 +37,13 @@ No Telegram/Ninja-specific Fabushi production, test, release or packaging owner 
 ## Explicit boundaries
 
 This responsibility proves configured graph facts only. It does not prove command execution, object existence, archive-member reachability, runtime/executable reachability, symbol presence, package identity, successful launch, or release acceptance. Archive-member and runtime reachability remain independently owned by existing archive/reachability evidence and GitHub Actions gates.
+
+
+## Traceability IDs
+
+- TDRP-R9-CONFIGURED-BUILD-GRAPH-PROVENANCE-001
+- TDRP-R9-CONFIGURED-BUILD-GRAPH-QUALIFICATION-001
+- ORA-TDRP-CONFIGURED-BUILD-GRAPH-001
+- INV-TDRP-CONFIGURED-GRAPH-STABLE-001
+- INV-TDRP-CONFIGURED-GRAPH-NO-EXECUTION-001
+- INV-TDRP-ARCHIVE-RUNTIME-SEPARATION-001
