@@ -65,6 +65,10 @@ The change-time health ratchet is proportional to the diff and exact base. Quali
 
 Task proof follows the selected health class. Q0–Q2 use narrow mechanical proof plus an independent review; characterization work must demonstrate mutation sensitivity; semantic reshapes require already-passing characterization coverage; redesign requires approved checkable invariants and independent alternatives. Routing limits, in-progress path conflicts, owner approvals, and audit suspension are negative controls. Health metrics, scanner output, or a clean ratchet alone never replace the task's required build/test/runtime/release evidence.
 
+### Repository quality-health native invocation qualification
+
+Native skill-surface qualification is intentionally smaller than scanner qualification. For a host registration/default prompt, prove discovery resolves to the existing repository quality-health owner, the default invocation selects only a supported mode, fresh exact-source authority remains mandatory before durable publication, regressions/decisions are reported before proposals, and scheduled/ad-hoc routing still obeys the same trust, conflict, approval, and ordinary task lifecycle gates. Negative controls reject a registration or prompt that embeds a second health implementation, advances canonical state from a mutable/stale observation, routes despite suspension/conflict, or treats provider-specific command syntax as semantic ownership.
+
 ### Arbitration semantics
 
 Cross-review scope is frozen once per session and snapshotted per round so reviewers judge the same declared change, including explicitly in-scope pre-existing uncommitted work. Round 1 uses fresh blind independent general + applicable specialist reviewers in parallel; later rounds use a fresh focused general reviewer and only the specialist lenses that originated accepted findings. Reviewer reports remain mutually blind; persistent state belongs to the source-neutral runner/ledger, not to a provider process.

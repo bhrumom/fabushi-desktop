@@ -145,6 +145,10 @@ Every source change is subject to a proportional quality ratchet against its exa
 
 Quality findings enter the ordinary task/review/evidence lifecycle rather than a parallel queue owner. Automated routing is permitted only for classes whose trust policy is currently enabled; an audit failure, later regression attribution, stale authority, conflicting in-progress ownership, or unmet map/invariant precondition suspends routing without erasing the finding. Bugs discovered during a health survey are ordinary product defects, not code-health cleanup.
 
+##### Repository quality-health native invocation
+
+Host-native skill registration metadata, command aliases, and default prompts are invocation surfaces only. They must resolve to an existing source-neutral repository workflow owner and preserve that owner's exact-authority, evidence, trust, and routing rules; provider syntax such as `$skill` or slash commands is an adapter detail, not a second scanner, task queue, product runtime, or semantic owner. A default prompt may select an already-supported mode, but it must not weaken the canonical skill/spec, let stale or mutable observations advance durable state, bypass ordinary routing approval/trust gates, or reorder reporting so proposals hide the regressions and decisions that precede them. Scheduled and ad-hoc invocations enter the same ordinary task/review/evidence lifecycle.
+
 #### Stage 5 — Spec Compliance Review
 Before declaring completion, compare the final implementation against **every applicable requirement and acceptance criterion**.
 
