@@ -40,6 +40,9 @@ on:
 permissions:
   contents: read
 
+env:
+  FABUSHI_TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+
 concurrency:
   group: rust-desktop-runtime-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -93,7 +96,7 @@ jobs:
           mkdir -p .evidence
           cat > .evidence/messaging-responsibilities.json <<EOF
           {
-            "head_sha": "${{ github.sha }}",
+            "head_sha": "${{ env.FABUSHI_TARGET_SHA }}",
             "manifest": "native/mahayana-messaging/Cargo.toml",
             "responsibilities": [
               "scheduled-and-silent-forward-preservation",
@@ -108,7 +111,7 @@ jobs:
       - name: Upload canonical Fabushi messaging evidence
         uses: actions/upload-artifact@v4
         with:
-          name: rust-messaging-responsibilities-${{ github.sha }}
+          name: rust-messaging-responsibilities-${{ env.FABUSHI_TARGET_SHA }}
           path: .evidence/messaging-responsibilities.json
           if-no-files-found: error
           retention-days: 90
