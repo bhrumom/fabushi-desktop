@@ -36,6 +36,8 @@ Change-ratchet evidence binds exact base/head (or staged snapshot), changed-path
 
 Routed proposal evidence includes finding identities, class, area, metric before/target, proportional proof, trust/approval state, conflicts with active ownership, and the ordinary task identity that received the work. Scheduled-run evidence also records route limits and whether the run was skipped idempotently. Audit evidence records the sampled landed task, exact revision, reviewer/checks, verdict, and any class+area routing suspension/re-enable decision. Histories are append-only enough to explain why a finding was routed, ignored, resolved, dropped, or suspended without recreating a source-specific health runtime in Fabushi.
 
+## Repository quality-health native invocation evidence
+
 Native skill-registration evidence records the host-visible display/description metadata, default prompt or equivalent invocation selector, the canonical source-neutral workflow owner it resolves to, and the exact skill/command/scheduled routing contract that remains authoritative. Passing evidence must show the registration adds no independent scanner/state/task owner and cannot weaken fresh exact-revision publication, reporting order, approval/trust/conflict gates, or ordinary task routing. Provider-specific `$skill`, slash-command, or adapter spelling is provenance only.
 
 ## Artifact copy and transformation identity evidence
