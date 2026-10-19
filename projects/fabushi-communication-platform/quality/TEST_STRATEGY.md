@@ -59,6 +59,12 @@ Every synthesized finding is arbitrated before fixes as `FIX`, `REJECT`, `DEFER`
 
 The loop terminates only on convergence (no FIX after valid reversal handling), configured round cap (default 10), non-convergence/scope expansion into another subsystem, or a required human product/arbitration choice. Open real defects in changed code remain blocking regardless of round pressure.
 
+## AI review phase execution policy
+
+Repository AI review/test phases use the source-neutral worker-effort contract in root `AGENTS.md`: routine already-specified execution may use `medium`; planning, implementation, judgment, evidence design/assessment, diagnosis, synthesis and convergence default to `xhigh`; `high` is allowed only with a concrete inspected-scope reason that no complexity is present. Failures needing diagnosis/repair escalate while preserving prior valid evidence.
+
+On Codex review providers, reuse, structure and performance lenses run on `gpt-6.1-sol` at the selected effort. If unavailable they fall back to the configured model and record the fallback. General review/synthesis, lifetime/security lenses and other phases retain the configured model unless another source-neutral host policy explicitly overrides it. Host adapters that cannot set effort/model inherit the actual session configuration and record that limitation rather than approximating it through prompt text.
+
 ## Independence and environment
 
 Implementer 可写 tests，但 release reviewer 必须独立复核。FBCP/TDRP 所有 executable verification 只在 GitHub Actions；fixture/locale/theme/viewport/network/fault/account identity 必须进入 manifest。
