@@ -11174,7 +11174,13 @@ fn install_approved_mini_app(host: &UnifiedAppHost, app_id: &str, operation_id: 
     let Some((proof, raw)) = approved.pop() else {
         return Err(GatewayCommandError::Internal("release_not_approved".into()));
     };
-    let archive = client.download_artifact(&proof.artifact.digest, proof.artifact.size_bytes).map_err(proof_gateway_error)?;
+    let archive = client
+        .download_artifact(
+            &proof.artifact.digest,
+            proof.artifact.size_bytes,
+            proof.artifact.url.as_deref(),
+        )
+        .map_err(proof_gateway_error)?;
     let package = verify_catalog_bundle(&archive, &proof.authorization).map_err(|_| GatewayCommandError::Internal("digest_mismatch: downloaded mini-app package failed verification".into()))?;
     if !native_mini_app_claim_is_current(&claim) {
         return Err(GatewayCommandError::Internal("stale_account: account changed during install".into()));

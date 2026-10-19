@@ -264,10 +264,7 @@ impl CatalogClient {
         digest: &str,
         expected_size: u64,
     ) -> Result<Vec<u8>, ProofError> {
-        let response = client
-            .get(url)
-            .send()
-            .map_err(|_| ProofError::Network)?;
+        let response = client.get(url).send().map_err(|_| ProofError::Network)?;
         if response.status() == reqwest::StatusCode::NOT_FOUND {
             return Err(ProofError::NotFound);
         }
@@ -996,7 +993,9 @@ mod tests {
         let parsed: ReleasePayload = serde_json::from_str(payload).unwrap();
         assert_eq!(
             parsed.artifacts[0].url.as_deref(),
-            Some("https://github.com/bhrumom/global-dandelion-rs/releases/download/v0.2.0/global-dandelion.fabapp")
+            Some(
+                "https://github.com/bhrumom/global-dandelion-rs/releases/download/v0.2.0/global-dandelion.fabapp"
+            )
         );
     }
 
@@ -1252,7 +1251,11 @@ mod tests {
             "de10e02115415908f827723457817e51cb4f39aa5ca68798da824fecc483118a"
         );
         let bytes = client
-            .download_artifact(&proof.artifact.digest, proof.artifact.size_bytes, proof.artifact.url.as_deref())
+            .download_artifact(
+                &proof.artifact.digest,
+                proof.artifact.size_bytes,
+                proof.artifact.url.as_deref(),
+            )
             .unwrap();
         let package = verify_catalog_bundle(&bytes, &proof.authorization).unwrap();
         let mut db = rusqlite::Connection::open_in_memory().unwrap();
