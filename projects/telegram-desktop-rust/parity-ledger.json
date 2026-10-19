@@ -5704,7 +5704,7 @@
         "projects/fabushi-communication-platform/quality/evidence-contract.md"
       ],
       "fabushi_target_symbols": [
-        "Artifact copy and transformation identity evidence"
+        "Format-transform stable acquisition and resource bounds"
       ],
       "target_language": "Markdown",
       "language_rationale": "The applicable responsibility is absorbed by existing source-neutral release/evidence ownership; upstream Python parser code is not copied into Fabushi.",
@@ -5728,10 +5728,10 @@
         "Independent exact-head GitHub Actions verification of this mapping commit is pending."
       ],
       "production_entrypoints": [
-        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Artifact copy and transformation identity evidence"
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Format-transform stable acquisition and resource bounds"
       ],
       "production_evidence": [
-        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Artifact copy and transformation identity evidence"
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Format-transform stable acquisition and resource bounds"
       ],
       "test_evidence": [
         "workflow:.github/workflows/release-macos-main.yml#Bind packaged candidate executable",
@@ -5923,7 +5923,7 @@
         "projects/fabushi-communication-platform/quality/evidence-contract.md"
       ],
       "fabushi_target_symbols": [
-        "Artifact copy and transformation identity evidence"
+        "Format-transform loader-visible identity"
       ],
       "target_language": "Markdown",
       "language_rationale": "The applicable responsibility is absorbed by existing source-neutral release/evidence ownership; upstream Python parser code is not copied into Fabushi.",
@@ -5947,10 +5947,10 @@
         "Independent exact-head GitHub Actions verification of this mapping commit is pending."
       ],
       "production_entrypoints": [
-        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Artifact copy and transformation identity evidence"
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Format-transform loader-visible identity"
       ],
       "production_evidence": [
-        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Artifact copy and transformation identity evidence"
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Format-transform loader-visible identity"
       ],
       "test_evidence": [
         "workflow:.github/workflows/release-macos-main.yml#Bind packaged candidate executable",
@@ -6143,7 +6143,7 @@
         "projects/fabushi-communication-platform/quality/evidence-contract.md"
       ],
       "fabushi_target_symbols": [
-        "Artifact copy and transformation identity evidence"
+        "Format-transform section/debug metadata"
       ],
       "target_language": "Markdown",
       "language_rationale": "The applicable responsibility is absorbed by existing source-neutral release/evidence ownership; upstream Python parser code is not copied into Fabushi.",
@@ -6167,10 +6167,10 @@
         "Independent exact-head GitHub Actions verification of this mapping commit is pending."
       ],
       "production_entrypoints": [
-        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Artifact copy and transformation identity evidence"
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Format-transform section/debug metadata"
       ],
       "production_evidence": [
-        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Artifact copy and transformation identity evidence"
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Format-transform section/debug metadata"
       ],
       "test_evidence": [
         "workflow:.github/workflows/release-macos-main.yml#Bind packaged candidate executable",
@@ -6362,7 +6362,7 @@
         "projects/fabushi-communication-platform/quality/evidence-contract.md"
       ],
       "fabushi_target_symbols": [
-        "Artifact copy and transformation identity evidence"
+        "Format-transform symbol semantics"
       ],
       "target_language": "Markdown",
       "language_rationale": "The applicable responsibility is absorbed by existing source-neutral release/evidence ownership; upstream Python parser code is not copied into Fabushi.",
@@ -6386,10 +6386,10 @@
         "Independent exact-head GitHub Actions verification of this mapping commit is pending."
       ],
       "production_entrypoints": [
-        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Artifact copy and transformation identity evidence"
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Format-transform symbol semantics"
       ],
       "production_evidence": [
-        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Artifact copy and transformation identity evidence"
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Format-transform symbol semantics"
       ],
       "test_evidence": [
         "workflow:.github/workflows/release-macos-main.yml#Bind packaged candidate executable",
@@ -6581,7 +6581,7 @@
         "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md"
       ],
       "fabushi_target_symbols": [
-        "Artifact identity and copy provenance"
+        "Format-transform positive/forbidden controls and report"
       ],
       "target_language": "Markdown",
       "language_rationale": "The applicable responsibility is absorbed by existing source-neutral release/evidence ownership; upstream Python parser code is not copied into Fabushi.",
@@ -6605,10 +6605,10 @@
         "Independent exact-head GitHub Actions verification of this mapping commit is pending."
       ],
       "production_entrypoints": [
-        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Artifact identity and copy provenance"
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Format-transform positive/forbidden controls and report"
       ],
       "production_evidence": [
-        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Artifact identity and copy provenance"
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Format-transform positive/forbidden controls and report"
       ],
       "test_evidence": [
         "workflow:.github/workflows/release-macos-main.yml#Bind packaged candidate executable",
