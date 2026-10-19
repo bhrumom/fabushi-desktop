@@ -49,6 +49,12 @@ Independent cross-review covers the complete declared diff, not a convenient sub
 
 Synthesis rechecks findings against current code, merges duplicates, drops unsupported findings, and rejects unsupported NOT_APPLICABLE decisions. A NEEDS_CHANGES-style gate requires at least one supported blocking failure. After fixes, focused re-review confirms every accepted fix and checks regressions in edited functions plus relevant callers/consumers without reopening unrelated unchanged code.
 
+### Review-scope snapshot qualification
+
+The frozen-scope owner is qualified independently from reviewer judgment. Cover uncommitted mode and bounded last-N-commit mode; exact base/starting-HEAD capture; too-deep commit-range rejection; repository-root normalization; pre-existing dirty-state capture; inclusion of untracked files; isolated staging/index behavior that leaves the real index untouched; stable tree identity; rename-aware and binary-safe complete scope diff; changed-path/status and short-stat projection; round-to-round fix-delta selection from the nearest prior snapshot; missing/corrupt session failure; and explicit empty-scope termination.
+
+Positive qualification proves that two reviewers consuming the same round observe the same immutable scope identity even while fixes create a later round. Negative controls must prove that scope capture cannot silently omit untracked/binary/renamed changes, widen the base, mutate the real index, invent a previous round, or classify failed acquisition as an empty/pass result. These are source-neutral review-evidence responsibilities and do not require preserving an upstream Python helper.
+
 ### Arbitration semantics
 
 Cross-review scope is frozen once per session and snapshotted per round so reviewers judge the same declared change, including explicitly in-scope pre-existing uncommitted work. Round 1 uses fresh blind independent general + applicable specialist reviewers in parallel; later rounds use a fresh focused general reviewer and only the specialist lenses that originated accepted findings. Reviewer reports remain mutually blind; persistent state belongs to the source-neutral runner/ledger, not to a provider process.

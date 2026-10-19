@@ -6,10 +6,10 @@
   "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16186,
-    "unread": 16159,
+    "unknown": 16185,
+    "unread": 16158,
     "omitted": 0,
-    "responsibilities_total": 38,
+    "responsibilities_total": 39,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -9182,6 +9182,250 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral repository-workflow adapter contracts read from telegramdesktop/tdesktop source authority; upstream Python implementation is not copied into Fabushi shipping runtime.",
       "notes": "Actual 1-based array entry 14 in the current recursive authority artifact is .agents/shared/scripts/codex_leaf.py. This closure decrements only one independent source entry to unknown=16,186 and unread=16,159, omitted=0; entry15 remains independently represented by its qualification row and older progression ordinals are not treated as array positions.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
+      "source_path": ".agents/shared/scripts/cross_review_scope.py",
+      "source_blob_sha": "d9fafdf9fa0857cc83f0ccb49d15d4fad8782768",
+      "source_kind": "cross_review_scope_snapshot_helper",
+      "module_id": "tdesktop.cross-review-scope",
+      "responsibility_id": "TDRP-R9-CROSS-REVIEW-SCOPE-SNAPSHOT-001",
+      "source_symbols": [
+        "command_init",
+        "previous_tree",
+        "command_snapshot",
+        "git",
+        "session_file"
+      ],
+      "capability_ids": [
+        "CAP-CROSS-REVIEW-GOVERNANCE",
+        "CAP-TEST-EVIDENCE-GOVERNANCE"
+      ],
+      "dependency_ids": [
+        "Fabushi repository independent review lifecycle",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/cross-review-scope-complete-read.md",
+      "behavior_contract": "Freeze one exact review base/session, snapshot each complete worktree round including untracked state through isolated staging, persist immutable tree plus rename-aware binary-safe scope/status evidence, and from later rounds persist fix deltas against the nearest prior snapshot without mutating the real index.",
+      "state_machine": "verified repo + mode -> exact base/start HEAD/session -> isolated staging -> immutable round tree -> scope diff/status -> review/fixes -> next tree + prior-tree fix delta; invalid repo/base/session/acquisition fails; empty scope stops explicitly",
+      "side_effects": [
+        "Repository quality/evidence governance only; no shipping product runtime is introduced."
+      ],
+      "failure_cases": [
+        "Commit range exceeds repository history",
+        "Session identity already exists or session metadata is missing/corrupt",
+        "Snapshot staging mutates or depends on the developer's real index",
+        "Untracked, renamed or binary changes are omitted from the complete scope",
+        "Tree/diff acquisition failure is mistaken for empty scope/pass",
+        "A previous round is invented instead of using the nearest actually persisted snapshot",
+        "Reviewer evidence points at an ambient mutable worktree instead of the immutable round snapshot"
+      ],
+      "ui_disposition": "Not applicable; repository workflow tooling only.",
+      "non_ui_responsibilities": [
+        "Exact frozen base and starting-HEAD capture",
+        "Uncommitted and bounded last-N-commit scope modes",
+        "Repository-root/common-dir normalization",
+        "Dirty-at-start and commit-list provenance",
+        "Private-index staging that includes untracked changes",
+        "Immutable per-round tree identity",
+        "Rename-aware binary-safe complete scope patch",
+        "Changed-path/status/file-count/short-stat projection",
+        "Nearest-prior-round fix delta lineage",
+        "Explicit empty-scope stop and fail-closed acquisition"
+      ],
+      "platform_delta": "Fabushi maps the source-neutral immutable review-scope/evidence invariants into existing review governance; upstream Python/Git command details are not copied.",
+      "existing_owner_candidates": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "existing_owner": "Fabushi repository independent review lifecycle / Test Strategy / Test Evidence Contract",
+      "rejected_existing_owners": [
+        "Shipping Agent/Coordinator/Host/Runner own product execution, not repository review-scope evidence",
+        "Release packaging consumes review evidence but does not own scope acquisition",
+        "A copied Telegram/Python review helper would duplicate existing source-neutral review governance"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Immutable review-scope snapshots",
+        "Review-scope snapshot qualification",
+        "Frozen review-scope snapshot evidence"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The source entry is repository review-evidence tooling rather than shipping product implementation.",
+      "command_event_contracts": [
+        "init -> verify repo/history -> persist exact frozen session/base/start identity",
+        "snapshot -> isolated complete staging -> immutable tree -> complete scope patch/status manifest",
+        "later snapshot -> find nearest prior persisted tree -> complete current scope + fix delta",
+        "empty scope -> explicit no-review stop",
+        "acquisition/session/base failure -> fail closed without review acceptance"
+      ],
+      "state_owner": "Existing Fabushi repository cross-review session/evidence state",
+      "lifecycle_owner": "Existing repository independent review lifecycle and GitHub Actions evidence review",
+      "persistence_and_restart": "Session identity/base/start facts and immutable per-round tree/scope/fix artifacts are durable review evidence; later rounds reference prior snapshot identity rather than recomputing historical scope.",
+      "concurrency_and_cancellation": "Snapshot staging is isolated from the real developer index; reviewers consume immutable round artifacts while later fixes can create a new round without changing earlier evidence.",
+      "security_boundary": "Never mutate the real index or silently widen the review base; acquisition errors and malformed session state fail closed.",
+      "network_service_dependencies": [
+        "GitHub Actions hosted runners",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi quality/release workflow / GitHub Actions",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "Independent exact-head GitHub Actions verification of this source-entry mapping commit is pending."
+      ],
+      "production_entrypoints": [
+        "AGENTS.md -> Immutable review-scope snapshots",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Review-scope snapshot qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Frozen review-scope snapshot evidence"
+      ],
+      "production_evidence": [
+        "path:AGENTS.md#Immutable review-scope snapshots",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Review-scope snapshot qualification",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Frozen review-scope snapshot evidence"
+      ],
+      "test_evidence": [
+        "dossier:projects/telegram-desktop-rust/dossiers/cross-review-scope-complete-read.md",
+        "upstream-cross-review-scope:.agents/shared/scripts/cross_review_scope.py@d9fafdf9fa0857cc83f0ccb49d15d4fad8782768",
+        "upstream-cross-review-protocol:.agents/shared/cross-review/protocol.md@51dabe142d5c3c7247e4050790c4e74b40f35b27",
+        "upstream-cross-review-command:.claude/commands/cross-review.md@7769d03de798cde66987cd41303d2ea529321361",
+        "upstream-cross-review-prompts:.agents/shared/cross-review/prompts.md@4e155d2bd7e647c12df7b008c279969bfd65e44d"
+      ],
+      "target_commit": "6e960b54574a3de6ecadd7816150f56faad42130",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development and quality governance",
+      "composition_slot": "Independent review frozen-scope acquisition/evidence",
+      "capability_component": "Source-neutral immutable review-scope snapshot contract",
+      "variation_axes": [
+        "uncommitted vs last-N-commit scope",
+        "clean vs pre-existing dirty worktree",
+        "tracked vs untracked/rename/binary changes",
+        "first vs later review round",
+        "non-empty vs empty scope",
+        "valid vs invalid/corrupt session/base"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi repository independent review lifecycle",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract"
+      ],
+      "duplicate_root_check": "No Telegram/Python-specific review runtime, second review store, or shipping owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Each review round binds to one immutable tree/scope artifact; later rounds preserve earlier scope identity and add fix-delta lineage instead of rewriting prior evidence.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to workflow tooling",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-CROSS-REVIEW-SCOPE-SNAPSHOT-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CROSS-REVIEW-SCOPE-IDENTITY-001",
+        "ORA-TDRP-CROSS-REVIEW-INDEX-ISOLATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-REVIEW-BASE-FROZEN-001",
+        "INV-TDRP-REVIEW-SNAPSHOT-COMPLETE-001",
+        "INV-TDRP-REVIEW-REAL-INDEX-UNTOUCHED-001",
+        "INV-TDRP-REVIEW-ROUND-IMMUTABLE-001",
+        "INV-TDRP-REVIEW-FIX-DELTA-LINEAGE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CROSS-REVIEW-SCOPE-SNAPSHOT-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-CROSS-REVIEW-FROZEN-SCOPE-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CROSS-REVIEW-SESSION-CORRUPT-001",
+        "FAULT-TDRP-CROSS-REVIEW-RANGE-INVALID-001",
+        "FAULT-TDRP-CROSS-REVIEW-SNAPSHOT-ACQUISITION-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CROSS-REVIEW-REAL-INDEX-ISOLATION-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-CROSS-REVIEW-SCOPE-001"
+      ],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "cross-review-frozen-scope-source-helper",
+        "untracked-rename-binary-scope-controls",
+        "multi-round-fix-delta-lineage"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral repository-review scope/evidence contracts read from telegramdesktop/tdesktop source authority; upstream Python implementation is not copied into Fabushi shipping runtime.",
+      "notes": "Actual 1-based array entry 16 in the current recursive authority artifact is .agents/shared/scripts/cross_review_scope.py. This closure decrements only one independent source entry to unknown=16,185 and unread=16,158, omitted=0.",
       "test_execution_evidence": []
     }
   ]

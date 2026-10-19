@@ -14,6 +14,12 @@ Unit/property/contract 保存 machine-readable result 与 failing seed/counterex
 
 独立 review evidence 还必须记录 declared change scope、reviewer role/lens、实际 checked paths/surfaces、每个 finding 的 location/severity/concrete failure/fix，以及 reviewer verdict。NOT_APPLICABLE 必须保存与 changed paths/hunks 绑定的 proof；synthesis 必须记录 merged/dropped findings 及理由。Focused re-review 必须逐项记录 previous finding 的 CONFIRMED FIXED / NOT FIXED、检查过的 adjacent callers/consumers、new findings 与最终 verdict。
 
+### Frozen review-scope snapshot evidence
+
+Each cross-review session records the verified repository root, scope mode, exact base commit, base subject, starting HEAD, bounded commit count/list when applicable, whether the worktree was already dirty, session identity, and creation time. Each round records an immutable tree/object identity and durable pointers/digests for the complete rename-aware binary-safe scope diff and changed-path/status manifest, plus file count and scope statistic. From round two onward also record the nearest prior snapshot identity and the fix-delta artifact/stat against that snapshot.
+
+Scope capture must prove staging isolation from the developer's real index or an equivalent mechanism, inclusion of untracked state, and successful tree/diff acquisition. Repository/base/session parse failures, impossible commit ranges, isolated-staging failures, or missing snapshot artifacts are acquisition failures. A genuinely empty diff is recorded distinctly as an empty-scope stop and does not count as review acceptance. Reviewer and synthesis evidence must reference the immutable round snapshot it actually consumed rather than an ambient mutable worktree.
+
 ### Durable review ledger evidence
 
 Cross-review session evidence 还必须持久化 frozen scope identity（base revision、scope mode、explicit in-scope uncommitted state）、每轮 immutable snapshot identity、fresh/blind reviewer set、每份原始 reviewer report 与 synthesis。Runner arbitration ledger 对每个 synthesized finding 记录 `FIX|REJECT|DEFER|COMPROMISE`、rationale、change/no-change、round/synthesis provenance、以及 supersedes 链；`NON_BLOCKING` 也记录但不能单独触发 fix round。
