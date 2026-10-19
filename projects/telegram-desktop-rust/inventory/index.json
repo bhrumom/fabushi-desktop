@@ -4,17 +4,17 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
-    "tree": "30c1d5cce4c1bde962882c1f2ca4b2e51bb03ae6",
+    "commit": "fab79561cf8030eade9d0098bc438346b8c39261",
+    "tree": "76afabc085867a9c2e086489270d0ca0d5c9bcac",
     "baseline_identity_accepted": false
   },
   "inventory": {
     "root_non_directory_entries": 6709,
-    "recursive_non_directory_entries": 16192,
+    "recursive_non_directory_entries": 16194,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16185,
-    "unread_minimum": 16158,
+    "unknown_minimum": 16186,
+    "unread_minimum": 16159,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -97,5 +97,5 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Rebaseline candidate telegramdesktop/tdesktop@1e18da644e37856c9b1d87434bfcd6a2e3d11c57 (tree 30c1d5cce4c1bde962882c1f2ca4b2e51bb03ae6) remains source-closure open. The seventh recursive inventory entry, .agents/shared/evidence/elf_identity.py blob 70dc54620651e8c6fd9cce6966c9964b1a6c90d7, has now been read completely; its stable bounded acquisition, loader-visible identity, section/debug/static-symbol equivalence, control and machine-readable report responsibilities map to existing source-neutral Fabushi release packaging and quality/evidence owners. Current macOS shipping uses the stronger byte-exact executable-copy path, so no duplicate ELF/Telegram packaging owner is introduced. Counters after this actual closure are unknown=16,185, unread=16,158, omitted=0; baseline_ready/acceptance.accepted remain false pending full source closure and current-head evidence."
+  "note": "Live rebaseline candidate telegramdesktop/tdesktop@fab79561cf8030eade9d0098bc438346b8c39261 (tree 76afabc085867a9c2e086489270d0ca0d5c9bcac) remains source-closure open. The eighth ordered recursive inventory entry, .agents/shared/evidence/elf_identity_test.py blob a75a29225b6eb70f255848e30026d02523d808f3, has been read completely. Its independent transform-oracle qualification and evidence-command ownership responsibilities are wired into existing source-neutral Fabushi test strategy/evidence owners. The live lib_base pin adds two previously unseen recursive files, so recursive inventory is 16,194 and counters after this closure are unknown=16,186, unread=16,159, omitted=0. baseline_ready/acceptance.accepted remain false pending full source closure and current-head evidence."
 }
