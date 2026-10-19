@@ -147,9 +147,9 @@ const qtReachability=recursiveReachability.qt_superproject;
 fail(qtReachability?.repository==='https://github.com/qt/qt5','Qt reachability authority missing');
 const qtEvidenceByPath=new Map((qtReachability.accepted_upstream_evidence||[]).map(item=>[item.path,item]));
 const expectedQtEvidence=[
-  ['Telegram/build/prepare/prepare.py','698ccd839591d4497ff5a932885f45724f95b890'],
-  ['Telegram/build/docker/centos_env/Dockerfile','126b74a759c4e09a51a37e951fa694c407b2a747'],
-  ['snap/snapcraft.yaml','824d6a30f1d4b85a29eece886bc1c1e2f42f59d4']
+  ['Telegram/build/prepare/prepare.py','a8bd8d6a5c1e190a27702cbcf7f00d10ce6f9dda'],
+  ['Telegram/build/docker/centos_env/Dockerfile','39b185c7277b1bb1819761d112a6799d4152ff04'],
+  ['snap/snapcraft.yaml','253f302455dfd61e31142d7734d8dcb8ed13b5eb']
 ];
 for (const [sourcePath,blob] of expectedQtEvidence) {
   const evidence=qtEvidenceByPath.get(sourcePath);
@@ -169,6 +169,8 @@ fail(dockerQt.includes('qtbase qtdeclarative qtwayland qtimageformats qtsvg qtsh
 for (const module of ['qtbase','qtdeclarative','qtimageformats','qtshadertools','qtsvg','qtwayland']) {
   fail(snapQt.includes('      - '+module),'accepted Snap Qt submodule selection missing '+module);
 }
+fail(prepareQt.includes('git clone https://github.com/desktop-app/qt6_windows7_patches.git qt6_windows7'),'accepted prepare.py Qt 6 Windows compatibility acquisition drift');
+fail(prepareQt.includes('git checkout bf64e7264237ffd371493f1780ef71d3f41373c9'),'accepted prepare.py Qt 6 Windows compatibility pin drift');
 fail(!prepareQt.includes('qttools'),'prepare.py unexpectedly initializes qttools');
 fail(!dockerQt.includes('qttools'),'Docker Qt build unexpectedly initializes qttools');
 fail(!snapQt.includes('      - qttools'),'Snap Qt build unexpectedly initializes qttools');
@@ -677,6 +679,8 @@ recursiveInventory.push(...childEntries.map(e=>({
   path:e.path,mode:e.mode,type:e.type,object:e.sha,size:e.size??null
 })));
 
+fail(recursiveInventory.length===lock.coverage.recursive_source_entries_total,`recursive inventory count drift ${recursiveInventory.length} != ${lock.coverage.recursive_source_entries_total}`);
+
 const attrs=await get(`https://raw.githubusercontent.com/${u.repository}/${u.commit}/.gitattributes`,false);
 fail(!/filter=lfs|diff=lfs|merge=lfs/.test(attrs),'Git LFS attributes detected; explicit LFS closure required');
 for (const p of lock.build_time_pin_changes) {
@@ -696,7 +700,7 @@ await fs.writeFile(path.join(root,'artifacts/tdrp-authority/upstream-recursive-i
   entries:recursiveInventory
 },null,2)+'\n');
 const report={
-  project_id:'TDRP-001',spec_revision:9,target_commit:process.env.GITHUB_SHA||null,
+  project_id:'TDRP-001',spec_revision:9,target_commit:(process.env.TDRP_TARGET_SHA||process.env.GITHUB_SHA)||null,
   upstream_commit:u.commit,upstream_tree:u.tree,root_tree_truncated:false,
   root_entries:tree.length,root_blobs:blobs.length,direct_gitlinks:links.length,recursive_non_directory_entries:recursiveInventory.length,
   direct_component_counts:directComponentCounts,github_nested_gitlinks:nested,github_nested_component_counts:githubNestedCounts,
@@ -714,7 +718,7 @@ if (requireAccepted) {
   fail(ledger.coverage.unread===0,'G-INVENTORY unread must be 0');
   fail(ledger.coverage.omitted===0,'G-INVENTORY omitted must be 0');
   fail(ledger.coverage.unmapped_responsibilities===0,'G-TRACEABILITY unmapped responsibilities must be 0');
-  fail(ledger.target_commit===(process.env.GITHUB_SHA||ledger.target_commit),'G-EVIDENCE ledger target_commit must equal exact GitHub Actions HEAD');
+  fail(ledger.target_commit===((process.env.TDRP_TARGET_SHA||process.env.GITHUB_SHA)||ledger.target_commit),'G-EVIDENCE ledger target_commit must equal exact GitHub Actions HEAD');
   fail(ledger.rows.length>0,'G-FILE/G-TRACEABILITY ledger cannot be empty at closure');
 }
 console.log(JSON.stringify(report,null,2));

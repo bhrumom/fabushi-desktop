@@ -7,13 +7,15 @@ Responsibility: `TDRP-R9-EXTERNAL-URL-AUTH-CONTEXT-001`
 ## Source authority
 
 - Repository: `telegramdesktop/tdesktop`
-- Commit: `b16daff6df63e8a812bc2b52a04ff243f67a7d3f`
+- Commit: `0a11537c220df35fe59a96aebe413b1e52bc6e47`
 - Primary source path: `Telegram/SourceFiles/boxes/url_auth_box.cpp`
-- Blob: `3e5e383b928f646dd8f16560cb90fc1a5745bdb7`
+- Blob: `1fa4309f2091cf148b0b6f249efa029bdc171c53`
 - Relevant source symbols: `AcceptedUrlContext`, `ActivateButton`, `ActivateUrl`, `RequestButton`, `RequestUrl`
-- Related behavior was cross-read in `core/click_handler_types.cpp` and `core/ui_integration.cpp` to understand stripping and dispatch semantics. At `b16daff6df63e8a812bc2b52a04ff243f67a7d3f`, Telegram additionally passes `ClickHandlerContext` into hidden URL activation and derives trusted domains from per-account `AppConfig`; this delta was re-read as an upstream policy change, not as permission to weaken Fabushi's exact-origin accepted-auth boundary.
+- Related behavior was cross-read in `core/click_handler_types.cpp` and `core/ui_integration.cpp` to understand stripping and dispatch semantics. At `0a11537c220df35fe59a96aebe413b1e52bc6e47`, Telegram additionally passes `ClickHandlerContext` into hidden URL activation and derives trusted domains from per-account `AppConfig`; this delta was re-read as an upstream policy change, not as permission to weaken Fabushi's exact-origin accepted-auth boundary.
 
 This dossier covers only the accepted-auth-context / foreign web-auth token security responsibility. It does **not** mark those complete source files read or migrated.
+
+At `0a11537c220df35fe59a96aebe413b1e52bc6e47`, `AcceptedUrlContext` remains the same privileged token-preservation boundary, while the same upstream file additionally introduces account-session loss fencing, account switching/reload, match-code/device context, and TonConnect wallet authorization paths. Those new responsibilities are deliberately **not** claimed by this scoped row; they remain unknown source responsibilities until separately decomposed and mapped to canonical Fabushi owners.
 
 ## Source behavior
 

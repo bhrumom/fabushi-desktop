@@ -43,7 +43,7 @@ for(const item of archives){
   });
 }
 const totals=reports.reduce((o,r)=>{o.archives++;o.entries+=r.archive_entries_non_directory;o.files+=r.extracted_files;o.acquisitions+=r.acquisition_candidates.length;o.patches+=r.patches.length;o.lfs+=r.lfs_pointers.length;o.generated+=r.generated_input_contracts.length;o.resources+=r.resource_inputs.length;o.tools+=r.tool_and_package_inputs.length;return o;},{archives:0,entries:0,files:0,acquisitions:0,patches:0,lfs:0,generated:0,resources:0,tools:0});
-const report={project_id:'TDRP-001',spec_revision:9,target_commit:process.env.GITHUB_SHA,accepted_upstream_commit:authority.accepted_upstream_commit,totals,closure_status:'archive-discovery-complete-disposition-pending',archives:reports};
+const report={project_id:'TDRP-001',spec_revision:9,target_commit:(process.env.TDRP_TARGET_SHA||process.env.GITHUB_SHA),accepted_upstream_commit:authority.accepted_upstream_commit,totals,closure_status:'archive-discovery-complete-disposition-pending',archives:reports};
 await fs.mkdir('artifacts/tdrp-root-source-archives',{recursive:true});
 await fs.writeFile('artifacts/tdrp-root-source-archives/root-source-archive-discovery.json',JSON.stringify(report,null,2)+'\n');
 console.log(JSON.stringify({target_commit:report.target_commit,totals,closure_status:report.closure_status},null,2));

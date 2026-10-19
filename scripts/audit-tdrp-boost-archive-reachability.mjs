@@ -63,7 +63,7 @@ fail(dispositions.length===(boost.acquisition_candidates||[]).length,'Boost acqu
 const result={
   project_id:'TDRP-001',
   spec_revision:9,
-  target_commit:process.env.GITHUB_SHA,
+  target_commit:(process.env.TDRP_TARGET_SHA||process.env.GITHUB_SHA),
   accepted_upstream_commit:report.accepted_upstream_commit,
   archive_id:boost.id,
   archive_url:boost.url,

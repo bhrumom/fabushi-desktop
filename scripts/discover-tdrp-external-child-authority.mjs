@@ -172,7 +172,7 @@ const libyuvParentExclusion = await scanLibyuvParentExclusion(tempRoot);
 const report = {
   project_id: 'TDRP-001',
   spec_revision: 9,
-  target_commit: process.env.GITHUB_SHA || null,
+  target_commit: (process.env.TDRP_TARGET_SHA||process.env.GITHUB_SHA) || null,
   discovery_kind: 'recursive-external-child-authority',
   targets: [],
 };

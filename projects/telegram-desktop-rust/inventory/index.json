@@ -4,34 +4,90 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "b16daff6df63e8a812bc2b52a04ff243f67a7d3f",
-    "tree": "673b8c7335ca98bd920a48a951dccc9052b77911",
-    "baseline_identity_accepted": false
+    "commit": "0a11537c220df35fe59a96aebe413b1e52bc6e47",
+    "tree": "2d737e3da8fd9a36166db27ff56756c99f6c2117",
+    "baseline_identity_accepted": true
   },
   "inventory": {
-    "root_non_directory_entries": 6701,
-    "recursive_non_directory_entries": 15795,
+    "root_non_directory_entries": 6703,
+    "recursive_non_directory_entries": 16186,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 15795,
-    "unread_minimum": 15768,
+    "unknown_minimum": 16186,
+    "unread_minimum": 16159,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
-    "run_id": 37596744991,
+    "run_id": 39267321482,
     "run_attempt": 1,
-    "job_id": 112711134608,
-    "head_sha": "cc318d81532c44f8710681039cc1dba3dafe72cc",
-    "artifact_id": 11470099433,
-    "artifact_digest": "sha256:087136a99675f1a112602e748573c9d20aeaa27e3e2b308f00603d0d9f4a3dad",
+    "job_id": 118110183925,
+    "head_sha": "5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+    "artifact_id": 12193803207,
+    "artifact_name": "tdrp-revision9-authority-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+    "artifact_digest": "sha256:7526811deaba969c6cf3c4a442a79ba5a2020811a993655c3dac457b146db9e0",
     "artifact_files": [
       "upstream-root-inventory.json",
       "upstream-recursive-inventory.json",
       "authority-report.json",
-      "build-time-acquisition-candidates.txt"
+      "build-time-acquisition-candidates.txt",
+      "external-recursive-child-acquisition-candidates.txt",
+      "external-recursive-child-discovery.json",
+      "root-open-authority-discovery.json",
+      "root-tool-authority-discovery.json"
     ],
-    "evidence_status": "historical-only",
-    "upstream_commit": "f23c37857220eb84f8559f0901ea26fb304b564b"
+    "supporting_artifacts": [
+      {
+        "kind": "recursive-root-aggregate",
+        "job_id": 118110671436,
+        "artifact_id": 12192619393,
+        "artifact_name": "tdrp-recursive-root-aggregate-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+        "artifact_digest": "sha256:c44a0247eb8977732373d08e06bf8cb52f4a72e2b22d10a587c451162a077b0e"
+      },
+      {
+        "kind": "recursive-child-aggregate",
+        "job_id": 118111905184,
+        "artifact_id": 12193158582,
+        "artifact_name": "tdrp-recursive-child-aggregate-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+        "artifact_digest": "sha256:6eaf637f330f01469dee3771e90e904f3f36d079e57217ae67d5373af1164e63"
+      },
+      {
+        "kind": "recursive-next-aggregate",
+        "job_id": 118114082297,
+        "artifact_id": 12193324860,
+        "artifact_name": "tdrp-recursive-next-aggregate-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+        "artifact_digest": "sha256:1afe55fae04e55577cc7c35254678f0b5ccfbde8b75b7821c2d47bb09471dd02"
+      },
+      {
+        "kind": "recursive-fixed-point",
+        "job_id": 118114176711,
+        "artifact_id": 12194136074,
+        "artifact_name": "tdrp-recursive-closure-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+        "artifact_digest": "sha256:87d18391079527ffce7a4d588e8dec08579e354a1ad02612a511e590e31233b2"
+      },
+      {
+        "kind": "recursive-build-reachability",
+        "job_id": 118114339699,
+        "artifact_id": 12193419380,
+        "artifact_name": "tdrp-recursive-reachability-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+        "artifact_digest": "sha256:1fd0f2411814962d74f2f8b991e6fd9a01bfc7c1da67e9590b8e9c49d5bf6d89"
+      },
+      {
+        "kind": "root-source-archives",
+        "job_id": 118110183972,
+        "artifact_id": 12192789573,
+        "artifact_name": "tdrp-root-source-archives-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+        "artifact_digest": "sha256:d461dd8f78d7e25b5ada127aaf10e08abedb1dc7c77d80d478cd235336a2cb2d"
+      },
+      {
+        "kind": "boost-build-reachability",
+        "job_id": 118110617587,
+        "artifact_id": 12193702905,
+        "artifact_name": "tdrp-boost-reachability-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+        "artifact_digest": "sha256:a5e1383f1a6e51093a92acc383d6bfb52e4e4f9cfec1d99e3739cf92d7b1af33"
+      }
+    ],
+    "evidence_status": "current-head-baseline-identity-only-source-closure-open",
+    "upstream_commit": "0a11537c220df35fe59a96aebe413b1e52bc6e47"
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -41,5 +97,5 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Rebased to telegramdesktop/tdesktop@b16daff6df63e8a812bc2b52a04ff243f67a7d3f (tree 673b8c7335ca98bd920a48a951dccc9052b77911). Compared with c317da9, the root tree adds seven net-new non-directory entries, six under Telegram/SourceFiles, while direct gitlink pins and resource blob count remain unchanged. Recursive non-directory inventory rises from 15,788 to 15,795. Existing read-complete entries retain their blob identities; source closure remains open pending current-head Actions."
+  "note": "Baseline identity for telegramdesktop/tdesktop@0a11537c220df35fe59a96aebe413b1e52bc6e47 (tree 2d737e3da8fd9a36166db27ff56756c99f6c2117) is provenance-bound by GitHub Actions run 39267321482 / job 118110183925 / artifact 12193803207. Exact recursive expansion is 16,186 non-directory entries; 27 read-complete blob identities are retained, so unknown=16,186, unread=16,159, omitted=0. Semantic reading and responsibility closure remain open; baseline_ready/acceptance.accepted remain false."
 }
