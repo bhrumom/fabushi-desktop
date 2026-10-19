@@ -147,9 +147,9 @@ const qtReachability=recursiveReachability.qt_superproject;
 fail(qtReachability?.repository==='https://github.com/qt/qt5','Qt reachability authority missing');
 const qtEvidenceByPath=new Map((qtReachability.accepted_upstream_evidence||[]).map(item=>[item.path,item]));
 const expectedQtEvidence=[
-  ['Telegram/build/prepare/prepare.py','698ccd839591d4497ff5a932885f45724f95b890'],
-  ['Telegram/build/docker/centos_env/Dockerfile','126b74a759c4e09a51a37e951fa694c407b2a747'],
-  ['snap/snapcraft.yaml','824d6a30f1d4b85a29eece886bc1c1e2f42f59d4']
+  ['Telegram/build/prepare/prepare.py','a8bd8d6a5c1e190a27702cbcf7f00d10ce6f9dda'],
+  ['Telegram/build/docker/centos_env/Dockerfile','39b185c7277b1bb1819761d112a6799d4152ff04'],
+  ['snap/snapcraft.yaml','253f302455dfd61e31142d7734d8dcb8ed13b5eb']
 ];
 for (const [sourcePath,blob] of expectedQtEvidence) {
   const evidence=qtEvidenceByPath.get(sourcePath);
@@ -169,6 +169,8 @@ fail(dockerQt.includes('qtbase qtdeclarative qtwayland qtimageformats qtsvg qtsh
 for (const module of ['qtbase','qtdeclarative','qtimageformats','qtshadertools','qtsvg','qtwayland']) {
   fail(snapQt.includes('      - '+module),'accepted Snap Qt submodule selection missing '+module);
 }
+fail(prepareQt.includes('git clone https://github.com/desktop-app/qt6_windows7_patches.git qt6_windows7'),'accepted prepare.py Qt 6 Windows compatibility acquisition drift');
+fail(prepareQt.includes('git checkout bf64e7264237ffd371493f1780ef71d3f41373c9'),'accepted prepare.py Qt 6 Windows compatibility pin drift');
 fail(!prepareQt.includes('qttools'),'prepare.py unexpectedly initializes qttools');
 fail(!dockerQt.includes('qttools'),'Docker Qt build unexpectedly initializes qttools');
 fail(!snapQt.includes('      - qttools'),'Snap Qt build unexpectedly initializes qttools');
