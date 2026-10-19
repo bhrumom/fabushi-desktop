@@ -467,7 +467,10 @@ jobs:
         run: |
           set -euo pipefail
           executable="${{ steps.candidate.outputs.executable }}"
-          candidate_app="$(dirname "$(dirname "$executable")")"
+          # The bound executable is inside <app>/Contents/MacOS; ascend three
+          # levels to the .app bundle before resolving sibling resources.
+          candidate_app="$(cd "$(dirname "$executable")/../.." && pwd)"
+          test -d "$candidate_app/Contents"
           worker="$candidate_app/Contents/Resources/bin/fabushi-network-worker"
           host="$candidate_app/Contents/Resources/bin/mahayana-app-host"
           test -x "$worker"
