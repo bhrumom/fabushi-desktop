@@ -121,6 +121,7 @@ When an independent review is required, the reviewer is read-only for the review
 
 A specialized review may be marked not applicable only with scope-specific evidence tied to the changed paths/hunks; uncertainty is applicable, not proof of non-applicability. After accepted fixes, perform a focused re-review of each claimed fix and the edited functions' adjacent callers/consumers. Unsupported findings are dropped rather than promoted into blockers.
 
+###### Frozen scope and bounded lifecycle
 Freeze the declared review scope once before independent review begins, including the base revision and any pre-existing uncommitted work that is explicitly in scope. Each round must review an immutable snapshot of that scope. Reviewers are fresh and blind to one another's reports and to prior runner decisions; only the source-neutral repository review runner may carry arbitration state across rounds.
 
 Before applying a review-driven fix, the runner must decide every synthesized finding in the durable review ledger as `FIX`, `REJECT`, `DEFER`, or `COMPROMISE`, with a concrete rationale. `NON_BLOCKING` findings are recorded but cannot start a fix round by themselves. A later finding that would reverse an earlier decision is rejected by reference to that decision unless it adds a concrete failure scenario not previously weighed; a decision may be superseded once, and any attempt to flip it again requires a human decision with both rationales preserved.
