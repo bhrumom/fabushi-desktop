@@ -3,7 +3,7 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_repository": "telegramdesktop/tdesktop",
-  "upstream_commit": "0a11537c220df35fe59a96aebe413b1e52bc6e47",
+  "upstream_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
   "discovery": {
     "evidence_run_id": 38547900810,
     "evidence_head_sha": "9a3e22f5ab8e3522bb27ff682f29703870e2f802",
@@ -13,7 +13,7 @@
     "candidate_lines_total": 331,
     "immutable_commit_pin_occurrences_classified": 19,
     "candidate_lines_pending_classification": 0,
-    "note": "Current upstream 0a11537c220df35fe59a96aebe413b1e52bc6e47 is 31 commits / 63 paths ahead of b16daff. Live acquisition authority changes materially: desktop-app/patches advances to 4811dda9fcabbf9cd8cab585d4df2379d81edf04 and prepare.py adds the exact-pinned desktop-app/qt6_windows7_patches acquisition. Candidate lines increase 330→331; current-head Actions must regenerate and validate the complete set.",
+    "note": "Current upstream 1e18da644e37856c9b1d87434bfcd6a2e3d11c57 is 5 commits / 63 paths ahead of 0a11537c220df35fe59a96aebe413b1e52bc6e47. The only changed accepted build-acquisition source is snap/snapcraft.yaml, which adds the non-acquisition permission line login-session-observe; immutable acquisition pins and classified candidate cardinality remain 331/19/0 pending current-head regeneration. No direct gitlink pin changed.",
     "candidate_lines_classified": 331,
     "disposition_closure_status": "complete",
     "recursive_authority_closure_status": "open",
@@ -1131,7 +1131,7 @@
   ],
   "recursive_build_reachability": {
     "status": "partial-audited-disposition-open",
-    "accepted_upstream_commit": "0a11537c220df35fe59a96aebe413b1e52bc6e47",
+    "accepted_upstream_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
     "rule": "A recursively discovered repository is source/build authority only when an accepted TDesktop build path actually initializes, downloads, generates, patches, or consumes it. Presence as an unselected superproject gitlink is not sufficient.",
     "qt_superproject": {
       "repository": "https://github.com/qt/qt5",
@@ -1177,7 +1177,7 @@
         },
         {
           "path": "snap/snapcraft.yaml",
-          "blob": "253f302455dfd61e31142d7734d8dcb8ed13b5eb",
+          "blob": "618110dba69e4f18c78fe65f282f1342a631cbfb",
           "evidence": "Snap Qt source-submodules lists only qtbase qtdeclarative qtimageformats qtshadertools qtsvg qtwayland."
         }
       ],
@@ -1274,7 +1274,7 @@
         },
         {
           "path": "snap/snapcraft.yaml",
-          "blob": "253f302455dfd61e31142d7734d8dcb8ed13b5eb",
+          "blob": "618110dba69e4f18c78fe65f282f1342a631cbfb",
           "evidence": "Snap OpenSSL part uses source-tag/plugin make and does not request source-submodules."
         }
       ],

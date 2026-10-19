@@ -149,7 +149,7 @@ const qtEvidenceByPath=new Map((qtReachability.accepted_upstream_evidence||[]).m
 const expectedQtEvidence=[
   ['Telegram/build/prepare/prepare.py','a8bd8d6a5c1e190a27702cbcf7f00d10ce6f9dda'],
   ['Telegram/build/docker/centos_env/Dockerfile','39b185c7277b1bb1819761d112a6799d4152ff04'],
-  ['snap/snapcraft.yaml','253f302455dfd61e31142d7734d8dcb8ed13b5eb']
+  ['snap/snapcraft.yaml','618110dba69e4f18c78fe65f282f1342a631cbfb']
 ];
 for (const [sourcePath,blob] of expectedQtEvidence) {
   const evidence=qtEvidenceByPath.get(sourcePath);
