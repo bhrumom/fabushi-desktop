@@ -6,10 +6,10 @@
   "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16190,
-    "unread": 16163,
+    "unknown": 16189,
+    "unread": 16162,
     "omitted": 0,
-    "responsibilities_total": 34,
+    "responsibilities_total": 35,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -8136,6 +8136,242 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral workflow-governance contract read from telegramdesktop/tdesktop authority; no upstream implementation copied into Fabushi shipping runtime.",
       "notes": "Twelfth previously unread recursive source entry at live dev 351204f3695b4a39bc3f4d2f230c061b9a01fe2a. Recursive inventory remains 16,202; after this source-entry closure unknown=16,190, unread=16,163, omitted=0. Baseline acceptance and full source closure remain false.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
+      "source_path": ".agents/shared/project-context.md",
+      "source_blob_sha": "53c8657eb7949a5a2fba7e7adc8d1073f3079ead",
+      "source_kind": "workflow_context_governance_documentation",
+      "module_id": "tdesktop.project-context-governance",
+      "responsibility_id": "TDRP-R9-PROJECT-CONTEXT-GOVERNANCE-001",
+      "source_symbols": [
+        "Document roles",
+        "Selective reading",
+        "Optional durable amendments"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-CONTEXT-GOVERNANCE",
+        "CAP-WORKFLOW-HANDOFF-GOVERNANCE",
+        "CAP-EVIDENCE-GOVERNANCE"
+      ],
+      "dependency_ids": [
+        "Fabushi repository AI development lifecycle",
+        "Fabushi Test Evidence Contract"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/project-context-complete-read.md",
+      "behavior_contract": "Discover task/project context selectively from current request, exact source/spec authority and explicit lineage; keep repository/nested AGENTS scope canonical while host pointers/adapters do not create competing policy roots; treat project/docs/README/history as supporting context that is revalidated before use; write a compact task-local handoff with exact locators; publish only narrow still-valid durable amendments after rereading/reconciling the latest canonical target, and fail closed on correctness/publication conflicts.",
+      "state_machine": "current request + live source/spec/instruction scope -> select candidate project/reference context -> bounded read of only relevant sections -> resolve load-bearing ambiguity or fail closed -> write compact task-local context handoff -> optional narrow project amendment proposal -> implementation/review/evidence approval -> reread latest canonical target -> reconcile or skip task-local amendment -> publish narrow valid fact only",
+      "side_effects": [
+        "Repository workflow/context/evidence governance only; no new shipping runtime."
+      ],
+      "failure_cases": [
+        "recursive loading of every linked project/document/history without task relevance",
+        "historical plan/proposal/snapshot overrides current request or current source",
+        "host CLAUDE/GROK pointer becomes a competing canonical instruction root",
+        "navigation index is treated as live status owner",
+        "task handoff copies accumulated project history instead of exact present context",
+        "legacy whole-document proposal is promoted or chained into current project truth",
+        "durable amendment publishes without rereading/reconciling the latest canonical target",
+        "correctness-affecting context conflict is guessed through instead of failing closed"
+      ],
+      "ui_disposition": "Not applicable; repository workflow governance only.",
+      "non_ui_responsibilities": [
+        "Project-local context discovery from explicit lineage/current request",
+        "AGENTS/nested-AGENTS versus host pointer/adaptor instruction precedence",
+        "Selective project/spec/docs/README/reference expansion",
+        "Current request/source precedence over historical context and snapshots",
+        "Compact work/context handoff with exact source/reference locators",
+        "tasks index versus live status-owner separation",
+        "Optional narrow durable amendment proposal/publication lifecycle",
+        "Latest-target reread and concurrent-edit reconciliation",
+        "Fail-closed behavior for correctness/publication conflicts",
+        "Resume semantics that reuse validated artifacts without inheriting stale proposals"
+      ],
+      "platform_delta": "Fabushi absorbs the source-neutral workflow/context/evidence semantics into existing repository governance rather than copying Telegram task machinery or creating a product/runtime owner.",
+      "existing_owner_candidates": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "existing_owner": "Fabushi repository AI lifecycle / Test Evidence Contract",
+      "rejected_existing_owners": [
+        "Shipping Host/Coordinator/Runner do not own development-context discovery or handoff policy",
+        "A Telegram workflow/context owner would duplicate repository-wide source-neutral governance",
+        "Product project documents are governed content, not a second repository workflow engine"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository/project context discovery and handoff",
+        "Context provenance and handoff evidence"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "This source entry is normative development workflow/context/evidence policy, not shipping product runtime.",
+      "command_event_contracts": [
+        "task/request + live source/spec + instruction scope -> selective context discovery -> compact handoff with exact locators",
+        "historical/supporting context -> revalidate against current request/source -> use or reject",
+        "optional durable fact -> task-local amendment -> approved outcome -> latest-target reread/reconcile -> narrow publication or skip/fail closed"
+      ],
+      "state_owner": "Existing repository AI workflow/context governance",
+      "lifecycle_owner": "Existing repository development lifecycle and GitHub Actions evidence review",
+      "persistence_and_restart": "Validated task-local context/artifacts survive session loss; historical project proposals remain discoverable but are not promoted automatically, and durable shared facts publish only after latest-target reconciliation.",
+      "concurrency_and_cancellation": "Immediately-before-publication reread/reconciliation fences concurrent project edits; consolidation callers also recheck source/dependent state and write nothing on races.",
+      "security_boundary": "Context discovery must not broaden instruction authority through untrusted/stale host pointers or historical documents; only current scoped repository/spec/source authority may control implementation.",
+      "network_service_dependencies": [
+        "GitHub Actions hosted runners",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi repository workflow / quality evidence governance",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "Independent exact-head GitHub Actions verification of this source-entry mapping commit is pending."
+      ],
+      "production_entrypoints": [
+        "AGENTS.md -> Repository/project context discovery and handoff",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Context provenance and handoff evidence"
+      ],
+      "production_evidence": [
+        "path:AGENTS.md#Repository/project context discovery and handoff",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Context provenance and handoff evidence"
+      ],
+      "test_evidence": [
+        "dossier:projects/telegram-desktop-rust/dossiers/project-context-complete-read.md",
+        "upstream-project-context:.agents/shared/project-context.md@53c8657eb7949a5a2fba7e7adc8d1073f3079ead",
+        "upstream-process-inbox:.agents/skills/process-inbox/SKILL.md@0ce70794ac743d99e6d5c80894cde970b52842db",
+        "upstream-pipeline:.agents/skills/perform-task/references/pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7",
+        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba",
+        "upstream-consolidation:.agents/skills/continue/references/consolidate-pending-tasks.md@bd301d93f8f670ad041b3db72330e17cbb50eb5c",
+        "upstream-agents:AGENTS.md@d8d59480277b7defbca1cdbccf7ed164ab2db086",
+        "upstream-claude:CLAUDE.md@f8564d18cef4b9c545767025995d31deb3fa7155",
+        "upstream-grok:GROK.md@b1ae452d94cf48971c6d7ea17cac6b45cabee08d"
+      ],
+      "target_commit": "2b394d7551f3dbbe1320bba7f771a4694134e382",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development and quality governance",
+      "composition_slot": "Project/task context discovery and evidence handoff",
+      "capability_component": "Source-neutral project context and handoff governance",
+      "variation_axes": [
+        "new task vs resumed task",
+        "small project overview vs large legacy document",
+        "current source/request vs stale historical context",
+        "root AGENTS vs nested AGENTS vs host pointer/adapter",
+        "no durable amendment vs still-useful narrow amendment",
+        "clean reconciliation vs optional conflict vs correctness-invalidating conflict"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi repository AI development lifecycle",
+        "Fabushi Test Evidence Contract"
+      ],
+      "duplicate_root_check": "No Telegram-specific repository workflow/context owner or shipping runtime introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Session loss does not require rereading unrelated history; validated task artifacts remain proof, while stale proposals never become current authority without revalidation.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to workflow governance",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-PROJECT-CONTEXT-GOVERNANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-PROJECT-CONTEXT-GOVERNANCE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CONTEXT-CURRENT-AUTHORITY-001",
+        "INV-TDRP-CONTEXT-SELECTIVE-READ-001",
+        "INV-TDRP-CONTEXT-HANDOFF-RECONSTRUCTABLE-001",
+        "INV-TDRP-CONTEXT-AMENDMENT-RECONCILED-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-PROJECT-CONTEXT-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-WORKFLOW-CONTEXT-HANDOFF-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CONTEXT-STALE-PROPOSAL-001",
+        "FAULT-TDRP-CONTEXT-AMENDMENT-RACE-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CONTEXT-INSTRUCTION-PRECEDENCE-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-CONTEXT-GOVERNANCE-001"
+      ],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "project-context-source-contract",
+        "workflow-caller-chain",
+        "host-pointer-precedence"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral workflow/context-governance contract read from telegramdesktop/tdesktop authority; no upstream implementation copied into Fabushi shipping runtime.",
+      "notes": "Thirteenth previously unread recursive source entry at live dev 351204f3695b4a39bc3f4d2f230c061b9a01fe2a. Recursive inventory remains 16,202; after this source-entry closure unknown=16,189, unread=16,162, omitted=0. Baseline acceptance and full source closure remain false.",
       "test_execution_evidence": []
     }
   ]
