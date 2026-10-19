@@ -180,6 +180,14 @@ Per-worker state is monotonic and fail-closed. Terminal outcomes are never rewri
 
 Process cleanup follows exact ownership, not a PID value or process name. POSIX session/process-group identity, Windows job membership, or an equivalent host primitive plus any durable writer token must prove the owned process set before stop/timeout cleanup. PID reuse, a foreign process group, a read-only file handle, or a failed ownership probe never authorizes termination; unresolved ownership remains non-terminal until the deadline/recovery contract resolves it. Bounded cleanup must preserve unrelated processes. Host-specific helper code, Windows Job Objects, and POSIX process mechanics are adapter details and do not create a product runtime owner.
 
+###### Out-of-process AI worker adapter execution
+
+A source-neutral repository adapter that starts an external AI worker must fail closed at admission and launch. Before the first detached worker of an invocation, verify that the selected adapter is actually available and authenticated through its supported status surface; an unavailable adapter follows the declared native or same-session fallback and records the reason. Do not install, update, authenticate, or mutate a user's global configuration on the worker's behalf.
+
+Bind each launch to an immutable run identity and to the effective execution inputs before detaching it: worker name, working directory, prompt/instruction identity, sandbox, effort, model override or inheritance, output schema, project-document policy, deadline, and any adapter-specific command arguments. Environment compatibility changes must be child-scoped and recorded; they must not escape into global repository or user configuration. A detached launcher returning successfully proves only that the run was accepted for execution, not that the worker completed.
+
+Completion uses the adapter's sanctioned foreground wait against that same durable run. A bounded wait that reports the worker still running means continue waiting on the same run; it never authorizes sleeps plus artifact polling, a duplicate start, destructive replacement, or a success verdict. After terminal adjudication, validate the phase's own required artifacts or code effects separately from the worker's terminal status.
+
 #### Stage 6 — Integrate / Deliver
 - Follow the repository's branch, PR, merge, release, migration, and deployment rules applicable to the task.
 - Do not claim completion merely because code was written or pushed.
