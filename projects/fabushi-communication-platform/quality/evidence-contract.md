@@ -25,3 +25,20 @@ Cross-review session evidence 还必须持久化 frozen scope identity（base re
 Any release, packaging, archive, staging, installation, or acceptance step that creates a second executable artifact must state whether the relationship is a byte-exact copy or an intentional transformation. Evidence for a byte-exact copy records the source and copy paths, sizes, separate raw whole-file SHA-256 identities, and proves equality; it also re-reads the source identity after the copy window and fails closed if source size or digest changed. A normalized/semantic digest may support a format-specific transformation proof, but it never replaces either artifact's raw identity and cannot by itself prove authenticity, safe execution, successful startup, signature/notarization validity, or dependency identity.
 
 Format-specific equivalence exceptions are allowed only when that platform's shipping transform actually requires them and must have a bounded parser/profile, explicit accepted/refused cases, stable acquisition, resource limits, independent positive and forbidden controls, and a machine-readable report. Otherwise the stronger byte-exact rule applies. Historical copies, mutable task-local outputs, a copy produced before the current evidence window, or a report not bound to the exact candidate SHA are not acceptable release evidence.
+
+### Format-transform stable acquisition and resource bounds
+
+A format-transform oracle must acquire each source/copy artifact as one stable inspection subject, reject unsupported or mutable acquisition states, validate every offset/count/size before the corresponding I/O, and publish finite per-input parser/read/resource limits. The final verdict must re-check source/copy stability after comparison. A parser that can follow replacement paths, consume unbounded declared metadata, or silently continue after partial/short reads cannot provide passing release evidence.
+
+### Format-transform loader-visible identity
+
+A transform exception must protect the complete loader-visible executable identity for its declared platform/profile: ordered load/program mapping semantics, executable entry reachability, permissions, zero-fill boundaries, mapped padding and any independently loader-consumed records. Any normalized allowance must be narrow, enumerated and proven unable to mask loader-visible bytes. Raw whole-file source/copy identities remain mandatory and unmasked.
+
+### Format-transform section/debug metadata
+
+A transform may remove or repack only metadata classes explicitly allowed by its profile after both inputs independently validate. Unknown or retained sections/records, their semantic references, and retained non-loader payloads remain protected; malformed references, unsupported compression/encoding, invented identities, or unqualified removals fail closed. A byte-exact shipping edge does not need or gain such an exception.
+
+### Format-transform symbol semantics
+
+Where the binary format exposes symbol/index metadata affected by the shipping transform, the oracle must preserve retained symbol meaning and ordering, resolve index-based references to stable semantic identities, and enumerate any narrowly removable bookkeeping records. Symbol or normalized semantic digests are supporting evidence only and never replace raw artifact identities.
+
