@@ -9,9 +9,13 @@ Comparator companion: `.agents/shared/evidence/elf_identity.py@70dc54620651e8c6f
 
 ## Live-baseline reconciliation
 
-The write lease supplied for the previous upstream head was re-read before modification. Live `telegramdesktop/tdesktop@dev` had advanced seven commits from `1e18da644e37856c9b1d87434bfcd6a2e3d11c57` to `fab79561cf8030eade9d0098bc438346b8c39261` (tree `76afabc085867a9c2e086489270d0ca0d5c9bcac`). The eight changed root paths do not include this entry or any already-ledgered source path. `Telegram/lib_base` advanced from `0d74e8cf4917a558eebac429cc12ac95d127be20` to `ad56a40232ba542ceb796af7c6b4f474c64df851` and adds two tracked files; `Telegram/lib_ui` advanced from `a0a6b50fb80f51b0c3e1b34a1bb8fbe7fee6c32d` to `af1132e87d75f80926dbce1017a96312af3d0bbe` without adding or deleting tracked files. Root non-directory inventory therefore remains 6,709 while the reconstructed recursive non-directory inventory rises from 16,192 to 16,194. The target blob remains exactly `a75a29225b6eb70f255848e30026d02523d808f3`.
+The original write lease was re-read before modification and then re-read again while GitHub Actions were queued. Live `telegramdesktop/tdesktop@dev` first advanced from `1e18da644e37856c9b1d87434bfcd6a2e3d11c57` to `fab79561cf8030eade9d0098bc438346b8c39261`, then advanced two additional commits to `34a86ed1a547ca6d12e25688c6289b60e6b6216c` (tree `41c7133ce1efab1e68bad4bcace2fea7cc10f24f`). The target test blob remains exactly `a75a29225b6eb70f255848e30026d02523d808f3`.
 
-This rebaseline adds two previously unseen recursive entries, so fail-closed unknown/unread counts first rise by two. Closing this eighth entry then yields unknown=16,186, unread=16,159, omitted=0. Baseline readiness and final acceptance remain false.
+The first delta advanced `Telegram/lib_base` and `Telegram/lib_ui`; `lib_base` added two tracked recursive files while `lib_ui` added none. The second delta does not change direct gitlinks. It removes three legacy premium OBJ files, adds nine diamond binary resources and two shader files, for a net +8 root non-directory entries. GitHub's untruncated recursive root tree at `41c7133ce1efab1e68bad4bcace2fea7cc10f24f` reports 7,014 total entries, 6,681 blobs, 36 direct gitlinks, 3,271 SourceFiles blobs, 3,129 Resources blobs and 6,717 non-directory root entries. Because the nested gitlink pins are unchanged from the immediately preceding baseline, recursive non-directory authority is 16,202.
+
+The latest delta's only path under the acquisition scanner's directories is `Telegram/cmake/qrhi_shaders.cmake`; its current content contains no acquisition-like git/curl/wget/URL/GIT_REPOSITORY/GIT_TAG tokens, so the already dispositioned 331/19/0 build-time acquisition accounting remains structurally unchanged pending exact-head Actions revalidation.
+
+Closing this eighth ordered source entry at the current live baseline yields unknown=16,194, unread=16,167, omitted=0. Baseline readiness and final acceptance remain false.
 
 ## Source role and caller closure
 
@@ -79,4 +83,4 @@ Existing production/evidence owner: Fabushi source-neutral test strategy, test e
 New owner: none.  
 Current platform disposition: exact-byte macOS copy; format-transform qualification dormant until an actual transform exists.
 
-This closes exactly one recursive source entry at the live baseline. Reconstructed recursive inventory is 16,194; counters after closure are unknown=16,186, unread=16,159, omitted=0. Source closure, baseline readiness and final release acceptance remain false.
+This closes exactly one recursive source entry at the live baseline. Reconstructed recursive inventory is 16,202; counters after closure are unknown=16,194, unread=16,167, omitted=0. Source closure, baseline readiness and final release acceptance remain false.
