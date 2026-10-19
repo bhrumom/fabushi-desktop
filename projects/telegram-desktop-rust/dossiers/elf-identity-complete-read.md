@@ -75,6 +75,9 @@ Responsibilities:
 - `TDRP-R9-ELF-CONTROLS-REPORT-001` — independent positive/forbidden controls plus bounded machine-readable evidence.
 
 Capabilities: `CAP-RELEASE-ARTIFACT-IDENTITY`, `CAP-RELEASE-TRANSFORM-EQUIVALENCE`.  
+Oracles: `ORA-TDRP-ARTIFACT-COPY-IDENTITY-001`, `ORA-TDRP-TRANSFORM-EQUIVALENCE-001`.  
+Invariants: `INV-TDRP-ARTIFACT-RAW-IDENTITY-001`, `INV-TDRP-ARTIFACT-SOURCE-STABLE-001`, `INV-TDRP-ARTIFACT-NORMALIZED-NOT-IDENTITY-001`.  
+
 Existing production owner: Fabushi release packaging + source-neutral quality/evidence contracts.  
 New owner: none.  
 Current platform disposition: exact-byte macOS copy; ELF transform mechanics dormant/not applicable until a Linux ELF transform exists.
