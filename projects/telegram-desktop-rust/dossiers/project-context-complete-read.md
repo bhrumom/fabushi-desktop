@@ -79,6 +79,14 @@ Fabushi already has the correct source-neutral owners:
 
 The mapped change extends those owners with selective context discovery, instruction/document precedence, compact handoff, revalidation of historical context, and narrow amendment publication. No Telegram-specific owner or second repository workflow/context system is introduced.
 
+## Traceability anchors
+
+Requirement: `TDRP-R9-PROJECT-CONTEXT-GOVERNANCE-001`  
+Oracle: `ORA-TDRP-PROJECT-CONTEXT-GOVERNANCE-001`  
+Invariants: `INV-TDRP-CONTEXT-CURRENT-AUTHORITY-001`, `INV-TDRP-CONTEXT-SELECTIVE-READ-001`, `INV-TDRP-CONTEXT-HANDOFF-RECONSTRUCTABLE-001`, `INV-TDRP-CONTEXT-AMENDMENT-RECONCILED-001`
+
+These anchors bind the ledger row to this exact source-read dossier. Exact-head execution evidence remains pending until the Actions runs for the final PR head succeed.
+
 ## Verification boundary
 
 This closure is documentation/governance mapping only. It does not claim that the whole upstream inventory is closed or that Fabushi product/release acceptance is complete. The exact mapping commit must pass the existing TDRP Revision 9 source-authority workflow and Rust desktop runtime workflow on the same PR head before the row's exact-head blocker can be cleared. Even after those runs pass, unknown=16,189 and unread=16,162 keep baseline/source closure fail-closed.
