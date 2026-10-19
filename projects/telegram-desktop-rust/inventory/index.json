@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16202,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16188,
-    "unread_minimum": 16161,
+    "unknown_minimum": 16187,
+    "unread_minimum": 16160,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -97,5 +97,5 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live rebaseline candidate telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a (tree 5151db79560ed40bf3802482fcfb74b950be6c40) remains source-closure open. Entry 14 .agents/shared/test-loop.md remains blob 83c4732bf6139f7c6557f18dd87bb35c3d68808d and is independently mapped to the existing source-neutral repository lifecycle / Test Strategy / Test Evidence Contract owners. Recursive inventory remains 16,202 with unknown=16,188, unread=16,161, omitted=0; baseline acceptance and full source closure remain fail-closed."
+  "note": "Live rebaseline candidate telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a (tree 5151db79560ed40bf3802482fcfb74b950be6c40) remains source-closure open. Direct reading of the current recursive authority artifact identifies actual 1-based array entry 15 as .agents/shared/scripts/codex_leaf_test.py@2831841e6b131ca2c42688fe24e00b739f825ccb; its repository AI worker lifecycle qualification responsibilities are independently mapped to existing source-neutral repository lifecycle / Test Strategy / Test Evidence Contract owners. Earlier notes used a different migration-progression ordinal and are not treated as artifact-array positions. Recursive inventory remains 16,202 with unknown=16,187, unread=16,160, omitted=0; baseline acceptance and full source closure remain fail-closed."
 }
