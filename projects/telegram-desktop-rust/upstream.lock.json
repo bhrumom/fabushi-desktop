@@ -258,10 +258,10 @@
   "coverage": {
     "root_source_entries_total": 6717,
     "recursive_source_entries_total": 16202,
-    "unknown_minimum": 16184,
-    "unread_minimum": 16157,
+    "unknown_minimum": 16183,
+    "unread_minimum": 16156,
     "omitted_known": 0,
-    "note": "Revision 9 live rebaseline remains in progress for telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a (tree 5151db79560ed40bf3802482fcfb74b950be6c40). Root non-directory inventory remains 6,717 and recursive authority remains 16,202. Actual recursive array entry 18 .agents/skills/code-health/SKILL.md is independently mapped to existing source-neutral repository quality/evidence owners; referenced code-health children remain independent inventory entries. Counters are unknown=16,184, unread=16,157, omitted=0."
+    "note": "Revision 9 live rebaseline remains in progress for telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a (tree 5151db79560ed40bf3802482fcfb74b950be6c40). Root non-directory inventory remains 6,717 and recursive authority remains 16,202. Actual recursive array entry 19 .agents/skills/code-health/agents/openai.yaml is independently mapped to the existing source-neutral repository skill/task invocation owner; native registration/default prompt selects the canonical code-health workflow and does not own scanner, state, routing, or runtime semantics. Counters are unknown=16,183, unread=16,156, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -275,7 +275,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Live rebaseline identity for telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a remains source-closure open. Actual recursive array entry 18 .agents/skills/code-health/SKILL.md is mapped to existing repository lifecycle / Test Strategy / Test Evidence Contract owners; full closure remains unknown=16,184, unread=16,157, omitted=0, so acceptance remains fail-closed."
+    "note": "Live rebaseline identity for telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a remains source-closure open. Actual recursive array entry 19 .agents/skills/code-health/agents/openai.yaml is mapped to the existing repository skill/task invocation and quality/evidence owners; full closure remains unknown=16,183, unread=16,156, omitted=0, so acceptance remains fail-closed."
   },
   "baseline_identity_evidence": {
     "status": "pending-current-head-revalidation",
