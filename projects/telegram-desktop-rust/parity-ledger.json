@@ -6,10 +6,10 @@
   "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16184,
-    "unread": 16157,
+    "unknown": 16183,
+    "unread": 16156,
     "omitted": 0,
-    "responsibilities_total": 40,
+    "responsibilities_total": 41,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -9689,6 +9689,236 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral repository-quality governance contract read from telegramdesktop/tdesktop authority; no upstream Python/C++ implementation copied into Fabushi shipping runtime.",
       "notes": "Actual 1-based recursive array entry 18 is .agents/skills/code-health/SKILL.md. References/scripts/callers were read only to understand this entry and remain independent inventory entries unless separately represented. This closure decrements only one independent source entry to unknown=16,184 and unread=16,157, omitted=0.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
+      "source_path": ".agents/skills/code-health/agents/openai.yaml",
+      "source_blob_sha": "59bb6304445f21e2a3ee1a97a69a8e231f934d30",
+      "source_kind": "repository_skill_native_registration",
+      "module_id": "tdesktop.code-health-native-registration",
+      "responsibility_id": "TDRP-R9-CODE-HEALTH-NATIVE-REGISTRATION-001",
+      "source_symbols": [
+        "interface.display_name",
+        "interface.short_description",
+        "interface.default_prompt"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-REPOSITORY-SKILL-INVOCATION"
+      ],
+      "dependency_ids": [
+        ".agents/skills/code-health/SKILL.md",
+        ".claude/commands/code-health.md",
+        "Fabushi repository AI development lifecycle",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/code-health-openai-registration-complete-read.md",
+      "behavior_contract": "Expose code health through host-native skill discovery metadata and a default invocation that selects the existing code-health workflow, explicitly requiring a fresh origin/dev scan, durable findings update, and report of regressions/decisions before proposals; registration does not own scanner, state, task routing, or product runtime semantics.",
+      "state_machine": "host discovers native skill -> user/scheduler invokes default or explicit code-health mode -> canonical code-health skill resolves fresh exact authority -> canonical findings/report/routing lifecycle; invalid/stale registration semantics cannot bypass the canonical owner",
+      "side_effects": [
+        "Repository invocation metadata only; no shipping product runtime or second quality state owner."
+      ],
+      "failure_cases": [
+        "Default prompt permits stale/mutable authority to update durable findings",
+        "Registration hides regressions behind proposals",
+        "Provider syntax becomes a second semantic owner",
+        "Registration introduces a copied scanner/task queue/runtime",
+        "Scheduled invocation bypasses canonical trust/conflict/approval routing"
+      ],
+      "ui_disposition": "Not applicable; host-native repository skill metadata only.",
+      "non_ui_responsibilities": [
+        "Native skill discoverability",
+        "Human-readable skill description",
+        "Default prompt selection of canonical scan/update/report ordering",
+        "Preservation of canonical scheduled/ad-hoc routing semantics"
+      ],
+      "platform_delta": "Fabushi carries the applicable responsibility in existing source-neutral repository skill/task invocation plus quality/evidence governance. Telegram/OpenAI-specific adapter metadata remains provenance, not a runtime to copy.",
+      "existing_owner_candidates": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "ordinary Fabushi task/review lifecycle"
+      ],
+      "existing_owner": "Fabushi repository skill/task invocation / quality-evidence lifecycle",
+      "rejected_existing_owners": [
+        "Shipping Agent/Coordinator/Host/Runner do not own repository skill registration",
+        "A copied OpenAI/Telegram adapter would duplicate host invocation mechanics",
+        "A second findings/task queue owner would duplicate existing quality governance"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository quality-health governance",
+        "Repository quality-health qualification",
+        "Repository quality-health evidence"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The entry is repository host registration metadata, not shipping product logic.",
+      "command_event_contracts": [
+        "native registration -> canonical code-health owner",
+        "default prompt -> fresh exact authority -> update durable findings -> report regressions/decisions -> proposals",
+        "scheduled/ad-hoc invocation -> same trust/conflict/approval routing"
+      ],
+      "state_owner": "Existing Fabushi repository quality/evidence governance",
+      "lifecycle_owner": "Existing repository development lifecycle and GitHub Actions evidence review",
+      "persistence_and_restart": "Registration itself owns no durable state; all persistent findings/history remain with the existing canonical quality-health evidence owner.",
+      "concurrency_and_cancellation": "Registration creates no concurrency owner; canonical quality-health routing continues to respect active-path/task conflicts and ordinary workflow cancellation.",
+      "security_boundary": "Registration metadata cannot authorize installs, auth changes, stale-source publication, or bypass of canonical approval/trust gates.",
+      "network_service_dependencies": [
+        "GitHub repository authority",
+        "GitHub Actions hosted runners",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi repository quality/release workflow / GitHub Actions",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "Independent exact-head GitHub Actions verification of this source-entry mapping commit is pending."
+      ],
+      "production_entrypoints": [
+        "AGENTS.md -> Repository quality-health governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Repository quality-health qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Repository quality-health evidence"
+      ],
+      "production_evidence": [
+        "path:AGENTS.md#Repository quality-health governance",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Repository quality-health qualification",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Repository quality-health evidence"
+      ],
+      "test_evidence": [
+        "dossier:projects/telegram-desktop-rust/dossiers/code-health-openai-registration-complete-read.md",
+        "upstream-registration:.agents/skills/code-health/agents/openai.yaml@59bb6304445f21e2a3ee1a97a69a8e231f934d30",
+        "upstream-skill:.agents/skills/code-health/SKILL.md@6885938b3d186b55f5d69cb8b9b9a96bbca0e097",
+        "upstream-command:.claude/commands/code-health.md@bcabd4bd5b5a1a2ed09b40a7f1fbdd502042329a",
+        "upstream-workspace:.agents/skills/process-inbox/scripts/workspace.py@e1fdabbac9ccd635962b7b6dc1a62357fc5b931c",
+        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba"
+      ],
+      "target_commit": "be031eae9f178ab080b076cd4bd48ceeabab7de7",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development and quality governance",
+      "composition_slot": "Host-native skill discovery/invocation",
+      "capability_component": "Source-neutral repository skill invocation surface",
+      "variation_axes": [
+        "native skill default prompt vs explicit command mode",
+        "scheduled scan route vs ad-hoc invocation",
+        "provider-specific command syntax"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi repository AI development lifecycle",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract",
+        "ordinary task/review lifecycle"
+      ],
+      "duplicate_root_check": "No Telegram/OpenAI adapter runtime, second scanner, findings ledger, task queue, or shipping owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Provider-native invocation always resolves into the same canonical quality-health lifecycle and cannot create divergent durable state.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to workflow governance",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CODE-HEALTH-NATIVE-REGISTRATION-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CODE-HEALTH-NATIVE-OWNER-001",
+        "ORA-TDRP-CODE-HEALTH-DEFAULT-PROMPT-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CODE-HEALTH-NATIVE-NO-SECOND-OWNER-001",
+        "INV-TDRP-CODE-HEALTH-NATIVE-FRESH-AUTHORITY-001",
+        "INV-TDRP-CODE-HEALTH-REPORT-BEFORE-PROPOSALS-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CODE-HEALTH-NATIVE-REGISTRATION-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-CODE-HEALTH-NATIVE-ROUTING-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CODE-HEALTH-NATIVE-STALE-AUTHORITY-001",
+        "FAULT-TDRP-CODE-HEALTH-NATIVE-ROUTING-BYPASS-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CODE-HEALTH-NATIVE-PROVENANCE-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-INVENTORY",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "code-health-native-registration-source-contract",
+        "code-health-skill-command-routing-contract"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral repository host-registration contract read from telegramdesktop/tdesktop authority; no OpenAI/Telegram adapter runtime copied into Fabushi shipping runtime.",
+      "notes": "Actual 1-based recursive array entry 19 is .agents/skills/code-health/agents/openai.yaml. Its referenced skill/command/scheduled callers remain independently accounted source entries unless already represented. This closure decrements only one independent source entry to unknown=16,183 and unread=16,156, omitted=0.",
       "test_execution_evidence": []
     }
   ]
