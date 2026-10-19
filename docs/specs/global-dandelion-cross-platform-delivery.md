@@ -17,7 +17,7 @@ requirement and acceptance IDs.
 | Android | `266f90f394e5a12219bc5d9c53cca5aec243bca3` | WebView bridge and marketplace projection exist; Global Dandelion native adapter is not evidenced. |
 | iOS | `a99a181f58aa544b2d3fcad6eece9dc3e96c316a` | Generic signed Mini App/WebMCP surface exists; Global Dandelion native adapter is not evidenced. |
 | Backend | `56de6f0d27705f95e1b98ec99515074eb8f3f728` plus uncommitted release worktree changes | Package delivery/review code is being repaired; no current public approval is inferred. |
-| Global Dandelion | source snapshot without Git metadata | Native Rust CLI exposes the 37-row parity inventory; exact source commit is not available in this checkout. |
+| Global Dandelion | remote `main` `16e5eeb0ea939b62e228c03fa6c06762435781af` (parity source `aa7f3720c42856f0e1d18742f78fba156227ee79`) | Native Rust CLI exposes the 37-row parity inventory; the local snapshot is not the provenance source. The current spec calls for corrective release `0.2.1`. |
 
 The baseline is evidence for planning only. It is not release or device
 acceptance evidence.
@@ -75,7 +75,8 @@ after the evidence listed in its final column is attached to an exact commit.
 
 - Android/iOS native Rust-core integration and device workflows are not present
   in the observed revisions.
-- The Global Dandelion snapshot lacks Git provenance in this workspace.
+- The original local Global Dandelion snapshot lacks Git provenance; remote main
+  provenance is now recorded above and must be used for release work.
 - Hardware hotspot, removable-device hotplug, production signer, catalog
   approval, physical-device installation and store distribution require external
   accounts/devices or protected Actions configuration.
