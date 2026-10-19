@@ -116,6 +116,11 @@ Record each criterion as:
 
 If the implementation intentionally changed the design or behavior, update the spec/decision record before completion. Never leave intentional behavior undocumented.
 
+##### Independent review contract
+When an independent review is required, the reviewer is read-only for the reviewed source and must inspect the complete declared change scope plus the adjacent callers, consumers, build declarations, and precedents needed to judge integration. Findings must be falsifiable: identify the affected path/symbol, the concrete failure and triggering scenario, severity, and a specific fix. Preference-only wording/naming or speculative cleanup is non-blocking.
+
+A specialized review may be marked not applicable only with scope-specific evidence tied to the changed paths/hunks; uncertainty is applicable, not proof of non-applicability. After accepted fixes, perform a focused re-review of each claimed fix and the edited functions' adjacent callers/consumers. Unsupported findings are dropped rather than promoted into blockers.
+
 #### Stage 6 — Integrate / Deliver
 - Follow the repository's branch, PR, merge, release, migration, and deployment rules applicable to the task.
 - Do not claim completion merely because code was written or pushed.
