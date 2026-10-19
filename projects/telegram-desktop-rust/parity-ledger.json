@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
-  "target_commit": "ae63c2cf09c33c443570ff757f5d73c0beb449b5",
+  "target_commit": "835d24d5923829a89d14b7a6b74431d45607e951",
   "coverage": {
     "source_entries_total": 16192,
-    "unknown": 16188,
-    "unread": 16161,
+    "unknown": 16187,
+    "unread": 16160,
     "omitted": 0,
-    "responsibilities_total": 16,
+    "responsibilities_total": 20,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -4149,6 +4149,863 @@
       "license_and_provenance": "Behavioral review contract was read from telegramdesktop/tdesktop source authority; no upstream prompt text or provider-specific runtime is copied into Fabushi.",
       "reviewer": null,
       "notes": "Fourth previously unread recursive inventory entry. Applicable review independence, complete-scope, concrete-finding, N/A-proof, synthesis and focused re-review responsibilities are implemented by extending existing source-neutral Fabushi quality owners; exact-head verification of this mapping commit remains pending."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_path": ".agents/shared/cross-review/protocol.md",
+      "source_blob_sha": "51dabe142d5c3c7247e4050790c4e74b40f35b27",
+      "source_kind": "tooling",
+      "module_id": "tdesktop.agent-cross-review-protocol",
+      "responsibility_id": "TDRP-R9-CROSS-REVIEW-PROTOCOL-SCOPE-001",
+      "source_symbols": [
+        "Scope",
+        "Round 1: full review",
+        "Later rounds: focused review"
+      ],
+      "capability_ids": [
+        "CAP-INDEPENDENT-FAIL-CLOSED-REVIEW"
+      ],
+      "dependency_ids": [
+        "Spec Compliance Review",
+        "Cross-review semantics",
+        "Independent review evidence"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/cross-review-protocol-complete-read.md",
+      "behavior_contract": "Freeze the declared review scope once, snapshot an immutable scope per round, and use fresh blind independent general/specialist reviewers while persistent arbitration state remains only with the source-neutral runner.",
+      "state_machine": "declare scope/base -> freeze -> immutable round snapshot -> fresh blind reviewers -> synthesis boundary",
+      "side_effects": [
+        "No provider-specific review runtime",
+        "No reviewer mutation of source/index",
+        "All reviewers judge the same frozen declared scope"
+      ],
+      "failure_cases": [
+        "Scope drifts between reviewers or rounds",
+        "Reviewer sees another report/prior arbitration and loses independence",
+        "Persistent provider session becomes canonical review state",
+        "Empty scope is treated as pass instead of terminal no-op"
+      ],
+      "ui_disposition": "Not applicable; repository development/quality tooling only.",
+      "non_ui_responsibilities": [
+        "Frozen scope/base identity",
+        "Immutable per-round snapshots",
+        "Fresh blind reviewer independence",
+        "Source-neutral persistent runner ownership"
+      ],
+      "platform_delta": "Provider-specific runner/reviewer mechanics are not shipped. The applicable frozen-scope, blind-review, arbitration, bounded-reversal, convergence, focused-re-review and durable-ledger guarantees are retained in existing source-neutral Fabushi quality owners.",
+      "existing_owner_candidates": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "existing_owner": "Repository development lifecycle",
+      "rejected_existing_owners": [
+        "Agent/Coordinator/Host/Runner are shipped product runtime owners, not repository code-review governance",
+        "A Telegram/Claude/Codex-specific review runtime would create a provider-specific second quality owner",
+        "A new review service/database is unnecessary because repository/GitHub evidence already owns durable quality state"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md"
+      ],
+      "fabushi_target_symbols": [
+        "Frozen scope and bounded lifecycle"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The source responsibility is development/quality governance rather than shipped product behavior, so it belongs in existing normative repository quality contracts.",
+      "command_event_contracts": [
+        "freeze declared scope -> snapshot round -> launch fresh blind read-only reviewers -> synthesis"
+      ],
+      "state_owner": "Repository quality/review state",
+      "lifecycle_owner": "Existing Fabushi development workflow and independent acceptance",
+      "persistence_and_restart": "Frozen scope identity and round snapshots are durable evidence; provider-local reviewer process memory is non-canonical.",
+      "concurrency_and_cancellation": "Independent reviewers may run in parallel only over the same immutable scope and remain mutually blind; incomplete reviewer set blocks synthesis.",
+      "security_boundary": "Review-only activity cannot mutate source; FBCP/TDRP executable verification remains GitHub-Actions-only; ambiguous scope, undecided findings, unsupported reversals and unreviewed fixes fail closed.",
+      "network_service_dependencies": [
+        "GitHub Actions for executable exact-head evidence"
+      ],
+      "service_owner": "Existing Fabushi quality process / GitHub Actions",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "toolchain-equivalent",
+      "blockers": [
+        "Independent exact-head verification of this mapping commit is pending."
+      ],
+      "production_entrypoints": [
+        "Repository development lifecycle -> Independent review contract -> Frozen scope and bounded lifecycle"
+      ],
+      "production_evidence": [
+        "commit:2034ff3eaa772f66113d56d8c1a279bbcc9e17db",
+        "path:AGENTS.md#Frozen scope and bounded lifecycle"
+      ],
+      "test_evidence": [
+        "workflow:39288436946@01a12364faf0ae33fc0d96d3f145c6ad22395ad1",
+        "workflow:39288436868@01a12364faf0ae33fc0d96d3f145c6ad22395ad1"
+      ],
+      "target_commit": "2034ff3eaa772f66113d56d8c1a279bbcc9e17db",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development/quality process",
+      "composition_slot": "Independent cross-review bounded lifecycle",
+      "capability_component": "Provider-neutral fail-closed review governance",
+      "variation_axes": [
+        "uncommitted/last-N scope",
+        "general/specialist lens",
+        "initial/focused round"
+      ],
+      "shared_owner_contracts": [
+        "AGENTS.md independent review contract",
+        "FBCP Cross-review semantics",
+        "Independent review evidence"
+      ],
+      "duplicate_root_check": "No Telegram/Claude/Codex-specific review runtime or second acceptance system introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Only supported review evidence and terminal verdicts advance integration; ambiguous/incomplete review remains blocked.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to tooling responsibility",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CROSS-REVIEW-PROTOCOL-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CROSS-REVIEW-PROTOCOL-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CROSS-REVIEW-FROZEN-SCOPE-001",
+        "INV-TDRP-CROSS-REVIEW-FIX-REREVIEW-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CROSS-REVIEW-PROTOCOL-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-CROSS-REVIEW-PROTOCOL-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-CROSS-REVIEW-FOCUSED-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CROSS-REVIEW-NONCONVERGENCE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CROSS-REVIEW-READONLY-001"
+      ],
+      "regression_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-CROSS-REVIEW-PROTOCOL-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "exact-head-actions-evidence"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "test_execution_evidence": [
+        "39288436946@01a12364faf0ae33fc0d96d3f145c6ad22395ad1",
+        "39288436868@01a12364faf0ae33fc0d96d3f145c6ad22395ad1"
+      ],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavioral review-governance contract was read from telegramdesktop/tdesktop source authority; no upstream provider-specific orchestration code is copied into Fabushi.",
+      "reviewer": null,
+      "notes": "Fifth previously unread recursive inventory entry. Applicable protocol responsibilities are implemented by extending existing source-neutral repository lifecycle, quality strategy and evidence owners; exact-head verification of this mapping commit remains pending."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_path": ".agents/shared/cross-review/protocol.md",
+      "source_blob_sha": "51dabe142d5c3c7247e4050790c4e74b40f35b27",
+      "source_kind": "tooling",
+      "module_id": "tdesktop.agent-cross-review-protocol",
+      "responsibility_id": "TDRP-R9-CROSS-REVIEW-PROTOCOL-ARBITRATION-001",
+      "source_symbols": [
+        "Arbitration",
+        "Fixing"
+      ],
+      "capability_ids": [
+        "CAP-INDEPENDENT-FAIL-CLOSED-REVIEW"
+      ],
+      "dependency_ids": [
+        "Spec Compliance Review",
+        "Cross-review semantics",
+        "Independent review evidence"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/cross-review-protocol-complete-read.md",
+      "behavior_contract": "The source-neutral runner reads code and synthesis, records a durable decision for every finding before any fix, and classifies it as FIX, REJECT, DEFER or COMPROMISE with rationale; NON_BLOCKING cannot trigger a fix round alone.",
+      "state_machine": "synthesized finding -> runner code check -> durable FIX|REJECT|DEFER|COMPROMISE -> optional fix",
+      "side_effects": [
+        "Every finding receives an explicit durable disposition",
+        "Only FIX changes the reviewed code",
+        "NON_BLOCKING is retained without independently starting a fix round"
+      ],
+      "failure_cases": [
+        "Fix applied before decision is recorded",
+        "Finding silently dropped without synthesis/arbitration",
+        "REJECT/DEFER/COMPROMISE lacks rationale",
+        "NON_BLOCKING alone triggers churn"
+      ],
+      "ui_disposition": "Not applicable; repository development/quality tooling only.",
+      "non_ui_responsibilities": [
+        "Runner arbitration",
+        "FIX/REJECT/DEFER/COMPROMISE semantics",
+        "NON_BLOCKING behavior",
+        "Decision-before-fix ordering"
+      ],
+      "platform_delta": "Provider-specific runner/reviewer mechanics are not shipped. The applicable frozen-scope, blind-review, arbitration, bounded-reversal, convergence, focused-re-review and durable-ledger guarantees are retained in existing source-neutral Fabushi quality owners.",
+      "existing_owner_candidates": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "existing_owner": "Fabushi quality test strategy",
+      "rejected_existing_owners": [
+        "Agent/Coordinator/Host/Runner are shipped product runtime owners, not repository code-review governance",
+        "A Telegram/Claude/Codex-specific review runtime would create a provider-specific second quality owner",
+        "A new review service/database is unnecessary because repository/GitHub evidence already owns durable quality state"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md"
+      ],
+      "fabushi_target_symbols": [
+        "Arbitration semantics"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The source responsibility is development/quality governance rather than shipped product behavior, so it belongs in existing normative repository quality contracts.",
+      "command_event_contracts": [
+        "synthesis -> runner arbitration -> durable decision -> apply only FIX -> repository checks"
+      ],
+      "state_owner": "Repository quality/review state",
+      "lifecycle_owner": "Existing Fabushi development workflow and independent acceptance",
+      "persistence_and_restart": "Arbitration decisions survive reviewer/process restart through durable review evidence.",
+      "concurrency_and_cancellation": "Parallel reviewer reports converge through one synthesis and one runner arbitration owner; conflicting writes to review truth are prohibited.",
+      "security_boundary": "Review-only activity cannot mutate source; FBCP/TDRP executable verification remains GitHub-Actions-only; ambiguous scope, undecided findings, unsupported reversals and unreviewed fixes fail closed.",
+      "network_service_dependencies": [
+        "GitHub Actions for executable exact-head evidence"
+      ],
+      "service_owner": "Existing Fabushi quality process / GitHub Actions",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "toolchain-equivalent",
+      "blockers": [
+        "Independent exact-head verification of this mapping commit is pending."
+      ],
+      "production_entrypoints": [
+        "Quality strategy -> Cross-review semantics -> Arbitration semantics"
+      ],
+      "production_evidence": [
+        "commit:9151124aee8139564b5c39838176bb238bf0117f",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Arbitration semantics"
+      ],
+      "test_evidence": [
+        "workflow:39288436946@01a12364faf0ae33fc0d96d3f145c6ad22395ad1",
+        "workflow:39288436868@01a12364faf0ae33fc0d96d3f145c6ad22395ad1"
+      ],
+      "target_commit": "9151124aee8139564b5c39838176bb238bf0117f",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development/quality process",
+      "composition_slot": "Independent cross-review bounded lifecycle",
+      "capability_component": "Provider-neutral fail-closed review governance",
+      "variation_axes": [
+        "FIX/REJECT/DEFER/COMPROMISE",
+        "blocking/non-blocking",
+        "general/specialist origin"
+      ],
+      "shared_owner_contracts": [
+        "AGENTS.md independent review contract",
+        "FBCP Cross-review semantics",
+        "Independent review evidence"
+      ],
+      "duplicate_root_check": "No Telegram/Claude/Codex-specific review runtime or second acceptance system introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Only supported review evidence and terminal verdicts advance integration; ambiguous/incomplete review remains blocked.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to tooling responsibility",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CROSS-REVIEW-PROTOCOL-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CROSS-REVIEW-PROTOCOL-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CROSS-REVIEW-FROZEN-SCOPE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CROSS-REVIEW-PROTOCOL-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-CROSS-REVIEW-PROTOCOL-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-CROSS-REVIEW-FOCUSED-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CROSS-REVIEW-NONCONVERGENCE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CROSS-REVIEW-READONLY-001"
+      ],
+      "regression_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-CROSS-REVIEW-PROTOCOL-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "exact-head-actions-evidence"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "test_execution_evidence": [
+        "39288436946@01a12364faf0ae33fc0d96d3f145c6ad22395ad1",
+        "39288436868@01a12364faf0ae33fc0d96d3f145c6ad22395ad1"
+      ],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavioral review-governance contract was read from telegramdesktop/tdesktop source authority; no upstream provider-specific orchestration code is copied into Fabushi.",
+      "reviewer": null,
+      "notes": "Fifth previously unread recursive inventory entry. Applicable protocol responsibilities are implemented by extending existing source-neutral repository lifecycle, quality strategy and evidence owners; exact-head verification of this mapping commit remains pending."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_path": ".agents/shared/cross-review/protocol.md",
+      "source_blob_sha": "51dabe142d5c3c7247e4050790c4e74b40f35b27",
+      "source_kind": "tooling",
+      "module_id": "tdesktop.agent-cross-review-protocol",
+      "responsibility_id": "TDRP-R9-CROSS-REVIEW-PROTOCOL-CONVERGENCE-001",
+      "source_symbols": [
+        "Arbitration",
+        "Later rounds: focused review",
+        "Stopping"
+      ],
+      "capability_ids": [
+        "CAP-INDEPENDENT-FAIL-CLOSED-REVIEW"
+      ],
+      "dependency_ids": [
+        "Spec Compliance Review",
+        "Cross-review semantics",
+        "Independent review evidence"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/cross-review-protocol-complete-read.md",
+      "behavior_contract": "After accepted fixes, fresh focused re-review confirms each fix and touched callers against the complete frozen scope. Reversals may supersede a decision once only; a second attempted flip requires human decision. The loop stops only on convergence, round cap, non-convergence/scope explosion, or required human choice.",
+      "state_machine": "FIX -> fresh focused re-review -> reversal check -> at most one supersession -> converge | cap | non-converging | human-decision-needed",
+      "side_effects": [
+        "Accepted fixes are independently re-reviewed",
+        "Repeated design flip-flop is bounded",
+        "Real defects in changed code cannot be left open to save a round"
+      ],
+      "failure_cases": [
+        "FIX is accepted without focused re-review",
+        "Rejected/deferred/compromise decisions are leaked to fresh reviewers and bias them",
+        "Decision flips more than once automatically",
+        "Round cap is used to ignore a real open defect",
+        "Fix grows uncontrolled into another subsystem"
+      ],
+      "ui_disposition": "Not applicable; repository development/quality tooling only.",
+      "non_ui_responsibilities": [
+        "Focused fix re-review",
+        "Reversal detection",
+        "Bounded supersession",
+        "Round-cap/non-convergence/human-decision stopping"
+      ],
+      "platform_delta": "Provider-specific runner/reviewer mechanics are not shipped. The applicable frozen-scope, blind-review, arbitration, bounded-reversal, convergence, focused-re-review and durable-ledger guarantees are retained in existing source-neutral Fabushi quality owners.",
+      "existing_owner_candidates": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "existing_owner": "Fabushi quality test strategy",
+      "rejected_existing_owners": [
+        "Agent/Coordinator/Host/Runner are shipped product runtime owners, not repository code-review governance",
+        "A Telegram/Claude/Codex-specific review runtime would create a provider-specific second quality owner",
+        "A new review service/database is unnecessary because repository/GitHub evidence already owns durable quality state"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md"
+      ],
+      "fabushi_target_symbols": [
+        "Focused re-review and stopping"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The source responsibility is development/quality governance rather than shipped product behavior, so it belongs in existing normative repository quality contracts.",
+      "command_event_contracts": [
+        "accepted FIX -> fresh focused review -> synthesize -> arbitrate -> stop or next round"
+      ],
+      "state_owner": "Repository quality/review state",
+      "lifecycle_owner": "Existing Fabushi development workflow and independent acceptance",
+      "persistence_and_restart": "Prior decisions and supersession count remain durable while fresh reviewers stay blind to rejected/deferred/compromise rationale.",
+      "concurrency_and_cancellation": "Only lenses that originated fixed findings are rerun alongside focused general review; incomplete focused confirmation blocks convergence.",
+      "security_boundary": "Review-only activity cannot mutate source; FBCP/TDRP executable verification remains GitHub-Actions-only; ambiguous scope, undecided findings, unsupported reversals and unreviewed fixes fail closed.",
+      "network_service_dependencies": [
+        "GitHub Actions for executable exact-head evidence"
+      ],
+      "service_owner": "Existing Fabushi quality process / GitHub Actions",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "toolchain-equivalent",
+      "blockers": [
+        "Independent exact-head verification of this mapping commit is pending."
+      ],
+      "production_entrypoints": [
+        "Quality strategy -> Cross-review semantics -> Focused re-review and stopping"
+      ],
+      "production_evidence": [
+        "commit:de59187bea1a933ea791a1037925cf3f4b7e5428",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Focused re-review and stopping"
+      ],
+      "test_evidence": [
+        "workflow:39288436946@01a12364faf0ae33fc0d96d3f145c6ad22395ad1",
+        "workflow:39288436868@01a12364faf0ae33fc0d96d3f145c6ad22395ad1"
+      ],
+      "target_commit": "de59187bea1a933ea791a1037925cf3f4b7e5428",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development/quality process",
+      "composition_slot": "Independent cross-review bounded lifecycle",
+      "capability_component": "Provider-neutral fail-closed review governance",
+      "variation_axes": [
+        "first/later round",
+        "new finding/reversal",
+        "converged/cap/non-converging/human decision"
+      ],
+      "shared_owner_contracts": [
+        "AGENTS.md independent review contract",
+        "FBCP Cross-review semantics",
+        "Independent review evidence"
+      ],
+      "duplicate_root_check": "No Telegram/Claude/Codex-specific review runtime or second acceptance system introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Only supported review evidence and terminal verdicts advance integration; ambiguous/incomplete review remains blocked.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to tooling responsibility",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CROSS-REVIEW-PROTOCOL-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CROSS-REVIEW-PROTOCOL-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CROSS-REVIEW-BOUNDED-REVERSAL-001",
+        "INV-TDRP-CROSS-REVIEW-FIX-REREVIEW-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CROSS-REVIEW-PROTOCOL-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-CROSS-REVIEW-PROTOCOL-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-CROSS-REVIEW-FOCUSED-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CROSS-REVIEW-NONCONVERGENCE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CROSS-REVIEW-READONLY-001"
+      ],
+      "regression_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-CROSS-REVIEW-PROTOCOL-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "exact-head-actions-evidence"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "test_execution_evidence": [
+        "39288436946@01a12364faf0ae33fc0d96d3f145c6ad22395ad1",
+        "39288436868@01a12364faf0ae33fc0d96d3f145c6ad22395ad1"
+      ],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavioral review-governance contract was read from telegramdesktop/tdesktop source authority; no upstream provider-specific orchestration code is copied into Fabushi.",
+      "reviewer": null,
+      "notes": "Fifth previously unread recursive inventory entry. Applicable protocol responsibilities are implemented by extending existing source-neutral repository lifecycle, quality strategy and evidence owners; exact-head verification of this mapping commit remains pending."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_path": ".agents/shared/cross-review/protocol.md",
+      "source_blob_sha": "51dabe142d5c3c7247e4050790c4e74b40f35b27",
+      "source_kind": "tooling",
+      "module_id": "tdesktop.agent-cross-review-protocol",
+      "responsibility_id": "TDRP-R9-CROSS-REVIEW-PROTOCOL-EVIDENCE-001",
+      "source_symbols": [
+        "Scope",
+        "Arbitration",
+        "Stopping",
+        "Ledger",
+        "Report"
+      ],
+      "capability_ids": [
+        "CAP-INDEPENDENT-FAIL-CLOSED-REVIEW"
+      ],
+      "dependency_ids": [
+        "Spec Compliance Review",
+        "Cross-review semantics",
+        "Independent review evidence"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/cross-review-protocol-complete-read.md",
+      "behavior_contract": "Persist frozen scope and immutable snapshot identity, raw reviewer/synthesis reports, per-finding arbitration and supersession chain, round statistics, focused-fix confirmation, configured cap/override, terminal stop reason and final open-item report.",
+      "state_machine": "session init -> round evidence -> synthesis -> ledger decision -> optional supersession/fix confirmation -> terminal stop report",
+      "side_effects": [
+        "Review decisions remain auditable across restarts",
+        "Both old and superseding rationales are preserved",
+        "Terminal acceptance can prove why the loop stopped"
+      ],
+      "failure_cases": [
+        "Missing base/snapshot identity",
+        "Missing raw report or synthesis provenance",
+        "Decision lacks rationale/change/supersedes metadata",
+        "Round counts or stop reason missing",
+        "Second reversal proceeds without human-decision-needed record"
+      ],
+      "ui_disposition": "Not applicable; repository development/quality tooling only.",
+      "non_ui_responsibilities": [
+        "Durable review ledger",
+        "Scope/snapshot/report provenance",
+        "Decision/supersession history",
+        "Round statistics and terminal stop evidence"
+      ],
+      "platform_delta": "Provider-specific runner/reviewer mechanics are not shipped. The applicable frozen-scope, blind-review, arbitration, bounded-reversal, convergence, focused-re-review and durable-ledger guarantees are retained in existing source-neutral Fabushi quality owners.",
+      "existing_owner_candidates": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "existing_owner": "Fabushi test evidence contract",
+      "rejected_existing_owners": [
+        "Agent/Coordinator/Host/Runner are shipped product runtime owners, not repository code-review governance",
+        "A Telegram/Claude/Codex-specific review runtime would create a provider-specific second quality owner",
+        "A new review service/database is unnecessary because repository/GitHub evidence already owns durable quality state"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Durable review ledger evidence"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The source responsibility is development/quality governance rather than shipped product behavior, so it belongs in existing normative repository quality contracts.",
+      "command_event_contracts": [
+        "round snapshot/reports -> synthesis -> decision ledger -> focused confirmation -> terminal report"
+      ],
+      "state_owner": "Repository quality/review state",
+      "lifecycle_owner": "Existing Fabushi development workflow and independent acceptance",
+      "persistence_and_restart": "Repository/GitHub evidence is canonical and survives runner/reviewer restart; local provider session memory is not accepted as the sole record.",
+      "concurrency_and_cancellation": "Parallel reviewers may emit independent raw reports; the ledger serializes synthesized decisions and supersession history.",
+      "security_boundary": "Review-only activity cannot mutate source; FBCP/TDRP executable verification remains GitHub-Actions-only; ambiguous scope, undecided findings, unsupported reversals and unreviewed fixes fail closed.",
+      "network_service_dependencies": [
+        "GitHub Actions for executable exact-head evidence"
+      ],
+      "service_owner": "Existing Fabushi quality process / GitHub Actions",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "toolchain-equivalent",
+      "blockers": [
+        "Independent exact-head verification of this mapping commit is pending."
+      ],
+      "production_entrypoints": [
+        "Evidence contract -> Independent review evidence -> Durable review ledger evidence"
+      ],
+      "production_evidence": [
+        "commit:f82e924decc9399ad37cbb9eab2c84f5ef0567f3",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Durable review ledger evidence"
+      ],
+      "test_evidence": [
+        "workflow:39288436946@01a12364faf0ae33fc0d96d3f145c6ad22395ad1",
+        "workflow:39288436868@01a12364faf0ae33fc0d96d3f145c6ad22395ad1"
+      ],
+      "target_commit": "f82e924decc9399ad37cbb9eab2c84f5ef0567f3",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development/quality process",
+      "composition_slot": "Independent cross-review bounded lifecycle",
+      "capability_component": "Provider-neutral fail-closed review governance",
+      "variation_axes": [
+        "round number",
+        "reviewer/lens",
+        "decision kind",
+        "superseded/not superseded",
+        "terminal stop reason"
+      ],
+      "shared_owner_contracts": [
+        "AGENTS.md independent review contract",
+        "FBCP Cross-review semantics",
+        "Independent review evidence"
+      ],
+      "duplicate_root_check": "No Telegram/Claude/Codex-specific review runtime or second acceptance system introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Only supported review evidence and terminal verdicts advance integration; ambiguous/incomplete review remains blocked.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to tooling responsibility",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CROSS-REVIEW-PROTOCOL-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CROSS-REVIEW-PROTOCOL-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CROSS-REVIEW-FROZEN-SCOPE-001",
+        "INV-TDRP-CROSS-REVIEW-BOUNDED-REVERSAL-001",
+        "INV-TDRP-CROSS-REVIEW-FIX-REREVIEW-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CROSS-REVIEW-PROTOCOL-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-CROSS-REVIEW-PROTOCOL-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-CROSS-REVIEW-FOCUSED-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CROSS-REVIEW-NONCONVERGENCE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CROSS-REVIEW-READONLY-001"
+      ],
+      "regression_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-CROSS-REVIEW-PROTOCOL-001"
+      ],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "exact-head-actions-evidence"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "test_execution_evidence": [
+        "39288436946@01a12364faf0ae33fc0d96d3f145c6ad22395ad1",
+        "39288436868@01a12364faf0ae33fc0d96d3f145c6ad22395ad1"
+      ],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavioral review-governance contract was read from telegramdesktop/tdesktop source authority; no upstream provider-specific orchestration code is copied into Fabushi.",
+      "reviewer": null,
+      "notes": "Fifth previously unread recursive inventory entry. Applicable protocol responsibilities are implemented by extending existing source-neutral repository lifecycle, quality strategy and evidence owners; exact-head verification of this mapping commit remains pending."
     }
   ]
 }
