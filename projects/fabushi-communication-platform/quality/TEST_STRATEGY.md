@@ -65,6 +65,16 @@ Repository AI review/test phases use the source-neutral worker-effort contract i
 
 On Codex review providers, reuse, structure and performance lenses run on `gpt-6.1-sol` at the selected effort. If unavailable they fall back to the configured model and record the fallback. General review/synthesis, lifetime/security lenses and other phases retain the configured model unless another source-neutral host policy explicitly overrides it. Host adapters that cannot set effort/model inherit the actual session configuration and record that limitation rather than approximating it through prompt text.
 
+### AI worker lifecycle qualification
+
+Any repository adapter that launches an external AI worker/reviewer is qualified as a durable lifecycle state machine rather than by observing only the launcher/runner process. A terminal success requires a completed worker turn plus a fresh non-empty final response bound to the same durable run identity; unreadable transcripts, missing completion, stale/empty finals, unresolved ownership, or ambiguous state remain non-passing. Transient pre-completion events and partial trailing records may be tolerated only when the later authoritative completion/final evidence is intact.
+
+State publication and replacement are fail-closed. State/terminal records are atomically replaced under an owned lock or equivalent primitive, bounded sharing-violation retries do not overwrite the prior valid state, unchanged updates do not manufacture new evidence, and terminal states are not rewritten by later polling. A lost launcher/runner is not itself worker failure: while the worker, its owned process group/job, or its transcript writer is directly observed alive, the lifecycle remains running; probe errors remain unresolved. Once the owned worker is gone, outcome recovery is reconstructed from the durable transcript/final response rather than inferred from the runner exit.
+
+Stop, timeout, recovery and replacement act only on the exact owned process group/job/session. Reused PIDs, unrelated groups/jobs, and plain readers are negative controls and must survive. An ownership/probe failure never authorizes a kill or replacement. Resume requires a completed source with a stable worker/thread identity and is refused while that source remains active. Replacement is allowed only after the prior leaf is proven inactive; its state, transcript, final response, stderr and runner diagnostics are archived as one coherent generation, with an all-or-none rollback contract on archive failure.
+
+Qualification must cover normal completion; worker/turn failure; missing, stale and empty finals; startup failure; time limit; stop; runner loss before and after worker claim; resume; concurrent waits; state-lock/state-write failures; replacement/archive failure; untracked live writers; reused process identities; and applicable POSIX process-group plus Windows job-object/file-sharing behavior. These are source-neutral repository workflow responsibilities: the qualification does not require copying an upstream Codex helper and does not create a shipping Agent/Coordinator/Host/Runner owner.
+
 ## Independence and environment
 
 Implementer 可写 tests，但 release reviewer 必须独立复核。FBCP/TDRP 所有 executable verification 只在 GitHub Actions；fixture/locale/theme/viewport/network/fault/account identity 必须进入 manifest。
