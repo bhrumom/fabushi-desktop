@@ -3,7 +3,7 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_repository": "telegramdesktop/tdesktop",
-  "upstream_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+  "upstream_commit": "fab79561cf8030eade9d0098bc438346b8c39261",
   "discovery": {
     "evidence_run_id": 38547900810,
     "evidence_head_sha": "9a3e22f5ab8e3522bb27ff682f29703870e2f802",
@@ -13,7 +13,7 @@
     "candidate_lines_total": 331,
     "immutable_commit_pin_occurrences_classified": 19,
     "candidate_lines_pending_classification": 0,
-    "note": "Current upstream 1e18da644e37856c9b1d87434bfcd6a2e3d11c57 is 5 commits / 63 paths ahead of 0a11537c220df35fe59a96aebe413b1e52bc6e47. snap/snapcraft.yaml adds the non-acquisition permission line login-session-observe before all acquisition candidates; every Snap candidate line anchor is therefore shifted by +1 while immutable acquisition pins and classified cardinality remain 331/19/0. No direct gitlink pin changed.",
+    "note": "Live upstream fab79561cf8030eade9d0098bc438346b8c39261 is 7 commits / 8 root paths ahead of 1e18da644e37856c9b1d87434bfcd6a2e3d11c57. Those paths do not alter Telegram/build, Telegram/cmake, cmake, snap, tools, or .github acquisition candidates; classified cardinality and immutable pins therefore remain 331/19/0. Telegram/lib_base and Telegram/lib_ui pins advance separately under recursive source authority, with lib_base adding two tracked recursive files.",
     "candidate_lines_classified": 331,
     "disposition_closure_status": "complete",
     "recursive_authority_closure_status": "open",
@@ -1131,7 +1131,7 @@
   ],
   "recursive_build_reachability": {
     "status": "partial-audited-disposition-open",
-    "accepted_upstream_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+    "accepted_upstream_commit": "fab79561cf8030eade9d0098bc438346b8c39261",
     "rule": "A recursively discovered repository is source/build authority only when an accepted TDesktop build path actually initializes, downloads, generates, patches, or consumes it. Presence as an unselected superproject gitlink is not sufficient.",
     "qt_superproject": {
       "repository": "https://github.com/qt/qt5",
