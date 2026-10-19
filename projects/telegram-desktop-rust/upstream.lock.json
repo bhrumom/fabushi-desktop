@@ -258,10 +258,10 @@
   "coverage": {
     "root_source_entries_total": 6709,
     "recursive_source_entries_total": 16192,
-    "unknown_minimum": 16188,
-    "unread_minimum": 16161,
+    "unknown_minimum": 16187,
+    "unread_minimum": 16160,
     "omitted_known": 0,
-    "note": "Revision 9 rebaseline remains in progress for telegramdesktop/tdesktop@1e18da644e37856c9b1d87434bfcd6a2e3d11c57 (tree 30c1d5cce4c1bde962882c1f2ca4b2e51bb03ae6). Recursive authority is 16,192. The first four recursive entries are now closed through .agents/shared/cross-review/prompts.md; current fail-closed counters are unknown=16,188, unread=16,161, omitted=0. Source closure, baseline_ready and acceptance.accepted remain false."
+    "note": "Revision 9 rebaseline remains in progress for telegramdesktop/tdesktop@1e18da644e37856c9b1d87434bfcd6a2e3d11c57 (tree 30c1d5cce4c1bde962882c1f2ca4b2e51bb03ae6). Recursive authority is 16,192. The first five recursive entries are now closed through .agents/shared/cross-review/protocol.md; current fail-closed counters are unknown=16,187, unread=16,160, omitted=0. Source closure, baseline_ready and acceptance.accepted remain false."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -275,7 +275,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Rebaseline identity for telegramdesktop/tdesktop@1e18da644e37856c9b1d87434bfcd6a2e3d11c57 remains pending current-head GitHub Actions. Full Revision 9 source closure remains open with unknown=16,189, unread=16,162, omitted=0; baseline_ready and acceptance.accepted remain false."
+    "note": "Rebaseline identity for telegramdesktop/tdesktop@1e18da644e37856c9b1d87434bfcd6a2e3d11c57 remains pending current-head GitHub Actions. Full Revision 9 source closure remains open with unknown=16,187, unread=16,160, omitted=0; baseline_ready and acceptance.accepted remain false."
   },
   "baseline_identity_evidence": {
     "status": "pending-current-head-revalidation",
