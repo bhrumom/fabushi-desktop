@@ -116,6 +116,25 @@ Durable shared-context changes are narrow, optional, and fail-closed. Propose on
 - Verify the exact source revision being accepted.
 - Check relevant regression, architecture, security, performance, power, migration, and compatibility requirements when the spec makes them applicable.
 
+##### Adaptive verification and evidence recovery
+
+Verification is an evidence state machine, not a rerun-until-green loop. Design checks from the current requirement, risk, oracle/invariants, and final changed surface before execution. Select the most direct practical instrument per claim; no expensive instrument is globally mandatory merely because another check uses it.
+
+A verification run is one related execution set with an immutable run identity. Preserve exact command or action, working directory, relevant environment additions, exit/outcome, complete log or durable artifact pointers, declared oracle/control, and the evidence needed to falsify the claim. Passing checks carry forward across recovery unless a code, fixture, oracle, environment, or dependency change invalidates them; rerun only failed or invalidated checks.
+
+Classify outcomes causally and fail closed:
+
+- `APPROVED`: every selected applicable check has direct positive evidence against its oracle.
+- `TEST_FLAW`: the command, environment, fixture, probe, oracle, capture, or evidence path cannot decide the claim. Keep the implementation and repair the check or move to a more direct instrument.
+- `IMPL_BUG`: a sound check proves the implementation is wrong. Repair the implementation, perform the required focused review, preserve still-valid approvals, and rerun only invalidated checks.
+- `BLOCKED/UNRECOVERABLE`: use only after an independent directness assessment establishes that a required subject or capability cannot be reached safely with the available environment. A run cap, elapsed time, repeated signature, timeout, flake, blank capture, or missing ambiguous evidence is not approval and does not become a blocker by itself.
+
+A repeated failure signature must trigger a fresh recovery assessment that records the prior positive proof, failed assumption, forbidden repeated technique, next direct instrument, and why it is at least as causal. The default managed campaign budget is one normal campaign plus at most one focused recovery campaign; the focused campaign runs only unmet checks and controls. At that cap, perform an independent exhaustion assessment rather than starting a third campaign or silently weakening coverage. Unresolved nondeterminism remains non-passing, and critical gates treat it as block/fail.
+
+Timeout, cancellation, crash, wait-error, and cleanup paths must preserve ownership boundaries. Stop or clean only the exact owned process/session/build artifact set; never use broad process-name cleanup as evidence recovery. A recoverable build-output lock preserves the failing log, scopes recovery to the exact build root and named artifacts/verified holders, retries only when ownership is proven safe, and uses a bounded recovery budget (default at most three lock-recovery rounds where that mechanism applies). Recovery bookkeeping does not erase prior attempts or consume an implementation attempt merely because infrastructure cleanup was required.
+
+The durable implementation-fix handoff must identify the failing check, classification, failure signature, root cause when known, retained positive evidence, invalidated evidence, and concrete fix/recovery hint. Historical attempts/runs are appended rather than overwritten.
+
 #### Stage 5 — Spec Compliance Review
 Before declaring completion, compare the final implementation against **every applicable requirement and acceptance criterion**.
 

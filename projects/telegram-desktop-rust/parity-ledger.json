@@ -6,10 +6,10 @@
   "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16189,
-    "unread": 16162,
+    "unknown": 16188,
+    "unread": 16161,
     "omitted": 0,
-    "responsibilities_total": 35,
+    "responsibilities_total": 36,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -8372,6 +8372,269 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral workflow/context-governance contract read from telegramdesktop/tdesktop authority; no upstream implementation copied into Fabushi shipping runtime.",
       "notes": "Thirteenth previously unread recursive source entry at live dev 351204f3695b4a39bc3f4d2f230c061b9a01fe2a. Recursive inventory remains 16,202; after this source-entry closure unknown=16,189, unread=16,162, omitted=0. Baseline acceptance and full source closure remain false.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
+      "source_path": ".agents/shared/test-loop.md",
+      "source_blob_sha": "83c4732bf6139f7c6557f18dd87bb35c3d68808d",
+      "source_kind": "workflow_test_evidence_governance_documentation",
+      "module_id": "tdesktop.adaptive-test-loop-governance",
+      "responsibility_id": "TDRP-R9-ADAPTIVE-TEST-LOOP-GOVERNANCE-001",
+      "source_symbols": [
+        "Inputs",
+        "State machine",
+        "Evidence instruments",
+        "Recovery and convergence",
+        "Assessment",
+        "Handoff and commit boundaries",
+        "Test account (portable data) — hard rules",
+        "Design evidence from this task",
+        "Telegram overlay mechanics",
+        "Telegram build & run discipline",
+        "Crashes & assertions",
+        "Hangs & freezes",
+        "Telegram runtime assessment",
+        "Test report"
+      ],
+      "capability_ids": [
+        "CAP-TEST-EVIDENCE-GOVERNANCE",
+        "CAP-TEST-RECOVERY-GOVERNANCE",
+        "CAP-BUILD-RECOVERY-SAFETY"
+      ],
+      "dependency_ids": [
+        "Fabushi repository AI development lifecycle",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/test-loop-complete-read.md",
+      "behavior_contract": "Derive deterministic evidence checks from the current requirement, risk, oracle/invariants and final changed surface; execute related checks under unique run identities with exact command/environment/log evidence; causally classify APPROVED, TEST_FLAW, IMPL_BUG or blocked/unrecoverable; carry still-valid passes forward, rerun only invalidated/unmet checks, use at most one focused recovery campaign after the normal campaign, and preserve exact process/build ownership and bounded recovery before any hard stop.",
+      "state_machine": "requirement + final diff/proposition -> evidence design with direct instrument/oracle/control/falsifier -> run related selected checks -> causal assessment -> APPROVED or TEST_FLAW recovery or IMPL_BUG fix/focused review or independently-proved hard stop -> preserve prior passes -> rerun only invalidated/unmet checks -> bounded focused recovery/exhaustion assessment",
+      "side_effects": [
+        "Repository quality/evidence governance only; no new shipping runtime."
+      ],
+      "failure_cases": [
+        "Pass inferred without direct positive evidence against a declared oracle",
+        "Missing or ambiguous evidence promoted to PASS",
+        "Same flaky command or capture technique rerun until green without a changed directness strategy",
+        "Passing evidence discarded instead of explicitly carried forward or invalidated",
+        "Normal campaign cap, elapsed time, timeout, blank capture or repeated signature promoted to approval or artificial blocker",
+        "Sound implementation failure misclassified as fixture/test flaw, or harness reachability failure misclassified as product defect",
+        "Broad process-name cleanup or unverified process termination used for recovery",
+        "Build lock recovery deletes outside the exact owned build root or retries while named artifacts/verified holders remain",
+        "Telegram-specific portable-account/overlay mechanics copied into a parallel Fabushi test/runtime owner"
+      ],
+      "ui_disposition": "Not applicable; repository test/evidence workflow governance only.",
+      "non_ui_responsibilities": [
+        "Task-derived deterministic evidence selection",
+        "Direct instrument, oracle, control/negative and falsifier design",
+        "Unique run identity and exact command/environment/log retention",
+        "APPROVED/TEST_FLAW/IMPL_BUG/blocked causal assessment",
+        "Pass carry-forward and explicit invalidation",
+        "Rerun only failed or invalidated checks",
+        "Repeated-signature directness escalation",
+        "Normal plus one focused recovery campaign bound",
+        "Independent recovery-exhaustion assessment",
+        "Flake, timeout, cancellation, crash and hang causal classification",
+        "Exact process/session/build-artifact ownership for cleanup",
+        "Bounded build-lock recovery and safe-to-retry proof",
+        "Append-only attempt/run evidence history",
+        "Implementation-fix handoff with failing check/root cause/evidence/fix hint",
+        "Telegram-specific runtime instrumentation kept outside Fabushi product ownership"
+      ],
+      "platform_delta": "Fabushi absorbs the source-neutral verification/evidence state machine and recovery-safety contracts into existing repository quality governance. Telegram portable account, overlay, Debug runner, Crashpad and OS-specific harness mechanics remain upstream instrumentation details rather than a Fabushi runtime/test owner.",
+      "existing_owner_candidates": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "existing_owner": "Fabushi repository AI lifecycle / Test Strategy / Test Evidence Contract",
+      "rejected_existing_owners": [
+        "Shipping Host/Coordinator/Runner do not own repository development evidence-loop policy",
+        "A Telegram-specific test runtime owner would duplicate source-neutral quality/evidence ownership",
+        "Telegram portable account, overlay and Debug harness helpers are source-specific instrumentation rather than a Fabushi product owner"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Adaptive verification and evidence recovery",
+        "Adaptive evidence loop and bounded recovery",
+        "Adaptive test-loop evidence and recovery history"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "This source entry defines normative repository verification/evidence workflow and recovery policy, not shipping product runtime.",
+      "command_event_contracts": [
+        "requirement/risk/final diff -> direct check design -> related run -> causal assessment -> carry pass or recover",
+        "TEST_FLAW -> preserve implementation -> record failed assumption/forbidden technique -> choose more direct instrument -> rerun unmet checks",
+        "IMPL_BUG -> repair implementation -> focused review -> invalidate affected evidence -> rerun invalidated checks",
+        "build lock -> preserve failing log -> exact owned artifact/holder recovery -> safe retry within bounded budget or hard stop"
+      ],
+      "state_owner": "Existing Fabushi repository quality/evidence governance",
+      "lifecycle_owner": "Existing repository development lifecycle and GitHub Actions evidence production/review",
+      "persistence_and_restart": "Attempt/run history is append-only; still-valid passing evidence survives recovery and session loss until a concrete implementation, fixture, oracle, environment or dependency change invalidates it.",
+      "concurrency_and_cancellation": "Timeout/cancellation/wait-error cleanup is restricted to exact owned process/session/build-artifact boundaries; recovery preserves prior evidence and records ownership/cleanup outcome before retry.",
+      "security_boundary": "Recovery must not terminate unrelated processes or delete outside the exact owned build root. Telegram account secrets and portable-data mechanics are not copied into Fabushi evidence owners.",
+      "network_service_dependencies": [
+        "GitHub Actions hosted runners",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi quality/release workflow / GitHub Actions",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "Independent exact-head GitHub Actions verification of this source-entry mapping commit is pending."
+      ],
+      "production_entrypoints": [
+        "AGENTS.md -> Adaptive verification and evidence recovery",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Adaptive evidence loop and bounded recovery",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Adaptive test-loop evidence and recovery history"
+      ],
+      "production_evidence": [
+        "path:AGENTS.md#Adaptive verification and evidence recovery",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Adaptive evidence loop and bounded recovery",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Adaptive test-loop evidence and recovery history"
+      ],
+      "test_evidence": [
+        "dossier:projects/telegram-desktop-rust/dossiers/test-loop-complete-read.md",
+        "upstream-test-loop:.agents/shared/test-loop.md@83c4732bf6139f7c6557f18dd87bb35c3d68808d",
+        "upstream-perform-task:.agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c",
+        "upstream-pipeline:.agents/skills/perform-task/references/pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7",
+        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba",
+        "upstream-continue:.agents/skills/continue/SKILL.md@aeb81dd57018abbc8f03ea3dbd34f91952128db5",
+        "upstream-build-lock:.agents/shared/build-lock-recovery.md@ec75573e7efe74e9c9a344f3e66f2fc43ac7680f",
+        "upstream-workspace:.agents/skills/process-inbox/scripts/workspace.py@e1fdabbac9ccd635962b7b6dc1a62357fc5b931c"
+      ],
+      "target_commit": "ecfaa45dcbf340f94cbd12231d1896ac15109389",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development and quality governance",
+      "composition_slot": "Adaptive verification, evidence assessment and recovery",
+      "capability_component": "Source-neutral adaptive test/evidence loop",
+      "variation_axes": [
+        "static/artifact vs command vs unit/component vs runtime/visual instrument",
+        "normal campaign vs focused recovery",
+        "APPROVED vs TEST_FLAW vs IMPL_BUG vs independently-proved blocked state",
+        "stable pass carry-forward vs explicit invalidation",
+        "timeout vs cancellation vs crash vs hang causal classification",
+        "clean build vs exact build-lock recovery"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi repository AI development lifecycle",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract"
+      ],
+      "duplicate_root_check": "No Telegram-specific Fabushi test owner, test runtime, account owner or shipping runtime introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Validated passing evidence remains usable across recovery/session loss until an explicit causal invalidation is recorded; historical attempts remain append-only and cannot be rewritten into a pass.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to workflow governance",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-ADAPTIVE-TEST-LOOP-GOVERNANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-ADAPTIVE-TEST-LOOP-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-EVIDENCE-DIRECT-001",
+        "INV-TDRP-PASS-CARRY-FORWARD-001",
+        "INV-TDRP-RECOVERY-BOUNDED-001",
+        "INV-TDRP-FAILURE-CAUSAL-001",
+        "INV-TDRP-BUILD-LOCK-OWNERSHIP-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-ADAPTIVE-TEST-LOOP-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-WORKFLOW-EVIDENCE-RECOVERY-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-TEST-FLAW-DIRECTNESS-001",
+        "FAULT-TDRP-CAMPAIGN-CAP-001",
+        "FAULT-TDRP-BUILD-LOCK-OWNERSHIP-001",
+        "FAULT-TDRP-TIMEOUT-CLASSIFICATION-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-EXACT-PROCESS-OWNERSHIP-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-TEST-LOOP-GOVERNANCE-001"
+      ],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "test-loop-source-contract",
+        "workflow-caller-chain",
+        "bounded-build-lock-recovery"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral workflow/evidence-governance contract read from telegramdesktop/tdesktop authority; no upstream Telegram runtime/testing implementation copied into Fabushi shipping runtime.",
+      "notes": "Fourteenth previously unread recursive source entry at live dev 351204f3695b4a39bc3f4d2f230c061b9a01fe2a. Recursive inventory remains 16,202; after this source-entry closure unknown=16,188, unread=16,161, omitted=0. Baseline acceptance and full source closure remain false.",
       "test_execution_evidence": []
     }
   ]

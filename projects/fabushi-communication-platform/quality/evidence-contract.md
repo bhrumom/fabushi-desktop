@@ -76,3 +76,18 @@ If older context, plans, proposals, READMEs, docs, receipts, or snapshots materi
 
 Task-local handoff evidence stays compact: present request, relevant implementation facts, load-bearing decisions, remaining assumptions, and exact locators. It must not claim a navigation index, historical proposal, host pointer, or stale project summary owns live task status or overrides canonical repository/spec/source authority. A durable shared-context amendment is passing only after the latest canonical target is reread, concurrent edits are reconciled, the published edit is narrow and still valid, and blocked/split-required work leaves proposed shared facts task-local.
 
+
+
+## Adaptive test-loop evidence and recovery history
+
+Every adaptive verification attempt preserves an append-only attempt/run history. Before execution, each check records its requirement/risk, changed surface, direct instrument, expected observable, oracle source, control or negative, durable evidence destination, and falsifier. After execution, record the exact command/action, working directory, relevant environment additions, start/end/deadline, exit/outcome, complete log or durable artifact pointers, literal observation, result, and final causal classification. Do not overwrite a failed run after recovery.
+
+Carried-forward passes remain bound to the exact implementation, fixture, oracle, environment and dependency state that produced them. A later change records which checks were invalidated and why; only invalidated or previously failed checks rerun. Evidence from a source/spec/oracle/baseline change is historical until revalidated. Rerunning the same command until it happens to pass is not acceptable evidence.
+
+For `TEST_FLAW` recovery, preserve: prior positive proof, exact failed assumption, failure signature, forbidden repeated technique, next directness strategy, why the next instrument executes/observes the changed surface more causally, and which checks remain unmet. At a normal campaign cap, preserve the completed passes and start at most one focused recovery campaign under the repository strategy. At the focused cap, preserve an independent recovery-exhaustion assessment; a cap, timeout, repeated signature, flake, blank/missing capture, or ambiguous reading is never transformed into pass evidence.
+
+For `IMPL_BUG`, evidence identifies the sound failing check, root cause when known, implementation fix provenance, required focused review, checks invalidated by the fix, and the still-valid approvals carried forward. The implementation-fix handoff names the failing check, evidence, failure signature/root cause and fix hint so another phase can reconstruct the boundary without chat history.
+
+Timeout/cancellation/wait-error evidence records owned process/session identity, cleanup actions, remaining owned processes, and whether the observation proves an implementation wedge or only an evidence-path failure. Build-lock recovery additionally records exact build root, named locked artifacts, verified holders/ownership basis, failing build log, recovery round, cleanup result, safe-to-retry decision, and final exhaustion reason if any. Cleanup must never infer ownership from a broad process name.
+
+These source-neutral records are repository workflow evidence. Telegram portable-account, overlay, UI-driver, and Debug-harness mechanics remain upstream-specific instrumentation details unless an independent Fabushi requirement selects an equivalent instrument; they do not create a Telegram test owner in Fabushi.
