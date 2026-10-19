@@ -71,3 +71,10 @@ Packaging/release tests treat artifact identity as a first-class contract. A byt
 
 Any platform-specific executable transformation oracle must be tested with independent accepted controls and paired forbidden mutations that prove protected loader/content/metadata semantics can actually fail. When the real toolchain performs the transform, at least one real-toolchain control is required in addition to synthetic fixtures. Tests must exercise declared parser/resource boundaries and stable-acquisition failures. Passing evidence is a machine-readable exact-head report containing both raw artifact identities, the declared profile/limits, acquisition/stability observations, semantic allowances/comparisons, and the final verdict; optimized/runtime modes that can disable assertions are separately controlled where applicable.
 
+
+
+### Transform-oracle independent qualification suite
+
+A format-specific executable transform oracle is qualified only by controls that are independent of the implementation layout. Literal fixtures, field locations, mutation offsets and expected semantics must not be derived from the production parser under test. The full qualification suite must contain accepted cases and paired forbidden mutations covering loader/program/header semantics, allocated/NOBITS/TLS state, retained and unknown section payloads, qualified debug/compression allowances, retained static-symbol meaning/order, exact and one-over parser/I/O/resource limits, nonregular/symlink/FIFO acquisition, deterministic mutation/replacement races, and final stability checks. Refusing every input is not qualification.
+
+When a real shipping toolchain performs the transform, qualification also runs a genuine compiler/transform pair and independently reads the resulting artifact identities. Runtime modes that can alter assertion behavior, including optimized interpreter modes where applicable, are exercised separately. Focused authoring subsets may shorten iteration but never replace the full qualification suite. FBCP/TDRP executable qualification remains GitHub-Actions-only.
