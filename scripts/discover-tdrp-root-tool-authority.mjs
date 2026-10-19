@@ -117,7 +117,7 @@ const missing=candidateDetails.filter(x=>!x.covered);
 fail(missing.length===0,'uncovered tool/versioned authority candidates: '+JSON.stringify(missing));
 fail(covered.size===candidates.length,'tool/versioned authority coverage cardinality drift');
 const report={
-  project_id:'TDRP-001',spec_revision:9,target_commit:process.env.GITHUB_SHA||null,upstream_commit:lock.upstream.commit,
+  project_id:'TDRP-001',spec_revision:9,target_commit:(process.env.TDRP_TARGET_SHA||process.env.GITHUB_SHA)||null,upstream_commit:lock.upstream.commit,
   candidate_lines_total:candidates.length,
   tool_bootstrap_lines:candidates.filter(x=>x.disposition==='tool-bootstrap').length,
   versioned_download_lines:candidates.filter(x=>x.disposition==='versioned-download-input').length,

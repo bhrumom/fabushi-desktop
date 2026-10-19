@@ -224,7 +224,7 @@ const candidateDetails=candidates.map(item=>({
 const unresolvedCandidates=candidateDetails.filter(item=>item.disposition==='mutable-tag-or-branch-input'&&!item.covered_by_resolution);
 const resolutions=acquisitions.flatMap(a=>a.platform_authorities ? a.platform_authorities.map(x=>x.resolution) : [a.resolution]).filter(Boolean);
 const summary={
-  target_commit:process.env.GITHUB_SHA||null,
+  target_commit:(process.env.TDRP_TARGET_SHA||process.env.GITHUB_SHA)||null,
   upstream_commit:lock.upstream.commit,
   candidate_lines_total:candidateDetails.length,
   candidate_lines_by_disposition:Object.fromEntries([...openDispositions].map(d=>[d,candidateDetails.filter(x=>x.disposition===d).length])),
