@@ -31,9 +31,9 @@ Provider names and local session-directory mechanics are source implementation d
 
 The existing canonical owners remain sufficient:
 
-- `AGENTS.md#Independent review contract` owns frozen declared scope, fresh/blind independence, durable source-neutral arbitration ownership, decision-before-fix, bounded reversal supersession, and hard stop conditions.
-- `projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Cross-review semantics` owns round topology, general/specialist synthesis, focused re-review, FIX/REJECT/DEFER/COMPROMISE semantics, non-blocking behavior, convergence/non-convergence and round-cap quality gates.
-- `projects/fabushi-communication-platform/quality/evidence-contract.md#Independent review evidence` owns durable scope/snapshot identity, raw reports/synthesis, arbitration ledger, supersession chain, per-round counts, focused confirmation, cap override, and terminal stop reason.
+- `AGENTS.md#Frozen scope and bounded lifecycle` (within the existing Independent review contract) owns frozen declared scope, fresh/blind independence, durable source-neutral arbitration ownership, decision-before-fix, bounded reversal supersession, and hard stop conditions.
+- `projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Arbitration semantics` owns round topology, general/specialist synthesis, FIX/REJECT/DEFER/COMPROMISE and non-blocking behavior; `#Focused re-review and stopping` owns focused re-review, bounded reversals, convergence/non-convergence and round-cap/human-decision quality gates.
+- `projects/fabushi-communication-platform/quality/evidence-contract.md#Durable review ledger evidence` (within Independent review evidence) owns durable scope/snapshot identity, raw reports/synthesis, arbitration ledger, supersession chain, per-round counts, focused confirmation, cap override, and terminal stop reason.
 
 Rejected owners:
 - shipping Agent/Coordinator/Host/Runner: product runtime, not repository quality governance;
