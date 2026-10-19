@@ -83,6 +83,12 @@ with fail-closed branches:
 
 The upstream Python, fake Codex fixture, POSIX calls, Windows Job Object calls and sharing-violation hooks are instruments. Fabushi absorbs their source-neutral invariants into existing repository quality/evidence owners rather than creating another executable worker subsystem.
 
+## Traceability IDs
+
+- Requirement: `TDRP-R9-AI-WORKER-LIFECYCLE-QUALIFICATION-001`
+- Oracles: `ORA-TDRP-AI-WORKER-TERMINAL-001`, `ORA-TDRP-AI-WORKER-OWNERSHIP-001`
+- Invariants: `INV-TDRP-WORKER-TERMINAL-MONOTONIC-001`, `INV-TDRP-WORKER-RUNNER-LOSS-NOT-FAILURE-001`, `INV-TDRP-WORKER-EXACT-OWNERSHIP-001`, `INV-TDRP-WORKER-REPLACE-ATOMIC-001`, `INV-TDRP-WORKER-RESUME-LINEAGE-001`
+
 ## Verification disposition
 
 This closure changes repository governance/evidence contracts only; it adds no shipping UI, network or service owner. Exact-head executable verification remains the existing TDRP Revision 9 source-authority workflow plus the Rust desktop runtime regression, both on the final PR head.
