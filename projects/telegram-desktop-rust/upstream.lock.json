@@ -258,10 +258,10 @@
   "coverage": {
     "root_source_entries_total": 6717,
     "recursive_source_entries_total": 16202,
-    "unknown_minimum": 16192,
-    "unread_minimum": 16165,
+    "unknown_minimum": 16191,
+    "unread_minimum": 16164,
     "omitted_known": 0,
-    "note": "Revision 9 live rebaseline is in progress for telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a (tree 5151db79560ed40bf3802482fcfb74b950be6c40). Root non-directory inventory remains 6,717 and recursive authority remains 16,202. First ten ordered entries are closed through .agents/shared/evidence/ninja_target_test.py; counters are unknown=16,192, unread=16,165, omitted=0."
+    "note": "Revision 9 live rebaseline is in progress for telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a (tree 5151db79560ed40bf3802482fcfb74b950be6c40). Root non-directory inventory remains 6,717 and recursive authority remains 16,202. First eleven ordered entries are closed through .agents/shared/ninja-target-evidence.md; counters are unknown=16,191, unread=16,164, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -275,7 +275,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Live rebaseline identity for telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a remains pending current-head GitHub Actions. Full source closure remains open with unknown=16,192, unread=16,165, omitted=0."
+    "note": "Live rebaseline identity for telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a remains pending current-head GitHub Actions. Full source closure remains open with unknown=16,191, unread=16,164, omitted=0."
   },
   "baseline_identity_evidence": {
     "status": "pending-current-head-revalidation",
