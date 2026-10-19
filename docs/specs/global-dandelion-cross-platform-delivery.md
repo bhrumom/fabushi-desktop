@@ -82,3 +82,21 @@ after the evidence listed in its final column is attached to an exact commit.
   accounts/devices or protected Actions configuration.
 
 These are blocked, not passed, until their exact-source evidence exists.
+
+## Current delivery evidence (2026-10-19)
+
+The following entries are the current review heads and must be refreshed before
+any promotion decision. A green contract or source check does not promote a
+platform capability whose runtime evidence is still missing.
+
+| Repository / PR | Exact review head | Current evidence | Disposition |
+| --- | --- | --- | --- |
+| Desktop #123 | `1e664cd315ccf09775d45842467e7775e8fabbd7` | Focused Electron E2E, renderer, native-intents, contracts, publisher, Rust Host, and macOS/Windows/Linux pressure jobs passed in Actions run `39273775698` and related checks. | Contract and desktop evidence passed; install/live release evidence remains separately required. |
+| Android #4 | `b435d3924239dd3b9197bc223a302755056e831c` | Android Mini App contract unit checks passed in runs `39274346480` and `39274354667`. | Contract projection passed; native Global Dandelion adapter, real permissions, background/recovery and device transfer evidence remain incomplete. |
+| iOS #10 | `5da76240bc90b35fc471ab7d80547fa2c64ddc8c` | Architecture parity `39280012807` and protected session `39280012830` are queued; no terminal result exists yet. | Not passed. The queued jobs must finish against this exact head before promotion. |
+| Backend #117 | `969f6f7749f808235a4675b90740ba3a8f08f7ae` | Candidate contract and pure review gates passed in runs `39274252506`, `39274457773`, and `39274457838`. | Registry/review contract evidence passed; external signer, catalog promotion, clean install and upgrade/revoke evidence remain separately required. |
+
+The evidence above is deliberately split by layer: source ownership,
+contract tests, package approval, installation, permission grant and live
+device behavior are not interchangeable. Any row in the capability matrix
+without its final-column evidence remains `blocked` or `not passed`.
