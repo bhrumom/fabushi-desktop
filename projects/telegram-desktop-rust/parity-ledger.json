@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "0a11537c220df35fe59a96aebe413b1e52bc6e47",
-  "target_commit": "34d19cc79a6821698a45017ebe89ce3b0722d073",
+  "target_commit": "f6b916bbac6e578add9e33acb140d9864946880d",
   "coverage": {
     "source_entries_total": 16186,
-    "unknown": 16186,
-    "unread": 16159,
+    "unknown": 16185,
+    "unread": 16158,
     "omitted": 0,
-    "responsibilities_total": 10,
+    "responsibilities_total": 11,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -2427,6 +2427,220 @@
       "license_and_provenance": "Behavior was reimplemented source-neutrally from the accepted ShareBox authorization semantics inside the existing Fabushi Conversation/Community policy owner.",
       "reviewer": null,
       "notes": "Shipping Human Forward now passes the actual sourceEntryId into Host recipient discovery. Host validates the settled source message, derives media/protected requirements, and calls the same fabushi_messaging_core::recipient_search_authorized function used by native SearchRecipients before returning candidates. The shipping candidate universe is still Human-direct and send-other/inline/game permission axes are not yet modeled by canonical Conversation state, so those typed requests fail closed and this row remains implemented/pending, not verified."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "0a11537c220df35fe59a96aebe413b1e52bc6e47",
+      "source_path": ".agents/shared/build-lock-recovery.md",
+      "source_blob_sha": "ec75573e7efe74e9c9a344f3e66f2fc43ac7680f",
+      "source_kind": "tooling",
+      "module_id": "tdesktop.agent-build-tooling",
+      "responsibility_id": "TDRP-R9-BUILD-LOCK-RECOVERY-001",
+      "source_symbols": [
+        "Safety boundary",
+        "Before every build",
+        "Recover a lock",
+        "Exhaustion"
+      ],
+      "capability_ids": [
+        "CAP-REPRODUCIBLE-ISOLATED-CI"
+      ],
+      "dependency_ids": [
+        "GitHub Actions",
+        "exact-head checkout",
+        "hosted runner isolation"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/build-lock-recovery-complete-read.md",
+      "behavior_contract": "Task-owned build recovery must never authorize mutation of unrelated processes, checkouts, IDEs, debuggers, directories, or guessed artifacts; failures remain fail-closed when ownership cannot be proven.",
+      "state_machine": "exact target SHA -> fresh hosted runner/workspace -> exact checkout assertion -> executable verification -> success artifact or failed job -> clean hosted runner on rerun",
+      "side_effects": [
+        "No local user-machine process termination",
+        "No local build artifact deletion",
+        "Exact-head CI evidence only"
+      ],
+      "failure_cases": [
+        "Verification executes on a user workstation",
+        "Target SHA is not asserted",
+        "A failed job is softened into pass",
+        "Recovery mutates an unrelated process/path"
+      ],
+      "ui_disposition": "Not applicable; developer/build tooling only.",
+      "non_ui_responsibilities": [
+        "Build execution isolation",
+        "Exact checkout identity",
+        "Fail-closed verification",
+        "No unrelated local process/file mutation"
+      ],
+      "platform_delta": "Telegram's Windows-local lock recovery mechanism is replaced by Fabushi's GitHub-Actions-only isolated runner policy and exact-head workflow fencing.",
+      "existing_owner_candidates": [
+        "AGENTS.md",
+        ".github/workflows/tdrp-revision9-authority.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "existing_owner": "Fabushi TDRP GitHub Actions execution policy and exact-head workflows",
+      "rejected_existing_owners": [
+        "Host/Coordinator/Runner are product runtime owners, not developer build recovery",
+        "A new Windows lock-recovery helper would violate the canonical no-local-executable-verification boundary"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        ".github/workflows/tdrp-revision9-authority.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "fabushi_target_symbols": [
+        "TDRP_TARGET_SHA",
+        "FABUSHI_TARGET_SHA"
+      ],
+      "target_language": "YAML",
+      "language_rationale": "The applicable responsibility is CI/build orchestration, so it belongs in existing GitHub Actions workflow contracts rather than product Rust/TypeScript runtime.",
+      "command_event_contracts": [
+        "pull_request/push -> exact target SHA binding -> hosted runner checkout -> assertion -> executable verification -> exact-head artifact/failure"
+      ],
+      "state_owner": "GitHub Actions job/workflow execution state",
+      "lifecycle_owner": "Existing TDRP authority and Rust desktop runtime workflows",
+      "persistence_and_restart": "No product persistence. Workflow evidence is persisted as GitHub Actions runs/artifacts; rerun starts from a clean hosted runner.",
+      "concurrency_and_cancellation": "Existing workflow/job isolation and rust-desktop-runtime concurrency own parallelism/cancellation; no shared workstation build root exists.",
+      "security_boundary": "No TDRP executable verification may kill processes or delete artifacts on a user workstation; exact-head Actions is the only executable boundary.",
+      "network_service_dependencies": [
+        "GitHub Actions service"
+      ],
+      "service_owner": "Existing GitHub Actions CI",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "toolchain-equivalent",
+      "blockers": [
+        "Independent exact-head verification of this mapping commit is pending."
+      ],
+      "production_entrypoints": [
+        "GitHub Actions -> TDRP Revision 9 source authority",
+        "GitHub Actions -> Rust desktop runtime"
+      ],
+      "production_evidence": [
+        "main:f6b916bbac6e578add9e33acb140d9864946880d",
+        "path:.github/workflows/tdrp-revision9-authority.yml#TDRP_TARGET_SHA",
+        "path:.github/workflows/rust-desktop-runtime.yml#FABUSHI_TARGET_SHA"
+      ],
+      "test_evidence": [
+        "workflow:39269513082@fdf901e4310579b3620a5a7a11638bee57b0290b",
+        "workflow:39269513136@fdf901e4310579b3620a5a7a11638bee57b0290b"
+      ],
+      "target_commit": "f6b916bbac6e578add9e33acb140d9864946880d",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository CI/toolchain",
+      "composition_slot": "TDRP executable verification",
+      "capability_component": "Exact-head isolated GitHub Actions execution",
+      "variation_axes": [
+        "authority workflow",
+        "Rust runtime workflow",
+        "hosted OS runner"
+      ],
+      "shared_owner_contracts": [
+        "AGENTS.md executable-verification policy",
+        "Exact-head artifact provenance"
+      ],
+      "duplicate_root_check": "No Telegram-specific build runtime or second CI owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "CI/toolchain",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "A failed verification remains failed evidence; rerun occurs on a clean hosted runner and must reassert the exact target SHA.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to build/tooling responsibility",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-BUILD-LOCK-RECOVERY-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-BUILD-LOCK-RECOVERY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-BUILD-EXECUTION-ISOLATION-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-EXACT-HEAD-CI-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-GITHUB-ACTIONS-ISOLATION-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-CLEAN-RERUN-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-BUILD-LOCK-NO-LOCAL-MUTATION-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-NO-LOCAL-PROCESS-KILL-001"
+      ],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "exact-head-actions-run"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "test_execution_evidence": [
+        "39269513082@fdf901e4310579b3620a5a7a11638bee57b0290b",
+        "39269513136@fdf901e4310579b3620a5a7a11638bee57b0290b"
+      ],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavioral/tooling contract was read from the accepted tdesktop source authority; no upstream code or local process-control helper is copied.",
+      "reviewer": null,
+      "notes": "First previously unread recursive inventory entry. The source-specific Windows lock recovery mechanism is intentionally not ported because TDRP forbids local executable verification; the applicable safety/reproducibility guarantee is mapped to existing isolated exact-head GitHub Actions workflows. Independent exact-head verification of this mapping commit remains pending."
     }
   ]
 }
