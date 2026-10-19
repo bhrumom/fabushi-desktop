@@ -42,7 +42,7 @@ The Electron main process owns the loopback server, token, discovery file, lifec
 
 ## 8. Interfaces / contracts / schemas / data flow
 
-The bridge uses `POST /v1/{status|snapshot|find|action|wait|assert}`, `Authorization: Bearer <token>`, JSON bodies, and request/response IDs over the existing main-edge event channel. Discovery contains `{version, appId, platform, pid, port, token, endpoint}`. The SDK contract in `frontend/packages/mcp-app-sdk/src/app-surface.ts` is authoritative for operation names and input/output semantics.
+The bridge uses `POST /v1/{status|snapshot|find|action|wait|assert}`, `Authorization: Bearer <token>`, and accepts the SDK client's `{input: <operation-input>}` JSON envelope (while retaining direct-object compatibility). Discovery contains `{version, appId, platform, pid, port, token, endpoint, origin}`, where `origin` is the loopback HTTP origin consumed by the existing app-agent client. The SDK contract in `frontend/packages/mcp-app-sdk/src/app-surface.ts` is authoritative for operation names and input/output semantics.
 
 ## 9. Constraints and non-functional requirements
 
@@ -88,3 +88,4 @@ Record the exact commit, Actions run, package checksum, discovery/status result,
 | --- | --- | --- |
 | R1-R5 | pending | Implementation and Actions evidence pending |
 | AC-1-AC-5 | pending | Implementation and Actions evidence pending |
+
