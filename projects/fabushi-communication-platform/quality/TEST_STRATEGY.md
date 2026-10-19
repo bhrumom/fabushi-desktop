@@ -75,6 +75,12 @@ Stop, timeout, recovery and replacement act only on the exact owned process grou
 
 Qualification must cover normal completion; worker/turn failure; missing, stale and empty finals; startup failure; time limit; stop; runner loss before and after worker claim; resume; concurrent waits; state-lock/state-write failures; replacement/archive failure; untracked live writers; reused process identities; and applicable POSIX process-group plus Windows job-object/file-sharing behavior. These are source-neutral repository workflow responsibilities: the qualification does not require copying an upstream Codex helper and does not create a shipping Agent/Coordinator/Host/Runner owner.
 
+### AI worker adapter execution qualification
+
+Repository adapters that implement an external AI worker lifecycle must be qualified for both lifecycle safety and execution fidelity. In addition to the lifecycle matrix above, cover: availability/authentication probe and declared fallback; immutable start-state capture; sandbox, effort, model, output-schema, project-document and deadline argument preservation; new-run versus resume command construction; detached-runner launch acceptance versus actual worker completion; bounded foreground wait returning still-running versus all-terminal; child-scoped environment compatibility without global mutation; diagnostics separation; and phase-artifact validation after the worker itself reaches a valid terminal result.
+
+The production adapter contract is qualified by an independent oracle rather than by copying its implementation. Positive and negative controls must exercise unavailable binaries/authentication, startup/argument failures, normal completion, nonzero/failed turns, missing/stale/empty finals, resume lineage, replacement/archive, runner loss, stop/time limit, state/lock failures, ownership ambiguity, unrelated processes, and applicable POSIX/Windows ownership behavior. The adapter and its qualification suite remain repository tooling responsibilities, not a shipping Agent/Coordinator/Host/Runner runtime.
+
 ## Independence and environment
 
 Implementer 可写 tests，但 release reviewer 必须独立复核。FBCP/TDRP 所有 executable verification 只在 GitHub Actions；fixture/locale/theme/viewport/network/fault/account identity 必须进入 manifest。
