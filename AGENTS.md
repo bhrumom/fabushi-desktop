@@ -84,6 +84,16 @@ AI development must follow this sequence:
 - Locate the owning project/spec/source of truth.
 - Do only the investigation necessary to understand the task.
 
+##### Repository/project context discovery and handoff
+
+Build task context selectively from the current explicit request, exact live repository state, applicable source/spec authority, task lineage, and only the project/reference material that is concretely relevant to the requested behavior or an unresolved ambiguity. Do not recursively load every linked document, project, task history, README, proposal, or archived context merely because it is discoverable.
+
+Repository instruction precedence remains source-neutral: the root `AGENTS.md` is repository-wide unless a more specific nested `AGENTS.md` governs the edited subtree. Host pointer files such as `CLAUDE.md` or `GROK.md` may add host-adapter mechanics but do not override canonical repository or nested instructions unless that canonical policy explicitly delegates the choice. Task/spec requirements and current source establish the behavior being implemented; project overviews, docs, READMEs, older plans, receipts, snapshots, and proposals are supporting context and must be revalidated before use when they conflict or may be stale.
+
+A task handoff must be compact and reconstructable: record the present request, relevant implementation facts, exact source/reference locations, load-bearing decisions, and unresolved assumptions needed by the next phase. Link to durable project/reference material instead of copying accumulated history. Live status belongs to the canonical task/status owner rather than a navigation index or historical context artifact.
+
+Durable shared-context changes are narrow, optional, and fail-closed. Propose only a still-useful shared fact; after implementation/review/evidence approve the outcome, reread the latest canonical target, reconcile concurrent edits, and publish only the still-valid narrow change. Historical full-document proposals are never promoted wholesale. If a conflict affects task correctness or safe publication, stop that publication boundary rather than guessing; an optional context amendment that cannot be reconciled may remain task-local without blocking an otherwise correct task.
+
 #### Stage 1 — Spec
 - Read the applicable spec completely.
 - Reconcile it with the latest explicit user requirement.
