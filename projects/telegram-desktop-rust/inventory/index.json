@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16202,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16194,
-    "unread_minimum": 16167,
+    "unknown_minimum": 16193,
+    "unread_minimum": 16166,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -97,5 +97,5 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live rebaseline candidate telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a (tree 5151db79560ed40bf3802482fcfb74b950be6c40) remains source-closure open. Entry 8 elf_identity_test.py remains blob a75a29225b6eb70f255848e30026d02523d808f3 and fully mapped to existing source-neutral quality/evidence owners. Latest delta only updates Qt prepare cache-key mechanics; recursive inventory remains 16,202 with unknown=16,194, unread=16,167, omitted=0."
+  "note": "Live rebaseline candidate telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a (tree 5151db79560ed40bf3802482fcfb74b950be6c40) remains source-closure open. Entry 9 .agents/shared/evidence/ninja_target.py remains blob f638b0e9c039784832155269b5931ab0cabdb16b and is fully mapped to existing source-neutral configured-build graph evidence/qualification owners. Recursive inventory remains 16,202 with unknown=16,193, unread=16,166, omitted=0; archive-member and runtime reachability remain independent evidence responsibilities."
 }
