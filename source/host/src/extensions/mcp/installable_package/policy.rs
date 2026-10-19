@@ -23,6 +23,15 @@ const MAX_FUTURE_SKEW_MS: u64 = 5 * 60 * 1000;
 const MAX_FEED_TTL_MS: u64 = 7 * 24 * 60 * 60 * 1000;
 const MAX_CATALOG_PAGES: usize = 10;
 const MAX_ARCHIVE_BYTES: u64 = 100 * 1024 * 1024;
+const MAX_MIRROR_REDIRECTS: usize = 5;
+/// Byte hosting may be delegated to public release infrastructure. Only these hosts
+/// may appear in a signed artifact `url`; the digest is still verified after download,
+/// so a compromised mirror can withhold bytes but can never substitute an artifact.
+const MIRROR_HOSTS: [&str; 3] = [
+    "github.com",
+    "objects.githubusercontent.com",
+    "release-assets.githubusercontent.com",
+];
 
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum ProofError {
@@ -60,6 +69,7 @@ pub fn is_transport_failure(error: &ProofError) -> bool {
 pub struct CatalogClient {
     origin: Url,
     client: reqwest::blocking::Client,
+    mirror: reqwest::blocking::Client,
 }
 
 impl CatalogClient {
@@ -76,7 +86,11 @@ impl CatalogClient {
             .timeout(Duration::from_secs(30))
             .build()
             .map_err(|_| ProofError::Network)?;
-        Ok(Self { origin, client })
+        Ok(Self {
+            origin,
+            client,
+            mirror: mirror_client()?,
+        })
     }
 
     fn route(&self, segments: &[&str]) -> Result<Url, ProofError> {
@@ -211,10 +225,16 @@ impl CatalogClient {
         Ok(raw)
     }
 
+    /// Fetch the approved artifact. When the signed payload names a mirror (public
+    /// release infrastructure such as GitHub Releases), that location is preferred and
+    /// the registry route is only used as a fallback for transport-level failures.
+    /// A mirror that answers with the wrong byte count or digest is rejected outright:
+    /// substitution is an attack signal, not a reason to retry elsewhere.
     pub fn download_artifact(
         &self,
         digest: &str,
         expected_size: u64,
+        mirror: Option<&str>,
     ) -> Result<Vec<u8>, ProofError> {
         if digest.len() != 64
             || !digest
@@ -225,12 +245,26 @@ impl CatalogClient {
         {
             return Err(ProofError::Authorization);
         }
+        if let Some(url) = mirror {
+            let target = approved_mirror_url(url)?;
+            match self.fetch_verified(&self.mirror, target, digest, expected_size) {
+                Ok(bytes) => return Ok(bytes),
+                Err(ProofError::Network) | Err(ProofError::NotFound) => {}
+                Err(error) => return Err(error),
+            }
+        }
         let url = self.route(&["artifacts", digest])?;
-        let response = self
-            .client
-            .get(url)
-            .send()
-            .map_err(|_| ProofError::Network)?;
+        self.fetch_verified(&self.client, url, digest, expected_size)
+    }
+
+    fn fetch_verified(
+        &self,
+        client: &reqwest::blocking::Client,
+        url: Url,
+        digest: &str,
+        expected_size: u64,
+    ) -> Result<Vec<u8>, ProofError> {
+        let response = client.get(url).send().map_err(|_| ProofError::Network)?;
         if response.status() == reqwest::StatusCode::NOT_FOUND {
             return Err(ProofError::NotFound);
         }
@@ -256,6 +290,53 @@ impl CatalogClient {
         }
         Ok(bytes)
     }
+}
+
+/// Validate a signed artifact mirror location. Only https on the approved host set is
+/// accepted, with no embedded credentials, no non-default port, and no fragment.
+fn approved_mirror_url(raw: &str) -> Result<Url, ProofError> {
+    if raw.len() > 2048 {
+        return Err(ProofError::Authorization);
+    }
+    let url = Url::parse(raw).map_err(|_| ProofError::Authorization)?;
+    if url.scheme() != "https"
+        || !url.username().is_empty()
+        || url.password().is_some()
+        || url.fragment().is_some()
+    {
+        return Err(ProofError::Authorization);
+    }
+    if url.port().is_some_and(|port| port != 443) {
+        return Err(ProofError::Authorization);
+    }
+    let host = url.host_str().ok_or(ProofError::Authorization)?;
+    if !MIRROR_HOSTS
+        .iter()
+        .any(|allowed| host.eq_ignore_ascii_case(allowed))
+    {
+        return Err(ProofError::Authorization);
+    }
+    Ok(url)
+}
+
+/// Mirror fetches follow redirects (GitHub release assets answer 302 to a CDN), but
+/// every hop must stay inside the approved host set and the chain is bounded.
+fn mirror_client() -> Result<reqwest::blocking::Client, ProofError> {
+    reqwest::blocking::Client::builder()
+        .https_only(true)
+        .redirect(reqwest::redirect::Policy::custom(|attempt| {
+            if attempt.previous().len() >= MAX_MIRROR_REDIRECTS {
+                return attempt.error("mirror redirect chain is too long");
+            }
+            match approved_mirror_url(attempt.url().as_str()) {
+                Ok(_) => attempt.follow(),
+                Err(_) => attempt.error("mirror redirect left the approved host set"),
+            }
+        }))
+        .connect_timeout(Duration::from_secs(10))
+        .timeout(Duration::from_secs(120))
+        .build()
+        .map_err(|_| ProofError::Network)
 }
 
 #[derive(Debug, Deserialize)]
@@ -363,6 +444,10 @@ pub struct SignedArtifact {
     pub platform: String,
     pub architecture: String,
     pub format: String,
+    /// Signed download location when the release is hosted off the registry.
+    /// Absent for registry-hosted releases, which keeps their payloads byte-identical.
+    #[serde(default)]
+    pub url: Option<String>,
 }
 
 pub struct VerifiedInstallProof {
@@ -565,7 +650,7 @@ pub fn verify_install_proof_with_anchor(
         .iter()
         .filter(|artifact| {
             artifact.digest == bundle_digest
-                && artifact.platform == "desktop"
+                && matches!(artifact.platform.as_str(), "desktop" | "all")
                 && artifact.format == "fabapp"
         })
         .collect();
@@ -599,6 +684,7 @@ pub fn verify_install_proof_with_anchor(
             platform: artifact.platform.clone(),
             architecture: artifact.architecture.clone(),
             format: artifact.format.clone(),
+            url: artifact.url.clone(),
         },
         proof_snapshot: raw.to_string(),
     })
@@ -857,6 +943,73 @@ mod tests {
     }
     use ed25519_dalek::{Signer, SigningKey};
 
+    #[test]
+    fn signed_mirror_urls_are_restricted_to_approved_https_hosts() {
+        for allowed in [
+            "https://github.com/bhrumom/global-dandelion-rs/releases/download/v0.2.0/global-dandelion.fabapp",
+            "https://objects.githubusercontent.com/github-production-release-asset/x?X-Amz-Signature=y",
+            "https://release-assets.githubusercontent.com/github-production-release-asset/x",
+        ] {
+            assert!(approved_mirror_url(allowed).is_ok(), "{allowed}");
+        }
+        for rejected in [
+            // plain http
+            "http://github.com/a/b/releases/download/v1/x.fabapp",
+            // unapproved host, including lookalikes
+            "https://raw.githubusercontent.com/a/b/main/x.fabapp",
+            "https://github.com.evil.example/a/b",
+            "https://evil.example/github.com",
+            // credentials, port, fragment
+            "https://user:pass@github.com/a/b",
+            "https://github.com:8443/a/b",
+            "https://github.com/a/b#fragment",
+            // not a url at all
+            "",
+            "not a url",
+        ] {
+            assert!(approved_mirror_url(rejected).is_err(), "{rejected}");
+        }
+    }
+
+    #[test]
+    fn registry_hosted_payloads_still_parse_without_a_mirror_url() {
+        let payload = r#"{"protocol":"fabushi.extension-release-signature.v1","keyId":"k","trustEpoch":1,
+            "identity":{"namespace":"bhrumom","name":"global-dandelion","kind":"web-miniapp"},
+            "version":"0.1.0","descriptorDigest":"00","artifacts":[{"artifactId":"desktop",
+            "digest":"de10e02115415908f827723457817e51cb4f39aa5ca68798da824fecc483118a",
+            "sizeBytes":453093,"platform":"desktop","architecture":"any","format":"fabapp"}]}"#;
+        let parsed: ReleasePayload = serde_json::from_str(payload).unwrap();
+        assert!(parsed.artifacts[0].url.is_none());
+    }
+
+    #[test]
+    fn signed_payloads_may_name_a_mirror_url() {
+        let payload = r#"{"protocol":"fabushi.extension-release-signature.v1","keyId":"k","trustEpoch":1,
+            "identity":{"namespace":"bhrumom","name":"global-dandelion","kind":"web-miniapp"},
+            "version":"0.2.0","descriptorDigest":"00","artifacts":[{"artifactId":"desktop",
+            "digest":"de10e02115415908f827723457817e51cb4f39aa5ca68798da824fecc483118a",
+            "sizeBytes":453093,"platform":"desktop","architecture":"any","format":"fabapp",
+            "url":"https://github.com/bhrumom/global-dandelion-rs/releases/download/v0.2.0/global-dandelion.fabapp"}]}"#;
+        let parsed: ReleasePayload = serde_json::from_str(payload).unwrap();
+        assert_eq!(
+            parsed.artifacts[0].url.as_deref(),
+            Some(
+                "https://github.com/bhrumom/global-dandelion-rs/releases/download/v0.2.0/global-dandelion.fabapp"
+            )
+        );
+    }
+
+    #[test]
+    fn signed_payloads_reject_unknown_artifact_fields() {
+        let payload = r#"{"protocol":"fabushi.extension-release-signature.v1","keyId":"k","trustEpoch":1,
+            "identity":{"namespace":"bhrumom","name":"global-dandelion","kind":"web-miniapp"},
+            "version":"0.2.0","descriptorDigest":"00","artifacts":[{"artifactId":"desktop",
+            "digest":"de10e02115415908f827723457817e51cb4f39aa5ca68798da824fecc483118a",
+            "sizeBytes":453093,"platform":"desktop","architecture":"any","format":"fabapp",
+            "mirrorUrl":"https://github.com/a/b"}]}"#;
+        assert!(serde_json::from_str::<ReleasePayload>(payload).is_err());
+    }
+
     fn signed_fixture(expired: bool, revoked_release_key: bool) -> (String, TrustAnchor) {
         let signing = SigningKey::from_bytes(&[23; 32]);
         let raw = signing.verifying_key().to_bytes();
@@ -935,6 +1088,77 @@ mod tests {
             proof.artifact.digest,
             "de10e02115415908f827723457817e51cb4f39aa5ca68798da824fecc483118a"
         );
+    }
+
+    #[test]
+    fn verifies_github_hosted_universal_artifact_install_proof() {
+        let signing = SigningKey::from_bytes(&[23; 32]);
+        let raw = signing.verifying_key().to_bytes();
+        let mut der = vec![
+            0x30, 0x2a, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x70, 0x03, 0x21, 0x00,
+        ];
+        der.extend_from_slice(&raw);
+        let spki = STANDARD.encode(&der);
+        let fingerprint = sha256_hex(&der);
+        let anchor = TrustAnchor {
+            key_id: "test-root".into(),
+            trust_epoch: 1,
+            public_key: raw,
+        };
+        let digest = "f6794dc4567063fe0e2743e9523db741ce6c1175bc49f35a2714f499191ef90d";
+        let url = "https://github.com/bhrumom/fabushi-backend/releases/download/v0.2.0/global-dandelion-0.2.0.fabapp";
+        let descriptor = serde_json::json!({
+            "identity": { "kind": "web-miniapp", "namespace": "bhrumom", "name": "global-dandelion" },
+            "publisher": { "id": "bhrumom" },
+            "displayName": "Global Dandelion 离线工作台",
+            "release": { "version": "0.2.0", "channel": "preview", "platforms": ["desktop", "ios", "android"],
+                "requestedCapabilities": [], "bundleDigest": digest },
+            "runtime": { "owner": "host-plugins", "installMode": "fabapp", "appId": "org.fabushi.global-dandelion", "offlineCore": true }
+        });
+        let descriptor_payload = serde_json::to_string(&descriptor).unwrap();
+        let descriptor_digest = sha256_hex(descriptor_payload.as_bytes());
+        let release_payload = serde_json::json!({
+            "protocol": RELEASE_PROTOCOL, "keyId": "release-key", "trustEpoch": 1,
+            "identity": { "namespace": "bhrumom", "name": "global-dandelion", "kind": "web-miniapp" },
+            "version": "0.2.0", "descriptorDigest": descriptor_digest,
+            "artifacts": [{ "artifactId": "universal-ui", "digest": digest,
+                "sizeBytes": 479376, "platform": "all", "architecture": "any", "format": "fabapp", "url": url }]
+        }).to_string();
+        let release_signature =
+            STANDARD.encode(signing.sign(release_payload.as_bytes()).to_bytes());
+        let trust_payload = serde_json::json!({
+            "protocol": TRUST_PROTOCOL, "issuedAtMs": 10_000, "expiresAtMs": 70_000,
+            "signer": { "algorithm": "Ed25519", "keyId": "test-root", "trustEpoch": 1, "publicKeyFingerprint": fingerprint },
+            "keys": [
+                { "algorithm": "Ed25519", "keyId": "test-root", "trustEpoch": 1, "publicKey": spki, "publicKeyFingerprint": fingerprint,
+                    "status": "active", "createdAtMs": 1, "revokedAtMs": null, "revocationReason": "" },
+                { "algorithm": "Ed25519", "keyId": "release-key", "trustEpoch": 1, "publicKey": spki, "publicKeyFingerprint": fingerprint,
+                    "status": "active", "createdAtMs": 1, "revokedAtMs": null, "revocationReason": "" }
+            ]
+        }).to_string();
+        let trust_signature = STANDARD.encode(signing.sign(trust_payload.as_bytes()).to_bytes());
+        let proof_raw = serde_json::json!({
+            "protocol": PROOF_PROTOCOL, "descriptor": descriptor,
+            "descriptorPayload": descriptor_payload,
+            "releaseSignature": { "protocol": RELEASE_PROTOCOL, "algorithm": "Ed25519", "keyId": "release-key", "trustEpoch": 1,
+                "publicKey": spki, "publicKeyFingerprint": fingerprint, "payload": release_payload,
+                "signature": release_signature, "signedAtMs": 3 },
+            "trust": { "protocol": TRUST_PROTOCOL, "algorithm": "Ed25519", "keyId": "test-root", "trustEpoch": 1,
+                "publicKey": spki, "publicKeyFingerprint": fingerprint, "issuedAtMs": 10_000,
+                "expiresAtMs": 70_000, "payload": trust_payload, "signature": trust_signature }
+        }).to_string();
+        let verified = verify_install_proof_with_anchor(
+            &proof_raw,
+            "org.fabushi.global-dandelion",
+            10_000,
+            false,
+            &anchor,
+        )
+        .unwrap();
+        assert_eq!(verified.authorization.version, "0.2.0");
+        assert_eq!(verified.artifact.digest, digest);
+        assert_eq!(verified.artifact.platform, "all");
+        assert_eq!(verified.artifact.url.as_deref(), Some(url));
     }
 
     #[test]
@@ -1027,7 +1251,11 @@ mod tests {
             "de10e02115415908f827723457817e51cb4f39aa5ca68798da824fecc483118a"
         );
         let bytes = client
-            .download_artifact(&proof.artifact.digest, proof.artifact.size_bytes)
+            .download_artifact(
+                &proof.artifact.digest,
+                proof.artifact.size_bytes,
+                proof.artifact.url.as_deref(),
+            )
             .unwrap();
         let package = verify_catalog_bundle(&bytes, &proof.authorization).unwrap();
         let mut db = rusqlite::Connection::open_in_memory().unwrap();

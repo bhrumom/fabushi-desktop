@@ -141,7 +141,7 @@
       "referencePath": "source/electron-main/adapters/mcp-oauth.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "ffbc225bfaaccbab7960ff8df31039553efdf1ec",
+      "targetBlobSha": "909f7fcf51018f93ab95a1473f48a899d8cd3bd0",
       "behavioralEvidence": [
         "source/electron-main/adapters/mcp-oauth.ts",
         "docs/specs/desktop-miniapp-publisher.md",
@@ -419,7 +419,7 @@
       "referencePath": "source/electron-main/main-production-services.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "7f8a501702d5d4f8aaaea5973c25e6ddac192e3c",
+      "targetBlobSha": "8ca982cf2401d31a4782870b37688703e7f96895",
       "behavioralEvidence": [
         "source/electron-main/main-production-services.ts",
         "docs/specs/desktop-miniapp-publisher.md",

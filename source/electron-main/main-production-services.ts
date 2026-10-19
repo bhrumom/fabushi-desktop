@@ -92,9 +92,7 @@ export interface ElectronProductionNativeBindings {
   readonly net?: { fetch: typeof globalThis.fetch };
   readonly session?: import("./mcp/miniapp-window.js").MiniAppWindowFactoryPorts["session"];
   readonly screen: WindowStatePersistenceScreen;
-  readonly dialog?: {
-    showOpenDialog(options: { properties: ["openFile"]; filters: { name: string; extensions: string[] }[] }): Promise<{ canceled: boolean; filePaths: string[] }>;
-  };
+  readonly dialog?: ElectronProductionDialog;
   readonly desktopCapturer?: {
     getSources(options: {
       readonly types: readonly ("screen" | "window")[];
@@ -108,6 +106,18 @@ export interface ElectronProductionNativeBindings {
   };
 }
 
+/**
+ * The existing Electron dialog owner serves both trusted package selection and
+ * Host-authorized directory selection. Keep the two intents in one ABI while
+ * preserving the publisher's file-only filter at its call site.
+ */
+export interface ElectronProductionDialog {
+  showOpenDialog(options: {
+    readonly properties: readonly ("openFile" | "openDirectory")[];
+    readonly filters?: readonly { readonly name: string; readonly extensions: readonly string[] }[];
+  }): Promise<{ canceled: boolean; filePaths: string[] }>;
+}
+
 export function createElectronProductionNativeBindings(electron: {
   readonly app: ElectronProductionApp;
   readonly safeStorage: SecureStorageCodec;
@@ -116,7 +126,7 @@ export function createElectronProductionNativeBindings(electron: {
   readonly Menu: ElectronProductionNativeBindings["Menu"];
   readonly shell: ElectronProductionNativeBindings["shell"];
   readonly screen: ElectronProductionNativeBindings["screen"];
-  readonly dialog?: ElectronProductionNativeBindings["dialog"];
+  readonly dialog?: ElectronProductionDialog;
   readonly net?: ElectronProductionNativeBindings["net"];
   readonly session?: ElectronProductionNativeBindings["session"];
   readonly desktopCapturer?: ElectronProductionNativeBindings["desktopCapturer"];
@@ -130,7 +140,7 @@ export function createElectronProductionNativeBindings(electron: {
   if (typeof electron.Menu.buildFromTemplate !== "function" || typeof electron.Menu.setApplicationMenu !== "function") throw new Error("Electron production ABI requires Menu construction and installation.");
   if (typeof electron.shell.openExternal !== "function") throw new Error("Electron production ABI requires shell.openExternal().");
   if (typeof electron.safeStorage.isEncryptionAvailable !== "function" || typeof electron.safeStorage.encryptString !== "function" || typeof electron.safeStorage.decryptString !== "function") throw new Error("Electron production ABI requires safeStorage encryption methods.");
-return { app: electron.app, safeStorage: electron.safeStorage, ipcMain: electron.ipcMain, BrowserWindow: electron.BrowserWindow, Menu: electron.Menu, shell: electron.shell, screen: electron.screen, ...(electron.dialog == null ? {} : { dialog: electron.dialog }), ...(electron.net == null ? {} : { net: electron.net }), ...(electron.session == null ? {} : { session: electron.session }), ...(electron.desktopCapturer == null ? {} : { desktopCapturer: electron.desktopCapturer }), ...(electron.systemPreferences == null ? {} : { systemPreferences: electron.systemPreferences }) };
+  return { app: electron.app, safeStorage: electron.safeStorage, ipcMain: electron.ipcMain, BrowserWindow: electron.BrowserWindow, Menu: electron.Menu, shell: electron.shell, screen: electron.screen, ...(electron.dialog == null ? {} : { dialog: electron.dialog }), ...(electron.net == null ? {} : { net: electron.net }), ...(electron.session == null ? {} : { session: electron.session }), ...(electron.desktopCapturer == null ? {} : { desktopCapturer: electron.desktopCapturer }), ...(electron.systemPreferences == null ? {} : { systemPreferences: electron.systemPreferences }) };
 }
 
 export interface ElectronProductionResources {
@@ -183,13 +193,6 @@ export type ProductionAccountStatus = SandAuthStatus;
 export interface ProductionAccountAuthService {
   getValidAccessToken(options?: { readonly backendUrl?: string }): Promise<string>;
   peekAccessToken?(): Promise<string | null>;
-  deviceAgentSession?(): Promise<{
-    readonly accessToken: string;
-    readonly accessTokenExpiresAt: number;
-    readonly deviceId: string;
-    readonly sessionId: string;
-    readonly username: string;
-  } | null>;
   revokeForAccountRefusal(): Promise<{ readonly kind: "completed"; readonly status: ProductionAccountStatus } | { readonly kind: "failed"; readonly status: ProductionAccountStatus; readonly error: unknown }>;
   getStatus(): Promise<ProductionAccountStatus>;
   subscribe(listener: (status: ProductionAccountStatus) => void): () => void;
@@ -922,7 +925,7 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
           installBoxVisibilityDocumentReset(window.webContents, () => boxVisibilityTracker?.abandonAll());
           bindings.services.onWindowCreated?.(window, context!);
           if (appAgentSurfaceServer == null) {
-            appAgentSurfaceServer = createAppAgentSurfaceServer({ app: bindings.native.app, getWindow: () => runtime?.getMainWindow() ?? null, env });
+            appAgentSurfaceServer = createAppAgentSurfaceServer({ app: bindings.native.app, getWindow: () => runtime?.getMainWindow() ?? null, appVersion: bindings.native.app.getVersion?.(), env });
             void appAgentSurfaceServer.start().catch((error) => bindings.reportFailure("app-agent-surface", "start", error));
           }
         },

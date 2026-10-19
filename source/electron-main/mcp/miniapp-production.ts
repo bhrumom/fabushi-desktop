@@ -1,7 +1,10 @@
 import { createHash, randomUUID } from "node:crypto";
+import { delimiter } from "node:path";
 import type { ProductionServiceContext } from "../main-production-services.js";
 import { registerMiniAppManagement, type NativeMiniAppEntry } from "./miniapp-management.js";
-import { createMiniAppWindowFactory, type MiniAppWindowFactoryPorts, type VerifiedMiniAppResource } from "./miniapp-window.js";
+import { createDandelionCliBackend, type MiniAppPickPort } from "./miniapp-cli-backend.js";
+import { createMiniAppToolRouter } from "./miniapp-tools.js";
+import { createMiniAppWindowFactory, type MiniAppIpc, type MiniAppToolBridgePorts, type MiniAppWindowFactoryPorts, type VerifiedMiniAppResource } from "./miniapp-window.js";
 
 type Method = "listApprovedMiniApps" | "listInstalledMiniApps" | "installApprovedMiniApp" | "getInstalledMiniAppResources" | "uninstallMiniApp";
 function record(value: unknown): Record<string, unknown> {
@@ -14,6 +17,53 @@ function entries(value: unknown): NativeMiniAppEntry[] {
   return items.map((item) => record(item) as unknown as NativeMiniAppEntry);
 }
 
+/** Opt-in native tool bridge. Absent configuration keeps the window render-only. */
+interface MiniAppDialogPort {
+  showOpenDialog(options: { properties: string[] }): Promise<{ canceled: boolean; filePaths: string[] }>;
+  showMessageBox?(options: { type?: string; buttons: string[]; defaultId?: number; cancelId?: number; message: string; detail?: string }): Promise<{ response: number }>;
+}
+
+function miniAppTooling(context: ProductionServiceContext, ipc: unknown): MiniAppToolBridgePorts | undefined {
+  const env = process.env;
+  const binaryPath = env.FABUSHI_DANDELION_BIN?.trim() ?? "";
+  const configPath = env.FABUSHI_DANDELION_CONFIG?.trim() ?? "";
+  const preloadPath = env.FABUSHI_MINIAPP_PRELOAD?.trim() ?? "";
+  const roots = (env.FABUSHI_DANDELION_ROOTS ?? "").split(delimiter).map((item) => item.trim()).filter(Boolean);
+  if (!binaryPath || !configPath || !preloadPath || roots.length === 0) return undefined;
+  let pools: { id: string; label: string }[];
+  try {
+    const parsed: unknown = JSON.parse(env.FABUSHI_DANDELION_POOLS ?? "[]");
+    if (!Array.isArray(parsed)) return undefined;
+    pools = parsed.filter((item): item is { id: string; label: string } =>
+      typeof item === "object" && item !== null
+      && typeof (item as { id?: unknown }).id === "string" && typeof (item as { label?: unknown }).label === "string");
+  } catch { return undefined; }
+  const dialog = (context.native as unknown as { dialog?: MiniAppDialogPort }).dialog;
+  if (!dialog) return undefined;
+  const pick: MiniAppPickPort = async () => {
+    const selected = await dialog.showOpenDialog({ properties: ["openDirectory"] });
+    if (selected.canceled || selected.filePaths.length === 0) return null;
+    return selected.filePaths.slice(0, 1).map((path) => ({ path, name: path, size: 0 }));
+  };
+  const backend = createDandelionCliBackend({
+    binaryPath, configPath, allowedRoots: roots, targetPools: pools,
+    enableHotspot: env.FABUSHI_DANDELION_HOTSPOT === "1",
+    enableUpdate: env.FABUSHI_DANDELION_UPDATE === "1",
+  }, { pick });
+  const router = createMiniAppToolRouter({
+    backend,
+    approve: async (tool) => {
+      if (!dialog.showMessageBox) return false;
+      const answer = await dialog.showMessageBox({
+        type: "question", buttons: ["取消", "允许"], defaultId: 0, cancelId: 0,
+        message: "小程序请求执行受控操作", detail: tool,
+      });
+      return answer.response === 1;
+    },
+  });
+  return { router, preloadPath, ipc: ipc as MiniAppIpc };
+}
+
 /** MainData only: no launch resources, credentials or paths cross desktop IPC. */
 export function registerProductionMiniApps(context: ProductionServiceContext, ipc: Parameters<typeof registerMiniAppManagement>[0]["ipc"]): { dispose(): void } {
   const account = context.requireAccount();
@@ -21,10 +71,12 @@ export function registerProductionMiniApps(context: ProductionServiceContext, ip
   let current: { accountScope: string; generation: number } | null = null;
   let disposed = false;
   const handles = new Map<string, { close(): void }>();
+  const tooling = miniAppTooling(context, ipc);
   const windows = context.native.session == null ? null : createMiniAppWindowFactory({
     BrowserWindow: context.native.BrowserWindow as unknown as MiniAppWindowFactoryPorts["BrowserWindow"],
     session: context.native.session,
     currentAccount: () => current,
+    ...(tooling ? { tools: tooling } : {}),
   });
   const closeAll = () => { windows?.closeAll(); handles.clear(); };
   const unsubscribe = account.subscribe(() => { generation += 1; current = null; closeAll(); });

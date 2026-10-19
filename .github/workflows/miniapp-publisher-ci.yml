@@ -5,7 +5,6 @@ on:
       - 'source/mahayana/mahayana-rs/mahayana-product/**'
       - 'source/mahayana/mahayana-rs/mahayana-app-host/**'
       - 'source/mahayana/mahayana-rs/mahayana-host/**'
-      - 'frontend/src/recovered/features/plugins/overlay/desktop-surface.tsx'
       - 'source/electron-main/mcp/miniapp-publisher*'
       - 'source/electron-main/adapters/mcp-oauth.ts'
       - 'frontend/src/recovered/features/plugins/overlay/miniapp-publisher.tsx'
@@ -16,7 +15,6 @@ on:
       - 'source/mahayana/mahayana-rs/mahayana-product/**'
       - 'source/mahayana/mahayana-rs/mahayana-app-host/**'
       - 'source/mahayana/mahayana-rs/mahayana-host/**'
-      - 'frontend/src/recovered/features/plugins/overlay/desktop-surface.tsx'
       - 'source/electron-main/mcp/miniapp-publisher*'
       - 'source/electron-main/adapters/mcp-oauth.ts'
 permissions:

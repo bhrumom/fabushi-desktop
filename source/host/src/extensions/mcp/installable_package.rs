@@ -697,6 +697,40 @@ mod tests {
         );
     }
 
+    #[test]
+    fn actual_production_signed_0_2_0_candidate_interoperability() {
+        let Ok(path) = std::env::var("FABUSHI_SIGNED_HOST_FIXTURE_0_2_0") else {
+            return;
+        };
+        let bytes = std::fs::read(path).unwrap();
+        let policy = CatalogAuthorization {
+            app_id: "org.fabushi.global-dandelion".into(),
+            publisher_id: "bhrumom".into(),
+            version: "0.2.0".into(),
+            package_sha256: "f6794dc4567063fe0e2743e9523db741ce6c1175bc49f35a2714f499191ef90d"
+                .into(),
+            key_id: "fabushi-marketplace-managed-20261013-1".into(),
+            public_key: URL_SAFE_NO_PAD
+                .decode("VbvgbVxNAeftFYB0l1-NzE2-Gx3d4NQ7hkKiQ0HMpu0")
+                .unwrap()
+                .try_into()
+                .unwrap(),
+            trust_epoch: 1,
+            host_api: 1,
+        };
+        let verified = verify_catalog_bundle(&bytes, &policy).unwrap();
+        assert_eq!(verified.entrypoint(), "index.html");
+        assert!(verified.resource("app.js").is_some());
+        assert!(verified.resource("host-tools.js").is_some());
+        assert!(verified.resource("LICENSE-MIT.txt").is_some());
+        assert!(verified.resource("LICENSE-APACHE.txt").is_some());
+        assert!(
+            verified
+                .resource("pkg/dandelion_web_adapter_bg.wasm")
+                .is_some()
+        );
+    }
+
     fn archive(items: Vec<(String, Vec<u8>)>) -> Vec<u8> {
         let mut writer = ZipWriter::new(Cursor::new(Vec::new()));
         for (name, data) in items {

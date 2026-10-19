@@ -1,6 +1,9 @@
 import { createHash } from "node:crypto";
+import type { MiniAppToolRouter, MiniAppToolScope } from "./miniapp-tools.js";
+import { MINIAPP_TOOL_CHANNEL } from "../../shared/miniapp-tool-contract.js";
 
 export const FABUSHI_MINI_APP_SCHEME = "fabushi-miniapp";
+/** Must stay byte-identical to source/electron-preload/preload-miniapp-tools.ts. */
 const MAX_RESOURCE_BYTES = 250 * 1024 * 1024;
 const MAX_RESOURCE_COUNT = 10_000;
 const MAX_REPORT_BYTES = 1024 * 1024;
@@ -93,7 +96,25 @@ export interface MiniAppWindowOptions {
     readonly sandbox: true;
     readonly webSecurity: true;
     readonly webviewTag: false;
+    readonly preload?: string;
   };
+}
+
+export interface MiniAppIpcEvent {
+  readonly sender: MiniAppWebContents;
+  readonly senderFrame?: { readonly url: string } | null;
+}
+
+export interface MiniAppIpc {
+  handle(channel: string, listener: (event: MiniAppIpcEvent, tool: unknown, args: unknown) => Promise<unknown>): void;
+  removeHandler?(channel: string): void;
+}
+
+export interface MiniAppToolBridgePorts {
+  readonly router: MiniAppToolRouter;
+  /** Absolute path to the compiled sandboxed preload. */
+  readonly preloadPath: string;
+  readonly ipc: MiniAppIpc;
 }
 
 export interface MiniAppWindowFactoryPorts {
@@ -102,6 +123,8 @@ export interface MiniAppWindowFactoryPorts {
   /** Existing native Auth/Account owner, based on getStatus().authId. */
   readonly currentAccount: () => { readonly accountScope: string; readonly generation: number } | null;
   readonly showError?: (error: "MINIAPP_STALE_ACCOUNT" | "MINIAPP_ALREADY_OPEN" | "MINIAPP_INVALID_PACKAGE") => void;
+  /** Omit to keep the window render-only (current default). */
+  readonly tools?: MiniAppToolBridgePorts;
 }
 
 export interface MiniAppWindowFactory {
@@ -193,10 +216,31 @@ function isAllowedReportExport(appId: string, item: MiniAppDownloadItem, content
 }
 
 export function createMiniAppWindowFactory(ports: MiniAppWindowFactoryPorts): MiniAppWindowFactory {
-  const windows = new Map<string, { scope: string; window: MiniAppWindow; disposeSession(): void }>();
+  const windows = new Map<string, { toolScope: MiniAppToolScope; origin: string; window: MiniAppWindow; disposeSession(): void }>();
   const minimumGeneration = new Map<string, number>();
   const opening = new Set<string>();
   const keyFor = (scope: string, appId: string) => identityHash(scope, appId);
+
+  let toolBridgeInstalled = false;
+  const ensureToolBridge = (): void => {
+    const tools = ports.tools;
+    if (!tools || toolBridgeInstalled) return;
+    toolBridgeInstalled = true;
+    const denied = { ok: false, error: { code: "UNAUTHORIZED_SENDER", message: "该窗口无权调用宿主工具" } };
+    tools.ipc.handle(MINIAPP_TOOL_CHANNEL, async (event, tool, args) => {
+      for (const record of windows.values()) {
+        if (record.window.webContents !== event.sender) continue;
+        const current = ports.currentAccount();
+        if (!current || current.accountScope !== record.toolScope.accountScope
+          || current.generation !== record.toolScope.accountGeneration) return denied;
+        let frameUrl: URL;
+        try { frameUrl = new URL(event.senderFrame?.url ?? ""); } catch { return denied; }
+        if (!matchesOrigin(frameUrl, record.origin)) return denied;
+        return tools.router.invoke(record.toolScope, tool, args);
+      }
+      return denied;
+    });
+  };
 
   const closeKey = (key: string): void => {
     const record = windows.get(key);
@@ -230,6 +274,10 @@ export function createMiniAppWindowFactory(ports: MiniAppWindowFactoryPorts): Mi
       const partition = `persist:fabushi-miniapp-${key}`;
       const session = ports.session.fromPartition(partition);
       const origin = `${FABUSHI_MINI_APP_SCHEME}://${key}.app`;
+      const toolScope: MiniAppToolScope = {
+        appId: launch.appId, version: launch.version, packageDigest: launch.packageDigest,
+        accountScope: launch.accountScope, accountGeneration: launch.accountGeneration,
+      };
       const handler = makeResourceHandler(origin, launch.entrypoint, resources);
       let protocolRegistered = false;
       let requestListener: ((details: { url: string }, callback: (result: { cancel: boolean }) => void) => void) | undefined;
@@ -264,10 +312,14 @@ export function createMiniAppWindowFactory(ports: MiniAppWindowFactoryPorts): Mi
       session.setPermissionRequestHandler(denyPermission);
       session.setPermissionCheckHandler(() => false);
       permissionInstalled = true;
+      ensureToolBridge();
       const window = new ports.BrowserWindow({
         width: 960, height: 720, minWidth: 480, minHeight: 360, show: false,
         title: "Fabushi Mini App", autoHideMenuBar: true,
-        webPreferences: { partition, nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true, webviewTag: false },
+        webPreferences: {
+          partition, nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true, webviewTag: false,
+          ...(ports.tools ? { preload: ports.tools.preloadPath } : {}),
+        },
       });
       let reportExportActive = false;
       handleDownload = (event, item, contents) => {
@@ -293,7 +345,7 @@ export function createMiniAppWindowFactory(ports: MiniAppWindowFactoryPorts): Mi
       const disposeSession = () => {
         cleanupPartialSession();
       };
-      const record = { scope: launch.accountScope, window, disposeSession };
+      const record = { toolScope, origin, window, disposeSession };
       windows.set(key, record);
       window.on("closed", () => { if (windows.get(key) === record) { windows.delete(key); disposeSession(); } });
       window.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
@@ -333,7 +385,7 @@ export function createMiniAppWindowFactory(ports: MiniAppWindowFactoryPorts): Mi
     closeAccountScope(accountScope, nextGeneration) {
       if (!Number.isSafeInteger(nextGeneration) || nextGeneration < 0) throw new TypeError("MINIAPP_INVALID_GENERATION");
       minimumGeneration.set(accountScope, Math.max(minimumGeneration.get(accountScope) ?? 0, nextGeneration));
-      for (const [windowKey, record] of windows) if (record.scope === accountScope) closeKey(windowKey);
+      for (const [windowKey, record] of windows) if (record.toolScope.accountScope === accountScope) closeKey(windowKey);
     },
     closeAll() { for (const key of windows.keys()) closeKey(key); },
   };
