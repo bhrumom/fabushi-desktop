@@ -3,7 +3,7 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_repository": "telegramdesktop/tdesktop",
-  "upstream_commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
+  "upstream_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
   "discovery": {
     "evidence_run_id": 38547900810,
     "evidence_head_sha": "9a3e22f5ab8e3522bb27ff682f29703870e2f802",
@@ -13,7 +13,7 @@
     "candidate_lines_total": 331,
     "immutable_commit_pin_occurrences_classified": 19,
     "candidate_lines_pending_classification": 0,
-    "note": "Live upstream 392b83b3091edaaaf0637ff92526db90ce6542e8 is one commit / one build-source path ahead of 3b1ac7732ddd3033d112865821db38b0e7d959d4. Telegram/build/prepare/prepare.py updates the Windows openal-soft revision in place, so scanner line numbers/cardinality remain 331/19/0 and direct gitlinks remain unchanged. The accepted prepare.py blob is a26df9ccf61705c431843fe1104334f4cbb0bc23; desktop-app/patches remains fe957833b84525e634a8d776a7f834ed536d9a21.",
+    "note": "Live upstream 351204f3695b4a39bc3f4d2f230c061b9a01fe2a is one commit / one prepare.py path ahead of 392b83b3091edaaaf0637ff92526db90ce6542e8. The Qt cache-key change inserts two net lines after prepare.py line 1675; eight registered acquisition anchors are shifted +2 with zero content mismatches. Candidate cardinality remains 331/19/0, direct gitlinks are unchanged, and accepted prepare.py blob is 4063cc766ffb60c018b7a6ad456453ec585d5566. Windows OpenAL short-ref resolution is 00cb9b649c -> 00cb9b649c1a6ad1802d88ee4458979164529238.",
     "candidate_lines_classified": 331,
     "disposition_closure_status": "complete",
     "recursive_authority_closure_status": "open",
@@ -551,10 +551,10 @@
         522,
         527,
         635,
-        1832,
-        1951,
-        2038,
-        2051
+        1834,
+        1953,
+        2040,
+        2053
       ],
       "authority_scope": "build-source-authority"
     },
@@ -712,8 +712,8 @@
         1454,
         1494,
         1610,
-        1681,
-        1930
+        1683,
+        1932
       ],
       "authority_scope": "build-source-authority"
     },
@@ -761,8 +761,8 @@
         1530,
         1531,
         1612,
-        1683,
-        1835
+        1685,
+        1837
       ],
       "authority_scope": "build-source-authority"
     },
@@ -881,8 +881,8 @@
       "source_path": "Telegram/build/prepare/prepare.py",
       "source_line": 1418,
       "repository": "https://github.com/telegramdesktop/openal-soft.git",
-      "observed_short_ref": "291c0fdbbd",
-      "resolved_commit": "291c0fdbbdd767f00c45c7fca562614faea57647",
+      "observed_short_ref": "00cb9b649c",
+      "resolved_commit": "00cb9b649c1a6ad1802d88ee4458979164529238",
       "status": "resolved-windows-ref-with-separate-mutable-macos-branch"
     },
     {
@@ -1131,7 +1131,7 @@
   ],
   "recursive_build_reachability": {
     "status": "partial-audited-disposition-open",
-    "accepted_upstream_commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
+    "accepted_upstream_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
     "rule": "A recursively discovered repository is source/build authority only when an accepted TDesktop build path actually initializes, downloads, generates, patches, or consumes it. Presence as an unselected superproject gitlink is not sufficient.",
     "qt_superproject": {
       "repository": "https://github.com/qt/qt5",
@@ -1167,7 +1167,7 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "blob": "a26df9ccf61705c431843fe1104334f4cbb0bc23",
+          "blob": "4063cc766ffb60c018b7a6ad456453ec585d5566",
           "evidence": "Qt 5 initializes only qtbase qtimageformats qtsvg; Qt 6 prepare initializes only qtbase qtimageformats qtshadertools qtsvg."
         },
         {
