@@ -414,6 +414,12 @@ jobs:
           # that is launched outside /Applications before creating BrowserWindow.
           # Exercise the exact signed/notarized candidate as an installed app
           # instead of bypassing that shipping startup contract in the test.
+          source_executable_name="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$source_app/Contents/Info.plist")"
+          source_executable="$source_app/Contents/MacOS/$source_executable_name"
+          test -x "$source_executable"
+          source_before_sha256="$(shasum -a 256 "$source_executable" | awk '{print $1}')"
+          source_before_size="$(stat -f '%z' "$source_executable")"
+
           installed_app="/Applications/Fabushi Candidate ${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.app"
           rm -rf "$installed_app"
           /usr/bin/ditto "$source_app" "$installed_app"
@@ -422,11 +428,36 @@ jobs:
           spctl --assess --type execute --verbose=4 "$installed_app"
 
           executable_name="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$installed_app/Contents/Info.plist")"
+          test "$executable_name" = "$source_executable_name"
           executable="$installed_app/Contents/MacOS/$executable_name"
           test -x "$executable"
+          installed_sha256="$(shasum -a 256 "$executable" | awk '{print $1}')"
+          installed_size="$(stat -f '%z' "$executable")"
+          source_after_sha256="$(shasum -a 256 "$source_executable" | awk '{print $1}')"
+          source_after_size="$(stat -f '%z' "$source_executable")"
+          test "$source_before_sha256" = "$source_after_sha256"
+          test "$source_before_size" = "$source_after_size"
+          test "$source_before_sha256" = "$installed_sha256"
+          test "$source_before_size" = "$installed_size"
+
+          jq -n \
+            --arg sourceSha "${{ steps.source.outputs.sha }}" \
+            --arg sourceApp "$source_app" \
+            --arg sourceExecutable "$source_executable" \
+            --arg sourceBeforeSha256 "$source_before_sha256" \
+            --arg sourceAfterSha256 "$source_after_sha256" \
+            --arg installedApp "$installed_app" \
+            --arg installedExecutable "$executable" \
+            --arg installedSha256 "$installed_sha256" \
+            --argjson sourceSize "$source_before_size" \
+            --argjson installedSize "$installed_size" \
+            '{sourceSha:$sourceSha,sourceApp:$sourceApp,sourceExecutable:$sourceExecutable,sourceBeforeSha256:$sourceBeforeSha256,sourceAfterSha256:$sourceAfterSha256,installedApp:$installedApp,installedExecutable:$installedExecutable,installedSha256:$installedSha256,sourceSize:$sourceSize,installedSize:$installedSize,sourceStable:true,exactSha256Equal:true,copyRelationship:"byte-exact"}' \
+            > "$RUNNER_TEMP/fabushi-packaged-executable-copy-identity.json"
+
           echo "executable=$executable" >> "$GITHUB_OUTPUT"
           echo "Installed candidate app: $installed_app" >> "$GITHUB_STEP_SUMMARY"
           echo "Candidate executable: $executable" >> "$GITHUB_STEP_SUMMARY"
+          echo "Candidate executable SHA-256: `$installed_sha256`" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Provision bounded production CI account session
         shell: bash
@@ -581,6 +612,7 @@ jobs:
             ${{ runner.temp }}/fabushi-candidate-acceptance/*.mov
             ${{ runner.temp }}/fabushi-candidate-acceptance/*.mp4
             ${{ runner.temp }}/fabushi-packaged-network-worker.json
+            ${{ runner.temp }}/fabushi-packaged-executable-copy-identity.json
             desktop/playwright-report
             desktop/test-results
           if-no-files-found: warn
