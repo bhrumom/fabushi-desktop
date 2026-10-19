@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16186,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16186,
-    "unread_minimum": 16159,
+    "unknown_minimum": 16185,
+    "unread_minimum": 16158,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -97,5 +97,5 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Baseline identity for telegramdesktop/tdesktop@0a11537c220df35fe59a96aebe413b1e52bc6e47 (tree 2d737e3da8fd9a36166db27ff56756c99f6c2117) is provenance-bound by GitHub Actions run 39267321482 / job 118110183925 / artifact 12193803207. Exact recursive expansion is 16,186 non-directory entries; 27 read-complete blob identities are retained, so unknown=16,186, unread=16,159, omitted=0. Semantic reading and responsibility closure remain open; baseline_ready/acceptance.accepted remain false."
+  "note": "Baseline identity for telegramdesktop/tdesktop@0a11537c220df35fe59a96aebe413b1e52bc6e47 (tree 2d737e3da8fd9a36166db27ff56756c99f6c2117) is provenance-bound by GitHub Actions run 39267321482 / job 118110183925 / artifact 12193803207. Exact recursive expansion is 16,186 non-directory entries; 27 read-complete blob identities are retained, so unknown=16,185, unread=16,158, omitted=0. Semantic reading and responsibility closure remain open; baseline_ready/acceptance.accepted remain false. The first recursive inventory entry (.agents/shared/build-lock-recovery.md) is now read and mapped as toolchain-equivalent."
 }
