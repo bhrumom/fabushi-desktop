@@ -457,7 +457,7 @@ jobs:
           echo "executable=$executable" >> "$GITHUB_OUTPUT"
           echo "Installed candidate app: $installed_app" >> "$GITHUB_STEP_SUMMARY"
           echo "Candidate executable: $executable" >> "$GITHUB_STEP_SUMMARY"
-          echo "Candidate executable SHA-256: `$installed_sha256`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Candidate executable SHA-256: \`$installed_sha256\`" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Provision bounded production CI account session
         shell: bash
