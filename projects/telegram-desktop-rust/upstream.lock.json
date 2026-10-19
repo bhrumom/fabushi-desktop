@@ -8,16 +8,16 @@
     "repository": "telegramdesktop/tdesktop",
     "url": "https://github.com/telegramdesktop/tdesktop",
     "discovery_ref": "refs/heads/dev",
-    "commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
-    "tree": "30c1d5cce4c1bde962882c1f2ca4b2e51bb03ae6",
-    "committed_at": "2026-10-19T15:15:12Z",
+    "commit": "fab79561cf8030eade9d0098bc438346b8c39261",
+    "tree": "76afabc085867a9c2e086489270d0ca0d5c9bcac",
+    "committed_at": "2026-10-19T18:20:32Z",
     "accepted": false
   },
   "previous_historical_baseline": {
-    "commit": "0a11537c220df35fe59a96aebe413b1e52bc6e47",
-    "tree": "2d737e3da8fd9a36166db27ff56756c99f6c2117",
+    "commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+    "tree": "30c1d5cce4c1bde962882c1f2ca4b2e51bb03ae6",
     "evidence_status": "historical-only",
-    "reason": "Upstream dev advanced by 5 commits and 63 paths from 0a11537. Root non-directory entries rise by six (five SourceFiles and one Resource), with no direct gitlink pin changes. The three mapped .agents entries plus mapped share_box.cpp/url_auth_box.cpp retain exact blob identity. Telegram/cmake/td_ui.cmake changed only by adding boxes/keys_legend.style to the style generator and was reread completely. Predecessor Actions/artifacts are historical-only."
+    "reason": "Live telegramdesktop/tdesktop dev advanced seven commits and eight root paths to fab79561cf8030eade9d0098bc438346b8c39261. The target elf_identity_test.py blob remains identical. Telegram/lib_base advances and adds two tracked files; Telegram/lib_ui advances without tracked-file additions/deletions. Prior exact-head Actions for the 1e18da64 baseline are historical-only."
   },
   "observed_root_inventory": {
     "tree_truncated": false,
@@ -29,8 +29,8 @@
     "root_non_directory_count": 6709
   },
   "delta_from_previous_baseline": {
-    "ahead_by": 5,
-    "changed_paths": 63
+    "ahead_by": 7,
+    "changed_paths": 8
   },
   "direct_gitlinks": [
     {
@@ -151,7 +151,7 @@
     {
       "path": "Telegram/lib_base",
       "repository": "desktop-app/lib_base",
-      "commit": "0d74e8cf4917a558eebac429cc12ac95d127be20"
+      "commit": "ad56a40232ba542ceb796af7c6b4f474c64df851"
     },
     {
       "path": "Telegram/lib_crl",
@@ -196,7 +196,7 @@
     {
       "path": "Telegram/lib_ui",
       "repository": "desktop-app/lib_ui",
-      "commit": "a0a6b50fb80f51b0c3e1b34a1bb8fbe7fee6c32d"
+      "commit": "af1132e87d75f80926dbce1017a96312af3d0bbe"
     },
     {
       "path": "Telegram/lib_webrtc",
@@ -257,11 +257,11 @@
   },
   "coverage": {
     "root_source_entries_total": 6709,
-    "recursive_source_entries_total": 16192,
-    "unknown_minimum": 16185,
-    "unread_minimum": 16158,
+    "recursive_source_entries_total": 16194,
+    "unknown_minimum": 16186,
+    "unread_minimum": 16159,
     "omitted_known": 0,
-    "note": "Revision 9 rebaseline remains in progress for telegramdesktop/tdesktop@1e18da644e37856c9b1d87434bfcd6a2e3d11c57 (tree 30c1d5cce4c1bde962882c1f2ca4b2e51bb03ae6). Recursive authority is 16,192. The first seven recursive entries are now closed through .agents/shared/evidence/elf_identity.py; current fail-closed counters are unknown=16,185, unread=16,158, omitted=0. Source closure, baseline_ready and acceptance.accepted remain false."
+    "note": "Revision 9 live rebaseline is in progress for telegramdesktop/tdesktop@fab79561cf8030eade9d0098bc438346b8c39261 (tree 76afabc085867a9c2e086489270d0ca0d5c9bcac). Root non-directory inventory remains 6,709. Telegram/lib_base adds two recursive entries, raising recursive authority to 16,194. The first eight ordered recursive entries are closed through .agents/shared/evidence/elf_identity_test.py; fail-closed counters are unknown=16,186, unread=16,159, omitted=0. Source closure, baseline_ready and acceptance.accepted remain false."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -275,7 +275,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Rebaseline identity for telegramdesktop/tdesktop@1e18da644e37856c9b1d87434bfcd6a2e3d11c57 remains pending current-head GitHub Actions. Full Revision 9 source closure remains open with unknown=16,185, unread=16,158, omitted=0; baseline_ready and acceptance.accepted remain false pending complete recursive source closure."
+    "note": "Live rebaseline identity for telegramdesktop/tdesktop@fab79561cf8030eade9d0098bc438346b8c39261 remains pending current-head GitHub Actions. Full Revision 9 source closure remains open with unknown=16,186, unread=16,159, omitted=0; baseline_ready and acceptance.accepted remain false pending complete recursive source closure."
   },
   "baseline_identity_evidence": {
     "status": "pending-current-head-revalidation",
@@ -311,7 +311,7 @@
   },
   "recursive_inventory_evidence": {
     "status": "pending-current-head-revalidation",
-    "upstream_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+    "upstream_commit": "fab79561cf8030eade9d0098bc438346b8c39261",
     "source_closure_ready": false,
     "previous_historical_evidence": {
       "status": "accepted-baseline-identity-only-source-closure-open",
