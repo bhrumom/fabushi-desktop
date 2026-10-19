@@ -3592,14 +3592,14 @@
         "Repository development lifecycle -> Independent review contract"
       ],
       "production_evidence": [
-        "main:ae63c2cf09c33c443570ff757f5d73c0beb449b5",
+        "commit:245cb2dbc3bc8817d4dc5d70afc9b4616e9c1eab",
         "path:AGENTS.md#Independent review contract"
       ],
       "test_evidence": [
         "workflow:39282098341@c4c3754bb30682f822839e135fd303021cfc45c7",
         "workflow:39282098302@c4c3754bb30682f822839e135fd303021cfc45c7"
       ],
-      "target_commit": "ae63c2cf09c33c443570ff757f5d73c0beb449b5",
+      "target_commit": "245cb2dbc3bc8817d4dc5d70afc9b4616e9c1eab",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -3807,14 +3807,14 @@
         "Quality strategy -> Cross-review semantics"
       ],
       "production_evidence": [
-        "main:ae63c2cf09c33c443570ff757f5d73c0beb449b5",
+        "commit:5d09b6299310d6414611d01120efda8c5bd589c6",
         "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Cross-review semantics"
       ],
       "test_evidence": [
         "workflow:39282098341@c4c3754bb30682f822839e135fd303021cfc45c7",
         "workflow:39282098302@c4c3754bb30682f822839e135fd303021cfc45c7"
       ],
-      "target_commit": "ae63c2cf09c33c443570ff757f5d73c0beb449b5",
+      "target_commit": "5d09b6299310d6414611d01120efda8c5bd589c6",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -4023,14 +4023,14 @@
         "Evidence contract -> Independent review evidence"
       ],
       "production_evidence": [
-        "main:ae63c2cf09c33c443570ff757f5d73c0beb449b5",
+        "commit:4eff846614db9b7e8b79e09fd9ede9686502c669",
         "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Independent review evidence"
       ],
       "test_evidence": [
         "workflow:39282098341@c4c3754bb30682f822839e135fd303021cfc45c7",
         "workflow:39282098302@c4c3754bb30682f822839e135fd303021cfc45c7"
       ],
-      "target_commit": "ae63c2cf09c33c443570ff757f5d73c0beb449b5",
+      "target_commit": "4eff846614db9b7e8b79e09fd9ede9686502c669",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
