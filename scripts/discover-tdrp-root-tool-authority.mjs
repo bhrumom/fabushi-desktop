@@ -69,7 +69,7 @@ add([key('.github/workflows/linux.yml',73)],{
   kind:'tool-bootstrap-versioned-archive',disposition:'non-product-source-toolchain',version:'4.13.6',...ccache
 });
 const rustup=hashUrl('https://sh.rustup.rs','rustup-init.sh');
-add([key('Telegram/build/docker/centos_env/Dockerfile',1000),key('Telegram/build/prepare/prepare.py',598)],{
+add([key('Telegram/build/docker/centos_env/Dockerfile',1001),key('Telegram/build/prepare/prepare.py',598)],{
   kind:'tool-bootstrap-content-snapshot',disposition:'non-product-source-toolchain',...rustup,
   rationale:'rustup installer is toolchain bootstrap; accepted sources separately pin the Rust toolchain version.'
 });
@@ -103,7 +103,7 @@ add([key('Telegram/build/prepare/prepare.py',581),key('Telegram/build/prepare/pr
 
 // Actual source archives remain source authority and are content-addressed.
 const boost=hashUrl('https://archives.boost.io/release/1.90.0/source/boost_1_90_0.tar.gz','boost-1.90.0.tar.gz');
-add([key('Telegram/build/docker/centos_env/Dockerfile',904)],{
+add([key('Telegram/build/docker/centos_env/Dockerfile',905)],{
   kind:'source-archive-content-authority',disposition:'immutable-source-archive',version:'1.90.0',...boost
 });
 const libiconv=hashUrl('https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.18.tar.gz','libiconv-1.18.tar.gz');
