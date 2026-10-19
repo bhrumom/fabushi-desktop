@@ -5065,7 +5065,7 @@
         ".github/workflows/release-macos-main.yml"
       ],
       "fabushi_target_symbols": [
-        "Bind packaged candidate executable"
+        "installed_sha256"
       ],
       "target_language": "YAML",
       "language_rationale": "The responsibility extends the existing source-neutral shipping release/evidence owner; no upstream Python implementation is copied into Fabushi.",
@@ -5277,7 +5277,7 @@
         ".github/workflows/release-macos-main.yml"
       ],
       "fabushi_target_symbols": [
-        "Bind packaged candidate executable"
+        "source_after_sha256"
       ],
       "target_language": "YAML",
       "language_rationale": "The responsibility extends the existing source-neutral shipping release/evidence owner; no upstream Python implementation is copied into Fabushi.",
