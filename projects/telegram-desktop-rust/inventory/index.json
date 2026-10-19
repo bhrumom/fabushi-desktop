@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16192,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16189,
-    "unread_minimum": 16162,
+    "unknown_minimum": 16188,
+    "unread_minimum": 16161,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -97,5 +97,5 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Rebaseline candidate telegramdesktop/tdesktop@1e18da644e37856c9b1d87434bfcd6a2e3d11c57 (tree 30c1d5cce4c1bde962882c1f2ca4b2e51bb03ae6) is 5 commits / 63 paths ahead of the predecessor. Root non-directory inventory is 6,709 and, with unchanged direct/nested gitlink pins, recursive non-directory inventory is 16,192. The three closed .agents entries retain exact blob identity; all 30 previously read-complete entries remain read-complete after rereading the only changed read entry, Telegram/cmake/td_ui.cmake. Current counters are unknown=16,189, unread=16,162, omitted=0. Predecessor recursive evidence is historical-only until current-head Actions accepts the new baseline identity; baseline_ready/acceptance.accepted remain false."
+  "note": "Rebaseline candidate telegramdesktop/tdesktop@1e18da644e37856c9b1d87434bfcd6a2e3d11c57 (tree 30c1d5cce4c1bde962882c1f2ca4b2e51bb03ae6) remains source-closure open. The fourth recursive inventory entry, .agents/shared/cross-review/prompts.md blob 4e155d2bd7e647c12df7b008c279969bfd65e44d, has now been read completely and its applicable independent-review responsibilities are wired into existing source-neutral Fabushi quality owners. Counters after this actual closure are unknown=16,188, unread=16,161, omitted=0; baseline_ready/acceptance.accepted remain false pending full source closure and current-head evidence."
 }
