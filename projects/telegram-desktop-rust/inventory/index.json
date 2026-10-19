@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16202,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16192,
-    "unread_minimum": 16165,
+    "unknown_minimum": 16191,
+    "unread_minimum": 16164,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -97,5 +97,5 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live rebaseline candidate telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a (tree 5151db79560ed40bf3802482fcfb74b950be6c40) remains source-closure open. Entry 10 .agents/shared/evidence/ninja_target_test.py remains blob a9c635eeb46a6ddf4295a815ef29bcae15ba2208 and is independently mapped to the existing source-neutral configured-build graph qualification/evidence owners. Recursive inventory remains 16,202 with unknown=16,192, unread=16,165, omitted=0; archive-member and executable/runtime reachability remain independent evidence responsibilities."
+  "note": "Live rebaseline candidate telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a (tree 5151db79560ed40bf3802482fcfb74b950be6c40) remains source-closure open. Entry 11 .agents/shared/ninja-target-evidence.md remains blob 7d73d0c8acbefb01b5dd748296db931c58d59b18 and is independently mapped to the existing source-neutral configured-build graph evidence/qualification owners. Recursive inventory remains 16,202 with unknown=16,191, unread=16,164, omitted=0; archive-member, symbol and executable/runtime reachability remain independent evidence responsibilities."
 }
