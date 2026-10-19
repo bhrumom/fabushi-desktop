@@ -64,10 +64,12 @@ export function createAppAgentSurfaceServer(options: { app: { getPath(name: "use
       await new Promise<void>((resolve, reject) => { server!.once("error", reject); server!.listen(0, "127.0.0.1", () => resolve()); });
       const address = server.address(); if (address == null || typeof address === "string") throw new Error("app_surface_bind_failed");
       endpoint = `http://127.0.0.1:${address.port}`;
-      const discovery = { version: 1, appId: "fabushi.desktop", platform: "electron", pid: process.pid, port: address.port, token, endpoint, ...(options.appVersion ? { appVersion: options.appVersion } : {}) };
+      const origin = `${endpoint}/`;
+      const discovery = { version: 1, appId: "fabushi.desktop", platform: "electron", pid: process.pid, port: address.port, token, endpoint, origin, ...(options.appVersion ? { appVersion: options.appVersion } : {}) };
       await writeFile(discoveryPath, JSON.stringify(discovery), { mode: 0o600 }); await chmod(discoveryPath, 0o600);
     },
     async close() { if (server != null) await new Promise<void>((resolve) => server!.close(() => resolve())); server = null; endpoint = ""; await rm(discoveryPath, { force: true }); },
   };
 }
+
 
