@@ -263,6 +263,9 @@ export class FabushiOfficialDeviceRegistryService {
       if (!FABUSHI_APP_AGENT_TOOLS.includes(toolName as typeof FABUSHI_APP_AGENT_TOOLS[number])) {
         throw new Error("The requested tool is not registered by the canonical Fabushi Host surface.");
       }
+      if (READ_ONLY_APP_AGENT_TOOLS.has(toolName) && message.diskPreflight != null && !isReadOnlyPreflight(message.diskPreflight)) {
+        throw new Error("Read-only Fabushi App Agent tools cannot carry a write-shaped disk preflight.");
+      }
       if (!READ_ONLY_APP_AGENT_TOOLS.has(toolName) && !isReadOnlyPreflight(message.diskPreflight)) {
         throw new Error("diskPreflight is required for non-read-only Fabushi App Agent tools.");
       }
