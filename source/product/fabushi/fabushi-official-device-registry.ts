@@ -9,6 +9,14 @@ import type { FabushiDeviceAgentSession } from "../../electron-main/account/auth
 export const OFFICIAL_FABUSHI_DEVICE_GATEWAY_URL = "wss://fabushi-mcp.ombhrum.com/agent";
 export const FABUSHI_DEVICE_GATEWAY_URL_ENV = "FABUSHI_REMOTE_DEVICE_GATEWAY_URL";
 export const FABUSHI_APP_AGENT_STATUS_TOOL = "fabushi.app.status";
+export const FABUSHI_APP_AGENT_TOOLS = [
+  "fabushi.app.status", "fabushi.app.snapshot", "fabushi.app.find",
+  "fabushi.app.action", "fabushi.app.wait", "fabushi.app.assert",
+] as const;
+const READ_ONLY_APP_AGENT_TOOLS = new Set<string>([
+  "fabushi.app.status", "fabushi.app.snapshot", "fabushi.app.find",
+  "fabushi.app.wait", "fabushi.app.assert",
+]);
 
 const DEFAULT_POLL_MS = 30_000;
 const DEFAULT_HEARTBEAT_MS = 25_000;
@@ -78,9 +86,21 @@ async function defaultSurfaceStatus(discoveryPath: string): Promise<unknown> {
   return await module.createAppAgentSurfaceClient({ discoveryPath }).status();
 }
 
+function appToolDescriptor(name: string): Record<string, unknown> {
+  const operation = name.slice("fabushi.app.".length);
+  return {
+    name,
+    title: "Fabushi desktop " + operation,
+    description: "Operate the authenticated Fabushi desktop semantic App Agent Surface.",
+    inputSchema: { type: "object", properties: {}, additionalProperties: true },
+    outputSchema: { type: "object", additionalProperties: true },
+    annotations: { readOnlyHint: READ_ONLY_APP_AGENT_TOOLS.has(name), destructiveHint: !READ_ONLY_APP_AGENT_TOOLS.has(name), idempotentHint: READ_ONLY_APP_AGENT_TOOLS.has(name), openWorldHint: false },
+  };
+}
+
 function statusToolDescriptor(): Record<string, unknown> {
   return {
-    name: FABUSHI_APP_AGENT_STATUS_TOOL,
+    ...appToolDescriptor(FABUSHI_APP_AGENT_STATUS_TOOL),
     title: "Fabushi desktop status",
     description: "Read the current Fabushi desktop App Agent Surface status. This operation does not modify device state.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
@@ -129,6 +149,7 @@ export class FabushiOfficialDeviceRegistryService {
   private readonly now: () => number;
   private readonly connect: (url: string, accessToken: string) => OfficialDeviceRegistrySocket;
   private readonly surfaceStatus: () => Promise<unknown>;
+  private readonly surfaceCall: (toolName: string, input: Record<string, unknown>) => Promise<unknown>;
   private readonly pollMs: number;
   private readonly heartbeatMs: number;
   private started = false;
@@ -142,6 +163,7 @@ export class FabushiOfficialDeviceRegistryService {
     this.connect = options.connect ?? defaultConnect;
     const discoveryPath = join(options.userDataPath, "agent-surface", "bridge.json");
     this.surfaceStatus = options.surfaceStatus ?? (async () => await defaultSurfaceStatus(discoveryPath));
+    this.surfaceCall = options.surfaceCall ?? (async (toolName, input) => { const module = await import("../../../chatgpt-vps-control/lib/app-agent-surface-client.js"); return await module.createAppAgentSurfaceClient({ discoveryPath }).call(toolName.slice("fabushi.app.".length), input); });
     this.pollMs = Math.max(1_000, options.pollMs ?? DEFAULT_POLL_MS);
     this.heartbeatMs = Math.max(1_000, options.heartbeatMs ?? DEFAULT_HEARTBEAT_MS);
   }
@@ -206,9 +228,9 @@ export class FabushiOfficialDeviceRegistryService {
       deviceId: current.deviceId,
       name: this.options.deviceName ?? "Fabushi Desktop",
       platform: process.platform,
-      capabilities: [FABUSHI_APP_AGENT_STATUS_TOOL],
-      tools: [statusToolDescriptor()],
-      toolSchemaVersion: "fabushi-app-status-v1",
+      capabilities: [...FABUSHI_APP_AGENT_TOOLS],
+      tools: FABUSHI_APP_AGENT_TOOLS.map((name) => name === FABUSHI_APP_AGENT_STATUS_TOOL ? statusToolDescriptor() : appToolDescriptor(name)),
+      toolSchemaVersion: "fabushi-app-agent-surface-v1",
       generation: current.sessionId,
       leaseSeconds: 14_400,
       metadata: { kind: "fabushi-desktop", owner: "canonical-host" },
@@ -236,19 +258,23 @@ export class FabushiOfficialDeviceRegistryService {
     }
 
     try {
-      if (message.toolName !== FABUSHI_APP_AGENT_STATUS_TOOL) {
+      const toolName = typeof message.toolName === "string" ? message.toolName : "";
+      if (!FABUSHI_APP_AGENT_TOOLS.includes(toolName as typeof FABUSHI_APP_AGENT_TOOLS[number])) {
         throw new Error("The requested tool is not registered by the canonical Fabushi Host surface.");
       }
-      if (!isReadOnlyPreflight(message.diskPreflight)) {
-        throw new Error("Fabushi App Agent status requires a read-only disk preflight.");
+      if (!READ_ONLY_APP_AGENT_TOOLS.has(toolName) && !isReadOnlyPreflight(message.diskPreflight)) {
+        throw new Error("diskPreflight is required for non-read-only Fabushi App Agent tools.");
       }
-      const status = await this.surfaceStatus();
+      let input: Record<string, unknown> = {};
+      if (typeof message.argumentsJson === "string" && message.argumentsJson.length > 0) input = JSON.parse(message.argumentsJson);
+      else if (message.arguments != null && typeof message.arguments === "object" && !Array.isArray(message.arguments)) input = message.arguments as Record<string, unknown>;
+      const resultValue = toolName === FABUSHI_APP_AGENT_STATUS_TOOL ? await this.surfaceStatus() : await this.surfaceCall(toolName, input);
       const currentAfter = await this.options.getDeviceAgentSession().catch(() => null);
       if (!isUsableSession(currentAfter, this.now()) || sessionKey(currentAfter) !== key) {
         this.disconnect("account changed during device call");
         return;
       }
-      const bounded = safeJsonResult(status, currentAfter.accessToken);
+      const bounded = safeJsonResult(resultValue, currentAfter.accessToken);
       this.send(socket, {
         type: "result",
         requestId,
