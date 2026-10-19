@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
 
 export const DandelionCandidate = Object.freeze({
-  namespace: "bhrumom", name: "global-dandelion", version: "0.1.0",
-  digest: "de10e02115415908f827723457817e51cb4f39aa5ca68798da824fecc483118a",
+  namespace: "bhrumom", name: "global-dandelion", version: "0.2.1",
+  digest: "afc45ad273e4965fc272a89e775291444c683513ecbc3fa31769858431e8a6b6",
   appId: "org.fabushi.global-dandelion",
 });
 const API = "https://api.ombhrum.com";
@@ -109,13 +109,13 @@ export function registerMiniAppPublisher(ports: MiniAppPublisherPorts): { dispos
       if (!existing) await request("/v1/extensions/publisher/releases", "POST", { descriptor: {
         identity: { namespace: DandelionCandidate.namespace, name: DandelionCandidate.name, kind: "web-miniapp" },
         origin: "public", trustDomain: "catalog-authorized", displayName: "Global Dandelion 离线工作台",
-        description: "离线 GDAN v2 文件分包、校验和报告导出预览版；尚不支持原项目 LAN/WAN、热点和系统扫描。",
+        description: "复用原生 Rust GDAN v2/BLAKE3 的离线文件分块与逐包完整性校验工作台。",
         publisher: { id: DandelionCandidate.namespace, displayName: "bhrumom", verified: false },
-        release: { version: DandelionCandidate.version, channel: "preview", platforms: ["desktop"],
+        release: { version: DandelionCandidate.version, channel: "preview", platforms: ["android", "desktop", "ios"],
           requestedCapabilities: [], minHostApi: 1, bundleDigest: DandelionCandidate.digest },
-        categories: ["utilities"], tags: ["offline", "proprietary", "preview"],
+        categories: ["developer-tools", "utilities"], tags: ["cross-platform", "file-integrity", "offline", "rust", "wasm"],
         runtime: { owner: "host-plugins", installMode: "fabapp", appId: DandelionCandidate.appId,
-          publisherId: DandelionCandidate.namespace, offlineCore: true, license: "LicenseRef-Proprietary",
+          publisherId: DandelionCandidate.namespace, offlineCore: true, license: "MIT OR Apache-2.0",
           nativeTransferAvailable: false, networkPolicy: { mode: "deny", allowedOrigins: [] } },
       } }, { "Content-Type": "application/json" });
       await request("/v1/extensions/publisher/artifacts", "POST", bytes, {
