@@ -36,6 +36,7 @@ sha2 = "0.10"
 subtle = "2"
 tar = "0.4"
 thiserror = "2"
+tungstenite = { version = "=0.27.0", default-features = false, features = ["handshake", "rustls-tls-native-roots", "url"] }
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "time", "net", "sync", "macros"] }
 uuid = { version = "1", features = ["v4"] }
 url = "2"

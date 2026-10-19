@@ -1,10 +1,20 @@
 use std::collections::HashMap;
 use std::fs;
+use std::io::ErrorKind;
+use std::net::{IpAddr, TcpStream};
 use std::path::PathBuf;
-use std::net::IpAddr;
+use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
+use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
+use std::thread::{self, JoinHandle};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use base64::Engine as _;
+use tungstenite::client::IntoClientRequest;
+use tungstenite::http::header::AUTHORIZATION;
+use tungstenite::http::HeaderValue;
+use tungstenite::stream::MaybeTlsStream;
+use tungstenite::{Message, WebSocket, WebSocketConfig};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use reqwest::blocking::Client;
@@ -46,6 +56,17 @@ const REMOTE_SENSITIVE_RESULT_TTL_SECONDS: i64 = 60;
 const REMOTE_SENSITIVE_RESULT_MAX_ENTRIES: usize = 8;
 pub const REMOTE_COMPUTER_TARGET_PORT: u16 = 8792;
 const REMOTE_NATIVE_TOOL_GRANT_MAX_SECONDS: i64 = 5 * 60;
+const MAX_PRIVATE_WS_MESSAGE_BYTES: usize = 64 * 1024;
+const MAX_ACTIVE_PRIVATE_WS_REQUESTS: usize = 16;
+const PRIVATE_WS_HEARTBEAT_INTERVAL: Duration = Duration::from_secs(20);
+const PRIVATE_WS_IDENTITY_CHECK_INTERVAL: Duration = Duration::from_secs(2);
+const PRIVATE_WS_NETWORK_CHECK_INTERVAL: Duration = Duration::from_secs(5);
+const PRIVATE_WS_READ_TIMEOUT: Duration = Duration::from_millis(50);
+const PRIVATE_WS_REQUEST_RECEIVED: u8 = 0;
+const PRIVATE_WS_REQUEST_DISPATCHED: u8 = 1;
+const PRIVATE_WS_REQUEST_CANCELLED_BEFORE_DISPATCH: u8 = 2;
+const PRIVATE_WS_REQUEST_FINISHED: u8 = 3;
+pub const FABUSHI_FDN_PRIVATE_WS_URL_ENV: &str = "FABUSHI_FDN_PRIVATE_WS_URL";
 
 fn canonical_json(value: &Value, output: &mut String) -> Result<(), RemoteComputerTargetError> {
     match value {
@@ -651,6 +672,107 @@ enum RemoteTargetPrivateRequest {
         grant_generation: i64,
         result_ref: String,
     },
+}
+
+trait RemoteTargetResponseSink {
+    fn send_response(&mut self, value: &Value) -> Result<(), RemoteComputerTargetError>;
+}
+
+struct NetworkWorkerResponseSink<'a> {
+    worker: &'a mut OwnedNetworkWorker,
+    stream_id: &'a str,
+}
+
+impl RemoteTargetResponseSink for NetworkWorkerResponseSink<'_> {
+    fn send_response(&mut self, value: &Value) -> Result<(), RemoteComputerTargetError> {
+        write_private_frame(self.worker, self.stream_id, value)
+    }
+}
+
+#[derive(Default)]
+struct CapturedRemoteTargetResponseSink {
+    response: Option<Value>,
+}
+
+impl RemoteTargetResponseSink for CapturedRemoteTargetResponseSink {
+    fn send_response(&mut self, value: &Value) -> Result<(), RemoteComputerTargetError> {
+        if self.response.is_some() {
+            return Err(RemoteComputerTargetError::InvalidResponse);
+        }
+        self.response = Some(value.clone());
+        Ok(())
+    }
+}
+
+struct PrivateRequestState {
+    phase: AtomicU8,
+    completed_at: Mutex<Option<Instant>>,
+}
+
+impl Default for PrivateRequestState {
+    fn default() -> Self {
+        Self {
+            phase: AtomicU8::new(PRIVATE_WS_REQUEST_RECEIVED),
+            completed_at: Mutex::new(None),
+        }
+    }
+}
+
+impl PrivateRequestState {
+    fn request_cancel(&self) -> &'static str {
+        loop {
+            match self.phase.load(Ordering::Acquire) {
+                PRIVATE_WS_REQUEST_RECEIVED => {
+                    if self.phase.compare_exchange(
+                        PRIVATE_WS_REQUEST_RECEIVED,
+                        PRIVATE_WS_REQUEST_CANCELLED_BEFORE_DISPATCH,
+                        Ordering::AcqRel,
+                        Ordering::Acquire,
+                    ).is_ok() {
+                        return "cancelled";
+                    }
+                }
+                PRIVATE_WS_REQUEST_DISPATCHED => return "cancellation_pending",
+                PRIVATE_WS_REQUEST_CANCELLED_BEFORE_DISPATCH => return "cancelled",
+                PRIVATE_WS_REQUEST_FINISHED => return "already_completed",
+                _ => return "cancellation_pending",
+            }
+        }
+    }
+
+    fn begin_dispatch(&self) -> bool {
+        self.phase.compare_exchange(
+            PRIVATE_WS_REQUEST_RECEIVED,
+            PRIVATE_WS_REQUEST_DISPATCHED,
+            Ordering::AcqRel,
+            Ordering::Acquire,
+        ).is_ok()
+    }
+
+    fn cancelled_before_dispatch(&self) -> bool {
+        self.phase.load(Ordering::Acquire) == PRIVATE_WS_REQUEST_CANCELLED_BEFORE_DISPATCH
+    }
+
+    fn complete(&self) {
+        if self.phase.load(Ordering::Acquire) != PRIVATE_WS_REQUEST_CANCELLED_BEFORE_DISPATCH {
+            self.phase.store(PRIVATE_WS_REQUEST_FINISHED, Ordering::Release);
+        }
+        if let Ok(mut completed_at) = self.completed_at.lock() {
+            *completed_at = Some(Instant::now());
+        }
+    }
+
+    fn can_expire(&self, now: Instant) -> bool {
+        let phase = self.phase.load(Ordering::Acquire);
+        if phase != PRIVATE_WS_REQUEST_FINISHED
+            && phase != PRIVATE_WS_REQUEST_CANCELLED_BEFORE_DISPATCH
+        {
+            return false;
+        }
+        self.completed_at.lock().ok()
+            .and_then(|completed_at| *completed_at)
+            .is_some_and(|completed_at| now.duration_since(completed_at) >= Duration::from_secs(60))
+    }
 }
 
 #[derive(Clone, PartialEq, Eq)]
@@ -1339,6 +1461,22 @@ impl FabushiCoreTargetClient {
         let frame = read_private_frame(worker, stream_id)?;
         let request: RemoteTargetPrivateRequest =
             serde_json::from_slice(&frame).map_err(|_| RemoteComputerTargetError::InvalidResponse)?;
+        let mut sink = NetworkWorkerResponseSink { worker, stream_id };
+        self.handle_private_request(request, catalog, authorizer, executor, &mut sink, None)
+    }
+
+    fn handle_private_request(
+        &self,
+        request: RemoteTargetPrivateRequest,
+        catalog: &dyn RemoteComputerToolCatalog,
+        authorizer: &dyn RemoteComputerToolAuthorizer,
+        executor: &dyn RemoteComputerNativeExecutor,
+        sink: &mut dyn RemoteTargetResponseSink,
+        cancellation: Option<&PrivateRequestState>,
+    ) -> Result<(), RemoteComputerTargetError> {
+        if cancellation.is_some_and(PrivateRequestState::cancelled_before_dispatch) {
+            return Err(RemoteComputerTargetError::RequestFailed);
+        }
 
         match request {
             RemoteTargetPrivateRequest::GrantController {
@@ -1352,10 +1490,7 @@ impl FabushiCoreTargetClient {
                 self.require_current_network_binding(&device_id, network_generation)?;
                 let grant =
                     self.grant_service_client(&connection_id, &delegation_id, &request_id, &label)?;
-                write_private_frame(
-                    worker,
-                    stream_id,
-                    &json!({
+                sink.send_response(&json!({
                         "type": "controllerGranted",
                         "deviceId": grant.device_id,
                         "clientId": grant.client_id,
@@ -1391,10 +1526,7 @@ impl FabushiCoreTargetClient {
                     .map(tool_descriptor_sha256)
                     .transpose()?
                     .unwrap_or_default();
-                write_private_frame(
-                    worker,
-                    stream_id,
-                    &json!({
+                sink.send_response(&json!({
                         "type": "toolDescription",
                         "deviceId": device_id,
                         "clientId": grant.client_id,
@@ -1427,10 +1559,7 @@ impl FabushiCoreTargetClient {
                 self.activate_session(&session_id)?;
                 let generation =
                     self.grant_tool(&session_id, &client_id, &tool_name, authorized_expires_at)?;
-                write_private_frame(
-                    worker,
-                    stream_id,
-                    &json!({
+                sink.send_response(&json!({
                         "type": "toolAuthorized",
                         "deviceId": device_id,
                         "sessionId": session_id,
@@ -1470,11 +1599,21 @@ impl FabushiCoreTargetClient {
                 // the Core claim but before any native side effect is dispatched.
                 self.require_current_network_binding(&device_id, network_generation)?;
 
+                if let Some(cancellation) = cancellation {
+                    if !cancellation.begin_dispatch() {
+                        return self.finish_native_operation(
+                            sink,
+                            &claimed,
+                            &device_id,
+                            network_generation,
+                            "failed",
+                            json!({"code":"cancelled_before_dispatch","retryable":false}),
+                        );
+                    }
+                }
+
                 match executor.execute(&claimed, &arguments, &disk_preflight) {
-                    RemoteComputerNativeOutcome::OutcomeUnknown => write_private_frame(
-                        worker,
-                        stream_id,
-                        &json!({
+                    RemoteComputerNativeOutcome::OutcomeUnknown => sink.send_response(&json!({
                             "type": "operationResult",
                             "deviceId": device_id,
                             "sessionId": session_id,
@@ -1485,26 +1624,23 @@ impl FabushiCoreTargetClient {
                         }),
                     ),
                     RemoteComputerNativeOutcome::SensitiveCompleted(result) => self.finish_sensitive_operation(
-                        worker,
-                        stream_id,
-                        &claimed,
+                    sink,
+                    &claimed,
                         &device_id,
                         network_generation,
                         result,
                     ),
                     RemoteComputerNativeOutcome::Completed(result) => self.finish_native_operation(
-                        worker,
-                        stream_id,
-                        &claimed,
+                    sink,
+                    &claimed,
                         &device_id,
                         network_generation,
                         "completed",
                         result,
                     ),
                     RemoteComputerNativeOutcome::Failed(result) => self.finish_native_operation(
-                        worker,
-                        stream_id,
-                        &claimed,
+                    sink,
+                    &claimed,
                         &device_id,
                         network_generation,
                         "failed",
@@ -1553,7 +1689,7 @@ impl FabushiCoreTargetClient {
                     .sensitive_inputs
                     .issue(binding, unix_millis()?, ttl_ms)
                     .map_err(|_| RemoteComputerTargetError::AuthorityUnavailable)?;
-                write_private_frame(worker, stream_id, &json!({
+                sink.send_response(&json!({
                     "type": "sensitiveInputChallenge",
                     "deviceId": device_id,
                     "sessionId": session_id,
@@ -1606,6 +1742,18 @@ impl FabushiCoreTargetClient {
                 let decoded = base64::engine::general_purpose::STANDARD.decode(&encoded);
                 encoded.fill(0);
                 let payload = decoded.map_err(|_| RemoteComputerTargetError::InvalidResponse)?;
+                if let Some(cancellation) = cancellation {
+                    if !cancellation.begin_dispatch() {
+                        return self.finish_native_operation(
+                            sink,
+                            &claimed,
+                            &device_id,
+                            network_generation,
+                            "failed",
+                            json!({"code":"cancelled_before_dispatch","retryable":false}),
+                        );
+                    }
+                }
                 let delivered = self
                     .sensitive_inputs
                     .consume(
@@ -1689,8 +1837,7 @@ impl FabushiCoreTargetClient {
                     "failed"
                 };
                 self.finish_native_operation(
-                    worker,
-                    stream_id,
+                    sink,
                     &claimed,
                     &device_id,
                     network_generation,
@@ -1716,7 +1863,7 @@ impl FabushiCoreTargetClient {
                     &request_sha256,
                     grant_generation,
                 )?;
-                write_private_frame(worker, stream_id, &json!({
+                sink.send_response(&json!({
                     "type": "sensitiveResultReady",
                     "deviceId": device_id,
                     "sessionId": session_id,
@@ -1758,7 +1905,7 @@ impl FabushiCoreTargetClient {
                     &result_ref,
                     offset,
                 )?;
-                write_private_frame(worker, stream_id, &chunk)
+                sink.send_response(&chunk)
             }
             RemoteTargetPrivateRequest::SensitiveResultRevoke {
                 device_id,
@@ -1780,7 +1927,7 @@ impl FabushiCoreTargetClient {
                     grant_generation,
                     &result_ref,
                 )?;
-                write_private_frame(worker, stream_id, &json!({
+                sink.send_response(&json!({
                     "type": "sensitiveResultRevoked",
                     "requestId": request_id,
                     "resultRef": result_ref,
@@ -1789,10 +1936,34 @@ impl FabushiCoreTargetClient {
         }
     }
 
+    fn handle_private_payload(
+        &self,
+        payload: &Value,
+        expected_account_id: &str,
+        expected_device_id: &str,
+        expected_network_generation: i64,
+        catalog: &dyn RemoteComputerToolCatalog,
+        authorizer: &dyn RemoteComputerToolAuthorizer,
+        executor: &dyn RemoteComputerNativeExecutor,
+        cancellation: &PrivateRequestState,
+    ) -> Result<Value, RemoteComputerTargetError> {
+        validate_private_ws_payload(payload, expected_device_id, expected_network_generation)?;
+        let (credential, _) = self.authority()?;
+        if credential.user_id != expected_account_id || credential.device_id != expected_device_id {
+            return Err(RemoteComputerTargetError::IdentityMismatch);
+        }
+        self.require_current_network_binding(expected_device_id, expected_network_generation)?;
+        let request: RemoteTargetPrivateRequest = serde_json::from_value(payload.clone())
+            .map_err(|_| RemoteComputerTargetError::InvalidResponse)?;
+        let mut sink = CapturedRemoteTargetResponseSink::default();
+        self.handle_private_request(request, catalog, authorizer, executor, &mut sink, Some(cancellation))?;
+        let response = sink.response.ok_or(RemoteComputerTargetError::InvalidResponse)?;
+        correlate_private_ws_response(response, payload, expected_device_id, expected_network_generation)
+    }
+
     fn finish_sensitive_operation(
         &self,
-        worker: &mut OwnedNetworkWorker,
-        stream_id: &str,
+        sink: &mut dyn RemoteTargetResponseSink,
         claimed: &ClaimedRemoteOperation,
         device_id: &str,
         network_generation: i64,
@@ -1843,7 +2014,7 @@ impl FabushiCoreTargetClient {
             }
             return Err(RemoteComputerTargetError::OutcomeUnknown);
         }
-        write_private_frame(worker, stream_id, &json!({
+        sink.send_response(&json!({
             "type": "operationResult",
             "deviceId": device_id,
             "sessionId": claimed.session_id,
@@ -2001,8 +2172,7 @@ impl FabushiCoreTargetClient {
 
     fn finish_native_operation(
         &self,
-        worker: &mut OwnedNetworkWorker,
-        stream_id: &str,
+        sink: &mut dyn RemoteTargetResponseSink,
         claimed: &ClaimedRemoteOperation,
         device_id: &str,
         network_generation: i64,
@@ -2022,10 +2192,7 @@ impl FabushiCoreTargetClient {
         };
         self.publish_result(claimed, status, &result_sha256, core_result)
             .map_err(|_| RemoteComputerTargetError::OutcomeUnknown)?;
-        write_private_frame(
-            worker,
-            stream_id,
-            &json!({
+        sink.send_response(&json!({
                 "type": "operationResult",
                 "deviceId": device_id,
                 "sessionId": claimed.session_id,
@@ -2112,6 +2279,9 @@ pub struct RemoteComputerTargetNetworkService {
     executor: Arc<dyn RemoteComputerNativeExecutor>,
     local_port: u16,
     ingress_cache: Mutex<Option<(RemoteNetworkIngress, Instant)>>,
+    private_ws_url: Option<Url>,
+    private_ws_stop: Arc<AtomicBool>,
+    private_ws_thread: Mutex<Option<JoinHandle<()>>>,
 }
 
 impl RemoteComputerTargetNetworkService {
@@ -2125,6 +2295,16 @@ impl RemoteComputerTargetNetworkService {
         if local_port == 0 {
             return Err(RemoteComputerTargetError::TransportFailed);
         }
+        let private_ws_url = std::env::var(FABUSHI_FDN_PRIVATE_WS_URL_ENV)
+            .ok()
+            .filter(|value| !value.trim().is_empty())
+            .and_then(|value| match validate_private_ws_url(&value) {
+                Ok(url) => Some(url),
+                Err(_) => {
+                    eprintln!("[fabushi-fdn] private WebSocket URL rejected; reverse fallback disabled");
+                    None
+                }
+            });
         Ok(Self {
             client,
             catalog,
@@ -2132,7 +2312,28 @@ impl RemoteComputerTargetNetworkService {
             executor,
             local_port,
             ingress_cache: Mutex::new(None),
+            private_ws_url,
+            private_ws_stop: Arc::new(AtomicBool::new(false)),
+            private_ws_thread: Mutex::new(None),
         })
+    }
+
+    fn ensure_private_ws_thread(&self) {
+        let Some(url) = self.private_ws_url.clone() else { return; };
+        let Ok(mut slot) = self.private_ws_thread.lock() else { return; };
+        if slot.as_ref().is_some_and(|handle| !handle.is_finished()) { return; }
+        if let Some(handle) = slot.take() { let _ = handle.join(); }
+        if self.private_ws_stop.load(Ordering::Acquire) { return; }
+        let client = Arc::clone(&self.client);
+        let catalog = Arc::clone(&self.catalog);
+        let authorizer = Arc::clone(&self.authorizer);
+        let executor = Arc::clone(&self.executor);
+        let stop = Arc::clone(&self.private_ws_stop);
+        match thread::Builder::new().name("fabushi-fdn-private-ws".into())
+            .spawn(move || run_private_ws_loop(url, client, catalog, authorizer, executor, stop)) {
+            Ok(handle) => *slot = Some(handle),
+            Err(_) => eprintln!("[fabushi-fdn] private WebSocket supervisor could not start"),
+        }
     }
 
     fn ingress(&self) -> Result<RemoteNetworkIngress, RemoteComputerTargetError> {
@@ -2187,6 +2388,7 @@ pub fn production_remote_computer_target_service(
 
 impl NetworkWorkerService for RemoteComputerTargetNetworkService {
     fn poll(&self, worker: &mut OwnedNetworkWorker) -> Result<(), NetworkEnrollmentError> {
+        self.ensure_private_ws_thread();
         let ingress = self.ingress().map_err(|error| match error {
             RemoteComputerTargetError::AuthorityUnavailable => NetworkEnrollmentError::AuthorityUnavailable,
             RemoteComputerTargetError::RequestFailed | RemoteComputerTargetError::TransportFailed => {
@@ -2251,6 +2453,290 @@ fn read_private_frame(
             return Err(RemoteComputerTargetError::InvalidResponse);
         }
     }
+}
+
+
+impl Drop for RemoteComputerTargetNetworkService {
+    fn drop(&mut self) {
+        self.private_ws_stop.store(true, Ordering::Release);
+        if let Ok(slot) = self.private_ws_thread.get_mut() {
+            if let Some(handle) = slot.take() { let _ = handle.join(); }
+        }
+    }
+}
+
+fn validate_private_ws_url(raw: &str) -> Result<Url, RemoteComputerTargetError> {
+    let url = Url::parse(raw.trim()).map_err(|_| RemoteComputerTargetError::InvalidResponse)?;
+    if url.scheme() != "wss" || url.host_str().is_none() || !url.username().is_empty()
+        || url.password().is_some() || url.query().is_some() || url.fragment().is_some()
+        || url.path() != "/fdn-private-agent" {
+        return Err(RemoteComputerTargetError::InvalidResponse);
+    }
+    Ok(url)
+}
+
+fn valid_private_ws_outer_request_id(value: &str) -> bool {
+    value.len() == 32 && value.bytes().all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+}
+
+fn validate_private_ws_payload(payload: &Value, device_id: &str, generation: i64) -> Result<(), RemoteComputerTargetError> {
+    if !payload.is_object()
+        || serde_json::to_vec(payload).map_err(|_| RemoteComputerTargetError::InvalidResponse)?.len() > MAX_PRIVATE_WS_MESSAGE_BYTES
+        || payload.get("deviceId").and_then(Value::as_str) != Some(device_id)
+        || payload.get("networkGeneration").and_then(Value::as_i64) != Some(generation) {
+        return Err(RemoteComputerTargetError::IdentityMismatch);
+    }
+    for key in ["sessionId", "requestId", "connectionId", "delegationId"] {
+        if let Some(value) = payload.get(key) {
+            let text = value.as_str().ok_or(RemoteComputerTargetError::InvalidResponse)?;
+            if text.trim().is_empty() || text.len() > 512 || text.contains('\r') || text.contains('\n') {
+                return Err(RemoteComputerTargetError::InvalidResponse);
+            }
+            if key == "requestId" && !(8..=160).contains(&text.len()) {
+                return Err(RemoteComputerTargetError::InvalidResponse);
+            }
+        }
+    }
+    Ok(())
+}
+
+fn correlate_private_ws_response(mut response: Value, payload: &Value, device_id: &str, generation: i64) -> Result<Value, RemoteComputerTargetError> {
+    let object = response.as_object_mut().ok_or(RemoteComputerTargetError::InvalidResponse)?;
+    if let Some(value) = object.get("deviceId") {
+        if value.as_str() != Some(device_id) { return Err(RemoteComputerTargetError::IdentityMismatch); }
+    } else { object.insert("deviceId".into(), Value::String(device_id.to_string())); }
+    if let Some(value) = object.get("networkGeneration") {
+        if value.as_i64() != Some(generation) { return Err(RemoteComputerTargetError::IdentityMismatch); }
+    } else { object.insert("networkGeneration".into(), Value::Number(generation.into())); }
+    for key in ["sessionId", "requestId", "connectionId", "delegationId"] {
+        if let Some(expected) = payload.get(key).and_then(Value::as_str) {
+            if let Some(actual) = object.get(key) {
+                if actual.as_str() != Some(expected) { return Err(RemoteComputerTargetError::IdentityMismatch); }
+            } else { object.insert(key.into(), Value::String(expected.to_string())); }
+        }
+    }
+    Ok(response)
+}
+
+fn set_private_ws_timeouts(socket: &mut WebSocket<MaybeTlsStream<TcpStream>>) {
+    fn set(stream: &TcpStream) {
+        let _ = stream.set_read_timeout(Some(PRIVATE_WS_READ_TIMEOUT));
+        let _ = stream.set_write_timeout(Some(Duration::from_secs(5)));
+    }
+    match socket.get_mut() {
+        MaybeTlsStream::Plain(stream) => set(stream),
+        MaybeTlsStream::Rustls(stream) => set(&stream.sock),
+        _ => {}
+    }
+}
+
+fn connect_private_ws(url: &Url, access_token: &str) -> Result<WebSocket<MaybeTlsStream<TcpStream>>, ()> {
+    if access_token.trim().is_empty() { return Err(()); }
+    let mut request = url.as_str().into_client_request().map_err(|_| ())?;
+    request.headers_mut().insert(AUTHORIZATION, HeaderValue::from_str(&format!("Bearer {access_token}")).map_err(|_| ())?);
+    let config = WebSocketConfig { max_message_size: Some(MAX_PRIVATE_WS_MESSAGE_BYTES), max_frame_size: Some(MAX_PRIVATE_WS_MESSAGE_BYTES), ..WebSocketConfig::default() };
+    let (mut socket, _) = tungstenite::client::connect_with_config(request, Some(config), false).map_err(|_| ())?;
+    set_private_ws_timeouts(&mut socket);
+    Ok(socket)
+}
+
+fn send_private_ws_json(socket: &mut WebSocket<MaybeTlsStream<TcpStream>>, value: &Value) -> Result<(), ()> {
+    let encoded = serde_json::to_string(value).map_err(|_| ())?;
+    if encoded.len() > MAX_PRIVATE_WS_MESSAGE_BYTES { return Err(()); }
+    socket.send(Message::Text(encoded.into())).map_err(|_| ())
+}
+
+fn wait_private_ws_registration(socket: &mut WebSocket<MaybeTlsStream<TcpStream>>, timeout: Duration) -> Result<Value, ()> {
+    let deadline = Instant::now() + timeout;
+    loop {
+        if Instant::now() >= deadline { return Err(()); }
+        match socket.read() {
+            Ok(Message::Text(text)) => return serde_json::from_str(text.as_ref()).map_err(|_| ()),
+            Ok(Message::Ping(payload)) => socket.send(Message::Pong(payload)).map_err(|_| ())?,
+            Ok(Message::Pong(_)) => {},
+            Ok(Message::Close(_)) => return Err(()),
+            Ok(_) => return Err(()),
+            Err(tungstenite::Error::Io(error)) if matches!(error.kind(), ErrorKind::WouldBlock | ErrorKind::TimedOut) => {},
+            Err(_) => return Err(()),
+        }
+    }
+}
+
+fn private_ws_error_message(_error: &RemoteComputerTargetError) -> &'static str { "target request failed" }
+
+fn dispatch_private_ws_message(
+    raw: &str, client: &Arc<FabushiCoreTargetClient>,
+    catalog: &Arc<dyn RemoteComputerToolCatalog>, authorizer: &Arc<dyn RemoteComputerToolAuthorizer>,
+    executor: &Arc<dyn RemoteComputerNativeExecutor>, account_id: &str, device_id: &str,
+    generation: i64, connection_id: &str,
+    active: &Arc<Mutex<HashMap<String, Arc<PrivateRequestState>>>>, outgoing: &mpsc::Sender<Value>,
+) -> bool {
+    let message: Value = match serde_json::from_str(raw) { Ok(value) if value.is_object() => value, _ => return false };
+    let kind = match message.get("type").and_then(Value::as_str) { Some(kind) => kind, None => return false };
+    let matches = message.get("deviceId").and_then(Value::as_str) == Some(device_id)
+        && message.get("networkGeneration").and_then(Value::as_i64) == Some(generation)
+        && message.get("connectionId").and_then(Value::as_str) == Some(connection_id);
+    match kind {
+        "fdnPrivate" => {
+            let Some(outer_id) = message.get("requestId").and_then(Value::as_str) else { return false; };
+            if !valid_private_ws_outer_request_id(outer_id) || !matches { return false; }
+            let Some(payload) = message.get("payload").filter(|value| value.is_object()).cloned() else {
+                let _ = outgoing.send(json!({"type":"fdnPrivateResult","requestId":outer_id,"connectionId":connection_id,"deviceId":device_id,"networkGeneration":generation,"ok":false,"error":"private request payload is invalid"}));
+                return true;
+            };
+            if validate_private_ws_payload(&payload, device_id, generation).is_err() {
+                let _ = outgoing.send(json!({"type":"fdnPrivateResult","requestId":outer_id,"connectionId":connection_id,"deviceId":device_id,"networkGeneration":generation,"ok":false,"error":"private request identity is invalid"}));
+                return true;
+            }
+            let state = Arc::new(PrivateRequestState::default());
+            {
+                let Ok(mut requests) = active.lock() else { return false; };
+                requests.retain(|_, state| !state.can_expire(Instant::now()));
+                if requests.contains_key(outer_id) || requests.len() >= MAX_ACTIVE_PRIVATE_WS_REQUESTS {
+                    let _ = outgoing.send(json!({"type":"fdnPrivateResult","requestId":outer_id,"connectionId":connection_id,"deviceId":device_id,"networkGeneration":generation,"ok":false,"error":"private request is already active or capacity is exhausted"}));
+                    return true;
+                }
+                requests.insert(outer_id.to_string(), Arc::clone(&state));
+            }
+            let request_id = outer_id.to_string();
+            let request_id_thread = request_id.clone();
+            let device_id_thread = device_id.to_string();
+            let connection_id_thread = connection_id.to_string();
+            let account_id_thread = account_id.to_string();
+            let client_thread = Arc::clone(client);
+            let catalog_thread = Arc::clone(catalog);
+            let authorizer_thread = Arc::clone(authorizer);
+            let executor_thread = Arc::clone(executor);
+            let outgoing_thread = outgoing.clone();
+            let state_thread = Arc::clone(&state);
+            let spawn = thread::Builder::new().name("fabushi-fdn-private-request".into()).spawn(move || {
+                let handled = client_thread.handle_private_payload(&payload, &account_id_thread, &device_id_thread, generation,
+                    catalog_thread.as_ref(), authorizer_thread.as_ref(), executor_thread.as_ref(), state_thread.as_ref());
+                let response = if state_thread.cancelled_before_dispatch() {
+                    json!({"type":"fdnPrivateResult","requestId":request_id_thread,"connectionId":connection_id_thread,"deviceId":device_id_thread,"networkGeneration":generation,"ok":false,"error":"private request cancelled before native dispatch"})
+                } else {
+                    match handled {
+                        Ok(result) => json!({"type":"fdnPrivateResult","requestId":request_id_thread,"connectionId":connection_id_thread,"deviceId":device_id_thread,"networkGeneration":generation,"ok":true,"result":result}),
+                        Err(error) => json!({"type":"fdnPrivateResult","requestId":request_id_thread,"connectionId":connection_id_thread,"deviceId":device_id_thread,"networkGeneration":generation,"ok":false,"error":private_ws_error_message(&error)}),
+                    }
+                };
+                state_thread.complete();
+                let _ = outgoing_thread.send(response);
+            });
+            if spawn.is_err() {
+                state.complete();
+                let _ = outgoing.send(json!({"type":"fdnPrivateResult","requestId":request_id,"connectionId":connection_id,"deviceId":device_id,"networkGeneration":generation,"ok":false,"error":"private request worker could not start"}));
+            }
+            true
+        }
+        "fdnPrivateCancel" => {
+            let Some(request_id) = message.get("requestId").and_then(Value::as_str) else { return false; };
+            if !valid_private_ws_outer_request_id(request_id) || !matches { return false; }
+            let status = active.lock().ok().and_then(|requests| requests.get(request_id).map(|state| state.request_cancel())).unwrap_or("not_found");
+            outgoing.send(json!({"type":"fdnPrivateCancelAck","requestId":request_id,"connectionId":connection_id,"deviceId":device_id,"networkGeneration":generation,"status":status})).is_ok()
+        }
+        _ => false,
+    }
+}
+
+fn run_private_ws_loop(
+    url: Url, client: Arc<FabushiCoreTargetClient>, catalog: Arc<dyn RemoteComputerToolCatalog>,
+    authorizer: Arc<dyn RemoteComputerToolAuthorizer>, executor: Arc<dyn RemoteComputerNativeExecutor>, stop: Arc<AtomicBool>,
+) {
+    let mut backoff = Duration::from_secs(1);
+    while !stop.load(Ordering::Acquire) {
+        let (credential, _) = match client.authority() {
+            Ok(value) => value,
+            Err(_) => { sleep_private_ws_backoff(&stop, backoff); backoff = std::cmp::min(backoff + backoff, Duration::from_secs(30)); continue; }
+        };
+        let binding = match client.network_binding() {
+            Ok(binding) if binding.device_id == credential.device_id && binding.active && binding.expires_at > unix_seconds().unwrap_or(0) => binding,
+            _ => { sleep_private_ws_backoff(&stop, backoff); backoff = std::cmp::min(backoff + backoff, Duration::from_secs(30)); continue; }
+        };
+        let account_id = credential.user_id.clone();
+        let device_id = credential.device_id.clone();
+        let generation = binding.generation;
+        let token_fingerprint = sha256_hex(credential.access_token().as_bytes());
+        let mut socket = match connect_private_ws(&url, credential.access_token()) {
+            Ok(socket) => socket,
+            Err(_) => { sleep_private_ws_backoff(&stop, backoff); backoff = std::cmp::min(backoff + backoff, Duration::from_secs(30)); continue; }
+        };
+        if send_private_ws_json(&mut socket, &json!({"type":"registerPrivateTransport","deviceId":device_id,"networkGeneration":generation,"leaseSeconds":120,"platform":"desktop"})).is_err() {
+            let _ = socket.close(None); sleep_private_ws_backoff(&stop, backoff); backoff = std::cmp::min(backoff + backoff, Duration::from_secs(30)); continue;
+        }
+        let registered = match wait_private_ws_registration(&mut socket, Duration::from_secs(5)) {
+            Ok(value) => value,
+            Err(_) => { let _ = socket.close(None); sleep_private_ws_backoff(&stop, backoff); backoff = std::cmp::min(backoff + backoff, Duration::from_secs(30)); continue; }
+        };
+        let connection_id = registered.get("connectionId").and_then(Value::as_str).unwrap_or("");
+        let expires_at = registered.get("expiresAt").and_then(Value::as_str)
+            .and_then(|value| chrono::DateTime::parse_from_rfc3339(value).ok()).map(|value| value.timestamp()).unwrap_or(0);
+        if registered.get("type").and_then(Value::as_str) != Some("privateTransportRegistered")
+            || registered.get("accountId").and_then(Value::as_str) != Some(account_id.as_str())
+            || registered.get("deviceId").and_then(Value::as_str) != Some(device_id.as_str())
+            || registered.get("networkGeneration").and_then(Value::as_i64) != Some(generation)
+            || !valid_private_ws_outer_request_id(connection_id)
+            || expires_at <= unix_seconds().unwrap_or(i64::MAX) {
+            let _ = socket.close(None); sleep_private_ws_backoff(&stop, backoff); backoff = std::cmp::min(backoff + backoff, Duration::from_secs(30)); continue;
+        }
+        let connected_at = Instant::now();
+        let active: Arc<Mutex<HashMap<String, Arc<PrivateRequestState>>>> = Arc::new(Mutex::new(HashMap::new()));
+        let (outgoing_tx, outgoing_rx) = mpsc::channel::<Value>();
+        let mut last_heartbeat = Instant::now();
+        let mut last_identity_check = Instant::now();
+        let mut last_network_check = Instant::now();
+        let mut disconnected = false;
+        while !stop.load(Ordering::Acquire) {
+            if expires_at <= unix_seconds().unwrap_or(i64::MAX) { break; }
+            if last_heartbeat.elapsed() >= PRIVATE_WS_HEARTBEAT_INTERVAL {
+                if send_private_ws_json(&mut socket, &json!({"type":"privateTransportHeartbeat","deviceId":device_id,"networkGeneration":generation,"connectionId":connection_id})).is_err() { break; }
+                last_heartbeat = Instant::now();
+            }
+            if last_identity_check.elapsed() >= PRIVATE_WS_IDENTITY_CHECK_INTERVAL {
+                match client.authority() {
+                    Ok((current,_)) if current.user_id == account_id && current.device_id == device_id
+                        && sha256_hex(current.access_token().as_bytes()) == token_fingerprint => {},
+                    _ => break,
+                }
+                last_identity_check = Instant::now();
+            }
+            if last_network_check.elapsed() >= PRIVATE_WS_NETWORK_CHECK_INTERVAL {
+                match client.network_binding() {
+                    Ok(current) if current.device_id == device_id && current.generation == generation && current.active && current.expires_at > unix_seconds().unwrap_or(0) => {},
+                    _ => break,
+                }
+                last_network_check = Instant::now();
+            }
+            for _ in 0..32 {
+                match outgoing_rx.try_recv() {
+                    Ok(message) => { if send_private_ws_json(&mut socket,&message).is_err(){disconnected=true;break;} },
+                    Err(mpsc::TryRecvError::Empty)=>break,
+                    Err(mpsc::TryRecvError::Disconnected)=>{disconnected=true;break;}
+                }
+            }
+            if disconnected { break; }
+            if let Ok(mut requests)=active.lock(){requests.retain(|_,state|!state.can_expire(Instant::now()));}
+            match socket.read() {
+                Ok(Message::Text(text)) => if !dispatch_private_ws_message(text.as_ref(),&client,&catalog,&authorizer,&executor,&account_id,&device_id,generation,connection_id,&active,&outgoing_tx){disconnected=true;break;},
+                Ok(Message::Ping(_)) => if socket.flush().is_err(){disconnected=true;break;},
+                Ok(Message::Pong(_)) => {},
+                Ok(Message::Close(_)) => {disconnected=true;break;},
+                Ok(_) => {disconnected=true;break;},
+                Err(tungstenite::Error::Io(error)) if matches!(error.kind(),ErrorKind::WouldBlock|ErrorKind::TimedOut)=>thread::sleep(Duration::from_millis(10)),
+                Err(_) => {disconnected=true;break;}
+            }
+        }
+        if let Ok(requests)=active.lock(){for state in requests.values(){let _=state.request_cancel();}}
+        let _=socket.close(None);
+        if stop.load(Ordering::Acquire){break;}
+        if connected_at.elapsed()>=Duration::from_secs(60){backoff=Duration::from_secs(1);}else{backoff=std::cmp::min(backoff+backoff,Duration::from_secs(30));}
+        sleep_private_ws_backoff(&stop,backoff);
+    }
+}
+
+fn sleep_private_ws_backoff(stop: &AtomicBool, duration: Duration) {
+    let deadline = Instant::now() + duration;
+    while !stop.load(Ordering::Acquire) && Instant::now() < deadline { thread::sleep(Duration::from_millis(50)); }
 }
 
 fn write_private_frame(
@@ -2393,5 +2879,48 @@ mod sensitive_result_tests {
             vault.insert(format!("ref-{index}"), item, 100);
         }
         assert!(vault.entries.len() <= REMOTE_SENSITIVE_RESULT_MAX_ENTRIES);
+    }
+}
+
+#[cfg(test)]
+mod private_websocket_tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn private_websocket_url_requires_tls_and_exact_path() {
+        assert!(validate_private_ws_url("wss://mcp.ombhrum.com/fdn-private-agent").is_ok());
+        assert!(validate_private_ws_url("ws://mcp.ombhrum.com/fdn-private-agent").is_err());
+        assert!(validate_private_ws_url("wss://mcp.ombhrum.com/agent").is_err());
+        assert!(validate_private_ws_url("wss://user:secret@mcp.ombhrum.com/fdn-private-agent").is_err());
+        assert!(validate_private_ws_url("wss://mcp.ombhrum.com/fdn-private-agent?token=secret").is_err());
+    }
+
+    #[test]
+    fn private_websocket_payload_and_response_are_generation_bound() {
+        let payload=json!({"deviceId":"device-a","networkGeneration":7,"sessionId":"session-a","requestId":"operation-00000001"});
+        assert!(validate_private_ws_payload(&payload,"device-a",7).is_ok());
+        assert!(validate_private_ws_payload(&payload,"device-b",7).is_err());
+        assert!(validate_private_ws_payload(&payload,"device-a",8).is_err());
+        let response=correlate_private_ws_response(json!({"type":"operationResult","status":"completed"}),&payload,"device-a",7).unwrap();
+        assert_eq!(response["deviceId"],"device-a");
+        assert_eq!(response["networkGeneration"],7);
+        assert_eq!(response["sessionId"],"session-a");
+        assert_eq!(response["requestId"],"operation-00000001");
+        assert!(correlate_private_ws_response(json!({"deviceId":"device-b","networkGeneration":7}),&payload,"device-a",7).is_err());
+    }
+
+    #[test]
+    fn private_websocket_cancel_distinguishes_queued_from_dispatched() {
+        let queued=PrivateRequestState::default();
+        assert_eq!(queued.request_cancel(),"cancelled");
+        assert!(!queued.begin_dispatch());
+        queued.complete();
+        assert_eq!(queued.request_cancel(),"cancelled");
+        let running=PrivateRequestState::default();
+        assert!(running.begin_dispatch());
+        assert_eq!(running.request_cancel(),"cancellation_pending");
+        running.complete();
+        assert_eq!(running.request_cancel(),"already_completed");
     }
 }
