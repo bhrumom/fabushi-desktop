@@ -6,10 +6,10 @@
   "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16191,
-    "unread": 16164,
+    "unknown": 16190,
+    "unread": 16163,
     "omitted": 0,
-    "responsibilities_total": 33,
+    "responsibilities_total": 34,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -7890,6 +7890,252 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral contracts read from telegramdesktop/tdesktop authority; upstream Python implementation is not copied.",
       "notes": "Eleventh previously unread recursive source entry at live dev 351204f3695b4a39bc3f4d2f230c061b9a01fe2a. Recursive inventory remains 16,202; after this source-entry closure unknown=16,191, unread=16,164, omitted=0. Archive-member, symbol and executable/runtime reachability remain separate evidence responsibilities.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
+      "source_path": ".agents/shared/phase-effort.md",
+      "source_blob_sha": "dd07a4c611922a29a6892332db98afe76cd58952",
+      "source_kind": "workflow_governance_documentation",
+      "module_id": "tdesktop.workflow-phase-effort",
+      "responsibility_id": "TDRP-R9-AI-PHASE-EFFORT-GOVERNANCE-001",
+      "source_symbols": [
+        "Select effort",
+        "Lens models",
+        "Apply on the current host"
+      ],
+      "capability_ids": [
+        "CAP-AI-WORKFLOW-EFFORT-GOVERNANCE",
+        "CAP-INDEPENDENT-REVIEW-GOVERNANCE",
+        "CAP-EVIDENCE-GOVERNANCE"
+      ],
+      "dependency_ids": [
+        "Fabushi repository AI development lifecycle",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/phase-effort-complete-read.md",
+      "behavior_contract": "Before each AI phase/worker, classify the whole assignment from actual scope/evidence; medium is routine execution only, xhigh is the default for planning/implementation/review/evidence/judgment/diagnosis/convergence/stateful performer work, and high requires a concrete inspected-scope reason. Preserve completed evidence when failures or complexity force escalation. On Codex review providers pin reuse/structure/performance lenses to gpt-6.1-sol with configured-model fallback recorded; all host adapters must use only supported effort/model controls and record inheritance/fallback honestly.",
+      "state_machine": "inspect complete scope/current evidence -> select medium|high|xhigh -> record reason -> apply supported host setting or inheritance fallback -> execute phase -> if failure/complexity exceeds class preserve valid outputs -> escalate medium/high to xhigh (or justified high from medium) -> retain review/evidence contract -> re-evaluate before new child scope",
+      "side_effects": [
+        "Repository workflow/test/evidence governance only; no new shipping runtime."
+      ],
+      "failure_cases": [
+        "medium selected for work containing planning, repair, judgment or synthesis",
+        "high selected without a concrete inspected-scope reason",
+        "failure diagnosis/repair continues at medium instead of escalating",
+        "unexpected complexity remains high instead of escalating to xhigh",
+        "valid prior artifacts/checks discarded solely because effort changes",
+        "reuse/structure/performance Codex lens silently omits gpt-6.1-sol pin or fallback record",
+        "host adapter invents unsupported effort/model arguments",
+        "prompt wording is claimed to change effort without a real host setting",
+        "extra CLI process/global setting/worker or stateful-performer replacement is introduced solely to tune effort/model"
+      ],
+      "ui_disposition": "Not applicable; repository workflow governance only.",
+      "non_ui_responsibilities": [
+        "Whole-assignment effort classification",
+        "medium/high/xhigh selection boundaries",
+        "failure/complexity escalation while preserving evidence",
+        "selected effort/reason and applied/inherited setting recording",
+        "reuse/structure/performance gpt-6.1-sol pin and configured-model fallback",
+        "Codex reasoning_effort mapping",
+        "Claude supported model mapping without fictional reasoning field",
+        "Codex CLI --effort/--model adapter contract",
+        "Grok inherited-setting contract",
+        "same-session/unavailable-override fallback",
+        "new-scope re-evaluation without replacing stateful performer solely for tuning"
+      ],
+      "platform_delta": "Fabushi absorbs the source-neutral governance semantics into existing repository lifecycle, test-strategy and evidence-contract owners rather than copying Telegram-specific workflow structure or introducing a product runtime owner.",
+      "existing_owner_candidates": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "existing_owner": "Fabushi repository AI lifecycle / Test Strategy / Test Evidence Contract",
+      "rejected_existing_owners": [
+        "Shipping Host/Coordinator/Runner do not own development-agent reasoning policy",
+        "A Telegram workflow owner would duplicate repository-wide source-neutral governance",
+        "A model-specific test owner is unnecessary because existing review/evidence owners express pins and fallbacks"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Worker/phase effort and model inheritance",
+        "AI review phase execution policy",
+        "AI phase/worker effort evidence"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "This source entry is normative development/review/evidence workflow policy, not shipping product runtime.",
+      "command_event_contracts": [
+        "phase/worker scope -> effort selection -> supported host override or inheritance fallback -> durable NOTES/evidence record",
+        "routine phase failure needing diagnosis/repair -> preserve outputs -> escalate -> resume same validation/review contract",
+        "Codex review lens -> gpt-6.1-sol if available -> configured model fallback if unavailable -> record applied model/fallback"
+      ],
+      "state_owner": "Existing repository AI workflow/review governance",
+      "lifecycle_owner": "Existing repository development lifecycle and GitHub Actions evidence review",
+      "persistence_and_restart": "Completed valid phase artifacts/checks remain reusable after effort escalation or adapter fallback; exact applied/inherited settings are recorded with durable evidence.",
+      "concurrency_and_cancellation": "Effort/model changes do not authorize duplicate stateful performers or overlapping workers whose writes may still be in flight; reusable children are reclassified before new scope and disposable children finish owned writes before replacement.",
+      "security_boundary": "Do not mutate global model settings or launch extra processes solely to tune execution; use only host-supported fields and record fallback honestly.",
+      "network_service_dependencies": [
+        "GitHub Actions hosted runners",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi repository workflow / quality evidence governance",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "Independent exact-head GitHub Actions verification of this source-entry mapping commit is pending."
+      ],
+      "production_entrypoints": [
+        "AGENTS.md -> Worker/phase effort and model inheritance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> AI review phase execution policy",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> AI phase/worker effort evidence"
+      ],
+      "production_evidence": [
+        "path:AGENTS.md#Worker/phase effort and model inheritance",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#AI review phase execution policy",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#AI phase/worker effort evidence"
+      ],
+      "test_evidence": [
+        "dossier:projects/telegram-desktop-rust/dossiers/phase-effort-complete-read.md",
+        "upstream-perform-task:.agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c",
+        "upstream-continue:.agents/skills/continue/SKILL.md@aeb81dd57018abbc8f03ea3dbd34f91952128db5",
+        "upstream-process-inbox:.agents/skills/process-inbox/SKILL.md@0ce70794ac743d99e6d5c80894cde970b52842db",
+        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba",
+        "upstream-evidence-loop:.agents/shared/test-loop.md@83c4732bf6139f7c6557f18dd87bb35c3d68808d",
+        "upstream-codex-leaf:.agents/shared/scripts/codex_leaf.py@313c4941c61a4ec0e3b3b65cdaa59cc213916fdd",
+        "upstream-codex-leaf-tests:.agents/shared/scripts/codex_leaf_test.py@2831841e6b131ca2c42688fe24e00b739f825ccb",
+        "upstream-claude-adapter:.claude/ai-workflow-adapter.md@370ff84a1ab4c080b15b601a54162b0630c4f4df",
+        "upstream-grok-adapter:.grok/ai-workflow-adapter.md@db447f204316d3991f6d20db3d8f097fcc021154"
+      ],
+      "target_commit": "baf0fe840c8530e38a827b32de7cc9d26a1c94b4",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository quality and development governance",
+      "composition_slot": "AI phase/review execution policy",
+      "capability_component": "Source-neutral AI phase effort and review-model governance",
+      "variation_axes": [
+        "medium routine execution vs xhigh complex/judgment work",
+        "justified high vs unjustified shortcut",
+        "normal phase vs failure/complexity escalation",
+        "Codex supported reasoning effort vs inherited fallback",
+        "gpt-6.1-sol lens pin available vs configured-model fallback",
+        "Claude supported model mapping vs no reasoning field",
+        "Grok/same-session inherited settings vs unsupported override"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi repository AI development lifecycle",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract"
+      ],
+      "duplicate_root_check": "No Telegram/model-specific product runtime or second workflow owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Effort/model fallback never invalidates already-valid artifacts by itself; failures/complexity preserve evidence and resume the same contract at escalated effort.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to workflow governance",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-AI-PHASE-EFFORT-GOVERNANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-PHASE-EFFORT-GOVERNANCE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-EFFORT-WHOLE-SCOPE-001",
+        "INV-TDRP-EFFORT-ESCALATION-PRESERVES-EVIDENCE-001",
+        "INV-TDRP-LENS-MODEL-FALLBACK-RECORDED-001",
+        "INV-TDRP-HOST-OVERRIDE-NO-FICTION-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-PHASE-EFFORT-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-WORKFLOW-EFFORT-EVIDENCE-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-EFFORT-ESCALATION-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-HOST-OVERRIDE-NO-GLOBAL-MUTATION-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-WORKFLOW-GOVERNANCE-001"
+      ],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "phase-effort-source-contract",
+        "workflow-caller-chain",
+        "codex-leaf-effort-adapter"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral workflow-governance contract read from telegramdesktop/tdesktop authority; no upstream implementation copied into Fabushi shipping runtime.",
+      "notes": "Twelfth previously unread recursive source entry at live dev 351204f3695b4a39bc3f4d2f230c061b9a01fe2a. Recursive inventory remains 16,202; after this source-entry closure unknown=16,190, unread=16,163, omitted=0. Baseline acceptance and full source closure remain false.",
       "test_execution_evidence": []
     }
   ]

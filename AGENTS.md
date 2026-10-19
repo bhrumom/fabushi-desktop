@@ -128,6 +128,21 @@ Before applying a review-driven fix, the runner must decide every synthesized fi
 
 After any accepted fixes, run a fresh focused re-review of the fix delta plus the affected functions and adjacent callers/consumers, while retaining the complete frozen scope as context. The review loop stops only on convergence, a configured round cap (default ten), demonstrated non-convergence/scope explosion, or a required human product/arbitration decision. A real defect in changed code is never left open merely to save a round.
 
+###### Worker/phase effort and model inheritance
+
+Before starting each AI phase or worker, classify the complete assigned scope from the current evidence and select an effort level. This governs development/review execution only; it does not create another product owner, delegation layer, or phase.
+
+- Use `medium` only for routine scheduler bookkeeping, helper-driven setup/publication, already-specified build/test execution, artifact collection, or mechanical normalization where no design, diagnosis, source repair, or verdict is required.
+- Default to `xhigh` for context/planning, visual design, independent assessment, implementation, review and synthesis, evidence design/authoring/assessment, failure diagnosis, convergence/rescoping, inbox routing/consolidation, and any stateful performer that owns an implementation/evidence campaign.
+- Use `high` instead of `xhigh` only when the parent has inspected the actual scope, is sure it contains nothing complex, and records a concrete reason. Short prompts, small diffs, expected not-applicable results, or time pressure are not sufficient. Unknown scope, ambiguity, interacting subsystems, lifetime/concurrency/security concerns, or an earlier failed approach favor `xhigh`. Never select below `medium`.
+- Classify the whole assignment rather than its easiest substep. A worker that plans, repairs, judges, or synthesizes does not become `medium` merely because it also runs commands.
+
+Include the selected effort and a short scope reason in the worker/phase instruction. Record the actually applied setting, inherited setting, or adapter fallback in the durable phase/review evidence.
+
+If a `medium` phase encounters a failure that needs diagnosis or repair, preserve its completed output/evidence and return control before expanding scope; continue the follow-up at `xhigh`, or at justified `high`. Unexpected complexity in `high` similarly escalates to `xhigh` without discarding already-valid artifacts or checks.
+
+Keep the parent/configured model unless an applicable source-neutral host or review-lens policy explicitly overrides it. On Codex review providers, the reuse, structure, and performance lenses use `gpt-6.1-sol` in every review round at the selected effort; the general reviewer/synthesis, lifetime and security lenses, and all other phases retain the configured model. If that pinned model is unavailable, run those three lenses on the configured model and record the fallback in the durable phase/review evidence. Use an exposed effort/model field only when the current host actually supports that field. If the host cannot apply the requested override, retain the real session setting and record the limitation/fallback; prompt wording alone is not an effort override. Same-session execution follows the same rule, and agents must not start another CLI process, change global settings, add workers, or replace a stateful performer solely to tune effort/model. Re-evaluate effort when a reusable child receives a new scope; a disposable child that cannot change effort/model may finish its owned writes before a fresh correctly configured child is started.
+
 #### Stage 6 — Integrate / Deliver
 - Follow the repository's branch, PR, merge, release, migration, and deployment rules applicable to the task.
 - Do not claim completion merely because code was written or pushed.
