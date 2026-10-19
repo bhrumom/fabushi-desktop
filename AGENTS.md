@@ -121,6 +121,12 @@ When an independent review is required, the reviewer is read-only for the review
 
 A specialized review may be marked not applicable only with scope-specific evidence tied to the changed paths/hunks; uncertainty is applicable, not proof of non-applicability. After accepted fixes, perform a focused re-review of each claimed fix and the edited functions' adjacent callers/consumers. Unsupported findings are dropped rather than promoted into blockers.
 
+Freeze the declared review scope once before independent review begins, including the base revision and any pre-existing uncommitted work that is explicitly in scope. Each round must review an immutable snapshot of that scope. Reviewers are fresh and blind to one another's reports and to prior runner decisions; only the source-neutral repository review runner may carry arbitration state across rounds.
+
+Before applying a review-driven fix, the runner must decide every synthesized finding in the durable review ledger as `FIX`, `REJECT`, `DEFER`, or `COMPROMISE`, with a concrete rationale. `NON_BLOCKING` findings are recorded but cannot start a fix round by themselves. A later finding that would reverse an earlier decision is rejected by reference to that decision unless it adds a concrete failure scenario not previously weighed; a decision may be superseded once, and any attempt to flip it again requires a human decision with both rationales preserved.
+
+After any accepted fixes, run a fresh focused re-review of the fix delta plus the affected functions and adjacent callers/consumers, while retaining the complete frozen scope as context. The review loop stops only on convergence, a configured round cap (default ten), demonstrated non-convergence/scope explosion, or a required human product/arbitration decision. A real defect in changed code is never left open merely to save a round.
+
 #### Stage 6 — Integrate / Deliver
 - Follow the repository's branch, PR, merge, release, migration, and deployment rules applicable to the task.
 - Do not claim completion merely because code was written or pushed.
