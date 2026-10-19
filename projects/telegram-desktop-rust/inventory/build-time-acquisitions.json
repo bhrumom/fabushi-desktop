@@ -855,7 +855,7 @@
   "resolved_short_ref_contexts": [
     {
       "source_path": "Telegram/build/prepare/prepare.py",
-      "source_line": 576,
+      "source_line": 577,
       "repository": "https://github.com/desktop-app/gyp.git",
       "observed_short_ref": "5e2425c47b",
       "resolved_commit": "5e2425c47ba62aea63b20887ce545058b2dddec6",
@@ -863,7 +863,7 @@
     },
     {
       "source_path": "Telegram/build/prepare/prepare.py",
-      "source_line": 773,
+      "source_line": 774,
       "repository": "https://github.com/desktop-app/rnnoise.git",
       "observed_short_ref": "d8ea2b0",
       "resolved_commit": "d8ea2b0ec6a88f8a68d6904d75e33b4f09cb2987",
@@ -871,7 +871,7 @@
     },
     {
       "source_path": "Telegram/build/prepare/prepare.py",
-      "source_line": 1525,
+      "source_line": 1526,
       "repository": "https://github.com/desktop-app/crashpad.git",
       "observed_short_ref": "3279fae3f0",
       "resolved_commit": "3279fae3f02a0370ef54d4f9d264f52f337b0f1d",
@@ -879,7 +879,7 @@
     },
     {
       "source_path": "Telegram/build/prepare/prepare.py",
-      "source_line": 1417,
+      "source_line": 1418,
       "repository": "https://github.com/telegramdesktop/openal-soft.git",
       "observed_short_ref": "291c0fdbbd",
       "resolved_commit": "291c0fdbbdd767f00c45c7fca562614faea57647",
@@ -887,7 +887,7 @@
     },
     {
       "source_path": "Telegram/build/prepare/prepare.py",
-      "source_line": 1447,
+      "source_line": 1448,
       "repository": "https://chromium.googlesource.com/breakpad/breakpad",
       "observed_short_ref": "dfcb7b6799",
       "resolved_commit": "dfcb7b6799b7c1e2c8d65e857d8afede185471d8",
@@ -895,7 +895,7 @@
     },
     {
       "source_path": "Telegram/build/prepare/prepare.py",
-      "source_line": 1453,
+      "source_line": 1454,
       "repository": "https://chromium.googlesource.com/linux-syscall-support",
       "observed_short_ref": "e1e7b0ad8e",
       "resolved_commit": "e1e7b0ad8ee99a875b272c8e33e308472e897660",
@@ -904,7 +904,7 @@
     },
     {
       "source_path": "Telegram/build/prepare/prepare.py",
-      "source_line": 1487,
+      "source_line": 1488,
       "repository": "https://chromium.googlesource.com/breakpad/breakpad",
       "observed_short_ref": "dfcb7b6799",
       "resolved_commit": "dfcb7b6799b7c1e2c8d65e857d8afede185471d8",
@@ -912,7 +912,7 @@
     },
     {
       "source_path": "Telegram/build/prepare/prepare.py",
-      "source_line": 1517,
+      "source_line": 1518,
       "repository": "https://chromium.googlesource.com/linux-syscall-support",
       "observed_short_ref": "e1e7b0ad8e",
       "resolved_commit": "e1e7b0ad8ee99a875b272c8e33e308472e897660",
