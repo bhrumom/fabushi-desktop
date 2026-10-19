@@ -135,6 +135,16 @@ Timeout, cancellation, crash, wait-error, and cleanup paths must preserve owners
 
 The durable implementation-fix handoff must identify the failing check, classification, failure signature, root cause when known, retained positive evidence, invalidated evidence, and concrete fix/recovery hint. Historical attempts/runs are appended rather than overwritten.
 
+##### Repository quality-health governance
+
+Repository maintainability measurement is source-neutral quality governance, not a product runtime. A scheduled or ad-hoc quality-health scan that writes durable findings must first bind itself to a freshly resolved exact source revision; a mutable working-tree scan may inform a developer but cannot update the canonical findings ledger. If an authority, dependency, or pinned source cannot be inspected, name that gap rather than silently treating it as scanned. Metrics and hotspot rankings select where to investigate; they are never acceptance evidence by themselves.
+
+Persistent findings use stable semantic identities and lifecycle state. Preserve first-seen history, explicit open/resolved/ignored status, and the exact scanned revision so a metric fluctuation, path move, or rerun cannot silently manufacture a new history or turn an unresolved finding into success. Area atlases/maps describe product responsibilities and placement; maps and redesign invariants require the declared owner approval, and hot-area surveys must separate verified maintainability findings from defects discovered in passing.
+
+Every source change is subject to a proportional quality ratchet against its exact base. The ratchet must detect newly introduced ownership/layer crossings, oversized growth, materially heavier dependency/build reach, duplicated logic, stranded definitions, and last-use/orphan leftovers where applicable. A behavior-preserving quality task proves the class of change with the narrowest causal evidence: deletion proves all relevant users/targets are gone, moves prove move-only semantics, duplicate merges prove the finding resolved, characterization work proves tests can detect deliberate mutations, and semantic redesign requires pre-existing behavior tests plus approved invariants. A scan never edits product code as part of measurement.
+
+Quality findings enter the ordinary task/review/evidence lifecycle rather than a parallel queue owner. Automated routing is permitted only for classes whose trust policy is currently enabled; an audit failure, later regression attribution, stale authority, conflicting in-progress ownership, or unmet map/invariant precondition suspends routing without erasing the finding. Bugs discovered during a health survey are ordinary product defects, not code-health cleanup.
+
 #### Stage 5 — Spec Compliance Review
 Before declaring completion, compare the final implementation against **every applicable requirement and acceptance criterion**.
 
