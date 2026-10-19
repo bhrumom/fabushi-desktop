@@ -922,7 +922,7 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
           installBoxVisibilityDocumentReset(window.webContents, () => boxVisibilityTracker?.abandonAll());
           bindings.services.onWindowCreated?.(window, context!);
           if (appAgentSurfaceServer == null) {
-            appAgentSurfaceServer = createAppAgentSurfaceServer({ app: bindings.native.app, getWindow: () => runtime?.getMainWindow() ?? null, appVersion: bindings.native.app.getVersion?.(), env });
+            appAgentSurfaceServer = createAppAgentSurfaceServer({ app: bindings.native.app, getWindow: () => runtime?.getMainWindow() ?? null, env });
             void appAgentSurfaceServer.start().catch((error) => bindings.reportFailure("app-agent-surface", "start", error));
           }
         },
