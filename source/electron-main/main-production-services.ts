@@ -32,6 +32,7 @@ import { createWindowChromeEdgePort, type WindowChromeBrowserWindow } from "./wi
 import { createProductionWindowBroadcaster } from "./window-broadcast.js";
 import type { SandUpdateService } from "./update/sand-update-service.js";
 import { createWindowStatePersistence, type WindowStatePersistenceScreen } from "./window-state-persistence.js";
+import { createAppAgentSurfaceServer } from "./app-agent-surface-server.js";
 import { submitFeedbackReport } from "./feedback/feedback-report.js";
 import { createSecretsStores } from "./secrets/secrets-ipc.js";
 import { desktopStructuredLogAccountSlot } from "./telemetry/desktop-structured-log-spill.js";
@@ -519,7 +520,7 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
     return { induced: Reflect.get(result, "induced") as boolean };
   });
   type ProductionClientPauseControl = ReturnType<typeof createSandClientPauseControl<BoxConnectionInfo, { readonly preserveData: boolean; readonly force?: boolean }, RecreateResult, { readonly credential: string; readonly backendUrl: string; readonly expiresAtMs?: number }>>;
-  let runtime: ElectronMainRuntime | undefined, settings: ProductionSettingsService | undefined, mainEdge: (MainEdge & Partial<ProductionDisposable>) | undefined, account: ProductionAccountService | undefined, cursorAccount: unknown, ensureTranscriptionManager: (() => Promise<unknown>) | undefined, experiments: ProductionExperimentsService | undefined, update: ProductionUpdateService | undefined, mcp: ProductionMcpService | undefined, telemetry: ProductionTelemetryService | undefined, notifications: ProductionNotificationsService | undefined, coordinator: ProductionCoordinatorService | undefined, egressTunnelController: EgressTunnelController | undefined, context: ProductionServiceContext | undefined, secretsStores: ReturnType<typeof createSecretsStores> | undefined, boxRecovery: ReturnType<typeof createProductionBoxRecovery> | undefined, clientPauseControl: ProductionClientPauseControl | undefined, boxVisibilityTracker: SandBoxVisibilityTracker | undefined, desktopMetricsRuntime: DesktopMetricsRuntime | undefined, productAnalytics: SandProductAnalytics | undefined, vncTrust: ReturnType<typeof registerElectronProductionVncTrust> | undefined;
+  let runtime: ElectronMainRuntime | undefined, settings: ProductionSettingsService | undefined, mainEdge: (MainEdge & Partial<ProductionDisposable>) | undefined, account: ProductionAccountService | undefined, cursorAccount: unknown, ensureTranscriptionManager: (() => Promise<unknown>) | undefined, experiments: ProductionExperimentsService | undefined, update: ProductionUpdateService | undefined, mcp: ProductionMcpService | undefined, telemetry: ProductionTelemetryService | undefined, notifications: ProductionNotificationsService | undefined, coordinator: ProductionCoordinatorService | undefined, egressTunnelController: EgressTunnelController | undefined, context: ProductionServiceContext | undefined, secretsStores: ReturnType<typeof createSecretsStores> | undefined, boxRecovery: ReturnType<typeof createProductionBoxRecovery> | undefined, clientPauseControl: ProductionClientPauseControl | undefined, boxVisibilityTracker: SandBoxVisibilityTracker | undefined, desktopMetricsRuntime: DesktopMetricsRuntime | undefined, productAnalytics: SandProductAnalytics | undefined, vncTrust: ReturnType<typeof registerElectronProductionVncTrust> | undefined, appAgentSurfaceServer: ReturnType<typeof createAppAgentSurfaceServer> | undefined;
   let sessionDeathSettlement: ReturnType<typeof wireDesktopUncleanExitSettlement> | undefined;
   const desktopLifecycle = createDesktopLifecycleReporter();
   const disposeLocalExecLifecycleReporter = installLocalExecLifecycleReporter(desktopLifecycle.reportDesktopLocalExecLifecycle);
@@ -920,8 +921,12 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
           if (sessionDeathSettlement != null) settleUncleanExitOnSessionEnd(window, sessionDeathSettlement);
           installBoxVisibilityDocumentReset(window.webContents, () => boxVisibilityTracker?.abandonAll());
           bindings.services.onWindowCreated?.(window, context!);
+          if (appAgentSurfaceServer == null) {
+            appAgentSurfaceServer = createAppAgentSurfaceServer({ app: bindings.native.app, getWindow: () => runtime?.getMainWindow() ?? null, env });
+            void appAgentSurfaceServer.start().catch((error) => bindings.reportFailure("app-agent-surface", "start", error));
+          }
         },
-        dispose: () => void disposeGraph(),
+        dispose: () => void (async () => { await appAgentSurfaceServer?.close(); appAgentSurfaceServer = undefined; await disposeGraph(); })(),
       };
     } catch (error) { await disposeGraph(); throw error; }
   })();

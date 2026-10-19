@@ -4,6 +4,7 @@ import test from "node:test";
 import type { FabushiDeviceAgentSession } from "../../electron-main/account/auth-service-contract.js";
 import {
   FABUSHI_APP_AGENT_STATUS_TOOL,
+  FABUSHI_APP_AGENT_TOOLS,
   FabushiOfficialDeviceRegistryService,
   type OfficialDeviceRegistrySocket,
   resolveFabushiDeviceGatewayUrl,
@@ -108,7 +109,7 @@ test("account switch and revoke close the previous registry socket without putti
   assert.ok(firstSession);
   const registerA = sockets[0]!.sent.find((entry) => entry.type === "register");
   assert.ok(registerA);
-  assert.deepEqual(registerA.capabilities, [FABUSHI_APP_AGENT_STATUS_TOOL]);
+  assert.deepEqual(registerA.capabilities, [...FABUSHI_APP_AGENT_TOOLS]);
   assert.equal(JSON.stringify(registerA).includes(firstSession.accessToken), false);
   assert.equal(bearerHeaders[0], firstSession.accessToken);
 
