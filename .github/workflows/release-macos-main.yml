@@ -168,6 +168,12 @@ jobs:
         with:
           toolchain: 1.97.1
 
+      - name: Set up Go for the packaged FDN worker
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.27.1'
+          cache-dependency-path: source/fabushi-network-worker/go.mod
+
       - name: Confirm Apple Silicon runner
         shell: bash
         run: |
@@ -234,6 +240,19 @@ jobs:
           test -n "$team_id"
           echo "APPLE_TEAM_ID_RESOLVED=$team_id" >> "$GITHUB_ENV"
           security find-identity -v -p codesigning "$keychain"
+
+      - name: Build and stage the signed FDN network worker
+        working-directory: source/fabushi-network-worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p target/release
+          go mod tidy
+          GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 \
+            go build -trimpath -ldflags='-s -w' \
+            -o target/release/fabushi-network-worker .
+          test -x target/release/fabushi-network-worker
+          file target/release/fabushi-network-worker | grep -F 'arm64'
 
       - name: Build and stage Mahayana desktop host
         working-directory: desktop
@@ -443,6 +462,33 @@ jobs:
           } >> "$GITHUB_ENV"
           echo "Bounded refresh-token-free production account session prepared for signed candidate acceptance." >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Verify packaged FDN worker sibling
+        shell: bash
+        run: |
+          set -euo pipefail
+          executable="${{ steps.candidate.outputs.executable }}"
+          candidate_app="$(dirname "$(dirname "$executable")")"
+          worker="$candidate_app/Contents/Resources/bin/fabushi-network-worker"
+          host="$candidate_app/Contents/Resources/bin/mahayana-app-host"
+          test -x "$worker"
+          test -x "$host"
+          codesign --verify --strict --verbose=2 "$worker"
+          file "$worker" | grep -F 'arm64'
+          worker_sha256="$(shasum -a 256 "$worker" | awk '{print $1}')"
+          jq -n \
+            --arg sourceSha "${{ steps.source.outputs.sha }}" \
+            --arg appPath "$candidate_app" \
+            --arg workerPath "$worker" \
+            --arg workerSha256 "$worker_sha256" \
+            '{sourceSha:$sourceSha,appPath:$appPath,workerPath:$workerPath,workerSha256:$workerSha256,hostSibling:true,codesignVerified:true}' \
+            > "$RUNNER_TEMP/fabushi-packaged-network-worker.json"
+          {
+            echo "## Packaged FDN worker"
+            echo "- Worker: \`$worker\`"
+            echo "- SHA-256: \`$worker_sha256\`"
+            echo "- Sibling Host: \`$host\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Run real signed packaged acceptance
         working-directory: desktop
         shell: bash
@@ -531,6 +577,7 @@ jobs:
             ${{ runner.temp }}/fabushi-candidate-acceptance/*.zip
             ${{ runner.temp }}/fabushi-candidate-acceptance/*.mov
             ${{ runner.temp }}/fabushi-candidate-acceptance/*.mp4
+            ${{ runner.temp }}/fabushi-packaged-network-worker.json
             desktop/playwright-report
             desktop/test-results
           if-no-files-found: warn

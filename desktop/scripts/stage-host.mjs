@@ -12,6 +12,9 @@ const coordinatorExecutable = process.platform === 'win32'
 const boxExecDaemonExecutable = process.platform === 'win32'
   ? 'box-exec-daemon.exe'
   : 'box-exec-daemon';
+const networkWorkerExecutable = process.platform === 'win32'
+  ? 'fabushi-network-worker.exe'
+  : 'fabushi-network-worker';
 const profile = process.argv[2] || process.env.MAHAYANA_HOST_PROFILE || 'release';
 const source = path.join(
   repoRoot,
@@ -38,15 +41,25 @@ const boxExecDaemonSource = path.join(
   profile,
   boxExecDaemonExecutable,
 );
+const networkWorkerSource = process.env.FABUSHI_NETWORK_WORKER_BINARY || path.join(
+  repoRoot,
+  'source',
+  'fabushi-network-worker',
+  'target',
+  profile,
+  networkWorkerExecutable,
+);
 const destinationDir = path.join(desktopRoot, 'resources', 'bin');
 const hostDestination = path.join(destinationDir, hostExecutable);
 const coordinatorDestination = path.join(destinationDir, coordinatorExecutable);
 const boxExecDaemonDestination = path.join(destinationDir, boxExecDaemonExecutable);
+const networkWorkerDestination = path.join(destinationDir, networkWorkerExecutable);
 
 for (const [label, candidate] of [
   ['Mahayana app host', source],
   ['Mahayana coordinator', coordinatorSource],
   ['Grok box exec daemon', boxExecDaemonSource],
+  ['Fabushi network worker', networkWorkerSource],
 ]) {
   if (!fs.existsSync(candidate)) throw new Error(`${label} was not built at ${candidate}`);
 }
@@ -54,11 +67,14 @@ fs.mkdirSync(destinationDir, { recursive: true });
 fs.copyFileSync(source, hostDestination);
 fs.copyFileSync(coordinatorSource, coordinatorDestination);
 fs.copyFileSync(boxExecDaemonSource, boxExecDaemonDestination);
+fs.copyFileSync(networkWorkerSource, networkWorkerDestination);
 if (process.platform !== 'win32') {
   fs.chmodSync(hostDestination, 0o755);
   fs.chmodSync(coordinatorDestination, 0o755);
   fs.chmodSync(boxExecDaemonDestination, 0o755);
+  fs.chmodSync(networkWorkerDestination, 0o755);
 }
 console.log(`staged ${hostDestination}`);
 console.log(`staged ${coordinatorDestination}`);
 console.log(`staged ${boxExecDaemonDestination}`);
+console.log(`staged ${networkWorkerDestination}`);
