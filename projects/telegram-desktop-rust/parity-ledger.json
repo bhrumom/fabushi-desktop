@@ -6,8 +6,8 @@
   "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16193,
-    "unread": 16166,
+    "unknown": 16192,
+    "unread": 16165,
     "omitted": 0,
     "responsibilities_total": 32,
     "unmapped_responsibilities": 0
@@ -7420,16 +7420,28 @@
     {
       "source_repository": "telegramdesktop/tdesktop",
       "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
-      "source_path": ".agents/shared/evidence/ninja_target.py",
-      "source_blob_sha": "f638b0e9c039784832155269b5931ab0cabdb16b",
-      "source_kind": "tooling",
-      "module_id": "tdesktop.ninja-target-evidence",
+      "source_path": ".agents/shared/evidence/ninja_target_test.py",
+      "source_blob_sha": "a9c635eeb46a6ddf4295a815ef29bcae15ba2208",
+      "source_kind": "test_tooling",
+      "module_id": "tdesktop.ninja-target-qualification",
       "responsibility_id": "TDRP-R9-CONFIGURED-BUILD-GRAPH-QUALIFICATION-001",
       "source_symbols": [
-        "ninja_target_test.py",
         "HandTree",
+        "SplitCommandTests",
+        "LinkGrammarTests",
+        "CompileGrammarTests",
+        "QueryAndCompdbTests",
+        "CacheIdentityAndSelectorTests",
+        "HandwrittenManifestTests",
         "CompiledFixtureTests",
-        "test_graph_commands_are_never_executed"
+        "test_one_mutation_negatives",
+        "test_manifest_touched_during_acquisition",
+        "test_graph_commands_are_never_executed",
+        "test_selects_app_object_and_excludes_tool_sibling",
+        "test_object_library_cohort_has_its_own_pch",
+        "test_option_contract_in_both_variants",
+        "test_response_file_variant_has_the_same_objects",
+        "test_duplicate_object_variant_refuses"
       ],
       "capability_ids": [
         "CAP-CONFIGURED-BUILD-GRAPH-EVIDENCE",
@@ -7440,26 +7452,37 @@
         "Fabushi Test Evidence Contract",
         "TDRP recursive reachability evidence"
       ],
-      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/ninja-target-complete-read.md",
-      "behavior_contract": "The configured-build provenance oracle must be independently qualified by positive and fail-closed negative controls, including real CMake/Ninja behavior, stable acquisition mutation, response-file expansion, path identity, PCH/macro coherence and proof that graph commands are never executed.",
-      "state_machine": "independent fixture setup -> positive oracle run -> one-fault negative mutations -> real CMake/Ninja cross-check -> no-execution sentinel -> pass only when all declared boundaries/refusals hold",
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/ninja-target-test-complete-read.md",
+      "behavior_contract": "The configured-build provenance oracle is independently qualified by handwritten parser/graph fixtures and a real CMake/Ninja fixture. Qualification covers Ninja/Ninja Multi-Config cache/config/manifest binding, safe tool/operand construction, fail-closed query/compdb/shell/compiler/link parsing, object/link/producer/source/output/PCH/macro/path ambiguity controls, stable-manifest mutation, response-file expansion, an independent nm object-identity cross-check, and a sentinel proving graph commands are never executed.",
+      "state_machine": "construct independent HandTree/parser fixtures -> run accepted grammar/cache/selector controls -> apply one-fault negative mutations -> verify stable-manifest refusal and no-execution sentinel -> configure real CMake Ninja Multi-Config variants -> build only positive ON/OFF variants -> cross-check selected/sibling objects with nm -> require response-file equivalence and duplicate-object refusal -> PASS only when the full declared qualification matrix holds",
       "side_effects": [
         "Evidence mapping only; no new shipping runtime."
       ],
       "failure_cases": [
-        "Fixture derived from production parser instead of independent construction",
-        "Unsupported grammar silently accepted",
-        "Graph command executed while claiming read-only evidence",
-        "Real response-file/config/path/PCH case not covered"
+        "Handwritten fixture derives expected structure from the production parser instead of independent literals",
+        "Unsafe tool, operand, shell operator, driver, macro channel, response-file state, or malformed query/compdb record is accepted",
+        "Duplicate, substituted, order-only-only, missing, or ambiguously selected object escapes refusal",
+        "Compile producer/output/source identity or PCH producer/consumer/header/dialect/macro coherence is not enforced",
+        "CMake cache/config/manifest or configured/host path identity is ambiguous or changes during acquisition",
+        "Graph command executes while evidence still reports PASS",
+        "Real CMake/Ninja fixture selection disagrees with independent nm symbol observations"
       ],
       "ui_disposition": "Not applicable; build/release evidence tooling only.",
       "non_ui_responsibilities": [
-        "Independent handwritten fixtures",
-        "Real CMake/Ninja fixture",
-        "Positive/negative parser and graph controls",
-        "Manifest race control",
-        "No-execution sentinel",
-        "Response-file/PCH/path/macro controls"
+        "Independent HandTree CMake-shaped Ninja Multi-Config fixtures",
+        "Real CMake/Ninja fixture with positive ON/OFF builds and configured response-file/duplicate variants",
+        "Ninja/Ninja Multi-Config, cache, config and manifest binding controls",
+        "Safe argv, tool allowlist and exact operand controls",
+        "Query, compdb, shell, compiler and link parser accepted/refusal controls",
+        "Object substitution, duplicate, order-only and missing-input controls",
+        "Compile producer/source/output identity controls",
+        "Clang/GCC PCH producer-consumer coherence controls",
+        "Ordered macro and option-contract controls",
+        "Configured-to-host path and selector ambiguity controls",
+        "Stable-manifest mutation control",
+        "Response-file expansion equivalence control",
+        "Independent nm selected-versus-sibling object cross-check",
+        "No-graph-execution sentinel"
       ],
       "platform_delta": "Fabushi absorbs the source-neutral evidence contract rather than copying Telegram/Ninja-specific Python into the product runtime.",
       "existing_owner_candidates": [
@@ -7501,7 +7524,7 @@
       "implementation_status": "implemented",
       "coverage_disposition": "toolchain-equivalent",
       "blockers": [
-        "Independent exact-head GitHub Actions verification of this mapping commit is pending."
+        "Independent exact-head GitHub Actions verification of this source-entry mapping commit is pending."
       ],
       "production_entrypoints": [
         "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Configured-build graph qualification"
@@ -7510,10 +7533,11 @@
         "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Configured-build graph qualification"
       ],
       "test_evidence": [
-        "dossier:projects/telegram-desktop-rust/dossiers/ninja-target-complete-read.md",
-        "policy:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Configured-build graph qualification"
+        "dossier:projects/telegram-desktop-rust/dossiers/ninja-target-test-complete-read.md",
+        "policy:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Configured-build graph qualification",
+        "contract:projects/fabushi-communication-platform/quality/evidence-contract.md#Configured-build graph provenance evidence"
       ],
-      "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
+      "target_commit": "c4226fc2017853f20492d730dfbe6f25b4eb9fb9",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -7523,11 +7547,14 @@
       "composition_slot": "Configured-build provenance",
       "capability_component": "Source-neutral configured-build graph evidence",
       "variation_axes": [
-        "Ninja vs Ninja Multi-Config",
-        "host path equals configured vs mapped",
-        "clang vs GCC PCH",
-        "response file expanded vs refusal",
-        "positive vs malformed/mutated graph"
+        "handwritten fixture vs real CMake/Ninja fixture",
+        "Ninja vs Ninja Multi-Config binding",
+        "clang vs GCC compiler/PCH dialect",
+        "host path equals configured vs samefile-mapped path",
+        "response file expanded vs unexpanded refusal",
+        "positive graph vs one-fault malformed/mutated graph",
+        "exact source/object selector vs ambiguous or sibling selector",
+        "ON/OFF option contract and matching macro state"
       ],
       "shared_owner_contracts": [
         "Fabushi Test Evidence Contract",
@@ -7617,7 +7644,10 @@
       ],
       "test_fixture_ids": [
         "handwritten-ninja-tree",
-        "real-cmake-ninja-fixture"
+        "real-cmake-ninja-fixture",
+        "configured-graph-one-mutation-negatives",
+        "configured-graph-no-execution-sentinel",
+        "configured-graph-nm-cross-check"
       ],
       "test_environment_ids": [
         "GitHub Actions hosted runners"
@@ -7628,7 +7658,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral contracts read from telegramdesktop/tdesktop authority; upstream Python implementation is not copied.",
-      "notes": "Ninth previously unread recursive source entry at live dev 351204f3695b4a39bc3f4d2f230c061b9a01fe2a; recursive=16,202, unknown=16,193, unread=16,166, omitted=0 after this mapping. Archive-member and runtime reachability remain separate evidence responsibilities.",
+      "notes": "Tenth previously unread recursive source entry at live dev 351204f3695b4a39bc3f4d2f230c061b9a01fe2a. This row is rebound from the production helper to its independently owned qualification source .agents/shared/evidence/ninja_target_test.py@a9c635eeb46a6ddf4295a815ef29bcae15ba2208. Recursive inventory remains 16,202; after this source-entry closure unknown=16,192, unread=16,165, omitted=0. Archive-member reachability and executable/runtime reachability remain separate evidence responsibilities.",
       "test_execution_evidence": []
     }
   ]
