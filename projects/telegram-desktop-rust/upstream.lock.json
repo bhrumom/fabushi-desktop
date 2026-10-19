@@ -8,16 +8,16 @@
     "repository": "telegramdesktop/tdesktop",
     "url": "https://github.com/telegramdesktop/tdesktop",
     "discovery_ref": "refs/heads/dev",
-    "commit": "ac531ac77e89075515adfc829e649a0bca7aa477",
-    "tree": "5e82735cb42fcbd0dbc069a96bcf42b5fba88a61",
-    "committed_at": "2026-10-19T18:26:23Z",
+    "commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
+    "tree": "7035dc3ed4e06f05a6045a2eedb9bce6335095ee",
+    "committed_at": "2026-10-19T18:57:03Z",
     "accepted": false
   },
   "previous_historical_baseline": {
-    "commit": "34a86ed1a547ca6d12e25688c6289b60e6b6216c",
-    "tree": "41c7133ce1efab1e68bad4bcace2fea7cc10f24f",
+    "commit": "ac531ac77e89075515adfc829e649a0bca7aa477",
+    "tree": "5e82735cb42fcbd0dbc069a96bcf42b5fba88a61",
     "evidence_status": "historical-only",
-    "reason": "Live telegramdesktop/tdesktop dev advanced two commits / five paths to ac531ac77e89075515adfc829e649a0bca7aa477. The target elf_identity_test.py blob, root non-directory cardinality and direct gitlink pins are unchanged. Accepted build paths now converge desktop-app/patches on fe957833b84525e634a8d776a7f834ed536d9a21 and apply the qtsvg patch set. Exact-head Actions for af77f1ad14df21c51c3eed1c9ba567db3f8ebc2e were against the prior 34a86ed1a547ca6d12e25688c6289b60e6b6216c authority and are historical-only."
+    "reason": "Live telegramdesktop/tdesktop dev advanced one commit to 3b1ac7732ddd3033d112865821db38b0e7d959d4, touching only Telegram/SourceFiles/history/view/history_view_read_metrics_tracker.cpp. The target test blob, build inputs, direct gitlinks and cardinalities are unchanged. Actions for the prior candidate are historical-only because the live-authority validator fail-closed on dev advancement."
   },
   "observed_root_inventory": {
     "tree_truncated": false,
@@ -29,8 +29,8 @@
     "root_non_directory_count": 6717
   },
   "delta_from_previous_baseline": {
-    "ahead_by": 2,
-    "changed_paths": 5
+    "ahead_by": 1,
+    "changed_paths": 1
   },
   "direct_gitlinks": [
     {
@@ -261,7 +261,7 @@
     "unknown_minimum": 16194,
     "unread_minimum": 16167,
     "omitted_known": 0,
-    "note": "Revision 9 live rebaseline is in progress for telegramdesktop/tdesktop@ac531ac77e89075515adfc829e649a0bca7aa477 (tree 5e82735cb42fcbd0dbc069a96bcf42b5fba88a61). Root non-directory inventory remains 6,717 and recursive authority remains 16,202. The first eight ordered recursive entries are closed through .agents/shared/evidence/elf_identity_test.py; fail-closed counters remain unknown=16,194, unread=16,167, omitted=0. The current build-patch input is desktop-app/patches@fe957833b84525e634a8d776a7f834ed536d9a21. Source closure, baseline_ready and acceptance.accepted remain false."
+    "note": "Revision 9 live rebaseline is in progress for telegramdesktop/tdesktop@3b1ac7732ddd3033d112865821db38b0e7d959d4 (tree 7035dc3ed4e06f05a6045a2eedb9bce6335095ee). Root non-directory inventory remains 6,717 and recursive authority remains 16,202. The first eight ordered recursive entries are closed through .agents/shared/evidence/elf_identity_test.py; fail-closed counters remain unknown=16,194, unread=16,167, omitted=0. Source closure, baseline_ready and acceptance.accepted remain false."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -275,11 +275,11 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Live rebaseline identity for telegramdesktop/tdesktop@ac531ac77e89075515adfc829e649a0bca7aa477 remains pending current-head GitHub Actions. Full Revision 9 source closure remains open with unknown=16,194, unread=16,167, omitted=0; baseline_ready and acceptance.accepted remain false pending complete recursive source closure."
+    "note": "Live rebaseline identity for telegramdesktop/tdesktop@3b1ac7732ddd3033d112865821db38b0e7d959d4 remains pending current-head GitHub Actions. Full Revision 9 source closure remains open with unknown=16,194, unread=16,167, omitted=0; baseline_ready and acceptance.accepted remain false pending complete recursive source closure."
   },
   "baseline_identity_evidence": {
     "status": "pending-current-head-revalidation",
-    "upstream_commit": "ac531ac77e89075515adfc829e649a0bca7aa477",
+    "upstream_commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
     "previous_historical_evidence": {
       "status": "accepted",
       "runner": "github-actions",
@@ -311,7 +311,7 @@
   },
   "recursive_inventory_evidence": {
     "status": "pending-current-head-revalidation",
-    "upstream_commit": "ac531ac77e89075515adfc829e649a0bca7aa477",
+    "upstream_commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
     "source_closure_ready": false,
     "previous_historical_evidence": {
       "status": "accepted-baseline-identity-only-source-closure-open",

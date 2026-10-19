@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "ac531ac77e89075515adfc829e649a0bca7aa477",
-    "tree": "5e82735cb42fcbd0dbc069a96bcf42b5fba88a61",
+    "commit": "3b1ac7732ddd3033d112865821db38b0e7d959d4",
+    "tree": "7035dc3ed4e06f05a6045a2eedb9bce6335095ee",
     "baseline_identity_accepted": false
   },
   "inventory": {
@@ -97,5 +97,5 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live rebaseline candidate telegramdesktop/tdesktop@ac531ac77e89075515adfc829e649a0bca7aa477 (tree 5e82735cb42fcbd0dbc069a96bcf42b5fba88a61) remains source-closure open. The eighth ordered recursive inventory entry, .agents/shared/evidence/elf_identity_test.py blob a75a29225b6eb70f255848e30026d02523d808f3, has been read completely and its independent transform-oracle qualification plus evidence-command/process-supervision responsibilities remain wired into existing source-neutral Fabushi quality/evidence owners. The latest two upstream commits leave the target blob, root cardinality and direct gitlinks unchanged, while updating the accepted desktop-app/patches input to fe957833b84525e634a8d776a7f834ed536d9a21 and adding qtsvg patch application. Recursive inventory remains 16,202 and counters after this closure remain unknown=16,194, unread=16,167, omitted=0. baseline_ready/acceptance.accepted remain false pending full source closure and current-head evidence."
+  "note": "Live rebaseline candidate telegramdesktop/tdesktop@3b1ac7732ddd3033d112865821db38b0e7d959d4 (tree 7035dc3ed4e06f05a6045a2eedb9bce6335095ee) remains source-closure open. The eighth ordered recursive inventory entry, .agents/shared/evidence/elf_identity_test.py blob a75a29225b6eb70f255848e30026d02523d808f3, remains fully read and wired to source-neutral quality/evidence owners. The latest one-commit delta touches only history_view_read_metrics_tracker.cpp and changes no target blob, build acquisition, gitlink or inventory cardinality. Recursive inventory remains 16,202 with unknown=16,194, unread=16,167, omitted=0; baseline_ready/acceptance.accepted remain false."
 }
