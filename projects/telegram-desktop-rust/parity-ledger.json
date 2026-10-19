@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
-  "target_commit": "835d24d5923829a89d14b7a6b74431d45607e951",
+  "target_commit": "97d7fa0154c1e774a75a79c5f66a36d2569c25a5",
   "coverage": {
     "source_entries_total": 16192,
-    "unknown": 16187,
-    "unread": 16160,
+    "unknown": 16186,
+    "unread": 16159,
     "omitted": 0,
-    "responsibilities_total": 20,
+    "responsibilities_total": 23,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -5006,6 +5006,633 @@
       "license_and_provenance": "Behavioral review-governance contract was read from telegramdesktop/tdesktop source authority; no upstream provider-specific orchestration code is copied into Fabushi.",
       "reviewer": null,
       "notes": "Fifth previously unread recursive inventory entry. Applicable protocol responsibilities are implemented by extending existing source-neutral repository lifecycle, quality strategy and evidence owners; exact-head verification of this mapping commit remains pending."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_path": ".agents/shared/evidence/elf-copies.md",
+      "source_blob_sha": "49fc28d671276e1787753267ae92397266d6bacd",
+      "source_kind": "tooling",
+      "module_id": "tdesktop.elf-copy-evidence",
+      "responsibility_id": "TDRP-R9-ELF-COPY-IDENTITY-001",
+      "source_symbols": [
+        "elf-copies.md",
+        "elf_identity.py::compare_elf",
+        "elf_identity.py::build_report"
+      ],
+      "capability_ids": [
+        "CAP-RELEASE-ARTIFACT-IDENTITY"
+      ],
+      "dependency_ids": [
+        "Fabushi release packaging",
+        "Test Evidence Contract",
+        "Release Candidate Entry / Exit Criteria"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/elf-copies-complete-read.md",
+      "behavior_contract": "Fresh installed acceptance executable is proven byte-identical to the signed/notarized source executable with separate raw SHA-256 and size observations.",
+      "state_machine": "exact candidate -> source identity -> fresh copy/transform -> copy identity -> source stability recheck -> fail-closed verdict -> durable evidence",
+      "side_effects": [
+        "Packaged acceptance is bound to a fresh executable identity edge"
+      ],
+      "failure_cases": [
+        "Source mutates during copy window",
+        "Copy digest or size differs",
+        "Normalized digest is presented as exact identity",
+        "Historical execution copy is reused"
+      ],
+      "ui_disposition": "Not applicable; build/release evidence tooling only.",
+      "non_ui_responsibilities": [
+        "Artifact identity",
+        "Stable acquisition",
+        "Machine-readable provenance"
+      ],
+      "platform_delta": "Fabushi macOS packaging is a byte copy, so exact-byte identity is stronger than and replaces the upstream narrow ELF transform exception.",
+      "existing_owner_candidates": [
+        ".github/workflows/release-macos-main.yml",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/release-entry-exit-criteria.md"
+      ],
+      "existing_owner": "Fabushi macOS release packaging",
+      "rejected_existing_owners": [
+        "Shipping Agent/Coordinator/Host/Runner are product runtime owners, not release artifact provenance owners",
+        "A Telegram- or ELF-specific Fabushi packaging owner would duplicate the existing release/evidence owner",
+        "TDRP source archive/reachability jobs prove source/build-input authority, not executable-copy identity"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "fabushi_target_symbols": [
+        "Bind packaged candidate executable"
+      ],
+      "target_language": "YAML",
+      "language_rationale": "The responsibility extends the existing source-neutral shipping release/evidence owner; no upstream Python implementation is copied into Fabushi.",
+      "command_event_contracts": [
+        "candidate -> raw identities/stability -> verdict -> evidence"
+      ],
+      "state_owner": "Existing Fabushi release/evidence state",
+      "lifecycle_owner": "GitHub Actions release packaging and independent acceptance",
+      "persistence_and_restart": "Machine-readable identity evidence is uploaded with exact-head packaged acceptance artifacts; historical artifacts do not become current evidence.",
+      "concurrency_and_cancellation": "The identity check is linear within the packaging job; incomplete checks yield no passing evidence.",
+      "security_boundary": "No artifact equivalence is inferred from path/name/launch. Exact raw digests are required for byte copies; transforms need a bounded explicit oracle.",
+      "network_service_dependencies": [
+        "GitHub Actions hosted runner",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi release workflow / GitHub Actions",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "toolchain-equivalent",
+      "blockers": [
+        "Independent exact-head GitHub Actions verification of this mapping commit is pending."
+      ],
+      "production_entrypoints": [
+        ".github/workflows/release-macos-main.yml -> Bind packaged candidate executable"
+      ],
+      "production_evidence": [
+        "path:.github/workflows/release-macos-main.yml#Bind packaged candidate executable"
+      ],
+      "test_evidence": [],
+      "target_commit": "97d7fa0154c1e774a75a79c5f66a36d2569c25a5",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi release packaging and quality evidence",
+      "composition_slot": "Executable artifact identity/provenance",
+      "capability_component": "Source-neutral artifact-copy identity gate",
+      "variation_axes": [
+        "byte-exact copy",
+        "intentional transform",
+        "stable/mutated source",
+        "matching/drifted copy"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi Test Evidence Contract",
+        "Fabushi Test Strategy",
+        "Release Candidate Entry / Exit Criteria"
+      ],
+      "duplicate_root_check": "No Telegram/ELF-specific Fabushi release owner or second packaging system introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Only complete exact-head identity evidence advances packaged acceptance.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to tooling responsibility",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-ELF-COPY-EVIDENCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-ARTIFACT-COPY-IDENTITY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-ARTIFACT-RAW-IDENTITY-001",
+        "INV-TDRP-ARTIFACT-SOURCE-STABLE-001",
+        "INV-TDRP-ARTIFACT-NORMALIZED-NOT-IDENTITY-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-ARTIFACT-COPY-IDENTITY-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-MACOS-PACKAGED-COPY-IDENTITY-001"
+      ],
+      "functional_e2e_case_ids": [
+        "E2E-TDRP-PACKAGED-EXACT-CANDIDATE-001"
+      ],
+      "temporal_case_ids": [
+        "TEMP-TDRP-COPY-SOURCE-STABILITY-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-COPY-IDENTITY-DRIFT-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-ARTIFACT-PROVENANCE-001"
+      ],
+      "regression_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-RELEASE-ARTIFACT-IDENTITY-001"
+      ],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "exact-head-signed-notarized-macos-candidate"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions macos-15"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavioral artifact-identity/evidence contract was read from telegramdesktop/tdesktop source authority; upstream ELF parser/test code is not copied into Fabushi.",
+      "reviewer": null,
+      "notes": "Sixth previously unread recursive entry; Linux ELF-format mechanics are explicitly not applicable to current macOS byte-copy packaging; exact-head verification pending."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_path": ".agents/shared/evidence/elf-copies.md",
+      "source_blob_sha": "49fc28d671276e1787753267ae92397266d6bacd",
+      "source_kind": "tooling",
+      "module_id": "tdesktop.elf-copy-evidence",
+      "responsibility_id": "TDRP-R9-ELF-COPY-STABILITY-001",
+      "source_symbols": [
+        "elf-copies.md",
+        "elf_identity.py::compare_elf",
+        "elf_identity.py::build_report"
+      ],
+      "capability_ids": [
+        "CAP-RELEASE-ARTIFACT-IDENTITY"
+      ],
+      "dependency_ids": [
+        "Fabushi release packaging",
+        "Test Evidence Contract",
+        "Release Candidate Entry / Exit Criteria"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/elf-copies-complete-read.md",
+      "behavior_contract": "Source executable digest and size are re-read after the copy window and any drift fails before acceptance.",
+      "state_machine": "exact candidate -> source identity -> fresh copy/transform -> copy identity -> source stability recheck -> fail-closed verdict -> durable evidence",
+      "side_effects": [
+        "Packaged acceptance is bound to a fresh executable identity edge"
+      ],
+      "failure_cases": [
+        "Source mutates during copy window",
+        "Copy digest or size differs",
+        "Normalized digest is presented as exact identity",
+        "Historical execution copy is reused"
+      ],
+      "ui_disposition": "Not applicable; build/release evidence tooling only.",
+      "non_ui_responsibilities": [
+        "Artifact identity",
+        "Stable acquisition",
+        "Machine-readable provenance"
+      ],
+      "platform_delta": "Linux descriptor/stat mechanics are implementation-specific; the portable invariant is source stability across the fresh copy window.",
+      "existing_owner_candidates": [
+        ".github/workflows/release-macos-main.yml",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/release-entry-exit-criteria.md"
+      ],
+      "existing_owner": "Fabushi macOS release packaging",
+      "rejected_existing_owners": [
+        "Shipping Agent/Coordinator/Host/Runner are product runtime owners, not release artifact provenance owners",
+        "A Telegram- or ELF-specific Fabushi packaging owner would duplicate the existing release/evidence owner",
+        "TDRP source archive/reachability jobs prove source/build-input authority, not executable-copy identity"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "fabushi_target_symbols": [
+        "Bind packaged candidate executable"
+      ],
+      "target_language": "YAML",
+      "language_rationale": "The responsibility extends the existing source-neutral shipping release/evidence owner; no upstream Python implementation is copied into Fabushi.",
+      "command_event_contracts": [
+        "candidate -> raw identities/stability -> verdict -> evidence"
+      ],
+      "state_owner": "Existing Fabushi release/evidence state",
+      "lifecycle_owner": "GitHub Actions release packaging and independent acceptance",
+      "persistence_and_restart": "Machine-readable identity evidence is uploaded with exact-head packaged acceptance artifacts; historical artifacts do not become current evidence.",
+      "concurrency_and_cancellation": "The identity check is linear within the packaging job; incomplete checks yield no passing evidence.",
+      "security_boundary": "No artifact equivalence is inferred from path/name/launch. Exact raw digests are required for byte copies; transforms need a bounded explicit oracle.",
+      "network_service_dependencies": [
+        "GitHub Actions hosted runner",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi release workflow / GitHub Actions",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "toolchain-equivalent",
+      "blockers": [
+        "Independent exact-head GitHub Actions verification of this mapping commit is pending."
+      ],
+      "production_entrypoints": [
+        ".github/workflows/release-macos-main.yml -> Bind packaged candidate executable"
+      ],
+      "production_evidence": [
+        "path:.github/workflows/release-macos-main.yml#Bind packaged candidate executable"
+      ],
+      "test_evidence": [],
+      "target_commit": "97d7fa0154c1e774a75a79c5f66a36d2569c25a5",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi release packaging and quality evidence",
+      "composition_slot": "Executable artifact identity/provenance",
+      "capability_component": "Source-neutral artifact-copy identity gate",
+      "variation_axes": [
+        "byte-exact copy",
+        "intentional transform",
+        "stable/mutated source",
+        "matching/drifted copy"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi Test Evidence Contract",
+        "Fabushi Test Strategy",
+        "Release Candidate Entry / Exit Criteria"
+      ],
+      "duplicate_root_check": "No Telegram/ELF-specific Fabushi release owner or second packaging system introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Only complete exact-head identity evidence advances packaged acceptance.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to tooling responsibility",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-ELF-COPY-EVIDENCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-ARTIFACT-COPY-IDENTITY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-ARTIFACT-RAW-IDENTITY-001",
+        "INV-TDRP-ARTIFACT-SOURCE-STABLE-001",
+        "INV-TDRP-ARTIFACT-NORMALIZED-NOT-IDENTITY-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-ARTIFACT-COPY-IDENTITY-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-MACOS-PACKAGED-COPY-IDENTITY-001"
+      ],
+      "functional_e2e_case_ids": [
+        "E2E-TDRP-PACKAGED-EXACT-CANDIDATE-001"
+      ],
+      "temporal_case_ids": [
+        "TEMP-TDRP-COPY-SOURCE-STABILITY-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-COPY-IDENTITY-DRIFT-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-ARTIFACT-PROVENANCE-001"
+      ],
+      "regression_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-RELEASE-ARTIFACT-IDENTITY-001"
+      ],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "exact-head-signed-notarized-macos-candidate"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions macos-15"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavioral artifact-identity/evidence contract was read from telegramdesktop/tdesktop source authority; upstream ELF parser/test code is not copied into Fabushi.",
+      "reviewer": null,
+      "notes": "Sixth previously unread recursive entry; Linux ELF-format mechanics are explicitly not applicable to current macOS byte-copy packaging; exact-head verification pending."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_path": ".agents/shared/evidence/elf-copies.md",
+      "source_blob_sha": "49fc28d671276e1787753267ae92397266d6bacd",
+      "source_kind": "tooling",
+      "module_id": "tdesktop.elf-copy-evidence",
+      "responsibility_id": "TDRP-R9-ELF-COPY-EVIDENCE-001",
+      "source_symbols": [
+        "elf-copies.md",
+        "elf_identity.py::compare_elf",
+        "elf_identity.py::build_report"
+      ],
+      "capability_ids": [
+        "CAP-RELEASE-ARTIFACT-IDENTITY"
+      ],
+      "dependency_ids": [
+        "Fabushi release packaging",
+        "Test Evidence Contract",
+        "Release Candidate Entry / Exit Criteria"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/elf-copies-complete-read.md",
+      "behavior_contract": "Artifact provenance classifies byte copy versus transform, preserves raw identities for both artifacts, requires source stability, and forbids normalized digests from standing in for exact identity.",
+      "state_machine": "exact candidate -> source identity -> fresh copy/transform -> copy identity -> source stability recheck -> fail-closed verdict -> durable evidence",
+      "side_effects": [
+        "Packaged acceptance is bound to a fresh executable identity edge"
+      ],
+      "failure_cases": [
+        "Source mutates during copy window",
+        "Copy digest or size differs",
+        "Normalized digest is presented as exact identity",
+        "Historical execution copy is reused"
+      ],
+      "ui_disposition": "Not applicable; build/release evidence tooling only.",
+      "non_ui_responsibilities": [
+        "Artifact identity",
+        "Stable acquisition",
+        "Machine-readable provenance"
+      ],
+      "platform_delta": "Detailed ELF64/x86-64 grammar is not applicable to current Mach-O byte-copy packaging; future transforms must add a bounded platform-specific oracle before equivalence can pass.",
+      "existing_owner_candidates": [
+        ".github/workflows/release-macos-main.yml",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/release-entry-exit-criteria.md"
+      ],
+      "existing_owner": "Fabushi test evidence contract",
+      "rejected_existing_owners": [
+        "Shipping Agent/Coordinator/Host/Runner are product runtime owners, not release artifact provenance owners",
+        "A Telegram- or ELF-specific Fabushi packaging owner would duplicate the existing release/evidence owner",
+        "TDRP source archive/reachability jobs prove source/build-input authority, not executable-copy identity"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Artifact copy and transformation identity evidence"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The responsibility extends the existing source-neutral shipping release/evidence owner; no upstream Python implementation is copied into Fabushi.",
+      "command_event_contracts": [
+        "candidate -> raw identities/stability -> verdict -> evidence"
+      ],
+      "state_owner": "Existing Fabushi release/evidence state",
+      "lifecycle_owner": "GitHub Actions release packaging and independent acceptance",
+      "persistence_and_restart": "Machine-readable identity evidence is uploaded with exact-head packaged acceptance artifacts; historical artifacts do not become current evidence.",
+      "concurrency_and_cancellation": "The identity check is linear within the packaging job; incomplete checks yield no passing evidence.",
+      "security_boundary": "No artifact equivalence is inferred from path/name/launch. Exact raw digests are required for byte copies; transforms need a bounded explicit oracle.",
+      "network_service_dependencies": [
+        "GitHub Actions hosted runner",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi release workflow / GitHub Actions",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "toolchain-equivalent",
+      "blockers": [
+        "Independent exact-head GitHub Actions verification of this mapping commit is pending."
+      ],
+      "production_entrypoints": [
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Artifact copy and transformation identity evidence"
+      ],
+      "production_evidence": [
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Artifact copy and transformation identity evidence"
+      ],
+      "test_evidence": [],
+      "target_commit": "97d7fa0154c1e774a75a79c5f66a36d2569c25a5",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi release packaging and quality evidence",
+      "composition_slot": "Executable artifact identity/provenance",
+      "capability_component": "Source-neutral artifact-copy identity gate",
+      "variation_axes": [
+        "byte-exact copy",
+        "intentional transform",
+        "stable/mutated source",
+        "matching/drifted copy"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi Test Evidence Contract",
+        "Fabushi Test Strategy",
+        "Release Candidate Entry / Exit Criteria"
+      ],
+      "duplicate_root_check": "No Telegram/ELF-specific Fabushi release owner or second packaging system introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Only complete exact-head identity evidence advances packaged acceptance.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to tooling responsibility",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-ELF-COPY-EVIDENCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-ARTIFACT-COPY-IDENTITY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-ARTIFACT-RAW-IDENTITY-001",
+        "INV-TDRP-ARTIFACT-SOURCE-STABLE-001",
+        "INV-TDRP-ARTIFACT-NORMALIZED-NOT-IDENTITY-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-ARTIFACT-COPY-IDENTITY-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-MACOS-PACKAGED-COPY-IDENTITY-001"
+      ],
+      "functional_e2e_case_ids": [
+        "E2E-TDRP-PACKAGED-EXACT-CANDIDATE-001"
+      ],
+      "temporal_case_ids": [
+        "TEMP-TDRP-COPY-SOURCE-STABILITY-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-COPY-IDENTITY-DRIFT-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-ARTIFACT-PROVENANCE-001"
+      ],
+      "regression_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-RELEASE-ARTIFACT-IDENTITY-001"
+      ],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "exact-head-signed-notarized-macos-candidate"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions macos-15"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavioral artifact-identity/evidence contract was read from telegramdesktop/tdesktop source authority; upstream ELF parser/test code is not copied into Fabushi.",
+      "reviewer": null,
+      "notes": "Sixth previously unread recursive entry; Linux ELF-format mechanics are explicitly not applicable to current macOS byte-copy packaging; exact-head verification pending."
     }
   ]
 }
