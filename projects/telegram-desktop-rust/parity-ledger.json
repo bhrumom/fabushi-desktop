@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
-  "target_commit": "8a38c08ea0f09e7c6fe7e8d50f776a813611aa6a",
+  "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16194,
-    "unread": 16167,
+    "unknown": 16193,
+    "unread": 16166,
     "omitted": 0,
-    "responsibilities_total": 30,
+    "responsibilities_total": 32,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -7190,6 +7190,445 @@
       "coverage_matrix_status": "pending",
       "flake_status": "stable",
       "notes": "Eighth previously unread recursive source entry, reconciled to live dev 351204f3695b4a39bc3f4d2f230c061b9a01fe2a; target blob unchanged. Latest delta changes Qt prepare cache-key mechanics only; recursive=16,202, unknown=16,194, unread=16,167, omitted=0. Exact-head verification pending.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
+      "source_path": ".agents/shared/evidence/ninja_target.py",
+      "source_blob_sha": "f638b0e9c039784832155269b5931ab0cabdb16b",
+      "source_kind": "tooling",
+      "module_id": "tdesktop.ninja-target-evidence",
+      "responsibility_id": "TDRP-R9-CONFIGURED-BUILD-GRAPH-PROVENANCE-001",
+      "source_symbols": [
+        "select_build",
+        "check_ninja",
+        "ninja_tool_argv",
+        "snapshot_manifests",
+        "parse_query",
+        "load_compdb",
+        "parse_link",
+        "parse_compile",
+        "resolve_objects",
+        "resolve_pchs",
+        "evaluate_policy",
+        "resolve"
+      ],
+      "capability_ids": [
+        "CAP-CONFIGURED-BUILD-GRAPH-EVIDENCE",
+        "CAP-RELEASE-EVIDENCE-QUALIFICATION"
+      ],
+      "dependency_ids": [
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract",
+        "TDRP recursive reachability evidence"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/ninja-target-complete-read.md",
+      "behavior_contract": "Configured-build target ownership claims must be bound to one exact stable CMake/Ninja graph, reconcile link objects to graph/compile/PCH/macro provenance with a bounded parser/tool grammar, and emit machine-readable limits without executing graph commands.",
+      "state_machine": "bind cache/generator/config/manifest -> snapshot manifests -> tool capability check -> exact target query -> compdb -x -> link/object/producer/PCH/policy reconciliation -> exact selection -> snapshot recheck -> PASS report",
+      "side_effects": [
+        "Evidence mapping only; no new shipping runtime."
+      ],
+      "failure_cases": [
+        "Manifest/cache changes during acquisition",
+        "Unsafe Ninja tool or operand",
+        "Graph/link substitution or missing object",
+        "Unsupported shell/compiler/macro channel",
+        "Incoherent PCH or policy cohort",
+        "Ambiguous/non-exact selector"
+      ],
+      "ui_disposition": "Not applicable; build/release evidence tooling only.",
+      "non_ui_responsibilities": [
+        "CMake generator/config/manifest binding",
+        "Ninja >=1.10 and compdb -x capability",
+        "safe query/compdb argv",
+        "stable manifest snapshot",
+        "query/compdb parsing",
+        "link/object/compile/PCH/macro/path reconciliation",
+        "machine-readable configured-graph-only report"
+      ],
+      "platform_delta": "Fabushi absorbs the source-neutral evidence contract rather than copying Telegram/Ninja-specific Python into the product runtime.",
+      "existing_owner_candidates": [
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "scripts/audit-tdrp-recursive-build-reachability.mjs",
+        "scripts/audit-tdrp-boost-archive-reachability.mjs"
+      ],
+      "existing_owner": "Fabushi test evidence contract",
+      "rejected_existing_owners": [
+        "Shipping Host/Runner do not own build-evidence provenance",
+        "Archive/reachability scripts remain separate evidence responsibilities and must not absorb configured graph parsing",
+        "A Telegram/Ninja-specific owner would duplicate source-neutral quality ownership"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Configured-build graph provenance evidence"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The applicable behavior is a normative source-neutral evidence/qualification contract, not a shipping product runtime.",
+      "command_event_contracts": [
+        "configured build graph -> bounded read-only acquisition -> fail-closed reconciliation -> machine-readable evidence"
+      ],
+      "state_owner": "Existing Fabushi quality/evidence state",
+      "lifecycle_owner": "GitHub Actions evidence production and review",
+      "persistence_and_restart": "Only complete exact-head evidence may advance acceptance; partial/historical acquisition remains non-passing.",
+      "concurrency_and_cancellation": "Stable before/after manifest snapshots fence concurrent graph mutation; executable verification remains GitHub-Actions-only.",
+      "security_boundary": "Evidence must not expose private compiler definitions and cannot broaden claims beyond configured graph provenance.",
+      "network_service_dependencies": [
+        "GitHub Actions hosted runners",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi quality/release workflow / GitHub Actions",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "toolchain-equivalent",
+      "blockers": [
+        "Independent exact-head GitHub Actions verification of this mapping commit is pending."
+      ],
+      "production_entrypoints": [
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Configured-build graph provenance evidence"
+      ],
+      "production_evidence": [
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Configured-build graph provenance evidence"
+      ],
+      "test_evidence": [
+        "dossier:projects/telegram-desktop-rust/dossiers/ninja-target-complete-read.md",
+        "policy:projects/fabushi-communication-platform/quality/evidence-contract.md#Configured-build graph provenance evidence"
+      ],
+      "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi quality and release evidence",
+      "composition_slot": "Configured-build provenance",
+      "capability_component": "Source-neutral configured-build graph evidence",
+      "variation_axes": [
+        "Ninja vs Ninja Multi-Config",
+        "host path equals configured vs mapped",
+        "clang vs GCC PCH",
+        "response file expanded vs refusal",
+        "positive vs malformed/mutated graph"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi Test Evidence Contract",
+        "Fabushi Test Strategy"
+      ],
+      "duplicate_root_check": "No Telegram/Ninja-specific Fabushi test, release, packaging or runtime owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Exact-head evidence remains bound to one stable manifest snapshot and cannot be promoted across graph drift.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to tooling responsibility",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-CONFIGURED-BUILD-GRAPH-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CONFIGURED-BUILD-GRAPH-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CONFIGURED-GRAPH-STABLE-001",
+        "INV-TDRP-CONFIGURED-GRAPH-NO-EXECUTION-001",
+        "INV-TDRP-ARCHIVE-RUNTIME-SEPARATION-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CONFIGURED-BUILD-GRAPH-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-CONFIGURED-BUILD-EVIDENCE-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CONFIGURED-GRAPH-MUTATION-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-EVIDENCE-TOOL-ALLOWLIST-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-BUILD-EVIDENCE-001"
+      ],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "handwritten-ninja-tree",
+        "real-cmake-ninja-fixture"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral contracts read from telegramdesktop/tdesktop authority; upstream Python implementation is not copied.",
+      "notes": "Ninth previously unread recursive source entry at live dev 351204f3695b4a39bc3f4d2f230c061b9a01fe2a; recursive=16,202, unknown=16,193, unread=16,166, omitted=0 after this mapping. Archive-member and runtime reachability remain separate evidence responsibilities.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
+      "source_path": ".agents/shared/evidence/ninja_target.py",
+      "source_blob_sha": "f638b0e9c039784832155269b5931ab0cabdb16b",
+      "source_kind": "tooling",
+      "module_id": "tdesktop.ninja-target-evidence",
+      "responsibility_id": "TDRP-R9-CONFIGURED-BUILD-GRAPH-QUALIFICATION-001",
+      "source_symbols": [
+        "ninja_target_test.py",
+        "HandTree",
+        "CompiledFixtureTests",
+        "test_graph_commands_are_never_executed"
+      ],
+      "capability_ids": [
+        "CAP-CONFIGURED-BUILD-GRAPH-EVIDENCE",
+        "CAP-RELEASE-EVIDENCE-QUALIFICATION"
+      ],
+      "dependency_ids": [
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract",
+        "TDRP recursive reachability evidence"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/ninja-target-complete-read.md",
+      "behavior_contract": "The configured-build provenance oracle must be independently qualified by positive and fail-closed negative controls, including real CMake/Ninja behavior, stable acquisition mutation, response-file expansion, path identity, PCH/macro coherence and proof that graph commands are never executed.",
+      "state_machine": "independent fixture setup -> positive oracle run -> one-fault negative mutations -> real CMake/Ninja cross-check -> no-execution sentinel -> pass only when all declared boundaries/refusals hold",
+      "side_effects": [
+        "Evidence mapping only; no new shipping runtime."
+      ],
+      "failure_cases": [
+        "Fixture derived from production parser instead of independent construction",
+        "Unsupported grammar silently accepted",
+        "Graph command executed while claiming read-only evidence",
+        "Real response-file/config/path/PCH case not covered"
+      ],
+      "ui_disposition": "Not applicable; build/release evidence tooling only.",
+      "non_ui_responsibilities": [
+        "Independent handwritten fixtures",
+        "Real CMake/Ninja fixture",
+        "Positive/negative parser and graph controls",
+        "Manifest race control",
+        "No-execution sentinel",
+        "Response-file/PCH/path/macro controls"
+      ],
+      "platform_delta": "Fabushi absorbs the source-neutral evidence contract rather than copying Telegram/Ninja-specific Python into the product runtime.",
+      "existing_owner_candidates": [
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "scripts/audit-tdrp-recursive-build-reachability.mjs",
+        "scripts/audit-tdrp-boost-archive-reachability.mjs"
+      ],
+      "existing_owner": "Fabushi test strategy",
+      "rejected_existing_owners": [
+        "Shipping Host/Runner do not own build-evidence provenance",
+        "Archive/reachability scripts remain separate evidence responsibilities and must not absorb configured graph parsing",
+        "A Telegram/Ninja-specific owner would duplicate source-neutral quality ownership"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md"
+      ],
+      "fabushi_target_symbols": [
+        "Configured-build graph qualification"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The applicable behavior is a normative source-neutral evidence/qualification contract, not a shipping product runtime.",
+      "command_event_contracts": [
+        "configured build graph -> bounded read-only acquisition -> fail-closed reconciliation -> machine-readable evidence"
+      ],
+      "state_owner": "Existing Fabushi quality/evidence state",
+      "lifecycle_owner": "GitHub Actions evidence production and review",
+      "persistence_and_restart": "Only complete exact-head evidence may advance acceptance; partial/historical acquisition remains non-passing.",
+      "concurrency_and_cancellation": "Stable before/after manifest snapshots fence concurrent graph mutation; executable verification remains GitHub-Actions-only.",
+      "security_boundary": "Evidence must not expose private compiler definitions and cannot broaden claims beyond configured graph provenance.",
+      "network_service_dependencies": [
+        "GitHub Actions hosted runners",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi quality/release workflow / GitHub Actions",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "toolchain-equivalent",
+      "blockers": [
+        "Independent exact-head GitHub Actions verification of this mapping commit is pending."
+      ],
+      "production_entrypoints": [
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Configured-build graph qualification"
+      ],
+      "production_evidence": [
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Configured-build graph qualification"
+      ],
+      "test_evidence": [
+        "dossier:projects/telegram-desktop-rust/dossiers/ninja-target-complete-read.md",
+        "policy:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Configured-build graph qualification"
+      ],
+      "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi quality and release evidence",
+      "composition_slot": "Configured-build provenance",
+      "capability_component": "Source-neutral configured-build graph evidence",
+      "variation_axes": [
+        "Ninja vs Ninja Multi-Config",
+        "host path equals configured vs mapped",
+        "clang vs GCC PCH",
+        "response file expanded vs refusal",
+        "positive vs malformed/mutated graph"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi Test Evidence Contract",
+        "Fabushi Test Strategy"
+      ],
+      "duplicate_root_check": "No Telegram/Ninja-specific Fabushi test, release, packaging or runtime owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Exact-head evidence remains bound to one stable manifest snapshot and cannot be promoted across graph drift.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to tooling responsibility",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-CONFIGURED-BUILD-GRAPH-QUALIFICATION-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CONFIGURED-BUILD-GRAPH-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CONFIGURED-GRAPH-STABLE-001",
+        "INV-TDRP-CONFIGURED-GRAPH-NO-EXECUTION-001",
+        "INV-TDRP-ARCHIVE-RUNTIME-SEPARATION-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CONFIGURED-BUILD-GRAPH-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-CONFIGURED-BUILD-EVIDENCE-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CONFIGURED-GRAPH-MUTATION-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-EVIDENCE-TOOL-ALLOWLIST-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-BUILD-EVIDENCE-001"
+      ],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "handwritten-ninja-tree",
+        "real-cmake-ninja-fixture"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral contracts read from telegramdesktop/tdesktop authority; upstream Python implementation is not copied.",
+      "notes": "Ninth previously unread recursive source entry at live dev 351204f3695b4a39bc3f4d2f230c061b9a01fe2a; recursive=16,202, unknown=16,193, unread=16,166, omitted=0 after this mapping. Archive-member and runtime reachability remain separate evidence responsibilities.",
       "test_execution_evidence": []
     }
   ]
