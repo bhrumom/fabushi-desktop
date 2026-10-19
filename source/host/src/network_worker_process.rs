@@ -59,7 +59,7 @@ impl fmt::Debug for NetworkWorkerProcessOptions {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct NetworkWorkerInitialize<'a> {
     #[serde(rename = "type")]
@@ -70,6 +70,21 @@ struct NetworkWorkerInitialize<'a> {
     auth_key: &'a str,
     state_dir: String,
     state_key_b64: &'a str,
+}
+
+impl fmt::Debug for NetworkWorkerInitialize<'_> {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("NetworkWorkerInitialize")
+            .field("kind", &self.kind)
+            .field("protocol_version", &self.protocol_version)
+            .field("hostname", &self.hostname)
+            .field("control_url", &self.control_url)
+            .field("auth_key", &"<redacted>")
+            .field("state_dir", &self.state_dir)
+            .field("state_key_b64", &"<redacted>")
+            .finish()
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -784,4 +799,29 @@ fn request_graceful_termination(child: &mut Child) -> Result<(), String> {
             child.id()
         )
     })
+}
+
+#[cfg(test)]
+mod network_worker_initialize_debug_tests {
+    use super::NetworkWorkerInitialize;
+
+    #[test]
+    fn network_worker_initialize_debug_redacts_secrets() {
+        let auth_key = "tskey-auth-never-log";
+        let state_key_b64 = "c3RhdGUtc2VjcmV0LW5ldmVyLWxvZw==";
+        let initialize = NetworkWorkerInitialize {
+            kind: "initialize",
+            protocol_version: 1,
+            hostname: "device-node-01234567",
+            control_url: "https://coord.example.test",
+            auth_key,
+            state_dir: "/private/fabushi/state".into(),
+            state_key_b64,
+        };
+
+        let rendered = format!("{initialize:?}");
+        assert!(!rendered.contains(auth_key));
+        assert!(!rendered.contains(state_key_b64));
+        assert_eq!(rendered.matches("<redacted>").count(), 2);
+    }
 }
