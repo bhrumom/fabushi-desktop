@@ -164,7 +164,7 @@ export class FabushiOfficialDeviceRegistryService {
     this.connect = options.connect ?? defaultConnect;
     const discoveryPath = join(options.userDataPath, "agent-surface", "bridge.json");
     this.surfaceStatus = options.surfaceStatus ?? (async () => await defaultSurfaceStatus(discoveryPath));
-    this.surfaceCall = options.surfaceCall ?? (async (toolName, input) => { const module = await import("../../../chatgpt-vps-control/lib/app-agent-surface-client.js"); return await module.createAppAgentSurfaceClient({ discoveryPath }).call(toolName.slice("fabushi.app.".length), input); });
+    this.surfaceCall = options.surfaceCall ?? (async (toolName, input) => { const module = await import("../../../chatgpt-vps-control/lib/app-agent-surface-client.js"); return await module.createAppAgentSurfaceClient({ discoveryPath }).call(toolName.slice("fabushi.app.".length) as "status" | "snapshot" | "find" | "action" | "wait" | "assert", input); });
     this.pollMs = Math.max(1_000, options.pollMs ?? DEFAULT_POLL_MS);
     this.heartbeatMs = Math.max(1_000, options.heartbeatMs ?? DEFAULT_HEARTBEAT_MS);
   }
