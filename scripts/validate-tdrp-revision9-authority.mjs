@@ -278,7 +278,7 @@ fail(openalReachability?.root_candidate_policy_status==='complete-for-current-op
 const expectedOpenalAuthorities=new Set([
   'https://github.com/kcat/openal-soft@b2c48f7718ef3fcf67921a8b6534c4914e328970',
   'https://github.com/kcat/openal-soft@dc7d7054a5b4f3bec1dc23a42fd616a0847af948',
-  'https://github.com/telegramdesktop/openal-soft@291c0fdbbdd767f00c45c7fca562614faea57647',
+  'https://github.com/telegramdesktop/openal-soft@00cb9b649c1a6ad1802d88ee4458979164529238',
   'https://github.com/telegramdesktop/openal-soft@c2eab43d72890c58d4b51d5d98eafb9f011e1c89'
 ]);
 for (const authority of openalReachability.observed_authorities||[]) expectedOpenalAuthorities.delete(authority.repository+'@'+authority.commit);
@@ -296,7 +296,7 @@ for (const option of ['ALSOFT_EXAMPLES=OFF','ALSOFT_UTILS=OFF']) {
   fail(dockerOpenalStage.includes(option),'accepted Docker OpenAL option drift: '+option);
   fail(snapOpenalStage.includes(option),'accepted Snap OpenAL option drift: '+option);
 }
-fail(prepareOpenalStage.includes('git checkout 291c0fdbbd'),'accepted Windows OpenAL pin drift');
+fail(prepareOpenalStage.includes('git checkout 00cb9b649c'),'accepted Windows OpenAL pin drift');
 fail(prepareOpenalStage.includes('git checkout coreaudio_device_uid'),'accepted Mac OpenAL branch evidence drift');
 fail(dockerOpenalStage.includes('git clone -b 1.25.2 --depth=1'),'accepted Docker OpenAL ref drift');
 fail(snapOpenalStage.includes('source-tag: 1.24.3'),'accepted Snap OpenAL ref drift');

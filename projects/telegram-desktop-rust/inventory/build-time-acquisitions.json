@@ -1673,8 +1673,8 @@
         },
         {
           "repository": "https://github.com/telegramdesktop/openal-soft",
-          "commit": "291c0fdbbdd767f00c45c7fca562614faea57647",
-          "ref": "291c0fdbbd",
+          "commit": "00cb9b649c1a6ad1802d88ee4458979164529238",
+          "ref": "00cb9b649c",
           "build_entries": [
             "Telegram/build/prepare/prepare.py"
           ]
