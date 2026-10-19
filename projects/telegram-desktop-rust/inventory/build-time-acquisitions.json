@@ -1167,17 +1167,17 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "blob": "a8bd8d6a5c1e190a27702cbcf7f00d10ce6f9dda",
+          "blob": "a765478895d2e743119ac9bcfac4ae3534b7a206",
           "evidence": "Qt 5 initializes only qtbase qtimageformats qtsvg; Qt 6 prepare initializes only qtbase qtimageformats qtshadertools qtsvg."
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "blob": "39b185c7277b1bb1819761d112a6799d4152ff04",
+          "blob": "f72162089985263493c6e3f7e23b566f5df8e454",
           "evidence": "Qt 6 Linux image initializes only qtbase qtdeclarative qtwayland qtimageformats qtsvg qtshadertools."
         },
         {
           "path": "snap/snapcraft.yaml",
-          "blob": "618110dba69e4f18c78fe65f282f1342a631cbfb",
+          "blob": "38f0eb362832c3623b868c9aa90c03bc4f426d01",
           "evidence": "Snap Qt source-submodules lists only qtbase qtdeclarative qtimageformats qtshadertools qtsvg qtwayland."
         }
       ],
