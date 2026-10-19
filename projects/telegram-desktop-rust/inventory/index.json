@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16202,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16183,
-    "unread_minimum": 16156,
+    "unknown_minimum": 16182,
+    "unread_minimum": 16155,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -97,5 +97,5 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live rebaseline candidate telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a (tree 5151db79560ed40bf3802482fcfb74b950be6c40) remains source-closure open. Actual recursive array entry 19 .agents/skills/code-health/agents/openai.yaml@59bb6304445f21e2a3ee1a97a69a8e231f934d30 is independently mapped to the existing source-neutral repository skill/task invocation owner: its native display/description/default prompt only discovers and selects the already-owned code-health workflow, preserving fresh exact-authority publication, report-before-proposals ordering, and ordinary trust/conflict/approval routing. No Telegram/OpenAI adapter runtime or second health/task owner is introduced. Recursive inventory remains 16,202 with unknown=16,183, unread=16,156, omitted=0; baseline acceptance remains fail-closed."
+  "note": "Live rebaseline candidate telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a (tree 5151db79560ed40bf3802482fcfb74b950be6c40) remains source-closure open. Actual recursive array entry 20 .agents/skills/code-health/references/atlas.md@7f43dd75fcfb670c327bc3e71c1de0589e7506f0 is independently mapped to the existing source-neutral repository quality/evidence/task owner: the atlas is stable responsibility/classification metadata with deterministic exact-file > glob > prefix ownership, exact-revision draft evidence, independent source reading/consolidation/verification, explicit owner approval, and narrow amendment rules. Telegram-specific Python generators and code-health runtime are not copied and no second repository/product owner is introduced. Recursive inventory remains 16,202 with unknown=16,182, unread=16,155, omitted=0; baseline acceptance remains fail-closed."
 }
