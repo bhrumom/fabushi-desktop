@@ -21,6 +21,7 @@ pub const SAND_BROWSER_AUTO_REVIEW_MAX_TEXT_CHARS: usize = 2_000;
 pub const SAND_BROWSER_AUTO_REVIEW_MAX_URL_CHARS: usize = 2_000;
 pub const SAND_BROWSER_AUTO_REVIEW_MAX_KEY_CHARS: usize = 256;
 pub const SAND_BROWSER_AUTO_REVIEW_MAX_CDP_PARAMS_CHARS: usize = 2_000;
+pub const SAND_BROWSER_AUTO_REVIEW_MAX_FILE_PATH_CHARS: usize = 4_096;
 
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[error("{0}")]
@@ -57,6 +58,7 @@ pub fn normalize_sand_browser_exact_action_args(
     bounded(object.get("value").and_then(Value::as_str), "value", SAND_BROWSER_AUTO_REVIEW_MAX_TEXT_CHARS)?;
     bounded(object.get("key").and_then(Value::as_str), "key", SAND_BROWSER_AUTO_REVIEW_MAX_KEY_CHARS)?;
     bounded(object.get("cdpParams").and_then(Value::as_str), "params", SAND_BROWSER_AUTO_REVIEW_MAX_CDP_PARAMS_CHARS)?;
+    bounded(object.get("filePath").and_then(Value::as_str), "filePath", SAND_BROWSER_AUTO_REVIEW_MAX_FILE_PATH_CHARS)?;
     if object
         .get("values")
         .and_then(Value::as_array)
@@ -162,11 +164,11 @@ where
     }
     let op = exact_action.get("op").and_then(Value::as_str).unwrap_or_default();
     if mode == SandAutoReviewMode::Enforce
-        && matches!(op, "click" | "mouse_click_xy" | "drag")
+        && matches!(op, "click" | "mouse_click_xy" | "drag" | "download" | "upload_file")
         && normalize_sand_browser_element(exact_action.get("element").and_then(Value::as_str))?.is_none()
     {
         return Err(SandBrowserAutoReviewBlockedError(
-            "Browser click and drag actions require an element description in Auto-review enforce mode.".into(),
+            "Browser click, drag, download, and upload actions require an element description in Auto-review enforce mode.".into(),
         ));
     }
     let initial_state = capture_review_state().map_err(SandBrowserAutoReviewBlockedError)?;
@@ -225,6 +227,7 @@ where
         cdp_params: action.get("cdpParams").and_then(Value::as_str).map(ToOwned::to_owned),
         tabs_action: action.get("tabsAction").and_then(Value::as_str).map(ToOwned::to_owned),
         tab_index: action.get("tabIndex").and_then(Value::as_u64).and_then(|value| usize::try_from(value).ok()),
+        file_path: action.get("filePath").and_then(Value::as_str).map(ToOwned::to_owned),
     });
     let request = SandAutoReviewRequest {
         agent_id: Some(agent_id.to_string()),

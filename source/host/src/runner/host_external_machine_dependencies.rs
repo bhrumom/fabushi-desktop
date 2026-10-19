@@ -5,7 +5,8 @@ use serde_json::{Value, json};
 use crate::extensions::inference::provider_session::ProviderSessionError;
 use crate::extensions::local_exec::extension::HostLocalExecExtension;
 use crate::extensions::local_exec::gateway_local_exec_sand_box::{
-    GatewayLocalExecManager, GatewayLocalToolGate, GatewayLocalToolScope,
+    GatewayLocalExecManager, GatewayLocalExecOperationRecord, GatewayLocalExecOperationStatus,
+    GatewayLocalToolGate, GatewayLocalToolScope,
 };
 use crate::extensions::local_tool_permission::extension::HostLocalToolPermissionExtension;
 use crate::extensions::local_exec::gateway_local_exec_sand_box::TurnScopedGatewayLocalToolGate;
@@ -64,6 +65,28 @@ impl ProductionExternalMachineExecutor {
             action: Some(action.to_string()),
         }
     }
+
+    fn operation_json(record: GatewayLocalExecOperationRecord) -> Value {
+        json!({
+            "operationId": record.operation_id,
+            "status": match record.status {
+                GatewayLocalExecOperationStatus::Accepted => "accepted",
+                GatewayLocalExecOperationStatus::Running => "running",
+                GatewayLocalExecOperationStatus::Completed => "completed",
+                GatewayLocalExecOperationStatus::Cancelled => "cancelled",
+                GatewayLocalExecOperationStatus::OutcomeUnknown => "outcome_unknown",
+                GatewayLocalExecOperationStatus::Failed => "failed",
+            },
+            "exitCode": record.exit_code,
+            "aborted": record.aborted,
+            "requestId": record.operation_id.clone(),
+            "resultRef": GatewayLocalExecManager::stable_result_ref(&record.operation_id),
+            "stdout": record.stdout,
+            "stderr": record.stderr,
+            "stdoutTruncated": record.stdout_truncated,
+            "stderrTruncated": record.stderr_truncated,
+        })
+    }
 }
 
 impl ExternalMachineExecutor for ProductionExternalMachineExecutor {
@@ -85,7 +108,36 @@ impl ExternalMachineExecutor for ProductionExternalMachineExecutor {
             "stderr": result.stderr,
             "exitCode": result.exit_code,
             "cwd": result.cwd,
-            "aborted": result.aborted
+            "aborted": result.aborted,
+            "requestId": result.request_id.clone(),
+            "operationId": result.request_id,
+            "outcomeUnknown": result.outcome_unknown,
+            "stdoutTruncated": result.stdout_truncated,
+            "stderrTruncated": result.stderr_truncated
+        }))
+    }
+
+    fn operation_status(&self, operation_id: &str) -> Result<Value, ProviderSessionError> {
+        Ok(self.manager
+            .operation_for_agent(&self.agent_id, operation_id)
+            .map(Self::operation_json)
+            .unwrap_or_else(|| json!({"operationId":operation_id,"status":"not_found"})))
+    }
+
+    fn operation_history(&self) -> Result<Value, ProviderSessionError> {
+        Ok(Value::Array(
+            self.manager
+                .operation_history_for_agent(&self.agent_id)
+                .into_iter()
+                .map(Self::operation_json)
+                .collect(),
+        ))
+    }
+
+    fn cancel_operation(&self, operation_id: &str) -> Result<Value, ProviderSessionError> {
+        Ok(json!({
+            "operationId": operation_id,
+            "cancelRequested": self.manager.cancel_operation_for_agent(&self.agent_id, operation_id),
         }))
     }
 

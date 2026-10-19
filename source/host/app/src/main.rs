@@ -11,6 +11,9 @@ use mahayana_host_runtime::extensions::box_store_sync::box_copy_in::{
     BOX_COPY_IN_ARG, execute_production_box_copy_in_from_env,
 };
 use mahayana_host_runtime::extensions::box_store_sync::production::ProductionBoxStoreSyncApi;
+use mahayana_host_runtime::extensions::local_exec::native_file_sandbox::{
+    LOCAL_EXEC_FILE_SANDBOX_ARG, execute_production_native_file_request_from_env,
+};
 use mahayana_host_runtime::extensions::action_audit::extension::ActionAuditExtension;
 use mahayana_host_runtime::extensions::attachments::attachments_service::AttachmentsService;
 use mahayana_host_runtime::extensions::attachments::generate_image_service::{
@@ -11171,7 +11174,7 @@ fn install_approved_mini_app(host: &UnifiedAppHost, app_id: &str, operation_id: 
     let Some((proof, raw)) = approved.pop() else {
         return Err(GatewayCommandError::Internal("release_not_approved".into()));
     };
-    let archive = client.download_artifact(&proof.artifact.digest, proof.artifact.size_bytes, proof.artifact.url.as_deref()).map_err(proof_gateway_error)?;
+    let archive = client.download_artifact(&proof.artifact.digest, proof.artifact.size_bytes).map_err(proof_gateway_error)?;
     let package = verify_catalog_bundle(&archive, &proof.authorization).map_err(|_| GatewayCommandError::Internal("digest_mismatch: downloaded mini-app package failed verification".into()))?;
     if !native_mini_app_claim_is_current(&claim) {
         return Err(GatewayCommandError::Internal("stale_account: account changed during install".into()));
@@ -11373,6 +11376,9 @@ fn drain_ready_runtime_events(
 }
 
 fn main() {
+    if std::env::args().any(|arg| arg == LOCAL_EXEC_FILE_SANDBOX_ARG) {
+        std::process::exit(execute_production_native_file_request_from_env());
+    }
     if std::env::args().any(|arg| arg == BOX_COPY_IN_ARG) {
         let environment = std::env::vars().collect::<BTreeMap<_, _>>();
         let exit_code = execute_production_box_copy_in_from_env(&environment, Path::new("/"));

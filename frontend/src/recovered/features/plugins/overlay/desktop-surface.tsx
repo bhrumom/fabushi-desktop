@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { DesktopBridge } from "../../../contracts/desktop-bridge";
-import type { PluginBrowserItem } from "./browser";
+import { PluginsBrowser, type PluginBrowserItem } from "./browser";
 import type { PluginGitHubAuthBannerProps } from "./github-auth-banner";
 import { pluginAuthenticationNotice, pluginPrivateSkillsFromCoordinator, pluginSkillPublishTargetsFromCoordinator, type PluginPrivateSkill, type PluginSkillPublishTargets } from "./model";
 import {
@@ -27,7 +27,6 @@ import {
   type PluginPrivateSkillSyncController,
   type PluginPrivateSkillSyncSource
 } from "./desktop";
-import { PluginsDialogShell } from "./view";
 import { MiniAppPublisher } from "./miniapp-publisher";
 import { MiniAppManagement } from "./miniapp-management";
 import { publishSurfaceNotice, type PluginsNoticeEvent } from "../../../contracts/surface-notice";
@@ -276,6 +275,7 @@ export function PluginsDesktopSurface({ bridge, githubAuth, activeAgentId = null
     publishSurfaceNotice({ kind: notice.kind, operation: "plugins-browser-remove", message: notice.text }, onNotice, onStatus);
   };
 
+  // Keep native Mini App production owners mounted across marketplace loading and ready states.
   if (snapshot == null) {
     return (
       <div aria-label="Plugins" aria-modal="true" className="sand-plugins-dialog" role="dialog">
@@ -296,12 +296,14 @@ export function PluginsDesktopSurface({ bridge, githubAuth, activeAgentId = null
     ? synchronizedPrivateSkills
     : [...privateSkillEnableSnapshot.skills];
   return (
-    <PluginsDialogShell
-      publisherPanel={<><MiniAppManagement bridge={bridge} /><MiniAppPublisher bridge={bridge} /></>}
+    <div aria-label="Plugins" aria-modal="true" className="sand-plugins-dialog" role="dialog">
+      <button aria-label="Close" className="sand-plugins-dialog__close" onClick={onClose} type="button">×</button>
+      <MiniAppManagement bridge={bridge} />
+      <MiniAppPublisher bridge={bridge} />
+      <PluginsBrowser
       catalog={snapshot.catalog}
       githubAuth={githubAuth}
       initialQuery={initialQuery}
-      isOpen={isOpen}
       items={items}
       privateSkills={privateSkillsForView}
       privateSkillsAgentId={activeAgentId}
@@ -319,7 +321,6 @@ export function PluginsDesktopSurface({ bridge, githubAuth, activeAgentId = null
       onAddAccount={(serverId, label) => void run(`server:${serverId}:${label}`, "plugins-authenticate", () => authenticate(serverId, label))}
       onRenameAccount={(args) => void run(`server:${args.serverId}:${args.accountKey}`, "plugins-account-rename", async () => { await bridge.mcp.renameAccount(args); publishSurfaceNotice({ kind: "success", operation: "plugins-account-rename", message: pluginAccountRenameNotice(args.newAccountKey) }, onNotice, onStatus); })}
       onRemoveAccount={(args) => void run(`server:${args.serverId}:${args.accountKey}`, "plugins-account-remove", async () => { await bridge.mcp.removeAccount(args); publishSurfaceNotice({ kind: "success", operation: "plugins-account-remove", message: pluginAccountRemovalNotice(args.accountKey) }, onNotice, onStatus); })}
-      onClose={onClose}
       onInstall={(pluginId, values, hasTeamConfiguredVariables) => run(`plugin:${pluginId}`, "plugins-install", async () => {
         await installMarketplacePlugin(bridge, pluginId, values, hasTeamConfiguredVariables);
         const refs = snapshot.catalog.find((entry) => entry.id === pluginId)?.skills.flatMap((skill) => skill.sourceUrl == null ? [] : [skill.sourceUrl]) ?? [];
@@ -329,6 +330,7 @@ export function PluginsDesktopSurface({ bridge, githubAuth, activeAgentId = null
       onRemove={(item: PluginBrowserItem) => void run(`${item.kind}:${item.id}`, "plugins-remove", () => removeBrowserItem(item))}
       onLoadServerTools={(serverId) => listPluginServerTools(bridge, serverId)}
       onToggleServerTool={(serverId, toolName) => togglePluginServerTool(bridge, serverId, toolName)}
-    />
+      />
+    </div>
   );
 }

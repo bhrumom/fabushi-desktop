@@ -2,7 +2,7 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
 import { dirname } from "node:path";
 
-import type { AuthServicePort, SandAuthStatus } from "../../electron-main/account/auth-service-contract.js";
+import type { AuthServicePort, FabushiDeviceAgentSession, SandAuthStatus } from "../../electron-main/account/auth-service-contract.js";
 import { settleOptionalRemoteComputerTarget } from "./remote-target-availability.js";
 import { deleteSecret, readSecret, writeSecret } from "../../electron-main/secrets/secret-store.js";
 
@@ -496,6 +496,28 @@ export class FabushiAuthService implements AuthServicePort {
       return session?.issuer === this.baseUrl && session.issuer !== FABUSHI_CI_ISOLATED_AUTH_BASE_URL
         ? session.accessToken
         : null;
+    } catch {
+      return null;
+    }
+  }
+
+  async deviceAgentSession(): Promise<FabushiDeviceAgentSession | null> {
+    const epoch = this.operationEpoch;
+    try {
+      const session = await this.currentSession();
+      if (!this.isOperationCurrent(epoch)
+        || session == null
+        || !isProductionFabushiIssuer(session.issuer)
+        || session.accessTokenExpiresAt <= this.now() + REFRESH_LEEWAY_MS) {
+        return null;
+      }
+      return {
+        accessToken: session.accessToken,
+        accessTokenExpiresAt: session.accessTokenExpiresAt,
+        deviceId: session.deviceId,
+        sessionId: session.sessionId,
+        username: session.username,
+      };
     } catch {
       return null;
     }

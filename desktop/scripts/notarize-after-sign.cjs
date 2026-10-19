@@ -45,6 +45,25 @@ function runWithRetry(command, args, options = {}) {
   throw lastError;
 }
 
+function runStaplerWithTransientRetry(action, appPath) {
+  const attempts = 3;
+  let lastError;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return run('xcrun', ['stapler', action, appPath], { capture: true });
+    } catch (error) {
+      lastError = error;
+      const message = String(error && error.message || error);
+      const transient = /NSURLErrorDomain Code=-1005|network connection was lost|CloudKit's response is inconsistent/i.test(message);
+      if (!transient || attempt >= attempts) throw error;
+      const delay = 3 * attempt;
+      console.warn(`xcrun stapler ${action} hit a transient Apple service/network error on attempt ${attempt}/${attempts}; retrying in ${delay}s.`);
+      run('sleep', [String(delay)]);
+    }
+  }
+  throw lastError;
+}
+
 function codesignDetails(target) {
   const result = execute('codesign', ['-dv', '--verbose=4', target], { capture: true });
   return `${result.stdout || ''}\n${result.stderr || ''}`;
@@ -182,8 +201,8 @@ module.exports = async function notarizeAfterSign(context) {
       }
       throw new Error(`Apple notarization did not accept the signed app: ${result.status || 'unknown'}`);
     }
-    run('xcrun', ['stapler', 'staple', appPath]);
-    run('xcrun', ['stapler', 'validate', appPath]);
+    runStaplerWithTransientRetry('staple', appPath);
+    runStaplerWithTransientRetry('validate', appPath);
     run('codesign', ['--verify', '--deep', '--strict', '--verbose=2', appPath]);
   } finally {
     fs.rmSync(tempRoot, { recursive: true, force: true });

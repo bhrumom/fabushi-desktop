@@ -4,17 +4,17 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
-    "tree": "b4095fab77f923fca2a4b99d710ec333aa6757ab",
-    "baseline_identity_accepted": true
+    "commit": "b16daff6df63e8a812bc2b52a04ff243f67a7d3f",
+    "tree": "673b8c7335ca98bd920a48a951dccc9052b77911",
+    "baseline_identity_accepted": false
   },
   "inventory": {
-    "root_non_directory_entries": 6355,
-    "recursive_non_directory_entries": 15788,
+    "root_non_directory_entries": 6701,
+    "recursive_non_directory_entries": 15795,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 15788,
-    "unread_minimum": 15761,
+    "unknown_minimum": 15795,
+    "unread_minimum": 15768,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -41,5 +41,5 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Rebased to telegramdesktop/tdesktop@72b3b71c3d6e450e5ef94a3112dd750a0168aa0b. Root cardinality remains 6,355 non-directory entries; the changed lib_webview pin remains 32 non-directory entries, so recursive total remains 15,788. Twenty-seven source entries are now read-complete on the accepted baseline. The four newly completed story entries are media_stories_share.cpp@cac84bc4f383fdc260e046ead9ee1fa96738a2f8, media_stories_share.h@c7149b0ca980a85c8592676f1cbc91abd1c6bafa, media_stories_sibling.h@24f334cae788ee6a1dc0b07cd313e81b77ca1ae2, and media_stories_sibling.cpp@a9d875c9e44a94909bb84c4aeb6e70c7f47403d3. unread_minimum is therefore 15,761; unknown remains 15,788 and omitted remains 0 while responsibility closure is open."
+  "note": "Rebased to telegramdesktop/tdesktop@b16daff6df63e8a812bc2b52a04ff243f67a7d3f (tree 673b8c7335ca98bd920a48a951dccc9052b77911). Compared with c317da9, the root tree adds seven net-new non-directory entries, six under Telegram/SourceFiles, while direct gitlink pins and resource blob count remain unchanged. Recursive non-directory inventory rises from 15,788 to 15,795. Existing read-complete entries retain their blob identities; source closure remains open pending current-head Actions."
 }

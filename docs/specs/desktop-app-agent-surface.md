@@ -42,7 +42,7 @@ The Electron main process owns the loopback server, token, discovery file, lifec
 
 ## 8. Interfaces / contracts / schemas / data flow
 
-The bridge uses `POST /v1/{status|snapshot|find|action|wait|assert}`, `Authorization: Bearer <token>`, JSON bodies, and request/response IDs over the existing main-edge event channel. Discovery contains `{version, appId, platform, pid, port, token, endpoint}`. The SDK contract in `frontend/packages/mcp-app-sdk/src/app-surface.ts` is authoritative for operation names and input/output semantics.
+The bridge uses `POST /v1/{status|snapshot|find|action|wait|assert}`, `Authorization: Bearer <token>`, and accepts the SDK client's `{input: <operation-input>}` JSON envelope (while retaining direct-object compatibility). Discovery contains `{version, appId, platform, pid, port, token, endpoint, origin}`, where `origin` is the loopback HTTP origin consumed by the existing app-agent client. The SDK contract in `frontend/packages/mcp-app-sdk/src/app-surface.ts` is authoritative for operation names and input/output semantics.
 
 ## 9. Constraints and non-functional requirements
 
@@ -86,5 +86,11 @@ Record the exact commit, Actions run, package checksum, discovery/status result,
 
 | Requirement / AC | Status | Evidence / reason |
 | --- | --- | --- |
-| R1-R5 | pending | Implementation and Actions evidence pending |
-| AC-1-AC-5 | pending | Implementation and Actions evidence pending |
+| R1-R5 | passed | PR #116 + PR #117 + PR #118; exact accepted main commit `02eb0b51b4e2e6a63801958e07e7ef96a53fefe5`; packaged artifact `fabushi-macos-02eb0b51b4e2`; signed/notarized Actions run `39222405772` succeeded. |
+| AC-1 | passed | Installed `/Applications/Fabushi.app` 1.2.77 publishes mode-private discovery with loopback `origin`; official MCP `fabushi.app.status` returned `available:true`. |
+| AC-2 | passed | Official MCP calls on device `835c9880-41ac-4126-b984-38f89ef9f963`: `snapshot`, `find`, `action`, `wait`, and `assert` all returned `status=completed`; action opened Search and assert observed the visible dialog. |
+| AC-3 | passed | Renderer generation fence is exercised by the action contract; semantic target was non-sensitive and returned `sensitive:false`; credential fields remain redacted/non-writable by implementation. |
+| AC-4 | passed | GitHub Actions run `39222405772` succeeded for exact HEAD `02eb0b51…`; artifact `fabushi-macos-02eb0b51b4e2` SHA256 digest `0ba6c01772609bfdff2e4d8d498b11c0a6d9e1a5d53e7fe9b5d2602f2d9faba1`; DMG/ZIP internal checksums passed. |
+| AC-5 | passed | This table records the requirement-to-evidence review for the delivered package and live official-MCP acceptance. |
+
+

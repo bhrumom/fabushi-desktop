@@ -51,7 +51,10 @@ export function createAppAgentSurfaceServer(options: { app: { getPath(name: "use
           if (request.headers.authorization !== `Bearer ${token}`) return json(response, 401, { error: "unauthorized" });
           const operation = request.url.slice(4).split("?")[0] as Operation;
           if (!["status", "snapshot", "find", "action", "wait", "assert"].includes(operation)) return json(response, 404, { error: "unsupported_operation" });
-          const input = await readJson(request);
+          const envelope = await readJson(request);
+          const input = envelope.input && typeof envelope.input === "object" && !Array.isArray(envelope.input)
+            ? envelope.input as Record<string, unknown>
+            : envelope;
           const win = options.getWindow();
           if (win == null || win.isDestroyed() || win.webContents.isDestroyed()) return json(response, 503, { error: "app_surface_renderer_unavailable" });
           const result = await Promise.race([win.webContents.executeJavaScript(rendererScript(operation, input), true), new Promise((_, reject) => setTimeout(() => reject(new Error("operation_timeout")), OP_TIMEOUT_MS))]);
@@ -61,9 +64,12 @@ export function createAppAgentSurfaceServer(options: { app: { getPath(name: "use
       await new Promise<void>((resolve, reject) => { server!.once("error", reject); server!.listen(0, "127.0.0.1", () => resolve()); });
       const address = server.address(); if (address == null || typeof address === "string") throw new Error("app_surface_bind_failed");
       endpoint = `http://127.0.0.1:${address.port}`;
-      const discovery = { version: 1, appId: "fabushi.desktop", platform: "electron", pid: process.pid, port: address.port, token, endpoint, ...(options.appVersion ? { appVersion: options.appVersion } : {}) };
+      const origin = `${endpoint}/`;
+      const discovery = { version: 1, appId: "fabushi.desktop", platform: "electron", pid: process.pid, port: address.port, token, endpoint, origin, ...(options.appVersion ? { appVersion: options.appVersion } : {}) };
       await writeFile(discoveryPath, JSON.stringify(discovery), { mode: 0o600 }); await chmod(discoveryPath, 0o600);
     },
     async close() { if (server != null) await new Promise<void>((resolve) => server!.close(() => resolve())); server = null; endpoint = ""; await rm(discoveryPath, { force: true }); },
   };
 }
+
+

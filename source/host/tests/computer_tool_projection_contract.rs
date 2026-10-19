@@ -21,9 +21,9 @@ use mahayana_host_runtime::runner::tools::sand_computer_tool::{
     ComputerActionArgs, ComputerActionName, ComputerCoordinate, ComputerToolExecutor,
     ComputerToolExposure, SandComputerToolBridge,
     ComputerUseResult, MouseButtonInput, ReportedComputerAction, ScrollDirectionInput,
-    build_computer_action_sequence, describe_outcome, drag_path,
-    persist_computer_screenshot, reported_batch_position, to_action,
-    validate_computer_action,
+    build_computer_action_sequence, computer_tool_definitions, describe_outcome, drag_path,
+    parse_remote_computer_action, persist_computer_screenshot, reported_batch_position, to_action,
+    to_exact_action_value, validate_computer_action,
 };
 
 #[test]
@@ -88,6 +88,44 @@ fn actions_and_batch_reporting_match_frozen_defaults() {
     let action = to_action(&click).expect("right click");
     assert_eq!(action.value["button"], "RIGHT");
     assert_eq!(action.value["count"], 2);
+}
+
+#[test]
+fn double_click_is_explicit_but_reuses_the_frozen_click_protocol() {
+    let parsed = parse_remote_computer_action(&serde_json::json!({
+        "action": "doubleClick",
+        "x": 10,
+        "y": 20,
+        "description": "Open the selected item"
+    }))
+    .expect("parse doubleClick");
+    assert_eq!(parsed.action, ComputerActionName::DoubleClick);
+    assert!(validate_computer_action(&parsed, Some(SandAutoReviewMode::Enforce)).is_ok());
+
+    let projected = to_action(&parsed).expect("project doubleClick");
+    assert_eq!(projected.action_case, "click");
+    assert_eq!(projected.value["count"], 2);
+    assert_eq!(
+        reported_batch_position(&[parsed.clone()]),
+        Some(ReportedComputerAction::Click {
+            x: 10,
+            y: 20,
+            button: "left".into(),
+            count: 2,
+        })
+    );
+
+    let mut invalid = parsed.clone();
+    invalid.count = Some(3);
+    assert!(validate_computer_action(&invalid, None).is_err());
+
+    let definitions = computer_tool_definitions();
+    let computer = definitions.iter().find(|tool| tool.name == "Computer").expect("Computer");
+    assert!(computer.input_schema["properties"]["action"]["enum"]
+        .as_array()
+        .expect("action enum")
+        .iter()
+        .any(|value| value.as_str() == Some("doubleClick")));
 }
 
 #[test]
@@ -467,4 +505,38 @@ fn production_computer_executor_checks_live_takeover_before_input_but_allows_scr
     takeover.store(false, std::sync::atomic::Ordering::SeqCst);
     executor.execute(&click, "released").expect("input after hand back");
     assert_eq!(port.requests.lock().expect("requests").len(), 2);
+}
+
+
+#[test]
+fn remote_computer_snapshot_generation_is_primary_only_and_exactly_projected() {
+    let parsed = parse_remote_computer_action(&serde_json::json!({
+        "action": "click",
+        "x": 10,
+        "y": 20,
+        "snapshotGeneration": 7
+    }))
+    .expect("parse generation-fenced action");
+    assert_eq!(parsed.snapshot_generation, Some(7));
+    assert_eq!(to_exact_action_value(&parsed)["snapshotGeneration"], 7);
+
+    let nested = parse_remote_computer_action(&serde_json::json!({
+        "action": "move",
+        "x": 1,
+        "y": 2,
+        "then": [{
+            "action": "wait",
+            "durationMs": 1,
+            "snapshotGeneration": 7
+        }]
+    }))
+    .expect_err("nested generation must not override the primary observation fence");
+    assert!(nested.to_string().contains("only allowed on the primary action"));
+
+    let zero = parse_remote_computer_action(&serde_json::json!({
+        "action": "screenshot",
+        "snapshotGeneration": 0
+    }))
+    .expect_err("generation zero is not a successful observation");
+    assert!(zero.to_string().contains("positive integer"));
 }
