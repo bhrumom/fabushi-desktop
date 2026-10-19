@@ -37,6 +37,7 @@ Unsupported findings, preference-only suggestions, unproved NOT_APPLICABLE, inco
 ## Traceability
 
 Requirements:
+- `TDRP-R9-CROSS-REVIEW-PROMPTS-001` (parent traceability requirement)
 - `TDRP-R9-CROSS-REVIEW-READONLY-SCOPE-001`
 - `TDRP-R9-CROSS-REVIEW-VERDICT-REREVIEW-001`
 - `TDRP-R9-CROSS-REVIEW-EVIDENCE-001`
