@@ -4210,7 +4210,7 @@
         "AGENTS.md"
       ],
       "fabushi_target_symbols": [
-        "Independent review contract"
+        "Frozen scope and bounded lifecycle"
       ],
       "target_language": "Markdown",
       "language_rationale": "The source responsibility is development/quality governance rather than shipped product behavior, so it belongs in existing normative repository quality contracts.",
@@ -4233,17 +4233,17 @@
         "Independent exact-head verification of this mapping commit is pending."
       ],
       "production_entrypoints": [
-        "Repository development lifecycle -> Independent review contract"
+        "Repository development lifecycle -> Independent review contract -> Frozen scope and bounded lifecycle"
       ],
       "production_evidence": [
-        "commit:a9b8fd72479c55ac28cec548488851769730cda6",
-        "path:AGENTS.md#Independent review contract"
+        "commit:2034ff3eaa772f66113d56d8c1a279bbcc9e17db",
+        "path:AGENTS.md#Frozen scope and bounded lifecycle"
       ],
       "test_evidence": [
         "workflow:39288436946@01a12364faf0ae33fc0d96d3f145c6ad22395ad1",
         "workflow:39288436868@01a12364faf0ae33fc0d96d3f145c6ad22395ad1"
       ],
-      "target_commit": "a9b8fd72479c55ac28cec548488851769730cda6",
+      "target_commit": "2034ff3eaa772f66113d56d8c1a279bbcc9e17db",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -4422,7 +4422,7 @@
         "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md"
       ],
       "fabushi_target_symbols": [
-        "Cross-review semantics"
+        "Arbitration semantics"
       ],
       "target_language": "Markdown",
       "language_rationale": "The source responsibility is development/quality governance rather than shipped product behavior, so it belongs in existing normative repository quality contracts.",
@@ -4445,17 +4445,17 @@
         "Independent exact-head verification of this mapping commit is pending."
       ],
       "production_entrypoints": [
-        "Quality strategy -> Cross-review semantics"
+        "Quality strategy -> Cross-review semantics -> Arbitration semantics"
       ],
       "production_evidence": [
-        "commit:b2472d5d12ab736855b526e43d0117277367b816",
-        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Cross-review semantics"
+        "commit:9151124aee8139564b5c39838176bb238bf0117f",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Arbitration semantics"
       ],
       "test_evidence": [
         "workflow:39288436946@01a12364faf0ae33fc0d96d3f145c6ad22395ad1",
         "workflow:39288436868@01a12364faf0ae33fc0d96d3f145c6ad22395ad1"
       ],
-      "target_commit": "b2472d5d12ab736855b526e43d0117277367b816",
+      "target_commit": "9151124aee8139564b5c39838176bb238bf0117f",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -4635,7 +4635,7 @@
         "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md"
       ],
       "fabushi_target_symbols": [
-        "Cross-review semantics"
+        "Focused re-review and stopping"
       ],
       "target_language": "Markdown",
       "language_rationale": "The source responsibility is development/quality governance rather than shipped product behavior, so it belongs in existing normative repository quality contracts.",
@@ -4658,17 +4658,17 @@
         "Independent exact-head verification of this mapping commit is pending."
       ],
       "production_entrypoints": [
-        "Quality strategy -> Cross-review semantics"
+        "Quality strategy -> Cross-review semantics -> Focused re-review and stopping"
       ],
       "production_evidence": [
-        "commit:b2472d5d12ab736855b526e43d0117277367b816",
-        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Cross-review semantics"
+        "commit:de59187bea1a933ea791a1037925cf3f4b7e5428",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Focused re-review and stopping"
       ],
       "test_evidence": [
         "workflow:39288436946@01a12364faf0ae33fc0d96d3f145c6ad22395ad1",
         "workflow:39288436868@01a12364faf0ae33fc0d96d3f145c6ad22395ad1"
       ],
-      "target_commit": "b2472d5d12ab736855b526e43d0117277367b816",
+      "target_commit": "de59187bea1a933ea791a1037925cf3f4b7e5428",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -4851,7 +4851,7 @@
         "projects/fabushi-communication-platform/quality/evidence-contract.md"
       ],
       "fabushi_target_symbols": [
-        "Independent review evidence"
+        "Durable review ledger evidence"
       ],
       "target_language": "Markdown",
       "language_rationale": "The source responsibility is development/quality governance rather than shipped product behavior, so it belongs in existing normative repository quality contracts.",
@@ -4874,17 +4874,17 @@
         "Independent exact-head verification of this mapping commit is pending."
       ],
       "production_entrypoints": [
-        "Evidence contract -> Independent review evidence"
+        "Evidence contract -> Independent review evidence -> Durable review ledger evidence"
       ],
       "production_evidence": [
-        "commit:1ccba5fd01f6bdf7acfde27ba68f9ac17e643284",
-        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Independent review evidence"
+        "commit:f82e924decc9399ad37cbb9eab2c84f5ef0567f3",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Durable review ledger evidence"
       ],
       "test_evidence": [
         "workflow:39288436946@01a12364faf0ae33fc0d96d3f145c6ad22395ad1",
         "workflow:39288436868@01a12364faf0ae33fc0d96d3f145c6ad22395ad1"
       ],
-      "target_commit": "1ccba5fd01f6bdf7acfde27ba68f9ac17e643284",
+      "target_commit": "f82e924decc9399ad37cbb9eab2c84f5ef0567f3",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
