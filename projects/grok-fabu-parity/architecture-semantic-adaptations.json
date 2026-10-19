@@ -141,7 +141,7 @@
       "referencePath": "source/electron-main/adapters/mcp-oauth.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "909f7fcf51018f93ab95a1473f48a899d8cd3bd0",
+      "targetBlobSha": "ffbc225bfaaccbab7960ff8df31039553efdf1ec",
       "behavioralEvidence": [
         "source/electron-main/adapters/mcp-oauth.ts",
         "docs/specs/desktop-miniapp-publisher.md",
