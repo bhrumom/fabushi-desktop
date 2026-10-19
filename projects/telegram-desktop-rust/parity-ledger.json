@@ -6964,7 +6964,8 @@
       ],
       "coverage_matrix_status": "pending",
       "flake_status": "stable",
-      "notes": "Eighth previously unread recursive source entry, reconciled to live dev 34a86ed1a547ca6d12e25688c6289b60e6b6216c. lib_base adds two new recursive files, so closing this entry yields recursive=16,202, unknown=16,194, unread=16,167, omitted=0. Exact-head verification pending."
+      "notes": "Eighth previously unread recursive source entry, reconciled to live dev 34a86ed1a547ca6d12e25688c6289b60e6b6216c. lib_base adds two new recursive files, so closing this entry yields recursive=16,202, unknown=16,194, unread=16,167, omitted=0. Exact-head verification pending.",
+      "test_execution_evidence": []
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
@@ -7188,7 +7189,8 @@
       ],
       "coverage_matrix_status": "pending",
       "flake_status": "stable",
-      "notes": "Eighth previously unread recursive source entry. Command ownership is absorbed into the existing source-neutral evidence contract; no ELF/Telegram test owner is added. Exact-head verification pending."
+      "notes": "Eighth previously unread recursive source entry. Command ownership is absorbed into the existing source-neutral evidence contract; no ELF/Telegram test owner is added. Exact-head verification pending.",
+      "test_execution_evidence": []
     }
   ]
 }
