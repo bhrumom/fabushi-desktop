@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "0a11537c220df35fe59a96aebe413b1e52bc6e47",
-  "target_commit": "160703057b24f6339ef2d88732c38dced8bc13aa",
+  "target_commit": "0ecf132681845231b597ece11bc5f979a9a8f0cc",
   "coverage": {
     "source_entries_total": 16186,
-    "unknown": 16184,
-    "unread": 16157,
+    "unknown": 16183,
+    "unread": 16156,
     "omitted": 0,
-    "responsibilities_total": 12,
+    "responsibilities_total": 13,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -2865,6 +2865,227 @@
       "license_and_provenance": "Provider-specific upstream tooling behavior was read from the accepted tdesktop authority; no Codex CLI helper/runtime code is copied into Fabushi.",
       "reviewer": null,
       "notes": "Second previously unread recursive inventory entry. Provider-specific CLI/process/session mechanics are intentionally not ported; applicable review independence, sandbox/no-source-mutation, provenance and fail-closed guarantees map to existing Fabushi quality owners. Exact-head verification of this mapping commit is pending."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "0a11537c220df35fe59a96aebe413b1e52bc6e47",
+      "source_path": ".agents/shared/codex-delegation.md",
+      "source_blob_sha": "ed89d2a14344f50034a9363bd9ffe75f7972e652",
+      "source_kind": "tooling",
+      "module_id": "tdesktop.agent-delegation-tooling",
+      "responsibility_id": "TDRP-R9-CODEX-DELEGATION-RECOVERY-001",
+      "source_symbols": [
+        "Dispatch and wait",
+        "Detect a missing result",
+        "Recover a stopped assignment"
+      ],
+      "capability_ids": [
+        "CAP-FAIL-CLOSED-DEVELOPMENT-ORCHESTRATION"
+      ],
+      "dependency_ids": [
+        "Spec Compliance Review",
+        "Independent exploratory acceptance",
+        "Test Evidence Contract"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/codex-delegation-complete-read.md",
+      "behavior_contract": "AI-development delegated work must preserve one authoritative assignment/writer owner, never infer completion or failure from silence, validate terminal results and required artifacts before dependent progression, prevent overlapping writers during recovery, bound retries, and fail closed when ownership or runtime state is ambiguous.",
+      "state_machine": "saved assignment owner -> delegated work -> authoritative terminal result -> validate artifacts/repository state -> dependent work may advance; stopped stateful owner -> resume same saved owner once -> validate or hard-stop; failed disposable phase -> prove old writer stopped -> one fresh retry -> validate or hard-stop",
+      "side_effects": [
+        "No shipped Codex child-agent controller",
+        "Dependent work advances only after terminal result plus validation",
+        "Ambiguous writer ownership remains blocked instead of spawning an overlapping replacement"
+      ],
+      "failure_cases": [
+        "Silence or timeout is treated as completion/failure without runtime proof",
+        "A replacement writer starts while the previous writer may still execute",
+        "Dependent work advances without validating required artifacts/repository state",
+        "A failed phase retries without bound",
+        "Missing or ambiguous runtime state is fabricated as success"
+      ],
+      "ui_disposition": "Not applicable; AI development orchestration/tooling only.",
+      "non_ui_responsibilities": [
+        "Assignment continuity",
+        "Authoritative terminal-result verification",
+        "Single-writer recovery safety",
+        "Bounded resume/retry semantics",
+        "Fail-closed hard-stop semantics"
+      ],
+      "platform_delta": "Codex-native subagent targets, waits, runtime probes, and follow-up APIs are provider-specific development-host mechanics and are not ported into the Fabushi product. Their applicable lifecycle guarantees are retained by Fabushi's source-neutral repository quality/development workflow.",
+      "existing_owner_candidates": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "existing_owner": "Fabushi repository development lifecycle + independent acceptance + evidence contract",
+      "rejected_existing_owners": [
+        "Agent/Coordinator/Host/Runner are shipped product runtime owners, not AI development-worker orchestration",
+        "A Codex-specific delegation controller would introduce a provider-specific second lifecycle owner with no Fabushi product responsibility"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Spec Compliance Review",
+        "Pass/fail semantics",
+        "target SHA"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The applicable responsibility is development/quality governance rather than shipped product runtime; the canonical owners are repository workflow and evidence contracts.",
+      "command_event_contracts": [
+        "delegated assignment -> terminal result -> artifact/repository validation -> dependent step",
+        "stopped stateful owner -> same-owner resume once -> validation -> continue or hard-stop",
+        "failed disposable phase -> prove no old writer -> one fresh retry -> validation -> continue or hard-stop"
+      ],
+      "state_owner": "Repository development/quality orchestration state",
+      "lifecycle_owner": "Existing Fabushi AI development workflow and independent acceptance",
+      "persistence_and_restart": "Durable source, task, commit and GitHub Actions evidence are authoritative across interruptions; provider-local child IDs/runtime state are not Fabushi product persistence.",
+      "concurrency_and_cancellation": "Independent non-overlapping work may proceed, but a write owner is never replaced until the previous writer is proven stopped. User interruption is not automatically retried. Ambiguous state hard-stops the affected boundary.",
+      "security_boundary": "No provider-specific delegation controls are exposed in the shipping product; no FBCP/TDRP executable verification is moved off GitHub Actions; recovery cannot authorize overlapping source mutation.",
+      "network_service_dependencies": [
+        "GitHub Actions for executable evidence"
+      ],
+      "service_owner": "Existing Fabushi quality process / GitHub Actions",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "toolchain-equivalent",
+      "blockers": [
+        "Independent exact-head verification of this mapping commit is pending."
+      ],
+      "production_entrypoints": [
+        "Repository development lifecycle -> Spec Compliance Review",
+        "Quality strategy -> terminal pass/fail and independent acceptance",
+        "Evidence contract -> exact target/run/artifact provenance"
+      ],
+      "production_evidence": [
+        "main:0ecf132681845231b597ece11bc5f979a9a8f0cc",
+        "path:AGENTS.md#Spec Compliance Review",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Pass/fail semantics",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#target SHA"
+      ],
+      "test_evidence": [
+        "workflow:39274541121@9fb68d119f9a412820bfa5a9c76eb1fa829b73db",
+        "workflow:39274541107@9fb68d119f9a412820bfa5a9c76eb1fa829b73db"
+      ],
+      "target_commit": "0ecf132681845231b597ece11bc5f979a9a8f0cc",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development/quality process",
+      "composition_slot": "Delegated work result validation and recovery",
+      "capability_component": "Single-owner fail-closed development orchestration",
+      "variation_axes": [
+        "running/completed/interrupted/failed/ambiguous",
+        "stateful owner/disposable phase",
+        "independent non-overlapping work/shared write boundary"
+      ],
+      "shared_owner_contracts": [
+        "AGENTS.md development workflow",
+        "FBCP quality test strategy",
+        "Test Evidence Contract"
+      ],
+      "duplicate_root_check": "No Codex delegation product runtime, second Agent/Coordinator/Host/Runner owner, or parallel acceptance system introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "The same saved assignment/write owner remains authoritative across recovery. Dependent work cannot advance past an unresolved stateful owner, and ambiguous runtime state cannot be converted into completion.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to tooling responsibility",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CODEX-DELEGATION-RECOVERY-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CODEX-DELEGATION-RECOVERY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-DELEGATION-SINGLE-OWNER-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-DELEGATION-RESULT-VALIDATION-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-EVIDENCE-DEPENDENCY-GATE-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-DELEGATION-WAIT-RECOVERY-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-DELEGATION-AMBIGUOUS-STATE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-DELEGATION-NO-OVERLAPPING-WRITERS-001"
+      ],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "exact-head-actions-evidence"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "test_execution_evidence": [
+        "39274541121@9fb68d119f9a412820bfa5a9c76eb1fa829b73db",
+        "39274541107@9fb68d119f9a412820bfa5a9c76eb1fa829b73db"
+      ],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Provider-specific upstream development-orchestration behavior was read from the accepted tdesktop authority; no Codex child-agent control code or runtime is copied into Fabushi.",
+      "reviewer": null,
+      "notes": "Third previously unread recursive inventory entry. Codex-native child-target/wait/recovery mechanics are intentionally not ported into the shipped product; applicable single-owner, result-validation, bounded-recovery and fail-closed guarantees map to existing Fabushi repository quality/development owners. Exact-head verification of this mapping commit is pending."
     }
   ]
 }
