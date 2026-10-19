@@ -2,20 +2,20 @@
   "format_version": 3,
   "project_id": "TDRP-001",
   "spec_revision": 9,
-  "upstream_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
-  "target_commit": "e0b7fd99504263bff39a5e398433010ef990e7e8",
+  "upstream_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
+  "target_commit": "8a38c08ea0f09e7c6fe7e8d50f776a813611aa6a",
   "coverage": {
-    "source_entries_total": 16192,
-    "unknown": 16185,
-    "unread": 16158,
+    "source_entries_total": 16202,
+    "unknown": 16194,
+    "unread": 16167,
     "omitted": 0,
-    "responsibilities_total": 28,
+    "responsibilities_total": 30,
     "unmapped_responsibilities": 0
   },
   "rows": [
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -268,7 +268,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
       "source_path": "Telegram/SourceFiles/boxes/url_auth_box.cpp",
       "source_blob_sha": "1fa4309f2091cf148b0b6f249efa029bdc171c53",
       "source_kind": "source",
@@ -513,7 +513,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -737,7 +737,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -969,7 +969,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -1184,7 +1184,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -1439,7 +1439,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -1687,7 +1687,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -1909,7 +1909,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -2161,7 +2161,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -2430,7 +2430,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
       "source_path": ".agents/shared/build-lock-recovery.md",
       "source_blob_sha": "ec75573e7efe74e9c9a344f3e66f2fc43ac7680f",
       "source_kind": "tooling",
@@ -2644,7 +2644,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
       "source_path": ".agents/shared/codex-cli-leaves.md",
       "source_blob_sha": "659da44a8083c433c4e9b59ca28f64ba525bfbf8",
       "source_kind": "tooling",
@@ -2868,7 +2868,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
       "source_path": ".agents/shared/codex-delegation.md",
       "source_blob_sha": "ed89d2a14344f50034a9363bd9ffe75f7972e652",
       "source_kind": "tooling",
@@ -3081,7 +3081,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
       "source_path": ".agents/shared/codex-delegation.md",
       "source_blob_sha": "ed89d2a14344f50034a9363bd9ffe75f7972e652",
       "source_kind": "tooling",
@@ -3294,7 +3294,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
       "source_path": ".agents/shared/codex-delegation.md",
       "source_blob_sha": "ed89d2a14344f50034a9363bd9ffe75f7972e652",
       "source_kind": "tooling",
@@ -3507,7 +3507,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
       "source_path": ".agents/shared/cross-review/prompts.md",
       "source_blob_sha": "4e155d2bd7e647c12df7b008c279969bfd65e44d",
       "source_kind": "tooling",
@@ -3721,7 +3721,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
       "source_path": ".agents/shared/cross-review/prompts.md",
       "source_blob_sha": "4e155d2bd7e647c12df7b008c279969bfd65e44d",
       "source_kind": "tooling",
@@ -3936,7 +3936,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
       "source_path": ".agents/shared/cross-review/prompts.md",
       "source_blob_sha": "4e155d2bd7e647c12df7b008c279969bfd65e44d",
       "source_kind": "tooling",
@@ -4152,7 +4152,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
       "source_path": ".agents/shared/cross-review/protocol.md",
       "source_blob_sha": "51dabe142d5c3c7247e4050790c4e74b40f35b27",
       "source_kind": "tooling",
@@ -4365,7 +4365,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
       "source_path": ".agents/shared/cross-review/protocol.md",
       "source_blob_sha": "51dabe142d5c3c7247e4050790c4e74b40f35b27",
       "source_kind": "tooling",
@@ -4576,7 +4576,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
       "source_path": ".agents/shared/cross-review/protocol.md",
       "source_blob_sha": "51dabe142d5c3c7247e4050790c4e74b40f35b27",
       "source_kind": "tooling",
@@ -4790,7 +4790,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
       "source_path": ".agents/shared/cross-review/protocol.md",
       "source_blob_sha": "51dabe142d5c3c7247e4050790c4e74b40f35b27",
       "source_kind": "tooling",
@@ -5009,7 +5009,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
       "source_path": ".agents/shared/evidence/elf-copies.md",
       "source_blob_sha": "49fc28d671276e1787753267ae92397266d6bacd",
       "source_kind": "tooling",
@@ -5221,7 +5221,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
       "source_path": ".agents/shared/evidence/elf-copies.md",
       "source_blob_sha": "49fc28d671276e1787753267ae92397266d6bacd",
       "source_kind": "tooling",
@@ -5433,7 +5433,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
       "source_path": ".agents/shared/evidence/elf-copies.md",
       "source_blob_sha": "49fc28d671276e1787753267ae92397266d6bacd",
       "source_kind": "tooling",
@@ -5645,7 +5645,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
       "source_path": ".agents/shared/evidence/elf_identity.py",
       "source_blob_sha": "70dc54620651e8c6fd9cce6966c9964b1a6c90d7",
       "source_kind": "tooling",
@@ -5864,7 +5864,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
       "source_path": ".agents/shared/evidence/elf_identity.py",
       "source_blob_sha": "70dc54620651e8c6fd9cce6966c9964b1a6c90d7",
       "source_kind": "tooling",
@@ -6083,7 +6083,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
       "source_path": ".agents/shared/evidence/elf_identity.py",
       "source_blob_sha": "70dc54620651e8c6fd9cce6966c9964b1a6c90d7",
       "source_kind": "tooling",
@@ -6303,7 +6303,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
       "source_path": ".agents/shared/evidence/elf_identity.py",
       "source_blob_sha": "70dc54620651e8c6fd9cce6966c9964b1a6c90d7",
       "source_kind": "tooling",
@@ -6522,7 +6522,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
       "source_path": ".agents/shared/evidence/elf_identity.py",
       "source_blob_sha": "70dc54620651e8c6fd9cce6966c9964b1a6c90d7",
       "source_kind": "tooling",
@@ -6738,6 +6738,459 @@
       "license_and_provenance": "Behavioral artifact-identity/equivalence contract was read from telegramdesktop/tdesktop source authority; upstream ELF parser/test code is not copied into Fabushi.",
       "reviewer": null,
       "notes": "Seventh previously unread recursive source entry. Current macOS shipping edge is byte-exact and therefore uses the stronger existing raw-identity contract; ELF-format mechanics remain dormant until an actual Linux ELF transform exists. Exact-head verification pending."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
+      "source_path": ".agents/shared/evidence/elf_identity_test.py",
+      "source_blob_sha": "a75a29225b6eb70f255848e30026d02523d808f3",
+      "source_kind": "tooling",
+      "module_id": "tdesktop.elf-identity-qualification-tests",
+      "capability_ids": [
+        "CAP-RELEASE-ARTIFACT-IDENTITY",
+        "CAP-RELEASE-TRANSFORM-EQUIVALENCE"
+      ],
+      "dependency_ids": [
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract",
+        "Release Candidate Entry / Exit Criteria",
+        "Fabushi release packaging"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/elf-identity-test-complete-read.md",
+      "ui_disposition": "Not applicable; build/release evidence qualification tooling only.",
+      "target_language": "Markdown",
+      "language_rationale": "The applicable responsibilities are absorbed by existing source-neutral quality/release evidence ownership; upstream Python qualification code is not copied into Fabushi.",
+      "state_owner": "Existing Fabushi release/evidence state",
+      "lifecycle_owner": "GitHub Actions release/evidence qualification and independent acceptance",
+      "persistence_and_restart": "Only complete exact-head evidence bound to the candidate/head may advance acceptance; interrupted or historical qualification cannot be promoted to passing evidence.",
+      "security_boundary": "Qualification evidence cannot replace raw artifact identity, signing/notarization, startup, dependency identity, or final release acceptance.",
+      "network_service_dependencies": [
+        "GitHub Actions hosted runner",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi quality/release workflow / GitHub Actions",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "toolchain-equivalent",
+      "blockers": [
+        "Independent exact-head GitHub Actions verification of this mapping commit is pending."
+      ],
+      "target_commit": "8a38c08ea0f09e7c6fe7e8d50f776a813611aa6a",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi release packaging and quality evidence",
+      "composition_slot": "Executable transform qualification",
+      "capability_component": "Source-neutral artifact identity/equivalence gate",
+      "shared_owner_contracts": [
+        "Fabushi Test Evidence Contract",
+        "Fabushi Test Strategy",
+        "Release Candidate Entry / Exit Criteria"
+      ],
+      "duplicate_root_check": "No Telegram/ELF-specific Fabushi test owner, release owner, or second packaging system introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to tooling responsibility",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "soak_case_ids": [],
+      "regression_ids": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavioral qualification/evidence contracts were read from telegramdesktop/tdesktop source authority; upstream ELF test code is not copied into Fabushi.",
+      "reviewer": null,
+      "responsibility_id": "TDRP-R9-TRANSFORM-QUALIFICATION-SUITE-001",
+      "source_symbols": [
+        "fixture",
+        "page_fixture",
+        "ElfComparisonTests",
+        "ElfMappingTests",
+        "ElfMalformedTests",
+        "ElfAcquisitionTests",
+        "ElfToolchainTests"
+      ],
+      "behavior_contract": "A format-specific transform oracle qualifies only through independent literal accepted controls and paired forbidden mutations, exact/one-over acquisition/parser/resource boundaries, genuine transform-toolchain coverage where applicable, and normal/optimized execution modes.",
+      "state_machine": "independent fixture -> accepted control -> forbidden mutation -> acquisition/resource boundary controls -> genuine toolchain control -> normal/optimized CLI -> fail-closed qualification verdict",
+      "side_effects": [
+        "A future intentional executable transform cannot advance acceptance unless its oracle passes a full independent qualification suite."
+      ],
+      "failure_cases": [
+        "Fixtures derive protected offsets from the implementation under test",
+        "Only happy-path controls or reject-everything behavior",
+        "No real toolchain control for a real transform",
+        "One-over parser/resource declarations drive unbounded I/O",
+        "Focused subset substituted for full qualification"
+      ],
+      "non_ui_responsibilities": [
+        "Independent literal fixtures",
+        "Positive/forbidden transform controls",
+        "Real GNU compiler/strip control",
+        "Stable-acquisition and exact/one-over resource controls",
+        "Normal and optimized interpreter controls"
+      ],
+      "platform_delta": "Current macOS shipping edge is byte-exact and does not need a semantic transform exception; this qualification contract becomes active only for an actual intentional transform.",
+      "existing_owner_candidates": [
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "projects/fabushi-communication-platform/quality/release-entry-exit-criteria.md",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "existing_owner": "Fabushi test strategy",
+      "rejected_existing_owners": [
+        "Shipping Agent/Coordinator/Host/Runner are runtime owners, not executable transform qualification owners",
+        "A Telegram-specific or ELF-specific test owner would duplicate source-neutral quality ownership",
+        "Ninja/archive/reachability evidence proves different build/source facts and cannot qualify semantic transform equivalence"
+      ],
+      "fabushi_target_paths": [
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md"
+      ],
+      "fabushi_target_symbols": [
+        "Transform-oracle independent qualification suite"
+      ],
+      "command_event_contracts": [
+        "candidate transform oracle -> independent controls and boundary cases -> genuine toolchain control where applicable -> exact-head qualification verdict"
+      ],
+      "concurrency_and_cancellation": "Full qualification may launch external tools only under the source-neutral evidence-command ownership contract; incomplete/cancelled qualification produces no pass.",
+      "production_entrypoints": [
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Transform-oracle independent qualification suite"
+      ],
+      "production_evidence": [
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Transform-oracle independent qualification suite"
+      ],
+      "test_evidence": [
+        "policy:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Transform-oracle independent qualification suite",
+        "dossier:projects/telegram-desktop-rust/dossiers/elf-identity-test-complete-read.md"
+      ],
+      "variation_axes": [
+        "exact/semantic identity",
+        "accepted/refused mutation",
+        "within/over resource limit",
+        "stable/mutated acquisition",
+        "normal/optimized interpreter",
+        "synthetic/real-toolchain"
+      ],
+      "state_continuity_contract": "Only the complete qualification suite bound to the current candidate may qualify a transform; focused/historical subsets never inherit a pass.",
+      "requirement_ids": [
+        "TDRP-R9-TRANSFORM-QUALIFICATION-SUITE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-TRANSFORM-EQUIVALENCE-001",
+        "ORA-TDRP-ARTIFACT-COPY-IDENTITY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-ARTIFACT-RAW-IDENTITY-001",
+        "INV-TDRP-ARTIFACT-SOURCE-STABLE-001",
+        "INV-TDRP-ARTIFACT-NORMALIZED-NOT-IDENTITY-001"
+      ],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-ARTIFACT-TRANSFORM-IDENTITY-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-PACKAGED-ARTIFACT-IDENTITY-001"
+      ],
+      "functional_e2e_case_ids": [
+        "E2E-TDRP-PACKAGED-EXACT-CANDIDATE-001"
+      ],
+      "temporal_case_ids": [
+        "TEMP-TDRP-COPY-SOURCE-STABILITY-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-TRANSFORM-IDENTITY-DRIFT-001"
+      ],
+      "performance_case_ids": [
+        "PERF-TDRP-BOUNDED-ARTIFACT-COMPARATOR-001"
+      ],
+      "security_case_ids": [
+        "SEC-TDRP-ARTIFACT-PROVENANCE-001"
+      ],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-RELEASE-ARTIFACT-IDENTITY-001"
+      ],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "independent-literal-transform-fixtures",
+        "genuine-gnu-compile-strip-control",
+        "sparse-high-offset-resource-boundary"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "notes": "Eighth previously unread recursive source entry, reconciled to live dev 351204f3695b4a39bc3f4d2f230c061b9a01fe2a; target blob unchanged. Latest delta changes Qt prepare cache-key mechanics only; recursive=16,202, unknown=16,194, unread=16,167, omitted=0. Exact-head verification pending.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
+      "source_path": ".agents/shared/evidence/elf_identity_test.py",
+      "source_blob_sha": "a75a29225b6eb70f255848e30026d02523d808f3",
+      "source_kind": "tooling",
+      "module_id": "tdesktop.elf-identity-qualification-tests",
+      "capability_ids": [
+        "CAP-RELEASE-ARTIFACT-IDENTITY",
+        "CAP-RELEASE-TRANSFORM-EQUIVALENCE"
+      ],
+      "dependency_ids": [
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract",
+        "Release Candidate Entry / Exit Criteria",
+        "Fabushi release packaging"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/elf-identity-test-complete-read.md",
+      "ui_disposition": "Not applicable; build/release evidence qualification tooling only.",
+      "target_language": "Markdown",
+      "language_rationale": "The applicable responsibilities are absorbed by existing source-neutral quality/release evidence ownership; upstream Python qualification code is not copied into Fabushi.",
+      "state_owner": "Existing Fabushi release/evidence state",
+      "lifecycle_owner": "GitHub Actions release/evidence qualification and independent acceptance",
+      "persistence_and_restart": "Only complete exact-head evidence bound to the candidate/head may advance acceptance; interrupted or historical qualification cannot be promoted to passing evidence.",
+      "security_boundary": "Qualification evidence cannot replace raw artifact identity, signing/notarization, startup, dependency identity, or final release acceptance.",
+      "network_service_dependencies": [
+        "GitHub Actions hosted runner",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi quality/release workflow / GitHub Actions",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "toolchain-equivalent",
+      "blockers": [
+        "Independent exact-head GitHub Actions verification of this mapping commit is pending."
+      ],
+      "target_commit": "8a38c08ea0f09e7c6fe7e8d50f776a813611aa6a",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi release packaging and quality evidence",
+      "composition_slot": "Executable transform qualification",
+      "capability_component": "Source-neutral artifact identity/equivalence gate",
+      "shared_owner_contracts": [
+        "Fabushi Test Evidence Contract",
+        "Fabushi Test Strategy",
+        "Release Candidate Entry / Exit Criteria"
+      ],
+      "duplicate_root_check": "No Telegram/ELF-specific Fabushi test owner, release owner, or second packaging system introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to tooling responsibility",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "soak_case_ids": [],
+      "regression_ids": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavioral qualification/evidence contracts were read from telegramdesktop/tdesktop source authority; upstream ELF test code is not copied into Fabushi.",
+      "reviewer": null,
+      "responsibility_id": "TDRP-R9-EVIDENCE-COMMAND-OWNERSHIP-001",
+      "source_symbols": [
+        "FixtureCase.command",
+        "_wait_command",
+        "_live_command_group",
+        "_cleanup_command",
+        "_command_owner_probe",
+        "CommandOwnerTests"
+      ],
+      "behavior_contract": "An evidence harness that launches external qualification tools must durably bind argv/environment/log/timing/PID/PGID/outcome, own a dedicated command process group, clean only that owned group on timeout/cancel/error/finalization interruption, fail on unverifiable cleanup, restore signal state, and preserve unrelated processes.",
+      "state_machine": "attempted record -> dedicated session launch -> owned wait -> success/nonzero/timeout/cancel/error -> bounded owned-group cleanup -> direct-child/descendant verification -> final record -> signal-state restoration -> cancellation propagation",
+      "side_effects": [
+        "Failed or incomplete cleanup prevents evidence from passing; unrelated process groups must not be signaled."
+      ],
+      "failure_cases": [
+        "Process-name or global kill instead of owned-group cleanup",
+        "Group identity anchor reaped before signaling",
+        "Timeout/cancel/error leaves owned descendants alive",
+        "Cleanup/probe failure recorded as success",
+        "Unrelated process is terminated",
+        "SIGINT handler/mask not restored",
+        "Final evidence missing after cancellation"
+      ],
+      "non_ui_responsibilities": [
+        "Attempted/final command evidence",
+        "Owned PID/PGID lifecycle",
+        "Bounded TERM-to-KILL escalation",
+        "Timeout/cancel/error descendant cleanup",
+        "Direct-child and owned-descendant reaping",
+        "Unrelated-process survival",
+        "Signal deferral/restoration"
+      ],
+      "platform_delta": "The upstream Linux qualification suite uses POSIX sessions/process groups and a test-only subreaper. Fabushi absorbs the source-neutral ownership/fail-closed invariant rather than copying Linux-specific ELF test machinery into current macOS packaging.",
+      "existing_owner_candidates": [
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/release-entry-exit-criteria.md"
+      ],
+      "existing_owner": "Fabushi test evidence contract",
+      "rejected_existing_owners": [
+        "Shipping Agent/Coordinator/Host/Runner own product execution, not test-harness evidence-command lifecycle",
+        "A Telegram/ELF command-runner owner would duplicate the existing source-neutral evidence contract",
+        "Ninja/archive/reachability jobs do not own qualification command teardown semantics"
+      ],
+      "fabushi_target_paths": [
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Evidence-command ownership and cleanup"
+      ],
+      "command_event_contracts": [
+        "external evidence command -> attempted record -> owned process group -> bounded outcome/cleanup -> durable final record"
+      ],
+      "concurrency_and_cancellation": "Cancellation is deferred only through bounded launch/cleanup/final-evidence critical sections, then propagated after owned descendants are gone and previous signal state is restored.",
+      "production_entrypoints": [
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Evidence-command ownership and cleanup"
+      ],
+      "production_evidence": [
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Evidence-command ownership and cleanup"
+      ],
+      "test_evidence": [
+        "policy:projects/fabushi-communication-platform/quality/evidence-contract.md#Evidence-command ownership and cleanup",
+        "dossier:projects/telegram-desktop-rust/dossiers/elf-identity-test-complete-read.md"
+      ],
+      "variation_axes": [
+        "success/nonzero/launch failure",
+        "timeout/cancel/wait error",
+        "TERM-resistant descendant",
+        "cleanup failure",
+        "SIGINT finalization race",
+        "related/unrelated process group"
+      ],
+      "state_continuity_contract": "An attempted record never upgrades to pass until owned cleanup and final evidence complete; cancellation remains observable after teardown.",
+      "requirement_ids": [
+        "TDRP-R9-EVIDENCE-COMMAND-OWNERSHIP-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-TRANSFORM-EQUIVALENCE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-EVIDENCE-COMMAND-OWNERSHIP-001"
+      ],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-EVIDENCE-COMMAND-OWNERSHIP-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-EVIDENCE-COMMAND-CLEANUP-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-EVIDENCE-COMMAND-CANCEL-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-EVIDENCE-COMMAND-CLEANUP-001"
+      ],
+      "performance_case_ids": [
+        "PERF-TDRP-EVIDENCE-COMMAND-BOUNDED-CLEANUP-001"
+      ],
+      "security_case_ids": [
+        "SEC-TDRP-EVIDENCE-COMMAND-ISOLATION-001"
+      ],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-RELEASE-ARTIFACT-IDENTITY-001"
+      ],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "owned-compiler-descendant",
+        "unrelated-session-sentinel",
+        "finalization-sigint-races"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "notes": "Eighth previously unread recursive source entry, reconciled to live dev 351204f3695b4a39bc3f4d2f230c061b9a01fe2a; target blob unchanged. Latest delta changes Qt prepare cache-key mechanics only; recursive=16,202, unknown=16,194, unread=16,167, omitted=0. Exact-head verification pending.",
+      "test_execution_evidence": []
     }
   ]
 }

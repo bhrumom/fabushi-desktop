@@ -42,3 +42,10 @@ A transform may remove or repack only metadata classes explicitly allowed by its
 
 Where the binary format exposes symbol/index metadata affected by the shipping transform, the oracle must preserve retained symbol meaning and ordering, resolve index-based references to stable semantic identities, and enumerate any narrowly removable bookkeeping records. Symbol or normalized semantic digests are supporting evidence only and never replace raw artifact identities.
 
+
+
+### Evidence-command ownership and cleanup
+
+When a format-transform qualification harness launches a compiler, strip tool, comparator, or other external evidence command, a passing record must establish command ownership rather than relying on process names or best-effort teardown. The harness records an attempted state before launch and a final state after cleanup, including argv, working directory, environment additions, stdout/stderr destinations, start/end/deadline, timeout, exit/outcome, exception, owned PID/PGID, cleanup signals/errors, and any remaining owned processes.
+
+Each launched command uses a dedicated owned process group/session or an equivalent source-neutral ownership primitive. Timeout, cancellation, wait error, and finalization interruption clean only that owned group with bounded graceful-to-forced escalation while a valid group identity anchor is retained; the direct child is reaped and surviving owned descendants are checked before pass. Cleanup/probe failure, unverifiable remaining ownership, or incomplete final evidence is a failed result. Unrelated process groups must survive. Signal deferral is limited to bounded launch/cleanup/evidence-finalization critical sections; the prior handler/mask is restored and cancellation is propagated after cleanup and the final record. This contract covers trusted descendants that remain within the declared ownership boundary and does not claim containment of adversarial or daemonized processes that deliberately escape it.

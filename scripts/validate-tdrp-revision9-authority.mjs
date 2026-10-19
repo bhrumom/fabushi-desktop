@@ -147,9 +147,9 @@ const qtReachability=recursiveReachability.qt_superproject;
 fail(qtReachability?.repository==='https://github.com/qt/qt5','Qt reachability authority missing');
 const qtEvidenceByPath=new Map((qtReachability.accepted_upstream_evidence||[]).map(item=>[item.path,item]));
 const expectedQtEvidence=[
-  ['Telegram/build/prepare/prepare.py','a8bd8d6a5c1e190a27702cbcf7f00d10ce6f9dda'],
-  ['Telegram/build/docker/centos_env/Dockerfile','39b185c7277b1bb1819761d112a6799d4152ff04'],
-  ['snap/snapcraft.yaml','618110dba69e4f18c78fe65f282f1342a631cbfb']
+  ['Telegram/build/prepare/prepare.py','4063cc766ffb60c018b7a6ad456453ec585d5566'],
+  ['Telegram/build/docker/centos_env/Dockerfile','f72162089985263493c6e3f7e23b566f5df8e454'],
+  ['snap/snapcraft.yaml','38f0eb362832c3623b868c9aa90c03bc4f426d01']
 ];
 for (const [sourcePath,blob] of expectedQtEvidence) {
   const evidence=qtEvidenceByPath.get(sourcePath);
@@ -278,7 +278,7 @@ fail(openalReachability?.root_candidate_policy_status==='complete-for-current-op
 const expectedOpenalAuthorities=new Set([
   'https://github.com/kcat/openal-soft@b2c48f7718ef3fcf67921a8b6534c4914e328970',
   'https://github.com/kcat/openal-soft@dc7d7054a5b4f3bec1dc23a42fd616a0847af948',
-  'https://github.com/telegramdesktop/openal-soft@291c0fdbbdd767f00c45c7fca562614faea57647',
+  'https://github.com/telegramdesktop/openal-soft@00cb9b649c1a6ad1802d88ee4458979164529238',
   'https://github.com/telegramdesktop/openal-soft@c2eab43d72890c58d4b51d5d98eafb9f011e1c89'
 ]);
 for (const authority of openalReachability.observed_authorities||[]) expectedOpenalAuthorities.delete(authority.repository+'@'+authority.commit);
@@ -296,7 +296,7 @@ for (const option of ['ALSOFT_EXAMPLES=OFF','ALSOFT_UTILS=OFF']) {
   fail(dockerOpenalStage.includes(option),'accepted Docker OpenAL option drift: '+option);
   fail(snapOpenalStage.includes(option),'accepted Snap OpenAL option drift: '+option);
 }
-fail(prepareOpenalStage.includes('git checkout 291c0fdbbd'),'accepted Windows OpenAL pin drift');
+fail(prepareOpenalStage.includes('git checkout 00cb9b649c'),'accepted Windows OpenAL pin drift');
 fail(prepareOpenalStage.includes('git checkout coreaudio_device_uid'),'accepted Mac OpenAL branch evidence drift');
 fail(dockerOpenalStage.includes('git clone -b 1.25.2 --depth=1'),'accepted Docker OpenAL ref drift');
 fail(snapOpenalStage.includes('source-tag: 1.24.3'),'accepted Snap OpenAL ref drift');

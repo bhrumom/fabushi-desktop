@@ -8,29 +8,29 @@
     "repository": "telegramdesktop/tdesktop",
     "url": "https://github.com/telegramdesktop/tdesktop",
     "discovery_ref": "refs/heads/dev",
-    "commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
-    "tree": "30c1d5cce4c1bde962882c1f2ca4b2e51bb03ae6",
-    "committed_at": "2026-10-19T15:15:12Z",
+    "commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
+    "tree": "5151db79560ed40bf3802482fcfb74b950be6c40",
+    "committed_at": "2026-10-19T19:08:59Z",
     "accepted": false
   },
   "previous_historical_baseline": {
-    "commit": "0a11537c220df35fe59a96aebe413b1e52bc6e47",
-    "tree": "2d737e3da8fd9a36166db27ff56756c99f6c2117",
+    "commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
+    "tree": "f8d3613b850cee75f156b762ef5399315302120e",
     "evidence_status": "historical-only",
-    "reason": "Upstream dev advanced by 5 commits and 63 paths from 0a11537. Root non-directory entries rise by six (five SourceFiles and one Resource), with no direct gitlink pin changes. The three mapped .agents entries plus mapped share_box.cpp/url_auth_box.cpp retain exact blob identity. Telegram/cmake/td_ui.cmake changed only by adding boxes/keys_legend.style to the style generator and was reread completely. Predecessor Actions/artifacts are historical-only."
+    "reason": "Live dev advanced one commit to 351204f3695b4a39bc3f4d2f230c061b9a01fe2a, changing only Telegram/build/prepare/prepare.py Qt cache-key mechanics. Entry-8 blob, direct gitlinks and cardinalities are unchanged; prior candidate evidence is historical-only."
   },
   "observed_root_inventory": {
     "tree_truncated": false,
-    "entry_count": 7005,
-    "blob_count": 6673,
+    "entry_count": 7014,
+    "blob_count": 6681,
     "direct_gitlink_count": 36,
     "sourcefiles_blob_count": 3271,
-    "resource_blob_count": 3123,
-    "root_non_directory_count": 6709
+    "resource_blob_count": 3129,
+    "root_non_directory_count": 6717
   },
   "delta_from_previous_baseline": {
-    "ahead_by": 5,
-    "changed_paths": 63
+    "ahead_by": 1,
+    "changed_paths": 1
   },
   "direct_gitlinks": [
     {
@@ -151,7 +151,7 @@
     {
       "path": "Telegram/lib_base",
       "repository": "desktop-app/lib_base",
-      "commit": "0d74e8cf4917a558eebac429cc12ac95d127be20"
+      "commit": "ad56a40232ba542ceb796af7c6b4f474c64df851"
     },
     {
       "path": "Telegram/lib_crl",
@@ -196,7 +196,7 @@
     {
       "path": "Telegram/lib_ui",
       "repository": "desktop-app/lib_ui",
-      "commit": "a0a6b50fb80f51b0c3e1b34a1bb8fbe7fee6c32d"
+      "commit": "af1132e87d75f80926dbce1017a96312af3d0bbe"
     },
     {
       "path": "Telegram/lib_webrtc",
@@ -238,17 +238,17 @@
     {
       "path": "Telegram/build/prepare/prepare.py",
       "dependency": "desktop-app/patches",
-      "commit": "11f9322e5f7102ecc0a6dd39abc3682f61ead65f"
+      "commit": "fe957833b84525e634a8d776a7f834ed536d9a21"
     },
     {
       "path": "Telegram/build/docker/centos_env/Dockerfile",
       "dependency": "desktop-app/patches",
-      "commit": "4811dda9fcabbf9cd8cab585d4df2379d81edf04"
+      "commit": "fe957833b84525e634a8d776a7f834ed536d9a21"
     },
     {
       "path": "snap/snapcraft.yaml",
       "dependency": "desktop-app/patches",
-      "commit": "4811dda9fcabbf9cd8cab585d4df2379d81edf04"
+      "commit": "fe957833b84525e634a8d776a7f834ed536d9a21"
     }
   ],
   "lfs": {
@@ -256,12 +256,12 @@
     "pointer_scan_required_in_github_actions": true
   },
   "coverage": {
-    "root_source_entries_total": 6709,
-    "recursive_source_entries_total": 16192,
-    "unknown_minimum": 16185,
-    "unread_minimum": 16158,
+    "root_source_entries_total": 6717,
+    "recursive_source_entries_total": 16202,
+    "unknown_minimum": 16194,
+    "unread_minimum": 16167,
     "omitted_known": 0,
-    "note": "Revision 9 rebaseline remains in progress for telegramdesktop/tdesktop@1e18da644e37856c9b1d87434bfcd6a2e3d11c57 (tree 30c1d5cce4c1bde962882c1f2ca4b2e51bb03ae6). Recursive authority is 16,192. The first seven recursive entries are now closed through .agents/shared/evidence/elf_identity.py; current fail-closed counters are unknown=16,185, unread=16,158, omitted=0. Source closure, baseline_ready and acceptance.accepted remain false."
+    "note": "Revision 9 live rebaseline is in progress for telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a (tree 5151db79560ed40bf3802482fcfb74b950be6c40). Root non-directory inventory remains 6,717 and recursive authority remains 16,202. First eight ordered entries are closed through elf_identity_test.py; counters remain unknown=16,194, unread=16,167, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -275,11 +275,11 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Rebaseline identity for telegramdesktop/tdesktop@1e18da644e37856c9b1d87434bfcd6a2e3d11c57 remains pending current-head GitHub Actions. Full Revision 9 source closure remains open with unknown=16,185, unread=16,158, omitted=0; baseline_ready and acceptance.accepted remain false pending complete recursive source closure."
+    "note": "Live rebaseline identity for telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a remains pending current-head GitHub Actions. Full source closure remains open with unknown=16,194, unread=16,167, omitted=0."
   },
   "baseline_identity_evidence": {
     "status": "pending-current-head-revalidation",
-    "upstream_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+    "upstream_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
     "previous_historical_evidence": {
       "status": "accepted",
       "runner": "github-actions",
@@ -311,7 +311,7 @@
   },
   "recursive_inventory_evidence": {
     "status": "pending-current-head-revalidation",
-    "upstream_commit": "1e18da644e37856c9b1d87434bfcd6a2e3d11c57",
+    "upstream_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
     "source_closure_ready": false,
     "previous_historical_evidence": {
       "status": "accepted-baseline-identity-only-source-closure-open",
