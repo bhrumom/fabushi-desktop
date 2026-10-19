@@ -3,6 +3,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::net::IpAddr;
 use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicU8, Ordering};
 
 use base64::Engine as _;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
@@ -33,12 +34,18 @@ use crate::runner::tools::sand_computer_tool::{
     parse_remote_computer_action,
 };
 
+#[path = "remote_computer_target_reverse_ws.rs"]
+mod reverse_ws;
+
 const CORE_REQUEST_TIMEOUT_SECS: u64 = 15;
 const MAX_CORE_RESPONSE_BYTES: usize = 1024 * 1024;
 const REMOTE_TARGET_STREAM_TIMEOUT_MS: u64 = 15_000;
 const REMOTE_TARGET_SERVICE_STREAM_TIMEOUT_MS: u64 = 1_000;
 const REMOTE_TARGET_INGRESS_CACHE_TTL: Duration = Duration::from_secs(10);
 const REMOTE_TARGET_FRAME_MAX_BYTES: usize = 32 * 1024;
+pub(super) const REVERSE_WS_FALLBACK_ENV: &str = "FABUSHI_FDN_AUTHENTICATED_REVERSE_WS_FALLBACK";
+pub(super) const REVERSE_WS_CAPABILITY: &str = "fabushi-fdn-private-transport";
+pub(super) const REVERSE_WS_PRIVATE_FRAME_MAX_BYTES: usize = 32 * 1024;
 const REMOTE_TARGET_RESULT_MAX_BYTES: usize = 1024 * 1024;
 const REMOTE_SENSITIVE_RESULT_MAX_BYTES: usize = 8 * 1024 * 1024;
 const REMOTE_SENSITIVE_RESULT_CHUNK_BYTES: usize = 16 * 1024;
@@ -226,6 +233,191 @@ pub enum RemoteComputerNativeOutcome {
     SensitiveCompleted(RemoteComputerSensitiveResult),
     Failed(Value),
     OutcomeUnknown,
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(super) struct ReverseWsIdentity {
+    pub(super) account_id: String,
+    pub(super) device_id: String,
+    pub(super) access_token_sha256: String,
+    pub(super) network_generation: i64,
+}
+
+impl ReverseWsIdentity {
+    pub(super) fn same_connection(&self, other: &Self) -> bool {
+        self.account_id == other.account_id
+            && self.device_id == other.device_id
+            && self.access_token_sha256 == other.access_token_sha256
+            && self.network_generation == other.network_generation
+    }
+}
+
+const PRIVATE_REQUEST_PENDING: u8 = 0;
+const PRIVATE_REQUEST_CANCELLED: u8 = 1;
+const PRIVATE_REQUEST_EXECUTING: u8 = 2;
+const PRIVATE_REQUEST_COMPLETED: u8 = 3;
+const PRIVATE_REQUEST_OUTCOME_UNKNOWN: u8 = 4;
+
+pub(super) struct RemoteTargetCancellation {
+    phase: AtomicU8,
+}
+
+impl RemoteTargetCancellation {
+    pub(super) fn new() -> Self {
+        Self { phase: AtomicU8::new(PRIVATE_REQUEST_PENDING) }
+    }
+
+    pub(super) fn try_begin(&self) -> bool {
+        self.phase.compare_exchange(
+            PRIVATE_REQUEST_PENDING,
+            PRIVATE_REQUEST_EXECUTING,
+            Ordering::AcqRel,
+            Ordering::Acquire,
+        ).is_ok()
+    }
+
+    pub(super) fn cancel_before_dispatch(&self) -> bool {
+        match self.phase.compare_exchange(
+            PRIVATE_REQUEST_PENDING,
+            PRIVATE_REQUEST_CANCELLED,
+            Ordering::AcqRel,
+            Ordering::Acquire,
+        ) {
+            Ok(_) => true,
+            Err(PRIVATE_REQUEST_CANCELLED) => true,
+            Err(_) => false,
+        }
+    }
+
+    pub(super) fn phase(&self) -> u8 {
+        self.phase.load(Ordering::Acquire)
+    }
+
+    pub(super) fn finish(&self, outcome_unknown: bool) {
+        let terminal = if outcome_unknown { PRIVATE_REQUEST_OUTCOME_UNKNOWN } else { PRIVATE_REQUEST_COMPLETED };
+        let _ = self.phase.compare_exchange(
+            PRIVATE_REQUEST_EXECUTING,
+            terminal,
+            Ordering::AcqRel,
+            Ordering::Acquire,
+        );
+    }
+
+    pub(super) fn finish_outcome_unknown(&self) {
+        let _ = self.phase.compare_exchange(
+            PRIVATE_REQUEST_EXECUTING,
+            PRIVATE_REQUEST_OUTCOME_UNKNOWN,
+            Ordering::AcqRel,
+            Ordering::Acquire,
+        );
+    }
+
+    pub(super) fn phase_label(&self) -> &'static str {
+        match self.phase() {
+            PRIVATE_REQUEST_PENDING => "pending",
+            PRIVATE_REQUEST_CANCELLED => "cancelled_before_dispatch",
+            PRIVATE_REQUEST_EXECUTING => "executing",
+            PRIVATE_REQUEST_COMPLETED => "completed",
+            PRIVATE_REQUEST_OUTCOME_UNKNOWN => "outcome_unknown",
+            _ => "outcome_unknown",
+        }
+    }
+}
+
+fn begin_private_action(cancellation: Option<&RemoteTargetCancellation>) -> bool {
+    cancellation.map_or(true, RemoteTargetCancellation::try_begin)
+}
+
+trait RemoteTargetPrivateFrameWriter {
+    fn write_frame(&mut self, value: &Value) -> Result<(), RemoteComputerTargetError>;
+}
+
+struct NetworkWorkerFrameWriter<'a> {
+    worker: &'a mut OwnedNetworkWorker,
+    stream_id: &'a str,
+}
+
+impl RemoteTargetPrivateFrameWriter for NetworkWorkerFrameWriter<'_> {
+    fn write_frame(&mut self, value: &Value) -> Result<(), RemoteComputerTargetError> {
+        write_private_frame(self.worker, self.stream_id, value)
+    }
+}
+
+#[derive(Default)]
+struct CapturedPrivateFrameWriter {
+    response: Option<Value>,
+}
+
+impl CapturedPrivateFrameWriter {
+    fn take_response(self) -> Result<Value, RemoteComputerTargetError> {
+        self.response.ok_or(RemoteComputerTargetError::InvalidResponse)
+    }
+}
+
+impl RemoteTargetPrivateFrameWriter for CapturedPrivateFrameWriter {
+    fn write_frame(&mut self, value: &Value) -> Result<(), RemoteComputerTargetError> {
+        if self.response.is_some() {
+            return Err(RemoteComputerTargetError::OutcomeUnknown);
+        }
+        let encoded = serde_json::to_vec(value).map_err(|_| RemoteComputerTargetError::OutcomeUnknown)?;
+        if encoded.len() >= REMOTE_TARGET_FRAME_MAX_BYTES {
+            return Err(RemoteComputerTargetError::OutcomeUnknown);
+        }
+        self.response = Some(value.clone());
+        Ok(())
+    }
+}
+
+fn valid_private_identifier(value: &str) -> bool {
+    (8..=160).contains(&value.len())
+        && value.bytes().all(|byte| byte.is_ascii_alphanumeric() || b"._:-".contains(&byte))
+}
+
+fn validate_reverse_ws_payload_binding(
+    payload: &Value,
+    identity: &ReverseWsIdentity,
+) -> Result<(), RemoteComputerTargetError> {
+    if !payload.is_object()
+        || payload.get("deviceId").and_then(Value::as_str) != Some(identity.device_id.as_str())
+        || payload.get("networkGeneration").and_then(Value::as_i64) != Some(identity.network_generation)
+    {
+        return Err(RemoteComputerTargetError::IdentityMismatch);
+    }
+    for field in ["sessionId", "requestId"] {
+        if let Some(value) = payload.get(field) {
+            if !value.is_null() {
+                let text = value.as_str().filter(|text| valid_private_identifier(text))
+                    .ok_or(RemoteComputerTargetError::InvalidResponse)?;
+                if text.trim().is_empty() {
+                    return Err(RemoteComputerTargetError::InvalidResponse);
+                }
+            }
+        }
+    }
+    let encoded = serde_json::to_vec(payload).map_err(|_| RemoteComputerTargetError::InvalidResponse)?;
+    if encoded.len() >= REMOTE_TARGET_FRAME_MAX_BYTES {
+        return Err(RemoteComputerTargetError::InvalidResponse);
+    }
+    Ok(())
+}
+
+fn validate_reverse_ws_response_binding(payload: &Value, response: &Value) -> bool {
+    if !response.is_object()
+        || response.get("deviceId").and_then(Value::as_str) != payload.get("deviceId").and_then(Value::as_str)
+        || response.get("networkGeneration").and_then(Value::as_i64)
+            != payload.get("networkGeneration").and_then(Value::as_i64)
+    {
+        return false;
+    }
+    for field in ["sessionId", "requestId"] {
+        if let Some(expected) = payload.get(field).and_then(Value::as_str) {
+            if response.get(field).and_then(Value::as_str) != Some(expected) {
+                return false;
+            }
+        }
+    }
+    true
 }
 
 pub trait RemoteComputerNativeExecutor: Send + Sync {
@@ -1339,7 +1531,52 @@ impl FabushiCoreTargetClient {
         let frame = read_private_frame(worker, stream_id)?;
         let request: RemoteTargetPrivateRequest =
             serde_json::from_slice(&frame).map_err(|_| RemoteComputerTargetError::InvalidResponse)?;
+        let mut writer = NetworkWorkerFrameWriter { worker, stream_id };
+        self.serve_private_request_value(request, &mut writer, catalog, authorizer, executor, None)
+    }
 
+    fn serve_private_payload(
+        &self,
+        payload: &Value,
+        identity: &ReverseWsIdentity,
+        catalog: &dyn RemoteComputerToolCatalog,
+        authorizer: &dyn RemoteComputerToolAuthorizer,
+        executor: &dyn RemoteComputerNativeExecutor,
+        cancellation: &RemoteTargetCancellation,
+    ) -> Result<Value, RemoteComputerTargetError> {
+        validate_reverse_ws_payload_binding(payload, identity)?;
+        let (_, current_identity) = self.reverse_ws_context()?;
+        if !identity.same_connection(&current_identity) {
+            return Err(RemoteComputerTargetError::IdentityMismatch);
+        }
+        let encoded = serde_json::to_vec(payload).map_err(|_| RemoteComputerTargetError::InvalidResponse)?;
+        let request: RemoteTargetPrivateRequest =
+            serde_json::from_slice(&encoded).map_err(|_| RemoteComputerTargetError::InvalidResponse)?;
+        let mut writer = CapturedPrivateFrameWriter::default();
+        let result = self.serve_private_request_value(
+            request,
+            &mut writer,
+            catalog,
+            authorizer,
+            executor,
+            Some(cancellation),
+        );
+        if cancellation.phase() == PRIVATE_REQUEST_EXECUTING {
+            cancellation.finish(result.is_err());
+        }
+        result?;
+        writer.take_response()
+    }
+
+    fn serve_private_request_value(
+        &self,
+        request: RemoteTargetPrivateRequest,
+        writer: &mut dyn RemoteTargetPrivateFrameWriter,
+        catalog: &dyn RemoteComputerToolCatalog,
+        authorizer: &dyn RemoteComputerToolAuthorizer,
+        executor: &dyn RemoteComputerNativeExecutor,
+        cancellation: Option<&RemoteTargetCancellation>,
+    ) -> Result<(), RemoteComputerTargetError> {
         match request {
             RemoteTargetPrivateRequest::GrantController {
                 device_id,
@@ -1350,12 +1587,12 @@ impl FabushiCoreTargetClient {
                 label,
             } => {
                 self.require_current_network_binding(&device_id, network_generation)?;
+                if !begin_private_action(cancellation) {
+                    return Err(RemoteComputerTargetError::RequestFailed);
+                }
                 let grant =
                     self.grant_service_client(&connection_id, &delegation_id, &request_id, &label)?;
-                write_private_frame(
-                    worker,
-                    stream_id,
-                    &json!({
+                writer.write_frame(&json!({
                         "type": "controllerGranted",
                         "deviceId": grant.device_id,
                         "clientId": grant.client_id,
@@ -1378,6 +1615,9 @@ impl FabushiCoreTargetClient {
                 tool_name,
             } => {
                 self.require_current_network_binding(&device_id, network_generation)?;
+                if !begin_private_action(cancellation) {
+                    return Err(RemoteComputerTargetError::RequestFailed);
+                }
                 let grant =
                     self.grant_service_client(&connection_id, &delegation_id, &request_id, &label)?;
                 let tool = catalog.describe_tool(&tool_name)?;
@@ -1391,10 +1631,7 @@ impl FabushiCoreTargetClient {
                     .map(tool_descriptor_sha256)
                     .transpose()?
                     .unwrap_or_default();
-                write_private_frame(
-                    worker,
-                    stream_id,
-                    &json!({
+                writer.write_frame(&json!({
                         "type": "toolDescription",
                         "deviceId": device_id,
                         "clientId": grant.client_id,
@@ -1424,13 +1661,13 @@ impl FabushiCoreTargetClient {
                 if authorized_expires_at <= now || authorized_expires_at > expires_at {
                     return Err(RemoteComputerTargetError::AuthorityUnavailable);
                 }
+                if !begin_private_action(cancellation) {
+                    return Err(RemoteComputerTargetError::RequestFailed);
+                }
                 self.activate_session(&session_id)?;
                 let generation =
                     self.grant_tool(&session_id, &client_id, &tool_name, authorized_expires_at)?;
-                write_private_frame(
-                    worker,
-                    stream_id,
-                    &json!({
+                writer.write_frame(&json!({
                         "type": "toolAuthorized",
                         "deviceId": device_id,
                         "sessionId": session_id,
@@ -1470,11 +1707,20 @@ impl FabushiCoreTargetClient {
                 // the Core claim but before any native side effect is dispatched.
                 self.require_current_network_binding(&device_id, network_generation)?;
 
-                match executor.execute(&claimed, &arguments, &disk_preflight) {
-                    RemoteComputerNativeOutcome::OutcomeUnknown => write_private_frame(
-                        worker,
-                        stream_id,
-                        &json!({
+                if !begin_private_action(cancellation) {
+                    return self.finish_native_operation(
+                        writer,
+                        &claimed,
+                        &device_id,
+                        network_generation,
+                        "failed",
+                        json!({"code":"cancelled_before_dispatch","retryable":false}),
+                    );
+                }
+                let native_outcome = executor.execute(&claimed, &arguments, &disk_preflight);
+                let outcome_unknown = matches!(&native_outcome, RemoteComputerNativeOutcome::OutcomeUnknown);
+                let result = match native_outcome {
+                    RemoteComputerNativeOutcome::OutcomeUnknown => writer.write_frame(&json!({
                             "type": "operationResult",
                             "deviceId": device_id,
                             "sessionId": session_id,
@@ -1484,33 +1730,32 @@ impl FabushiCoreTargetClient {
                             "networkGeneration": network_generation,
                         }),
                     ),
-                    RemoteComputerNativeOutcome::SensitiveCompleted(result) => self.finish_sensitive_operation(
-                        worker,
-                        stream_id,
-                        &claimed,
+                    RemoteComputerNativeOutcome::SensitiveCompleted(result) => self.finish_sensitive_operation(writer, &claimed,
                         &device_id,
                         network_generation,
                         result,
                     ),
-                    RemoteComputerNativeOutcome::Completed(result) => self.finish_native_operation(
-                        worker,
-                        stream_id,
-                        &claimed,
+                    RemoteComputerNativeOutcome::Completed(result) => self.finish_native_operation(writer, &claimed,
                         &device_id,
                         network_generation,
                         "completed",
                         result,
                     ),
-                    RemoteComputerNativeOutcome::Failed(result) => self.finish_native_operation(
-                        worker,
-                        stream_id,
-                        &claimed,
+                    RemoteComputerNativeOutcome::Failed(result) => self.finish_native_operation(writer, &claimed,
                         &device_id,
                         network_generation,
                         "failed",
                         result,
                     ),
+                };
+                if let Some(cancellation) = cancellation {
+                    if outcome_unknown {
+                        cancellation.finish_outcome_unknown();
+                    } else if cancellation.phase() == PRIVATE_REQUEST_EXECUTING {
+                        cancellation.finish(result.is_err());
+                    }
                 }
+                result
             }
             RemoteTargetPrivateRequest::SensitiveInputIssue {
                 device_id,
@@ -1549,11 +1794,21 @@ impl FabushiCoreTargetClient {
                     network_generation,
                     authorization_generation: grant_generation,
                 };
+                if !begin_private_action(cancellation) {
+                    return self.finish_native_operation(
+                        writer,
+                        &claimed,
+                        &device_id,
+                        network_generation,
+                        "failed",
+                        json!({"code":"cancelled_before_dispatch","retryable":false}),
+                    );
+                }
                 let challenge = self
                     .sensitive_inputs
                     .issue(binding, unix_millis()?, ttl_ms)
                     .map_err(|_| RemoteComputerTargetError::AuthorityUnavailable)?;
-                write_private_frame(worker, stream_id, &json!({
+                writer.write_frame(&json!({
                     "type": "sensitiveInputChallenge",
                     "deviceId": device_id,
                     "sessionId": session_id,
@@ -1605,7 +1860,18 @@ impl FabushiCoreTargetClient {
                 let mut encoded = payload_base64.into_bytes();
                 let decoded = base64::engine::general_purpose::STANDARD.decode(&encoded);
                 encoded.fill(0);
-                let payload = decoded.map_err(|_| RemoteComputerTargetError::InvalidResponse)?;
+                let mut payload = decoded.map_err(|_| RemoteComputerTargetError::InvalidResponse)?;
+                if !begin_private_action(cancellation) {
+                    payload.fill(0);
+                    return self.finish_native_operation(
+                        writer,
+                        &claimed,
+                        &device_id,
+                        network_generation,
+                        "failed",
+                        json!({"code":"cancelled_before_dispatch","retryable":false}),
+                    );
+                }
                 let delivered = self
                     .sensitive_inputs
                     .consume(
@@ -1688,10 +1954,7 @@ impl FabushiCoreTargetClient {
                 } else {
                     "failed"
                 };
-                self.finish_native_operation(
-                    worker,
-                    stream_id,
-                    &claimed,
+                self.finish_native_operation(writer, &claimed,
                     &device_id,
                     network_generation,
                     status,
@@ -1707,6 +1970,9 @@ impl FabushiCoreTargetClient {
                 request_sha256,
                 grant_generation,
             } => {
+                if !begin_private_action(cancellation) {
+                    return Err(RemoteComputerTargetError::RequestFailed);
+                }
                 let access = self.resume_sensitive_result(
                     &device_id,
                     network_generation,
@@ -1716,7 +1982,7 @@ impl FabushiCoreTargetClient {
                     &request_sha256,
                     grant_generation,
                 )?;
-                write_private_frame(worker, stream_id, &json!({
+                writer.write_frame(&json!({
                     "type": "sensitiveResultReady",
                     "deviceId": device_id,
                     "sessionId": session_id,
@@ -1747,6 +2013,9 @@ impl FabushiCoreTargetClient {
                 result_ref,
                 offset,
             } => {
+                if !begin_private_action(cancellation) {
+                    return Err(RemoteComputerTargetError::RequestFailed);
+                }
                 let chunk = self.read_sensitive_result_chunk(
                     &device_id,
                     network_generation,
@@ -1758,7 +2027,7 @@ impl FabushiCoreTargetClient {
                     &result_ref,
                     offset,
                 )?;
-                write_private_frame(worker, stream_id, &chunk)
+                writer.write_frame(&chunk)
             }
             RemoteTargetPrivateRequest::SensitiveResultRevoke {
                 device_id,
@@ -1770,6 +2039,9 @@ impl FabushiCoreTargetClient {
                 grant_generation,
                 result_ref,
             } => {
+                if !begin_private_action(cancellation) {
+                    return Err(RemoteComputerTargetError::RequestFailed);
+                }
                 self.revoke_sensitive_result(
                     &device_id,
                     network_generation,
@@ -1780,7 +2052,7 @@ impl FabushiCoreTargetClient {
                     grant_generation,
                     &result_ref,
                 )?;
-                write_private_frame(worker, stream_id, &json!({
+                writer.write_frame(&json!({
                     "type": "sensitiveResultRevoked",
                     "requestId": request_id,
                     "resultRef": result_ref,
@@ -1791,8 +2063,7 @@ impl FabushiCoreTargetClient {
 
     fn finish_sensitive_operation(
         &self,
-        worker: &mut OwnedNetworkWorker,
-        stream_id: &str,
+        writer: &mut dyn RemoteTargetPrivateFrameWriter,
         claimed: &ClaimedRemoteOperation,
         device_id: &str,
         network_generation: i64,
@@ -1843,7 +2114,7 @@ impl FabushiCoreTargetClient {
             }
             return Err(RemoteComputerTargetError::OutcomeUnknown);
         }
-        write_private_frame(worker, stream_id, &json!({
+        writer.write_frame(&json!({
             "type": "operationResult",
             "deviceId": device_id,
             "sessionId": claimed.session_id,
@@ -2001,8 +2272,7 @@ impl FabushiCoreTargetClient {
 
     fn finish_native_operation(
         &self,
-        worker: &mut OwnedNetworkWorker,
-        stream_id: &str,
+        writer: &mut dyn RemoteTargetPrivateFrameWriter,
         claimed: &ClaimedRemoteOperation,
         device_id: &str,
         network_generation: i64,
@@ -2022,10 +2292,7 @@ impl FabushiCoreTargetClient {
         };
         self.publish_result(claimed, status, &result_sha256, core_result)
             .map_err(|_| RemoteComputerTargetError::OutcomeUnknown)?;
-        write_private_frame(
-            worker,
-            stream_id,
-            &json!({
+        writer.write_frame(&json!({
                 "type": "operationResult",
                 "deviceId": device_id,
                 "sessionId": claimed.session_id,
@@ -2054,10 +2321,13 @@ impl FabushiCoreTargetClient {
         Ok(binding)
     }
 
-    pub fn network_binding(&self) -> Result<RemoteNetworkBinding, RemoteComputerTargetError> {
-        let (credential, device_secret) = self.authority()?;
+    fn network_binding_for_credential(
+        &self,
+        credential: &FabushiCoreCredential,
+        device_secret: &str,
+    ) -> Result<RemoteNetworkBinding, RemoteComputerTargetError> {
         let response = self.post_json(
-            &credential,
+            credential,
             self.endpoint(&["v1", "computers", "network-binding"])?,
             json!({
                 "deviceId": credential.device_id,
@@ -2077,7 +2347,7 @@ impl FabushiCoreTargetClient {
             .and_then(Value::as_i64)
             .ok_or(RemoteComputerTargetError::InvalidResponse)?;
         Ok(RemoteNetworkBinding {
-            device_id: credential.device_id,
+            device_id: credential.device_id.clone(),
             cell_id: required_text(&response, "cellId")?,
             node_id: required_text(&response, "nodeId")?,
             proof_sha256: required_text(&response, "proofSha256")?,
@@ -2086,8 +2356,65 @@ impl FabushiCoreTargetClient {
             active: response.get("active").and_then(Value::as_bool).unwrap_or(false),
         })
     }
+
+    pub fn network_binding(&self) -> Result<RemoteNetworkBinding, RemoteComputerTargetError> {
+        let (credential, device_secret) = self.authority()?;
+        self.network_binding_for_credential(&credential, &device_secret)
+    }
+
+    fn reverse_websocket_endpoint(&self) -> Result<Url, RemoteComputerTargetError> {
+        reverse_websocket_url(&self.base_url)
+    }
+
+    fn reverse_ws_context(&self) -> Result<(FabushiCoreCredential, ReverseWsIdentity), RemoteComputerTargetError> {
+        let (credential, device_secret) = self.authority()?;
+        let now_ms = u64::try_from(unix_millis()?).map_err(|_| RemoteComputerTargetError::AuthorityUnavailable)?;
+        if credential.expires_at_ms <= now_ms
+            || credential.user_id.trim().is_empty()
+            || credential.device_id.trim().is_empty()
+        {
+            return Err(RemoteComputerTargetError::AuthorityUnavailable);
+        }
+        let binding = self.network_binding_for_credential(&credential, &device_secret)?;
+        let ingress = self.network_ingress("official-device-mcp")?;
+        let now = unix_seconds()?;
+        if binding.device_id != credential.device_id
+            || ingress.device_id != credential.device_id
+            || ingress.target_generation != binding.generation
+            || ingress.cell_id != binding.cell_id
+            || !binding.active
+            || !ingress.active
+            || binding.expires_at <= now
+            || ingress.expires_at <= now
+        {
+            return Err(RemoteComputerTargetError::IdentityMismatch);
+        }
+        let identity = ReverseWsIdentity {
+            account_id: credential.user_id.clone(),
+            device_id: credential.device_id.clone(),
+            access_token_sha256: sha256_hex(credential.access_token().as_bytes()),
+            network_generation: binding.generation,
+        };
+        Ok((credential, identity))
+    }
 }
 
+
+
+fn reverse_websocket_url(base_url: &Url) -> Result<Url, RemoteComputerTargetError> {
+    let loopback = matches!(base_url.host_str(), Some("localhost" | "127.0.0.1" | "::1"));
+    let scheme = match base_url.scheme() {
+        "https" => "wss",
+        "http" if loopback => "ws",
+        _ => return Err(RemoteComputerTargetError::AuthorityUnavailable),
+    };
+    let mut url = base_url.clone();
+    url.set_scheme(scheme).map_err(|_| RemoteComputerTargetError::AuthorityUnavailable)?;
+    url.set_path("/agent");
+    url.set_query(None);
+    url.set_fragment(None);
+    Ok(url)
+}
 
 fn unix_millis() -> Result<i64, RemoteComputerTargetError> {
     let millis = SystemTime::now()
@@ -2112,6 +2439,7 @@ pub struct RemoteComputerTargetNetworkService {
     executor: Arc<dyn RemoteComputerNativeExecutor>,
     local_port: u16,
     ingress_cache: Mutex<Option<(RemoteNetworkIngress, Instant)>>,
+    reverse_ws_manager: Mutex<Option<reverse_ws::ReverseWsManager>>,
 }
 
 impl RemoteComputerTargetNetworkService {
@@ -2132,6 +2460,7 @@ impl RemoteComputerTargetNetworkService {
             executor,
             local_port,
             ingress_cache: Mutex::new(None),
+            reverse_ws_manager: Mutex::new(None),
         })
     }
 
@@ -2168,6 +2497,22 @@ impl RemoteComputerTargetNetworkService {
         *cache = Some((ingress.clone(), Instant::now()));
         Ok(ingress)
     }
+
+    fn ensure_reverse_ws_manager(&self) {
+        if std::env::var(REVERSE_WS_FALLBACK_ENV).ok().as_deref() != Some("1") {
+            return;
+        }
+        if let Ok(mut manager) = self.reverse_ws_manager.lock() {
+            if manager.is_none() {
+                *manager = reverse_ws::ReverseWsManager::start(
+                    Arc::clone(&self.client),
+                    Arc::clone(&self.catalog),
+                    Arc::clone(&self.authorizer),
+                    Arc::clone(&self.executor),
+                ).ok();
+            }
+        }
+    }
 }
 
 pub fn production_remote_computer_target_service(
@@ -2197,6 +2542,7 @@ impl NetworkWorkerService for RemoteComputerTargetNetworkService {
                 NetworkEnrollmentError::RequestRejected
             }
         })?;
+        self.ensure_reverse_ws_manager();
         self.client
             .serve_private_request_with_timeout(
                 worker,

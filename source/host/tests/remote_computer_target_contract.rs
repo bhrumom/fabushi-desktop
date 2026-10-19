@@ -1,4 +1,5 @@
 const TARGET_SOURCE: &str = include_str!("../src/remote_computer_target.rs");
+const REVERSE_WS_SOURCE: &str = include_str!("../src/remote_computer_target_reverse_ws.rs");
 
 #[test]
 fn target_core_client_keeps_controller_and_device_credentials_secret() {
@@ -229,4 +230,39 @@ fn native_snapshot_generation_is_projected_and_stale_fenced() {
             "missing native snapshot generation/stale-fence invariant: {required}"
         );
     }
+}
+
+
+#[test]
+fn target_reverse_websocket_is_opt_in_authenticated_generation_fenced_and_cancellable() {
+    for required in [
+        "REVERSE_WS_FALLBACK_ENV",
+        "REVERSE_WS_CAPABILITY",
+        "fn reverse_ws_context(",
+        "binding.generation != ingress.target_generation",
+        "validate_reverse_ws_payload_binding(payload, identity)?",
+        "self.serve_private_request_value(",
+        "RemoteTargetCancellation",
+        "writer.write_frame(",
+        "fdnPrivateCancelResult",
+        "cancelled_before_dispatch",
+        "outcome_unknown",
+    ] {
+        assert!(TARGET_SOURCE.contains(required), "missing target reverse WebSocket invariant: {required}");
+    }
+    for required in [
+        "connect_async_with_config",
+        "AUTHORIZATION",
+        "fabushi-fdn-private-transport",
+        "fdnPrivate",
+        "fdnPrivateCancel",
+        "fdnPrivateCancelResult",
+        "network_generation",
+        "cancel_before_dispatch",
+        "REMOTE_WS_MAX_PENDING",
+        "registered",
+    ] {
+        assert!(REVERSE_WS_SOURCE.contains(required), "missing reverse WebSocket client invariant: {required}");
+    }
+    assert!(!REVERSE_WS_SOURCE.contains("deviceSecret"), "device secret must not be sent to the reverse WebSocket gateway");
 }

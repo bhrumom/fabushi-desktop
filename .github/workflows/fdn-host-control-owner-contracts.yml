@@ -6,6 +6,8 @@ on:
       - "source/host/src/network_enrollment_owner.rs"
       - "source/host/src/network_worker_process.rs"
       - "source/host/src/remote_computer_target.rs"
+      - "source/host/src/remote_computer_target_reverse_ws.rs"
+      - "source/host/Cargo.toml"
       - "source/host/app/src/main.rs"
       - "source/host/tests/network_enrollment_owner_contract.rs"
       - "source/host/tests/network_worker_process_contract.rs"
@@ -68,6 +70,9 @@ jobs:
       - name: Test shipping native target wiring and sensitive result boundary
         shell: bash
         run: cargo test --manifest-path source/host/Cargo.toml --test remote_computer_target_native_wiring_contract -- --nocapture
+      - name: Test reverse WebSocket cancellation and identity fences
+        shell: bash
+        run: cargo test --manifest-path source/host/Cargo.toml --lib remote_computer_target::reverse_ws::tests -- --nocapture
       - name: Record bounded evidence scope
         shell: bash
         run: |
