@@ -15,6 +15,9 @@ import { deleteSecret, isEncryptedStorageAvailable, readSecret, waitForEncrypted
 import { reportSessionEvent, type SessionRefreshFailure, type SessionSignoutCause } from "./session-funnel-telemetry.js";
 import { reportSigninLogin, reportSigninSignout, signinSignoutCause } from "./signin-funnel-telemetry.js";
 import { resolveAuthRedirectTarget } from "../auth/auth-callback-registration.js";
+import type { SandAuthStatus } from "./auth-service-contract.js";
+
+export type { SandAuthStatus } from "./auth-service-contract.js";
 
 export const ACCESS_TOKEN_SECRET_KEY = "cursor-access-token";
 export const REFRESH_TOKEN_SECRET_KEY = "cursor-refresh-token";
@@ -28,10 +31,6 @@ export class SandAuthSignInExpiredError extends Error { constructor() { super("C
 export class SandAuthLoginTimedOutError extends Error { constructor() { super("Cursor sign-in did not finish. Try again."); } }
 export class SandDevLoginError extends Error {}
 
-export type SandAuthStatus =
-  | { readonly kind: "logging-in" }
-  | { readonly kind: "logged-out"; readonly errorMessage?: string }
-  | { readonly kind: "logged-in"; readonly authId?: string; readonly email?: string; readonly expiresAt?: number; readonly displayName?: string; readonly profilePictureUrl?: string; readonly isAnysphereUser?: boolean };
 export interface CursorProfile { readonly email?: string; readonly displayName?: string; readonly profilePictureUrl?: string; readonly isAnysphereUser: boolean }
 export interface CursorTokens { readonly accessToken: string; readonly refreshToken: string }
 export interface CursorSecretStore {

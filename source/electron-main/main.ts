@@ -82,7 +82,7 @@ export interface MainBrowserWindow extends WindowStatePersistenceWindow {
 export interface ElectronMainApp {
   readonly isPackaged: boolean;
   disableHardwareAcceleration(): void;
-  readonly commandLine: { readonly appendSwitch: (name: string) => void };
+  readonly commandLine: { readonly appendSwitch: (name: string) => void; readonly hasSwitch?: (name: string) => boolean };
   requestSingleInstanceLock(): boolean;
   quit(): void;
   isReady(): boolean;
@@ -242,7 +242,6 @@ export function startElectronMain(deps: ElectronMainDependencies): ElectronMainR
   deps.startup.bootstrapBeforeSingleInstance();
 
   deps.app.disableHardwareAcceleration();
-  deps.app.commandLine.appendSwitch("no-sandbox");
   deps.app.commandLine.appendSwitch("disable-gpu");
 
   const isPrimaryInstance = !deps.app.isPackaged || deps.app.requestSingleInstanceLock();

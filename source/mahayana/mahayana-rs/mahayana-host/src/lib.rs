@@ -51,6 +51,8 @@ use mahayana_product::ProductError;
 use mahayana_product::default_mahayana_home;
 use mahayana_product::default_product_surface_state_path;
 use mahayana_runtime_core::MahayanaRuntime;
+#[cfg(not(target_arch = "wasm32"))]
+pub use mahayana_runtime_core::{MiniAppRuntimeStorePort, RuntimeStoreError};
 use mahayana_runtime_core::RuntimeBuilder;
 use mahayana_runtime_core::RuntimeError;
 use mahayana_social::MahayanaSocialConversationProvider;
@@ -138,6 +140,17 @@ impl From<RuntimeError> for HostError {
     }
 }
 
+fn configured_product_api_base_url() -> Result<String, HostError> {
+    if mahayana_product::native_desktop_session::enabled() {
+        return mahayana_product::native_desktop_session::target_origin(None)
+            .map_err(|error| HostError::new(error.to_string()));
+    }
+    Ok(env::var("MAHAYANA_API_BASE_URL")
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or_else(|| "https://api.ombhrum.com".to_string()))
+}
+
 /// Long-lived process-local host shared by every presentation surface.
 #[derive(Clone)]
 pub struct MahayanaHost {
@@ -146,11 +159,15 @@ pub struct MahayanaHost {
 }
 
 impl MahayanaHost {
+    /// Return a native-only transactional port over the RuntimeStore SQLite
+    /// connection. No independent connection or database file is created.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn mini_app_store_port(&self) -> Result<MiniAppRuntimeStorePort, RuntimeStoreError> {
+        self.runtime.mini_app_store_port()
+    }
+
     pub fn create(config: HostCreateConfig) -> Result<Self, HostError> {
-        let api_base_url = env::var("MAHAYANA_API_BASE_URL")
-            .ok()
-            .filter(|value| !value.trim().is_empty())
-            .unwrap_or_else(|| "https://api.ombhrum.com".to_string());
+        let api_base_url = configured_product_api_base_url()?;
         let product_client = match (
             config.product_session_path.clone(),
             config.product_surface_state_path.clone(),
@@ -194,10 +211,7 @@ impl MahayanaHost {
         config: HostCreateConfig,
         backend: Arc<dyn EngineBackend>,
     ) -> Result<Self, HostError> {
-        let api_base_url = env::var("MAHAYANA_API_BASE_URL")
-            .ok()
-            .filter(|value| !value.trim().is_empty())
-            .unwrap_or_else(|| "https://api.ombhrum.com".to_string());
+        let api_base_url = configured_product_api_base_url()?;
         let product_client = match (
             config.product_session_path.clone(),
             config.product_surface_state_path.clone(),

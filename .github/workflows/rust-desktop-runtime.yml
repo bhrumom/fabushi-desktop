@@ -140,6 +140,12 @@ jobs:
       - name: Test ConversationActor and CapabilityBroker ownership
         shell: bash
         run: cargo test -p mahayana-runtime --manifest-path source/mahayana/mahayana-rs/Cargo.toml
+      - name: Test Native-only Desktop credential hand-off on macOS
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-platform-client --lib
+          cargo test --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-app-host --test native_desktop_account_handoff
 
   pressure-profiler-platform:
     name: Pressure profiler / ${{ matrix.os }}
@@ -173,13 +179,14 @@ jobs:
         with:
           workspaces: source/host -> target
           shared-key: pressure-profiler-${{ matrix.os }}-1.97.1
-      - name: Enable Linux perf sampling
+      - name: Enable Linux perf sampling and native desktop dependencies
         if: runner.os == 'Linux'
         shell: bash
         run: |
           set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
           if ! command -v perf >/dev/null 2>&1; then
-            sudo apt-get update
             sudo apt-get install -y linux-tools-common linux-tools-generic
           fi
           sudo sysctl -w kernel.perf_event_paranoid=-1 || true

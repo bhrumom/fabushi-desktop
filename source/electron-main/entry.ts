@@ -1,4 +1,5 @@
 import * as electron from "electron";
+import { FABUSHI_MINI_APP_PRIVILEGED_SCHEME } from "./mcp/miniapp-window.js";
 
 import { parseAllowedExternalUrl } from "../shared/external-url-policy.js";
 import { startElectronMainProduction } from "./main.js";
@@ -65,7 +66,7 @@ const adapters: ElectronProductionAdapterBindings = {
   cursorAccount: createFabushiProductionCursorAccountBinding(),
   mainRpc: createElectronProductionMainRpcBinding(),
   updaterInstaller: createElectronProductionUpdaterInstallerBinding(),
-  mediaProtocol: createElectronProductionMediaProtocolBinding(),
+  mediaProtocol: createElectronProductionMediaProtocolBinding([FABUSHI_MINI_APP_PRIVILEGED_SCHEME]),
   accountOAuth: createFabushiProductionAccountOAuthBinding(),
   experiments: createElectronProductionExperimentsBinding(),
   mcpOAuth: createProductionMcpOAuthAdapter(),

@@ -12,6 +12,23 @@ on:
         required: true
         default: false
         type: boolean
+      iterate_existing_miniapp_candidate:
+        description: Diagnose the fixed e62ea0 signed binary with this harness; never publish or claim this harness SHA is the binary source.
+        required: false
+        default: false
+        type: boolean
+      promote_existing_candidate:
+        description: Publish only the immutable main candidate already accepted by production and isolated factory gates.
+        type: boolean
+        default: false
+      accepted_candidate_run_id:
+        type: string
+      accepted_candidate_artifact_id:
+        type: string
+      accepted_candidate_archive_sha256:
+        type: string
+      factory_acceptance_run_id:
+        type: string
   push:
     branches: [main]
     paths:
@@ -28,13 +45,42 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 concurrency:
   group: package-macos-${{ github.event_name == 'push' && github.sha || inputs.source_sha || github.ref }}
   cancel-in-progress: false
 
 jobs:
+  promote:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.promote_existing_candidate }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Verify exact binary, all gates and factory cleanup before immutable promotion
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PROMOTION_SOURCE_SHA: ${{ inputs.source_sha }}
+          PROMOTION_CANDIDATE_RUN_ID: ${{ inputs.accepted_candidate_run_id }}
+          PROMOTION_ARTIFACT_ID: ${{ inputs.accepted_candidate_artifact_id }}
+          PROMOTION_ARCHIVE_SHA256: ${{ inputs.accepted_candidate_archive_sha256 }}
+          PROMOTION_FACTORY_RUN_ID: ${{ inputs.factory_acceptance_run_id }}
+          PROMOTION_PUBLISH: ${{ inputs.publish_release }}
+          PROMOTION_DIAGNOSTIC: ${{ inputs.iterate_existing_miniapp_candidate }}
+        run: node .github/scripts/promote-miniapp-candidate.mjs
+  miniapp-iteration:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.iterate_existing_miniapp_candidate && !inputs.promote_existing_candidate }}
+    uses: ./.github/workflows/miniapp-packaged-iteration.yml
+    secrets:
+      FABUSHI_CI_TEST_USERNAME: ${{ secrets.FABUSHI_CI_TEST_USERNAME }}
+      FABUSHI_CI_TEST_PASSWORD: ${{ secrets.FABUSHI_CI_TEST_PASSWORD }}
   publish:
+    if: ${{ github.event_name != 'workflow_dispatch' || (!inputs.iterate_existing_miniapp_candidate && !inputs.promote_existing_candidate) }}
     name: Build, notarize, and publish macOS arm64
     runs-on: macos-15
     timeout-minutes: 180
@@ -96,6 +142,16 @@ jobs:
             exit 1
           fi
 
+      - name: Private builds cannot bypass immutable factory-bound promotion
+        env:
+          REQUEST_PUBLIC_RELEASE: ${{ inputs.publish_release }}
+        run: |
+          set -euo pipefail
+          if [ "$REQUEST_PUBLIC_RELEASE" = true ]; then
+            echo "::error::Public release requires promote_existing_candidate and exact binary-bound factory proof; rebuilding cannot substitute for accepted bytes."
+            exit 1
+          fi
+
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
@@ -121,6 +177,15 @@ jobs:
       - name: Install desktop dependencies
         shell: bash
         run: npm --prefix desktop ci --prefer-offline --no-audit --no-fund
+
+      - name: Compile and collect the installed Mini App gate before packaging
+        working-directory: desktop
+        run: |
+          ./node_modules/.bin/tsc --noEmit --strict --skipLibCheck --target ES2022 --module NodeNext --moduleResolution NodeNext --esModuleInterop e2e/miniapp-packaged-acceptance.spec.ts
+          npx playwright test e2e/miniapp-packaged-acceptance.spec.ts --list
+          /usr/bin/osacompile -o "$RUNNER_TEMP/miniapp-save-report.scpt" ../.github/scripts/miniapp-save-report.applescript
+          node --test ../.github/scripts/miniapp-release-evidence.test.mjs
+          node --test ../.github/scripts/promote-miniapp-candidate.test.mjs
 
       - name: Validate Fabushi product adapter contracts
         shell: bash
@@ -191,8 +256,26 @@ jobs:
           src="$RUNNER_TEMP/whisper-cpp"
           build="$RUNNER_TEMP/whisper-build"
           rm -rf "$src" "$build"
-          git clone --filter=blob:none --no-checkout "$repo" "$src"
-          git -C "$src" checkout --detach "$commit"
+          fetched=false
+          for attempt in 1 2 3; do
+            rm -rf "$src"
+            git init -q "$src"
+            git -C "$src" remote add origin "$repo"
+            if git -C "$src" -c http.version=HTTP/1.1 fetch --depth=1 --filter=blob:none origin "$commit"; then
+              git -C "$src" checkout --detach FETCH_HEAD
+              if [[ "$(git -C "$src" rev-parse HEAD)" == "$commit" ]]; then
+                fetched=true
+                break
+              fi
+            fi
+            echo "::warning::offline ASR exact-source fetch attempt $attempt failed for $commit"
+            sleep $((attempt * 2))
+          done
+          if [[ "$fetched" != "true" ]]; then
+            echo "::error::failed to fetch pinned offline ASR commit $commit after 3 attempts"
+            exit 1
+          fi
+          test "$(git -C "$src" rev-parse HEAD)" = "$commit"
           cmake -S "$src" -B "$build"             -DWHISPER_BUILD_TESTS=OFF             -DWHISPER_BUILD_EXAMPLES=ON             -DWHISPER_BUILD_SERVER=OFF             -DBUILD_SHARED_LIBS=OFF             -DGGML_NATIVE=OFF
           cmake --build "$build" --config Release --parallel 2
           binary="$(find "$build" -type f -name whisper-cli -perm -111 -print -quit)"
@@ -283,10 +366,10 @@ jobs:
           fi
           xcrun notarytool submit "$dmg" "${args[@]}" --wait --output-format json > "$RUNNER_TEMP/dmg-notary.json"
           node -e "const r=require(process.argv[1]); if(r.status!=='Accepted') { console.error(r); process.exit(1) }" "$RUNNER_TEMP/dmg-notary.json"
-          xcrun stapler staple "$dmg"
-          xcrun stapler validate "$dmg"
+          node .github/scripts/validate-apple-ticket.mjs --staple "$dmg"
+          node .github/scripts/validate-apple-ticket.mjs "$dmg"
           codesign --verify --deep --strict --verbose=2 "$app"
-          xcrun stapler validate "$app"
+          node .github/scripts/validate-apple-ticket.mjs "$app"
           spctl --assess --type execute --verbose=4 "$app"
 
       - name: Verify desktop updater metadata
@@ -316,7 +399,7 @@ jobs:
           rm -rf "$installed_app"
           /usr/bin/ditto "$source_app" "$installed_app"
           codesign --verify --deep --strict --verbose=2 "$installed_app"
-          xcrun stapler validate "$installed_app"
+          node .github/scripts/validate-apple-ticket.mjs "$installed_app"
           spctl --assess --type execute --verbose=4 "$installed_app"
 
           executable_name="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$installed_app/Contents/Info.plist")"
@@ -331,7 +414,7 @@ jobs:
         env:
           FABUSHI_CI_TEST_USERNAME: ${{ secrets.FABUSHI_CI_TEST_USERNAME }}
           FABUSHI_CI_TEST_PASSWORD: ${{ secrets.FABUSHI_CI_TEST_PASSWORD }}
-          FABUSHI_API_BASE_URL: ${{ vars.FABUSHI_API_BASE_URL || 'https://api.ombhrum.com' }}
+          FABUSHI_API_BASE_URL: https://api.ombhrum.com
           DEVICE_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}-macos-app
         run: |
           set -euo pipefail
@@ -348,6 +431,9 @@ jobs:
           export FABUSHI_CI_ACCOUNT_SESSION_FILE="$app_session_dir/session.json"
           node "$support/chatgpt-vps-control/scripts/login-ci-test-account.mjs"
           node "$support/chatgpt-vps-control/scripts/export-ci-app-account-session.mjs"
+          umask 077
+          jq -ce --arg issuer "$FABUSHI_API_BASE_URL" '. + {issuer: $issuer}' "$FABUSHI_CI_ACCOUNT_SESSION_FILE" > "$app_session_dir/issuer-bound.json"
+          mv "$app_session_dir/issuer-bound.json" "$FABUSHI_CI_ACCOUNT_SESSION_FILE"
           chmod 600 "$FABUSHI_CI_ACCOUNT_SESSION_FILE"
           jq -e '.provider == "github-actions" and .ciRunner == true and (.refreshToken | not)' "$FABUSHI_CI_ACCOUNT_SESSION_FILE" >/dev/null
           rm -f "$FABUSHI_ACCOUNT_SESSION_FILE"
@@ -394,13 +480,57 @@ jobs:
           find "$OBF_EVIDENCE_DIR/screenshots" -type f -name '*.png' -size +0c -print -quit | grep -q .
           find "$OBF_EVIDENCE_DIR" -type f \( -name '*.mp4' -o -name '*.mov' -o -name '*.webm' \) -size +0c -print -quit | grep -q .
 
+      - name: Run approved Mini App installed and OS-offline lifecycle acceptance
+        working-directory: desktop
+        shell: bash
+        timeout-minutes: 40
+        env:
+          MINIAPP_REAL_ACCEPTANCE: '1'
+          MINIAPP_EVIDENCE_DIR: ${{ runner.temp }}/fabushi-miniapp-acceptance
+          OBF_SOURCE_SHA: ${{ steps.source.outputs.sha }}
+          OBF_EXPECTED_SOURCE_SHA: ${{ steps.source.outputs.sha }}
+          FABUSHI_ELECTRON_EXECUTABLE: ${{ steps.candidate.outputs.executable }}
+          FABUSHI_FEATURE_HOST_MODE: production
+          FABUSHI_E2E: '0'
+        run: |
+          set -euo pipefail
+          test "$MINIAPP_REAL_ACCEPTANCE" = 1
+          recorder="$GITHUB_WORKSPACE/desktop/scripts/macos-session-recorder.sh"
+          mkdir -p "$MINIAPP_EVIDENCE_DIR"
+          bash "$recorder" start "$MINIAPP_EVIDENCE_DIR"
+          bash "$recorder" assert-live "$MINIAPP_EVIDENCE_DIR"
+          test_status=0
+          npx playwright test e2e/miniapp-packaged-acceptance.spec.ts --workers=1 || test_status=$?
+          stop_status=0
+          bash "$recorder" stop "$MINIAPP_EVIDENCE_DIR" || stop_status=$?
+          verify_status=0
+          bash "$recorder" verify "$MINIAPP_EVIDENCE_DIR" || verify_status=$?
+          test "$test_status" -eq 0
+          test "$stop_status" -eq 0
+          test "$verify_status" -eq 0
+          find "$MINIAPP_EVIDENCE_DIR" -type f -name acceptance.json -size +0c -print -quit | grep -q .
+
+      - name: Upload Mini App installed acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: fabushi-miniapp-installed-${{ steps.source.outputs.short }}
+          path: ${{ runner.temp }}/fabushi-miniapp-acceptance
+          if-no-files-found: warn
+
       - name: Upload packaged acceptance evidence
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: fabushi-candidate-acceptance-${{ steps.source.outputs.short }}
           path: |
-            ${{ runner.temp }}/fabushi-candidate-acceptance
+            ${{ runner.temp }}/fabushi-candidate-acceptance/screenshots
+            ${{ runner.temp }}/fabushi-candidate-acceptance/*.json
+            ${{ runner.temp }}/fabushi-candidate-acceptance/*.txt
+            ${{ runner.temp }}/fabushi-candidate-acceptance/*.log
+            ${{ runner.temp }}/fabushi-candidate-acceptance/*.zip
+            ${{ runner.temp }}/fabushi-candidate-acceptance/*.mov
+            ${{ runner.temp }}/fabushi-candidate-acceptance/*.mp4
             desktop/playwright-report
             desktop/test-results
           if-no-files-found: warn
@@ -430,20 +560,5 @@ jobs:
           retention-days: 90
           compression-level: 0
 
-      - name: Publish GitHub prerelease
-        if: ${{ (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/package-macos-') || startsWith(github.event.head_commit.message, 'release:'))) || (github.event_name == 'workflow_dispatch' && inputs.publish_release) }}
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ steps.source.outputs.tag }}
-          VERSION: ${{ steps.source.outputs.version }}
-          SOURCE_SHA: ${{ steps.source.outputs.sha }}
-        run: |
-          set -euo pipefail
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release delete "$TAG" --yes --cleanup-tag
-          fi
-          gh release create "$TAG"             desktop/release/*.dmg             desktop/release/*.zip             desktop/release/*.blockmap             desktop/release/latest-mac.yml             desktop/release/SHA256SUMS.txt             --target "$SOURCE_SHA"             --title "Fabushi macOS $VERSION — ${SOURCE_SHA:0:12}"             --notes "Signed and Apple-notarized macOS arm64 installer built from exact fabushi-desktop commit \`$SOURCE_SHA\`."             --prerelease
-          url="$(gh release view "$TAG" --json url -q .url)"
-          echo "### Published" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Release: $url" >> "$GITHUB_STEP_SUMMARY"
+      - name: Keep accepted installer private until binary-bound factory promotion
+        run: echo 'Candidate retained as immutable Actions artifact; public promotion requires matching factory acceptance and zero-residue evidence.' >> "$GITHUB_STEP_SUMMARY"

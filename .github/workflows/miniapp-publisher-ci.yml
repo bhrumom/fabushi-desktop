@@ -1,0 +1,45 @@
+name: First-party Mini App publisher
+on:
+  pull_request:
+    paths:
+      - 'source/mahayana/mahayana-rs/mahayana-product/**'
+      - 'source/mahayana/mahayana-rs/mahayana-app-host/**'
+      - 'source/mahayana/mahayana-rs/mahayana-host/**'
+      - 'source/electron-main/mcp/miniapp-publisher*'
+      - 'source/electron-main/adapters/mcp-oauth.ts'
+      - 'frontend/src/recovered/features/plugins/overlay/miniapp-publisher.tsx'
+      - '.github/workflows/miniapp-publisher-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'source/mahayana/mahayana-rs/mahayana-product/**'
+      - 'source/mahayana/mahayana-rs/mahayana-app-host/**'
+      - 'source/mahayana/mahayana-rs/mahayana-host/**'
+      - 'source/electron-main/mcp/miniapp-publisher*'
+      - 'source/electron-main/adapters/mcp-oauth.ts'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  publisher:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Exact signed fixture, not catalog approval
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api repos/bhrumom/fabushi-backend/actions/artifacts/11797530939/zip > signed-fixture.zip
+          echo 'b4fb72cfcdec50acd4c4a648f44699813c3b31cbbd0080445a6057fb4578c64e  signed-fixture.zip' | sha256sum -c -
+          mkdir signed-fixture
+          unzip -q signed-fixture.zip -d signed-fixture
+      - name: Native trusted publisher boundaries
+        env:
+          FABUSHI_SIGNED_DANDELION_FIXTURE: ${{ github.workspace }}/signed-fixture/global-dandelion-0.1.0.fabapp
+        run: npx --yes tsx@4.21.0 --test source/electron-main/mcp/miniapp-publisher.contract.test.ts

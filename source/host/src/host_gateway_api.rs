@@ -33,17 +33,21 @@ pub enum HostGatewayOwner {
 }
 
 macro_rules! define_host_gateway_registry {
-    ($(($method:literal, $owner:ident)),+ $(,)?) => {
+    ($(($method:literal, $owner:ident)),+ $(,)?; native $(($native:literal, $native_owner:ident)),+ $(,)?) => {
         /// Frozen Grok 0.18 public Host gateway surface. Keep this list as the
         /// single public-method registry; protocol exposure and ownership
         /// contracts consume it instead of maintaining parallel string tables.
         pub const FROZEN_HOST_GATEWAY_METHODS: &[&str] = &[
             $($method),+
         ];
+        pub const FABUSHI_NATIVE_MINIAPP_GATEWAY_METHODS: &[&str] = &[
+            $($native),+
+        ];
 
         pub fn host_gateway_owner(method: &str) -> Option<HostGatewayOwner> {
             match method {
                 $($method => Some(HostGatewayOwner::$owner),)+
+                $($native => Some(HostGatewayOwner::$native_owner),)+
                 _ => None,
             }
         }
@@ -173,6 +177,14 @@ define_host_gateway_registry!(
     ("requestWebAuthnCeremony", WebAuthn),
     ("setBoxSecrets", Secrets),
     ("getBoxSecretsStatus", Secrets),
+    ; native
+    // Fabushi-owned extensions stay outside the frozen upstream inventory.
+    // Coordinator restricts these to MainData; Host owns identity and bytes.
+    ("listApprovedMiniApps", Mcp),
+    ("listInstalledMiniApps", Mcp),
+    ("installApprovedMiniApp", Mcp),
+    ("getInstalledMiniAppResources", Mcp),
+    ("uninstallMiniApp", Mcp),
 );
 
 pub fn is_sand_agent_purpose(value: &str) -> bool {

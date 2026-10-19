@@ -242,6 +242,15 @@ use mahayana_host_runtime::host_production_extensions::{
     CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS, start_production_host_box_extensions,
     start_production_host_extensions,
 };
+use mahayana_host_runtime::network_enrollment_owner::{
+    DEFAULT_FABUSHI_API_BASE_URL, FABUSHI_API_BASE_URL_ENV, NetworkEnrollmentOwner,
+    NetworkEnrollmentSupervisor,
+};
+use mahayana_host_runtime::remote_computer_target::{
+    FileRemoteComputerDeviceSecretProvider, RemoteComputerDeviceSecretProvider,
+    production_remote_computer_target_service,
+};
+use mahayana_host_runtime::extensions::auth::auth_service::FabushiCoreCredentialProvider;
 use mahayana_host_runtime::host_invariant::{install_invariant_reporter, invariant_failure};
 #[cfg(test)]
 use mahayana_host_runtime::host_production_extensions::{
@@ -10737,6 +10746,9 @@ fn dispatch_gateway_call(
     method: &str,
     args: serde_json::Value,
 ) -> Result<serde_json::Value, GatewayCommandError> {
+    if let Some(result) = dispatch_mini_app_management(host, method, &args) {
+        return result;
+    }
     if let Some(result) = attachments.dispatch_gateway(method, &args) {
         return result.map_err(GatewayCommandError::Internal);
     }
@@ -10781,6 +10793,518 @@ fn dispatch_gateway_call(
         Err(GatewayCommandError::UnknownMethod(method.to_string()))
     } else {
         Err(GatewayCommandError::Internal(message))
+    }
+}
+
+/// OMA-001's named MainData-only package management intents. The MainData
+/// carrier is not permission to accept policy or package bytes from callers.
+fn dispatch_mini_app_management(
+    host: &UnifiedAppHost,
+    method: &str,
+    args: &serde_json::Value,
+) -> Option<Result<serde_json::Value, GatewayCommandError>> {
+    use base64::{Engine, engine::general_purpose::STANDARD};
+    use mahayana_host_runtime::extensions::mcp::installable_package::{
+        ledger, policy, verify_catalog_bundle, NativeMiniAppEntry,
+    };
+
+    let allowed_fields: &[&str] = match method {
+        "listApprovedMiniApps" | "listInstalledMiniApps" => &[],
+        "installApprovedMiniApp" | "uninstallMiniApp" => &["appId", "operationId"],
+        "getInstalledMiniAppResources" => &["appId", "operationId"],
+        _ => return None,
+    };
+    let respond = || -> Result<serde_json::Value, GatewayCommandError> {
+        let object = args.as_object().ok_or_else(|| {
+            GatewayCommandError::BadRequest("mini-app intent must be an object".into())
+        })?;
+        if object.keys().any(|key| !allowed_fields.contains(&key.as_str())) {
+            return Err(GatewayCommandError::BadRequest(
+                "mini-app intent contains unsupported fields".into(),
+            ));
+        }
+        match method {
+            "listApprovedMiniApps" => list_approved_mini_apps(host),
+            "installApprovedMiniApp" => {
+                mini_app_identifier_arg(object, "appId")?;
+                let operation_id = mini_app_identifier_arg(object, "operationId")?;
+                if operation_id.len() < 16 {
+                    return Err(GatewayCommandError::BadRequest(
+                        "mini-app operationId must be a native-generated random identifier".into(),
+                    ));
+                }
+                install_approved_mini_app(host, mini_app_identifier_arg(object, "appId")?, operation_id)
+            }
+            "getInstalledMiniAppResources" => {
+                let app_id = mini_app_identifier_arg(object, "appId")?;
+                let operation_id = mini_app_identifier_arg(object, "operationId")?;
+                if operation_id.len() < 16 {
+                    return Err(GatewayCommandError::BadRequest(
+                        "mini-app operationId must be a native-generated random identifier".into(),
+                    ));
+                }
+                let (install_scope, claim) = current_native_mini_app_scope(host)?;
+                let store = host.mini_app_store_port().map_err(|_| {
+                    GatewayCommandError::Internal("not_configured: RuntimeStore SQLite connection is unavailable".into())
+                })?;
+                let client = policy::CatalogClient::production_from_environment().map_err(proof_gateway_error)?;
+                // Commit a valid signed feed before looking up the exact release.
+                // This ordering preserves a key revocation even if proof lookup is 404.
+                let latest_trust = refresh_mini_app_trust(&client, &store, true)?;
+                let loaded = store.with_connection(|connection| {
+                    ledger::initialize(connection)?;
+                    ledger::load_active_authorized_archive(connection, &install_scope, app_id)
+                }).map_err(|_| GatewayCommandError::Internal("storage: installed mini-app could not be loaded".into()))?;
+                let Some((archive, proof_snapshot, cached_trust)) = loaded else {
+                    return Err(GatewayCommandError::Internal("resource_not_found: mini-app is not installed".into()));
+                };
+                let persisted_quarantine = store.with_connection(|connection| ledger::quarantine_reason(connection, &install_scope, app_id))
+                    .map_err(|_| GatewayCommandError::Internal("storage: mini-app quarantine state could not be read".into()))?;
+                if persisted_quarantine.as_deref() == Some("release_revoked") {
+                    return Err(GatewayCommandError::Internal("release_revoked".into()));
+                }
+                let latest_trust = latest_trust.or(cached_trust);
+                let effective_snapshot = policy::overlay_cached_trust(&proof_snapshot, latest_trust.as_deref()).map_err(proof_gateway_error)?;
+                let verified = match policy::verify_install_proof(&effective_snapshot, app_id, policy::now_ms(), true) {
+                    Ok(proof) => proof,
+                    Err(error) => {
+                        let _ = store.with_connection(|connection| ledger::set_quarantined(connection, &install_scope, app_id, Some(&format!("{error:?}"))));
+                        return Err(proof_gateway_error(error));
+                    }
+                };
+                if let Some(trust) = latest_trust.as_deref() {
+                    let descriptor = policy::proof_descriptor(&proof_snapshot).map_err(proof_gateway_error)?;
+                    match client.fetch_install_proof(&descriptor) {
+                        Ok(raw) => {
+                            let current_proof = policy::overlay_trust(&raw, trust).map_err(proof_gateway_error)?;
+                            let current_authorization = match policy::verify_install_proof(&current_proof, app_id, policy::now_ms(), true) {
+                                Ok(proof) => proof,
+                                Err(error) => {
+                                    let reason = format!("{error:?}");
+                                    let _ = store.with_connection(|connection| ledger::set_quarantined(connection, &install_scope, app_id, Some(&reason)));
+                                    return Err(proof_gateway_error(error));
+                                }
+                            };
+                            if current_authorization.authorization.version != verified.authorization.version
+                                || current_authorization.authorization.package_sha256 != verified.authorization.package_sha256 {
+                                let _ = store.with_connection(|connection| ledger::set_quarantined(connection, &install_scope, app_id, Some("release_binding_changed")));
+                                return Err(GatewayCommandError::Internal("release_revoked".into()));
+                            }
+                        }
+                        Err(policy::ProofError::NotFound) => {
+                            let _ = store.with_connection(|connection| ledger::set_quarantined(connection, &install_scope, app_id, Some("release_revoked")));
+                            return Err(GatewayCommandError::Internal("release_revoked".into()));
+                        }
+                        Err(policy::ProofError::Network) => { /* verified last-good feed + archive below */ }
+                        Err(error) => return Err(proof_gateway_error(error)),
+                    }
+                }
+                let package = match verify_catalog_bundle(&archive, &verified.authorization) {
+                    Ok(package) => package,
+                    Err(_) => {
+                        let _ = store.with_connection(|connection| ledger::set_quarantined(connection, &install_scope, app_id, Some("package_verification")));
+                        return Err(GatewayCommandError::Internal("digest_mismatch: installed package failed verification".into()));
+                    }
+                };
+                if !native_mini_app_claim_is_current(&claim) {
+                    return Err(GatewayCommandError::Internal("stale_account: account changed during resource verification".into()));
+                }
+                let resources = package.resource_entries().map(|(path, bytes, mime)| serde_json::json!({
+                    "path": path, "mime": mime, "bytesBase64": STANDARD.encode(bytes)
+                })).collect::<Vec<_>>();
+                let _ = operation_id;
+                Ok(serde_json::json!({"sameScopeHash": install_scope.account_scope,
+                    "descriptor": {
+                    "appId": package.app_id(), "version": package.version(),
+                    "digest": package.digest(), "entrypoint": package.entrypoint()
+                }, "resources": resources}))
+            }
+            "listInstalledMiniApps" | "uninstallMiniApp" => {
+                let app_id = if method == "uninstallMiniApp" {
+                    Some(mini_app_identifier_arg(object, "appId")?)
+                } else {
+                    None
+                };
+                let operation_id = if method == "uninstallMiniApp" {
+                    let value = mini_app_identifier_arg(object, "operationId")?;
+                    Some(value)
+                } else {
+                    None
+                };
+                let (install_scope, claim) = current_native_mini_app_scope(host)?;
+                let store = host.mini_app_store_port().map_err(|_| {
+                    GatewayCommandError::Internal(
+                        "not_configured: RuntimeStore SQLite connection is unavailable".into(),
+                    )
+                })?;
+                if let Some(app_id) = app_id {
+                    let operation_id = operation_id.expect("validated uninstall operation ID");
+                    store
+                        .with_connection(|connection| {
+                            ledger::initialize(connection)
+                                .and_then(|()| ledger::remove_fenced(connection, &install_scope, &install_scope, app_id, operation_id, || {
+                                    native_mini_app_claim_is_current(&claim)
+                                }))
+                        })
+                        .map(|removed| serde_json::json!({"appId": app_id, "removed": removed}))
+                        .map_err(|_| GatewayCommandError::Internal(
+                            "storage: mini-app code removal failed".into(),
+                        ))
+                } else {
+                    let items = store
+                        .with_connection(|connection| {
+                            ledger::initialize(connection)
+                                .and_then(|()| ledger::list_installed(connection, &install_scope))
+                        })
+                        .map_err(|_| GatewayCommandError::Internal(
+                            "storage: mini-app install listing failed".into(),
+                        ))?;
+                    let entries = items.into_iter().map(|item| {
+                        let validation = validate_installed_listing(
+                            host, &install_scope, &item.app_id, &item.digest,
+                            &item.version, &item.publisher_id, item.size_bytes,
+                        );
+                        NativeMiniAppEntry {
+                            app_id: item.app_id,
+                            display_name: validation.display_name,
+                            publisher_id: item.publisher_id,
+                            version: item.version,
+                            package_digest: item.digest,
+                            size_bytes: validation.size_bytes,
+                            offline_core: true,
+                            installed: true,
+                            supported: validation.supported,
+                            state: validation.state,
+                        }
+                    }).collect::<Vec<_>>();
+                    let response = serde_json::json!({"items": entries});
+                    if !native_mini_app_claim_is_current(&claim) {
+                        return Err(GatewayCommandError::Internal("stale_account: account changed during install listing".into()));
+                    }
+                    Ok(response)
+                }
+            }
+            _ => unreachable!("recognized mini-app method"),
+        }
+    };
+    Some(respond())
+}
+
+fn current_native_mini_app_scope(
+    host: &UnifiedAppHost,
+) -> Result<(
+    mahayana_host_runtime::extensions::mcp::installable_package::ledger::HostInstallScope,
+    mahayana_host_runtime::extensions::session::native_messaging::FabushiNativeCredentialClaim,
+), GatewayCommandError> {
+    use mahayana_host_runtime::extensions::{
+        mcp::installable_package::ledger,
+        session::native_messaging::{FabushiIdentityVerificationError, FabushiNativeMessagingClient},
+    };
+    let client = FabushiNativeMessagingClient::from_env().map_err(|_| {
+        GatewayCommandError::Internal("not_authenticated: Native account credential is unavailable".into())
+    })?;
+    let claim = client.credential_claim().map_err(|_| {
+        GatewayCommandError::Internal("not_authenticated: Native account credential is invalid or expired".into())
+    })?;
+    let scope_hash = claim.account_scope_hash();
+    let store = host.mini_app_store_port().map_err(|_| {
+        GatewayCommandError::Internal("not_configured: RuntimeStore SQLite connection is unavailable".into())
+    })?;
+    let verified = client.verify_account_identity();
+    let now_ms = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)
+        .map(|duration| duration.as_millis().min(u64::MAX as u128) as u64).unwrap_or(0);
+    let scope = match verified {
+        Ok(verified_claim) if verified_claim == claim => store.with_connection(|connection| {
+            ledger::initialize(connection)?;
+            ledger::verified_native_account(connection, &scope_hash, &claim.session_binding_hash, claim.expires_at_ms, now_ms)
+        }).map_err(|_| GatewayCommandError::Internal("storage: verified Native account scope could not be persisted".into()))?,
+        Ok(_) | Err(FabushiIdentityVerificationError::Unauthenticated)
+        | Err(FabushiIdentityVerificationError::Rejected)
+        | Err(FabushiIdentityVerificationError::IdentityMismatch) => {
+            let _ = store.with_connection(|connection| {
+                ledger::initialize(connection)?;
+                ledger::clear_cached_native_account(connection)
+            });
+            return Err(GatewayCommandError::Internal("not_authenticated: Backend did not confirm the Native account identity".into()));
+        }
+        Err(FabushiIdentityVerificationError::Network) => store.with_connection(|connection| {
+            ledger::initialize(connection)?;
+            ledger::cached_native_account(connection, &scope_hash, &claim.session_binding_hash, now_ms)
+        }).map_err(|_| GatewayCommandError::Internal("storage: cached Native account scope is unavailable".into()))?
+            .ok_or_else(|| GatewayCommandError::Internal("not_authenticated: no unexpired verified Native account snapshot is available offline".into()))?,
+    };
+    Ok((scope, claim))
+}
+
+fn native_mini_app_claim_is_current(
+    expected: &mahayana_host_runtime::extensions::session::native_messaging::FabushiNativeCredentialClaim,
+) -> bool {
+    use mahayana_host_runtime::extensions::session::native_messaging::FabushiNativeMessagingClient;
+    let now_ms = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)
+        .map(|duration| duration.as_millis().min(u64::MAX as u128) as u64).unwrap_or(0);
+    FabushiNativeMessagingClient::from_env().ok()
+        .and_then(|client| client.credential_claim().ok())
+        .is_some_and(|current| current == *expected && current.expires_at_ms > now_ms)
+}
+
+fn proof_gateway_error(error: mahayana_host_runtime::extensions::mcp::installable_package::policy::ProofError) -> GatewayCommandError {
+    use mahayana_host_runtime::extensions::mcp::installable_package::policy::ProofError;
+    let code = match error {
+        ProofError::NotFound => "release_not_approved",
+        ProofError::FeedFreshness => "trust_feed_expired",
+        ProofError::TrustRollback => "trust_feed_rollback",
+        ProofError::Revoked => "release_revoked",
+        ProofError::Signature => "release_signature_invalid",
+        ProofError::DescriptorBinding | ProofError::Authorization | ProofError::Malformed => "trust_feed_invalid",
+        ProofError::Network => "marketplace_unavailable",
+        ProofError::Rejected => "marketplace_rejected",
+        ProofError::ArtifactSize => "digest_mismatch",
+    };
+    GatewayCommandError::Internal(code.into())
+}
+
+fn refresh_mini_app_trust(
+    client: &mahayana_host_runtime::extensions::mcp::installable_package::policy::CatalogClient,
+    store: &mahayana_unified_app_host::MiniAppRuntimeStorePort,
+    allow_transport_fallback: bool,
+) -> Result<Option<String>, GatewayCommandError> {
+    use mahayana_host_runtime::extensions::mcp::installable_package::{ledger, policy};
+    let cached = store.with_connection(|connection| {
+        ledger::initialize(connection)?;
+        ledger::current_trust_envelope(connection)
+    }).map_err(|_| GatewayCommandError::Internal("storage: mini-app trust state could not be read".into()))?;
+    let fetched = match client.fetch_install_trust() {
+        Ok(raw) => raw,
+        Err(error) if allow_transport_fallback && policy::is_transport_failure(&error) => {
+            let cached = cached.ok_or_else(|| GatewayCommandError::Internal("marketplace_unavailable".into()))?;
+            policy::verify_trust_feed(&cached, policy::now_ms(), true).map_err(proof_gateway_error)?;
+            return Ok(Some(cached));
+        }
+        Err(error) => return Err(proof_gateway_error(error)),
+    };
+    let verified = policy::verify_trust_feed(&fetched, policy::now_ms(), false).map_err(proof_gateway_error)?;
+    policy::trust_feed_not_rolled_back(&verified, cached.as_deref()).map_err(proof_gateway_error)?;
+    store.with_connection(|connection| {
+        ledger::cache_verified_trust(connection, verified.epoch, verified.issued_at_ms,
+            &verified.signed_payload, &verified.envelope_json)
+    }).map_err(|_| GatewayCommandError::Internal("storage: verified trust feed could not be persisted".into()))?;
+    Ok(Some(verified.envelope_json))
+}
+
+fn list_approved_mini_apps(host: &UnifiedAppHost) -> Result<serde_json::Value, GatewayCommandError> {
+    use mahayana_host_runtime::extensions::mcp::installable_package::{ledger, policy::{self, CatalogClient}};
+    let (install_scope, claim) = current_native_mini_app_scope(host)?;
+    let store = host.mini_app_store_port().map_err(|_| GatewayCommandError::Internal("not_configured: RuntimeStore SQLite connection is unavailable".into()))?;
+    let (installed, cached_trust) = store.with_connection(|connection| {
+        ledger::initialize(connection)?;
+        Ok::<_, ledger::InstallError>((
+            ledger::list_installed(connection, &install_scope)?,
+            ledger::current_trust_envelope(connection)?,
+        ))
+    }).map_err(|_| GatewayCommandError::Internal("storage: mini-app install listing failed".into()))?;
+    let client = CatalogClient::production_from_environment().map_err(proof_gateway_error)?;
+    let latest_trust = refresh_mini_app_trust(&client, &store, true)?.or(cached_trust);
+    let descriptors = client.list_descriptors().map_err(proof_gateway_error)?;
+    let mut items = Vec::new();
+    for entry in descriptors {
+        let descriptor = entry.get("descriptor").unwrap_or(&entry);
+        let Some(app_id) = policy::descriptor_app_id(descriptor) else { continue };
+        let Some(version) = policy::descriptor_version(descriptor) else { continue };
+        if stable_version_tuple(version).is_none() { continue; }
+        let Some(publisher_id) = policy::descriptor_publisher(descriptor) else { continue };
+        let raw = match client.fetch_install_proof(descriptor) {
+            Ok(raw) => raw,
+            Err(policy::ProofError::NotFound) => continue,
+            Err(error) => return Err(proof_gateway_error(error)),
+        };
+        let proof_raw = latest_trust.as_deref().map_or(Ok(raw.clone()), |trust| policy::overlay_trust(&raw, trust))
+            .map_err(proof_gateway_error)?;
+        let proof = policy::verify_install_proof(&proof_raw, app_id, policy::now_ms(), false)
+            .map_err(proof_gateway_error)?;
+        if !policy::descriptor_supports_desktop(&proof.descriptor) { continue; }
+        let is_installed = installed.iter().any(|row| row.app_id == app_id);
+        items.push(serde_json::json!({
+            "appId": app_id,
+            "displayName": policy::descriptor_display_name(&proof.descriptor).unwrap_or(app_id),
+            "publisherId": publisher_id,
+            "version": version,
+            "packageDigest": proof.artifact.digest,
+            "sizeBytes": proof.artifact.size_bytes,
+            "offlineCore": true,
+            "installed": is_installed,
+            "supported": true
+        }));
+    }
+    if !native_mini_app_claim_is_current(&claim) {
+        return Err(GatewayCommandError::Internal("stale_account: account changed during catalog request".into()));
+    }
+    Ok(serde_json::json!({"items": items}))
+}
+
+fn install_approved_mini_app(host: &UnifiedAppHost, app_id: &str, operation_id: &str) -> Result<serde_json::Value, GatewayCommandError> {
+    use mahayana_host_runtime::extensions::mcp::installable_package::{ledger, policy::{self, CatalogClient}, verify_catalog_bundle};
+    let (install_scope, claim) = current_native_mini_app_scope(host)?;
+    let store = host.mini_app_store_port().map_err(|_| GatewayCommandError::Internal("not_configured: RuntimeStore SQLite connection is unavailable".into()))?;
+    let cached_trust = store.with_connection(|connection| {
+        ledger::initialize(connection)?;
+        ledger::current_trust_envelope(connection)
+    }).map_err(|_| GatewayCommandError::Internal("storage: mini-app trust state could not be read".into()))?;
+    let client = CatalogClient::production_from_environment().map_err(proof_gateway_error)?;
+    let latest_trust = refresh_mini_app_trust(&client, &store, false)?.or(cached_trust);
+    let descriptors = client.list_descriptors().map_err(proof_gateway_error)?;
+    let mut approved = Vec::new();
+    for entry in descriptors {
+        let descriptor = entry.get("descriptor").unwrap_or(&entry);
+        if policy::descriptor_app_id(descriptor) != Some(app_id) { continue; }
+        if policy::descriptor_version(descriptor).and_then(stable_version_tuple).is_none() { continue; }
+        let raw = match client.fetch_install_proof(descriptor) {
+            Ok(raw) => raw,
+            Err(policy::ProofError::NotFound) => continue,
+            Err(error) => return Err(proof_gateway_error(error)),
+        };
+        let proof_raw = latest_trust.as_deref().map_or(Ok(raw.clone()), |trust| policy::overlay_trust(&raw, trust)).map_err(proof_gateway_error)?;
+        let proof = policy::verify_install_proof(&proof_raw, app_id, policy::now_ms(), false).map_err(proof_gateway_error)?;
+        if !policy::descriptor_supports_desktop(&proof.descriptor) { continue; }
+        approved.push((proof, proof_raw));
+    }
+    approved.sort_by(|a, b| stable_version_tuple(policy::descriptor_version(&a.0.descriptor).unwrap_or_default()).cmp(&stable_version_tuple(policy::descriptor_version(&b.0.descriptor).unwrap_or_default())));
+    let Some((proof, raw)) = approved.pop() else {
+        return Err(GatewayCommandError::Internal("release_not_approved".into()));
+    };
+    let archive = client.download_artifact(&proof.artifact.digest, proof.artifact.size_bytes, proof.artifact.url.as_deref()).map_err(proof_gateway_error)?;
+    let package = verify_catalog_bundle(&archive, &proof.authorization).map_err(|_| GatewayCommandError::Internal("digest_mismatch: downloaded mini-app package failed verification".into()))?;
+    if !native_mini_app_claim_is_current(&claim) {
+        return Err(GatewayCommandError::Internal("stale_account: account changed during install".into()));
+    }
+    let record = store.with_connection(|connection| {
+        ledger::initialize(connection)?;
+        let old = ledger::installed(connection, &install_scope, app_id)?;
+        let changed = old.as_ref().is_none_or(|row| row.digest != package.digest());
+        let record = ledger::activate_authorized_fenced(connection, &install_scope, &install_scope, operation_id, package, &raw, policy::now_ms(), || {
+            native_mini_app_claim_is_current(&claim)
+        })?;
+        Ok::<_, ledger::InstallError>((record, changed))
+    }).map_err(|_| GatewayCommandError::Internal("storage: mini-app activation failed".into()))?;
+    Ok(serde_json::json!({"appId": record.0.app_id, "version": record.0.version,
+        "digest": record.0.digest, "publisherId": proof.authorization.publisher_id,
+        "offlineCore": true, "trustEpoch": proof.authorization.trust_epoch,
+        "state": "ready", "changed": record.1}))
+}
+
+fn stable_version_tuple(value: &str) -> Option<(u64, u64, u64)> {
+    let mut parts = value.split('.').map(|part| part.parse::<u64>().ok());
+    match (parts.next().flatten(), parts.next().flatten(), parts.next().flatten(), parts.next()) {
+        (Some(major), Some(minor), Some(patch), None) => Some((major, minor, patch)),
+        _ => None,
+    }
+}
+
+struct InstalledMiniAppValidation {
+    display_name: String,
+    size_bytes: u64,
+    supported: bool,
+    state: mahayana_host_runtime::extensions::mcp::installable_package::NativeMiniAppInstallState,
+}
+
+fn quarantined_mini_app_listing(
+    host: &UnifiedAppHost,
+    scope: &mahayana_host_runtime::extensions::mcp::installable_package::ledger::HostInstallScope,
+    app_id: &str,
+    fallback_size_bytes: u64,
+    reason: &str,
+) -> InstalledMiniAppValidation {
+    use mahayana_host_runtime::extensions::mcp::installable_package::ledger;
+    if let Ok(store) = host.mini_app_store_port() {
+        let _ = store.with_connection(|connection| {
+            ledger::set_quarantined(connection, scope, app_id, Some(reason))
+        });
+    }
+    InstalledMiniAppValidation {
+        display_name: app_id.to_string(),
+        size_bytes: fallback_size_bytes,
+        supported: false,
+        state: mahayana_host_runtime::extensions::mcp::installable_package::NativeMiniAppInstallState::Quarantined,
+    }
+}
+
+fn validate_installed_listing(
+    host: &UnifiedAppHost,
+    scope: &mahayana_host_runtime::extensions::mcp::installable_package::ledger::HostInstallScope,
+    app_id: &str,
+    digest: &str,
+    expected_version: &str,
+    expected_publisher_id: &str,
+    fallback_size_bytes: u64,
+) -> InstalledMiniAppValidation {
+    use mahayana_host_runtime::extensions::mcp::installable_package::{ledger, policy, verify_catalog_bundle};
+    let Ok(store) = host.mini_app_store_port() else {
+        return InstalledMiniAppValidation { display_name: app_id.into(), size_bytes: fallback_size_bytes, supported: false, state: mahayana_host_runtime::extensions::mcp::installable_package::NativeMiniAppInstallState::Quarantined };
+    };
+    let hard_revoked = store.with_connection(|connection| ledger::quarantine_reason(connection, scope, app_id))
+        .ok().flatten().as_deref() == Some("release_revoked");
+    if hard_revoked {
+        return InstalledMiniAppValidation {
+            display_name: app_id.to_string(), size_bytes: fallback_size_bytes, supported: false,
+            state: mahayana_host_runtime::extensions::mcp::installable_package::NativeMiniAppInstallState::Quarantined,
+        };
+    }
+    let verified = store.with_connection(|connection| {
+        ledger::load_active_authorized_archive(connection, scope, app_id)
+    });
+    let Ok(Some((archive, snapshot, latest_trust))) = verified else {
+        return quarantined_mini_app_listing(host, scope, app_id, fallback_size_bytes, "authorization_missing");
+    };
+    let Ok(snapshot) = policy::overlay_cached_trust(&snapshot, latest_trust.as_deref()) else {
+        return quarantined_mini_app_listing(host, scope, app_id, fallback_size_bytes, "cached_policy");
+    };
+    let Ok(proof) = policy::verify_install_proof(&snapshot, app_id, policy::now_ms(), true) else {
+        return quarantined_mini_app_listing(host, scope, app_id, fallback_size_bytes, "cached_policy");
+    };
+    if proof.authorization.version != expected_version
+        || proof.authorization.publisher_id != expected_publisher_id
+        || proof.artifact.size_bytes != archive.len() as u64
+        || proof.artifact.size_bytes > 100 * 1024 * 1024
+    {
+        return quarantined_mini_app_listing(host, scope, app_id, fallback_size_bytes, "artifact_size");
+    }
+    let Ok(package) = verify_catalog_bundle(&archive, &proof.authorization) else {
+        return quarantined_mini_app_listing(host, scope, app_id, fallback_size_bytes, "package_verification");
+    };
+    if package.digest() != digest || package.version() != expected_version
+        || package.publisher_id() != expected_publisher_id || package.app_id() != app_id
+    {
+        return quarantined_mini_app_listing(host, scope, app_id, fallback_size_bytes, "active_digest");
+    }
+    let _ = store.with_connection(|connection| ledger::set_quarantined(connection, scope, app_id, None));
+    let display_name = policy::descriptor_display_name(&proof.descriptor)
+        .filter(|name| !name.trim().is_empty() && name.len() <= 160)
+        .unwrap_or(app_id)
+        .to_string();
+    InstalledMiniAppValidation {
+        display_name,
+        size_bytes: proof.artifact.size_bytes,
+        supported: true,
+        state: mahayana_host_runtime::extensions::mcp::installable_package::NativeMiniAppInstallState::Ready,
+    }
+}
+
+fn mini_app_identifier_arg<'a>(
+    object: &'a serde_json::Map<String, serde_json::Value>,
+    field: &str,
+) -> Result<&'a str, GatewayCommandError> {
+    let value = object.get(field).and_then(serde_json::Value::as_str).ok_or_else(|| {
+        GatewayCommandError::BadRequest(format!("mini-app intent requires {field}"))
+    })?;
+    let valid = !value.is_empty()
+        && value.len() <= 128
+        && value.as_bytes()[0].is_ascii_alphanumeric()
+        && value.bytes().all(|byte| byte.is_ascii_alphanumeric() || b"._-".contains(&byte));
+    if valid {
+        Ok(value)
+    } else {
+        Err(GatewayCommandError::BadRequest(format!(
+            "mini-app intent has invalid {field}"
+        )))
     }
 }
 
@@ -10924,6 +11448,46 @@ fn main() {
         Err(error) => {
             eprintln!("failed to start production Host extensions: {error}");
             return;
+        }
+    };
+    let mut network_enrollment_supervisor: Option<NetworkEnrollmentSupervisor> = {
+        match FileRemoteComputerDeviceSecretProvider::from_environment() {
+            Ok(device_provider) => {
+                let credential_provider: Arc<dyn FabushiCoreCredentialProvider> =
+                    production_extensions.auth.service().clone();
+                let device_secret_provider: Arc<dyn RemoteComputerDeviceSecretProvider> =
+                    Arc::new(device_provider);
+                let api_base_url = std::env::var(FABUSHI_API_BASE_URL_ENV)
+                    .unwrap_or_else(|_| DEFAULT_FABUSHI_API_BASE_URL.to_string());
+                let target_service = production_remote_computer_target_service(
+                    &api_base_url,
+                    Arc::clone(&credential_provider),
+                    Arc::clone(&device_secret_provider),
+                )
+                .map(Some)
+                .unwrap_or_else(|error| {
+                    eprintln!("[fabushi-fdn] remote target service unavailable: {error}");
+                    None
+                });
+                match NetworkEnrollmentOwner::from_environment(
+                    credential_provider,
+                    device_secret_provider,
+                    app_data_dir.join("fdn-network"),
+                ) {
+                    Ok(owner) => match NetworkEnrollmentSupervisor::start_with_service(owner, target_service) {
+                        Ok(supervisor) => Some(supervisor),
+                        Err(error) => {
+                            eprintln!("[fabushi-fdn] network enrollment supervisor unavailable: {error}");
+                            None
+                        }
+                    },
+                    Err(error) => {
+                        eprintln!("[fabushi-fdn] network enrollment owner unavailable: {error}");
+                        None
+                    }
+                }
+            }
+            Err(_) => None,
         }
     };
     let host_telemetry = production_extensions.telemetry.clone();
@@ -12802,6 +13366,9 @@ fn main() {
         }
     }
     drop(platform_tx);
+    if let Some(supervisor) = network_enrollment_supervisor.as_mut() {
+        supervisor.stop();
+    }
     ack_redrive_stop.store(true, Ordering::Release);
     drop(gateway_server);
     runner_registry.cancel_all("Mahayana Host shutting down");

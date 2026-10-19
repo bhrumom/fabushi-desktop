@@ -143,6 +143,17 @@ export function createDesktopPreloadBridge(options: {
       items: paths.map((path, index) => ({ path, ...(filenames[index] ? { name: filenames[index] } : {}) })),
     })),
     async discardStagedAttachment(path: string) { await edge("discardStagedAttachment", { path }); },
+    marketplaceMiniApps: {
+      list: () => ipc.invoke("sand:miniapp-list"),
+      install: (appId: string) => ipc.invoke("sand:miniapp-install", appId),
+      launch: (appId: string) => ipc.invoke("sand:miniapp-launch", appId),
+      removeCode: (appId: string) => ipc.invoke("sand:miniapp-remove-code", appId),
+    },
+    marketplacePublisher: {
+      ownedNamespaces: () => ipc.invoke("sand:marketplace-publisher-owned"),
+      claimDandelionNamespace: () => ipc.invoke("sand:marketplace-publisher-claim"),
+      submitDandelion: () => ipc.invoke("sand:marketplace-submit-dandelion"),
+    },
     mcp: {
       list: () => ipc.invoke("sand:mcp-list"),
       effectivePlugins: () => ipc.invoke("sand:mcp-effective-plugins"),
