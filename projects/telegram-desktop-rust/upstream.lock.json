@@ -258,10 +258,10 @@
   "coverage": {
     "root_source_entries_total": 6717,
     "recursive_source_entries_total": 16202,
-    "unknown_minimum": 16189,
-    "unread_minimum": 16162,
+    "unknown_minimum": 16188,
+    "unread_minimum": 16161,
     "omitted_known": 0,
-    "note": "Revision 9 live rebaseline is in progress for telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a (tree 5151db79560ed40bf3802482fcfb74b950be6c40). Root non-directory inventory remains 6,717 and recursive authority remains 16,202. First thirteen ordered entries are closed through .agents/shared/project-context.md; counters are unknown=16,189, unread=16,162, omitted=0."
+    "note": "Revision 9 live rebaseline is in progress for telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a (tree 5151db79560ed40bf3802482fcfb74b950be6c40). Root non-directory inventory remains 6,717 and recursive authority remains 16,202. First fourteen ordered entries are closed through .agents/shared/test-loop.md; counters are unknown=16,188, unread=16,161, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -275,7 +275,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Live rebaseline identity for telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a remains source-closure open. Entry 13 .agents/shared/project-context.md is mapped to existing source-neutral repository workflow/context/evidence governance; full closure remains unknown=16,189, unread=16,162, omitted=0, so acceptance remains fail-closed."
+    "note": "Live rebaseline identity for telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a remains source-closure open. Entry 14 .agents/shared/test-loop.md is mapped to existing source-neutral repository lifecycle / Test Strategy / Test Evidence Contract owners; full closure remains unknown=16,188, unread=16,161, omitted=0, so acceptance remains fail-closed."
   },
   "baseline_identity_evidence": {
     "status": "pending-current-head-revalidation",
