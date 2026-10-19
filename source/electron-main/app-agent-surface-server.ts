@@ -51,7 +51,10 @@ export function createAppAgentSurfaceServer(options: { app: { getPath(name: "use
           if (request.headers.authorization !== `Bearer ${token}`) return json(response, 401, { error: "unauthorized" });
           const operation = request.url.slice(4).split("?")[0] as Operation;
           if (!["status", "snapshot", "find", "action", "wait", "assert"].includes(operation)) return json(response, 404, { error: "unsupported_operation" });
-          const input = await readJson(request);
+          const envelope = await readJson(request);
+          const input = envelope.input && typeof envelope.input === "object" && !Array.isArray(envelope.input)
+            ? envelope.input as Record<string, unknown>
+            : envelope;
           const win = options.getWindow();
           if (win == null || win.isDestroyed() || win.webContents.isDestroyed()) return json(response, 503, { error: "app_surface_renderer_unavailable" });
           const result = await Promise.race([win.webContents.executeJavaScript(rendererScript(operation, input), true), new Promise((_, reject) => setTimeout(() => reject(new Error("operation_timeout")), OP_TIMEOUT_MS))]);
@@ -67,3 +70,4 @@ export function createAppAgentSurfaceServer(options: { app: { getPath(name: "use
     async close() { if (server != null) await new Promise<void>((resolve) => server!.close(() => resolve())); server = null; endpoint = ""; await rm(discoveryPath, { force: true }); },
   };
 }
+
