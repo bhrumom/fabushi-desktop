@@ -1,0 +1,83 @@
+# Global Dandelion cross-platform delivery and evidence plan
+
+Status: active; discovery baseline 2026-10-19; implementation must remain
+fail-closed until each platform has a real Host owner and exact-head evidence.
+
+This document is the durable cross-repository plan for Global Dandelion. The
+existing offline package specification and the native Dandelion architecture
+spec remain authoritative for package format, protocol, security and Rust
+ownership. This document only binds the cross-platform delivery work to stable
+requirement and acceptance IDs.
+
+## Current baseline
+
+| Repository | Observed revision | Current fact |
+| --- | --- | --- |
+| Desktop | `6fc7291143ae2bc988105c9361cf5d44db9263c3` | Typed `fabushi.miniapp.tools.v1` router and CLI-backed Host owner exist. |
+| Android | `266f90f394e5a12219bc5d9c53cca5aec243bca3` | WebView bridge and marketplace projection exist; Global Dandelion native adapter is not evidenced. |
+| iOS | `a99a181f58aa544b2d3fcad6eece9dc3e96c316a` | Generic signed Mini App/WebMCP surface exists; Global Dandelion native adapter is not evidenced. |
+| Backend | `56de6f0d27705f95e1b98ec99515074eb8f3f728` plus uncommitted release worktree changes | Package delivery/review code is being repaired; no current public approval is inferred. |
+| Global Dandelion | source snapshot without Git metadata | Native Rust CLI exposes the 37-row parity inventory; exact source commit is not available in this checkout. |
+
+The baseline is evidence for planning only. It is not release or device
+acceptance evidence.
+
+## Stable requirements
+
+- GD-X01: one versioned tool contract is the only UI-to-Host boundary.
+- GD-X02: every call validates app identity, package digest, account
+  generation, declared capability, arguments, approval and platform state.
+- GD-X03: native code owns file handles, credentials, sockets, processes,
+  mounts and update keys; no such value crosses the WebView bridge.
+- GD-X04: long operations have operation ID, bounded progress, cancellation,
+  timeout, cleanup and late-result fencing.
+- GD-X05: unsupported or unconfigured platform behavior returns a stable
+  `CAPABILITY_UNAVAILABLE`/`NOT_CONFIGURED` result and is hidden in the UI.
+- GD-X06: package signature, review, catalog approval, installation and live
+  device behavior are independent evidence layers.
+- GD-X07: all executable verification follows the owning repository rule:
+  GitHub Actions or an explicitly authorized remote runtime only.
+
+## Capability matrix and current disposition
+
+| Acceptance ID | Contract methods | Desktop | Android | iOS | Evidence required |
+| --- | --- | --- | --- | --- | --- |
+| GD-XA-01 | `offline.capabilities`, `offline.state.read` | implemented in Host | bridge projection only | bridge projection only | exact-head Host call and offline launch |
+| GD-XA-02 | `selection.pick`, `selection.release` | implemented with picker/root checks | WebView bridge only | generic picker surface only | real picker and scope revalidation |
+| GD-XA-03 | `transfer.send/receive/status/cancel` | CLI owner, config-gated | not configured | not configured | authenticated fixture transfer, cancel/resume |
+| GD-XA-04 | `scan.metadata/read` | CLI owner, root-gated | not configured | not configured | bounded scan and negative path tests |
+| GD-XA-05 | `state.inspect/import` | inspect owner; import is native-picker gated | not configured | not configured | corruption, import idempotence, restart |
+| GD-XA-06 | `config.defaults/check` | CLI owner | not configured | not configured | schema and effective-config evidence |
+| GD-XA-07 | `platform.inspect/mounts/time/watch` | CLI owner | not configured | not configured | supported OS API or hidden panel |
+| GD-XA-08 | `hotspot.plan/apply/status/stop` | explicit opt-in only | not configured | not configured | real reversible OS API and rollback |
+| GD-XA-09 | `update.check/stage` | updater owner, opt-in | not configured | not configured | signed staging and rollback |
+| GD-XA-10 | `diagnostics.selfTest/doctor/status` | CLI owner | not configured | not configured | exact binary/version and failure mapping |
+| GD-XA-11 | `compat.packetInspect/countryLookup/linkExercise/linkRecover` | partial CLI owner | not configured | not configured | complete adapter or capability hidden |
+| GD-XA-12 | package/review/install | backend + Desktop Host path | catalog/install path only | catalog/install path only | signature, review, immutable digest, clean install |
+
+“Implemented” above means source ownership only. A row becomes passed only
+after the evidence listed in its final column is attached to an exact commit.
+
+## Delivery order
+
+1. Keep this matrix and the existing package specs synchronized with the exact
+   contract and platform status.
+2. Finish Desktop contract tests and exact-head Actions evidence.
+3. Add Android and iOS native adapters around their existing Host/Coordinator
+   owners. Until then, their bridges may discover only genuinely granted tools
+   and must not advertise the desktop CLI capabilities.
+4. Update the descriptor only after platform adapters exist; re-run package
+   signing and review rather than widening an existing signed artifact.
+5. Run platform install and device workflows, then perform the compliance review
+   against GD-X01..GD-X07 and GD-XA-01..GD-XA-12.
+
+## Explicit blockers
+
+- Android/iOS native Rust-core integration and device workflows are not present
+  in the observed revisions.
+- The Global Dandelion snapshot lacks Git provenance in this workspace.
+- Hardware hotspot, removable-device hotplug, production signer, catalog
+  approval, physical-device installation and store distribution require external
+  accounts/devices or protected Actions configuration.
+
+These are blocked, not passed, until their exact-source evidence exists.
