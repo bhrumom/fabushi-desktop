@@ -9756,9 +9756,9 @@
         "projects/fabushi-communication-platform/quality/evidence-contract.md"
       ],
       "fabushi_target_symbols": [
-        "Repository quality-health governance",
-        "Repository quality-health qualification",
-        "Repository quality-health evidence"
+        "Repository quality-health native invocation",
+        "Repository quality-health native invocation qualification",
+        "Repository quality-health native invocation evidence"
       ],
       "target_language": "Markdown",
       "language_rationale": "The entry is repository host registration metadata, not shipping product logic.",
@@ -9785,14 +9785,14 @@
         "Independent exact-head GitHub Actions verification of this source-entry mapping commit is pending."
       ],
       "production_entrypoints": [
-        "AGENTS.md -> Repository quality-health governance",
-        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Repository quality-health qualification",
-        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Repository quality-health evidence"
+        "AGENTS.md -> Repository quality-health native invocation",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Repository quality-health native invocation qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Repository quality-health native invocation evidence"
       ],
       "production_evidence": [
-        "path:AGENTS.md#Repository quality-health governance",
-        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Repository quality-health qualification",
-        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Repository quality-health evidence"
+        "path:AGENTS.md#Repository quality-health native invocation",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Repository quality-health native invocation qualification",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Repository quality-health native invocation evidence"
       ],
       "test_evidence": [
         "dossier:projects/telegram-desktop-rust/dossiers/code-health-openai-registration-complete-read.md",
