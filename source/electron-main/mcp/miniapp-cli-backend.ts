@@ -16,6 +16,7 @@ import type {
   MiniAppCapability,
   MiniAppSelectionEntry,
   MiniAppTargetPool,
+  MiniAppTransferSendConfig,
   MiniAppToolBackend,
 } from "./miniapp-tools.js";
 
@@ -222,13 +223,23 @@ export function createDandelionCliBackend(
       selections.delete(selectionId);
       return Promise.resolve();
     },
-    async send(selectionId, targetPoolId) {
+    async send(sendConfig: MiniAppTransferSendConfig) {
       if (!nativeCliSupported) throw new Error("PLATFORM_UNSUPPORTED");
-      const root = requireSelection(selectionId);
-      if (!config.targetPools.some((pool) => pool.id === targetPoolId)) throw new Error("UNKNOWN_TARGET_POOL");
+      const root = requireSelection(sendConfig.selectionId);
+      if (!config.targetPools.some((pool) => pool.id === sendConfig.targetPoolId)) throw new Error("UNKNOWN_TARGET_POOL");
       pruneOperations();
       const operationId = randomUUID();
-      const handle = spawnCommand(["run", "--source", root, "--json"]);
+      const argv = ["run", "--source", root];
+      if (sendConfig.repeat !== undefined) argv.push("--repeat", String(sendConfig.repeat));
+      if (sendConfig.watch === true) argv.push("--watch");
+      if (sendConfig.intervalMs !== undefined) argv.push("--interval-ms", String(sendConfig.intervalMs));
+      if (sendConfig.resume === true) argv.push("--resume");
+      if (sendConfig.rateBytesPerSecond !== undefined) argv.push("--rate-bytes-per-second", String(sendConfig.rateBytesPerSecond));
+      if (sendConfig.trafficLimitBytes !== undefined) argv.push("--traffic-limit-bytes", String(sendConfig.trafficLimitBytes));
+      if (sendConfig.queueCapacity !== undefined) argv.push("--queue-capacity", String(sendConfig.queueCapacity));
+      if (sendConfig.chunkBytes !== undefined) argv.push("--chunk-bytes", String(sendConfig.chunkBytes));
+      argv.push("--json");
+      const handle = spawnCommand(argv);
       const timer = setTimeout(() => handle.kill(), timeoutMs);
       const operation: Operation = { handle, timer, state: "running" };
       operations.set(operationId, operation);
