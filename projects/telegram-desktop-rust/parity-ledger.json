@@ -6,10 +6,10 @@
   "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16176,
-    "unread": 16149,
+    "unknown": 16175,
+    "unread": 16148,
     "omitted": 0,
-    "responsibilities_total": 48,
+    "responsibilities_total": 49,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -11855,6 +11855,317 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral repository-quality source-derived CMake/build-model contract read from telegramdesktop/tdesktop authority; no upstream Python/C++ implementation copied into Fabushi shipping runtime.",
       "notes": "Actual 1-based recursive array entry 26 is .agents/skills/code-health/scripts/cmake_model.py. Related include/report/review/health/tests/atlas/clones/references/perform-task/scheduled callers were read to understand this entry and remain independently accounted inventory entries unless separately represented. This closure decrements only one independent source entry to unknown=16,176 and unread=16,149, omitted=0.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
+      "source_path": ".agents/skills/code-health/scripts/cpp_text.py",
+      "source_blob_sha": "366f173248add43c34317c8fe17d9ca31d46b1d4",
+      "source_kind": "repository_quality_source_text_normalization_instrument",
+      "module_id": "tdesktop.code-health-source-text-normalization-instrument",
+      "responsibility_id": "TDRP-R9-CODE-HEALTH-SOURCE-TEXT-NORMALIZATION-001",
+      "source_symbols": [
+        "Function",
+        "Class",
+        "is_tu",
+        "is_header",
+        "functions",
+        "definition_name",
+        "classes",
+        "includes",
+        "identifiers",
+        "code_lines",
+        "normalize"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-REPOSITORY-RESPONSIBILITY-GOVERNANCE",
+        "CAP-REPOSITORY-TASK-EVIDENCE"
+      ],
+      "dependency_ids": [
+        ".agents/skills/code-health/SKILL.md",
+        ".agents/skills/code-health/scripts/sources.py",
+        ".agents/skills/code-health/scripts/metrics.py",
+        ".agents/skills/code-health/scripts/includes.py",
+        ".agents/skills/code-health/scripts/clones.py",
+        ".agents/skills/code-health/scripts/report.py",
+        ".agents/skills/code-health/scripts/review.py",
+        ".agents/skills/code-health/scripts/atlas.py",
+        ".agents/skills/code-health/scripts/health.py",
+        ".agents/skills/code-health/scripts/health_test.py",
+        ".agents/skills/code-health/references/atlas.md",
+        ".agents/skills/code-health/references/maps.md",
+        ".agents/skills/code-health/references/classes.md",
+        ".agents/skills/code-health/references/survey.md",
+        ".agents/skills/perform-task/SKILL.md",
+        ".agents/skills/perform-task/references/mechanical-lane.md",
+        ".agents/skills/perform-task/references/pipeline.md",
+        ".agents/skills/perform-task/references/phase-prompts.md",
+        ".agents/skills/process-inbox/SKILL.md",
+        ".agents/skills/continue/SKILL.md",
+        "Fabushi repository AI development lifecycle",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract",
+        "Repository duplicate/clone evidence governance"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/code-health-cpp-text-script-complete-read.md",
+      "behavior_contract": "Provide deterministic, line-provenance-preserving lexical normalization and bounded C++ layout heuristics from one exact source snapshot for repository quality consumers, without claiming compiler/language authority; keep caller results, failures, findings, ownership and routing with the existing source-neutral owners and preserve unsupported or ambiguous syntax as limitations rather than proof of absence.",
+      "state_machine": "exact source snapshot -> declared TU/header source kind -> raw or block-comment-blanked line-preserving view -> quoted include/identifier/bounded definition/class/text normalization facts -> metrics/include/clone/report/review/atlas consumers -> health scan/check/area/verify/atlas command -> existing findings/class/placement/task routing; unsupported/ambiguous lexical semantics -> explicit limitation/unknown",
+      "side_effects": [
+        "Read-only transient repository-quality text evidence only; no source mutation, compiler/build execution, durable findings state, owner approval, task insertion, shipping runtime, network request or parallel parser store."
+      ],
+      "failure_cases": [
+        "Stale, partial or mutable source authority is used for durable scanner evidence",
+        "Block/inline comment heuristics or comment-like text in literals/raw strings are presented as full C++ lexical correctness",
+        "Comment blanking/removal loses physical line cardinality or original report line provenance",
+        "Unsupported macro/generated/nested/indented/layout syntax is treated as proof a definition, include, identifier use or behavior is absent",
+        "Identifier/include/function/class/member heuristics are promoted to compiler name/type/build semantics",
+        "Malformed input or scanner exception is rewritten as zero findings or a clean review",
+        "Caller-owned thresholds, strictness, resolution, findings, approval or routing semantics move into the text primitive",
+        "Telegram Python code-health runtime is copied or a second parser/findings/ownership/task owner is created"
+      ],
+      "ui_disposition": "Not applicable; repository quality/text-evidence tooling only.",
+      "non_ui_responsibilities": [
+        "Translation-unit/header source-kind classification",
+        "Quoted include/import extraction with original line numbers",
+        "Lexical identifier extraction",
+        "Block-comment blanking/removal with physical line-count preservation",
+        "Logic-free-line filtering and deterministic whitespace normalization",
+        "Bounded callable definition-name recognition",
+        "Column-zero function span heuristics with inclusive source lines",
+        "Column-zero class/struct span and rough one-level member counts",
+        "Original path/line provenance for clone/review/include consumers",
+        "Explicit lexical-approximation and non-compiler authority boundary",
+        "Existing metrics/include/clone/report/review/atlas/health result-owner boundaries",
+        "Existing class/placement/perform-task/process-inbox/continue routing boundaries"
+      ],
+      "platform_delta": "Fabushi already owns the applicable source-neutral repository responsibility/quality/task-evidence lifecycle, with clone normalization already present as one consumer-specific contract. This closure generalizes the shared source-text line/provenance/recognition boundary for metrics/includes/review/clones/atlas without porting Telegram Python code-health runtime or introducing a second parser/findings/ownership/task owner.",
+      "existing_owner_candidates": [
+        "AGENTS.md repository quality-health governance",
+        "AGENTS.md Repository duplicate/clone evidence governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "ordinary Fabushi task/review/evidence lifecycle"
+      ],
+      "existing_owner": "Fabushi repository responsibility/quality/task-evidence governance",
+      "rejected_existing_owners": [
+        "Shipping Agent/Coordinator/Host/Runner do not own repository source-text quality analysis",
+        "Product-domain stores, UI roots and packaging/updater owners do not own lexical repository evidence",
+        "Copying Telegram cpp_text.py/metrics/includes/review/health runtime would create a source-specific parallel parser/workflow",
+        "A new parser findings store, ownership graph or task queue would duplicate canonical repository governance",
+        "Treating lexical recognition as full C++ or configured-build authority would weaken stronger compiler/build/runtime evidence owners"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository source-text normalization evidence governance",
+        "Repository source-text normalization evidence qualification",
+        "Repository source-text normalization evidence",
+        "Repository duplicate/clone evidence governance"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The upstream Python module is a repository-quality lexical evidence helper, not shipping product logic or a compiler frontend; Fabushi preserves the applicable responsibility in source-neutral governance/evidence contracts and reuses caller-owned quality/task workflows.",
+      "command_event_contracts": [
+        "exact source text -> declared source kind -> deterministic lexical/comment/line normalization -> bounded text facts with original provenance -> repository quality consumers",
+        "unrecognized or ambiguous lexical construct -> explicit limitation/unknown; never infer semantic absence",
+        "consumer result -> existing metrics/include/clone/report/review/atlas/health owner decides threshold, identity, error/warning or publication semantics",
+        "quality finding/proposal -> existing class/placement/process-inbox/perform-task/continue lifecycle; text primitive never edits, routes or approves"
+      ],
+      "state_owner": "Existing Fabushi repository responsibility/quality/task-evidence governance",
+      "lifecycle_owner": "Existing repository development lifecycle and GitHub Actions evidence production/review",
+      "persistence_and_restart": "No text-scanner-owned durable state. Facts are recomputed from one exact source snapshot and retain source path/line provenance; interrupted or resumed work must revalidate the exact source authority before durable reuse.",
+      "concurrency_and_cancellation": "Text normalization is read-only and deterministic for one input snapshot. Cancellation or scanner failure cannot mutate source/findings/ownership and cannot publish a clean negative result.",
+      "security_boundary": "Lexical text evidence cannot authorize source mutation, task insertion, ownership changes, credentials, compiler/build truth, product behavior or release acceptance. Stale/partial source, provenance loss and unsupported/ambiguous syntax remain explicit non-passing/unknown evidence.",
+      "network_service_dependencies": [
+        "GitHub repository authority",
+        "GitHub Actions hosted runners",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi repository quality/release workflow / GitHub Actions",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "Independent exact-head GitHub Actions verification of this source-entry mapping commit is pending."
+      ],
+      "production_entrypoints": [
+        "AGENTS.md -> Repository source-text normalization evidence governance",
+        "AGENTS.md -> Repository duplicate/clone evidence governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Repository source-text normalization evidence qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Repository source-text normalization evidence"
+      ],
+      "production_evidence": [
+        "path:AGENTS.md#Repository source-text normalization evidence governance",
+        "path:AGENTS.md#Repository duplicate/clone evidence governance",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Repository source-text normalization evidence qualification",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Repository source-text normalization evidence"
+      ],
+      "test_evidence": [
+        "dossier:projects/telegram-desktop-rust/dossiers/code-health-cpp-text-script-complete-read.md",
+        "upstream-cpp-text:.agents/skills/code-health/scripts/cpp_text.py@366f173248add43c34317c8fe17d9ca31d46b1d4",
+        "upstream-sources:.agents/skills/code-health/scripts/sources.py@688aa05c4223d0d45b8572cff89fbc5148254844",
+        "upstream-metrics:.agents/skills/code-health/scripts/metrics.py@ebab29607cb52782899d5424636f0bd5e0c126cd",
+        "upstream-includes:.agents/skills/code-health/scripts/includes.py@2c02b4e7eb821f123588e0a80056edef86fc084c",
+        "upstream-clones:.agents/skills/code-health/scripts/clones.py@b74e6e939a3ccaae894d1afa5978f422aec8ee65",
+        "upstream-report:.agents/skills/code-health/scripts/report.py@a1177613670e933694f545f387ca7e7ed8cf0ee0",
+        "upstream-review:.agents/skills/code-health/scripts/review.py@070b55553052267e8fbc12d70985b447b24bbb02",
+        "upstream-atlas:.agents/skills/code-health/scripts/atlas.py@6680fa747a1ddc520f4396949f3c84ab25cd8c43",
+        "upstream-health:.agents/skills/code-health/scripts/health.py@f08675ef7a03c016d85f91c60b8f29e99454abe9",
+        "upstream-health-test:.agents/skills/code-health/scripts/health_test.py@2176aea672fd9ed16c01342939fbffb41490ae73",
+        "upstream-code-health-skill:.agents/skills/code-health/SKILL.md@6885938b3d186b55f5d69cb8b9b9a96bbca0e097",
+        "upstream-classes:.agents/skills/code-health/references/classes.md@27847cae96838be7ddf68d3759dba89279f7cf0e",
+        "upstream-atlas-reference:.agents/skills/code-health/references/atlas.md@7f43dd75fcfb670c327bc3e71c1de0589e7506f0",
+        "upstream-maps:.agents/skills/code-health/references/maps.md@89dd78f48283b15d6ad959b2d450895258a0980f",
+        "upstream-survey:.agents/skills/code-health/references/survey.md@d900e7a42b768679c69cd4c584559c783b59d47a",
+        "upstream-perform-task:.agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c",
+        "upstream-mechanical-lane:.agents/skills/perform-task/references/mechanical-lane.md@e5e3cc88ba80ece6a20df7c4dd6002491d66a4ef",
+        "upstream-pipeline:.agents/skills/perform-task/references/pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7",
+        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba",
+        "upstream-process-inbox:.agents/skills/process-inbox/SKILL.md@0ce70794ac743d99e6d5c80894cde970b52842db",
+        "upstream-continue:.agents/skills/continue/SKILL.md@aeb81dd57018abbc8f03ea3dbd34f91952128db5"
+      ],
+      "target_commit": "6550d08c6f73d6c75dc9651a3d06de84f956212f",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development and quality evidence governance",
+      "composition_slot": "Line-provenance-preserving lexical/source-text evidence feeding repository quality consumers",
+      "capability_component": "Source-neutral repository source-text normalization evidence",
+      "variation_axes": [
+        "translation unit vs header vs out-of-scope source kind",
+        "raw physical lines vs block-comment-blanked line-preserving view",
+        "block comments vs inline trailing comments vs logic-free lines",
+        "quoted include/import vs unrecognized include syntax",
+        "identifier vs definition-name vs function vs class/member recognition",
+        "normalized substantive line vs filtered/trivial line",
+        "recognized lexical observation vs unsupported/ambiguous C++ semantic construct",
+        "caller-owned metric/include/clone/review/atlas result semantics"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi repository AI development lifecycle",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract",
+        "Repository duplicate/clone evidence governance",
+        "ordinary task/review lifecycle"
+      ],
+      "duplicate_root_check": "No Telegram/code-health Python scanner runtime, second C++ parser authority, second findings ledger, second ownership graph, or second task queue introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Lexical facts own no durable mutable state and must be recomputed or rebound to the exact source revision with original path/line provenance before resumed durable use.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to workflow governance",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CODE-HEALTH-SOURCE-TEXT-NORMALIZATION-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CODE-HEALTH-TEXT-LINE-PRESERVATION-001",
+        "ORA-TDRP-CODE-HEALTH-TEXT-LEXICAL-NORMALIZATION-001",
+        "ORA-TDRP-CODE-HEALTH-TEXT-CONSUMERS-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CODE-HEALTH-TEXT-NONCOMPILER-001",
+        "INV-TDRP-CODE-HEALTH-TEXT-PROVENANCE-001",
+        "INV-TDRP-CODE-HEALTH-TEXT-NO-SECOND-OWNER-001"
+      ],
+      "unit_case_ids": [
+        "health_test.TextTests.test_functions_span_signature_to_closing_brace",
+        "health_test.TextTests.test_initializer_list_is_part_of_constructor",
+        "health_test.TextTests.test_license_header_does_not_hide_the_first_function",
+        "health_test.TextTests.test_aggregates_and_forward_declarations_are_not_functions",
+        "health_test.TextTests.test_object_constructed_from_braces_is_not_a_function",
+        "health_test.TextTests.test_class_members_are_counted",
+        "health_test.TextTests.test_block_comments_do_not_count_as_code"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CODE-HEALTH-SOURCE-TEXT-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-CODE-HEALTH-SOURCE-TEXT-CONSUMERS-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CODE-HEALTH-TEXT-MALFORMED-001",
+        "FAULT-TDRP-CODE-HEALTH-TEXT-UNSUPPORTED-001",
+        "FAULT-TDRP-CODE-HEALTH-STALE-SOURCE-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CODE-HEALTH-TEXT-AUTHORITY-BYPASS-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-CODE-HEALTH-SOURCE-TEXT-001"
+      ],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-INVENTORY",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "code-health-cpp-text-source-contract",
+        "repository-source-text-normalization-evidence-contract",
+        "source-line-provenance-and-caller-boundary-contract"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral repository-quality lexical/text-normalization contract read from telegramdesktop/tdesktop authority; no upstream Python/C++ implementation copied into Fabushi shipping runtime.",
+      "notes": "Actual 1-based recursive array entry 27 is .agents/skills/code-health/scripts/cpp_text.py. Direct metrics/includes/clones/report/review/atlas/health/tests plus reference/perform-task/scheduled routing were read to understand this entry and remain independently accounted inventory entries unless separately represented. There is no scripts/scan.py at this upstream commit; scan is the health.py command. This closure decrements only one independent source entry to unknown=16,175 and unread=16,148, omitted=0.",
       "test_execution_evidence": []
     }
   ]
