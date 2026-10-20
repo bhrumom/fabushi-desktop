@@ -46,6 +46,15 @@ Map-amendment evidence identifies the prior approved map, exact source/task chan
 
 A map is non-passing when it is stale, contradicts its atlas area, contains ambiguous/uncheckable invariants presented as approved, widens ownership to normalize a known break, lacks required owner approval, or becomes a parallel repository/product owner. Area-map evidence can prove placement governance and task preconditions; it cannot by itself prove product behavior, safe execution, security, successful build/runtime, packaging or release acceptance.
 
+
+## Repository responsibility-area survey evidence
+
+Passing survey evidence records the exact scanned revision and detached read snapshot, area identity, canonical area-report identity, prior survey/current map identity when present, and the open finding identities supplied as inputs. For every independent lens it preserves reviewer identity, the lens scope and direct path/line observations without merging another lens's conclusions into the evidence. Scanner measurements retained as inputs are distinguished from semantic claims produced by source reading.
+
+The verification record is separate from the lens records. Every claim used by a map or proposal carries a verifier disposition and the reproduced observation: repeated count/search, source lines re-read, caller/reference negative, or equivalent falsifiable check. Claims not rechecked are durably marked inferred; verified status cannot be inferred from agreement between reviewers. The evidence must make it possible to trace each material map/proposal statement back to both the originating lens evidence and, when required, its independent verification.
+
+Survey outputs preserve distinct identities for the narrative/plan, draft map, maintainability proposals and incidental defects. Draft-map evidence points to the existing area-map approval lifecycle and is non-authoritative until owner approval is recorded separately. Proposal evidence records class/area/finding/metric/proof intent but is not a queue receipt; defect evidence is ordinary product-defect evidence rather than maintainability success. A survey evidence bundle records that the survey changed no source and created no queue record. Any later publication, approval or routing has its own ordinary evidence/receipt, so survey completion can never be used to bypass source ownership, task trust, security, runtime, packaging or release gates.
+
 Change-ratchet evidence binds exact base/head (or staged snapshot), changed-path scope, errors/warnings, and the direct proof selected for the task class. Preserve move-only novel/lost-line results, finding verification status, mutation cases for characterization tests, before/after metrics, required build/test results, and any explicit dropped-item reason. A clean scanner report is supporting evidence only; it cannot prove behavior preservation, successful shipping, or release acceptance by itself.
 
 ## Repository quality-task class evidence
