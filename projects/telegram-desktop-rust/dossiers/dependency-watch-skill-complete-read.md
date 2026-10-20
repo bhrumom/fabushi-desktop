@@ -1,6 +1,6 @@
 # Dependency Watch skill complete read — strict recursive index 39
 
-Status: strict index 39 exact-head verified at 67fd7d1a8259d4990096bc1952b0459bebf7b464; strict index 40 source-grounded and existing-owner mapped; child exact-head verification pending.
+Status: strict index 40 exact-head verified at 37504a29151be2d65a92f1b60b34efc5913a7e0e; strict index 41 source-grounded and existing-owner mapped; child exact-head verification pending.
 
 Authority: telegramdesktop/tdesktop@0eca52223cceed229932add1cc80792763120844 tree 1fc479a4b448aed851181bf4a4796d3015368348. Strict index 39 remains .agents/skills/dependency-watch/SKILL.md@482b3a8d0c939d4bb7bd32ab146e0cc988d29fd8.
 
@@ -77,3 +77,30 @@ Traceability:
 - SEC-TDRP-DEPENDENCY-WATCH-NATIVE-INVOCATION-FAIL-CLOSED-001
 
 Coverage after strict index 40: source_entries_total=16305, unknown=16262, unread=16237, omitted=0. baseline accepted=false and source_closure_ready=false. Next strict entry index 41 is .agents/skills/dependency-watch/references/forks.md@29a7aa587ae26118a0611a2e4037a69141a3ffde.
+
+
+## Strict index 41 — patched-fork and original-upstream provenance
+
+Source: .agents/skills/dependency-watch/references/forks.md@29a7aa587ae26118a0611a2e4037a69141a3ffde on telegramdesktop/tdesktop@0eca52223cceed229932add1cc80792763120844/tree 1fc479a4b448aed851181bf4a4796d3015368348.
+
+Responsibility: patched or copied upstreams are not one moving version. The monitor keeps (1) the exact revision pinned by the current Telegram snapshot, (2) the fork's own current upstream branch, and (3) the original project's stable/development upstream as separate authorities. Fork-head movement can be a pin update while a fresh original-upstream import can carry a large Telegram patch stack. Comparable history must be reconstructed from actual import provenance before calculating lag. A failed merge-base, unrelated commit count, matching subject or merely-applicable patch is not proof. Security candidates require the fixing diff and prerequisites plus pinned source presence, compiled backend/build flags and reachable use before classifying confirmed-missing, already-present/backported, not-applicable, or needs-investigation. The monitor proposes update/import/backport routes; it does not apply them. Mapped baselines, scanned ranges, unresolved old tails and per-fix evidence remain durable across scans.
+
+Current exact recipe evidence: Telegram/build/prepare/prepare.py@4063cc766ffb60c018b7a6ad456453ec585d5566 pins desktop-app/tg_owt@07fb35bc33b3e79125a1beab7690e830f183f5d8 with recursive submodules, desktop-app/tg_angle@b34c4dc879d115d34794a657c7fa5f6bb34bc10a on Windows, and desktop-app/patches@fe957833b84525e634a8d776a7f834ed536d9a21. Telegram/build/docker/centos_env/Dockerfile@f72162089985263493c6e3f7e23b566f5df8e454 and snap/snapcraft.yaml@38f0eb362832c3623b868c9aa90c03bc4f426d01 independently pin the same tg_owt/patches revisions where used. The reference maps tg_owt to the WebRTC original upstream and tg_angle to the ANGLE original upstream, but explicitly treats those mappings as discovery seeds rather than fixed baseline claims. Current tg_angle exposure must therefore remain configured-build/reachability evidence, not be inferred from an old milestone note.
+
+Caller/test trace: SKILL.md@482b3a8d0c939d4bb7bd32ab146e0cc988d29fd8 is the direct caller: it requires references/forks.md for patched/copied upstreams and always for tg_owt/tg_angle when present. Repository search finds no other direct references/forks.md caller. scripts/watch.py@231c5a13e8d7e3cd337dbbad08e8f4434a943a38 owns generic snapshot/version mechanics but does not directly parse this reference or encode tg_owt/tg_angle import archaeology. scripts/watch_test.py@d3107c617be3e8780a99bebaeba19a4f235ae6ea provides the freshness/fail-closed primitives used by the workflow: stable version ordering, fresh remote fetch without worktree mutation, fetch-failure rejection, required-manifest failure, offline-unverified state and linked-worktree report storage. No dedicated fork-provenance test is falsely claimed.
+
+Fabushi existing owner: quality/evidence-contract.md@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70 already requires repository quality-health observations to bind exact source authority/revision, fetch outcome and skipped/unavailable pinned inputs, preserving stable finding identities and provenance. TEST_STRATEGY.md@0d3a4c993784625f9b70279602c655d4788fe9fb keeps exact-source qualification fail-closed. security-privacy-test-plan.md@f6d6672988d46c06152f4e2f5ff585fecc424141 owns security/release evidence gates. build-time-acquisitions.json@e714a52f7033d288ef6e13e02721dc3c3896f772 already records the exact tg_owt/patches pins and recursive build-reachability evidence. Shipping app updater and MCP installable-package owners are rejected; no Telegram fork scanner/backport daemon or second findings store is required. novel_capability=false.
+
+Parent exact-head gate: TDRP run 39509311259 succeeded at 37504a29151be2d65a92f1b60b34efc5913a7e0e; source-authority artifact 12304418404 digest sha256:0d1ac43c798569ee82a75c43af60e64b0bcde11fcd33590c73ef65a0dae11079. Its recursive fixed-point remains 203 scanned authorities / 0 unresolved gitlink authorities, while recursive reachability remains partial-audited-open with authorities=95, tree_entries=167824, gitlinks=133, acquisition_candidates=3865, patches=235, lfs_pointers=21, generated_inputs=4674, resource_inputs=4602 and tool_inputs=4255; source_closure_ready=false. Rust run 39509311149 succeeded 6/6 jobs at the same exact head; rust-host steps 13-17 plus post steps completed successfully and artifact 12304913206 has digest sha256:a8dcd88399978b0f59d6d0a6bb8aec328b958d585a364ae94cf4c3f63fb35a65.
+
+Traceability:
+- TDRP-R9-DEPENDENCY-WATCH-FORK-PROVENANCE-001
+- ORA-TDRP-DEPENDENCY-WATCH-FORK-THREE-STATE-001
+- ORA-TDRP-DEPENDENCY-WATCH-IMPORT-PROVENANCE-001
+- ORA-TDRP-DEPENDENCY-WATCH-FIX-APPLICABILITY-001
+- INV-TDRP-DEPENDENCY-WATCH-NO-INCOMPARABLE-LAG-001
+- INV-TDRP-DEPENDENCY-WATCH-RECIPE-PROVENANCE-001
+- INV-TDRP-DEPENDENCY-WATCH-ADVISORY-ONLY-001
+- SEC-TDRP-DEPENDENCY-WATCH-PATCHED-FORK-FIX-CLASSIFICATION-001
+
+Coverage after strict index 41: source_entries_total=16305, unknown=16261, unread=16236, omitted=0. baseline accepted=false and source_closure_ready=false. Next strict entry index 42 is .agents/skills/dependency-watch/references/release-trust.md@81a68395f9ad54ed651a84464a933ed7e57c9d32.

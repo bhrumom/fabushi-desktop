@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16305,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16262,
-    "unread_minimum": 16237,
+    "unknown_minimum": 16261,
+    "unread_minimum": 16236,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -53,5 +53,5 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream remains telegramdesktop/tdesktop@0eca52223cceed229932add1cc80792763120844/tree 1fc479a4b448aed851181bf4a4796d3015368348. Recursive total is 16,305. Strict index 40 .agents/skills/dependency-watch/agents/openai.yaml@a61c118c41e3b50d6bc4bde12dc6d4c1b3756b5d is mapped to Fabushi's existing repository quality-health native-invocation/evidence owner: unknown=16,262, unread=16,237, omitted=0. Parent exact-head TDRP 39506049373 and Rust 39506049401 succeeded at 67fd7d1a8259d4990096bc1952b0459bebf7b464; those current-upstream parent receipts remain documented in the index-40 dossier/ledger while latest_recursive_evidence intentionally remains bound to the previous historical baseline for exact rebaseline reconciliation. The new mapping/fix commit requires fresh exact-head Actions. Fixed-point gitlink closure is 203 scanned / 0 unresolved; recursive reachability/disposition remains open, therefore baseline_identity_accepted/source_closure_ready remain false. Next strict entry is index 41 .agents/skills/dependency-watch/references/forks.md@29a7aa587ae26118a0611a2e4037a69141a3ffde."
+  "note": "Live upstream remains telegramdesktop/tdesktop@0eca52223cceed229932add1cc80792763120844/tree 1fc479a4b448aed851181bf4a4796d3015368348. Recursive total is 16,305. Strict index 41 .agents/skills/dependency-watch/references/forks.md@29a7aa587ae26118a0611a2e4037a69141a3ffde is mapped to Fabushi's existing source-neutral repository quality-health dependency-provenance/source-authority evidence owner: unknown=16,261, unread=16,236, omitted=0. The source contract keeps Telegram's exact pinned fork revision, the fork's own current upstream, and the original upstream as distinct baselines; import provenance, recipe-specific patch sets, comparable-history rules, reachability and per-fix applicability evidence remain fail-visible. Parent exact-head TDRP 39509311259 and Rust 39509311149 both succeeded at 37504a29151be2d65a92f1b60b34efc5913a7e0e; the new index-41 mapping commit requires fresh exact-head Actions. Fixed-point gitlink closure is 203 scanned / 0 unresolved; recursive reachability/disposition remains open, therefore baseline_identity_accepted/source_closure_ready remain false. Next strict entry is index 42 .agents/skills/dependency-watch/references/release-trust.md@81a68395f9ad54ed651a84464a933ed7e57c9d32."
 }

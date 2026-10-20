@@ -6,10 +6,10 @@
   "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
   "coverage": {
     "source_entries_total": 16305,
-    "unknown": 16262,
-    "unread": 16237,
+    "unknown": 16261,
+    "unread": 16236,
     "omitted": 0,
-    "responsibilities_total": 59,
+    "responsibilities_total": 60,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -15922,6 +15922,271 @@
       "reviewer": null,
       "license_and_provenance": "Declarative host-registration semantics read from exact telegramdesktop/tdesktop YAML and sibling skill/test graph; no upstream Python monitor or provider-specific product runtime is copied into Fabushi.",
       "notes": "Zero-based strict index 40 is .agents/skills/dependency-watch/agents/openai.yaml@a61c118c41e3b50d6bc4bde12dc6d4c1b3756b5d on live 0eca52223cceed229932add1cc80792763120844. It registers host-visible Dependency Watch metadata/default invocation and routes to sibling canonical skill. Coverage after this one entry: unknown=16,262, unread=16,237, omitted=0. Parent 67fd exact-head TDRP/Rust are successful; child commit requires fresh exact-head workflows. Next strict entry index 41 is .agents/skills/dependency-watch/references/forks.md@29a7aa587ae26118a0611a2e4037a69141a3ffde. baseline accepted/source_closure_ready remain false.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "0eca52223cceed229932add1cc80792763120844",
+      "source_path": ".agents/skills/dependency-watch/references/forks.md",
+      "source_blob_sha": "29a7aa587ae26118a0611a2e4037a69141a3ffde",
+      "source_kind": "repository_dependency_watch_patched_fork_provenance_contract",
+      "module_id": "tdesktop.dependency-watch-patched-fork-provenance",
+      "responsibility_id": "TDRP-R9-DEPENDENCY-WATCH-FORK-PROVENANCE-001",
+      "source_symbols": [
+        "Patched forks and copied source trees",
+        "Establish comparable revisions",
+        "Find and verify missing fixes"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-DEPENDENCY-PROVENANCE",
+        "CAP-SOURCE-AUTHORITY"
+      ],
+      "dependency_ids": [
+        ".agents/skills/dependency-watch/SKILL.md",
+        ".agents/skills/dependency-watch/scripts/watch.py",
+        ".agents/skills/dependency-watch/scripts/watch_test.py",
+        "Telegram/build/prepare/prepare.py",
+        "Telegram/build/docker/centos_env/Dockerfile",
+        "snap/snapcraft.yaml",
+        "projects/telegram-desktop-rust/inventory/build-time-acquisitions.json",
+        "Fabushi repository quality-health exact-source/evidence governance"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/dependency-watch-skill-complete-read.md",
+      "behavior_contract": "Patched or copied dependency monitoring must preserve three separate authorities: the exact revision pinned by the current Telegram snapshot, the fork's own current upstream branch, and the original project's upstream. It must reconstruct import provenance and recipe-specific patch history before comparing revisions, only compare demonstrably comparable history, verify actual fixing diffs/prerequisites/build flags/source presence/reachability before classifying security fixes, preserve unresolved old-tail evidence, and remain advisory-only rather than mutating pins or applying backports.",
+      "state_machine": "fresh exact Telegram snapshot -> extract exact fork and patch pins from all active recipes -> inspect fork history through the pin and reconstruct original imported revision/provenance -> separately resolve fork head plus original stable/development heads -> map comparable ranges -> inspect candidate fix diff/prerequisites and current source/build/reachability -> classify missing/backported/not-applicable/needs-investigation -> persist mapped baselines/scanned ranges/unresolved candidates/per-fix evidence -> advisory update/backport recommendation only",
+      "side_effects": [
+        "Advances only durable repository quality-health dependency-provenance evidence when exact source/revision and mapping evidence are available.",
+        "Preserves recipe-specific fork/patch/import mappings and unresolved candidate history without editing Telegram/Fabushi dependency pins, product source, fork repositories or release state."
+      ],
+      "failure_cases": [
+        "Pinned Telegram revision, fork current branch and original upstream are collapsed into one baseline.",
+        "A failed merge-base, unrelated commit count or approximate milestone is treated as comparable revision lag.",
+        "Prepare/Docker/Snap patch inputs are assumed identical without exact recipe evidence.",
+        "A CVE/advisory or matching subject is called applicable/missing without fixing diff, prerequisites, source presence, compiled backend/build flags and reachability evidence.",
+        "Equivalent/backported fixes are rejected solely because upstream ancestry/hash differs.",
+        "Unexamined historical tail or inaccessible/private fix evidence is silently treated as clean.",
+        "The monitor edits pins, applies a backport, creates a shipping dependency runtime or bypasses ordinary approval/release gates."
+      ],
+      "ui_disposition": "Not applicable; repository-development dependency provenance/security advisory workflow only.",
+      "non_ui_responsibilities": [
+        "Three-state fork authority separation: current Telegram pin vs fork head vs original upstream",
+        "Exact import provenance and comparable-revision reconstruction",
+        "Recipe-specific patch/folded-source provenance",
+        "Stable/development upstream range separation",
+        "Fix-diff/prerequisite/source/build/reachability applicability verification",
+        "Four-way candidate classification with unresolved history retention",
+        "Advisory-only update/backport proposal with no automatic source mutation"
+      ],
+      "platform_delta": "Fabushi already owns the applicable source-neutral responsibility through repository quality-health exact-source/provenance evidence, the recursive build-acquisition inventory and fail-closed security/release governance. Do not add a Telegram-specific fork scanner, backport runtime, second dependency findings store or shipping updater owner.",
+      "existing_owner_candidates": [
+        "projects/fabushi-communication-platform/quality/evidence-contract.md — exact-revision repository quality-health/provenance evidence",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md — exact-source qualification and fail-closed evidence",
+        "projects/fabushi-communication-platform/quality/plans/security-privacy-test-plan.md — security/release applicability gates",
+        "projects/telegram-desktop-rust/inventory/build-time-acquisitions.json — exact pinned build-input and recursive reachability evidence",
+        "AGENTS.md — canonical repository quality-health command/orchestration governance"
+      ],
+      "existing_owner": "Fabushi source-neutral repository quality-health dependency-provenance / source-authority evidence governance",
+      "rejected_existing_owners": [
+        "source/electron-main/update/* owns the shipping application updater and cannot own repository fork/import provenance.",
+        "source/host/src/extensions/mcp/installable_package/* owns shipping plugin-package installation and cannot own repository fork/import provenance.",
+        "A Telegram-specific fork scanner/backport daemon or second dependency findings store would duplicate the source-neutral quality-health owner."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/plans/security-privacy-test-plan.md",
+        "projects/telegram-desktop-rust/inventory/build-time-acquisitions.json"
+      ],
+      "fabushi_target_symbols": [
+        "Repository quality-health evidence",
+        "exact source authority and fail-closed evidence qualification",
+        "security/release applicability evidence",
+        "immutable commit pin occurrences and recursive build reachability"
+      ],
+      "target_language": "Markdown/JSON",
+      "language_rationale": "The upstream entry is an advisory repository-development provenance/review contract plus exact pin evidence, not shipping product logic; its applicable semantics belong in existing source-neutral quality/evidence and inventory owners.",
+      "command_event_contracts": [
+        "exact Telegram snapshot -> enumerate fork/patch pins from active recipes",
+        "exact fork pin -> reconstruct import provenance -> resolve fork head and original stable/development heads separately",
+        "candidate fix -> inspect real fixing diff/prerequisites + pinned source/build/reachability -> four-way classification",
+        "missing applicable fix -> advisory update/import/backport proposal with exact prerequisites/conflicts/platform/tests",
+        "incomplete mapping/private issue/unverified equivalence -> needs-investigation and retained open evidence, never all-clear",
+        "new mapping commit -> current 37504a exact-head Actions become parent evidence; fresh child exact-head workflows required"
+      ],
+      "state_owner": "Existing Fabushi repository quality-health findings/provenance evidence plus exact build-acquisition inventory; no shipping product store is added.",
+      "lifecycle_owner": "Root AGENTS.md repository quality-health orchestration plus Test Strategy/Evidence Contract and existing security/release evidence gates.",
+      "persistence_and_restart": "Mapped exact pins, import revisions, scanned comparable ranges, stable/development heads, unresolved candidates and per-fix evidence remain durable quality-health evidence; unresolved historical ranges survive subsequent scans until explicitly reviewed.",
+      "concurrency_and_cancellation": "Each durable observation is bound to one exact fetched revision. Stale/mutable-source observations cannot advance canonical state; mapping or advisory/source failures remain explicit and do not authorize a replacement scan or clean verdict.",
+      "security_boundary": "Advisory provenance/classification cannot authorize installs, pin changes, backports or releases. Applicability requires actual fix/source/build/reachability evidence; inaccessible or uncertain evidence fails closed as needs-investigation.",
+      "network_service_dependencies": [
+        "GitHub repository authority for telegramdesktop/tdesktop and desktop-app fork/patch repositories",
+        "Original upstream release/source/advisory authorities when reachable",
+        "GitHub Actions hosted runners and artifact storage for Fabushi exact-head evidence"
+      ],
+      "service_owner": "Existing Fabushi repository governance / GitHub Actions evidence lifecycle",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "The index-41 mapping commit requires fresh exact-head TDRP Revision 9 and Rust desktop runtime verification.",
+        "Recursive reachability/disposition remains open with unknown/unread non-zero; baseline accepted/source_closure_ready remain false."
+      ],
+      "production_entrypoints": [
+        "AGENTS.md -> canonical repository quality-health orchestration",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> exact-revision repository quality-health/provenance evidence",
+        "projects/telegram-desktop-rust/inventory/build-time-acquisitions.json -> exact pinned build-input and recursive reachability evidence"
+      ],
+      "production_evidence": [
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md@0d3a4c993784625f9b70279602c655d4788fe9fb",
+        "path:projects/fabushi-communication-platform/quality/plans/security-privacy-test-plan.md@f6d6672988d46c06152f4e2f5ff585fecc424141",
+        "path:projects/telegram-desktop-rust/inventory/build-time-acquisitions.json@e714a52f7033d288ef6e13e02721dc3c3896f772",
+        "parent-exact-head-tdrp:39509311259/head:37504a29151be2d65a92f1b60b34efc5913a7e0e/success/source-authority-artifact:12304418404/digest:sha256:0d1ac43c798569ee82a75c43af60e64b0bcde11fcd33590c73ef65a0dae11079",
+        "parent-exact-head-rust:39509311149/head:37504a29151be2d65a92f1b60b34efc5913a7e0e/success-6-of-6/artifact:12304913206/digest:sha256:a8dcd88399978b0f59d6d0a6bb8aec328b958d585a364ae94cf4c3f63fb35a65"
+      ],
+      "test_evidence": [
+        "upstream-forks:.agents/skills/dependency-watch/references/forks.md@29a7aa587ae26118a0611a2e4037a69141a3ffde",
+        "upstream-caller:.agents/skills/dependency-watch/SKILL.md@482b3a8d0c939d4bb7bd32ab146e0cc988d29fd8",
+        "upstream-watch:.agents/skills/dependency-watch/scripts/watch.py@231c5a13e8d7e3cd337dbbad08e8f4434a943a38",
+        "upstream-watch-tests:.agents/skills/dependency-watch/scripts/watch_test.py@d3107c617be3e8780a99bebaeba19a4f235ae6ea",
+        "upstream-prepare:Telegram/build/prepare/prepare.py@4063cc766ffb60c018b7a6ad456453ec585d5566",
+        "upstream-docker:Telegram/build/docker/centos_env/Dockerfile@f72162089985263493c6e3f7e23b566f5df8e454",
+        "upstream-snap:snap/snapcraft.yaml@38f0eb362832c3623b868c9aa90c03bc4f426d01",
+        "pin:desktop-app/tg_owt@07fb35bc33b3e79125a1beab7690e830f183f5d8",
+        "pin:desktop-app/tg_angle@b34c4dc879d115d34794a657c7fa5f6bb34bc10a",
+        "pin:desktop-app/patches@fe957833b84525e634a8d776a7f834ed536d9a21",
+        "focused-upstream-tests:VersionTests.test_stable_ordering_and_prefixes;SnapshotTests.test_fetches_remote_without_touching_working_tree;SnapshotTests.test_fetch_failure_never_uses_stale_ref;SnapshotTests.test_missing_required_manifest_fails;SnapshotTests.test_offline_snapshot_is_marked_unverified;SnapshotTests.test_linked_worktree_uses_common_report_storage"
+      ],
+      "target_commit": "37504a29151be2d65a92f1b60b34efc5913a7e0e",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository quality-health and source-authority evidence governance",
+      "composition_slot": "Dependency provenance / patched-fork applicability evidence",
+      "capability_component": "Source-neutral patched-fork/import-provenance monitoring contract",
+      "variation_axes": [
+        "Telegram pinned fork revision vs fork current upstream vs original upstream",
+        "shared ancestry vs flattened/imported source",
+        "prepare vs Docker vs Snap patch/provenance inputs",
+        "stable upstream vs development head",
+        "missing vs backported vs not-applicable vs needs-investigation security fix",
+        "comparable range proven vs unresolved mapping"
+      ],
+      "shared_owner_contracts": [
+        "Root AGENTS.md repository quality-health governance",
+        "Fabushi Test Strategy exact-source qualification",
+        "Fabushi Test Evidence Contract exact-revision provenance evidence",
+        "TDRP build-time acquisition and recursive reachability inventory",
+        "Fabushi security/release fail-closed evidence gates"
+      ],
+      "duplicate_root_check": "No Telegram-specific dependency scanner, patched-fork runtime, backport daemon, updater, package installer, findings store, task queue or second quality-health owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "The fork reference is consumed by the existing dependency-watch quality workflow and exact-source inventory/evidence owners; no product route is introduced.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Exact mapped pins/import provenance/scanned ranges and unresolved candidate evidence persist across monitoring runs; new upstream/fork/advisory changes trigger revalidation rather than silently replacing prior unresolved history.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to repository provenance governance",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-DEPENDENCY-WATCH-FORK-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-DEPENDENCY-WATCH-FORK-THREE-STATE-001",
+        "ORA-TDRP-DEPENDENCY-WATCH-IMPORT-PROVENANCE-001",
+        "ORA-TDRP-DEPENDENCY-WATCH-FIX-APPLICABILITY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-DEPENDENCY-WATCH-NO-INCOMPARABLE-LAG-001",
+        "INV-TDRP-DEPENDENCY-WATCH-RECIPE-PROVENANCE-001",
+        "INV-TDRP-DEPENDENCY-WATCH-ADVISORY-ONLY-001"
+      ],
+      "unit_case_ids": [
+        "VersionTests.test_stable_ordering_and_prefixes"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [
+        "SnapshotTests.test_fetches_remote_without_touching_working_tree",
+        "SnapshotTests.test_linked_worktree_uses_common_report_storage"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "SnapshotTests.test_fetch_failure_never_uses_stale_ref",
+        "SnapshotTests.test_missing_required_manifest_fails",
+        "SnapshotTests.test_offline_snapshot_is_marked_unverified"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-DEPENDENCY-WATCH-PATCHED-FORK-FIX-CLASSIFICATION-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-INVENTORY",
+        "G-TRACEABILITY",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "telegramdesktop/tdesktop@0eca52223cceed229932add1cc80792763120844 patched-fork reference graph",
+        "desktop-app/tg_owt@07fb35bc33b3e79125a1beab7690e830f183f5d8",
+        "desktop-app/tg_angle@b34c4dc879d115d34794a657c7fa5f6bb34bc10a",
+        "desktop-app/patches@fe957833b84525e634a8d776a7f834ed536d9a21"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral repository provenance/advisory contract read from exact telegramdesktop/tdesktop source and exact recipe pins; no upstream Python monitor, fork source or Telegram-specific runtime is copied into Fabushi.",
+      "notes": "Zero-based strict index 41 is .agents/skills/dependency-watch/references/forks.md@29a7aa587ae26118a0611a2e4037a69141a3ffde on live 0eca52223cceed229932add1cc80792763120844. SKILL.md is the direct caller and requires this reference for tg_owt/tg_angle; watch.py does not directly parse the reference and watch_test.py supplies snapshot/fail-closed/version primitives rather than a dedicated fork-provenance case. Exact current recipe pins are tg_owt 07fb35bc33b3e79125a1beab7690e830f183f5d8, tg_angle b34c4dc879d115d34794a657c7fa5f6bb34bc10a and desktop-app/patches fe957833b84525e634a8d776a7f834ed536d9a21. Coverage after this one entry: unknown=16,261, unread=16,236, omitted=0. Parent 37504a TDRP/Rust are successful; child commit requires fresh exact-head workflows. Next strict entry index 42 is .agents/skills/dependency-watch/references/release-trust.md@81a68395f9ad54ed651a84464a933ed7e57c9d32. baseline accepted/source_closure_ready remain false.",
       "test_execution_evidence": []
     }
   ]
