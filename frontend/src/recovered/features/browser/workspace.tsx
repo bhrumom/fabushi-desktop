@@ -11,7 +11,7 @@ export interface BrowserWorkspacePaneProps {
   readonly onClose: () => void;
 }
 
-type BrowserSidebar = "bookmarks" | "history" | "downloads" | null;
+type BrowserSidebar = "bookmarks" | "history" | "downloads" | "extensions" | null;
 
 function boundsFor(element: HTMLElement): { x: number; y: number; width: number; height: number } | null {
   const rect = element.getBoundingClientRect();
@@ -159,6 +159,7 @@ export function BrowserWorkspacePane({ bridge, conversationId, onClose }: Browse
         <button aria-pressed={sidebar === "bookmarks"} onClick={() => setSidebarMode("bookmarks")} type="button">Bookmarks</button>
         <button aria-pressed={sidebar === "history"} onClick={() => setSidebarMode("history")} type="button">History</button>
         <button aria-pressed={sidebar === "downloads"} onClick={() => setSidebarMode("downloads")} type="button">Downloads</button>
+        <button aria-pressed={sidebar === "extensions"} onClick={() => setSidebarMode("extensions")} type="button">Extensions</button>
         {snapshot == null ? null : (
           <>
             <span className="sand-browser-workspace__agent-state" aria-live="polite">
@@ -204,7 +205,7 @@ export function BrowserWorkspacePane({ bridge, conversationId, onClose }: Browse
                 <strong>{entry.title}</strong><small>{entry.url}</small>
               </button>
             ))
-          ) : (
+          ) : sidebar === "downloads" ? (
             (snapshot?.downloads.length ?? 0) === 0 ? <p>No downloads yet.</p> :
             [...(snapshot?.downloads ?? [])].reverse().map((download) => (
               <div className="sand-browser-workspace__download-row" key={download.id}>
@@ -212,6 +213,37 @@ export function BrowserWorkspacePane({ bridge, conversationId, onClose }: Browse
                 <small>{download.state} · {download.receivedBytes}/{download.totalBytes || "?"} bytes</small>
               </div>
             ))
+          ) : (
+            <>
+              <button onClick={() => void settle(bridge.chooseExtension(conversationId))} type="button">Choose unpacked extension…</button>
+              {snapshot?.extensionCandidate == null ? null : (
+                <div className="sand-browser-workspace__drawer-row" role="group" aria-label="Extension install confirmation">
+                  <div>
+                    <strong>{snapshot.extensionCandidate.name} {snapshot.extensionCandidate.version}</strong>
+                    <small>Permissions: {snapshot.extensionCandidate.permissions.join(", ") || "none"}</small>
+                    <small>Host access: {snapshot.extensionCandidate.hostPermissions.join(", ") || "none"}</small>
+                    <small>{snapshot.extensionCandidate.integrity}</small>
+                  </div>
+                  <button onClick={() => void settle(bridge.installExtension(conversationId, snapshot.extensionCandidate!.candidateId))} type="button">Install</button>
+                </div>
+              )}
+              {(snapshot?.extensions.length ?? 0) === 0 ? <p>No browser extensions installed.</p> :
+                snapshot?.extensions.map((extension) => (
+                  <div className="sand-browser-workspace__drawer-row" key={extension.key}>
+                    <div>
+                      <strong>{extension.name} {extension.version}</strong>
+                      <small>{extension.enabled ? "Enabled" : "Disabled"} · {extension.integrity}</small>
+                      {extension.error == null ? null : <small role="status">{extension.error}</small>}
+                    </div>
+                    <button onClick={() => void settle(bridge.setExtensionEnabled(conversationId, extension.key, !extension.enabled))} type="button">
+                      {extension.enabled ? "Disable" : "Enable"}
+                    </button>
+                    <button onClick={() => void settle(bridge.updateExtension(conversationId, extension.key))} type="button">Update</button>
+                    <button onClick={() => void settle(bridge.removeExtension(conversationId, extension.key))} type="button">Uninstall</button>
+                  </div>
+                ))
+              }
+            </>
           )}
         </div>
       )}

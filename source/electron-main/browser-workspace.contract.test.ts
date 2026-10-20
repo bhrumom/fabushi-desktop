@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import {
   createBrowserWorkspaceService,
@@ -20,6 +23,15 @@ import {
 } from "../shared/browser-workspace.js";
 
 class FakeSession implements BrowserWorkspaceSessionPort {
+  readonly loadedExtensions = new Map<string, string>();
+  readonly extensions = {
+    loadExtension: async (path: string) => {
+      const id = `extension-${this.loadedExtensions.size + 1}`;
+      this.loadedExtensions.set(id, path);
+      return { id, name: "Fabushi Test Extension", version: "1.0.0" };
+    },
+    removeExtension: (id: string) => { this.loadedExtensions.delete(id); },
+  };
   permissionRequest: ((contents: BrowserWorkspaceWebContentsPort, permission: string, callback: (allowed: boolean) => void) => void) | null = null;
   permissionCheck: ((contents: BrowserWorkspaceWebContentsPort, permission: string) => boolean) | null = null;
   download: ((event: unknown, item: BrowserWorkspaceDownloadItem, contents: BrowserWorkspaceWebContentsPort) => void) | null = null;
@@ -163,7 +175,11 @@ class MemoryPersistence implements BrowserWorkspacePersistencePort {
   }
 }
 
-function harness(initialState: unknown = null, pickUploadFile?: () => Promise<string | null>) {
+function harness(
+  initialState: unknown = null,
+  pickUploadFile?: () => Promise<string | null>,
+  pickExtensionDirectory?: () => Promise<string | null>,
+) {
   const ipc = new FakeIpc();
   const persistence = new MemoryPersistence();
   persistence.state = initialState;
@@ -187,6 +203,7 @@ function harness(initialState: unknown = null, pickUploadFile?: () => Promise<st
     getAccountScope: () => accountScope,
     persistence,
     ...(pickUploadFile == null ? {} : { pickUploadFile }),
+    ...(pickExtensionDirectory == null ? {} : { pickExtensionDirectory }),
     broadcast: (_channel, payload) => broadcasts.push(payload),
     id: () => `id-${++id}`,
     now: () => 1_700_000_000_000 + id,
@@ -887,6 +904,110 @@ test("takeover plus explicit reauthorization rotates task identity and rejects t
     }),
     /BROWSER_AGENT_TASK_STALE/,
   );
+});
+
+test("unpacked browser extension requires user confirmation, enforces integrity, and supports disable update uninstall", async () => {
+  const root = mkdtempSync(join(tmpdir(), "fabushi-extension-"));
+  try {
+    writeFileSync(join(root, "manifest.json"), JSON.stringify({
+      manifest_version: 3,
+      name: "Fabushi Test Extension",
+      version: "1.0.0",
+      permissions: ["storage"],
+      host_permissions: ["https://example.com/*"],
+      content_scripts: [{ matches: ["https://example.com/*"], js: ["content.js"] }],
+    }));
+    writeFileSync(join(root, "content.js"), "document.documentElement.dataset.fabushiExtension = 'loaded';");
+
+    const h = harness(null, undefined, async () => root);
+    h.service.attachWindow(new FakeHostWindow());
+    const state = await h.invoke({ type: "activate", conversationId: "bot-extension", bounds: { x: 1, y: 1, width: 500, height: 500 } });
+    const candidate = await h.invoke({ type: "extension-choose", conversationId: "bot-extension" });
+    assert.equal(candidate.extensions.length, 0);
+    assert.equal(candidate.extensionCandidate?.name, "Fabushi Test Extension");
+    assert.deepEqual(candidate.extensionCandidate?.permissions, ["storage"]);
+    assert.deepEqual(candidate.extensionCandidate?.hostPermissions, ["https://example.com/*"]);
+    assert.equal(JSON.stringify(candidate).includes(root), false, "renderer snapshot must not expose extension source path");
+    assert.equal(h.sessions.values().next().value?.loadedExtensions.size ?? 0, 0, "choosing must not load before confirmation");
+
+    const installed = await h.invoke({
+      type: "extension-install",
+      conversationId: "bot-extension",
+      candidateId: candidate.extensionCandidate!.candidateId,
+    });
+    assert.equal(installed.extensions.length, 1);
+    assert.equal(installed.extensions[0]?.enabled, true);
+    assert.equal(h.sessions.values().next().value?.loadedExtensions.size ?? 0, 1);
+
+    const disabled = await h.invoke({
+      type: "extension-set-enabled",
+      conversationId: "bot-extension",
+      extensionKey: installed.extensions[0]!.key,
+      enabled: false,
+    });
+    assert.equal(disabled.extensions[0]?.enabled, false);
+    assert.equal(h.sessions.values().next().value?.loadedExtensions.size ?? 0, 0);
+
+    writeFileSync(join(root, "content.js"), "document.documentElement.dataset.fabushiExtension = 'updated';");
+    await assert.rejects(
+      () => h.invoke({
+        type: "extension-set-enabled",
+        conversationId: "bot-extension",
+        extensionKey: installed.extensions[0]!.key,
+        enabled: true,
+      }),
+      /BROWSER_EXTENSION_INTEGRITY_CHANGED/,
+    );
+
+    const updated = await h.invoke({
+      type: "extension-update",
+      conversationId: "bot-extension",
+      extensionKey: installed.extensions[0]!.key,
+    });
+    assert.notEqual(updated.extensions[0]?.integrity, installed.extensions[0]?.integrity);
+    assert.equal(updated.extensions[0]?.enabled, false);
+
+    const enabled = await h.invoke({
+      type: "extension-set-enabled",
+      conversationId: "bot-extension",
+      extensionKey: installed.extensions[0]!.key,
+      enabled: true,
+    });
+    assert.equal(enabled.extensions[0]?.enabled, true);
+    assert.equal(h.sessions.values().next().value?.loadedExtensions.size ?? 0, 1);
+
+    const removed = await h.invoke({
+      type: "extension-remove",
+      conversationId: "bot-extension",
+      extensionKey: installed.extensions[0]!.key,
+    });
+    assert.equal(removed.extensions.length, 0);
+    assert.equal(h.sessions.values().next().value?.loadedExtensions.size ?? 0, 0);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("browser extension policy rejects privileged permissions before Electron load", async () => {
+  const root = mkdtempSync(join(tmpdir(), "fabushi-extension-reject-"));
+  try {
+    writeFileSync(join(root, "manifest.json"), JSON.stringify({
+      manifest_version: 3,
+      name: "Fabushi Test Extension",
+      version: "1.0.0",
+      permissions: ["nativeMessaging"],
+    }));
+    const h = harness(null, undefined, async () => root);
+    h.service.attachWindow(new FakeHostWindow());
+    await h.invoke({ type: "activate", conversationId: "bot-extension-reject", bounds: { x: 1, y: 1, width: 500, height: 500 } });
+    await assert.rejects(
+      () => h.invoke({ type: "extension-choose", conversationId: "bot-extension-reject" }),
+      /BROWSER_EXTENSION_PERMISSION_UNSUPPORTED:nativeMessaging/,
+    );
+    assert.equal(h.sessions.values().next().value?.loadedExtensions.size ?? 0, 0);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test("invalid commands are rejected before any view is created", async () => {

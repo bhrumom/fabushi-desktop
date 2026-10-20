@@ -860,6 +860,11 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
             if (result.canceled || result.filePaths.length !== 1) return null;
             return result.filePaths[0] ?? null;
           },
+          pickExtensionDirectory: async () => {
+            const result = await bindings.native.dialog!.showOpenDialog({ properties: ["openDirectory"] });
+            if (result.canceled || result.filePaths.length !== 1) return null;
+            return result.filePaths[0] ?? null;
+          },
         }),
         broadcast,
         reportFailure: (leg, error) => bindings.reportFailure("browser-workspace", leg, error),

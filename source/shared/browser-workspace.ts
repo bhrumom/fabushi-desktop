@@ -59,6 +59,26 @@ export interface BrowserWorkspaceDownload {
   readonly startedAtMs: number;
 }
 
+export interface BrowserWorkspaceExtension {
+  readonly key: string;
+  readonly name: string;
+  readonly version: string;
+  readonly enabled: boolean;
+  readonly permissions: readonly string[];
+  readonly hostPermissions: readonly string[];
+  readonly integrity: string;
+  readonly error: string | null;
+}
+
+export interface BrowserWorkspaceExtensionCandidate {
+  readonly candidateId: string;
+  readonly name: string;
+  readonly version: string;
+  readonly permissions: readonly string[];
+  readonly hostPermissions: readonly string[];
+  readonly integrity: string;
+}
+
 export type BrowserAgentControlState = "available" | "paused" | "taken-over" | "stopped";
 
 export type BrowserAgentTaskStatus = "idle" | "running" | "paused" | "taken-over" | "stopped";
@@ -80,6 +100,8 @@ export interface BrowserWorkspaceSnapshot {
   readonly bookmarks: readonly BrowserWorkspaceBookmark[];
   readonly history: readonly BrowserWorkspaceHistoryEntry[];
   readonly downloads: readonly BrowserWorkspaceDownload[];
+  readonly extensions: readonly BrowserWorkspaceExtension[];
+  readonly extensionCandidate: BrowserWorkspaceExtensionCandidate | null;
   readonly agentControl: BrowserAgentControlSnapshot;
 }
 
@@ -95,6 +117,11 @@ export type BrowserWorkspaceCommand =
   | { readonly type: "set-zoom"; readonly conversationId: string; readonly tabId: string; readonly factor: number }
   | { readonly type: "add-bookmark"; readonly conversationId: string; readonly tabId: string }
   | { readonly type: "remove-bookmark"; readonly conversationId: string; readonly bookmarkId: string }
+  | { readonly type: "extension-choose"; readonly conversationId: string }
+  | { readonly type: "extension-install"; readonly conversationId: string; readonly candidateId: string }
+  | { readonly type: "extension-set-enabled"; readonly conversationId: string; readonly extensionKey: string; readonly enabled: boolean }
+  | { readonly type: "extension-update"; readonly conversationId: string; readonly extensionKey: string }
+  | { readonly type: "extension-remove"; readonly conversationId: string; readonly extensionKey: string }
   | { readonly type: "agent-control"; readonly conversationId: string; readonly action: "pause" | "resume" | "takeover" | "stop" };
 
 export interface BrowserWorkspaceDesktopBridge {
@@ -112,6 +139,11 @@ export interface BrowserWorkspaceDesktopBridge {
   setZoom(conversationId: string, tabId: string, factor: number): Promise<BrowserWorkspaceSnapshot>;
   addBookmark(conversationId: string, tabId: string): Promise<BrowserWorkspaceSnapshot>;
   removeBookmark(conversationId: string, bookmarkId: string): Promise<BrowserWorkspaceSnapshot>;
+  chooseExtension(conversationId: string): Promise<BrowserWorkspaceSnapshot>;
+  installExtension(conversationId: string, candidateId: string): Promise<BrowserWorkspaceSnapshot>;
+  setExtensionEnabled(conversationId: string, extensionKey: string, enabled: boolean): Promise<BrowserWorkspaceSnapshot>;
+  updateExtension(conversationId: string, extensionKey: string): Promise<BrowserWorkspaceSnapshot>;
+  removeExtension(conversationId: string, extensionKey: string): Promise<BrowserWorkspaceSnapshot>;
   setAgentControl(conversationId: string, action: "pause" | "resume" | "takeover" | "stop"): Promise<BrowserWorkspaceSnapshot>;
   onState(listener: (snapshot: BrowserWorkspaceSnapshot) => void): () => void;
 }
@@ -194,6 +226,21 @@ export function parseBrowserWorkspaceCommand(value: unknown): BrowserWorkspaceCo
     case "remove-bookmark":
       return typeof value.bookmarkId === "string" && value.bookmarkId.length > 0 && value.bookmarkId.length <= 128
         ? { type: "remove-bookmark", conversationId, bookmarkId: value.bookmarkId }
+        : null;
+    case "extension-choose":
+      return { type: "extension-choose", conversationId };
+    case "extension-install":
+      return typeof value.candidateId === "string" && value.candidateId.length > 0 && value.candidateId.length <= 128
+        ? { type: "extension-install", conversationId, candidateId: value.candidateId }
+        : null;
+    case "extension-set-enabled":
+      return typeof value.extensionKey === "string" && value.extensionKey.length > 0 && value.extensionKey.length <= 128 && typeof value.enabled === "boolean"
+        ? { type: "extension-set-enabled", conversationId, extensionKey: value.extensionKey, enabled: value.enabled }
+        : null;
+    case "extension-update":
+    case "extension-remove":
+      return typeof value.extensionKey === "string" && value.extensionKey.length > 0 && value.extensionKey.length <= 128
+        ? { type: value.type, conversationId, extensionKey: value.extensionKey }
         : null;
     case "agent-control":
       return ["pause", "resume", "takeover", "stop"].includes(String(value.action))

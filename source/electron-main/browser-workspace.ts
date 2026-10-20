@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
+import { inspectUnpackedBrowserExtension, type BrowserExtensionInspection } from "./browser-extension-policy.js";
 import { basename, dirname, join } from "node:path";
 import {
   LOCAL_BROWSER_AGENT_LIMITS,
@@ -34,6 +35,7 @@ import {
   type BrowserWorkspaceCommand,
   type BrowserWorkspaceDownload,
   type BrowserWorkspaceHistoryEntry,
+  type BrowserWorkspaceExtension,
   type BrowserWorkspaceSnapshot,
   type BrowserWorkspaceTabSnapshot,
 } from "../shared/browser-workspace.js";
@@ -53,10 +55,20 @@ export interface BrowserWorkspaceDownloadItem {
   on(event: "updated" | "done", listener: (_event?: unknown, state?: string) => void): void;
 }
 
+export interface BrowserWorkspaceLoadedExtension {
+  readonly id: string;
+  readonly name: string;
+  readonly version: string;
+}
+
 export interface BrowserWorkspaceSessionPort {
   setPermissionRequestHandler(handler: ((webContents: BrowserWorkspaceWebContentsPort, permission: string, callback: (allowed: boolean) => void) => void) | null): void;
   setPermissionCheckHandler(handler: ((webContents: BrowserWorkspaceWebContentsPort, permission: string) => boolean) | null): void;
   on(event: "will-download", listener: (event: unknown, item: BrowserWorkspaceDownloadItem, webContents: BrowserWorkspaceWebContentsPort) => void): void;
+  readonly extensions?: {
+    loadExtension(path: string, options?: { readonly allowFileAccess?: boolean }): Promise<BrowserWorkspaceLoadedExtension>;
+    removeExtension(extensionId: string): void;
+  };
 }
 
 export interface BrowserWorkspaceWebContentsPort {
@@ -114,6 +126,7 @@ export interface BrowserWorkspaceServicePorts {
   readonly getAccountScope: () => string | undefined;
   readonly persistence: BrowserWorkspacePersistencePort;
   readonly pickUploadFile?: () => Promise<string | null>;
+  readonly pickExtensionDirectory?: () => Promise<string | null>;
   readonly broadcast: (channel: string, payload: unknown) => void;
   readonly now?: () => number;
   readonly id?: () => string;
@@ -133,9 +146,20 @@ interface PersistedWorkspace {
   readonly activeTabIndex: number;
   readonly tabs: readonly PersistedTab[];
 }
+interface PersistedExtension {
+  key: string;
+  sourcePath: string;
+  integrity: string;
+  name: string;
+  version: string;
+  enabled: boolean;
+  permissions: readonly string[];
+  hostPermissions: readonly string[];
+}
 interface PersistedAccount {
   readonly bookmarks: readonly BrowserWorkspaceBookmark[];
   readonly history: readonly BrowserWorkspaceHistoryEntry[];
+  readonly extensions: readonly PersistedExtension[];
   readonly workspaces: Readonly<Record<string, PersistedWorkspace>>;
 }
 interface PersistedRoot {
@@ -143,9 +167,14 @@ interface PersistedRoot {
   readonly accounts: Readonly<Record<string, PersistedAccount>>;
 }
 
+interface MutableExtension extends PersistedExtension {
+  runtimeId: string | null;
+  error: string | null;
+}
 interface MutableAccount {
   bookmarks: BrowserWorkspaceBookmark[];
   history: BrowserWorkspaceHistoryEntry[];
+  extensions: MutableExtension[];
   workspaces: Record<string, PersistedWorkspace>;
 }
 
@@ -178,6 +207,7 @@ interface RuntimeWorkspace {
   agentTaskId: string;
   agentTaskStatus: "idle" | "running" | "paused" | "taken-over" | "stopped";
   activeAgentOperationId: string | null;
+  extensionCandidate: { readonly candidateId: string; readonly inspection: BrowserExtensionInspection } | null;
 }
 
 function record(value: unknown): Record<string, unknown> | null {
@@ -212,6 +242,20 @@ function normalizePersistedRoot(value: unknown): PersistedRoot {
       return id != null && title != null && url != null && normalizeBrowserWorkspaceAddress(url) != null && typeof visitedAtMs === "number" && Number.isFinite(visitedAtMs)
         ? [{ id, title, url, visitedAtMs }] : [];
     }).slice(-BROWSER_WORKSPACE_LIMITS.maxHistory) : [];
+    const extensions = Array.isArray(account.extensions) ? account.extensions.flatMap((item): PersistedExtension[] => {
+      const entry = record(item);
+      const key = boundedString(entry?.key, 128);
+      const sourcePath = boundedString(entry?.sourcePath, 8192);
+      const integrity = boundedString(entry?.integrity, 128);
+      const name = boundedString(entry?.name, 256);
+      const version = boundedString(entry?.version, 64);
+      const enabled = entry?.enabled;
+      const permissions = Array.isArray(entry?.permissions) ? entry.permissions.filter((value): value is string => typeof value === "string" && value.length > 0 && value.length <= 512).slice(0, 100) : [];
+      const hostPermissions = Array.isArray(entry?.hostPermissions) ? entry.hostPermissions.filter((value): value is string => typeof value === "string" && value.length > 0 && value.length <= 512).slice(0, 100) : [];
+      return key != null && sourcePath != null && integrity?.startsWith("sha256:") && name != null && version != null && typeof enabled === "boolean"
+        ? [{ key, sourcePath, integrity, name, version, enabled, permissions, hostPermissions }]
+        : [];
+    }).slice(0, 64) : [];
     const workspaces: Record<string, PersistedWorkspace> = {};
     const rawWorkspaces = record(account.workspaces);
     if (rawWorkspaces != null) {
@@ -230,7 +274,7 @@ function normalizePersistedRoot(value: unknown): PersistedRoot {
         workspaces[conversationHash] = { activeTabIndex, tabs };
       }
     }
-    accounts[accountHash] = { bookmarks, history, workspaces };
+    accounts[accountHash] = { bookmarks, history, extensions, workspaces };
   }
   return { version: PERSISTENCE_VERSION, accounts };
 }
@@ -298,6 +342,7 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
       nextAccounts[accountHash] = {
         bookmarks: account.bookmarks,
         history: account.history,
+        extensions: account.extensions.map(({ runtimeId: _runtimeId, error: _error, ...extension }) => extension),
         workspaces: account.workspaces,
       };
     }
@@ -312,6 +357,7 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
     const created: MutableAccount = {
       bookmarks: [...(saved?.bookmarks ?? [])],
       history: [...(saved?.history ?? [])],
+      extensions: (saved?.extensions ?? []).map((extension) => ({ ...extension, runtimeId: null, error: null })),
       workspaces: { ...(saved?.workspaces ?? {}) },
     };
     accounts.set(accountHash, created);
@@ -365,6 +411,24 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
       bookmarks: account.bookmarks,
       history: account.history,
       downloads: workspace.downloads,
+      extensions: account.extensions.map((extension): BrowserWorkspaceExtension => ({
+        key: extension.key,
+        name: extension.name,
+        version: extension.version,
+        enabled: extension.enabled,
+        permissions: extension.permissions,
+        hostPermissions: extension.hostPermissions,
+        integrity: extension.integrity,
+        error: extension.error,
+      })),
+      extensionCandidate: workspace.extensionCandidate == null ? null : {
+        candidateId: workspace.extensionCandidate.candidateId,
+        name: workspace.extensionCandidate.inspection.name,
+        version: workspace.extensionCandidate.inspection.version,
+        permissions: workspace.extensionCandidate.inspection.permissions,
+        hostPermissions: workspace.extensionCandidate.inspection.hostPermissions,
+        integrity: workspace.extensionCandidate.inspection.integrity,
+      },
       agentControl: {
         state: workspace.agentControlState,
         epoch: workspace.agentControlEpoch,
@@ -445,9 +509,57 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
     return null;
   };
 
-  const configureSession = (session: BrowserWorkspaceSessionPort): void => {
+  const publishAccount = (accountHash: string): void => {
+    for (const workspace of workspaces.values()) {
+      if (workspace.accountHash === accountHash) publish(workspace);
+    }
+  };
+
+  const loadExtension = async (
+    session: BrowserWorkspaceSessionPort,
+    accountHash: string,
+    extension: MutableExtension,
+    inspection: BrowserExtensionInspection,
+  ): Promise<void> => {
+    if (session.extensions == null) throw new Error("BROWSER_EXTENSIONS_UNAVAILABLE");
+    const loaded = await session.extensions.loadExtension(inspection.sourcePath, { allowFileAccess: false });
+    if (loaded.name !== inspection.name || loaded.version !== inspection.version) {
+      try { session.extensions.removeExtension(loaded.id); } catch {}
+      throw new Error("BROWSER_EXTENSION_LOAD_MISMATCH");
+    }
+    extension.runtimeId = loaded.id;
+    extension.error = null;
+    publishAccount(accountHash);
+  };
+
+  const unloadExtension = (session: BrowserWorkspaceSessionPort, extension: MutableExtension): void => {
+    if (extension.runtimeId != null && session.extensions != null) {
+      try { session.extensions.removeExtension(extension.runtimeId); } catch {}
+    }
+    extension.runtimeId = null;
+  };
+
+  const restoreExtensions = async (session: BrowserWorkspaceSessionPort, accountHash: string): Promise<void> => {
+    const account = accountFor(accountHash);
+    for (const extension of account.extensions) {
+      if (!extension.enabled || disposed) continue;
+      try {
+        const inspection = inspectUnpackedBrowserExtension(extension.sourcePath);
+        if (inspection.integrity !== extension.integrity) throw new Error("BROWSER_EXTENSION_INTEGRITY_CHANGED");
+        await loadExtension(session, accountHash, extension, inspection);
+      } catch (error) {
+        extension.runtimeId = null;
+        extension.error = error instanceof Error ? error.message.slice(0, 256) : "BROWSER_EXTENSION_LOAD_FAILED";
+        fail("extension-restore", error);
+        publishAccount(accountHash);
+      }
+    }
+  };
+
+  const configureSession = (session: BrowserWorkspaceSessionPort, accountHash: string): void => {
     if (sessionConfigured.has(session as object)) return;
     sessionConfigured.add(session as object);
+    void restoreExtensions(session, accountHash);
     session.setPermissionRequestHandler((_contents, _permission, callback) => callback(false));
     session.setPermissionCheckHandler(() => false);
     session.on("will-download", (_event, item, contents) => {
@@ -498,7 +610,7 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
     if (workspace.tabs.length >= BROWSER_WORKSPACE_LIMITS.maxTabs) throw new Error("BROWSER_TAB_LIMIT");
     const view = ports.createView({ partition: workspace.partition });
     const contents = view.webContents;
-    configureSession(contents.session);
+    configureSession(contents.session, workspace.accountHash);
     const tab: RuntimeTab = {
       id: nextId(),
       view,
@@ -633,6 +745,7 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
       agentTaskId: nextId(),
       agentTaskStatus: "idle",
       activeAgentOperationId: null,
+      extensionCandidate: null,
     };
     workspaces.set(workspace.id, workspace);
     for (const savedTab of saved?.tabs ?? []) {
@@ -766,6 +879,94 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
       case "remove-bookmark": {
         const account = accountFor(workspace.accountHash);
         account.bookmarks = account.bookmarks.filter((bookmark) => bookmark.id !== command.bookmarkId);
+        persist();
+        return publish(workspace);
+      }
+      case "extension-choose": {
+        if (ports.pickExtensionDirectory == null) throw new Error("BROWSER_EXTENSIONS_UNAVAILABLE");
+        const selected = await ports.pickExtensionDirectory();
+        if (selected == null) {
+          workspace.extensionCandidate = null;
+          return publish(workspace);
+        }
+        const inspection = inspectUnpackedBrowserExtension(selected);
+        workspace.extensionCandidate = { candidateId: nextId(), inspection };
+        return publish(workspace);
+      }
+      case "extension-install": {
+        const candidate = workspace.extensionCandidate;
+        if (candidate == null || candidate.candidateId !== command.candidateId) throw new Error("BROWSER_EXTENSION_CANDIDATE_STALE");
+        const inspection = inspectUnpackedBrowserExtension(candidate.inspection.sourcePath);
+        if (inspection.integrity !== candidate.inspection.integrity) throw new Error("BROWSER_EXTENSION_INTEGRITY_CHANGED");
+        const account = accountFor(workspace.accountHash);
+        const key = hashIdentity(inspection.sourcePath);
+        if (account.extensions.some((extension) => extension.key === key)) throw new Error("BROWSER_EXTENSION_ALREADY_INSTALLED");
+        const extension: MutableExtension = {
+          key,
+          sourcePath: inspection.sourcePath,
+          integrity: inspection.integrity,
+          name: inspection.name,
+          version: inspection.version,
+          enabled: true,
+          permissions: inspection.permissions,
+          hostPermissions: inspection.hostPermissions,
+          runtimeId: null,
+          error: null,
+        };
+        await loadExtension(activeTab(workspace).view.webContents.session, workspace.accountHash, extension, inspection);
+        account.extensions.push(extension);
+        workspace.extensionCandidate = null;
+        persist();
+        return publish(workspace);
+      }
+      case "extension-set-enabled": {
+        const account = accountFor(workspace.accountHash);
+        const extension = account.extensions.find((item) => item.key === command.extensionKey);
+        if (extension == null) throw new Error("BROWSER_EXTENSION_NOT_FOUND");
+        const session = activeTab(workspace).view.webContents.session;
+        if (!command.enabled) {
+          unloadExtension(session, extension);
+          extension.enabled = false;
+          extension.error = null;
+        } else {
+          const inspection = inspectUnpackedBrowserExtension(extension.sourcePath);
+          if (inspection.integrity !== extension.integrity) throw new Error("BROWSER_EXTENSION_INTEGRITY_CHANGED");
+          await loadExtension(session, workspace.accountHash, extension, inspection);
+          extension.enabled = true;
+        }
+        persist();
+        return publish(workspace);
+      }
+      case "extension-update": {
+        const account = accountFor(workspace.accountHash);
+        const extension = account.extensions.find((item) => item.key === command.extensionKey);
+        if (extension == null) throw new Error("BROWSER_EXTENSION_NOT_FOUND");
+        const session = activeTab(workspace).view.webContents.session;
+        const inspection = inspectUnpackedBrowserExtension(extension.sourcePath);
+        unloadExtension(session, extension);
+        try {
+          if (extension.enabled) await loadExtension(session, workspace.accountHash, extension, inspection);
+          extension.integrity = inspection.integrity;
+          extension.name = inspection.name;
+          extension.version = inspection.version;
+          extension.permissions = inspection.permissions;
+          extension.hostPermissions = inspection.hostPermissions;
+          extension.error = null;
+          persist();
+          return publish(workspace);
+        } catch (error) {
+          extension.error = error instanceof Error ? error.message.slice(0, 256) : "BROWSER_EXTENSION_UPDATE_FAILED";
+          persist();
+          publish(workspace);
+          throw error;
+        }
+      }
+      case "extension-remove": {
+        const account = accountFor(workspace.accountHash);
+        const index = account.extensions.findIndex((item) => item.key === command.extensionKey);
+        if (index < 0) throw new Error("BROWSER_EXTENSION_NOT_FOUND");
+        unloadExtension(activeTab(workspace).view.webContents.session, account.extensions[index]!);
+        account.extensions.splice(index, 1);
         persist();
         return publish(workspace);
       }
