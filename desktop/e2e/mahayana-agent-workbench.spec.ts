@@ -582,8 +582,16 @@ async function ensureE2eAuthBackend(): Promise<string> {
       if (requestUrl.pathname === '/browser-workspace-fixture' && request.method === 'GET') {
         const origin = `http://${request.headers.host ?? '127.0.0.1'}`;
         response.setHeader('content-type', 'text/html; charset=utf-8');
+        response.setHeader('set-cookie', 'fabushi_browser_profile=retained; Path=/; SameSite=Lax');
         response.statusCode = 200;
         response.end(`<!doctype html><html><head><title>Fabushi Browser Fixture</title></head><body><main><h1>Fabushi Native Browser</h1><a id="download-link" href="${origin}/browser-workspace-download">Download fixture</a></main></body></html>`);
+        return;
+      }
+      if (requestUrl.pathname === '/browser-workspace-cookie' && request.method === 'GET') {
+        const retained = String(request.headers.cookie ?? '').split(';').map((part) => part.trim()).includes('fabushi_browser_profile=retained');
+        response.setHeader('content-type', 'text/html; charset=utf-8');
+        response.statusCode = 200;
+        response.end(`<!doctype html><html><head><title>Fabushi Browser Cookie ${retained ? 'retained' : 'missing'}</title></head><body><main><h1>Profile cookie ${retained ? 'retained' : 'missing'}</h1></main></body></html>`);
         return;
       }
       if (requestUrl.pathname === '/browser-agent-form' && request.method === 'GET') {
@@ -971,6 +979,29 @@ test('native Browser Workspace opens real Chromium pages, isolates tabs, and dow
       .filter((entry) => entry.url.includes('/browser-workspace-')));
     expect(nativeEntries.some((entry) => entry.url.includes('/browser-workspace-fixture'))).toBe(true);
     expect(nativeEntries.some((entry) => entry.url.includes('/browser-workspace-second'))).toBe(true);
+
+    await app.close();
+    app = null;
+    app = await launchDesktopApp(appDataDir);
+    const restartedPage = await app.firstWindow();
+    await completeBrowserLogin(restartedPage);
+    const existingAgent = restartedPage.getByRole('region', { name: 'Agent list' }).locator('button.sand-agent-item').first();
+    await expect(existingAgent).toBeVisible({ timeout: 15_000 });
+    await existingAgent.click();
+    const restartedPrompt = restartedPage.getByRole('textbox', { name: 'Prompt' });
+    await expect(restartedPrompt).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
+
+    await restartedPage.getByRole('button', { name: 'Open browser workspace', exact: true }).click();
+    const restoredWorkspace = restartedPage.getByTestId('browser-workspace');
+    await expect(restoredWorkspace).toBeVisible({ timeout: 10_000 });
+    await expect(restoredWorkspace.getByRole('tab')).toHaveCount(2, { timeout: 15_000 });
+    await expect(restoredWorkspace.getByRole('tab').filter({ hasText: 'Fabushi Browser Fixture' })).toHaveCount(1, { timeout: 15_000 });
+    await expect(restoredWorkspace.getByRole('tab').filter({ hasText: 'Fabushi Browser Second' })).toHaveCount(1, { timeout: 15_000 });
+
+    const restoredAddress = restoredWorkspace.getByRole('textbox', { name: 'Address and search' });
+    await restoredAddress.fill(`${origin}/browser-workspace-cookie`);
+    await restoredAddress.press('Enter');
+    await expect(restoredWorkspace.getByRole('tab').filter({ hasText: 'Fabushi Browser Cookie retained' })).toHaveCount(1, { timeout: 15_000 });
   } finally {
     await app?.close().catch(() => undefined);
     await rm(appDataDir, { recursive: true, force: true });
