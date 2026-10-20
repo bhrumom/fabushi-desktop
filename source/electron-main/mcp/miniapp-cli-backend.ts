@@ -10,8 +10,8 @@
  */
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { realpath, stat } from "node:fs/promises";
-import { basename, isAbsolute, relative, sep } from "node:path";
+import { lstat, realpath, stat } from "node:fs/promises";
+import { basename, dirname, isAbsolute, relative, sep } from "node:path";
 import type {
   MiniAppCapability,
   MiniAppSelectionEntry,
@@ -27,6 +27,8 @@ export interface DandelionCliConfig {
   readonly configPath: string;
   /** Roots the Host owner explicitly authorized for scanning and transfer. */
   readonly allowedRoots: readonly string[];
+  /** The native picker itself grants a bounded directory for bundled local-only defaults. */
+  readonly authorizePickedRoots?: boolean;
   /** Authorized destination pools; empty disables transfer. */
   readonly targetPools: readonly MiniAppTargetPool[];
   /** Trusted native state directory; never supplied by the renderer. */
@@ -142,7 +144,7 @@ export function createDandelionCliBackend(
   const platform = config.platform ?? process.platform;
   const nativeCliSupported = platform === "linux" || platform === "darwin";
   const spawnCommand = ports.spawn ?? defaultSpawn(config.binaryPath, config.configPath);
-  const selections = new Map<string, { root: string; expiresAt: number }>();
+  const selections = new Map<string, { root: string; device: bigint; inode: bigint; expiresAt: number }>();
   const operations = new Map<string, Operation>();
   const active = new Set<NativeRun>();
   let generation = 0;
@@ -185,11 +187,13 @@ export function createDandelionCliBackend(
     }
   };
 
-  const requireSelection = (selectionId: string): string => {
+  const requireSelection = async (selectionId: string): Promise<string> => {
     pruneSelections();
     const record = selections.get(selectionId);
     if (!record) throw new Error("UNKNOWN_SELECTION");
     if (record.expiresAt <= Date.now()) { selections.delete(selectionId); throw new Error("SELECTION_EXPIRED"); }
+    const info = await lstat(record.root, { bigint: true });
+    if (!info.isDirectory() || info.isSymbolicLink() || info.dev !== record.device || info.ino !== record.inode) throw new Error("SELECTION_SOURCE_CHANGED");
     return record.root;
   };
 
@@ -272,8 +276,8 @@ export function createDandelionCliBackend(
       try { await requireNative(); available = true; } catch { /* keep offline operation available */ }
       const capabilities: MiniAppCapability[] = ["offline", "selection"];
       if (available) {
-        if (config.targetPools.length > 0 && roots.length > 0) capabilities.push("transfer");
-        if (roots.length > 0) capabilities.push("scan");
+        if (config.targetPools.length > 0 && (roots.length > 0 || config.authorizePickedRoots === true)) capabilities.push("transfer");
+        if (roots.length > 0 || config.authorizePickedRoots === true) capabilities.push("scan");
         if (stateDirectory) capabilities.push("state");
         capabilities.push("config");
         if (platform === "linux") capabilities.push("platform");
@@ -299,16 +303,17 @@ export function createDandelionCliBackend(
       const picked = await ports.pick(mode, limits);
       if (!picked || picked.length === 0) return null;
       const root = await realpath(picked[0]!.path);
-      const info = await stat(root);
+      const info = await stat(root, { bigint: true });
+      if (dirname(root) === root) throw new Error("FILESYSTEM_ROOT_NOT_AUTHORIZED");
       if (mode === "directory" && !info.isDirectory()) throw new Error("DIRECTORY_SELECTION_REQUIRED");
-      if (!(await canonicalRoots()).some((allowed) => insideRoot(allowed, root))) throw new Error("ROOT_NOT_AUTHORIZED");
+      if (config.authorizePickedRoots !== true && !(await canonicalRoots()).some((allowed) => insideRoot(allowed, root))) throw new Error("ROOT_NOT_AUTHORIZED");
       // Directory stat size is filesystem metadata, not the recursive payload
       // size. The Dandelion scanner enforces the configured recursive budget.
       if (picked.length > limits.maxFiles || (!info.isDirectory() && info.size > limits.maxBytes)) throw new Error("SELECTION_LIMIT_EXCEEDED");
       if (ticket !== generation) throw new Error("DANDELION_CANCELLED");
       pruneSelections();
       const selectionId = randomUUID();
-      selections.set(selectionId, { root, expiresAt: Date.now() + SELECTION_TTL_MS });
+      selections.set(selectionId, { root, device: info.dev, inode: info.ino, expiresAt: Date.now() + SELECTION_TTL_MS });
       const entries: MiniAppSelectionEntry[] = [{ name: basename(root), size: picked[0]!.size }];
       return { selectionId, entries };
     },
@@ -321,7 +326,8 @@ export function createDandelionCliBackend(
       await requireNative();
       if (ticket !== generation) throw new Error("DANDELION_CANCELLED");
       if (platform !== "linux" && sendConfig.resume === true) throw new Error("PLATFORM_UNSUPPORTED");
-      const root = requireSelection(sendConfig.selectionId);
+      const root = await requireSelection(sendConfig.selectionId);
+      if (ticket !== generation) throw new Error("DANDELION_CANCELLED");
       if (!config.targetPools.some((pool) => pool.id === sendConfig.targetPoolId)) throw new Error("UNKNOWN_TARGET_POOL");
       const argv = ["run", "--source", root];
       if (sendConfig.repeat !== undefined) argv.push("--repeat", String(sendConfig.repeat));
@@ -379,7 +385,7 @@ export function createDandelionCliBackend(
       const ticket = generation;
       await requireNative();
       if (ticket !== generation) throw new Error("DANDELION_CANCELLED");
-      return execute(ticket, ["scan", mode, "--source", requireSelection(rootId), "--json"]);
+      return execute(ticket, ["scan", mode, "--source", await requireSelection(rootId), "--json"]);
     },
     async state(action) {
       const ticket = generation;

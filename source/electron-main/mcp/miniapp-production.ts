@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { lstatSync, readFileSync } from "node:fs";
 import { delimiter, isAbsolute, join } from "node:path";
 import type { ProductionServiceContext } from "../main-production-services.js";
 import { registerMiniAppManagement, type NativeMiniAppEntry } from "./miniapp-management.js";
@@ -40,10 +40,24 @@ type DandelionHostDescriptor = {
   receive?: unknown;
   enableHotspot?: unknown;
   enableUpdate?: unknown;
+  authorizePickedRoots?: unknown;
 };
 
+/** Only sealed application resources supply defaults; never search PATH or download code. */
+export function bundledDandelionDescriptor(resourcesPath: string): DandelionHostDescriptor {
+  const binaryPath = join(resourcesPath, "bin", "dandelion");
+  const configPath = join(resourcesPath, "bin", "dandelion-default.toml");
+  try {
+    for (const [path, max] of [[binaryPath, 64 * 1024 * 1024], [configPath, 64 * 1024]] as const) {
+      const info = lstatSync(path);
+      if (!info.isFile() || info.isSymbolicLink() || info.size === 0 || info.size > max) return {};
+    }
+    return { binaryPath, configPath, roots: [], pools: [{ id: "loopback", label: "本机回环验证" }], authorizePickedRoots: true };
+  } catch { return {}; }
+}
+
 function readDandelionHostDescriptor(context: ProductionServiceContext): DandelionHostDescriptor {
-  const app = context.native.app as unknown as { getPath?: (name: string) => string };
+  const app = context.native.app as unknown as { getPath?: (name: string) => string; isPackaged?: boolean };
   if (typeof app.getPath !== "function") return {};
   const descriptorPath = join(app.getPath("userData"), "global-dandelion", "host-config.json");
   try {
@@ -52,7 +66,13 @@ function readDandelionHostDescriptor(context: ProductionServiceContext): Dandeli
     const parsed: unknown = JSON.parse(text);
     if (parsed == null || typeof parsed !== "object" || Array.isArray(parsed)) return {};
     return parsed as DandelionHostDescriptor;
-  } catch {
+  } catch (error) {
+    const resourcesPath = (process as unknown as { resourcesPath?: string }).resourcesPath;
+    if ((error as NodeJS.ErrnoException).code === "ENOENT" && app.isPackaged === true
+      && (process.platform === "darwin" || process.platform === "linux") && resourcesPath
+      && !Object.keys(process.env).some((key) => key.startsWith("FABUSHI_DANDELION_") && process.env[key])) {
+      return bundledDandelionDescriptor(resourcesPath);
+    }
     return {};
   }
 }
@@ -83,7 +103,8 @@ function miniAppTooling(context: ProductionServiceContext, ipc: unknown): MiniAp
   const hotspotPasswordFile = optionalString(env.FABUSHI_DANDELION_HOTSPOT_PASSWORD_FILE, descriptor.hotspotPasswordFile);
   const updateTrust = env.FABUSHI_DANDELION_UPDATE_TRUST?.trim() || (descriptor.updateTrust == null ? undefined : JSON.stringify(descriptor.updateTrust));
   let receive: { targetPoolId: string; caFile: string; certificateFile: string; privateKeyFile: string; bind?: string; maxSessions?: number; trafficLimitBytes?: number; rateBytesPerSecond?: number; timeoutMs?: number } | undefined;
-  if (!binaryPath || !configPath || !isAbsolute(binaryPath) || !isAbsolute(configPath) || !preloadPath || authorizedRoots.length === 0) return undefined;
+  if (!binaryPath || !configPath || !isAbsolute(binaryPath) || !isAbsolute(configPath) || !preloadPath
+    || (authorizedRoots.length === 0 && descriptor.authorizePickedRoots !== true)) return undefined;
   let pools: { id: string; label: string }[];
   try {
     const parsed: unknown = env.FABUSHI_DANDELION_POOLS == null ? (descriptor.pools ?? []) : JSON.parse(env.FABUSHI_DANDELION_POOLS);
@@ -130,6 +151,7 @@ function miniAppTooling(context: ProductionServiceContext, ipc: unknown): MiniAp
   };
   const backend = createDandelionCliBackend({
     binaryPath, configPath, allowedRoots: authorizedRoots, targetPools: pools,
+    authorizePickedRoots: descriptor.authorizePickedRoots === true,
     stateDirectory, compatDirectory, receive,
     hotspotJournalDirectory,
     hotspotInterface, hotspotSsid, hotspotBand, hotspotPasswordFile,

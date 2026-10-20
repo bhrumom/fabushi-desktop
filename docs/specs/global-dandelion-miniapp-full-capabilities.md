@@ -36,6 +36,27 @@ Extend the existing CLI backend and test workflow; no second process supervisor.
 Binary provisioning/installed Host acceptance remains required before claiming
 consumer delivery. Rollback restores the Host and reviewed native binary together.
 
+### Bundled native engine
+
+GD-P01: macOS packaging builds the exact Dandelion source pinned by
+`source/packaging/dandelion-engine.json`, using its own toolchain. Bundle the binary,
+both license texts, source identity, digest and a finite read-only default config
+inside the signed application resources. No runtime shell, download or environment
+variable is needed. A missing bundled engine preserves offline launch.
+
+GD-P02: the bundled default authorizes only a native-picker-selected directory and
+loopback verification. No filesystem-root selection or implicit LAN/WAN peer
+enrollment. The picker grant expires and is revoked with account/window teardown.
+The same limits and source-identity checks apply at invocation. The default config
+has at most 128 files / 1 GiB read budget and no implicit persistent shared account
+state; account-scoped persistent configuration remains a separate required feature.
+
+GD-P03: user-reviewed Host configuration remains the explicit opt-in route for
+authenticated remote peers, private state, updates and OS changes. Bundled defaults
+must not silently replace an invalid/incomplete user descriptor or environment
+override. Signed-package installation, native provisioning and installed operations
+are separate checks. Package acceptance must inspect and invoke the bundled engine.
+
 ## Context
 
 The approved Global Dandelion package currently exposes an offline Web/Wasm

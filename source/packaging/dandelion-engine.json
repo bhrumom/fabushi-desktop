@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "repository": "https://github.com/bhrumom/global-dandelion-rs.git",
+  "sourceSha": "fbc4270ac51ee8ff7c05d20b685ec509aa36ce85",
+  "toolchain": "1.98.1",
+  "target": "aarch64-apple-darwin"
+}

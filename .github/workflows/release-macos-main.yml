@@ -259,6 +259,10 @@ jobs:
         shell: bash
         run: npm run build:host
 
+      - name: Build and stage exact-source Dandelion native engine
+        shell: bash
+        run: bash .github/scripts/stage-dandelion.sh
+
       - name: Build pinned offline ASR engine
         shell: bash
         run: |
@@ -356,6 +360,21 @@ jobs:
           APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
           APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
         run: npx electron-builder --mac --arm64 --publish never
+
+      - name: Verify native Dandelion inside the signed app
+        shell: bash
+        run: |
+          set -euo pipefail
+          app="$(find desktop/release -maxdepth 3 -type d -name '*.app' -print -quit)"
+          test -n "$app"
+          engine="$app/Contents/Resources/bin/dandelion"
+          config="$app/Contents/Resources/bin/dandelion-default.toml"
+          test -x "$engine"
+          codesign --verify --strict "$engine"
+          "$engine" self-test --json
+          "$engine" --config "$config" config check --json
+          test -s "$app/Contents/Resources/bin/LICENSE.dandelion-MIT"
+          test -s "$app/Contents/Resources/bin/LICENSE.dandelion-APACHE"
 
       - name: Notarize and staple DMG
         shell: bash

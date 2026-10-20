@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { chmod, mkdir, mkdtemp, realpath, rm, symlink, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, realpath, rename, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
 import { createDandelionCliBackend } from "./miniapp-cli-backend.js";
@@ -328,6 +328,30 @@ test("native failures return stable errors without paths or credential stderr", 
     binaryPath: "/reviewed/dandelion", configPath: "/reviewed/config.toml", allowedRoots: [], targetPools: [], platform: "linux",
   }, { pick: async () => null, spawn: () => ({ kill() {}, done: Promise.resolve({ code: 2, stdout: "", stderr: "/private/key SECRET" }) }) });
   await assert.rejects(() => backend.config("defaults"), /^Error: DANDELION_EXIT_2$/);
+});
+
+test("bundled picker grants only the selected directory and rejects replacement before invocation", async () => {
+  const workspace = await mkdtemp(join(tmpdir(), "fabushi-picked-root-"));
+  try {
+    const root = join(workspace, "selected");
+    await mkdir(root);
+    let spawned = 0;
+    const backend = createDandelionCliBackend({
+      binaryPath: "/bundle/dandelion", configPath: "/bundle/default.toml", allowedRoots: [],
+      authorizePickedRoots: true, targetPools: [{ id: "loopback", label: "Local" }], platform: "linux",
+    }, { pick: async () => [{ path: root, name: "selected", size: 0 }], spawn: () => {
+      spawned += 1;
+      return { kill() {}, done: Promise.resolve({ code: 0, stdout: "{}", stderr: "" }) };
+    } });
+    const picked = await backend.pick("directory", { maxFiles: 1, maxBytes: 1024 });
+    assert.ok(picked);
+    await backend.scan("metadata", picked.selectionId);
+    assert.equal(spawned, 1);
+    await rename(root, join(workspace, "original"));
+    await mkdir(root);
+    await assert.rejects(() => backend.scan("metadata", picked.selectionId), /SELECTION_SOURCE_CHANGED/);
+    assert.equal(spawned, 1);
+  } finally { await rm(workspace, { recursive: true, force: true }); }
 });
 
 test("Host invokes the pinned Global Dandelion source engine through the real CLI", {

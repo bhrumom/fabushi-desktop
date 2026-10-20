@@ -1,6 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { registerProductionMiniApps } from "./miniapp-production.js";
+import { bundledDandelionDescriptor, registerProductionMiniApps } from "./miniapp-production.js";
+import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import type { ProductionServiceContext } from "../main-production-services.js";
 
 function fixture() {
@@ -26,6 +29,23 @@ function fixture() {
   const handle = registerProductionMiniApps(context, { handle: (name, fn) => { handlers.set(name, fn); } });
   return { context, handle, listeners, calls, entry, invoke: (name: string, id?: unknown) => handlers.get(name)!({ sender }, id), handlers };
 }
+
+test("bundled defaults are local-only and reject missing or redirected resources", async () => {
+  const root = await mkdtemp(join(tmpdir(), "fabushi-bundled-dandelion-"));
+  try {
+    assert.deepEqual(bundledDandelionDescriptor(root), {});
+    await mkdir(join(root, "bin"));
+    await writeFile(join(root, "bin", "dandelion"), "fixture binary");
+    await writeFile(join(root, "bin", "dandelion-default.toml"), "[state]\nenabled=false\n");
+    const descriptor = bundledDandelionDescriptor(root);
+    assert.equal(descriptor.authorizePickedRoots, true);
+    assert.deepEqual(descriptor.roots, []);
+    assert.deepEqual(descriptor.pools, [{ id: "loopback", label: "本机回环验证" }]);
+    await rm(join(root, "bin", "dandelion"));
+    await symlink(join(root, "bin", "dandelion-default.toml"), join(root, "bin", "dandelion"));
+    assert.deepEqual(bundledDandelionDescriptor(root), {});
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
 
 test("production keeps installed metadata usable when catalog is offline", async () => {
   const f = fixture();
