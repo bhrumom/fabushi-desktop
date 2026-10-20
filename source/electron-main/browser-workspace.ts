@@ -850,7 +850,7 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
     const workspace = requireExistingOwnedWorkspace(action.conversationId);
 
     if (action.type === "resolve-target") {
-      ensureAgentTaskRunning(workspace);
+      if (workspace.agentControlState === "available") ensureAgentTaskRunning(workspace);
       const tab = action.tabId == null ? activeTab(workspace) : requireTab(workspace, action.tabId);
       return agentResult(action.operationId, workspace, tab, { tabs: agentTabs(workspace) });
     }
