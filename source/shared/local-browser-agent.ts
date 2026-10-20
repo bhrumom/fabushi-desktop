@@ -5,6 +5,7 @@ export const LOCAL_BROWSER_AGENT_LIMITS = Object.freeze({
   maxSelectValues: 100,
   maxOptionValueLength: 4_096,
   maxSnapshotElements: 500,
+  maxSnapshotFrames: 64,
   maxSnapshotTextLength: 32_768,
   maxWaitMs: 15_000,
   maxScrollDelta: 20_000,
@@ -66,6 +67,8 @@ export interface LocalBrowserSnapshotElement {
   readonly checked: boolean | null;
   readonly selected: boolean | null;
   readonly frameUrl: string | null;
+  readonly frameName: string | null;
+  readonly frameId: number | null;
 }
 
 export interface LocalBrowserStructuredSnapshot {

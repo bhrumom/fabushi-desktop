@@ -28,7 +28,14 @@ class FakeSession implements BrowserWorkspaceSessionPort {
 }
 
 class FakeContents implements BrowserWorkspaceWebContentsPort {
-  readonly mainFrame = {};
+  readonly mainFrame: import("./local-browser-agent-page.js").LocalBrowserFramePort = {
+    url: "https://example.com/",
+    name: "",
+    frameTreeNodeId: 1,
+    detached: false,
+    framesInSubtree: [],
+    executeJavaScript: async (script: string) => await this.executeJavaScript(script),
+  };
   readonly listeners = new Map<string, Array<(...args: any[]) => void>>();
   popup: ((details: { readonly url: string }) => { action: "deny" }) | null = null;
   url = "about:blank";
@@ -509,6 +516,55 @@ test("agent target discovery and tab management stay scoped to the conversation 
   if (!closed.ok) return;
   assert.equal(closed.tabs?.length, 1);
   assert.equal(closed.tabs?.[0]?.tabId, state.activeTabId);
+});
+
+test("snapshot includes frame identity and routes ref actions to the owning frame", async () => {
+  const h = harness();
+  h.service.attachWindow(new FakeHostWindow());
+  const state = await h.invoke({ type: "activate", conversationId: "bot-a", bounds: { x: 1, y: 1, width: 500, height: 500 } });
+  const contents = h.views[0]!.webContents;
+  let childActions = 0;
+  const childFrame: import("./local-browser-agent-page.js").LocalBrowserFramePort = {
+    url: "https://frame.example/child",
+    name: "child",
+    frameTreeNodeId: 22,
+    detached: false,
+    framesInSubtree: [],
+    executeJavaScript: async (script: string) => {
+      if (script.includes("MAX_ELEMENTS") && script.includes("document.querySelectorAll")) {
+        return {
+          url: "https://frame.example/child", title: "Child", text: "Child Frame Submit",
+          elements: [{
+            selector: "html > body > button", tag: "button", role: null, name: "Child Submit", text: "Child Submit",
+            href: null, inputType: null, disabled: false, editable: false, checked: null, selected: null, frameUrl: null,
+          }],
+        };
+      }
+      childActions += 1;
+      return { ok: true };
+    },
+  };
+  const mainFrame = contents.mainFrame!;
+  (mainFrame as { framesInSubtree: readonly import("./local-browser-agent-page.js").LocalBrowserFramePort[] }).framesInSubtree = [mainFrame, childFrame];
+
+  const snap = await h.service.executeAgentAction({
+    type: "snapshot", conversationId: "bot-a", workspaceId: state.workspaceId, tabId: state.tabs[0]!.id,
+    expectedGeneration: state.tabs[0]!.generation, expectedControlEpoch: state.agentControl.epoch, operationId: "frame-snapshot",
+  });
+  assert.equal(snap.ok, true);
+  if (!snap.ok) return;
+  const child = snap.snapshot!.elements.find((element) => element.frameId === 22);
+  assert.equal(child?.frameName, "child");
+  assert.equal(child?.frameUrl, "https://frame.example/child");
+  assert.match(child!.ref, /^g\d+-f22-e\d+$/);
+
+  const clicked = await h.service.executeAgentAction({
+    type: "click", conversationId: "bot-a", workspaceId: state.workspaceId, tabId: state.tabs[0]!.id,
+    expectedGeneration: state.tabs[0]!.generation, expectedControlEpoch: state.agentControl.epoch,
+    operationId: "frame-click", ref: child!.ref,
+  });
+  assert.equal(clicked.ok, true);
+  assert.ok(childActions > 0);
 });
 
 test("agent drag uses generation-scoped refs and bounded native mouse input", async () => {

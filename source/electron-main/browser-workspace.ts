@@ -19,6 +19,7 @@ import {
   scrollLocalBrowserPage,
   selectLocalBrowserOptions,
   type LocalBrowserElementLocator,
+  type LocalBrowserFramePort,
 } from "./local-browser-agent-page.js";
 import {
   BROWSER_WORKSPACE_INVOKE_CHANNEL,
@@ -58,7 +59,7 @@ export interface BrowserWorkspaceSessionPort {
 
 export interface BrowserWorkspaceWebContentsPort {
   readonly session: BrowserWorkspaceSessionPort;
-  readonly mainFrame?: unknown;
+  readonly mainFrame?: LocalBrowserFramePort;
   loadURL(url: string): Promise<unknown>;
   getURL(): string;
   getTitle(): string;

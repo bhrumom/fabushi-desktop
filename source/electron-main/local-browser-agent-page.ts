@@ -7,7 +7,17 @@ export interface LocalBrowserPageImage {
   toPNG(): Buffer;
 }
 
+export interface LocalBrowserFramePort {
+  readonly url?: string;
+  readonly name?: string;
+  readonly frameTreeNodeId?: number;
+  readonly detached?: boolean;
+  readonly framesInSubtree?: readonly LocalBrowserFramePort[];
+  executeJavaScript(script: string, userGesture?: boolean): Promise<unknown>;
+}
+
 export interface LocalBrowserPagePort {
+  readonly mainFrame?: LocalBrowserFramePort;
   executeJavaScript(script: string, userGesture?: boolean): Promise<unknown>;
   capturePage(): Promise<LocalBrowserPageImage>;
   sendInputEvent(event: {
@@ -22,6 +32,10 @@ export interface LocalBrowserPagePort {
 
 export interface LocalBrowserElementLocator {
   readonly selector: string;
+  readonly frame: LocalBrowserFramePort | null;
+  readonly frameUrl: string | null;
+  readonly frameName: string | null;
+  readonly frameId: number | null;
   readonly fingerprint: {
     readonly tag: string;
     readonly role: string | null;
@@ -214,6 +228,19 @@ const VERIFY_LOCATOR_SOURCE = String.raw`
   }
 `;
 
+async function executeForLocator(
+  page: LocalBrowserPagePort,
+  locator: LocalBrowserElementLocator,
+  script: string,
+  userGesture = false,
+): Promise<unknown> {
+  if (locator.frame != null) {
+    if (locator.frame.detached === true) throw new Error("BROWSER_FRAME_DETACHED");
+    return await locator.frame.executeJavaScript(script, userGesture);
+  }
+  return await page.executeJavaScript(script, userGesture);
+}
+
 function actionScript(locator: LocalBrowserElementLocator, body: string): string {
   return `(() => {
     const locator = ${locatorPayload(locator)};
@@ -233,43 +260,70 @@ export async function captureLocalBrowserSnapshot(
   page: LocalBrowserPagePort,
   generation: number,
 ): Promise<LocalBrowserPageSnapshot> {
-  const raw = parseRawSnapshot(await page.executeJavaScript(SNAPSHOT_SCRIPT, false));
+  const rootFrame = page.mainFrame;
+  const frames = rootFrame?.framesInSubtree?.slice(0, LOCAL_BROWSER_AGENT_LIMITS.maxSnapshotFrames) ?? [];
+  const targets: Array<{ frame: LocalBrowserFramePort | null; frameUrl: string | null; frameName: string | null; frameId: number | null }> = frames.length > 0
+    ? frames.map((frame) => {
+        const isRoot = frame === rootFrame;
+        return {
+          frame: isRoot ? null : frame,
+          frameUrl: isRoot ? null : (typeof frame.url === "string" && frame.url.length > 0 ? frame.url.slice(0, 4096) : null),
+          frameName: isRoot ? null : (typeof frame.name === "string" && frame.name.length > 0 ? frame.name.slice(0, 240) : null),
+          frameId: isRoot ? null : (typeof frame.frameTreeNodeId === "number" && Number.isSafeInteger(frame.frameTreeNodeId) ? frame.frameTreeNodeId : null),
+        };
+      })
+    : [{ frame: null, frameUrl: null, frameName: null, frameId: null }];
   const locators = new Map<string, LocalBrowserElementLocator>();
-  const elements = raw.elements.map((element, index): LocalBrowserSnapshotElement => {
-    const ref = `g${generation}-e${index + 1}`;
-    locators.set(ref, {
-      selector: element.selector,
-      fingerprint: {
-        tag: element.tag,
-        role: element.role,
-        name: element.name,
-        href: element.href,
-        inputType: element.inputType,
-      },
-    });
-    return {
-      ref,
-      tag: element.tag,
-      role: element.role,
-      name: element.name,
-      text: element.text,
-      href: element.href,
-      inputType: element.inputType,
-      disabled: element.disabled,
-      editable: element.editable,
-      checked: element.checked,
-      selected: element.selected,
-      frameUrl: element.frameUrl,
-    };
-  });
-  return { url: raw.url, title: raw.title, text: raw.text, elements, locators };
+  const elements: LocalBrowserSnapshotElement[] = [];
+  const textParts: string[] = [];
+  let root: RawSnapshot | null = null;
+  for (const target of targets) {
+    if (target.frame?.detached === true) continue;
+    let raw: RawSnapshot;
+    try {
+      raw = parseRawSnapshot(await (target.frame ?? page).executeJavaScript(SNAPSHOT_SCRIPT, false));
+    } catch {
+      continue;
+    }
+    if (root == null || target.frame === rootFrame) root = raw;
+    if (raw.text.length > 0) textParts.push((target.frameId == null ? "" : "[frame " + target.frameId + (target.frameName == null ? "" : " " + target.frameName) + "] ") + raw.text);
+    const remaining = LOCAL_BROWSER_AGENT_LIMITS.maxSnapshotElements - elements.length;
+    if (remaining <= 0) break;
+    for (const element of raw.elements.slice(0, remaining)) {
+      const ordinal = elements.length + 1;
+      const frameToken = target.frameId == null ? "main" : String(target.frameId);
+      const ref = "g" + generation + "-f" + frameToken + "-e" + ordinal;
+      locators.set(ref, {
+        selector: element.selector,
+        frame: target.frame,
+        frameUrl: target.frameUrl,
+        frameName: target.frameName,
+        frameId: target.frameId,
+        fingerprint: {
+          tag: element.tag, role: element.role, name: element.name, href: element.href, inputType: element.inputType,
+        },
+      });
+      elements.push({
+        ref, tag: element.tag, role: element.role, name: element.name, text: element.text, href: element.href,
+        inputType: element.inputType, disabled: element.disabled, editable: element.editable, checked: element.checked,
+        selected: element.selected, frameUrl: target.frameUrl, frameName: target.frameName, frameId: target.frameId,
+      });
+    }
+  }
+  const fallback = root ?? parseRawSnapshot(await page.executeJavaScript(SNAPSHOT_SCRIPT, false));
+  return {
+    url: fallback.url,
+    title: fallback.title,
+    text: (textParts.join("\n") || fallback.text).slice(0, LOCAL_BROWSER_AGENT_LIMITS.maxSnapshotTextLength),
+    elements,
+    locators,
+  };
 }
-
 export async function clickLocalBrowserRef(
   page: LocalBrowserPagePort,
   locator: LocalBrowserElementLocator,
 ): Promise<void> {
-  actionResult(await page.executeJavaScript(actionScript(locator, String.raw`
+  actionResult(await executeForLocator(page, locator, actionScript(locator, String.raw`
     if (element.disabled || element.getAttribute("aria-disabled") === "true") {
       return { ok: false, code: "BROWSER_ELEMENT_DISABLED" };
     }
@@ -319,7 +373,7 @@ export async function fillLocalBrowserRef(
     }
     return { ok: false, code: "BROWSER_ELEMENT_NOT_EDITABLE" };
   `);
-  actionResult(await page.executeJavaScript(script, true));
+  actionResult(await executeForLocator(page, locator, script, true));
 }
 
 export async function selectLocalBrowserOptions(
@@ -354,14 +408,14 @@ export async function selectLocalBrowserOptions(
     }
     return { ok: true };
   `);
-  actionResult(await page.executeJavaScript(script, true));
+  actionResult(await executeForLocator(page, locator, script, true));
 }
 
 async function localBrowserRefCenter(
   page: LocalBrowserPagePort,
   locator: LocalBrowserElementLocator,
 ): Promise<{ x: number; y: number }> {
-  const result = record(await page.executeJavaScript(actionScript(locator, String.raw`
+  const result = record(await executeForLocator(page, locator, actionScript(locator, String.raw`
     element.scrollIntoView({ block: "center", inline: "center", behavior: "instant" });
     const rect = element.getBoundingClientRect();
     if (!(rect.width > 0) || !(rect.height > 0)) {
@@ -380,6 +434,9 @@ export async function dragLocalBrowserRef(
   source: LocalBrowserElementLocator,
   target: LocalBrowserElementLocator | { readonly x: number; readonly y: number },
 ): Promise<void> {
+  if (source.frame != null || ("selector" in target && target.frame != null)) {
+    throw new Error("BROWSER_DRAG_FRAME_UNSUPPORTED");
+  }
   const start = await localBrowserRefCenter(page, source);
   const end = "selector" in target ? await localBrowserRefCenter(page, target) : target;
   for (const point of [start, end]) {
@@ -417,7 +474,7 @@ export async function localBrowserRefStillMatches(
   page: LocalBrowserPagePort,
   locator: LocalBrowserElementLocator,
 ): Promise<boolean> {
-  const result = record(await page.executeJavaScript(actionScript(locator, "return { ok: true };"), false));
+  const result = record(await executeForLocator(page, locator, actionScript(locator, "return { ok: true };"), false));
   return result?.ok === true;
 }
 
