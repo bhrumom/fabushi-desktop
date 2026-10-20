@@ -3,5 +3,6 @@
   "repository": "https://github.com/bhrumom/global-dandelion-rs.git",
   "sourceSha": "516102fc2a0fa131a92153190fb75d40231ed547",
   "toolchain": "1.98.1",
-  "target": "aarch64-apple-darwin"
+  "target": "aarch64-apple-darwin",
+  "supportedTargets": ["aarch64-apple-darwin", "x86_64-unknown-linux-gnu", "aarch64-unknown-linux-gnu"]
 }

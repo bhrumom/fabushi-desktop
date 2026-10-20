@@ -268,7 +268,8 @@ async function verifyBundledNativeHost(page: Page): Promise<boolean> {
   const capabilities = observed.capabilities.data?.capabilities as string[];
   for (const capability of ['selection', 'scan', 'transfer', 'config', 'diagnostics']) expect(capabilities).toContain(capability);
   expect(capabilities).not.toContain('hotspot');
-  expect(capabilities).not.toContain('platform');
+  if (process.platform === 'linux') expect(capabilities).toContain('platform');
+  else expect(capabilities).not.toContain('platform');
   expect(observed.config.ok).toBe(true);
   expect((observed.config.data?.scanner as Record<string, unknown>).max_files).toBe(128);
   expect((observed.config.data?.transport as Record<string, unknown>).mode).toBe('loopback');
@@ -279,12 +280,21 @@ async function verifyBundledNativeHost(page: Page): Promise<boolean> {
 }
 
 async function exportAndVerifyReport(page: Page, appPid: number, downloadDir: string, inputFile: string, inputBytes: number): Promise<void> {
-  if (process.platform !== 'darwin' || process.env.GITHUB_ACTIONS !== 'true') throw new Error('Actions-only native Save panel gate');
+  if (!['darwin', 'linux'].includes(process.platform) || process.env.GITHUB_ACTIONS !== 'true') throw new Error('Actions-only native Save panel gate');
   const reportDir = await mkdtemp(path.join(downloadDir, 'report-'));
     await page.getByRole('button', { name: '导出报告', exact: true }).click();
-    execFileSync('/usr/bin/osascript', [path.resolve('../.github/scripts/miniapp-save-report.applescript'), String(appPid), reportDir], {
-      encoding: 'utf8', timeout: 45_000, stdio: ['ignore', 'pipe', 'pipe'],
-    });
+    if (process.platform === 'darwin') {
+      execFileSync('/usr/bin/osascript', [path.resolve('../.github/scripts/miniapp-save-report.applescript'), String(appPid), reportDir], {
+        encoding: 'utf8', timeout: 45_000, stdio: ['ignore', 'pipe', 'pipe'],
+      });
+    } else {
+      // Interact with the real GTK Save chooser; the final file assertion below
+      // proves the report was exported by the installed application.
+      await expect.poll(() => execFileSync('xdotool', ['getactivewindow', 'getwindowclassname'], { encoding: 'utf8', timeout: 5000 }).trim(), { timeout: 15000 }).toMatch(/fabushi|zenity|electron/i);
+      execFileSync('xdotool', ['key', '--clearmodifiers', 'ctrl+l'], { timeout: 5000 });
+      execFileSync('xdotool', ['type', '--clearmodifiers', '--delay', '1', path.join(reportDir, 'global-dandelion-local-report.json')], { timeout: 5000 });
+      execFileSync('xdotool', ['key', '--clearmodifiers', 'Return'], { timeout: 5000 });
+    }
     const reportFilename = 'global-dandelion-local-report.json';
     const reportPath = path.join(reportDir, reportFilename);
     await expect.poll(async () => {
@@ -346,18 +356,18 @@ function enabledNetworkServices(): NetworkService[] {
 }
 
 function disableRunnerNetwork(): NetworkService[] {
-  if (process.platform !== 'darwin' || process.env.GITHUB_ACTIONS !== 'true') {
-    throw new Error('Offline cold-launch acceptance requires the macOS GitHub Actions runner.');
+  if (!['darwin', 'linux'].includes(process.platform) || process.env.GITHUB_ACTIONS !== 'true') {
+    throw new Error('Offline cold-launch acceptance requires a supported GitHub Actions runner.');
   }
-  const services = enabledNetworkServices();
-  if (services.length === 0) throw new Error('No enabled macOS network service was found; refusing to claim OS offline state.');
+  const services = process.platform === 'linux' ? enabledLinuxInterfaces() : enabledNetworkServices();
+  if (services.length === 0) throw new Error('No enabled OS network service was found; refusing to claim OS offline state.');
   const changed: NetworkService[] = [];
   try {
     for (const service of services) {
-      networksetup(['-setnetworkserviceenabled', service.name, 'off']);
+      setNetworkService(service.name, false);
       changed.push(service);
     }
-    if (enabledNetworkServices().length !== 0) throw new Error('One or more macOS network services remained enabled.');
+    if ((process.platform === 'linux' ? enabledLinuxInterfaces() : enabledNetworkServices()).length !== 0) throw new Error('One or more OS network services remained enabled.');
     return changed;
   } catch (error) {
     restoreRunnerNetwork(changed);
@@ -365,10 +375,25 @@ function disableRunnerNetwork(): NetworkService[] {
   }
 }
 
+function enabledLinuxInterfaces(): NetworkService[] {
+  const links: unknown = JSON.parse(execFileSync('ip', ['-json', 'link', 'show'], { encoding: 'utf8', timeout: 5000 }));
+  if (!Array.isArray(links)) throw new Error('Invalid OS interface inventory');
+  return links.flatMap((link: { ifname?: unknown; flags?: unknown }) => {
+    if (typeof link.ifname !== 'string' || !Array.isArray(link.flags)) throw new Error('Invalid OS interface entry');
+    return link.ifname !== 'lo' && link.flags.includes('UP') ? [{ name: link.ifname, wasEnabled: true }] : [];
+  });
+}
+
+function setNetworkService(name: string, enabled: boolean): void {
+  if (process.platform === 'linux') {
+    execFileSync('sudo', ['-n', 'ip', 'link', 'set', 'dev', name, enabled ? 'up' : 'down'], { timeout: 15000, stdio: ['ignore', 'pipe', 'pipe'] });
+  } else networksetup(['-setnetworkserviceenabled', name, enabled ? 'on' : 'off']);
+}
+
 function restoreRunnerNetwork(services: readonly NetworkService[]): void {
   const failures: string[] = [];
   for (const service of [...services].reverse()) {
-    try { networksetup(['-setnetworkserviceenabled', service.name, service.wasEnabled ? 'on' : 'off']); }
+    try { setNetworkService(service.name, service.wasEnabled); }
     catch { failures.push(service.name); }
   }
   if (failures.length > 0) throw new Error(`Failed to restore ${failures.length} runner network service(s).`);
@@ -385,11 +410,11 @@ async function expectInternetUnavailable(): Promise<void> {
 
 test.describe('signed production Mini App install and offline lifecycle', () => {
   test.describe.configure({ retries: 0 });
-  test.skip(!enabled, 'Set MINIAPP_REAL_ACCEPTANCE=1 only in the signed macOS packaged Actions job.');
+  test.skip(!enabled, 'Set MINIAPP_REAL_ACCEPTANCE=1 only in a production packaged Actions job.');
 
   test('real Plugins install, Wasm report, offline cold launch, code removal and online reinstall', async () => {
     test.setTimeout(20 * 60_000);
-    expect(process.platform, 'MU-07 currently requires the signed macOS candidate').toBe('darwin');
+    expect(['darwin', 'linux']).toContain(process.platform);
     expect(process.env.GITHUB_ACTIONS, 'this test may only alter network services on an Actions runner').toBe('true');
     expect(executable, 'FABUSHI_ELECTRON_EXECUTABLE is required').toBeTruthy();
     expect(sourceSha).toMatch(/^[0-9a-f]{40}$/u);

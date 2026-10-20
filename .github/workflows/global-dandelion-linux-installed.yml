@@ -1,0 +1,198 @@
+name: Global Dandelion Linux installer acceptance
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/global-dandelion-linux-installed.yml'
+      - '.github/scripts/stage-dandelion.sh'
+      - 'source/packaging/dandelion-engine.json'
+      - 'docs/specs/global-dandelion-linux-installed.md'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/global-dandelion-linux-installed.yml'
+      - '.github/scripts/stage-dandelion.sh'
+      - 'source/packaging/dandelion-engine.json'
+      - 'desktop/e2e/miniapp-packaged-acceptance.spec.ts'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: dandelion-linux-installed-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  staged-apple:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Verify existing Apple staging path
+        run: bash .github/scripts/stage-dandelion.sh
+  installed-linux:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 100
+    env:
+      SUPPORT_SHA: 5d75920308fa17f5000308df1a0153309eb8e9ab
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.98.1
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.25.3'
+          cache-dependency-path: source/fabushi-network-worker/go.sum
+      - name: Reserve disk before dependencies and compilation
+        run: |
+          python3 - <<'PY'
+          import os
+          for p in (os.getcwd(), os.environ['RUNNER_TEMP']):
+              s = os.statvfs(p)
+              total, available = s.f_blocks*s.f_frsize, s.f_bavail*s.f_frsize
+              if total <= 0 or available < max(1024**3, (total+19)//20)+16*1024**3:
+                  raise SystemExit('Insufficient/unknown Linux packaging capacity')
+          PY
+      - name: Install native desktop dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb openbox xdotool dbus-x11 libgtk-3-0 libnss3 libgbm1 libasound2t64 libsecret-1-dev libx11-dev libxtst-dev libxdo-dev libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libgbm-dev libdrm-dev libxkbcommon-dev libasound2-dev ffmpeg
+          # Permit Chromium's user-namespace sandbox on this disposable runner.
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          npm --prefix desktop ci --prefer-offline --no-audit --no-fund
+      - name: Validate production architecture and installed harness
+        working-directory: desktop
+        run: |
+          node ../scripts/check-grok-architecture.mjs
+          ./node_modules/.bin/tsc --noEmit --strict --skipLibCheck --target ES2022 --module NodeNext --moduleResolution NodeNext --esModuleInterop e2e/miniapp-packaged-acceptance.spec.ts
+      - name: Build network worker and existing native Host
+        run: |
+          mkdir -p source/fabushi-network-worker/target/release
+          (cd source/fabushi-network-worker && go build -trimpath -ldflags='-s -w' -o target/release/fabushi-network-worker .)
+          npm --prefix desktop run build:host
+      - name: Stage exact-source native Dandelion
+        run: bash .github/scripts/stage-dandelion.sh
+      - name: Stage pinned offline ASR
+        run: |
+          set -euo pipefail
+          manifest=source/packaging/offline-asr-engine.json
+          repo="$(node -p "require('./$manifest').whisperCpp.repository")"
+          commit="$(node -p "require('./$manifest').whisperCpp.commit")"
+          [[ "$commit" =~ ^[0-9a-f]{40}$ ]]
+          asr_src="$RUNNER_TEMP/whisper-source"
+          git clone --filter=blob:none --no-checkout "$repo" "$asr_src"
+          git -C "$asr_src" fetch --depth=1 origin "$commit"
+          git -C "$asr_src" checkout --detach "$commit"
+          test "$(git -C "$asr_src" rev-parse HEAD)" = "$commit"
+          cmake -S "$asr_src" -B "$RUNNER_TEMP/whisper-build" -DWHISPER_BUILD_TESTS=OFF -DWHISPER_BUILD_EXAMPLES=ON -DWHISPER_BUILD_SERVER=OFF -DBUILD_SHARED_LIBS=OFF -DGGML_NATIVE=OFF
+          cmake --build "$RUNNER_TEMP/whisper-build" --config Release --parallel 2
+          out=desktop/resources/asr/linux-x64
+          mkdir -p "$out"
+          binary="$(find "$RUNNER_TEMP/whisper-build" -type f -name whisper-cli -executable -print -quit)"
+          test -n "$binary"
+          cp "$binary" "$out/whisper-cli"
+          cp "$asr_src/LICENSE" "$out/LICENSE.whisper.cpp"
+          printf '{"repository":"%s","commit":"%s","platform":"linux","arch":"x64"}\n' "$repo" "$commit" > "$out/build.json"
+      - name: Prepare existing Computer Control and CI bootstrap owner
+        run: |
+          set -euo pipefail
+          support="$RUNNER_TEMP/fabushi-support"
+          git clone --filter=blob:none --no-checkout https://github.com/bhrumom/fabushi.git "$support"
+          git -C "$support" sparse-checkout init --cone
+          git -C "$support" sparse-checkout set chatgpt-vps-control
+          git -C "$support" checkout "$SUPPORT_SHA"
+          npm --prefix "$support/chatgpt-vps-control" ci --ignore-scripts --prefer-offline --no-audit --no-fund
+          mkdir -p "$support/desktop/resources"
+          export CHATGPT_COMPUTER_HOME="$support/desktop/resources/computer-control"
+          node "$support/chatgpt-vps-control/bin/prepare-fabushi-bundle.js"
+          mkdir -p desktop/resources/computer-control
+          rsync -a "$support/desktop/resources/computer-control/" desktop/resources/computer-control/
+      - name: Build and package Debian installer
+        working-directory: desktop
+        run: |
+          npm run build:electron
+          npm run build:renderer
+          npm run check:desktop-runtime
+          npx electron-builder --linux deb --x64 --publish never
+          (cd release && sha256sum ./*.deb > SHA256SUMS-linux.txt)
+      - name: Install the actual Debian package
+        run: |
+          set -euo pipefail
+          sudo apt-get install -y ./desktop/release/*.deb
+          executable="$(dpkg-query -L fabushi | awk '/\/fabushi$/ {print; exit}')"
+          test -x "$executable"
+          test -x "$(dirname "$executable")/resources/bin/dandelion"
+          echo "FABUSHI_ELECTRON_EXECUTABLE=$executable" >> "$GITHUB_ENV"
+          echo "OBF_SOURCE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          echo "OBF_EXPECTED_SOURCE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Provision bounded production CI session
+        env:
+          FABUSHI_CI_TEST_USERNAME: ${{ secrets.FABUSHI_CI_TEST_USERNAME }}
+          FABUSHI_CI_TEST_PASSWORD: ${{ secrets.FABUSHI_CI_TEST_PASSWORD }}
+          FABUSHI_API_BASE_URL: https://api.ombhrum.com
+          DEVICE_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}-linux-dandelion
+        run: |
+          set -euo pipefail
+          test -n "$FABUSHI_CI_TEST_USERNAME"
+          test -n "$FABUSHI_CI_TEST_PASSWORD"
+          support="$RUNNER_TEMP/fabushi-support"
+          account_dir="$RUNNER_TEMP/dandelion-ci-session"
+          mkdir -m 700 -p "$account_dir"
+          export FABUSHI_ACCOUNT_SESSION_FILE="$account_dir/login.json"
+          export FABUSHI_CI_ACCOUNT_SESSION_FILE="$account_dir/session.json"
+          node "$support/chatgpt-vps-control/scripts/login-ci-test-account.mjs"
+          node "$support/chatgpt-vps-control/scripts/export-ci-app-account-session.mjs"
+          umask 077
+          jq -ce --arg issuer "$FABUSHI_API_BASE_URL" '. + {issuer: $issuer}' "$FABUSHI_CI_ACCOUNT_SESSION_FILE" > "$account_dir/bound.json"
+          mv "$account_dir/bound.json" "$FABUSHI_CI_ACCOUNT_SESSION_FILE"
+          chmod 600 "$FABUSHI_CI_ACCOUNT_SESSION_FILE"
+          jq -e '.provider == "github-actions" and .ciRunner == true and (.refreshToken | not)' "$FABUSHI_CI_ACCOUNT_SESSION_FILE" >/dev/null
+          rm -f "$FABUSHI_ACCOUNT_SESSION_FILE"
+          echo "FABUSHI_CI_ACCOUNT_SESSION_FILE=$FABUSHI_CI_ACCOUNT_SESSION_FILE" >> "$GITHUB_ENV"
+      - name: Installed production Mini App and OS-offline lifecycle
+        working-directory: desktop
+        timeout-minutes: 25
+        env:
+          MINIAPP_REAL_ACCEPTANCE: '1'
+          MINIAPP_REQUIRE_NATIVE_ENGINE: '1'
+          MINIAPP_PACKAGE_VERSION: '0.3.4'
+          MINIAPP_PACKAGE_DIGEST: f6bcaf7cc5ab5640fb4b0ffdbb2f97738c1d2309b96f61720081e33f903c304b
+          MINIAPP_EVIDENCE_DIR: ${{ runner.temp }}/dandelion-linux-evidence
+          FABUSHI_FEATURE_HOST_MODE: production
+          FABUSHI_E2E: '0'
+        run: |
+          set -euo pipefail
+          dbus-run-session -- xvfb-run -a -s '-screen 0 1440x1000x24' bash -c 'openbox & npx playwright test e2e/miniapp-packaged-acceptance.spec.ts --workers=1 --grep "real Plugins install"'
+          find "$MINIAPP_EVIDENCE_DIR" -type f -name acceptance.json -size +0c -print -quit | grep -q .
+      - name: Remove private CI transport
+        if: always()
+        run: rm -f "$RUNNER_TEMP/dandelion-ci-session/session.json" "$RUNNER_TEMP/dandelion-ci-session/login.json" "$RUNNER_TEMP/dandelion-ci-session/bound.json"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: dandelion-linux-installed-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            desktop/release/*.deb
+            desktop/release/SHA256SUMS-linux.txt
+            desktop/resources/bin/dandelion-build.json
+            ${{ runner.temp }}/dandelion-linux-evidence
+          if-no-files-found: error
