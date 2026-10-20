@@ -5,7 +5,7 @@
       "referencePath": "frontend/src/production/ProductionRenderer.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "af8a83a8dd7cf1444474889ce3e64fe796a7d458",
+      "targetBlobSha": "b96a4d712ba502fc5c81cdd473d72b72e1b70561",
       "behavioralEvidence": [
         "frontend/src/production/ProductionRenderer.tsx",
         "frontend/src/recovered/features/account/session/sign-in-status.tsx",
@@ -79,7 +79,7 @@
       "referencePath": "source/electron-preload/preload.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "4d4aadb62aacb85cae559c4cb6aa01885a9990b8",
+      "targetBlobSha": "3be90485efc8b7991cdd8b39a8ed462e76fc5c7a",
       "behavioralEvidence": [
         "source/electron-preload/preload.ts",
         "source/electron-preload/runtime/primary.ts",
@@ -419,7 +419,7 @@
       "referencePath": "source/electron-main/main-production-services.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "8ca982cf2401d31a4782870b37688703e7f96895",
+      "targetBlobSha": "f52a0470620270a1f33107d3bccbf59705eea046",
       "behavioralEvidence": [
         "source/electron-main/main-production-services.ts",
         "docs/specs/desktop-miniapp-publisher.md",
