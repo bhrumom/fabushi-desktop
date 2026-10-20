@@ -61,6 +61,27 @@ test("a mutating tool never runs without an approval owner", async () => {
   assert.equal(sent(), 1);
 });
 
+test("a foreign app cannot inspect native state and a late approval cannot start work", async () => {
+  const { backend, sent } = fixture();
+  let current = true;
+  let approve!: (allowed: boolean) => void;
+  const router = createMiniAppToolRouter({
+    backend, allowedAppId: scope.appId,
+    approve: () => new Promise<boolean>((settle) => { approve = settle; }),
+  });
+  const foreign = await router.invoke({ ...scope, appId: "org.other.app" }, "offline.state.read", {});
+  assert.equal(foreign.ok, false);
+  assert.equal(!foreign.ok && foreign.error.code, "APP_NOT_AUTHORIZED");
+  const pending = router.invoke(scope, "transfer.send", { selectionId: "sel-1", targetPoolId: "lan" }, () => current);
+  while (!approve) await new Promise((resolve) => setImmediate(resolve));
+  current = false;
+  approve(true);
+  const result = await pending;
+  assert.equal(result.ok, false);
+  assert.equal(!result.ok && result.error.code, "STALE_SCOPE");
+  assert.equal(sent(), 0);
+});
+
 test("calls are throttled per account scope and recover after the window", async () => {
   const { backend } = fixture();
   let now = 0;

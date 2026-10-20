@@ -94,6 +94,37 @@ test("scheme declaration is ready for the existing single pre-ready Electron reg
   } });
 });
 
+test("closing or crashing the native owner revokes work once; unrelated apps do not", async () => {
+  for (const reason of ["user-close", "renderer-crash", "host-close"] as const) {
+    let revoked = 0;
+    const owner = "org.fabushi.global-dandelion";
+    const localFactory = createMiniAppWindowFactory({
+      BrowserWindow: FakeWindow,
+      session: { fromPartition: () => { const session = fakeSession(); testSessions.push({ session }); return session; } },
+      currentAccount: () => ({ accountScope: accountA, generation: 4 }),
+      tools: {
+        appId: owner, preloadPath: "/reviewed/preload-miniapp-tools.cjs",
+        router: { invoke: async () => ({ ok: true }) }, ipc: { handle() {} },
+        cancelAll: () => { revoked += 1; },
+      },
+    });
+    try {
+      const instance = await localFactory.open(launchFor());
+      const ownerWindow = lastWindow!;
+      const unrelated = await localFactory.open(launchFor(accountA, 4, "org.other.app"));
+      unrelated.close();
+      assert.equal(revoked, 0);
+      if (reason === "user-close") ownerWindow.close();
+      else if (reason === "renderer-crash") ownerWindow.emitRendererCrash();
+      else instance.close();
+      assert.equal(revoked, 1, reason);
+      instance.close();
+      localFactory.closeAll();
+      assert.equal(revoked, 1, "native teardown must be idempotent");
+    } finally { localFactory.closeAll(); }
+  }
+});
+
 test("Host resources are copied, bounded, app-scoped, and all non-package requests are denied", async () => {
   testSessions.length = 0;
   factory = createMiniAppWindowFactory({

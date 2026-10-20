@@ -205,13 +205,14 @@ function handlersFor(backend: MiniAppToolBackend): Map<string, { capability: Min
 
 export interface MiniAppToolRouterOptions {
   readonly backend: MiniAppToolBackend;
+  readonly allowedAppId?: string;
   /** Called before a mutating tool runs; return false to reject. */
   readonly approve?: (tool: string, args: Record<string, unknown>) => Promise<boolean> | boolean;
   readonly now?: () => number;
 }
 
 export interface MiniAppToolRouter {
-  invoke(scope: MiniAppToolScope, tool: unknown, rawArgs: unknown): Promise<MiniAppToolResult>;
+  invoke(scope: MiniAppToolScope, tool: unknown, rawArgs: unknown, isCurrent?: () => boolean): Promise<MiniAppToolResult>;
 }
 
 const WINDOW_MS = 10_000;
@@ -231,7 +232,9 @@ export function createMiniAppToolRouter(options: MiniAppToolRouterOptions): Mini
   };
 
   return {
-    async invoke(scope, tool, rawArgs) {
+    async invoke(scope, tool, rawArgs, isCurrent = () => true) {
+      if (options.allowedAppId && scope.appId !== options.allowedAppId) return fail("APP_NOT_AUTHORIZED", "该小程序无权使用此原生引擎");
+      if (!isCurrent()) return fail("STALE_SCOPE", "小程序窗口或账号已变化");
       if (typeof tool !== "string" || !handlers.has(tool)) {
         return fail("UNKNOWN_TOOL", "该工具未在契约中声明");
       }
@@ -244,6 +247,7 @@ export function createMiniAppToolRouter(options: MiniAppToolRouterOptions): Mini
       let announced: Awaited<ReturnType<MiniAppToolBackend["capabilities"]>>;
       try { announced = await options.backend.capabilities(); }
       catch { return fail("CAPABILITY_UNAVAILABLE", "宿主能力探测失败"); }
+      if (!isCurrent()) return fail("STALE_SCOPE", "小程序窗口或账号已变化");
       if (!announced.capabilities.includes(handler.capability)) {
         return fail("CAPABILITY_UNAVAILABLE", "该能力未获宿主授权");
       }
@@ -258,7 +262,9 @@ export function createMiniAppToolRouter(options: MiniAppToolRouterOptions): Mini
         if (!approved) return fail("NOT_APPROVED", "用户未批准该操作");
       }
       try {
+        if (!isCurrent()) return fail("STALE_SCOPE", "小程序窗口或账号已变化");
         const result = await handler.run(args);
+        if (!isCurrent()) return fail("STALE_SCOPE", "小程序窗口或账号已变化");
         return result;
       } catch (error) {
         const code = error instanceof TypeError ? String(error.message) : "TOOL_FAILED";

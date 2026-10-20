@@ -63,6 +63,14 @@ preload, never reuse the primary preload. Do not inject a node:url/import.meta b
 into the sandboxed Mini App preload. The runtime artifact graph requires this file,
 and signed-app acceptance invokes it through the installed isolated window.
 
+GD-P05: production native Dandelion tools are bound to
+`org.fabushi.global-dandelion`. Other installed apps cannot enumerate its selections
+or operations. Closing that app window (including renderer loss) invokes native
+revocation before teardown. Approval, capability discovery and result delivery
+must recheck that the exact window/account scope is still current; a late approval
+cannot start work after the window closes. Closing an unrelated app must not cancel
+Dandelion work. Account-wide teardown still revokes all owned work.
+
 ## Context
 
 The approved Global Dandelion package currently exposes an offline Web/Wasm

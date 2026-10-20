@@ -161,6 +161,7 @@ function miniAppTooling(context: ProductionServiceContext, ipc: unknown): MiniAp
   }, { pick });
   const router = createMiniAppToolRouter({
     backend,
+    allowedAppId: "org.fabushi.global-dandelion",
     approve: async (tool) => {
       if (!dialog.showMessageBox) return false;
       const answer = await dialog.showMessageBox({
@@ -170,7 +171,7 @@ function miniAppTooling(context: ProductionServiceContext, ipc: unknown): MiniAp
       return answer.response === 1;
     },
   });
-  return { router, preloadPath, ipc: ipc as MiniAppIpc, cancelAll: () => backend.cancelAll?.() };
+  return { appId: "org.fabushi.global-dandelion", router, preloadPath, ipc: ipc as MiniAppIpc, cancelAll: () => backend.cancelAll?.() };
 }
 
 /** MainData only: no launch resources, credentials or paths cross desktop IPC. */
