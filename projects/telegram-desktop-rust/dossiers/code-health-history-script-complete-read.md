@@ -36,3 +36,11 @@ Current Fabushi already owns this responsibility in repository quality/test-evid
 ## Failure and lifecycle boundaries
 
 Historical observations remain bound to the exact source revision and measurement window. Root/submodule histories are not silently mixed across revisions. An unavailable submodule history, missing queue, absent Task trailer, missing Start/Approve endpoint, non-positive interval or unrecognized review artifact cannot be fabricated into a successful cost observation. Rename-disabled churn is an explicit measurement convention, not semantic file identity. Churn, hotspot, elapsed hours and review rounds are prioritization evidence only and cannot by themselves approve an atlas/map, route a task, establish product correctness, prove a build, or satisfy release acceptance.
+
+## Traceability
+
+- Requirement: `TDRP-R9-CODE-HEALTH-HISTORY-MEASUREMENT-001`
+- Oracles: `ORA-TDRP-CODE-HEALTH-HISTORY-REVISION-001`, `ORA-TDRP-CODE-HEALTH-TASK-COST-001`, `ORA-TDRP-CODE-HEALTH-HISTORY-ABSENCE-001`
+- Invariants: `INV-TDRP-CODE-HEALTH-HISTORY-EXACT-REVISION-001`, `INV-TDRP-CODE-HEALTH-HISTORY-NO-FABRICATED-ZERO-001`, `INV-TDRP-CODE-HEALTH-HISTORY-NO-SECOND-OWNER-001`
+
+These identifiers bind only this source-entry responsibility and its repository-quality evidence boundary; they do not claim product/runtime or release acceptance.
