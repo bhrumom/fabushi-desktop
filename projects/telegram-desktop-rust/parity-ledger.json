@@ -11966,8 +11966,7 @@
       "fabushi_target_symbols": [
         "Repository source-text normalization evidence governance",
         "Repository source-text normalization evidence qualification",
-        "Repository source-text normalization evidence",
-        "Repository duplicate/clone evidence governance"
+        "Repository source-text normalization evidence"
       ],
       "target_language": "Markdown",
       "language_rationale": "The upstream Python module is a repository-quality lexical evidence helper, not shipping product logic or a compiler frontend; Fabushi preserves the applicable responsibility in source-neutral governance/evidence contracts and reuses caller-owned quality/task workflows.",
