@@ -258,10 +258,10 @@
   "coverage": {
     "root_source_entries_total": 6717,
     "recursive_source_entries_total": 16202,
-    "unknown_minimum": 16175,
-    "unread_minimum": 16148,
+    "unknown_minimum": 16174,
+    "unread_minimum": 16147,
     "omitted_known": 0,
-    "note": "Revision 9 live rebaseline remains in progress for telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a (tree 5151db79560ed40bf3802482fcfb74b950be6c40). Root non-directory inventory remains 6,717 and recursive authority remains 16,202. Actual recursive array entry 27 .agents/skills/code-health/scripts/cpp_text.py is independently mapped to existing repository responsibility/quality/task-evidence governance with line-provenance-preserving lexical/text normalization and non-compiler authority separation preserved; direct quality consumers keep result/finding/routing ownership and unsupported syntax remains limitation/unknown. Counters are unknown=16,175, unread=16,148, omitted=0."
+    "note": "Revision 9 live rebaseline remains in progress for telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a (tree 5151db79560ed40bf3802482fcfb74b950be6c40). Root non-directory inventory remains 6,717 and recursive authority remains 16,202. Recursive array index 27 (the source entry immediately after cpp_text.py) .agents/skills/code-health/scripts/health.py is independently mapped to the existing repository responsibility/quality/task-evidence owner: exact-ref durable scans are fenced from mutable temporary scans, stable findings/history and cache rebuild semantics are preserved, detached inspection is exact-commit bound, delegated command results fail closed, and no Telegram Python quality runtime or second scanner/findings/ownership/task owner is introduced. Counters are unknown=16,174, unread=16,147, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
