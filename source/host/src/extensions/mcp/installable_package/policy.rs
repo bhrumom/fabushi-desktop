@@ -624,7 +624,7 @@ pub fn verify_install_proof_with_anchor(
             == Some(true)
         || value_at(&proof.descriptor, &["release", "requestedCapabilities"])
             .and_then(Value::as_array)
-            .is_none_or(|items| !items.is_empty())
+            .is_none_or(|items| !(items.is_empty() || items.as_slice() == [Value::String("native.runtime".into())]))
         || !descriptor_supports_desktop(&proof.descriptor)
     {
         return Err(ProofError::DescriptorBinding);
@@ -671,7 +671,12 @@ pub fn verify_install_proof_with_anchor(
         key_id: proof.release_signature.key_id.clone(),
         public_key: release_raw,
         trust_epoch: proof.release_signature.trust_epoch,
-        host_api: 1,
+        host_api: 2,
+        requested_capabilities: value_at(&proof.descriptor, &["release", "requestedCapabilities"])
+            .and_then(Value::as_array)
+            .ok_or(ProofError::DescriptorBinding)?
+            .iter().map(|v| v.as_str().map(str::to_owned).ok_or(ProofError::DescriptorBinding))
+            .collect::<Result<Vec<_>, _>>()?,
     };
     Ok(VerifiedInstallProof {
         descriptor: proof.descriptor,

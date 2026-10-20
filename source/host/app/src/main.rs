@@ -10919,7 +10919,8 @@ fn dispatch_mini_app_management(
                 Ok(serde_json::json!({"sameScopeHash": install_scope.account_scope,
                     "descriptor": {
                     "appId": package.app_id(), "version": package.version(),
-                    "digest": package.digest(), "entrypoint": package.entrypoint()
+                    "digest": package.digest(), "entrypoint": package.entrypoint(),
+                    "nativeRuntime": package.native_runtime()
                 }, "resources": resources}))
             }
             "listInstalledMiniApps" | "uninstallMiniApp" => {

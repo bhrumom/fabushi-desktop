@@ -67,3 +67,11 @@ if (!coordinatorCarrier.includes("mahayana-app-host")) {
 console.log(
   "Desktop runtime artifact graph passed: Electron main, preload, Rust Coordinator carrier + app-host binary wiring, and Renderer are co-staged.",
 );
+
+const productMain = fs.readFileSync(path.join(desktopRoot, "dist/electron-main/main.cjs"), "utf8");
+for (const forbidden of ["FABUSHI_DANDELION_BIN", "dandelion-default.toml", "dandelion.native.apple.v1"]) {
+  if (productMain.includes(forbidden)) throw new Error(`Application bundle contains Mini App-owned code: ${forbidden}`);
+}
+for (const filename of ["dandelion", "dandelion-default.toml", "dandelion-build.json"]) {
+  if (fs.existsSync(path.join(desktopRoot, "resources/bin", filename))) throw new Error(`Application contains Mini App-owned resource ${filename}`);
+}
