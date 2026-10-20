@@ -654,7 +654,7 @@ for (const removed of removedPaths) {
   fail(!tree.some(e=>e.path===removed.path),'removed root path remains in current authority: '+removed.path);
 }
 const currentRootNonDirectoryEntries=tree.filter(e=>e.type!=='tree').length;
-fail(previousRootNonDirectoryEntries-currentRootNonDirectoryEntries===removedPaths.length-addedPaths.length,'root non-directory delta is not explained by removed/added path records');
+fail(previousRootNonDirectoryEntries.length-currentRootNonDirectoryEntries===removedPaths.length-addedPaths.length,'root non-directory delta is not explained by removed/added path records');
 
 const gmRaw=await get(`https://raw.githubusercontent.com/${u.repository}/${u.commit}/.gitmodules`,false);
 const gm=parseGitmodules(gmRaw);
