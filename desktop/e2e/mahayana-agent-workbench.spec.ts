@@ -467,11 +467,13 @@ async function ensureE2eAuthBackend(): Promise<string> {
             sendFunctionCall('browser_snapshot', 'fabushi-e2e-browser-snapshot', { target: 'local' });
             return;
           }
-          const snapshot = snapshotOutput.snapshot != null
-            && typeof snapshotOutput.snapshot === 'object'
-            && !Array.isArray(snapshotOutput.snapshot)
-            ? snapshotOutput.snapshot as { elements?: unknown }
-            : null;
+          let snapshot: { elements?: unknown } | null = null;
+          if (typeof snapshotOutput.text === 'string') {
+            try {
+              const parsed = JSON.parse(snapshotOutput.text);
+              if (parsed != null && typeof parsed === 'object' && !Array.isArray(parsed)) snapshot = parsed as { elements?: unknown };
+            } catch {}
+          }
           const elements = Array.isArray(snapshot?.elements) ? snapshot.elements : [];
           const refNamed = (name: string): string => {
             const element = elements.find((candidate) => candidate != null
