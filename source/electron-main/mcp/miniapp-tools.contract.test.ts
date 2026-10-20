@@ -238,6 +238,22 @@ test("CLI backend spawns real argv-only binary for scan, async transfer, cancell
   }
 });
 
+test("Linux-only native capabilities are never advertised on macOS or Windows", async () => {
+  const backend = createDandelionCliBackend(
+    {
+      binaryPath: "/reviewed/dandelion",
+      configPath: "/reviewed/dandelion.toml",
+      allowedRoots: ["/reviewed/root"],
+      targetPools: [{ id: "lan", label: "LAN" }],
+      platform: "darwin",
+    },
+    { pick: async () => null },
+  );
+  const announced = await backend.capabilities();
+  assert.deepEqual(announced.capabilities, ["offline", "selection"]);
+  assert.equal(announced.platform, "darwin");
+});
+
 test("production desktop bridge runs end-to-end without Electron from preload IPC through router, approval gate and dandelion CLI", async () => {
   const workspace = await mkdtemp(join(tmpdir(), "fabushi-desktop-bridge-e2e-"));
   const previousEnv = {

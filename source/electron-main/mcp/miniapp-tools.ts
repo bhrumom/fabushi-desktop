@@ -58,6 +58,8 @@ export interface MiniAppToolBackend {
   update(action: "check" | "stage"): Promise<unknown>;
   diagnostics?(action: "selfTest" | "doctor" | "status"): Promise<unknown>;
   compat?(action: "packetInspect" | "countryLookup" | "linkExercise" | "linkRecover", args: Record<string, unknown>): Promise<unknown>;
+  /** Fences and cancels native work when account/window ownership changes. */
+  cancelAll?(): void;
 }
 
 const ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;

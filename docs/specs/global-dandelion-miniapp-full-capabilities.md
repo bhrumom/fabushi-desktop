@@ -3,6 +3,13 @@
 Status: active; implementation started 2026-10-19  
 Owner: existing Plugins/MCP Mini App owner plus the existing native Host/Coordinator owners
 
+Review note 2026-10-20: the exact source and platform disposition are recorded
+in `docs/evidence/2026-10-20-global-dandelion-delivery.md`. The current source
+CLI is Linux-specific. Desktop Host discovery therefore exposes the native CLI
+capabilities only on Linux; macOS and Windows retain offline/selection
+compatibility until a real native adapter exists. Android and iOS remain
+bridge-compatible but not Dandelion-native-configured.
+
 ## Context
 
 The approved Global Dandelion package currently exposes an offline Web/Wasm
@@ -64,6 +71,9 @@ the whole affected panel is hidden and calls return `CAPABILITY_UNAVAILABLE`.
   fence late results by account generation and app digest.
 - Hotspot apply/stop requires an explicit confirmation and a journaled rollback
   record. No platform without a reversible OS API may advertise apply/stop.
+- A platform-specific CLI or native adapter must be checked before capability
+  discovery and again at invocation. A configured binary path alone is not
+  evidence that the current OS can execute the source implementation.
 - Native errors are sanitized stable codes; no credential, private key, host
   path or raw file content crosses the bridge.
 

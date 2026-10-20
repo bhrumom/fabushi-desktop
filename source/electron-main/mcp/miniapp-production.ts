@@ -93,7 +93,7 @@ function miniAppTooling(context: ProductionServiceContext, ipc: unknown): MiniAp
       return answer.response === 1;
     },
   });
-  return { router, preloadPath, ipc: ipc as MiniAppIpc };
+  return { router, preloadPath, ipc: ipc as MiniAppIpc, cancelAll: () => backend.cancelAll?.() };
 }
 
 /** MainData only: no launch resources, credentials or paths cross desktop IPC. */
@@ -110,7 +110,7 @@ export function registerProductionMiniApps(context: ProductionServiceContext, ip
     currentAccount: () => current,
     ...(tooling ? { tools: tooling } : {}),
   });
-  const closeAll = () => { windows?.closeAll(); handles.clear(); };
+  const closeAll = () => { tooling?.cancelAll?.(); windows?.closeAll(); handles.clear(); };
   const unsubscribe = account.subscribe(() => { generation += 1; current = null; closeAll(); });
   const scope = async (): Promise<string | null> => {
     const ticket = generation;

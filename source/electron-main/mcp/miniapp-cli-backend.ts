@@ -51,6 +51,8 @@ export interface DandelionCliConfig {
   readonly enableHotspot?: boolean;
   readonly enableUpdate?: boolean;
   readonly timeoutMs?: number;
+  /** The host platform, injectable for contract tests. The Rust CLI is Linux-only. */
+  readonly platform?: NodeJS.Platform;
 }
 
 export interface MiniAppPickPort {
@@ -65,6 +67,8 @@ export interface MiniAppChildHandle {
 export interface MiniAppSpawnPort {
   (argv: readonly string[]): MiniAppChildHandle;
 }
+
+const NATIVE_CLI_PLATFORM: NodeJS.Platform = "linux";
 
 const SELECTION_TTL_MS = 10 * 60_000;
 const MAX_SELECTIONS = 16;
@@ -107,6 +111,8 @@ export function createDandelionCliBackend(
   ports: { readonly pick: MiniAppPickPort; readonly spawn?: MiniAppSpawnPort },
 ): MiniAppToolBackend {
   const timeoutMs = config.timeoutMs ?? 30 * 60_000;
+  const platform = config.platform ?? process.platform;
+  const nativeCliSupported = platform === NATIVE_CLI_PLATFORM;
   const spawnCommand = ports.spawn ?? defaultSpawn(config.binaryPath, config.configPath);
   const selections = new Map<string, { root: string; expiresAt: number }>();
   const operations = new Map<string, Operation>();
@@ -175,14 +181,16 @@ export function createDandelionCliBackend(
   return {
     capabilities() {
       const capabilities: MiniAppCapability[] = ["offline", "selection"];
-      if (config.targetPools.length > 0 && roots.length > 0) capabilities.push("transfer");
-      if (roots.length > 0) capabilities.push("scan");
-      if (stateDirectory) capabilities.push("state");
-      capabilities.push("config", "platform", "diagnostics");
-      if (compatDirectory) capabilities.push("compat");
-      if (config.enableHotspot === true) capabilities.push("hotspot");
-      if (config.enableUpdate === true) capabilities.push("update");
-      return Promise.resolve({ capabilities, platform: "desktop", targetPools: [...config.targetPools] });
+      if (nativeCliSupported) {
+        if (config.targetPools.length > 0 && roots.length > 0) capabilities.push("transfer");
+        if (roots.length > 0) capabilities.push("scan");
+        if (stateDirectory) capabilities.push("state");
+        capabilities.push("config", "platform", "diagnostics");
+        if (compatDirectory) capabilities.push("compat");
+        if (config.enableHotspot === true) capabilities.push("hotspot");
+        if (config.enableUpdate === true) capabilities.push("update");
+      }
+      return Promise.resolve({ capabilities, platform: platform === NATIVE_CLI_PLATFORM ? "linux" : platform, targetPools: [...config.targetPools] });
     },
     readState() {
       return Promise.resolve({
@@ -192,12 +200,15 @@ export function createDandelionCliBackend(
         operations: [...operations].map(([id, operation]) => ({ id, state: operation.state })),
       });
     },
-    async pick(mode) {
+    async pick(mode, limits) {
       // The engine works on a source root; per-file selection would widen it.
       if (mode !== "directory") throw new Error("DIRECTORY_SELECTION_REQUIRED");
-      const picked = await ports.pick(mode, { maxFiles: 1, maxBytes: 1024 ** 3 });
+      const picked = await ports.pick(mode, limits);
       if (!picked || picked.length === 0) return null;
       const root = await realpath(picked[0]!.path);
+      const info = await stat(root);
+      if (mode === "directory" && !info.isDirectory()) throw new Error("DIRECTORY_SELECTION_REQUIRED");
+      if (picked.length > limits.maxFiles || info.size > limits.maxBytes) throw new Error("SELECTION_LIMIT_EXCEEDED");
       if (!(await canonicalRoots()).some((allowed) => insideRoot(allowed, root))) throw new Error("ROOT_NOT_AUTHORIZED");
       pruneSelections();
       const selectionId = randomUUID();
@@ -210,6 +221,7 @@ export function createDandelionCliBackend(
       return Promise.resolve();
     },
     async send(selectionId, targetPoolId) {
+      if (!nativeCliSupported) throw new Error("PLATFORM_UNSUPPORTED");
       const root = requireSelection(selectionId);
       if (!config.targetPools.some((pool) => pool.id === targetPoolId)) throw new Error("UNKNOWN_TARGET_POOL");
       pruneOperations();
@@ -233,11 +245,14 @@ export function createDandelionCliBackend(
       return { operationId };
     },
     async receive(receiveConfig) {
+      if (!nativeCliSupported) throw new Error("PLATFORM_UNSUPPORTED");
       const settings = config.receive;
       if (!settings || settings.targetPoolId !== receiveConfig.targetPoolId) throw new Error("RECEIVE_DISABLED");
       pruneOperations();
       const operationId = randomUUID();
-      const argv = ["receive", "--bind", settings.bind ?? "127.0.0.1:20000", "--ca-file", settings.caFile, "--certificate-file", settings.certificateFile, "--private-key-file", settings.privateKeyFile, "--once", "--json"];
+      const argv = ["receive", "--bind", settings.bind ?? "127.0.0.1:20000", "--ca-file", settings.caFile, "--certificate-file", settings.certificateFile, "--private-key-file", settings.privateKeyFile];
+      if (receiveConfig.once !== false) argv.push("--once");
+      argv.push("--json");
       const handle = spawnCommand(argv);
       const timer = setTimeout(() => handle.kill(), timeoutMs);
       const operation: Operation = { handle, timer, state: "running" };
@@ -268,10 +283,22 @@ export function createDandelionCliBackend(
       clearTimeout(operation.timer);
       operation.handle.kill();
     },
+    cancelAll() {
+      for (const operation of operations.values()) {
+        if (operation.state === "running") {
+          operation.state = "cancelled";
+          clearTimeout(operation.timer);
+          operation.handle.kill();
+        }
+      }
+      selections.clear();
+    },
     async scan(mode, rootId) {
+      if (!nativeCliSupported) throw new Error("PLATFORM_UNSUPPORTED");
       return execute(["scan", mode, "--source", requireSelection(rootId), "--json"]);
     },
     async state(action) {
+      if (!nativeCliSupported) throw new Error("PLATFORM_UNSUPPORTED");
       if (!stateDirectory) throw new Error("STATE_DISABLED");
       if (action === "inspect") return execute(["state", "inspect", "--directory", stateDirectory, "--json"]);
       const picked = await ports.pick("files", { maxFiles: 1, maxBytes: 1024 * 1024 });
@@ -279,18 +306,22 @@ export function createDandelionCliBackend(
       const file = await realpath(picked[0]!.path);
       const fileInfo = await stat(file);
       if (!fileInfo.isFile()) throw new Error("STATE_IMPORT_FILE_REQUIRED");
+      if (fileInfo.size > 1024 * 1024) throw new Error("STATE_IMPORT_TOO_LARGE");
       return execute(["state", "import", "--directory", stateDirectory, "--file", file]);
     },
     async config(action) {
+      if (!nativeCliSupported) throw new Error("PLATFORM_UNSUPPORTED");
       return execute(["config", action === "defaults" ? "init" : "check", "--json"]);
     },
     async platform(action) {
+      if (!nativeCliSupported) throw new Error("PLATFORM_UNSUPPORTED");
       const argv = action === "watch"
         ? ["platform", "watch", "--samples", "5", "--interval-ms", "1000", "--json"]
         : ["platform", action, "--json"];
       return execute(argv);
     },
     async hotspot(action) {
+      if (!nativeCliSupported) throw new Error("PLATFORM_UNSUPPORTED");
       if (config.enableHotspot !== true) throw new Error("HOTSPOT_DISABLED");
       const iface = config.hotspotInterface;
       if (action === "plan") {
@@ -305,6 +336,7 @@ export function createDandelionCliBackend(
       return execute(["hotspot", "apply", "--interface", iface, "--ssid", config.hotspotSsid ?? "Global-Dandelion", "--band", config.hotspotBand ?? "a", "--journal-directory", journalDirectory, "--password-file", config.hotspotPasswordFile, "--confirm", "--json"]);
     },
     async update(action) {
+      if (!nativeCliSupported) throw new Error("PLATFORM_UNSUPPORTED");
       if (config.enableUpdate !== true) throw new Error("UPDATE_DISABLED");
       const trust = config.updateTrust;
       if (!trust?.publicKey) throw new Error("UPDATE_TRUST_NOT_CONFIGURED");
@@ -323,6 +355,7 @@ export function createDandelionCliBackend(
       return execute(argv);
     },
     async diagnostics(action) {
+      if (!nativeCliSupported) throw new Error("PLATFORM_UNSUPPORTED");
       if (action === "status") {
         if (!stateDirectory) throw new Error("STATE_DISABLED");
         return execute(["status", "--directory", stateDirectory, "--json"]);
@@ -330,6 +363,7 @@ export function createDandelionCliBackend(
       return execute([action === "selfTest" ? "self-test" : "doctor", "--json"]);
     },
     async compat(action, args) {
+      if (!nativeCliSupported) throw new Error("PLATFORM_UNSUPPORTED");
       if (!compatDirectory) throw new Error("COMPAT_DISABLED");
       if (action === "packetInspect") return execute(["compat", "packet-inspect", "--file", await compatPath(args.file, "packet.bin"), "--json"]);
       if (action === "countryLookup") {
