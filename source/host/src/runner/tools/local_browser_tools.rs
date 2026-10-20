@@ -7,13 +7,14 @@ use crate::runner::coordinator_tool_relay::{
     CoordinatorToolRelay, LOCAL_BROWSER_ACTION_METHOD,
 };
 use crate::runner::tools::sand_browser_tools::{
-    BrowserDriverOutput, BrowserToolExecutor, BrowserToolSpec,
+    BrowserAutoReviewCallback, BrowserDriverOutput, BrowserToolExecutor, BrowserToolSpec,
 };
 
 #[derive(Clone)]
 pub struct LocalBrowserCoordinatorExecutor {
     relay: Arc<CoordinatorToolRelay>,
     conversation_id: String,
+    auto_review: Option<BrowserAutoReviewCallback>,
 }
 
 impl LocalBrowserCoordinatorExecutor {
@@ -24,7 +25,16 @@ impl LocalBrowserCoordinatorExecutor {
         Self {
             relay,
             conversation_id: conversation_id.into(),
+            auto_review: None,
         }
+    }
+
+    pub fn with_auto_review_callback(
+        mut self,
+        callback: BrowserAutoReviewCallback,
+    ) -> Self {
+        self.auto_review = Some(callback);
+        self
     }
 
     fn call_main(&self, request: Value) -> Result<Value, ProviderSessionError> {
@@ -216,6 +226,9 @@ impl BrowserToolExecutor for LocalBrowserCoordinatorExecutor {
         args: &Map<String, Value>,
         tool_call_id: &str,
     ) -> Result<BrowserDriverOutput, ProviderSessionError> {
+        if let Some(auto_review) = self.auto_review.as_ref() {
+            auto_review(spec, args, tool_call_id)?;
+        }
         if spec.op == "tabs" {
             return self.execute_tabs(args, tool_call_id);
         }

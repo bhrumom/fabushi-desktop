@@ -7787,7 +7787,7 @@ fn start_routed_provider_task(
                 Arc::clone(&box_resources),
                 agent_id.clone(),
             )
-            .with_auto_review_callback(browser_auto_review)
+            .with_auto_review_callback(Arc::clone(&browser_auto_review))
             .with_possible_navigation_callback(browser_possible_navigation)
             .with_shell_safety_callback(browser_shell_safety);
             if !is_group_member_turn {
@@ -7800,7 +7800,8 @@ fn start_routed_provider_task(
                 LocalBrowserCoordinatorExecutor::new(
                     Arc::clone(&worker_local_browser_relay),
                     agent_id.clone(),
-                ),
+                )
+                .with_auto_review_callback(browser_auto_review),
             );
             let browser_executor: Arc<dyn BrowserToolExecutor> = Arc::new(
                 ExplicitBrowserTargetExecutor::new(
