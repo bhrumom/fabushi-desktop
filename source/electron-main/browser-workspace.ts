@@ -16,6 +16,7 @@ import {
   localBrowserRefStillMatches,
   pressLocalBrowserKey,
   scrollLocalBrowserPage,
+  selectLocalBrowserOptions,
   type LocalBrowserElementLocator,
 } from "./local-browser-agent-page.js";
 import {
@@ -850,6 +851,9 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
         return agentResult(action.operationId, workspace, tab);
       case "fill":
         await fillLocalBrowserRef(page, requireAgentRef(tab, action.ref), action.value, false);
+        return agentResult(action.operationId, workspace, tab);
+      case "select-option":
+        await selectLocalBrowserOptions(page, requireAgentRef(tab, action.ref), action.values);
         return agentResult(action.operationId, workspace, tab);
       case "type":
         await fillLocalBrowserRef(page, requireAgentRef(tab, action.ref), action.text, true);

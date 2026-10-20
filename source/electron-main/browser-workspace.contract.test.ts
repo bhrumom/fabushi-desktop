@@ -355,6 +355,49 @@ test("agent action snapshot mints opaque generation refs and fixed actions rejec
   );
 });
 
+test("agent select-option is generation-fenced and rejects invalid payloads before page mutation", async () => {
+  const h = harness();
+  h.service.attachWindow(new FakeHostWindow());
+  const state = await h.invoke({ type: "activate", conversationId: "bot-a", bounds: { x: 1, y: 1, width: 500, height: 500 } });
+  const tab = state.tabs[0]!;
+  const snap = await h.service.executeAgentAction({
+    type: "snapshot",
+    conversationId: "bot-a",
+    workspaceId: state.workspaceId,
+    tabId: tab.id,
+    expectedGeneration: tab.generation,
+    operationId: "op-select-snapshot",
+  });
+  assert.equal(snap.ok, true);
+  if (!snap.ok) return;
+
+  const selected = await h.service.executeAgentAction({
+    type: "select-option",
+    conversationId: "bot-a",
+    workspaceId: state.workspaceId,
+    tabId: tab.id,
+    expectedGeneration: tab.generation,
+    operationId: "op-select",
+    ref: snap.snapshot!.elements[0]!.ref,
+    values: ["ready"],
+  });
+  assert.equal(selected.ok, true);
+
+  await assert.rejects(
+    () => h.service.executeAgentAction({
+      type: "select-option",
+      conversationId: "bot-a",
+      workspaceId: state.workspaceId,
+      tabId: tab.id,
+      expectedGeneration: tab.generation,
+      operationId: "op-invalid-select",
+      ref: snap.snapshot!.elements[0]!.ref,
+      values: [],
+    }),
+    /BROWSER_AGENT_INVALID_ACTION/,
+  );
+});
+
 test("agent actions fence workspace identity and expose only bounded fixed keyboard events", async () => {
   const h = harness();
   h.service.attachWindow(new FakeHostWindow());

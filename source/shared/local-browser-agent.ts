@@ -2,6 +2,8 @@ export const LOCAL_BROWSER_AGENT_LIMITS = Object.freeze({
   maxOperationIdLength: 128,
   maxElementRefLength: 64,
   maxTextInputLength: 16_384,
+  maxSelectValues: 100,
+  maxOptionValueLength: 4_096,
   maxSnapshotElements: 500,
   maxSnapshotTextLength: 32_768,
   maxWaitMs: 15_000,
@@ -39,6 +41,7 @@ export type LocalBrowserAgentAction =
   | (LocalBrowserAgentTarget & { readonly type: "snapshot" })
   | (LocalBrowserAgentTarget & { readonly type: "click"; readonly ref: string })
   | (LocalBrowserAgentTarget & { readonly type: "fill"; readonly ref: string; readonly value: string })
+  | (LocalBrowserAgentTarget & { readonly type: "select-option"; readonly ref: string; readonly values: readonly string[] })
   | (LocalBrowserAgentTarget & { readonly type: "type"; readonly ref: string; readonly text: string })
   | (LocalBrowserAgentTarget & { readonly type: "press-key"; readonly key: string })
   | (LocalBrowserAgentTarget & { readonly type: "scroll"; readonly deltaX: number; readonly deltaY: number })
@@ -175,6 +178,15 @@ export function parseLocalBrowserAgentAction(value: unknown): LocalBrowserAgentA
       const ref = boundedString(source.ref, LOCAL_BROWSER_AGENT_LIMITS.maxElementRefLength);
       if (ref == null || typeof source.value !== "string" || source.value.length > LOCAL_BROWSER_AGENT_LIMITS.maxTextInputLength) return null;
       return { ...target, type: "fill", ref, value: source.value };
+    }
+    case "select-option": {
+      const ref = boundedString(source.ref, LOCAL_BROWSER_AGENT_LIMITS.maxElementRefLength);
+      if (ref == null || !Array.isArray(source.values) || source.values.length === 0 || source.values.length > LOCAL_BROWSER_AGENT_LIMITS.maxSelectValues) return null;
+      const values = source.values.flatMap((value): string[] =>
+        typeof value === "string" && value.length > 0 && value.length <= LOCAL_BROWSER_AGENT_LIMITS.maxOptionValueLength ? [value] : []
+      );
+      if (values.length !== source.values.length) return null;
+      return { ...target, type: "select-option", ref, values };
     }
     case "type": {
       const ref = boundedString(source.ref, LOCAL_BROWSER_AGENT_LIMITS.maxElementRefLength);

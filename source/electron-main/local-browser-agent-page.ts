@@ -318,6 +318,41 @@ export async function fillLocalBrowserRef(
   actionResult(await page.executeJavaScript(script, true));
 }
 
+export async function selectLocalBrowserOptions(
+  page: LocalBrowserPagePort,
+  locator: LocalBrowserElementLocator,
+  values: readonly string[],
+): Promise<void> {
+  const script = actionScript(locator, String.raw`
+    const requested = ${JSON.stringify(values)};
+    if (!(element instanceof HTMLSelectElement)) {
+      return { ok: false, code: "BROWSER_ELEMENT_NOT_SELECT" };
+    }
+    if (element.disabled || element.getAttribute("aria-disabled") === "true") {
+      return { ok: false, code: "BROWSER_ELEMENT_DISABLED" };
+    }
+    const available = new Set(Array.from(element.options, option => option.value));
+    if (requested.some(value => !available.has(value))) {
+      return { ok: false, code: "BROWSER_OPTION_NOT_FOUND" };
+    }
+    if (!element.multiple && requested.length !== 1) {
+      return { ok: false, code: "BROWSER_SELECT_SINGLE_VALUE_REQUIRED" };
+    }
+    for (const option of Array.from(element.options)) {
+      option.selected = requested.includes(option.value);
+    }
+    element.dispatchEvent(new Event("input", { bubbles: true, composed: true }));
+    element.dispatchEvent(new Event("change", { bubbles: true }));
+    element.focus({ preventScroll: true });
+    const selected = Array.from(element.selectedOptions, option => option.value);
+    if (selected.length !== requested.length || requested.some(value => !selected.includes(value))) {
+      return { ok: false, code: "BROWSER_SELECT_POSTCONDITION_FAILED" };
+    }
+    return { ok: true };
+  `);
+  actionResult(await page.executeJavaScript(script, true));
+}
+
 export async function scrollLocalBrowserPage(
   page: LocalBrowserPagePort,
   deltaX: number,

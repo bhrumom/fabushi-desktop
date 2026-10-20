@@ -418,6 +418,25 @@ fn browser_wait_is_bounded_generation_fenced_and_shared_by_explicit_targets() {
 }
 
 #[test]
+fn local_select_option_uses_the_generation_fenced_workspace_ref_path() {
+    let spec = browser_tool_specs().into_iter()
+        .find(|spec| spec.name == "browser_select_option")
+        .expect("select option spec");
+    assert_eq!(spec.op, "select_option");
+    for required in [
+        "\"select_option\" | \"type\"",
+        "\"select_option\" => {",
+        "self.action_request(&target, tool_call_id, \"select-option\")?",
+        "request.insert(\"values\".into(), args.get(\"values\").cloned().unwrap_or(Value::Null));",
+    ] {
+        assert!(
+            LOCAL_BROWSER_TOOLS_SOURCE.contains(required),
+            "local select-option lost invariant: {required}"
+        );
+    }
+}
+
+#[test]
 fn unsupported_local_browser_action_fails_before_auto_review_or_relay() {
     let reviewed = Arc::new(Mutex::new(Vec::<String>::new()));
     let reviewed_sink = Arc::clone(&reviewed);
