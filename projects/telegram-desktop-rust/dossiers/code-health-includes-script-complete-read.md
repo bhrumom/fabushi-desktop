@@ -3,9 +3,11 @@
 ## Source authority
 
 - Repository: `telegramdesktop/tdesktop`
-- Commit: `351204f3695b4a39bc3f4d2f230c061b9a01fe2a`
+- Commit: `7b08e3ff570186ca8714e4de2242d08af4d98814`
 - Path: `.agents/skills/code-health/scripts/includes.py`
 - Blob: `2c02b4e7eb821f123588e0a80056edef86fc084c`
+- Root tree: `cf82a72e311226b7b14f712e8de2586d7ff6e1f4` (recursive API `truncated=false`; 7,014 entries; 6,717 non-directory entries).
+- Current recursive inventory: 16,203 non-directory entries, derived from the prior 16,202 exact inventory plus the sole direct-child net addition at `Telegram/lib_webview/webview/platform/win/webview_windows_temporary_storage.cpp` (`desktop-app/lib_webview@ef03bbfd696c7527d7cb57ac20c3a5d30feb98fa`, blob `cee5520c0cb8c40aa52ec8a82343f10ab8393212`).
 - Recursive authority position: array index 30, immediately after `history.py` at index 29.
 - File history at the accepted authority contains one introducing commit: `0d6570aeb5794b82b071a004cd4745142a21a048` ("[ai] Add a code-health skill measuring and checking code").
 
