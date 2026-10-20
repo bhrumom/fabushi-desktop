@@ -131,7 +131,7 @@ export interface MiniAppWindowFactoryPorts {
 }
 
 export interface MiniAppWindowFactory {
-  open(launch: VerifiedMiniAppLaunch): Promise<{ close(): void }>;
+  open(launch: VerifiedMiniAppLaunch, tools?: MiniAppToolBridgePorts): Promise<{ close(): void }>;
   closeAccountScope(accountScope: string, nextGeneration: number): void;
   closeAll(): void;
 }
@@ -219,27 +219,27 @@ function isAllowedReportExport(appId: string, item: MiniAppDownloadItem, content
 }
 
 export function createMiniAppWindowFactory(ports: MiniAppWindowFactoryPorts): MiniAppWindowFactory {
-  const windows = new Map<string, { toolScope: MiniAppToolScope; origin: string; window: MiniAppWindow; disposeSession(): void }>();
+  const windows = new Map<string, { toolScope: MiniAppToolScope; tools?: MiniAppToolBridgePorts; origin: string; window: MiniAppWindow; disposeSession(): void }>();
   const minimumGeneration = new Map<string, number>();
   const opening = new Set<string>();
   const keyFor = (scope: string, appId: string) => identityHash(scope, appId);
 
   let toolBridgeInstalled = false;
-  const ensureToolBridge = (): void => {
-    const tools = ports.tools;
+  const ensureToolBridge = (tools?: MiniAppToolBridgePorts): void => {
     if (!tools || toolBridgeInstalled) return;
     toolBridgeInstalled = true;
     const denied = { ok: false, error: { code: "UNAUTHORIZED_SENDER", message: "该窗口无权调用宿主工具" } };
     tools.ipc.handle(MINIAPP_TOOL_CHANNEL, async (event, tool, args) => {
       for (const record of windows.values()) {
         if (record.window.webContents !== event.sender) continue;
+        if (!record.tools || (record.tools.appId && record.tools.appId !== record.toolScope.appId)) return denied;
         const current = ports.currentAccount();
         if (!current || current.accountScope !== record.toolScope.accountScope
           || current.generation !== record.toolScope.accountGeneration) return denied;
         let frameUrl: URL;
         try { frameUrl = new URL(event.senderFrame?.url ?? ""); } catch { return denied; }
         if (!matchesOrigin(frameUrl, record.origin)) return denied;
-        return tools.router.invoke(record.toolScope, tool, args, () => {
+        return record.tools.router.invoke(record.toolScope, tool, args, () => {
           const latest = ports.currentAccount();
           return [...windows.values()].includes(record)
             && latest?.accountScope === record.toolScope.accountScope
@@ -254,13 +254,14 @@ export function createMiniAppWindowFactory(ports: MiniAppWindowFactoryPorts): Mi
     const record = windows.get(key);
     if (!record) return;
     windows.delete(key); // Fence callbacks before Electron tears down the renderer.
-    if (!ports.tools?.appId || ports.tools.appId === record.toolScope.appId) ports.tools?.cancelAll?.();
+    if (!record.tools?.appId || record.tools.appId === record.toolScope.appId) record.tools?.cancelAll?.();
     if (!record.window.isDestroyed()) record.window.destroy();
     record.disposeSession();
   };
 
   return {
-    async open(launch) {
+    async open(launch, toolOverride) {
+      const tools = toolOverride ?? ports.tools;
       const account = ports.currentAccount();
       const floor = minimumGeneration.get(launch.accountScope) ?? 0;
       if (!account || account.accountScope !== launch.accountScope || account.generation !== launch.accountGeneration || launch.accountGeneration < floor) {
@@ -321,13 +322,13 @@ export function createMiniAppWindowFactory(ports: MiniAppWindowFactoryPorts): Mi
       session.setPermissionRequestHandler(denyPermission);
       session.setPermissionCheckHandler(() => false);
       permissionInstalled = true;
-      ensureToolBridge();
+      ensureToolBridge(tools);
       const window = new ports.BrowserWindow({
         width: 960, height: 720, minWidth: 480, minHeight: 360, show: false,
         title: "Fabushi Mini App", autoHideMenuBar: true,
         webPreferences: {
           partition, nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true, webviewTag: false,
-          ...(ports.tools ? { preload: ports.tools.preloadPath } : {}),
+          ...(tools ? { preload: tools.preloadPath } : {}),
         },
       });
       let reportExportActive = false;
@@ -354,11 +355,11 @@ export function createMiniAppWindowFactory(ports: MiniAppWindowFactoryPorts): Mi
       const disposeSession = () => {
         cleanupPartialSession();
       };
-      const record = { toolScope, origin, window, disposeSession };
+      const record = { toolScope, tools, origin, window, disposeSession };
       windows.set(key, record);
       window.on("closed", () => { if (windows.get(key) === record) {
         windows.delete(key);
-        if (!ports.tools?.appId || ports.tools.appId === record.toolScope.appId) ports.tools?.cancelAll?.();
+        if (!record.tools?.appId || record.tools.appId === record.toolScope.appId) record.tools?.cancelAll?.();
         disposeSession();
       } });
       window.webContents.setWindowOpenHandler(() => ({ action: "deny" }));

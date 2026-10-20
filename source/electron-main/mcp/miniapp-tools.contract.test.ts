@@ -463,7 +463,7 @@ test("Host invokes the pinned Global Dandelion source engine through the real CL
   backend.cancelAll();
 });
 
-test("production desktop bridge runs end-to-end without Electron from preload IPC through router, approval gate and dandelion CLI", async () => {
+test("legacy Host environment cannot activate domain tools in an offline installed package", async () => {
   const workspace = await mkdtemp(join(tmpdir(), "fabushi-desktop-bridge-e2e-"));
   const previousEnv = {
     FABUSHI_DANDELION_BIN: process.env.FABUSHI_DANDELION_BIN,
@@ -612,82 +612,14 @@ test("production desktop bridge runs end-to-end without Electron from preload IP
     try {
       await ipcHandlers.get("sand:miniapp-launch")!({ sender: trustedManagementSender }, appId);
       assert.ok(openedWindow, "window must be created on launch");
-      assert.equal(openedWindow.options.webPreferences.preload, preloadPath);
+      assert.equal(openedWindow.options.webPreferences.preload, undefined);
       assert.equal(openedWindow.options.webPreferences.sandbox, true);
       assert.equal(openedWindow.options.webPreferences.contextIsolation, true);
       assert.equal(openedWindow.options.webPreferences.nodeIntegration, false);
 
-      const toolIpc = ipcHandlers.get(MINIAPP_TOOL_CHANNEL);
-      assert.ok(toolIpc, "preload IPC handler must be registered");
-
-      const hostHash = createHash("sha256").update(expectedAccountScope).update("\0").update(appId).digest("hex");
-      const validOrigin = `fabushi-miniapp://${hostHash}.app`;
-      const invokeFromRenderer = (tool: string, args: Record<string, unknown> = {}, frameUrl = `${validOrigin}/index.html`) =>
-        toolIpc({ sender: openedWindow!.webContents, senderFrame: { url: frameUrl } } satisfies MiniAppIpcEvent, tool, args) as Promise<{
-          ok: boolean;
-          data?: Record<string, unknown>;
-          error?: { code: string; message: string };
-        }>;
-
-      // 1. Capabilities probe matches host-tools.js expectations.
-      const caps = await invokeFromRenderer("offline.capabilities", { contract: MINIAPP_TOOL_CONTRACT });
-      assert.equal(caps.ok, true);
-      assert.equal(caps.data?.contract, MINIAPP_TOOL_CONTRACT);
-      assert.equal(caps.data?.platform, "desktop");
-      assert.deepEqual(caps.data?.capabilities, ["offline", "selection", "transfer", "scan", "config", ...(process.platform === "linux" ? ["platform"] : []), "diagnostics", ...(process.platform === "linux" ? ["hotspot"] : [])]);
-      assert.deepEqual(caps.data?.targetPools, [{ id: "lan-pool", label: "局域网目标" }]);
-
-      // 2. Directory selection via native dialog and canonical root validation.
-      const picked = await invokeFromRenderer("selection.pick", { mode: "directory" });
-      assert.equal(picked.ok, true);
-      const selectionId = String(picked.data?.selectionId ?? "");
-      assert.match(selectionId, /^[0-9a-f-]{36}$/);
-
-      // 3. Metadata scan executes real dandelion binary.
-      const scanned = await invokeFromRenderer("scan.metadata", { rootId: selectionId });
-      assert.equal(scanned.ok, true);
-      assert.deepEqual(scanned.data, { files: 5, bytes: 8192 });
-
-      // 4. Mutating transfer.send is denied when user cancels the approval dialog.
-      approveNext = false;
-      const deniedSend = await invokeFromRenderer("transfer.send", { selectionId, targetPoolId: "lan-pool" });
-      assert.equal(deniedSend.ok, false);
-      assert.equal(deniedSend.error?.code, "NOT_APPROVED");
-
-      // 5. Mutating transfer.send runs when user approves and completes asynchronously.
-      approveNext = true;
-      const approvedSend = await invokeFromRenderer("transfer.send", { selectionId, targetPoolId: "lan-pool" });
-      assert.equal(approvedSend.ok, true);
-      const operationId = String(approvedSend.data?.operationId ?? "");
-      let statusOut: { ok: boolean; data?: Record<string, unknown> } = { ok: true, data: { state: "running" } };
-      for (let attempt = 0; attempt < 40; attempt += 1) {
-        statusOut = await invokeFromRenderer("transfer.status", { operationId });
-        if (statusOut.data?.state !== "running") break;
-        await new Promise((resolve) => setTimeout(resolve, 25));
-      }
-      assert.equal(statusOut.ok, true);
-      assert.equal(statusOut.data?.state, "complete");
-      assert.deepEqual(statusOut.data?.result, { packets: 16, verifiedBytes: 8192 });
-
-      // 6. Forged frame origin or untrusted sender webContents is rejected before reaching router.
-      const badOrigin = await invokeFromRenderer("offline.capabilities", {}, "https://evil.example/index.html");
-      assert.equal(badOrigin.ok, false);
-      assert.equal(badOrigin.error?.code, "UNAUTHORIZED_SENDER");
-
-      const badSender = (await toolIpc(
-        { sender: {} as MiniAppWindow["webContents"], senderFrame: { url: `${validOrigin}/index.html` } },
-        "offline.capabilities",
-        {},
-      )) as { ok: boolean; error?: { code: string } };
-      assert.equal(badSender.ok, false);
-      assert.equal(badSender.error?.code, "UNAUTHORIZED_SENDER");
-
-      // 7. Account change closes the window and fences any late tool calls.
+      assert.equal(ipcHandlers.has(MINIAPP_TOOL_CHANNEL), false, "old domain env must not create a bridge for an offline package");
       for (const listener of accountListeners) listener();
       assert.equal(openedWindow.closed, true);
-      const afterLogout = await invokeFromRenderer("offline.capabilities", {});
-      assert.equal(afterLogout.ok, false);
-      assert.equal(afterLogout.error?.code, "UNAUTHORIZED_SENDER");
     } finally {
       registration.dispose();
     }
