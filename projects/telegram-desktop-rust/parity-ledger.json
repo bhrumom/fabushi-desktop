@@ -14113,10 +14113,9 @@
         "projects/fabushi-communication-platform/quality/evidence-contract.md"
       ],
       "fabushi_target_symbols": [
-        "ghTree / recursive authority validation",
-        "root open-authority discovery",
-        "Source authority / recursive inventory",
-        "Repository quality-health command orchestration governance"
+        "const ghTree=(repo,sha)=>get(",
+        "const selectedGroups=(inventory.candidate_disposition_groups||[]).filter",
+        "name: Source authority / recursive inventory"
       ],
       "target_language": "JavaScript/YAML/Markdown",
       "language_rationale": "sources.py is repository-development source acquisition instrumentation rather than shipping product logic. Fabushi already carries its applicable behavior in source-neutral GitHub Actions authority/discovery/validation contracts; retaining Python would create a duplicate authority path.",
@@ -14314,7 +14313,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral repository source-acquisition and snapshot contract read from telegramdesktop/tdesktop authority; no upstream Python implementation copied into Fabushi shipping runtime.",
-      "notes": "Recursive authority index 34 immediately after review.py index 33 is sources.py@688aa05c4223d0d45b8572cff89fbc5148254844. Complete source, health.py/report.py/review.py callers and direct health_test.py consumers were read. Upstream health_test.py exercises from_worktree through unused/map/atlas/state flows but has no dedicated direct from_ref/gitlink unit case; Fabushi exact-head authority workflow supplies the stronger recursive immutable-ref/gitlink/acquisition evidence. This closes only one source entry: unknown=16,164, unread=16,139, omitted=0. Parent authority run 39478280087/artifact 12291075807 and Rust run 39478280157/artifact 12290181212 are verified historical-only evidence for a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7; exact-head verification of this new commit is pending. The next strict source entry is .agents/skills/continue/SKILL.md@aeb81dd57018abbc8f03ea3dbd34f91952128db5.",
+      "notes": "Recursive authority index 34 immediately after review.py index 33 is sources.py@688aa05c4223d0d45b8572cff89fbc5148254844. Complete source, health.py/report.py/review.py callers and direct health_test.py consumers were read. Upstream health_test.py exercises from_worktree through unused/map/atlas/state flows but has no dedicated direct from_ref/gitlink unit case; Fabushi exact-head authority workflow supplies the stronger recursive immutable-ref/gitlink/acquisition evidence. This closes only one source entry: unknown=16,164, unread=16,139, omitted=0. Parent authority run 39478280087/artifact 12291075807 and Rust run 39478280157/artifact 12290181212 are verified historical-only evidence for a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7; exact-head verification of this new commit is pending. The next strict source entry is .agents/skills/continue/SKILL.md@aeb81dd57018abbc8f03ea3dbd34f91952128db5. Follow-up exact-head validator failure on 586c46fec037057af83f7c7a184ade5e1eb1db82 showed descriptive target-symbol labels were invalid because validator requires literal target text; this correction replaces only those labels with real, unique target source/workflow strings.",
       "test_execution_evidence": []
     }
   ]
