@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16202,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16176,
-    "unread_minimum": 16149,
+    "unknown_minimum": 16175,
+    "unread_minimum": 16148,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -97,5 +97,5 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live rebaseline candidate telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a (tree 5151db79560ed40bf3802482fcfb74b950be6c40) remains source-closure open. Actual recursive array entry 26 .agents/skills/code-health/scripts/cmake_model.py@e40ec0fc152958f96bd58d795f70d1a3a24ab1eb is independently mapped to existing source-neutral repository responsibility/quality/task-evidence governance with configured-build graph provenance retained as the stronger build authority: deterministic recognized CMake parsing, target/source/link/PCH/test normalization, quality-consumer boundaries, explicit unsupported/unknown semantics and source-derived-vs-configured authority separation are preserved without copying Telegram Python code-health runtime or creating a second build-model/findings/ownership/task owner. Recursive inventory remains 16,202 with unknown=16,176, unread=16,149, omitted=0; baseline acceptance remains fail-closed."
+  "note": "Live rebaseline candidate telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a (tree 5151db79560ed40bf3802482fcfb74b950be6c40) remains source-closure open. Actual recursive array entry 27 .agents/skills/code-health/scripts/cpp_text.py@366f173248add43c34317c8fe17d9ca31d46b1d4 is independently mapped to existing source-neutral repository responsibility/quality/task-evidence governance: line-provenance-preserving comment/text normalization, bounded include/identifier/function/class heuristics, direct metrics/includes/clones/report/review/atlas/health consumer boundaries and explicit non-compiler/unsupported-syntax semantics are preserved without copying Telegram Python code-health runtime or creating a second parser/findings/ownership/task owner. Recursive inventory remains 16,202 with unknown=16,175, unread=16,148, omitted=0; baseline acceptance remains fail-closed."
 }
