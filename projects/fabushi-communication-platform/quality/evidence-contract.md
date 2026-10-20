@@ -44,6 +44,15 @@ Passing atlas-instrument evidence binds the exact source revision, approved atla
 
 Skeleton evidence preserves the candidate thresholds, selected candidate folders, per-file line inputs and the derived per-area facts used for drafting: file/line totals, largest files, own-name groups when applicable, cross-area dependency counts, recent non-merge co-change/solo counts where repository history permits it, churn, task count/median duration and tested-line totals. The evidence must distinguish raw measurements from human responsibility judgments and must label histories that cannot be compared across repositories instead of inventing cross-repository co-change.
 
+## Repository maintenance-history measurement evidence
+
+Passing maintenance-history evidence records the exact scanned source revision, explicit lookback window, repository identity for each history source, pinned submodule revision where applicable, Git-history acquisition outcome, and the raw per-path commit counts before aggregation. Rename-disabled counting is recorded as a measurement convention, not a claim of stable semantic file identity. If a pinned submodule history cannot be acquired, preserve that source as unavailable; do not emit zero churn or merge it silently with a different revision.
+
+Task-effort evidence records each accepted `Task:` trailer, touched source paths, earliest Start event, latest Approve event, positive elapsed wall time, approval date, and highest recognized review-round marker. Missing queue state, absent task trailers, incomplete Start/Approve endpoints, non-positive intervals, or unrecognized review artifacts are retained as absent/unknown measurement rather than zero effort. Count/median/total summaries identify the exact retained observation set from which they were derived.
+
+Churn, hotspot, elapsed hours and review rounds are repository-quality prioritization evidence only. They may rank investigation or survey candidates but cannot independently assign responsibility, approve an atlas/map, authorize task routing, prove product behavior, configured-build success, packaging, security, or release acceptance. The evidence remains an input to the existing repository-quality report owner and creates no second task store, review owner, queue, product runtime, or release verdict.
+
+
 Command evidence records whether the operation was draft-check or skeleton-generation, the exact source revision, state/temporary output location, machine-readable and human-readable output identities, result code and failure class. Coverage violations and execution failures remain distinct: coverage failures preserve their negative sets; Git/process failures preserve the underlying error and cannot be converted to a clean check. Successful skeleton generation is evidence only; it provides no atlas approval, product/source mutation, queue receipt, shipping runtime, security authorization or release acceptance.
 
 ## Repository duplicate/clone evidence

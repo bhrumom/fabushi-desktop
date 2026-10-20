@@ -6,10 +6,10 @@
   "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16173,
-    "unread": 16146,
+    "unknown": 16172,
+    "unread": 16145,
     "omitted": 0,
-    "responsibilities_total": 51,
+    "responsibilities_total": 52,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -12718,6 +12718,250 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral repository-quality integration-test contract read from telegramdesktop/tdesktop authority; no upstream Python test implementation or fixture source copied into Fabushi shipping runtime.",
       "notes": "Recursive authority array index 28, immediately after health.py index 27, is .agents/skills/code-health/scripts/health_test.py. The complete test class surface and direct imports/health.py command invocations were read; repository code search found no separate runtime caller by file name. This closure decrements only this independent source entry to unknown=16,173 and unread=16,146, omitted=0.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
+      "source_path": ".agents/skills/code-health/scripts/history.py",
+      "source_blob_sha": "7c12f5b091936723c6ad005dda4bb8e2b1e549df",
+      "source_kind": "repository_quality_history_measurement_helper",
+      "module_id": "tdesktop.code-health-history-measurement",
+      "responsibility_id": "TDRP-R9-CODE-HEALTH-HISTORY-MEASUREMENT-001",
+      "source_symbols": [
+        "churn",
+        "collect",
+        "task_files",
+        "agent_cost",
+        "summarize"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-REPOSITORY-TASK-EVIDENCE"
+      ],
+      "dependency_ids": [
+        ".agents/skills/code-health/SKILL.md",
+        ".agents/skills/code-health/scripts/report.py",
+        ".agents/skills/code-health/scripts/sources.py",
+        "Fabushi repository AI development lifecycle",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract",
+        "ordinary Fabushi task/review lifecycle"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/code-health-history-script-complete-read.md",
+      "behavior_contract": "Measure recent source churn and optional task effort only from revision-bounded Git history: count changed scanned paths over an explicit window, preserve pinned submodule history boundaries, associate root commits carrying Task trailers with touched paths, derive positive Start-to-Approve wall time and highest review round only when lifecycle evidence is complete, and expose bounded summaries for repository-quality reporting/prioritization without treating missing history as zero or quality metrics as product acceptance.",
+      "state_machine": "exact scanned revision + lookback window -> root/pinned-submodule history acquisition -> per-path churn facts -> optional Task trailer/path association -> earliest Start + latest Approve + review-round observation -> positive task-effort fact -> report aggregation/prioritization; unavailable history, missing queue/trailer/endpoints, non-positive interval or unrecognized review state remains absent/unknown evidence",
+      "side_effects": [
+        "Repository quality/evidence measurement only; no shipping product runtime or task-state mutation is introduced."
+      ],
+      "failure_cases": [
+        "A missing or failed pinned-submodule history is reported as zero churn",
+        "History from a different revision/window is merged into the exact scan",
+        "Rename-disabled path counting is presented as stable semantic file identity",
+        "A task without both Start and Approve lifecycle evidence is assigned zero or fabricated effort",
+        "A non-positive lifecycle interval or unrecognized review artifact is treated as valid cost evidence",
+        "Churn, hotspot, elapsed hours or review rounds are used as ownership, task authorization, product, build or release acceptance"
+      ],
+      "ui_disposition": "Not applicable; repository quality/evidence measurement only.",
+      "non_ui_responsibilities": [
+        "Exact-revision bounded root and pinned-submodule churn observation",
+        "Explicit history lookback-window provenance",
+        "Task-trailer to changed-source-path association",
+        "Earliest Start and latest Approve lifecycle interval derivation",
+        "Highest recognized review-round observation",
+        "Missing/incomplete history represented as absent or unknown evidence",
+        "Count/median/total summary derivation from retained observations",
+        "Quality-report and survey-prioritization input without ownership or acceptance authority"
+      ],
+      "platform_delta": "Fabushi already owns repository quality and test-evidence governance. This closure records exact history/task-effort measurement semantics under that owner instead of porting Telegram's Python helper, queue layout, or creating a second task/review/history runtime.",
+      "existing_owner_candidates": [
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "AGENTS.md repository quality-health governance",
+        "ordinary Fabushi task/review lifecycle"
+      ],
+      "existing_owner": "Fabushi repository quality/test-evidence governance",
+      "rejected_existing_owners": [
+        "Shipping Agent/Coordinator/Host/Runner and product-domain stores do not own repository maintenance-history metrics",
+        "The task lifecycle owns task state and approval, not quality-history measurement",
+        "The report layer composes measurements but does not redefine Git/task lifecycle facts",
+        "Copying Telegram history.py would create a source-specific parallel quality instrument"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository maintenance-history measurement qualification",
+        "Repository maintenance-history measurement evidence"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The upstream helper supplies repository-development measurement/evidence semantics, not shipping C++ product logic. Fabushi preserves them as source-neutral qualification/evidence contracts under the existing quality owner.",
+      "command_event_contracts": [
+        "exact scanned revision + lookback -> Git path history -> per-path churn observations",
+        "pinned submodule history failure -> unavailable observation; never synthetic zero churn",
+        "Task trailer + touched paths + complete Start/Approve lifecycle -> positive elapsed-hours observation + approval date",
+        "recognized reviewN artifact -> highest review-round observation",
+        "missing queue/trailer/lifecycle or non-positive interval -> absent/unknown task-effort evidence",
+        "retained observations -> count/median/total summaries -> quality-report prioritization only"
+      ],
+      "state_owner": "Existing Fabushi repository quality/test-evidence governance",
+      "lifecycle_owner": "Existing repository development lifecycle and GitHub Actions evidence production/review",
+      "persistence_and_restart": "History measurements are reproducible evidence bound to exact revision, lookback and source repositories; task lifecycle remains owned by the ordinary task system. Missing observations are not persisted as fabricated zero values, and summaries retain derivation from the observed set.",
+      "concurrency_and_cancellation": "The responsibility is read-only measurement. Partial Git/queue acquisition or interrupted measurement cannot be promoted to complete quality evidence; each repository history stays bound to its declared exact revision/window.",
+      "security_boundary": "Repository-history measurements authorize no product mutation, task approval, owner decision, credentials, configured-build truth, packaging or release acceptance. Provenance mismatch and incomplete history remain non-passing/unknown.",
+      "network_service_dependencies": [
+        "GitHub repository authority",
+        "GitHub Actions hosted runners",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi repository quality/release workflow / GitHub Actions",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "Independent exact-head GitHub Actions verification of this source-entry mapping commit is pending."
+      ],
+      "production_entrypoints": [
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Repository maintenance-history measurement qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Repository maintenance-history measurement evidence"
+      ],
+      "production_evidence": [
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Repository maintenance-history measurement qualification",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Repository maintenance-history measurement evidence"
+      ],
+      "test_evidence": [
+        "dossier:projects/telegram-desktop-rust/dossiers/code-health-history-script-complete-read.md",
+        "upstream-history:.agents/skills/code-health/scripts/history.py@7c12f5b091936723c6ad005dda4bb8e2b1e549df",
+        "upstream-report:.agents/skills/code-health/scripts/report.py@a1177613670e933694f545f387ca7e7ed8cf0ee0",
+        "upstream-code-health-skill:.agents/skills/code-health/SKILL.md@6885938b3d186b55f5d69cb8b9b9a96bbca0e097"
+      ],
+      "target_commit": "92382d7e11a321166bc274bcd62505dc7516c9bb",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development and quality evidence governance",
+      "composition_slot": "Revision-bounded maintenance-history and task-effort measurement for quality reporting/prioritization",
+      "capability_component": "Source-neutral repository maintenance-history measurement",
+      "variation_axes": [
+        "root repository vs pinned submodule history",
+        "history available vs unavailable",
+        "task trailer present vs absent",
+        "complete vs incomplete Start/Approve lifecycle",
+        "recognized vs absent review-round artifacts",
+        "non-empty vs empty retained observation set"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi repository AI development lifecycle",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract",
+        "Repository quality-health governance",
+        "ordinary task/review lifecycle"
+      ],
+      "duplicate_root_check": "No Telegram Python history helper, second task store, second review owner, second queue, product runtime or release owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Every observation remains bound to its exact source revision, lookback and lifecycle evidence; missing history stays absent/unknown and cannot silently become zero-cost or healthy state.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to workflow governance",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CODE-HEALTH-HISTORY-MEASUREMENT-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CODE-HEALTH-HISTORY-REVISION-001",
+        "ORA-TDRP-CODE-HEALTH-TASK-COST-001",
+        "ORA-TDRP-CODE-HEALTH-HISTORY-ABSENCE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CODE-HEALTH-HISTORY-EXACT-REVISION-001",
+        "INV-TDRP-CODE-HEALTH-HISTORY-NO-FABRICATED-ZERO-001",
+        "INV-TDRP-CODE-HEALTH-HISTORY-NO-SECOND-OWNER-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CODE-HEALTH-HISTORY-MEASUREMENT-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-CODE-HEALTH-REPORT-HISTORY-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CODE-HEALTH-SUBMODULE-HISTORY-UNAVAILABLE-001",
+        "FAULT-TDRP-CODE-HEALTH-TASK-LIFECYCLE-INCOMPLETE-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CODE-HEALTH-HISTORY-PROVENANCE-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-CODE-HEALTH-HISTORY-MEASUREMENT-001"
+      ],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-INVENTORY",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "code-health-history-measurement-contract",
+        "repository-quality-history-evidence-contract"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral repository-quality history/task-effort measurement contract read from telegramdesktop/tdesktop authority; no upstream Python implementation copied into Fabushi shipping runtime.",
+      "notes": "Recursive authority array index 29, immediately after health_test.py index 28, is .agents/skills/code-health/scripts/history.py. Its direct report.py caller and code-health SKILL measurement/prioritization contract were read. This closure decrements only this independent source entry to unknown=16,172 and unread=16,145, omitted=0.",
       "test_execution_evidence": []
     }
   ]
