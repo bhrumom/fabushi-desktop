@@ -258,10 +258,10 @@
   "coverage": {
     "root_source_entries_total": 6717,
     "recursive_source_entries_total": 16202,
-    "unknown_minimum": 16172,
-    "unread_minimum": 16145,
+    "unknown_minimum": 16171,
+    "unread_minimum": 16144,
     "omitted_known": 0,
-    "note": "Revision 9 live rebaseline remains in progress for telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a (tree 5151db79560ed40bf3802482fcfb74b950be6c40). Root non-directory inventory remains 6,717 and recursive authority remains 16,202. Recursive array index 29 .agents/skills/code-health/scripts/history.py is independently mapped to existing repository quality/test-evidence governance: churn stays exact-revision/lookback bounded across root and pinned submodule histories, unavailable history remains absent rather than synthetic zero, Task trailers plus complete Start/Approve lifecycle and recognized review rounds yield optional task-effort observations, and churn/hotspot/cost remain prioritization evidence rather than ownership or acceptance. No Telegram Python history helper, second task store, review owner or queue is introduced. Counters are unknown=16,172, unread=16,145, omitted=0."
+    "note": "Revision 9 live rebaseline remains in progress for telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a (tree 5151db79560ed40bf3802482fcfb74b950be6c40). Root non-directory inventory remains 6,717 and recursive authority remains 16,202. Recursive array index 30 .agents/skills/code-health/scripts/includes.py is independently mapped to the existing source-neutral repository quality/build-evidence owner: bounded C/C++ and style-import resolution, unresolved-edge accounting, cycle-safe closure, source-derived PCH exclusion, source-line weight/reach/rebuild proxies and cross-target layering observations are preserved while configured-build truth and report/review result semantics remain with their stronger existing owners. No Telegram Python include graph or second build/findings/task owner is introduced. Counters are unknown=16,171, unread=16,144, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
