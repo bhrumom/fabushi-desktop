@@ -433,7 +433,6 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
   };
 
   const findTabByContents = (contents: BrowserWorkspaceWebContentsPort): { workspace: RuntimeWorkspace; tab: RuntimeTab } | null => {
-    agentQueues.clear();
     for (const workspace of workspaces.values()) {
       const tab = workspace.tabs.find((candidate) => candidate.view.webContents === contents);
       if (tab != null) return { workspace, tab };
@@ -1069,6 +1068,7 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
     dispose() {
       if (disposed) return;
       disposed = true;
+      agentQueues.clear();
       ports.ipcMain.removeHandler?.(BROWSER_WORKSPACE_INVOKE_CHANNEL);
       destroyAllRuntime();
       hostWindow = null;
