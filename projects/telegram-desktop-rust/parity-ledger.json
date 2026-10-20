@@ -16786,13 +16786,10 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "AGENTS.md",
         "projects/fabushi-communication-platform/quality/evidence-contract.md",
-        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
-        "projects/fabushi-communication-platform/quality/plans/security-privacy-test-plan.md"
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md"
       ],
       "fabushi_target_symbols": [
-        "Repository quality-health command orchestration governance",
         "Repository quality-health integrated regression evidence",
         "Repository quality-health command orchestration evidence",
         "FBCP/TDRP 所有 executable verification 只在 GitHub Actions"
@@ -16826,10 +16823,8 @@
         "Recursive reachability/disposition remains open with unknown/unread non-zero; baseline accepted/source_closure_ready remain false."
       ],
       "production_entrypoints": [
-        "AGENTS.md -> Repository quality-health command orchestration governance",
         "projects/fabushi-communication-platform/quality/evidence-contract.md -> repository quality-health integrated regression / command-orchestration evidence",
-        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> repository quality qualification and GitHub-Actions-only TDRP verification",
-        "projects/fabushi-communication-platform/quality/plans/security-privacy-test-plan.md -> fail-closed security/privacy release gate"
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> repository quality qualification and GitHub-Actions-only TDRP verification"
       ],
       "production_evidence": [
         "path:AGENTS.md@57ed0d56acc64ef24ce4c1f5c2877a4ec3ab570b",
