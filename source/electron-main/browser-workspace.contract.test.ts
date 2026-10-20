@@ -1,0 +1,288 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import {
+  createBrowserWorkspaceService,
+  type BrowserWorkspaceDownloadItem,
+  type BrowserWorkspaceHostWindowPort,
+  type BrowserWorkspaceIpcPort,
+  type BrowserWorkspacePersistencePort,
+  type BrowserWorkspaceSessionPort,
+  type BrowserWorkspaceViewPort,
+  type BrowserWorkspaceWebContentsPort,
+} from "./browser-workspace.js";
+import {
+  BROWSER_WORKSPACE_INVOKE_CHANNEL,
+  normalizeBrowserWorkspaceAddress,
+  type BrowserWorkspaceBounds,
+  type BrowserWorkspaceCommand,
+  type BrowserWorkspaceSnapshot,
+} from "../shared/browser-workspace.js";
+
+class FakeSession implements BrowserWorkspaceSessionPort {
+  permissionRequest: ((contents: BrowserWorkspaceWebContentsPort, permission: string, callback: (allowed: boolean) => void) => void) | null = null;
+  permissionCheck: ((contents: BrowserWorkspaceWebContentsPort, permission: string) => boolean) | null = null;
+  download: ((event: unknown, item: BrowserWorkspaceDownloadItem, contents: BrowserWorkspaceWebContentsPort) => void) | null = null;
+  setPermissionRequestHandler(handler: FakeSession["permissionRequest"]): void { this.permissionRequest = handler; }
+  setPermissionCheckHandler(handler: FakeSession["permissionCheck"]): void { this.permissionCheck = handler; }
+  on(_event: "will-download", listener: NonNullable<FakeSession["download"]>): void { this.download = listener; }
+}
+
+class FakeContents implements BrowserWorkspaceWebContentsPort {
+  readonly mainFrame = {};
+  readonly listeners = new Map<string, Array<(...args: any[]) => void>>();
+  popup: ((details: { readonly url: string }) => { action: "deny" }) | null = null;
+  url = "about:blank";
+  title = "New Tab";
+  zoom = 1;
+  destroyed = false;
+  stopped = false;
+  reloaded = false;
+  back = false;
+  forward = false;
+  constructor(readonly session: FakeSession) {}
+  on(event: string, listener: (...args: any[]) => void): void {
+    const list = this.listeners.get(event) ?? [];
+    list.push(listener);
+    this.listeners.set(event, list);
+  }
+  emit(event: string, ...args: unknown[]): void {
+    for (const listener of this.listeners.get(event) ?? []) listener(...args);
+  }
+  async loadURL(url: string): Promise<unknown> {
+    this.emit("did-start-loading");
+    this.url = url;
+    this.title = `Title ${new URL(url).hostname}`;
+    this.emit("did-navigate", {}, url);
+    this.emit("page-title-updated", {}, this.title);
+    this.emit("did-stop-loading");
+    return undefined;
+  }
+  getURL(): string { return this.url; }
+  getTitle(): string { return this.title; }
+  canGoBack(): boolean { return this.back; }
+  canGoForward(): boolean { return this.forward; }
+  goBack(): void { this.back = false; }
+  goForward(): void { this.forward = false; }
+  reload(): void { this.reloaded = true; this.emit("did-start-loading"); this.emit("did-stop-loading"); }
+  stop(): void { this.stopped = true; }
+  getZoomFactor(): number { return this.zoom; }
+  setZoomFactor(factor: number): void { this.zoom = factor; }
+  isDestroyed(): boolean { return this.destroyed; }
+  destroy(): void { this.destroyed = true; this.emit("destroyed"); }
+  setWindowOpenHandler(handler: NonNullable<FakeContents["popup"]>): void { this.popup = handler; }
+}
+
+class FakeView implements BrowserWorkspaceViewPort {
+  bounds: BrowserWorkspaceBounds = { x: 0, y: 0, width: 1, height: 1 };
+  constructor(readonly webContents: FakeContents) {}
+  setBounds(bounds: BrowserWorkspaceBounds): void { this.bounds = bounds; }
+}
+
+class FakeHostWindow implements BrowserWorkspaceHostWindowPort {
+  destroyed = false;
+  mounted: BrowserWorkspaceViewPort[] = [];
+  readonly listeners = new Map<string, () => void>();
+  readonly contentView = {
+    addChildView: (view: BrowserWorkspaceViewPort) => { if (!this.mounted.includes(view)) this.mounted.push(view); },
+    removeChildView: (view: BrowserWorkspaceViewPort) => { this.mounted = this.mounted.filter((candidate) => candidate !== view); },
+  };
+  isDestroyed(): boolean { return this.destroyed; }
+  on(event: "resize" | "closed", listener: () => void): void { this.listeners.set(event, listener); }
+}
+
+class FakeIpc implements BrowserWorkspaceIpcPort {
+  handler: ((event: unknown, request?: unknown) => unknown) | null = null;
+  channel: string | null = null;
+  handle(channel: string, listener: (event: unknown, request?: unknown) => unknown): void {
+    this.channel = channel;
+    this.handler = listener;
+  }
+  removeHandler(channel: string): void {
+    if (this.channel === channel) {
+      this.channel = null;
+      this.handler = null;
+    }
+  }
+}
+
+class MemoryPersistence implements BrowserWorkspacePersistencePort {
+  state: unknown = null;
+  readonly paths: string[] = [];
+  load(): unknown { return this.state; }
+  save(value: unknown): void { this.state = structuredClone(value); }
+  prepareDownloadPath(accountHash: string, downloadId: string, fileName: string): string {
+    const path = `/downloads/${accountHash}/${downloadId}-${fileName}`;
+    this.paths.push(path);
+    return path;
+  }
+}
+
+function harness(initialState: unknown = null) {
+  const ipc = new FakeIpc();
+  const persistence = new MemoryPersistence();
+  persistence.state = initialState;
+  const sessions = new Map<string, FakeSession>();
+  const views: FakeView[] = [];
+  const trustedSession = new FakeSession();
+  const trusted = new FakeContents(trustedSession);
+  let accountScope = "account-a";
+  let id = 0;
+  const broadcasts: unknown[] = [];
+  const service = createBrowserWorkspaceService({
+    ipcMain: ipc,
+    createView: ({ partition }) => {
+      const session = sessions.get(partition) ?? new FakeSession();
+      sessions.set(partition, session);
+      const view = new FakeView(new FakeContents(session));
+      views.push(view);
+      return view;
+    },
+    getTrustedContents: () => trusted,
+    getAccountScope: () => accountScope,
+    persistence,
+    broadcast: (_channel, payload) => broadcasts.push(payload),
+    id: () => `id-${++id}`,
+    now: () => 1_700_000_000_000 + id,
+  });
+  const invoke = async (command: BrowserWorkspaceCommand): Promise<BrowserWorkspaceSnapshot> => {
+    assert.equal(ipc.channel, BROWSER_WORKSPACE_INVOKE_CHANNEL);
+    assert.ok(ipc.handler);
+    return await ipc.handler({ sender: trusted, senderFrame: trusted.mainFrame }, command) as BrowserWorkspaceSnapshot;
+  };
+  return {
+    service, ipc, persistence, sessions, views, trusted, broadcasts, invoke,
+    setAccountScope(value: string) { accountScope = value; },
+  };
+}
+
+test("navigation policy permits HTTPS/search/loopback and rejects privileged or credential URLs", () => {
+  assert.equal(normalizeBrowserWorkspaceAddress("example.com"), "https://example.com/");
+  assert.equal(normalizeBrowserWorkspaceAddress("https://example.com/a?q=1"), "https://example.com/a?q=1");
+  assert.equal(normalizeBrowserWorkspaceAddress("http://127.0.0.1:8080/test"), "http://127.0.0.1:8080/test");
+  assert.equal(normalizeBrowserWorkspaceAddress("find cats"), "https://www.google.com/search?q=find%20cats");
+  assert.equal(normalizeBrowserWorkspaceAddress("http://example.com"), null);
+  assert.equal(normalizeBrowserWorkspaceAddress("file:///etc/passwd"), null);
+  assert.equal(normalizeBrowserWorkspaceAddress("javascript:alert(1)"), null);
+  assert.equal(normalizeBrowserWorkspaceAddress("https://user:pass@example.com"), null);
+});
+
+test("trusted renderer activates a real view boundary with account-scoped session and denied page permissions", async () => {
+  const h = harness();
+  const host = new FakeHostWindow();
+  h.service.attachWindow(host);
+  const state = await h.invoke({ type: "activate", conversationId: "bot-a", bounds: { x: 500.8, y: 50.2, width: 700.9, height: 800.1 } });
+  assert.equal(state.visible, true);
+  assert.equal(state.tabs.length, 1);
+  assert.equal(host.mounted.length, 1);
+  assert.deepEqual(h.views[0]?.bounds, { x: 500, y: 50, width: 700, height: 800 });
+  assert.equal(h.sessions.size, 1);
+  const [partition, session] = [...h.sessions.entries()][0]!;
+  assert.match(partition, /^persist:fabushi-browser-[a-f0-9]{64}$/);
+  assert.ok(session.permissionRequest);
+  let allowed = true;
+  session.permissionRequest!(h.views[0]!.webContents, "geolocation", (result) => { allowed = result; });
+  assert.equal(allowed, false);
+  assert.equal(session.permissionCheck!(h.views[0]!.webContents, "geolocation"), false);
+});
+
+test("tabs stay identity-isolated across conversations and wrong-tab mutations are rejected", async () => {
+  const h = harness();
+  const host = new FakeHostWindow();
+  h.service.attachWindow(host);
+  const a = await h.invoke({ type: "activate", conversationId: "bot-a", bounds: { x: 500, y: 50, width: 700, height: 800 } });
+  const aTab = a.activeTabId;
+  const a2 = await h.invoke({ type: "new-tab", conversationId: "bot-a", address: "https://example.com/a" });
+  assert.equal(a2.tabs.length, 2);
+  assert.notEqual(a2.activeTabId, aTab);
+
+  const b = await h.invoke({ type: "activate", conversationId: "bot-b", bounds: { x: 400, y: 50, width: 800, height: 800 } });
+  assert.equal(b.tabs.length, 1);
+  assert.notEqual(b.workspaceId, a.workspaceId);
+  assert.equal(host.mounted.length, 1);
+  await assert.rejects(() => h.invoke({ type: "select-tab", conversationId: "bot-b", tabId: a2.activeTabId }), /BROWSER_TAB_NOT_FOUND/);
+  const after = h.service.snapshot("bot-b");
+  assert.equal(after?.tabs.length, 1);
+});
+
+test("select/close/zoom/navigation operations preserve the selected workspace", async () => {
+  const h = harness();
+  const host = new FakeHostWindow();
+  h.service.attachWindow(host);
+  const first = await h.invoke({ type: "activate", conversationId: "bot-a", bounds: { x: 600, y: 60, width: 600, height: 700 } });
+  const firstTab = first.activeTabId;
+  const withSecond = await h.invoke({ type: "new-tab", conversationId: "bot-a", address: "https://example.com/path" });
+  const secondTab = withSecond.activeTabId;
+  assert.equal(withSecond.tabs.find((tab) => tab.id === secondTab)?.url, "https://example.com/path");
+  await h.invoke({ type: "set-zoom", conversationId: "bot-a", tabId: secondTab, factor: 99 });
+  assert.equal(h.views.at(-1)?.webContents.zoom, 3);
+  await h.invoke({ type: "select-tab", conversationId: "bot-a", tabId: firstTab });
+  const closed = await h.invoke({ type: "close-tab", conversationId: "bot-a", tabId: secondTab });
+  assert.equal(closed.tabs.length, 1);
+  assert.equal(closed.activeTabId, firstTab);
+});
+
+test("popup policy denies Chromium windows and converts only allowed URLs into managed tabs", async () => {
+  const h = harness();
+  h.service.attachWindow(new FakeHostWindow());
+  await h.invoke({ type: "activate", conversationId: "bot-a", bounds: { x: 1, y: 1, width: 500, height: 500 } });
+  const owner = h.views[0]!.webContents;
+  assert.ok(owner.popup);
+  assert.deepEqual(owner.popup!({ url: "javascript:alert(1)" }), { action: "deny" });
+  assert.equal(h.service.snapshot("bot-a")?.tabs.length, 1);
+  assert.deepEqual(owner.popup!({ url: "https://example.com/popup" }), { action: "deny" });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(h.service.snapshot("bot-a")?.tabs.length, 2);
+  assert.equal(h.service.snapshot("bot-a")?.tabs.some((tab) => tab.url === "https://example.com/popup"), true);
+});
+
+test("history/bookmarks persist URLs only and restore bounded tabs after service recreation", async () => {
+  const h = harness();
+  h.service.attachWindow(new FakeHostWindow());
+  let state = await h.invoke({ type: "activate", conversationId: "bot-a", bounds: { x: 1, y: 1, width: 500, height: 500 } });
+  state = await h.invoke({ type: "navigate", conversationId: "bot-a", tabId: state.activeTabId, address: "https://example.com/persisted" });
+  state = await h.invoke({ type: "add-bookmark", conversationId: "bot-a", tabId: state.activeTabId });
+  assert.equal(state.bookmarks.length, 1);
+  assert.equal(state.history.at(-1)?.url, "https://example.com/persisted");
+  const persisted = h.persistence.state;
+  h.service.dispose();
+
+  const restored = harness(persisted);
+  restored.service.attachWindow(new FakeHostWindow());
+  const next = await restored.invoke({ type: "activate", conversationId: "bot-a", bounds: { x: 1, y: 1, width: 500, height: 500 } });
+  assert.equal(next.tabs.length, 1);
+  assert.equal(next.tabs[0]?.url, "https://example.com/persisted");
+  assert.equal(next.bookmarks[0]?.url, "https://example.com/persisted");
+});
+
+test("untrusted renderer cannot reach browser commands", async () => {
+  const h = harness();
+  assert.ok(h.ipc.handler);
+  await assert.rejects(
+    async () => await h.ipc.handler!({ sender: new FakeContents(new FakeSession()), senderFrame: {} }, { type: "hide", conversationId: "bot-a" }),
+    /BROWSER_UNAUTHORIZED_SENDER/,
+  );
+  assert.equal(h.views.length, 0);
+});
+
+test("account revocation destroys runtime tabs and the next account gets a distinct workspace/profile", async () => {
+  const h = harness();
+  h.service.attachWindow(new FakeHostWindow());
+  const a = await h.invoke({ type: "activate", conversationId: "bot-a", bounds: { x: 1, y: 1, width: 500, height: 500 } });
+  const oldContents = h.views[0]!.webContents;
+  h.service.revokeAccount();
+  assert.equal(oldContents.destroyed, true);
+  h.setAccountScope("account-b");
+  const b = await h.invoke({ type: "activate", conversationId: "bot-a", bounds: { x: 1, y: 1, width: 500, height: 500 } });
+  assert.notEqual(a.workspaceId, b.workspaceId);
+  assert.equal(h.sessions.size, 2);
+});
+
+test("invalid commands are rejected before any view is created", async () => {
+  const h = harness();
+  assert.ok(h.ipc.handler);
+  await assert.rejects(
+    async () => await h.ipc.handler!({ sender: h.trusted, senderFrame: h.trusted.mainFrame }, { type: "activate", conversationId: "", bounds: {} }),
+    /BROWSER_INVALID_COMMAND/,
+  );
+  assert.equal(h.views.length, 0);
+});

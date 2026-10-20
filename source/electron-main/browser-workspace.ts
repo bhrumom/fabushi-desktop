@@ -1,0 +1,774 @@
+import { createHash, randomUUID } from "node:crypto";
+import { mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import {
+  BROWSER_WORKSPACE_INVOKE_CHANNEL,
+  BROWSER_WORKSPACE_LIMITS,
+  BROWSER_WORKSPACE_STATE_CHANNEL,
+  normalizeBrowserWorkspaceAddress,
+  parseBrowserWorkspaceCommand,
+  type BrowserDownloadState,
+  type BrowserWorkspaceBookmark,
+  type BrowserWorkspaceBounds,
+  type BrowserWorkspaceCommand,
+  type BrowserWorkspaceDownload,
+  type BrowserWorkspaceHistoryEntry,
+  type BrowserWorkspaceSnapshot,
+  type BrowserWorkspaceTabSnapshot,
+} from "../shared/browser-workspace.js";
+
+const PERSISTENCE_VERSION = 1;
+const MAX_PERSISTED_BYTES = 4 * 1024 * 1024;
+const DEFAULT_TITLE = "New Tab";
+
+export interface BrowserWorkspaceDownloadItem {
+  getURL(): string;
+  getFilename(): string;
+  getTotalBytes(): number;
+  getReceivedBytes(): number;
+  setSavePath(path: string): void;
+  cancel(): void;
+  on(event: "updated" | "done", listener: (_event?: unknown, state?: string) => void): void;
+}
+
+export interface BrowserWorkspaceSessionPort {
+  setPermissionRequestHandler(handler: ((webContents: BrowserWorkspaceWebContentsPort, permission: string, callback: (allowed: boolean) => void) => void) | null): void;
+  setPermissionCheckHandler(handler: ((webContents: BrowserWorkspaceWebContentsPort, permission: string) => boolean) | null): void;
+  on(event: "will-download", listener: (event: unknown, item: BrowserWorkspaceDownloadItem, webContents: BrowserWorkspaceWebContentsPort) => void): void;
+}
+
+export interface BrowserWorkspaceWebContentsPort {
+  readonly session: BrowserWorkspaceSessionPort;
+  readonly mainFrame?: unknown;
+  loadURL(url: string): Promise<unknown>;
+  getURL(): string;
+  getTitle(): string;
+  canGoBack(): boolean;
+  canGoForward(): boolean;
+  goBack(): void;
+  goForward(): void;
+  reload(): void;
+  stop(): void;
+  getZoomFactor(): number;
+  setZoomFactor(factor: number): void;
+  isDestroyed(): boolean;
+  destroy(): void;
+  setWindowOpenHandler(handler: (details: { readonly url: string }) => { action: "deny" }): void;
+  on(event: string, listener: (...args: any[]) => void): void;
+}
+
+export interface BrowserWorkspaceViewPort {
+  readonly webContents: BrowserWorkspaceWebContentsPort;
+  setBounds(bounds: BrowserWorkspaceBounds): void;
+}
+
+export interface BrowserWorkspaceHostWindowPort {
+  readonly contentView: {
+    addChildView(view: BrowserWorkspaceViewPort): void;
+    removeChildView(view: BrowserWorkspaceViewPort): void;
+  };
+  isDestroyed(): boolean;
+  on?(event: "resize" | "closed", listener: () => void): void;
+}
+
+export interface BrowserWorkspaceIpcPort {
+  handle(channel: string, listener: (event: unknown, request?: unknown) => unknown): void;
+  removeHandler?(channel: string): void;
+}
+
+export interface BrowserWorkspacePersistencePort {
+  load(): unknown;
+  save(value: unknown): void;
+  prepareDownloadPath(accountHash: string, downloadId: string, fileName: string): string;
+}
+
+export interface BrowserWorkspaceServicePorts {
+  readonly ipcMain: BrowserWorkspaceIpcPort;
+  readonly createView: (options: { readonly partition: string }) => BrowserWorkspaceViewPort;
+  readonly getTrustedContents: () => BrowserWorkspaceWebContentsPort | undefined;
+  readonly getAccountScope: () => string | undefined;
+  readonly persistence: BrowserWorkspacePersistencePort;
+  readonly broadcast: (channel: string, payload: unknown) => void;
+  readonly now?: () => number;
+  readonly id?: () => string;
+  readonly reportFailure?: (leg: string, error: unknown) => void;
+}
+
+export interface BrowserWorkspaceService {
+  attachWindow(window: BrowserWorkspaceHostWindowPort): void;
+  revokeAccount(): void;
+  snapshot(conversationId: string): BrowserWorkspaceSnapshot | null;
+  dispose(): void;
+}
+
+interface PersistedTab { readonly url: string }
+interface PersistedWorkspace {
+  readonly activeTabIndex: number;
+  readonly tabs: readonly PersistedTab[];
+}
+interface PersistedAccount {
+  readonly bookmarks: readonly BrowserWorkspaceBookmark[];
+  readonly history: readonly BrowserWorkspaceHistoryEntry[];
+  readonly workspaces: Readonly<Record<string, PersistedWorkspace>>;
+}
+interface PersistedRoot {
+  readonly version: 1;
+  readonly accounts: Readonly<Record<string, PersistedAccount>>;
+}
+
+interface MutableAccount {
+  bookmarks: BrowserWorkspaceBookmark[];
+  history: BrowserWorkspaceHistoryEntry[];
+  workspaces: Record<string, PersistedWorkspace>;
+}
+
+interface RuntimeTab {
+  readonly id: string;
+  readonly view: BrowserWorkspaceViewPort;
+  title: string;
+  url: string;
+  faviconUrl: string | null;
+  loading: boolean;
+  generation: number;
+  crashed: boolean;
+  error: { code: string; description: string } | null;
+}
+
+interface RuntimeWorkspace {
+  readonly id: string;
+  readonly accountHash: string;
+  readonly conversationId: string;
+  readonly conversationHash: string;
+  readonly partition: string;
+  tabs: RuntimeTab[];
+  activeTabId: string;
+  bounds: BrowserWorkspaceBounds;
+  visible: boolean;
+  downloads: BrowserWorkspaceDownload[];
+}
+
+function record(value: unknown): Record<string, unknown> | null {
+  return typeof value === "object" && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : null;
+}
+
+function boundedString(value: unknown, max: number): string | null {
+  return typeof value === "string" && value.length > 0 && value.length <= max ? value : null;
+}
+
+function normalizePersistedRoot(value: unknown): PersistedRoot {
+  const root = record(value);
+  if (root?.version !== PERSISTENCE_VERSION) return { version: PERSISTENCE_VERSION, accounts: {} };
+  const rawAccounts = record(root.accounts);
+  if (rawAccounts == null) return { version: PERSISTENCE_VERSION, accounts: {} };
+  const accounts: Record<string, PersistedAccount> = {};
+  for (const [accountHash, raw] of Object.entries(rawAccounts)) {
+    if (!/^[a-f0-9]{64}$/.test(accountHash)) continue;
+    const account = record(raw);
+    if (account == null) continue;
+    const bookmarks = Array.isArray(account.bookmarks) ? account.bookmarks.flatMap((item): BrowserWorkspaceBookmark[] => {
+      const entry = record(item);
+      const id = boundedString(entry?.id, 128), title = boundedString(entry?.title, 512), url = boundedString(entry?.url, BROWSER_WORKSPACE_LIMITS.maxAddressLength);
+      const createdAtMs = entry?.createdAtMs;
+      return id != null && title != null && url != null && normalizeBrowserWorkspaceAddress(url) != null && typeof createdAtMs === "number" && Number.isFinite(createdAtMs)
+        ? [{ id, title, url, createdAtMs }] : [];
+    }).slice(-BROWSER_WORKSPACE_LIMITS.maxBookmarks) : [];
+    const history = Array.isArray(account.history) ? account.history.flatMap((item): BrowserWorkspaceHistoryEntry[] => {
+      const entry = record(item);
+      const id = boundedString(entry?.id, 128), title = boundedString(entry?.title, 512), url = boundedString(entry?.url, BROWSER_WORKSPACE_LIMITS.maxAddressLength);
+      const visitedAtMs = entry?.visitedAtMs;
+      return id != null && title != null && url != null && normalizeBrowserWorkspaceAddress(url) != null && typeof visitedAtMs === "number" && Number.isFinite(visitedAtMs)
+        ? [{ id, title, url, visitedAtMs }] : [];
+    }).slice(-BROWSER_WORKSPACE_LIMITS.maxHistory) : [];
+    const workspaces: Record<string, PersistedWorkspace> = {};
+    const rawWorkspaces = record(account.workspaces);
+    if (rawWorkspaces != null) {
+      for (const [conversationHash, rawWorkspace] of Object.entries(rawWorkspaces)) {
+        if (!/^[a-f0-9]{64}$/.test(conversationHash)) continue;
+        const workspace = record(rawWorkspace);
+        if (workspace == null || !Array.isArray(workspace.tabs)) continue;
+        const tabs = workspace.tabs.flatMap((item): PersistedTab[] => {
+          const tab = record(item);
+          const url = typeof tab?.url === "string" ? normalizeBrowserWorkspaceAddress(tab.url) : null;
+          return url == null ? [] : [{ url }];
+        }).slice(0, BROWSER_WORKSPACE_LIMITS.maxTabs);
+        const activeTabIndex = typeof workspace.activeTabIndex === "number" && Number.isSafeInteger(workspace.activeTabIndex)
+          ? Math.max(0, Math.min(tabs.length - 1, workspace.activeTabIndex))
+          : 0;
+        workspaces[conversationHash] = { activeTabIndex, tabs };
+      }
+    }
+    accounts[accountHash] = { bookmarks, history, workspaces };
+  }
+  return { version: PERSISTENCE_VERSION, accounts };
+}
+
+function hashIdentity(value: string): string {
+  return createHash("sha256").update(value).digest("hex");
+}
+
+function safeDownloadFilename(value: string): string {
+  const base = value.replace(/[\\/\0<>:"|?*]/g, "_").trim().replace(/^\.+/, "").slice(0, 180);
+  return base.length > 0 ? base : "download";
+}
+
+export function createBrowserWorkspaceFilePersistence(rootDir: string): BrowserWorkspacePersistencePort {
+  const statePath = join(rootDir, "state-v1.json");
+  return {
+    load() {
+      try {
+        if (statSync(statePath).size > MAX_PERSISTED_BYTES) return null;
+        return JSON.parse(readFileSync(statePath, "utf8")) as unknown;
+      } catch {
+        return null;
+      }
+    },
+    save(value) {
+      mkdirSync(dirname(statePath), { recursive: true });
+      const encoded = JSON.stringify(value);
+      if (Buffer.byteLength(encoded, "utf8") > MAX_PERSISTED_BYTES) throw new Error("BROWSER_STATE_TOO_LARGE");
+      const temporary = `${statePath}.tmp-${process.pid}`;
+      writeFileSync(temporary, encoded, { encoding: "utf8", mode: 0o600 });
+      renameSync(temporary, statePath);
+    },
+    prepareDownloadPath(accountHash, downloadId, fileName) {
+      const directory = join(rootDir, "downloads", accountHash);
+      mkdirSync(directory, { recursive: true });
+      return join(directory, `${downloadId}-${safeDownloadFilename(fileName)}`);
+    },
+  };
+}
+
+function downloadState(value: string | undefined): BrowserDownloadState {
+  return value === "cancelled" || value === "interrupted" || value === "completed" ? value : "progressing";
+}
+
+export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePorts): BrowserWorkspaceService {
+  const now = ports.now ?? Date.now;
+  const nextId = ports.id ?? randomUUID;
+  let persisted = normalizePersistedRoot(ports.persistence.load());
+  const accounts = new Map<string, MutableAccount>();
+  const workspaces = new Map<string, RuntimeWorkspace>();
+  const sessionConfigured = new WeakSet<object>();
+  let hostWindow: BrowserWorkspaceHostWindowPort | null = null;
+  let activeWorkspaceId: string | null = null;
+  let mountedView: BrowserWorkspaceViewPort | null = null;
+  let disposed = false;
+
+  const fail = (leg: string, error: unknown): void => {
+    ports.reportFailure?.(leg, error);
+  };
+
+  const persist = (): void => {
+    const nextAccounts: Record<string, PersistedAccount> = { ...persisted.accounts };
+    for (const [accountHash, account] of accounts) {
+      nextAccounts[accountHash] = {
+        bookmarks: account.bookmarks,
+        history: account.history,
+        workspaces: account.workspaces,
+      };
+    }
+    persisted = { version: PERSISTENCE_VERSION, accounts: nextAccounts };
+    try { ports.persistence.save(persisted); } catch (error) { fail("persistence", error); }
+  };
+
+  const accountFor = (accountHash: string): MutableAccount => {
+    const existing = accounts.get(accountHash);
+    if (existing != null) return existing;
+    const saved = persisted.accounts[accountHash];
+    const created: MutableAccount = {
+      bookmarks: [...(saved?.bookmarks ?? [])],
+      history: [...(saved?.history ?? [])],
+      workspaces: { ...(saved?.workspaces ?? {}) },
+    };
+    accounts.set(accountHash, created);
+    return created;
+  };
+
+  const currentAccount = (): { scope: string; hash: string } => {
+    const scope = ports.getAccountScope()?.trim();
+    if (scope == null || scope.length === 0 || scope.length > 1024) throw new Error("BROWSER_ACCOUNT_UNAVAILABLE");
+    return { scope, hash: hashIdentity(scope) };
+  };
+
+  const workspaceIdentity = (accountHash: string, conversationId: string): { id: string; conversationHash: string } => {
+    const conversationHash = hashIdentity(conversationId);
+    return { id: hashIdentity(`${accountHash}\0${conversationHash}`), conversationHash };
+  };
+
+  const tabSnapshot = (tab: RuntimeTab): BrowserWorkspaceTabSnapshot => {
+    const contents = tab.view.webContents;
+    let canGoBack = false, canGoForward = false, zoomFactor = 1;
+    try {
+      if (!contents.isDestroyed()) {
+        canGoBack = contents.canGoBack();
+        canGoForward = contents.canGoForward();
+        zoomFactor = contents.getZoomFactor();
+      }
+    } catch {}
+    return {
+      id: tab.id,
+      title: tab.title,
+      url: tab.url,
+      faviconUrl: tab.faviconUrl,
+      loading: tab.loading,
+      canGoBack,
+      canGoForward,
+      zoomFactor,
+      generation: tab.generation,
+      crashed: tab.crashed,
+      error: tab.error,
+    };
+  };
+
+  const snapshot = (workspace: RuntimeWorkspace): BrowserWorkspaceSnapshot => {
+    const account = accountFor(workspace.accountHash);
+    return {
+      workspaceId: workspace.id,
+      conversationId: workspace.conversationId,
+      visible: workspace.visible,
+      activeTabId: workspace.activeTabId,
+      tabs: workspace.tabs.map(tabSnapshot),
+      bookmarks: account.bookmarks,
+      history: account.history,
+      downloads: workspace.downloads,
+    };
+  };
+
+  const publish = (workspace: RuntimeWorkspace): BrowserWorkspaceSnapshot => {
+    const value = snapshot(workspace);
+    ports.broadcast(BROWSER_WORKSPACE_STATE_CHANNEL, value);
+    return value;
+  };
+
+  const saveWorkspace = (workspace: RuntimeWorkspace): void => {
+    const account = accountFor(workspace.accountHash);
+    const activeIndex = Math.max(0, workspace.tabs.findIndex((tab) => tab.id === workspace.activeTabId));
+    account.workspaces[workspace.conversationHash] = {
+      activeTabIndex: activeIndex,
+      tabs: workspace.tabs.flatMap((tab): PersistedTab[] => {
+        const url = normalizeBrowserWorkspaceAddress(tab.url);
+        return url == null ? [] : [{ url }];
+      }),
+    };
+    persist();
+  };
+
+  const addHistory = (workspace: RuntimeWorkspace, tab: RuntimeTab, url: string): void => {
+    const safeUrl = normalizeBrowserWorkspaceAddress(url);
+    if (safeUrl == null) return;
+    const account = accountFor(workspace.accountHash);
+    const previous = account.history.at(-1);
+    if (previous?.url === safeUrl && previous.title === tab.title) return;
+    account.history.push({ id: nextId(), title: tab.title || safeUrl, url: safeUrl, visitedAtMs: now() });
+    if (account.history.length > BROWSER_WORKSPACE_LIMITS.maxHistory) account.history.splice(0, account.history.length - BROWSER_WORKSPACE_LIMITS.maxHistory);
+    persist();
+  };
+
+  const unmount = (): void => {
+    if (mountedView == null) return;
+    try { hostWindow?.contentView.removeChildView(mountedView); } catch (error) { fail("remove-view", error); }
+    mountedView = null;
+  };
+
+  const activeTab = (workspace: RuntimeWorkspace): RuntimeTab => {
+    const tab = workspace.tabs.find((candidate) => candidate.id === workspace.activeTabId);
+    if (tab == null) throw new Error("BROWSER_TAB_NOT_FOUND");
+    return tab;
+  };
+
+  const layout = (workspace: RuntimeWorkspace): void => {
+    if (hostWindow == null || hostWindow.isDestroyed() || !workspace.visible || activeWorkspaceId !== workspace.id) {
+      unmount();
+      return;
+    }
+    const tab = activeTab(workspace);
+    if (tab.view.webContents.isDestroyed()) return;
+    if (mountedView !== tab.view) {
+      unmount();
+      try {
+        hostWindow.contentView.addChildView(tab.view);
+        mountedView = tab.view;
+      } catch (error) {
+        fail("add-view", error);
+        return;
+      }
+    }
+    try { tab.view.setBounds(workspace.bounds); } catch (error) { fail("bounds", error); }
+  };
+
+  const findTabByContents = (contents: BrowserWorkspaceWebContentsPort): { workspace: RuntimeWorkspace; tab: RuntimeTab } | null => {
+    for (const workspace of workspaces.values()) {
+      const tab = workspace.tabs.find((candidate) => candidate.view.webContents === contents);
+      if (tab != null) return { workspace, tab };
+    }
+    return null;
+  };
+
+  const configureSession = (session: BrowserWorkspaceSessionPort): void => {
+    if (sessionConfigured.has(session as object)) return;
+    sessionConfigured.add(session as object);
+    session.setPermissionRequestHandler((_contents, _permission, callback) => callback(false));
+    session.setPermissionCheckHandler(() => false);
+    session.on("will-download", (_event, item, contents) => {
+      const owner = findTabByContents(contents);
+      if (owner == null || disposed) {
+        try { item.cancel(); } catch {}
+        return;
+      }
+      const { workspace, tab } = owner;
+      const id = nextId();
+      const fileName = safeDownloadFilename(item.getFilename());
+      const entry: BrowserWorkspaceDownload = {
+        id,
+        tabId: tab.id,
+        fileName,
+        url: item.getURL().slice(0, BROWSER_WORKSPACE_LIMITS.maxAddressLength),
+        receivedBytes: Math.max(0, item.getReceivedBytes()),
+        totalBytes: Math.max(0, item.getTotalBytes()),
+        state: "progressing",
+        startedAtMs: now(),
+      };
+      workspace.downloads = [...workspace.downloads.slice(-99), entry];
+      try {
+        item.setSavePath(ports.persistence.prepareDownloadPath(workspace.accountHash, id, fileName));
+      } catch (error) {
+        try { item.cancel(); } catch {}
+        fail("download-path", error);
+        workspace.downloads = workspace.downloads.map((download) => download.id === id ? { ...download, state: "cancelled" } : download);
+        publish(workspace);
+        return;
+      }
+      const update = (_event?: unknown, state?: string): void => {
+        workspace.downloads = workspace.downloads.map((download) => download.id === id ? {
+          ...download,
+          receivedBytes: Math.max(0, item.getReceivedBytes()),
+          totalBytes: Math.max(0, item.getTotalBytes()),
+          state: downloadState(state),
+        } : download);
+        publish(workspace);
+      };
+      item.on("updated", update);
+      item.on("done", update);
+      publish(workspace);
+    });
+  };
+
+  const createTab = (workspace: RuntimeWorkspace, requestedAddress?: string, select = true): RuntimeTab => {
+    if (workspace.tabs.length >= BROWSER_WORKSPACE_LIMITS.maxTabs) throw new Error("BROWSER_TAB_LIMIT");
+    const view = ports.createView({ partition: workspace.partition });
+    const contents = view.webContents;
+    configureSession(contents.session);
+    const tab: RuntimeTab = {
+      id: nextId(),
+      view,
+      title: DEFAULT_TITLE,
+      url: "about:blank",
+      faviconUrl: null,
+      loading: false,
+      generation: 0,
+      crashed: false,
+      error: null,
+    };
+    workspace.tabs.push(tab);
+    if (select) workspace.activeTabId = tab.id;
+
+    const updateState = (): void => {
+      if (contents.isDestroyed() || disposed) return;
+      try {
+        tab.url = contents.getURL() || tab.url;
+        tab.title = contents.getTitle() || tab.title || DEFAULT_TITLE;
+      } catch {}
+      if (workspace.visible && activeWorkspaceId === workspace.id && workspace.activeTabId === tab.id) layout(workspace);
+      publish(workspace);
+    };
+
+    contents.setWindowOpenHandler(({ url }) => {
+      const safe = normalizeBrowserWorkspaceAddress(url);
+      if (safe != null && !disposed) {
+        try {
+          createTab(workspace, safe, true);
+          saveWorkspace(workspace);
+          layout(workspace);
+          publish(workspace);
+        } catch (error) { fail("popup", error); }
+      }
+      return { action: "deny" };
+    });
+    contents.on("will-navigate", (event: { preventDefault(): void }, url: string) => {
+      if (normalizeBrowserWorkspaceAddress(url) != null) return;
+      event.preventDefault();
+      tab.error = { code: "BROWSER_NAVIGATION_BLOCKED", description: "Fabushi blocked a non-HTTP(S) navigation." };
+      publish(workspace);
+    });
+    contents.on("did-start-loading", () => {
+      tab.loading = true;
+      tab.generation += 1;
+      tab.crashed = false;
+      tab.error = null;
+      updateState();
+    });
+    contents.on("did-stop-loading", () => {
+      tab.loading = false;
+      updateState();
+    });
+    contents.on("page-title-updated", (_event: unknown, title: string) => {
+      if (typeof title === "string" && title.trim().length > 0) tab.title = title.slice(0, 512);
+      updateState();
+    });
+    contents.on("page-favicon-updated", (_event: unknown, favicons: unknown) => {
+      const candidate = Array.isArray(favicons) ? favicons.find((value) => typeof value === "string" && value.length <= 2048 && normalizeBrowserWorkspaceAddress(value) != null) : null;
+      tab.faviconUrl = typeof candidate === "string" ? candidate : null;
+      publish(workspace);
+    });
+    const didNavigate = (_event: unknown, url: string) => {
+      const safe = normalizeBrowserWorkspaceAddress(url);
+      if (safe != null) tab.url = safe;
+      updateState();
+      addHistory(workspace, tab, url);
+      saveWorkspace(workspace);
+    };
+    contents.on("did-navigate", didNavigate);
+    contents.on("did-navigate-in-page", didNavigate);
+    contents.on("did-fail-load", (_event: unknown, code: number, description: string, _validatedUrl: string, isMainFrame: boolean) => {
+      if (isMainFrame === false || code === -3) return;
+      tab.loading = false;
+      tab.error = { code: `LOAD_${code}`, description: String(description || "Navigation failed").slice(0, 512) };
+      updateState();
+    });
+    contents.on("render-process-gone", (_event: unknown, details: { reason?: string }) => {
+      tab.loading = false;
+      tab.crashed = true;
+      tab.generation += 1;
+      tab.error = { code: "RENDERER_GONE", description: String(details?.reason ?? "renderer process exited").slice(0, 256) };
+      updateState();
+    });
+    contents.on("destroyed", () => {
+      if (disposed) return;
+      tab.loading = false;
+      tab.crashed = true;
+      tab.generation += 1;
+      tab.error = { code: "TAB_DESTROYED", description: "The browser tab was destroyed." };
+      publish(workspace);
+    });
+
+    if (requestedAddress != null) {
+      const safe = normalizeBrowserWorkspaceAddress(requestedAddress);
+      if (safe == null) {
+        workspace.tabs = workspace.tabs.filter((candidate) => candidate !== tab);
+        if (!contents.isDestroyed()) contents.destroy();
+        throw new Error("BROWSER_NAVIGATION_BLOCKED");
+      }
+      tab.url = safe;
+      void contents.loadURL(safe).catch((error: unknown) => {
+        tab.loading = false;
+        tab.error = { code: "LOAD_REJECTED", description: error instanceof Error ? error.message.slice(0, 512) : "Navigation failed" };
+        publish(workspace);
+      });
+    }
+    return tab;
+  };
+
+  const ensureWorkspace = (conversationId: string): RuntimeWorkspace => {
+    const account = currentAccount();
+    const identity = workspaceIdentity(account.hash, conversationId);
+    const existing = workspaces.get(identity.id);
+    if (existing != null) return existing;
+    const saved = accountFor(account.hash).workspaces[identity.conversationHash];
+    const workspace: RuntimeWorkspace = {
+      id: identity.id,
+      accountHash: account.hash,
+      conversationId,
+      conversationHash: identity.conversationHash,
+      partition: `persist:fabushi-browser-${account.hash}`,
+      tabs: [],
+      activeTabId: "",
+      bounds: { x: 0, y: 0, width: 1, height: 1 },
+      visible: false,
+      downloads: [],
+    };
+    workspaces.set(workspace.id, workspace);
+    for (const savedTab of saved?.tabs ?? []) {
+      try { createTab(workspace, savedTab.url, false); } catch (error) { fail("restore-tab", error); }
+    }
+    if (workspace.tabs.length === 0) createTab(workspace, undefined, false);
+    const index = Math.max(0, Math.min(workspace.tabs.length - 1, saved?.activeTabIndex ?? 0));
+    workspace.activeTabId = workspace.tabs[index]!.id;
+    return workspace;
+  };
+
+  const requireOwnedWorkspace = (conversationId: string): RuntimeWorkspace => {
+    const workspace = ensureWorkspace(conversationId);
+    const account = currentAccount();
+    if (workspace.accountHash !== account.hash) throw new Error("BROWSER_WORKSPACE_STALE_ACCOUNT");
+    return workspace;
+  };
+
+  const requireTab = (workspace: RuntimeWorkspace, tabId: string): RuntimeTab => {
+    const tab = workspace.tabs.find((candidate) => candidate.id === tabId);
+    if (tab == null || tab.view.webContents.isDestroyed()) throw new Error("BROWSER_TAB_NOT_FOUND");
+    return tab;
+  };
+
+  const execute = async (command: BrowserWorkspaceCommand): Promise<BrowserWorkspaceSnapshot> => {
+    if (disposed) throw new Error("BROWSER_WORKSPACE_DISPOSED");
+    const workspace = requireOwnedWorkspace(command.conversationId);
+    switch (command.type) {
+      case "activate": {
+        if (activeWorkspaceId != null && activeWorkspaceId !== workspace.id) {
+          const previous = workspaces.get(activeWorkspaceId);
+          if (previous != null) previous.visible = false;
+        }
+        activeWorkspaceId = workspace.id;
+        workspace.visible = true;
+        workspace.bounds = command.bounds;
+        layout(workspace);
+        return publish(workspace);
+      }
+      case "hide":
+        workspace.visible = false;
+        if (activeWorkspaceId === workspace.id) {
+          activeWorkspaceId = null;
+          unmount();
+        }
+        return publish(workspace);
+      case "set-bounds":
+        workspace.bounds = command.bounds;
+        layout(workspace);
+        return publish(workspace);
+      case "new-tab":
+        createTab(workspace, command.address, true);
+        saveWorkspace(workspace);
+        layout(workspace);
+        return publish(workspace);
+      case "select-tab":
+        requireTab(workspace, command.tabId);
+        workspace.activeTabId = command.tabId;
+        saveWorkspace(workspace);
+        layout(workspace);
+        return publish(workspace);
+      case "close-tab": {
+        const tab = requireTab(workspace, command.tabId);
+        const index = workspace.tabs.indexOf(tab);
+        if (mountedView === tab.view) unmount();
+        workspace.tabs.splice(index, 1);
+        if (!tab.view.webContents.isDestroyed()) tab.view.webContents.destroy();
+        if (workspace.tabs.length === 0) createTab(workspace, undefined, true);
+        else if (workspace.activeTabId === tab.id) workspace.activeTabId = workspace.tabs[Math.min(index, workspace.tabs.length - 1)]!.id;
+        saveWorkspace(workspace);
+        layout(workspace);
+        return publish(workspace);
+      }
+      case "navigate": {
+        const tab = requireTab(workspace, command.tabId);
+        const safe = normalizeBrowserWorkspaceAddress(command.address);
+        if (safe == null) throw new Error("BROWSER_NAVIGATION_BLOCKED");
+        tab.url = safe;
+        tab.error = null;
+        await tab.view.webContents.loadURL(safe);
+        saveWorkspace(workspace);
+        return publish(workspace);
+      }
+      case "back": {
+        const tab = requireTab(workspace, command.tabId);
+        if (tab.view.webContents.canGoBack()) tab.view.webContents.goBack();
+        return publish(workspace);
+      }
+      case "forward": {
+        const tab = requireTab(workspace, command.tabId);
+        if (tab.view.webContents.canGoForward()) tab.view.webContents.goForward();
+        return publish(workspace);
+      }
+      case "reload": {
+        const tab = requireTab(workspace, command.tabId);
+        tab.crashed = false;
+        tab.error = null;
+        tab.view.webContents.reload();
+        return publish(workspace);
+      }
+      case "stop":
+        requireTab(workspace, command.tabId).view.webContents.stop();
+        return publish(workspace);
+      case "set-zoom": {
+        const tab = requireTab(workspace, command.tabId);
+        const factor = Math.max(BROWSER_WORKSPACE_LIMITS.minZoomFactor, Math.min(BROWSER_WORKSPACE_LIMITS.maxZoomFactor, command.factor));
+        tab.view.webContents.setZoomFactor(factor);
+        return publish(workspace);
+      }
+      case "add-bookmark": {
+        const tab = requireTab(workspace, command.tabId);
+        const url = normalizeBrowserWorkspaceAddress(tab.url);
+        if (url == null) return publish(workspace);
+        const account = accountFor(workspace.accountHash);
+        if (!account.bookmarks.some((bookmark) => bookmark.url === url)) {
+          account.bookmarks.push({ id: nextId(), title: tab.title || url, url, createdAtMs: now() });
+          if (account.bookmarks.length > BROWSER_WORKSPACE_LIMITS.maxBookmarks) account.bookmarks.splice(0, account.bookmarks.length - BROWSER_WORKSPACE_LIMITS.maxBookmarks);
+          persist();
+        }
+        return publish(workspace);
+      }
+      case "remove-bookmark": {
+        const account = accountFor(workspace.accountHash);
+        account.bookmarks = account.bookmarks.filter((bookmark) => bookmark.id !== command.bookmarkId);
+        persist();
+        return publish(workspace);
+      }
+    }
+  };
+
+  ports.ipcMain.handle(BROWSER_WORKSPACE_INVOKE_CHANNEL, async (event, raw) => {
+    const trusted = ports.getTrustedContents();
+    const eventRecord = record(event);
+    if (trusted == null || eventRecord?.sender !== trusted || eventRecord.senderFrame !== trusted.mainFrame) throw new Error("BROWSER_UNAUTHORIZED_SENDER");
+    const command = parseBrowserWorkspaceCommand(raw);
+    if (command == null) throw new Error("BROWSER_INVALID_COMMAND");
+    return await execute(command);
+  });
+
+  const destroyAllRuntime = (): void => {
+    unmount();
+    activeWorkspaceId = null;
+    for (const workspace of workspaces.values()) {
+      workspace.visible = false;
+      for (const tab of workspace.tabs) {
+        try { if (!tab.view.webContents.isDestroyed()) tab.view.webContents.destroy(); } catch (error) { fail("destroy-tab", error); }
+      }
+    }
+    workspaces.clear();
+  };
+
+  return {
+    attachWindow(window) {
+      if (disposed) return;
+      unmount();
+      hostWindow = window;
+      window.on?.("resize", () => {
+        if (activeWorkspaceId == null) return;
+        const workspace = workspaces.get(activeWorkspaceId);
+        if (workspace != null) layout(workspace);
+      });
+      window.on?.("closed", () => {
+        unmount();
+        hostWindow = null;
+      });
+      if (activeWorkspaceId != null) {
+        const workspace = workspaces.get(activeWorkspaceId);
+        if (workspace != null) layout(workspace);
+      }
+    },
+    revokeAccount() {
+      if (disposed) return;
+      destroyAllRuntime();
+    },
+    snapshot(conversationId) {
+      if (disposed) return null;
+      try { return snapshot(requireOwnedWorkspace(conversationId)); } catch { return null; }
+    },
+    dispose() {
+      if (disposed) return;
+      disposed = true;
+      ports.ipcMain.removeHandler?.(BROWSER_WORKSPACE_INVOKE_CHANNEL);
+      destroyAllRuntime();
+      hostWindow = null;
+    },
+  };
+}

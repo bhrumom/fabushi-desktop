@@ -1,0 +1,65 @@
+name: Browser Workspace CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "source/shared/browser-workspace.ts"
+      - "source/electron-main/browser-workspace.ts"
+      - "source/electron-main/browser-workspace.contract.test.ts"
+      - "source/electron-main/main-production-services.ts"
+      - "source/electron-preload/preload.ts"
+      - "frontend/src/recovered/contracts/desktop-bridge.ts"
+      - "frontend/src/recovered/contracts/desktop-bridge.contract.test.ts"
+      - "frontend/src/recovered/features/browser/**"
+      - "frontend/src/production/ProductionRenderer.tsx"
+      - "desktop/tsconfig.browser-workspace.json"
+      - ".github/workflows/browser-workspace-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: browser-workspace-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    name: Browser contracts and renderer integration
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - name: Bind exact tested HEAD
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          expected="${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}"
+          test "$actual" = "$expected"
+          echo "Exact tested HEAD: $actual" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci
+      - name: Compile browser workspace contracts
+        run: ./node_modules/.bin/tsc -p tsconfig.browser-workspace.json
+      - name: Run browser workspace contracts
+        run: node --test .tmp-browser-workspace/source/electron-main/browser-workspace.contract.test.js
+      - name: Build Electron main and preload
+        run: npm run build:electron
+      - name: Typecheck renderer
+        run: npm run typecheck
+      - name: Build renderer
+        run: npm run build:renderer
+      - name: Verify co-staged Electron runtime
+        run: npm run check:desktop-runtime

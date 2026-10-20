@@ -1,5 +1,10 @@
 import { CLIENT_PERSISTENCE_CHANNELS } from "../shared/persistence.js";
 import {
+  BROWSER_WORKSPACE_INVOKE_CHANNEL,
+  BROWSER_WORKSPACE_STATE_CHANNEL,
+  type BrowserWorkspaceBounds,
+} from "../shared/browser-workspace.js";
+import {
   createCoordinatorPortBroker,
   wrapTransferredCoordinatorPort,
   type CoordinatorPortConsumer,
@@ -143,6 +148,23 @@ export function createDesktopPreloadBridge(options: {
       items: paths.map((path, index) => ({ path, ...(filenames[index] ? { name: filenames[index] } : {}) })),
     })),
     async discardStagedAttachment(path: string) { await edge("discardStagedAttachment", { path }); },
+    browserWorkspace: {
+      activate: (conversationId: string, bounds: BrowserWorkspaceBounds) => ipc.invoke(BROWSER_WORKSPACE_INVOKE_CHANNEL, { type: "activate", conversationId, bounds }),
+      hide: (conversationId: string) => ipc.invoke(BROWSER_WORKSPACE_INVOKE_CHANNEL, { type: "hide", conversationId }),
+      setBounds: (conversationId: string, bounds: BrowserWorkspaceBounds) => ipc.invoke(BROWSER_WORKSPACE_INVOKE_CHANNEL, { type: "set-bounds", conversationId, bounds }),
+      newTab: (conversationId: string, address?: string) => ipc.invoke(BROWSER_WORKSPACE_INVOKE_CHANNEL, { type: "new-tab", conversationId, ...(address === undefined ? {} : { address }) }),
+      selectTab: (conversationId: string, tabId: string) => ipc.invoke(BROWSER_WORKSPACE_INVOKE_CHANNEL, { type: "select-tab", conversationId, tabId }),
+      closeTab: (conversationId: string, tabId: string) => ipc.invoke(BROWSER_WORKSPACE_INVOKE_CHANNEL, { type: "close-tab", conversationId, tabId }),
+      navigate: (conversationId: string, tabId: string, address: string) => ipc.invoke(BROWSER_WORKSPACE_INVOKE_CHANNEL, { type: "navigate", conversationId, tabId, address }),
+      back: (conversationId: string, tabId: string) => ipc.invoke(BROWSER_WORKSPACE_INVOKE_CHANNEL, { type: "back", conversationId, tabId }),
+      forward: (conversationId: string, tabId: string) => ipc.invoke(BROWSER_WORKSPACE_INVOKE_CHANNEL, { type: "forward", conversationId, tabId }),
+      reload: (conversationId: string, tabId: string) => ipc.invoke(BROWSER_WORKSPACE_INVOKE_CHANNEL, { type: "reload", conversationId, tabId }),
+      stop: (conversationId: string, tabId: string) => ipc.invoke(BROWSER_WORKSPACE_INVOKE_CHANNEL, { type: "stop", conversationId, tabId }),
+      setZoom: (conversationId: string, tabId: string, factor: number) => ipc.invoke(BROWSER_WORKSPACE_INVOKE_CHANNEL, { type: "set-zoom", conversationId, tabId, factor }),
+      addBookmark: (conversationId: string, tabId: string) => ipc.invoke(BROWSER_WORKSPACE_INVOKE_CHANNEL, { type: "add-bookmark", conversationId, tabId }),
+      removeBookmark: (conversationId: string, bookmarkId: string) => ipc.invoke(BROWSER_WORKSPACE_INVOKE_CHANNEL, { type: "remove-bookmark", conversationId, bookmarkId }),
+      onState: (listener: (payload: unknown) => void) => subscribeIpc(ipc, BROWSER_WORKSPACE_STATE_CHANNEL, listener),
+    },
     marketplaceMiniApps: {
       list: () => ipc.invoke("sand:miniapp-list"),
       install: (appId: string) => ipc.invoke("sand:miniapp-install", appId),
