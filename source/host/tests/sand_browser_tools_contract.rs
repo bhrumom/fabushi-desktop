@@ -499,6 +499,34 @@ fn unsupported_local_browser_action_fails_before_auto_review_or_relay() {
 }
 
 #[test]
+fn local_upload_requires_user_authorized_sentinel_before_review_and_never_forwards_a_path() {
+    let sentinel = LOCAL_BROWSER_TOOLS_SOURCE
+        .find("Some(\"user-authorized\")")
+        .expect("local upload sentinel");
+    let review = LOCAL_BROWSER_TOOLS_SOURCE
+        .find("if let Some(auto_review)")
+        .expect("local auto review");
+    assert!(sentinel < review, "local upload path sentinel must be checked before approval");
+
+    for required in [
+        "\"click\" | \"upload_file\" | \"fill\"",
+        "\"upload_file\" => {",
+        "self.action_request(&target, tool_call_id, \"upload-file\")?",
+        "request.insert(\"ref\".into(), args.get(\"ref\").cloned().unwrap_or(Value::Null));",
+        "never accepts an Agent-provided local path",
+    ] {
+        assert!(
+            LOCAL_BROWSER_TOOLS_SOURCE.contains(required),
+            "local upload lost fail-closed invariant: {required}"
+        );
+    }
+    assert!(
+        !LOCAL_BROWSER_TOOLS_SOURCE.contains("request.insert(\"filePath\".into()"),
+        "local upload must never forward an Agent-controlled local filePath to Main"
+    );
+}
+
+#[test]
 fn screenshot_cache_returns_stashed_image_once() {
     let key = stash_screenshot("aW1hZ2U=");
     assert_eq!(take_stashed_screenshot(&key).as_deref(), Some("aW1hZ2U="));

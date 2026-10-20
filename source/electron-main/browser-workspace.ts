@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import {
   LOCAL_BROWSER_AGENT_LIMITS,
   parseLocalBrowserAgentAction,
@@ -18,6 +18,7 @@ import {
   pressLocalBrowserKey,
   scrollLocalBrowserPage,
   selectLocalBrowserOptions,
+  uploadLocalBrowserFile,
   type LocalBrowserElementLocator,
   type LocalBrowserFramePort,
 } from "./local-browser-agent-page.js";
@@ -111,6 +112,7 @@ export interface BrowserWorkspaceServicePorts {
   readonly getTrustedContents: () => BrowserWorkspaceWebContentsPort | undefined;
   readonly getAccountScope: () => string | undefined;
   readonly persistence: BrowserWorkspacePersistencePort;
+  readonly pickUploadFile?: () => Promise<string | null>;
   readonly broadcast: (channel: string, payload: unknown) => void;
   readonly now?: () => number;
   readonly id?: () => string;
@@ -886,6 +888,39 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
       case "click":
         await clickLocalBrowserRef(page, requireAgentRef(tab, action.ref));
         return agentResult(action.operationId, workspace, tab);
+      case "upload-file": {
+        if (ports.pickUploadFile == null) throw new Error("BROWSER_UPLOAD_UNAVAILABLE");
+        const selectedPath = await ports.pickUploadFile();
+        if (selectedPath == null) throw new Error("BROWSER_UPLOAD_CANCELLED");
+        if (tab.generation !== action.expectedGeneration) throw new Error("BROWSER_STALE_GENERATION");
+        requireControlLease(action.expectedControlEpoch, true);
+        let info;
+        try {
+          info = statSync(selectedPath);
+        } catch {
+          throw new Error("BROWSER_UPLOAD_FILE_UNAVAILABLE");
+        }
+        if (!info.isFile()) throw new Error("BROWSER_UPLOAD_FILE_INVALID");
+        if (info.size > LOCAL_BROWSER_AGENT_LIMITS.maxUploadBytes) throw new Error("BROWSER_UPLOAD_FILE_TOO_LARGE");
+        let bytes: Buffer;
+        try {
+          bytes = readFileSync(selectedPath);
+        } catch {
+          throw new Error("BROWSER_UPLOAD_FILE_UNAVAILABLE");
+        }
+        if (bytes.byteLength !== info.size || bytes.byteLength > LOCAL_BROWSER_AGENT_LIMITS.maxUploadBytes) {
+          throw new Error("BROWSER_UPLOAD_FILE_CHANGED");
+        }
+        const name = (basename(selectedPath) || "upload.bin").slice(0, 255);
+        await uploadLocalBrowserFile(page, requireAgentRef(tab, action.ref), {
+          name,
+          bytesBase64: bytes.toString("base64"),
+          sizeBytes: bytes.byteLength,
+        });
+        if (tab.generation !== action.expectedGeneration) throw new Error("BROWSER_STALE_GENERATION");
+        requireControlLease(action.expectedControlEpoch, true);
+        return agentResult(action.operationId, workspace, tab, { uploadedFile: { name, sizeBytes: bytes.byteLength } });
+      }
       case "fill":
         await fillLocalBrowserRef(page, requireAgentRef(tab, action.ref), action.value, false);
         return agentResult(action.operationId, workspace, tab);

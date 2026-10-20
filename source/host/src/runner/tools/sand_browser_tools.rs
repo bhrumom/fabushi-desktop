@@ -395,7 +395,7 @@ pub fn browser_tool_specs() -> Vec<BrowserToolSpec> {
         spec("BROWSER_CLICK", "browser_click", "click", "Click an element by ref from browser_snapshot.", &["ref"], &[], true, false),
         spec("BROWSER_MOUSE_CLICK_XY", "browser_mouse_click_xy", "mouse_click_xy", "Click at viewport coordinates.", &["x","y"], &[], true, false),
         spec("BROWSER_DOWNLOAD", "browser_download", "download", "Click an element and track the resulting download into the authorized workspace download area with bounded size and SHA-256 evidence.", &["ref"], &[], true, false),
-        spec("BROWSER_UPLOAD_FILE", "browser_upload_file", "upload_file", "Upload one explicitly authorized regular file from the box /workspace root into a file input.", &["ref","filePath"], &[], false, false),
+        spec("BROWSER_UPLOAD_FILE", "browser_upload_file", "upload_file", "Upload one authorized file into a file input. For target=box, filePath is an authorized regular file under /workspace. For target=local, filePath must be the literal user-authorized and Fabushi Main opens a trusted OS file picker; the Agent never chooses a local path.", &["ref","filePath"], &[], false, false),
         spec("BROWSER_TYPE", "browser_type", "type", "Type text into an editable element by ref.", &["ref","text"], &[], true, false),
         spec("BROWSER_FILL", "browser_fill", "fill", "Set the value of an editable element by ref.", &["ref","value"], &[], false, false),
         spec("BROWSER_SELECT_OPTION", "browser_select_option", "select_option", "Select one or more options in a select element by ref.", &["ref","values"], &[], false, false),
@@ -980,7 +980,12 @@ fn browser_tool_definition(spec: &BrowserToolSpec) -> RoutedToolDefinition {
         .or_insert_with(|| json!({"type":"string","minLength":1,"maxLength":240}));
     properties.entry("frameName").or_insert_with(|| json!({"type":"string","minLength":1,"maxLength":240}));
     properties.entry("frameUrl").or_insert_with(|| json!({"type":"string","minLength":1,"maxLength":2048}));
-    properties.insert("filePath".into(), json!({"type":"string","minLength":1,"maxLength":4096}));
+    properties.insert("filePath".into(), json!({
+        "type":"string",
+        "minLength":1,
+        "maxLength":4096,
+        "description":"For target=box: authorized regular file under /workspace. For target=local: pass literal user-authorized; Fabushi Main opens a trusted OS picker and never accepts an Agent-chosen local path."
+    }));
     if let Some(max) = spec.schema.max_text_len {
         properties.insert("text".into(), json!({"type":"string","minLength":1,"maxLength":max}));
     }

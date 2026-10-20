@@ -377,6 +377,45 @@ export async function fillLocalBrowserRef(
   actionResult(await executeForLocator(page, locator, script, true));
 }
 
+export async function uploadLocalBrowserFile(
+  page: LocalBrowserPagePort,
+  locator: LocalBrowserElementLocator,
+  file: { readonly name: string; readonly bytesBase64: string; readonly sizeBytes: number },
+): Promise<void> {
+  if (file.name.length === 0 || file.name.length > 255) throw new Error("BROWSER_UPLOAD_FILE_INVALID");
+  if (!Number.isSafeInteger(file.sizeBytes) || file.sizeBytes < 0 || file.sizeBytes > LOCAL_BROWSER_AGENT_LIMITS.maxUploadBytes) {
+    throw new Error("BROWSER_UPLOAD_FILE_TOO_LARGE");
+  }
+  const script = actionScript(locator, String.raw`
+    const fileName = ${JSON.stringify(file.name)};
+    const encoded = ${JSON.stringify(file.bytesBase64)};
+    const expectedSize = ${JSON.stringify(file.sizeBytes)};
+    if (!(element instanceof HTMLInputElement) || String(element.type || "").toLowerCase() !== "file") {
+      return { ok: false, code: "BROWSER_ELEMENT_NOT_FILE_INPUT" };
+    }
+    if (element.disabled || element.getAttribute("aria-disabled") === "true") {
+      return { ok: false, code: "BROWSER_ELEMENT_DISABLED" };
+    }
+    const binary = atob(encoded);
+    if (binary.length !== expectedSize) return { ok: false, code: "BROWSER_UPLOAD_SIZE_MISMATCH" };
+    const bytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+    const transfer = new DataTransfer();
+    transfer.items.add(new File([bytes], fileName, { type: "application/octet-stream" }));
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "files")?.set;
+    if (typeof setter !== "function") return { ok: false, code: "BROWSER_FILE_INPUT_UNAVAILABLE" };
+    setter.call(element, transfer.files);
+    element.dispatchEvent(new Event("input", { bubbles: true, composed: true }));
+    element.dispatchEvent(new Event("change", { bubbles: true }));
+    const selected = element.files && element.files[0];
+    if (!selected || element.files.length !== 1 || selected.name !== fileName || selected.size !== expectedSize) {
+      return { ok: false, code: "BROWSER_UPLOAD_POSTCONDITION_FAILED" };
+    }
+    return { ok: true };
+  `);
+  actionResult(await executeForLocator(page, locator, script, true));
+}
+
 export async function selectLocalBrowserOptions(
   page: LocalBrowserPagePort,
   locator: LocalBrowserElementLocator,

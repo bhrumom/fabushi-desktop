@@ -10,6 +10,7 @@ export const LOCAL_BROWSER_AGENT_LIMITS = Object.freeze({
   maxWaitMs: 15_000,
   maxScrollDelta: 20_000,
   maxScreenshotBytes: 8 * 1024 * 1024,
+  maxUploadBytes: 8 * 1024 * 1024,
 });
 
 export interface LocalBrowserAgentTarget {
@@ -43,6 +44,7 @@ export type LocalBrowserAgentAction =
   | LocalBrowserAgentTabsAction
   | (LocalBrowserAgentTarget & { readonly type: "snapshot" })
   | (LocalBrowserAgentTarget & { readonly type: "click"; readonly ref: string })
+  | (LocalBrowserAgentTarget & { readonly type: "upload-file"; readonly ref: string })
   | (LocalBrowserAgentTarget & { readonly type: "fill"; readonly ref: string; readonly value: string })
   | (LocalBrowserAgentTarget & { readonly type: "select-option"; readonly ref: string; readonly values: readonly string[] })
   | (LocalBrowserAgentTarget & { readonly type: "type"; readonly ref: string; readonly text: string })
@@ -103,6 +105,7 @@ export type LocalBrowserAgentActionResult =
       readonly screenshotBase64?: string;
       readonly waited?: boolean;
       readonly tabs?: readonly LocalBrowserAgentTabSummary[];
+      readonly uploadedFile?: { readonly name: string; readonly sizeBytes: number };
     }
   | {
       readonly ok: false;
@@ -187,6 +190,10 @@ export function parseLocalBrowserAgentAction(value: unknown): LocalBrowserAgentA
     case "click": {
       const ref = boundedString(source.ref, LOCAL_BROWSER_AGENT_LIMITS.maxElementRefLength);
       return ref == null ? null : { ...target, type: "click", ref };
+    }
+    case "upload-file": {
+      const ref = boundedString(source.ref, LOCAL_BROWSER_AGENT_LIMITS.maxElementRefLength);
+      return ref == null ? null : { ...target, type: "upload-file", ref };
     }
     case "fill": {
       const ref = boundedString(source.ref, LOCAL_BROWSER_AGENT_LIMITS.maxElementRefLength);

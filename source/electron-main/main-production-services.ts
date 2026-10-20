@@ -854,6 +854,13 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
         getTrustedContents: () => getTrustedContents() as unknown as BrowserWorkspaceWebContentsPort | undefined,
         getAccountScope: accountLifecycle.getAccountScope,
         persistence: createBrowserWorkspaceFilePersistence(join(bindings.native.app.getPath("userData"), "browser-workspace")),
+        ...(bindings.native.dialog == null ? {} : {
+          pickUploadFile: async () => {
+            const result = await bindings.native.dialog!.showOpenDialog({ properties: ["openFile"] });
+            if (result.canceled || result.filePaths.length !== 1) return null;
+            return result.filePaths[0] ?? null;
+          },
+        }),
         broadcast,
         reportFailure: (leg, error) => bindings.reportFailure("browser-workspace", leg, error),
       }));

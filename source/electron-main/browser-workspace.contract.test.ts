@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import {
   createBrowserWorkspaceService,
   type BrowserWorkspaceDownloadItem,
@@ -47,6 +48,21 @@ class FakeContents implements BrowserWorkspaceWebContentsPort {
   back = false;
   forward = false;
   readonly inputEvents: Array<{ readonly type: string; readonly keyCode?: string; readonly x?: number; readonly y?: number; readonly button?: "left"; readonly clickCount?: number }> = [];
+  readonly executedScripts: string[] = [];
+  snapshotElements: unknown[] = [{
+    selector: "html > body > button",
+    tag: "button",
+    role: null,
+    name: "Submit",
+    text: "Submit",
+    href: null,
+    inputType: null,
+    disabled: false,
+    editable: false,
+    checked: null,
+    selected: null,
+    frameUrl: null,
+  }];
   constructor(readonly session: FakeSession) {}
   on(event: string, listener: (...args: any[]) => void): void {
     const list = this.listeners.get(event) ?? [];
@@ -76,25 +92,13 @@ class FakeContents implements BrowserWorkspaceWebContentsPort {
   getZoomFactor(): number { return this.zoom; }
   setZoomFactor(factor: number): void { this.zoom = factor; }
   async executeJavaScript(script: string): Promise<unknown> {
+    this.executedScripts.push(script);
     if (script.includes("MAX_ELEMENTS") && script.includes("document.querySelectorAll")) {
       return {
         url: this.url,
         title: this.title,
         text: "Synthetic page Submit",
-        elements: [{
-          selector: "html > body > button",
-          tag: "button",
-          role: null,
-          name: "Submit",
-          text: "Submit",
-          href: null,
-          inputType: null,
-          disabled: false,
-          editable: false,
-          checked: null,
-          selected: null,
-          frameUrl: null,
-        }],
+        elements: this.snapshotElements,
       };
     }
     if (script.includes("getBoundingClientRect")) return { ok: true, x: 40, y: 50 };
@@ -159,7 +163,7 @@ class MemoryPersistence implements BrowserWorkspacePersistencePort {
   }
 }
 
-function harness(initialState: unknown = null) {
+function harness(initialState: unknown = null, pickUploadFile?: () => Promise<string | null>) {
   const ipc = new FakeIpc();
   const persistence = new MemoryPersistence();
   persistence.state = initialState;
@@ -182,6 +186,7 @@ function harness(initialState: unknown = null) {
     getTrustedContents: () => trusted,
     getAccountScope: () => accountScope,
     persistence,
+    ...(pickUploadFile == null ? {} : { pickUploadFile }),
     broadcast: (_channel, payload) => broadcasts.push(payload),
     id: () => `id-${++id}`,
     now: () => 1_700_000_000_000 + id,
@@ -703,6 +708,97 @@ test("user takeover rotates the Main-owned mutation lease and requires an explic
     ref,
   });
   assert.equal(clicked.ok, true);
+});
+
+test("local Agent upload uses a trusted user selection and never exposes a local path to the page or tool request", async () => {
+  const selectedPath = fileURLToPath(import.meta.url);
+  let pickerCalls = 0;
+  const h = harness(null, async () => {
+    pickerCalls += 1;
+    return selectedPath;
+  });
+  h.service.attachWindow(new FakeHostWindow());
+  const state = await h.invoke({ type: "activate", conversationId: "bot-upload", bounds: { x: 1, y: 1, width: 500, height: 500 } });
+  const tab = state.tabs[0]!;
+  const contents = h.views[0]!.webContents;
+  contents.snapshotElements = [{
+    selector: "html > body > input",
+    tag: "input",
+    role: null,
+    name: "Attachment",
+    text: "",
+    href: null,
+    inputType: "file",
+    disabled: false,
+    editable: true,
+    checked: null,
+    selected: null,
+    frameUrl: null,
+  }];
+  const snap = await h.service.executeAgentAction({
+    type: "snapshot",
+    conversationId: "bot-upload",
+    workspaceId: state.workspaceId,
+    tabId: tab.id,
+    expectedGeneration: tab.generation,
+    expectedControlEpoch: state.agentControl.epoch,
+    operationId: "upload-snapshot",
+  });
+  assert.equal(snap.ok, true);
+  if (!snap.ok) return;
+  const uploaded = await h.service.executeAgentAction({
+    type: "upload-file",
+    conversationId: "bot-upload",
+    workspaceId: state.workspaceId,
+    tabId: tab.id,
+    expectedGeneration: tab.generation,
+    expectedControlEpoch: state.agentControl.epoch,
+    operationId: "upload-file",
+    ref: snap.snapshot!.elements[0]!.ref,
+  });
+  assert.equal(uploaded.ok, true);
+  if (!uploaded.ok) return;
+  assert.equal(pickerCalls, 1);
+  assert.equal(uploaded.uploadedFile?.name, "browser-workspace.contract.test.js");
+  assert.ok((uploaded.uploadedFile?.sizeBytes ?? 0) > 0);
+  const script = contents.executedScripts.find((candidate) =>
+    candidate.includes("new DataTransfer()") && candidate.includes("HTMLInputElement.prototype")
+  );
+  assert.ok(script);
+  assert.equal(script.includes(selectedPath), false, "page script must never contain the selected local path");
+});
+
+test("local Agent upload cancellation is explicit and has no page side effect", async () => {
+  const h = harness(null, async () => null);
+  h.service.attachWindow(new FakeHostWindow());
+  const state = await h.invoke({ type: "activate", conversationId: "bot-upload-cancel", bounds: { x: 1, y: 1, width: 500, height: 500 } });
+  const tab = state.tabs[0]!;
+  const snap = await h.service.executeAgentAction({
+    type: "snapshot",
+    conversationId: "bot-upload-cancel",
+    workspaceId: state.workspaceId,
+    tabId: tab.id,
+    expectedGeneration: tab.generation,
+    expectedControlEpoch: state.agentControl.epoch,
+    operationId: "upload-cancel-snapshot",
+  });
+  assert.equal(snap.ok, true);
+  if (!snap.ok) return;
+  const beforeScripts = h.views[0]!.webContents.executedScripts.length;
+  await assert.rejects(
+    () => h.service.executeAgentAction({
+      type: "upload-file",
+      conversationId: "bot-upload-cancel",
+      workspaceId: state.workspaceId,
+      tabId: tab.id,
+      expectedGeneration: tab.generation,
+      expectedControlEpoch: state.agentControl.epoch,
+      operationId: "upload-cancel",
+      ref: snap.snapshot!.elements[0]!.ref,
+    }),
+    /BROWSER_UPLOAD_CANCELLED/,
+  );
+  assert.equal(h.views[0]!.webContents.executedScripts.length, beforeScripts);
 });
 
 test("invalid commands are rejected before any view is created", async () => {
