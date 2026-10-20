@@ -119,7 +119,7 @@ for(const [sourcePath,data] of byPath){
       authorityNote='resolved from preceding QT assignment in same Docker RUN block';
     }
     if(sourcePath==='Telegram/build/prepare/prepare.py'){
-      const qtResolution=resolveQtCloneRef(logical.text,qtVersionSource);
+      const qtResolution=resolveQtCloneRef(logical.text,qtVersionSource,data.lines.join('\n'));
       if(qtResolution){ref=qtResolution.ref;authorityNote=qtResolution.authorityNote;}
     }
     const resolution=resolveRef(url,ref,null);
