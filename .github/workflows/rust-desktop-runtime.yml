@@ -1,0 +1,323 @@
+name: Rust desktop runtime
+
+on:
+  push:
+    branches: [main, restore/rust-desktop-runtime, refactor/grok-018-architecture-rebuild]
+    paths:
+      - 'desktop/**'
+      - 'source/**'
+      - 'projects/grok-fabu-parity/architecture-manifest.json'
+      - 'projects/grok-fabu-parity/architecture-semantic-adaptations.json'
+      - 'scripts/check-grok-architecture.mjs'
+      - 'source/mahayana/mahayana-rs/**'
+      - 'source/mahayana/codex-rs/**'
+      - 'native/mahayana-messaging/**'
+      - 'projects/telegram-desktop-rust/**'
+      - 'scripts/*tdrp*.mjs'
+      - '.github/workflows/tdrp-revision9-authority.yml'
+      - '.github/workflows/rust-desktop-runtime.yml'
+      - 'RUST_RUNTIME_SOURCE.md'
+      - 'DESKTOP_SOURCE_CLOSURE.md'
+      - 'frontend/**'
+      - 'chatgpt-vps-control/**'
+      - 'contracts/**'
+  pull_request:
+    paths:
+      - 'desktop/**'
+      - 'source/**'
+      - 'projects/grok-fabu-parity/architecture-manifest.json'
+      - 'projects/grok-fabu-parity/architecture-semantic-adaptations.json'
+      - 'scripts/check-grok-architecture.mjs'
+      - 'source/mahayana/mahayana-rs/**'
+      - 'source/mahayana/codex-rs/**'
+      - 'native/mahayana-messaging/**'
+      - 'projects/telegram-desktop-rust/**'
+      - 'scripts/*tdrp*.mjs'
+      - '.github/workflows/tdrp-revision9-authority.yml'
+      - '.github/workflows/rust-desktop-runtime.yml'
+      - 'RUST_RUNTIME_SOURCE.md'
+      - 'DESKTOP_SOURCE_CLOSURE.md'
+      - 'frontend/**'
+      - 'chatgpt-vps-control/**'
+      - 'contracts/**'
+
+permissions:
+  contents: read
+
+env:
+  FABUSHI_TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+
+concurrency:
+  group: rust-desktop-runtime-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  rust-host:
+    runs-on: macos-15
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - name: Bind exact tested HEAD
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            expected="${{ github.event.pull_request.head.sha }}"
+          else
+            expected="${{ github.sha }}"
+          fi
+          test "$actual" = "$expected"
+          echo "Exact tested HEAD: $actual" >> "$GITHUB_STEP_SUMMARY"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            source/mahayana/mahayana-rs -> target
+            source/host -> target
+            source/host/app -> target
+            source/node-agent-coordinator -> target
+            source/box-exec-daemon -> target
+          shared-key: desktop-restored-rust-1.97.1
+      - name: Validate local Cargo dependency closure
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f source/mahayana/mahayana-rs/Cargo.toml
+          test -f source/mahayana/codex-rs/Cargo.toml
+          test -f native/mahayana-messaging/Cargo.toml
+          cargo metadata --no-deps --format-version 1 --manifest-path source/mahayana/mahayana-rs/Cargo.toml >/dev/null
+      - name: Test canonical Fabushi messaging responsibilities
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --manifest-path native/mahayana-messaging/Cargo.toml
+          mkdir -p .evidence
+          cat > .evidence/messaging-responsibilities.json <<EOF
+          {
+            "head_sha": "${{ env.FABUSHI_TARGET_SHA }}",
+            "manifest": "native/mahayana-messaging/Cargo.toml",
+            "responsibilities": [
+              "scheduled-and-silent-forward-preservation",
+              "forward-destination-authorization",
+              "formatted-text-utf16-entity-offset",
+              "typed-forward-thread-destination",
+              "missing-closed-hidden-topic-rejection"
+            ],
+            "result": "passed"
+          }
+          EOF
+      - name: Upload canonical Fabushi messaging evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-messaging-responsibilities-${{ env.FABUSHI_TARGET_SHA }}
+          path: .evidence/messaging-responsibilities.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Check Grok-aligned shipping Mahayana Host
+        shell: bash
+        run: cargo check --profile ci --bin mahayana-app-host --manifest-path source/host/app/Cargo.toml
+      - name: Test independent Mahayana Coordinator contract
+        shell: bash
+        run: cargo test --manifest-path source/node-agent-coordinator/Cargo.toml
+      - name: Test independent Grok box exec daemon contract
+        shell: bash
+        run: cargo test --manifest-path source/box-exec-daemon/Cargo.toml
+      - name: Test shipping Host box exec daemon supervisor
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo build --manifest-path source/box-exec-daemon/Cargo.toml --bin box-exec-daemon
+          FABUSHI_BOX_EXEC_DAEMON_TEST_BIN="$GITHUB_WORKSPACE/source/box-exec-daemon/target/debug/box-exec-daemon" \
+            cargo test --manifest-path source/host/Cargo.toml --test box_exec_daemon_process_contract
+      - name: Test independent Mahayana Host Runner contract
+        shell: bash
+        run: cargo test --manifest-path source/host/Cargo.toml
+      - name: Test Grok prompt attachment projection contract
+        shell: bash
+        run: cargo test -p mahayana-feature-host grok_send_prompt_projects_attachment_context_into_user_transcript_event --manifest-path source/mahayana/mahayana-rs/Cargo.toml
+      - name: Test human Computer takeover lifecycle
+        shell: bash
+        run: cargo test -p mahayana-feature-host computer_takeover_acquires_and_releases_a_human_control_lease --manifest-path source/mahayana/mahayana-rs/Cargo.toml
+      - name: Test ConversationActor and CapabilityBroker ownership
+        shell: bash
+        run: cargo test -p mahayana-runtime --manifest-path source/mahayana/mahayana-rs/Cargo.toml
+      - name: Test Native-only Desktop credential hand-off on macOS
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-platform-client --lib
+          cargo test --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-app-host --test native_desktop_account_handoff
+
+  pressure-profiler-platform:
+    name: Pressure profiler / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025, macos-15]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - name: Bind exact tested HEAD
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            expected="${{ github.event.pull_request.head.sha }}"
+          else
+            expected="${{ github.sha }}"
+          fi
+          test "$actual" = "$expected"
+          echo "Exact tested HEAD: $actual" >> "$GITHUB_STEP_SUMMARY"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: source/host -> target
+          shared-key: pressure-profiler-${{ matrix.os }}-1.97.1
+      - name: Enable Linux perf sampling and native desktop dependencies
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
+          if ! command -v perf >/dev/null 2>&1; then
+            sudo apt-get install -y linux-tools-common linux-tools-generic
+          fi
+          sudo sysctl -w kernel.perf_event_paranoid=-1 || true
+          perf --version
+      - name: Capture a real production pressure CPU profile
+        run: >-
+          cargo test --manifest-path source/host/Cargo.toml
+          --test pressure_cpu_profiler_contract
+          production_backend_emits_native_consumable_cpu_profile_artifact
+          -- --exact --nocapture
+
+  platform-worker:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - name: Bind exact tested HEAD
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            expected="${{ github.event.pull_request.head.sha }}"
+          else
+            expected="${{ github.sha }}"
+          fi
+          test "$actual" = "$expected"
+          echo "Exact tested HEAD: $actual" >> "$GITHUB_STEP_SUMMARY"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: source/mahayana/mahayana-rs -> target
+          shared-key: mahayana-platform-worker-wasm-1.97.1
+      - name: Test Mahayana platform Worker contracts
+        shell: bash
+        run: cargo test -p mahayana-platform-worker --manifest-path source/mahayana/mahayana-rs/Cargo.toml
+      - name: Check Mahayana platform Worker
+        shell: bash
+        run: cargo check --target wasm32-unknown-unknown -p mahayana-platform-worker --manifest-path source/mahayana/mahayana-rs/Cargo.toml
+
+  renderer:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - name: Bind exact tested HEAD
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            expected="${{ github.event.pull_request.head.sha }}"
+          else
+            expected="${{ github.sha }}"
+          fi
+          test "$actual" = "$expected"
+          echo "Exact tested HEAD: $actual" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - name: Install desktop dependencies
+        run: npm --prefix desktop ci --prefer-offline --no-audit --no-fund
+      - name: Build Grok-shaped Electron runtime
+        run: npm --prefix desktop run build:electron
+      - name: Check production architecture boundary
+        run: node desktop/scripts/check-agent-workspace-boundary.mjs
+      - name: Compile Grok Electron boundary contracts
+        run: ./desktop/node_modules/.bin/tsc -p desktop/tsconfig.grok-electron.json
+      - name: Compile Fabushi product policy contract
+        run: ./desktop/node_modules/.bin/tsc -p desktop/tsconfig.fabushi-product.json
+      - name: Test Grok Electron boundary contracts
+        run: >-
+          node --test
+          desktop/.tmp-grok-electron/source/electron-preload/coordinator-port-bridge.test.js
+          desktop/.tmp-grok-electron/source/electron-preload/preload-boundaries.test.js
+          desktop/.tmp-grok-electron/source/shared/foundations.test.js
+          desktop/.tmp-grok-electron/source/shared/node/mcp/mcp-discovery-settlement.contract.test.js
+          desktop/.tmp-grok-electron/source/electron-main/foundations.test.js
+          desktop/.tmp-grok-electron/source/electron-main/mcp/mcp-runtime.contract.test.js
+          desktop/.tmp-grok-electron/source/electron-main/coordinator/coordinator-launcher.test.js
+          desktop/.tmp-grok-electron/source/electron-main/coordinator/coordinator-executors.test.js
+          desktop/.tmp-grok-electron/source/electron-main/local-exec/local-exec-daemon-protocol.test.js
+      - name: Test Fabushi product policy contract
+        run: node --test desktop/.tmp-fabushi-product/source/product/fabushi/fabushi-account-service.contract.test.js
+      - name: Test recovered window chrome contracts
+        run: >-
+          node --experimental-strip-types --test
+          frontend/src/recovered/features/window-chrome/app-alert/controller.contract.test.ts
+          frontend/src/recovered/features/window-chrome/model.contract.test.ts
+          frontend/src/recovered/features/recovered-foundations.contract.test.ts
+          frontend/src/recovered/features/recovered-runtime-models.contract.test.ts
+          frontend/src/recovered/features/access-cover.contract.test.ts
+          frontend/src/recovered/features/recovered-configuration-models.contract.test.ts
+          frontend/src/recovered/features/recovered-navigation.contract.test.ts
+          frontend/src/recovered/features/reaction-system.contract.test.ts
+          frontend/src/recovered/features/agent-info-members.contract.test.ts
+          frontend/src/recovered/features/shared-room.contract.test.ts
+          frontend/src/recovered/features/recovered-owner-utilities.contract.test.ts
+          frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts
+          frontend/src/recovered/features/access-roster-state.contract.test.ts
+          frontend/src/recovered/features/recovered-state-models.contract.test.ts
+          frontend/src/recovered/features/recovered-shell-models.contract.test.ts
+          frontend/src/recovered/contracts/desktop-bridge.contract.test.ts
+          frontend/src/recovered/runtime/runtime-foundations.contract.test.ts
+      - name: Check Agent workspace architecture boundary
+        run: node desktop/scripts/check-agent-workspace-boundary.mjs
+      - name: Check Grok architecture inventory
+        run: node scripts/check-grok-architecture.mjs
+      - name: Typecheck and build renderer
+        run: npm --prefix desktop run build:renderer
+      - name: Verify co-staged desktop runtime
+        run: npm --prefix desktop run check:desktop-runtime
+      - name: Enforce built desktop bundle boundary
+        run: node desktop/scripts/check-desktop-bundle.mjs
+      - name: Check Grok final architecture gate
+        run: node scripts/check-grok-architecture.mjs --strict
