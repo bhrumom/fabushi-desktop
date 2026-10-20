@@ -84,9 +84,12 @@ jobs:
           printf 'Global Dandelion real Host fixture\n' > "$fixture/root/payload.txt"
           "$SOURCE_DIR/target/release/dandelion" config init > "$fixture/config.toml"
           chmod 600 "$fixture/config.toml"
+          printf '{"current_month":"2026-10","total_sent_bytes":1234}\n' > "$fixture/legacy-state.json"
           echo "FABUSHI_DANDELION_REAL_BIN=$SOURCE_DIR/target/release/dandelion" >> "$GITHUB_ENV"
           echo "FABUSHI_DANDELION_REAL_CONFIG=$fixture/config.toml" >> "$GITHUB_ENV"
           echo "FABUSHI_DANDELION_REAL_ROOT=$fixture/root" >> "$GITHUB_ENV"
+          echo "FABUSHI_DANDELION_REAL_STATE=$fixture/state" >> "$GITHUB_ENV"
+          echo "FABUSHI_DANDELION_REAL_IMPORT=$fixture/legacy-state.json" >> "$GITHUB_ENV"
 
       - name: Run Host contract and real-engine acceptance
         working-directory: desktop

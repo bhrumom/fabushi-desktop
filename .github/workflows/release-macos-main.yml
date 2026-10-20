@@ -585,6 +585,7 @@ jobs:
         timeout-minutes: 40
         env:
           MINIAPP_REAL_ACCEPTANCE: '1'
+          MINIAPP_REQUIRE_NATIVE_ENGINE: '1'
           MINIAPP_EVIDENCE_DIR: ${{ runner.temp }}/fabushi-miniapp-acceptance
           OBF_SOURCE_SHA: ${{ steps.source.outputs.sha }}
           OBF_EXPECTED_SOURCE_SHA: ${{ steps.source.outputs.sha }}

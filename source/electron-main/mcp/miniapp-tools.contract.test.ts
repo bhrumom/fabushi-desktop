@@ -361,20 +361,23 @@ test("Host invokes the pinned Global Dandelion source engine through the real CL
   const binaryPath = process.env.FABUSHI_DANDELION_REAL_BIN!;
   const configPath = process.env.FABUSHI_DANDELION_REAL_CONFIG!;
   const root = process.env.FABUSHI_DANDELION_REAL_ROOT!;
+  const stateDirectory = process.env.FABUSHI_DANDELION_REAL_STATE!;
+  const importFile = process.env.FABUSHI_DANDELION_REAL_IMPORT!;
   const backend = createDandelionCliBackend(
     {
       binaryPath,
       configPath,
       allowedRoots: [root],
+      stateDirectory,
       targetPools: [{ id: "loopback", label: "授权本机回环" }],
       platform: process.platform,
     },
-    { pick: async () => [{ path: root, name: "real-fixture", size: 32 }] },
+    { pick: async (mode) => [{ path: mode === "files" ? importFile : root, name: "real-fixture", size: 32 }] },
   );
 
   const capabilities = await backend.capabilities();
   assert.deepEqual(capabilities.capabilities, [
-    "offline", "selection", "transfer", "scan", "config",
+    "offline", "selection", "transfer", "scan", "state", "config",
     ...(process.platform === "linux" ? ["platform"] : []), "diagnostics",
   ]);
 
@@ -412,8 +415,19 @@ test("Host invokes the pinned Global Dandelion source engine through the real CL
   assert.equal(status.state, "complete");
   assert.ok(Number((status.result as Record<string, unknown>).verified_payload_bytes) > 0);
 
+  const imported = await backend.state("import", {}) as Record<string, unknown>;
+  assert.equal(imported.imported, true);
+  const persisted = await backend.state("inspect", {}) as Record<string, unknown>;
+  assert.equal(persisted.charged_bytes, 1234);
+  const repeated = await backend.state("import", {}) as Record<string, unknown>;
+  assert.equal(repeated.imported, false);
+  const watched = await backend.send({ selectionId: picked.selectionId, targetPoolId: "loopback", watch: true });
+  await backend.cancel(watched.operationId);
+  assert.equal((await backend.status(watched.operationId) as Record<string, unknown>).state, "cancelled");
+
   await backend.release(picked.selectionId);
   await assert.rejects(() => backend.scan("metadata", picked.selectionId), /UNKNOWN_SELECTION/);
+  backend.cancelAll();
 });
 
 test("production desktop bridge runs end-to-end without Electron from preload IPC through router, approval gate and dandelion CLI", async () => {

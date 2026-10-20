@@ -252,6 +252,31 @@ async function verifyWasmFileReport(page: Page, inputFile: string, inputBytes: n
   await expect(page.getByRole('button', { name: '导出报告', exact: true })).toBeEnabled();
 }
 
+async function verifyBundledNativeHost(page: Page): Promise<boolean> {
+  if (process.env.MINIAPP_REQUIRE_NATIVE_ENGINE !== '1') return false;
+  const observed = await page.evaluate(async () => {
+    const bridge = (globalThis as unknown as { fabushi?: { invoke(tool: string, args?: Record<string, unknown>): Promise<{ ok: boolean; data?: Record<string, unknown> }> } }).fabushi;
+    if (!bridge) throw new Error('INSTALLED_NATIVE_BRIDGE_MISSING');
+    return {
+      capabilities: await bridge.invoke('offline.capabilities'),
+      config: await bridge.invoke('config.check'),
+      diagnostic: await bridge.invoke('diagnostics.selfTest'),
+    };
+  });
+  expect(observed.capabilities.ok).toBe(true);
+  const capabilities = observed.capabilities.data?.capabilities as string[];
+  for (const capability of ['selection', 'scan', 'transfer', 'config', 'diagnostics']) expect(capabilities).toContain(capability);
+  expect(capabilities).not.toContain('hotspot');
+  expect(capabilities).not.toContain('platform');
+  expect(observed.config.ok).toBe(true);
+  expect((observed.config.data?.scanner as Record<string, unknown>).max_files).toBe(128);
+  expect((observed.config.data?.transport as Record<string, unknown>).mode).toBe('loopback');
+  expect(observed.diagnostic.ok).toBe(true);
+  expect(observed.diagnostic.data?.status).toBe('completed');
+  expect(observed.diagnostic.data?.verified_payload_bytes).toBe(65537);
+  return true;
+}
+
 async function exportAndVerifyReport(page: Page, appPid: number, downloadDir: string, inputFile: string, inputBytes: number): Promise<void> {
   if (process.platform !== 'darwin' || process.env.GITHUB_ACTIONS !== 'true') throw new Error('Actions-only native Save panel gate');
   const reportDir = await mkdtemp(path.join(downloadDir, 'report-'));
@@ -398,6 +423,7 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
       wasmLoaded: [] as boolean[],
       reportObserved: [] as boolean[],
       reportVerified: [] as boolean[],
+      bundledNativeVerified: [] as boolean[],
       installedAfterColdLaunch: false,
       codeRemoved: false,
       reinstalledOnline: false,
@@ -415,6 +441,7 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
       await expect(catalog.row).toContainText('已安装', { timeout: 90_000 });
       await catalog.row.getByRole('button', { name: '打开', exact: true }).click();
       let mini = await findMiniAppPage(app.browser);
+      evidence.bundledNativeVerified.push(await verifyBundledNativeHost(mini));
       await verifyWasmFileReport(mini, inputFile, fixtureStat.size);
       await exportAndVerifyReport(mini, app.process.pid!, evidenceDir, inputFile, fixtureStat.size);
       evidence.launchModes.push('online-install');
@@ -436,6 +463,7 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
       evidence.installedAfterColdLaunch = true;
       await catalog.row.getByRole('button', { name: '打开', exact: true }).click();
       mini = await findMiniAppPage(app.browser);
+      evidence.bundledNativeVerified.push(await verifyBundledNativeHost(mini));
       await verifyWasmFileReport(mini, inputFile, fixtureStat.size);
       await exportAndVerifyReport(mini, app.process.pid!, evidenceDir, inputFile, fixtureStat.size);
       evidence.launchModes.push('os-network-disabled-cold-launch');
