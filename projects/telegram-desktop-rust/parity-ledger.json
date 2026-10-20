@@ -6,10 +6,10 @@
   "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16174,
-    "unread": 16147,
+    "unknown": 16173,
+    "unread": 16146,
     "omitted": 0,
-    "responsibilities_total": 50,
+    "responsibilities_total": 51,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -12463,6 +12463,261 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral repository-quality command/state contract read from telegramdesktop/tdesktop authority; no upstream Python implementation copied into Fabushi shipping runtime.",
       "notes": "Recursive authority array index 27 (immediately after cpp_text.py index 26) is .agents/skills/code-health/scripts/health.py. Its direct health_test.py and code-health SKILL command callers plus delegated report/include/atlas/build/text/clone owners were read. This closure decrements only this independent source entry to unknown=16,174 and unread=16,147, omitted=0.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
+      "source_path": ".agents/skills/code-health/scripts/health_test.py",
+      "source_blob_sha": "2176aea672fd9ed16c01342939fbffb41490ae73",
+      "source_kind": "repository_quality_integrated_regression_harness",
+      "module_id": "tdesktop.code-health-integrated-regression-harness",
+      "responsibility_id": "TDRP-R9-CODE-HEALTH-INTEGRATED-REGRESSION-001",
+      "source_symbols": [
+        "Repo",
+        "TextTests",
+        "GraphTests",
+        "CloneTests",
+        "UnusedTests",
+        "MapTests",
+        "CheckTests",
+        "VerifyTests",
+        "AtlasTests",
+        "StateTests",
+        "MoveTests",
+        "unittest.main"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-REPOSITORY-TASK-EVIDENCE"
+      ],
+      "dependency_ids": [
+        ".agents/skills/code-health/SKILL.md",
+        ".agents/skills/code-health/scripts/atlas.py",
+        ".agents/skills/code-health/scripts/clones.py",
+        ".agents/skills/code-health/scripts/cmake_model.py",
+        ".agents/skills/code-health/scripts/cpp_text.py",
+        ".agents/skills/code-health/scripts/health.py",
+        ".agents/skills/code-health/scripts/includes.py",
+        ".agents/skills/code-health/scripts/metrics.py",
+        ".agents/skills/code-health/scripts/report.py",
+        ".agents/skills/code-health/scripts/review.py",
+        ".agents/skills/code-health/scripts/sources.py",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/code-health-health-test-script-complete-read.md",
+      "behavior_contract": "Qualify the existing repository-quality text/build/include/clone/atlas/report/review/health-command owners together with disposable exact fixtures and positive/negative controls, preserving canonical-state lifecycle, review/verification result distinctions, move-only accounting and safe inspection-worktree boundaries without porting the upstream Python unittest harness or creating a second quality runtime.",
+      "state_machine": "disposable exact fixture -> invoke one or more existing repository-quality owners -> observe declared positive/negative oracle -> assert clean/warning/error, present/resolved/unknown, move-only/substantive or durable/temporary state distinction -> exact-head automated qualification evidence; harness plumbing owns no production state",
+      "side_effects": [
+        "Test-only temporary repositories/worktrees and fixture files may be created and removed within the harness boundary.",
+        "Qualification may exercise canonical-state behavior only inside disposable fixtures; it must not mutate shipping product or canonical repository-quality state."
+      ],
+      "failure_cases": [
+        "A positive-only fixture passes without the negative control needed to falsify the prohibited behavior",
+        "Mutable or non-exact fixture state is presented as canonical durable evidence",
+        "Clean/warning/error, present/resolved/changed/unknown, move-only/substantive, or durable/temporary distinctions are collapsed",
+        "A test worktree or fixture cleanup removes a path outside its owned temporary identity",
+        "Upstream Python unittest plumbing or sample C++ text is treated as shipping product responsibility",
+        "The integrated harness becomes a second scanner, findings ledger, ownership graph, task queue or release owner"
+      ],
+      "ui_disposition": "Not applicable; repository quality test/qualification evidence only.",
+      "non_ui_responsibilities": [
+        "Cross-owner repository-quality integration qualification",
+        "Positive and negative lexical/layout fixtures",
+        "Build/include/layer/reach evidence qualification",
+        "Clone and unused/stale-map evidence qualification",
+        "Review ratchet warning/error qualification",
+        "Finding present/resolved/unknown command qualification",
+        "Atlas specificity/coverage qualification",
+        "Durable scan idempotence/history qualification",
+        "Mutable working-tree nonpublication qualification",
+        "Published exact-revision cache rebuild qualification",
+        "Owned exact inspection-worktree lifecycle qualification",
+        "Move-only versus substantive-change qualification"
+      ],
+      "platform_delta": "Fabushi already owns all applicable repository-quality semantics. This closure preserves the upstream file's integrated regression responsibility through source-neutral strategy/evidence contracts and exact-head automation, not by copying its Python unittest runner, temporary Git helper or C++ fixtures.",
+      "existing_owner_candidates": [
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "AGENTS.md repository quality-health governance",
+        "ordinary Fabushi test/review/evidence lifecycle"
+      ],
+      "existing_owner": "Fabushi repository quality/test-evidence governance",
+      "rejected_existing_owners": [
+        "Shipping Agent/Coordinator/Host/Runner do not own repository-quality regression fixtures",
+        "Individual text/build/clone/atlas/health instruments keep their own semantic contracts and do not become an aggregate second owner",
+        "Product UI/domain stores and packaging/updater owners do not own repository maintainability tests",
+        "Copying Telegram health_test.py would preserve source-specific test plumbing rather than the applicable qualification responsibility"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository quality-health integrated regression qualification",
+        "Repository quality-health integrated regression evidence"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The upstream file is repository-development qualification/test plumbing rather than shipping product logic; the portable responsibility is the source-neutral oracle/negative-control contract executed by Fabushi exact-head automation.",
+      "command_event_contracts": [
+        "fixture -> existing qualified owner(s) -> declared positive/negative observation -> assertion",
+        "durable scan fixture -> publish once per scheduling window -> forced rerun appends history",
+        "mutable worktree fixture -> temporary evidence only -> canonical state unchanged",
+        "verify/check/moves fixture -> preserve declared exit/result distinctions",
+        "inspection worktree fixture -> exact commit create/reuse -> owned path safe removal"
+      ],
+      "state_owner": "Existing Fabushi repository quality/test-evidence governance",
+      "lifecycle_owner": "Existing repository development lifecycle and GitHub Actions evidence production/review",
+      "persistence_and_restart": "The harness owns no durable production state. Any stateful assertions use disposable fixture directories; durable repository-quality evidence remains owned by the canonical quality workflow and exact-head Actions artifacts.",
+      "concurrency_and_cancellation": "Tests use isolated temporary fixture repositories and must not share canonical mutable quality state. Cleanup is limited to owned fixtures/worktrees; interruption cannot be rewritten as a passing assertion.",
+      "security_boundary": "Regression fixtures cannot authorize source/product mutation, task routing, ownership changes, credentials, configured-build truth, runtime behavior, packaging or release acceptance. Exact authority and negative controls remain mandatory for dependent claims.",
+      "network_service_dependencies": [
+        "GitHub repository authority",
+        "GitHub Actions hosted runners",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi repository quality/release workflow / GitHub Actions",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "Independent exact-head GitHub Actions verification of this source-entry mapping commit is pending."
+      ],
+      "production_entrypoints": [
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Repository quality-health integrated regression qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Repository quality-health integrated regression evidence"
+      ],
+      "production_evidence": [
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Repository quality-health integrated regression qualification",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Repository quality-health integrated regression evidence"
+      ],
+      "test_evidence": [
+        "dossier:projects/telegram-desktop-rust/dossiers/code-health-health-test-script-complete-read.md",
+        "upstream-health-test:.agents/skills/code-health/scripts/health_test.py@2176aea672fd9ed16c01342939fbffb41490ae73",
+        "upstream-health:.agents/skills/code-health/scripts/health.py@f08675ef7a03c016d85f91c60b8f29e99454abe9",
+        "upstream-code-health-skill:.agents/skills/code-health/SKILL.md@6885938b3d186b55f5d69cb8b9b9a96bbca0e097"
+      ],
+      "target_commit": "83e7df7a1ef88bc447eb45e9da2c10b05cbd3cdb",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development and quality evidence governance",
+      "composition_slot": "Integrated regression qualification across repository-quality owners",
+      "capability_component": "Source-neutral repository quality integrated regression evidence",
+      "variation_axes": [
+        "positive fixture vs negative control",
+        "durable exact-ref state vs mutable temporary state",
+        "clean vs warning vs error",
+        "finding present vs resolved vs changed vs unknown",
+        "move-only relocation/reordering vs substantive value/order/logic change",
+        "exact worktree create vs reuse vs safe removal"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract",
+        "Repository quality-health command orchestration governance",
+        "ordinary test/review lifecycle"
+      ],
+      "duplicate_root_check": "No Telegram Python unittest runtime, second scanner, second findings ledger, second ownership graph or second task queue introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Test fixtures own no durable canonical state; stateful assertions prove the existing exact-revision quality owner preserves its canonical ledger/history/cache boundaries.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to workflow governance",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CODE-HEALTH-INTEGRATED-REGRESSION-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CODE-HEALTH-INTEGRATED-POSITIVE-NEGATIVE-001",
+        "ORA-TDRP-CODE-HEALTH-STATE-LIFECYCLE-001",
+        "ORA-TDRP-CODE-HEALTH-RESULT-DISTINCTIONS-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CODE-HEALTH-TEST-NO-SECOND-OWNER-001",
+        "INV-TDRP-CODE-HEALTH-TEST-EXACT-EVIDENCE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CODE-HEALTH-INTEGRATED-REGRESSION-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-CODE-HEALTH-INTEGRATED-REGRESSION-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CODE-HEALTH-TEST-NEGATIVE-CONTROLS-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CODE-HEALTH-TEST-AUTHORITY-BYPASS-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-CODE-HEALTH-INTEGRATED-REGRESSION-001"
+      ],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-INVENTORY",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral repository-quality integration-test contract read from telegramdesktop/tdesktop authority; no upstream Python test implementation or fixture source copied into Fabushi shipping runtime.",
+      "notes": "Recursive authority array index 28, immediately after health.py index 27, is .agents/skills/code-health/scripts/health_test.py. The complete test class surface and direct imports/health.py command invocations were read; repository code search found no separate runtime caller by file name. This closure decrements only this independent source entry to unknown=16,173 and unread=16,146, omitted=0.",
       "test_execution_evidence": []
     }
   ]
