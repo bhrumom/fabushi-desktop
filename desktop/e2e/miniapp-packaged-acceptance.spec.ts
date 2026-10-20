@@ -298,7 +298,7 @@ async function exportAndVerifyReport(page: Page, appPid: number, downloadDir: st
     const report: unknown = JSON.parse(await readFile(reportPath, 'utf8'));
     expect(report).toMatchObject({
       schemaVersion: 1,
-      appVersion: '0.3.3',
+      appVersion: packageVersion,
       verification: 'local-packet-roundtrip',
       networkSent: false,
       status: 'complete',
