@@ -654,7 +654,13 @@ fail(lock.delta_from_previous_baseline?.base_commit===lock.previous_historical_b
 fail(lock.delta_from_previous_baseline?.base_tree===lock.previous_historical_baseline.tree,'previous baseline tree mismatch');
 fail(lock.delta_from_previous_baseline?.current_commit===u.commit&&lock.delta_from_previous_baseline?.current_tree===u.tree,'current upstream delta identity mismatch');
 fail(removedPaths.length===lock.delta_from_previous_baseline.deleted_path_count,'removed path count drift');
-fail(addedPaths.length===0,'added root paths require recursive count rebaseline');
+fail(addedPaths.length===lock.delta_from_previous_baseline.added_path_count,'added path count drift');
+for (const added of addedPaths) {
+  fail(typeof added?.path==='string'&&/^[0-9a-f]{40}$/.test(added.current_blob_sha||''),'added root path record malformed');
+  fail(!previousRootEntries.some(e=>e.path===added.path),'added root path already existed in previous authority: '+added.path);
+  const current=tree.find(e=>e.path===added.path);
+  fail(current?.type==='blob'&&current.sha===added.current_blob_sha,'added root blob does not match current authority: '+added.path);
+}
 for (const removed of removedPaths) {
   const previous=previousRootEntries.find(e=>e.path===removed.path);
   fail(previous?.type==='blob'&&previous.sha===removed.previous_blob_sha,'removed root blob does not match previous authority: '+removed.path);
@@ -766,7 +772,7 @@ const recursiveCountBreakdown={
 const previousEvidence=inventoryIndex.latest_recursive_evidence;
 fail(previousEvidence?.upstream_commit===lock.previous_historical_baseline.commit,'historical recursive evidence is not bound to previous baseline');
 fail(previousEvidence?.evidence_status==='historical-only','previous recursive evidence must remain historical-only');
-const previousReconciledTotal=recursiveInventory.length+removedPaths.length-directComponentDelta;
+const previousReconciledTotal=recursiveInventory.length+removedPaths.length-addedPaths.length-directComponentDelta;
 fail(previousReconciledTotal===previousEvidence.recursive_non_directory_entries,'previous recursive count reconciliation drift '+previousReconciledTotal+' != '+previousEvidence.recursive_non_directory_entries+'; breakdown='+JSON.stringify(recursiveCountBreakdown));
 const recursiveCountReconciliation={
   status:'reconciled-exactly',

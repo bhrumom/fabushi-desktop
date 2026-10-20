@@ -3,7 +3,7 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_repository": "telegramdesktop/tdesktop",
-  "upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
+  "upstream_commit": "0eca52223cceed229932add1cc80792763120844",
   "discovery": {
     "evidence_run_id": 39486129504,
     "evidence_head_sha": "f605a520cb7d3dc21da795a35cb89b8479afdb8f",
@@ -13,7 +13,7 @@
     "candidate_lines_total": 331,
     "immutable_commit_pin_occurrences_classified": 19,
     "candidate_lines_pending_classification": 0,
-    "note": "Immediate parent 91d7db2db7bdcdf5a13d1abd9659a46cbedc4f07 has TDRP run 39495231120 with 61/61 successful jobs and 506/506 successful steps. Source authority revalidated 78ceaa548ae0e055aa56b53fde22064d13f250ef/76b967833b38eb7aa2cb4047008c07331390e61e, root entries 7012/root blobs 6679/direct gitlinks 36, recursive non-directory 16201 with exact reconciliation, and cppgir/expected-lite participation. Fixed-point reached 203 authorities with unresolved_gitlink_authorities=0, and Boost remained 582/582/open=0. Full recursive authority is still incomplete under the current closure contract because reachability remains partial-audited-open with 95 authorities, 133 gitlinks, 3865 acquisition candidates, 4674 generated inputs, 4602 resource inputs and 4255 tool inputs remaining open. source_closure_ready=false and new exact-head Actions are required after this mapping commit.",
+    "note": "Live dev advanced 78ceaa548ae0e055aa56b53fde22064d13f250ef -> 0eca52223cceed229932add1cc80792763120844. prepare.py@4063cc766ffb60c018b7a6ad456453ec585d5566, Dockerfile@f72162089985263493c6e3f7e23b566f5df8e454 and snapcraft.yaml@38f0eb362832c3623b868c9aa90c03bc4f426d01 are byte-identical, so explicit candidate/disposition keys are retained; fresh exact-head discovery must revalidate them.",
     "candidate_lines_classified": 331,
     "disposition_closure_status": "complete",
     "recursive_authority_closure_status": "gitlink-fixed-point-closed-disposition-pending",
@@ -125,7 +125,8 @@
         "artifact_id": 12298695193,
         "artifact_digest": "sha256:d087bd0bd7f834d370d259be40a238467b300bb5fcb4acc48c47c54527400228"
       }
-    }
+    },
+    "current_head_evidence_status": "pending-current-head-revalidation"
   },
   "immutable_commit_pin_occurrences": [
     {
@@ -1228,7 +1229,7 @@
   ],
   "recursive_build_reachability": {
     "status": "partial-audited-disposition-open",
-    "accepted_upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
+    "accepted_upstream_commit": "0eca52223cceed229932add1cc80792763120844",
     "rule": "A recursively discovered repository is source/build authority only when an accepted TDesktop build path actually initializes, downloads, generates, patches, or consumes it. Presence as an unselected superproject gitlink is not sufficient.",
     "qt_superproject": {
       "repository": "https://github.com/qt/qt5",
@@ -2523,6 +2524,43 @@
     },
     "evidence_status": "pending-current-head-revalidation",
     "note": "Parent TDRP run 39495231120 at 91d7db2db7bdcdf5a13d1abd9659a46cbedc4f07 proved recursive gitlink fixed-point closure (203 scanned authorities; unresolved_gitlink_authorities=0) and root candidate disposition, but recursive build reachability explicitly remains partial-audited-open. Proven non-reachable authorities=108; remaining-open totals are authorities=95, gitlinks=133, acquisition_candidates=3865, generated_inputs=4674, resource_inputs=4602, tool_inputs=4255. This cannot be promoted to full source authority or source_closure_ready. Parent Rust run 39495231072 succeeded 6/6 jobs. After this mapping commit the parent runs are supporting/historical only pending exact-head revalidation.",
-    "discovery_evidence_status": "pending-current-head-revalidation"
+    "discovery_evidence_status": "pending-current-head-revalidation",
+    "source_closure_ready": false
+  },
+  "previous_incomplete_attempt": {
+    "runner": "github-actions",
+    "head_sha": "e709693ec625dc26cc027ac641f20fca348a5ed0",
+    "tdrp_run_id": 39497897314,
+    "run_attempt": 1,
+    "run_conclusion": "success",
+    "evidence_status": "historical-only-after-upstream-drift",
+    "upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
+    "source_authority_job_id": 118887598690,
+    "source_authority_artifact_id": 12297708015,
+    "source_authority_artifact_digest": "sha256:e5daa7a9b49aa9fdf9db1f7328126a25591bac7c584fb27c325b1a9a39a08081",
+    "fixed_point_job_id": 118890649712,
+    "fixed_point_artifact_id": 12298583879,
+    "fixed_point_artifact_digest": "sha256:d37a714a601385bf38db06f397aae5cff28fdafbca50c90b451660b7d574c1c1",
+    "recursive_reachability_job_id": 118890784676,
+    "recursive_reachability_artifact_id": 12298094517,
+    "recursive_reachability_artifact_digest": "sha256:8453ba411cccd01d1a713b0800fe904d49f8da0dc02edb1ae0d3372a4eeaa2d2",
+    "boost_job_id": 118887858224,
+    "boost_artifact_id": 12298697939,
+    "boost_artifact_digest": "sha256:f880cd469830e6b494a1f23ac5e57fcf68cd745beb6542d0bc57d70e7f6c9b18",
+    "remaining_open_totals": {
+      "authorities": 95,
+      "gitlinks": 133,
+      "acquisition_candidates": 3865,
+      "generated_inputs": 4674,
+      "resource_inputs": 4602,
+      "tool_inputs": 4255
+    },
+    "rust_parent_run": {
+      "run_id": 39497897342,
+      "status": "success",
+      "jobs": "6/6 success",
+      "artifact_id": 12299250602,
+      "artifact_digest": "sha256:56407823b6ac8397f653dfb75305effb84731c96e63206b8b01d8f324503b1e6"
+    }
   }
 }

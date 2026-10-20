@@ -4,32 +4,46 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
-    "tree": "76b967833b38eb7aa2cb4047008c07331390e61e",
+    "commit": "0eca52223cceed229932add1cc80792763120844",
+    "tree": "1fc479a4b448aed851181bf4a4796d3015368348",
     "baseline_identity_accepted": false
   },
   "inventory": {
-    "root_non_directory_entries": 6715,
-    "recursive_non_directory_entries": 16201,
+    "root_non_directory_entries": 6819,
+    "recursive_non_directory_entries": 16305,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16160,
-    "unread_minimum": 16135,
+    "unknown_minimum": 16263,
+    "unread_minimum": 16238,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
-    "run_id": 39417471110,
+    "run_id": 39497897314,
     "run_attempt": 1,
-    "job_id": 118609886145,
-    "head_sha": "885665d399d6c65b78f5ea048685109f3e8bbebc",
-    "artifact_id": 12261394728,
-    "artifact_name": "tdrp-revision9-authority-885665d399d6c65b78f5ea048685109f3e8bbebc",
-    "artifact_digest": "sha256:5bad99275a0524134eafe8a2116addaee89bd53b1e6453706e87d93bc94dbc8e",
+    "job_id": 118887598690,
+    "head_sha": "e709693ec625dc26cc027ac641f20fca348a5ed0",
+    "artifact_id": 12297708015,
+    "artifact_name": "tdrp-revision9-authority-e709693ec625dc26cc027ac641f20fca348a5ed0",
+    "artifact_digest": "sha256:e5daa7a9b49aa9fdf9db1f7328126a25591bac7c584fb27c325b1a9a39a08081",
     "evidence_status": "historical-only",
-    "upstream_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
-    "upstream_tree": "5cc28eee8d541752295ce299b860303fcb4b687d",
+    "upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
+    "upstream_tree": "76b967833b38eb7aa2cb4047008c07331390e61e",
     "recursive_non_directory_entries": 16201,
-    "source_closure_ready": false
+    "source_closure_ready": false,
+    "prior_history": {
+      "run_id": 39417471110,
+      "run_attempt": 1,
+      "job_id": 118609886145,
+      "head_sha": "885665d399d6c65b78f5ea048685109f3e8bbebc",
+      "artifact_id": 12261394728,
+      "artifact_name": "tdrp-revision9-authority-885665d399d6c65b78f5ea048685109f3e8bbebc",
+      "artifact_digest": "sha256:5bad99275a0524134eafe8a2116addaee89bd53b1e6453706e87d93bc94dbc8e",
+      "evidence_status": "historical-only",
+      "upstream_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "upstream_tree": "5cc28eee8d541752295ce299b860303fcb4b687d",
+      "recursive_non_directory_entries": 16201,
+      "source_closure_ready": false
+    }
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -39,5 +53,5 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream is telegramdesktop/tdesktop@78ceaa548ae0e055aa56b53fde22064d13f250ef/tree 76b967833b38eb7aa2cb4047008c07331390e61e. latest_recursive_evidence intentionally remains bound to the historical reconciliation baseline rather than fabricating accepted current-head closure. Recursive authority index 38 .agents/skills/continue/references/split-required-task.md@552ad09b2fa022b7df94481746a51167305bf846 is independently mapped: unknown=16,160, unread=16,135, omitted=0. Parent TDRP run 39495231120 at 91d7db2db7bdcdf5a13d1abd9659a46cbedc4f07 completed 61/61 jobs and 506/506 steps successfully and proves exact recursive reconciliation, cppgir/expected-lite participation, all recursive shard layers, fixed-point unresolved_gitlink_authorities=0 and Boost 582/582/open=0. It is nevertheless incomplete as full authority under the current gate because recursive build reachability remains partial-audited-open with remaining-open totals authorities=95, gitlinks=133, acquisition_candidates=3865, generated_inputs=4674, resource_inputs=4602, tool_inputs=4255; source_closure_ready remains false. Parent Rust run 39495231072 succeeded 6/6 jobs with 79 successful steps and two expected platform-conditional skips. The next strict source entry is index 39 .agents/skills/dependency-watch/SKILL.md@482b3a8d0c939d4bb7bd32ab146e0cc988d29fd8."
+  "note": "Live upstream is telegramdesktop/tdesktop@0eca52223cceed229932add1cc80792763120844/tree 1fc479a4b448aed851181bf4a4796d3015368348. Recursive count rebaselined 16,201 -> 16,305 from +104 root non-directory entries and zero Telegram/lib_ui recursive-entry delta. Strict index 39 .agents/skills/dependency-watch/SKILL.md@482b3a8d0c939d4bb7bd32ab146e0cc988d29fd8 is mapped: unknown=16,263, unread=16,238, omitted=0. e709 TDRP 39497897314 and Rust 39497897342 are historical parent evidence after upstream drift. Fresh exact-head Actions are required; recursive reachability/disposition remains open and source_closure_ready=false. Next strict entry is index 40 .agents/skills/dependency-watch/agents/openai.yaml@a61c118c41e3b50d6bc4bde12dc6d4c1b3756b5d."
 }
