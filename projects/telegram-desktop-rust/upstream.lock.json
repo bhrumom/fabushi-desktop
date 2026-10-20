@@ -258,10 +258,10 @@
   "coverage": {
     "root_source_entries_total": 6717,
     "recursive_source_entries_total": 16202,
-    "unknown_minimum": 16179,
-    "unread_minimum": 16152,
+    "unknown_minimum": 16178,
+    "unread_minimum": 16151,
     "omitted_known": 0,
-    "note": "Revision 9 live rebaseline remains in progress for telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a (tree 5151db79560ed40bf3802482fcfb74b950be6c40). Root non-directory inventory remains 6,717 and recursive authority remains 16,202. Actual recursive array entry 23 .agents/skills/code-health/references/survey.md is independently mapped to existing repository responsibility/quality/task-evidence governance; exact survey inputs, isolated source-reading lenses, independent verification with inferred/verified distinction, draft-map approval boundary, proposal/defect separation and zero source/queue side effects are preserved without copying Telegram workflow runtime or creating a second survey/map/ownership/task owner. Counters are unknown=16,179, unread=16,152, omitted=0."
+    "note": "Revision 9 live rebaseline remains in progress for telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a (tree 5151db79560ed40bf3802482fcfb74b950be6c40). Root non-directory inventory remains 6,717 and recursive authority remains 16,202. Actual recursive array entry 24 .agents/skills/code-health/scripts/atlas.py is independently mapped to existing repository responsibility/quality/task-evidence governance; deterministic path specificity, ambiguity/coverage negatives, non-authoritative candidate skeleton evidence, missing-atlas fallback and caller-owned CLI/error boundaries are preserved without copying Telegram Python code-health runtime or creating a second atlas/ownership/map/task owner. Counters are unknown=16,178, unread=16,151, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -275,7 +275,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Live rebaseline identity for telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a remains source-closure open. Actual recursive array entry 23 .agents/skills/code-health/references/survey.md is mapped to existing repository responsibility/quality/task-evidence governance; full closure remains unknown=16,179, unread=16,152, omitted=0, so acceptance remains fail-closed."
+    "note": "Live rebaseline identity for telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a remains source-closure open. Actual recursive array entry 24 .agents/skills/code-health/scripts/atlas.py is mapped to existing repository responsibility/quality/task-evidence governance; full closure remains unknown=16,178, unread=16,151, omitted=0, so acceptance remains fail-closed."
   },
   "baseline_identity_evidence": {
     "status": "pending-current-head-revalidation",
