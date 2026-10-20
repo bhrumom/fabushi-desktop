@@ -16002,9 +16002,9 @@
       ],
       "fabushi_target_symbols": [
         "Repository quality-health evidence",
-        "exact source authority and fail-closed evidence qualification",
-        "security/release applicability evidence",
-        "immutable commit pin occurrences and recursive build reachability"
+        "fresh exact-source authority remains mandatory before durable publication",
+        "Security/privacy P0/P1 blocks release",
+        "immutable_commit_pin_occurrences"
       ],
       "target_language": "Markdown/JSON",
       "language_rationale": "The upstream entry is an advisory repository-development provenance/review contract plus exact pin evidence, not shipping product logic; its applicable semantics belong in existing source-neutral quality/evidence and inventory owners.",
