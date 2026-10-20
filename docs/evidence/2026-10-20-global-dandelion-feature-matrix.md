@@ -8,12 +8,12 @@
 | --- | --- |
 | 源仓库 | `https://github.com/bhrumom/global-dandelion-rs` |
 | 源分支 | `main` |
-| 源提交 | `1b90698cbccbcf49662b8c56d96f145fe223a9b4` |
+| 源提交 | `8af045367fcf7e6caa3756552629eb6eef96a3f5` |
 | 源 native base | `aa6436315cde7b66868b0592d1c67b4590ebd1f9` |
 | 桌面宿主提交 | `afb489baef4f501a0b9a6b8ff8cefef7f90470b5` |
 | Host 协议 | `fabushi.miniapp.tools.v1` |
-| 生产小程序版本 | `0.3.1` |
-| 生产包摘要 | `5c41325a52ceb52ba40ad9615d973c38e1d9873484698960b8bc76675f4df492` |
+| 生产小程序版本 | `0.3.2` |
+| 生产包摘要 | `a08f6fa285353bdb77c4376bd87ca747599597c03098d202359ba2e5f8b0f697` |
 | 源功能机器清单 | `global-dandelion-rs/docs/migration/parity.json`，37 行 |
 | 生产包能力声明 | `requestedCapabilities: []`；能力由当前 Host 运行时发现、授权和平台实现决定 |
 
@@ -23,7 +23,7 @@
 
 | # | 源功能 / 符号 | 小程序入口 | Host 接口 | 原生实现 / 平台 | 当前证据与结论 |
 |---:|---|---|---|---|---|
-| 1 | `time-metadata`：`get_current_local_time`、`sync_network_time` | 平台面板（能力存在时） | `platform.time` | Rust `platform`；Linux 原生时钟/对等端比较 | Host 路由已存在；未有当前 0.3.0 真实对等端证据，已接入待验收 |
+| 1 | `time-metadata`：`get_current_local_time`、`sync_network_time` | 平台面板（能力存在时） | `platform.time` | Rust `platform`；Linux 原生时钟/对等端比较 | Host 路由已存在；未有当前 0.3.2 真实对等端证据，已接入待验收 |
 | 2 | `host-clock-mutation`：`sync_network_time` | 无入口 | 无；明确拒绝 | 源版本已移除主机时钟自动修改 | 设计排除，非遗漏；受限/移除 |
 | 3 | `disk-partitions`：`DiskPartition`、`linux_get_disk_partitions` | 平台挂载面板 | `platform.mounts` | Linux `inventory` mountinfo 解析 | Host 路由存在；仅 Linux，未有安装包真实挂载证据 |
 | 4 | `disk-space`：`DiskUsage`、`linux_get_disk_usage` | 平台面板 | `platform.inspect` / `platform.mounts` | Linux `statvfs` 与保留空间检查 | 共享 Host contract 有负面校验；真实平台验收缺失 |
@@ -63,15 +63,15 @@
 
 ## 结论与缺口
 
-1. 当前生产 0.3.1 已证明的是：离线 WebAssembly packet 编解码、真实安装包加载、冷启动/网络禁用启动、重装保留小程序设置，以及 Host 工具协议与隔离窗口契约。
+1. 当前生产 0.3.2 已证明的是：离线 WebAssembly packet 编解码、真实安装包加载、冷启动/网络禁用启动、重装保留小程序设置，以及 Host 工具协议与隔离窗口契约。
 2. 当前还不能证明“源版本全部功能已通过小程序”：网络发送/接收、Rust 状态恢复、Linux 挂载观察、热点硬件回滚、签名更新暂存、真实诊断/兼容数据和目标健康度均缺少对应的安装后真实证据。
 3. 源实现的原生能力是 Linux-first；macOS/Windows 当前 Host 不能把 Linux CLI 伪装成可用能力。应继续保持能力发现按平台真实返回，并为 macOS/Windows 分别实现共享核心或原生适配后再验收。
 4. 本矩阵区分了模拟契约、Rust/CLI CI、安装包验证和真实操作验收；没有证据的行不标记为通过。
 
 ## 当前交付证据索引
 
-- 源版本构建与准备包：Actions `39375352233`，源提交 `1b90698cbccbcf49662b8c56d96f145fe223a9b4`。
-- 生产签名发布：backend Actions `39375612808`，发布 `v0.3.1`，包摘要见上表。
+- 源版本构建与准备包：Actions `39377126153`，源提交 `8af045367fcf7e6caa3756552629eb6eef96a3f5`。
+- 生产签名发布：backend Actions `39377448970`，发布 `v0.3.2`，包摘要见上表。
 - macOS 当前源提交安装验收：Desktop Actions `39372081156`，提交 `afb489baef4f501a0b9a6b8ff8cefef7f90470b5`。
 - macOS 安装验收 JSON：`artifacts/macos-run-39372081156-miniapp/run-r1x5T8/acceptance.json`。
 - macOS 安装包：`artifacts/macos-run-39372081156-macos/fabushi-1.2.77-macos-arm64.dmg`。
