@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
-    "tree": "5cc28eee8d541752295ce299b860303fcb4b687d",
+    "commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
+    "tree": "76b967833b38eb7aa2cb4047008c07331390e61e",
     "baseline_identity_accepted": false
   },
   "inventory": {
@@ -18,15 +18,16 @@
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
-    "run_id": 39408064448,
+    "run_id": 39417471110,
     "run_attempt": 1,
-    "job_id": 118578755584,
-    "head_sha": "abcd30172faf46684b6c46905f61264be99a5b4a",
-    "artifact_id": 12257803423,
-    "artifact_name": "tdrp-revision9-authority-abcd30172faf46684b6c46905f61264be99a5b4a",
-    "artifact_digest": "sha256:90817b28fb14446175360707a31554c08af216bfa2ddb831cda9d2f90f95f36d",
+    "job_id": 118609886145,
+    "head_sha": "885665d399d6c65b78f5ea048685109f3e8bbebc",
+    "artifact_id": 12261394728,
+    "artifact_name": "tdrp-revision9-authority-885665d399d6c65b78f5ea048685109f3e8bbebc",
+    "artifact_digest": "sha256:5bad99275a0524134eafe8a2116addaee89bd53b1e6453706e87d93bc94dbc8e",
     "evidence_status": "historical-only",
-    "upstream_commit": "6c2ee90618bf69683a1c466e3b0550260b82e129",
+    "upstream_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+    "upstream_tree": "5cc28eee8d541752295ce299b860303fcb4b687d",
     "recursive_non_directory_entries": 16201,
     "source_closure_ready": false
   },
@@ -38,5 +39,5 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Current live upstream is telegramdesktop/tdesktop@a0cfd60923a220894611b6fcb3c92157876dc4a5/tree 5cc28eee8d541752295ce299b860303fcb4b687d; prior exact-head evidence run 39408064448 is now historical-only for 6c2ee90618bf69683a1c466e3b0550260b82e129. Root tree is non-truncated; current exact-head Actions must regenerate recursive inventory and revalidate external acquisitions/generated/resource/tool inputs. Recursive count remains provisional at 16,201; unknown=16,168, unread=16,143, omitted=0; source_closure_ready=false."
+  "note": "Current live upstream is telegramdesktop/tdesktop@78ceaa548ae0e055aa56b53fde22064d13f250ef/tree 76b967833b38eb7aa2cb4047008c07331390e61e; compared with the immediately previous snapshot a0cfd60923a220894611b6fcb3c92157876dc4a5/5cc28eee8d541752295ce299b860303fcb4b687d, 5 root blobs changed and no paths or direct gitlinks changed. Exact-head run 39417471110/artifact 12261394728 validated the previous snapshot a0cfd60923a220894611b6fcb3c92157876dc4a5 and is now historical-only. Current exact-head Actions must regenerate recursive inventory and revalidate external acquisitions/generated/resource/tool inputs. Recursive count remains provisional at 16,201; unknown=16,168, unread=16,143, omitted=0; source_closure_ready=false."
 }

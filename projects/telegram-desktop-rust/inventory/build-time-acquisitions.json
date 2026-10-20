@@ -3,17 +3,17 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_repository": "telegramdesktop/tdesktop",
-  "upstream_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+  "upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
   "discovery": {
-    "evidence_run_id": 39408064448,
-    "evidence_head_sha": "abcd30172faf46684b6c46905f61264be99a5b4a",
-    "artifact_id": 12257803423,
-    "artifact_digest": "sha256:90817b28fb14446175360707a31554c08af216bfa2ddb831cda9d2f90f95f36d",
+    "evidence_run_id": 39417471110,
+    "evidence_head_sha": "885665d399d6c65b78f5ea048685109f3e8bbebc",
+    "artifact_id": 12261394728,
+    "artifact_digest": "sha256:5bad99275a0524134eafe8a2116addaee89bd53b1e6453706e87d93bc94dbc8e",
     "candidate_file": "build-time-acquisition-candidates.txt",
     "candidate_lines_total": 331,
     "immutable_commit_pin_occurrences_classified": 19,
     "candidate_lines_pending_classification": 0,
-    "note": "The available source-authority ZIP from run 39408064448 contains acquisition discovery for 6c2ee90618bf69683a1c466e3b0550260b82e129, not current live dev a0cfd60923a220894611b6fcb3c92157876dc4a5; treat it as historical-only and revalidate on the current exact upstream.",
+    "note": "Exact-head run 39417471110 artifact 12261394728 contains build-time acquisition discovery for a0cfd60923a220894611b6fcb3c92157876dc4a5/5cc28eee8d541752295ce299b860303fcb4b687d; live refs/heads/dev has since advanced to 78ceaa548ae0e055aa56b53fde22064d13f250ef/76b967833b38eb7aa2cb4047008c07331390e61e. Treat all run 39417471110 source/recursive evidence as historical-only and revalidate on the current exact upstream.",
     "candidate_lines_classified": 331,
     "disposition_closure_status": "complete",
     "recursive_authority_closure_status": "open",
@@ -21,7 +21,7 @@
     "recursive_child_unique_repositories_recorded": 9,
     "recursive_child_unique_external_nested_scans_pending": 0,
     "recursive_child_unique_external_nested_scans_complete": 3,
-    "evidence_status": "pending-current-head-revalidation",
+    "evidence_status": "historical-only",
     "previous_historical_evidence": {
       "runner": "github-actions",
       "run_id": 38547900810,
@@ -32,8 +32,8 @@
       "upstream_commit": "c317da960b2664962aeb17892adbd6dda59c98fe",
       "evidence_status": "historical-only"
     },
-    "evidence_upstream_commit": "6c2ee90618bf69683a1c466e3b0550260b82e129",
-    "evidence_upstream_tree": "c0b745cdee2cf0e2ab560ebcedc49cbbaafbfeaa"
+    "evidence_upstream_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+    "evidence_upstream_tree": "5cc28eee8d541752295ce299b860303fcb4b687d"
   },
   "immutable_commit_pin_occurrences": [
     {
@@ -1136,7 +1136,7 @@
   ],
   "recursive_build_reachability": {
     "status": "partial-audited-disposition-open",
-    "accepted_upstream_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+    "accepted_upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
     "rule": "A recursively discovered repository is source/build authority only when an accepted TDesktop build path actually initializes, downloads, generates, patches, or consumes it. Presence as an unselected superproject gitlink is not sufficient.",
     "qt_superproject": {
       "repository": "https://github.com/qt/qt5",
@@ -2429,7 +2429,7 @@
       "root_candidate_policy_status": "complete-for-current-xkbcommon-authority",
       "note": "Closes acquisition-pattern candidates for xkbcommon-1.6.0; keyboard mapping/runtime behavior remains in semantic scope."
     },
-    "evidence_status": "pending-current-head-revalidation",
-    "note": "Previous reachability evidence is historical-only after live dev advanced to a0cfd60923a220894611b6fcb3c92157876dc4a5; keep disposition open until exact-head rerun."
+    "evidence_status": "historical-only",
+    "note": "Previous recursive build-reachability evidence is historical-only after live dev advanced from a0cfd60923a220894611b6fcb3c92157876dc4a5/5cc28eee8d541752295ce299b860303fcb4b687d to 78ceaa548ae0e055aa56b53fde22064d13f250ef/76b967833b38eb7aa2cb4047008c07331390e61e; keep disposition open until exact-head rerun."
   }
 }

@@ -2,7 +2,7 @@
   "format_version": 3,
   "project_id": "TDRP-001",
   "spec_revision": 9,
-  "upstream_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+  "upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
   "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
   "coverage": {
     "source_entries_total": 16201,
@@ -15,7 +15,7 @@
   "rows": [
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -263,7 +263,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": "Telegram/SourceFiles/boxes/url_auth_box.cpp",
       "source_blob_sha": "1fa4309f2091cf148b0b6f249efa029bdc171c53",
       "source_kind": "source",
@@ -508,7 +508,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -732,7 +732,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -964,7 +964,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -1179,7 +1179,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -1434,7 +1434,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -1682,7 +1682,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -1904,7 +1904,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -2156,7 +2156,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "b7bf9f0d1f253d8e1a333ec1daa61d224fb188be",
       "source_kind": "source",
@@ -2425,7 +2425,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/shared/build-lock-recovery.md",
       "source_blob_sha": "ec75573e7efe74e9c9a344f3e66f2fc43ac7680f",
       "source_kind": "tooling",
@@ -2636,7 +2636,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/shared/codex-cli-leaves.md",
       "source_blob_sha": "659da44a8083c433c4e9b59ca28f64ba525bfbf8",
       "source_kind": "tooling",
@@ -2857,7 +2857,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/shared/codex-delegation.md",
       "source_blob_sha": "ed89d2a14344f50034a9363bd9ffe75f7972e652",
       "source_kind": "tooling",
@@ -3067,7 +3067,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/shared/codex-delegation.md",
       "source_blob_sha": "ed89d2a14344f50034a9363bd9ffe75f7972e652",
       "source_kind": "tooling",
@@ -3277,7 +3277,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/shared/codex-delegation.md",
       "source_blob_sha": "ed89d2a14344f50034a9363bd9ffe75f7972e652",
       "source_kind": "tooling",
@@ -3487,7 +3487,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/shared/cross-review/prompts.md",
       "source_blob_sha": "4e155d2bd7e647c12df7b008c279969bfd65e44d",
       "source_kind": "tooling",
@@ -3698,7 +3698,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/shared/cross-review/prompts.md",
       "source_blob_sha": "4e155d2bd7e647c12df7b008c279969bfd65e44d",
       "source_kind": "tooling",
@@ -3910,7 +3910,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/shared/cross-review/prompts.md",
       "source_blob_sha": "4e155d2bd7e647c12df7b008c279969bfd65e44d",
       "source_kind": "tooling",
@@ -4123,7 +4123,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/shared/cross-review/protocol.md",
       "source_blob_sha": "51dabe142d5c3c7247e4050790c4e74b40f35b27",
       "source_kind": "tooling",
@@ -4333,7 +4333,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/shared/cross-review/protocol.md",
       "source_blob_sha": "51dabe142d5c3c7247e4050790c4e74b40f35b27",
       "source_kind": "tooling",
@@ -4541,7 +4541,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/shared/cross-review/protocol.md",
       "source_blob_sha": "51dabe142d5c3c7247e4050790c4e74b40f35b27",
       "source_kind": "tooling",
@@ -4752,7 +4752,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/shared/cross-review/protocol.md",
       "source_blob_sha": "51dabe142d5c3c7247e4050790c4e74b40f35b27",
       "source_kind": "tooling",
@@ -4968,7 +4968,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/shared/evidence/elf-copies.md",
       "source_blob_sha": "49fc28d671276e1787753267ae92397266d6bacd",
       "source_kind": "tooling",
@@ -5180,7 +5180,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/shared/evidence/elf-copies.md",
       "source_blob_sha": "49fc28d671276e1787753267ae92397266d6bacd",
       "source_kind": "tooling",
@@ -5392,7 +5392,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/shared/evidence/elf-copies.md",
       "source_blob_sha": "49fc28d671276e1787753267ae92397266d6bacd",
       "source_kind": "tooling",
@@ -5604,7 +5604,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/shared/evidence/elf_identity.py",
       "source_blob_sha": "70dc54620651e8c6fd9cce6966c9964b1a6c90d7",
       "source_kind": "tooling",
@@ -5823,7 +5823,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/shared/evidence/elf_identity.py",
       "source_blob_sha": "70dc54620651e8c6fd9cce6966c9964b1a6c90d7",
       "source_kind": "tooling",
@@ -6042,7 +6042,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/shared/evidence/elf_identity.py",
       "source_blob_sha": "70dc54620651e8c6fd9cce6966c9964b1a6c90d7",
       "source_kind": "tooling",
@@ -6262,7 +6262,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/shared/evidence/elf_identity.py",
       "source_blob_sha": "70dc54620651e8c6fd9cce6966c9964b1a6c90d7",
       "source_kind": "tooling",
@@ -6481,7 +6481,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/shared/evidence/elf_identity.py",
       "source_blob_sha": "70dc54620651e8c6fd9cce6966c9964b1a6c90d7",
       "source_kind": "tooling",
@@ -6700,7 +6700,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/shared/evidence/elf_identity_test.py",
       "source_blob_sha": "a75a29225b6eb70f255848e30026d02523d808f3",
       "source_kind": "tooling",
@@ -6928,7 +6928,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/shared/evidence/elf_identity_test.py",
       "source_blob_sha": "a75a29225b6eb70f255848e30026d02523d808f3",
       "source_kind": "tooling",
@@ -7153,7 +7153,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/shared/evidence/ninja_target.py",
       "source_blob_sha": "f638b0e9c039784832155269b5931ab0cabdb16b",
       "source_kind": "tooling",
@@ -7378,7 +7378,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/shared/evidence/ninja_target_test.py",
       "source_blob_sha": "a9c635eeb46a6ddf4295a815ef29bcae15ba2208",
       "source_kind": "test_tooling",
@@ -7622,7 +7622,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/shared/ninja-target-evidence.md",
       "source_blob_sha": "7d73d0c8acbefb01b5dd748296db931c58d59b18",
       "source_kind": "evidence_documentation",
@@ -7853,7 +7853,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/shared/phase-effort.md",
       "source_blob_sha": "dd07a4c611922a29a6892332db98afe76cd58952",
       "source_kind": "workflow_governance_documentation",
@@ -8099,7 +8099,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/shared/project-context.md",
       "source_blob_sha": "53c8657eb7949a5a2fba7e7adc8d1073f3079ead",
       "source_kind": "workflow_context_governance_documentation",
@@ -8335,7 +8335,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/shared/test-loop.md",
       "source_blob_sha": "83c4732bf6139f7c6557f18dd87bb35c3d68808d",
       "source_kind": "workflow_test_evidence_governance_documentation",
@@ -8598,7 +8598,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/shared/scripts/codex_leaf_test.py",
       "source_blob_sha": "2831841e6b131ca2c42688fe24e00b739f825ccb",
       "source_kind": "workflow_worker_lifecycle_qualification_tests",
@@ -8869,7 +8869,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/shared/scripts/codex_leaf.py",
       "source_blob_sha": "313c4941c61a4ec0e3b3b65cdaa59cc213916fdd",
       "source_kind": "workflow_worker_lifecycle_adapter",
@@ -9145,7 +9145,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/shared/scripts/cross_review_scope.py",
       "source_blob_sha": "d9fafdf9fa0857cc83f0ccb49d15d4fad8782768",
       "source_kind": "cross_review_scope_snapshot_helper",
@@ -9389,7 +9389,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/skills/code-health/SKILL.md",
       "source_blob_sha": "6885938b3d186b55f5d69cb8b9b9a96bbca0e097",
       "source_kind": "repository_quality_health_governance_skill",
@@ -9652,7 +9652,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/skills/code-health/agents/openai.yaml",
       "source_blob_sha": "59bb6304445f21e2a3ee1a97a69a8e231f934d30",
       "source_kind": "repository_skill_native_registration",
@@ -9882,7 +9882,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/skills/code-health/references/atlas.md",
       "source_blob_sha": "7f43dd75fcfb670c327bc3e71c1de0589e7506f0",
       "source_kind": "repository_quality_responsibility_atlas_reference",
@@ -10143,7 +10143,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/skills/code-health/references/classes.md",
       "source_blob_sha": "27847cae96838be7ddf68d3759dba89279f7cf0e",
       "source_kind": "repository_quality_task_classes_reference",
@@ -10412,7 +10412,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/skills/code-health/references/maps.md",
       "source_blob_sha": "89dd78f48283b15d6ad959b2d450895258a0980f",
       "source_kind": "repository_responsibility_area_map_reference",
@@ -10693,7 +10693,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/skills/code-health/references/survey.md",
       "source_blob_sha": "d900e7a42b768679c69cd4c584559c783b59d47a",
       "source_kind": "repository_quality_area_survey_reference",
@@ -10977,7 +10977,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/skills/code-health/scripts/atlas.py",
       "source_blob_sha": "6680fa747a1ddc520f4396949f3c84ab25cd8c43",
       "source_kind": "repository_quality_responsibility_atlas_instrument",
@@ -11263,7 +11263,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/skills/code-health/scripts/clones.py",
       "source_blob_sha": "b74e6e939a3ccaae894d1afa5978f422aec8ee65",
       "source_kind": "repository_quality_clone_evidence_instrument",
@@ -11526,7 +11526,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/skills/code-health/scripts/cmake_model.py",
       "source_blob_sha": "e40ec0fc152958f96bd58d795f70d1a3a24ab1eb",
       "source_kind": "repository_quality_source_derived_build_model_instrument",
@@ -11818,7 +11818,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/skills/code-health/scripts/cpp_text.py",
       "source_blob_sha": "366f173248add43c34317c8fe17d9ca31d46b1d4",
       "source_kind": "repository_quality_source_text_normalization_instrument",
@@ -12128,7 +12128,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/skills/code-health/scripts/health.py",
       "source_blob_sha": "f08675ef7a03c016d85f91c60b8f29e99454abe9",
       "source_kind": "repository_quality_health_command_orchestration",
@@ -12426,7 +12426,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/skills/code-health/scripts/health_test.py",
       "source_blob_sha": "a79addaaceb35848dbd17e94e01ea428aede7788",
       "source_kind": "repository_quality_integrated_regression_harness",
@@ -12681,7 +12681,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/skills/code-health/scripts/history.py",
       "source_blob_sha": "7c12f5b091936723c6ad005dda4bb8e2b1e549df",
       "source_kind": "repository_quality_history_measurement_helper",
@@ -12925,7 +12925,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "source_path": ".agents/skills/code-health/scripts/includes.py",
       "source_blob_sha": "2c02b4e7eb821f123588e0a80056edef86fc084c",
       "source_kind": "repository_quality_include_graph_helper",
