@@ -6,8 +6,8 @@
   "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
   "coverage": {
     "source_entries_total": 16201,
-    "unknown": 16163,
-    "unread": 16138,
+    "unknown": 16162,
+    "unread": 16137,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -14625,6 +14625,262 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral repository workflow contract read from telegramdesktop/tdesktop authority; no upstream scheduler/Python implementation copied into Fabushi shipping runtime.",
       "notes": "Recursive authority index 35 immediately after sources.py index 34 is continue/SKILL.md@aeb81dd57018abbc8f03ea3dbd34f91952128db5. The 722-line skill, Grok/Claude command callers, OpenAI registration, phase/codex delegation policies, split/consolidation references, process-inbox/perform-task workflows, relevant workspace.py command implementations and direct workspace_test.py regressions were traced. Shipping RunScheduler/background-work/multitask/workflow/automation owners were inspected and rejected because they own end-user runtime work, not repository-development queue truth. This closes only one source entry: unknown=16,163, unread=16,138, omitted=0. Parent TDRP run 39481285146 and Rust run 39481285124 are historical-only for fb04df3f5e3b5f3d077a1c216205001970981fa8; new exact-head verification is pending. The next strict source entry is .agents/skills/continue/agents/openai.yaml@e981285ee10cbed9e27e358d60ce596c9e0b3d61.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
+      "source_path": ".agents/skills/continue/agents/openai.yaml",
+      "source_blob_sha": "e981285ee10cbed9e27e358d60ce596c9e0b3d61",
+      "source_kind": "repository_skill_native_registration",
+      "module_id": "tdesktop.continue-native-registration",
+      "responsibility_id": "TDRP-R9-CONTINUE-NATIVE-REGISTRATION-001",
+      "source_symbols": [
+        "interface.display_name",
+        "interface.short_description",
+        "interface.default_prompt"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-TASK-EVIDENCE",
+        "CAP-REPOSITORY-AI-WORKER-LIFECYCLE",
+        "CAP-REPOSITORY-SKILL-INVOCATION"
+      ],
+      "dependency_ids": [
+        ".agents/skills/continue/SKILL.md",
+        ".grok/commands/continue.md",
+        ".claude/commands/continue.md",
+        ".grok/ai-workflow-adapter.md",
+        ".claude/ai-workflow-adapter.md",
+        ".agents/shared/codex-cli-leaves.md",
+        ".agents/shared/scripts/codex_leaf.py",
+        ".agents/shared/scripts/codex_leaf_test.py",
+        ".agents/skills/process-inbox/scripts/workspace.py",
+        ".agents/skills/process-inbox/scripts/workspace_test.py",
+        "Fabushi repository AI development lifecycle",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/continue-openai-registration-complete-read.md",
+      "behavior_contract": "Expose the existing repository continuation workflow through host-native display/description metadata and a default $continue prompt that keeps the active task first, freezes exactly the requested batch behind it, and processes that batch one task at a time; registration itself owns no queue, worker, product-runtime or publication semantics.",
+      "state_machine": "host discovers native skill -> display/description/default invocation -> $continue dispatch -> canonical continue skill freezes the explicit batch -> canonical repository task/evidence owner starts or resumes exactly one stateful task at a time -> terminal evidence/routing remains with the existing workflow; registration remains stateless",
+      "side_effects": [
+        "Repository invocation metadata only; no shipping product runtime, task-state mutation or second queue owner."
+      ],
+      "failure_cases": [
+        "Default prompt silently broadens the frozen invocation batch",
+        "Provider syntax becomes a second semantic or task-state owner",
+        "Registration bypasses source-lineage, worker ownership, split/consolidation or evidence gates",
+        "Host/worker completion is presented as task, product or release acceptance",
+        "Shipping Agent/Runner/Automation/Workflow stores are repurposed into a repository-development queue"
+      ],
+      "ui_disposition": "Not applicable; host-native repository skill metadata only.",
+      "non_ui_responsibilities": [
+        "Native Continue AI Work discoverability and description",
+        "Default $continue invocation selection",
+        "Preservation of active-first exact frozen-batch semantics",
+        "Resolution into the existing source-neutral repository task/evidence workflow"
+      ],
+      "platform_delta": "Fabushi already owns the applicable responsibility through source-neutral host-native invocation and repository task/evidence orchestration governance. OpenAI manifest syntax and $continue spelling remain adapter provenance; no host-specific or Telegram-specific runtime is copied.",
+      "existing_owner_candidates": [
+        "AGENTS.md source-neutral host-native invocation and repository task/process lifecycle",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md native invocation qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md native registration evidence",
+        "source/host/src/extensions/transcript/run_scheduler.rs shipping RunScheduler",
+        "source/host/src/runner/runner_prompt_glue.rs / system_prompt_assembly.rs / turn_agent_composition.rs shipping Runner prompt/provider composition",
+        "source/host/src/runner/background_work.rs shipping background-work lifecycle",
+        "source/host/src/extensions/transcript/workflow_commands.rs shipping workflow command owner",
+        "source/host/src/extensions/transcript/automation_runtime.rs shipping automation runtime"
+      ],
+      "existing_owner": "Fabushi repository development task/evidence orchestration plus source-neutral host-native invocation governance",
+      "rejected_existing_owners": [
+        "RunScheduler owns end-user/agent/background shipping run lanes, watchdog and settlement, not repository continuation or skill registration.",
+        "Runner prompt/provider composition owns shipping model/tool turns, not repository skill manifests, source-lineage or task publication.",
+        "Background-work, Workflow and Automation owners manage shipping asynchronous/user workflows, not repository-development queue truth.",
+        "A copied OpenAI/Telegram manifest runtime or second queue would duplicate existing source-neutral repository governance."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Host-native skill registration metadata, command aliases, and default prompts are invocation surfaces only.",
+        "Native skill-surface qualification is intentionally smaller than scanner qualification.",
+        "Native skill-registration evidence records the host-visible display/description metadata, default prompt or equivalent invocation selector"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The source entry is repository host registration metadata, not shipping product logic.",
+      "command_event_contracts": [
+        "native registration -> existing repository continuation owner",
+        "default prompt -> active task first + exact requested frozen batch -> one task at a time",
+        "$continue host adapter -> shared continue skill -> existing workspace/task evidence state machine",
+        "new target commit -> parent Actions/artifacts historical-only until exact-head revalidation"
+      ],
+      "state_owner": "Existing Fabushi canonical repository task/spec/evidence lifecycle; registration owns no durable state.",
+      "lifecycle_owner": "Root AGENTS.md repository development lifecycle plus source-neutral host-native invocation/evidence contracts.",
+      "persistence_and_restart": "Registration is stateless. Durable task, batch-publication and evidence state remains with the existing repository workflow; a new target commit demotes parent CI/artifacts to historical-only.",
+      "concurrency_and_cancellation": "Registration creates no concurrency owner. The canonical continuation workflow retains its one-stateful-performer/publication boundary, worker ownership, timeout/cancellation and fail-visible recovery rules.",
+      "security_boundary": "Registration metadata cannot authorize product execution, credential mutation, source-lineage bypass, broad process cleanup, task approval or release acceptance.",
+      "network_service_dependencies": [
+        "GitHub repository authority",
+        "GitHub Actions hosted runners",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi repository governance / GitHub Actions evidence lifecycle",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "Independent exact-head GitHub Actions verification of this source-entry mapping commit is pending.",
+        "Full recursive generated/resource/tool disposition remains open; source closure cannot be accepted while unknown/unread remain non-zero."
+      ],
+      "production_entrypoints": [
+        "AGENTS.md -> Repository quality-health native invocation and ordinary task/process lifecycle",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Repository quality-health native invocation qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Repository quality-health native invocation evidence"
+      ],
+      "production_evidence": [
+        "path:AGENTS.md#Repository quality-health native invocation",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Repository quality-health native invocation qualification",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Repository quality-health native invocation evidence",
+        "historical-parent-run:39486129504/job:118846890476/artifact:12292833722/sha256:bdb9370eabb49b7e9cecc271c6e078c1aa7dd2f67c6db5b4879cc1a42195c9fe",
+        "historical-parent-run:39486129565/artifact:12294430499/sha256:c6644bd99fbb542e629eb3d3fecd70627477cb31443faaed08a2b3fd6999ce9f",
+        "historical-parent-artifact-set:61/61 downloaded ZIP SHA-256 values matched GitHub sha256 digests at f605a520cb7d3dc21da795a35cb89b8479afdb8f"
+      ],
+      "test_evidence": [
+        "dossier:projects/telegram-desktop-rust/dossiers/continue-openai-registration-complete-read.md",
+        "upstream-registration:.agents/skills/continue/agents/openai.yaml@e981285ee10cbed9e27e358d60ce596c9e0b3d61",
+        "upstream-skill:.agents/skills/continue/SKILL.md@aeb81dd57018abbc8f03ea3dbd34f91952128db5",
+        "upstream-grok-caller:.grok/commands/continue.md@1365e5a7dc4c167468f7b6f57ec92ff89389b32e",
+        "upstream-claude-caller:.claude/commands/continue.md@e81c86031f2e501f30d2b6ed908fb03d648324c8",
+        "upstream-grok-adapter:.grok/ai-workflow-adapter.md@db447f204316d3991f6d20db3d8f097fcc021154",
+        "upstream-claude-adapter:.claude/ai-workflow-adapter.md@370ff84a1ab4c080b15b601a54162b0630c4f4df",
+        "upstream-codex-leaf-contract:.agents/shared/codex-cli-leaves.md@659da44a8083c433c4e9b59ca28f64ba525bfbf8",
+        "upstream-codex-leaf-tests:.agents/shared/scripts/codex_leaf_test.py@2831841e6b131ca2c42688fe24e00b739f825ccb",
+        "upstream-workspace:.agents/skills/process-inbox/scripts/workspace.py@e1fdabbac9ccd635962b7b6dc1a62357fc5b931c",
+        "upstream-workspace-tests:.agents/skills/process-inbox/scripts/workspace_test.py@d045c95ca4415ffc02953ff02ac10e329dc69e7b"
+      ],
+      "target_commit": "f605a520cb7d3dc21da795a35cb89b8479afdb8f",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development and evidence governance",
+      "composition_slot": "Host-native continuation skill discovery/invocation",
+      "capability_component": "Source-neutral repository continuation invocation surface",
+      "variation_axes": [
+        "native default prompt vs explicit /continue or $continue invocation",
+        "OpenAI registration vs Grok/Claude command adapter",
+        "parent evidence historical-only vs new exact-head evidence"
+      ],
+      "shared_owner_contracts": [
+        "Root AGENTS.md development lifecycle",
+        "Repository continuation task/evidence orchestration",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract"
+      ],
+      "duplicate_root_check": "No OpenAI/Telegram adapter runtime, second repository task queue, shipping Task store, Automation scheduler, Workflow store, source-lineage runtime or AI worker lifecycle owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Every native invocation resolves into the same canonical repository task/evidence lifecycle; registration itself owns no divergent durable state.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to workflow governance",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CONTINUE-NATIVE-REGISTRATION-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CONTINUE-NATIVE-OWNER-001",
+        "ORA-TDRP-CONTINUE-DEFAULT-PROMPT-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CONTINUE-NATIVE-NO-SECOND-OWNER-001",
+        "INV-TDRP-CONTINUE-NATIVE-FROZEN-BATCH-001",
+        "INV-TDRP-CONTINUE-NATIVE-NO-SHIPPING-QUEUE-COLLISION-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CONTINUE-NATIVE-REGISTRATION-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-CONTINUE-NATIVE-ROUTING-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-CONTINUE-PARENT-EVIDENCE-DEMOTION-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CONTINUE-NATIVE-BATCH-BROADENING-001",
+        "FAULT-TDRP-CONTINUE-NATIVE-WORKER-TERMINAL-INCOMPLETE-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CONTINUE-NATIVE-PROVENANCE-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-INVENTORY",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "continue-native-registration-source-contract",
+        "continue-skill-command-routing-contract"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral repository host-registration contract read from telegramdesktop/tdesktop authority; no OpenAI/Telegram adapter runtime copied into Fabushi shipping runtime.",
+      "notes": "Zero-based recursive authority index 36 immediately after continue/SKILL.md index 35 is .agents/skills/continue/agents/openai.yaml@e981285ee10cbed9e27e358d60ce596c9e0b3d61. The complete registration YAML, Grok/Claude invocation callers and adapters, related Codex worker contract/tests, durable workspace owner/tests, and Fabushi exact-head native-invocation plus shipping AI/task owner candidates were traced. No in-repository parser or direct test for the YAML path itself was found; host discovery is the registration boundary, while $continue resolves to the already-mapped shared scheduler. This closes only one source entry: unknown=16,162, unread=16,137, omitted=0. Parent TDRP run 39486129504 and Rust run 39486129565 are historical-only for f605a520cb7d3dc21da795a35cb89b8479afdb8f; new exact-head verification is pending. The next strict source entry is .agents/skills/continue/references/consolidate-pending-tasks.md@bd301d93f8f670ad041b3db72330e17cbb50eb5c.",
       "test_execution_evidence": []
     }
   ]
