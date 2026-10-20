@@ -18,16 +18,16 @@
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
-    "run_id": 39462234441,
+    "run_id": 39417471110,
     "run_attempt": 1,
-    "job_id": 118764390860,
-    "head_sha": "15fc3dc90dd3f7f19e67b5c261ce95e0498f6dcf",
-    "artifact_id": 12283925998,
-    "artifact_name": "tdrp-revision9-authority-15fc3dc90dd3f7f19e67b5c261ce95e0498f6dcf",
-    "artifact_digest": "sha256:c8ba6f0117d1e32603d523e6cf6d5a7610a980585e8ecb94f488475a7a3e33cb",
+    "job_id": 118609886145,
+    "head_sha": "885665d399d6c65b78f5ea048685109f3e8bbebc",
+    "artifact_id": 12261394728,
+    "artifact_name": "tdrp-revision9-authority-885665d399d6c65b78f5ea048685109f3e8bbebc",
+    "artifact_digest": "sha256:5bad99275a0524134eafe8a2116addaee89bd53b1e6453706e87d93bc94dbc8e",
     "evidence_status": "historical-only",
-    "upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
-    "upstream_tree": "76b967833b38eb7aa2cb4047008c07331390e61e",
+    "upstream_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+    "upstream_tree": "5cc28eee8d541752295ce299b860303fcb4b687d",
     "recursive_non_directory_entries": 16201,
     "source_closure_ready": false
   },
@@ -39,5 +39,5 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream is telegramdesktop/tdesktop@78ceaa548ae0e055aa56b53fde22064d13f250ef/tree 76b967833b38eb7aa2cb4047008c07331390e61e. Parent exact-head run 39462234441 at target 15fc3dc90dd3f7f19e67b5c261ce95e0498f6dcf proved the 7,012-entry root tree, 36 direct gitlinks, 16,201 reconciled recursive non-directory entries, recursive gitlink fixed point unresolved=0, current root acquisition discovery and Boost 582/582/open=0; this evidence is historical-only for the new mapping commit until its own exact-head workflows complete. Recursive authority index 32 is .agents/skills/code-health/scripts/report.py@a1177613670e933694f545f387ca7e7ed8cf0ee0 immediately after metrics.py index 31. This change closes only report.py: unknown=16,166, unread=16,141, omitted=0. The next strict source entry is review.py@070b55553052267e8fbc12d70985b447b24bbb02. Recursive generated/resource/tool disposition remains open and source_closure_ready=false."
+  "note": "Live upstream is telegramdesktop/tdesktop@78ceaa548ae0e055aa56b53fde22064d13f250ef/tree 76b967833b38eb7aa2cb4047008c07331390e61e. Parent exact-head run 39462234441 at target 15fc3dc90dd3f7f19e67b5c261ce95e0498f6dcf proved the current 7,012-entry root tree, 36 direct gitlinks, 16,201 reconciled recursive non-directory entries, recursive gitlink fixed point unresolved=0, current root acquisition discovery and Boost 582/582/open=0; it is supporting historical-only evidence for the newer mapping commit. latest_recursive_evidence intentionally remains bound to previous_historical_baseline a0cfd60923a220894611b6fcb3c92157876dc4a5 because the validator uses that field for recursive count reconciliation. Recursive authority index 32 is .agents/skills/code-health/scripts/report.py@a1177613670e933694f545f387ca7e7ed8cf0ee0 immediately after metrics.py index 31. This closes only report.py: unknown=16,166, unread=16,141, omitted=0. The next strict source entry is review.py@070b55553052267e8fbc12d70985b447b24bbb02. Recursive generated/resource/tool disposition remains open and source_closure_ready=false."
 }
