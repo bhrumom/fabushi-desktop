@@ -98,6 +98,7 @@ let e2eHumanMessages: E2eHumanMessage[] = [];
 let e2eHumanMessageSequence = 1;
 let e2eHumanResourceSequence = 1;
 let e2eHumanResources = new Map<string, E2eHumanResource>();
+let e2eBrowserAgentSubmissions: Array<{ name: string; plan: string }> = [];
 let e2eLoginDeviceSequence = 1;
 const e2eObservedSocialDeviceIds = new Set<string>();
 
@@ -417,14 +418,121 @@ async function ensureE2eAuthBackend(): Promise<string> {
           ? '收到：自建 Bot 请规划步骤'
           : '收到：请分析这个任务';
         const providerRequest = JSON.parse(body.toString('utf8')) as { input?: unknown };
-        const isToolContinuation = Array.isArray(providerRequest.input)
-          && providerRequest.input.some((item) => item != null
-            && typeof item === 'object'
-            && !Array.isArray(item)
-            && 'type' in item
-            && item.type === 'function_call_output');
+        const providerInput = Array.isArray(providerRequest.input) ? providerRequest.input : [];
+        const isToolContinuation = providerInput.some((item) => item != null
+          && typeof item === 'object'
+          && !Array.isArray(item)
+          && 'type' in item
+          && item.type === 'function_call_output');
+        const browserAgentE2e = body.includes(Buffer.from('FABUSHI_BROWSER_AGENT_E2E', 'utf8'))
+          || body.includes(Buffer.from('fabushi-e2e-browser-', 'utf8'));
+        const functionOutput = (callId: string): Record<string, unknown> | null => {
+          const item = providerInput.find((candidate) => candidate != null
+            && typeof candidate === 'object'
+            && !Array.isArray(candidate)
+            && (candidate as { type?: unknown }).type === 'function_call_output'
+            && (candidate as { call_id?: unknown }).call_id === callId) as { output?: unknown } | undefined;
+          if (item == null) return null;
+          let output = item.output;
+          if (typeof output === 'string') {
+            try { output = JSON.parse(output); } catch { return null; }
+          }
+          return output != null && typeof output === 'object' && !Array.isArray(output)
+            ? output as Record<string, unknown>
+            : null;
+        };
+        const sendFunctionCall = (name: string, callId: string, args: Record<string, unknown>): void => {
+          const call = { type: 'function_call', name, call_id: callId, arguments: JSON.stringify(args) };
+          response.end([
+            `data: ${JSON.stringify({ type: 'response.output_item.done', item: call })}\n\n`,
+            `data: ${JSON.stringify({
+              type: 'response.completed',
+              response: {
+                id: `fabushi-e2e-browser-response-${callId}`,
+                output: [call],
+                usage: { input_tokens: 8, output_tokens: 8, input_tokens_details: { cached_tokens: 0 } },
+              },
+            })}\n\n`,
+          ].join(''));
+        };
         response.setHeader('content-type', 'text/event-stream');
         response.statusCode = 200;
+        if (browserAgentE2e) {
+          const snapshotOutput = functionOutput('fabushi-e2e-browser-snapshot');
+          const fillOutput = functionOutput('fabushi-e2e-browser-fill');
+          const selectOutput = functionOutput('fabushi-e2e-browser-select');
+          const clickOutput = functionOutput('fabushi-e2e-browser-click');
+          const waitOutput = functionOutput('fabushi-e2e-browser-wait');
+          if (snapshotOutput == null) {
+            sendFunctionCall('browser_snapshot', 'fabushi-e2e-browser-snapshot', { target: 'local' });
+            return;
+          }
+          const snapshot = snapshotOutput.snapshot != null
+            && typeof snapshotOutput.snapshot === 'object'
+            && !Array.isArray(snapshotOutput.snapshot)
+            ? snapshotOutput.snapshot as { elements?: unknown }
+            : null;
+          const elements = Array.isArray(snapshot?.elements) ? snapshot.elements : [];
+          const refNamed = (name: string): string => {
+            const element = elements.find((candidate) => candidate != null
+              && typeof candidate === 'object'
+              && !Array.isArray(candidate)
+              && (candidate as { name?: unknown }).name === name) as { ref?: unknown } | undefined;
+            if (typeof element?.ref !== 'string' || element.ref.length === 0) {
+              throw new Error(`Focused Browser Agent E2E snapshot did not expose ref for ${name}.`);
+            }
+            return element.ref;
+          };
+          if (fillOutput == null) {
+            sendFunctionCall('browser_fill', 'fabushi-e2e-browser-fill', {
+              target: 'local',
+              ref: refNamed('Name'),
+              value: 'Ada Agent',
+            });
+            return;
+          }
+          if (selectOutput == null) {
+            sendFunctionCall('browser_select_option', 'fabushi-e2e-browser-select', {
+              target: 'local',
+              ref: refNamed('Plan'),
+              values: ['pro'],
+            });
+            return;
+          }
+          if (clickOutput == null) {
+            sendFunctionCall('browser_click', 'fabushi-e2e-browser-click', {
+              target: 'local',
+              ref: refNamed('Submit order'),
+            });
+            return;
+          }
+          if (waitOutput == null) {
+            sendFunctionCall('browser_wait', 'fabushi-e2e-browser-wait', {
+              target: 'local',
+              text: 'Submission received',
+              timeoutMs: 10_000,
+            });
+            return;
+          }
+          const finalCall = {
+            type: 'function_call',
+            name: 'SendMessage',
+            call_id: 'fabushi-e2e-browser-final-message',
+            arguments: JSON.stringify({ type: 'text', content: 'Browser agent submission complete' }),
+          };
+          response.end([
+            `data: ${JSON.stringify({ type: 'response.output_item.done', item: finalCall })}\n\n`,
+            `data: ${JSON.stringify({
+              type: 'response.completed',
+              response: {
+                id: 'fabushi-e2e-browser-response-final-message',
+                output: [finalCall],
+                usage: { input_tokens: 8, output_tokens: 8, input_tokens_details: { cached_tokens: 0 } },
+              },
+            })}\n\n`,
+          ].join(''));
+          return;
+        }
         if (isToolContinuation) {
           // The visible assistant body was already persisted by the shipping
           // Host-owned SendMessage tool. Finish the provider turn with private
@@ -474,6 +582,22 @@ async function ensureE2eAuthBackend(): Promise<string> {
         response.setHeader('content-type', 'text/html; charset=utf-8');
         response.statusCode = 200;
         response.end(`<!doctype html><html><head><title>Fabushi Browser Fixture</title></head><body><main><h1>Fabushi Native Browser</h1><a id="download-link" href="${origin}/browser-workspace-download">Download fixture</a></main></body></html>`);
+        return;
+      }
+      if (requestUrl.pathname === '/browser-agent-form' && request.method === 'GET') {
+        response.setHeader('content-type', 'text/html; charset=utf-8');
+        response.statusCode = 200;
+        response.end('<!doctype html><html><head><title>Fabushi Browser Agent Form</title></head><body><main><h1>Browser Agent Form</h1><form method="post" action="/browser-agent-form-submit"><label>Name <input name="name" autocomplete="off"></label><label>Plan <select name="plan"><option value="basic">Basic</option><option value="pro">Pro</option></select></label><button type="submit">Submit order</button></form></main></body></html>');
+        return;
+      }
+      if (requestUrl.pathname === '/browser-agent-form-submit' && request.method === 'POST') {
+        const body = new URLSearchParams((await readRequestBody(request)).toString('utf8'));
+        const name = body.get('name') ?? '';
+        const plan = body.get('plan') ?? '';
+        e2eBrowserAgentSubmissions.push({ name, plan });
+        response.setHeader('content-type', 'text/html; charset=utf-8');
+        response.statusCode = 200;
+        response.end('<!doctype html><html><head><title>Fabushi Browser Agent Submitted</title></head><body><main><h1>Submission received</h1></main></body></html>');
         return;
       }
       if (requestUrl.pathname === '/browser-workspace-second' && request.method === 'GET') {
@@ -845,6 +969,45 @@ test('native Browser Workspace opens real Chromium pages, isolates tabs, and dow
       .filter((entry) => entry.url.includes('/browser-workspace-')));
     expect(nativeEntries.some((entry) => entry.url.includes('/browser-workspace-fixture'))).toBe(true);
     expect(nativeEntries.some((entry) => entry.url.includes('/browser-workspace-second'))).toBe(true);
+  } finally {
+    await app?.close().catch(() => undefined);
+    await rm(appDataDir, { recursive: true, force: true });
+  }
+});
+
+
+test('Agent controls the real local Chromium form through Host tools and the server observes the submission', async () => {
+  e2eBrowserAgentSubmissions = [];
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-browser-agent-e2e-'));
+  let app: ElectronApplication | null = null;
+
+  try {
+    const origin = await ensureE2eAuthBackend();
+    app = await launchDesktopApp(appDataDir);
+    const page = await app.firstWindow();
+    await completeBrowserLogin(page);
+    await openMahayanaConversation(page);
+
+    await page.getByRole('button', { name: 'Open browser workspace', exact: true }).click();
+    const workspace = page.getByTestId('browser-workspace');
+    await expect(workspace).toBeVisible({ timeout: 10_000 });
+    const address = workspace.getByRole('textbox', { name: 'Address and search' });
+    await address.fill(`${origin}/browser-agent-form`);
+    await address.press('Enter');
+    await expect(workspace.getByRole('tab').filter({ hasText: 'Fabushi Browser Agent Form' })).toHaveCount(1, { timeout: 15_000 });
+
+    const prompt = page.getByRole('textbox', { name: 'Prompt' });
+    await prompt.pressSequentially('FABUSHI_BROWSER_AGENT_E2E submit the visible browser form');
+    await page.getByRole('button', { name: 'Send message' }).click();
+
+    await expect.poll(() => e2eBrowserAgentSubmissions, { timeout: 20_000 }).toEqual([
+      { name: 'Ada Agent', plan: 'pro' },
+    ]);
+    await expect.poll(async () => app!.evaluate(({ webContents }) => webContents.getAllWebContents()
+      .some((contents) => contents.getURL().includes('/browser-agent-form-submit')
+        && contents.getTitle() === 'Fabushi Browser Agent Submitted')), { timeout: 10_000 }).toBe(true);
+
+    await expectHermesAssistantTurn(page, 'Browser agent submission complete');
   } finally {
     await app?.close().catch(() => undefined);
     await rm(appDataDir, { recursive: true, force: true });
