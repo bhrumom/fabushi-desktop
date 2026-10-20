@@ -25,6 +25,11 @@ The module is the code-health command/orchestration boundary rather than a metri
 - `report.py@a1177613670e933694f545f387ca7e7ed8cf0ee0`, `includes.py@2c02b4e7eb821f123588e0a80056edef86fc084c`, and the already-read atlas/clone/build-model/text helpers are delegated evidence libraries, not command/state owners.
 - The skill routes proposals through the existing process-inbox/perform-task lifecycle; health.py does not own a separate queue or product runtime.
 
+## Traceability
+
+- Requirement: `TDRP-R9-CODE-HEALTH-COMMAND-ORCHESTRATION-001`
+- Oracle set: exact durable source fencing, noncanonical worktree isolation, delegated command-result preservation.
+
 ## Responsibility decision
 
 Applicable responsibility: source-neutral repository quality-health command orchestration and durable evidence-state publication. It includes exact-source fencing, canonical-versus-temporary run separation, stable findings/history publication, cache/rebuild semantics, safe detached inspection, command result preservation, and delegation to existing quality owners.
