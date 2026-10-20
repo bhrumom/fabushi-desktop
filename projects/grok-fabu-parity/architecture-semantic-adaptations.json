@@ -385,7 +385,7 @@
       "referencePath": "source/electron-main/coordinator/coordinator-executors.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "0e12efd790bdfb60bb54d07048c80547c3581080",
+      "targetBlobSha": "8932e691c8d90f721269bf0498f94a8414423f4f",
       "behavioralEvidence": [
         "source/electron-main/coordinator/coordinator-executors.ts",
         "source/electron-main/coordinator/production-provider.ts",
@@ -402,7 +402,7 @@
       "referencePath": "source/electron-main/coordinator/production-provider.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "3b7591fbaf07cd7a5b13bfda27bca717c8603e01",
+      "targetBlobSha": "1eca53d85e101247cc491c3b592debf4e4cd1268",
       "behavioralEvidence": [
         "source/electron-main/coordinator/production-provider.ts",
         "source/electron-main/coordinator/coordinator-executors.ts",
@@ -419,7 +419,7 @@
       "referencePath": "source/electron-main/main-production-services.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "f52a0470620270a1f33107d3bccbf59705eea046",
+      "targetBlobSha": "4bcf2024a40712ab9e524eadc4580725af14e06b",
       "behavioralEvidence": [
         "source/electron-main/main-production-services.ts",
         "docs/specs/desktop-miniapp-publisher.md",

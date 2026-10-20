@@ -434,6 +434,8 @@ export interface ProductionServiceContext {
   readonly requireExperiments: () => ProductionExperimentsService;
   readonly requireUpdate: () => ProductionUpdateService;
   readonly requireMcp: () => ProductionMcpService;
+  /** Main-owned local Chromium workspace; coordinator callers never receive its WebContents handle. */
+  readonly requireBrowserWorkspace: () => BrowserWorkspaceService;
   readonly requireTelemetry: () => ProductionTelemetryService;
   readonly readTelemetry: () => ProductionTelemetryService | undefined;
   readonly requireNotifications: () => ProductionNotificationsService;
@@ -797,6 +799,7 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
         clearLocalToolApprovals: () => clearPersistedLocalToolApprovals(),
         requireAccount: () => requireValue(account, "account"), requireExperiments: () => requireValue(experiments, "experiments"),
         requireUpdate: () => requireValue(update, "update"), requireMcp: () => requireValue(mcp, "mcp"),
+        requireBrowserWorkspace: () => requireValue(browserWorkspace, "browser-workspace"),
         requireTelemetry: () => requireValue(telemetry, "telemetry"), readTelemetry: () => telemetry,
         requireNotifications: () => requireValue(notifications, "notifications"), requireCoordinator: () => requireValue(coordinator, "coordinator"),
         requireCoordinatorTelemetry: () => {
