@@ -6,10 +6,10 @@
   "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
   "coverage": {
     "source_entries_total": 16201,
-    "unknown": 16168,
-    "unread": 16143,
+    "unknown": 16167,
+    "unread": 16142,
     "omitted": 0,
-    "responsibilities_total": 53,
+    "responsibilities_total": 54,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -13187,6 +13187,264 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral repository-quality include-graph contract read from telegramdesktop/tdesktop authority; no upstream Python implementation copied into Fabushi shipping runtime.",
       "notes": "Recursive authority array index 30, immediately after history.py index 29, is .agents/skills/code-health/scripts/includes.py. Direct report.py/review.py callers and health_test.py GraphTests were read. This closure decrements only this independent source entry to unknown=16,171 and unread=16,144, omitted=0. Prior production/test/Actions evidence is historical-only; not accepted for current upstream authority 6c2ee90618bf69683a1c466e3b0550260b82e129 or current PR HEAD.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
+      "source_path": ".agents/skills/code-health/scripts/metrics.py",
+      "source_blob_sha": "ebab29607cb52782899d5424636f0bd5e0c126cd",
+      "source_kind": "repository_quality_structural_metrics_helper",
+      "module_id": "tdesktop.code-health-structural-metrics",
+      "responsibility_id": "TDRP-R9-CODE-HEALTH-STRUCTURAL-METRICS-001",
+      "source_symbols": [
+        "LONG_FUNCTION",
+        "UNUSED_EXEMPT",
+        "area_of",
+        "file_metrics",
+        "unused_candidates",
+        "only_declared",
+        "declares"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE"
+      ],
+      "dependency_ids": [
+        ".agents/skills/code-health/scripts/cpp_text.py",
+        ".agents/skills/code-health/scripts/sources.py::LANG_FILE",
+        ".agents/skills/code-health/scripts/report.py",
+        ".agents/skills/code-health/scripts/health_test.py",
+        "Fabushi repository quality-health governance",
+        "Fabushi repository source-text normalization evidence"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/code-health-metrics-script-complete-read.md",
+      "behavior_contract": "Derive reproducible source-level structural measurements from one exact scanned source snapshot: fallback area names, per-C/C++ file line/function/class observations, bounded long-function/class candidates, and conservative unused-function candidates. Preserve lexical/source provenance and explicit exemptions; unused is an investigation candidate only and deletion remains unproven until ordinary build/test proof succeeds.",
+      "state_machine": "exact source snapshot + bounded source-text recognizer -> eligible C/C++ files/functions/classes/identifiers -> structural measurements + fallback area labels + conservative unused candidates -> report/health aggregation; ambiguous lexical use, exemptions and unsupported semantics remain outside proof, and no candidate becomes deletion acceptance",
+      "side_effects": [
+        "Read-only repository quality evidence; no source mutation, durable finding/task mutation, product runtime or release side effect."
+      ],
+      "failure_cases": [
+        "Stale/mutable/partial source is presented as exact-source metrics",
+        "A lexical use such as an initializer-list call is ignored and a used function is mislabeled unused",
+        "Framework/entrypoint/operator/destructor/test exemptions are discarded without stronger proof",
+        "A declaration-only heuristic is presented as semantic dead-code or safe-deletion proof",
+        "Source metrics are presented as product acceptance or configured-build truth",
+        "Fallback area naming overrides approved atlas ownership",
+        "The metric helper creates findings, routing, mutation or release semantics owned by callers"
+      ],
+      "ui_disposition": "Not applicable; repository quality evidence only.",
+      "non_ui_responsibilities": [
+        "Exact-source C/C++ file line/function/class structural measurement",
+        "Bounded long-function and large-class candidate extraction with line provenance",
+        "Fallback area labeling",
+        "Conservative unused-function candidate discovery",
+        "LANG_FILE exclusion from identifier-use counts",
+        "Framework/entrypoint/operator/destructor/test-name exemptions",
+        "Declaration-only lexical filtering including initializer-list/use safeguards",
+        "Candidate-not-deletion-proof boundary",
+        "Caller-owned report/finding/task/release boundary"
+      ],
+      "platform_delta": "Fabushi already has source-neutral repository quality-health and source-text evidence owners. The applicable responsibility maps there; no Telegram metrics runtime, second findings store, code-deletion engine or task owner is introduced.",
+      "existing_owner_candidates": [
+        "AGENTS.md repository quality-health governance",
+        "AGENTS.md repository source-text normalization evidence governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "existing_owner": "Fabushi repository quality-health/source-text evidence governance",
+      "rejected_existing_owners": [
+        "Source-text normalization owns lexical facts but not metric selection/aggregation",
+        "Report/health own durable findings and lifecycle, not this metric primitive",
+        "Configured-build evidence is stronger for build facts but does not own source structural metrics",
+        "Copying metrics.py would create a source-specific parallel scanner"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository quality-health governance",
+        "Repository source-text normalization evidence governance",
+        "Repository quality-health qualification",
+        "Repository quality-health evidence",
+        "Repository source-text normalization evidence"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "Upstream metrics.py is repository-development quality instrumentation, not shipping product logic; its applicable behavior is preserved as source-neutral evidence contracts.",
+      "command_event_contracts": [
+        "exact source -> C/C++ structural metric facts",
+        "exact source + bounded identifiers/functions + LANG_FILE exclusion -> conservative unused candidates",
+        "approved atlas absent -> bounded path fallback; approved atlas present -> caller atlas wins",
+        "candidate -> existing report/health semantics only",
+        "unused candidate -> stronger build/test/deletion proof before mutation"
+      ],
+      "state_owner": "Existing Fabushi repository quality-health evidence owner",
+      "lifecycle_owner": "Existing repository quality scan/report/review lifecycle and GitHub Actions evidence production",
+      "persistence_and_restart": "Metric layer owns no durable state; measurements reproduce from exact source. Report/health own persisted findings. Failed/partial scans cannot publish zero findings as success.",
+      "concurrency_and_cancellation": "Read-only snapshot-bound analysis; partial acquisition or interruption remains incomplete evidence.",
+      "security_boundary": "Metrics authorize no deletion, build execution, credential use, task approval, product behavior or release verdict.",
+      "network_service_dependencies": [
+        "GitHub repository authority",
+        "GitHub Actions hosted runners",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi repository quality/release workflow / GitHub Actions",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "Independent exact-head GitHub Actions verification of this metrics mapping commit is pending."
+      ],
+      "production_entrypoints": [
+        "AGENTS.md -> Repository quality-health governance / source-text normalization governance",
+        "TEST_STRATEGY.md -> Repository quality-health qualification",
+        "evidence-contract.md -> Repository quality-health/source-text evidence"
+      ],
+      "production_evidence": [
+        "path:AGENTS.md#Repository quality-health governance",
+        "path:AGENTS.md#Repository source-text normalization evidence governance",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Repository quality-health qualification",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Repository quality-health evidence",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Repository source-text normalization evidence"
+      ],
+      "test_evidence": [
+        "dossier:projects/telegram-desktop-rust/dossiers/code-health-metrics-script-complete-read.md",
+        "upstream-metrics:.agents/skills/code-health/scripts/metrics.py@ebab29607cb52782899d5424636f0bd5e0c126cd",
+        "upstream-report:.agents/skills/code-health/scripts/report.py@a1177613670e933694f545f387ca7e7ed8cf0ee0",
+        "upstream-unused-tests:.agents/skills/code-health/scripts/health_test.py@a79addaaceb35848dbd17e94e01ea428aede7788",
+        "upstream-sources:.agents/skills/code-health/scripts/sources.py@688aa05c4223d0d45b8572cff89fbc5148254844"
+      ],
+      "target_commit": "4f2603b8a728e1acfffc39796006d5a710cd0b72",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development and quality evidence governance",
+      "composition_slot": "Exact-source structural metrics and conservative dead-code candidate evidence",
+      "capability_component": "Source-neutral repository structural metrics evidence",
+      "variation_axes": [
+        "TU vs header",
+        "SourceFiles vs lib_* vs generic fallback",
+        "below vs above thresholds",
+        "declaration-only vs observed use",
+        "production vs test source",
+        "exempt callback/entrypoint vs ordinary function",
+        "atlas area vs fallback area"
+      ],
+      "shared_owner_contracts": [
+        "Repository quality-health governance",
+        "Repository source-text normalization evidence",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract"
+      ],
+      "duplicate_root_check": "No Telegram Python metrics scanner, second findings store, code-deletion engine, product owner or task queue introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Every measurement stays bound to exact source and bounded lexical recognizer; candidate/exemption/unknown distinctions never silently become safe-deletion or acceptance truth.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to workflow governance",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CODE-HEALTH-STRUCTURAL-METRICS-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CODE-HEALTH-METRICS-EXACT-SOURCE-001",
+        "ORA-TDRP-CODE-HEALTH-UNUSED-CANDIDATE-001",
+        "ORA-TDRP-CODE-HEALTH-METRIC-BOUNDARY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CODE-HEALTH-METRICS-NO-DELETE-PROOF-001",
+        "INV-TDRP-CODE-HEALTH-METRICS-PROVENANCE-001",
+        "INV-TDRP-CODE-HEALTH-METRICS-NO-PARALLEL-OWNER-001"
+      ],
+      "unit_case_ids": [
+        "UnusedTests.test_declared_but_never_called",
+        "UnusedTests.test_initializer_list_call_is_a_use"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CODE-HEALTH-STRUCTURAL-METRICS-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-CODE-HEALTH-REPORT-METRICS-001",
+        "INT-TDRP-CODE-HEALTH-SCAN-METRICS-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CODE-HEALTH-METRICS-STALE-SOURCE-001",
+        "FAULT-TDRP-CODE-HEALTH-UNUSED-AMBIGUOUS-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CODE-HEALTH-METRICS-NO-MUTATION-AUTHORITY-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-CODE-HEALTH-STRUCTURAL-METRICS-001"
+      ],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-INVENTORY",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "health-test-unused-fixture",
+        "quality-health-scan-fixture"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral repository-quality include-graph contract read from telegramdesktop/tdesktop authority; no upstream Python implementation copied into Fabushi shipping runtime.",
+      "notes": "Recursive authority index 31 immediately after includes.py index 30 is metrics.py@ebab29607cb52782899d5424636f0bd5e0c126cd. Complete source, production caller report.py, direct UnusedTests and sources.py LANG_FILE boundary were read. This closes only one source entry: unknown=16,167, unread=16,142, omitted=0. PR #158 run 39441511131 is historical-only for this newer target commit; exact-head verification is pending.",
       "test_execution_evidence": []
     }
   ]

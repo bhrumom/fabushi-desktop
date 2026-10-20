@@ -276,10 +276,10 @@
   "coverage": {
     "root_source_entries_total": 6715,
     "recursive_source_entries_total": 16201,
-    "unknown_minimum": 16168,
-    "unread_minimum": 16143,
+    "unknown_minimum": 16167,
+    "unread_minimum": 16142,
     "omitted_known": 0,
-    "note": "Live dev authority is 78ceaa548ae0e055aa56b53fde22064d13f250ef/76b967833b38eb7aa2cb4047008c07331390e61e. Compared with the previous historical snapshot a0cfd60923a220894611b6fcb3c92157876dc4a5/5cc28eee8d541752295ce299b860303fcb4b687d, the root tree is complete (7,012 entries, 6,679 blobs, 36 direct gitlinks, 6,715 non-directory entries, 3,269 Telegram/SourceFiles blobs, 3,129 Telegram/Resources blobs); 5 blob paths changed, no paths added/deleted, direct gitlink pins unchanged. Recursive total remains provisional at 16,201 pending exact-head rerun. Coverage remains open: unknown=16,168, unread=16,143, omitted=0; source closure remains false."
+    "note": "Live dev authority is 78ceaa548ae0e055aa56b53fde22064d13f250ef/76b967833b38eb7aa2cb4047008c07331390e61e. PR #158 run 39441511131 at target 5d917aeb6d190db43983b87734905308903a6eee proved current root/recursive authority and is historical-only for this newer target commit. metrics.py at recursive index 31 is independently mapped after includes.py index 30. Coverage is unknown=16,167, unread=16,142, omitted=0; generated/resource/tool disposition remains open and source_closure_ready=false."
   },
   "acceptance": {
     "baseline_ready": false,

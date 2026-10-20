@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16201,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16168,
-    "unread_minimum": 16143,
+    "unknown_minimum": 16167,
+    "unread_minimum": 16142,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -39,5 +39,5 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Current live upstream is telegramdesktop/tdesktop@78ceaa548ae0e055aa56b53fde22064d13f250ef/tree 76b967833b38eb7aa2cb4047008c07331390e61e; compared with the immediately previous snapshot a0cfd60923a220894611b6fcb3c92157876dc4a5/5cc28eee8d541752295ce299b860303fcb4b687d, 5 root blobs changed and no paths or direct gitlinks changed. Exact-head run 39417471110/artifact 12261394728 validated the previous snapshot a0cfd60923a220894611b6fcb3c92157876dc4a5 and is now historical-only. Current exact-head Actions must regenerate recursive inventory and revalidate external acquisitions/generated/resource/tool inputs. Recursive count remains provisional at 16,201; unknown=16,168, unread=16,143, omitted=0; source_closure_ready=false."
+  "note": "Live upstream is telegramdesktop/tdesktop@78ceaa548ae0e055aa56b53fde22064d13f250ef/tree 76b967833b38eb7aa2cb4047008c07331390e61e. Exact-head PR #158 run 39441511131 at target 5d917aeb6d190db43983b87734905308903a6eee proved the 7,012-entry root tree, 36 direct gitlinks, 16,201 reconciled recursive non-directory entries, recursive gitlink fixed point unresolved=0, and current acquisition/reachability evidence; it is historical-only for this newer target commit. Recursive authority index 31 is .agents/skills/code-health/scripts/metrics.py@ebab29607cb52782899d5424636f0bd5e0c126cd immediately after includes.py index 30. This change closes only that source entry: unknown=16,167, unread=16,142, omitted=0. Generated/resource/tool disposition remains open and source_closure_ready=false."
 }
