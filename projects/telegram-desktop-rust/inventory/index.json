@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16201,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16166,
-    "unread_minimum": 16141,
+    "unknown_minimum": 16165,
+    "unread_minimum": 16140,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -39,5 +39,5 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream is telegramdesktop/tdesktop@78ceaa548ae0e055aa56b53fde22064d13f250ef/tree 76b967833b38eb7aa2cb4047008c07331390e61e. Parent exact-head run 39462234441 at target 15fc3dc90dd3f7f19e67b5c261ce95e0498f6dcf proved the current 7,012-entry root tree, 36 direct gitlinks, 16,201 reconciled recursive non-directory entries, recursive gitlink fixed point unresolved=0, current root acquisition discovery and Boost 582/582/open=0; it is supporting historical-only evidence for the newer mapping commit. latest_recursive_evidence intentionally remains bound to previous_historical_baseline a0cfd60923a220894611b6fcb3c92157876dc4a5 because the validator uses that field for recursive count reconciliation. Recursive authority index 32 is .agents/skills/code-health/scripts/report.py@a1177613670e933694f545f387ca7e7ed8cf0ee0 immediately after metrics.py index 31. This closes only report.py: unknown=16,166, unread=16,141, omitted=0. The next strict source entry is review.py@070b55553052267e8fbc12d70985b447b24bbb02. Recursive generated/resource/tool disposition remains open and source_closure_ready=false."
+  "note": "Live upstream is telegramdesktop/tdesktop@78ceaa548ae0e055aa56b53fde22064d13f250ef/tree 76b967833b38eb7aa2cb4047008c07331390e61e. Parent exact-head run 39467249963 at target a9953cffaa81da2b672b41529bc8b598b7340334 proved the current 7,012-entry root tree, 36 direct gitlinks, 16,201 reconciled recursive non-directory entries, recursive gitlink fixed point unresolved=0, current Qt-aware root acquisition discovery and Boost 582/582/open=0; it is supporting historical-only evidence for this newer mapping commit. latest_recursive_evidence intentionally remains bound to previous_historical_baseline a0cfd60923a220894611b6fcb3c92157876dc4a5 because the validator uses that field for recursive count reconciliation. Recursive authority index 33 is .agents/skills/code-health/scripts/review.py@070b55553052267e8fbc12d70985b447b24bbb02 immediately after report.py index 32. This closes only review.py: unknown=16,165, unread=16,140, omitted=0. The next strict source entry is .agents/skills/code-health/scripts/sources.py@688aa05c4223d0d45b8572cff89fbc5148254844. Recursive generated/resource/tool disposition remains open and source_closure_ready=false."
 }

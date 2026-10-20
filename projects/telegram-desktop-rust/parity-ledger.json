@@ -6,8 +6,8 @@
   "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
   "coverage": {
     "source_entries_total": 16201,
-    "unknown": 16166,
-    "unread": 16141,
+    "unknown": 16165,
+    "unread": 16140,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -13701,6 +13701,318 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral repository-quality report aggregation contract read from telegramdesktop/tdesktop authority; no upstream Python implementation copied into Fabushi shipping runtime.",
       "notes": "Recursive authority index 32 immediately after metrics.py index 31 is report.py@a1177613670e933694f545f387ca7e7ed8cf0ee0. Complete source, health.py production callers and direct health_test.py map/atlas/state coverage were read. This closes only one source entry: unknown=16,166, unread=16,141, omitted=0. Parent exact-head run 39462234441 becomes historical-only for this new target commit; exact-head verification is pending. The next strict source entry is review.py@070b55553052267e8fbc12d70985b447b24bbb02.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
+      "source_path": ".agents/skills/code-health/scripts/review.py",
+      "source_blob_sha": "070b55553052267e8fbc12d70985b447b24bbb02",
+      "source_kind": "repository_quality_change_ratchet_and_move_proof",
+      "module_id": "tdesktop.code-health-review",
+      "responsibility_id": "TDRP-R9-CODE-HEALTH-CHANGE-RATCHET-001",
+      "source_symbols": [
+        "HUNK",
+        "SCAFFOLDING",
+        "BUILD_SHARE",
+        "GROWTH_TOLERANCE",
+        "code_path",
+        "tracked_path",
+        "untracked",
+        "changed",
+        "diff_lines",
+        "base_text",
+        "added_hunks",
+        "check",
+        "definitions",
+        "mention_lines",
+        "defines",
+        "orphaned",
+        "platform_only",
+        "stranded",
+        "grown_classes",
+        "heavier",
+        "moves",
+        "out_of_order",
+        "comparable",
+        "declaration_like"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-REPOSITORY-CHANGE-RATCHET-EVIDENCE",
+        "CAP-REPOSITORY-TASK-EVIDENCE"
+      ],
+      "dependency_ids": [
+        ".agents/skills/code-health/scripts/clones.py",
+        ".agents/skills/code-health/scripts/cmake_model.py",
+        ".agents/skills/code-health/scripts/cpp_text.py",
+        ".agents/skills/code-health/scripts/includes.py",
+        ".agents/skills/code-health/scripts/metrics.py",
+        ".agents/skills/code-health/scripts/report.py",
+        ".agents/skills/code-health/scripts/sources.py",
+        ".agents/skills/code-health/scripts/health.py",
+        ".agents/skills/code-health/scripts/health_test.py",
+        "Fabushi repository quality-health governance",
+        "Fabushi repository quality-health command orchestration governance",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/code-health-review-script-complete-read.md",
+      "behavior_contract": "Compare one declared change against its exact base and return proportional review errors/warnings for newly introduced structural risk while preserving a separate move-only proof that rejects substantive added/lost/reordered logic. Review evidence is advisory/gating input to the existing task/review lifecycle and never substitutes for build, runtime or release proof.",
+      "state_machine": "exact base + current/staged change -> changed tracked scope + exact source/build/include/clone facts -> classify new-file/over-limit/layer/copy/rebuild/stranded/orphan observations -> errors and warnings, with selected warnings promoted under strict mode; separately exact base/head/staged diff -> normalize relocation scaffolding/declarations -> account moved/novel/lost/order -> MOVE_ONLY or NOT_MOVE_ONLY",
+      "side_effects": [
+        "Reads Git diff/base/current source and qualified repository-quality facts; returns review evidence only. It does not edit source, publish canonical findings, route tasks or approve changes."
+      ],
+      "failure_cases": [
+        "A stale or mismatched base is reviewed as if it were the declared change base",
+        "A new cross-target include with no prior crossing is downgraded from error",
+        "Over-limit growth, materially heavier header reach or copied substantive code is silently ignored",
+        "Removed definitions or last uses are treated as clean when platform/style/language references remain",
+        "Strict mode fails to promote the declared growth/copy warnings",
+        "Move-only proof accepts changed values, lost/new substantive logic or reordered statements",
+        "Lexical/build/include recognition gaps are rewritten as clean review evidence",
+        "A clean quality ratchet is presented as product/build/release acceptance"
+      ],
+      "ui_disposition": "Not applicable; repository change-review and move-proof evidence only.",
+      "non_ui_responsibilities": [
+        "Exact-base changed/untracked/staged scope accounting",
+        "New-file and over-limit growth ratchet",
+        "New include/layer-crossing classification with known-crossing downgrade",
+        "Header rebuild-share growth warning",
+        "Added clone/copy warning with strict rejection mode",
+        "Removed-definition stranded-reference detection across platform/style/language scope",
+        "Removed-last-use orphan detection",
+        "Class growth warning and bounded lexical declaration/use classification",
+        "Move-only substantive line/accounting and statement-order proof",
+        "Warning/error/strictness semantics separated from stronger task/build/release proof"
+      ],
+      "platform_delta": "Fabushi already owns source-neutral repository review-ratchet policy, integrated quality qualification and evidence contracts. Preserve the behavior under those owners; do not retain Telegram Python review runtime or create a second review/task/findings owner.",
+      "existing_owner_candidates": [
+        "AGENTS.md repository quality-health command orchestration governance",
+        "AGENTS.md proportional quality-ratchet governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md repository quality-health qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md change-ratchet evidence"
+      ],
+      "existing_owner": "Fabushi repository quality-health change-ratchet and review policy governance",
+      "rejected_existing_owners": [
+        "Source-text/build/include/clone instruments own facts, not warning/error/strictness policy",
+        "Report owns scan finding aggregation/lifecycle, not diff-time review disposition",
+        "Health command orchestrates review execution and exit codes, not the underlying ratchet semantics",
+        "Copying review.py would create a source-specific parallel review runtime"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Every source change is subject to a proportional quality ratchet against its exact base."
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "review.py is repository-development quality instrumentation, not shipping product logic. Its applicable behavior is source-neutral governance/evidence already owned by Fabushi review and quality contracts.",
+      "command_event_contracts": [
+        "exact base/current or staged scope -> changed tracked files including untracked additions",
+        "new cross-target include -> error when no prior crossing, warning when the same target pair already has crossings",
+        "over-limit file growth -> warning, promoted to error under strict mode after the bounded tolerance",
+        "added copied substantive block -> warning, promoted to error under strict mode",
+        "materially heavier header/build reach -> warning",
+        "removed definition with remaining mention -> stranded warning",
+        "removed last use leaving definition -> orphan warning",
+        "base/head/staged relocation -> moved/novel/lost/order accounting -> MOVE_ONLY or NOT_MOVE_ONLY",
+        "recognition/acquisition failure -> explicit non-passing/unknown evidence, never clean review"
+      ],
+      "state_owner": "Exact change/base identity and existing repository-quality facts; no independent durable state",
+      "lifecycle_owner": "Existing repository review/perform-task lifecycle and repository quality-health command orchestration",
+      "persistence_and_restart": "No independent persistence. Ratchet and move proof are recomputed from the declared exact base and current/staged subject; durable task evidence is recorded by the existing review/task evidence owner.",
+      "concurrency_and_cancellation": "Review is snapshot/base-relative. A moving base/current subject, incomplete Git operation or instrument failure invalidates the observation instead of being retried into a clean result.",
+      "security_boundary": "Review evidence authorizes no source mutation, deletion, task approval, product behavior, credentials or release verdict. Strictness only changes the quality-review error/warning disposition.",
+      "network_service_dependencies": [
+        "GitHub repository authority",
+        "GitHub Actions hosted runners",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi repository quality/review workflow / GitHub Actions",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "Independent exact-head GitHub Actions verification of this review.py mapping commit is pending."
+      ],
+      "production_entrypoints": [
+        "AGENTS.md -> proportional quality ratchet against exact base",
+        "AGENTS.md -> repository quality-health command orchestration -> change warnings/errors to review policy",
+        "Fabushi Test Strategy -> change-time health ratchet qualification",
+        "Fabushi Test Evidence Contract -> change-ratchet evidence"
+      ],
+      "production_evidence": [
+        "path:AGENTS.md#proportional-quality-ratchet",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Repository-quality-health-qualification",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Repository-quality-task-class-evidence"
+      ],
+      "test_evidence": [
+        "dossier:projects/telegram-desktop-rust/dossiers/code-health-review-script-complete-read.md",
+        "upstream-review:.agents/skills/code-health/scripts/review.py@070b55553052267e8fbc12d70985b447b24bbb02",
+        "upstream-health:.agents/skills/code-health/scripts/health.py@f08675ef7a03c016d85f91c60b8f29e99454abe9",
+        "upstream-health-test:.agents/skills/code-health/scripts/health_test.py@a79addaaceb35848dbd17e94e01ea428aede7788",
+        "health_test.CheckTests.test_new_upward_include_is_an_error",
+        "health_test.CheckTests.test_oversized_file_may_not_grow",
+        "health_test.CheckTests.test_copy_paste_is_reported",
+        "health_test.CheckTests.test_removed_definition_still_mentioned_is_reported",
+        "health_test.CheckTests.test_removed_last_use_reports_orphaned_helper",
+        "health_test.CheckTests.test_removed_last_use_reports_orphaned_style_and_key",
+        "health_test.CheckTests.test_known_crossing_is_a_warning",
+        "health_test.CheckTests.test_untracked_new_file_is_checked",
+        "health_test.MoveTests.test_extracting_a_function_into_a_new_file_is_move_only",
+        "health_test.MoveTests.test_changed_initializer_value_is_not_move_only",
+        "health_test.MoveTests.test_reordered_statements_are_not_move_only",
+        "health_test.MoveTests.test_changed_logic_is_not_move_only"
+      ],
+      "target_commit": "a9953cffaa81da2b672b41529bc8b598b7340334",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development and quality evidence governance",
+      "composition_slot": "Exact-base change ratchet and move-only proof",
+      "capability_component": "Source-neutral repository change-review ratchet evidence",
+      "variation_axes": [
+        "working tree vs staged subject",
+        "new vs existing vs deleted file",
+        "strict vs non-strict review",
+        "new vs previously existing target crossing",
+        "ordinary C++ vs platform/style/language references",
+        "relocation scaffolding vs substantive code",
+        "move-only vs changed/lost/new/reordered logic",
+        "complete recognized evidence vs unknown/stale/failed input"
+      ],
+      "shared_owner_contracts": [
+        "Repository quality-health command orchestration governance",
+        "Repository source-text/build/include/clone evidence",
+        "Repository quality task-class governance",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract"
+      ],
+      "duplicate_root_check": "No Telegram Python review runtime, second diff/review owner, second findings ledger, second task queue, second ownership graph or release owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Every review result remains bound to the declared exact base/current or staged subject. Warning/error/strictness and move-only classification are recomputed evidence; failed/unknown inputs cannot silently become clean.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to workflow governance",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CODE-HEALTH-CHANGE-RATCHET-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CODE-HEALTH-REVIEW-EXACT-BASE-001",
+        "ORA-TDRP-CODE-HEALTH-REVIEW-RATCHET-001",
+        "ORA-TDRP-CODE-HEALTH-MOVE-ONLY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CODE-HEALTH-REVIEW-NO-CLEAN-ON-UNKNOWN-001",
+        "INV-TDRP-CODE-HEALTH-REVIEW-STRICTNESS-001",
+        "INV-TDRP-CODE-HEALTH-MOVE-NO-SEMANTIC-CHANGE-001"
+      ],
+      "unit_case_ids": [
+        "health_test.CheckTests.test_new_upward_include_is_an_error",
+        "health_test.CheckTests.test_oversized_file_may_not_grow",
+        "health_test.CheckTests.test_copy_paste_is_reported",
+        "health_test.CheckTests.test_removed_definition_still_mentioned_is_reported",
+        "health_test.CheckTests.test_removed_last_use_reports_orphaned_helper",
+        "health_test.CheckTests.test_removed_last_use_reports_orphaned_style_and_key",
+        "health_test.MoveTests.test_extracting_a_function_into_a_new_file_is_move_only",
+        "health_test.MoveTests.test_changed_initializer_value_is_not_move_only",
+        "health_test.MoveTests.test_reordered_statements_are_not_move_only",
+        "health_test.MoveTests.test_changed_logic_is_not_move_only"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CODE-HEALTH-CHANGE-RATCHET-001",
+        "CONTRACT-TDRP-CODE-HEALTH-MOVE-ONLY-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-CODE-HEALTH-REVIEW-HEALTH-COMMAND-001",
+        "INT-TDRP-CODE-HEALTH-REVIEW-QUALIFIED-INSTRUMENTS-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-CODE-HEALTH-REVIEW-BASE-CURRENT-FENCE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CODE-HEALTH-REVIEW-STALE-BASE-001",
+        "FAULT-TDRP-CODE-HEALTH-REVIEW-UNRECOGNIZED-SOURCE-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CODE-HEALTH-REVIEW-NO-AUTHORITY-BYPASS-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-CODE-HEALTH-CHANGE-RATCHET-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-CODE-HEALTH-MOVE-CHANGED-LOGIC-001"
+      ],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-INVENTORY",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "code-health-fixture",
+        "change-ratchet-fixture",
+        "move-only-fixture"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral repository-quality change-ratchet and move-proof contract read from telegramdesktop/tdesktop authority; no upstream Python implementation copied into Fabushi shipping runtime.",
+      "notes": "Recursive authority index 33 immediately after report.py index 32 is review.py@070b55553052267e8fbc12d70985b447b24bbb02. Complete source, health.py check/moves callers and direct CheckTests/MoveTests coverage were read. This closes only one source entry: unknown=16,165, unread=16,140, omitted=0. Parent exact-head run 39467249963 at a9953cffaa81da2b672b41529bc8b598b7340334 becomes historical-only for this new target commit; exact-head verification is pending. The next strict source entry is sources.py@688aa05c4223d0d45b8572cff89fbc5148254844.",
       "test_execution_evidence": []
     }
   ]
