@@ -1,6 +1,6 @@
 # Dependency Watch skill complete read — strict recursive index 39
 
-Status: source-grounded; existing-owner mapped; exact-head verification pending.
+Status: strict index 39 exact-head verified at 67fd7d1a8259d4990096bc1952b0459bebf7b464; strict index 40 source-grounded and existing-owner mapped; child exact-head verification pending.
 
 Authority: telegramdesktop/tdesktop@0eca52223cceed229932add1cc80792763120844 tree 1fc479a4b448aed851181bf4a4796d3015368348. Strict index 39 remains .agents/skills/dependency-watch/SKILL.md@482b3a8d0c939d4bb7bd32ab146e0cc988d29fd8.
 
@@ -58,3 +58,22 @@ Coverage after rebaseline and this mapping: source_entries_total=16305, unknown=
 - SEC-TDRP-DEPENDENCY-WATCH-ADVISORY-ONLY-001
 
 Focused upstream cases at watch_test.py@d3107c617be3e8780a99bebaeba19a4f235ae6ea: VersionTests.test_stable_ordering_and_prefixes; SnapshotTests.test_fetches_remote_without_touching_working_tree; test_fetch_failure_never_uses_stale_ref; test_missing_required_manifest_fails; test_offline_snapshot_is_marked_unverified; test_linked_worktree_uses_common_report_storage.
+
+
+## Strict index 40 — OpenAI native skill registration
+
+Source: .agents/skills/dependency-watch/agents/openai.yaml@a61c118c41e3b50d6bc4bde12dc6d4c1b3756b5d on telegramdesktop/tdesktop@0eca52223cceed229932add1cc80792763120844. It is declarative host-registration metadata only: display_name="Dependency Watch", short_description="Track dependency releases and missing upstream fixes", and default_prompt selects $dependency-watch against freshly fetched origin/dev with pressing updates before the review-someday list.
+
+Caller/owner trace: the descriptor's default prompt names sibling $dependency-watch; workflow semantics remain in SKILL.md@482b3a8d0c939d4bb7bd32ab146e0cc988d29fd8 and executable snapshot/version behavior remains in scripts/watch.py@231c5a13e8d7e3cd337dbbad08e8f4434a943a38. scripts/watch_test.py@d3107c617be3e8780a99bebaeba19a4f235ae6ea covers fresh fetch without worktree mutation, fetch-failure rejection, missing required manifests, offline-unverified state, linked-worktree storage, and version classification. Upstream AGENTS.md@b138b4fbfae7a8d1e92d28c154e09eaca2418e51 states the scheduled dependency monitor remains advisory and does not implement fixes.
+
+Fabushi existing owner: quality/evidence-contract.md@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70 defines Repository quality-health native invocation evidence for host-visible metadata/default prompt/equivalent selector and canonical source-neutral workflow resolution, with no independent scanner/state/task owner. TEST_STRATEGY.md@0d3a4c993784625f9b70279602c655d4788fe9fb qualifies native skill surfaces and rejects stale/mutable-source publication or provider-specific syntax becoming semantic ownership. AGENTS.md@57ed0d56acc64ef24ce4c1f5c2877a4ec3ab570b keeps exact-source quality-health orchestration canonical. Shipping app updater and MCP installable-package owners are rejected. novel_capability=false.
+
+Parent exact-head gate: TDRP 39506049373 succeeded at 67fd7d1a8259d4990096bc1952b0459bebf7b464 and proved root 7116/6783/36/6819, recursive=16305, cppgir/expected-lite, root/child/next shard artifacts, fixed-point final_scanned_authorities=203 with unresolved_gitlink_authorities=0, and Boost 582/582/open=0. Reachability artifact 12304695149 digest sha256:83223fb59675f6e5320a3e8b6e1a593b52b90f1ceafda1d4e87d9e766bed0c48 still reports 95 authorities, 133 gitlinks, 3865 acquisition candidates, 4674 generated inputs, 4602 resource inputs and 4255 tool inputs open; source_closure_ready=false. Rust 39506049401 succeeded 6/6 jobs with artifact 12303721533 digest sha256:5a3fbcd642b49ead461369ae9815971d481cf1839f76fdd89960b4082ca5614a.
+
+Traceability:
+- TDRP-R9-DEPENDENCY-WATCH-NATIVE-INVOCATION-001
+- ORA-TDRP-DEPENDENCY-WATCH-NATIVE-ROUTING-001
+- INV-TDRP-DEPENDENCY-WATCH-REGISTRATION-NO-SECOND-OWNER-001
+- SEC-TDRP-DEPENDENCY-WATCH-NATIVE-INVOCATION-FAIL-CLOSED-001
+
+Coverage after strict index 40: source_entries_total=16305, unknown=16262, unread=16237, omitted=0. baseline accepted=false and source_closure_ready=false. Next strict entry index 41 is .agents/skills/dependency-watch/references/forks.md@29a7aa587ae26118a0611a2e4037a69141a3ffde.

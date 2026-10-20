@@ -896,10 +896,10 @@
   "coverage": {
     "root_source_entries_total": 6819,
     "recursive_source_entries_total": 16305,
-    "unknown_minimum": 16263,
-    "unread_minimum": 16238,
+    "unknown_minimum": 16262,
+    "unread_minimum": 16237,
     "omitted_known": 0,
-    "note": "Live dev authority is 0eca52223cceed229932add1cc80792763120844/1fc479a4b448aed851181bf4a4796d3015368348. Exact recursive total is 16,305. Strict index 39 dependency-watch/SKILL.md is mapped: unknown=16,263, unread=16,238, omitted=0; next strict entry index 40 is dependency-watch/agents/openai.yaml@a61c118c41e3b50d6bc4bde12dc6d4c1b3756b5d. e709 TDRP 39497897314 and Rust 39497897342 succeeded against 78ceaa548ae0e055aa56b53fde22064d13f250ef but are historical after live-dev drift. source_closure_ready/baseline acceptance remain false."
+    "note": "Live dev authority remains 0eca52223cceed229932add1cc80792763120844/1fc479a4b448aed851181bf4a4796d3015368348. Exact recursive total is 16,305. Strict index 40 .agents/skills/dependency-watch/agents/openai.yaml@a61c118c41e3b50d6bc4bde12dc6d4c1b3756b5d is mapped as host-native invocation metadata for the existing source-neutral dependency-watch/quality-health owner: unknown=16,262, unread=16,237, omitted=0; next strict entry index 41 is .agents/skills/dependency-watch/references/forks.md@29a7aa587ae26118a0611a2e4037a69141a3ffde. Parent exact-head TDRP 39506049373 and Rust 39506049401 succeeded at 67fd7d1a8259d4990096bc1952b0459bebf7b464. Recursive disposition remains open (95 authorities, 133 gitlinks, 3,865 acquisition candidates, 4,674 generated inputs, 4,602 resource inputs, 4,255 tool inputs), so source_closure_ready/baseline acceptance remain false."
   },
   "acceptance": {
     "baseline_ready": false,

@@ -6,10 +6,10 @@
   "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
   "coverage": {
     "source_entries_total": 16305,
-    "unknown": 16263,
-    "unread": 16238,
+    "unknown": 16262,
+    "unread": 16237,
     "omitted": 0,
-    "responsibilities_total": 58,
+    "responsibilities_total": 59,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -15699,6 +15699,229 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral repository workflow contract read from exact telegramdesktop/tdesktop blobs; no upstream Python monitor or dependency code is copied into Fabushi shipping runtime.",
       "notes": "Zero-based strict index 39 is dependency-watch/SKILL.md@482b3a8d0c939d4bb7bd32ab146e0cc988d29fd8 on live 0eca52223cceed229932add1cc80792763120844. Rebaseline changes recursive total 16201->16305; after mapping unknown=16263 unread=16238 omitted=0. Parent e709 workflows are historical. Next strict entry is index 40 dependency-watch/agents/openai.yaml@a61c118c41e3b50d6bc4bde12dc6d4c1b3756b5d.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "0eca52223cceed229932add1cc80792763120844",
+      "source_path": ".agents/skills/dependency-watch/agents/openai.yaml",
+      "source_blob_sha": "a61c118c41e3b50d6bc4bde12dc6d4c1b3756b5d",
+      "source_kind": "repository_dependency_watch_native_skill_registration",
+      "module_id": "tdesktop.dependency-watch-native-invocation",
+      "responsibility_id": "TDRP-R9-DEPENDENCY-WATCH-NATIVE-INVOCATION-001",
+      "source_symbols": [
+        "interface.display_name",
+        "interface.short_description",
+        "interface.default_prompt"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-DEPENDENCY-PROVENANCE",
+        "CAP-NATIVE-SKILL-INVOCATION"
+      ],
+      "dependency_ids": [
+        ".agents/skills/dependency-watch/SKILL.md",
+        ".agents/skills/dependency-watch/scripts/watch.py",
+        ".agents/skills/dependency-watch/scripts/watch_test.py",
+        "telegramdesktop/tdesktop AGENTS.md dependency-backport policy",
+        "Fabushi repository quality-health native invocation evidence"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/dependency-watch-skill-complete-read.md",
+      "behavior_contract": "Host-visible skill registration exposes Dependency Watch display/description metadata and a default invocation that selects the existing $dependency-watch advisory workflow. Registration must route to the canonical exact-origin/dev dependency/security monitor, preserve pressing-updates-before-review-someday reporting and fail-closed freshness, and must not create a second scanner, findings store, task owner, dependency updater or shipping runtime.",
+      "state_machine": "host discovers declarative registration -> default invocation selects $dependency-watch -> canonical SKILL.md owns workflow -> watch.py binds fresh exact origin/dev snapshot -> advisory report/evidence lifecycle; registration itself owns no scan state",
+      "side_effects": [
+        "Provides host-visible discovery metadata and a default invocation selector only.",
+        "Does not mutate dependency pins, product source, shipping runtime, canonical findings or task state by itself."
+      ],
+      "failure_cases": [
+        "Registration points to a different/duplicated scanner.",
+        "Default invocation weakens fresh exact-source acquisition or permits stale/incomplete all-clear.",
+        "Prompt/routing reverses pressing-updates-before-review-someday order.",
+        "Provider-specific $skill syntax is mistaken for a new semantic owner."
+      ],
+      "ui_disposition": "Not applicable; host-native repository skill registration metadata only.",
+      "non_ui_responsibilities": [
+        "Host-visible display/description registration",
+        "Default invocation selection for the canonical dependency-watch workflow",
+        "Preservation of exact-source/fail-closed quality-health ownership",
+        "No second scanner/state/task/update owner"
+      ],
+      "platform_delta": "The upstream OpenAI YAML is provider-host registration metadata. Fabushi already defines source-neutral repository quality-health native-invocation qualification/evidence, so applicable responsibility is retained as declarative provenance/routing rather than copied as a Telegram/OpenAI product runtime.",
+      "existing_owner_candidates": [
+        "projects/fabushi-communication-platform/quality/evidence-contract.md — Repository quality-health native invocation evidence",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md — Repository quality-health native invocation qualification",
+        "AGENTS.md — repository quality-health command orchestration governance"
+      ],
+      "existing_owner": "Fabushi repository quality-health native invocation / evidence governance",
+      "rejected_existing_owners": [
+        "source/electron-main/update/* is shipping app updater, not repository dependency-watch invocation truth.",
+        "source/host/src/extensions/mcp/installable_package/* is shipping plugin-package installer, not repository dependency-watch invocation truth.",
+        "A Telegram/OpenAI-specific scanner/agent runtime would duplicate the canonical source-neutral owner."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Native skill-registration evidence records the host-visible display/description metadata, default prompt or equivalent invocation selector, the canonical source-neutral workflow owner it resolves to, and the exact skill/command/scheduled routing contract that remains authoritative."
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "This source entry is declarative AI-host registration for repository-development quality governance, not shipped product logic.",
+      "command_event_contracts": [
+        "host registration discovery -> default prompt selects $dependency-watch",
+        "$dependency-watch -> canonical SKILL.md -> fresh exact origin/dev snapshot -> advisory report",
+        "registration mismatch/stale source/incomplete coverage -> fail visible without second owner/all-clear"
+      ],
+      "state_owner": "Existing Fabushi repository quality-health evidence state; registration owns no independent state.",
+      "lifecycle_owner": "Fabushi repository quality-health native invocation qualification/evidence plus canonical dependency-watch workflow owner.",
+      "persistence_and_restart": "Only canonical exact-revision quality-health findings/evidence persist; host metadata is declarative configuration, not a second durable store.",
+      "concurrency_and_cancellation": "Registration introduces no worker/writer; invoked scan inherits existing exact-source and canonical-publication concurrency rules.",
+      "security_boundary": "Declarative invocation cannot authorize dependency updates, installs, backports or releases; it cannot bypass fresh-source/trust/conflict/approval/fail-closed security gates.",
+      "network_service_dependencies": [
+        "GitHub repository authority",
+        "GitHub Actions hosted runners",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi repository governance / GitHub Actions evidence lifecycle",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "Fresh exact-head TDRP Revision 9 and Rust runtime verification is required for this child mapping commit.",
+        "Recursive disposition remains open and unknown/unread are non-zero; baseline accepted/source_closure_ready remain false."
+      ],
+      "production_entrypoints": [
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Repository quality-health native invocation evidence"
+      ],
+      "production_evidence": [
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md@0d3a4c993784625f9b70279602c655d4788fe9fb",
+        "parent-exact-head-tdrp:39506049373/head:67fd7d1a8259d4990096bc1952b0459bebf7b464/success/source-authority-job:118915120392/artifact:12303780947/digest:sha256:77771334a7c85f1cb07ff886249095524787d54313239bcf861425b0b15c4473",
+        "parent-exact-head-rust:39506049401/head:67fd7d1a8259d4990096bc1952b0459bebf7b464/success-6-of-6/artifact:12303721533/digest:sha256:5a3fbcd642b49ead461369ae9815971d481cf1839f76fdd89960b4082ca5614a"
+      ],
+      "test_evidence": [
+        "upstream-agent:.agents/skills/dependency-watch/agents/openai.yaml@a61c118c41e3b50d6bc4bde12dc6d4c1b3756b5d",
+        "upstream-skill:.agents/skills/dependency-watch/SKILL.md@482b3a8d0c939d4bb7bd32ab146e0cc988d29fd8",
+        "upstream-watch:.agents/skills/dependency-watch/scripts/watch.py@231c5a13e8d7e3cd337dbbad08e8f4434a943a38",
+        "upstream-watch-tests:.agents/skills/dependency-watch/scripts/watch_test.py@d3107c617be3e8780a99bebaeba19a4f235ae6ea",
+        "upstream-policy:AGENTS.md@b138b4fbfae7a8d1e92d28c154e09eaca2418e51",
+        "parent-actions:tdrp-39506049373@67fd7d1a8259d4990096bc1952b0459bebf7b464",
+        "parent-actions:rust-39506049401@67fd7d1a8259d4990096bc1952b0459bebf7b464"
+      ],
+      "target_commit": "67fd7d1a8259d4990096bc1952b0459bebf7b464",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository quality-health command orchestration",
+      "composition_slot": "Native skill registration / invocation routing evidence",
+      "capability_component": "Source-neutral dependency-watch native invocation",
+      "variation_axes": [
+        "host display/description metadata",
+        "default prompt/equivalent selector",
+        "scheduled/ad-hoc invocation",
+        "fresh exact-source vs stale/incomplete acquisition",
+        "provider-specific syntax vs source-neutral semantic owner"
+      ],
+      "shared_owner_contracts": [
+        "Root AGENTS.md repository quality-health governance",
+        "Fabushi Test Strategy native invocation qualification",
+        "Fabushi Test Evidence Contract native invocation evidence"
+      ],
+      "duplicate_root_check": "No Telegram/OpenAI-specific dependency scanner, findings store, updater, task queue, product runtime or second quality-health owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Host registration/default prompt resolves to existing source-neutral dependency-watch/quality-health workflow; provider-specific spelling is provenance only.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Registration metadata may be rediscovered after host restart; semantic continuity remains with canonical exact-revision quality-health findings/evidence owner.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to repository skill registration",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-DEPENDENCY-WATCH-NATIVE-INVOCATION-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-DEPENDENCY-WATCH-NATIVE-ROUTING-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-DEPENDENCY-WATCH-REGISTRATION-NO-SECOND-OWNER-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [
+        "SnapshotTests.test_fetches_remote_without_touching_working_tree",
+        "SnapshotTests.test_fetch_failure_never_uses_stale_ref"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "SnapshotTests.test_offline_snapshot_is_marked_unverified"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-DEPENDENCY-WATCH-NATIVE-INVOCATION-FAIL-CLOSED-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-INVENTORY",
+        "G-TRACEABILITY"
+      ],
+      "test_fixture_ids": [
+        "telegramdesktop/tdesktop exact upstream registration + dependency-watch skill graph",
+        "GitHub Actions exact-head repository quality evidence"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Declarative host-registration semantics read from exact telegramdesktop/tdesktop YAML and sibling skill/test graph; no upstream Python monitor or provider-specific product runtime is copied into Fabushi.",
+      "notes": "Zero-based strict index 40 is .agents/skills/dependency-watch/agents/openai.yaml@a61c118c41e3b50d6bc4bde12dc6d4c1b3756b5d on live 0eca52223cceed229932add1cc80792763120844. It registers host-visible Dependency Watch metadata/default invocation and routes to sibling canonical skill. Coverage after this one entry: unknown=16,262, unread=16,237, omitted=0. Parent 67fd exact-head TDRP/Rust are successful; child commit requires fresh exact-head workflows. Next strict entry index 41 is .agents/skills/dependency-watch/references/forks.md@29a7aa587ae26118a0611a2e4037a69141a3ffde. baseline accepted/source_closure_ready remain false.",
       "test_execution_evidence": []
     }
   ]
