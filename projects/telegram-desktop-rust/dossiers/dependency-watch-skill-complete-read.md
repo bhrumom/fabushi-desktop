@@ -1,6 +1,6 @@
 # Dependency Watch skill complete read — strict recursive index 39
 
-Status: strict index 40 exact-head verified at 37504a29151be2d65a92f1b60b34efc5913a7e0e; strict index 41 source-grounded and existing-owner mapped; child exact-head verification pending.
+Status: strict index 41 exact-head verified at c380f8bdae6c1f6b909874e92b6d551a58262e32; strict index 42 source-grounded and existing-owner mapped; child exact-head verification pending.
 
 Authority: telegramdesktop/tdesktop@0eca52223cceed229932add1cc80792763120844 tree 1fc479a4b448aed851181bf4a4796d3015368348. Strict index 39 remains .agents/skills/dependency-watch/SKILL.md@482b3a8d0c939d4bb7bd32ab146e0cc988d29fd8.
 
@@ -104,3 +104,29 @@ Traceability:
 - SEC-TDRP-DEPENDENCY-WATCH-PATCHED-FORK-FIX-CLASSIFICATION-001
 
 Coverage after strict index 41: source_entries_total=16305, unknown=16261, unread=16236, omitted=0. baseline accepted=false and source_closure_ready=false. Next strict entry index 42 is .agents/skills/dependency-watch/references/release-trust.md@81a68395f9ad54ed651a84464a933ed7e57c9d32.
+
+
+## Strict index 42 — dependency release trust and adoption readiness
+
+Source: .agents/skills/dependency-watch/references/release-trust.md@81a68395f9ad54ed651a84464a933ed7e57c9d32 on telegramdesktop/tdesktop@0eca52223cceed229932add1cc80792763120844/tree 1fc479a4b448aed851181bf4a4796d3015368348.
+
+Responsibility: release urgency and adoption readiness are separate. Each actionable candidate binds publication date, canonical/immutable source identity and the source form actually consumed, then records relevant upstream plus independent advisory/regression evidence, source/package/build deltas, changed publisher/signer/repository/release process, generated archive-only inputs and signature/attestation evidence where available. No checksum, signature, elapsed observation window or passing build is a safety proof. The durable decision is Update, Backport, Hold, Skip or Track with decision_reason, trust_checks, regression_checks, unknown_checks and review_after/review_condition. Missing evidence remains unknown/hold rather than clearance. Known compromised candidates such as XZ 5.6.0/5.6.1 are rejected specifically; later versions are reassessed from current evidence instead of permanently blacklisting the project. The monitor remains advisory-only and cannot install, bump pins or approve deployment.
+
+Caller/test trace: SKILL.md@482b3a8d0c939d4bb7bd32ab146e0cc988d29fd8 is the direct caller and requires release-trust.md before any candidate recommendation. Repository search found no second direct caller. scripts/watch.py@231c5a13e8d7e3cd337dbbad08e8f4434a943a38 owns exact fresh snapshot and stable-version comparison mechanics; scripts/watch_test.py@d3107c617be3e8780a99bebaeba19a4f235ae6ea covers version classification, fresh fetch without worktree mutation, fetch-failure fail-closed behavior, required-manifest failure, offline-unverified state and linked-worktree storage. It does not encode a dedicated release-trust decision matrix, and no such dedicated test is falsely claimed.
+
+Fabushi existing owner: quality/evidence-contract.md@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70 owns Repository quality-health evidence and exact-revision provenance; TEST_STRATEGY.md@0d3a4c993784625f9b70279602c655d4788fe9fb requires fresh exact-source authority before durable publication and keeps repository-quality evidence separate from release acceptance; security-privacy-test-plan.md@f6d6672988d46c06152f4e2f5ff585fecc424141 makes Security/privacy P0/P1 release-blocking. Shipping app updater and MCP installable-package owners are rejected because they execute product/package updates rather than own repository dependency advisory truth. No Telegram-specific release scanner/updater or second findings store is required; novel_capability=false.
+
+Parent exact-head gate: TDRP run 39511909703 succeeded at c380f8bdae6c1f6b909874e92b6d551a58262e32. Source-authority artifact 12306591548 digest sha256:555388802314c7031a814637cf8746e3294e6ddb5f0806806fc184461d4a4b74; Boost artifact 12306521471 digest sha256:34d19cebfb85dc49fa2798b475f78b1b9aacd02cf8e33b0066cc947d0a2bd86a proves 582/582/open=0; recursive closure artifact 12306387143 digest sha256:b5cfe63821e62d70415468df742dfe01b2cb446b46905e2e99dd37a78bb3a777 has unresolved_gitlink_authorities=0 but source_closure_ready=false; reachability artifact 12305924061 digest sha256:caf811ba6d94dc896adc1958f2a8cd84731c63e21627607c62f710a9b0e8c32c remains partial-audited-open with 95 authorities, 133 gitlinks, 3865 acquisition candidates, 4674 generated inputs, 4602 resource inputs and 4255 tool inputs open. Rust run 39511909737 succeeded 6/6 exact-c380 jobs; artifact 12305069290 digest sha256:b327bfe8a430eef8653190c7f146c04d76af3c89d69a0be570e9a8bf4d9f6304.
+
+Traceability:
+- TDRP-R9-DEPENDENCY-WATCH-RELEASE-TRUST-001
+- ORA-TDRP-DEPENDENCY-WATCH-RELEASE-IDENTITY-001
+- ORA-TDRP-DEPENDENCY-WATCH-ADOPTION-DECISION-001
+- ORA-TDRP-DEPENDENCY-WATCH-TRUST-EVIDENCE-001
+- INV-TDRP-DEPENDENCY-WATCH-NO-AUTO-ADOPT-001
+- INV-TDRP-DEPENDENCY-WATCH-NO-TRUST-OVERCLAIM-001
+- INV-TDRP-DEPENDENCY-WATCH-UNKNOWN-FAIL-CLOSED-001
+- INV-TDRP-DEPENDENCY-WATCH-CANDIDATE-SPECIFIC-COMPROMISE-001
+- SEC-TDRP-DEPENDENCY-WATCH-RELEASE-TRUST-001
+
+Coverage after strict index 42: source_entries_total=16305, unknown=16260, unread=16235, omitted=0. baseline accepted=false and source_closure_ready=false. Next strict entry index 43 is .agents/skills/dependency-watch/scripts/watch.py@231c5a13e8d7e3cd337dbbad08e8f4434a943a38.

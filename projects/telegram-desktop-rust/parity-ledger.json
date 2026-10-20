@@ -6,10 +6,10 @@
   "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
   "coverage": {
     "source_entries_total": 16305,
-    "unknown": 16261,
-    "unread": 16236,
+    "unknown": 16260,
+    "unread": 16235,
     "omitted": 0,
-    "responsibilities_total": 60,
+    "responsibilities_total": 61,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -16187,6 +16187,262 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral repository provenance/advisory contract read from exact telegramdesktop/tdesktop source and exact recipe pins; no upstream Python monitor, fork source or Telegram-specific runtime is copied into Fabushi.",
       "notes": "Zero-based strict index 41 is .agents/skills/dependency-watch/references/forks.md@29a7aa587ae26118a0611a2e4037a69141a3ffde on live 0eca52223cceed229932add1cc80792763120844. SKILL.md is the direct caller and requires this reference for tg_owt/tg_angle; watch.py does not directly parse the reference and watch_test.py supplies snapshot/fail-closed/version primitives rather than a dedicated fork-provenance case. Exact current recipe pins are tg_owt 07fb35bc33b3e79125a1beab7690e830f183f5d8, tg_angle b34c4dc879d115d34794a657c7fa5f6bb34bc10a and desktop-app/patches fe957833b84525e634a8d776a7f834ed536d9a21. Coverage after this one entry: unknown=16,261, unread=16,236, omitted=0. Parent 37504a TDRP/Rust are successful; child commit requires fresh exact-head workflows. Next strict entry index 42 is .agents/skills/dependency-watch/references/release-trust.md@81a68395f9ad54ed651a84464a933ed7e57c9d32. baseline accepted/source_closure_ready remain false.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "0eca52223cceed229932add1cc80792763120844",
+      "source_path": ".agents/skills/dependency-watch/references/release-trust.md",
+      "source_blob_sha": "81a68395f9ad54ed651a84464a933ed7e57c9d32",
+      "source_kind": "repository_dependency_watch_release_trust_contract",
+      "module_id": "tdesktop.dependency-watch-release-trust",
+      "responsibility_id": "TDRP-R9-DEPENDENCY-WATCH-RELEASE-TRUST-001",
+      "source_symbols": [
+        "Assess whether to adopt a release",
+        "Evidence proportional to the change",
+        "Decisions",
+        "XZ incident: a standing case to check, not a permanent ban"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-DEPENDENCY-PROVENANCE",
+        "CAP-SOURCE-AUTHORITY"
+      ],
+      "dependency_ids": [
+        ".agents/skills/dependency-watch/SKILL.md",
+        ".agents/skills/dependency-watch/scripts/watch.py",
+        ".agents/skills/dependency-watch/scripts/watch_test.py",
+        "Fabushi repository quality-health exact-source/evidence governance",
+        "Fabushi security/privacy release gate"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/dependency-watch-skill-complete-read.md",
+      "behavior_contract": "Dependency release monitoring must separate urgency from adoption readiness and assess both staying risk and proposed-change risk. Every actionable candidate keeps immutable source identity, publication date, consumed source form, trust/regression checks, unavailable checks and an explicit Update/Backport/Hold/Skip/Track decision with reason and revisit condition. Mutable tags/assets, publisher/signer/repository ownership changes, generated archive-only inputs, signatures/attestations, independent advisories and relevant source/build deltas are evaluated without treating any single signal, checksum, signature or passing build as proof of safety. Known compromised candidates are rejected specifically; later releases are reassessed from current evidence rather than permanently blacklisted.",
+      "state_machine": "fresh exact dependency snapshot -> resolve candidate publication and immutable source identity -> inspect advisories/release discussions plus independent authoritative checks -> inspect relevant source/package/build deltas and provenance/signature/attestation evidence -> record unavailable/unknown checks -> evaluate compatibility/regression and current-pin risk -> choose Update, Backport, Hold, Skip or Track with reason -> persist decision/trust/regression/unknown evidence plus review_after/review_condition -> revisit held/unknown candidates without erasing unresolved security findings",
+      "side_effects": [
+        "Advances only durable source-neutral repository quality-health release-trust findings/evidence after exact-source and trust/regression assessment.",
+        "Preserves candidate decisions and revisit conditions without installing dependencies, editing pins, approving deployment or claiming release safety."
+      ],
+      "failure_cases": [
+        "Urgency or a newer patch is treated as automatic approval to update.",
+        "A mutable tag, replaced asset or same-page checksum is treated as immutable/independent trust proof.",
+        "A valid signature or successful build/test is described as proof that code is benign or safe.",
+        "Missing advisory/signature/regression evidence is silently treated as clearance instead of unknown/hold evidence.",
+        "Freshness window alone clears a trust or compatibility concern, or a confirmed security fix is delayed mechanically without weighing current-pin risk.",
+        "A compromised candidate causes a permanent project-wide blacklist, or later XZ releases are assumed safe merely because they are later.",
+        "The advisory monitor installs, updates, backports or authorizes deployment instead of producing evidence and a recommendation."
+      ],
+      "ui_disposition": "Not applicable; repository-development dependency release/security advisory workflow only.",
+      "non_ui_responsibilities": [
+        "Immutable release/source identity and consumed-source-form evidence",
+        "Independent advisory, compromise and regression evidence proportional to exposure",
+        "Source/package/build delta and generated-input trust review",
+        "Signer/signature/attestation evidence with bounded trust claims",
+        "Explicit Update/Backport/Hold/Skip/Track decision semantics",
+        "Durable decision reason, trust/regression/unknown checks and revisit condition",
+        "Candidate-specific compromise handling without permanent project blacklist",
+        "Advisory-only recommendation with no automatic install/deployment approval"
+      ],
+      "platform_delta": "Fabushi already owns the applicable source-neutral responsibility through repository quality-health exact-revision evidence, fresh exact-source qualification and security/privacy release gates. This entry strengthens evidence semantics only; it does not justify a Telegram-specific dependency updater, release scanner, second findings store or deployment owner.",
+      "existing_owner_candidates": [
+        "projects/fabushi-communication-platform/quality/evidence-contract.md — repository quality-health exact-revision/provenance evidence",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md — fresh exact-source qualification and fail-closed release evidence",
+        "projects/fabushi-communication-platform/quality/plans/security-privacy-test-plan.md — security/privacy P0/P1 release blocking",
+        "AGENTS.md — canonical repository quality-health orchestration and GitHub Actions evidence policy"
+      ],
+      "existing_owner": "Fabushi source-neutral repository quality-health release-trust / security evidence governance",
+      "rejected_existing_owners": [
+        "source/electron-main/update/* owns shipping application update execution, not repository dependency release-trust assessment.",
+        "source/host/src/extensions/mcp/installable_package/* owns shipping plugin-package installation, not repository dependency advisory truth.",
+        "A Telegram-specific release scanner/updater or second findings store would duplicate source-neutral repository quality-health ownership."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/plans/security-privacy-test-plan.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository quality-health evidence",
+        "fresh exact-source authority remains mandatory before durable publication",
+        "Security/privacy P0/P1 blocks release"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The upstream entry is an advisory repository-development release-trust contract, not shipping product logic. Its applicable semantics are evidence, qualification and security/release gating responsibilities already owned by Fabushi's source-neutral quality system.",
+      "command_event_contracts": [
+        "candidate discovered -> bind publication date + immutable tag/commit/package revision/artifact digest + consumed source form",
+        "candidate trust review -> collect upstream and independent advisory/regression evidence + source/package/build deltas + signer/attestation evidence when available",
+        "missing/uncertain evidence -> persist unknown check and Hold/Track/review condition rather than clean verdict",
+        "confirmed applicable security fix -> weigh immediate reviewed update/backport against current-pin risk; seven-day routine window is not mandatory",
+        "known compromised/withdrawn candidate -> Skip exact candidate with evidence and alternative, without project-wide blacklist",
+        "new index-42 mapping commit -> c380 exact-head Actions are parent evidence; fresh child exact-head workflows required"
+      ],
+      "state_owner": "Existing Fabushi repository quality-health findings/provenance evidence; no shipping updater or second dependency state store is added.",
+      "lifecycle_owner": "Root AGENTS.md repository quality-health orchestration plus Test Strategy/Evidence Contract and existing security/privacy release gates.",
+      "persistence_and_restart": "Persist decision, decision_reason, release_published_at, source_identity, trust_checks, regression_checks, unknown_checks and review_after/review_condition with stable finding identity; held/skipped candidates and unresolved vulnerabilities survive later scans until evidence changes their disposition.",
+      "concurrency_and_cancellation": "Every durable assessment binds one exact fetched revision and immutable candidate identity. Stale/mutable observations cannot advance canonical state; failed/unavailable external checks remain explicit unknown evidence and do not authorize a clean or update verdict.",
+      "security_boundary": "Release-trust advice cannot authorize install, pin mutation, deployment or release. Signatures/attestations are attribution/integrity evidence under stated trust assumptions, not proof of benign code; missing evidence and suspect provenance fail closed to investigation/hold rather than accusation or clearance.",
+      "network_service_dependencies": [
+        "GitHub/repository authority for exact source and release identities",
+        "Primary upstream release/advisory/incident sources and independent authoritative security trackers when reachable",
+        "GitHub Actions hosted runners and artifact storage for Fabushi exact-head evidence"
+      ],
+      "service_owner": "Existing Fabushi repository governance / GitHub Actions evidence lifecycle",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "The index-42 mapping commit requires fresh exact-head TDRP Revision 9 and Rust desktop runtime verification.",
+        "Recursive reachability/disposition remains open with unknown/unread non-zero; baseline accepted/source_closure_ready remain false."
+      ],
+      "production_entrypoints": [
+        "AGENTS.md -> canonical repository quality-health orchestration",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> exact-revision repository quality-health/provenance evidence",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> fresh exact-source qualification",
+        "projects/fabushi-communication-platform/quality/plans/security-privacy-test-plan.md -> fail-closed security/privacy release gate"
+      ],
+      "production_evidence": [
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md@0d3a4c993784625f9b70279602c655d4788fe9fb",
+        "path:projects/fabushi-communication-platform/quality/plans/security-privacy-test-plan.md@f6d6672988d46c06152f4e2f5ff585fecc424141",
+        "parent-exact-head-tdrp:39511909703/head:c380f8bdae6c1f6b909874e92b6d551a58262e32/success/source-authority-artifact:12306591548/digest:sha256:555388802314c7031a814637cf8746e3294e6ddb5f0806806fc184461d4a4b74",
+        "parent-exact-head-tdrp-closure:job:118936577046/artifact:12306387143/digest:sha256:b5cfe63821e62d70415468df742dfe01b2cb446b46905e2e99dd37a78bb3a777/unresolved_gitlink_authorities:0/source_closure_ready:false",
+        "parent-exact-head-tdrp-reachability:job:118936719183/artifact:12305924061/digest:sha256:caf811ba6d94dc896adc1958f2a8cd84731c63e21627607c62f710a9b0e8c32c/remaining_open:95,133,3865,4674,4602,4255",
+        "parent-exact-head-rust:39511909737/head:c380f8bdae6c1f6b909874e92b6d551a58262e32/success-6-of-6/artifact:12305069290/digest:sha256:b327bfe8a430eef8653190c7f146c04d76af3c89d69a0be570e9a8bf4d9f6304"
+      ],
+      "test_evidence": [
+        "upstream-release-trust:.agents/skills/dependency-watch/references/release-trust.md@81a68395f9ad54ed651a84464a933ed7e57c9d32",
+        "upstream-caller:.agents/skills/dependency-watch/SKILL.md@482b3a8d0c939d4bb7bd32ab146e0cc988d29fd8",
+        "upstream-watch:.agents/skills/dependency-watch/scripts/watch.py@231c5a13e8d7e3cd337dbbad08e8f4434a943a38",
+        "upstream-watch-tests:.agents/skills/dependency-watch/scripts/watch_test.py@d3107c617be3e8780a99bebaeba19a4f235ae6ea",
+        "focused-upstream-tests:VersionTests.test_stable_ordering_and_prefixes;SnapshotTests.test_fetches_remote_without_touching_working_tree;SnapshotTests.test_fetch_failure_never_uses_stale_ref;SnapshotTests.test_missing_required_manifest_fails;SnapshotTests.test_offline_snapshot_is_marked_unverified;SnapshotTests.test_linked_worktree_uses_common_report_storage",
+        "no-dedicated-release-trust-test:release-trust.md is a workflow policy reference directly consumed by SKILL.md; watch_test.py tests the snapshot/version fail-closed primitives but does not encode the release decision matrix"
+      ],
+      "target_commit": "c380f8bdae6c1f6b909874e92b6d551a58262e32",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository quality-health and source-authority evidence governance",
+      "composition_slot": "Dependency release trust / adoption-readiness evidence",
+      "capability_component": "Source-neutral dependency release-trust assessment contract",
+      "variation_axes": [
+        "routine patch vs security fix",
+        "Git tag vs release archive vs binary/distro package",
+        "signed/attested vs unsigned/unavailable provenance",
+        "Update vs Backport vs Hold vs Skip vs Track",
+        "fresh release observation window vs urgent confirmed fix",
+        "known compromised exact candidate vs later reassessed project release",
+        "complete vs unavailable trust/regression checks"
+      ],
+      "shared_owner_contracts": [
+        "Root AGENTS.md repository quality-health governance",
+        "Fabushi Test Strategy exact-source qualification",
+        "Fabushi Test Evidence Contract exact-revision provenance evidence",
+        "Fabushi security/privacy fail-closed release gates"
+      ],
+      "duplicate_root_check": "No Telegram-specific dependency updater, release scanner, deployment approver, second findings store, task queue or second quality-health owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "The release-trust reference is consumed by the existing dependency-watch quality workflow and mapped to exact-source quality/security evidence owners; no product route is introduced.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Candidate identity, decision/reason, trust/regression/unknown evidence and revisit condition remain durable across monitoring runs; evidence drift triggers reassessment rather than silently inheriting an old Update/clean verdict.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to repository release-trust governance",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-DEPENDENCY-WATCH-RELEASE-TRUST-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-DEPENDENCY-WATCH-RELEASE-IDENTITY-001",
+        "ORA-TDRP-DEPENDENCY-WATCH-ADOPTION-DECISION-001",
+        "ORA-TDRP-DEPENDENCY-WATCH-TRUST-EVIDENCE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-DEPENDENCY-WATCH-NO-AUTO-ADOPT-001",
+        "INV-TDRP-DEPENDENCY-WATCH-NO-TRUST-OVERCLAIM-001",
+        "INV-TDRP-DEPENDENCY-WATCH-UNKNOWN-FAIL-CLOSED-001",
+        "INV-TDRP-DEPENDENCY-WATCH-CANDIDATE-SPECIFIC-COMPROMISE-001"
+      ],
+      "unit_case_ids": [
+        "VersionTests.test_stable_ordering_and_prefixes"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [
+        "SnapshotTests.test_fetches_remote_without_touching_working_tree",
+        "SnapshotTests.test_linked_worktree_uses_common_report_storage"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "SnapshotTests.test_fetch_failure_never_uses_stale_ref",
+        "SnapshotTests.test_missing_required_manifest_fails",
+        "SnapshotTests.test_offline_snapshot_is_marked_unverified"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-DEPENDENCY-WATCH-RELEASE-TRUST-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-INVENTORY",
+        "G-TRACEABILITY",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "telegramdesktop/tdesktop@0eca52223cceed229932add1cc80792763120844 release-trust reference graph"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral repository release-trust/advisory contract read from exact telegramdesktop/tdesktop source; no upstream Python monitor, release artifact or Telegram-specific runtime is copied into Fabushi.",
+      "notes": "Zero-based strict index 42 is .agents/skills/dependency-watch/references/release-trust.md@81a68395f9ad54ed651a84464a933ed7e57c9d32 on live 0eca52223cceed229932add1cc80792763120844. SKILL.md directly requires this reference before any candidate recommendation. watch.py/watch_test.py provide exact fresh-snapshot/version/fail-closed primitives but no dedicated release-trust decision-matrix test is claimed. Coverage after this one entry: unknown=16,260, unread=16,235, omitted=0. Parent c380 exact-head TDRP/Rust are both successful; child commit requires fresh exact-head workflows. Next strict entry index 43 is .agents/skills/dependency-watch/scripts/watch.py@231c5a13e8d7e3cd337dbbad08e8f4434a943a38. baseline accepted/source_closure_ready remain false.",
       "test_execution_evidence": []
     }
   ]
