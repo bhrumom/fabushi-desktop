@@ -17,7 +17,9 @@ Status: implementation, 2026-10-13. Parent DCI/OMA/FPM. Owner existing Plugins.
   no data-delete choice until native consent/export/deletion policy is implemented.
 - MU-05: new offline UI never changes existing MCP/Skills/OAuth owners. Public
   catalog approval does not bypass Host verify/journal or sandbox policy. Native
-  transfer capabilities remain unavailable in the current packet workbench.
+  Native Dandelion capabilities are exposed only through the versioned Host
+  contract and only when the signed descriptor, platform policy and native
+  owner all advertise the same capability; the Web surface never infers them.
 
 Native list response entries: appId/displayName/publisherId/version/packageDigest/
 sizeBytes/offlineCore/installed/supported. `installed` is from actual current-account
@@ -57,8 +59,8 @@ quarantined/older collisions and independent catalog-only entries.
 MU-07: signed packaged acceptance in GitHub Actions must use the real production
 CI login owner (not the real publisher's credentials), real Plugins intent IPC,
 Coordinator/Host and public approved Registry/CAS. No injected synthetic install
-ledger, resource map or test auth. Assert exact de10e02115415908f827723457817e51cb4f39aa5ca68798da824fecc483118a
-package / version0.1.0, launch actual Wasm, choose a bounded fixture through Web file
+ledger, resource map or test auth. Assert exact afc45ad273e4965fc272a89e775291444c683513ecbc3fa31769858431e8a6b6
+package / version0.2.1, launch actual Wasm, choose a bounded fixture through Web file
 input, verify its local packet report, close/restart the entire signed app with the
 same isolated app-data and network disabled, launch from installed truth and retain
 only settings. Remove code using native UI, confirm window teardown and absent
@@ -75,7 +77,7 @@ Final distributable uses a monotonic Desktop version1.2.77 (latest public previe
 is1.2.76), with matching npm root/lockfile metadata. PR candidates remain private
 artifacts; public signed/notarized Desktop preview is published only after current
 source CI and both existing chat and new MU-07 installed gates pass. Catalog
-release0.1.0 remains immutable; this host version change is not a new mini-app.
+release0.2.1 remains immutable; this host version change is not a new mini-app.
 
 ## Escaped acceptance defects and evidence privacy
 

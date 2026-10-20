@@ -70,3 +70,33 @@ fn payment_methods_route_only_after_commerce_permission() {
         }))
     );
 }
+
+#[test]
+fn dandelion_operations_require_their_narrow_platform_permission() {
+    let router = BridgeRouter::new(TestHost, [HostPermission::DandelionScan]);
+    let allowed = router.handle(BridgeRequest::new(
+        "scan-1",
+        method::DANDELION_SCAN,
+        json!({"mode": "metadata"}),
+    ));
+    assert!(allowed.error.is_none());
+
+    let denied = router.handle(BridgeRequest::new(
+        "transfer-1",
+        method::DANDELION_TRANSFER,
+        json!({"operation": "send"}),
+    ));
+    assert_eq!(denied.result, None);
+    assert_eq!(denied.error.expect("permission error").code, -32001);
+}
+
+#[test]
+fn dandelion_capability_discovery_is_read_only() {
+    let router = BridgeRouter::new(TestHost, []);
+    let response = router.handle(BridgeRequest::new(
+        "capabilities-1",
+        method::DANDELION_CAPABILITIES,
+        json!({}),
+    ));
+    assert!(response.error.is_none());
+}

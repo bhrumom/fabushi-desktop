@@ -8,7 +8,7 @@ Date: 2026-10-13
 
 The Host verifier and install ledger exist in `source/host/src/extensions/mcp/installable_package/`, but the shipping Host has no production intent service connecting approved Registry releases, current account scope, the existing Runtime SQLite database, and the verified resource loader. This specification defines that service and its narrow native method surface.
 
-The pinned Global Dandelion candidate is `org.fabushi.global-dandelion`, publisher `bhrumom`, version `0.1.0`, artifact SHA-256 `de10e02115415908f827723457817e51cb4f39aa5ca68798da824fecc483118a`. Marketplace trust key is `fabushi-marketplace-managed-20261013-1`, epoch `1`, raw Ed25519 public key `VbvgbVxNAeftFYB0l1-NzE2-Gx3d4NQ7hkKiQ0HMpu0`. These values pin an expected candidate; they do not prove that the current release is approved.
+The pinned Global Dandelion release is `org.fabushi.global-dandelion`, publisher `bhrumom`, version `0.2.1`, artifact SHA-256 `afc45ad273e4965fc272a89e775291444c683513ecbc3fa31769858431e8a6b6`. Marketplace trust key is `fabushi-marketplace-managed-20261013-1`, epoch `1`, raw Ed25519 public key `VbvgbVxNAeftFYB0l1-NzE2-Gx3d4NQ7hkKiQ0HMpu0`. These values pin the currently approved release; the Host still verifies the live signed catalog and install proof before exposing or installing it.
 
 ## Boundaries
 
@@ -189,7 +189,7 @@ revocations and full package re-verification.
 
 ## SemVer and preview channel
 
-`0.1.0` is stable SemVer and is eligible under the existing stable-version ledger rule. The release channel is independent rollout metadata: `channel=preview` does not alter the version, authorize prerelease syntax, downgrade an installation, or relax digest/signature/revocation checks. The candidate must remain the exact pinned digest above. Updates require a strictly greater stable `major.minor.patch`; version reuse with different bytes and prerelease versions remain rejected. No silent fallback to a lower release is allowed.
+`0.2.1` is stable SemVer and is eligible under the existing stable-version ledger rule. The release channel is independent rollout metadata: `channel=preview` does not alter the version, authorize prerelease syntax, downgrade an installation, or relax digest/signature/revocation checks. The release must remain the exact pinned digest above. Updates require a strictly greater stable `major.minor.patch`; version reuse with different bytes and prerelease versions remain rejected. No silent fallback to a lower release is allowed.
 
 ## Persistence and recovery
 

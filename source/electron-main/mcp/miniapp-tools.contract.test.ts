@@ -150,14 +150,18 @@ test("CLI backend spawns real argv-only binary for scan, async transfer, cancell
         "    if 'slow' in cmd[2]:",
         "        time.sleep(10)",
         "    print(json.dumps({'packets': 8, 'verifiedBytes': 4096, 'source': cmd[2]}))",
-        "elif cmd == ['hotspot', 'plan', '--json']:",
+        "elif cmd[:2] == ['hotspot', 'plan']:",
         "    print(json.dumps({'profileId': 'hs-preview-1'}))",
-        "elif cmd == ['hotspot', 'apply', '--confirm', '--json']:",
+        "elif cmd[:2] == ['hotspot', 'apply']:",
         "    print(json.dumps({'applied': True}))",
-        "elif cmd == ['hotspot', 'stop', '--confirm', '--json']:",
+        "elif cmd[:2] == ['hotspot', 'status']:",
+        "    print(json.dumps({'active': False}))",
+        "elif cmd[:2] == ['hotspot', 'stop']:",
         "    print(json.dumps({'stopped': True}))",
-        "elif cmd == ['update', 'check', '--json']:",
+        "elif cmd[:2] == ['update', 'check']:",
         "    print(json.dumps({'upToDate': True}))",
+        "elif cmd[:2] == ['config', 'init']:",
+        "    print(json.dumps({'defaults': True}))",
         "else:",
         "    sys.stderr.write('unknown args: ' + ' '.join(cmd))",
         "    sys.exit(2)",
@@ -186,6 +190,14 @@ test("CLI backend spawns real argv-only binary for scan, async transfer, cancell
         allowedRoots: [allowedRoot],
         targetPools: [{ id: "lan", label: "LAN" }],
         enableHotspot: true,
+        hotspotJournalDirectory: join(workspace, "hotspot-journal"),
+        hotspotInterface: "wlan0",
+        hotspotPasswordFile: join(workspace, "hotspot-password"),
+        updateTrust: {
+          manifest: join(workspace, "release.json"),
+          signature: join(workspace, "release.sig"),
+          publicKey: join(workspace, "trusted-key.raw"),
+        },
         enableUpdate: true,
       },
       { pick: async () => [{ path: chosenDir, name: "dir", size: 4096 }] },
@@ -218,10 +230,28 @@ test("CLI backend spawns real argv-only binary for scan, async transfer, cancell
 
     assert.deepEqual(await backend.hotspot("plan"), { profileId: "hs-preview-1" });
     assert.deepEqual(await backend.hotspot("apply"), { applied: true });
+    assert.deepEqual(await backend.hotspot("status"), { active: false });
     assert.deepEqual(await backend.update("check"), { upToDate: true });
+    assert.deepEqual(await backend.config("defaults"), { defaults: true });
   } finally {
     await rm(workspace, { recursive: true, force: true });
   }
+});
+
+test("Linux-only native capabilities are never advertised on macOS or Windows", async () => {
+  const backend = createDandelionCliBackend(
+    {
+      binaryPath: "/reviewed/dandelion",
+      configPath: "/reviewed/dandelion.toml",
+      allowedRoots: ["/reviewed/root"],
+      targetPools: [{ id: "lan", label: "LAN" }],
+      platform: "darwin",
+    },
+    { pick: async () => null },
+  );
+  const announced = await backend.capabilities();
+  assert.deepEqual(announced.capabilities, ["offline", "selection"]);
+  assert.equal(announced.platform, "desktop");
 });
 
 test("production desktop bridge runs end-to-end without Electron from preload IPC through router, approval gate and dandelion CLI", async () => {
@@ -393,7 +423,7 @@ test("production desktop bridge runs end-to-end without Electron from preload IP
       assert.equal(caps.ok, true);
       assert.equal(caps.data?.contract, MINIAPP_TOOL_CONTRACT);
       assert.equal(caps.data?.platform, "desktop");
-      assert.deepEqual(caps.data?.capabilities, ["offline", "selection", "transfer", "scan", "hotspot"]);
+      assert.deepEqual(caps.data?.capabilities, ["offline", "selection", "transfer", "scan", "config", "platform", "diagnostics", "hotspot"]);
       assert.deepEqual(caps.data?.targetPools, [{ id: "lan-pool", label: "局域网目标" }]);
 
       // 2. Directory selection via native dialog and canonical root validation.

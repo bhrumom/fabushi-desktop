@@ -29,6 +29,15 @@ function miniAppTooling(context: ProductionServiceContext, ipc: unknown): MiniAp
   const configPath = env.FABUSHI_DANDELION_CONFIG?.trim() ?? "";
   const preloadPath = env.FABUSHI_MINIAPP_PRELOAD?.trim() ?? "";
   const roots = (env.FABUSHI_DANDELION_ROOTS ?? "").split(delimiter).map((item) => item.trim()).filter(Boolean);
+  const stateDirectory = env.FABUSHI_DANDELION_STATE_DIR?.trim() || undefined;
+  const compatDirectory = env.FABUSHI_DANDELION_COMPAT_DIR?.trim() || undefined;
+  const hotspotJournalDirectory = env.FABUSHI_DANDELION_HOTSPOT_JOURNAL_DIR?.trim() || undefined;
+  const hotspotInterface = env.FABUSHI_DANDELION_HOTSPOT_INTERFACE?.trim() || undefined;
+  const hotspotSsid = env.FABUSHI_DANDELION_HOTSPOT_SSID?.trim() || undefined;
+  const hotspotBand = env.FABUSHI_DANDELION_HOTSPOT_BAND?.trim() || undefined;
+  const hotspotPasswordFile = env.FABUSHI_DANDELION_HOTSPOT_PASSWORD_FILE?.trim() || undefined;
+  const updateTrust = env.FABUSHI_DANDELION_UPDATE_TRUST?.trim();
+  let receive: { targetPoolId: string; caFile: string; certificateFile: string; privateKeyFile: string; bind?: string } | undefined;
   if (!binaryPath || !configPath || !preloadPath || roots.length === 0) return undefined;
   let pools: { id: string; label: string }[];
   try {
@@ -38,15 +47,38 @@ function miniAppTooling(context: ProductionServiceContext, ipc: unknown): MiniAp
       typeof item === "object" && item !== null
       && typeof (item as { id?: unknown }).id === "string" && typeof (item as { label?: unknown }).label === "string");
   } catch { return undefined; }
+  let parsedUpdateTrust: { manifest?: string; signature?: string; publicKey: string; directory?: string; artifact?: string; allowedHost?: string } | undefined;
+  if (updateTrust) {
+    try {
+      const value: unknown = JSON.parse(updateTrust);
+      if (value && typeof value === "object" && !Array.isArray(value)
+        && typeof (value as { publicKey?: unknown }).publicKey === "string") {
+        parsedUpdateTrust = value as typeof parsedUpdateTrust;
+      }
+    } catch { return undefined; }
+  }
+  try {
+    const parsed: unknown = JSON.parse(env.FABUSHI_DANDELION_RECEIVE ?? "null");
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      const value = parsed as Record<string, unknown>;
+      if (typeof value.targetPoolId === "string" && typeof value.caFile === "string" && typeof value.certificateFile === "string" && typeof value.privateKeyFile === "string") {
+        receive = { targetPoolId: value.targetPoolId, caFile: value.caFile, certificateFile: value.certificateFile, privateKeyFile: value.privateKeyFile, bind: typeof value.bind === "string" ? value.bind : undefined };
+      }
+    }
+  } catch { return undefined; }
   const dialog = (context.native as unknown as { dialog?: MiniAppDialogPort }).dialog;
   if (!dialog) return undefined;
-  const pick: MiniAppPickPort = async () => {
-    const selected = await dialog.showOpenDialog({ properties: ["openDirectory"] });
+  const pick: MiniAppPickPort = async (mode) => {
+    const selected = await dialog.showOpenDialog({ properties: [mode === "directory" ? "openDirectory" : "openFile"] });
     if (selected.canceled || selected.filePaths.length === 0) return null;
     return selected.filePaths.slice(0, 1).map((path) => ({ path, name: path, size: 0 }));
   };
   const backend = createDandelionCliBackend({
     binaryPath, configPath, allowedRoots: roots, targetPools: pools,
+    stateDirectory, compatDirectory, receive,
+    hotspotJournalDirectory,
+    hotspotInterface, hotspotSsid, hotspotBand, hotspotPasswordFile,
+    updateTrust: parsedUpdateTrust,
     enableHotspot: env.FABUSHI_DANDELION_HOTSPOT === "1",
     enableUpdate: env.FABUSHI_DANDELION_UPDATE === "1",
   }, { pick });
@@ -61,7 +93,7 @@ function miniAppTooling(context: ProductionServiceContext, ipc: unknown): MiniAp
       return answer.response === 1;
     },
   });
-  return { router, preloadPath, ipc: ipc as MiniAppIpc };
+  return { router, preloadPath, ipc: ipc as MiniAppIpc, cancelAll: () => backend.cancelAll?.() };
 }
 
 /** MainData only: no launch resources, credentials or paths cross desktop IPC. */
@@ -78,7 +110,7 @@ export function registerProductionMiniApps(context: ProductionServiceContext, ip
     currentAccount: () => current,
     ...(tooling ? { tools: tooling } : {}),
   });
-  const closeAll = () => { windows?.closeAll(); handles.clear(); };
+  const closeAll = () => { tooling?.cancelAll?.(); windows?.closeAll(); handles.clear(); };
   const unsubscribe = account.subscribe(() => { generation += 1; current = null; closeAll(); });
   const scope = async (): Promise<string | null> => {
     const ticket = generation;

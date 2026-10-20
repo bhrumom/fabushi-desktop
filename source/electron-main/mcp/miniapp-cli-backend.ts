@@ -10,7 +10,7 @@
  */
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { realpath } from "node:fs/promises";
+import { realpath, stat } from "node:fs/promises";
 import { basename, isAbsolute, relative, sep } from "node:path";
 import type {
   MiniAppCapability,
@@ -28,9 +28,31 @@ export interface DandelionCliConfig {
   readonly allowedRoots: readonly string[];
   /** Authorized destination pools; empty disables transfer. */
   readonly targetPools: readonly MiniAppTargetPool[];
+  /** Trusted native state directory; never supplied by the renderer. */
+  readonly stateDirectory?: string;
+  /** Trusted native compatibility data directory; never supplied by the renderer. */
+  readonly compatDirectory?: string;
+  /** Optional authenticated receive settings owned by the Host. */
+  readonly receive?: { readonly targetPoolId: string; readonly caFile: string; readonly certificateFile: string; readonly privateKeyFile: string; readonly bind?: string };
+  /** Trusted journal directory used by hotspot status/apply/stop. */
+  readonly hotspotJournalDirectory?: string;
+  readonly hotspotInterface?: string;
+  readonly hotspotSsid?: string;
+  readonly hotspotBand?: string;
+  readonly hotspotPasswordFile?: string;
+  readonly updateTrust?: {
+    readonly manifest?: string;
+    readonly signature?: string;
+    readonly publicKey: string;
+    readonly directory?: string;
+    readonly artifact?: string;
+    readonly allowedHost?: string;
+  };
   readonly enableHotspot?: boolean;
   readonly enableUpdate?: boolean;
   readonly timeoutMs?: number;
+  /** The host platform, injectable for contract tests. The Rust CLI is Linux-only. */
+  readonly platform?: NodeJS.Platform;
 }
 
 export interface MiniAppPickPort {
@@ -45,6 +67,8 @@ export interface MiniAppChildHandle {
 export interface MiniAppSpawnPort {
   (argv: readonly string[]): MiniAppChildHandle;
 }
+
+const NATIVE_CLI_PLATFORM: NodeJS.Platform = "linux";
 
 const SELECTION_TTL_MS = 10 * 60_000;
 const MAX_SELECTIONS = 16;
@@ -87,10 +111,23 @@ export function createDandelionCliBackend(
   ports: { readonly pick: MiniAppPickPort; readonly spawn?: MiniAppSpawnPort },
 ): MiniAppToolBackend {
   const timeoutMs = config.timeoutMs ?? 30 * 60_000;
+  const platform = config.platform ?? process.platform;
+  const nativeCliSupported = platform === NATIVE_CLI_PLATFORM;
   const spawnCommand = ports.spawn ?? defaultSpawn(config.binaryPath, config.configPath);
   const selections = new Map<string, { root: string; expiresAt: number }>();
   const operations = new Map<string, Operation>();
   const roots = config.allowedRoots.filter((root) => isAbsolute(root));
+  const stateDirectory = config.stateDirectory && isAbsolute(config.stateDirectory) ? config.stateDirectory : null;
+  const compatDirectory = config.compatDirectory && isAbsolute(config.compatDirectory) ? config.compatDirectory : null;
+  const compatPath = async (value: unknown, fallback: string): Promise<string> => {
+    if (!compatDirectory) throw new Error("COMPAT_DISABLED");
+    const raw = typeof value === "string" && value.length > 0 ? value : fallback;
+    const candidate = isAbsolute(raw) ? raw : `${compatDirectory}/${raw}`;
+    const resolved = await realpath(candidate);
+    const root = await realpath(compatDirectory);
+    if (!insideRoot(root, resolved)) throw new Error("COMPAT_PATH_NOT_AUTHORIZED");
+    return resolved;
+  };
   // macOS resolves /tmp to /private/tmp; compare real paths on both sides.
   let resolvedRoots: Promise<string[]> | null = null;
   const canonicalRoots = (): Promise<string[]> => {
@@ -144,10 +181,15 @@ export function createDandelionCliBackend(
   return {
     capabilities() {
       const capabilities: MiniAppCapability[] = ["offline", "selection"];
-      if (config.targetPools.length > 0 && roots.length > 0) capabilities.push("transfer");
-      if (roots.length > 0) capabilities.push("scan");
-      if (config.enableHotspot === true) capabilities.push("hotspot");
-      if (config.enableUpdate === true) capabilities.push("update");
+      if (nativeCliSupported) {
+        if (config.targetPools.length > 0 && roots.length > 0) capabilities.push("transfer");
+        if (roots.length > 0) capabilities.push("scan");
+        if (stateDirectory) capabilities.push("state");
+        capabilities.push("config", "platform", "diagnostics");
+        if (compatDirectory) capabilities.push("compat");
+        if (config.enableHotspot === true) capabilities.push("hotspot");
+        if (config.enableUpdate === true) capabilities.push("update");
+      }
       return Promise.resolve({ capabilities, platform: "desktop", targetPools: [...config.targetPools] });
     },
     readState() {
@@ -158,13 +200,18 @@ export function createDandelionCliBackend(
         operations: [...operations].map(([id, operation]) => ({ id, state: operation.state })),
       });
     },
-    async pick(mode) {
+    async pick(mode, limits) {
       // The engine works on a source root; per-file selection would widen it.
       if (mode !== "directory") throw new Error("DIRECTORY_SELECTION_REQUIRED");
-      const picked = await ports.pick(mode, { maxFiles: 1, maxBytes: 1024 ** 3 });
+      const picked = await ports.pick(mode, limits);
       if (!picked || picked.length === 0) return null;
       const root = await realpath(picked[0]!.path);
+      const info = await stat(root);
+      if (mode === "directory" && !info.isDirectory()) throw new Error("DIRECTORY_SELECTION_REQUIRED");
       if (!(await canonicalRoots()).some((allowed) => insideRoot(allowed, root))) throw new Error("ROOT_NOT_AUTHORIZED");
+      // Directory stat size is filesystem metadata, not the recursive payload
+      // size. The Dandelion scanner enforces the configured recursive budget.
+      if (picked.length > limits.maxFiles || (!info.isDirectory() && info.size > limits.maxBytes)) throw new Error("SELECTION_LIMIT_EXCEEDED");
       pruneSelections();
       const selectionId = randomUUID();
       selections.set(selectionId, { root, expiresAt: Date.now() + SELECTION_TTL_MS });
@@ -176,11 +223,39 @@ export function createDandelionCliBackend(
       return Promise.resolve();
     },
     async send(selectionId, targetPoolId) {
+      if (!nativeCliSupported) throw new Error("PLATFORM_UNSUPPORTED");
       const root = requireSelection(selectionId);
       if (!config.targetPools.some((pool) => pool.id === targetPoolId)) throw new Error("UNKNOWN_TARGET_POOL");
       pruneOperations();
       const operationId = randomUUID();
       const handle = spawnCommand(["run", "--source", root, "--json"]);
+      const timer = setTimeout(() => handle.kill(), timeoutMs);
+      const operation: Operation = { handle, timer, state: "running" };
+      operations.set(operationId, operation);
+      void handle.done.then((result) => {
+        clearTimeout(timer);
+        if (operation.state === "cancelled") return;
+        if (result.code !== 0) {
+          operation.state = "failed";
+          operation.error = (result.stderr || result.stdout).trim().slice(0, 240) || `DANDELION_EXIT_${result.code}`;
+          return;
+        }
+        operation.state = "complete";
+        try { operation.result = result.stdout.trim() ? JSON.parse(result.stdout) : {}; }
+        catch { operation.error = "DANDELION_INVALID_JSON"; operation.state = "failed"; }
+      });
+      return { operationId };
+    },
+    async receive(receiveConfig) {
+      if (!nativeCliSupported) throw new Error("PLATFORM_UNSUPPORTED");
+      const settings = config.receive;
+      if (!settings || settings.targetPoolId !== receiveConfig.targetPoolId) throw new Error("RECEIVE_DISABLED");
+      pruneOperations();
+      const operationId = randomUUID();
+      const argv = ["receive", "--bind", settings.bind ?? "127.0.0.1:20000", "--ca-file", settings.caFile, "--certificate-file", settings.certificateFile, "--private-key-file", settings.privateKeyFile];
+      if (receiveConfig.once !== false) argv.push("--once");
+      argv.push("--json");
+      const handle = spawnCommand(argv);
       const timer = setTimeout(() => handle.kill(), timeoutMs);
       const operation: Operation = { handle, timer, state: "running" };
       operations.set(operationId, operation);
@@ -210,16 +285,98 @@ export function createDandelionCliBackend(
       clearTimeout(operation.timer);
       operation.handle.kill();
     },
+    cancelAll() {
+      for (const operation of operations.values()) {
+        if (operation.state === "running") {
+          operation.state = "cancelled";
+          clearTimeout(operation.timer);
+          operation.handle.kill();
+        }
+      }
+      selections.clear();
+    },
     async scan(mode, rootId) {
+      if (!nativeCliSupported) throw new Error("PLATFORM_UNSUPPORTED");
       return execute(["scan", mode, "--source", requireSelection(rootId), "--json"]);
     },
+    async state(action) {
+      if (!nativeCliSupported) throw new Error("PLATFORM_UNSUPPORTED");
+      if (!stateDirectory) throw new Error("STATE_DISABLED");
+      if (action === "inspect") return execute(["state", "inspect", "--directory", stateDirectory, "--json"]);
+      const picked = await ports.pick("files", { maxFiles: 1, maxBytes: 1024 * 1024 });
+      if (!picked || picked.length === 0) throw new Error("STATE_IMPORT_CANCELLED");
+      const file = await realpath(picked[0]!.path);
+      const fileInfo = await stat(file);
+      if (!fileInfo.isFile()) throw new Error("STATE_IMPORT_FILE_REQUIRED");
+      if (fileInfo.size > 1024 * 1024) throw new Error("STATE_IMPORT_TOO_LARGE");
+      return execute(["state", "import", "--directory", stateDirectory, "--file", file]);
+    },
+    async config(action) {
+      if (!nativeCliSupported) throw new Error("PLATFORM_UNSUPPORTED");
+      return execute(["config", action === "defaults" ? "init" : "check", "--json"]);
+    },
+    async platform(action) {
+      if (!nativeCliSupported) throw new Error("PLATFORM_UNSUPPORTED");
+      const argv = action === "watch"
+        ? ["platform", "watch", "--samples", "5", "--interval-ms", "1000", "--json"]
+        : ["platform", action, "--json"];
+      return execute(argv);
+    },
     async hotspot(action) {
+      if (!nativeCliSupported) throw new Error("PLATFORM_UNSUPPORTED");
       if (config.enableHotspot !== true) throw new Error("HOTSPOT_DISABLED");
-      return execute(action === "plan" ? ["hotspot", "plan", "--json"] : ["hotspot", action, "--confirm", "--json"]);
+      const iface = config.hotspotInterface;
+      if (action === "plan") {
+        if (!iface) throw new Error("HOTSPOT_INTERFACE_NOT_CONFIGURED");
+        return execute(["hotspot", "plan", "--interface", iface, "--ssid", config.hotspotSsid ?? "Global-Dandelion", "--band", config.hotspotBand ?? "a", "--json"]);
+      }
+      const journalDirectory = config.hotspotJournalDirectory;
+      if (!journalDirectory || !isAbsolute(journalDirectory)) throw new Error("HOTSPOT_JOURNAL_NOT_CONFIGURED");
+      if (action === "status") return execute(["hotspot", "status", "--journal-directory", journalDirectory, "--json"]);
+      if (action === "stop") return execute(["hotspot", "stop", "--journal-directory", journalDirectory, "--confirm", "--json"]);
+      if (!iface || !config.hotspotPasswordFile) throw new Error("HOTSPOT_APPLY_NOT_CONFIGURED");
+      return execute(["hotspot", "apply", "--interface", iface, "--ssid", config.hotspotSsid ?? "Global-Dandelion", "--band", config.hotspotBand ?? "a", "--journal-directory", journalDirectory, "--password-file", config.hotspotPasswordFile, "--confirm", "--json"]);
     },
     async update(action) {
+      if (!nativeCliSupported) throw new Error("PLATFORM_UNSUPPORTED");
       if (config.enableUpdate !== true) throw new Error("UPDATE_DISABLED");
-      return execute(["update", action, "--json"]);
+      const trust = config.updateTrust;
+      if (!trust?.publicKey) throw new Error("UPDATE_TRUST_NOT_CONFIGURED");
+      const argv = ["update", action];
+      if (trust.manifest) argv.push("--manifest", trust.manifest);
+      if (trust.signature) argv.push("--signature", trust.signature);
+      argv.push("--public-key", trust.publicKey);
+      if (action === "stage") {
+        if (!trust.directory) throw new Error("UPDATE_DIRECTORY_NOT_CONFIGURED");
+        argv.push("--directory", trust.directory);
+        if (trust.artifact) argv.push("--artifact", trust.artifact);
+        else if (trust.allowedHost) argv.push("--allowed-host", trust.allowedHost);
+        else throw new Error("UPDATE_SOURCE_NOT_CONFIGURED");
+      }
+      argv.push("--json");
+      return execute(argv);
+    },
+    async diagnostics(action) {
+      if (!nativeCliSupported) throw new Error("PLATFORM_UNSUPPORTED");
+      if (action === "status") {
+        if (!stateDirectory) throw new Error("STATE_DISABLED");
+        return execute(["status", "--directory", stateDirectory, "--json"]);
+      }
+      return execute([action === "selfTest" ? "self-test" : "doctor", "--json"]);
+    },
+    async compat(action, args) {
+      if (!nativeCliSupported) throw new Error("PLATFORM_UNSUPPORTED");
+      if (!compatDirectory) throw new Error("COMPAT_DISABLED");
+      if (action === "packetInspect") return execute(["compat", "packet-inspect", "--file", await compatPath(args.file, "packet.bin"), "--json"]);
+      if (action === "countryLookup") {
+        const address = typeof args.address === "string" ? args.address : null;
+        if (!address) throw new Error("COMPAT_ADDRESS_REQUIRED");
+        return execute(["compat", "country-lookup", "--locations", await compatPath(args.locations, "locations.csv"), "--blocks", await compatPath(args.blocks, "blocks.csv"), "--address", address, "--json"]);
+      }
+      if (action === "linkExercise") {
+        return execute(["compat", "link-exercise", "--file", await compatPath(args.file, "link-target"), "--cycles", "10", "--interval-ms", "50", "--confirm", "--json"]);
+      }
+      return execute(["compat", "link-recover", "--journal-directory", await compatPath(args.journalDirectory, "."), "--confirm", "--json"]);
     },
   };
 }

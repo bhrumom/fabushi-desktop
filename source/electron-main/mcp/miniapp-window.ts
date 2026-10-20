@@ -115,6 +115,8 @@ export interface MiniAppToolBridgePorts {
   /** Absolute path to the compiled sandboxed preload. */
   readonly preloadPath: string;
   readonly ipc: MiniAppIpc;
+  /** Called when account ownership changes or the Host is disposed. */
+  readonly cancelAll?: () => void;
 }
 
 export interface MiniAppWindowFactoryPorts {

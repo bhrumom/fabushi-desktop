@@ -77,7 +77,7 @@ test("actual production-signed candidate follows genuine account draft/upload/su
   assert.equal(upload.headers.get("x-fabushi-artifact-format"), "fabapp");
   assert.deepEqual(upload.body, bytes);
   const draft = JSON.parse(p.calls[2]!.body as string).descriptor;
-  assert.equal(draft.runtime.license, "LicenseRef-Proprietary");
+  assert.equal(draft.runtime.license, "MIT OR Apache-2.0");
   assert.equal(draft.runtime.nativeTransferAvailable, false);
   assert.equal(draft.release.bundleDigest, DandelionCandidate.digest);
 });
@@ -215,7 +215,7 @@ test("immutable conflicts and frozen releases cannot reach artifact upload or su
     await t.test(state, async () => {
       const p = setup({ bytes, respond: (url) => url.endsWith("namespaces")
         ? Response.json({ namespaces: [{ namespace: "bhrumom" }] })
-        : Response.json({ releases: [{ namespace: "bhrumom", name: "global-dandelion", kind: "web-miniapp", version: "0.1.0",
+        : Response.json({ releases: [{ namespace: "bhrumom", name: "global-dandelion", kind: "web-miniapp", version: "0.2.1",
           state: state === "conflicting-digest" ? "draft" : state,
           descriptor: { release: { bundleDigest: state === "conflicting-digest" ? "0".repeat(64) : DandelionCandidate.digest } },
         }] }) });

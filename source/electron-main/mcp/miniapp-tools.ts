@@ -12,8 +12,13 @@ export const MINIAPP_CAPABILITY = Object.freeze({
   SELECTION: "selection",
   TRANSFER: "transfer",
   SCAN: "scan",
+  STATE: "state",
+  CONFIG: "config",
+  PLATFORM: "platform",
   HOTSPOT: "hotspot",
   UPDATE: "update",
+  DIAGNOSTICS: "diagnostics",
+  COMPAT: "compat",
 } as const);
 
 export type MiniAppCapability = typeof MINIAPP_CAPABILITY[keyof typeof MINIAPP_CAPABILITY];
@@ -33,6 +38,7 @@ export type MiniAppToolResult =
 
 export interface MiniAppSelectionEntry { readonly name: string; readonly size: number }
 export interface MiniAppTargetPool { readonly id: string; readonly label: string }
+export interface MiniAppReceiveConfig { readonly targetPoolId: string; readonly once?: boolean }
 
 /** Implemented by the native owner; never reachable from the renderer directly. */
 export interface MiniAppToolBackend {
@@ -41,11 +47,19 @@ export interface MiniAppToolBackend {
   pick(mode: "files" | "directory", limits: { readonly maxFiles: number; readonly maxBytes: number }): Promise<{ readonly selectionId: string; readonly entries: MiniAppSelectionEntry[] } | null>;
   release(selectionId: string): Promise<void>;
   send(selectionId: string, targetPoolId: string): Promise<{ readonly operationId: string }>;
+  receive?(config: MiniAppReceiveConfig): Promise<{ readonly operationId: string }>;
   status(operationId: string): Promise<unknown>;
   cancel(operationId: string): Promise<void>;
   scan(mode: "metadata" | "read", rootId: string): Promise<unknown>;
-  hotspot(action: "plan" | "apply" | "stop"): Promise<unknown>;
+  state?(action: "inspect" | "import", args: Record<string, unknown>): Promise<unknown>;
+  config?(action: "defaults" | "check"): Promise<unknown>;
+  platform?(action: "inspect" | "mounts" | "time" | "watch"): Promise<unknown>;
+  hotspot(action: "plan" | "apply" | "status" | "stop"): Promise<unknown>;
   update(action: "check" | "stage"): Promise<unknown>;
+  diagnostics?(action: "selfTest" | "doctor" | "status"): Promise<unknown>;
+  compat?(action: "packetInspect" | "countryLookup" | "linkExercise" | "linkRecover", args: Record<string, unknown>): Promise<unknown>;
+  /** Fences and cancels native work when account/window ownership changes. */
+  cancelAll?(): void;
 }
 
 const ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
@@ -68,6 +82,12 @@ function optionalLimits(args: Record<string, unknown>): { maxFiles: number; maxB
   if (!Number.isSafeInteger(maxFiles) || maxFiles < 1 || maxFiles > MAX_FILES_LIMIT) throw new TypeError("INVALID_MAX_FILES");
   if (!Number.isSafeInteger(maxBytes) || maxBytes < 1 || maxBytes > MAX_BYTES_LIMIT) throw new TypeError("INVALID_MAX_BYTES");
   return { maxFiles, maxBytes };
+}
+
+function optionalBoolean(args: Record<string, unknown>, key: string): boolean | undefined {
+  if (args[key] === undefined) return undefined;
+  if (typeof args[key] !== "boolean") throw new TypeError(`INVALID_${key.toUpperCase()}`);
+  return args[key] as boolean;
 }
 
 function asRecord(args: unknown): Record<string, unknown> {
@@ -98,6 +118,12 @@ function handlersFor(backend: MiniAppToolBackend): Map<string, { capability: Min
       const sent = await backend.send(requiredId(args, "selectionId"), requiredId(args, "targetPoolId"));
       return { ok: true, data: sent };
     }],
+    ["transfer.receive", MINIAPP_CAPABILITY.TRANSFER, true, async (args) => {
+      if (!backend.receive) return fail("CAPABILITY_UNAVAILABLE", "宿主未提供接收能力");
+      const targetPoolId = requiredId(args, "targetPoolId");
+      const received = await backend.receive({ targetPoolId, once: optionalBoolean(args, "once") });
+      return { ok: true, data: received };
+    }],
     ["transfer.status", MINIAPP_CAPABILITY.TRANSFER, false, async (args) => ({ ok: true, data: await backend.status(requiredId(args, "operationId")) })],
     ["transfer.cancel", MINIAPP_CAPABILITY.TRANSFER, true, async (args) => {
       await backend.cancel(requiredId(args, "operationId"));
@@ -105,11 +131,27 @@ function handlersFor(backend: MiniAppToolBackend): Map<string, { capability: Min
     }],
     ["scan.metadata", MINIAPP_CAPABILITY.SCAN, false, async (args) => ({ ok: true, data: await backend.scan("metadata", requiredId(args, "rootId")) })],
     ["scan.read", MINIAPP_CAPABILITY.SCAN, false, async (args) => ({ ok: true, data: await backend.scan("read", requiredId(args, "rootId")) })],
+    ["state.inspect", MINIAPP_CAPABILITY.STATE, false, async (args) => backend.state ? ({ ok: true, data: await backend.state("inspect", args) }) : fail("CAPABILITY_UNAVAILABLE", "宿主未提供状态能力")],
+    ["state.import", MINIAPP_CAPABILITY.STATE, true, async (args) => backend.state ? ({ ok: true, data: await backend.state("import", args) }) : fail("CAPABILITY_UNAVAILABLE", "宿主未提供状态能力")],
+    ["config.defaults", MINIAPP_CAPABILITY.CONFIG, false, async () => backend.config ? ({ ok: true, data: await backend.config("defaults") }) : fail("CAPABILITY_UNAVAILABLE", "宿主未提供配置能力")],
+    ["config.check", MINIAPP_CAPABILITY.CONFIG, false, async () => backend.config ? ({ ok: true, data: await backend.config("check") }) : fail("CAPABILITY_UNAVAILABLE", "宿主未提供配置能力")],
+    ["platform.inspect", MINIAPP_CAPABILITY.PLATFORM, false, async () => backend.platform ? ({ ok: true, data: await backend.platform("inspect") }) : fail("CAPABILITY_UNAVAILABLE", "宿主未提供平台能力")],
+    ["platform.mounts", MINIAPP_CAPABILITY.PLATFORM, false, async () => backend.platform ? ({ ok: true, data: await backend.platform("mounts") }) : fail("CAPABILITY_UNAVAILABLE", "宿主未提供平台能力")],
+    ["platform.time", MINIAPP_CAPABILITY.PLATFORM, false, async () => backend.platform ? ({ ok: true, data: await backend.platform("time") }) : fail("CAPABILITY_UNAVAILABLE", "宿主未提供平台能力")],
+    ["platform.watch", MINIAPP_CAPABILITY.PLATFORM, false, async () => backend.platform ? ({ ok: true, data: await backend.platform("watch") }) : fail("CAPABILITY_UNAVAILABLE", "宿主未提供平台能力")],
     ["hotspot.plan", MINIAPP_CAPABILITY.HOTSPOT, false, async () => ({ ok: true, data: await backend.hotspot("plan") })],
     ["hotspot.apply", MINIAPP_CAPABILITY.HOTSPOT, true, async () => ({ ok: true, data: await backend.hotspot("apply") })],
+    ["hotspot.status", MINIAPP_CAPABILITY.HOTSPOT, false, async () => ({ ok: true, data: await backend.hotspot("status") })],
     ["hotspot.stop", MINIAPP_CAPABILITY.HOTSPOT, true, async () => ({ ok: true, data: await backend.hotspot("stop") })],
     ["update.check", MINIAPP_CAPABILITY.UPDATE, false, async () => ({ ok: true, data: await backend.update("check") })],
     ["update.stage", MINIAPP_CAPABILITY.UPDATE, true, async () => ({ ok: true, data: await backend.update("stage") })],
+    ["diagnostics.selfTest", MINIAPP_CAPABILITY.DIAGNOSTICS, false, async () => backend.diagnostics ? ({ ok: true, data: await backend.diagnostics("selfTest") }) : fail("CAPABILITY_UNAVAILABLE", "宿主未提供诊断能力")],
+    ["diagnostics.doctor", MINIAPP_CAPABILITY.DIAGNOSTICS, false, async () => backend.diagnostics ? ({ ok: true, data: await backend.diagnostics("doctor") }) : fail("CAPABILITY_UNAVAILABLE", "宿主未提供诊断能力")],
+    ["diagnostics.status", MINIAPP_CAPABILITY.DIAGNOSTICS, false, async () => backend.diagnostics ? ({ ok: true, data: await backend.diagnostics("status") }) : fail("CAPABILITY_UNAVAILABLE", "宿主未提供诊断能力")],
+    ["compat.packetInspect", MINIAPP_CAPABILITY.COMPAT, false, async (args) => backend.compat ? ({ ok: true, data: await backend.compat("packetInspect", args) }) : fail("CAPABILITY_UNAVAILABLE", "宿主未提供兼容能力")],
+    ["compat.countryLookup", MINIAPP_CAPABILITY.COMPAT, false, async (args) => backend.compat ? ({ ok: true, data: await backend.compat("countryLookup", args) }) : fail("CAPABILITY_UNAVAILABLE", "宿主未提供兼容能力")],
+    ["compat.linkExercise", MINIAPP_CAPABILITY.COMPAT, true, async (args) => backend.compat ? ({ ok: true, data: await backend.compat("linkExercise", args) }) : fail("CAPABILITY_UNAVAILABLE", "宿主未提供兼容能力")],
+    ["compat.linkRecover", MINIAPP_CAPABILITY.COMPAT, true, async (args) => backend.compat ? ({ ok: true, data: await backend.compat("linkRecover", args) }) : fail("CAPABILITY_UNAVAILABLE", "宿主未提供兼容能力")],
   ];
   return new Map(entries.map(([name, capability, mutating, run]) => [name, { capability, mutating, run }]));
 }
@@ -149,6 +191,15 @@ export function createMiniAppToolRouter(options: MiniAppToolRouterOptions): Mini
       const handler = handlers.get(tool);
       if (!handler) return fail("UNKNOWN_TOOL", "该工具未在契约中声明");
       if (!throttle(scope.accountScope)) return fail("RATE_LIMITED", "调用过于频繁，请稍后重试");
+      // Discovery is a policy boundary, not a UI hint. Re-check the native
+      // announcement on every invocation so a renderer cannot call a hidden
+      // capability by guessing its method name.
+      let announced: Awaited<ReturnType<MiniAppToolBackend["capabilities"]>>;
+      try { announced = await options.backend.capabilities(); }
+      catch { return fail("CAPABILITY_UNAVAILABLE", "宿主能力探测失败"); }
+      if (!announced.capabilities.includes(handler.capability)) {
+        return fail("CAPABILITY_UNAVAILABLE", "该能力未获宿主授权");
+      }
       let args: Record<string, unknown>;
       try { args = asRecord(rawArgs); }
       catch { return fail("INVALID_ARGUMENTS", "参数必须是对象"); }

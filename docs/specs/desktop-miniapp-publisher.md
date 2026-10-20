@@ -4,7 +4,7 @@ Status: active implementation slice. Date: 2026-10-13. Owner: existing Plugins
 surface / native MCP-Marketplace edge / existing account authentication service.
 Parent: FPM-001, desktop-catalog-package-installation.md.
 
-User requests completing proprietary Global Dandelion publication. Installed
+User requests completing first-party Global Dandelion publication. Installed
 Fabushi was switched by the user from CI account to real account bhrum108.
 Current Plugins lacks canonical namespace/release publication UI. Do not read,
 export or impersonate its session; use existing native account service internally.
@@ -26,7 +26,7 @@ export or impersonate its session; use existing native account service internall
   publication candidate. Native publisher does not execute the package. Create
   immutable web-miniapp draft, upload exact bytes to existing artifact CAS, submit
   review with honest preview/offline-workbench/native-transfer-unavailable metadata.
-  Proprietary license/rights retained. Server scan/sign/review and client install
+  The current package ships MIT OR Apache-2.0 notices. Server scan/sign/review and client install
   acceptance remain separate, never automatic UI approval.
 - MP-05: first-party metadata/namespace fields bounded and validated. Backend
   public descriptors contain no paths/session/secret. Errors are structured safe
@@ -35,7 +35,7 @@ export or impersonate its session; use existing native account service internall
 Data flow: Plugins publisher intent -> typed optional marketplace bridge ->
 trusted native account/file edge -> existing /v1/extensions publisher APIs.
 Identity namespace=bhrumom/name=global-dandelion/kind=web-miniapp, appId
-org.fabushi.global-dandelion, version0.1.0 for the current reviewed candidate.
+org.fabushi.global-dandelion, version0.2.1 for the current reviewed candidate.
 This narrow first release does not invent a generic publisher/code-upload service.
 The prepared signed package digest is pinned to the reviewed delivery evidence;
 other package/version requires a separate reviewed release update.
@@ -63,7 +63,7 @@ AC-1 MP-01..05 exact-head CI. AC-2 actual account owns namespace, actual signed
 artifact uploaded and pending-review state observable. AC-3 separate reviewer scan,
 release signature/approval, catalog and packaged install acceptance. All pending.
 References: Global Dandelion PR2 fce746b, backend production signing run38366572165
-(packageSHA de10e02115415908f827723457817e51cb4f39aa5ca68798da824fecc483118a).
+(packageSHA afc45ad273e4965fc272a89e775291444c683513ecbc3fa31769858431e8a6b6).
 
 ## Architecture exception and protected-source evidence
 
