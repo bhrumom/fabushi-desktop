@@ -8,9 +8,9 @@
     "repository": "telegramdesktop/tdesktop",
     "url": "https://github.com/telegramdesktop/tdesktop",
     "discovery_ref": "refs/heads/dev",
-    "commit": "7b08e3ff570186ca8714e4de2242d08af4d98814",
-    "tree": "cf82a72e311226b7b14f712e8de2586d7ff6e1f4",
-    "committed_at": "2026-10-20T01:42:31Z",
+    "commit": "f0aa39cb1c5e48c7a0dc5283150d4975f556b582",
+    "tree": "592063989cd2124fa9c1e5c59c99b0eb599bec4f",
+    "committed_at": "2026-10-20T04:28:54Z",
     "accepted": false
   },
   "previous_historical_baseline": {
@@ -275,11 +275,11 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Live rebaseline identity for telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a remains source-closure open. Actual recursive array entry 27 .agents/skills/code-health/scripts/cpp_text.py is mapped to existing repository responsibility/quality/task-evidence governance with source-text provenance and non-compiler authority boundaries preserved; full closure remains unknown=16,175, unread=16,148, omitted=0, so acceptance remains fail-closed."
+    "note": "Live rebaseline identity for telegramdesktop/tdesktop@f0aa39cb1c5e48c7a0dc5283150d4975f556b582 (tree 592063989cd2124fa9c1e5c59c99b0eb599bec4f) is source-closure open. The exact-head GitHub Actions recursive inventory is pending; existing coverage counts remain provisional and acceptance remains fail-closed."
   },
   "baseline_identity_evidence": {
     "status": "pending-current-head-revalidation",
-    "upstream_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
+    "upstream_commit": "f0aa39cb1c5e48c7a0dc5283150d4975f556b582",
     "previous_historical_evidence": {
       "status": "accepted",
       "runner": "github-actions",
@@ -311,7 +311,7 @@
   },
   "recursive_inventory_evidence": {
     "status": "pending-current-head-revalidation",
-    "upstream_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
+    "upstream_commit": "f0aa39cb1c5e48c7a0dc5283150d4975f556b582",
     "source_closure_ready": false,
     "previous_historical_evidence": {
       "status": "accepted-baseline-identity-only-source-closure-open",
@@ -418,7 +418,7 @@
       "artifact_digest": "sha256:ab52d74cadbc20427e8183fd0963a955d7a7a4f91a478744688fb6c299442d38"
     },
     "evidence_status": "pending-current-head-revalidation",
-    "upstream_commit": "7b08e3ff570186ca8714e4de2242d08af4d98814",
+    "upstream_commit": "f0aa39cb1c5e48c7a0dc5283150d4975f556b582",
     "discovery_evidence_status": "pending-current-head-revalidation"
   }
 }
