@@ -6,7 +6,7 @@ on:
       source_sha:
         description: Exact Global Dandelion source commit
         required: true
-        default: 0fc0c7513ddac495a7149038583670c29cbe56fa
+        default: 36261f06a57db0820d412fc8e6fa8be9d36cce7d
         type: string
   pull_request:
     paths:
@@ -27,11 +27,15 @@ permissions:
   contents: read
 
 jobs:
-  linux-real-engine:
-    runs-on: ubuntu-24.04
+  native-real-engine:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-24.04, macos-15]
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 45
     env:
-      SOURCE_SHA: ${{ inputs.source_sha || '0fc0c7513ddac495a7149038583670c29cbe56fa' }}
+      SOURCE_SHA: ${{ inputs.source_sha || '36261f06a57db0820d412fc8e6fa8be9d36cce7d' }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -46,7 +50,7 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: 1.98.0
+          toolchain: 1.98.1
 
       - name: Install desktop test dependencies
         run: npm --prefix desktop ci --prefer-offline --no-audit --no-fund
@@ -88,7 +92,7 @@ jobs:
         working-directory: desktop
         run: |
           set -o pipefail
-          npx --yes tsx@4.21.0 --test ../source/electron-main/mcp/miniapp-tools.contract.test.ts 2>&1 | tee "$RUNNER_TEMP/global-dandelion-real-engine.log"
+          npx --yes tsx@4.21.0 --test ../source/electron-main/mcp/miniapp-tools.contract.test.ts 2>&1 | tee -a "$RUNNER_TEMP/global-dandelion-real-engine.log"
 
       - name: Write exact-head evidence
         if: always()
@@ -98,15 +102,15 @@ jobs:
           jq -n \
             --arg desktop "$(git rev-parse HEAD)" \
             --arg source "$SOURCE_SHA" \
-            --arg platform "github-actions/ubuntu-24.04" \
-            --arg log_sha "$(sha256sum "$RUNNER_TEMP/global-dandelion-real-engine.log" | awk '{print $1}')" \
+            --arg platform "github-actions/${{ matrix.runner }}" \
+            --arg log_sha "$(shasum -a 256 "$RUNNER_TEMP/global-dandelion-real-engine.log" | awk '{print $1}')" \
             '{schemaVersion:1,desktopSha:$desktop,sourceSha:$source,platform:$platform,realEngineHostAcceptance:"see log",logSha256:$log_sha}' \
             > "$RUNNER_TEMP/global-dandelion-real-engine-evidence.json"
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: global-dandelion-real-engine-${{ github.sha }}
+          name: global-dandelion-real-engine-${{ matrix.runner }}-${{ github.sha }}
           path: |
             ${{ runner.temp }}/global-dandelion-real-engine.log
             ${{ runner.temp }}/global-dandelion-real-engine-evidence.json

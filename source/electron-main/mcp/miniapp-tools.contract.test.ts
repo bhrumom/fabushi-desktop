@@ -87,6 +87,7 @@ test("CLI backend enforces directory-only selection, canonical root boundaries a
     const spawned: string[][] = [];
     const backend = createDandelionCliBackend(
       {
+        platform: "linux",
         binaryPath: "/nonexistent/dandelion",
         configPath: "/nonexistent/config.toml",
         allowedRoots: [allowedRoot],
@@ -177,7 +178,7 @@ test("CLI backend spawns real argv-only binary for scan, async transfer, cancell
 
     let chosenDir = fastDir;
     const disabledBackend = createDandelionCliBackend(
-      { binaryPath: binPath, configPath, allowedRoots: [allowedRoot], targetPools: [{ id: "lan", label: "LAN" }] },
+      { platform: "linux", binaryPath: binPath, configPath, allowedRoots: [allowedRoot], targetPools: [{ id: "lan", label: "LAN" }] },
       { pick: async () => [{ path: chosenDir, name: "dir", size: 4096 }] },
     );
     await assert.rejects(() => disabledBackend.hotspot("plan"), /HOTSPOT_DISABLED/);
@@ -185,6 +186,7 @@ test("CLI backend spawns real argv-only binary for scan, async transfer, cancell
 
     const backend = createDandelionCliBackend(
       {
+        platform: "linux",
         binaryPath: binPath,
         configPath,
         allowedRoots: [allowedRoot],
@@ -238,7 +240,7 @@ test("CLI backend spawns real argv-only binary for scan, async transfer, cancell
   }
 });
 
-test("Linux-only native capabilities are never advertised on macOS or Windows", async () => {
+test("an unproven Apple binary never advertises native capabilities", async () => {
   const backend = createDandelionCliBackend(
     {
       binaryPath: "/reviewed/dandelion",
@@ -254,6 +256,80 @@ test("Linux-only native capabilities are never advertised on macOS or Windows", 
   assert.equal(announced.platform, "desktop");
 });
 
+test("Apple native contract is probed again and Linux-only operations stay unavailable", async () => {
+  let valid = true;
+  let probes = 0;
+  const backend = createDandelionCliBackend({
+    binaryPath: "/reviewed/dandelion", configPath: "/reviewed/config.toml",
+    allowedRoots: ["/reviewed/root"], targetPools: [], platform: "darwin", enableHotspot: true,
+  }, { pick: async () => null, spawn: (argv) => {
+    if (argv[0] === "doctor") probes += 1;
+    return { kill() {}, done: Promise.resolve({ code: 0, stderr: "", stdout: JSON.stringify(
+      argv[0] === "doctor" ? { native_contract: valid ? "dandelion.native.apple.v1" : "legacy", os: "macos", target: "aarch64-apple-darwin" } : { defaults: true },
+    ) }) };
+  } });
+  assert.deepEqual((await backend.capabilities()).capabilities, ["offline", "selection", "scan", "config", "diagnostics"]);
+  assert.deepEqual(await backend.config("defaults"), { defaults: true });
+  await assert.rejects(() => backend.platform("mounts"), /PLATFORM_UNSUPPORTED/);
+  await assert.rejects(() => backend.hotspot("plan"), /PLATFORM_UNSUPPORTED/);
+  valid = false;
+  await assert.rejects(() => backend.config("defaults"), /NATIVE_RUNTIME_INCOMPATIBLE/);
+  assert.ok(probes >= 3);
+});
+
+test("receive consumes readiness and final receipt; readiness alone and malformed trailers fail", async () => {
+  let stdout = "";
+  const backend = createDandelionCliBackend({
+    binaryPath: "/reviewed/dandelion", configPath: "/reviewed/config.toml", allowedRoots: [], targetPools: [], platform: "linux",
+    receive: { targetPoolId: "local", caFile: "/private/ca", certificateFile: "/private/cert", privateKeyFile: "/private/key" },
+  }, { pick: async () => null, spawn: () => ({ kill() {}, done: Promise.resolve({ code: 0, stderr: "", stdout }) }) });
+  const ready = { event: "ready", mutual_tls: true, address: "127.0.0.1:10000" };
+  const receipt = { sessions: 1, failed_sessions: 0, verified_payload_bytes: 42, cancelled: false };
+  for (const [payload, expected] of [
+    [JSON.stringify(ready) + "\n" + JSON.stringify(receipt) + "\n", "complete"],
+    [JSON.stringify(ready) + "\n", "failed"],
+    [JSON.stringify(ready) + "\n" + JSON.stringify(receipt) + "\ninvalid\n", "failed"],
+  ] as const) {
+    stdout = payload;
+    const operation = await backend.receive({ targetPoolId: "local" });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const status = await backend.status(operation.operationId) as { state: string; result?: unknown };
+    assert.equal(status.state, expected);
+    if (expected === "complete") assert.deepEqual(status.result, receipt);
+  }
+});
+
+test("all native calls share bounded admission and teardown fences direct results", async () => {
+  const pending: Array<{ resolve: (result: { code: number; stdout: string; stderr: string }) => void; killed: boolean }> = [];
+  const backend = createDandelionCliBackend({
+    binaryPath: "/reviewed/dandelion", configPath: "/reviewed/config.toml", allowedRoots: [], targetPools: [], platform: "linux",
+  }, { pick: async () => null, spawn: () => {
+    let resolve!: (result: { code: number; stdout: string; stderr: string }) => void;
+    const done = new Promise<{ code: number; stdout: string; stderr: string }>((settle) => { resolve = settle; });
+    const entry = { resolve, killed: false };
+    pending.push(entry);
+    return { done, kill() { entry.killed = true; } };
+  } });
+  const requests = Array.from({ length: 8 }, () => backend.config("defaults").then(
+    () => "unexpected success", (error: Error) => error.message,
+  ));
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(pending.length, 8);
+  await assert.rejects(() => backend.config("defaults"), /NATIVE_OPERATION_LIMIT/);
+  backend.cancelAll();
+  assert.ok(pending.every((entry) => entry.killed));
+  await assert.rejects(() => backend.config("defaults"), /NATIVE_OPERATION_LIMIT/);
+  for (const entry of pending) entry.resolve({ code: 0, stdout: "{}", stderr: "" });
+  assert.deepEqual(await Promise.all(requests), Array(8).fill("DANDELION_CANCELLED"));
+});
+
+test("native failures return stable errors without paths or credential stderr", async () => {
+  const backend = createDandelionCliBackend({
+    binaryPath: "/reviewed/dandelion", configPath: "/reviewed/config.toml", allowedRoots: [], targetPools: [], platform: "linux",
+  }, { pick: async () => null, spawn: () => ({ kill() {}, done: Promise.resolve({ code: 2, stdout: "", stderr: "/private/key SECRET" }) }) });
+  await assert.rejects(() => backend.config("defaults"), /^Error: DANDELION_EXIT_2$/);
+});
+
 test("Host invokes the pinned Global Dandelion source engine through the real CLI", {
   skip: !process.env.FABUSHI_DANDELION_REAL_BIN,
   timeout: 120_000,
@@ -267,14 +343,15 @@ test("Host invokes the pinned Global Dandelion source engine through the real CL
       configPath,
       allowedRoots: [root],
       targetPools: [{ id: "loopback", label: "授权本机回环" }],
-      platform: "linux",
+      platform: process.platform,
     },
     { pick: async () => [{ path: root, name: "real-fixture", size: 32 }] },
   );
 
   const capabilities = await backend.capabilities();
   assert.deepEqual(capabilities.capabilities, [
-    "offline", "selection", "transfer", "scan", "config", "platform", "diagnostics",
+    "offline", "selection", "transfer", "scan", "config",
+    ...(process.platform === "linux" ? ["platform"] : []), "diagnostics",
   ]);
 
   const picked = await backend.pick("directory", { maxFiles: 1, maxBytes: 1024 ** 3 });
@@ -292,8 +369,12 @@ test("Host invokes the pinned Global Dandelion source engine through the real CL
   const checked = await backend.config("check") as Record<string, unknown>;
   assert.equal(typeof checked, "object");
 
-  const platform = await backend.platform("inspect") as Record<string, unknown>;
-  assert.ok(Array.isArray(platform.mounts));
+  if (process.platform === "linux") {
+    const platform = await backend.platform("inspect") as Record<string, unknown>;
+    assert.ok(Array.isArray(platform.mounts));
+  } else {
+    await assert.rejects(() => backend.platform("inspect"), /PLATFORM_UNSUPPORTED/);
+  }
   const diagnostics = await backend.diagnostics("selfTest") as Record<string, unknown>;
   assert.equal(diagnostics.status, "completed");
 
@@ -339,7 +420,9 @@ test("production desktop bridge runs end-to-end without Electron from preload IP
         "args = sys.argv[1:]",
         "assert args[:2] == ['--config', " + JSON.stringify(configPath) + "]",
         "cmd = args[2:]",
-        "if cmd[:2] == ['scan', 'metadata']:",
+        "if cmd[:1] == ['doctor']:",
+        "    print(json.dumps({'native_contract': 'dandelion.native.apple.v1', 'os': 'macos', 'target': 'aarch64-apple-darwin'}))",
+        "elif cmd[:2] == ['scan', 'metadata']:",
         "    print(json.dumps({'files': 5, 'bytes': 8192}))",
         "elif cmd[:1] == ['run']:",
         "    print(json.dumps({'packets': 16, 'verifiedBytes': 8192}))",
@@ -480,7 +563,7 @@ test("production desktop bridge runs end-to-end without Electron from preload IP
       assert.equal(caps.ok, true);
       assert.equal(caps.data?.contract, MINIAPP_TOOL_CONTRACT);
       assert.equal(caps.data?.platform, "desktop");
-      assert.deepEqual(caps.data?.capabilities, ["offline", "selection", "transfer", "scan", "config", "platform", "diagnostics", "hotspot"]);
+      assert.deepEqual(caps.data?.capabilities, ["offline", "selection", "transfer", "scan", "config", ...(process.platform === "linux" ? ["platform"] : []), "diagnostics", ...(process.platform === "linux" ? ["hotspot"] : [])]);
       assert.deepEqual(caps.data?.targetPools, [{ id: "lan-pool", label: "局域网目标" }]);
 
       // 2. Directory selection via native dialog and canonical root validation.

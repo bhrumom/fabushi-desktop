@@ -5,10 +5,36 @@ Owner: existing Plugins/MCP Mini App owner plus the existing native Host/Coordin
 
 Review note 2026-10-20: the exact source and platform disposition are recorded
 in `docs/evidence/2026-10-20-global-dandelion-delivery.md`. The current source
-CLI is Linux-specific. Desktop Host discovery therefore exposes the native CLI
-capabilities only on Linux; macOS and Windows retain offline/selection
-compatibility until a real native adapter exists. Android and iOS remain
+CLI baseline is Linux-specific. Apple source composition is being added under
+Global Dandelion PR #7 / `docs/specs/native-apple-core.md`. macOS discovery may
+expose the implemented subset only after a live doctor probe proves the Apple
+native source contract. Windows retains offline/selection compatibility until a
+real native adapter exists. Android and iOS remain
 bridge-compatible but not Dandelion-native-configured.
+
+### Native operation correctness (2026-10-20)
+
+- GD-N01: consume bounded native JSON/NDJSON. Receiver readiness is an event,
+  not its final result. Preserve the final structured receipt; malformed/trailing
+  output fails, never turn readiness alone into completed receive.
+- GD-N02: admit at most eight active native processes, including synchronous
+  scan/config/diagnostics calls and receiver/sender jobs. Prune only settled
+  history. Cancellation retains capacity until the owned child actually exits.
+- GD-N03: timeout and account/window cancellation own all processes, including
+  operations awaiting a direct response; late results are rejected after teardown.
+  Stable errors contain no raw stderr, credentials or native paths.
+- GD-N04: Apple source support is proven by `doctor` contract
+  `dandelion.native.apple.v1`, matching OS/target. Recheck at invocation. Do not
+  advertise Linux inventory, resume or NetworkManager on Apple. Preserve the
+  full-parity gaps in the delivery matrix; enabling a subset is not completion.
+- GD-N05: Actions runs the real pinned CLI through Host routes on both Linux and
+  macOS. Validate native receive JSON, process admission, timeout and teardown
+  races, unsupported methods, missing/mismatched Apple binary and actual native
+  scan/loopback/config/diagnostic output. Mock contracts remain a separate layer.
+
+Extend the existing CLI backend and test workflow; no second process supervisor.
+Binary provisioning/installed Host acceptance remains required before claiming
+consumer delivery. Rollback restores the Host and reviewed native binary together.
 
 ## Context
 
