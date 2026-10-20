@@ -240,15 +240,21 @@ export function createMiniAppToolRouter(options: MiniAppToolRouterOptions): Mini
       }
       const handler = handlers.get(tool);
       if (!handler) return fail("UNKNOWN_TOOL", "该工具未在契约中声明");
-      if (!throttle(scope.accountScope)) return fail("RATE_LIMITED", "调用过于频繁，请稍后重试");
+      const ownedControl = tool === "transfer.status" || tool === "transfer.cancel";
+      if (!ownedControl && !throttle(scope.accountScope)) return fail("RATE_LIMITED", "调用过于频繁，请稍后重试");
       // Discovery is a policy boundary, not a UI hint. Re-check the native
       // announcement on every invocation so a renderer cannot call a hidden
       // capability by guessing its method name.
-      let announced: Awaited<ReturnType<MiniAppToolBackend["capabilities"]>>;
-      try { announced = await options.backend.capabilities(); }
-      catch { return fail("CAPABILITY_UNAVAILABLE", "宿主能力探测失败"); }
+      // Existing operation control must not need a ninth child just to probe
+      // capabilities. The backend validates the owned opaque operation handle;
+      // scope fencing and explicit cancellation approval still apply below.
+      let announced: Awaited<ReturnType<MiniAppToolBackend["capabilities"]>> | undefined;
+      if (!ownedControl) {
+        try { announced = await options.backend.capabilities(); }
+        catch { return fail("CAPABILITY_UNAVAILABLE", "宿主能力探测失败"); }
+      }
       if (!isCurrent()) return fail("STALE_SCOPE", "小程序窗口或账号已变化");
-      if (!announced.capabilities.includes(handler.capability)) {
+      if (!ownedControl && !announced?.capabilities.includes(handler.capability)) {
         return fail("CAPABILITY_UNAVAILABLE", "该能力未获宿主授权");
       }
       let args: Record<string, unknown>;

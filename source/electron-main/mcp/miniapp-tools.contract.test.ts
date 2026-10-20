@@ -93,6 +93,18 @@ test("calls are throttled per account scope and recover after the window", async
   assert.equal((await router.invoke(scope, "offline.state.read", {})).ok, true);
 });
 
+test("owned operation control remains available when a native probe cannot obtain a slot", async () => {
+  const { backend } = fixture();
+  backend.capabilities = async () => { throw new Error("NATIVE_OPERATION_LIMIT"); };
+  let cancelled = 0;
+  backend.cancel = async (id) => { assert.equal(id, "op-1"); cancelled += 1; };
+  const router = createMiniAppToolRouter({ backend, allowedAppId: scope.appId, approve: () => true });
+  assert.equal((await router.invoke(scope, "transfer.status", { operationId: "op-1" })).ok, true);
+  assert.equal((await router.invoke(scope, "transfer.cancel", { operationId: "op-1" })).ok, true);
+  assert.equal(cancelled, 1);
+  assert.equal((await router.invoke(scope, "transfer.send", { selectionId: "sel-1", targetPoolId: "lan" })).ok, false);
+});
+
 test("CLI backend enforces directory-only selection, canonical root boundaries and handle release", async () => {
   const workspace = await mkdtemp(join(tmpdir(), "fabushi-dandelion-cli-"));
   try {

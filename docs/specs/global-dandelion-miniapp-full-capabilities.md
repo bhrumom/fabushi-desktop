@@ -20,6 +20,10 @@ bridge-compatible but not Dandelion-native-configured.
 - GD-N02: admit at most eight active native processes, including synchronous
   scan/config/diagnostics calls and receiver/sender jobs. Prune only settled
   history. Cancellation retains capacity until the owned child actually exits.
+  Status/cancel of an existing owned operation must remain available when all
+  process slots are occupied or the binary probe fails. These control methods do
+  not start a new native operation; they recheck app/window/account ownership,
+  operation handle and cancellation approval without spawning a discovery probe.
 - GD-N03: timeout and account/window cancellation own all processes, including
   operations awaiting a direct response; late results are rejected after teardown.
   Stable errors contain no raw stderr, credentials or native paths.
