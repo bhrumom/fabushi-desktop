@@ -276,10 +276,10 @@
   "coverage": {
     "root_source_entries_total": 6715,
     "recursive_source_entries_total": 16201,
-    "unknown_minimum": 16161,
-    "unread_minimum": 16136,
+    "unknown_minimum": 16160,
+    "unread_minimum": 16135,
     "omitted_known": 0,
-    "note": "Live dev authority is 78ceaa548ae0e055aa56b53fde22064d13f250ef/76b967833b38eb7aa2cb4047008c07331390e61e. Recursive index 37 .agents/skills/continue/references/consolidate-pending-tasks.md@bd301d93f8f670ad041b3db72330e17cbb50eb5c is independently mapped after index 36. Coverage is unknown=16,161, unread=16,136, omitted=0; next strict entry is index 38 .agents/skills/continue/references/split-required-task.md@552ad09b2fa022b7df94481746a51167305bf846. Parent Rust run 39492471969 at 423d90406948a0e8b06a5c17a8aece30ce687346 succeeded 6/6 jobs. Parent TDRP run 39492472036 attempt 2 failed because Recursive root authority shard 7 hit chromium.googlesource.com/breakpad HTTP 503; downstream fixed-point/reachability gates were dependency-skipped. Its authority and Boost artifacts are partial supporting evidence only, not accepted parent authority. Recursive generated/resource/tool disposition remains open and source_closure_ready=false."
+    "note": "Live dev authority is 78ceaa548ae0e055aa56b53fde22064d13f250ef/76b967833b38eb7aa2cb4047008c07331390e61e. Recursive index 38 .agents/skills/continue/references/split-required-task.md@552ad09b2fa022b7df94481746a51167305bf846 is independently mapped after index 37. Coverage is unknown=16,160, unread=16,135, omitted=0; next strict entry is index 39 .agents/skills/dependency-watch/SKILL.md@482b3a8d0c939d4bb7bd32ab146e0cc988d29fd8. Parent TDRP run 39495231120 completed 61/61 jobs and 506/506 steps successfully, including fixed-point unresolved gitlinks=0 and Boost 582/582/open=0, but full authority remains incomplete because recursive reachability is partial-audited-open with 95 authorities, 133 gitlinks, 3865 acquisitions, 4674 generated inputs, 4602 resource inputs and 4255 tool inputs remaining open. Parent Rust run 39495231072 succeeded 6/6 jobs with 79 successful steps and two expected platform-conditional skips. source_closure_ready and baseline acceptance remain false."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -427,40 +427,54 @@
     },
     "previous_incomplete_attempt": {
       "runner": "github-actions",
-      "head_sha": "423d90406948a0e8b06a5c17a8aece30ce687346",
-      "tdrp_run_id": 39492472036,
-      "tdrp_run_attempt": 2,
-      "status": "incomplete-failed-external-503",
-      "failed_job_id": 118870253577,
-      "failed_job_name": "Recursive root authority shard 7",
-      "failure": "git clone https://chromium.googlesource.com/breakpad/breakpad failed 128; HTTP 503",
-      "partial_authority_job_id": 118870251376,
-      "partial_authority_artifact_id": 12296064250,
-      "partial_authority_artifact_digest": "sha256:37ac4fe26a6244d47c5e5b61c05b3bd2dc626a370aad34b19ce71b3e69ccb58e",
-      "boost_job_id": 118870320373,
-      "boost_artifact_id": 12296446919,
-      "boost_artifact_digest": "sha256:493aa3266201c07f240c79764e580bc0467bd614b195e972431a50b9dedf0c70",
+      "head_sha": "91d7db2db7bdcdf5a13d1abd9659a46cbedc4f07",
+      "tdrp_run_id": 39495231120,
+      "tdrp_run_attempt": 1,
+      "run_conclusion": "success",
+      "status": "workflow-success-authority-incomplete-recursive-disposition-open",
+      "source_authority_job_id": 118878465787,
+      "source_authority_artifact_id": 12296714976,
+      "source_authority_artifact_digest": "sha256:9447c3e071bb8aa578e9ff2d1ca6b4595296b9cbf2afa6a8f94875ad9bdb7305",
+      "boost_job_id": 118878739418,
+      "boost_artifact_id": 12297411524,
+      "boost_artifact_digest": "sha256:b29e28c2e4e634a1401992cc97e1f1235c604e7fdeea16c509e97f031870699d",
+      "fixed_point_job_id": 118881711068,
+      "fixed_point_artifact_id": 12298126603,
+      "fixed_point_artifact_digest": "sha256:d86315b3bbc6519a44f26e96f00cc235fdd27835e8d80742b8ba4b8773445ae0",
+      "recursive_reachability_job_id": 118881879880,
+      "recursive_reachability_artifact_id": 12298730361,
+      "recursive_reachability_artifact_digest": "sha256:cbb6ba947678e08e816ab85d724b9a29e37252c5eac12ae0a67e83cc0beb85fe",
       "proved_partial": [
         "live upstream/tree 78ceaa548ae0e055aa56b53fde22064d13f250ef/76b967833b38eb7aa2cb4047008c07331390e61e",
         "root entries 7012, root blobs 6679, direct gitlinks 36",
         "recursive non-directory entries 16201 with exact count reconciliation",
         "cppgir and expected-lite participation",
+        "all recursive root/child/next shards and accounting gates successful",
+        "fixed-point scanned authorities 203 with unresolved gitlink authorities 0",
         "Boost 582 candidates / 582 dispositioned / 0 open"
       ],
       "missing_required": [
-        "recursive root aggregate after all shards",
-        "recursive child/next accounting",
-        "recursive fixed-point unresolved=0",
-        "recursive build reachability and remaining-open disposition"
+        "recursive remaining-open disposition is not closed",
+        "recursive build reachability remains partial-audited-open",
+        "remaining open: authorities 95, gitlinks 133, acquisition candidates 3865, generated inputs 4674, resource inputs 4602, tool inputs 4255",
+        "source_closure_ready remains false"
       ],
+      "remaining_open_totals": {
+        "authorities": 95,
+        "gitlinks": 133,
+        "acquisition_candidates": 3865,
+        "generated_inputs": 4674,
+        "resource_inputs": 4602,
+        "tool_inputs": 4255
+      },
       "accepted_authority": false,
       "rust_parent_run": {
-        "run_id": 39492471969,
+        "run_id": 39495231072,
         "status": "success",
         "jobs": "6/6 success",
         "steps": "79 success + 2 expected platform-conditional skipped",
-        "artifact_id": 12296766732,
-        "artifact_digest": "sha256:fa685dbeff5ec979fa07ad913e4c8cda01b0f8c1f1108c0b0f74e705b07b622a"
+        "artifact_id": 12298695193,
+        "artifact_digest": "sha256:d087bd0bd7f834d370d259be40a238467b300bb5fcb4acc48c47c54527400228"
       }
     }
   },
@@ -899,40 +913,54 @@
     },
     "previous_incomplete_attempt": {
       "runner": "github-actions",
-      "head_sha": "423d90406948a0e8b06a5c17a8aece30ce687346",
-      "tdrp_run_id": 39492472036,
-      "tdrp_run_attempt": 2,
-      "status": "incomplete-failed-external-503",
-      "failed_job_id": 118870253577,
-      "failed_job_name": "Recursive root authority shard 7",
-      "failure": "git clone https://chromium.googlesource.com/breakpad/breakpad failed 128; HTTP 503",
-      "partial_authority_job_id": 118870251376,
-      "partial_authority_artifact_id": 12296064250,
-      "partial_authority_artifact_digest": "sha256:37ac4fe26a6244d47c5e5b61c05b3bd2dc626a370aad34b19ce71b3e69ccb58e",
-      "boost_job_id": 118870320373,
-      "boost_artifact_id": 12296446919,
-      "boost_artifact_digest": "sha256:493aa3266201c07f240c79764e580bc0467bd614b195e972431a50b9dedf0c70",
+      "head_sha": "91d7db2db7bdcdf5a13d1abd9659a46cbedc4f07",
+      "tdrp_run_id": 39495231120,
+      "tdrp_run_attempt": 1,
+      "run_conclusion": "success",
+      "status": "workflow-success-authority-incomplete-recursive-disposition-open",
+      "source_authority_job_id": 118878465787,
+      "source_authority_artifact_id": 12296714976,
+      "source_authority_artifact_digest": "sha256:9447c3e071bb8aa578e9ff2d1ca6b4595296b9cbf2afa6a8f94875ad9bdb7305",
+      "boost_job_id": 118878739418,
+      "boost_artifact_id": 12297411524,
+      "boost_artifact_digest": "sha256:b29e28c2e4e634a1401992cc97e1f1235c604e7fdeea16c509e97f031870699d",
+      "fixed_point_job_id": 118881711068,
+      "fixed_point_artifact_id": 12298126603,
+      "fixed_point_artifact_digest": "sha256:d86315b3bbc6519a44f26e96f00cc235fdd27835e8d80742b8ba4b8773445ae0",
+      "recursive_reachability_job_id": 118881879880,
+      "recursive_reachability_artifact_id": 12298730361,
+      "recursive_reachability_artifact_digest": "sha256:cbb6ba947678e08e816ab85d724b9a29e37252c5eac12ae0a67e83cc0beb85fe",
       "proved_partial": [
         "live upstream/tree 78ceaa548ae0e055aa56b53fde22064d13f250ef/76b967833b38eb7aa2cb4047008c07331390e61e",
         "root entries 7012, root blobs 6679, direct gitlinks 36",
         "recursive non-directory entries 16201 with exact count reconciliation",
         "cppgir and expected-lite participation",
+        "all recursive root/child/next shards and accounting gates successful",
+        "fixed-point scanned authorities 203 with unresolved gitlink authorities 0",
         "Boost 582 candidates / 582 dispositioned / 0 open"
       ],
       "missing_required": [
-        "recursive root aggregate after all shards",
-        "recursive child/next accounting",
-        "recursive fixed-point unresolved=0",
-        "recursive build reachability and remaining-open disposition"
+        "recursive remaining-open disposition is not closed",
+        "recursive build reachability remains partial-audited-open",
+        "remaining open: authorities 95, gitlinks 133, acquisition candidates 3865, generated inputs 4674, resource inputs 4602, tool inputs 4255",
+        "source_closure_ready remains false"
       ],
+      "remaining_open_totals": {
+        "authorities": 95,
+        "gitlinks": 133,
+        "acquisition_candidates": 3865,
+        "generated_inputs": 4674,
+        "resource_inputs": 4602,
+        "tool_inputs": 4255
+      },
       "accepted_authority": false,
       "rust_parent_run": {
-        "run_id": 39492471969,
+        "run_id": 39495231072,
         "status": "success",
         "jobs": "6/6 success",
         "steps": "79 success + 2 expected platform-conditional skipped",
-        "artifact_id": 12296766732,
-        "artifact_digest": "sha256:fa685dbeff5ec979fa07ad913e4c8cda01b0f8c1f1108c0b0f74e705b07b622a"
+        "artifact_id": 12298695193,
+        "artifact_digest": "sha256:d087bd0bd7f834d370d259be40a238467b300bb5fcb4acc48c47c54527400228"
       }
     }
   },
@@ -962,43 +990,57 @@
     "evidence_status": "pending-current-head-revalidation",
     "upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
     "discovery_evidence_status": "pending-current-head-revalidation",
-    "note": "Parent exact-head run 39486129504 at f605a520cb7d3dc21da795a35cb89b8479afdb8f revalidated current upstream 78ceaa548ae0e055aa56b53fde22064d13f250ef/76b967833b38eb7aa2cb4047008c07331390e61e, root acquisition discovery, recursive authority and Boost 582/582/open=0. Its 60 TDRP artifacts plus Rust run 39486129565 artifact were ZIP-hash verified at the parent and are historical-only for this continue OpenAI registration mapping commit; generated/resource/tool disposition and full source closure remain open.",
+    "note": "Parent exact-head TDRP run 39495231120 at 91d7db2db7bdcdf5a13d1abd9659a46cbedc4f07 workflow-succeeded and revalidated current upstream/tree, 16201 recursive entries, cppgir/expected-lite, fixed-point unresolved gitlinks=0 and Boost 582/582/open=0. It is retained as incomplete full-authority evidence because recursive reachability is partial-audited-open with non-zero remaining-open acquisition/generated/resource/tool dispositions; source_closure_ready=false. Parent Rust run 39495231072 also succeeded. After this mapping write both runs are parent supporting evidence only and new exact-head Actions are required.",
     "previous_incomplete_attempt": {
       "runner": "github-actions",
-      "head_sha": "423d90406948a0e8b06a5c17a8aece30ce687346",
-      "tdrp_run_id": 39492472036,
-      "tdrp_run_attempt": 2,
-      "status": "incomplete-failed-external-503",
-      "failed_job_id": 118870253577,
-      "failed_job_name": "Recursive root authority shard 7",
-      "failure": "git clone https://chromium.googlesource.com/breakpad/breakpad failed 128; HTTP 503",
-      "partial_authority_job_id": 118870251376,
-      "partial_authority_artifact_id": 12296064250,
-      "partial_authority_artifact_digest": "sha256:37ac4fe26a6244d47c5e5b61c05b3bd2dc626a370aad34b19ce71b3e69ccb58e",
-      "boost_job_id": 118870320373,
-      "boost_artifact_id": 12296446919,
-      "boost_artifact_digest": "sha256:493aa3266201c07f240c79764e580bc0467bd614b195e972431a50b9dedf0c70",
+      "head_sha": "91d7db2db7bdcdf5a13d1abd9659a46cbedc4f07",
+      "tdrp_run_id": 39495231120,
+      "tdrp_run_attempt": 1,
+      "run_conclusion": "success",
+      "status": "workflow-success-authority-incomplete-recursive-disposition-open",
+      "source_authority_job_id": 118878465787,
+      "source_authority_artifact_id": 12296714976,
+      "source_authority_artifact_digest": "sha256:9447c3e071bb8aa578e9ff2d1ca6b4595296b9cbf2afa6a8f94875ad9bdb7305",
+      "boost_job_id": 118878739418,
+      "boost_artifact_id": 12297411524,
+      "boost_artifact_digest": "sha256:b29e28c2e4e634a1401992cc97e1f1235c604e7fdeea16c509e97f031870699d",
+      "fixed_point_job_id": 118881711068,
+      "fixed_point_artifact_id": 12298126603,
+      "fixed_point_artifact_digest": "sha256:d86315b3bbc6519a44f26e96f00cc235fdd27835e8d80742b8ba4b8773445ae0",
+      "recursive_reachability_job_id": 118881879880,
+      "recursive_reachability_artifact_id": 12298730361,
+      "recursive_reachability_artifact_digest": "sha256:cbb6ba947678e08e816ab85d724b9a29e37252c5eac12ae0a67e83cc0beb85fe",
       "proved_partial": [
         "live upstream/tree 78ceaa548ae0e055aa56b53fde22064d13f250ef/76b967833b38eb7aa2cb4047008c07331390e61e",
         "root entries 7012, root blobs 6679, direct gitlinks 36",
         "recursive non-directory entries 16201 with exact count reconciliation",
         "cppgir and expected-lite participation",
+        "all recursive root/child/next shards and accounting gates successful",
+        "fixed-point scanned authorities 203 with unresolved gitlink authorities 0",
         "Boost 582 candidates / 582 dispositioned / 0 open"
       ],
       "missing_required": [
-        "recursive root aggregate after all shards",
-        "recursive child/next accounting",
-        "recursive fixed-point unresolved=0",
-        "recursive build reachability and remaining-open disposition"
+        "recursive remaining-open disposition is not closed",
+        "recursive build reachability remains partial-audited-open",
+        "remaining open: authorities 95, gitlinks 133, acquisition candidates 3865, generated inputs 4674, resource inputs 4602, tool inputs 4255",
+        "source_closure_ready remains false"
       ],
+      "remaining_open_totals": {
+        "authorities": 95,
+        "gitlinks": 133,
+        "acquisition_candidates": 3865,
+        "generated_inputs": 4674,
+        "resource_inputs": 4602,
+        "tool_inputs": 4255
+      },
       "accepted_authority": false,
       "rust_parent_run": {
-        "run_id": 39492471969,
+        "run_id": 39495231072,
         "status": "success",
         "jobs": "6/6 success",
         "steps": "79 success + 2 expected platform-conditional skipped",
-        "artifact_id": 12296766732,
-        "artifact_digest": "sha256:fa685dbeff5ec979fa07ad913e4c8cda01b0f8c1f1108c0b0f74e705b07b622a"
+        "artifact_id": 12298695193,
+        "artifact_digest": "sha256:d087bd0bd7f834d370d259be40a238467b300bb5fcb4acc48c47c54527400228"
       }
     }
   }

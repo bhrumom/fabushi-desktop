@@ -6,10 +6,10 @@
   "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
   "coverage": {
     "source_entries_total": 16201,
-    "unknown": 16161,
-    "unread": 16136,
+    "unknown": 16160,
+    "unread": 16135,
     "omitted": 0,
-    "responsibilities_total": 56,
+    "responsibilities_total": 57,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -15159,6 +15159,286 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral repository workflow contract read from telegramdesktop/tdesktop authority; no upstream Python scheduler implementation is copied into Fabushi shipping runtime.",
       "notes": "Zero-based recursive authority index 37 is .agents/skills/continue/references/consolidate-pending-tasks.md@bd301d93f8f670ad041b3db72330e17cbb50eb5c. Its complete reference, continue skill, Grok/Claude callers, workspace consolidation implementation and direct regressions were traced against Fabushi exact-head repository task/evidence governance and shipping RunScheduler/prompt candidates. This closes one source entry: unknown=16,161, unread=16,136, omitted=0. Parent Rust run 39492471969 succeeded at 423d90406948a0e8b06a5c17a8aece30ce687346. Parent TDRP run 39492472036 attempt 2 failed on external chromium.googlesource.com/breakpad HTTP 503 in shard 7; downstream fixed-point/reachability were skipped, so it is incomplete/failed evidence and not accepted parent authority. The next strict source entry is index 38 .agents/skills/continue/references/split-required-task.md@552ad09b2fa022b7df94481746a51167305bf846. Exact-head run 39494999784 exposed and correctly rejected a duplicated target-symbol ownership key against TDRP-R9-CODE-HEALTH-TASK-CLASSES-001; this repair narrows the mapping to three distinct existing-owner contract sentences without changing responsibility, counters, source identity or closure gates.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
+      "source_path": ".agents/skills/continue/references/split-required-task.md",
+      "source_blob_sha": "552ad09b2fa022b7df94481746a51167305bf846",
+      "source_kind": "repository_ai_split_required_task_routing_transaction",
+      "module_id": "tdesktop.continue-split-required-task",
+      "responsibility_id": "TDRP-R9-CONTINUE-SPLIT-REQUIRED-ROUTING-001",
+      "source_symbols": [
+        "Route a split-required task",
+        "Read the retained task",
+        "Preserve existing implementation",
+        "Write replacement state",
+        "Validate and publish"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-TASK-EVIDENCE",
+        "CAP-REPOSITORY-AI-WORKER-LIFECYCLE",
+        "CAP-WORKFLOW-HANDOFF-GOVERNANCE"
+      ],
+      "dependency_ids": [
+        ".agents/skills/continue/SKILL.md",
+        ".grok/commands/continue.md",
+        ".claude/commands/continue.md",
+        ".grok/commands/perform-task.md",
+        ".claude/commands/perform-task.md",
+        ".agents/skills/process-inbox/scripts/workspace.py",
+        ".agents/skills/process-inbox/scripts/workspace_test.py",
+        "Fabushi ordinary repository task/review/evidence lifecycle",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/continue-split-required-task-complete-read.md",
+      "behavior_contract": "Route one published split-required repository task into at least two independently shippable/testable replacement tasks without editing product source, preserving acceptance criteria, dependencies, project routing and durable lineage; when retained implementation exists, transfer the sealed source work and ownership state exactly once through the first implementation carrier before ordinary task execution resumes.",
+      "state_machine": "published split-required source + sealed retained-task/worktree evidence -> complete task/project/dependency read -> minimum independent boundary decomposition -> pristine replacement tasks + receipt + rewritten dependencies/project links -> optional first implementation carrier bound to full retained diff -> split-publish full-tree revalidation/CAS -> source split.yaml + replacements published -> carrier start transfers source refs, or no-carrier cleanup; race/conflict/outage remains visible and non-passing",
+      "side_effects": [
+        "Mutates repository-development task/project/dependency/receipt state only through the split publication helper; the split worker must not edit/reset/stash/commit/build/test product source.",
+        "When retained implementation exists exactly one first replacement becomes implementation carrier and receives source reservation/owned-path state; later replacements consume it only through dependencies."
+      ],
+      "failure_cases": [
+        "Mechanical split instead of independently testable ownership/lifecycle boundaries",
+        "Acceptance/project/dependency/source lineage or receipt traceability lost",
+        "Retained implementation duplicated/discarded/reset/checkpointed or assigned to multiple replacements",
+        "Non-first replacement becomes carrier or consumes retained code without carrier dependency",
+        "Replacement is non-pristine before publication",
+        "Retired split id remains in live dependency/project indexes",
+        "Changed carried-work seal, dependency cycle, semantic conflict or race is forced through",
+        "Shipping RunScheduler/Task/Automation state is repurposed as repository-development split truth"
+      ],
+      "ui_disposition": "Not applicable; repository-development task routing and retained implementation handoff only.",
+      "non_ui_responsibilities": [
+        "Complete source task/context/dependency/retained-work read",
+        "Minimum independently shippable/testable replacement boundary selection",
+        "Acceptance/dependency/project/receipt preservation",
+        "Exactly-one first implementation carrier for retained source state",
+        "Carried-work digest and owned-path/ref transfer fencing",
+        "Whole dependency/split/project graph validation and fail-visible atomic publication"
+      ],
+      "platform_delta": "Fabushi already owns the applicable source-neutral responsibility through canonical repository task/status/handoff and exact-head evidence governance. Preserve behavior under those owners; do not copy upstream Python routing runtime or create a second product Task/scheduler/source-specific queue.",
+      "existing_owner_candidates": [
+        "AGENTS.md canonical repository task/status/handoff and fail-closed publication governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md ordinary task routing/conflict/verification qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md task handoff/publication/conflict evidence",
+        "source/host/src/extensions/transcript/run_scheduler.rs shipping RunScheduler",
+        "source/host/src/runner/runner_prompt_glue.rs / system_prompt_assembly.rs / turn_agent_composition.rs shipping turn composition"
+      ],
+      "existing_owner": "Fabushi source-neutral canonical repository task/status/handoff and exact-head evidence governance",
+      "rejected_existing_owners": [
+        "RunScheduler owns end-user User/Agent/Background shipping runs, not repository task decomposition, split aliases, refs or retained worktree transfer.",
+        "Runner prompt/system/turn composition owns shipping provider/tool turns, not repository task/project/dependency publication.",
+        "A copied upstream split runtime or second repository queue would duplicate the source-neutral task/review/evidence owner."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "A task handoff must be compact and reconstructable:",
+        "proposal routing and owner approval remain in the ordinary quality-task/process-inbox/perform-task lifecycle.",
+        "blocked/split-required work leaves proposed shared facts task-local."
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The upstream entry defines repository-development orchestration/publication semantics, not shipping product logic; its applicable responsibility is source-neutral governance/evidence already owned by Fabushi.",
+      "command_event_contracts": [
+        "perform-task publishes split-required + retained source state -> continue launches exactly one fresh split worker",
+        "split worker reads task/project/dependencies/context/plan/proposal/result/carried-work + retained diff",
+        "independent boundaries -> at least two pristine replacements + receipt + dependency/project rewrites",
+        "retained implementation -> first replacement is sole carrier -> split-publish transfers reservation/owned paths -> ordinary start transfers sealed refs",
+        "no retained implementation -> no carrier -> obsolete source refs removed after successful publication",
+        "snapshot drift/cycle/semantic conflict/remote outage -> fail visible without weakened publication",
+        "new mapping commit -> parent CI is supporting/historical; fresh exact-head workflows required"
+      ],
+      "state_owner": "Existing Fabushi canonical repository task/status/spec/review/evidence owner; no shipping product state owner is added.",
+      "lifecycle_owner": "Root AGENTS.md ordinary repository development lifecycle plus Test Strategy and Test Evidence Contract exact-head governance.",
+      "persistence_and_restart": "Source task body/history remains durable; split.yaml seals retired identity and replacements, receipt records boundaries/dependencies/carrier, and retained refs/work digest survive scheduler restart until first carrier ordinary start transfers them.",
+      "concurrency_and_cancellation": "Exactly one split transaction owns the published split-required source. Publication re-reads the carried-work seal and full dependency/split/project graph through repository CAS. Races, changed state and conflicts remain visible.",
+      "security_boundary": "Split worker cannot authorize product execution, mutate/reset/stash/commit product source, bypass trust/approval/evidence, force-push, fabricate acceptance or transfer retained implementation to an unvalidated replacement.",
+      "network_service_dependencies": [
+        "GitHub repository authority",
+        "GitHub Actions hosted runners",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi repository governance / GitHub Actions evidence lifecycle",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "Fresh exact-head TDRP Revision 9 and Rust desktop runtime verification of this mapping commit is pending.",
+        "Parent TDRP 39495231120 is workflow-successful but full recursive authority remains incomplete because recursive build reachability is partial-audited-open with non-zero remaining-open authorities/gitlinks/acquisition/generated/resource/tool inputs.",
+        "Full source closure remains prohibited while unknown/unread are non-zero."
+      ],
+      "production_entrypoints": [
+        "AGENTS.md -> canonical compact task handoff and task/status ownership",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> ordinary task routing/conflict/verification qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> task-local split-required handoff and fail-closed publication evidence"
+      ],
+      "production_evidence": [
+        "path:AGENTS.md#canonical-task-handoff-and-status-owner",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#ordinary-task-routing-and-conflict-qualification",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#split-required-task-local-handoff-evidence",
+        "parent-tdrp-run:39495231120/head:91d7db2db7bdcdf5a13d1abd9659a46cbedc4f07/workflow-success-61-of-61-506-of-506/authority-incomplete-disposition-open",
+        "parent-source-authority:job118878465787/artifact:12296714976/digest:sha256:9447c3e071bb8aa578e9ff2d1ca6b4595296b9cbf2afa6a8f94875ad9bdb7305",
+        "parent-fixed-point:job118881711068/artifact:12298126603/digest:sha256:d86315b3bbc6519a44f26e96f00cc235fdd27835e8d80742b8ba4b8773445ae0/unresolved-gitlinks:0",
+        "parent-reachability:job118881879880/artifact:12298730361/digest:sha256:cbb6ba947678e08e816ab85d724b9a29e37252c5eac12ae0a67e83cc0beb85fe/status:partial-audited-open",
+        "parent-boost:job118878739418/artifact:12297411524/digest:sha256:b29e28c2e4e634a1401992cc97e1f1235c604e7fdeea16c509e97f031870699d/582-of-582-open-0",
+        "parent-rust-run:39495231072/head:91d7db2db7bdcdf5a13d1abd9659a46cbedc4f07/success-6-of-6/artifact:12298695193/digest:sha256:d087bd0bd7f834d370d259be40a238467b300bb5fcb4acc48c47c54527400228"
+      ],
+      "test_evidence": [
+        "dossier:projects/telegram-desktop-rust/dossiers/continue-split-required-task-complete-read.md",
+        "upstream-reference:.agents/skills/continue/references/split-required-task.md@552ad09b2fa022b7df94481746a51167305bf846",
+        "upstream-skill:.agents/skills/continue/SKILL.md@aeb81dd57018abbc8f03ea3dbd34f91952128db5",
+        "upstream-grok-continue:.grok/commands/continue.md@1365e5a7dc4c167468f7b6f57ec92ff89389b32e",
+        "upstream-claude-continue:.claude/commands/continue.md@e81c86031f2e501f30d2b6ed908fb03d648324c8",
+        "upstream-grok-performer:.grok/commands/perform-task.md@313e94a3202c39aa10944b832b45ee80a762f509",
+        "upstream-claude-performer:.claude/commands/perform-task.md@98ec6ed4aa51d3cac043a70a23adc6834b147f8e",
+        "upstream-workspace:.agents/skills/process-inbox/scripts/workspace.py@e1fdabbac9ccd635962b7b6dc1a62357fc5b931c",
+        "upstream-workspace-tests:.agents/skills/process-inbox/scripts/workspace_test.py@d045c95ca4415ffc02953ff02ac10e329dc69e7b",
+        "workspace_test.test_finish_publishes_split_required_with_carried_work",
+        "workspace_test.test_carried_work_snapshot_seals_owned_submodule_changes",
+        "workspace_test.test_split_publish_routes_and_starts_implementation_carrier",
+        "workspace_test.test_dependency_validation_rejects_missing_and_cyclic_edges"
+      ],
+      "target_commit": "91d7db2db7bdcdf5a13d1abd9659a46cbedc4f07",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development and evidence governance",
+      "composition_slot": "Canonical repository task decomposition and retained implementation handoff",
+      "capability_component": "Source-neutral split-required task routing and evidence-preserving publication",
+      "variation_axes": [
+        "retained implementation vs no retained implementation",
+        "coherent first carrier vs no safe carrier",
+        "two or more independent replacements and dependency order",
+        "clean publication vs race/semantic conflict/remote outage",
+        "parent supporting evidence vs new exact-head evidence"
+      ],
+      "shared_owner_contracts": [
+        "Root AGENTS.md development lifecycle",
+        "Ordinary repository task/review/evidence lifecycle",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract"
+      ],
+      "duplicate_root_check": "No source-specific split runtime, second repository task queue, shipping Task store, RunScheduler lane, Automation scheduler, Workflow store or source-specific product owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Published split-required state and sealed carried-work survive scheduler context loss. Successful split retires live source state into split.yaml and replacement/receipt graph; retained implementation remains owned until first carrier ordinary start transfers source refs. Races/conflicts do not erase or fabricate task state.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to workflow governance",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CONTINUE-SPLIT-REQUIRED-ROUTING-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CONTINUE-SPLIT-BOUNDARY-001",
+        "ORA-TDRP-CONTINUE-SPLIT-CARRIER-TRANSFER-001",
+        "ORA-TDRP-CONTINUE-SPLIT-PUBLICATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CONTINUE-SPLIT-NO-RETAINED-WORK-LOSS-001",
+        "INV-TDRP-CONTINUE-SPLIT-DEPENDENCY-GRAPH-CLOSED-001",
+        "INV-TDRP-CONTINUE-SPLIT-FAIL-VISIBLE-001",
+        "INV-TDRP-CONTINUE-SPLIT-NO-SHIPPING-QUEUE-COLLISION-001"
+      ],
+      "unit_case_ids": [
+        "workspace_test.test_finish_publishes_split_required_with_carried_work",
+        "workspace_test.test_carried_work_snapshot_seals_owned_submodule_changes"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CONTINUE-SPLIT-PRESERVES-TASK-SEMANTICS-001",
+        "CONTRACT-TDRP-CONTINUE-SPLIT-CARRIER-OWNERSHIP-001"
+      ],
+      "integration_case_ids": [
+        "workspace_test.test_split_publish_routes_and_starts_implementation_carrier",
+        "workspace_test.test_dependency_validation_rejects_missing_and_cyclic_edges"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-CONTINUE-SPLIT-PARENT-EVIDENCE-DEMOTION-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CONTINUE-SPLIT-CARRIED-WORK-DRIFT-001",
+        "FAULT-TDRP-CONTINUE-SPLIT-PUBLICATION-RACE-001",
+        "FAULT-TDRP-CONTINUE-SPLIT-NO-COHERENT-CARRIER-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CONTINUE-SPLIT-NO-PRODUCT-SOURCE-MUTATION-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-CONTINUE-SPLIT-ROUTING-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-CONTINUE-SPLIT-CARRIER-START-001"
+      ],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-INVENTORY",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "telegramdesktop/tdesktop exact upstream snapshot",
+        "workspace.py temporary Git/task fixtures"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral repository workflow contract read from telegramdesktop/tdesktop authority; no upstream Python scheduler/routing implementation is copied into Fabushi shipping runtime.",
+      "notes": "Zero-based recursive authority index 38 is .agents/skills/continue/references/split-required-task.md@552ad09b2fa022b7df94481746a51167305bf846. Complete reference, continue/perform-task callers, workspace split-publish transaction and regressions were traced against Fabushi repository task/status/handoff/evidence governance and shipping scheduler candidates rejected. This closes one source entry: unknown=16,160, unread=16,135, omitted=0. Parent TDRP 39495231120 completed 61/61 jobs and 506/506 steps and proves fixed-point unresolved gitlinks=0 plus Boost 582/582/open=0, but recursive build reachability remains partial-audited-open with 95 authorities, 133 gitlinks, 3865 acquisitions, 4674 generated, 4602 resources and 4255 tools open; it is not full accepted authority and source_closure_ready remains false. Parent Rust 39495231072 succeeded 6/6 jobs. Next strict source entry is index 39 .agents/skills/dependency-watch/SKILL.md@482b3a8d0c939d4bb7bd32ab146e0cc988d29fd8.",
       "test_execution_evidence": []
     }
   ]

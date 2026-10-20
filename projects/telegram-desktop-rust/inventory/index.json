@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16201,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16161,
-    "unread_minimum": 16136,
+    "unknown_minimum": 16160,
+    "unread_minimum": 16135,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -39,5 +39,5 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream is telegramdesktop/tdesktop@78ceaa548ae0e055aa56b53fde22064d13f250ef/tree 76b967833b38eb7aa2cb4047008c07331390e61e. latest_recursive_evidence intentionally remains bound to previous_historical_baseline a0cfd60923a220894611b6fcb3c92157876dc4a5 for recursive count reconciliation. Recursive authority index 37 .agents/skills/continue/references/consolidate-pending-tasks.md@bd301d93f8f670ad041b3db72330e17cbb50eb5c is independently mapped: unknown=16,161, unread=16,136, omitted=0. Parent Rust run 39492471969 at 423d90406948a0e8b06a5c17a8aece30ce687346 succeeded. Parent TDRP run 39492472036 attempt 2 is explicitly incomplete/failed evidence because shard 7 hit chromium.googlesource.com/breakpad HTTP 503, dependency-skipping fixed-point and recursive reachability; its successful authority/Boost jobs do not constitute accepted authority. The next strict source entry is index 38 .agents/skills/continue/references/split-required-task.md@552ad09b2fa022b7df94481746a51167305bf846. Recursive generated/resource/tool disposition remains open and source_closure_ready=false."
+  "note": "Live upstream is telegramdesktop/tdesktop@78ceaa548ae0e055aa56b53fde22064d13f250ef/tree 76b967833b38eb7aa2cb4047008c07331390e61e. latest_recursive_evidence intentionally remains bound to the historical reconciliation baseline rather than fabricating accepted current-head closure. Recursive authority index 38 .agents/skills/continue/references/split-required-task.md@552ad09b2fa022b7df94481746a51167305bf846 is independently mapped: unknown=16,160, unread=16,135, omitted=0. Parent TDRP run 39495231120 at 91d7db2db7bdcdf5a13d1abd9659a46cbedc4f07 completed 61/61 jobs and 506/506 steps successfully and proves exact recursive reconciliation, cppgir/expected-lite participation, all recursive shard layers, fixed-point unresolved_gitlink_authorities=0 and Boost 582/582/open=0. It is nevertheless incomplete as full authority under the current gate because recursive build reachability remains partial-audited-open with remaining-open totals authorities=95, gitlinks=133, acquisition_candidates=3865, generated_inputs=4674, resource_inputs=4602, tool_inputs=4255; source_closure_ready remains false. Parent Rust run 39495231072 succeeded 6/6 jobs with 79 successful steps and two expected platform-conditional skips. The next strict source entry is index 39 .agents/skills/dependency-watch/SKILL.md@482b3a8d0c939d4bb7bd32ab146e0cc988d29fd8."
 }
