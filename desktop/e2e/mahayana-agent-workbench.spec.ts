@@ -1,5 +1,5 @@
 import { _electron as electron, expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -680,7 +680,7 @@ test.afterAll(async () => {
   });
 });
 
-async function launchDesktopApp(appDataDir: string): Promise<ElectronApplication> {
+async function launchDesktopApp(appDataDir: string, extraEnv: Record<string, string> = {}): Promise<ElectronApplication> {
   const e2eAuthBackendUrl = await ensureE2eAuthBackend();
   // Exercise the shipping Fabushi account -> private Host credential ->
   // Responses transport chain. The browser-first login below owns the token;
@@ -704,6 +704,7 @@ async function launchDesktopApp(appDataDir: string): Promise<ElectronApplication
       SAND_DISABLE_SENTRY: '1',
       FABUSHI_FEATURE_HOST_MODE: process.env.FABUSHI_FEATURE_HOST_MODE || 'test',
       MAHAYANA_APP_HOST_BIN: process.env.MAHAYANA_APP_HOST_BIN || '',
+      ...extraEnv,
     },
   });
 }
@@ -1005,6 +1006,105 @@ test('native Browser Workspace opens real Chromium pages, isolates tabs, and dow
   } finally {
     await app?.close().catch(() => undefined);
     await rm(appDataDir, { recursive: true, force: true });
+  }
+});
+
+
+test('Browser extension installs into real Chromium, survives restart, disables, updates, and uninstalls', async () => {
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-browser-extension-data-'));
+  const extensionDir = await mkdtemp(path.join(tmpdir(), 'fabushi-browser-extension-src-'));
+  let app: ElectronApplication | null = null;
+  const writeExtension = async (version: string, marker: string) => {
+    await writeFile(path.join(extensionDir, 'manifest.json'), JSON.stringify({
+      manifest_version: 3,
+      name: 'Fabushi E2E Extension',
+      version,
+      permissions: ['storage'],
+      host_permissions: ['http://127.0.0.1/*'],
+      content_scripts: [{
+        matches: ['http://127.0.0.1/*'],
+        js: ['content.js'],
+        run_at: 'document_idle',
+      }],
+    }));
+    await writeFile(path.join(extensionDir, 'content.js'), `document.documentElement.dataset.fabushiExtension = ${JSON.stringify(marker)};`);
+  };
+  const observedMarker = async (expectedUrl: string) => await app!.evaluate(async ({ webContents }, url) => {
+    const contents = webContents.getAllWebContents().find((candidate) => candidate.getURL() === url);
+    if (contents == null) return null;
+    return await contents.executeJavaScript('document.documentElement.dataset.fabushiExtension || null');
+  }, expectedUrl);
+
+  try {
+    await writeExtension('1.0.0', 'v1');
+    const origin = await ensureE2eAuthBackend();
+    const fixtureUrl = `${origin}/browser-workspace-fixture`;
+    app = await launchDesktopApp(appDataDir, { FABUSHI_E2E_BROWSER_EXTENSION_DIR: extensionDir });
+    let page = await app.firstWindow();
+    await completeBrowserLogin(page);
+    await openMahayanaConversation(page);
+
+    await page.getByRole('button', { name: 'Open browser workspace', exact: true }).click();
+    let workspace = page.getByTestId('browser-workspace');
+    await expect(workspace).toBeVisible({ timeout: 10_000 });
+    await workspace.getByRole('button', { name: 'Extensions', exact: true }).click();
+    await workspace.getByRole('button', { name: 'Choose unpacked extension…', exact: true }).click();
+    const confirmation = workspace.getByRole('group', { name: 'Extension install confirmation' });
+    await expect(confirmation.getByText(/Fabushi E2E Extension 1\.0\.0/)).toBeVisible();
+    await expect(confirmation.getByText(/storage/)).toBeVisible();
+    await expect(confirmation.getByText(/http:\/\/127\.0\.0\.1\/\*/)).toBeVisible();
+    await confirmation.getByRole('button', { name: 'Install', exact: true }).click();
+    await expect(workspace.getByText(/Fabushi E2E Extension 1\.0\.0/)).toBeVisible();
+
+    let address = workspace.getByRole('textbox', { name: 'Address and search' });
+    await address.fill(fixtureUrl);
+    await address.press('Enter');
+    await expect.poll(() => observedMarker(fixtureUrl), { timeout: 15_000 }).toBe('v1');
+
+    await app.close();
+    app = null;
+    app = await launchDesktopApp(appDataDir, { FABUSHI_E2E_BROWSER_EXTENSION_DIR: extensionDir });
+    page = await app.firstWindow();
+    await completeBrowserLogin(page);
+    const existingAgent = page.getByRole('region', { name: 'Agent list' }).locator('button.sand-agent-item').first();
+    await expect(existingAgent).toBeVisible({ timeout: 15_000 });
+    await existingAgent.click();
+    await page.getByRole('button', { name: 'Open browser workspace', exact: true }).click();
+    workspace = page.getByTestId('browser-workspace');
+    await workspace.getByRole('button', { name: 'Extensions', exact: true }).click();
+    await expect(workspace.getByText(/Fabushi E2E Extension 1\.0\.0/)).toBeVisible({ timeout: 15_000 });
+
+    await workspace.getByRole('button', { name: 'New browser tab', exact: true }).click();
+    address = workspace.getByRole('textbox', { name: 'Address and search' });
+    await address.fill(fixtureUrl);
+    await address.press('Enter');
+    await expect.poll(() => observedMarker(fixtureUrl), { timeout: 15_000 }).toBe('v1');
+
+    await workspace.getByRole('button', { name: 'Disable', exact: true }).click();
+    await workspace.getByRole('button', { name: 'New browser tab', exact: true }).click();
+    await address.fill(fixtureUrl);
+    await address.press('Enter');
+    await expect.poll(() => observedMarker(fixtureUrl), { timeout: 15_000 }).toBe(null);
+
+    await writeExtension('1.1.0', 'v2');
+    await workspace.getByRole('button', { name: 'Update', exact: true }).click();
+    await expect(workspace.getByText(/Fabushi E2E Extension 1\.1\.0/)).toBeVisible({ timeout: 10_000 });
+    await workspace.getByRole('button', { name: 'Enable', exact: true }).click();
+    await workspace.getByRole('button', { name: 'New browser tab', exact: true }).click();
+    await address.fill(fixtureUrl);
+    await address.press('Enter');
+    await expect.poll(() => observedMarker(fixtureUrl), { timeout: 15_000 }).toBe('v2');
+
+    await workspace.getByRole('button', { name: 'Uninstall', exact: true }).click();
+    await expect(workspace.getByText('No browser extensions installed.', { exact: true })).toBeVisible();
+    await workspace.getByRole('button', { name: 'New browser tab', exact: true }).click();
+    await address.fill(fixtureUrl);
+    await address.press('Enter');
+    await expect.poll(() => observedMarker(fixtureUrl), { timeout: 15_000 }).toBe(null);
+  } finally {
+    await app?.close().catch(() => undefined);
+    await rm(appDataDir, { recursive: true, force: true });
+    await rm(extensionDir, { recursive: true, force: true });
   }
 });
 

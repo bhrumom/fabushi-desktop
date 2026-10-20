@@ -861,6 +861,10 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
             return result.filePaths[0] ?? null;
           },
           pickExtensionDirectory: async () => {
+            const fixture = process.env.FABUSHI_E2E === "1"
+              ? process.env.FABUSHI_E2E_BROWSER_EXTENSION_DIR?.trim()
+              : undefined;
+            if (fixture) return fixture;
             const result = await bindings.native.dialog!.showOpenDialog({ properties: ["openDirectory"] });
             if (result.canceled || result.filePaths.length !== 1) return null;
             return result.filePaths[0] ?? null;
