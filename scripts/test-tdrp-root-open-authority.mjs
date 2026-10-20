@@ -53,7 +53,7 @@ test('fails closed for ambiguous Qt version source', () => {
 
 test('fails closed if the computed branch expression is ambiguous or unknown', () => {
   assert.throws(
-    () => resolveQtCloneRef(qt6Clone, qtVersionSource, prepareSource + "\nbranch = 'v$QT'"),
+    () => resolveQtCloneRef(qt6Clone, qtVersionSource, prepareSource + "\nbranch = 'v$QT' + ('-lts-lgpl' if qt.startswith('6.2.') else '')"),
     /expected exactly one source branch expression/,
   );
 });
