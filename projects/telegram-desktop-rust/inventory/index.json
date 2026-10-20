@@ -4,16 +4,16 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "7b08e3ff570186ca8714e4de2242d08af4d98814",
-    "tree": "cf82a72e311226b7b14f712e8de2586d7ff6e1f4",
+    "commit": "6c2ee90618bf69683a1c466e3b0550260b82e129",
+    "tree": "c0b745cdee2cf0e2ab560ebcedc49cbbaafbfeaa",
     "baseline_identity_accepted": false
   },
   "inventory": {
-    "root_non_directory_entries": 6717,
+    "root_non_directory_entries": 6715,
     "recursive_non_directory_entries": 16203,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16172,
+    "unknown_minimum": 16170,
     "unread_minimum": 16145,
     "omitted_known": 0
   },
@@ -26,8 +26,8 @@
     "artifact_name": "tdrp-revision9-authority-6d51a22dab24cdcb2817d602b58a2a02f75830e8",
     "artifact_digest": "sha256:d4ca4facb948537b0fcfe56cfac9d69718b846e66c7cde12cbdb942816452671",
     "evidence_status": "historical-only",
-    "upstream_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
-    "recursive_non_directory_entries": 16202,
+    "upstream_commit": "f0aa39cb1c5e48c7a0dc5283150d4975f556b582",
+    "recursive_non_directory_entries": 16203,
     "source_closure_ready": false
   },
   "closure_rules": {
@@ -38,5 +38,5 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Current fail-closed rebaseline candidate is telegramdesktop/tdesktop@7b08e3ff570186ca8714e4de2242d08af4d98814, root tree cf82a72e311226b7b14f712e8de2586d7ff6e1f4. Fresh root recursive API tree is complete (truncated=false), with 6,717 root non-directory entries. Telegram/lib_webview advanced to ef03bbfd696c7527d7cb57ac20c3a5d30feb98fa and adds exactly one non-directory source file, yielding a 16,203-entry recursive candidate inventory. Recomputed coverage is unknown=16,172, unread=16,145, omitted=0. Last available Actions evidence is historical-only for old 351204 authority; fresh exact-head artifact is pending. .agents/skills/code-health/scripts/includes.py@2c02b4e7eb821f123588e0a80056edef86fc084c remains the unique next strict gap at root recursive non-directory index 30."
+  "note": "Current upstream candidate: telegramdesktop/tdesktop@6c2ee90618bf69683a1c466e3b0550260b82e129/tree c0b745cdee2cf0e2ab560ebcedc49cbbaafbfeaa. Root tree is non-truncated; recursive total and coverage remain provisional until exact-head Actions verifies all direct/nested gitlinks, acquisitions and generated/resource/tool inputs. Prior evidence is historical-only. source_closure_ready=false."
 }

@@ -8,29 +8,111 @@
     "repository": "telegramdesktop/tdesktop",
     "url": "https://github.com/telegramdesktop/tdesktop",
     "discovery_ref": "refs/heads/dev",
-    "commit": "f0aa39cb1c5e48c7a0dc5283150d4975f556b582",
-    "tree": "592063989cd2124fa9c1e5c59c99b0eb599bec4f",
+    "commit": "6c2ee90618bf69683a1c466e3b0550260b82e129",
+    "tree": "c0b745cdee2cf0e2ab560ebcedc49cbbaafbfeaa",
     "committed_at": "2026-10-20T04:28:54Z",
     "accepted": false
   },
   "previous_historical_baseline": {
-    "commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
-    "tree": "f8d3613b850cee75f156b762ef5399315302120e",
+    "commit": "f0aa39cb1c5e48c7a0dc5283150d4975f556b582",
+    "tree": "592063989cd2124fa9c1e5c59c99b0eb599bec4f",
     "evidence_status": "historical-only",
-    "reason": "Live dev advanced one commit to 351204f3695b4a39bc3f4d2f230c061b9a01fe2a, changing only Telegram/build/prepare/prepare.py Qt cache-key mechanics. Entry-8 blob, direct gitlinks and cardinalities are unchanged; prior candidate evidence is historical-only."
+    "reason": "Live dev advanced to 6c2ee90618bf69683a1c466e3b0550260b82e129. The prior source and Actions evidence remain historical-only."
   },
   "observed_root_inventory": {
     "tree_truncated": false,
-    "entry_count": 7014,
-    "blob_count": 6681,
+    "entry_count": 7012,
+    "blob_count": 6679,
     "direct_gitlink_count": 36,
-    "sourcefiles_blob_count": 3271,
+    "sourcefiles_blob_count": 3269,
     "resource_blob_count": 3129,
-    "root_non_directory_count": 6717
+    "root_non_directory_count": 6715
   },
   "delta_from_previous_baseline": {
-    "ahead_by": 1,
-    "changed_paths": 1
+    "base_commit": "f0aa39cb1c5e48c7a0dc5283150d4975f556b582",
+    "base_tree": "592063989cd2124fa9c1e5c59c99b0eb599bec4f",
+    "current_commit": "6c2ee90618bf69683a1c466e3b0550260b82e129",
+    "current_tree": "c0b745cdee2cf0e2ab560ebcedc49cbbaafbfeaa",
+    "ahead_by": 24,
+    "changed_paths": 63,
+    "added_paths": [],
+    "modified_paths": [
+      ".agents/skills/code-health/scripts/health_test.py",
+      "AGENTS.md",
+      "Telegram/SourceFiles/boxes/premium_preview_box.cpp",
+      "Telegram/SourceFiles/chat_helpers/emoji_list_widget.cpp",
+      "Telegram/SourceFiles/chat_helpers/emoji_list_widget.h",
+      "Telegram/SourceFiles/chat_helpers/stickers_list_widget.cpp",
+      "Telegram/SourceFiles/chat_helpers/stickers_list_widget.h",
+      "Telegram/SourceFiles/chat_helpers/tabbed_panel.cpp",
+      "Telegram/SourceFiles/chat_helpers/tabbed_panel.h",
+      "Telegram/SourceFiles/data/data_session.cpp",
+      "Telegram/SourceFiles/data/data_session.h",
+      "Telegram/SourceFiles/dialogs/dialogs_entry.cpp",
+      "Telegram/SourceFiles/dialogs/dialogs_entry.h",
+      "Telegram/SourceFiles/dialogs/dialogs_inner_widget.cpp",
+      "Telegram/SourceFiles/dialogs/dialogs_inner_widget.h",
+      "Telegram/SourceFiles/dialogs/ui/dialogs_suggestions.cpp",
+      "Telegram/SourceFiles/dialogs/ui/dialogs_suggestions.h",
+      "Telegram/SourceFiles/dialogs/ui/dialogs_video_userpic.cpp",
+      "Telegram/SourceFiles/editor/editor_link_box.cpp",
+      "Telegram/SourceFiles/editor/editor_trim_timeline.cpp",
+      "Telegram/SourceFiles/export/export_api_wrap.cpp",
+      "Telegram/SourceFiles/export/export_api_wrap.h",
+      "Telegram/SourceFiles/export/output/export_output_abstract.cpp",
+      "Telegram/SourceFiles/export/output/export_output_abstract.h",
+      "Telegram/SourceFiles/ffmpeg/ffmpeg_utility.cpp",
+      "Telegram/SourceFiles/history/history.cpp",
+      "Telegram/SourceFiles/history/history.h",
+      "Telegram/SourceFiles/history/history_item.cpp",
+      "Telegram/SourceFiles/history/history_item.h",
+      "Telegram/SourceFiles/history/history_widget.cpp",
+      "Telegram/SourceFiles/history/history_widget.h",
+      "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp",
+      "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.h",
+      "Telegram/SourceFiles/history/view/controls/history_view_voice_record_bar.cpp",
+      "Telegram/SourceFiles/history/view/controls/history_view_voice_record_bar.h",
+      "Telegram/SourceFiles/info/profile/info_profile_actions.cpp",
+      "Telegram/SourceFiles/info/profile/info_profile_actions.h",
+      "Telegram/SourceFiles/info/profile/info_profile_top_bar.cpp",
+      "Telegram/SourceFiles/info/stories/info_stories_inner_widget.cpp",
+      "Telegram/SourceFiles/info/stories/info_stories_inner_widget.h",
+      "Telegram/SourceFiles/media/clip/media_clip_reader.cpp",
+      "Telegram/SourceFiles/passport/passport_encryption.cpp",
+      "Telegram/SourceFiles/passport/passport_encryption.h",
+      "Telegram/SourceFiles/passport/passport_form_view_controller.cpp",
+      "Telegram/SourceFiles/passport/passport_panel_controller.cpp",
+      "Telegram/SourceFiles/passport/passport_panel_controller.h",
+      "Telegram/SourceFiles/ui/boxes/confirm_phone_box.cpp",
+      "Telegram/SourceFiles/ui/boxes/confirm_phone_box.h",
+      "Telegram/SourceFiles/ui/chat/chat.style",
+      "Telegram/SourceFiles/ui/menu_icons.style",
+      "Telegram/SourceFiles/ui/peer/video_userpic_player.cpp",
+      "Telegram/SourceFiles/ui/peer/video_userpic_player.h",
+      "Telegram/SourceFiles/wallet/wallet_api.cpp",
+      "Telegram/SourceFiles/wallet/wallet_api.h",
+      "Telegram/SourceFiles/wallet/wallet_content.cpp",
+      "Telegram/SourceFiles/wallet/wallet_session.cpp",
+      "Telegram/SourceFiles/wallet/wallet_session.h",
+      "Telegram/cmake/td_ui.cmake",
+      "Telegram/cmake/telegram_apple_swift_runtime.cmake",
+      "Telegram/lib_base",
+      "cmake"
+    ],
+    "removed_paths": [
+      {
+        "path": "Telegram/SourceFiles/ui/boxes/auto_delete_settings.cpp",
+        "previous_blob_sha": "e735f4d8123eb2a77951a7d38e65e77e5b7eab95",
+        "change_status": "removed-at-current-authority"
+      },
+      {
+        "path": "Telegram/SourceFiles/ui/boxes/auto_delete_settings.h",
+        "previous_blob_sha": "0c7e72322838843329a9f07740a8d21fb993348b",
+        "change_status": "removed-at-current-authority"
+      }
+    ],
+    "deleted_path_count": 2,
+    "note": "Live GitHub compare result from previous upstream commit to current dev authority."
   },
   "direct_gitlinks": [
     {
@@ -151,7 +233,7 @@
     {
       "path": "Telegram/lib_base",
       "repository": "desktop-app/lib_base",
-      "commit": "ad56a40232ba542ceb796af7c6b4f474c64df851"
+      "commit": "5e3449e85b52cc0b3e95a9324b2a79d1b3f812d0"
     },
     {
       "path": "Telegram/lib_crl",
@@ -211,7 +293,7 @@
     {
       "path": "cmake",
       "repository": "desktop-app/cmake_helpers",
-      "commit": "c90e6a1236142cbd80ac0ea3cdf219dabab2ed53"
+      "commit": "7ceca3019b4750d7a5acb2de0faffd523ee14095"
     }
   ],
   "known_nested_gitlinks": [
@@ -228,7 +310,7 @@
       "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae"
     },
     {
-      "parent": "desktop-app/cmake_helpers@c90e6a1236142cbd80ac0ea3cdf219dabab2ed53",
+      "parent": "desktop-app/cmake_helpers@7ceca3019b4750d7a5acb2de0faffd523ee14095",
       "path": "external/glib/cppgir",
       "repository": "gitlab.com/mnauw/cppgir",
       "commit": "47cf94f83b54cda59018135601e19d7fb0c77776"
@@ -256,12 +338,12 @@
     "pointer_scan_required_in_github_actions": true
   },
   "coverage": {
-    "root_source_entries_total": 6717,
+    "root_source_entries_total": 6715,
     "recursive_source_entries_total": 16203,
-    "unknown_minimum": 16172,
+    "unknown_minimum": 16170,
     "unread_minimum": 16145,
     "omitted_known": 0,
-    "note": "Revision 9 live rebaseline is bound to telegramdesktop/tdesktop@7b08e3ff570186ca8714e4de2242d08af4d98814 (tree cf82a72e311226b7b14f712e8de2586d7ff6e1f4). Root non-directory inventory remains 6,717. Telegram/lib_webview advanced from 48c72924706c37addb5f0bcf70b2df8b227f1313 to ef03bbfd696c7527d7cb57ac20c3a5d30feb98fa and its recursive non-directory inventory increased 32 -> 33, so recursive authority is 16,203. The seven changed root paths have no existing parity-ledger row, so all previously mapped source blobs remain unchanged at the new authority. Recursive array index 30 includes.py remains independently mapped; the newly added lib_webview source entry is conservatively unknown/unread. Counters are unknown=16,172, unread=16,145, omitted=0."
+    "note": "Current root tree API is complete: 7,012 entries, 6,679 blobs, 36 direct gitlinks, 6,715 non-directory entries, 3,269 Telegram/SourceFiles blobs, 3,129 Telegram/Resources blobs. Recursive total 16,203 is provisional pending exact-head Actions validation of all direct/nested gitlinks and build inputs. 33 unique ledger source paths; unknown=16,170, unread=16,145, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -275,11 +357,12 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Live rebaseline identity for telegramdesktop/tdesktop@f0aa39cb1c5e48c7a0dc5283150d4975f556b582 (tree 592063989cd2124fa9c1e5c59c99b0eb599bec4f) is source-closure open. The exact-head GitHub Actions recursive inventory is pending; existing coverage counts remain provisional and acceptance remains fail-closed."
+    "note": "Upstream identity is observed but not accepted. Exact-head Actions recursive inventory, build-time/generated/resource/tool inputs, complete responsibility mapping, production/release and independent acceptance remain open."
   },
   "baseline_identity_evidence": {
     "status": "pending-current-head-revalidation",
-    "upstream_commit": "f0aa39cb1c5e48c7a0dc5283150d4975f556b582",
+    "upstream_commit": "6c2ee90618bf69683a1c466e3b0550260b82e129",
+    "upstream_tree": "c0b745cdee2cf0e2ab560ebcedc49cbbaafbfeaa",
     "previous_historical_evidence": {
       "status": "accepted",
       "runner": "github-actions",
@@ -311,7 +394,7 @@
   },
   "recursive_inventory_evidence": {
     "status": "pending-current-head-revalidation",
-    "upstream_commit": "f0aa39cb1c5e48c7a0dc5283150d4975f556b582",
+    "upstream_commit": "6c2ee90618bf69683a1c466e3b0550260b82e129",
     "source_closure_ready": false,
     "previous_historical_evidence": {
       "status": "accepted-baseline-identity-only-source-closure-open",
@@ -418,7 +501,8 @@
       "artifact_digest": "sha256:ab52d74cadbc20427e8183fd0963a955d7a7a4f91a478744688fb6c299442d38"
     },
     "evidence_status": "pending-current-head-revalidation",
-    "upstream_commit": "f0aa39cb1c5e48c7a0dc5283150d4975f556b582",
-    "discovery_evidence_status": "pending-current-head-revalidation"
+    "upstream_commit": "6c2ee90618bf69683a1c466e3b0550260b82e129",
+    "discovery_evidence_status": "pending-current-head-revalidation",
+    "note": "All candidate classifications and child scans from earlier commits are historical-only until exact-current-head Actions revalidates them."
   }
 }
