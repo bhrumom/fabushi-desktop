@@ -339,11 +339,11 @@
   },
   "coverage": {
     "root_source_entries_total": 6715,
-    "recursive_source_entries_total": 16203,
-    "unknown_minimum": 16170,
-    "unread_minimum": 16145,
+    "recursive_source_entries_total": 16201,
+    "unknown_minimum": 16168,
+    "unread_minimum": 16143,
     "omitted_known": 0,
-    "note": "Current root tree API is complete: 7,012 entries, 6,679 blobs, 36 direct gitlinks, 6,715 non-directory entries, 3,269 Telegram/SourceFiles blobs, 3,129 Telegram/Resources blobs. Recursive total 16,203 is provisional pending exact-head Actions validation of all direct/nested gitlinks and build inputs. 33 unique ledger source paths; unknown=16,170, unread=16,145, omitted=0."
+    "note": "Current root tree API is complete: 7,012 entries, 6,679 blobs, 36 direct gitlinks, 6,715 non-directory entries, 3,269 Telegram/SourceFiles blobs, 3,129 Telegram/Resources blobs. The previous historical recursive evidence is 16,203 entries. The current recursive total is 16,201: the exact two-entry decrease is explained by deletion of Telegram/SourceFiles/ui/boxes/auto_delete_settings.cpp (previous blob e735f4d8123eb2a77951a7d38e65e77e5b7eab95) and Telegram/SourceFiles/ui/boxes/auto_delete_settings.h (previous blob 0c7e72322838843329a9f07740a8d21fb993348b); no root paths were added, and direct-component counts are reconciled separately by the validator. 33 unique ledger source paths; unknown=16,168, unread=16,143, omitted=0. Exact-head recursive report remains pending; source closure stays open."
   },
   "acceptance": {
     "baseline_ready": false,
