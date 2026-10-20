@@ -134,7 +134,7 @@ function handlersFor(backend: MiniAppToolBackend): Map<string, { capability: Min
       return { ok: true };
     }],
     ["transfer.send", MINIAPP_CAPABILITY.TRANSFER, true, async (args) => {
-      const sent = await backend.send({
+      const transferConfig = {
         selectionId: requiredId(args, "selectionId"),
         targetPoolId: requiredId(args, "targetPoolId"),
         repeat: optionalInteger(args, "repeat", 1, 10_000),
@@ -145,7 +145,10 @@ function handlersFor(backend: MiniAppToolBackend): Map<string, { capability: Min
         trafficLimitBytes: optionalInteger(args, "trafficLimitBytes", 1, 1_073_741_824),
         queueCapacity: optionalInteger(args, "queueCapacity", 1, 65_536),
         chunkBytes: optionalInteger(args, "chunkBytes", 1, 16 * 1024 * 1024),
-      });
+      };
+      if (transferConfig.watch === true && (transferConfig.repeat !== undefined || transferConfig.resume === true)) throw new TypeError("TRANSFER_MODES_CONFLICT");
+      if (transferConfig.resume === true && transferConfig.repeat !== undefined) throw new TypeError("TRANSFER_MODES_CONFLICT");
+      const sent = await backend.send(transferConfig);
       return { ok: true, data: sent };
     }],
     ["transfer.receive", MINIAPP_CAPABILITY.TRANSFER, true, async (args) => {
