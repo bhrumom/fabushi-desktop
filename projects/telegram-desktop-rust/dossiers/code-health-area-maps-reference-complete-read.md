@@ -86,6 +86,17 @@ The applicable responsibility is preserved by:
 
 Telegram-specific paths, Python scanner implementation, Claude/Codex command spelling, health-state worktrees and perform-task lane implementation are provenance/instrumentation only. They are not copied into Fabushi shipping/runtime architecture.
 
+## Traceability identities
+
+- Requirement: `TDRP-R9-CODE-HEALTH-AREA-MAPS-001`
+- Oracle: `ORA-TDRP-AREA-MAP-SECTIONS-001`
+- Oracle: `ORA-TDRP-AREA-MAP-APPROVAL-001`
+- Oracle: `ORA-TDRP-AREA-MAP-PLACEMENT-001`
+- Invariant: `INV-TDRP-AREA-MAP-ATLAS-CONSISTENCY-001`
+- Invariant: `INV-TDRP-AREA-MAP-CHECKABLE-APPROVAL-001`
+- Invariant: `INV-TDRP-AREA-MAP-MECHANICAL-BOUND-001`
+- Invariant: `INV-TDRP-AREA-MAP-NO-SECOND-OWNER-001`
+
 ## Verification and remaining scope
 
 This entry is complete only when the mapping commit passes exact-head TDRP Revision 9 source-authority validation and Rust desktop runtime verification on GitHub Actions, including the fail-closed Accepted gate and the existing recursive/source/runtime proof set. Until then its repository row remains implementation-complete but exact-head-evidence-pending.
