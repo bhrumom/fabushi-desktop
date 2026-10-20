@@ -13261,16 +13261,10 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "AGENTS.md",
-        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
-        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+        "AGENTS.md"
       ],
       "fabushi_target_symbols": [
-        "Repository quality-health governance",
-        "Repository source-text normalization evidence governance",
-        "Repository quality-health qualification",
-        "Repository quality-health evidence",
-        "Repository source-text normalization evidence"
+        "Metrics and hotspot rankings select where to investigate; they are never acceptance evidence by themselves."
       ],
       "target_language": "Markdown",
       "language_rationale": "Upstream metrics.py is repository-development quality instrumentation, not shipping product logic; its applicable behavior is preserved as source-neutral evidence contracts.",
@@ -13299,16 +13293,10 @@
         "Independent exact-head GitHub Actions verification of this metrics mapping commit is pending."
       ],
       "production_entrypoints": [
-        "AGENTS.md -> Repository quality-health governance / source-text normalization governance",
-        "TEST_STRATEGY.md -> Repository quality-health qualification",
-        "evidence-contract.md -> Repository quality-health/source-text evidence"
+        "AGENTS.md -> Repository quality-health governance -> metrics/hotspot evidence boundary"
       ],
       "production_evidence": [
-        "path:AGENTS.md#Repository quality-health governance",
-        "path:AGENTS.md#Repository source-text normalization evidence governance",
-        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Repository quality-health qualification",
-        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Repository quality-health evidence",
-        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Repository source-text normalization evidence"
+        "path:AGENTS.md#Repository quality-health governance"
       ],
       "test_evidence": [
         "dossier:projects/telegram-desktop-rust/dossiers/code-health-metrics-script-complete-read.md",
@@ -13444,7 +13432,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral repository-quality include-graph contract read from telegramdesktop/tdesktop authority; no upstream Python implementation copied into Fabushi shipping runtime.",
-      "notes": "Recursive authority index 31 immediately after includes.py index 30 is metrics.py@ebab29607cb52782899d5424636f0bd5e0c126cd. Complete source, production caller report.py, direct UnusedTests and sources.py LANG_FILE boundary were read. This closes only one source entry: unknown=16,167, unread=16,142, omitted=0. PR #158 run 39441511131 is historical-only for this newer target commit; exact-head verification is pending.",
+      "notes": "Recursive authority index 31 immediately after includes.py index 30 is metrics.py@ebab29607cb52782899d5424636f0bd5e0c126cd. Complete source, production caller report.py, direct UnusedTests and sources.py LANG_FILE boundary were read. This closes only one source entry: unknown=16,167, unread=16,142, omitted=0. PR #158 run 39441511131 is historical-only for this newer target commit; exact-head verification is pending. Validator ownership is intentionally bound to the unique AGENTS.md metric-not-acceptance sentence; broader quality-health headings remain shared-owner context rather than duplicate target-symbol ownership.",
       "test_execution_evidence": []
     }
   ]
