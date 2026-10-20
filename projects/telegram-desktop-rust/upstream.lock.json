@@ -416,6 +416,9 @@
       "validation_head_sha": "7e1f2dbfb5c543ab05231a0e271f11d48232ca94",
       "artifact_id": 11474492724,
       "artifact_digest": "sha256:ab52d74cadbc20427e8183fd0963a955d7a7a4f91a478744688fb6c299442d38"
-    }
+    },
+    "evidence_status": "pending-current-head-revalidation",
+    "upstream_commit": "7b08e3ff570186ca8714e4de2242d08af4d98814",
+    "discovery_evidence_status": "pending-current-head-revalidation"
   }
 }

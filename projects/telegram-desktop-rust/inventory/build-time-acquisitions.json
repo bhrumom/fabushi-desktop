@@ -13,7 +13,7 @@
     "candidate_lines_total": 331,
     "immutable_commit_pin_occurrences_classified": 19,
     "candidate_lines_pending_classification": 0,
-    "note": "Live upstream 7b08e3ff570186ca8714e4de2242d08af4d98814 is two commits ahead of 351204f3695b4a39bc3f4d2f230c061b9a01fe2a. The changed root paths do not modify build-time acquisition declarations; candidate cardinality remains 331/19/0. Telegram/lib_webview advances to ef03bbfd696c7527d7cb57ac20c3a5d30feb98fa and is accounted by recursive source authority/reachability.",
+    "note": "Historical acquisition-candidate evidence was measured for the prior authority and is not accepted for the current head. Re-run the source-authority workflow against telegramdesktop/tdesktop@7b08e3ff570186ca8714e4de2242d08af4d98814 and confirm candidate lines remain 331 with 331 classified, 0 pending. The direct lib_webview gitlink advances to ef03bbfd696c7527d7cb57ac20c3a5d30feb98fa; its new Windows temporary-storage source is tracked recursive input, not a root build-time acquisition pin.",
     "candidate_lines_classified": 331,
     "disposition_closure_status": "complete",
     "recursive_authority_closure_status": "open",
