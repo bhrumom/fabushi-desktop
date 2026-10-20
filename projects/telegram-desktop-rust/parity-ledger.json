@@ -6,10 +6,10 @@
   "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16181,
-    "unread": 16154,
+    "unknown": 16180,
+    "unread": 16153,
     "omitted": 0,
-    "responsibilities_total": 43,
+    "responsibilities_total": 44,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -10449,6 +10449,287 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral repository-quality/task-class contract read from telegramdesktop/tdesktop authority; no upstream Python/C++/agent workflow implementation copied into Fabushi shipping runtime.",
       "notes": "Actual 1-based recursive array entry 21 is .agents/skills/code-health/references/classes.md. Its skill/scripts/maps/survey/perform-task callers were read to understand this entry and remain independently accounted inventory entries unless separately represented. This closure decrements only one independent source entry to unknown=16,181 and unread=16,154, omitted=0.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
+      "source_path": ".agents/skills/code-health/references/maps.md",
+      "source_blob_sha": "89dd78f48283b15d6ad959b2d450895258a0980f",
+      "source_kind": "repository_responsibility_area_map_reference",
+      "module_id": "tdesktop.code-health-area-maps",
+      "responsibility_id": "TDRP-R9-CODE-HEALTH-AREA-MAPS-001",
+      "source_symbols": [
+        "Area maps",
+        "Location and size",
+        "Sections",
+        "Modules",
+        "Placement",
+        "Invariants",
+        "Leave alone",
+        "Direction",
+        "Lifecycle"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-RESPONSIBILITY-GOVERNANCE",
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-REPOSITORY-TASK-EVIDENCE"
+      ],
+      "dependency_ids": [
+        ".agents/skills/code-health/SKILL.md",
+        ".agents/skills/code-health/references/atlas.md",
+        ".agents/skills/code-health/references/classes.md",
+        ".agents/skills/code-health/references/survey.md",
+        ".agents/skills/code-health/scripts/health.py",
+        ".agents/skills/code-health/scripts/report.py",
+        ".agents/skills/code-health/scripts/atlas.py",
+        ".agents/skills/perform-task/SKILL.md",
+        ".agents/skills/perform-task/references/mechanical-lane.md",
+        ".agents/skills/perform-task/references/pipeline.md",
+        ".agents/skills/perform-task/references/phase-prompts.md",
+        ".claude/commands/code-health.md",
+        ".agents/skills/code-health/agents/openai.yaml",
+        ".agents/skills/continue/SKILL.md",
+        "upstream AGENTS.md",
+        "Fabushi repository AI development lifecycle",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/code-health-area-maps-reference-complete-read.md",
+      "behavior_contract": "Refine one approved responsibility area with a compact owner-approved map of Modules, Placement, checkable Invariants, Leave alone and Direction; bind source changes and reviews to the nearest approved placement authority; constrain mechanical updates to factual Modules changes; require explicit approval for semantic invariant/direction policy; detect stale references and re-survey areas whose placement findings recur.",
+      "state_machine": "exact source/atlas area -> survey or task drafts narrow map/refinement -> independent/source review -> declared owner approves or adjusts -> approved map guides ordinary task placement/review -> structural task amends map with source -> mechanical task may update only Modules facts -> stale/contradictory/repeated-placement evidence triggers fail-closed revalidation or re-survey",
+      "side_effects": [
+        "Repository responsibility/quality/task evidence only; no shipping product runtime, Telegram code-health executor, second ownership graph, second map store, or second task queue is introduced."
+      ],
+      "failure_cases": [
+        "A map contradicts its parent atlas area or broadens responsibility to hide an existing boundary break",
+        "Placement is re-derived from surrounding drift instead of the nearest approved map",
+        "Modules retains stale moved/deleted file references and the condition is treated as passing",
+        "An invariant is subjective/uncheckable or presented as approved without approval provenance",
+        "A mechanical Q0-Q2 task changes Placement/Invariants/Leave-alone/Direction instead of only required Modules facts",
+        "A Q4/Q5 semantic change proceeds without its required approved map/invariants",
+        "A survey or scanner self-publishes semantic ownership without owner approval",
+        "Repeated placement failures accumulate ad-hoc amendments instead of triggering re-survey",
+        "Area-map metadata becomes a parallel repository/product ownership or task runtime"
+      ],
+      "ui_disposition": "Not applicable; repository responsibility/quality/task governance only.",
+      "non_ui_responsibilities": [
+        "One-area map refinement tied to an approved atlas identity",
+        "Modules ownership facts for files or tight file groups",
+        "Prescriptive Placement rules and forbidden destinations",
+        "Owner-approved objectively checkable Invariants with durable provenance",
+        "Leave-alone negative scope/rationale for deliberate structures",
+        "Direction for intended target shape without implicit present-tense authority",
+        "Narrow same-task map amendment when source placement genuinely changes",
+        "Mechanical-lane restriction to factual Modules updates",
+        "Stale-map/reference detection and atlas consistency checks",
+        "Re-survey/revalidation when recurring placement findings show the map has drifted"
+      ],
+      "platform_delta": "Fabushi already owns the applicable responsibility through source-neutral repository responsibility, quality and task-evidence governance. This closure makes local map semantics, owner approval/update boundaries and placement proof explicit without porting Telegram code-health, survey, command or perform-task runtime.",
+      "existing_owner_candidates": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "ordinary Fabushi task/review/evidence lifecycle"
+      ],
+      "existing_owner": "Fabushi repository responsibility/quality/task-evidence governance",
+      "rejected_existing_owners": [
+        "Shipping Agent/Coordinator/Host/Runner do not own repository source-placement governance",
+        "Product-domain stores, UI roots and packaging/updater owners do not own responsibility maps",
+        "Copying Telegram code-health maps/survey/perform-task runtime would create a source-specific parallel governance implementation",
+        "A new map store or task queue would duplicate the existing repository atlas/task/review/evidence lifecycle"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository responsibility-area-map governance",
+        "Repository responsibility-area-map qualification",
+        "Repository responsibility-area-map evidence"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The upstream entry is a repository responsibility/placement reference contract; its applicable behavior is governance/evidence rather than shipping product logic.",
+      "command_event_contracts": [
+        "exact approved atlas area -> draft local map -> independent/source review -> owner approval -> repository instruction",
+        "ordinary change -> read nearest approved map -> place code by approved Placement/Modules and stronger ownership/spec constraints",
+        "Q0-Q2 move/delete/consolidate -> update factual Modules lines only when files move/disappear; semantic map edit -> leave mechanical lane/reclassify",
+        "Q4/Q5 semantic work -> require approved map/invariants as class preconditions before implementation",
+        "stale reference/atlas contradiction/unapproved invariant -> fail closed",
+        "repeated placement findings -> re-survey/revalidate instead of appending exceptions"
+      ],
+      "state_owner": "Existing Fabushi repository responsibility/quality/task-evidence governance",
+      "lifecycle_owner": "Existing repository development lifecycle and GitHub Actions evidence production/review",
+      "persistence_and_restart": "Approved map text, atlas parent identity, approval provenance and amendment history are durable repository instructions/evidence. Interrupted task work resumes under the ordinary lifecycle and must revalidate the exact map/atlas/source authority before relying on placement decisions.",
+      "concurrency_and_cancellation": "Area-map-sensitive tasks obey ordinary owned-path and authority-drift conflict rules. A conflicting or stale map is revalidated before source placement proceeds; cancellation/drop preserves unresolved placement findings and does not self-approve draft map text.",
+      "security_boundary": "A responsibility map cannot authorize product behavior, secret access, persistence-format ownership, permission bypass, review bypass or weaker release/security evidence. Its checkable invariants may constrain such ownership, but stronger current product/spec/security/release owners remain authoritative.",
+      "network_service_dependencies": [
+        "GitHub repository authority",
+        "GitHub Actions hosted runners",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi repository quality/release workflow / GitHub Actions",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "Independent exact-head GitHub Actions verification of this source-entry mapping commit is pending."
+      ],
+      "production_entrypoints": [
+        "AGENTS.md -> Repository responsibility-area-map governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Repository responsibility-area-map qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Repository responsibility-area-map evidence"
+      ],
+      "production_evidence": [
+        "path:AGENTS.md#Repository responsibility-area-map governance",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Repository responsibility-area-map qualification",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Repository responsibility-area-map evidence"
+      ],
+      "test_evidence": [
+        "dossier:projects/telegram-desktop-rust/dossiers/code-health-area-maps-reference-complete-read.md",
+        "upstream-maps:.agents/skills/code-health/references/maps.md@89dd78f48283b15d6ad959b2d450895258a0980f",
+        "upstream-skill:.agents/skills/code-health/SKILL.md@6885938b3d186b55f5d69cb8b9b9a96bbca0e097",
+        "upstream-atlas:.agents/skills/code-health/references/atlas.md@7f43dd75fcfb670c327bc3e71c1de0589e7506f0",
+        "upstream-classes:.agents/skills/code-health/references/classes.md@27847cae96838be7ddf68d3759dba89279f7cf0e",
+        "upstream-survey:.agents/skills/code-health/references/survey.md@d900e7a42b768679c69cd4c584559c783b59d47a",
+        "upstream-health:.agents/skills/code-health/scripts/health.py@f08675ef7a03c016d85f91c60b8f29e99454abe9",
+        "upstream-report:.agents/skills/code-health/scripts/report.py@a1177613670e933694f545f387ca7e7ed8cf0ee0",
+        "upstream-atlas-script:.agents/skills/code-health/scripts/atlas.py@6680fa747a1ddc520f4396949f3c84ab25cd8c43",
+        "upstream-perform-task:.agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c",
+        "upstream-mechanical-lane:.agents/skills/perform-task/references/mechanical-lane.md@e5e3cc88ba80ece6a20df7c4dd6002491d66a4ef",
+        "upstream-pipeline:.agents/skills/perform-task/references/pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7",
+        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba",
+        "upstream-command:.claude/commands/code-health.md@bcabd4bd5b5a1a2ed09b40a7f1fbdd502042329a",
+        "upstream-openai-surface:.agents/skills/code-health/agents/openai.yaml@59bb6304445f21e2a3ee1a97a69a8e231f934d30",
+        "upstream-root-agents:AGENTS.md@d8d59480277b7defbca1cdbccf7ed164ab2db086"
+      ],
+      "target_commit": "1ac669188f453f2765728aaee83a20c64866ff87",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development and quality governance",
+      "composition_slot": "Responsibility-area map / placement / invariants",
+      "capability_component": "Source-neutral repository responsibility-area-map evidence",
+      "variation_axes": [
+        "Modules facts vs semantic Placement/Invariants/Leave-alone/Direction",
+        "draft vs owner-approved map",
+        "stable map vs narrow amendment vs re-survey",
+        "mechanical Q0-Q2 vs semantic Q4/Q5 map preconditions",
+        "current exact authority vs stale/contradictory map"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi repository AI development lifecycle",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract",
+        "ordinary task/review lifecycle"
+      ],
+      "duplicate_root_check": "No Telegram/code-health runtime, second responsibility graph, second map store, second maintainability executor, second task queue, or shipping owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Approved map identity and owner provenance survive task interruption; source/atlas/map authority is revalidated before resumed placement-sensitive work, while unresolved stale/placement findings remain unresolved.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to workflow governance",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CODE-HEALTH-AREA-MAPS-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-AREA-MAP-SECTIONS-001",
+        "ORA-TDRP-AREA-MAP-APPROVAL-001",
+        "ORA-TDRP-AREA-MAP-PLACEMENT-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-AREA-MAP-ATLAS-CONSISTENCY-001",
+        "INV-TDRP-AREA-MAP-CHECKABLE-APPROVAL-001",
+        "INV-TDRP-AREA-MAP-MECHANICAL-BOUND-001",
+        "INV-TDRP-AREA-MAP-NO-SECOND-OWNER-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CODE-HEALTH-AREA-MAPS-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-AREA-MAP-TASK-PLACEMENT-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-AREA-MAP-STALE-REFERENCE-001",
+        "FAULT-TDRP-AREA-MAP-ATLAS-CONTRADICTION-001",
+        "FAULT-TDRP-AREA-MAP-UNAPPROVED-INVARIANT-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-AREA-MAP-OWNERSHIP-BYPASS-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-CODE-HEALTH-AREA-MAPS-001"
+      ],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-INVENTORY",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "code-health-area-maps-reference-source-contract",
+        "responsibility-map-placement-and-approval-contract"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral repository-quality/responsibility-map contract read from telegramdesktop/tdesktop authority; no upstream Python/C++/agent workflow implementation copied into Fabushi shipping runtime.",
+      "notes": "Actual 1-based recursive array entry 22 is .agents/skills/code-health/references/maps.md. The skill/scripts/atlas/classes/survey/perform-task/scheduled callers were read to understand this entry and remain independently accounted inventory entries unless separately represented. This closure decrements only one independent source entry to unknown=16,180 and unread=16,153, omitted=0.",
       "test_execution_evidence": []
     }
   ]
