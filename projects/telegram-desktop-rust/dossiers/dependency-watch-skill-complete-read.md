@@ -1,6 +1,6 @@
 # Dependency Watch skill complete read — strict recursive index 39
 
-Status: strict index 41 exact-head verified at c380f8bdae6c1f6b909874e92b6d551a58262e32; strict index 42 source-grounded and existing-owner mapped; child exact-head verification pending.
+Status: strict index 42 exact-head verified at a1dfd724295a985c286ad25e8d5628b794fcf056; strict index 43 source-grounded and existing-owner mapped; child exact-head verification pending.
 
 Authority: telegramdesktop/tdesktop@0eca52223cceed229932add1cc80792763120844 tree 1fc479a4b448aed851181bf4a4796d3015368348. Strict index 39 remains .agents/skills/dependency-watch/SKILL.md@482b3a8d0c939d4bb7bd32ab146e0cc988d29fd8.
 
@@ -130,3 +130,30 @@ Traceability:
 - SEC-TDRP-DEPENDENCY-WATCH-RELEASE-TRUST-001
 
 Coverage after strict index 42: source_entries_total=16305, unknown=16260, unread=16235, omitted=0. baseline accepted=false and source_closure_ready=false. Next strict entry index 43 is .agents/skills/dependency-watch/scripts/watch.py@231c5a13e8d7e3cd337dbbad08e8f4434a943a38.
+
+## Strict index 43 — exact-source dependency snapshot and stable-version classifier
+
+Source: .agents/skills/dependency-watch/scripts/watch.py@231c5a13e8d7e3cd337dbbad08e8f4434a943a38 on telegramdesktop/tdesktop@0eca52223cceed229932add1cc80792763120844/tree 1fc479a4b448aed851181bf4a4796d3015368348. The file was read completely (191 lines) together with direct workflow caller SKILL.md@482b3a8d0c939d4bb7bd32ab146e0cc988d29fd8 (150 lines) and watch_test.py@d3107c617be3e8780a99bebaeba19a4f235ae6ea (100 lines).
+
+Responsibility: snapshot() resolves the Git top-level, optionally fetches only refs/heads/dev into refs/remotes/origin/dev without tags or recursive submodules, resolves one immutable origin/dev commit, enumerates that exact root tree, preserves gitlinks, selects required build/dependency files plus manifest-name matches, and fails when required manifests are missing/non-regular or unreadable. It uses cat-file on exact blob ids rather than mutable working-tree files, writes copied UTF-8 sources plus snapshot.json/candidates.json only under the Git common directory dependency-watch/runs, records skipped inputs explicitly, and marks --no-fetch runs fresh_fetch=false/audit_status=snapshot-only. The candidate regex is navigation evidence only, matching the sibling SKILL.md warning that it is not complete dependency inventory. compare() classifies only supported three-component stable versions as same/older/major/minor/patch and returns unknown for prereleases, hashes, milestones, legacy-letter or four-component schemes.
+
+Caller/test trace: SKILL.md invokes python3 .agents/skills/dependency-watch/scripts/watch.py snapshot and uses watch.py compare CURRENT CANDIDATE only for ordinary three-component stable versions. watch_test.py imports watch directly. VersionTests.test_stable_ordering_and_prefixes covers prefixes, stable ordering and unsupported forms. SnapshotTests.test_fetches_remote_without_touching_working_tree proves fresh remote acquisition, exact fetched source content, gitlink capture and unchanged dirty checkout/HEAD; test_fetch_failure_never_uses_stale_ref rejects stale fallback; test_missing_required_manifest_fails rejects missing required scope; test_offline_snapshot_is_marked_unverified preserves fresh_fetch=false; test_linked_worktree_uses_common_report_storage proves common Git storage. These are source-read test contracts; this mapping does not falsely claim a fresh execution of upstream Python tests.
+
+Fabushi existing owner: AGENTS.md@57ed0d56acc64ef24ce4c1f5c2877a4ec3ab570b already defines Repository quality-health command orchestration as the source-neutral owner for exact-revision acquisition, dependency refresh, transient measurement, durable findings publication and fail-visible execution. Durable scan state must derive from one freshly resolved exact source revision; failed fetch, missing commit, mismatched detached HEAD, incomplete dependency or process failure is non-passing. Detached inspection worktrees/caches may be used only as exact-source subjects without mutating the canonical checkout. quality/evidence-contract.md@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70 and TEST_STRATEGY.md@0d3a4c993784625f9b70279602c655d4788fe9fb retain exact-revision provenance and fresh exact-source qualification; security-privacy-test-plan.md@f6d6672988d46c06152f4e2f5ff585fecc424141 keeps security/privacy release evidence fail-closed. Shipping app updater and MCP installable-package owners are rejected. Copying source-specific watch.py or adding a second scanner/findings store would violate the canonical source-neutral owner; novel_capability=false.
+
+Parent exact-head gate: TDRP run 39514005648 is terminal success at a1dfd724295a985c286ad25e8d5628b794fcf056. Source-authority artifact 12307031769 digest sha256:f90afa1a92a4888260906d2b1a46722ffa3279bb73e645b5b97362acb1f801bf; Boost artifact 12307546480 digest sha256:e2aa1736144a124fe0ad36da78c511aab513e1f797e3bc20731fa717eaca7e76 proves 582/582/open=0; recursive closure artifact 12307181868 digest sha256:4c63d10b02a7138530ea5e3f3292742ec32707d456b9f952feb5250e0d97b11f reaches final_scanned_authorities=203 and unresolved_gitlink_authorities=0; recursive reachability artifact 12308110096 digest sha256:30c70e0acb688c8407537075b62a16439845a80315a9756631a03a8e7a09e053 remains partial-audited-open with 95 authorities, 133 gitlinks, 3865 acquisition candidates, 4674 generated inputs, 4602 resource inputs and 4255 tool inputs open, so source_closure_ready=false. Root 0-11, child 0-23 and next 0-15 shard artifacts are complete; next aggregate artifact 12306921952 digest sha256:91f40466f218e8fd5aaee46656d389294f29b4b5122fdbf5c12cc79b05c47fd6. Rust run 39514005658 is terminal success with renderer, platform-worker, rust-host and three pressure-profiler jobs 6/6 successful. rust-host steps 1-17, both post steps and Complete job succeeded; artifact 12307581107 digest sha256:4b07048bf3637d3f6f02e8841edd4dbd4ae6a07adb203f54313d30eb4ae86776.
+
+Traceability:
+- TDRP-R9-DEPENDENCY-WATCH-SNAPSHOT-001
+- ORA-TDRP-DEPENDENCY-WATCH-FRESH-SNAPSHOT-001
+- ORA-TDRP-DEPENDENCY-WATCH-EXACT-BLOB-001
+- ORA-TDRP-DEPENDENCY-WATCH-VERSION-CLASSIFICATION-001
+- INV-TDRP-DEPENDENCY-WATCH-NO-WORKTREE-MUTATION-001
+- INV-TDRP-DEPENDENCY-WATCH-NO-STALE-ALL-CLEAR-001
+- INV-TDRP-DEPENDENCY-WATCH-COMMON-STORAGE-001
+- INV-TDRP-DEPENDENCY-WATCH-CANDIDATES-NOT-COMPLETE-001
+- SEC-TDRP-DEPENDENCY-WATCH-SNAPSHOT-FAIL-CLOSED-001
+- REG-TDRP-DEPENDENCY-WATCH-MUTABLE-WORKTREE-READ-001
+
+Coverage after strict index 43: source_entries_total=16305, unknown=16259, unread=16234, omitted=0, responsibilities_total=62, unmapped=0. baseline accepted=false and source_closure_ready=false. Next strict entry index 44 is .agents/skills/dependency-watch/scripts/watch_test.py@d3107c617be3e8780a99bebaeba19a4f235ae6ea.
+

@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16305,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16260,
-    "unread_minimum": 16235,
+    "unknown_minimum": 16259,
+    "unread_minimum": 16234,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -53,5 +53,5 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream remains telegramdesktop/tdesktop@0eca52223cceed229932add1cc80792763120844/tree 1fc479a4b448aed851181bf4a4796d3015368348. Recursive total is 16,305. Strict index 42 .agents/skills/dependency-watch/references/release-trust.md@81a68395f9ad54ed651a84464a933ed7e57c9d32 is mapped to Fabushi's existing source-neutral repository quality-health release-trust/security evidence owner: unknown=16,260, unread=16,235, omitted=0. The contract separates update urgency from adoption readiness; immutable release/source identity, trust/regression/unknown checks and Update/Backport/Hold/Skip/Track decisions remain durable and fail-closed, with no automatic install/deployment authority. Parent exact-head TDRP 39511909703 and Rust 39511909737 both succeeded at c380f8bdae6c1f6b909874e92b6d551a58262e32; the new index-42 mapping commit requires fresh exact-head Actions. Fixed-point gitlink closure has unresolved_gitlink_authorities=0, while recursive reachability/disposition remains open (95 authorities, 133 gitlinks, 3,865 acquisition candidates, 4,674 generated inputs, 4,602 resource inputs, 4,255 tool inputs), therefore baseline_identity_accepted/source_closure_ready remain false. Next strict entry is index 43 .agents/skills/dependency-watch/scripts/watch.py@231c5a13e8d7e3cd337dbbad08e8f4434a943a38."
+  "note": "Live upstream remains telegramdesktop/tdesktop@0eca52223cceed229932add1cc80792763120844/tree 1fc479a4b448aed851181bf4a4796d3015368348. Recursive total is 16,305. Strict index 43 .agents/skills/dependency-watch/scripts/watch.py@231c5a13e8d7e3cd337dbbad08e8f4434a943a38 is fully read and mapped to Fabushi's existing source-neutral repository quality-health exact-revision acquisition/evidence orchestration owner: unknown=16,259, unread=16,234, omitted=0. The helper's applicable responsibilities are fresh exact origin/dev binding, exact tree/blob and gitlink provenance, required-manifest fail-closed checks, no mutable-worktree reads, Git-common linked-worktree storage, explicit offline/skipped evidence and bounded stable-version classification; no Telegram-specific Python watcher is copied. Parent exact-head TDRP 39514005648 and Rust 39514005658 both succeeded at a1dfd724295a985c286ad25e8d5628b794fcf056; the new index-43 mapping commit requires fresh exact-head Actions. Fixed-point gitlink closure has unresolved_gitlink_authorities=0 and Boost remains 582/582/open=0, while recursive reachability/disposition remains open (95 authorities, 133 gitlinks, 3,865 acquisition candidates, 4,674 generated inputs, 4,602 resource inputs, 4,255 tool inputs), therefore baseline_identity_accepted/source_closure_ready remain false. Next strict entry is index 44 .agents/skills/dependency-watch/scripts/watch_test.py@d3107c617be3e8780a99bebaeba19a4f235ae6ea."
 }
