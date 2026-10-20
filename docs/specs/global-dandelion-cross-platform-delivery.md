@@ -46,13 +46,13 @@ acceptance evidence.
 | GD-XA-02 | `selection.pick`, `selection.release` | implemented with picker/root checks | WebView bridge only | generic picker surface only | real picker and scope revalidation |
 | GD-XA-03 | `transfer.send/receive/status/cancel` | CLI owner, config-gated | not configured | not configured | authenticated fixture transfer, cancel/resume |
 | GD-XA-04 | `scan.metadata/read` | CLI owner, root-gated | not configured | not configured | bounded scan and negative path tests |
-| GD-XA-05 | `state.inspect/import` | inspect owner; import is native-picker gated | not configured | not configured | corruption, import idempotence, restart |
+| GD-XA-05 | `state.inspect/import` | CLI owner; import is native-picker gated | not configured | not configured | corruption, import idempotence, restart |
 | GD-XA-06 | `config.defaults/check` | CLI owner | not configured | not configured | schema and effective-config evidence |
 | GD-XA-07 | `platform.inspect/mounts/time/watch` | CLI owner | not configured | not configured | supported OS API or hidden panel |
-| GD-XA-08 | `hotspot.plan/apply/status/stop` | explicit opt-in only | not configured | not configured | real reversible OS API and rollback |
+| GD-XA-08 | `hotspot.plan/apply/status/stop` | explicit opt-in; Host-configured journal/settings | not configured | not configured | real reversible OS API and rollback |
 | GD-XA-09 | `update.check/stage` | updater owner, opt-in | not configured | not configured | signed staging and rollback |
 | GD-XA-10 | `diagnostics.selfTest/doctor/status` | CLI owner | not configured | not configured | exact binary/version and failure mapping |
-| GD-XA-11 | `compat.packetInspect/countryLookup/linkExercise/linkRecover` | partial CLI owner | not configured | not configured | complete adapter or capability hidden |
+| GD-XA-11 | `compat.packetInspect/countryLookup/linkExercise/linkRecover` | CLI owner; compat-root bounded | not configured | not configured | complete adapter or capability hidden |
 | GD-XA-12 | package/review/install | backend + Desktop Host path | catalog/install path only | catalog/install path only | signature, review, immutable digest, clean install |
 
 “Implemented” above means source ownership only. A row becomes passed only

@@ -10,7 +10,7 @@
  */
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { realpath } from "node:fs/promises";
+import { realpath, stat } from "node:fs/promises";
 import { basename, isAbsolute, relative, sep } from "node:path";
 import type {
   MiniAppCapability,
@@ -34,6 +34,20 @@ export interface DandelionCliConfig {
   readonly compatDirectory?: string;
   /** Optional authenticated receive settings owned by the Host. */
   readonly receive?: { readonly targetPoolId: string; readonly caFile: string; readonly certificateFile: string; readonly privateKeyFile: string; readonly bind?: string };
+  /** Trusted journal directory used by hotspot status/apply/stop. */
+  readonly hotspotJournalDirectory?: string;
+  readonly hotspotInterface?: string;
+  readonly hotspotSsid?: string;
+  readonly hotspotBand?: string;
+  readonly hotspotPasswordFile?: string;
+  readonly updateTrust?: {
+    readonly manifest?: string;
+    readonly signature?: string;
+    readonly publicKey: string;
+    readonly directory?: string;
+    readonly artifact?: string;
+    readonly allowedHost?: string;
+  };
   readonly enableHotspot?: boolean;
   readonly enableUpdate?: boolean;
   readonly timeoutMs?: number;
@@ -99,6 +113,15 @@ export function createDandelionCliBackend(
   const roots = config.allowedRoots.filter((root) => isAbsolute(root));
   const stateDirectory = config.stateDirectory && isAbsolute(config.stateDirectory) ? config.stateDirectory : null;
   const compatDirectory = config.compatDirectory && isAbsolute(config.compatDirectory) ? config.compatDirectory : null;
+  const compatPath = async (value: unknown, fallback: string): Promise<string> => {
+    if (!compatDirectory) throw new Error("COMPAT_DISABLED");
+    const raw = typeof value === "string" && value.length > 0 ? value : fallback;
+    const candidate = isAbsolute(raw) ? raw : `${compatDirectory}/${raw}`;
+    const resolved = await realpath(candidate);
+    const root = await realpath(compatDirectory);
+    if (!insideRoot(root, resolved)) throw new Error("COMPAT_PATH_NOT_AUTHORIZED");
+    return resolved;
+  };
   // macOS resolves /tmp to /private/tmp; compare real paths on both sides.
   let resolvedRoots: Promise<string[]> | null = null;
   const canonicalRoots = (): Promise<string[]> => {
@@ -251,14 +274,15 @@ export function createDandelionCliBackend(
     async state(action) {
       if (!stateDirectory) throw new Error("STATE_DISABLED");
       if (action === "inspect") return execute(["state", "inspect", "--directory", stateDirectory, "--json"]);
-      throw new Error("STATE_IMPORT_REQUIRES_NATIVE_FILE_PICKER");
+      const picked = await ports.pick("files", { maxFiles: 1, maxBytes: 1024 * 1024 });
+      if (!picked || picked.length === 0) throw new Error("STATE_IMPORT_CANCELLED");
+      const file = await realpath(picked[0]!.path);
+      const fileInfo = await stat(file);
+      if (!fileInfo.isFile()) throw new Error("STATE_IMPORT_FILE_REQUIRED");
+      return execute(["state", "import", "--directory", stateDirectory, "--file", file]);
     },
     async config(action) {
-      // The native CLI exposes `config check` as the effective/defaulted
-      // configuration view; keep the Mini App contract semantic and avoid a
-      // renderer-visible CLI spelling dependency.
-      void action;
-      return execute(["config", "check", "--json"]);
+      return execute(["config", action === "defaults" ? "init" : "check", "--json"]);
     },
     async platform(action) {
       const argv = action === "watch"
@@ -268,11 +292,35 @@ export function createDandelionCliBackend(
     },
     async hotspot(action) {
       if (config.enableHotspot !== true) throw new Error("HOTSPOT_DISABLED");
-      return execute(action === "plan" ? ["hotspot", "plan", "--json"] : ["hotspot", action, "--confirm", "--json"]);
+      const iface = config.hotspotInterface;
+      if (action === "plan") {
+        if (!iface) throw new Error("HOTSPOT_INTERFACE_NOT_CONFIGURED");
+        return execute(["hotspot", "plan", "--interface", iface, "--ssid", config.hotspotSsid ?? "Global-Dandelion", "--band", config.hotspotBand ?? "a", "--json"]);
+      }
+      const journalDirectory = config.hotspotJournalDirectory;
+      if (!journalDirectory || !isAbsolute(journalDirectory)) throw new Error("HOTSPOT_JOURNAL_NOT_CONFIGURED");
+      if (action === "status") return execute(["hotspot", "status", "--journal-directory", journalDirectory, "--json"]);
+      if (action === "stop") return execute(["hotspot", "stop", "--journal-directory", journalDirectory, "--confirm", "--json"]);
+      if (!iface || !config.hotspotPasswordFile) throw new Error("HOTSPOT_APPLY_NOT_CONFIGURED");
+      return execute(["hotspot", "apply", "--interface", iface, "--ssid", config.hotspotSsid ?? "Global-Dandelion", "--band", config.hotspotBand ?? "a", "--journal-directory", journalDirectory, "--password-file", config.hotspotPasswordFile, "--confirm", "--json"]);
     },
     async update(action) {
       if (config.enableUpdate !== true) throw new Error("UPDATE_DISABLED");
-      return execute(["update", action, "--json"]);
+      const trust = config.updateTrust;
+      if (!trust?.publicKey) throw new Error("UPDATE_TRUST_NOT_CONFIGURED");
+      const argv = ["update", action];
+      if (trust.manifest) argv.push("--manifest", trust.manifest);
+      if (trust.signature) argv.push("--signature", trust.signature);
+      argv.push("--public-key", trust.publicKey);
+      if (action === "stage") {
+        if (!trust.directory) throw new Error("UPDATE_DIRECTORY_NOT_CONFIGURED");
+        argv.push("--directory", trust.directory);
+        if (trust.artifact) argv.push("--artifact", trust.artifact);
+        else if (trust.allowedHost) argv.push("--allowed-host", trust.allowedHost);
+        else throw new Error("UPDATE_SOURCE_NOT_CONFIGURED");
+      }
+      argv.push("--json");
+      return execute(argv);
     },
     async diagnostics(action) {
       if (action === "status") {
@@ -283,10 +331,16 @@ export function createDandelionCliBackend(
     },
     async compat(action, args) {
       if (!compatDirectory) throw new Error("COMPAT_DISABLED");
-      const file = typeof args.file === "string" ? args.file : null;
-      if (file && !isAbsolute(file)) throw new Error("COMPAT_PATH_INVALID");
-      if (action === "packetInspect") return execute(["compat", "packet-inspect", "--file", file ?? compatDirectory, "--json"]);
-      throw new Error("COMPAT_OPERATION_REQUIRES_NATIVE_ADAPTER");
+      if (action === "packetInspect") return execute(["compat", "packet-inspect", "--file", await compatPath(args.file, "packet.bin"), "--json"]);
+      if (action === "countryLookup") {
+        const address = typeof args.address === "string" ? args.address : null;
+        if (!address) throw new Error("COMPAT_ADDRESS_REQUIRED");
+        return execute(["compat", "country-lookup", "--locations", await compatPath(args.locations, "locations.csv"), "--blocks", await compatPath(args.blocks, "blocks.csv"), "--address", address, "--json"]);
+      }
+      if (action === "linkExercise") {
+        return execute(["compat", "link-exercise", "--file", await compatPath(args.file, "link-target"), "--cycles", "10", "--interval-ms", "50", "--confirm", "--json"]);
+      }
+      return execute(["compat", "link-recover", "--journal-directory", await compatPath(args.journalDirectory, "."), "--confirm", "--json"]);
     },
   };
 }

@@ -54,7 +54,7 @@ export interface MiniAppToolBackend {
   state?(action: "inspect" | "import", args: Record<string, unknown>): Promise<unknown>;
   config?(action: "defaults" | "check"): Promise<unknown>;
   platform?(action: "inspect" | "mounts" | "time" | "watch"): Promise<unknown>;
-  hotspot(action: "plan" | "apply" | "stop"): Promise<unknown>;
+  hotspot(action: "plan" | "apply" | "status" | "stop"): Promise<unknown>;
   update(action: "check" | "stage"): Promise<unknown>;
   diagnostics?(action: "selfTest" | "doctor" | "status"): Promise<unknown>;
   compat?(action: "packetInspect" | "countryLookup" | "linkExercise" | "linkRecover", args: Record<string, unknown>): Promise<unknown>;
@@ -139,6 +139,7 @@ function handlersFor(backend: MiniAppToolBackend): Map<string, { capability: Min
     ["platform.watch", MINIAPP_CAPABILITY.PLATFORM, false, async () => backend.platform ? ({ ok: true, data: await backend.platform("watch") }) : fail("CAPABILITY_UNAVAILABLE", "宿主未提供平台能力")],
     ["hotspot.plan", MINIAPP_CAPABILITY.HOTSPOT, false, async () => ({ ok: true, data: await backend.hotspot("plan") })],
     ["hotspot.apply", MINIAPP_CAPABILITY.HOTSPOT, true, async () => ({ ok: true, data: await backend.hotspot("apply") })],
+    ["hotspot.status", MINIAPP_CAPABILITY.HOTSPOT, false, async () => ({ ok: true, data: await backend.hotspot("status") })],
     ["hotspot.stop", MINIAPP_CAPABILITY.HOTSPOT, true, async () => ({ ok: true, data: await backend.hotspot("stop") })],
     ["update.check", MINIAPP_CAPABILITY.UPDATE, false, async () => ({ ok: true, data: await backend.update("check") })],
     ["update.stage", MINIAPP_CAPABILITY.UPDATE, true, async () => ({ ok: true, data: await backend.update("stage") })],
