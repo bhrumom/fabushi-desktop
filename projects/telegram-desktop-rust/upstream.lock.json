@@ -8,9 +8,9 @@
     "repository": "telegramdesktop/tdesktop",
     "url": "https://github.com/telegramdesktop/tdesktop",
     "discovery_ref": "refs/heads/dev",
-    "commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
-    "tree": "5151db79560ed40bf3802482fcfb74b950be6c40",
-    "committed_at": "2026-10-19T19:08:59Z",
+    "commit": "7b08e3ff570186ca8714e4de2242d08af4d98814",
+    "tree": "cf82a72e311226b7b14f712e8de2586d7ff6e1f4",
+    "committed_at": "2026-10-20T01:42:31Z",
     "accepted": false
   },
   "previous_historical_baseline": {
@@ -206,7 +206,7 @@
     {
       "path": "Telegram/lib_webview",
       "repository": "desktop-app/lib_webview",
-      "commit": "48c72924706c37addb5f0bcf70b2df8b227f1313"
+      "commit": "ef03bbfd696c7527d7cb57ac20c3a5d30feb98fa"
     },
     {
       "path": "cmake",
@@ -257,11 +257,11 @@
   },
   "coverage": {
     "root_source_entries_total": 6717,
-    "recursive_source_entries_total": 16202,
-    "unknown_minimum": 16171,
-    "unread_minimum": 16144,
+    "recursive_source_entries_total": 16203,
+    "unknown_minimum": 16172,
+    "unread_minimum": 16145,
     "omitted_known": 0,
-    "note": "Revision 9 live rebaseline remains in progress for telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a (tree 5151db79560ed40bf3802482fcfb74b950be6c40). Root non-directory inventory remains 6,717 and recursive authority remains 16,202. Recursive array index 30 .agents/skills/code-health/scripts/includes.py is independently mapped to the existing source-neutral repository quality/build-evidence owner: bounded C/C++ and style-import resolution, unresolved-edge accounting, cycle-safe closure, source-derived PCH exclusion, source-line weight/reach/rebuild proxies and cross-target layering observations are preserved while configured-build truth and report/review result semantics remain with their stronger existing owners. No Telegram Python include graph or second build/findings/task owner is introduced. Counters are unknown=16,171, unread=16,144, omitted=0."
+    "note": "Revision 9 live rebaseline is bound to telegramdesktop/tdesktop@7b08e3ff570186ca8714e4de2242d08af4d98814 (tree cf82a72e311226b7b14f712e8de2586d7ff6e1f4). Root non-directory inventory remains 6,717. Telegram/lib_webview advanced from 48c72924706c37addb5f0bcf70b2df8b227f1313 to ef03bbfd696c7527d7cb57ac20c3a5d30feb98fa and its recursive non-directory inventory increased 32 -> 33, so recursive authority is 16,203. The seven changed root paths have no existing parity-ledger row, so all previously mapped source blobs remain unchanged at the new authority. Recursive array index 30 includes.py remains independently mapped; the newly added lib_webview source entry is conservatively unknown/unread. Counters are unknown=16,172, unread=16,145, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
