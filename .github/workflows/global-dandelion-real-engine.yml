@@ -46,7 +46,7 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: 1.97.1
+          toolchain: 1.98.0
 
       - name: Install desktop test dependencies
         run: npm --prefix desktop ci --prefer-offline --no-audit --no-fund
@@ -66,8 +66,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          : > "$RUNNER_TEMP/global-dandelion-real-engine.log"
           python3 "$SOURCE_DIR/scripts/disk_guard.py" --path "$SOURCE_DIR" --planned-bytes 1073741824
-          cargo build --locked --release --manifest-path "$SOURCE_DIR/Cargo.toml" -p dandelion-app
+          cargo build --locked --release --manifest-path "$SOURCE_DIR/Cargo.toml" -p dandelion-app 2>&1 | tee -a "$RUNNER_TEMP/global-dandelion-real-engine.log"
           test -x "$SOURCE_DIR/target/release/dandelion"
 
       - name: Prepare authorized disposable fixture
