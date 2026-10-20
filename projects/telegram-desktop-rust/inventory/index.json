@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16202,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16180,
-    "unread_minimum": 16153,
+    "unknown_minimum": 16179,
+    "unread_minimum": 16152,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -97,5 +97,5 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live rebaseline candidate telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a (tree 5151db79560ed40bf3802482fcfb74b950be6c40) remains source-closure open. Actual recursive array entry 22 .agents/skills/code-health/references/maps.md@89dd78f48283b15d6ad959b2d450895258a0980f is independently mapped to the existing source-neutral repository responsibility/quality/task-evidence owner: Modules, Placement, checkable approved Invariants, Leave alone, Direction, owner-controlled amendment, stale-reference detection and re-survey semantics are preserved without copying Telegram code-health/perform-task runtime or creating a second map/ownership/task owner. Recursive inventory remains 16,202 with unknown=16,180, unread=16,153, omitted=0; baseline acceptance remains fail-closed."
+  "note": "Live rebaseline candidate telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a (tree 5151db79560ed40bf3802482fcfb74b950be6c40) remains source-closure open. Actual recursive array entry 23 .agents/skills/code-health/references/survey.md@d900e7a42b768679c69cd4c584559c783b59d47a is independently mapped to the existing source-neutral repository responsibility/quality/task-evidence owner: exact scan/map/ledger inputs, independent source-reading lenses, separate verifier with inferred/verified claim state, draft-map approval boundary, proposal/defect separation, and zero source/queue side effects are preserved without copying Telegram survey/code-health runtime or creating a second survey/map/ownership/task owner. Recursive inventory remains 16,202 with unknown=16,179, unread=16,152, omitted=0; baseline acceptance remains fail-closed."
 }
