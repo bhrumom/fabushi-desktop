@@ -6,8 +6,8 @@
   "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
   "coverage": {
     "source_entries_total": 16201,
-    "unknown": 16164,
-    "unread": 16139,
+    "unknown": 16163,
+    "unread": 16138,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -14314,6 +14314,317 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral repository source-acquisition and snapshot contract read from telegramdesktop/tdesktop authority; no upstream Python implementation copied into Fabushi shipping runtime.",
       "notes": "Recursive authority index 34 immediately after review.py index 33 is sources.py@688aa05c4223d0d45b8572cff89fbc5148254844. Complete source, health.py/report.py/review.py callers and direct health_test.py consumers were read. Upstream health_test.py exercises from_worktree through unused/map/atlas/state flows but has no dedicated direct from_ref/gitlink unit case; Fabushi exact-head authority workflow supplies the stronger recursive immutable-ref/gitlink/acquisition evidence. This closes only one source entry: unknown=16,164, unread=16,139, omitted=0. Parent authority run 39478280087/artifact 12291075807 and Rust run 39478280157/artifact 12290181212 are verified historical-only evidence for a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7; exact-head verification of this new commit is pending. The next strict source entry is .agents/skills/continue/SKILL.md@aeb81dd57018abbc8f03ea3dbd34f91952128db5. Follow-up exact-head validator failure on 586c46fec037057af83f7c7a184ade5e1eb1db82 showed descriptive target-symbol labels were invalid because validator requires literal target text; this correction replaces only those labels with real, unique target source/workflow strings.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
+      "source_path": ".agents/skills/continue/SKILL.md",
+      "source_blob_sha": "aeb81dd57018abbc8f03ea3dbd34f91952128db5",
+      "source_kind": "repository_ai_task_queue_scheduler_and_continuation_workflow",
+      "module_id": "tdesktop.continue-skill",
+      "responsibility_id": "TDRP-R9-CONTINUE-WORKFLOW-001",
+      "source_symbols": [
+        "Batch specification",
+        "Read the queue",
+        "Freeze this invocation's batch",
+        "Source-lineage gate",
+        "Start or resume exactly one task",
+        "Split-required routing",
+        "Discovery routing",
+        "Pending-task consolidation",
+        "Archival housekeeping",
+        "Report"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-REPOSITORY-TASK-EVIDENCE",
+        "CAP-REPOSITORY-AI-WORKER-LIFECYCLE"
+      ],
+      "dependency_ids": [
+        ".agents/skills/process-inbox/scripts/workspace.py",
+        ".agents/skills/process-inbox/scripts/workspace_test.py",
+        ".agents/skills/process-inbox/SKILL.md",
+        ".agents/skills/perform-task/SKILL.md",
+        ".agents/shared/phase-effort.md",
+        ".agents/shared/codex-delegation.md",
+        ".agents/skills/continue/references/split-required-task.md",
+        ".agents/skills/continue/references/consolidate-pending-tasks.md",
+        ".grok/commands/continue.md",
+        ".claude/commands/continue.md",
+        ".grok/ai-workflow-adapter.md",
+        "AGENTS.md Repository quality-health command orchestration governance",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/continue-skill-complete-read.md",
+      "behavior_contract": "Continue one explicitly requested repository-development batch without silently enlarging scope: read the durable queue, freeze the invocation task identities, preserve source-lineage prerequisites, prepare exact source state, allow only one stateful performer/task at a time, route split-required/discovered work through isolated publication boundaries, consolidate only safe pristine pending work, recover task-local blockers without stalling unrelated batch work, archive stale completed projects, and return evidence-based status without treating helper or runner success as product/release acceptance.",
+      "state_machine": "explicit batch specification -> queue/read-only validation -> freeze initial batch plus allowed same-invocation discoveries/splits -> source-lineage gate and exact source preparation -> start/retry/resume one task -> performer reaches Approve/Block/Split-required or environment stop -> optional deep split routing -> discovery routing -> pending-task consolidation -> refresh queue -> next eligible frozen-batch task -> archival housekeeping -> compact report; no batch specification => read-only queue/report only",
+      "side_effects": [
+        "The scheduler itself does not edit Telegram product source; delegated perform-task may own exactly one task's source work under its own lifecycle.",
+        "workspace.py publishes Start/Approve/Block/Split-required/routing/consolidation/archive state under explicit ownership and path guards.",
+        "Host command adapters may spawn one stateful performer/routing worker at a time and disposable review/evidence leaves according to the host contract."
+      ],
+      "failure_cases": [
+        "A later unrelated todo is silently absorbed into the frozen invocation batch",
+        "Two stateful performers or routing writers mutate the same queue/worktree concurrently",
+        "A source dependency is absent but execution starts or switches after Phase 1 without a task-local blocked result",
+        "A soft batch mark is treated as a claim/reservation and prevents another checkout from legitimately claiming work",
+        "Split-required retained implementation is duplicated across replacement tasks instead of exactly one carrier",
+        "Discovery or consolidation rewrites source/product state or publishes outside explicit paths",
+        "TEST_FLAW, run cap, timeout, runner loss, or ambiguous evidence is converted into approval or an exhausted task blocker",
+        "Stale/partial worker completion or missing final result is treated as terminal success",
+        "A repository-development scheduler is copied into shipping Automations/Tasks and creates a second product queue owner"
+      ],
+      "ui_disposition": "Not applicable; repository-development AI task/workflow orchestration, not a user-facing Telegram/Fabushi product surface.",
+      "non_ui_responsibilities": [
+        "Explicit batch admission and frozen invocation scope",
+        "Queue read/validation and soft batch bookkeeping without reservation",
+        "Exact source preparation and source-lineage prerequisite fencing",
+        "Single-task Start/Retry/Resume lifecycle and one-stateful-writer rule",
+        "Split-required deep routing with exact implementation-carrier semantics",
+        "Post-task discovery routing and scope/lineage filtering",
+        "Safe pending-task consolidation with dependency/cycle/content-digest guards",
+        "Task-local blocker recovery while unrelated batch work can continue",
+        "Host-adapter child lifecycle, non-duplication and durable terminal evidence",
+        "Archival housekeeping and compact reconstructable reporting"
+      ],
+      "platform_delta": "Upstream continue/SKILL.md is repository developer tooling, not Telegram product runtime. Fabushi already has source-neutral repository task/evidence orchestration governance. Shipping RunScheduler/background-work/multitask/workflow/automation owners were inspected because they also schedule work, but their state belongs to end-user Agent/Automation/Workflow execution and must not be overloaded with repository branch/source-lineage/AI publication semantics.",
+      "existing_owner_candidates": [
+        "AGENTS.md Repository quality-health command orchestration governance and ordinary task/process lifecycle",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md Repository quality-health command orchestration qualification and AI worker lifecycle qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md Repository quality-health command orchestration / AI worker lifecycle / context-handoff evidence",
+        "source/host/src/extensions/transcript/run_scheduler.rs RunScheduler",
+        "source/host/src/runner/background_work.rs RevivingBackgroundWorkRegistry and background watch owners",
+        "source/host/src/sand_multitask.rs durable user-request multitask todo contract",
+        "source/host/src/extensions/transcript/workflow_commands.rs plus source/host/src/workflows/workflow_store.rs",
+        "source/host/src/extensions/transcript/automation_runtime.rs plus source/host/src/automations/automation_store.rs"
+      ],
+      "existing_owner": "Fabushi repository development task/evidence orchestration governance in AGENTS.md plus TEST_STRATEGY.md and evidence-contract.md",
+      "rejected_existing_owners": [
+        "RunScheduler owns per-agent shipping user/background run lanes, watchdog and settlement, not repository development batch/source-lineage publication.",
+        "RevivingBackgroundWorkRegistry and shell/cloud watches own shipping async task wakeups/cancellation, not Git task queue truth or AI state publication.",
+        "sand_multitask owns end-user requested parallel todo state, explicitly allowing several independent in-progress streams; continue enforces one stateful repository performer.",
+        "WorkflowCommands/FileWorkflowStore own user/agent workflows and managed skills, not development task claims, split routing or branch lineage.",
+        "AutomationRuntime/FileAutomationStore own scheduled/event/manual user automations and run history, not repository-development continuation.",
+        "Copying workspace.py/continue policy would create a second repository queue/workflow owner instead of extending the existing source-neutral governance."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "##### Repository quality-health command orchestration governance",
+        "### Repository quality-health command orchestration qualification",
+        "## Repository quality-health command orchestration evidence"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The upstream file is host/repository workflow policy. Applicable responsibility is retained in Fabushi's source-neutral repository task/evidence governance rather than copied as Python or introduced into shipping Rust/TypeScript task runtimes.",
+      "command_event_contracts": [
+        "explicit batch -> queue snapshot -> immutable invocation batch",
+        "task dependency/source requirement -> source-lineage report -> run only when current_satisfies=true",
+        "todo + no active task -> Start with batch mark -> exactly one in-progress stateful performer",
+        "owned blocked + retryable -> local Retry -> resume without manufacturing a Resume publication",
+        "split-required -> deep split transaction -> at least two replacements -> at most one retained implementation carrier",
+        "Approve/Block -> scoped discovery routing -> same-project/declared-scope admission only",
+        "pending consolidation marker -> safe unfinished pristine todo partition -> publish merge/no-merge completion",
+        "worker/runner loss or incomplete final -> durable lifecycle recovery/failure evidence, never inferred success",
+        "new target commit -> parent Actions/artifacts immediately historical-only until new exact-head evidence"
+      ],
+      "state_owner": "Fabushi canonical repository task/spec/evidence lifecycle; no shipping Task/Automation store is repurposed and no second queue store is added.",
+      "lifecycle_owner": "Root AGENTS.md development lifecycle plus repository quality command orchestration and AI worker lifecycle evidence contracts.",
+      "persistence_and_restart": "Durable task/evidence state must be reconstructable from repository state and exact evidence artifacts. Frozen-batch/worker continuation state is retained only under the active repository workflow; a new target commit demotes parent evidence to historical-only.",
+      "concurrency_and_cancellation": "One stateful repository performer/routing publication boundary at a time; helper publication uses ownership/path guards. Cancellation, timeout, runner loss, source-lineage mismatch and blocked outcomes remain fail-visible and must not kill unrelated owned work or broaden process ownership.",
+      "security_boundary": "Repository scheduler state authorizes no shipping product capability, account credential access, package/release acceptance, or broad process cleanup. Worker and process ownership must be positively identified before stop/replacement.",
+      "network_service_dependencies": [
+        "GitHub repository authority",
+        "GitHub Actions hosted runners",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi repository governance / GitHub Actions evidence lifecycle",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "Independent exact-head GitHub Actions verification of this continue/SKILL.md mapping commit is pending.",
+        "Full recursive generated/resource/tool disposition remains open; source closure cannot be accepted while unknown/unread remain non-zero."
+      ],
+      "production_entrypoints": [
+        "AGENTS.md -> Repository quality-health command orchestration governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> repository task/worker orchestration qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> exact task/worker/context handoff evidence"
+      ],
+      "production_evidence": [
+        "path:AGENTS.md",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "historical-parent-run:39481285146/job:118830205800/artifact:12290068816/sha256:64ebf5a260fa6931ba5a69a21fb8b78aae06e65f9eeaa9e28b49492e67ae1371",
+        "historical-parent-run:39481285124/artifact:12291662749/sha256:df1178f0ba508dafb8aebf85e15c896e6bb01995739e97e1fa41cc19e0d017a0",
+        "historical-parent-artifact-set:61/61 downloaded ZIP SHA-256 values matched their GitHub sha256 digests at parent fb04"
+      ],
+      "test_evidence": [
+        "dossier:projects/telegram-desktop-rust/dossiers/continue-skill-complete-read.md",
+        "upstream-continue:.agents/skills/continue/SKILL.md@aeb81dd57018abbc8f03ea3dbd34f91952128db5",
+        "upstream-grok-caller:.grok/commands/continue.md@1365e5a7dc4c167468f7b6f57ec92ff89389b32e",
+        "upstream-claude-caller:.claude/commands/continue.md@e81c86031f2e501f30d2b6ed908fb03d648324c8",
+        "upstream-openai-registration:.agents/skills/continue/agents/openai.yaml@e981285ee10cbed9e27e358d60ce596c9e0b3d61",
+        "upstream-workspace:.agents/skills/process-inbox/scripts/workspace.py@e1fdabbac9ccd635962b7b6dc1a62357fc5b931c",
+        "upstream-workspace-tests:.agents/skills/process-inbox/scripts/workspace_test.py@d045c95ca4415ffc02953ff02ac10e329dc69e7b",
+        "workspace_test.test_start_atomically_assigns_unclaimed_todo",
+        "workspace_test.test_start_refuses_source_dependency_absent_from_branch",
+        "workspace_test.test_source_lineage_finds_compatible_local_branch",
+        "workspace_test.test_retry_reopens_owned_blocked_task_and_resets_routing_marker",
+        "workspace_test.test_split_publish_routes_and_starts_implementation_carrier",
+        "workspace_test.test_start_writes_the_batch_into_its_start_commit",
+        "workspace_test.test_a_batch_marks_tasks_without_claiming_them",
+        "workspace_test.test_queue_inventory_finds_pending_consolidation_markers",
+        "workspace_test.test_no_merge_consolidation_publishes_durable_completion",
+        "workspace_test.test_merged_consolidation_validates_aliases_and_dependencies",
+        "workspace_test.test_archive_stale_moves_only_old_fully_approved_projects",
+        "workspace_test.test_preparation_updates_recursive_recorded_pins_without_following_remote"
+      ],
+      "target_commit": "fb04df3f5e3b5f3d077a1c216205001970981fa8",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development and evidence governance",
+      "composition_slot": "Task batch admission, source-lineage fencing, worker lifecycle, routing and publication",
+      "capability_component": "Source-neutral repository task/evidence orchestration",
+      "variation_axes": [
+        "read-only no-batch vs explicit requested batch",
+        "todo vs in-progress vs blocked vs split-required",
+        "current source lineage satisfied vs compatible branch vs unavailable prerequisite",
+        "clean task completion vs split-required vs genuine blocker vs environment stop",
+        "same-invocation discovered work vs unrelated later queue work",
+        "single stateful worker vs disposable evidence/review leaves",
+        "current-head evidence vs historical-only parent evidence"
+      ],
+      "shared_owner_contracts": [
+        "Root AGENTS.md development lifecycle",
+        "Repository quality-health command orchestration governance",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract"
+      ],
+      "duplicate_root_check": "No second repository task queue, shipping Task store, Automation scheduler, Workflow store, source-lineage runtime or AI worker lifecycle owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "A task/workflow handoff remains reconstructable from exact current task/spec/source/evidence state. A new target commit immediately makes parent CI/artifacts historical-only until exact-head revalidation.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to workflow governance",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-CONTINUE-WORKFLOW-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CONTINUE-FROZEN-BATCH-001",
+        "ORA-TDRP-CONTINUE-SOURCE-LINEAGE-001",
+        "ORA-TDRP-CONTINUE-SINGLE-WRITER-001",
+        "ORA-TDRP-CONTINUE-DURABLE-TERMINAL-EVIDENCE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CONTINUE-NO-SILENT-BATCH-GROWTH-001",
+        "INV-TDRP-CONTINUE-NO-DUPLICATE-STATEFUL-WRITER-001",
+        "INV-TDRP-CONTINUE-NO-PRODUCT-QUEUE-COLLISION-001"
+      ],
+      "unit_case_ids": [
+        "workspace_test.test_start_atomically_assigns_unclaimed_todo",
+        "workspace_test.test_start_refuses_source_dependency_absent_from_branch",
+        "workspace_test.test_source_lineage_finds_compatible_local_branch",
+        "workspace_test.test_retry_reopens_owned_blocked_task_and_resets_routing_marker",
+        "workspace_test.test_start_writes_the_batch_into_its_start_commit",
+        "workspace_test.test_a_batch_marks_tasks_without_claiming_them"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CONTINUE-BATCH-SCOPE-001",
+        "CONTRACT-TDRP-CONTINUE-SOURCE-LINEAGE-001",
+        "CONTRACT-TDRP-CONTINUE-SPLIT-CARRIER-001"
+      ],
+      "integration_case_ids": [
+        "workspace_test.test_split_publish_routes_and_starts_implementation_carrier",
+        "workspace_test.test_no_merge_consolidation_publishes_durable_completion",
+        "workspace_test.test_merged_consolidation_validates_aliases_and_dependencies"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-CONTINUE-PARENT-EVIDENCE-DEMOTION-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "workspace_test.test_a_lost_start_leaves_no_batch_published",
+        "workspace_test.test_retry_refuses_to_compete_with_active_task",
+        "FAULT-TDRP-CONTINUE-WORKER-TERMINAL-INCOMPLETE-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CONTINUE-OWNED-WORKER-STOP-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-CONTINUE-WORKFLOW-001"
+      ],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-INVENTORY",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "telegramdesktop/tdesktop exact upstream snapshot",
+        "workspace.py temporary Git/task fixtures"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral repository workflow contract read from telegramdesktop/tdesktop authority; no upstream scheduler/Python implementation copied into Fabushi shipping runtime.",
+      "notes": "Recursive authority index 35 immediately after sources.py index 34 is continue/SKILL.md@aeb81dd57018abbc8f03ea3dbd34f91952128db5. The 722-line skill, Grok/Claude command callers, OpenAI registration, phase/codex delegation policies, split/consolidation references, process-inbox/perform-task workflows, relevant workspace.py command implementations and direct workspace_test.py regressions were traced. Shipping RunScheduler/background-work/multitask/workflow/automation owners were inspected and rejected because they own end-user runtime work, not repository-development queue truth. This closes only one source entry: unknown=16,163, unread=16,138, omitted=0. Parent TDRP run 39481285146 and Rust run 39481285124 are historical-only for fb04df3f5e3b5f3d077a1c216205001970981fa8; new exact-head verification is pending. The next strict source entry is .agents/skills/continue/agents/openai.yaml@e981285ee10cbed9e27e358d60ce596c9e0b3d61.",
       "test_execution_evidence": []
     }
   ]

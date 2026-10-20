@@ -276,10 +276,10 @@
   "coverage": {
     "root_source_entries_total": 6715,
     "recursive_source_entries_total": 16201,
-    "unknown_minimum": 16164,
-    "unread_minimum": 16139,
+    "unknown_minimum": 16163,
+    "unread_minimum": 16138,
     "omitted_known": 0,
-    "note": "Live dev authority is 78ceaa548ae0e055aa56b53fde22064d13f250ef/76b967833b38eb7aa2cb4047008c07331390e61e. Parent exact-head run 39478280087 at target a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7 proved current root/recursive authority, current Qt-aware acquisition discovery, 36 direct gitlinks, recursive fixed point unresolved=0 and Boost 582/582/open=0; its artifacts are historical-only for this newer mapping commit until exact-head revalidation completes. sources.py at recursive index 34 is independently mapped after review.py index 33. Coverage is unknown=16,164, unread=16,139, omitted=0. The next strict source entry is .agents/skills/continue/SKILL.md@aeb81dd57018abbc8f03ea3dbd34f91952128db5; recursive generated/resource/tool disposition remains open and source_closure_ready=false."
+    "note": "Live dev authority is 78ceaa548ae0e055aa56b53fde22064d13f250ef/76b967833b38eb7aa2cb4047008c07331390e61e. Parent exact-head runs 39481285146 (TDRP) and 39481285124 (Rust) at target fb04df3f5e3b5f3d077a1c216205001970981fa8 succeeded; TDRP had 61/61 successful jobs and 506/506 successful steps, Rust had 6/6 successful jobs with 79 successful and 2 platform-conditional skipped steps, and all 61 parent artifacts were previously downloaded with ZIP SHA-256 equal to GitHub digest. Those parent artifacts are historical-only for this newer mapping commit. continue/SKILL.md at recursive index 35 is independently mapped after sources.py index 34. Coverage is unknown=16,163, unread=16,138, omitted=0. The next strict source entry is .agents/skills/continue/agents/openai.yaml@e981285ee10cbed9e27e358d60ce596c9e0b3d61; recursive generated/resource/tool disposition remains open and source_closure_ready=false."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -300,44 +300,293 @@
     "upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
     "upstream_tree": "76b967833b38eb7aa2cb4047008c07331390e61e",
     "previous_historical_evidence": {
-      "run_id": 39478280087,
+      "run_id": 39481285146,
       "run_attempt": 1,
-      "job_id": 118819855616,
-      "validation_head_sha": "a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
-      "artifact_id": 12291075807,
-      "artifact_name": "tdrp-revision9-authority-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
-      "artifact_digest": "sha256:9dc2c056af519a0a3ab50995a688759297b8c3dd7a412288724e08c31c020d72",
+      "job_id": 118830205800,
+      "validation_head_sha": "fb04df3f5e3b5f3d077a1c216205001970981fa8",
+      "artifact_id": 12290068816,
+      "artifact_name": "tdrp-revision9-authority-fb04df3f5e3b5f3d077a1c216205001970981fa8",
+      "artifact_digest": "sha256:64ebf5a260fa6931ba5a69a21fb8b78aae06e65f9eeaa9e28b49492e67ae1371",
       "upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
       "upstream_tree": "76b967833b38eb7aa2cb4047008c07331390e61e",
       "recursive_non_directory_entries": 16201,
       "source_closure_ready": false,
       "evidence_status": "historical-only",
       "prior_history": {
-        "run_id": 39467249963,
+        "run_id": 39478280087,
         "run_attempt": 1,
-        "job_id": 118781736304,
-        "validation_head_sha": "a9953cffaa81da2b672b41529bc8b598b7340334",
-        "artifact_id": 12284788852,
-        "artifact_name": "tdrp-revision9-authority-a9953cffaa81da2b672b41529bc8b598b7340334",
-        "artifact_digest": "sha256:fd8e508f10482125e95a2b5a8ef6f1411e25135fd71052a7b122a793060fca0d",
+        "job_id": 118819855616,
+        "validation_head_sha": "a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
+        "artifact_id": 12291075807,
+        "artifact_name": "tdrp-revision9-authority-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
+        "artifact_digest": "sha256:9dc2c056af519a0a3ab50995a688759297b8c3dd7a412288724e08c31c020d72",
         "upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
         "upstream_tree": "76b967833b38eb7aa2cb4047008c07331390e61e",
         "recursive_non_directory_entries": 16201,
         "source_closure_ready": false,
         "evidence_status": "historical-only",
         "prior_history": {
-          "run_id": 39462234441,
+          "run_id": 39467249963,
           "run_attempt": 1,
-          "job_id": 118764390860,
-          "validation_head_sha": "15fc3dc90dd3f7f19e67b5c261ce95e0498f6dcf",
-          "artifact_id": 12283925998,
-          "artifact_name": "tdrp-revision9-authority-15fc3dc90dd3f7f19e67b5c261ce95e0498f6dcf",
-          "artifact_digest": "sha256:c8ba6f0117d1e32603d523e6cf6d5a7610a980585e8ecb94f488475a7a3e33cb",
+          "job_id": 118781736304,
+          "validation_head_sha": "a9953cffaa81da2b672b41529bc8b598b7340334",
+          "artifact_id": 12284788852,
+          "artifact_name": "tdrp-revision9-authority-a9953cffaa81da2b672b41529bc8b598b7340334",
+          "artifact_digest": "sha256:fd8e508f10482125e95a2b5a8ef6f1411e25135fd71052a7b122a793060fca0d",
           "upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
           "upstream_tree": "76b967833b38eb7aa2cb4047008c07331390e61e",
           "recursive_non_directory_entries": 16201,
           "source_closure_ready": false,
           "evidence_status": "historical-only",
+          "prior_history": {
+            "run_id": 39462234441,
+            "run_attempt": 1,
+            "job_id": 118764390860,
+            "validation_head_sha": "15fc3dc90dd3f7f19e67b5c261ce95e0498f6dcf",
+            "artifact_id": 12283925998,
+            "artifact_name": "tdrp-revision9-authority-15fc3dc90dd3f7f19e67b5c261ce95e0498f6dcf",
+            "artifact_digest": "sha256:c8ba6f0117d1e32603d523e6cf6d5a7610a980585e8ecb94f488475a7a3e33cb",
+            "upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
+            "upstream_tree": "76b967833b38eb7aa2cb4047008c07331390e61e",
+            "recursive_non_directory_entries": 16201,
+            "source_closure_ready": false,
+            "evidence_status": "historical-only",
+            "prior_history": {
+              "run_id": 39417471110,
+              "run_attempt": 1,
+              "job_id": 118609886145,
+              "validation_head_sha": "885665d399d6c65b78f5ea048685109f3e8bbebc",
+              "artifact_id": 12261394728,
+              "artifact_name": "tdrp-revision9-authority-885665d399d6c65b78f5ea048685109f3e8bbebc",
+              "artifact_digest": "sha256:5bad99275a0524134eafe8a2116addaee89bd53b1e6453706e87d93bc94dbc8e",
+              "upstream_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+              "upstream_tree": "5cc28eee8d541752295ce299b860303fcb4b687d",
+              "recursive_non_directory_entries": 16201,
+              "source_closure_ready": false,
+              "evidence_status": "historical-only",
+              "prior_history": {
+                "run_id": 39408064448,
+                "run_attempt": 1,
+                "job_id": 118578755584,
+                "validation_head_sha": "abcd30172faf46684b6c46905f61264be99a5b4a",
+                "artifact_id": 12257803423,
+                "artifact_name": "tdrp-revision9-authority-abcd30172faf46684b6c46905f61264be99a5b4a",
+                "artifact_digest": "sha256:90817b28fb14446175360707a31554c08af216bfa2ddb831cda9d2f90f95f36d",
+                "upstream_commit": "6c2ee90618bf69683a1c466e3b0550260b82e129",
+                "upstream_tree": "c0b745cdee2cf0e2ab560ebcedc49cbbaafbfeaa",
+                "recursive_non_directory_entries": 16201,
+                "source_closure_ready": false,
+                "evidence_status": "historical-only",
+                "prior_history": {
+                  "status": "accepted",
+                  "runner": "github-actions",
+                  "run_id": 39267321482,
+                  "run_attempt": 1,
+                  "job_id": 118110183925,
+                  "validation_head_sha": "5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+                  "artifact_id": 12193803207,
+                  "artifact_name": "tdrp-revision9-authority-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+                  "artifact_digest": "sha256:7526811deaba969c6cf3c4a442a79ba5a2020811a993655c3dac457b146db9e0",
+                  "upstream_commit": "0a11537c220df35fe59a96aebe413b1e52bc6e47",
+                  "recursive_non_directory_entries": 16186,
+                  "previous_historical_evidence": {
+                    "status": "accepted",
+                    "runner": "github-actions",
+                    "run_id": 37652251698,
+                    "run_attempt": 1,
+                    "job_id": 112898298716,
+                    "validation_head_sha": "9e7b4e3ada9876019aac02a1562dcc4ad7d059b7",
+                    "artifact_id": 11497690488,
+                    "artifact_name": "tdrp-revision9-authority-9e7b4e3ada9876019aac02a1562dcc4ad7d059b7",
+                    "artifact_digest": "sha256:2282fdfe4cdc4835240a503092b107ae6037749e1d615978a34a36829f9affca",
+                    "upstream_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+                    "recursive_non_directory_entries": 15788,
+                    "evidence_status": "historical-only"
+                  },
+                  "evidence_status": "historical-only"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "recursive_inventory_evidence": {
+    "status": "pending-current-head-revalidation",
+    "upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
+    "source_closure_ready": false,
+    "previous_historical_evidence": {
+      "run_id": 39481285146,
+      "run_attempt": 1,
+      "job_id": 118830205800,
+      "validation_head_sha": "fb04df3f5e3b5f3d077a1c216205001970981fa8",
+      "artifact_id": 12290068816,
+      "artifact_name": "tdrp-revision9-authority-fb04df3f5e3b5f3d077a1c216205001970981fa8",
+      "artifact_digest": "sha256:64ebf5a260fa6931ba5a69a21fb8b78aae06e65f9eeaa9e28b49492e67ae1371",
+      "upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
+      "upstream_tree": "76b967833b38eb7aa2cb4047008c07331390e61e",
+      "recursive_non_directory_entries": 16201,
+      "source_closure_ready": false,
+      "evidence_status": "historical-only",
+      "supporting_artifacts": [
+        {
+          "kind": "recursive-root-aggregate",
+          "artifact_id": 12290724824,
+          "artifact_name": "tdrp-recursive-root-aggregate-fb04df3f5e3b5f3d077a1c216205001970981fa8",
+          "artifact_digest": "sha256:9d166ddd8d2fac5ec516f00ab96e826f913249d88ea350aa8ae384652b513a4b"
+        },
+        {
+          "kind": "recursive-child-aggregate",
+          "artifact_id": 12290859311,
+          "artifact_name": "tdrp-recursive-child-aggregate-fb04df3f5e3b5f3d077a1c216205001970981fa8",
+          "artifact_digest": "sha256:f5aae7bc58baa617dc4e5f067f730d80b8de35ab432728c1756a02fd8b68d8ad"
+        },
+        {
+          "kind": "recursive-next-aggregate",
+          "artifact_id": 12290109350,
+          "artifact_name": "tdrp-recursive-next-aggregate-fb04df3f5e3b5f3d077a1c216205001970981fa8",
+          "artifact_digest": "sha256:625c66b39eb13422dd4bd5d41365ccf6328aa863f52491957d04ce90f60a0f2c"
+        },
+        {
+          "kind": "recursive-fixed-point",
+          "artifact_id": 12292016692,
+          "artifact_name": "tdrp-recursive-closure-fb04df3f5e3b5f3d077a1c216205001970981fa8",
+          "artifact_digest": "sha256:e59f04a2feab78b87f30e4b469f2a1efe9b038ac59b2624c815e9175e2429765"
+        },
+        {
+          "kind": "recursive-build-reachability",
+          "artifact_id": 12292021649,
+          "artifact_name": "tdrp-recursive-reachability-fb04df3f5e3b5f3d077a1c216205001970981fa8",
+          "artifact_digest": "sha256:2a15d5d7e46c32ab10aa46909165bc9aa75a05b1d112a7564c1eb47df71ae362"
+        },
+        {
+          "kind": "root-source-archives",
+          "artifact_id": 12290199662,
+          "artifact_name": "tdrp-root-source-archives-fb04df3f5e3b5f3d077a1c216205001970981fa8",
+          "artifact_digest": "sha256:88597a323880795d7e3957e496b49d7d0b58e1ffd90947ce6cd317e3571acaf3"
+        },
+        {
+          "kind": "boost-build-reachability",
+          "artifact_id": 12292030237,
+          "artifact_name": "tdrp-boost-reachability-fb04df3f5e3b5f3d077a1c216205001970981fa8",
+          "artifact_digest": "sha256:70ed313ddbc0155954882a82c1a48370d937bd9b4c2c22a08a7e9a302df6440a"
+        }
+      ],
+      "prior_history": {
+        "run_id": 39478280087,
+        "run_attempt": 1,
+        "job_id": 118819855616,
+        "validation_head_sha": "a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
+        "artifact_id": 12291075807,
+        "artifact_name": "tdrp-revision9-authority-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
+        "artifact_digest": "sha256:9dc2c056af519a0a3ab50995a688759297b8c3dd7a412288724e08c31c020d72",
+        "upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
+        "upstream_tree": "76b967833b38eb7aa2cb4047008c07331390e61e",
+        "recursive_non_directory_entries": 16201,
+        "source_closure_ready": false,
+        "evidence_status": "historical-only",
+        "supporting_artifacts": [
+          {
+            "kind": "recursive-root-aggregate",
+            "artifact_id": 12289878200,
+            "artifact_name": "tdrp-recursive-root-aggregate-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
+            "artifact_digest": "sha256:f72194bb22f12dffe6dd2a5acfa370858315ced4ff04125ab5fd84841f3f7dce"
+          },
+          {
+            "kind": "recursive-child-aggregate",
+            "artifact_id": 12289758508,
+            "artifact_name": "tdrp-recursive-child-aggregate-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
+            "artifact_digest": "sha256:3d568818c2e87aa8798048bf1fdfa80dab8d24ce38d83fd02a4b21adb3c35561"
+          },
+          {
+            "kind": "recursive-next-aggregate",
+            "artifact_id": 12291361688,
+            "artifact_name": "tdrp-recursive-next-aggregate-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
+            "artifact_digest": "sha256:0badd16776ce0521f7a86855363047099bff1af5d3fd5135d854a98c516b60b8"
+          },
+          {
+            "kind": "recursive-fixed-point",
+            "artifact_id": 12290436916,
+            "artifact_name": "tdrp-recursive-closure-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
+            "artifact_digest": "sha256:f60ad36b3f346befac93adf2a841ec5b3e250c41ccbf7262109773a77717fc1d"
+          },
+          {
+            "kind": "recursive-build-reachability",
+            "artifact_id": 12290736992,
+            "artifact_name": "tdrp-recursive-reachability-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
+            "artifact_digest": "sha256:2202d4cfc58d0810f667e37be621acf6ab4038bba39bd56b57569df2be8ecb82"
+          },
+          {
+            "kind": "root-source-archives",
+            "artifact_id": 12290491250,
+            "artifact_name": "tdrp-root-source-archives-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
+            "artifact_digest": "sha256:37c67c45ec3b9a8645e615c4538207397c0089a2fb57f3b5fd158476f2ab9e63"
+          },
+          {
+            "kind": "boost-build-reachability",
+            "artifact_id": 12291465615,
+            "artifact_name": "tdrp-boost-reachability-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
+            "artifact_digest": "sha256:fe58d7bb9d118df07936ce42d9b8d5470a7d831566120ea081466b9431237285"
+          }
+        ],
+        "prior_history": {
+          "run_id": 39467249963,
+          "run_attempt": 1,
+          "job_id": 118781736304,
+          "validation_head_sha": "a9953cffaa81da2b672b41529bc8b598b7340334",
+          "artifact_id": 12284788852,
+          "artifact_name": "tdrp-revision9-authority-a9953cffaa81da2b672b41529bc8b598b7340334",
+          "artifact_digest": "sha256:fd8e508f10482125e95a2b5a8ef6f1411e25135fd71052a7b122a793060fca0d",
+          "upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
+          "upstream_tree": "76b967833b38eb7aa2cb4047008c07331390e61e",
+          "recursive_non_directory_entries": 16201,
+          "source_closure_ready": false,
+          "evidence_status": "historical-only",
+          "supporting_artifacts": [
+            {
+              "kind": "recursive-root-aggregate",
+              "artifact_id": 12285717165,
+              "artifact_name": "tdrp-recursive-root-aggregate-a9953cffaa81da2b672b41529bc8b598b7340334",
+              "artifact_digest": "sha256:b15c144259e9a577bca2217117b972aa2c643fc10ddbfcd4b9a2946195769b5c"
+            },
+            {
+              "kind": "recursive-child-aggregate",
+              "artifact_id": 12285218573,
+              "artifact_name": "tdrp-recursive-child-aggregate-a9953cffaa81da2b672b41529bc8b598b7340334",
+              "artifact_digest": "sha256:5818571ff194fbb54f6b9fd08f9456e25dae14bcfc6ec0a3febefe66a6329b05"
+            },
+            {
+              "kind": "recursive-next-aggregate",
+              "artifact_id": 12285428847,
+              "artifact_name": "tdrp-recursive-next-aggregate-a9953cffaa81da2b672b41529bc8b598b7340334",
+              "artifact_digest": "sha256:1fa3cbabb3de79b04fdf6e32338158d360685f91c5b494ae678955830fe4081b"
+            },
+            {
+              "kind": "recursive-fixed-point",
+              "artifact_id": 12286430875,
+              "artifact_name": "tdrp-recursive-closure-a9953cffaa81da2b672b41529bc8b598b7340334",
+              "artifact_digest": "sha256:0eed55ab4d254048bf5e9c3130d85a6bf2ab047dc121feb5168ba576d9b3d9f3"
+            },
+            {
+              "kind": "recursive-build-reachability",
+              "artifact_id": 12286001861,
+              "artifact_name": "tdrp-recursive-reachability-a9953cffaa81da2b672b41529bc8b598b7340334",
+              "artifact_digest": "sha256:538e511c39d1246f9b3dc9a4a6440b129dacdd5743a25538b5db4b4df129c1f3"
+            },
+            {
+              "kind": "root-source-archives",
+              "artifact_id": 12285835956,
+              "artifact_name": "tdrp-root-source-archives-a9953cffaa81da2b672b41529bc8b598b7340334",
+              "artifact_digest": "sha256:854f07f67ce085b14de358600a0d3eb02c3ec523a7584a3433b98f15538fab5d"
+            },
+            {
+              "kind": "boost-build-reachability",
+              "artifact_id": 12285227708,
+              "artifact_name": "tdrp-boost-reachability-a9953cffaa81da2b672b41529bc8b598b7340334",
+              "artifact_digest": "sha256:10d357748d30197b58225a983ee527466997b3f9e10edf5aa94e18899bd8354a"
+            }
+          ],
           "prior_history": {
             "run_id": 39417471110,
             "run_attempt": 1,
@@ -351,6 +600,50 @@
             "recursive_non_directory_entries": 16201,
             "source_closure_ready": false,
             "evidence_status": "historical-only",
+            "supporting_artifacts": [
+              {
+                "kind": "recursive-root-aggregate",
+                "artifact_id": 12262220367,
+                "artifact_name": "tdrp-recursive-root-aggregate-885665d399d6c65b78f5ea048685109f3e8bbebc",
+                "artifact_digest": "sha256:1b883a32221b5cdeea030e738c70be76d1744cc94d38dc4010957f938515bfd7"
+              },
+              {
+                "kind": "recursive-child-aggregate",
+                "artifact_id": 12261129835,
+                "artifact_name": "tdrp-recursive-child-aggregate-885665d399d6c65b78f5ea048685109f3e8bbebc",
+                "artifact_digest": "sha256:70fff4ad244fb65f9ead0df7beb7616c8843eed6d4bf27f6ead6f7fa89325cf6"
+              },
+              {
+                "kind": "recursive-next-aggregate",
+                "artifact_id": 12263140384,
+                "artifact_name": "tdrp-recursive-next-aggregate-885665d399d6c65b78f5ea048685109f3e8bbebc",
+                "artifact_digest": "sha256:92b81c8dfd60be12915cd02f4483eda52b4fc5b87b6cd1f2b4efca3feb065683"
+              },
+              {
+                "kind": "recursive-fixed-point",
+                "artifact_id": 12263220363,
+                "artifact_name": "tdrp-recursive-closure-885665d399d6c65b78f5ea048685109f3e8bbebc",
+                "artifact_digest": "sha256:bfc7493c743b7e674c2923ef4ca49b3040bf25b9af9ba2b9b6a707f1e355736b"
+              },
+              {
+                "kind": "recursive-build-reachability",
+                "artifact_id": 12262039910,
+                "artifact_name": "tdrp-recursive-reachability-885665d399d6c65b78f5ea048685109f3e8bbebc",
+                "artifact_digest": "sha256:1f9732e1f152c496f7eba3d6e247fe52c88486346b33c79ba40a7f67b434df1a"
+              },
+              {
+                "kind": "root-source-archives",
+                "artifact_id": 12261474061,
+                "artifact_name": "tdrp-root-source-archives-885665d399d6c65b78f5ea048685109f3e8bbebc",
+                "artifact_digest": "sha256:e03b6b301d7e53dc65c2be8e452211c1cabc6f9e03fccf94dac4f2fe13207fc4"
+              },
+              {
+                "kind": "boost-build-reachability",
+                "artifact_id": 12261014898,
+                "artifact_name": "tdrp-boost-reachability-885665d399d6c65b78f5ea048685109f3e8bbebc",
+                "artifact_digest": "sha256:2514a9939a0ec75d786ff939d1510e1a550e10d96bb0ab8090ee096635dd4c32"
+              }
+            ],
             "prior_history": {
               "run_id": 39408064448,
               "run_attempt": 1,
@@ -364,8 +657,52 @@
               "recursive_non_directory_entries": 16201,
               "source_closure_ready": false,
               "evidence_status": "historical-only",
+              "supporting_artifacts": [
+                {
+                  "kind": "recursive-root-aggregate",
+                  "artifact_id": 12257489483,
+                  "artifact_name": "tdrp-recursive-root-aggregate-abcd30172faf46684b6c46905f61264be99a5b4a",
+                  "artifact_digest": "sha256:033adfc22ccb8c1e0c90981dd7a48c660683b2b094a96272b4a81aa14a52854b"
+                },
+                {
+                  "kind": "recursive-child-aggregate",
+                  "artifact_id": 12257134871,
+                  "artifact_name": "tdrp-recursive-child-aggregate-abcd30172faf46684b6c46905f61264be99a5b4a",
+                  "artifact_digest": "sha256:11d009381e637c8b8c44fe2b801283fbf9a8ace759813bade820f4b31abd64d3"
+                },
+                {
+                  "kind": "recursive-next-aggregate",
+                  "artifact_id": 12258093509,
+                  "artifact_name": "tdrp-recursive-next-aggregate-abcd30172faf46684b6c46905f61264be99a5b4a",
+                  "artifact_digest": "sha256:72e0ca29d2aaeffe9e4f339255f2ab566388a994aae4c691c2666cde6b09ee8d"
+                },
+                {
+                  "kind": "recursive-fixed-point",
+                  "artifact_id": 12258530653,
+                  "artifact_name": "tdrp-recursive-closure-abcd30172faf46684b6c46905f61264be99a5b4a",
+                  "artifact_digest": "sha256:835e1b506c563a9a86c1217b53bed6471368faeed372248d83db9d481175f358"
+                },
+                {
+                  "kind": "recursive-build-reachability",
+                  "artifact_id": 12258510700,
+                  "artifact_name": "tdrp-recursive-reachability-abcd30172faf46684b6c46905f61264be99a5b4a",
+                  "artifact_digest": "sha256:bd82bc4c86fd1b2f3f2267d6918581c7ba12e2d9f12323b50cc5275068925a8b"
+                },
+                {
+                  "kind": "root-source-archives",
+                  "artifact_id": 12258182504,
+                  "artifact_name": "tdrp-root-source-archives-abcd30172faf46684b6c46905f61264be99a5b4a",
+                  "artifact_digest": "sha256:9326d516d04ac547a9b2085febf86fa33c24f5ba7a6e48dedf2a08e9ae8389db"
+                },
+                {
+                  "kind": "boost-build-reachability",
+                  "artifact_id": 12257818264,
+                  "artifact_name": "tdrp-boost-reachability-abcd30172faf46684b6c46905f61264be99a5b4a",
+                  "artifact_digest": "sha256:2f9141c9967744d985976dba932ce8855e1f00f59e382e63cd79b3d79097aea3"
+                }
+              ],
               "prior_history": {
-                "status": "accepted",
+                "status": "accepted-baseline-identity-only-source-closure-open",
                 "runner": "github-actions",
                 "run_id": 39267321482,
                 "run_attempt": 1,
@@ -376,8 +713,60 @@
                 "artifact_digest": "sha256:7526811deaba969c6cf3c4a442a79ba5a2020811a993655c3dac457b146db9e0",
                 "upstream_commit": "0a11537c220df35fe59a96aebe413b1e52bc6e47",
                 "recursive_non_directory_entries": 16186,
+                "source_closure_ready": false,
+                "supporting_artifacts": [
+                  {
+                    "kind": "recursive-root-aggregate",
+                    "job_id": 118110671436,
+                    "artifact_id": 12192619393,
+                    "artifact_name": "tdrp-recursive-root-aggregate-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+                    "artifact_digest": "sha256:c44a0247eb8977732373d08e06bf8cb52f4a72e2b22d10a587c451162a077b0e"
+                  },
+                  {
+                    "kind": "recursive-child-aggregate",
+                    "job_id": 118111905184,
+                    "artifact_id": 12193158582,
+                    "artifact_name": "tdrp-recursive-child-aggregate-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+                    "artifact_digest": "sha256:6eaf637f330f01469dee3771e90e904f3f36d079e57217ae67d5373af1164e63"
+                  },
+                  {
+                    "kind": "recursive-next-aggregate",
+                    "job_id": 118114082297,
+                    "artifact_id": 12193324860,
+                    "artifact_name": "tdrp-recursive-next-aggregate-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+                    "artifact_digest": "sha256:1afe55fae04e55577cc7c35254678f0b5ccfbde8b75b7821c2d47bb09471dd02"
+                  },
+                  {
+                    "kind": "recursive-fixed-point",
+                    "job_id": 118114176711,
+                    "artifact_id": 12194136074,
+                    "artifact_name": "tdrp-recursive-closure-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+                    "artifact_digest": "sha256:87d18391079527ffce7a4d588e8dec08579e354a1ad02612a511e590e31233b2"
+                  },
+                  {
+                    "kind": "recursive-build-reachability",
+                    "job_id": 118114339699,
+                    "artifact_id": 12193419380,
+                    "artifact_name": "tdrp-recursive-reachability-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+                    "artifact_digest": "sha256:1fd0f2411814962d74f2f8b991e6fd9a01bfc7c1da67e9590b8e9c49d5bf6d89"
+                  },
+                  {
+                    "kind": "root-source-archives",
+                    "job_id": 118110183972,
+                    "artifact_id": 12192789573,
+                    "artifact_name": "tdrp-root-source-archives-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+                    "artifact_digest": "sha256:d461dd8f78d7e25b5ada127aaf10e08abedb1dc7c77d80d478cd235336a2cb2d"
+                  },
+                  {
+                    "kind": "boost-build-reachability",
+                    "job_id": 118110617587,
+                    "artifact_id": 12193702905,
+                    "artifact_name": "tdrp-boost-reachability-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+                    "artifact_digest": "sha256:a5e1383f1a6e51093a92acc383d6bfb52e4e4f9cfec1d99e3739cf92d7b1af33"
+                  }
+                ],
                 "previous_historical_evidence": {
-                  "status": "accepted",
+                  "status": "accepted-baseline-identity-only-source-closure-open",
                   "runner": "github-actions",
                   "run_id": 37652251698,
                   "run_attempt": 1,
@@ -388,328 +777,11 @@
                   "artifact_digest": "sha256:2282fdfe4cdc4835240a503092b107ae6037749e1d615978a34a36829f9affca",
                   "upstream_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
                   "recursive_non_directory_entries": 15788,
+                  "source_closure_ready": false,
                   "evidence_status": "historical-only"
                 },
                 "evidence_status": "historical-only"
               }
-            }
-          }
-        }
-      }
-    }
-  },
-  "recursive_inventory_evidence": {
-    "status": "pending-current-head-revalidation",
-    "upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
-    "source_closure_ready": false,
-    "previous_historical_evidence": {
-      "run_id": 39478280087,
-      "run_attempt": 1,
-      "job_id": 118819855616,
-      "validation_head_sha": "a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
-      "artifact_id": 12291075807,
-      "artifact_name": "tdrp-revision9-authority-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
-      "artifact_digest": "sha256:9dc2c056af519a0a3ab50995a688759297b8c3dd7a412288724e08c31c020d72",
-      "upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
-      "upstream_tree": "76b967833b38eb7aa2cb4047008c07331390e61e",
-      "recursive_non_directory_entries": 16201,
-      "source_closure_ready": false,
-      "evidence_status": "historical-only",
-      "supporting_artifacts": [
-        {
-          "kind": "recursive-root-aggregate",
-          "artifact_id": 12289878200,
-          "artifact_name": "tdrp-recursive-root-aggregate-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
-          "artifact_digest": "sha256:f72194bb22f12dffe6dd2a5acfa370858315ced4ff04125ab5fd84841f3f7dce"
-        },
-        {
-          "kind": "recursive-child-aggregate",
-          "artifact_id": 12289758508,
-          "artifact_name": "tdrp-recursive-child-aggregate-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
-          "artifact_digest": "sha256:3d568818c2e87aa8798048bf1fdfa80dab8d24ce38d83fd02a4b21adb3c35561"
-        },
-        {
-          "kind": "recursive-next-aggregate",
-          "artifact_id": 12291361688,
-          "artifact_name": "tdrp-recursive-next-aggregate-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
-          "artifact_digest": "sha256:0badd16776ce0521f7a86855363047099bff1af5d3fd5135d854a98c516b60b8"
-        },
-        {
-          "kind": "recursive-fixed-point",
-          "artifact_id": 12290436916,
-          "artifact_name": "tdrp-recursive-closure-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
-          "artifact_digest": "sha256:f60ad36b3f346befac93adf2a841ec5b3e250c41ccbf7262109773a77717fc1d"
-        },
-        {
-          "kind": "recursive-build-reachability",
-          "artifact_id": 12290736992,
-          "artifact_name": "tdrp-recursive-reachability-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
-          "artifact_digest": "sha256:2202d4cfc58d0810f667e37be621acf6ab4038bba39bd56b57569df2be8ecb82"
-        },
-        {
-          "kind": "root-source-archives",
-          "artifact_id": 12290491250,
-          "artifact_name": "tdrp-root-source-archives-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
-          "artifact_digest": "sha256:37c67c45ec3b9a8645e615c4538207397c0089a2fb57f3b5fd158476f2ab9e63"
-        },
-        {
-          "kind": "boost-build-reachability",
-          "artifact_id": 12291465615,
-          "artifact_name": "tdrp-boost-reachability-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
-          "artifact_digest": "sha256:fe58d7bb9d118df07936ce42d9b8d5470a7d831566120ea081466b9431237285"
-        }
-      ],
-      "prior_history": {
-        "run_id": 39467249963,
-        "run_attempt": 1,
-        "job_id": 118781736304,
-        "validation_head_sha": "a9953cffaa81da2b672b41529bc8b598b7340334",
-        "artifact_id": 12284788852,
-        "artifact_name": "tdrp-revision9-authority-a9953cffaa81da2b672b41529bc8b598b7340334",
-        "artifact_digest": "sha256:fd8e508f10482125e95a2b5a8ef6f1411e25135fd71052a7b122a793060fca0d",
-        "upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
-        "upstream_tree": "76b967833b38eb7aa2cb4047008c07331390e61e",
-        "recursive_non_directory_entries": 16201,
-        "source_closure_ready": false,
-        "evidence_status": "historical-only",
-        "supporting_artifacts": [
-          {
-            "kind": "recursive-root-aggregate",
-            "artifact_id": 12285717165,
-            "artifact_name": "tdrp-recursive-root-aggregate-a9953cffaa81da2b672b41529bc8b598b7340334",
-            "artifact_digest": "sha256:b15c144259e9a577bca2217117b972aa2c643fc10ddbfcd4b9a2946195769b5c"
-          },
-          {
-            "kind": "recursive-child-aggregate",
-            "artifact_id": 12285218573,
-            "artifact_name": "tdrp-recursive-child-aggregate-a9953cffaa81da2b672b41529bc8b598b7340334",
-            "artifact_digest": "sha256:5818571ff194fbb54f6b9fd08f9456e25dae14bcfc6ec0a3febefe66a6329b05"
-          },
-          {
-            "kind": "recursive-next-aggregate",
-            "artifact_id": 12285428847,
-            "artifact_name": "tdrp-recursive-next-aggregate-a9953cffaa81da2b672b41529bc8b598b7340334",
-            "artifact_digest": "sha256:1fa3cbabb3de79b04fdf6e32338158d360685f91c5b494ae678955830fe4081b"
-          },
-          {
-            "kind": "recursive-fixed-point",
-            "artifact_id": 12286430875,
-            "artifact_name": "tdrp-recursive-closure-a9953cffaa81da2b672b41529bc8b598b7340334",
-            "artifact_digest": "sha256:0eed55ab4d254048bf5e9c3130d85a6bf2ab047dc121feb5168ba576d9b3d9f3"
-          },
-          {
-            "kind": "recursive-build-reachability",
-            "artifact_id": 12286001861,
-            "artifact_name": "tdrp-recursive-reachability-a9953cffaa81da2b672b41529bc8b598b7340334",
-            "artifact_digest": "sha256:538e511c39d1246f9b3dc9a4a6440b129dacdd5743a25538b5db4b4df129c1f3"
-          },
-          {
-            "kind": "root-source-archives",
-            "artifact_id": 12285835956,
-            "artifact_name": "tdrp-root-source-archives-a9953cffaa81da2b672b41529bc8b598b7340334",
-            "artifact_digest": "sha256:854f07f67ce085b14de358600a0d3eb02c3ec523a7584a3433b98f15538fab5d"
-          },
-          {
-            "kind": "boost-build-reachability",
-            "artifact_id": 12285227708,
-            "artifact_name": "tdrp-boost-reachability-a9953cffaa81da2b672b41529bc8b598b7340334",
-            "artifact_digest": "sha256:10d357748d30197b58225a983ee527466997b3f9e10edf5aa94e18899bd8354a"
-          }
-        ],
-        "prior_history": {
-          "run_id": 39417471110,
-          "run_attempt": 1,
-          "job_id": 118609886145,
-          "validation_head_sha": "885665d399d6c65b78f5ea048685109f3e8bbebc",
-          "artifact_id": 12261394728,
-          "artifact_name": "tdrp-revision9-authority-885665d399d6c65b78f5ea048685109f3e8bbebc",
-          "artifact_digest": "sha256:5bad99275a0524134eafe8a2116addaee89bd53b1e6453706e87d93bc94dbc8e",
-          "upstream_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
-          "upstream_tree": "5cc28eee8d541752295ce299b860303fcb4b687d",
-          "recursive_non_directory_entries": 16201,
-          "source_closure_ready": false,
-          "evidence_status": "historical-only",
-          "supporting_artifacts": [
-            {
-              "kind": "recursive-root-aggregate",
-              "artifact_id": 12262220367,
-              "artifact_name": "tdrp-recursive-root-aggregate-885665d399d6c65b78f5ea048685109f3e8bbebc",
-              "artifact_digest": "sha256:1b883a32221b5cdeea030e738c70be76d1744cc94d38dc4010957f938515bfd7"
-            },
-            {
-              "kind": "recursive-child-aggregate",
-              "artifact_id": 12261129835,
-              "artifact_name": "tdrp-recursive-child-aggregate-885665d399d6c65b78f5ea048685109f3e8bbebc",
-              "artifact_digest": "sha256:70fff4ad244fb65f9ead0df7beb7616c8843eed6d4bf27f6ead6f7fa89325cf6"
-            },
-            {
-              "kind": "recursive-next-aggregate",
-              "artifact_id": 12263140384,
-              "artifact_name": "tdrp-recursive-next-aggregate-885665d399d6c65b78f5ea048685109f3e8bbebc",
-              "artifact_digest": "sha256:92b81c8dfd60be12915cd02f4483eda52b4fc5b87b6cd1f2b4efca3feb065683"
-            },
-            {
-              "kind": "recursive-fixed-point",
-              "artifact_id": 12263220363,
-              "artifact_name": "tdrp-recursive-closure-885665d399d6c65b78f5ea048685109f3e8bbebc",
-              "artifact_digest": "sha256:bfc7493c743b7e674c2923ef4ca49b3040bf25b9af9ba2b9b6a707f1e355736b"
-            },
-            {
-              "kind": "recursive-build-reachability",
-              "artifact_id": 12262039910,
-              "artifact_name": "tdrp-recursive-reachability-885665d399d6c65b78f5ea048685109f3e8bbebc",
-              "artifact_digest": "sha256:1f9732e1f152c496f7eba3d6e247fe52c88486346b33c79ba40a7f67b434df1a"
-            },
-            {
-              "kind": "root-source-archives",
-              "artifact_id": 12261474061,
-              "artifact_name": "tdrp-root-source-archives-885665d399d6c65b78f5ea048685109f3e8bbebc",
-              "artifact_digest": "sha256:e03b6b301d7e53dc65c2be8e452211c1cabc6f9e03fccf94dac4f2fe13207fc4"
-            },
-            {
-              "kind": "boost-build-reachability",
-              "artifact_id": 12261014898,
-              "artifact_name": "tdrp-boost-reachability-885665d399d6c65b78f5ea048685109f3e8bbebc",
-              "artifact_digest": "sha256:2514a9939a0ec75d786ff939d1510e1a550e10d96bb0ab8090ee096635dd4c32"
-            }
-          ],
-          "prior_history": {
-            "run_id": 39408064448,
-            "run_attempt": 1,
-            "job_id": 118578755584,
-            "validation_head_sha": "abcd30172faf46684b6c46905f61264be99a5b4a",
-            "artifact_id": 12257803423,
-            "artifact_name": "tdrp-revision9-authority-abcd30172faf46684b6c46905f61264be99a5b4a",
-            "artifact_digest": "sha256:90817b28fb14446175360707a31554c08af216bfa2ddb831cda9d2f90f95f36d",
-            "upstream_commit": "6c2ee90618bf69683a1c466e3b0550260b82e129",
-            "upstream_tree": "c0b745cdee2cf0e2ab560ebcedc49cbbaafbfeaa",
-            "recursive_non_directory_entries": 16201,
-            "source_closure_ready": false,
-            "evidence_status": "historical-only",
-            "supporting_artifacts": [
-              {
-                "kind": "recursive-root-aggregate",
-                "artifact_id": 12257489483,
-                "artifact_name": "tdrp-recursive-root-aggregate-abcd30172faf46684b6c46905f61264be99a5b4a",
-                "artifact_digest": "sha256:033adfc22ccb8c1e0c90981dd7a48c660683b2b094a96272b4a81aa14a52854b"
-              },
-              {
-                "kind": "recursive-child-aggregate",
-                "artifact_id": 12257134871,
-                "artifact_name": "tdrp-recursive-child-aggregate-abcd30172faf46684b6c46905f61264be99a5b4a",
-                "artifact_digest": "sha256:11d009381e637c8b8c44fe2b801283fbf9a8ace759813bade820f4b31abd64d3"
-              },
-              {
-                "kind": "recursive-next-aggregate",
-                "artifact_id": 12258093509,
-                "artifact_name": "tdrp-recursive-next-aggregate-abcd30172faf46684b6c46905f61264be99a5b4a",
-                "artifact_digest": "sha256:72e0ca29d2aaeffe9e4f339255f2ab566388a994aae4c691c2666cde6b09ee8d"
-              },
-              {
-                "kind": "recursive-fixed-point",
-                "artifact_id": 12258530653,
-                "artifact_name": "tdrp-recursive-closure-abcd30172faf46684b6c46905f61264be99a5b4a",
-                "artifact_digest": "sha256:835e1b506c563a9a86c1217b53bed6471368faeed372248d83db9d481175f358"
-              },
-              {
-                "kind": "recursive-build-reachability",
-                "artifact_id": 12258510700,
-                "artifact_name": "tdrp-recursive-reachability-abcd30172faf46684b6c46905f61264be99a5b4a",
-                "artifact_digest": "sha256:bd82bc4c86fd1b2f3f2267d6918581c7ba12e2d9f12323b50cc5275068925a8b"
-              },
-              {
-                "kind": "root-source-archives",
-                "artifact_id": 12258182504,
-                "artifact_name": "tdrp-root-source-archives-abcd30172faf46684b6c46905f61264be99a5b4a",
-                "artifact_digest": "sha256:9326d516d04ac547a9b2085febf86fa33c24f5ba7a6e48dedf2a08e9ae8389db"
-              },
-              {
-                "kind": "boost-build-reachability",
-                "artifact_id": 12257818264,
-                "artifact_name": "tdrp-boost-reachability-abcd30172faf46684b6c46905f61264be99a5b4a",
-                "artifact_digest": "sha256:2f9141c9967744d985976dba932ce8855e1f00f59e382e63cd79b3d79097aea3"
-              }
-            ],
-            "prior_history": {
-              "status": "accepted-baseline-identity-only-source-closure-open",
-              "runner": "github-actions",
-              "run_id": 39267321482,
-              "run_attempt": 1,
-              "job_id": 118110183925,
-              "validation_head_sha": "5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-              "artifact_id": 12193803207,
-              "artifact_name": "tdrp-revision9-authority-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-              "artifact_digest": "sha256:7526811deaba969c6cf3c4a442a79ba5a2020811a993655c3dac457b146db9e0",
-              "upstream_commit": "0a11537c220df35fe59a96aebe413b1e52bc6e47",
-              "recursive_non_directory_entries": 16186,
-              "source_closure_ready": false,
-              "supporting_artifacts": [
-                {
-                  "kind": "recursive-root-aggregate",
-                  "job_id": 118110671436,
-                  "artifact_id": 12192619393,
-                  "artifact_name": "tdrp-recursive-root-aggregate-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-                  "artifact_digest": "sha256:c44a0247eb8977732373d08e06bf8cb52f4a72e2b22d10a587c451162a077b0e"
-                },
-                {
-                  "kind": "recursive-child-aggregate",
-                  "job_id": 118111905184,
-                  "artifact_id": 12193158582,
-                  "artifact_name": "tdrp-recursive-child-aggregate-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-                  "artifact_digest": "sha256:6eaf637f330f01469dee3771e90e904f3f36d079e57217ae67d5373af1164e63"
-                },
-                {
-                  "kind": "recursive-next-aggregate",
-                  "job_id": 118114082297,
-                  "artifact_id": 12193324860,
-                  "artifact_name": "tdrp-recursive-next-aggregate-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-                  "artifact_digest": "sha256:1afe55fae04e55577cc7c35254678f0b5ccfbde8b75b7821c2d47bb09471dd02"
-                },
-                {
-                  "kind": "recursive-fixed-point",
-                  "job_id": 118114176711,
-                  "artifact_id": 12194136074,
-                  "artifact_name": "tdrp-recursive-closure-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-                  "artifact_digest": "sha256:87d18391079527ffce7a4d588e8dec08579e354a1ad02612a511e590e31233b2"
-                },
-                {
-                  "kind": "recursive-build-reachability",
-                  "job_id": 118114339699,
-                  "artifact_id": 12193419380,
-                  "artifact_name": "tdrp-recursive-reachability-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-                  "artifact_digest": "sha256:1fd0f2411814962d74f2f8b991e6fd9a01bfc7c1da67e9590b8e9c49d5bf6d89"
-                },
-                {
-                  "kind": "root-source-archives",
-                  "job_id": 118110183972,
-                  "artifact_id": 12192789573,
-                  "artifact_name": "tdrp-root-source-archives-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-                  "artifact_digest": "sha256:d461dd8f78d7e25b5ada127aaf10e08abedb1dc7c77d80d478cd235336a2cb2d"
-                },
-                {
-                  "kind": "boost-build-reachability",
-                  "job_id": 118110617587,
-                  "artifact_id": 12193702905,
-                  "artifact_name": "tdrp-boost-reachability-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-                  "artifact_digest": "sha256:a5e1383f1a6e51093a92acc383d6bfb52e4e4f9cfec1d99e3739cf92d7b1af33"
-                }
-              ],
-              "previous_historical_evidence": {
-                "status": "accepted-baseline-identity-only-source-closure-open",
-                "runner": "github-actions",
-                "run_id": 37652251698,
-                "run_attempt": 1,
-                "job_id": 112898298716,
-                "validation_head_sha": "9e7b4e3ada9876019aac02a1562dcc4ad7d059b7",
-                "artifact_id": 11497690488,
-                "artifact_name": "tdrp-revision9-authority-9e7b4e3ada9876019aac02a1562dcc4ad7d059b7",
-                "artifact_digest": "sha256:2282fdfe4cdc4835240a503092b107ae6037749e1d615978a34a36829f9affca",
-                "upstream_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
-                "recursive_non_directory_entries": 15788,
-                "source_closure_ready": false,
-                "evidence_status": "historical-only"
-              },
-              "evidence_status": "historical-only"
             }
           }
         }
@@ -742,6 +814,6 @@
     "evidence_status": "pending-current-head-revalidation",
     "upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
     "discovery_evidence_status": "pending-current-head-revalidation",
-    "note": "Parent exact-head run 39478280087 at a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7 revalidated current upstream 78ceaa548ae0e055aa56b53fde22064d13f250ef/76b967833b38eb7aa2cb4047008c07331390e61e, root acquisition discovery, recursive authority and Boost reachability. Those artifacts are historical-only for the sources.py mapping commit; generated/resource/tool disposition and full source closure remain open."
+    "note": "Parent exact-head run 39481285146 at fb04df3f5e3b5f3d077a1c216205001970981fa8 revalidated current upstream 78ceaa548ae0e055aa56b53fde22064d13f250ef/76b967833b38eb7aa2cb4047008c07331390e61e, root acquisition discovery, recursive authority and Boost 582/582/open=0. Its 60 TDRP artifacts plus Rust run 39481285124 artifact were hash-verified at the parent and are historical-only for this continue/SKILL.md mapping commit; generated/resource/tool disposition and full source closure remain open."
   }
 }
