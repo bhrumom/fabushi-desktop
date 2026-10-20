@@ -6,10 +6,10 @@
   "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16172,
-    "unread": 16145,
+    "unknown": 16171,
+    "unread": 16144,
     "omitted": 0,
-    "responsibilities_total": 52,
+    "responsibilities_total": 53,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -12962,6 +12962,272 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral repository-quality history/task-effort measurement contract read from telegramdesktop/tdesktop authority; no upstream Python implementation copied into Fabushi shipping runtime.",
       "notes": "Recursive authority array index 29, immediately after health_test.py index 28, is .agents/skills/code-health/scripts/history.py. Its direct report.py caller and code-health SKILL measurement/prioritization contract were read. This closure decrements only this independent source entry to unknown=16,172 and unread=16,145, omitted=0.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
+      "source_path": ".agents/skills/code-health/scripts/includes.py",
+      "source_blob_sha": "2c02b4e7eb821f123588e0a80056edef86fc084c",
+      "source_kind": "repository_quality_include_graph_helper",
+      "module_id": "tdesktop.code-health-include-graph",
+      "responsibility_id": "TDRP-R9-CODE-HEALTH-INCLUDE-GRAPH-001",
+      "source_symbols": [
+        "IncludeGraph.__init__",
+        "IncludeGraph.resolve",
+        "IncludeGraph.closure",
+        "IncludeGraph.pch_closure",
+        "IncludeGraph.costs",
+        "IncludeGraph.layering",
+        "style_imports"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-REPOSITORY-BUILD-EVIDENCE"
+      ],
+      "dependency_ids": [
+        ".agents/skills/code-health/scripts/cpp_text.py",
+        ".agents/skills/code-health/scripts/cmake_model.py",
+        ".agents/skills/code-health/scripts/report.py",
+        ".agents/skills/code-health/scripts/review.py",
+        ".agents/skills/code-health/scripts/health_test.py",
+        "Fabushi repository source-text normalization evidence",
+        "Fabushi repository source-derived build-model evidence",
+        "Fabushi configured-build graph provenance"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/code-health-includes-script-complete-read.md",
+      "behavior_contract": "Build a deterministic source include/style-import graph from one exact scanned source snapshot and recognized source-build model; resolve bounded source-relative/root/style edges with line provenance, preserve unresolved inputs, compute cycle-safe closure and PCH closure, derive PCH-excluded source-line weight plus header reach/rebuild proxies, and expose cross-target layering observations while keeping configured-build truth and caller-owned report/review result semantics outside the graph.",
+      "state_machine": "exact source snapshot + source-text recognizer + source-derived build model -> resolved/unresolved include and style-import observations -> cached cycle-safe closure/PCH closure -> source-line weight/reach/rebuild proxy facts + cross-target layering facts -> report/review caller result; unresolved paths or unrecognized build relationships remain unknown evidence and never become clean negatives",
+      "side_effects": [
+        "Read-only repository quality/build evidence; no shipping runtime, source mutation, durable finding or task-state mutation."
+      ],
+      "failure_cases": [
+        "An unresolved include or unrecognized generated/system/macro include is fabricated into a graph edge",
+        "Resolution ignores declared source-relative/root/style precedence or loses original source line provenance",
+        "A cycle causes nontermination or drops reachable nodes",
+        "A missing/unrecognized PCH is treated as configured empty-PCH truth",
+        "Source-line build-work proxies are presented as compiler timing or configured-build truth",
+        "A cross-target edge derived from incomplete source-build evidence is presented as a proven clean dependency result",
+        "The graph creates warning/error, finding, task-routing, ownership, product or release semantics that belong to existing callers/owners"
+      ],
+      "ui_disposition": "Not applicable; repository quality/build evidence only.",
+      "non_ui_responsibilities": [
+        "Exact-source C/C++ quoted-include and style-import graph construction",
+        "Source-relative/declaration-root/generated-style path resolution",
+        "Unresolved include accounting",
+        "Cycle-safe transitive include closure",
+        "Source-derived target PCH closure",
+        "PCH-excluded translation-unit source-line weight proxy",
+        "Per-header reach and rebuild source-line work proxy",
+        "Cross-target layering observation against recognized dependency closure",
+        "Original source path/line provenance for report/review consumers",
+        "Configured-build authority escalation boundary",
+        "Caller-owned report/review warning/finding/routing boundaries"
+      ],
+      "platform_delta": "Fabushi already assigns include path resolution, reach/build-cost and layering interpretation to repository quality governance, backed by source-text and source-derived build-model evidence with configured-build graph provenance as stronger authority. This closure makes that source-neutral include-graph contract explicit instead of porting Telegram's Python graph.",
+      "existing_owner_candidates": [
+        "AGENTS.md repository quality-health governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "Repository source-text normalization evidence",
+        "Repository source-derived build-model evidence",
+        "Configured-build graph provenance"
+      ],
+      "existing_owner": "Fabushi repository responsibility/quality/build-evidence governance",
+      "rejected_existing_owners": [
+        "Source-text normalization owns bounded lexical include extraction but not path resolution/closure/build-work/layering interpretation",
+        "Source-derived build model owns approximate target/link/PCH facts but not include graph semantics",
+        "Configured-build provenance is stronger authority for evaluated graph facts, not the owner of source-level include quality proxies",
+        "Report/review own aggregation and warning/error semantics, not graph construction",
+        "Copying Telegram includes.py would create a source-specific parallel dependency graph"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository source include-graph evidence governance",
+        "Repository source include-graph evidence qualification",
+        "Repository source include-graph evidence"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The upstream helper supplies repository-development graph/evidence semantics rather than shipping C++ product logic; Fabushi preserves them as source-neutral quality/build-evidence contracts under existing owners.",
+      "command_event_contracts": [
+        "exact source + include recognizer + source-build model -> resolved/unresolved path-line edge facts",
+        "resolved edges -> cycle-safe closure; recognized target PCH -> PCH closure",
+        "translation-unit closure minus PCH closure -> source-line weight proxy; header participation -> reach/rebuild proxy",
+        "resolved edge + recognized source/target owners + dependency closure -> layering observation",
+        "unresolved include/unrecognized build relation -> unknown evidence, not clean negative",
+        "graph facts -> existing report/review caller semantics only"
+      ],
+      "state_owner": "Existing Fabushi repository quality/build-evidence governance",
+      "lifecycle_owner": "Existing repository quality scan/review lifecycle and GitHub Actions evidence production",
+      "persistence_and_restart": "The graph is reproducible from exact source/build evidence and owns no durable state. Report/review/health owners persist any caller results; unresolved inputs remain explicit observations rather than fabricated absence.",
+      "concurrency_and_cancellation": "Graph construction is read-only and snapshot-bound. Partial source/build acquisition or interrupted analysis cannot be promoted to complete layering/build-work evidence; cycles are handled by explicit seen-set closure.",
+      "security_boundary": "Source include-graph evidence authorizes no build execution, source mutation, task approval, credential use, product behavior or release decision. Configured-build/runtime claims require stronger existing evidence owners.",
+      "network_service_dependencies": [
+        "GitHub repository authority",
+        "GitHub Actions hosted runners",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi repository quality/release workflow / GitHub Actions",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "Independent exact-head GitHub Actions verification of this source-entry mapping commit is pending."
+      ],
+      "production_entrypoints": [
+        "AGENTS.md -> Repository source include-graph evidence governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Repository source include-graph evidence qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Repository source include-graph evidence"
+      ],
+      "production_evidence": [
+        "path:AGENTS.md#Repository source include-graph evidence governance",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Repository source include-graph evidence qualification",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Repository source include-graph evidence"
+      ],
+      "test_evidence": [
+        "dossier:projects/telegram-desktop-rust/dossiers/code-health-includes-script-complete-read.md",
+        "upstream-includes:.agents/skills/code-health/scripts/includes.py@2c02b4e7eb821f123588e0a80056edef86fc084c",
+        "upstream-report:.agents/skills/code-health/scripts/report.py@a1177613670e933694f545f387ca7e7ed8cf0ee0",
+        "upstream-review:.agents/skills/code-health/scripts/review.py@070b55553052267e8fbc12d70985b447b24bbb02",
+        "upstream-graph-tests:.agents/skills/code-health/scripts/health_test.py@2176aea672fd9ed16c01342939fbffb41490ae73"
+      ],
+      "target_commit": "2bfc3fd3638596b37a01c54e17a333c1798414f3",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development and quality/build evidence governance",
+      "composition_slot": "Source include/dependency graph evidence for quality reporting and change review",
+      "capability_component": "Source-neutral repository include graph evidence",
+      "variation_axes": [
+        "C/C++ quoted include vs style import",
+        "source-relative vs own-root vs other-root vs generated-style resolution",
+        "resolved vs unresolved include",
+        "acyclic vs cyclic graph",
+        "recognized PCH vs missing/unrecognized PCH",
+        "linked vs cross-target recognized dependency",
+        "report aggregation vs review check consumer"
+      ],
+      "shared_owner_contracts": [
+        "Repository source-text normalization evidence",
+        "Repository source-derived build-model evidence",
+        "Configured-build graph provenance",
+        "Repository quality-health governance",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract"
+      ],
+      "duplicate_root_check": "No Telegram Python include graph, second build graph, second findings store, product dependency runtime or task owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Every graph fact remains bound to the exact source snapshot and source-build recognizer; unresolved or unrecognized dependency inputs remain unknown and cannot silently become clean edges, zero build work or valid layering.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to workflow governance",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CODE-HEALTH-INCLUDE-GRAPH-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CODE-HEALTH-INCLUDE-RESOLUTION-001",
+        "ORA-TDRP-CODE-HEALTH-INCLUDE-COST-001",
+        "ORA-TDRP-CODE-HEALTH-LAYERING-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CODE-HEALTH-INCLUDE-EXACT-SOURCE-001",
+        "INV-TDRP-CODE-HEALTH-INCLUDE-NO-FABRICATED-EDGE-001",
+        "INV-TDRP-CODE-HEALTH-INCLUDE-NO-CONFIGURED-BUILD-CLAIM-001"
+      ],
+      "unit_case_ids": [
+        "GraphTests.test_targets_and_pch",
+        "GraphTests.test_upward_include_is_a_layering_violation",
+        "GraphTests.test_reach_and_weight"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CODE-HEALTH-INCLUDE-GRAPH-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-CODE-HEALTH-REPORT-INCLUDE-GRAPH-001",
+        "INT-TDRP-CODE-HEALTH-REVIEW-INCLUDE-GRAPH-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CODE-HEALTH-INCLUDE-UNRESOLVED-001",
+        "FAULT-TDRP-CODE-HEALTH-INCLUDE-BUILD-MODEL-UNKNOWN-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CODE-HEALTH-INCLUDE-PROVENANCE-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-CODE-HEALTH-INCLUDE-GRAPH-001"
+      ],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-INVENTORY",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "code-health-include-graph-contract",
+        "health-test-graph-fixture"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral repository-quality include-graph contract read from telegramdesktop/tdesktop authority; no upstream Python implementation copied into Fabushi shipping runtime.",
+      "notes": "Recursive authority array index 30, immediately after history.py index 29, is .agents/skills/code-health/scripts/includes.py. Direct report.py/review.py callers and health_test.py GraphTests were read. This closure decrements only this independent source entry to unknown=16,171 and unread=16,144, omitted=0.",
       "test_execution_evidence": []
     }
   ]
