@@ -625,39 +625,71 @@ pub fn verify_catalog_bundle(
         if manifest.min_host_api < 2 || !cfg!(all(target_os = "macos", target_arch = "aarch64")) {
             return Err(PackageError::Authorization);
         }
-        let descriptor = resources.get("native-runtime.json").ok_or(PackageError::Manifest)?;
+        let descriptor = resources
+            .get("native-runtime.json")
+            .ok_or(PackageError::Manifest)?;
         if descriptor.len() > 16 * 1024 {
             return Err(PackageError::Manifest);
         }
-        let UniqueJson(value) = serde_json::from_slice(descriptor).map_err(|_| PackageError::Manifest)?;
-        let native: NativeRuntimeDefinition = serde_json::from_value(value).map_err(|_| PackageError::Manifest)?;
+        let UniqueJson(value) =
+            serde_json::from_slice(descriptor).map_err(|_| PackageError::Manifest)?;
+        let native: NativeRuntimeDefinition =
+            serde_json::from_value(value).map_err(|_| PackageError::Manifest)?;
         let native_path = |path: &str| safe_path(path) && path.starts_with("native/");
         if native.schema != "fabushi.native-runtime.v1"
-            || native.platform != "darwin" || native.architecture != "arm64"
-            || !native_path(&native.entrypoint) || !native.entrypoint.ends_with(".cjs")
-            || manifest.files.get(&native.entrypoint).is_none_or(|r| r.mime != "text/javascript")
-            || native.executables.is_empty() || native.executables.len() > 8
+            || native.platform != "darwin"
+            || native.architecture != "arm64"
+            || !native_path(&native.entrypoint)
+            || !native.entrypoint.ends_with(".cjs")
+            || manifest
+                .files
+                .get(&native.entrypoint)
+                .is_none_or(|r| r.mime != "text/javascript")
+            || native.executables.is_empty()
+            || native.executables.len() > 8
             || native.executables.iter().collect::<BTreeSet<_>>().len() != native.executables.len()
-            || native.host_capabilities.iter().collect::<BTreeSet<_>>().len() != native.host_capabilities.len()
-            || native.host_capabilities.iter().any(|p| p != "file-picker" && p != "confirmation")
+            || native
+                .host_capabilities
+                .iter()
+                .collect::<BTreeSet<_>>()
+                .len()
+                != native.host_capabilities.len()
+            || native
+                .host_capabilities
+                .iter()
+                .any(|p| p != "file-picker" && p != "confirmation")
         {
             return Err(PackageError::Manifest);
         }
         for path in &native.executables {
             let data = resources.get(path).ok_or(PackageError::Integrity)?;
-            if !native_path(path) || !path.ends_with(".bin") || data.len() < 32 || data.len() > 64 * 1024 * 1024
+            if !native_path(path)
+                || !path.ends_with(".bin")
+                || data.len() < 32
+                || data.len() > 64 * 1024 * 1024
                 || data[..8] != [0xcf, 0xfa, 0xed, 0xfe, 0x0c, 0, 0, 1]
-                || manifest.files.get(path).is_none_or(|r| r.mime != "application/octet-stream")
+                || manifest
+                    .files
+                    .get(path)
+                    .is_none_or(|r| r.mime != "application/octet-stream")
             {
                 return Err(PackageError::Manifest);
             }
         }
-        if manifest.files.iter().any(|(p, r)| r.mime == "application/octet-stream" && !native.executables.contains(p)) {
+        if manifest
+            .files
+            .iter()
+            .any(|(p, r)| r.mime == "application/octet-stream" && !native.executables.contains(p))
+        {
             return Err(PackageError::Manifest);
         }
         Some(native)
     } else {
-        if manifest.files.iter().any(|(p, r)| p.starts_with("native/") || p == "native-runtime.json" || r.mime == "application/octet-stream") {
+        if manifest.files.iter().any(|(p, r)| {
+            p.starts_with("native/")
+                || p == "native-runtime.json"
+                || r.mime == "application/octet-stream"
+        }) {
             return Err(PackageError::Manifest);
         }
         None
