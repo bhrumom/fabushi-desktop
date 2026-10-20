@@ -1136,7 +1136,7 @@
   ],
   "recursive_build_reachability": {
     "status": "partial-audited-disposition-open",
-    "accepted_upstream_commit": "6c2ee90618bf69683a1c466e3b0550260b82e129",
+    "accepted_upstream_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
     "rule": "A recursively discovered repository is source/build authority only when an accepted TDesktop build path actually initializes, downloads, generates, patches, or consumes it. Presence as an unselected superproject gitlink is not sufficient.",
     "qt_superproject": {
       "repository": "https://github.com/qt/qt5",
@@ -1272,19 +1272,19 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "blob": "a8bd8d6a5c1e190a27702cbcf7f00d10ce6f9dda",
+          "blob": "4063cc766ffb60c018b7a6ad456453ec585d5566",
           "evidence": "Clones OpenSSL and builds libraries directly; no git submodule init/update in the OpenSSL stage.",
           "evidence_status": "historical-only"
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "blob": "39b185c7277b1bb1819761d112a6799d4152ff04",
+          "blob": "f72162089985263493c6e3f7e23b566f5df8e454",
           "evidence": "Shallow clones OpenSSL, configures no-tests/no-dso, builds and installs; no submodule init/update.",
           "evidence_status": "historical-only"
         },
         {
           "path": "snap/snapcraft.yaml",
-          "blob": "618110dba69e4f18c78fe65f282f1342a631cbfb",
+          "blob": "38f0eb362832c3623b868c9aa90c03bc4f426d01",
           "evidence": "Snap OpenSSL part uses source-tag/plugin make and does not request source-submodules.",
           "evidence_status": "historical-only"
         }
