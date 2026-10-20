@@ -209,8 +209,8 @@ test("CLI backend spawns real argv-only binary for scan, async transfer, cancell
     assert.equal(scanOut.files, 3);
     assert.equal(scanOut.bytes, 4096);
 
-    await assert.rejects(() => backend.send(fastPicked.selectionId, "unknown-pool"), /UNKNOWN_TARGET_POOL/);
-    const started = await backend.send(fastPicked.selectionId, "lan");
+    await assert.rejects(() => backend.send({ selectionId: fastPicked.selectionId, targetPoolId: "unknown-pool" }), /UNKNOWN_TARGET_POOL/);
+    const started = await backend.send({ selectionId: fastPicked.selectionId, targetPoolId: "lan" });
     let finalState: { state?: string; result?: unknown } = { state: "running" };
     for (let attempt = 0; attempt < 40; attempt += 1) {
       finalState = (await backend.status(started.operationId)) as { state?: string; result?: unknown };
@@ -223,7 +223,7 @@ test("CLI backend spawns real argv-only binary for scan, async transfer, cancell
     chosenDir = slowDir;
     const slowPicked = await backend.pick("directory", { maxFiles: 1, maxBytes: 1024 ** 3 });
     assert.ok(slowPicked);
-    const slowOp = await backend.send(slowPicked.selectionId, "lan");
+    const slowOp = await backend.send({ selectionId: slowPicked.selectionId, targetPoolId: "lan" });
     await backend.cancel(slowOp.operationId);
     const cancelledState = (await backend.status(slowOp.operationId)) as { state?: string };
     assert.equal(cancelledState.state, "cancelled");

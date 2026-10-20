@@ -39,6 +39,18 @@ export type MiniAppToolResult =
 export interface MiniAppSelectionEntry { readonly name: string; readonly size: number }
 export interface MiniAppTargetPool { readonly id: string; readonly label: string }
 export interface MiniAppReceiveConfig { readonly targetPoolId: string; readonly once?: boolean }
+export interface MiniAppTransferSendConfig {
+  readonly selectionId: string;
+  readonly targetPoolId: string;
+  readonly repeat?: number;
+  readonly watch?: boolean;
+  readonly intervalMs?: number;
+  readonly resume?: boolean;
+  readonly rateBytesPerSecond?: number;
+  readonly trafficLimitBytes?: number;
+  readonly queueCapacity?: number;
+  readonly chunkBytes?: number;
+}
 
 /** Implemented by the native owner; never reachable from the renderer directly. */
 export interface MiniAppToolBackend {
@@ -46,7 +58,7 @@ export interface MiniAppToolBackend {
   readState(): Promise<unknown>;
   pick(mode: "files" | "directory", limits: { readonly maxFiles: number; readonly maxBytes: number }): Promise<{ readonly selectionId: string; readonly entries: MiniAppSelectionEntry[] } | null>;
   release(selectionId: string): Promise<void>;
-  send(selectionId: string, targetPoolId: string): Promise<{ readonly operationId: string }>;
+  send(config: MiniAppTransferSendConfig): Promise<{ readonly operationId: string }>;
   receive?(config: MiniAppReceiveConfig): Promise<{ readonly operationId: string }>;
   status(operationId: string): Promise<unknown>;
   cancel(operationId: string): Promise<void>;
@@ -90,6 +102,13 @@ function optionalBoolean(args: Record<string, unknown>, key: string): boolean | 
   return args[key] as boolean;
 }
 
+function optionalInteger(args: Record<string, unknown>, key: string, min: number, max: number): number | undefined {
+  if (args[key] === undefined) return undefined;
+  const value = Number(args[key]);
+  if (!Number.isSafeInteger(value) || value < min || value > max) throw new TypeError(`INVALID_${key.toUpperCase()}`);
+  return value;
+}
+
 function asRecord(args: unknown): Record<string, unknown> {
   if (args === undefined || args === null) return {};
   if (typeof args !== "object" || Array.isArray(args)) throw new TypeError("INVALID_ARGUMENTS");
@@ -115,7 +134,21 @@ function handlersFor(backend: MiniAppToolBackend): Map<string, { capability: Min
       return { ok: true };
     }],
     ["transfer.send", MINIAPP_CAPABILITY.TRANSFER, true, async (args) => {
-      const sent = await backend.send(requiredId(args, "selectionId"), requiredId(args, "targetPoolId"));
+      const transferConfig = {
+        selectionId: requiredId(args, "selectionId"),
+        targetPoolId: requiredId(args, "targetPoolId"),
+        repeat: optionalInteger(args, "repeat", 1, 10_000),
+        watch: optionalBoolean(args, "watch"),
+        intervalMs: optionalInteger(args, "intervalMs", 100, 60_000),
+        resume: optionalBoolean(args, "resume"),
+        rateBytesPerSecond: optionalInteger(args, "rateBytesPerSecond", 1, 1_073_741_824),
+        trafficLimitBytes: optionalInteger(args, "trafficLimitBytes", 1, 1_073_741_824),
+        queueCapacity: optionalInteger(args, "queueCapacity", 1, 65_536),
+        chunkBytes: optionalInteger(args, "chunkBytes", 1, 16 * 1024 * 1024),
+      };
+      if (transferConfig.watch === true && (transferConfig.repeat !== undefined || transferConfig.resume === true)) throw new TypeError("TRANSFER_MODES_CONFLICT");
+      if (transferConfig.resume === true && transferConfig.repeat !== undefined) throw new TypeError("TRANSFER_MODES_CONFLICT");
+      const sent = await backend.send(transferConfig);
       return { ok: true, data: sent };
     }],
     ["transfer.receive", MINIAPP_CAPABILITY.TRANSFER, true, async (args) => {
