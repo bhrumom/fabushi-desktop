@@ -15645,52 +15645,41 @@
         "TDRP-R9-DEPENDENCY-WATCH-ADVISORY-001"
       ],
       "oracle_ids": [
-        "ORA-TDRP-CONTINUE-SPLIT-BOUNDARY-001",
-        "ORA-TDRP-CONTINUE-SPLIT-CARRIER-TRANSFER-001",
-        "ORA-TDRP-CONTINUE-SPLIT-PUBLICATION-001"
+        "ORA-TDRP-DEPENDENCY-WATCH-FRESH-SNAPSHOT-001",
+        "ORA-TDRP-DEPENDENCY-WATCH-ADVISORY-PROVENANCE-001",
+        "ORA-TDRP-DEPENDENCY-WATCH-FAIL-CLOSED-001"
       ],
       "invariant_ids": [
-        "INV-TDRP-CONTINUE-SPLIT-NO-RETAINED-WORK-LOSS-001",
-        "INV-TDRP-CONTINUE-SPLIT-DEPENDENCY-GRAPH-CLOSED-001",
-        "INV-TDRP-CONTINUE-SPLIT-FAIL-VISIBLE-001",
-        "INV-TDRP-CONTINUE-SPLIT-NO-SHIPPING-QUEUE-COLLISION-001"
+        "INV-TDRP-DEPENDENCY-WATCH-NO-WORKTREE-MUTATION-001",
+        "INV-TDRP-DEPENDENCY-WATCH-NO-STALE-ALL-CLEAR-001",
+        "INV-TDRP-DEPENDENCY-WATCH-STABLE-FINDING-HISTORY-001"
       ],
       "unit_case_ids": [
-        "workspace_test.test_finish_publishes_split_required_with_carried_work",
-        "workspace_test.test_carried_work_snapshot_seals_owned_submodule_changes"
+        "VersionTests.test_stable_ordering_and_prefixes"
       ],
       "property_state_case_ids": [],
-      "contract_case_ids": [
-        "CONTRACT-TDRP-CONTINUE-SPLIT-PRESERVES-TASK-SEMANTICS-001",
-        "CONTRACT-TDRP-CONTINUE-SPLIT-CARRIER-OWNERSHIP-001"
-      ],
+      "contract_case_ids": [],
       "integration_case_ids": [
-        "workspace_test.test_split_publish_routes_and_starts_implementation_carrier",
-        "workspace_test.test_dependency_validation_rejects_missing_and_cyclic_edges"
+        "SnapshotTests.test_fetches_remote_without_touching_working_tree",
+        "SnapshotTests.test_linked_worktree_uses_common_report_storage"
       ],
       "functional_e2e_case_ids": [],
-      "temporal_case_ids": [
-        "TEMP-TDRP-CONTINUE-SPLIT-PARENT-EVIDENCE-DEMOTION-001"
-      ],
+      "temporal_case_ids": [],
       "ui_functional_case_ids": [],
       "visual_case_ids": [],
       "accessibility_case_ids": [],
       "fault_recovery_case_ids": [
-        "FAULT-TDRP-CONTINUE-SPLIT-CARRIED-WORK-DRIFT-001",
-        "FAULT-TDRP-CONTINUE-SPLIT-PUBLICATION-RACE-001",
-        "FAULT-TDRP-CONTINUE-SPLIT-NO-COHERENT-CARRIER-001"
+        "SnapshotTests.test_fetch_failure_never_uses_stale_ref",
+        "SnapshotTests.test_missing_required_manifest_fails",
+        "SnapshotTests.test_offline_snapshot_is_marked_unverified"
       ],
       "performance_case_ids": [],
       "security_case_ids": [
-        "SEC-TDRP-CONTINUE-SPLIT-NO-PRODUCT-SOURCE-MUTATION-001"
+        "SEC-TDRP-DEPENDENCY-WATCH-ADVISORY-ONLY-001"
       ],
       "soak_case_ids": [],
-      "exploratory_charter_ids": [
-        "EXP-TDRP-CONTINUE-SPLIT-ROUTING-001"
-      ],
-      "regression_ids": [
-        "REG-TDRP-CONTINUE-SPLIT-CARRIER-START-001"
-      ],
+      "exploratory_charter_ids": [],
+      "regression_ids": [],
       "release_gate_ids": [
         "G-EVIDENCE",
         "G-INVENTORY",
@@ -15709,7 +15698,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral repository workflow contract read from exact telegramdesktop/tdesktop blobs; no upstream Python monitor or dependency code is copied into Fabushi shipping runtime.",
-      "notes": "Zero-based strict index 39 remains dependency-watch/SKILL.md@482b3a8d0c939d4bb7bd32ab146e0cc988d29fd8 on live 0eca52223cceed229932add1cc80792763120844. Rebaseline changes recursive total 16201->16305; after mapping unknown=16263 unread=16238 omitted=0. Parent e709 workflows are historical. Next strict entry is index 40 dependency-watch/agents/openai.yaml@a61c118c41e3b50d6bc4bde12dc6d4c1b3756b5d.",
+      "notes": "Zero-based strict index 39 is dependency-watch/SKILL.md@482b3a8d0c939d4bb7bd32ab146e0cc988d29fd8 on live 0eca52223cceed229932add1cc80792763120844. Rebaseline changes recursive total 16201->16305; after mapping unknown=16263 unread=16238 omitted=0. Parent e709 workflows are historical. Next strict entry is index 40 dependency-watch/agents/openai.yaml@a61c118c41e3b50d6bc4bde12dc6d4c1b3756b5d.",
       "test_execution_evidence": []
     }
   ]

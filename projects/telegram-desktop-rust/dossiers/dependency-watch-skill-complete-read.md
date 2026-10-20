@@ -45,3 +45,16 @@ Both runs are historical for the new upstream baseline.
 The Revision 9 validator is minimally generalized for positive root additions: added_path_count must match; each added path must be absent in the old tree and present as the recorded current blob; previous-total reconciliation subtracts explicit additions, adds explicit removals, and reverses direct-component delta. Exact fail-closed reconciliation is preserved.
 
 Coverage after rebaseline and this mapping: source_entries_total=16305, unknown=16263, unread=16238, omitted=0, source_closure_ready=false, baseline accepted=false. Next strict entry is index 40 .agents/skills/dependency-watch/agents/openai.yaml@a61c118c41e3b50d6bc4bde12dc6d4c1b3756b5d.
+
+## Traceability
+
+- TDRP-R9-DEPENDENCY-WATCH-ADVISORY-001
+- ORA-TDRP-DEPENDENCY-WATCH-FRESH-SNAPSHOT-001
+- ORA-TDRP-DEPENDENCY-WATCH-ADVISORY-PROVENANCE-001
+- ORA-TDRP-DEPENDENCY-WATCH-FAIL-CLOSED-001
+- INV-TDRP-DEPENDENCY-WATCH-NO-WORKTREE-MUTATION-001
+- INV-TDRP-DEPENDENCY-WATCH-NO-STALE-ALL-CLEAR-001
+- INV-TDRP-DEPENDENCY-WATCH-STABLE-FINDING-HISTORY-001
+- SEC-TDRP-DEPENDENCY-WATCH-ADVISORY-ONLY-001
+
+Focused upstream cases at watch_test.py@d3107c617be3e8780a99bebaeba19a4f235ae6ea: VersionTests.test_stable_ordering_and_prefixes; SnapshotTests.test_fetches_remote_without_touching_working_tree; test_fetch_failure_never_uses_stale_ref; test_missing_required_manifest_fails; test_offline_snapshot_is_marked_unverified; test_linked_worktree_uses_common_report_storage.
