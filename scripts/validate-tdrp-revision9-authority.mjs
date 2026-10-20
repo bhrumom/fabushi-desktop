@@ -60,6 +60,13 @@ async function gitlabRaw(project, sha, file) {
 }
 
 const lock=await readJson('projects/telegram-desktop-rust/upstream.lock.json');
+const liveBranchName=lock.upstream?.discovery_ref?.startsWith('refs/heads/')
+  ? lock.upstream.discovery_ref.slice('refs/heads/'.length)
+  : null;
+fail(Boolean(liveBranchName),'upstream discovery_ref must identify a live branch');
+const liveUpstream=await get(`https://api.github.com/repos/${lock.upstream.repository}/branches/${encodeURIComponent(liveBranchName)}`);
+fail(liveUpstream.commit?.sha===lock.upstream.commit,`live upstream ref moved: ${lock.upstream.discovery_ref} is ${liveUpstream.commit?.sha}, lock pins ${lock.upstream.commit}`);
+fail(liveUpstream.commit?.commit?.tree?.sha===lock.upstream.tree,`live upstream tree moved: ${lock.upstream.tree} != ${liveUpstream.commit?.commit?.tree?.sha}`);
 const schema=await readJson('projects/telegram-desktop-rust/contracts/parity-ledger.schema.json');
 const spec=await read('docs/specs/telegram-desktop-rust-equivalence-migration.md');
 const rtm=await read('projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md');

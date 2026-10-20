@@ -3,17 +3,17 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_repository": "telegramdesktop/tdesktop",
-  "upstream_commit": "6c2ee90618bf69683a1c466e3b0550260b82e129",
+  "upstream_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
   "discovery": {
-    "evidence_run_id": 38547900810,
-    "evidence_head_sha": "9a3e22f5ab8e3522bb27ff682f29703870e2f802",
-    "artifact_id": 11885536485,
-    "artifact_digest": "sha256:f0067de9aa30612734e5214ae88fadaf86e01ce7bfbc8183cb99002436359811",
+    "evidence_run_id": 39408064448,
+    "evidence_head_sha": "abcd30172faf46684b6c46905f61264be99a5b4a",
+    "artifact_id": 12257803423,
+    "artifact_digest": "sha256:90817b28fb14446175360707a31554c08af216bfa2ddb831cda9d2f90f95f36d",
     "candidate_file": "build-time-acquisition-candidates.txt",
     "candidate_lines_total": 331,
     "immutable_commit_pin_occurrences_classified": 19,
     "candidate_lines_pending_classification": 0,
-    "note": "Historical acquisition evidence is not accepted for this authority. Re-run the source-authority workflow against telegramdesktop/tdesktop@6c2ee90618bf69683a1c466e3b0550260b82e129 and verify exact live dev.",
+    "note": "The available source-authority ZIP from run 39408064448 contains acquisition discovery for 6c2ee90618bf69683a1c466e3b0550260b82e129, not current live dev a0cfd60923a220894611b6fcb3c92157876dc4a5; treat it as historical-only and revalidate on the current exact upstream.",
     "candidate_lines_classified": 331,
     "disposition_closure_status": "complete",
     "recursive_authority_closure_status": "open",
@@ -31,7 +31,9 @@
       "artifact_digest": "sha256:f0067de9aa30612734e5214ae88fadaf86e01ce7bfbc8183cb99002436359811",
       "upstream_commit": "c317da960b2664962aeb17892adbd6dda59c98fe",
       "evidence_status": "historical-only"
-    }
+    },
+    "evidence_upstream_commit": "6c2ee90618bf69683a1c466e3b0550260b82e129",
+    "evidence_upstream_tree": "c0b745cdee2cf0e2ab560ebcedc49cbbaafbfeaa"
   },
   "immutable_commit_pin_occurrences": [
     {
@@ -2427,6 +2429,7 @@
       "root_candidate_policy_status": "complete-for-current-xkbcommon-authority",
       "note": "Closes acquisition-pattern candidates for xkbcommon-1.6.0; keyboard mapping/runtime behavior remains in semantic scope."
     },
-    "evidence_status": "historical-only-pending-current-head-revalidation"
+    "evidence_status": "pending-current-head-revalidation",
+    "note": "Previous reachability evidence is historical-only after live dev advanced to a0cfd60923a220894611b6fcb3c92157876dc4a5; keep disposition open until exact-head rerun."
   }
 }

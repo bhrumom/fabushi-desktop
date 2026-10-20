@@ -4,30 +4,30 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "6c2ee90618bf69683a1c466e3b0550260b82e129",
-    "tree": "c0b745cdee2cf0e2ab560ebcedc49cbbaafbfeaa",
+    "commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+    "tree": "5cc28eee8d541752295ce299b860303fcb4b687d",
     "baseline_identity_accepted": false
   },
   "inventory": {
     "root_non_directory_entries": 6715,
-    "recursive_non_directory_entries": 16203,
+    "recursive_non_directory_entries": 16201,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16170,
-    "unread_minimum": 16145,
+    "unknown_minimum": 16168,
+    "unread_minimum": 16143,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
-    "run_id": 39367202556,
+    "run_id": 39408064448,
     "run_attempt": 1,
-    "job_id": 118446642052,
-    "head_sha": "6d51a22dab24cdcb2817d602b58a2a02f75830e8",
-    "artifact_id": 12239379696,
-    "artifact_name": "tdrp-revision9-authority-6d51a22dab24cdcb2817d602b58a2a02f75830e8",
-    "artifact_digest": "sha256:d4ca4facb948537b0fcfe56cfac9d69718b846e66c7cde12cbdb942816452671",
+    "job_id": 118578755584,
+    "head_sha": "abcd30172faf46684b6c46905f61264be99a5b4a",
+    "artifact_id": 12257803423,
+    "artifact_name": "tdrp-revision9-authority-abcd30172faf46684b6c46905f61264be99a5b4a",
+    "artifact_digest": "sha256:90817b28fb14446175360707a31554c08af216bfa2ddb831cda9d2f90f95f36d",
     "evidence_status": "historical-only",
-    "upstream_commit": "f0aa39cb1c5e48c7a0dc5283150d4975f556b582",
-    "recursive_non_directory_entries": 16203,
+    "upstream_commit": "6c2ee90618bf69683a1c466e3b0550260b82e129",
+    "recursive_non_directory_entries": 16201,
     "source_closure_ready": false
   },
   "closure_rules": {
@@ -38,5 +38,5 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Current upstream candidate: telegramdesktop/tdesktop@6c2ee90618bf69683a1c466e3b0550260b82e129/tree c0b745cdee2cf0e2ab560ebcedc49cbbaafbfeaa. Root tree is non-truncated; recursive total and coverage remain provisional until exact-head Actions verifies all direct/nested gitlinks, acquisitions and generated/resource/tool inputs. Prior evidence is historical-only. source_closure_ready=false. Historical external nested scan rows are inventory inputs only: discovery mode may revalidate them on this exact HEAD while upstream.accepted=false and acceptance.accepted/baseline_ready=false; accepted mode rejects before deep validation. This does not close recursive authority or source closure."
+  "note": "Current live upstream is telegramdesktop/tdesktop@a0cfd60923a220894611b6fcb3c92157876dc4a5/tree 5cc28eee8d541752295ce299b860303fcb4b687d; prior exact-head evidence run 39408064448 is now historical-only for 6c2ee90618bf69683a1c466e3b0550260b82e129. Root tree is non-truncated; current exact-head Actions must regenerate recursive inventory and revalidate external acquisitions/generated/resource/tool inputs. Recursive count remains provisional at 16,201; unknown=16,168, unread=16,143, omitted=0; source_closure_ready=false."
 }
