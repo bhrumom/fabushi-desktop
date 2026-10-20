@@ -43,7 +43,9 @@ type DandelionHostDescriptor = {
 };
 
 function readDandelionHostDescriptor(context: ProductionServiceContext): DandelionHostDescriptor {
-  const descriptorPath = join(context.native.app.getPath("userData"), "global-dandelion", "host-config.json");
+  const app = context.native.app as unknown as { getPath?: (name: string) => string };
+  if (typeof app.getPath !== "function") return {};
+  const descriptorPath = join(app.getPath("userData"), "global-dandelion", "host-config.json");
   try {
     const text = readFileSync(descriptorPath, "utf8");
     if (Buffer.byteLength(text, "utf8") > 64 * 1024) return {};
