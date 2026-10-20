@@ -1,6 +1,6 @@
 /** Generic, explicitly authorized native package runner. No application methods. */
 import { spawn } from "node:child_process";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { chmod, lstat, mkdir, mkdtemp, rm, statfs, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import type { MiniAppToolRouter, MiniAppToolScope, MiniAppToolResult } from "./miniapp-tools.js";
@@ -31,7 +31,7 @@ export function parseNativeRuntime(raw: unknown, resources: ReadonlyMap<string, 
     || new Set(d.executables).size !== d.executables.length
     || d.executables.some(p => !resourcePath(p) || !p.endsWith(".bin") || resources.get(p)?.mime !== "application/octet-stream")
     || !Array.isArray(d.hostCapabilities) || new Set(d.hostCapabilities).size !== d.hostCapabilities.length
-    || d.hostCapabilities.some(p => p !== "file-picker" && p !== "confirmation")) throw new Error("MINIAPP_POLICY_DENIED");
+    || d.hostCapabilities.some(p => p !== "file-picker" && p !== "confirmation" && p !== "package-update")) throw new Error("MINIAPP_POLICY_DENIED");
   return d as unknown as NativeRuntimeDefinition;
 }
 export interface NativeRuntimePorts {
@@ -42,6 +42,7 @@ export interface NativeRuntimePorts {
   current(): boolean;
   confirm(detail: string): Promise<boolean>;
   pick(mode: "files" | "directory"): Promise<{ path: string; name: string; size: number }[] | null>;
+  selfUpdate?(action: "check" | "stage"): Promise<unknown>;
   /** Generic Electron Node carrier, never a package-supplied interpreter path. */
   interpreter?: string;
 }
@@ -67,6 +68,15 @@ export async function createInstalledNativeRuntime(ports: NativeRuntimePorts): P
   const directory = await mkdtemp(join(ports.codeRoot, "runtime-"));
   try {
     await chmod(directory, 0o700);
+    const dataBase = join(ports.codeRoot, "data");
+    await mkdir(dataBase, { recursive: true, mode: 0o700 });
+    const dataInfo = await lstat(dataBase);
+    if (!dataInfo.isDirectory() || dataInfo.isSymbolicLink() || (dataInfo.mode & 0o077) !== 0) throw new Error("MINIAPP_POLICY_DENIED");
+    const identity = createHash("sha256").update(ports.scope.accountScope).update("\0").update(ports.scope.appId).digest("hex");
+    const dataDirectory = join(dataBase, identity);
+    await mkdir(dataDirectory, { recursive: true, mode: 0o700 });
+    const privateInfo = await lstat(dataDirectory);
+    if (!privateInfo.isDirectory() || privateInfo.isSymbolicLink() || (privateInfo.mode & 0o077) !== 0) throw new Error("MINIAPP_POLICY_DENIED");
     for (const [name, resource] of nativeResources) {
       if (!resourcePath(name)) throw new Error("MINIAPP_DESCRIPTOR_INVALID");
       const destination = join(directory, name);
@@ -75,7 +85,7 @@ export async function createInstalledNativeRuntime(ports: NativeRuntimePorts): P
     }
     if (!ports.current()) throw new Error("MINIAPP_SCOPE_CHANGED");
     // Avoid inheriting authentication, Node injection options or domain overrides.
-    const env: NodeJS.ProcessEnv = { ELECTRON_RUN_AS_NODE: "1", LANG: "en_US.UTF-8", PATH: "/usr/bin:/bin", TMPDIR: directory };
+    const env: NodeJS.ProcessEnv = { ELECTRON_RUN_AS_NODE: "1", LANG: "en_US.UTF-8", PATH: "/usr/bin:/bin", TMPDIR: directory, FABUSHI_NATIVE_DATA_DIRECTORY: dataDirectory };
     const child = spawn(ports.interpreter ?? process.execPath, [join(directory, definition.entrypoint)], {
       cwd: directory, env, detached: true, stdio: ["pipe", "pipe", "pipe"],
     });
@@ -113,6 +123,11 @@ export async function createInstalledNativeRuntime(ports: NativeRuntimePorts): P
           result = await ports.confirm(message.detail);
         } else if (message.method === "file-picker" && definition.hostCapabilities.includes("file-picker") && (message.mode === "files" || message.mode === "directory")) {
           result = await ports.pick(message.mode);
+        } else if (message.method === "package-update" && definition.hostCapabilities.includes("package-update") && ports.selfUpdate && (message.action === "check" || message.action === "stage")) {
+          try { result = await ports.selfUpdate(message.action); } catch {
+            if (!closed && ports.current() && request.current()) send({ kind: "host-result", callId: message.callId, error: "HOST_OPERATION_FAILED" });
+            return;
+          }
         } else { close(); return; }
         if (!closed && ports.current() && request.current()) send({ kind: "host-result", callId: message.callId, result });
         return;

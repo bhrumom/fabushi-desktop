@@ -18,7 +18,7 @@ Use existing fabapp v1 integrity/signing and strict file table. A package asking
 for exactly `native.runtime` carries `native-runtime.json`, an authenticated
 resource with schema `fabushi.native-runtime.v1`, macOS/arm64 target, a relative
 Node worker entrypoint, declared executable resource paths, and generic
-`file-picker`/`confirmation` broker permissions. This permission is a native-code
+`file-picker`/`confirmation`/`package-update` broker permissions. This permission is a native-code
 trust grant, distinct from the sandboxed Web surface. It must be reviewed in the
 signed catalog descriptor and explicitly confirmed by the user before launch;
 signature alone does not grant execution. Do not disguise native bytes as text
@@ -62,6 +62,12 @@ the package and no automatic code download is permitted.
   behavior. Record Host SHA, package/source/digest and native executable identity.
 
 ## Delivery, rollback and acceptance
+
+Native data lives in a private account/app-derived directory supplied by the
+generic Host. Version changes share only this app's data; different accounts/apps
+do not. The package-update broker addresses only the current app's approved
+catalog release, requires explicit operation approval and closes old execution
+after staging. It never patches an authenticated executable in place.
 
 First remove the mistaken Host bundle and cancel its in-flight candidate. Keep
 old 0.3.4 signed bytes immutable and label them offline-only on corrected Hosts.

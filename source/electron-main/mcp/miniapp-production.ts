@@ -113,6 +113,19 @@ export function registerProductionMiniApps(context: ProductionServiceContext, ip
               const result = await dialog.showOpenDialog({ properties: [mode === "directory" ? "openDirectory" : "openFile"] });
               return currentScope() && !result.canceled ? result.filePaths.slice(0, 1).map(path => ({ path, name: path, size: 0 })) : null;
             },
+            selfUpdate: async action => {
+              if (!currentScope()) throw new Error("MINIAPP_SCOPE_CHANGED");
+              const approved = entries(await call("listApprovedMiniApps")).find(item => item.appId === appId && item.supported);
+              if (!currentScope() || !approved) throw new Error("MINIAPP_POLICY_DENIED");
+              const available = approved.packageDigest !== descriptor.digest;
+              if (action === "stage" && available) {
+                await call("installApprovedMiniApp", { appId, operationId: randomUUID() });
+                if (!currentScope()) throw new Error("MINIAPP_SCOPE_CHANGED");
+                const timer = setTimeout(() => { handles.get(appId)?.close(); handles.delete(appId); runtimes.get(appId)?.cancelAll(); runtimes.delete(appId); }, 250);
+                timer.unref();
+              }
+              return { installedVersion: descriptor.version, availableVersion: approved.version, availableDigest: approved.packageDigest, updateAvailable: available, staged: action === "stage" && available, requiresReopen: action === "stage" && available };
+            },
           });
           if (!await stillCurrent() || ticket !== generation) { runtime.cancelAll(); throw new Error("MINIAPP_SCOPE_CHANGED"); }
           runtimes.get(appId)?.cancelAll(); runtimes.set(appId, runtime);

@@ -657,7 +657,7 @@ pub fn verify_catalog_bundle(
             || native
                 .host_capabilities
                 .iter()
-                .any(|p| p != "file-picker" && p != "confirmation")
+                .any(|p| p != "file-picker" && p != "confirmation" && p != "package-update")
         {
             return Err(PackageError::Manifest);
         }
