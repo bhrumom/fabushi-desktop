@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16202,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16178,
-    "unread_minimum": 16151,
+    "unknown_minimum": 16177,
+    "unread_minimum": 16150,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -97,5 +97,5 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live rebaseline candidate telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a (tree 5151db79560ed40bf3802482fcfb74b950be6c40) remains source-closure open. Actual recursive array entry 24 .agents/skills/code-health/scripts/atlas.py@6680fa747a1ddc520f4396949f3c84ab25cd8c43 is independently mapped to the existing source-neutral repository responsibility/quality/task-evidence owner: deterministic exact/glob/prefix classification, ambiguity and coverage negatives, missing-atlas fallback boundary, candidate-skeleton heuristics/evidence, caller-owned CLI/output/error semantics and ordinary atlas/map/task routing boundaries are preserved without copying Telegram Python code-health runtime or creating a second atlas/ownership/map/task owner. Recursive inventory remains 16,202 with unknown=16,178, unread=16,151, omitted=0; baseline acceptance remains fail-closed."
+  "note": "Live rebaseline candidate telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a (tree 5151db79560ed40bf3802482fcfb74b950be6c40) remains source-closure open. Actual recursive array entry 25 .agents/skills/code-health/scripts/clones.py@b74e6e939a3ccaae894d1afa5978f422aec8ee65 is independently mapped to the existing source-neutral repository responsibility/quality/task-evidence owner: source-kind filtering, comment/logic-free normalization with original coordinates, bounded window candidate grouping, maximal/non-overlapping substantive clone evidence, declaration-only and common-bucket exclusions, stable content-derived identities, review-time copied-from provenance, and caller-owned scan/check/Q2 task boundaries are preserved without copying Telegram Python code-health runtime or creating a second clone/findings/ownership/task owner. Recursive inventory remains 16,202 with unknown=16,177, unread=16,150, omitted=0; baseline acceptance remains fail-closed."
 }

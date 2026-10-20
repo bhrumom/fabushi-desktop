@@ -6,10 +6,10 @@
   "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16178,
-    "unread": 16151,
+    "unknown": 16177,
+    "unread": 16150,
     "omitted": 0,
-    "responsibilities_total": 46,
+    "responsibilities_total": 47,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -11300,6 +11300,269 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral repository-quality/responsibility-atlas instrument contract read from telegramdesktop/tdesktop authority; no upstream Python/C++ implementation copied into Fabushi shipping runtime.",
       "notes": "Actual 1-based recursive array entry 24 is .agents/skills/code-health/scripts/atlas.py. Related skill/references/scripts/tests/perform-task/scheduled callers were read to understand this entry and remain independently accounted inventory entries unless separately represented. This closure decrements only one independent source entry to unknown=16,178 and unread=16,151, omitted=0.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
+      "source_path": ".agents/skills/code-health/scripts/clones.py",
+      "source_blob_sha": "b74e6e939a3ccaae894d1afa5978f422aec8ee65",
+      "source_kind": "repository_quality_clone_evidence_instrument",
+      "module_id": "tdesktop.code-health-clone-evidence-instrument",
+      "responsibility_id": "TDRP-R9-CODE-HEALTH-CLONE-EVIDENCE-001",
+      "source_symbols": [
+        "Sequence",
+        "sequences",
+        "window_index",
+        "find",
+        "declarations_only",
+        "copied_from",
+        "flush"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-REPOSITORY-TASK-EVIDENCE"
+      ],
+      "dependency_ids": [
+        ".agents/skills/code-health/SKILL.md",
+        ".agents/skills/code-health/scripts/report.py",
+        ".agents/skills/code-health/scripts/review.py",
+        ".agents/skills/code-health/scripts/cpp_text.py",
+        ".agents/skills/code-health/scripts/health.py",
+        ".agents/skills/code-health/scripts/health_test.py",
+        ".agents/skills/code-health/references/classes.md",
+        ".agents/skills/code-health/references/atlas.md",
+        ".agents/skills/code-health/references/maps.md",
+        ".agents/skills/code-health/references/survey.md",
+        ".agents/skills/perform-task/SKILL.md",
+        ".agents/skills/perform-task/references/mechanical-lane.md",
+        ".agents/skills/perform-task/references/pipeline.md",
+        ".agents/skills/perform-task/references/phase-prompts.md",
+        "Fabushi repository AI development lifecycle",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/code-health-clones-script-complete-read.md",
+      "behavior_contract": "Detect substantive duplicate C/C++ code as normalized, maximal, non-overlapping clone evidence with stable content-derived identities and original source provenance, and detect review-time added hunks copied from existing source; keep semantic merge decisions, strictness, findings persistence, task routing and edits in existing repository quality/task owners.",
+      "state_machine": "exact source -> declared TU/header filter -> comment/logic-free removal + whitespace normalization with original coordinates -> bounded window index -> candidate pairs -> maximal run/overlap clipping/declaration-only filtering -> stable clone evidence -> existing scan/report ledger; review path: added hunks -> same normalization/window lookup excluding identical location -> thresholded copied-from provenance -> existing check strictness -> ordinary task lifecycle",
+      "side_effects": [
+        "Repository duplicate/clone evidence only; no product/source mutation, semantic merge decision, direct task routing, shipping runtime, or parallel findings/ownership store."
+      ],
+      "failure_cases": [
+        "Comments-only, logic-free or declaration mirroring reported as substantive clone",
+        "Same-file overlap double-counted",
+        "Common window creates unbounded/low-signal pair explosion",
+        "Below-threshold exclusion presented as proof no duplication exists",
+        "Review-time same-location match reported as copied-from",
+        "Clone metric treated as semantic proof that Q2 merge is correct",
+        "Detector/process failure rewritten as zero clones or clean review",
+        "Clone evidence mutates source, routes a task, or creates a second findings/ownership/task owner"
+      ],
+      "ui_disposition": "Not applicable; repository quality/task-evidence tooling only.",
+      "non_ui_responsibilities": [
+        "Declared translation-unit/header source filtering",
+        "Comment/logic-free removal and whitespace normalization with original line provenance",
+        "Bounded window indexing and common-bucket suppression",
+        "Maximal clone-run extension and same-file overlap clipping",
+        "Declaration/interface-only block exclusion",
+        "Stable normalized-content clone identity and deterministic ordering",
+        "Review-time copied-from detection over added hunks with existing-source provenance",
+        "Existing scan/report aggregation and stable finding lifecycle",
+        "Existing check strictness and Q2 task lifecycle boundaries"
+      ],
+      "platform_delta": "Fabushi already owns the applicable responsibility through source-neutral repository quality/task-evidence governance. This closure makes clones.py normalization, grouping, scoring/provenance and caller boundaries independently auditable without porting Telegram Python code-health runtime.",
+      "existing_owner_candidates": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "ordinary Fabushi task/review/evidence lifecycle"
+      ],
+      "existing_owner": "Fabushi repository responsibility/quality/task-evidence governance",
+      "rejected_existing_owners": [
+        "Shipping Agent/Coordinator/Host/Runner do not own repository clone analysis",
+        "Product-domain stores, UI roots and packaging/updater owners do not own duplicate evidence",
+        "Copying Telegram clones.py/health.py would create a source-specific parallel workflow runtime",
+        "A new clone findings store, ownership graph or task queue would duplicate canonical repository governance"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository duplicate/clone evidence governance",
+        "Repository duplicate/clone evidence qualification",
+        "Repository duplicate/clone evidence"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The upstream Python file implements repository duplication evidence mechanics, not shipping product behavior; Fabushi preserves the applicable behavior in source-neutral governance/evidence contracts rather than copying a Telegram-specific Python runtime.",
+      "command_event_contracts": [
+        "exact source -> supported source kinds -> normalize with original coordinates -> bounded window candidates -> maximal substantive clone evidence -> existing scan/report ledger",
+        "added hunks + exact current source -> same normalization/window lookup excluding identical location -> thresholded copied-from provenance -> existing check warning/error strictness",
+        "clone finding -> existing Q2/Q4 class judgment -> ordinary task lifecycle; detector never edits/routes/approves"
+      ],
+      "state_owner": "Existing Fabushi repository responsibility/quality/task-evidence governance",
+      "lifecycle_owner": "Existing repository development lifecycle and GitHub Actions evidence production/review",
+      "persistence_and_restart": "No detector-owned durable state. Stable content-derived clone IDs and source provenance are consumed by the existing quality ledger bound to an exact source revision; reruns must rebind current source identity.",
+      "concurrency_and_cancellation": "Detection is read-only over one exact source snapshot. Interrupted scans/checks cannot mutate source or ownership; command/process failure remains an explicit non-passing execution outcome.",
+      "security_boundary": "Clone evidence cannot authorize source mutation, task insertion, ownership changes, credentials, product behavior or release acceptance. Stale/partial source and detector/process failure are fail-closed.",
+      "network_service_dependencies": [
+        "GitHub repository authority",
+        "GitHub Actions hosted runners",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi repository quality/release workflow / GitHub Actions",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "Independent exact-head GitHub Actions verification of this source-entry mapping commit is pending."
+      ],
+      "production_entrypoints": [
+        "AGENTS.md -> Repository duplicate/clone evidence governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Repository duplicate/clone evidence qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Repository duplicate/clone evidence"
+      ],
+      "production_evidence": [
+        "path:AGENTS.md#Repository duplicate/clone evidence governance",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Repository duplicate/clone evidence qualification",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Repository duplicate/clone evidence"
+      ],
+      "test_evidence": [
+        "dossier:projects/telegram-desktop-rust/dossiers/code-health-clones-script-complete-read.md",
+        "upstream-clones-script:.agents/skills/code-health/scripts/clones.py@b74e6e939a3ccaae894d1afa5978f422aec8ee65",
+        "upstream-health:.agents/skills/code-health/scripts/health.py@f08675ef7a03c016d85f91c60b8f29e99454abe9",
+        "upstream-report:.agents/skills/code-health/scripts/report.py@a1177613670e933694f545f387ca7e7ed8cf0ee0",
+        "upstream-review:.agents/skills/code-health/scripts/review.py@070b55553052267e8fbc12d70985b447b24bbb02",
+        "upstream-cpp-text:.agents/skills/code-health/scripts/cpp_text.py@366f173248add43c34317c8fe17d9ca31d46b1d4",
+        "upstream-health-test:.agents/skills/code-health/scripts/health_test.py@2176aea672fd9ed16c01342939fbffb41490ae73",
+        "upstream-classes:.agents/skills/code-health/references/classes.md@27847cae96838be7ddf68d3759dba89279f7cf0e",
+        "upstream-mechanical-lane:.agents/skills/perform-task/references/mechanical-lane.md@e5e3cc88ba80ece6a20df7c4dd6002491d66a4ef"
+      ],
+      "target_commit": "96de945ef88fe7e11e1579cc333e6eb723d078ee",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development and quality governance",
+      "composition_slot": "Repository duplicate/clone evidence and review copy-paste guard",
+      "capability_component": "Source-neutral duplicate/clone evidence",
+      "variation_axes": [
+        "scan-time full-tree clone detection vs review-time added-hunk copied-from detection",
+        "different-file vs same-file clone",
+        "substantive logic vs declaration/interface mirroring",
+        "below/within/over common-bucket threshold",
+        "non-strict warning vs strict review failure"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi repository AI development lifecycle",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract",
+        "ordinary task/review lifecycle"
+      ],
+      "duplicate_root_check": "No Telegram/code-health Python clone runtime, second findings ledger, second ownership graph, or second task queue introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Stable normalized-content clone identities may persist through the existing quality ledger only when rebound to an exact scanned source revision; detector output itself owns no durable state.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to workflow governance",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CODE-HEALTH-CLONE-EVIDENCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CODE-HEALTH-CLONE-NORMALIZATION-001",
+        "ORA-TDRP-CODE-HEALTH-CLONE-MAXIMAL-001",
+        "ORA-TDRP-CODE-HEALTH-COPIED-FROM-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CODE-HEALTH-CLONE-PROVENANCE-001",
+        "INV-TDRP-CODE-HEALTH-CLONE-NONAUTHORITATIVE-001",
+        "INV-TDRP-CODE-HEALTH-CLONE-NO-SECOND-OWNER-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CODE-HEALTH-CLONE-EVIDENCE-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-CODE-HEALTH-CLONE-CONSUMERS-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CODE-HEALTH-CLONE-STALE-SOURCE-001",
+        "FAULT-TDRP-CODE-HEALTH-CLONE-PROCESS-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CODE-HEALTH-CLONE-AUTHORITY-BYPASS-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-CODE-HEALTH-CLONE-EVIDENCE-001"
+      ],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-INVENTORY",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "code-health-clones-script-source-contract",
+        "repository-clone-evidence-contract"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral repository-quality duplicate/clone evidence contract read from telegramdesktop/tdesktop authority; no upstream Python/C++ implementation copied into Fabushi shipping runtime.",
+      "notes": "Actual 1-based recursive array entry 25 is .agents/skills/code-health/scripts/clones.py. Related normalization/scan/review/tests/classes/perform-task/scheduled callers were read to understand this entry and remain independently accounted inventory entries unless separately represented. This closure decrements only one independent source entry to unknown=16,177 and unread=16,150, omitted=0.",
       "test_execution_evidence": []
     }
   ]
