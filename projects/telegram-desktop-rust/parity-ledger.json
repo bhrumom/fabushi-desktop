@@ -6,10 +6,10 @@
   "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16175,
-    "unread": 16148,
+    "unknown": 16174,
+    "unread": 16147,
     "omitted": 0,
-    "responsibilities_total": 49,
+    "responsibilities_total": 50,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -12165,6 +12165,304 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral repository-quality lexical/text-normalization contract read from telegramdesktop/tdesktop authority; no upstream Python/C++ implementation copied into Fabushi shipping runtime.",
       "notes": "Actual 1-based recursive array entry 27 is .agents/skills/code-health/scripts/cpp_text.py. Direct metrics/includes/clones/report/review/atlas/health/tests plus reference/perform-task/scheduled routing were read to understand this entry and remain independently accounted inventory entries unless separately represented. There is no scripts/scan.py at this upstream commit; scan is the health.py command. This closure decrements only one independent source entry to unknown=16,175 and unread=16,148, omitted=0.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
+      "source_path": ".agents/skills/code-health/scripts/health.py",
+      "source_blob_sha": "f08675ef7a03c016d85f91c60b8f29e99454abe9",
+      "source_kind": "repository_quality_health_command_orchestration",
+      "module_id": "tdesktop.code-health-command-orchestration",
+      "responsibility_id": "TDRP-R9-CODE-HEALTH-COMMAND-ORCHESTRATION-001",
+      "source_symbols": [
+        "published_state",
+        "snapshot_cache",
+        "cache_snapshot",
+        "write_atomic",
+        "load",
+        "fetch_dev",
+        "ensure_commit",
+        "tree_for",
+        "command_scan",
+        "command_worktree",
+        "command_atlas",
+        "command_area",
+        "command_check",
+        "command_moves",
+        "command_verify",
+        "main"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-REPOSITORY-RESPONSIBILITY-GOVERNANCE",
+        "CAP-REPOSITORY-TASK-EVIDENCE"
+      ],
+      "dependency_ids": [
+        ".agents/skills/code-health/SKILL.md",
+        ".agents/skills/code-health/scripts/atlas.py",
+        ".agents/skills/code-health/scripts/cmake_model.py",
+        ".agents/skills/code-health/scripts/cpp_text.py",
+        ".agents/skills/code-health/scripts/includes.py",
+        ".agents/skills/code-health/scripts/metrics.py",
+        ".agents/skills/code-health/scripts/report.py",
+        ".agents/skills/code-health/scripts/review.py",
+        ".agents/skills/code-health/scripts/sources.py",
+        ".agents/skills/code-health/scripts/health_test.py",
+        ".agents/skills/perform-task/SKILL.md",
+        ".agents/skills/process-inbox/SKILL.md",
+        "Fabushi repository AI development lifecycle",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/code-health-health-script-complete-read.md",
+      "behavior_contract": "Orchestrate source-neutral repository quality commands over one exact source authority, separating canonical durable scans from temporary working-tree evidence, preserving stable findings/history and atomic publication, safely materializing exact detached inspection worktrees, and propagating delegated atlas/review/move/verification/process failures without creating a second scanner, findings store, ownership graph, task queue or release owner.",
+      "state_machine": "requested command -> resolve exact ref/base/staged or explicit mutable temporary subject -> acquire/rebuild delegated source-quality evidence -> preserve delegated result semantics -> for durable scan merge stable finding lifecycle and ignored state -> atomic canonical ledger publication + append-only history + local cache; execution/authority mismatch -> explicit non-passing result",
+      "side_effects": [
+        "Durable exact-ref scans may atomically replace the canonical repository-quality findings ledger, append trend history, and refresh a local raw-snapshot cache.",
+        "Temporary scans/atlas drafts/checks/area/moves/verify emit evidence without becoming canonical state.",
+        "Detached inspection may create/reuse/remove only a dedicated exact-source temporary worktree and initialize the declared pinned source dependencies."
+      ],
+      "failure_cases": [
+        "A mutable working-tree scan updates canonical durable findings state",
+        "A stale, missing, partial or mismatched source revision is treated as the requested exact authority",
+        "A failed fetch/Git/process operation is rewritten as a clean scan, zero findings or successful review",
+        "A cache or temporary report is treated as canonical publication",
+        "Stable finding first-seen/status/history is lost or silently regenerated on rerun/path movement",
+        "Atlas coverage negatives, review errors, present/changed/unknown findings or non-move-only evidence are collapsed into success",
+        "A detached inspection worktree at the wrong HEAD is reused or a non-owned path is removed",
+        "Health orchestration absorbs parser/metric/atlas/review/task-routing semantics that belong to existing qualified owners",
+        "Telegram Python code-health runtime or a second scanner/findings/ownership/task owner is copied into Fabushi"
+      ],
+      "ui_disposition": "Not applicable; repository quality/evidence orchestration only.",
+      "non_ui_responsibilities": [
+        "Exact-ref versus mutable working-tree evidence fencing",
+        "Fresh source acquisition and missing-commit recovery",
+        "Canonical findings ledger/history publication and daily idempotence",
+        "Stable ignored/open/resolved finding lifecycle preservation",
+        "Atomic durable state replacement and append-only trend history",
+        "Local raw-snapshot cache and exact-published-revision rebuild",
+        "Temporary noncanonical scan/report output",
+        "Exact detached source inspection worktree create/reuse/remove",
+        "Declared pinned dependency initialization for detached inspection",
+        "Atlas check/skeleton command composition",
+        "Area evidence projection",
+        "Base-relative/staged review check composition",
+        "Move-only proof composition",
+        "Finding present/resolved/changed/unknown verification",
+        "Explicit process/Git failure propagation",
+        "Existing process-inbox/perform-task routing boundary"
+      ],
+      "platform_delta": "Fabushi already owns the applicable source-neutral repository quality, evidence, responsibility and task lifecycle. This closure extends that owner with the health-command orchestration/state-publication contract rather than porting Telegram's Python command runtime or adding a second durable findings/task system.",
+      "existing_owner_candidates": [
+        "AGENTS.md repository quality-health governance",
+        "AGENTS.md repository responsibility/quality governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "ordinary Fabushi task/review/evidence lifecycle"
+      ],
+      "existing_owner": "Fabushi repository responsibility/quality/task-evidence governance",
+      "rejected_existing_owners": [
+        "Shipping Agent/Coordinator/Host/Runner do not own repository maintainability command state",
+        "Product-domain stores, UI roots, messaging owners and packaging/updater do not own repository quality findings",
+        "Individual text/build/clone/include/atlas instruments do not own canonical command orchestration or task routing",
+        "Copying Telegram health.py would create a source-specific parallel quality runtime",
+        "A new findings ledger, ownership graph or task queue would duplicate canonical repository governance"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository quality-health command orchestration governance",
+        "Repository quality-health command orchestration qualification",
+        "Repository quality-health command orchestration evidence"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The upstream module is repository-development orchestration/evidence state, not shipping product logic. Fabushi preserves the applicable behavior as source-neutral governance and qualification contracts under the existing quality owner.",
+      "command_event_contracts": [
+        "durable scan request -> exact source revision -> delegated snapshot/findings/report -> stable lifecycle merge -> atomic canonical ledger + append-only history + cache",
+        "mutable working-tree scan -> temporary report/snapshot only -> canonical ledger/history unchanged",
+        "missing canonical cache -> reacquire exact published revision -> recompute delegated snapshot -> cache only",
+        "detached inspection request -> exact commit resolution -> dedicated temporary worktree -> HEAD equality -> narrow pinned dependencies -> safe reuse/removal",
+        "atlas/area/check/moves/verify -> delegated qualified owner -> preserve declared clean/warning/error/present/resolved/changed/unknown/move-only result",
+        "Git/process/authority failure -> explicit failed result; never zero/clean/pass"
+      ],
+      "state_owner": "Existing Fabushi repository responsibility/quality/task-evidence governance",
+      "lifecycle_owner": "Existing repository development lifecycle and GitHub Actions evidence production/review",
+      "persistence_and_restart": "Canonical quality state preserves exact scanned revision, stable findings/status/first-seen history, run/totals and append-only trends. Replacement is atomic; local raw snapshots are disposable caches and are rebuilt only from the exact canonical revision. Temporary command output owns no durable authority.",
+      "concurrency_and_cancellation": "Canonical publication is a serialized repository workflow boundary. A cancellation or process/Git failure before complete publication cannot be reported as a clean run; temporary worktree/cache cleanup is limited to the dedicated owned path and cannot broadly mutate unrelated checkout/process state.",
+      "security_boundary": "Repository-quality orchestration cannot authorize product mutation, owner approval, task insertion, credentials, configured-build truth, runtime behavior, packaging or release acceptance. Exact-source mismatch, stale/partial authority, execution failure and unknown/negative evidence fail closed.",
+      "network_service_dependencies": [
+        "GitHub repository authority",
+        "GitHub Actions hosted runners",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi repository quality/release workflow / GitHub Actions",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "Independent exact-head GitHub Actions verification of this source-entry mapping commit is pending."
+      ],
+      "production_entrypoints": [
+        "AGENTS.md -> Repository quality-health command orchestration governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Repository quality-health command orchestration qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Repository quality-health command orchestration evidence"
+      ],
+      "production_evidence": [
+        "path:AGENTS.md#Repository quality-health command orchestration governance",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Repository quality-health command orchestration qualification",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Repository quality-health command orchestration evidence"
+      ],
+      "test_evidence": [
+        "dossier:projects/telegram-desktop-rust/dossiers/code-health-health-script-complete-read.md",
+        "upstream-health:.agents/skills/code-health/scripts/health.py@f08675ef7a03c016d85f91c60b8f29e99454abe9",
+        "upstream-health-test:.agents/skills/code-health/scripts/health_test.py@2176aea672fd9ed16c01342939fbffb41490ae73",
+        "upstream-code-health-skill:.agents/skills/code-health/SKILL.md@6885938b3d186b55f5d69cb8b9b9a96bbca0e097",
+        "upstream-report:.agents/skills/code-health/scripts/report.py@a1177613670e933694f545f387ca7e7ed8cf0ee0",
+        "upstream-includes:.agents/skills/code-health/scripts/includes.py@2c02b4e7eb821f123588e0a80056edef86fc084c"
+      ],
+      "target_commit": "0f6551f0bd30732a1a133575fc2fbe757baee337",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development and quality evidence governance",
+      "composition_slot": "Exact-authority quality command orchestration and canonical findings-state publication",
+      "capability_component": "Source-neutral repository quality-health command orchestration",
+      "variation_axes": [
+        "exact-ref durable scan vs mutable temporary scan",
+        "fresh acquisition vs exact published-revision cache rebuild",
+        "scheduled idempotent skip vs forced durable run",
+        "canonical state directory vs temporary output directory",
+        "atlas check vs skeleton generation",
+        "base vs staged review subject",
+        "finding present vs resolved vs changed vs unknown",
+        "move-only vs substantive change",
+        "detached inspection create vs exact reuse vs safe removal",
+        "successful delegated operation vs Git/process/authority failure"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi repository AI development lifecycle",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract",
+        "Repository quality-health governance",
+        "ordinary task/review lifecycle"
+      ],
+      "duplicate_root_check": "No Telegram/code-health Python command runtime, second scanner, second findings ledger, second responsibility graph, or second task queue introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Durable findings/history remain bound to their exact scanned revision and stable semantic identities; caches are rebuildable from that revision, while temporary run output never becomes canonical by reuse.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to workflow governance",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CODE-HEALTH-COMMAND-ORCHESTRATION-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CODE-HEALTH-EXACT-DURABLE-SCAN-001",
+        "ORA-TDRP-CODE-HEALTH-NONCANONICAL-WORKTREE-001",
+        "ORA-TDRP-CODE-HEALTH-COMMAND-RESULTS-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CODE-HEALTH-EXACT-AUTHORITY-001",
+        "INV-TDRP-CODE-HEALTH-STABLE-STATE-001",
+        "INV-TDRP-CODE-HEALTH-NO-SECOND-OWNER-001"
+      ],
+      "unit_case_ids": [
+        "health_test.StateTests.test_recorded_scan_writes_state_once_a_day",
+        "health_test.StateTests.test_working_tree_scan_leaves_the_ledger_alone",
+        "health_test.StateTests.test_area_rebuilds_a_missing_snapshot_of_the_published_scan",
+        "health_test.StateTests.test_source_worktree_is_created_reused_and_removed",
+        "health_test.VerifyTests.test_deleted_candidate_is_resolved",
+        "health_test.MoveTests.test_extracting_a_function_into_a_new_file_is_move_only"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CODE-HEALTH-COMMAND-ORCHESTRATION-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-CODE-HEALTH-SKILL-COMMANDS-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CODE-HEALTH-FETCH-FAILURE-001",
+        "FAULT-TDRP-CODE-HEALTH-HEAD-MISMATCH-001",
+        "FAULT-TDRP-CODE-HEALTH-MALFORMED-STATE-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CODE-HEALTH-AUTHORITY-BYPASS-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-CODE-HEALTH-COMMAND-ORCHESTRATION-001"
+      ],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-INVENTORY",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "code-health-health-command-contract",
+        "repository-quality-health-orchestration-contract",
+        "exact-source-canonical-state-contract"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral repository-quality command/state contract read from telegramdesktop/tdesktop authority; no upstream Python implementation copied into Fabushi shipping runtime.",
+      "notes": "Recursive authority array index 27 (immediately after cpp_text.py index 26) is .agents/skills/code-health/scripts/health.py. Its direct health_test.py and code-health SKILL command callers plus delegated report/include/atlas/build/text/clone owners were read. This closure decrements only this independent source entry to unknown=16,174 and unread=16,147, omitted=0.",
       "test_execution_evidence": []
     }
   ]
