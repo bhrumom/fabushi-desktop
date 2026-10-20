@@ -2,6 +2,23 @@ import { createHash, randomUUID } from "node:crypto";
 import { mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import {
+  LOCAL_BROWSER_AGENT_LIMITS,
+  parseLocalBrowserAgentAction,
+  type LocalBrowserAgentActionResult,
+  type LocalBrowserStructuredSnapshot,
+} from "../shared/local-browser-agent.js";
+import {
+  captureLocalBrowserScreenshotBase64,
+  captureLocalBrowserSnapshot,
+  clickLocalBrowserRef,
+  fillLocalBrowserRef,
+  localBrowserPageContainsText,
+  localBrowserRefStillMatches,
+  pressLocalBrowserKey,
+  scrollLocalBrowserPage,
+  type LocalBrowserElementLocator,
+} from "./local-browser-agent-page.js";
+import {
   BROWSER_WORKSPACE_INVOKE_CHANNEL,
   BROWSER_WORKSPACE_LIMITS,
   BROWSER_WORKSPACE_STATE_CHANNEL,
@@ -51,6 +68,9 @@ export interface BrowserWorkspaceWebContentsPort {
   stop(): void;
   getZoomFactor(): number;
   setZoomFactor(factor: number): void;
+  executeJavaScript(script: string, userGesture?: boolean): Promise<unknown>;
+  capturePage(): Promise<{ toPNG(): Buffer }>;
+  sendInputEvent(event: { readonly type: "keyDown" | "keyUp" | "char"; readonly keyCode?: string }): void;
   isDestroyed(): boolean;
   destroy(): void;
   setWindowOpenHandler(handler: (details: { readonly url: string }) => { action: "deny" }): void;
@@ -98,6 +118,7 @@ export interface BrowserWorkspaceService {
   attachWindow(window: BrowserWorkspaceHostWindowPort): void;
   revokeAccount(): void;
   snapshot(conversationId: string): BrowserWorkspaceSnapshot | null;
+  executeAgentAction(request: unknown): Promise<LocalBrowserAgentActionResult>;
   dispose(): void;
 }
 
@@ -132,6 +153,7 @@ interface RuntimeTab {
   generation: number;
   crashed: boolean;
   error: { code: string; description: string } | null;
+  agentRefs: Map<string, LocalBrowserElementLocator>;
 }
 
 interface RuntimeWorkspace {
@@ -468,6 +490,7 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
       generation: 0,
       crashed: false,
       error: null,
+      agentRefs: new Map(),
     };
     workspace.tabs.push(tab);
     if (select) workspace.activeTabId = tab.id;
@@ -503,6 +526,7 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
     contents.on("did-start-loading", () => {
       tab.loading = true;
       tab.generation += 1;
+      tab.agentRefs.clear();
       tab.crashed = false;
       tab.error = null;
       updateState();
@@ -715,6 +739,109 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
     }
   };
 
+  const agentResult = (
+    operationId: string,
+    workspace: RuntimeWorkspace,
+    tab: RuntimeTab,
+    extra: Partial<Extract<LocalBrowserAgentActionResult, { readonly ok: true }>> = {},
+  ): LocalBrowserAgentActionResult => ({
+    ok: true,
+    operationId,
+    workspaceId: workspace.id,
+    tabId: tab.id,
+    generation: tab.generation,
+    observedUrl: tab.view.webContents.getURL() || tab.url,
+    observedTitle: tab.view.webContents.getTitle() || tab.title,
+    ...extra,
+  });
+
+  const requireAgentRef = (tab: RuntimeTab, ref: string): LocalBrowserElementLocator => {
+    const locator = tab.agentRefs.get(ref);
+    if (locator == null) throw new Error("BROWSER_REF_NOT_FOUND");
+    return locator;
+  };
+
+  const executeAgentAction = async (raw: unknown): Promise<LocalBrowserAgentActionResult> => {
+    const action = parseLocalBrowserAgentAction(raw);
+    if (action == null) throw new TypeError("BROWSER_AGENT_INVALID_ACTION");
+    if (disposed) throw new Error("BROWSER_WORKSPACE_DISPOSED");
+    const workspace = requireOwnedWorkspace(action.conversationId);
+    if (workspace.id !== action.workspaceId) throw new Error("BROWSER_WORKSPACE_MISMATCH");
+    const tab = requireTab(workspace, action.tabId);
+    if (tab.generation !== action.expectedGeneration) throw new Error("BROWSER_STALE_GENERATION");
+    const page = tab.view.webContents;
+
+    switch (action.type) {
+      case "snapshot": {
+        const captured = await captureLocalBrowserSnapshot(page, tab.generation);
+        if (tab.generation !== action.expectedGeneration) throw new Error("BROWSER_STALE_GENERATION");
+        tab.agentRefs = new Map(captured.locators);
+        const snapshot: LocalBrowserStructuredSnapshot = {
+          workspaceId: workspace.id,
+          tabId: tab.id,
+          generation: tab.generation,
+          url: captured.url,
+          title: captured.title,
+          text: captured.text,
+          elements: captured.elements,
+        };
+        return agentResult(action.operationId, workspace, tab, { snapshot });
+      }
+      case "click":
+        await clickLocalBrowserRef(page, requireAgentRef(tab, action.ref));
+        return agentResult(action.operationId, workspace, tab);
+      case "fill":
+        await fillLocalBrowserRef(page, requireAgentRef(tab, action.ref), action.value, false);
+        return agentResult(action.operationId, workspace, tab);
+      case "type":
+        await fillLocalBrowserRef(page, requireAgentRef(tab, action.ref), action.text, true);
+        return agentResult(action.operationId, workspace, tab);
+      case "press-key":
+        pressLocalBrowserKey(page, action.key);
+        return agentResult(action.operationId, workspace, tab);
+      case "scroll":
+        await scrollLocalBrowserPage(page, action.deltaX, action.deltaY);
+        return agentResult(action.operationId, workspace, tab);
+      case "screenshot":
+        return agentResult(action.operationId, workspace, tab, {
+          screenshotBase64: await captureLocalBrowserScreenshotBase64(page),
+        });
+      case "wait": {
+        const deadline = now() + Math.min(action.timeoutMs ?? 5_000, LOCAL_BROWSER_AGENT_LIMITS.maxWaitMs);
+        const locator = action.ref == null ? null : requireAgentRef(tab, action.ref);
+        let matched = false;
+        do {
+          if (tab.generation !== action.expectedGeneration) throw new Error("BROWSER_STALE_GENERATION");
+          const refReady = locator == null || await localBrowserRefStillMatches(page, locator);
+          const textReady = action.text == null || await localBrowserPageContainsText(page, action.text);
+          matched = refReady && textReady;
+          if (matched) break;
+          await new Promise((resolve) => setTimeout(resolve, 50));
+        } while (now() < deadline);
+        if (!matched) throw new Error("BROWSER_WAIT_TIMEOUT");
+        return agentResult(action.operationId, workspace, tab, { waited: true });
+      }
+      case "navigate": {
+        const safe = normalizeBrowserWorkspaceAddress(action.address);
+        if (safe == null) throw new Error("BROWSER_NAVIGATION_BLOCKED");
+        tab.error = null;
+        await page.loadURL(safe);
+        saveWorkspace(workspace);
+        return agentResult(action.operationId, workspace, tab);
+      }
+      case "back":
+        if (page.canGoBack()) page.goBack();
+        return agentResult(action.operationId, workspace, tab);
+      case "forward":
+        if (page.canGoForward()) page.goForward();
+        return agentResult(action.operationId, workspace, tab);
+      case "reload":
+        tab.error = null;
+        page.reload();
+        return agentResult(action.operationId, workspace, tab);
+    }
+  };
+
   ports.ipcMain.handle(BROWSER_WORKSPACE_INVOKE_CHANNEL, async (event, raw) => {
     const trusted = ports.getTrustedContents();
     const eventRecord = record(event);
@@ -763,6 +890,7 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
       if (disposed) return null;
       try { return snapshot(requireOwnedWorkspace(conversationId)); } catch { return null; }
     },
+    executeAgentAction,
     dispose() {
       if (disposed) return;
       disposed = true;

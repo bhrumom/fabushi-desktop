@@ -39,6 +39,7 @@ class FakeContents implements BrowserWorkspaceWebContentsPort {
   reloaded = false;
   back = false;
   forward = false;
+  readonly inputEvents: Array<{ readonly type: string; readonly keyCode?: string }> = [];
   constructor(readonly session: FakeSession) {}
   on(event: string, listener: (...args: any[]) => void): void {
     const list = this.listeners.get(event) ?? [];
@@ -67,6 +68,39 @@ class FakeContents implements BrowserWorkspaceWebContentsPort {
   stop(): void { this.stopped = true; }
   getZoomFactor(): number { return this.zoom; }
   setZoomFactor(factor: number): void { this.zoom = factor; }
+  async executeJavaScript(script: string): Promise<unknown> {
+    if (script.includes("MAX_ELEMENTS") && script.includes("document.querySelectorAll")) {
+      return {
+        url: this.url,
+        title: this.title,
+        text: "Synthetic page Submit",
+        elements: [{
+          selector: "html > body > button",
+          tag: "button",
+          role: null,
+          name: "Submit",
+          text: "Submit",
+          href: null,
+          inputType: null,
+          disabled: false,
+          editable: false,
+          checked: null,
+          selected: null,
+          frameUrl: null,
+        }],
+      };
+    }
+    if (script.includes("document.querySelector(locator.selector)")) return { ok: true };
+    if (script.includes("document.body && document.body.innerText")) return true;
+    if (script.includes("window.scrollBy")) return { ok: true };
+    return { ok: true };
+  }
+  async capturePage(): Promise<{ toPNG(): Buffer }> {
+    return { toPNG: () => Buffer.from("synthetic-png") };
+  }
+  sendInputEvent(event: { readonly type: "keyDown" | "keyUp" | "char"; readonly keyCode?: string }): void {
+    this.inputEvents.push(event);
+  }
   isDestroyed(): boolean { return this.destroyed; }
   destroy(): void { this.destroyed = true; this.emit("destroyed"); }
   setWindowOpenHandler(handler: NonNullable<FakeContents["popup"]>): void { this.popup = handler; }
@@ -275,6 +309,97 @@ test("account revocation destroys runtime tabs and the next account gets a disti
   const b = await h.invoke({ type: "activate", conversationId: "bot-a", bounds: { x: 1, y: 1, width: 500, height: 500 } });
   assert.notEqual(a.workspaceId, b.workspaceId);
   assert.equal(h.sessions.size, 2);
+});
+
+test("agent action snapshot mints opaque generation refs and fixed actions reject stale generations", async () => {
+  const h = harness();
+  h.service.attachWindow(new FakeHostWindow());
+  const state = await h.invoke({ type: "activate", conversationId: "bot-a", bounds: { x: 1, y: 1, width: 500, height: 500 } });
+  const tab = state.tabs[0]!;
+  const snap = await h.service.executeAgentAction({
+    type: "snapshot",
+    conversationId: "bot-a",
+    workspaceId: state.workspaceId,
+    tabId: tab.id,
+    expectedGeneration: tab.generation,
+    operationId: "op-snapshot",
+  });
+  assert.equal(snap.ok, true);
+  if (!snap.ok) return;
+  assert.equal(snap.snapshot?.elements.length, 1);
+  assert.equal(snap.snapshot?.elements[0]?.ref, `g${tab.generation}-e1`);
+
+  const clicked = await h.service.executeAgentAction({
+    type: "click",
+    conversationId: "bot-a",
+    workspaceId: state.workspaceId,
+    tabId: tab.id,
+    expectedGeneration: tab.generation,
+    operationId: "op-click",
+    ref: snap.snapshot!.elements[0]!.ref,
+  });
+  assert.equal(clicked.ok, true);
+
+  await h.invoke({ type: "navigate", conversationId: "bot-a", tabId: tab.id, address: "https://example.com/next" });
+  await assert.rejects(
+    () => h.service.executeAgentAction({
+      type: "click",
+      conversationId: "bot-a",
+      workspaceId: state.workspaceId,
+      tabId: tab.id,
+      expectedGeneration: tab.generation,
+      operationId: "op-stale",
+      ref: snap.snapshot!.elements[0]!.ref,
+    }),
+    /BROWSER_STALE_GENERATION/,
+  );
+});
+
+test("agent actions fence workspace identity and expose only bounded fixed keyboard events", async () => {
+  const h = harness();
+  h.service.attachWindow(new FakeHostWindow());
+  const state = await h.invoke({ type: "activate", conversationId: "bot-a", bounds: { x: 1, y: 1, width: 500, height: 500 } });
+  const tab = state.tabs[0]!;
+
+  await assert.rejects(
+    () => h.service.executeAgentAction({
+      type: "snapshot",
+      conversationId: "bot-a",
+      workspaceId: "wrong-workspace",
+      tabId: tab.id,
+      expectedGeneration: tab.generation,
+      operationId: "op-wrong",
+    }),
+    /BROWSER_WORKSPACE_MISMATCH/,
+  );
+
+  const pressed = await h.service.executeAgentAction({
+    type: "press-key",
+    conversationId: "bot-a",
+    workspaceId: state.workspaceId,
+    tabId: tab.id,
+    expectedGeneration: tab.generation,
+    operationId: "op-key",
+    key: "Enter",
+  });
+  assert.equal(pressed.ok, true);
+  assert.deepEqual(h.views[0]!.webContents.inputEvents, [
+    { type: "keyDown", keyCode: "Enter" },
+    { type: "keyUp", keyCode: "Enter" },
+  ]);
+
+  await assert.rejects(
+    () => h.service.executeAgentAction({
+      type: "press-key",
+      conversationId: "bot-a",
+      workspaceId: state.workspaceId,
+      tabId: tab.id,
+      expectedGeneration: tab.generation,
+      operationId: "op-key-denied",
+      key: "Meta+A",
+    }),
+    /BROWSER_KEY_DENIED/,
+  );
 });
 
 test("invalid commands are rejected before any view is created", async () => {

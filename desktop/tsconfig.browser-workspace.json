@@ -8,13 +8,17 @@
     "strict": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "declaration": false,
     "sourceMap": false
   },
   "include": [
     "../source/shared/browser-workspace.ts",
     "../source/electron-main/browser-workspace.ts",
-    "../source/electron-main/browser-workspace.contract.test.ts"
+    "../source/electron-main/browser-workspace.contract.test.ts",
+    "../source/shared/local-browser-agent.ts",
+    "../source/electron-main/local-browser-agent-page.ts"
   ]
 }
