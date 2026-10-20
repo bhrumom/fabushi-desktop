@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
-import { delimiter } from "node:path";
+import { readFileSync } from "node:fs";
+import { delimiter, isAbsolute, join } from "node:path";
 import type { ProductionServiceContext } from "../main-production-services.js";
 import { registerMiniAppManagement, type NativeMiniAppEntry } from "./miniapp-management.js";
 import { createDandelionCliBackend, type MiniAppPickPort } from "./miniapp-cli-backend.js";
@@ -23,25 +24,65 @@ interface MiniAppDialogPort {
   showMessageBox?(options: { type?: string; buttons: string[]; defaultId?: number; cancelId?: number; message: string; detail?: string }): Promise<{ response: number }>;
 }
 
+type DandelionHostDescriptor = {
+  binaryPath?: unknown;
+  configPath?: unknown;
+  roots?: unknown;
+  pools?: unknown;
+  stateDirectory?: unknown;
+  compatDirectory?: unknown;
+  hotspotJournalDirectory?: unknown;
+  hotspotInterface?: unknown;
+  hotspotSsid?: unknown;
+  hotspotBand?: unknown;
+  hotspotPasswordFile?: unknown;
+  updateTrust?: unknown;
+  receive?: unknown;
+  enableHotspot?: unknown;
+  enableUpdate?: unknown;
+};
+
+function readDandelionHostDescriptor(context: ProductionServiceContext): DandelionHostDescriptor {
+  const descriptorPath = join(context.native.app.getPath("userData"), "global-dandelion", "host-config.json");
+  try {
+    const text = readFileSync(descriptorPath, "utf8");
+    if (Buffer.byteLength(text, "utf8") > 64 * 1024) return {};
+    const parsed: unknown = JSON.parse(text);
+    if (parsed == null || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+    return parsed as DandelionHostDescriptor;
+  } catch {
+    return {};
+  }
+}
+
 function miniAppTooling(context: ProductionServiceContext, ipc: unknown): MiniAppToolBridgePorts | undefined {
   const env = process.env;
-  const binaryPath = env.FABUSHI_DANDELION_BIN?.trim() ?? "";
-  const configPath = env.FABUSHI_DANDELION_CONFIG?.trim() ?? "";
-  const preloadPath = env.FABUSHI_MINIAPP_PRELOAD?.trim() ?? "";
+  const descriptor = readDandelionHostDescriptor(context);
+  const stringValue = (envValue: string | undefined, descriptorValue: unknown): string =>
+    envValue?.trim() || (typeof descriptorValue === "string" ? descriptorValue.trim() : "");
+  const binaryPath = stringValue(env.FABUSHI_DANDELION_BIN, descriptor.binaryPath);
+  const configPath = stringValue(env.FABUSHI_DANDELION_CONFIG, descriptor.configPath);
+  const preloadPath = stringValue(env.FABUSHI_MINIAPP_PRELOAD, undefined) || context.resources.preloadPath;
+  const descriptorRoots = Array.isArray(descriptor.roots) ? descriptor.roots.filter((item): item is string => typeof item === "string") : [];
   const roots = (env.FABUSHI_DANDELION_ROOTS ?? "").split(delimiter).map((item) => item.trim()).filter(Boolean);
-  const stateDirectory = env.FABUSHI_DANDELION_STATE_DIR?.trim() || undefined;
-  const compatDirectory = env.FABUSHI_DANDELION_COMPAT_DIR?.trim() || undefined;
-  const hotspotJournalDirectory = env.FABUSHI_DANDELION_HOTSPOT_JOURNAL_DIR?.trim() || undefined;
-  const hotspotInterface = env.FABUSHI_DANDELION_HOTSPOT_INTERFACE?.trim() || undefined;
-  const hotspotSsid = env.FABUSHI_DANDELION_HOTSPOT_SSID?.trim() || undefined;
-  const hotspotBand = env.FABUSHI_DANDELION_HOTSPOT_BAND?.trim() || undefined;
-  const hotspotPasswordFile = env.FABUSHI_DANDELION_HOTSPOT_PASSWORD_FILE?.trim() || undefined;
-  const updateTrust = env.FABUSHI_DANDELION_UPDATE_TRUST?.trim();
+  const authorizedRoots = roots.length > 0 ? roots : descriptorRoots.map((item) => item.trim()).filter(Boolean);
+  const optionalString = (envValue: string | undefined, descriptorValue: unknown): string | undefined => {
+    const value = stringValue(envValue, descriptorValue);
+    return value || undefined;
+  };
+  const stateDirectory = optionalString(env.FABUSHI_DANDELION_STATE_DIR, descriptor.stateDirectory);
+  const compatDirectory = optionalString(env.FABUSHI_DANDELION_COMPAT_DIR, descriptor.compatDirectory);
+  const hotspotJournalDirectory = optionalString(env.FABUSHI_DANDELION_HOTSPOT_JOURNAL_DIR, descriptor.hotspotJournalDirectory);
+  const hotspotInterface = optionalString(env.FABUSHI_DANDELION_HOTSPOT_INTERFACE, descriptor.hotspotInterface);
+  const hotspotSsid = optionalString(env.FABUSHI_DANDELION_HOTSPOT_SSID, descriptor.hotspotSsid);
+  const hotspotBand = optionalString(env.FABUSHI_DANDELION_HOTSPOT_BAND, descriptor.hotspotBand);
+  const hotspotPasswordFile = optionalString(env.FABUSHI_DANDELION_HOTSPOT_PASSWORD_FILE, descriptor.hotspotPasswordFile);
+  const updateTrust = env.FABUSHI_DANDELION_UPDATE_TRUST?.trim() || (descriptor.updateTrust == null ? undefined : JSON.stringify(descriptor.updateTrust));
   let receive: { targetPoolId: string; caFile: string; certificateFile: string; privateKeyFile: string; bind?: string; maxSessions?: number; trafficLimitBytes?: number; rateBytesPerSecond?: number; timeoutMs?: number } | undefined;
-  if (!binaryPath || !configPath || !preloadPath || roots.length === 0) return undefined;
+  if (!binaryPath || !configPath || !isAbsolute(binaryPath) || !isAbsolute(configPath) || !preloadPath || authorizedRoots.length === 0) return undefined;
   let pools: { id: string; label: string }[];
   try {
-    const parsed: unknown = JSON.parse(env.FABUSHI_DANDELION_POOLS ?? "[]");
+    const parsed: unknown = env.FABUSHI_DANDELION_POOLS == null ? (descriptor.pools ?? []) : JSON.parse(env.FABUSHI_DANDELION_POOLS);
     if (!Array.isArray(parsed)) return undefined;
     pools = parsed.filter((item): item is { id: string; label: string } =>
       typeof item === "object" && item !== null
@@ -58,7 +99,7 @@ function miniAppTooling(context: ProductionServiceContext, ipc: unknown): MiniAp
     } catch { return undefined; }
   }
   try {
-    const parsed: unknown = JSON.parse(env.FABUSHI_DANDELION_RECEIVE ?? "null");
+    const parsed: unknown = env.FABUSHI_DANDELION_RECEIVE == null ? (descriptor.receive ?? null) : JSON.parse(env.FABUSHI_DANDELION_RECEIVE);
     if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
       const value = parsed as Record<string, unknown>;
       if (typeof value.targetPoolId === "string" && typeof value.caFile === "string" && typeof value.certificateFile === "string" && typeof value.privateKeyFile === "string") {
@@ -84,13 +125,13 @@ function miniAppTooling(context: ProductionServiceContext, ipc: unknown): MiniAp
     return selected.filePaths.slice(0, 1).map((path) => ({ path, name: path, size: 0 }));
   };
   const backend = createDandelionCliBackend({
-    binaryPath, configPath, allowedRoots: roots, targetPools: pools,
+    binaryPath, configPath, allowedRoots: authorizedRoots, targetPools: pools,
     stateDirectory, compatDirectory, receive,
     hotspotJournalDirectory,
     hotspotInterface, hotspotSsid, hotspotBand, hotspotPasswordFile,
     updateTrust: parsedUpdateTrust,
-    enableHotspot: env.FABUSHI_DANDELION_HOTSPOT === "1",
-    enableUpdate: env.FABUSHI_DANDELION_UPDATE === "1",
+    enableHotspot: env.FABUSHI_DANDELION_HOTSPOT === "1" || descriptor.enableHotspot === true,
+    enableUpdate: env.FABUSHI_DANDELION_UPDATE === "1" || descriptor.enableUpdate === true,
   }, { pick });
   const router = createMiniAppToolRouter({
     backend,
