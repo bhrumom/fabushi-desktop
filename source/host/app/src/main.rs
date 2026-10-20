@@ -325,6 +325,9 @@ use mahayana_host_runtime::runner::tools::sand_browser_tools::{
     capture_browser_review_state,
     to_browser_review_action,
 };
+use mahayana_host_runtime::runner::tools::local_browser_tools::{
+    ExplicitBrowserTargetExecutor, LocalBrowserCoordinatorExecutor,
+};
 use mahayana_host_runtime::runner::host_computer_tool_dependencies::ProductionComputerToolExecutor;
 use mahayana_host_runtime::runner::host_file_transfer_dependencies::ProductionFileTransferExecutor;
 use mahayana_host_runtime::runner::host_external_machine_dependencies::ProductionExternalMachineExecutor;
@@ -6217,6 +6220,7 @@ fn start_routed_provider_task(
     let worker_auth = Arc::clone(&auth);
     let worker_auto_review = Arc::clone(&auto_review);
     let worker_auto_review_controller = Arc::clone(&auto_review_controller);
+    let worker_local_browser_relay = Arc::clone(&routed_tool_relay);
     let spawn_error_auto_review = Arc::clone(&auto_review_service);
     let spawn_error_agent_id = agent_id.clone();
     let spawn = thread::Builder::new()
@@ -7790,8 +7794,20 @@ fn start_routed_provider_task(
                 browser_executor_owner =
                     browser_executor_owner.with_persist_image_callback(browser_persist_image);
             }
-            let browser_executor: Arc<dyn BrowserToolExecutor> =
+            let box_browser_executor: Arc<dyn BrowserToolExecutor> =
                 Arc::new(browser_executor_owner);
+            let local_browser_executor: Arc<dyn BrowserToolExecutor> = Arc::new(
+                LocalBrowserCoordinatorExecutor::new(
+                    Arc::clone(&worker_local_browser_relay),
+                    agent_id.clone(),
+                ),
+            );
+            let browser_executor: Arc<dyn BrowserToolExecutor> = Arc::new(
+                ExplicitBrowserTargetExecutor::new(
+                    box_browser_executor,
+                    local_browser_executor,
+                ),
+            );
             let computer_media_agent_id = agent_id.clone();
             let computer_persist_image: ComputerPersistImageCallback = Arc::new(
                 move |bytes, mime| {

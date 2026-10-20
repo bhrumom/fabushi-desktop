@@ -9,6 +9,7 @@ use mahayana_host_runtime::runner::box_tool_access::{
 };
 use mahayana_host_runtime::runner::routed_provider_runtime::RoutedToolBridge;
 use mahayana_host_runtime::runner::tools::sand_browser_driver_source::SAND_BROWSER_DRIVER_SOURCE;
+use mahayana_host_runtime::runner::tools::local_browser_tools::ExplicitBrowserTargetExecutor;
 use mahayana_host_runtime::runner::tools::sand_browser_tools::{
     BOX_CDP_PORT_BASE, BrowserDriverOutput, BrowserEnvelope, BrowserToolExecutor,
     BrowserShellSafetyCallback, BrowserToolSpec, ProductionBrowserToolExecutor,
@@ -114,6 +115,32 @@ impl RunnerBoxResourcePort for ProductionBoxPort {
 
     fn browser_window_index(&self) -> Result<u32, ProviderSessionError> {
         Ok(4)
+    }
+}
+
+#[derive(Clone)]
+struct TrackingBrowserExecutor {
+    label: &'static str,
+    calls: Arc<Mutex<Vec<String>>>,
+}
+
+impl BrowserToolExecutor for TrackingBrowserExecutor {
+    fn execute(
+        &self,
+        spec: &BrowserToolSpec,
+        _args: &Map<String, Value>,
+        _tool_call_id: &str,
+    ) -> Result<BrowserDriverOutput, ProviderSessionError> {
+        self.calls.lock().expect("calls").push(self.label.to_string());
+        Ok(BrowserDriverOutput {
+            text: format!("{}:{}", self.label, spec.op),
+            image_b64: None,
+            is_error: false,
+            view_id: None,
+            generation: None,
+            frame_name: None,
+            frame_url: None,
+        })
     }
 }
 
@@ -270,11 +297,65 @@ fn browser_toolset_registers_frozen_inventory_validates_and_delegates() {
     );
     assert_eq!(navigate.input_schema["properties"]["frameName"]["type"], "string");
     assert_eq!(navigate.input_schema["properties"]["frameUrl"]["type"], "string");
+    assert_eq!(
+        navigate.input_schema["properties"]["target"]["enum"],
+        json!(["box","local"])
+    );
+
+    let mut invalid_target = Map::new();
+    invalid_target.insert("url".into(), json!("https://example.com"));
+    invalid_target.insert("target".into(), json!("auto"));
+    let target_error = validate_browser_arguments(
+        &browser_tool_specs().into_iter().find(|spec| spec.name == "browser_navigate").expect("navigate spec").schema,
+        &invalid_target,
+    ).expect_err("unknown browser target must fail closed");
+    assert!(target_error.to_string().contains("box or local"));
 
     let base = tools.iter().find(|tool| tool.name == "base_tool").expect("base");
     assert_eq!(
         bridge.call_tool(base, json!({}), "tool-base").expect("delegate"),
         Value::String("delegated".into())
+    );
+}
+
+#[test]
+fn explicit_browser_target_defaults_to_box_and_never_falls_back() {
+    let calls = Arc::new(Mutex::new(Vec::<String>::new()));
+    let box_executor: Arc<dyn BrowserToolExecutor> = Arc::new(TrackingBrowserExecutor {
+        label: "box",
+        calls: Arc::clone(&calls),
+    });
+    let local_executor: Arc<dyn BrowserToolExecutor> = Arc::new(TrackingBrowserExecutor {
+        label: "local",
+        calls: Arc::clone(&calls),
+    });
+    let executor = ExplicitBrowserTargetExecutor::new(box_executor, local_executor);
+    let spec = browser_tool_specs().into_iter()
+        .find(|spec| spec.name == "browser_snapshot")
+        .expect("snapshot");
+
+    let default_args = Map::new();
+    let output = executor.execute(&spec, &default_args, "default").expect("default box");
+    assert_eq!(output.text, "box:snapshot");
+
+    let local_args = json!({"target":"local"});
+    let output = executor.execute(
+        &spec,
+        local_args.as_object().expect("local args"),
+        "local",
+    ).expect("explicit local");
+    assert_eq!(output.text, "local:snapshot");
+
+    let invalid_args = json!({"target":"auto"});
+    let error = executor.execute(
+        &spec,
+        invalid_args.as_object().expect("invalid args"),
+        "invalid",
+    ).expect_err("unknown target");
+    assert!(error.to_string().contains("box or local"));
+    assert_eq!(
+        calls.lock().expect("calls").as_slice(),
+        &["box".to_string(), "local".to_string()]
     );
 }
 

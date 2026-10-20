@@ -17,7 +17,25 @@ export interface LocalBrowserAgentTarget {
   readonly operationId: string;
 }
 
+export interface LocalBrowserAgentResolveTarget {
+  readonly type: "resolve-target";
+  readonly conversationId: string;
+  readonly operationId: string;
+  readonly tabId?: string;
+}
+
+export interface LocalBrowserAgentTabsAction {
+  readonly type: "tabs";
+  readonly conversationId: string;
+  readonly operationId: string;
+  readonly action: "list" | "new" | "select" | "close";
+  readonly tabId?: string;
+  readonly address?: string;
+}
+
 export type LocalBrowserAgentAction =
+  | LocalBrowserAgentResolveTarget
+  | LocalBrowserAgentTabsAction
   | (LocalBrowserAgentTarget & { readonly type: "snapshot" })
   | (LocalBrowserAgentTarget & { readonly type: "click"; readonly ref: string })
   | (LocalBrowserAgentTarget & { readonly type: "fill"; readonly ref: string; readonly value: string })
@@ -54,6 +72,14 @@ export interface LocalBrowserStructuredSnapshot {
   readonly elements: readonly LocalBrowserSnapshotElement[];
 }
 
+export interface LocalBrowserAgentTabSummary {
+  readonly tabId: string;
+  readonly title: string;
+  readonly url: string;
+  readonly generation: number;
+  readonly active: boolean;
+}
+
 export type LocalBrowserAgentActionResult =
   | {
       readonly ok: true;
@@ -66,6 +92,7 @@ export type LocalBrowserAgentActionResult =
       readonly snapshot?: LocalBrowserStructuredSnapshot;
       readonly screenshotBase64?: string;
       readonly waited?: boolean;
+      readonly tabs?: readonly LocalBrowserAgentTabSummary[];
     }
   | {
       readonly ok: false;
@@ -92,16 +119,47 @@ function finiteInteger(value: unknown, min: number, max: number): number | null 
     : null;
 }
 
+function parseBase(source: Record<string, unknown>): { conversationId: string; operationId: string } | null {
+  const conversationId = boundedString(source.conversationId, 256);
+  const operationId = boundedString(source.operationId, LOCAL_BROWSER_AGENT_LIMITS.maxOperationIdLength);
+  return conversationId == null || operationId == null ? null : { conversationId, operationId };
+}
+
 export function parseLocalBrowserAgentAction(value: unknown): LocalBrowserAgentAction | null {
   const source = record(value);
   if (source == null || typeof source.type !== "string") return null;
-  const conversationId = boundedString(source.conversationId, 256);
+  const base = parseBase(source);
+  if (base == null) return null;
+
+  if (source.type === "resolve-target") {
+    const tabId = source.tabId === undefined ? undefined : boundedString(source.tabId, 128);
+    if (source.tabId !== undefined && tabId == null) return null;
+    return { type: "resolve-target", ...base, ...(tabId == null ? {} : { tabId }) };
+  }
+
+  if (source.type === "tabs") {
+    if (!["list", "new", "select", "close"].includes(String(source.action))) return null;
+    const action = source.action as LocalBrowserAgentTabsAction["action"];
+    const tabId = source.tabId === undefined ? undefined : boundedString(source.tabId, 128);
+    const address = source.address === undefined ? undefined : boundedString(source.address, 4096);
+    if (source.tabId !== undefined && tabId == null) return null;
+    if (source.address !== undefined && address == null) return null;
+    if ((action === "select" || action === "close") && tabId == null) return null;
+    return {
+      type: "tabs",
+      ...base,
+      action,
+      ...(tabId == null ? {} : { tabId }),
+      ...(address == null ? {} : { address }),
+    };
+  }
+
   const workspaceId = boundedString(source.workspaceId, 128);
   const tabId = boundedString(source.tabId, 128);
-  const operationId = boundedString(source.operationId, LOCAL_BROWSER_AGENT_LIMITS.maxOperationIdLength);
   const expectedGeneration = finiteInteger(source.expectedGeneration, 0, Number.MAX_SAFE_INTEGER);
-  if (conversationId == null || workspaceId == null || tabId == null || operationId == null || expectedGeneration == null) return null;
-  const target = { conversationId, workspaceId, tabId, operationId, expectedGeneration };
+  if (workspaceId == null || tabId == null || expectedGeneration == null) return null;
+  const target = { ...base, workspaceId, tabId, expectedGeneration };
+
   switch (source.type) {
     case "snapshot":
     case "screenshot":

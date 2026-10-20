@@ -627,6 +627,15 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
     return workspace;
   };
 
+  const requireExistingOwnedWorkspace = (conversationId: string): RuntimeWorkspace => {
+    const account = currentAccount();
+    const identity = workspaceIdentity(account.hash, conversationId);
+    const workspace = workspaces.get(identity.id);
+    if (workspace == null) throw new Error("BROWSER_WORKSPACE_NOT_OPEN");
+    if (workspace.accountHash !== account.hash) throw new Error("BROWSER_WORKSPACE_STALE_ACCOUNT");
+    return workspace;
+  };
+
   const requireTab = (workspace: RuntimeWorkspace, tabId: string): RuntimeTab => {
     const tab = workspace.tabs.find((candidate) => candidate.id === tabId);
     if (tab == null || tab.view.webContents.isDestroyed()) throw new Error("BROWSER_TAB_NOT_FOUND");
@@ -761,11 +770,60 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
     return locator;
   };
 
+  const agentTabs = (workspace: RuntimeWorkspace) => workspace.tabs.map((candidate) => ({
+    tabId: candidate.id,
+    title: candidate.title,
+    url: candidate.url,
+    generation: candidate.generation,
+    active: candidate.id === workspace.activeTabId,
+  }));
+
   const executeAgentAction = async (raw: unknown): Promise<LocalBrowserAgentActionResult> => {
     const action = parseLocalBrowserAgentAction(raw);
     if (action == null) throw new TypeError("BROWSER_AGENT_INVALID_ACTION");
     if (disposed) throw new Error("BROWSER_WORKSPACE_DISPOSED");
-    const workspace = requireOwnedWorkspace(action.conversationId);
+    const workspace = requireExistingOwnedWorkspace(action.conversationId);
+
+    if (action.type === "resolve-target") {
+      const tab = action.tabId == null ? activeTab(workspace) : requireTab(workspace, action.tabId);
+      return agentResult(action.operationId, workspace, tab, { tabs: agentTabs(workspace) });
+    }
+
+    if (action.type === "tabs") {
+      switch (action.action) {
+        case "list":
+          break;
+        case "new":
+          createTab(workspace, action.address, true);
+          saveWorkspace(workspace);
+          layout(workspace);
+          break;
+        case "select":
+          requireTab(workspace, action.tabId!);
+          workspace.activeTabId = action.tabId!;
+          saveWorkspace(workspace);
+          layout(workspace);
+          break;
+        case "close": {
+          const closing = requireTab(workspace, action.tabId!);
+          const index = workspace.tabs.indexOf(closing);
+          if (mountedView === closing.view) unmount();
+          workspace.tabs.splice(index, 1);
+          if (!closing.view.webContents.isDestroyed()) closing.view.webContents.destroy();
+          if (workspace.tabs.length === 0) createTab(workspace, undefined, true);
+          else if (workspace.activeTabId === closing.id) {
+            workspace.activeTabId = workspace.tabs[Math.min(index, workspace.tabs.length - 1)]!.id;
+          }
+          saveWorkspace(workspace);
+          layout(workspace);
+          break;
+        }
+      }
+      const tab = activeTab(workspace);
+      publish(workspace);
+      return agentResult(action.operationId, workspace, tab, { tabs: agentTabs(workspace) });
+    }
+
     if (workspace.id !== action.workspaceId) throw new Error("BROWSER_WORKSPACE_MISMATCH");
     const tab = requireTab(workspace, action.tabId);
     if (tab.generation !== action.expectedGeneration) throw new Error("BROWSER_STALE_GENERATION");

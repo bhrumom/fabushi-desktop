@@ -402,6 +402,59 @@ test("agent actions fence workspace identity and expose only bounded fixed keybo
   );
 });
 
+test("agent target discovery and tab management stay scoped to the conversation workspace", async () => {
+  const h = harness();
+  h.service.attachWindow(new FakeHostWindow());
+  const state = await h.invoke({ type: "activate", conversationId: "bot-a", bounds: { x: 1, y: 1, width: 500, height: 500 } });
+
+  const resolved = await h.service.executeAgentAction({
+    type: "resolve-target",
+    conversationId: "bot-a",
+    operationId: "resolve-a",
+  });
+  assert.equal(resolved.ok, true);
+  if (!resolved.ok) return;
+  assert.equal(resolved.workspaceId, state.workspaceId);
+  assert.equal(resolved.tabs?.length, 1);
+  assert.equal(resolved.tabs?.[0]?.active, true);
+
+  const created = await h.service.executeAgentAction({
+    type: "tabs",
+    action: "new",
+    conversationId: "bot-a",
+    operationId: "new-a",
+    address: "https://example.com/local",
+  });
+  assert.equal(created.ok, true);
+  if (!created.ok) return;
+  assert.equal(created.tabs?.length, 2);
+  const newTab = created.tabs?.find((tab) => tab.active);
+  assert.equal(newTab?.url, "https://example.com/local");
+
+  const selected = await h.service.executeAgentAction({
+    type: "tabs",
+    action: "select",
+    conversationId: "bot-a",
+    operationId: "select-a",
+    tabId: state.activeTabId,
+  });
+  assert.equal(selected.ok, true);
+  if (!selected.ok) return;
+  assert.equal(selected.tabId, state.activeTabId);
+
+  const closed = await h.service.executeAgentAction({
+    type: "tabs",
+    action: "close",
+    conversationId: "bot-a",
+    operationId: "close-a",
+    tabId: newTab!.tabId,
+  });
+  assert.equal(closed.ok, true);
+  if (!closed.ok) return;
+  assert.equal(closed.tabs?.length, 1);
+  assert.equal(closed.tabs?.[0]?.tabId, state.activeTabId);
+});
+
 test("invalid commands are rejected before any view is created", async () => {
   const h = harness();
   assert.ok(h.ipc.handler);

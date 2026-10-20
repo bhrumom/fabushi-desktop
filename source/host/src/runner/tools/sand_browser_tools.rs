@@ -409,6 +409,14 @@ pub fn validate_browser_arguments(
     schema: &BrowserToolSchema,
     args: &Map<String, Value>,
 ) -> Result<(), BrowserDriverError> {
+    if let Some(value) = args.get("target") {
+        let target = value.as_str().ok_or_else(|| {
+            BrowserDriverError::new("target must be box or local")
+        })?;
+        if !matches!(target, "box" | "local") {
+            return Err(BrowserDriverError::new("target must be box or local"));
+        }
+    }
     for key in &schema.required {
         if args.get(*key).is_none_or(|value| value.is_null() || value.as_str() == Some("")) {
             return Err(BrowserDriverError::new(format!("{key} is required")));
@@ -934,6 +942,11 @@ fn browser_tool_definition(spec: &BrowserToolSpec) -> RoutedToolDefinition {
     for (key, values) in &spec.schema.enum_values {
         properties.insert((*key).to_string(), json!({"type":"string","enum":values}));
     }
+    properties.insert("target".into(), json!({
+        "type":"string",
+        "enum":["box","local"],
+        "description":"Execution target. Omit or use box for the managed isolated browser; use local only for an already-open Fabushi Browser Workspace. Targets never silently fall back."
+    }));
     properties.entry("viewId").or_insert_with(|| json!({"type":"string"}));
     properties
         .entry("expectedGeneration")
