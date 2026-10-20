@@ -278,6 +278,7 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
   let persisted = normalizePersistedRoot(ports.persistence.load());
   const accounts = new Map<string, MutableAccount>();
   const workspaces = new Map<string, RuntimeWorkspace>();
+  const agentQueues = new Map<string, Promise<void>>();
   const sessionConfigured = new WeakSet<object>();
   let hostWindow: BrowserWorkspaceHostWindowPort | null = null;
   let activeWorkspaceId: string | null = null;
@@ -432,6 +433,7 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
   };
 
   const findTabByContents = (contents: BrowserWorkspaceWebContentsPort): { workspace: RuntimeWorkspace; tab: RuntimeTab } | null => {
+    agentQueues.clear();
     for (const workspace of workspaces.values()) {
       const tab = workspace.tabs.find((candidate) => candidate.view.webContents === contents);
       if (tab != null) return { workspace, tab };
@@ -807,9 +809,9 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
     active: candidate.id === workspace.activeTabId,
   }));
 
-  const executeAgentAction = async (raw: unknown): Promise<LocalBrowserAgentActionResult> => {
-    const action = parseLocalBrowserAgentAction(raw);
-    if (action == null) throw new TypeError("BROWSER_AGENT_INVALID_ACTION");
+  const executeAgentActionNow = async (
+    action: NonNullable<ReturnType<typeof parseLocalBrowserAgentAction>>,
+  ): Promise<LocalBrowserAgentActionResult> => {
     if (disposed) throw new Error("BROWSER_WORKSPACE_DISPOSED");
     const workspace = requireExistingOwnedWorkspace(action.conversationId);
 
@@ -986,6 +988,31 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
       if (workspace.activeAgentOperationId === action.operationId) {
         workspace.activeAgentOperationId = null;
         publish(workspace);
+      }
+    }
+  };
+
+  const executeAgentAction = async (raw: unknown): Promise<LocalBrowserAgentActionResult> => {
+    const action = parseLocalBrowserAgentAction(raw);
+    if (action == null) throw new TypeError("BROWSER_AGENT_INVALID_ACTION");
+    if (disposed) throw new Error("BROWSER_WORKSPACE_DISPOSED");
+    const workspace = requireExistingOwnedWorkspace(action.conversationId);
+    const queueKey = workspace.id;
+    const previous = agentQueues.get(queueKey) ?? Promise.resolve();
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    const tail = previous.catch(() => undefined).then(() => gate);
+    agentQueues.set(queueKey, tail);
+    await previous.catch(() => undefined);
+    try {
+      if (disposed) throw new Error("BROWSER_WORKSPACE_DISPOSED");
+      return await executeAgentActionNow(action);
+    } finally {
+      release();
+      if (agentQueues.get(queueKey) === tail) {
+        void tail.finally(() => {
+          if (agentQueues.get(queueKey) === tail) agentQueues.delete(queueKey);
+        });
       }
     }
   };

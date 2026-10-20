@@ -801,6 +801,66 @@ test("local Agent upload cancellation is explicit and has no page side effect", 
   assert.equal(h.views[0]!.webContents.executedScripts.length, beforeScripts);
 });
 
+test("workspace agent actions serialize and takeover invalidates queued mutations before side effects", async () => {
+  let releasePicker!: (path: string | null) => void;
+  let pickerStarted!: () => void;
+  const pickerStartedPromise = new Promise<void>((resolve) => { pickerStarted = resolve; });
+  const pickerPromise = new Promise<string | null>((resolve) => { releasePicker = resolve; });
+  const selectedPath = fileURLToPath(import.meta.url);
+  const h = harness(null, async () => {
+    pickerStarted();
+    return await pickerPromise;
+  });
+  h.service.attachWindow(new FakeHostWindow());
+  const state = await h.invoke({ type: "activate", conversationId: "bot-queue", bounds: { x: 1, y: 1, width: 500, height: 500 } });
+  const tab = state.tabs[0]!;
+  const contents = h.views[0]!.webContents;
+  contents.snapshotElements = [{
+    selector: "html > body > input",
+    tag: "input",
+    role: null,
+    name: "Attachment",
+    text: "",
+    href: null,
+    inputType: "file",
+    disabled: false,
+    editable: true,
+    checked: null,
+    selected: null,
+    frameUrl: null,
+  }];
+  const snap = await h.service.executeAgentAction({
+    type: "snapshot", conversationId: "bot-queue", workspaceId: state.workspaceId, tabId: tab.id,
+    expectedGeneration: tab.generation, expectedControlEpoch: state.agentControl.epoch, operationId: "queue-snapshot",
+  });
+  assert.equal(snap.ok, true);
+  if (!snap.ok) return;
+  const ref = snap.snapshot!.elements[0]!.ref;
+  const upload = h.service.executeAgentAction({
+    type: "upload-file", conversationId: "bot-queue", workspaceId: state.workspaceId, tabId: tab.id,
+    expectedGeneration: tab.generation, expectedControlEpoch: state.agentControl.epoch, operationId: "queue-upload", ref,
+  });
+  await pickerStartedPromise;
+  const scriptsBeforeQueued = contents.executedScripts.length;
+  const queuedClick = h.service.executeAgentAction({
+    type: "click", conversationId: "bot-queue", workspaceId: state.workspaceId, tabId: tab.id,
+    expectedGeneration: tab.generation, expectedControlEpoch: state.agentControl.epoch, operationId: "queue-click", ref,
+  });
+  await Promise.resolve();
+  assert.equal(contents.executedScripts.length, scriptsBeforeQueued, "queued action must not execute while the prior operation owns the workspace lane");
+
+  const taken = await h.invoke({ type: "agent-control", conversationId: "bot-queue", action: "takeover" });
+  assert.equal(taken.agentControl.state, "taken-over");
+  releasePicker(selectedPath);
+  await assert.rejects(() => upload, /BROWSER_AGENT_CONTROL_STALE/);
+  await assert.rejects(() => queuedClick, /BROWSER_AGENT_CONTROL_STALE/);
+  assert.equal(
+    contents.executedScripts.some((script) => script.includes("element.click()")),
+    false,
+    "a queued mutation from the revoked lease must never reach the page",
+  );
+});
+
 test("invalid commands are rejected before any view is created", async () => {
   const h = harness();
   assert.ok(h.ipc.handler);
