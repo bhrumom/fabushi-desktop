@@ -6,8 +6,8 @@
   "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
   "coverage": {
     "source_entries_total": 16201,
-    "unknown": 16165,
-    "unread": 16140,
+    "unknown": 16164,
+    "unread": 16139,
     "omitted": 0,
     "responsibilities_total": 55,
     "unmapped_responsibilities": 0
@@ -14013,6 +14013,308 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral repository-quality change-ratchet and move-proof contract read from telegramdesktop/tdesktop authority; no upstream Python implementation copied into Fabushi shipping runtime.",
       "notes": "Recursive authority index 33 immediately after report.py index 32 is review.py@070b55553052267e8fbc12d70985b447b24bbb02. Complete source, health.py check/moves callers and direct CheckTests/MoveTests coverage were read. This closes only one source entry: unknown=16,165, unread=16,140, omitted=0. Parent exact-head run 39467249963 at a9953cffaa81da2b672b41529bc8b598b7340334 becomes historical-only for this new target commit; exact-head verification is pending. The next strict source entry is sources.py@688aa05c4223d0d45b8572cff89fbc5148254844.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
+      "source_path": ".agents/skills/code-health/scripts/sources.py",
+      "source_blob_sha": "688aa05c4223d0d45b8572cff89fbc5148254844",
+      "source_kind": "repository_source_snapshot_acquisition_and_scoped_text_set",
+      "module_id": "tdesktop.code-health-sources",
+      "responsibility_id": "TDRP-R9-CODE-HEALTH-SOURCE-ACQUISITION-001",
+      "source_symbols": [
+        "SOURCE_ROOT",
+        "LIB_PREFIX",
+        "LANG_FILE",
+        "TOP_LEVEL",
+        "EXTENSIONS",
+        "git",
+        "wanted",
+        "lib_roots",
+        "SourceTree",
+        "SourceTree.lines",
+        "SourceTree.root_of",
+        "from_worktree",
+        "from_ref",
+        "list_tree",
+        "read_blobs",
+        "submodule_heads",
+        "read_text",
+        "decode"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-SOURCE-AUTHORITY",
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-REPOSITORY-TASK-EVIDENCE"
+      ],
+      "dependency_ids": [
+        ".agents/skills/code-health/scripts/health.py",
+        ".agents/skills/code-health/scripts/report.py",
+        ".agents/skills/code-health/scripts/review.py",
+        ".agents/skills/code-health/scripts/health_test.py",
+        "scripts/validate-tdrp-revision9-authority.mjs",
+        "scripts/discover-tdrp-root-open-authority.mjs",
+        ".github/workflows/tdrp-revision9-authority.yml",
+        "Fabushi repository quality-health command orchestration governance",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/code-health-sources-script-complete-read.md",
+      "behavior_contract": "Acquire one code-health source snapshot from either the current working tree or an exact Git ref, bind every exposed text file to repository/ref/commit provenance, account top-level Telegram/lib_* gitlink heads, preserve source-root membership and acquisition notes, and provide deterministic text/line/root access to report/review/atlas/metric consumers without turning the scanner into source ownership or release acceptance.",
+      "state_machine": "worktree or requested ref -> resolve exact commit/scope -> enumerate declared Telegram SourceFiles/lib_*/cmake/CMakeLists/lang inputs -> reject ThirdParty/.git from this narrow code-health scan -> read/decode text blobs -> bind SourceTree files/roots/submodules/ref/commit/notes -> downstream qualified evidence; unavailable exact-ref lib checkout or undecodable/binary input remains skipped/noted or absent under the upstream instrument and cannot be inflated into Fabushi source-completeness proof",
+      "side_effects": [
+        "Runs bounded Git subprocesses and reads repository/submodule files; it does not mutate product source. health.py separately owns optional fetch/worktree creation and durable report publication."
+      ],
+      "failure_cases": [
+        "A mutable ref or moving working tree is presented as exact-source evidence",
+        "The selected path scope silently changes or ThirdParty/.git exclusions are treated as full migration inventory",
+        "A top-level Telegram/lib_* gitlink head is lost or read at a commit other than the recorded object ID",
+        "An unavailable local exact-ref submodule checkout is silently treated as complete instead of being noted/incomplete",
+        "Binary/undecodable content is reinterpreted as authoritative text",
+        "A narrow code-health source set is presented as complete recursive tdesktop migration scope",
+        "Acquisition/process failure is rewritten as a clean source snapshot or release verdict"
+      ],
+      "ui_disposition": "Not applicable; repository source acquisition and quality evidence only.",
+      "non_ui_responsibilities": [
+        "Declared code-health path filtering for SourceFiles, lib_*, cmake/CMakeLists and language source",
+        "Working-tree enumeration with dirty-state provenance",
+        "Exact-ref commit resolution and recursive ls-tree enumeration",
+        "Top-level Telegram/lib_* gitlink capture and exact-object child reads",
+        "Batch blob acquisition by immutable object ID",
+        "UTF-8/Latin-1 text decoding with binary exclusion",
+        "SourceTree root, line-count, ref/commit, submodule and acquisition-note projection",
+        "Fail-visible distinction between narrow code-health scan evidence and broader migration source completeness"
+      ],
+      "platform_delta": "Fabushi already owns a broader source-neutral exact-head authority pipeline that recursively inventories every non-directory tdesktop entry, direct and nested gitlinks, external child authorities, build-time acquisitions, archives and remaining generated/resource/tool disposition. Preserve sources.py's applicable snapshot/provenance responsibility under those owners; do not copy the Telegram Python SourceTree runtime or narrow its scope into the migration completeness boundary.",
+      "existing_owner_candidates": [
+        "scripts/validate-tdrp-revision9-authority.mjs exact-head recursive inventory and fail-closed authority validation",
+        "scripts/discover-tdrp-root-open-authority.mjs build-time source-acquisition discovery",
+        ".github/workflows/tdrp-revision9-authority.yml exact target checkout and authority evidence lifecycle",
+        "AGENTS.md Repository quality-health command orchestration governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md repository authority qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md exact-source evidence contract"
+      ],
+      "existing_owner": "Fabushi TDRP exact-head repository authority, recursive source inventory and source-acquisition evidence lifecycle",
+      "rejected_existing_owners": [
+        "Shipping ProductShell/Conversation/Host/Runner owners do not own repository source acquisition",
+        "Report/review/metrics consumers use acquired source facts but do not own authority enumeration",
+        "The upstream narrow SourceTree scope cannot replace Fabushi full recursive migration inventory",
+        "Copying sources.py would create a Telegram-specific parallel source authority runtime"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "scripts/validate-tdrp-revision9-authority.mjs",
+        "scripts/discover-tdrp-root-open-authority.mjs",
+        ".github/workflows/tdrp-revision9-authority.yml",
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "ghTree / recursive authority validation",
+        "root open-authority discovery",
+        "Source authority / recursive inventory",
+        "Repository quality-health command orchestration governance"
+      ],
+      "target_language": "JavaScript/YAML/Markdown",
+      "language_rationale": "sources.py is repository-development source acquisition instrumentation rather than shipping product logic. Fabushi already carries its applicable behavior in source-neutral GitHub Actions authority/discovery/validation contracts; retaining Python would create a duplicate authority path.",
+      "command_event_contracts": [
+        "exact target SHA -> exact checkout assertion -> recursive source authority validation",
+        "accepted upstream commit/tree -> complete recursive non-directory inventory with immutable repository/commit/path/object provenance",
+        "direct/nested gitlink -> immutable child authority discovery -> reconciled fixed point or explicit unresolved failure",
+        "build-time mutable/tool candidate -> discover and resolve/express or remain explicit non-passing/open evidence",
+        "working/narrow code-health source semantics -> existing repository quality consumers only, never migration completeness",
+        "partial/unavailable/stale authority -> fail closed or explicit open/unknown evidence, never clean closure"
+      ],
+      "state_owner": "Immutable GitHub repository/commit/tree/object identity plus checked-in TDRP lock/inventory/evidence metadata; no second SourceTree store",
+      "lifecycle_owner": "Existing TDRP source-authority GitHub Actions workflow and repository quality-health command orchestration",
+      "persistence_and_restart": "Durable authority state is the checked-in lock/inventory/ledger plus exact-head GitHub Actions artifacts. Discovery is recomputed from immutable upstream/target identities; historical artifacts never become current-head acceptance after a new mapping commit.",
+      "concurrency_and_cancellation": "Every authority claim is target-SHA and upstream-commit/tree bound. Branch/ref drift invalidates the write lease; partial job, Git/API/submodule/acquisition failure or artifact-finalization failure cannot advance closure.",
+      "security_boundary": "Repository source acquisition authorizes no product behavior, credential use, code mutation, ownership rewrite or release verdict. Network-fetched authority is accepted only with immutable identity and existing evidence gates.",
+      "network_service_dependencies": [
+        "GitHub repository authority",
+        "GitHub Actions hosted runners",
+        "GitHub Actions artifact storage",
+        "GitLab authority for recursively discovered cppgir lineage where applicable"
+      ],
+      "service_owner": "Existing Fabushi TDRP repository authority / GitHub Actions",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "Independent exact-head GitHub Actions verification of this sources.py mapping commit is pending.",
+        "Full recursive generated/resource/tool disposition remains open; source closure cannot be accepted while unknown/unread remain non-zero."
+      ],
+      "production_entrypoints": [
+        "scripts/validate-tdrp-revision9-authority.mjs -> exact-head root/recursive source authority validation",
+        "scripts/discover-tdrp-root-open-authority.mjs -> root build-time acquisition discovery",
+        ".github/workflows/tdrp-revision9-authority.yml -> Source authority / recursive inventory",
+        "AGENTS.md -> repository quality-health command orchestration -> exact source acquisition/evidence"
+      ],
+      "production_evidence": [
+        "path:scripts/validate-tdrp-revision9-authority.mjs",
+        "path:scripts/discover-tdrp-root-open-authority.mjs",
+        "path:.github/workflows/tdrp-revision9-authority.yml",
+        "historical-parent-run:39478280087/job:118819855616/artifact:12291075807/sha256:9dc2c056af519a0a3ab50995a688759297b8c3dd7a412288724e08c31c020d72",
+        "historical-parent-run:39478280157/job:118819857405/artifact:12290181212/sha256:a05ed26500434b01836bb4223ebe2fc5085e1e10dcd62e3d986d99d1b31f6e89"
+      ],
+      "test_evidence": [
+        "dossier:projects/telegram-desktop-rust/dossiers/code-health-sources-script-complete-read.md",
+        "upstream-sources:.agents/skills/code-health/scripts/sources.py@688aa05c4223d0d45b8572cff89fbc5148254844",
+        "upstream-health:.agents/skills/code-health/scripts/health.py@f08675ef7a03c016d85f91c60b8f29e99454abe9",
+        "upstream-report:.agents/skills/code-health/scripts/report.py@a1177613670e933694f545f387ca7e7ed8cf0ee0",
+        "upstream-review:.agents/skills/code-health/scripts/review.py@070b55553052267e8fbc12d70985b447b24bbb02",
+        "upstream-health-test:.agents/skills/code-health/scripts/health_test.py@a79addaaceb35848dbd17e94e01ea428aede7788",
+        "health_test.UnusedTests.test_declared_but_never_called",
+        "health_test.MapTests.test_map_naming_a_missing_file_is_stale",
+        "health_test.AtlasTests.test_check_reports_unmapped_and_unused",
+        "health_test.AtlasTests.test_scan_names_areas_by_the_atlas",
+        "health_test.StateTests.test_working_tree_scan_leaves_the_ledger_alone",
+        "health_test.StateTests.test_area_rebuilds_a_missing_snapshot_of_the_published_scan",
+        "health_test.StateTests.test_source_worktree_is_created_reused_and_removed",
+        "TDRP authority: Assert exact checkout",
+        "TDRP authority: Validate Revision 9 source authority",
+        "TDRP authority: Discover build-time acquisition candidates at exact upstream",
+        "TDRP authority: Root source archive accounting",
+        "TDRP authority: recursive root/child/fixed-point authority jobs"
+      ],
+      "target_commit": "a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development and source-authority evidence governance",
+      "composition_slot": "Exact source snapshot, recursive authority and acquisition provenance",
+      "capability_component": "Source-neutral repository authority/acquisition evidence",
+      "variation_axes": [
+        "working tree vs exact immutable ref",
+        "root repository vs top-level/nested gitlink authority",
+        "text vs binary/undecodable input",
+        "UTF-8 vs Latin-1 fallback",
+        "available vs unavailable child source",
+        "narrow code-health scan vs complete migration inventory",
+        "current-head evidence vs historical-only parent evidence",
+        "closed recursive gitlink fixed point vs still-open generated/resource/tool disposition"
+      ],
+      "shared_owner_contracts": [
+        "TDRP exact-head source authority workflow",
+        "Recursive inventory and acquisition validation",
+        "Repository quality-health command orchestration governance",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract"
+      ],
+      "duplicate_root_check": "No Telegram Python SourceTree runtime, second source inventory, second gitlink resolver, second acquisition ledger, second repository authority root or release owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Every durable authority/evidence record remains bound to immutable target SHA and upstream commit/tree/object identities. A new commit immediately demotes parent artifacts to historical-only until the new exact-head workflow succeeds.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to workflow governance",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-CODE-HEALTH-SOURCE-ACQUISITION-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CODE-HEALTH-SOURCE-EXACT-REF-001",
+        "ORA-TDRP-CODE-HEALTH-SOURCE-GITLINK-PROVENANCE-001",
+        "ORA-TDRP-CODE-HEALTH-SOURCE-SCOPE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CODE-HEALTH-SOURCE-NO-MUTABLE-AS-EXACT-001",
+        "INV-TDRP-CODE-HEALTH-SOURCE-NO-PARTIAL-AS-COMPLETE-001",
+        "INV-TDRP-CODE-HEALTH-SOURCE-NO-SECOND-AUTHORITY-001"
+      ],
+      "unit_case_ids": [
+        "health_test.UnusedTests.test_declared_but_never_called",
+        "health_test.MapTests.test_map_naming_a_missing_file_is_stale",
+        "health_test.AtlasTests.test_check_reports_unmapped_and_unused"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CODE-HEALTH-SOURCE-SNAPSHOT-001",
+        "CONTRACT-TDRP-RECURSIVE-SOURCE-AUTHORITY-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-CODE-HEALTH-SOURCES-HEALTH-COMMAND-001",
+        "INT-TDRP-EXACT-HEAD-AUTHORITY-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-SOURCE-AUTHORITY-HISTORICAL-DEMOTION-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-SOURCE-UNAVAILABLE-CHILD-001",
+        "FAULT-TDRP-SOURCE-REF-DRIFT-001",
+        "FAULT-TDRP-ARTIFACT-FINALIZE-INFRA-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-SOURCE-AUTHORITY-IMMUTABLE-PROVENANCE-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-CODE-HEALTH-SOURCE-ACQUISITION-001"
+      ],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-INVENTORY",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "telegramdesktop/tdesktop exact upstream snapshot",
+        "TDRP recursive authority inventory"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral repository source-acquisition and snapshot contract read from telegramdesktop/tdesktop authority; no upstream Python implementation copied into Fabushi shipping runtime.",
+      "notes": "Recursive authority index 34 immediately after review.py index 33 is sources.py@688aa05c4223d0d45b8572cff89fbc5148254844. Complete source, health.py/report.py/review.py callers and direct health_test.py consumers were read. Upstream health_test.py exercises from_worktree through unused/map/atlas/state flows but has no dedicated direct from_ref/gitlink unit case; Fabushi exact-head authority workflow supplies the stronger recursive immutable-ref/gitlink/acquisition evidence. This closes only one source entry: unknown=16,164, unread=16,139, omitted=0. Parent authority run 39478280087/artifact 12291075807 and Rust run 39478280157/artifact 12290181212 are verified historical-only evidence for a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7; exact-head verification of this new commit is pending. The next strict source entry is .agents/skills/continue/SKILL.md@aeb81dd57018abbc8f03ea3dbd34f91952128db5.",
       "test_execution_evidence": []
     }
   ]
