@@ -291,8 +291,9 @@ export async function captureLocalBrowserSnapshot(
     if (remaining <= 0) break;
     for (const element of raw.elements.slice(0, remaining)) {
       const ordinal = elements.length + 1;
-      const frameToken = target.frameId == null ? "main" : String(target.frameId);
-      const ref = "g" + generation + "-f" + frameToken + "-e" + ordinal;
+      const ref = target.frameId == null
+        ? "g" + generation + "-e" + ordinal
+        : "g" + generation + "-f" + target.frameId + "-e" + ordinal;
       locators.set(ref, {
         selector: element.selector,
         frame: target.frame,
