@@ -1,4 +1,5 @@
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderSessionError, RoutedToolDefinition,
@@ -9,7 +10,11 @@ use mahayana_host_runtime::runner::box_tool_access::{
 };
 use mahayana_host_runtime::runner::routed_provider_runtime::RoutedToolBridge;
 use mahayana_host_runtime::runner::tools::sand_browser_driver_source::SAND_BROWSER_DRIVER_SOURCE;
-use mahayana_host_runtime::runner::tools::local_browser_tools::ExplicitBrowserTargetExecutor;
+use mahayana_host_runtime::gateway_server::GatewayEventHub;
+use mahayana_host_runtime::runner::coordinator_tool_relay::CoordinatorToolRelay;
+use mahayana_host_runtime::runner::tools::local_browser_tools::{
+    ExplicitBrowserTargetExecutor, LocalBrowserCoordinatorExecutor,
+};
 use mahayana_host_runtime::runner::tools::sand_browser_tools::{
     BOX_CDP_PORT_BASE, BrowserDriverOutput, BrowserEnvelope, BrowserToolExecutor,
     BrowserShellSafetyCallback, BrowserToolSpec, ProductionBrowserToolExecutor,
@@ -356,6 +361,35 @@ fn explicit_browser_target_defaults_to_box_and_never_falls_back() {
     assert_eq!(
         calls.lock().expect("calls").as_slice(),
         &["box".to_string(), "local".to_string()]
+    );
+}
+
+#[test]
+fn unsupported_local_browser_action_fails_before_auto_review_or_relay() {
+    let reviewed = Arc::new(Mutex::new(Vec::<String>::new()));
+    let reviewed_sink = Arc::clone(&reviewed);
+    let relay = Arc::new(CoordinatorToolRelay::with_timeout(
+        GatewayEventHub::default(),
+        Duration::from_millis(20),
+    ));
+    let executor = LocalBrowserCoordinatorExecutor::new(relay, "agent-a")
+        .with_auto_review_callback(Arc::new(move |spec, _args, _tool_call_id| {
+            reviewed_sink.lock().expect("reviewed").push(spec.name.to_string());
+            Ok(())
+        }));
+    let spec = browser_tool_specs().into_iter()
+        .find(|spec| spec.name == "browser_cdp")
+        .expect("cdp spec");
+    let args = json!({"method":"Runtime.evaluate","target":"local"});
+    let error = executor.execute(
+        &spec,
+        args.as_object().expect("args"),
+        "local-cdp",
+    ).expect_err("local cdp must fail closed");
+    assert!(error.to_string().contains("not yet supported for target=local"));
+    assert!(
+        reviewed.lock().expect("reviewed").is_empty(),
+        "unsupported local actions must fail before asking for approval"
     );
 }
 

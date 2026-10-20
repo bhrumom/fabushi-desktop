@@ -226,6 +226,16 @@ impl BrowserToolExecutor for LocalBrowserCoordinatorExecutor {
         args: &Map<String, Value>,
         tool_call_id: &str,
     ) -> Result<BrowserDriverOutput, ProviderSessionError> {
+        if !matches!(
+            spec.op,
+            "tabs" | "snapshot" | "click" | "fill" | "type" | "press_key"
+                | "scroll" | "screenshot" | "navigate" | "back" | "forward" | "refresh"
+        ) {
+            return Err(ProviderSessionError::Tool(format!(
+                "browser_{} is not yet supported for target=local; Fabushi will not fall back to the managed Box browser.",
+                spec.op
+            )));
+        }
         if let Some(auto_review) = self.auto_review.as_ref() {
             auto_review(spec, args, tool_call_id)?;
         }
@@ -279,11 +289,7 @@ impl BrowserToolExecutor for LocalBrowserCoordinatorExecutor {
             "back" => self.action_request(&target, tool_call_id, "back")?,
             "forward" => self.action_request(&target, tool_call_id, "forward")?,
             "refresh" => self.action_request(&target, tool_call_id, "reload")?,
-            unsupported => {
-                return Err(ProviderSessionError::Tool(format!(
-                    "browser_{unsupported} is not yet supported for target=local; Fabushi will not fall back to the managed Box browser."
-                )));
-            }
+            unsupported => unreachable!("local browser support list drifted for {unsupported}"),
         };
 
         request.remove("target");
