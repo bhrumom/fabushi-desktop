@@ -38,5 +38,5 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Current upstream candidate: telegramdesktop/tdesktop@6c2ee90618bf69683a1c466e3b0550260b82e129/tree c0b745cdee2cf0e2ab560ebcedc49cbbaafbfeaa. Root tree is non-truncated; recursive total and coverage remain provisional until exact-head Actions verifies all direct/nested gitlinks, acquisitions and generated/resource/tool inputs. Prior evidence is historical-only. source_closure_ready=false."
+  "note": "Current upstream candidate: telegramdesktop/tdesktop@6c2ee90618bf69683a1c466e3b0550260b82e129/tree c0b745cdee2cf0e2ab560ebcedc49cbbaafbfeaa. Root tree is non-truncated; recursive total and coverage remain provisional until exact-head Actions verifies all direct/nested gitlinks, acquisitions and generated/resource/tool inputs. Prior evidence is historical-only. source_closure_ready=false. Historical external nested scan rows are inventory inputs only: discovery mode may revalidate them on this exact HEAD while upstream.accepted=false and acceptance.accepted/baseline_ready=false; accepted mode rejects before deep validation. This does not close recursive authority or source closure."
 }

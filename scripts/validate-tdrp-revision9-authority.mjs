@@ -65,6 +65,19 @@ const spec=await read('docs/specs/telegram-desktop-rust-equivalence-migration.md
 const rtm=await read('projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md');
 const ledger=await readJson('projects/telegram-desktop-rust/parity-ledger.json');
 const acquisitionInventory=await readJson('projects/telegram-desktop-rust/inventory/build-time-acquisitions.json');
+if (requireAccepted) {
+  // Reject an open baseline before discovery-only checks can mask the acceptance failure.
+  fail(lock.upstream?.accepted===true,'accepted mode requires upstream.accepted=true');
+  fail(lock.acceptance?.accepted===true,'accepted mode requires acceptance.accepted=true');
+  fail(lock.acceptance?.baseline_ready===true,'accepted mode requires baseline_ready=true');
+  fail(ledger.coverage?.unknown===0,'G-INVENTORY unknown must be 0');
+  fail(ledger.coverage?.unread===0,'G-INVENTORY unread must be 0');
+  fail(ledger.coverage?.omitted===0,'G-INVENTORY omitted must be 0');
+  fail(ledger.coverage?.unmapped_responsibilities===0,'G-TRACEABILITY unmapped responsibilities must be 0');
+  fail(ledger.target_commit===((process.env.TDRP_TARGET_SHA||process.env.GITHUB_SHA)||ledger.target_commit),'G-EVIDENCE ledger target_commit must equal exact GitHub Actions HEAD');
+  fail(Array.isArray(ledger.rows)&&ledger.rows.length>0,'G-FILE/G-TRACEABILITY ledger cannot be empty at closure');
+}
+
 
 fail(lock.project_id==='TDRP-001' && lock.spec_revision===9,'lock is not TDRP Revision 9');
 fail(schema.properties?.spec_revision?.const===9,'ledger schema is not Revision 9');
@@ -120,7 +133,14 @@ for (const scan of externalScans) {
   fail(!externalScanIds.has(scan.id),'duplicate external nested scan id: '+scan.id);
   externalScanIds.add(scan.id);
   fail(/^[0-9a-f]{40}$/.test(scan.commit),'external nested scan commit is not immutable: '+scan.id);
-  fail(scan.status==='complete-live-scan-dispositioned','external nested scan is not closed: '+scan.id);
+  const liveScanComplete=scan.status==='complete-live-scan-dispositioned';
+  const pendingHistoricalScan=scan.status==='historical-only-pending-current-head-revalidation';
+  fail(liveScanComplete || (
+    pendingHistoricalScan
+    && lock.upstream.accepted===false
+    && lock.acceptance?.accepted===false
+    && lock.acceptance?.baseline_ready===false
+  ),'external nested scan is not closed: ' + scan.id);
   const dispositionTotal=Object.values(scan.disposition_counts||{}).reduce((sum,value)=>sum+value,0);
   fail(dispositionTotal===scan.acquisition_candidates,'external nested scan dispositions do not cover every candidate: '+scan.id);
   fail(scan.gitlinks===0,'external nested scan discovered unexpanded gitlinks: '+scan.id);
@@ -710,15 +730,4 @@ const report={
 };
 await fs.writeFile(path.join(root,'artifacts/tdrp-authority/authority-report.json'),JSON.stringify(report,null,2)+'\n');
 
-if (requireAccepted) {
-  fail(u.accepted===true,'accepted mode requires upstream.accepted=true');
-  fail(lock.acceptance.accepted===true,'accepted mode requires acceptance.accepted=true');
-  fail(lock.acceptance.baseline_ready===true,'accepted mode requires baseline_ready=true');
-  fail(ledger.coverage.unknown===0,'G-INVENTORY unknown must be 0');
-  fail(ledger.coverage.unread===0,'G-INVENTORY unread must be 0');
-  fail(ledger.coverage.omitted===0,'G-INVENTORY omitted must be 0');
-  fail(ledger.coverage.unmapped_responsibilities===0,'G-TRACEABILITY unmapped responsibilities must be 0');
-  fail(ledger.target_commit===((process.env.TDRP_TARGET_SHA||process.env.GITHUB_SHA)||ledger.target_commit),'G-EVIDENCE ledger target_commit must equal exact GitHub Actions HEAD');
-  fail(ledger.rows.length>0,'G-FILE/G-TRACEABILITY ledger cannot be empty at closure');
-}
 console.log(JSON.stringify(report,null,2));
