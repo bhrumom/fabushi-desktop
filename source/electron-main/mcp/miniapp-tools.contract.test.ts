@@ -254,6 +254,63 @@ test("Linux-only native capabilities are never advertised on macOS or Windows", 
   assert.equal(announced.platform, "desktop");
 });
 
+test("Host invokes the pinned Global Dandelion source engine through the real CLI", {
+  skip: !process.env.FABUSHI_DANDELION_REAL_BIN,
+  timeout: 120_000,
+}, async () => {
+  const binaryPath = process.env.FABUSHI_DANDELION_REAL_BIN!;
+  const configPath = process.env.FABUSHI_DANDELION_REAL_CONFIG!;
+  const root = process.env.FABUSHI_DANDELION_REAL_ROOT!;
+  const backend = createDandelionCliBackend(
+    {
+      binaryPath,
+      configPath,
+      allowedRoots: [root],
+      targetPools: [{ id: "loopback", label: "授权本机回环" }],
+      platform: "linux",
+    },
+    { pick: async () => [{ path: root, name: "real-fixture", size: 32 }] },
+  );
+
+  const capabilities = await backend.capabilities();
+  assert.deepEqual(capabilities.capabilities, [
+    "offline", "selection", "transfer", "scan", "config", "platform", "diagnostics",
+  ]);
+
+  const picked = await backend.pick("directory", { maxFiles: 1, maxBytes: 1024 ** 3 });
+  assert.ok(picked);
+
+  const metadata = await backend.scan("metadata", picked.selectionId) as Record<string, unknown>;
+  assert.equal(metadata.payload_bytes_read, 0);
+  assert.ok(Number(metadata.regular_files) >= 1);
+
+  const read = await backend.scan("read", picked.selectionId) as Record<string, unknown>;
+  assert.ok(Number(read.verified_payload_bytes) > 0);
+
+  const defaults = await backend.config("defaults") as Record<string, unknown>;
+  assert.equal(typeof defaults, "object");
+  const checked = await backend.config("check") as Record<string, unknown>;
+  assert.equal(typeof checked, "object");
+
+  const platform = await backend.platform("inspect") as Record<string, unknown>;
+  assert.ok(Array.isArray(platform.mounts));
+  const diagnostics = await backend.diagnostics("selfTest") as Record<string, unknown>;
+  assert.equal(diagnostics.status, "completed");
+
+  const operation = await backend.send({ selectionId: picked.selectionId, targetPoolId: "loopback" });
+  let status: Record<string, unknown> = { state: "running" };
+  for (let attempt = 0; attempt < 240; attempt += 1) {
+    status = await backend.status(operation.operationId) as Record<string, unknown>;
+    if (status.state !== "running") break;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  assert.equal(status.state, "complete");
+  assert.ok(Number((status.result as Record<string, unknown>).verified_payload_bytes) > 0);
+
+  await backend.release(picked.selectionId);
+  await assert.rejects(() => backend.scan("metadata", picked.selectionId), /UNKNOWN_SELECTION/);
+});
+
 test("production desktop bridge runs end-to-end without Electron from preload IPC through router, approval gate and dandelion CLI", async () => {
   const workspace = await mkdtemp(join(tmpdir(), "fabushi-desktop-bridge-e2e-"));
   const previousEnv = {
