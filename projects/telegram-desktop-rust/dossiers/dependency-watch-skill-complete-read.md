@@ -1,6 +1,6 @@
 # Dependency Watch skill complete read — strict recursive index 39
 
-Status: strict index 42 exact-head verified at a1dfd724295a985c286ad25e8d5628b794fcf056; strict index 43 source-grounded and existing-owner mapped; child exact-head verification pending.
+Status: strict index 43 exact-head verified at aa3b353daca8b75be04a534f5643465297263962; strict index 44 source-grounded and existing-owner mapped; child exact-head verification pending.
 
 Authority: telegramdesktop/tdesktop@0eca52223cceed229932add1cc80792763120844 tree 1fc479a4b448aed851181bf4a4796d3015368348. Strict index 39 remains .agents/skills/dependency-watch/SKILL.md@482b3a8d0c939d4bb7bd32ab146e0cc988d29fd8.
 
@@ -156,4 +156,30 @@ Traceability:
 - REG-TDRP-DEPENDENCY-WATCH-MUTABLE-WORKTREE-READ-001
 
 Coverage after strict index 43: source_entries_total=16305, unknown=16259, unread=16234, omitted=0, responsibilities_total=62, unmapped=0. baseline accepted=false and source_closure_ready=false. Next strict entry index 44 is .agents/skills/dependency-watch/scripts/watch_test.py@d3107c617be3e8780a99bebaeba19a4f235ae6ea.
+
+## Strict index 44 — dependency snapshot regression and fail-closed qualification
+
+Source: .agents/skills/dependency-watch/scripts/watch_test.py@d3107c617be3e8780a99bebaeba19a4f235ae6ea on telegramdesktop/tdesktop@0eca52223cceed229932add1cc80792763120844/tree 1fc479a4b448aed851181bf4a4796d3015368348. The file was read completely (100 lines) together with the exact implementation under test watch.py@231c5a13e8d7e3cd337dbbad08e8f4434a943a38 (191 lines) and workflow contract SKILL.md@482b3a8d0c939d4bb7bd32ab146e0cc988d29fd8 (150 lines).
+
+Responsibility: the unittest suite qualifies the dependency-watch snapshot/version helper with an isolated temporary Git remote and checkout. VersionTests.test_stable_ordering_and_prefixes proves supported prefixed three-component stable versions classify as patch/minor/major/older/same while prereleases, hashes, milestones, four-component versions and OpenSSL legacy-letter versions stay unknown. SnapshotTests.test_fetches_remote_without_touching_working_tree proves a fresh remote update is read from the fetched exact commit rather than a dirty checkout, a gitlink is retained exactly, and local HEAD/status remain unchanged. test_fetch_failure_never_uses_stale_ref requires acquisition failure instead of stale-ref fallback and requires that no dependency-watch storage be published. test_missing_required_manifest_fails rejects incomplete required scope. test_offline_snapshot_is_marked_unverified keeps fetch=False explicitly non-fresh with audit_status=snapshot-only. test_linked_worktree_uses_common_report_storage proves detached linked worktrees share the main repository Git common dependency-watch storage root.
+
+Caller/test trace: watch_test.py imports watch directly and is a standalone unittest module ending in unittest.main(); repository search found no separate production caller for the test module. The real implementation symbols exercised are watch.compare, watch.snapshot, watch.git and watch.REQUIRED, with snapshot transitively exercising exact ls-tree/cat-file source selection, required-manifest checks, gitlink capture and Git-common storage. SKILL.md is the production workflow caller of watch.py, not a caller of watch_test.py. These are source-read upstream test contracts; this mapping does not claim that the upstream Python suite was freshly executed. All Fabushi executable TDRP verification remains GitHub-Actions-only.
+
+Fabushi existing owner: AGENTS.md@57ed0d56acc64ef24ce4c1f5c2877a4ec3ab570b owns the source-neutral repository quality-health command orchestration and makes failed fetch, stale/mismatched source, incomplete dependency and process failure explicitly non-passing. quality/evidence-contract.md@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70 already owns integrated repository-quality regression evidence: exact test-subject revision, fixture inputs, exercised existing owners, positive/negative oracle observations, exact-ref durable-publication behavior, and the rule that temporary Git repositories/subprocess wrappers are test mechanics rather than a second semantic owner. TEST_STRATEGY.md@0d3a4c993784625f9b70279602c655d4788fe9fb keeps repository-quality qualification fail-closed and requires FBCP/TDRP executable verification in GitHub Actions. No Telegram-specific Python test owner, second scanner, second findings store or product runtime is required; novel_capability=false.
+
+Parent exact-head gate: TDRP Revision 9 run 39515594730 is terminal success at aa3b353daca8b75be04a534f5643465297263962. Its first Source authority job 118946870617 had already passed the Revision 9 validator before an external chromium.googlesource.com mini_chromium HTTP 503; the failed acquisition job was retried without a code change and latest-attempt Source authority job 118949358056 succeeded. Successful source-authority artifact 12308247434 digest sha256:cf9a57537be204f97241ee2a684f447fb4c954a957fe2dc363bded601078237a binds aa3b353daca8b75be04a534f5643465297263962/0eca52223cceed229932add1cc80792763120844/1fc479a4b448aed851181bf4a4796d3015368348. Boost artifact 12307911850 digest sha256:d4bd045fc2ac550310bc94bb2b640cef693236f3534ba2336b411c863ea36a67 proves 582/582/open=0. Root aggregate artifact 12307043808 digest sha256:9db6bde956e510091ff31c4aac2710bf3e355174acd39f6673d7eb38e6e6d995 contains root shards 0-11; child aggregate 12307643558 digest sha256:e153244fa21ba1d5ca1aee1df88f415ce4d00e589e9ee89a04db8f715eb95728 contains child shards 0-23; next aggregate 12307404473 digest sha256:573937916232daffe55f1251215d303baf1064ec77fc459e196040094e3c22eb contains next shards 0-15. Recursive closure artifact 12306893764 digest sha256:c8e62637612e6dae6d759d771ce3b00b1344b097647129518db11a901174ed3c reaches final_scanned_authorities=203 and unresolved_gitlink_authorities=0. Recursive reachability artifact 12307503655 digest sha256:53da0ab81dcca94939a330c7351fd5de440cf9366176c0119f57290316fee94d remains partial-audited-open with 95 authorities, 133 gitlinks, 3865 acquisition candidates, 4674 generated inputs, 4602 resource inputs and 4255 tool inputs open, so source_closure_ready=false. Rust desktop runtime run 39515594749 is terminal success with rust-host, renderer, platform-worker and macOS/Windows/Ubuntu pressure profiler 6/6 successful; rust-host steps 1-17, both post steps and Complete job succeeded. Artifact 12306824163 digest sha256:8172d2ce4fabc25fe9a36475eb9be948101f239e7e9cd2f27e14ddbaca07307b is bound to aa3b353daca8b75be04a534f5643465297263962.
+
+Traceability:
+- TDRP-R9-DEPENDENCY-WATCH-SNAPSHOT-TESTS-001
+- ORA-TDRP-DEPENDENCY-WATCH-TEST-FRESH-FETCH-001
+- ORA-TDRP-DEPENDENCY-WATCH-TEST-FAIL-CLOSED-001
+- ORA-TDRP-DEPENDENCY-WATCH-TEST-COMMON-STORAGE-001
+- ORA-TDRP-DEPENDENCY-WATCH-TEST-VERSION-CLASSIFICATION-001
+- INV-TDRP-DEPENDENCY-WATCH-TEST-NO-WORKTREE-MUTATION-001
+- INV-TDRP-DEPENDENCY-WATCH-TEST-NO-STALE-FALLBACK-001
+- INV-TDRP-DEPENDENCY-WATCH-TEST-OFFLINE-UNVERIFIED-001
+- SEC-TDRP-DEPENDENCY-WATCH-TEST-FAIL-CLOSED-001
+- REG-TDRP-DEPENDENCY-WATCH-TEST-FIXTURE-ISOLATION-001
+
+Coverage after strict index 44: source_entries_total=16305, unknown=16258, unread=16233, omitted=0, responsibilities_total=63, unmapped=0. baseline accepted=false and source_closure_ready=false. Next strict entry index 45 is .agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c.
 

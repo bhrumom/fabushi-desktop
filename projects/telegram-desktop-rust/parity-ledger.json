@@ -6,10 +6,10 @@
   "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
   "coverage": {
     "source_entries_total": 16305,
-    "unknown": 16259,
-    "unread": 16234,
+    "unknown": 16258,
+    "unread": 16233,
     "omitted": 0,
-    "responsibilities_total": 62,
+    "responsibilities_total": 63,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -16708,6 +16708,282 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral repository exact-source/dependency snapshot and version-classification contract read from exact telegramdesktop/tdesktop Python source and tests; no upstream Python monitor or Telegram-specific runtime is copied into Fabushi.",
       "notes": "Zero-based strict index 43 is .agents/skills/dependency-watch/scripts/watch.py@231c5a13e8d7e3cd337dbbad08e8f4434a943a38 on live 0eca52223cceed229932add1cc80792763120844. SKILL.md invokes its snapshot helper and watch_test.py imports watch to exercise stable version ordering, fresh remote fetch without worktree mutation, fetch-failure rejection, required-manifest failure, offline-unverified state and linked-worktree common storage. Coverage after this one entry: unknown=16,259, unread=16,234, omitted=0. Parent a1df exact-head TDRP 39514005648 and Rust 39514005658 are both successful; child commit requires fresh exact-head workflows. Fixed-point unresolved_gitlink_authorities=0 but recursive reachability/disposition remains open, so baseline accepted/source_closure_ready remain false. Next strict entry index 44 is .agents/skills/dependency-watch/scripts/watch_test.py@d3107c617be3e8780a99bebaeba19a4f235ae6ea.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "0eca52223cceed229932add1cc80792763120844",
+      "source_path": ".agents/skills/dependency-watch/scripts/watch_test.py",
+      "source_blob_sha": "d3107c617be3e8780a99bebaeba19a4f235ae6ea",
+      "source_kind": "repository_dependency_watch_snapshot_and_version_regression_tests",
+      "module_id": "tdesktop.dependency-watch-snapshot-tests",
+      "responsibility_id": "TDRP-R9-DEPENDENCY-WATCH-SNAPSHOT-TESTS-001",
+      "source_symbols": [
+        "VersionTests.test_stable_ordering_and_prefixes",
+        "SnapshotTests.setUp / commit",
+        "SnapshotTests.test_fetches_remote_without_touching_working_tree",
+        "SnapshotTests.test_fetch_failure_never_uses_stale_ref",
+        "SnapshotTests.test_missing_required_manifest_fails",
+        "SnapshotTests.test_offline_snapshot_is_marked_unverified",
+        "SnapshotTests.test_linked_worktree_uses_common_report_storage",
+        "unittest.main"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-DEPENDENCY-PROVENANCE",
+        "CAP-SOURCE-AUTHORITY"
+      ],
+      "dependency_ids": [
+        ".agents/skills/dependency-watch/scripts/watch.py",
+        ".agents/skills/dependency-watch/SKILL.md",
+        "Python unittest/tempfile/subprocess",
+        "Git exact-ref/tree/blob/worktree plumbing",
+        "Fabushi repository quality-health integrated regression evidence",
+        "Fabushi repository quality-health command orchestration"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/dependency-watch-skill-complete-read.md",
+      "behavior_contract": "The dependency-watch regression suite must prove the bounded stable-version classifier and exact-source snapshot contract using isolated temporary Git repositories: a fresh fetch consumes the exact remote commit/blob and preserves gitlinks without mutating a dirty checkout or HEAD; failed acquisition never falls back to a stale ref or publishes dependency-watch state; missing required manifests fail; explicit offline mode remains non-fresh/snapshot-only; and linked worktrees use Git-common report storage.",
+      "state_machine": "test fixture -> create temporary dev remote with every REQUIRED manifest -> commit -> clone checkout -> per-case mutation -> invoke watch.compare or watch.snapshot -> assert exact positive/negative oracle -> temporary fixture cleanup; fresh-fetch case adds exact remote manifest+gitlink and dirties local checkout before snapshot; fetch-failure case breaks origin and expects CalledProcessError/no storage; required-manifest case deletes required source and expects ValueError; offline case asserts fresh_fetch=false/snapshot-only; linked-worktree case creates detached worktree and asserts common storage",
+      "side_effects": [
+        "Creates only TemporaryDirectory-scoped Git remotes/checkouts/linked worktrees and the helper's test-local Git-common dependency-watch storage.",
+        "Exercises fetch/commit/worktree Git mechanics inside isolated fixtures without mutating Telegram or Fabushi product source, canonical repository state, dependency pins, tasks or releases.",
+        "Provides source-read upstream test-contract evidence only in this mapping; no local executable test run is claimed."
+      ],
+      "failure_cases": [
+        "Supported stable version ordering or prefixes classify incorrectly, or unsupported prerelease/hash/milestone/four-component/legacy-letter schemes are forced into a stable ordering.",
+        "snapshot reads dirty mutable checkout content instead of the freshly fetched exact commit blob.",
+        "snapshot changes checkout HEAD/status while acquiring source evidence.",
+        "gitlinks are lost or rewritten during snapshot.",
+        "a failed fresh fetch silently reuses stale origin/dev or publishes dependency-watch storage.",
+        "a missing required manifest is treated as a successful complete snapshot.",
+        "offline fetch=False evidence is presented as fresh/current.",
+        "a linked worktree creates a divergent per-worktree report root instead of Git-common storage.",
+        "The upstream Python test module is copied into Fabushi as a second repository-quality test/scanner owner."
+      ],
+      "ui_disposition": "Not applicable; repository-development regression/evidence tooling only.",
+      "non_ui_responsibilities": [
+        "Stable three-component version-classification qualification with unsupported-scheme rejection",
+        "Fresh exact remote snapshot qualification against a dirty local checkout",
+        "Worktree HEAD/status non-mutation and exact gitlink preservation",
+        "Fetch-failure stale-ref/storage-publication fail-closed qualification",
+        "Required-manifest completeness failure qualification",
+        "Explicit offline-unverified qualification",
+        "Linked-worktree Git-common storage qualification"
+      ],
+      "platform_delta": "Fabushi already owns these source-neutral test/evidence responsibilities through repository quality-health integrated regression evidence and command-orchestration qualification. The Telegram-specific unittest fixture is not copied; its applicable positive/negative contracts remain qualification requirements of the existing exact-source quality owner.",
+      "existing_owner_candidates": [
+        "AGENTS.md — Repository quality-health command orchestration governance for fresh exact source, fail-visible acquisition and detached worktree safety",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md — Repository quality-health integrated regression and command-orchestration evidence",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md — repository-quality qualification and GitHub-Actions-only FBCP/TDRP executable verification",
+        "projects/fabushi-communication-platform/quality/plans/security-privacy-test-plan.md — fail-closed security/privacy release gate"
+      ],
+      "existing_owner": "Fabushi source-neutral repository quality-health integrated regression / command-orchestration evidence owner",
+      "rejected_existing_owners": [
+        "source/electron-main/update/* owns shipping application update execution, not repository exact-source regression qualification.",
+        "source/host/src/extensions/mcp/installable_package/* owns shipping plugin-package installation, not repository test evidence.",
+        "A copied Telegram watch_test.py, second test harness owner, second scanner or second findings store would duplicate the canonical source-neutral repository-quality owner."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/plans/security-privacy-test-plan.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository quality-health command orchestration governance",
+        "Repository quality-health integrated regression evidence",
+        "Repository quality-health command orchestration evidence",
+        "FBCP/TDRP 所有 executable verification 只在 GitHub Actions"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The upstream entry is a repository-development unittest suite for source/dependency evidence mechanics, not Fabushi shipping product behavior. Its applicable semantics belong to the existing source-neutral quality/evidence qualification owner instead of a retained Telegram-specific Python test runtime.",
+      "command_event_contracts": [
+        "temporary fixture remote+checkout -> exact watch.snapshot acquisition -> assert fetched source/gitlink identity and unchanged dirty worktree/HEAD",
+        "broken origin fetch -> CalledProcessError and no dependency-watch storage; stale fallback forbidden",
+        "required manifest removed -> ValueError; incomplete scope cannot pass",
+        "fetch=False -> fresh_fetch=false + audit_status=snapshot-only",
+        "detached linked worktree -> storage_root resolves to main Git common .git/dependency-watch",
+        "watch.compare supported stable versions -> same/older/major/minor/patch; unsupported schemes -> unknown",
+        "new index-44 mapping commit -> aa3b353daca8b75be04a534f5643465297263962 exact-head Actions are parent evidence; fresh child exact-head workflows required"
+      ],
+      "state_owner": "Existing Fabushi repository quality-health exact-revision findings/evidence state; the test fixture owns no durable product or canonical findings state.",
+      "lifecycle_owner": "Root AGENTS.md repository quality-health command orchestration plus Test Strategy/Evidence Contract integrated regression lifecycle.",
+      "persistence_and_restart": "Test fixtures are temporary and disposable. Durable Fabushi repository-quality observations remain bound to exact source revision/run identity in the existing evidence lifecycle; test-local Git-common storage is evidence mechanics, not a second canonical store.",
+      "concurrency_and_cancellation": "Each qualification run is isolated to one temporary fixture and one exact source revision. Failed acquisition, stale source, incomplete manifest, process failure or undecidable evidence remains non-passing; cleanup cannot mutate the canonical checkout or manufacture a clean result.",
+      "security_boundary": "The suite qualifies source-evidence integrity only and cannot authorize dependency changes, installs, backports or releases. Freshness/completeness negatives fail closed; explicit offline evidence remains unverified.",
+      "network_service_dependencies": [
+        "Git/GitHub repository authority for immutable source identity",
+        "GitHub Actions hosted runners and artifact storage for exact-head Fabushi executable evidence"
+      ],
+      "service_owner": "Existing Fabushi repository governance / GitHub Actions evidence lifecycle",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "The index-44 mapping commit requires fresh exact-head TDRP Revision 9 and Rust desktop runtime verification.",
+        "Recursive reachability/disposition remains open with unknown/unread non-zero; baseline accepted/source_closure_ready remain false."
+      ],
+      "production_entrypoints": [
+        "AGENTS.md -> Repository quality-health command orchestration governance",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> repository quality-health integrated regression / command-orchestration evidence",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> repository quality qualification and GitHub-Actions-only TDRP verification",
+        "projects/fabushi-communication-platform/quality/plans/security-privacy-test-plan.md -> fail-closed security/privacy release gate"
+      ],
+      "production_evidence": [
+        "path:AGENTS.md@57ed0d56acc64ef24ce4c1f5c2877a4ec3ab570b",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md@0d3a4c993784625f9b70279602c655d4788fe9fb",
+        "path:projects/fabushi-communication-platform/quality/plans/security-privacy-test-plan.md@f6d6672988d46c06152f4e2f5ff585fecc424141",
+        "parent-exact-head-tdrp:39515594730/head:aa3b353daca8b75be04a534f5643465297263962/success/latest-source-authority-job:118949358056/artifact:12308247434/digest:sha256:cf9a57537be204f97241ee2a684f447fb4c954a957fe2dc363bded601078237a",
+        "parent-exact-head-tdrp-boost:artifact:12307911850/digest:sha256:d4bd045fc2ac550310bc94bb2b640cef693236f3534ba2336b411c863ea36a67/acquisition_candidates:582/dispositioned:582/open:0",
+        "parent-exact-head-tdrp-root:artifact:12307043808/digest:sha256:9db6bde956e510091ff31c4aac2710bf3e355174acd39f6673d7eb38e6e6d995/shards:0-11",
+        "parent-exact-head-tdrp-child:artifact:12307643558/digest:sha256:e153244fa21ba1d5ca1aee1df88f415ce4d00e589e9ee89a04db8f715eb95728/shards:0-23",
+        "parent-exact-head-tdrp-next:artifact:12307404473/digest:sha256:573937916232daffe55f1251215d303baf1064ec77fc459e196040094e3c22eb/shards:0-15",
+        "parent-exact-head-tdrp-closure:artifact:12306893764/digest:sha256:c8e62637612e6dae6d759d771ce3b00b1344b097647129518db11a901174ed3c/final_scanned_authorities:203/unresolved_gitlink_authorities:0/source_closure_ready:false",
+        "parent-exact-head-tdrp-reachability:artifact:12307503655/digest:sha256:53da0ab81dcca94939a330c7351fd5de440cf9366176c0119f57290316fee94d/remaining_open:95,133,3865,4674,4602,4255",
+        "parent-exact-head-rust:39515594749/head:aa3b353daca8b75be04a534f5643465297263962/success-6-of-6/artifact:12306824163/digest:sha256:8172d2ce4fabc25fe9a36475eb9be948101f239e7e9cd2f27e14ddbaca07307b"
+      ],
+      "test_evidence": [
+        "upstream-watch-tests:.agents/skills/dependency-watch/scripts/watch_test.py@d3107c617be3e8780a99bebaeba19a4f235ae6ea",
+        "upstream-watch:.agents/skills/dependency-watch/scripts/watch.py@231c5a13e8d7e3cd337dbbad08e8f4434a943a38",
+        "upstream-workflow-contract:.agents/skills/dependency-watch/SKILL.md@482b3a8d0c939d4bb7bd32ab146e0cc988d29fd8",
+        "unit-contract:VersionTests.test_stable_ordering_and_prefixes",
+        "integration-contract:SnapshotTests.test_fetches_remote_without_touching_working_tree",
+        "fault-contract:SnapshotTests.test_fetch_failure_never_uses_stale_ref",
+        "fault-contract:SnapshotTests.test_missing_required_manifest_fails",
+        "qualification-contract:SnapshotTests.test_offline_snapshot_is_marked_unverified",
+        "integration-contract:SnapshotTests.test_linked_worktree_uses_common_report_storage",
+        "source-read-complete:watch_test.py 100 lines; watch.py 191 lines; SKILL.md 150 lines at exact upstream commit",
+        "source-read-only:no fresh upstream Python unittest execution claimed"
+      ],
+      "target_commit": "aa3b353daca8b75be04a534f5643465297263962",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository quality-health and source-authority evidence governance",
+      "composition_slot": "Exact-source acquisition regression / fail-closed qualification",
+      "capability_component": "Source-neutral repository quality-health integrated regression contract",
+      "variation_axes": [
+        "fresh fetch vs explicit offline test",
+        "clean remote source vs dirty local checkout",
+        "required manifest present vs missing",
+        "successful fetch vs unreachable origin",
+        "main checkout vs detached linked worktree",
+        "supported stable three-component version vs unsupported version scheme"
+      ],
+      "shared_owner_contracts": [
+        "Root AGENTS.md repository quality-health command orchestration governance",
+        "Fabushi Test Evidence Contract integrated regression and command-orchestration evidence",
+        "Fabushi Test Strategy repository-quality qualification and GitHub Actions-only execution",
+        "Fabushi security/privacy fail-closed release gates"
+      ],
+      "duplicate_root_check": "No Telegram-specific unittest runtime, dependency watcher, scanner, findings store, task queue, product runtime or second repository quality-health owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "The upstream test module qualifies the existing dependency-watch helper and maps to the existing repository-quality evidence owners; no product route is introduced.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Qualification preserves exact-source identity and negative evidence: failed fetch, incomplete required scope, offline mode or linked-worktree storage divergence cannot be rewritten into fresh canonical evidence.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to repository quality regression governance",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-DEPENDENCY-WATCH-SNAPSHOT-TESTS-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-DEPENDENCY-WATCH-TEST-FRESH-FETCH-001",
+        "ORA-TDRP-DEPENDENCY-WATCH-TEST-FAIL-CLOSED-001",
+        "ORA-TDRP-DEPENDENCY-WATCH-TEST-COMMON-STORAGE-001",
+        "ORA-TDRP-DEPENDENCY-WATCH-TEST-VERSION-CLASSIFICATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-DEPENDENCY-WATCH-TEST-NO-WORKTREE-MUTATION-001",
+        "INV-TDRP-DEPENDENCY-WATCH-TEST-NO-STALE-FALLBACK-001",
+        "INV-TDRP-DEPENDENCY-WATCH-TEST-OFFLINE-UNVERIFIED-001"
+      ],
+      "unit_case_ids": [
+        "VersionTests.test_stable_ordering_and_prefixes"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [
+        "SnapshotTests.test_fetches_remote_without_touching_working_tree",
+        "SnapshotTests.test_linked_worktree_uses_common_report_storage"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "SnapshotTests.test_fetch_failure_never_uses_stale_ref",
+        "SnapshotTests.test_missing_required_manifest_fails",
+        "SnapshotTests.test_offline_snapshot_is_marked_unverified"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-DEPENDENCY-WATCH-TEST-FAIL-CLOSED-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-DEPENDENCY-WATCH-TEST-FIXTURE-ISOLATION-001"
+      ],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-INVENTORY",
+        "G-TRACEABILITY",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "watch_test.py TemporaryDirectory dev-remote / checkout / linked-worktree fixture contract"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral repository exact-source/dependency regression contract read from exact telegramdesktop/tdesktop Python tests and implementation; no upstream Python test runtime or Telegram-specific product code is copied into Fabushi.",
+      "notes": "Zero-based strict index 44 is .agents/skills/dependency-watch/scripts/watch_test.py@d3107c617be3e8780a99bebaeba19a4f235ae6ea on live 0eca52223cceed229932add1cc80792763120844. The suite imports watch.py and directly exercises stable version ordering, fresh exact remote fetch without mutable-worktree/HEAD mutation, exact gitlink capture, stale-ref rejection, required-manifest failure, offline-unverified state and linked-worktree Git-common storage. Coverage after this one entry: unknown=16,258, unread=16,233, omitted=0. Parent aa3b353daca8b75be04a534f5643465297263962 exact-head TDRP 39515594730 and Rust 39515594749 are both terminal success; the child mapping commit requires fresh exact-head workflows. Fixed-point unresolved_gitlink_authorities=0 and Boost 582/582/open=0, but recursive reachability/disposition remains open (95 authorities, 133 gitlinks, 3,865 acquisition candidates, 4,674 generated inputs, 4,602 resource inputs, 4,255 tool inputs), so baseline accepted/source_closure_ready remain false. No fresh upstream Python unittest execution is claimed. Next strict entry index 45 is .agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c.",
       "test_execution_evidence": []
     }
   ]

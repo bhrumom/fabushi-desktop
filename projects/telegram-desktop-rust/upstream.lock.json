@@ -896,10 +896,10 @@
   "coverage": {
     "root_source_entries_total": 6819,
     "recursive_source_entries_total": 16305,
-    "unknown_minimum": 16259,
-    "unread_minimum": 16234,
+    "unknown_minimum": 16258,
+    "unread_minimum": 16233,
     "omitted_known": 0,
-    "note": "Live dev authority remains 0eca52223cceed229932add1cc80792763120844/1fc479a4b448aed851181bf4a4796d3015368348. Exact recursive total is 16,305. Strict index 43 .agents/skills/dependency-watch/scripts/watch.py@231c5a13e8d7e3cd337dbbad08e8f4434a943a38 is mapped to the existing source-neutral repository quality-health exact-revision acquisition/evidence orchestration owner: unknown=16,259, unread=16,234, omitted=0; next strict entry index 44 is .agents/skills/dependency-watch/scripts/watch_test.py@d3107c617be3e8780a99bebaeba19a4f235ae6ea. Parent exact-head TDRP 39514005648 and Rust 39514005658 succeeded at a1dfd724295a985c286ad25e8d5628b794fcf056. Recursive fixed-point remains unresolved_gitlink_authorities=0 and Boost 582/582/open=0, while recursive disposition remains open (95 authorities, 133 gitlinks, 3,865 acquisition candidates, 4,674 generated inputs, 4,602 resource inputs, 4,255 tool inputs), so source_closure_ready/baseline acceptance remain false."
+    "note": "Live dev authority remains 0eca52223cceed229932add1cc80792763120844/1fc479a4b448aed851181bf4a4796d3015368348. Exact recursive total is 16,305. Strict index 44 .agents/skills/dependency-watch/scripts/watch_test.py@d3107c617be3e8780a99bebaeba19a4f235ae6ea is mapped to the existing source-neutral repository quality-health integrated-regression / command-orchestration evidence owner: unknown=16,258, unread=16,233, omitted=0; next strict entry index 45 is .agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c. Parent exact-head TDRP 39515594730 and Rust 39515594749 succeeded at aa3b353daca8b75be04a534f5643465297263962; the transient mini_chromium HTTP 503 was recovered by retrying the failed Source authority acquisition job without code changes. Recursive fixed-point remains unresolved_gitlink_authorities=0 and Boost 582/582/open=0, while recursive disposition remains open (95 authorities, 133 gitlinks, 3,865 acquisition candidates, 4,674 generated inputs, 4,602 resource inputs, 4,255 tool inputs), so source_closure_ready/baseline acceptance remain false."
   },
   "acceptance": {
     "baseline_ready": false,

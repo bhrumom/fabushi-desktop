@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16305,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16259,
-    "unread_minimum": 16234,
+    "unknown_minimum": 16258,
+    "unread_minimum": 16233,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -53,5 +53,5 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream remains telegramdesktop/tdesktop@0eca52223cceed229932add1cc80792763120844/tree 1fc479a4b448aed851181bf4a4796d3015368348. Recursive total is 16,305. Strict index 43 .agents/skills/dependency-watch/scripts/watch.py@231c5a13e8d7e3cd337dbbad08e8f4434a943a38 is fully read and mapped to Fabushi's existing source-neutral repository quality-health exact-revision acquisition/evidence orchestration owner: unknown=16,259, unread=16,234, omitted=0. The helper's applicable responsibilities are fresh exact origin/dev binding, exact tree/blob and gitlink provenance, required-manifest fail-closed checks, no mutable-worktree reads, Git-common linked-worktree storage, explicit offline/skipped evidence and bounded stable-version classification; no Telegram-specific Python watcher is copied. Parent exact-head TDRP 39514005648 and Rust 39514005658 both succeeded at a1dfd724295a985c286ad25e8d5628b794fcf056; the new index-43 mapping commit requires fresh exact-head Actions. Fixed-point gitlink closure has unresolved_gitlink_authorities=0 and Boost remains 582/582/open=0, while recursive reachability/disposition remains open (95 authorities, 133 gitlinks, 3,865 acquisition candidates, 4,674 generated inputs, 4,602 resource inputs, 4,255 tool inputs), therefore baseline_identity_accepted/source_closure_ready remain false. Next strict entry is index 44 .agents/skills/dependency-watch/scripts/watch_test.py@d3107c617be3e8780a99bebaeba19a4f235ae6ea."
+  "note": "Live upstream remains telegramdesktop/tdesktop@0eca52223cceed229932add1cc80792763120844/tree 1fc479a4b448aed851181bf4a4796d3015368348. Recursive total is 16,305. Strict index 44 .agents/skills/dependency-watch/scripts/watch_test.py@d3107c617be3e8780a99bebaeba19a4f235ae6ea is fully read and mapped to Fabushi's existing source-neutral repository quality-health integrated-regression / command-orchestration evidence owner: unknown=16,258, unread=16,233, omitted=0. The suite qualifies stable-version classification plus fresh exact remote snapshot behavior, dirty-worktree/HEAD non-mutation, no stale fallback on failed fetch, required-manifest failure, explicit offline-unverified state and Git-common linked-worktree storage; no Telegram-specific Python test owner is copied and no fresh upstream Python test execution is falsely claimed. Parent exact-head TDRP 39515594730 and Rust 39515594749 both succeeded at aa3b353daca8b75be04a534f5643465297263962; the new index-44 mapping commit requires fresh exact-head Actions. Fixed-point gitlink closure has unresolved_gitlink_authorities=0 and Boost remains 582/582/open=0, while recursive reachability/disposition remains open (95 authorities, 133 gitlinks, 3,865 acquisition candidates, 4,674 generated inputs, 4,602 resource inputs, 4,255 tool inputs), therefore baseline_identity_accepted/source_closure_ready remain false. Next strict entry is index 45 .agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c."
 }
