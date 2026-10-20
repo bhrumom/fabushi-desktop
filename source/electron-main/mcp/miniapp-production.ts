@@ -37,7 +37,7 @@ function miniAppTooling(context: ProductionServiceContext, ipc: unknown): MiniAp
   const hotspotBand = env.FABUSHI_DANDELION_HOTSPOT_BAND?.trim() || undefined;
   const hotspotPasswordFile = env.FABUSHI_DANDELION_HOTSPOT_PASSWORD_FILE?.trim() || undefined;
   const updateTrust = env.FABUSHI_DANDELION_UPDATE_TRUST?.trim();
-  let receive: { targetPoolId: string; caFile: string; certificateFile: string; privateKeyFile: string; bind?: string } | undefined;
+  let receive: { targetPoolId: string; caFile: string; certificateFile: string; privateKeyFile: string; bind?: string; maxSessions?: number; trafficLimitBytes?: number; rateBytesPerSecond?: number; timeoutMs?: number } | undefined;
   if (!binaryPath || !configPath || !preloadPath || roots.length === 0) return undefined;
   let pools: { id: string; label: string }[];
   try {
@@ -62,7 +62,17 @@ function miniAppTooling(context: ProductionServiceContext, ipc: unknown): MiniAp
     if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
       const value = parsed as Record<string, unknown>;
       if (typeof value.targetPoolId === "string" && typeof value.caFile === "string" && typeof value.certificateFile === "string" && typeof value.privateKeyFile === "string") {
-        receive = { targetPoolId: value.targetPoolId, caFile: value.caFile, certificateFile: value.certificateFile, privateKeyFile: value.privateKeyFile, bind: typeof value.bind === "string" ? value.bind : undefined };
+        receive = {
+          targetPoolId: value.targetPoolId,
+          caFile: value.caFile,
+          certificateFile: value.certificateFile,
+          privateKeyFile: value.privateKeyFile,
+          bind: typeof value.bind === "string" ? value.bind : undefined,
+          maxSessions: typeof value.maxSessions === "number" ? value.maxSessions : undefined,
+          trafficLimitBytes: typeof value.trafficLimitBytes === "number" ? value.trafficLimitBytes : undefined,
+          rateBytesPerSecond: typeof value.rateBytesPerSecond === "number" ? value.rateBytesPerSecond : undefined,
+          timeoutMs: typeof value.timeoutMs === "number" ? value.timeoutMs : undefined,
+        };
       }
     }
   } catch { return undefined; }

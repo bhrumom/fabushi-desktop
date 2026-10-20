@@ -34,7 +34,7 @@ export interface DandelionCliConfig {
   /** Trusted native compatibility data directory; never supplied by the renderer. */
   readonly compatDirectory?: string;
   /** Optional authenticated receive settings owned by the Host. */
-  readonly receive?: { readonly targetPoolId: string; readonly caFile: string; readonly certificateFile: string; readonly privateKeyFile: string; readonly bind?: string };
+  readonly receive?: { readonly targetPoolId: string; readonly caFile: string; readonly certificateFile: string; readonly privateKeyFile: string; readonly bind?: string; readonly maxSessions?: number; readonly trafficLimitBytes?: number; readonly rateBytesPerSecond?: number; readonly timeoutMs?: number };
   /** Trusted journal directory used by hotspot status/apply/stop. */
   readonly hotspotJournalDirectory?: string;
   readonly hotspotInterface?: string;
@@ -264,6 +264,14 @@ export function createDandelionCliBackend(
       pruneOperations();
       const operationId = randomUUID();
       const argv = ["receive", "--bind", settings.bind ?? "127.0.0.1:20000", "--ca-file", settings.caFile, "--certificate-file", settings.certificateFile, "--private-key-file", settings.privateKeyFile];
+      const maxSessions = receiveConfig.maxSessions ?? settings.maxSessions;
+      const trafficLimitBytes = receiveConfig.trafficLimitBytes ?? settings.trafficLimitBytes;
+      const rateBytesPerSecond = receiveConfig.rateBytesPerSecond ?? settings.rateBytesPerSecond;
+      const timeoutMs = receiveConfig.timeoutMs ?? settings.timeoutMs;
+      if (maxSessions !== undefined) argv.push("--max-sessions", String(maxSessions));
+      if (trafficLimitBytes !== undefined) argv.push("--traffic-limit-bytes", String(trafficLimitBytes));
+      if (rateBytesPerSecond !== undefined) argv.push("--rate-bytes-per-second", String(rateBytesPerSecond));
+      if (timeoutMs !== undefined) argv.push("--timeout-ms", String(timeoutMs));
       if (receiveConfig.once !== false) argv.push("--once");
       argv.push("--json");
       const handle = spawnCommand(argv);

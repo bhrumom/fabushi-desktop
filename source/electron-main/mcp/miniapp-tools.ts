@@ -38,7 +38,14 @@ export type MiniAppToolResult =
 
 export interface MiniAppSelectionEntry { readonly name: string; readonly size: number }
 export interface MiniAppTargetPool { readonly id: string; readonly label: string }
-export interface MiniAppReceiveConfig { readonly targetPoolId: string; readonly once?: boolean }
+export interface MiniAppReceiveConfig {
+  readonly targetPoolId: string;
+  readonly once?: boolean;
+  readonly maxSessions?: number;
+  readonly trafficLimitBytes?: number;
+  readonly rateBytesPerSecond?: number;
+  readonly timeoutMs?: number;
+}
 export interface MiniAppTransferSendConfig {
   readonly selectionId: string;
   readonly targetPoolId: string;
@@ -154,7 +161,14 @@ function handlersFor(backend: MiniAppToolBackend): Map<string, { capability: Min
     ["transfer.receive", MINIAPP_CAPABILITY.TRANSFER, true, async (args) => {
       if (!backend.receive) return fail("CAPABILITY_UNAVAILABLE", "宿主未提供接收能力");
       const targetPoolId = requiredId(args, "targetPoolId");
-      const received = await backend.receive({ targetPoolId, once: optionalBoolean(args, "once") });
+      const received = await backend.receive({
+        targetPoolId,
+        once: optionalBoolean(args, "once"),
+        maxSessions: optionalInteger(args, "maxSessions", 1, 16),
+        trafficLimitBytes: optionalInteger(args, "trafficLimitBytes", 1, 1_073_741_824),
+        rateBytesPerSecond: optionalInteger(args, "rateBytesPerSecond", 1, 1_073_741_824),
+        timeoutMs: optionalInteger(args, "timeoutMs", 100, 60_000),
+      });
       return { ok: true, data: received };
     }],
     ["transfer.status", MINIAPP_CAPABILITY.TRANSFER, false, async (args) => ({ ok: true, data: await backend.status(requiredId(args, "operationId")) })],

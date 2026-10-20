@@ -12,7 +12,7 @@ const expectedSourceSha = process.env.OBF_EXPECTED_SOURCE_SHA?.trim() || sourceS
 const evidenceRoot = process.env.MINIAPP_EVIDENCE_DIR?.trim()
   || path.join(tmpdir(), `fabushi-miniapp-acceptance-${sourceSha.slice(0, 12) || 'unknown'}`);
 const appId = 'org.fabushi.global-dandelion';
-const packageDigest = '5c41325a52ceb52ba40ad9615d973c38e1d9873484698960b8bc76675f4df492';
+const packageDigest = 'a08f6fa285353bdb77c4376bd87ca747599597c03098d202359ba2e5f8b0f697';
 const preferenceKey = 'global-dandelion-display-v1';
 const maxInputBytes = 16 * 1024 * 1024;
 const harnessSource = process.env.FABUSHI_MINIAPP_HARNESS_SOURCE || process.env.GITHUB_SHA || sourceSha;
@@ -215,7 +215,7 @@ async function refreshUntilCatalogItem(page: Page): Promise<{ dialog: Locator; s
   const { dialog, section } = await openPlugins(page);
   const row = section.locator('li').filter({ hasText: packageDigest });
   await expect(row, 'public approved catalog must expose the exact pinned package').toHaveCount(1, { timeout: 60_000 });
-  await expect(row).toContainText('0.3.1');
+  await expect(row).toContainText('0.3.2');
   await expect(row).toContainText('bhrumom');
   return { dialog, section, row };
 }
@@ -272,7 +272,7 @@ async function exportAndVerifyReport(page: Page, appPid: number, downloadDir: st
     const report: unknown = JSON.parse(await readFile(reportPath, 'utf8'));
     expect(report).toMatchObject({
       schemaVersion: 1,
-      appVersion: '0.3.1',
+      appVersion: '0.3.2',
       verification: 'local-packet-roundtrip',
       networkSent: false,
       status: 'complete',
@@ -391,7 +391,7 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
       binarySource: sourceSha,
       harnessSource,
       appId,
-      version: '0.3.1',
+      version: '0.3.2',
       packageDigest,
       inputBytes: fixtureStat.size,
       launchModes: [] as string[],
