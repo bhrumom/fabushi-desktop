@@ -38,6 +38,14 @@ An atlas draft records the exact source revision, stable area name, declared lay
 
 The canonical atlas evidence identifies the exact text approved by the declared owner and the commit that made it repository instruction. Amendments preserve the prior identity/history, state why source drift requires the narrow edit, and record any intentional rename as an identity reset. Area-map evidence must identify the atlas area it refines and prove it does not contradict the atlas boundary. Unapproved drafts, stale exact-source bindings, coverage gaps, contradictory maps, or a generator attempting to publish its own ownership decisions remain non-passing.
 
+## Repository responsibility-area-map evidence
+
+Passing area-map evidence records the exact source revision, parent atlas area and exact approved map text, then preserves the map's five semantic parts: Modules file/file-group ownership facts; Placement rules and forbidden homes; checkable Invariants with approval provenance; Leave-alone rationale; and Direction. It records the reviewer/source facts that motivated each material placement or boundary statement, stale-file-reference results, atlas-consistency checks, and the declared owner's approval identity/date or equivalent durable provenance. Unapproved invariant text is explicitly labeled proposal-only.
+
+Map-amendment evidence identifies the prior approved map, exact source/task change that made the amendment necessary, the narrow before/after map diff, and whether the edit changes only Modules facts or also semantic Placement/Invariants/Leave-alone/Direction. A mechanical deletion/move/consolidation may claim the narrow path only when semantic map policy is unchanged. A semantic policy change requires its ordinary owner approval and stronger task proof. Evidence also records re-survey/revalidation when repeated placement findings show the map no longer explains the area reliably.
+
+A map is non-passing when it is stale, contradicts its atlas area, contains ambiguous/uncheckable invariants presented as approved, widens ownership to normalize a known break, lacks required owner approval, or becomes a parallel repository/product owner. Area-map evidence can prove placement governance and task preconditions; it cannot by itself prove product behavior, safe execution, security, successful build/runtime, packaging or release acceptance.
+
 Change-ratchet evidence binds exact base/head (or staged snapshot), changed-path scope, errors/warnings, and the direct proof selected for the task class. Preserve move-only novel/lost-line results, finding verification status, mutation cases for characterization tests, before/after metrics, required build/test results, and any explicit dropped-item reason. A clean scanner report is supporting evidence only; it cannot prove behavior preservation, successful shipping, or release acceptance by itself.
 
 ## Repository quality-task class evidence
