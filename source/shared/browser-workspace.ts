@@ -59,6 +59,14 @@ export interface BrowserWorkspaceDownload {
   readonly startedAtMs: number;
 }
 
+export type BrowserAgentControlState = "available" | "paused" | "taken-over" | "stopped";
+
+export interface BrowserAgentControlSnapshot {
+  readonly state: BrowserAgentControlState;
+  readonly epoch: number;
+  readonly activeOperationId: string | null;
+}
+
 export interface BrowserWorkspaceSnapshot {
   readonly workspaceId: string;
   readonly conversationId: string;
@@ -68,6 +76,7 @@ export interface BrowserWorkspaceSnapshot {
   readonly bookmarks: readonly BrowserWorkspaceBookmark[];
   readonly history: readonly BrowserWorkspaceHistoryEntry[];
   readonly downloads: readonly BrowserWorkspaceDownload[];
+  readonly agentControl: BrowserAgentControlSnapshot;
 }
 
 export type BrowserWorkspaceCommand =
@@ -81,7 +90,8 @@ export type BrowserWorkspaceCommand =
   | { readonly type: "back" | "forward" | "reload" | "stop"; readonly conversationId: string; readonly tabId: string }
   | { readonly type: "set-zoom"; readonly conversationId: string; readonly tabId: string; readonly factor: number }
   | { readonly type: "add-bookmark"; readonly conversationId: string; readonly tabId: string }
-  | { readonly type: "remove-bookmark"; readonly conversationId: string; readonly bookmarkId: string };
+  | { readonly type: "remove-bookmark"; readonly conversationId: string; readonly bookmarkId: string }
+  | { readonly type: "agent-control"; readonly conversationId: string; readonly action: "pause" | "resume" | "takeover" | "stop" };
 
 export interface BrowserWorkspaceDesktopBridge {
   activate(conversationId: string, bounds: BrowserWorkspaceBounds): Promise<BrowserWorkspaceSnapshot>;
@@ -98,6 +108,7 @@ export interface BrowserWorkspaceDesktopBridge {
   setZoom(conversationId: string, tabId: string, factor: number): Promise<BrowserWorkspaceSnapshot>;
   addBookmark(conversationId: string, tabId: string): Promise<BrowserWorkspaceSnapshot>;
   removeBookmark(conversationId: string, bookmarkId: string): Promise<BrowserWorkspaceSnapshot>;
+  setAgentControl(conversationId: string, action: "pause" | "resume" | "takeover" | "stop"): Promise<BrowserWorkspaceSnapshot>;
   onState(listener: (snapshot: BrowserWorkspaceSnapshot) => void): () => void;
 }
 
@@ -179,6 +190,10 @@ export function parseBrowserWorkspaceCommand(value: unknown): BrowserWorkspaceCo
     case "remove-bookmark":
       return typeof value.bookmarkId === "string" && value.bookmarkId.length > 0 && value.bookmarkId.length <= 128
         ? { type: "remove-bookmark", conversationId, bookmarkId: value.bookmarkId }
+        : null;
+    case "agent-control":
+      return ["pause", "resume", "takeover", "stop"].includes(String(value.action))
+        ? { type: "agent-control", conversationId, action: value.action as "pause" | "resume" | "takeover" | "stop" }
         : null;
     default:
       return null;

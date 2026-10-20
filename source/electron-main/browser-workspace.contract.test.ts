@@ -322,6 +322,7 @@ test("agent action snapshot mints opaque generation refs and fixed actions rejec
     workspaceId: state.workspaceId,
     tabId: tab.id,
     expectedGeneration: tab.generation,
+    expectedControlEpoch: state.agentControl.epoch,
     operationId: "op-snapshot",
   });
   assert.equal(snap.ok, true);
@@ -335,6 +336,7 @@ test("agent action snapshot mints opaque generation refs and fixed actions rejec
     workspaceId: state.workspaceId,
     tabId: tab.id,
     expectedGeneration: tab.generation,
+    expectedControlEpoch: state.agentControl.epoch,
     operationId: "op-click",
     ref: snap.snapshot!.elements[0]!.ref,
   });
@@ -366,6 +368,7 @@ test("agent select-option is generation-fenced and rejects invalid payloads befo
     workspaceId: state.workspaceId,
     tabId: tab.id,
     expectedGeneration: tab.generation,
+    expectedControlEpoch: state.agentControl.epoch,
     operationId: "op-select-snapshot",
   });
   assert.equal(snap.ok, true);
@@ -377,6 +380,7 @@ test("agent select-option is generation-fenced and rejects invalid payloads befo
     workspaceId: state.workspaceId,
     tabId: tab.id,
     expectedGeneration: tab.generation,
+    expectedControlEpoch: state.agentControl.epoch,
     operationId: "op-select",
     ref: snap.snapshot!.elements[0]!.ref,
     values: ["ready"],
@@ -422,6 +426,7 @@ test("agent actions fence workspace identity and expose only bounded fixed keybo
     workspaceId: state.workspaceId,
     tabId: tab.id,
     expectedGeneration: tab.generation,
+    expectedControlEpoch: state.agentControl.epoch,
     operationId: "op-key",
     key: "Enter",
   });
@@ -466,6 +471,7 @@ test("agent target discovery and tab management stay scoped to the conversation 
     action: "new",
     conversationId: "bot-a",
     operationId: "new-a",
+    expectedControlEpoch: resolved.controlEpoch,
     address: "https://example.com/local",
   });
   assert.equal(created.ok, true);
@@ -479,6 +485,7 @@ test("agent target discovery and tab management stay scoped to the conversation 
     action: "select",
     conversationId: "bot-a",
     operationId: "select-a",
+    expectedControlEpoch: resolved.controlEpoch,
     tabId: state.activeTabId,
   });
   assert.equal(selected.ok, true);
@@ -490,12 +497,99 @@ test("agent target discovery and tab management stay scoped to the conversation 
     action: "close",
     conversationId: "bot-a",
     operationId: "close-a",
+    expectedControlEpoch: resolved.controlEpoch,
     tabId: newTab!.tabId,
   });
   assert.equal(closed.ok, true);
   if (!closed.ok) return;
   assert.equal(closed.tabs?.length, 1);
   assert.equal(closed.tabs?.[0]?.tabId, state.activeTabId);
+});
+
+test("user takeover rotates the Main-owned mutation lease and requires an explicit resume", async () => {
+  const h = harness();
+  h.service.attachWindow(new FakeHostWindow());
+  const state = await h.invoke({ type: "activate", conversationId: "bot-a", bounds: { x: 1, y: 1, width: 500, height: 500 } });
+  const tab = state.tabs[0]!;
+  const resolved = await h.service.executeAgentAction({
+    type: "resolve-target",
+    conversationId: "bot-a",
+    operationId: "lease-resolve",
+  });
+  assert.equal(resolved.ok, true);
+  if (!resolved.ok) return;
+  const snap = await h.service.executeAgentAction({
+    type: "snapshot",
+    conversationId: "bot-a",
+    workspaceId: state.workspaceId,
+    tabId: tab.id,
+    expectedGeneration: tab.generation,
+    expectedControlEpoch: resolved.controlEpoch,
+    operationId: "lease-snapshot",
+  });
+  assert.equal(snap.ok, true);
+  if (!snap.ok) return;
+  const ref = snap.snapshot!.elements[0]!.ref;
+
+  const taken = await h.invoke({ type: "agent-control", conversationId: "bot-a", action: "takeover" });
+  assert.equal(taken.agentControl.state, "taken-over");
+  assert.ok(taken.agentControl.epoch > resolved.controlEpoch);
+
+  await assert.rejects(
+    () => h.service.executeAgentAction({
+      type: "click",
+      conversationId: "bot-a",
+      workspaceId: state.workspaceId,
+      tabId: tab.id,
+      expectedGeneration: tab.generation,
+      expectedControlEpoch: resolved.controlEpoch,
+      operationId: "lease-stale-click",
+      ref,
+    }),
+    /BROWSER_AGENT_CONTROL_STALE/,
+  );
+
+  const fresh = await h.service.executeAgentAction({
+    type: "resolve-target",
+    conversationId: "bot-a",
+    operationId: "lease-fresh-resolve",
+  });
+  assert.equal(fresh.ok, true);
+  if (!fresh.ok) return;
+  await assert.rejects(
+    () => h.service.executeAgentAction({
+      type: "click",
+      conversationId: "bot-a",
+      workspaceId: state.workspaceId,
+      tabId: tab.id,
+      expectedGeneration: tab.generation,
+      expectedControlEpoch: fresh.controlEpoch,
+      operationId: "lease-revoked-click",
+      ref,
+    }),
+    /BROWSER_AGENT_CONTROL_REVOKED/,
+  );
+
+  const resumed = await h.invoke({ type: "agent-control", conversationId: "bot-a", action: "resume" });
+  assert.equal(resumed.agentControl.state, "available");
+  const resumedTarget = await h.service.executeAgentAction({
+    type: "resolve-target",
+    conversationId: "bot-a",
+    operationId: "lease-resume-resolve",
+  });
+  assert.equal(resumedTarget.ok, true);
+  if (!resumedTarget.ok) return;
+  const clicked = await h.service.executeAgentAction({
+    type: "click",
+    conversationId: "bot-a",
+    workspaceId: state.workspaceId,
+    tabId: tab.id,
+    expectedGeneration: tab.generation,
+    expectedControlEpoch: resumedTarget.controlEpoch,
+    operationId: "lease-resumed-click",
+    ref,
+  });
+  assert.equal(clicked.ok, true);
 });
 
 test("invalid commands are rejected before any view is created", async () => {

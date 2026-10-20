@@ -168,6 +168,9 @@ interface RuntimeWorkspace {
   bounds: BrowserWorkspaceBounds;
   visible: boolean;
   downloads: BrowserWorkspaceDownload[];
+  agentControlState: "available" | "paused" | "taken-over" | "stopped";
+  agentControlEpoch: number;
+  activeAgentOperationId: string | null;
 }
 
 function record(value: unknown): Record<string, unknown> | null {
@@ -354,6 +357,11 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
       bookmarks: account.bookmarks,
       history: account.history,
       downloads: workspace.downloads,
+      agentControl: {
+        state: workspace.agentControlState,
+        epoch: workspace.agentControlEpoch,
+        activeOperationId: workspace.activeAgentOperationId,
+      },
     };
   };
 
@@ -610,6 +618,9 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
       bounds: { x: 0, y: 0, width: 1, height: 1 },
       visible: false,
       downloads: [],
+      agentControlState: "available",
+      agentControlEpoch: 1,
+      activeAgentOperationId: null,
     };
     workspaces.set(workspace.id, workspace);
     for (const savedTab of saved?.tabs ?? []) {
@@ -746,6 +757,18 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
         persist();
         return publish(workspace);
       }
+      case "agent-control": {
+        workspace.agentControlEpoch += 1;
+        workspace.activeAgentOperationId = null;
+        workspace.agentControlState = command.action === "resume"
+          ? "available"
+          : command.action === "pause"
+            ? "paused"
+            : command.action === "takeover"
+              ? "taken-over"
+              : "stopped";
+        return publish(workspace);
+      }
     }
   };
 
@@ -760,6 +783,7 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
     workspaceId: workspace.id,
     tabId: tab.id,
     generation: tab.generation,
+    controlEpoch: workspace.agentControlEpoch,
     observedUrl: tab.view.webContents.getURL() || tab.url,
     observedTitle: tab.view.webContents.getTitle() || tab.title,
     ...extra,
@@ -790,7 +814,13 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
       return agentResult(action.operationId, workspace, tab, { tabs: agentTabs(workspace) });
     }
 
+    const requireControlLease = (expectedControlEpoch: number, mutation: boolean): void => {
+      if (workspace.agentControlEpoch !== expectedControlEpoch) throw new Error("BROWSER_AGENT_CONTROL_STALE");
+      if (mutation && workspace.agentControlState !== "available") throw new Error("BROWSER_AGENT_CONTROL_REVOKED");
+    };
+
     if (action.type === "tabs") {
+      if (action.action !== "list") requireControlLease(action.expectedControlEpoch!, true);
       switch (action.action) {
         case "list":
           break;
@@ -828,9 +858,14 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
     if (workspace.id !== action.workspaceId) throw new Error("BROWSER_WORKSPACE_MISMATCH");
     const tab = requireTab(workspace, action.tabId);
     if (tab.generation !== action.expectedGeneration) throw new Error("BROWSER_STALE_GENERATION");
+    const mutation = !["snapshot", "screenshot", "wait"].includes(action.type);
+    requireControlLease(action.expectedControlEpoch, mutation);
     const page = tab.view.webContents;
+    workspace.activeAgentOperationId = action.operationId;
+    publish(workspace);
 
-    switch (action.type) {
+    try {
+      switch (action.type) {
       case "snapshot": {
         const captured = await captureLocalBrowserSnapshot(page, tab.generation);
         if (tab.generation !== action.expectedGeneration) throw new Error("BROWSER_STALE_GENERATION");
@@ -874,6 +909,7 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
         let matched = false;
         do {
           if (tab.generation !== action.expectedGeneration) throw new Error("BROWSER_STALE_GENERATION");
+          requireControlLease(action.expectedControlEpoch, false);
           const refReady = locator == null || await localBrowserRefStillMatches(page, locator);
           const textReady = action.text == null || await localBrowserPageContainsText(page, action.text);
           matched = refReady && textReady;
@@ -901,6 +937,12 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
         tab.error = null;
         page.reload();
         return agentResult(action.operationId, workspace, tab);
+      }
+    } finally {
+      if (workspace.activeAgentOperationId === action.operationId) {
+        workspace.activeAgentOperationId = null;
+        publish(workspace);
+      }
     }
   };
 

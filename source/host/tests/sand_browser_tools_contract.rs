@@ -437,6 +437,21 @@ fn local_select_option_uses_the_generation_fenced_workspace_ref_path() {
 }
 
 #[test]
+fn local_browser_actions_carry_main_owned_control_epoch_and_tab_mutations_resolve_it() {
+    for required in [
+        "target.get(\"controlEpoch\")",
+        "\"expectedControlEpoch\".into(), Value::from(control_epoch)",
+        "if action != \"list\" {",
+        "request[\"expectedControlEpoch\"] = target.get(\"controlEpoch\")",
+    ] {
+        assert!(
+            LOCAL_BROWSER_TOOLS_SOURCE.contains(required),
+            "local control lease lost invariant: {required}"
+        );
+    }
+}
+
+#[test]
 fn unsupported_local_browser_action_fails_before_auto_review_or_relay() {
     let reviewed = Arc::new(Mutex::new(Vec::<String>::new()));
     let reviewed_sink = Arc::clone(&reviewed);

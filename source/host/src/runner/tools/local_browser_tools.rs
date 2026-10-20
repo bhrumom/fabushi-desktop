@@ -113,12 +113,19 @@ impl LocalBrowserCoordinatorExecutor {
             .ok_or_else(|| ProviderSessionError::Tool(
                 "Local Browser Workspace target is missing generation.".into(),
             ))?;
+        let control_epoch = target
+            .get("controlEpoch")
+            .and_then(Value::as_u64)
+            .ok_or_else(|| ProviderSessionError::Tool(
+                "Local Browser Workspace target is missing controlEpoch.".into(),
+            ))?;
         Ok(Map::from_iter([
             ("type".into(), Value::String(action.to_string())),
             ("conversationId".into(), Value::String(self.conversation_id.clone())),
             ("workspaceId".into(), Value::String(workspace_id.to_string())),
             ("tabId".into(), Value::String(tab_id.to_string())),
             ("expectedGeneration".into(), Value::from(generation)),
+            ("expectedControlEpoch".into(), Value::from(control_epoch)),
             ("operationId".into(), Value::String(tool_call_id.to_string())),
         ]))
     }
@@ -169,6 +176,12 @@ impl LocalBrowserCoordinatorExecutor {
             "operationId": tool_call_id,
             "action": action,
         });
+        if action != "list" {
+            let target = self.resolve_target(args, tool_call_id)?;
+            request["expectedControlEpoch"] = target.get("controlEpoch").cloned().ok_or_else(|| ProviderSessionError::Tool(
+                "Local Browser Workspace target is missing controlEpoch.".into(),
+            ))?;
+        }
         if action == "new" {
             if let Some(url) = args.get("url").and_then(Value::as_str) {
                 request["address"] = Value::String(url.to_string());

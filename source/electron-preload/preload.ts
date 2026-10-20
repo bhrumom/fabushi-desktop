@@ -163,6 +163,7 @@ export function createDesktopPreloadBridge(options: {
       setZoom: (conversationId: string, tabId: string, factor: number) => ipc.invoke(BROWSER_WORKSPACE_INVOKE_CHANNEL, { type: "set-zoom", conversationId, tabId, factor }),
       addBookmark: (conversationId: string, tabId: string) => ipc.invoke(BROWSER_WORKSPACE_INVOKE_CHANNEL, { type: "add-bookmark", conversationId, tabId }),
       removeBookmark: (conversationId: string, bookmarkId: string) => ipc.invoke(BROWSER_WORKSPACE_INVOKE_CHANNEL, { type: "remove-bookmark", conversationId, bookmarkId }),
+      setAgentControl: (conversationId: string, action: "pause" | "resume" | "takeover" | "stop") => ipc.invoke(BROWSER_WORKSPACE_INVOKE_CHANNEL, { type: "agent-control", conversationId, action }),
       onState: (listener: (payload: unknown) => void) => subscribeIpc(ipc, BROWSER_WORKSPACE_STATE_CHANNEL, listener),
     },
     marketplaceMiniApps: {

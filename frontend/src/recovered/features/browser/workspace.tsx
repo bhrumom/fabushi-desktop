@@ -159,6 +159,22 @@ export function BrowserWorkspacePane({ bridge, conversationId, onClose }: Browse
         <button aria-pressed={sidebar === "bookmarks"} onClick={() => setSidebarMode("bookmarks")} type="button">Bookmarks</button>
         <button aria-pressed={sidebar === "history"} onClick={() => setSidebarMode("history")} type="button">History</button>
         <button aria-pressed={sidebar === "downloads"} onClick={() => setSidebarMode("downloads")} type="button">Downloads</button>
+        {snapshot == null ? null : (
+          <>
+            <span className="sand-browser-workspace__agent-state" aria-live="polite">
+              Agent: {snapshot.agentControl.activeOperationId != null ? "working" : snapshot.agentControl.state}
+            </span>
+            {snapshot.agentControl.state === "available" ? (
+              <>
+                <button onClick={() => void settle(bridge.setAgentControl(conversationId, "pause"))} type="button">Pause agent</button>
+                <button onClick={() => void settle(bridge.setAgentControl(conversationId, "takeover"))} type="button">Take over</button>
+                <button onClick={() => void settle(bridge.setAgentControl(conversationId, "stop"))} type="button">Stop agent</button>
+              </>
+            ) : (
+              <button onClick={() => void settle(bridge.setAgentControl(conversationId, "resume"))} type="button">Resume agent</button>
+            )}
+          </>
+        )}
       </div>
 
       {error == null && activeTab?.error == null ? null : (

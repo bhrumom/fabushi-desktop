@@ -16,6 +16,7 @@ export interface LocalBrowserAgentTarget {
   readonly workspaceId: string;
   readonly tabId: string;
   readonly expectedGeneration: number;
+  readonly expectedControlEpoch: number;
   readonly operationId: string;
 }
 
@@ -33,6 +34,7 @@ export interface LocalBrowserAgentTabsAction {
   readonly action: "list" | "new" | "select" | "close";
   readonly tabId?: string;
   readonly address?: string;
+  readonly expectedControlEpoch?: number;
 }
 
 export type LocalBrowserAgentAction =
@@ -90,6 +92,7 @@ export type LocalBrowserAgentActionResult =
       readonly workspaceId: string;
       readonly tabId: string;
       readonly generation: number;
+      readonly controlEpoch: number;
       readonly observedUrl: string;
       readonly observedTitle: string;
       readonly snapshot?: LocalBrowserStructuredSnapshot;
@@ -148,20 +151,27 @@ export function parseLocalBrowserAgentAction(value: unknown): LocalBrowserAgentA
     if (source.tabId !== undefined && tabId == null) return null;
     if (source.address !== undefined && address == null) return null;
     if ((action === "select" || action === "close") && tabId == null) return null;
+    const expectedControlEpoch = source.expectedControlEpoch === undefined
+      ? undefined
+      : finiteInteger(source.expectedControlEpoch, 1, Number.MAX_SAFE_INTEGER);
+    if (source.expectedControlEpoch !== undefined && expectedControlEpoch == null) return null;
+    if (action !== "list" && expectedControlEpoch == null) return null;
     return {
       type: "tabs",
       ...base,
       action,
       ...(tabId == null ? {} : { tabId }),
       ...(address == null ? {} : { address }),
+      ...(expectedControlEpoch == null ? {} : { expectedControlEpoch }),
     };
   }
 
   const workspaceId = boundedString(source.workspaceId, 128);
   const tabId = boundedString(source.tabId, 128);
   const expectedGeneration = finiteInteger(source.expectedGeneration, 0, Number.MAX_SAFE_INTEGER);
-  if (workspaceId == null || tabId == null || expectedGeneration == null) return null;
-  const target = { ...base, workspaceId, tabId, expectedGeneration };
+  const expectedControlEpoch = finiteInteger(source.expectedControlEpoch, 1, Number.MAX_SAFE_INTEGER);
+  if (workspaceId == null || tabId == null || expectedGeneration == null || expectedControlEpoch == null) return null;
+  const target = { ...base, workspaceId, tabId, expectedGeneration, expectedControlEpoch };
 
   switch (source.type) {
     case "snapshot":
