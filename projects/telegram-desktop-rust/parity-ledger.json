@@ -6,10 +6,10 @@
   "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
   "coverage": {
     "source_entries_total": 16201,
-    "unknown": 16167,
-    "unread": 16142,
+    "unknown": 16166,
+    "unread": 16141,
     "omitted": 0,
-    "responsibilities_total": 54,
+    "responsibilities_total": 55,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -13433,6 +13433,274 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral repository-quality include-graph contract read from telegramdesktop/tdesktop authority; no upstream Python implementation copied into Fabushi shipping runtime.",
       "notes": "Recursive authority index 31 immediately after includes.py index 30 is metrics.py@ebab29607cb52782899d5424636f0bd5e0c126cd. Complete source, production caller report.py, direct UnusedTests and sources.py LANG_FILE boundary were read. This closes only one source entry: unknown=16,167, unread=16,142, omitted=0. PR #158 run 39441511131 is historical-only for this newer target commit; exact-head verification is pending. Validator ownership is intentionally bound to the unique AGENTS.md metric-not-acceptance sentence; broader quality-health headings remain shared-owner context rather than duplicate target-symbol ownership.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
+      "source_path": ".agents/skills/code-health/scripts/report.py",
+      "source_blob_sha": "a1177613670e933694f545f387ca7e7ed8cf0ee0",
+      "source_kind": "repository_quality_report_aggregation_and_finding_lifecycle",
+      "module_id": "tdesktop.code-health-report-aggregation",
+      "responsibility_id": "TDRP-R9-CODE-HEALTH-REPORT-AGGREGATION-001",
+      "source_symbols": [
+        "LIMITS",
+        "CLASS_BY_KIND",
+        "MAP_PATH",
+        "short",
+        "file_limit",
+        "snapshot",
+        "map_references",
+        "findings",
+        "merge",
+        "markdown"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-REPOSITORY-RESPONSIBILITY-GOVERNANCE",
+        "CAP-REPOSITORY-TASK-EVIDENCE"
+      ],
+      "dependency_ids": [
+        ".agents/skills/code-health/scripts/atlas.py",
+        ".agents/skills/code-health/scripts/clones.py",
+        ".agents/skills/code-health/scripts/cmake_model.py",
+        ".agents/skills/code-health/scripts/cpp_text.py",
+        ".agents/skills/code-health/scripts/history.py",
+        ".agents/skills/code-health/scripts/includes.py",
+        ".agents/skills/code-health/scripts/metrics.py",
+        ".agents/skills/code-health/scripts/health.py",
+        ".agents/skills/code-health/scripts/health_test.py",
+        "Fabushi repository quality-health governance",
+        "Fabushi repository quality-health command orchestration governance",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/code-health-report-script-complete-read.md",
+      "behavior_contract": "Compose qualified exact-source repository-quality facts into reproducible snapshots, thresholded stable-identity findings, lifecycle-preserving ledgers and human-readable reports without becoming a source owner, task router or acceptance gate.",
+      "state_machine": "exact acquired source + qualified atlas/build/text/include/clone/history/metric facts -> snapshot -> thresholded stable-id findings -> merge with prior canonical finding history -> report projection; missing/stale/failed inputs remain incomplete/non-passing and never become clean zero findings",
+      "side_effects": [
+        "The report helper itself is read-only aggregation/presentation; durable publication is owned by the existing health command orchestration and canonical quality ledger."
+      ],
+      "failure_cases": [
+        "Stale, mutable or partial source/dependency inputs are presented as a canonical report",
+        "A failed/missing instrument is silently converted to zero findings",
+        "Threshold or score output is presented as product/release acceptance",
+        "Finding identity changes manufacture history instead of preserving first-seen/resolved lifecycle",
+        "Fallback area classification overrides an approved atlas",
+        "Report aggregation creates a second findings store, owner graph, task queue or source-specific quality runtime"
+      ],
+      "ui_disposition": "Not applicable; repository quality evidence and report projection only.",
+      "non_ui_responsibilities": [
+        "Exact-source snapshot composition across existing qualified instruments",
+        "Report-owned investigation thresholds and class projection",
+        "Per-file, per-area and global quality rollups",
+        "Stale area-map reference detection",
+        "Stable finding identity, scoring and typed payload construction",
+        "First-seen/open/resolved finding lifecycle merge with bounded resolved retention",
+        "Human-readable report projection and prior-run deltas",
+        "Explicit separation of prioritization evidence from acceptance/ownership/task-routing authority"
+      ],
+      "platform_delta": "Fabushi already owns source-neutral repository quality-health evidence, stable finding lifecycle and command publication. Preserve report.py behavior there; do not retain Telegram Python report runtime or duplicate canonical findings/task/ownership state.",
+      "existing_owner_candidates": [
+        "AGENTS.md Repository quality-health governance",
+        "AGENTS.md Repository quality-health command orchestration governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "existing_owner": "Fabushi repository quality-health evidence and canonical finding-lifecycle governance",
+      "rejected_existing_owners": [
+        "Source-text/build/include/clone/history instruments own their facts, not cross-instrument finding aggregation",
+        "Responsibility atlas owns approved area classification, not quality finding lifecycle",
+        "Health command orchestration owns acquisition/publication/commands, while report aggregation owns finding/report semantics",
+        "Copying report.py would create a Telegram-specific parallel quality runtime/findings ledger"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md"
+      ],
+      "fabushi_target_symbols": [
+        "Persistent findings use stable semantic identities and lifecycle state."
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "Upstream report.py is repository-development quality instrumentation rather than shipping product logic; its applicable semantics already exist as source-neutral Fabushi governance/evidence contracts.",
+      "command_event_contracts": [
+        "exact source + qualified instrument outputs -> one reproducible quality snapshot",
+        "snapshot -> stable-id typed findings using report-owned thresholds and prioritization scores",
+        "prior finding ledger + current findings + checked_at -> preserved first-seen/open/resolved lifecycle",
+        "snapshot + merged ledger + previous totals -> human-readable report projection",
+        "missing/stale/failed input -> explicit incomplete/non-passing evidence, never clean zero",
+        "finding/class/score -> existing review/task lifecycle only; no self-routing or acceptance"
+      ],
+      "state_owner": "Existing Fabushi canonical repository quality-health finding/evidence ledger",
+      "lifecycle_owner": "Existing repository quality-health command orchestration and ordinary review/task lifecycle",
+      "persistence_and_restart": "report.py's pure aggregation owns no independent persistence. Durable first-seen/open/resolved history is published atomically by the existing canonical quality-health command owner and remains bound to the exact scanned revision; task-local reports are recomputable evidence only.",
+      "concurrency_and_cancellation": "Aggregation is snapshot-bound and read-only. Cancellation, partial acquisition or instrument failure cannot advance canonical findings/history or publish a clean report.",
+      "security_boundary": "Report metrics/findings authorize no source mutation, deletion, ownership change, task approval, credential action, product behavior or release verdict.",
+      "network_service_dependencies": [
+        "GitHub repository authority",
+        "GitHub Actions hosted runners",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi repository quality/release workflow / GitHub Actions",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "Independent exact-head GitHub Actions verification of this report.py mapping commit is pending."
+      ],
+      "production_entrypoints": [
+        "AGENTS.md -> Repository quality-health governance -> stable finding identity/lifecycle",
+        "AGENTS.md -> Repository quality-health command orchestration governance -> measurements/findings/reporting delegation"
+      ],
+      "production_evidence": [
+        "path:AGENTS.md#Repository quality-health governance",
+        "path:AGENTS.md#Repository quality-health command orchestration governance"
+      ],
+      "test_evidence": [
+        "dossier:projects/telegram-desktop-rust/dossiers/code-health-report-script-complete-read.md",
+        "upstream-report:.agents/skills/code-health/scripts/report.py@a1177613670e933694f545f387ca7e7ed8cf0ee0",
+        "upstream-health:.agents/skills/code-health/scripts/health.py@f08675ef7a03c016d85f91c60b8f29e99454abe9",
+        "upstream-health-test:.agents/skills/code-health/scripts/health_test.py@a79addaaceb35848dbd17e94e01ea428aede7788",
+        "upstream-code-health-skill:.agents/skills/code-health/SKILL.md@6885938b3d186b55f5d69cb8b9b9a96bbca0e097",
+        "health_test.MapTests.test_map_naming_a_missing_file_is_stale",
+        "health_test.AtlasTests.test_scan_names_areas_by_the_atlas",
+        "health_test.StateTests.test_recorded_scan_writes_state_once_a_day",
+        "health_test.StateTests.test_working_tree_scan_leaves_the_ledger_alone"
+      ],
+      "target_commit": "15fc3dc90dd3f7f19e67b5c261ce95e0498f6dcf",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development and quality evidence governance",
+      "composition_slot": "Exact-source quality snapshot, stable finding lifecycle and report projection",
+      "capability_component": "Source-neutral repository quality report aggregation evidence",
+      "variation_axes": [
+        "translation unit vs header thresholds",
+        "approved atlas vs bounded fallback area",
+        "finding kind/class thresholds",
+        "current vs prior finding presence",
+        "open/ignored/resolved lifecycle",
+        "first run vs prior-run delta",
+        "durable exact-ref scan vs task-local working-tree report",
+        "complete qualified inputs vs unavailable/stale/failed evidence"
+      ],
+      "shared_owner_contracts": [
+        "Repository quality-health governance",
+        "Repository quality-health command orchestration governance",
+        "Repository responsibility-atlas evidence",
+        "Repository source-build/text/include/clone/history evidence",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract"
+      ],
+      "duplicate_root_check": "No Telegram Python report runtime, second quality findings ledger, second responsibility atlas, second ownership graph, second task queue or release owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Stable finding identity and first-seen/open/resolved history remain with the canonical repository quality ledger and exact scanned revision; recomputed reports cannot manufacture resolution or erase unknown/failed input state.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to workflow governance",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CODE-HEALTH-REPORT-AGGREGATION-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CODE-HEALTH-REPORT-EXACT-SNAPSHOT-001",
+        "ORA-TDRP-CODE-HEALTH-STABLE-FINDING-LIFECYCLE-001",
+        "ORA-TDRP-CODE-HEALTH-REPORT-PRESENTATION-BOUNDARY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CODE-HEALTH-REPORT-PROVENANCE-001",
+        "INV-TDRP-CODE-HEALTH-REPORT-NO-SECOND-OWNER-001",
+        "INV-TDRP-CODE-HEALTH-REPORT-NO-ACCEPTANCE-001"
+      ],
+      "unit_case_ids": [
+        "health_test.MapTests.test_map_naming_a_missing_file_is_stale",
+        "health_test.AtlasTests.test_scan_names_areas_by_the_atlas"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CODE-HEALTH-REPORT-AGGREGATION-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-CODE-HEALTH-REPORT-HEALTH-COMMAND-001",
+        "INT-TDRP-CODE-HEALTH-REPORT-QUALIFIED-INSTRUMENTS-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-CODE-HEALTH-FINDING-LIFECYCLE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CODE-HEALTH-REPORT-STALE-SOURCE-001",
+        "FAULT-TDRP-CODE-HEALTH-REPORT-INSTRUMENT-FAILURE-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CODE-HEALTH-REPORT-NO-AUTHORITY-BYPASS-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-CODE-HEALTH-REPORT-AGGREGATION-001"
+      ],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-INVENTORY",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "code-health-fixture",
+        "canonical-quality-ledger-fixture"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral repository-quality report aggregation contract read from telegramdesktop/tdesktop authority; no upstream Python implementation copied into Fabushi shipping runtime.",
+      "notes": "Recursive authority index 32 immediately after metrics.py index 31 is report.py@a1177613670e933694f545f387ca7e7ed8cf0ee0. Complete source, health.py production callers and direct health_test.py map/atlas/state coverage were read. This closes only one source entry: unknown=16,166, unread=16,141, omitted=0. Parent exact-head run 39462234441 becomes historical-only for this new target commit; exact-head verification is pending. The next strict source entry is review.py@070b55553052267e8fbc12d70985b447b24bbb02.",
       "test_execution_evidence": []
     }
   ]

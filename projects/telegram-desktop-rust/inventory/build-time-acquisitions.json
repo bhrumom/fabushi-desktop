@@ -5,18 +5,18 @@
   "upstream_repository": "telegramdesktop/tdesktop",
   "upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
   "discovery": {
-    "evidence_run_id": 39417471110,
-    "evidence_head_sha": "885665d399d6c65b78f5ea048685109f3e8bbebc",
-    "artifact_id": 12261394728,
-    "artifact_digest": "sha256:5bad99275a0524134eafe8a2116addaee89bd53b1e6453706e87d93bc94dbc8e",
+    "evidence_run_id": 39462234441,
+    "evidence_head_sha": "15fc3dc90dd3f7f19e67b5c261ce95e0498f6dcf",
+    "artifact_id": 12283925998,
+    "artifact_digest": "sha256:c8ba6f0117d1e32603d523e6cf6d5a7610a980585e8ecb94f488475a7a3e33cb",
     "candidate_file": "build-time-acquisition-candidates.txt",
     "candidate_lines_total": 331,
     "immutable_commit_pin_occurrences_classified": 19,
     "candidate_lines_pending_classification": 0,
-    "note": "Exact-head run 39417471110 artifact 12261394728 contains build-time acquisition discovery for a0cfd60923a220894611b6fcb3c92157876dc4a5/5cc28eee8d541752295ce299b860303fcb4b687d; live refs/heads/dev has since advanced to 78ceaa548ae0e055aa56b53fde22064d13f250ef/76b967833b38eb7aa2cb4047008c07331390e61e. Treat all run 39417471110 source/recursive evidence as historical-only and revalidate on the current exact upstream.",
+    "note": "Exact-head parent run 39462234441 artifact 12283925998 revalidated build-time acquisition discovery against 78ceaa548ae0e055aa56b53fde22064d13f250ef/76b967833b38eb7aa2cb4047008c07331390e61e: 331 candidate lines, no root-expression acquisition error, Qt 5.15.19-lts-lgpl and Qt 6.11.2 derived from current prepare.py/qt_version.py source semantics, and current root candidate disposition closed. Because this inventory update creates a newer target commit, that artifact is historical-only for the new HEAD; fresh exact-head workflow evidence remains required. Recursive nested acquisition/generated/resource/tool disposition is still open.",
     "candidate_lines_classified": 331,
     "disposition_closure_status": "complete",
-    "recursive_authority_closure_status": "open",
+    "recursive_authority_closure_status": "gitlink-fixed-point-closed-disposition-pending",
     "recursive_child_input_occurrences_recorded": 11,
     "recursive_child_unique_repositories_recorded": 9,
     "recursive_child_unique_external_nested_scans_pending": 0,
@@ -24,16 +24,27 @@
     "evidence_status": "historical-only",
     "previous_historical_evidence": {
       "runner": "github-actions",
-      "run_id": 38547900810,
+      "run_id": 39417471110,
       "run_attempt": 1,
-      "evidence_head_sha": "9a3e22f5ab8e3522bb27ff682f29703870e2f802",
-      "artifact_id": 11885536485,
-      "artifact_digest": "sha256:f0067de9aa30612734e5214ae88fadaf86e01ce7bfbc8183cb99002436359811",
-      "upstream_commit": "c317da960b2664962aeb17892adbd6dda59c98fe",
-      "evidence_status": "historical-only"
+      "evidence_head_sha": "885665d399d6c65b78f5ea048685109f3e8bbebc",
+      "artifact_id": 12261394728,
+      "artifact_digest": "sha256:5bad99275a0524134eafe8a2116addaee89bd53b1e6453706e87d93bc94dbc8e",
+      "upstream_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+      "upstream_tree": "5cc28eee8d541752295ce299b860303fcb4b687d",
+      "evidence_status": "historical-only",
+      "prior_history": {
+        "runner": "github-actions",
+        "run_id": 38547900810,
+        "run_attempt": 1,
+        "evidence_head_sha": "9a3e22f5ab8e3522bb27ff682f29703870e2f802",
+        "artifact_id": 11885536485,
+        "artifact_digest": "sha256:f0067de9aa30612734e5214ae88fadaf86e01ce7bfbc8183cb99002436359811",
+        "upstream_commit": "c317da960b2664962aeb17892adbd6dda59c98fe",
+        "evidence_status": "historical-only"
+      }
     },
-    "evidence_upstream_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
-    "evidence_upstream_tree": "5cc28eee8d541752295ce299b860303fcb4b687d"
+    "evidence_upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
+    "evidence_upstream_tree": "76b967833b38eb7aa2cb4047008c07331390e61e"
   },
   "immutable_commit_pin_occurrences": [
     {
