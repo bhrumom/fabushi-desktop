@@ -12,6 +12,7 @@ import {
   captureLocalBrowserSnapshot,
   clickLocalBrowserRef,
   fillLocalBrowserRef,
+  dragLocalBrowserRef,
   localBrowserPageContainsText,
   localBrowserRefStillMatches,
   pressLocalBrowserKey,
@@ -71,7 +72,7 @@ export interface BrowserWorkspaceWebContentsPort {
   setZoomFactor(factor: number): void;
   executeJavaScript(script: string, userGesture?: boolean): Promise<unknown>;
   capturePage(): Promise<{ toPNG(): Buffer }>;
-  sendInputEvent(event: { readonly type: "keyDown" | "keyUp" | "char"; readonly keyCode?: string }): void;
+  sendInputEvent(event: { readonly type: "keyDown" | "keyUp" | "char" | "mouseMove" | "mouseDown" | "mouseUp"; readonly keyCode?: string; readonly x?: number; readonly y?: number; readonly button?: "left"; readonly clickCount?: number }): void;
   isDestroyed(): boolean;
   destroy(): void;
   setWindowOpenHandler(handler: (details: { readonly url: string }) => { action: "deny" }): void;
@@ -898,6 +899,13 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
         return agentResult(action.operationId, workspace, tab);
       case "scroll":
         await scrollLocalBrowserPage(page, action.deltaX, action.deltaY);
+        return agentResult(action.operationId, workspace, tab);
+      case "drag":
+        await dragLocalBrowserRef(
+          page,
+          requireAgentRef(tab, action.sourceRef),
+          action.targetRef != null ? requireAgentRef(tab, action.targetRef) : { x: action.targetX!, y: action.targetY! },
+        );
         return agentResult(action.operationId, workspace, tab);
       case "screenshot":
         return agentResult(action.operationId, workspace, tab, {

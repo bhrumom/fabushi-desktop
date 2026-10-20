@@ -47,6 +47,7 @@ export type LocalBrowserAgentAction =
   | (LocalBrowserAgentTarget & { readonly type: "type"; readonly ref: string; readonly text: string })
   | (LocalBrowserAgentTarget & { readonly type: "press-key"; readonly key: string })
   | (LocalBrowserAgentTarget & { readonly type: "scroll"; readonly deltaX: number; readonly deltaY: number })
+  | (LocalBrowserAgentTarget & { readonly type: "drag"; readonly sourceRef: string; readonly targetRef?: string; readonly targetX?: number; readonly targetY?: number })
   | (LocalBrowserAgentTarget & { readonly type: "screenshot" })
   | (LocalBrowserAgentTarget & { readonly type: "wait"; readonly text?: string; readonly ref?: string; readonly timeoutMs?: number })
   | (LocalBrowserAgentTarget & { readonly type: "navigate"; readonly address: string })
@@ -212,6 +213,27 @@ export function parseLocalBrowserAgentAction(value: unknown): LocalBrowserAgentA
       const deltaY = typeof source.deltaY === "number" && Number.isFinite(source.deltaY) ? source.deltaY : null;
       if (deltaX == null || deltaY == null || Math.abs(deltaX) > LOCAL_BROWSER_AGENT_LIMITS.maxScrollDelta || Math.abs(deltaY) > LOCAL_BROWSER_AGENT_LIMITS.maxScrollDelta) return null;
       return { ...target, type: "scroll", deltaX, deltaY };
+    }
+    case "drag": {
+      const sourceRef = boundedString(source.sourceRef, LOCAL_BROWSER_AGENT_LIMITS.maxElementRefLength);
+      const targetRef = source.targetRef === undefined ? undefined : boundedString(source.targetRef, LOCAL_BROWSER_AGENT_LIMITS.maxElementRefLength);
+      const targetX = source.targetX === undefined ? undefined : finiteInteger(source.targetX, 0, 16_384);
+      const targetY = source.targetY === undefined ? undefined : finiteInteger(source.targetY, 0, 16_384);
+      if (sourceRef == null) return null;
+      if (source.targetRef !== undefined && targetRef == null) return null;
+      if (source.targetX !== undefined && targetX == null) return null;
+      if (source.targetY !== undefined && targetY == null) return null;
+      const byRef = targetRef != null && targetX == null && targetY == null;
+      const byPoint = targetRef == null && targetX != null && targetY != null;
+      if (!byRef && !byPoint) return null;
+      return {
+        ...target,
+        type: "drag",
+        sourceRef,
+        ...(targetRef == null ? {} : { targetRef }),
+        ...(targetX == null ? {} : { targetX }),
+        ...(targetY == null ? {} : { targetY }),
+      };
     }
     case "wait": {
       const text = source.text === undefined ? undefined : boundedString(source.text, 1024);

@@ -242,7 +242,7 @@ impl BrowserToolExecutor for LocalBrowserCoordinatorExecutor {
         if !matches!(
             spec.op,
             "tabs" | "snapshot" | "wait" | "click" | "fill" | "select_option" | "type" | "press_key"
-                | "scroll" | "screenshot" | "navigate" | "back" | "forward" | "refresh"
+                | "scroll" | "drag" | "screenshot" | "navigate" | "back" | "forward" | "refresh"
         ) {
             return Err(ProviderSessionError::Tool(format!(
                 "browser_{} is not yet supported for target=local; Fabushi will not fall back to the managed Box browser.",
@@ -305,6 +305,20 @@ impl BrowserToolExecutor for LocalBrowserCoordinatorExecutor {
                     "deltaY".into(),
                     Value::from(args.get("y").and_then(Value::as_f64).unwrap_or(600.0)),
                 );
+                request
+            }
+            "drag" => {
+                let mut request = self.action_request(&target, tool_call_id, "drag")?;
+                request.insert("sourceRef".into(), args.get("sourceRef").cloned().unwrap_or(Value::Null));
+                if let Some(target_ref) = args.get("targetRef") {
+                    request.insert("targetRef".into(), target_ref.clone());
+                }
+                if let Some(target_x) = args.get("targetX") {
+                    request.insert("targetX".into(), target_x.clone());
+                }
+                if let Some(target_y) = args.get("targetY") {
+                    request.insert("targetY".into(), target_y.clone());
+                }
                 request
             }
             "screenshot" => self.action_request(&target, tool_call_id, "screenshot")?,

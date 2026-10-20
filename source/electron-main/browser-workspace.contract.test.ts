@@ -39,7 +39,7 @@ class FakeContents implements BrowserWorkspaceWebContentsPort {
   reloaded = false;
   back = false;
   forward = false;
-  readonly inputEvents: Array<{ readonly type: string; readonly keyCode?: string }> = [];
+  readonly inputEvents: Array<{ readonly type: string; readonly keyCode?: string; readonly x?: number; readonly y?: number; readonly button?: "left"; readonly clickCount?: number }> = [];
   constructor(readonly session: FakeSession) {}
   on(event: string, listener: (...args: any[]) => void): void {
     const list = this.listeners.get(event) ?? [];
@@ -90,6 +90,7 @@ class FakeContents implements BrowserWorkspaceWebContentsPort {
         }],
       };
     }
+    if (script.includes("getBoundingClientRect")) return { ok: true, x: 40, y: 50 };
     if (script.includes("document.querySelector(locator.selector)")) return { ok: true };
     if (script.includes("document.body && document.body.innerText")) return true;
     if (script.includes("window.scrollBy")) return { ok: true };
@@ -98,7 +99,7 @@ class FakeContents implements BrowserWorkspaceWebContentsPort {
   async capturePage(): Promise<{ toPNG(): Buffer }> {
     return { toPNG: () => Buffer.from("synthetic-png") };
   }
-  sendInputEvent(event: { readonly type: "keyDown" | "keyUp" | "char"; readonly keyCode?: string }): void {
+  sendInputEvent(event: { readonly type: "keyDown" | "keyUp" | "char" | "mouseMove" | "mouseDown" | "mouseUp"; readonly keyCode?: string; readonly x?: number; readonly y?: number; readonly button?: "left"; readonly clickCount?: number }): void {
     this.inputEvents.push(event);
   }
   isDestroyed(): boolean { return this.destroyed; }
@@ -350,6 +351,7 @@ test("agent action snapshot mints opaque generation refs and fixed actions rejec
       workspaceId: state.workspaceId,
       tabId: tab.id,
       expectedGeneration: tab.generation,
+      expectedControlEpoch: state.agentControl.epoch,
       operationId: "op-stale",
       ref: snap.snapshot!.elements[0]!.ref,
     }),
@@ -394,6 +396,7 @@ test("agent select-option is generation-fenced and rejects invalid payloads befo
       workspaceId: state.workspaceId,
       tabId: tab.id,
       expectedGeneration: tab.generation,
+      expectedControlEpoch: state.agentControl.epoch,
       operationId: "op-invalid-select",
       ref: snap.snapshot!.elements[0]!.ref,
       values: [],
@@ -415,6 +418,7 @@ test("agent actions fence workspace identity and expose only bounded fixed keybo
       workspaceId: "wrong-workspace",
       tabId: tab.id,
       expectedGeneration: tab.generation,
+      expectedControlEpoch: state.agentControl.epoch,
       operationId: "op-wrong",
     }),
     /BROWSER_WORKSPACE_MISMATCH/,
@@ -443,6 +447,7 @@ test("agent actions fence workspace identity and expose only bounded fixed keybo
       workspaceId: state.workspaceId,
       tabId: tab.id,
       expectedGeneration: tab.generation,
+      expectedControlEpoch: state.agentControl.epoch,
       operationId: "op-key-denied",
       key: "Meta+A",
     }),
@@ -504,6 +509,58 @@ test("agent target discovery and tab management stay scoped to the conversation 
   if (!closed.ok) return;
   assert.equal(closed.tabs?.length, 1);
   assert.equal(closed.tabs?.[0]?.tabId, state.activeTabId);
+});
+
+test("agent drag uses generation-scoped refs and bounded native mouse input", async () => {
+  const h = harness();
+  h.service.attachWindow(new FakeHostWindow());
+  const state = await h.invoke({ type: "activate", conversationId: "bot-a", bounds: { x: 1, y: 1, width: 500, height: 500 } });
+  const tab = state.tabs[0]!;
+  const snap = await h.service.executeAgentAction({
+    type: "snapshot",
+    conversationId: "bot-a",
+    workspaceId: state.workspaceId,
+    tabId: tab.id,
+    expectedGeneration: tab.generation,
+    expectedControlEpoch: state.agentControl.epoch,
+    operationId: "drag-snapshot",
+  });
+  assert.equal(snap.ok, true);
+  if (!snap.ok) return;
+  const sourceRef = snap.snapshot!.elements[0]!.ref;
+  const dragged = await h.service.executeAgentAction({
+    type: "drag",
+    conversationId: "bot-a",
+    workspaceId: state.workspaceId,
+    tabId: tab.id,
+    expectedGeneration: tab.generation,
+    expectedControlEpoch: state.agentControl.epoch,
+    operationId: "drag-bounded",
+    sourceRef,
+    targetX: 120,
+    targetY: 160,
+  });
+  assert.equal(dragged.ok, true);
+  const pointerEvents = h.views[0]!.webContents.inputEvents.filter((event) => event.type.startsWith("mouse"));
+  assert.equal(pointerEvents[0]?.type, "mouseMove");
+  assert.equal(pointerEvents[1]?.type, "mouseDown");
+  assert.equal(pointerEvents.at(-1)?.type, "mouseUp");
+
+  await assert.rejects(
+    () => h.service.executeAgentAction({
+      type: "drag",
+      conversationId: "bot-a",
+      workspaceId: state.workspaceId,
+      tabId: tab.id,
+      expectedGeneration: tab.generation,
+      expectedControlEpoch: state.agentControl.epoch,
+      operationId: "drag-invalid",
+      sourceRef,
+      targetX: 20_000,
+      targetY: 1,
+    }),
+    /BROWSER_AGENT_INVALID_ACTION/,
+  );
 });
 
 test("user takeover rotates the Main-owned mutation lease and requires an explicit resume", async () => {

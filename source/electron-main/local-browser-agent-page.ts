@@ -11,8 +11,12 @@ export interface LocalBrowserPagePort {
   executeJavaScript(script: string, userGesture?: boolean): Promise<unknown>;
   capturePage(): Promise<LocalBrowserPageImage>;
   sendInputEvent(event: {
-    readonly type: "keyDown" | "keyUp" | "char";
+    readonly type: "keyDown" | "keyUp" | "char" | "mouseMove" | "mouseDown" | "mouseUp";
     readonly keyCode?: string;
+    readonly x?: number;
+    readonly y?: number;
+    readonly button?: "left";
+    readonly clickCount?: number;
   }): void;
 }
 
@@ -351,6 +355,50 @@ export async function selectLocalBrowserOptions(
     return { ok: true };
   `);
   actionResult(await page.executeJavaScript(script, true));
+}
+
+async function localBrowserRefCenter(
+  page: LocalBrowserPagePort,
+  locator: LocalBrowserElementLocator,
+): Promise<{ x: number; y: number }> {
+  const result = record(await page.executeJavaScript(actionScript(locator, String.raw`
+    element.scrollIntoView({ block: "center", inline: "center", behavior: "instant" });
+    const rect = element.getBoundingClientRect();
+    if (!(rect.width > 0) || !(rect.height > 0)) {
+      return { ok: false, code: "BROWSER_ELEMENT_NO_BOUNDS" };
+    }
+    return { ok: true, x: Math.round(rect.left + rect.width / 2), y: Math.round(rect.top + rect.height / 2) };
+  `), false));
+  if (result?.ok !== true || typeof result.x !== "number" || typeof result.y !== "number") {
+    throw new Error(typeof result?.code === "string" ? result.code : "BROWSER_ELEMENT_NO_BOUNDS");
+  }
+  return { x: result.x, y: result.y };
+}
+
+export async function dragLocalBrowserRef(
+  page: LocalBrowserPagePort,
+  source: LocalBrowserElementLocator,
+  target: LocalBrowserElementLocator | { readonly x: number; readonly y: number },
+): Promise<void> {
+  const start = await localBrowserRefCenter(page, source);
+  const end = "selector" in target ? await localBrowserRefCenter(page, target) : target;
+  for (const point of [start, end]) {
+    if (!Number.isSafeInteger(point.x) || !Number.isSafeInteger(point.y) || point.x < 0 || point.y < 0 || point.x > 16_384 || point.y > 16_384) {
+      throw new Error("BROWSER_DRAG_TARGET_OUT_OF_BOUNDS");
+    }
+  }
+  page.sendInputEvent({ type: "mouseMove", x: start.x, y: start.y });
+  page.sendInputEvent({ type: "mouseDown", x: start.x, y: start.y, button: "left", clickCount: 1 });
+  const steps = 12;
+  for (let index = 1; index <= steps; index += 1) {
+    const ratio = index / steps;
+    page.sendInputEvent({
+      type: "mouseMove",
+      x: Math.round(start.x + (end.x - start.x) * ratio),
+      y: Math.round(start.y + (end.y - start.y) * ratio),
+    });
+  }
+  page.sendInputEvent({ type: "mouseUp", x: end.x, y: end.y, button: "left", clickCount: 1 });
 }
 
 export async function scrollLocalBrowserPage(

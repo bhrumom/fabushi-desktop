@@ -437,6 +437,24 @@ fn local_select_option_uses_the_generation_fenced_workspace_ref_path() {
 }
 
 #[test]
+fn local_drag_uses_only_bounded_workspace_action_fields_and_never_local_cdp() {
+    for required in [
+        "\"scroll\" | \"drag\" | \"screenshot\"",
+        "\"drag\" => {",
+        "self.action_request(&target, tool_call_id, \"drag\")?",
+        "request.insert(\"sourceRef\".into()",
+        "request.insert(\"targetRef\".into()",
+        "request.insert(\"targetX\".into()",
+        "request.insert(\"targetY\".into()",
+    ] {
+        assert!(
+            LOCAL_BROWSER_TOOLS_SOURCE.contains(required),
+            "local drag lost invariant: {required}"
+        );
+    }
+}
+
+#[test]
 fn local_browser_actions_carry_main_owned_control_epoch_and_tab_mutations_resolve_it() {
     for required in [
         "target.get(\"controlEpoch\")",
