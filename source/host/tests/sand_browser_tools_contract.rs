@@ -27,6 +27,7 @@ use mahayana_host_runtime::runner::tools::sand_browser_tools::{
 use serde_json::{Map, Value, json};
 
 const BROWSER_AUTO_REVIEW_SOURCE: &str = include_str!("../src/runner/sand_browser_auto_review.rs");
+const LOCAL_BROWSER_TOOLS_SOURCE: &str = include_str!("../src/runner/tools/local_browser_tools.rs");
 const AUTO_REVIEW_SUMMARIES_SOURCE: &str = include_str!("../src/runner/sand_auto_review_summaries.rs");
 
 struct BaseBridge;
@@ -362,6 +363,58 @@ fn explicit_browser_target_defaults_to_box_and_never_falls_back() {
         calls.lock().expect("calls").as_slice(),
         &["box".to_string(), "local".to_string()]
     );
+}
+
+#[test]
+fn browser_wait_is_bounded_generation_fenced_and_shared_by_explicit_targets() {
+    let spec = browser_tool_specs().into_iter()
+        .find(|spec| spec.name == "browser_wait")
+        .expect("wait spec");
+    assert_eq!(spec.op, "wait");
+    assert_eq!(spec.schema.required, vec!["text"]);
+    assert_eq!(spec.schema.max_text_len, Some(1_024));
+    assert_eq!(spec.schema.max_timeout_ms, Some(15_000));
+    assert!(!spec.can_navigate);
+    assert!(spec.skip_screenshot);
+
+    let valid = json!({"text":"Ready","timeoutMs":15000,"target":"local"});
+    validate_browser_arguments(&spec.schema, valid.as_object().expect("valid wait"))
+        .expect("bounded local wait");
+
+    for invalid in [
+        json!({"text":"","target":"local"}),
+        json!({"text":"Ready","timeoutMs":0,"target":"local"}),
+        json!({"text":"Ready","timeoutMs":15001,"target":"local"}),
+    ] {
+        assert!(
+            validate_browser_arguments(&spec.schema, invalid.as_object().expect("invalid wait")).is_err(),
+            "invalid wait must fail closed: {invalid}"
+        );
+    }
+
+    for required in [
+        "  \"wait\",",
+        "wait: async ({ request, context, state }) => {",
+        "Buffer.byteLength(text, \"utf8\") > 1024",
+        "Math.max(1, Math.min(15000, request.timeoutMs))",
+        "scope.getByText(text, { exact: false }).first().waitFor({",
+    ] {
+        assert!(
+            SAND_BROWSER_DRIVER_SOURCE.contains(required),
+            "managed Box wait lost invariant: {required}"
+        );
+    }
+    for required in [
+        "\"tabs\" | \"snapshot\" | \"wait\" | \"click\"",
+        "\"wait\" => {",
+        "self.action_request(&target, tool_call_id, \"wait\")?",
+        "request.insert(\"timeoutMs\".into(), timeout_ms.clone());",
+    ] {
+        assert!(
+            LOCAL_BROWSER_TOOLS_SOURCE.contains(required),
+            "local Browser Workspace wait lost relay invariant: {required}"
+        );
+    }
 }
 
 #[test]

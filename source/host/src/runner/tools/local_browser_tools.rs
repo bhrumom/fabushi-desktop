@@ -228,7 +228,7 @@ impl BrowserToolExecutor for LocalBrowserCoordinatorExecutor {
     ) -> Result<BrowserDriverOutput, ProviderSessionError> {
         if !matches!(
             spec.op,
-            "tabs" | "snapshot" | "click" | "fill" | "type" | "press_key"
+            "tabs" | "snapshot" | "wait" | "click" | "fill" | "type" | "press_key"
                 | "scroll" | "screenshot" | "navigate" | "back" | "forward" | "refresh"
         ) {
             return Err(ProviderSessionError::Tool(format!(
@@ -246,6 +246,14 @@ impl BrowserToolExecutor for LocalBrowserCoordinatorExecutor {
         let target = self.resolve_target(args, tool_call_id)?;
         let mut request = match spec.op {
             "snapshot" => self.action_request(&target, tool_call_id, "snapshot")?,
+            "wait" => {
+                let mut request = self.action_request(&target, tool_call_id, "wait")?;
+                request.insert("text".into(), args.get("text").cloned().unwrap_or(Value::Null));
+                if let Some(timeout_ms) = args.get("timeoutMs") {
+                    request.insert("timeoutMs".into(), timeout_ms.clone());
+                }
+                request
+            },
             "click" => {
                 let mut request = self.action_request(&target, tool_call_id, "click")?;
                 request.insert("ref".into(), args.get("ref").cloned().unwrap_or(Value::Null));
