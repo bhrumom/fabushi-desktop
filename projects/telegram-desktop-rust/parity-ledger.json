@@ -6,10 +6,10 @@
   "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16180,
-    "unread": 16153,
+    "unknown": 16179,
+    "unread": 16152,
     "omitted": 0,
-    "responsibilities_total": 44,
+    "responsibilities_total": 45,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -10730,6 +10730,290 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral repository-quality/responsibility-map contract read from telegramdesktop/tdesktop authority; no upstream Python/C++/agent workflow implementation copied into Fabushi shipping runtime.",
       "notes": "Actual 1-based recursive array entry 22 is .agents/skills/code-health/references/maps.md. The skill/scripts/atlas/classes/survey/perform-task/scheduled callers were read to understand this entry and remain independently accounted inventory entries unless separately represented. This closure decrements only one independent source entry to unknown=16,180 and unread=16,153, omitted=0.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
+      "source_path": ".agents/skills/code-health/references/survey.md",
+      "source_blob_sha": "d900e7a42b768679c69cd4c584559c783b59d47a",
+      "source_kind": "repository_quality_area_survey_reference",
+      "module_id": "tdesktop.code-health-area-survey",
+      "responsibility_id": "TDRP-R9-CODE-HEALTH-AREA-SURVEY-001",
+      "source_symbols": [
+        "Area survey",
+        "Inputs",
+        "Lenses",
+        "Verification",
+        "Outputs"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-RESPONSIBILITY-GOVERNANCE",
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-REPOSITORY-TASK-EVIDENCE"
+      ],
+      "dependency_ids": [
+        ".agents/skills/code-health/SKILL.md",
+        ".agents/skills/code-health/references/atlas.md",
+        ".agents/skills/code-health/references/classes.md",
+        ".agents/skills/code-health/references/survey.md",
+        ".agents/skills/code-health/scripts/health.py",
+        ".agents/skills/code-health/scripts/report.py",
+        ".agents/skills/code-health/scripts/atlas.py",
+        ".agents/skills/perform-task/SKILL.md",
+        ".agents/skills/perform-task/references/mechanical-lane.md",
+        ".agents/skills/perform-task/references/pipeline.md",
+        ".agents/skills/perform-task/references/phase-prompts.md",
+        ".claude/commands/code-health.md",
+        ".agents/skills/code-health/agents/openai.yaml",
+        ".agents/skills/continue/SKILL.md",
+        "upstream AGENTS.md",
+        "Fabushi repository AI development lifecycle",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/code-health-area-survey-reference-complete-read.md",
+      "behavior_contract": "Review one responsibility area against the exact scanned authority using the canonical area report, prior survey/current map and open findings; keep responsibility, duplication, coupling/build, testability and incidental-defect lenses independent; separately recheck every claim that drives a map or proposal; label unrechecked claims inferred; emit survey, draft-map, proposal and defect outputs separately; change no source and create no queue record.",
+      "state_machine": "fresh exact scan/area -> gather canonical area report + prior survey/map + open findings -> independent direct-source lenses -> separate verifier reproduces map/proposal-driving claims -> mark remaining claims inferred -> emit survey narrative + draft map + bounded proposals + ordinary defects -> stop without source or queue mutation -> existing owner may later approve or route under ordinary gates",
+      "side_effects": [
+        "Repository responsibility/quality/task evidence only; the survey itself changes no product/source code, approves no map, creates no queue record, and introduces no shipping or parallel survey runtime."
+      ],
+      "failure_cases": [
+        "Survey reads a mutable/stale checkout instead of the exact scanned source authority",
+        "A lens reuses another lens's conclusions and is treated as independent evidence",
+        "Scanner metrics are re-measured or treated as semantic authority instead of survey inputs",
+        "An unrechecked claim is presented as verified or silently drives an authoritative map/proposal",
+        "A survey self-approves a draft map or semantic invariant",
+        "A proposal emitted by the survey is inserted directly into the task queue without ordinary routing/trust gates",
+        "A defect found in passing is hidden inside behavior-preserving code-health work",
+        "Survey completion changes source code or is used as product/build/security/release acceptance",
+        "Survey metadata becomes a parallel responsibility graph, map store, findings store or task queue"
+      ],
+      "ui_disposition": "Not applicable; repository responsibility/quality/task-evidence governance only.",
+      "non_ui_responsibilities": [
+        "Exact scanned-source and stable area input binding",
+        "Consumption of canonical area report, prior survey/current map and open ledger findings",
+        "Independent model/responsibility and encoded-state-machine reading",
+        "Independent duplication reading against existing shared mechanisms",
+        "Independent coupling/build/dependency/global-state reading",
+        "Independent testability and first characterization-seam reading",
+        "Separate incidental-defect capture as ordinary defect work",
+        "Independent re-verification of every map/proposal-driving claim",
+        "Durable inferred versus verified claim distinction",
+        "Separated survey, draft-map, proposal and defect outputs",
+        "Map draft remains under existing owner approval lifecycle",
+        "Zero source-code and direct-queue side effects from survey itself"
+      ],
+      "platform_delta": "Fabushi already owns the applicable responsibility through source-neutral repository responsibility, quality and task-evidence governance. This closure makes the complete deep-area survey input, lens-isolation, verification, output-separation and no-side-effect contract explicit without porting Telegram code-health/survey execution machinery.",
+      "existing_owner_candidates": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "ordinary Fabushi task/review/evidence lifecycle"
+      ],
+      "existing_owner": "Fabushi repository responsibility/quality/task-evidence governance",
+      "rejected_existing_owners": [
+        "Shipping Agent/Coordinator/Host/Runner do not own repository source-review surveys",
+        "Product-domain stores, UI roots and packaging/updater owners do not own maintainability survey evidence",
+        "Copying Telegram code-health skill/health-state/worktree/provider runtime would create a source-specific parallel workflow implementation",
+        "A new survey store, map owner, findings ledger or task queue would duplicate existing repository responsibility/quality/task-evidence owners"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository responsibility-area survey governance",
+        "Repository responsibility-area survey qualification",
+        "Repository responsibility-area survey evidence"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The upstream entry is an agent-driven repository source-review/evidence contract; its applicable behavior is governance and verification, not shipping product logic.",
+      "command_event_contracts": [
+        "fresh exact area authority -> gather area report/prior survey/current map/open findings -> launch independent source-reading lenses",
+        "lens claim used by map/proposal -> separate verifier repeats the relevant read/count/search -> verified OR explicit inferred status",
+        "survey output -> narrative + draft map + bounded maintainability proposals + ordinary defects remain distinct",
+        "draft map -> existing map owner approval before repository instruction",
+        "proposal/defect -> ordinary task-routing decision and receipt before any queue record",
+        "survey completion -> zero source changes and zero queue records"
+      ],
+      "state_owner": "Existing Fabushi repository responsibility/quality/task-evidence governance",
+      "lifecycle_owner": "Existing repository development lifecycle and GitHub Actions evidence production/review",
+      "persistence_and_restart": "Survey evidence retains exact source/area input identities, per-lens observations, verifier dispositions and inferred/verified claim state. On resume, stale source/map/open-finding inputs are revalidated before relying on prior conclusions; unresolved claims remain inferred/unresolved rather than being promoted by age.",
+      "concurrency_and_cancellation": "Survey reading is observation-only and obeys ordinary exact-authority/ownership drift checks. Cancellation preserves partial lens/verifier evidence without source or queue mutation; a later run revalidates the exact inputs and does not treat partial output as approved map/task state.",
+      "security_boundary": "Survey evidence cannot authorize product behavior, secret access, source mutation, map approval, queue insertion, permission bypass or weaker security/release proof. Independent verification and ordinary owner/trust gates remain mandatory where applicable.",
+      "network_service_dependencies": [
+        "GitHub repository authority",
+        "GitHub Actions hosted runners",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi repository quality/release workflow / GitHub Actions",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "Independent exact-head GitHub Actions verification of this source-entry mapping commit is pending."
+      ],
+      "production_entrypoints": [
+        "AGENTS.md -> Repository responsibility-area survey governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Repository responsibility-area survey qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Repository responsibility-area survey evidence"
+      ],
+      "production_evidence": [
+        "path:AGENTS.md#Repository responsibility-area survey governance",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Repository responsibility-area survey qualification",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Repository responsibility-area survey evidence"
+      ],
+      "test_evidence": [
+        "dossier:projects/telegram-desktop-rust/dossiers/code-health-area-survey-reference-complete-read.md",
+        "upstream-survey:.agents/skills/code-health/references/survey.md@d900e7a42b768679c69cd4c584559c783b59d47a",
+        "upstream-skill:.agents/skills/code-health/SKILL.md@6885938b3d186b55f5d69cb8b9b9a96bbca0e097",
+        "upstream-maps:.agents/skills/code-health/references/maps.md@89dd78f48283b15d6ad959b2d450895258a0980f",
+        "upstream-atlas:.agents/skills/code-health/references/atlas.md@7f43dd75fcfb670c327bc3e71c1de0589e7506f0",
+        "upstream-classes:.agents/skills/code-health/references/classes.md@27847cae96838be7ddf68d3759dba89279f7cf0e",
+        "upstream-health:.agents/skills/code-health/scripts/health.py@f08675ef7a03c016d85f91c60b8f29e99454abe9",
+        "upstream-report:.agents/skills/code-health/scripts/report.py@a1177613670e933694f545f387ca7e7ed8cf0ee0",
+        "upstream-atlas-script:.agents/skills/code-health/scripts/atlas.py@6680fa747a1ddc520f4396949f3c84ab25cd8c43",
+        "upstream-perform-task:.agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c",
+        "upstream-mechanical-lane:.agents/skills/perform-task/references/mechanical-lane.md@e5e3cc88ba80ece6a20df7c4dd6002491d66a4ef",
+        "upstream-pipeline:.agents/skills/perform-task/references/pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7",
+        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba",
+        "upstream-command:.claude/commands/code-health.md@bcabd4bd5b5a1a2ed09b40a7f1fbdd502042329a",
+        "upstream-openai-surface:.agents/skills/code-health/agents/openai.yaml@59bb6304445f21e2a3ee1a97a69a8e231f934d30",
+        "upstream-root-agents:AGENTS.md@d8d59480277b7defbca1cdbccf7ed164ab2db086"
+      ],
+      "target_commit": "fb4d62d00ff63c36fcf5e422849e2bf8512d608d",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development and quality governance",
+      "composition_slot": "Deep responsibility-area source review / evidence / draft proposal boundary",
+      "capability_component": "Source-neutral responsibility-area survey evidence",
+      "variation_axes": [
+        "explicitly named area vs priority-selected structural hotspot",
+        "scanner input fact vs semantic source-reading claim",
+        "independent lens vs separate verifier",
+        "verified claim vs explicit inferred claim",
+        "survey narrative vs draft map vs maintainability proposal vs ordinary defect",
+        "observation-only survey vs later owner-approved map/task routing"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi repository AI development lifecycle",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract",
+        "ordinary task/review lifecycle"
+      ],
+      "duplicate_root_check": "No Telegram/code-health survey runtime, second responsibility graph, second survey/map/findings store, second maintainability executor, second task queue, or shipping owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Exact source/area inputs, lens evidence and verifier dispositions survive interruption; resumed work revalidates stale inputs, while inferred claims, unapproved maps and unrouted proposals remain non-authoritative.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to workflow governance",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CODE-HEALTH-AREA-SURVEY-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-AREA-SURVEY-INPUTS-001",
+        "ORA-TDRP-AREA-SURVEY-INDEPENDENT-LENSES-001",
+        "ORA-TDRP-AREA-SURVEY-VERIFICATION-001",
+        "ORA-TDRP-AREA-SURVEY-OUTPUT-SEPARATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-AREA-SURVEY-EXACT-AUTHORITY-001",
+        "INV-TDRP-AREA-SURVEY-INDEPENDENT-REVIEW-001",
+        "INV-TDRP-AREA-SURVEY-INFERRED-LABEL-001",
+        "INV-TDRP-AREA-SURVEY-NO-SOURCE-MUTATION-001",
+        "INV-TDRP-AREA-SURVEY-NO-DIRECT-QUEUE-001",
+        "INV-TDRP-AREA-SURVEY-NO-SECOND-OWNER-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CODE-HEALTH-AREA-SURVEY-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-AREA-SURVEY-MAP-AND-TASK-BOUNDARY-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-AREA-SURVEY-STALE-SOURCE-001",
+        "FAULT-TDRP-AREA-SURVEY-LENS-CONTAMINATION-001",
+        "FAULT-TDRP-AREA-SURVEY-UNVERIFIED-CLAIM-001",
+        "FAULT-TDRP-AREA-SURVEY-DIRECT-QUEUE-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-AREA-SURVEY-EVIDENCE-BYPASS-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-CODE-HEALTH-AREA-SURVEY-001"
+      ],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-INVENTORY",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "code-health-area-survey-reference-source-contract",
+        "responsibility-area-survey-input-lens-verification-output-contract"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral repository-quality/responsibility-area-survey contract read from telegramdesktop/tdesktop authority; no upstream Python/C++/agent workflow implementation copied into Fabushi shipping runtime.",
+      "notes": "Actual 1-based recursive array entry 23 is .agents/skills/code-health/references/survey.md. The skill/maps/atlas/classes/scripts/perform-task/scheduled callers were read to understand this entry and remain independently accounted inventory entries unless separately represented. This closure decrements only one independent source entry to unknown=16,179 and unread=16,152, omitted=0.",
       "test_execution_evidence": []
     }
   ]
