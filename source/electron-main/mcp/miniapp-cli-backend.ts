@@ -209,7 +209,9 @@ export function createDandelionCliBackend(
       const info = await stat(root);
       if (mode === "directory" && !info.isDirectory()) throw new Error("DIRECTORY_SELECTION_REQUIRED");
       if (!(await canonicalRoots()).some((allowed) => insideRoot(allowed, root))) throw new Error("ROOT_NOT_AUTHORIZED");
-      if (picked.length > limits.maxFiles || info.size > limits.maxBytes) throw new Error("SELECTION_LIMIT_EXCEEDED");
+      // Directory stat size is filesystem metadata, not the recursive payload
+      // size. The Dandelion scanner enforces the configured recursive budget.
+      if (picked.length > limits.maxFiles || (!info.isDirectory() && info.size > limits.maxBytes)) throw new Error("SELECTION_LIMIT_EXCEEDED");
       pruneSelections();
       const selectionId = randomUUID();
       selections.set(selectionId, { root, expiresAt: Date.now() + SELECTION_TTL_MS });
