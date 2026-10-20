@@ -258,10 +258,10 @@
   "coverage": {
     "root_source_entries_total": 6717,
     "recursive_source_entries_total": 16202,
-    "unknown_minimum": 16173,
-    "unread_minimum": 16146,
+    "unknown_minimum": 16172,
+    "unread_minimum": 16145,
     "omitted_known": 0,
-    "note": "Revision 9 live rebaseline remains in progress for telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a (tree 5151db79560ed40bf3802482fcfb74b950be6c40). Root non-directory inventory remains 6,717 and recursive authority remains 16,202. Recursive array index 28 .agents/skills/code-health/scripts/health_test.py is independently mapped to existing repository quality/test-evidence governance as integrated regression qualification across the text/build/include/clone/atlas/report/review/health-command owners; positive/negative controls, canonical state lifecycle, result distinctions, move-only accounting and exact owned worktree behavior are preserved without copying the upstream Python unittest harness or creating a second quality runtime. Counters are unknown=16,173, unread=16,146, omitted=0."
+    "note": "Revision 9 live rebaseline remains in progress for telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a (tree 5151db79560ed40bf3802482fcfb74b950be6c40). Root non-directory inventory remains 6,717 and recursive authority remains 16,202. Recursive array index 29 .agents/skills/code-health/scripts/history.py is independently mapped to existing repository quality/test-evidence governance: churn stays exact-revision/lookback bounded across root and pinned submodule histories, unavailable history remains absent rather than synthetic zero, Task trailers plus complete Start/Approve lifecycle and recognized review rounds yield optional task-effort observations, and churn/hotspot/cost remain prioritization evidence rather than ownership or acceptance. No Telegram Python history helper, second task store, review owner or queue is introduced. Counters are unknown=16,172, unread=16,145, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
