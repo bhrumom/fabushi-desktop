@@ -67,6 +67,16 @@ the package and no automatic code download is permitted.
 
 ## Delivery, rollback and acceptance
 
+MNR-08: installed metadata remains authoritative. When the approved catalog has a
+different supported digest for the same app, expose a separate validated update
+hint and a generic "更新并验证" action. Do not overwrite installed version/digest
+or quarantine state with catalog metadata. Reuse the existing verified installer
+and preserve per-account data; old offline packages need this Host-owned lifecycle
+entry to obtain their first native-capable version. The Marketplace must describe
+native functionality as supplied by the installed Mini App, never as absent or
+built into Fabushi. Verify metadata precedence and rejection of malformed hints
+in Actions; retain the existing installed-code lifecycle gates.
+
 Native data lives in a private account/app-derived directory supplied by the
 generic Host. Version changes share only this app's data; different accounts/apps
 do not. The package-update broker addresses only the current app's approved
