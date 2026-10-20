@@ -7,6 +7,7 @@ const EXPECTED_CONTROL_METHODS = [
   "resolveGatewayConnection",
   "listRoutedMcpTools",
   "executeRoutedMcpTool",
+  "executeLocalBrowserAction",
   "listHostMcpServers",
   "listHostMcpCatalog",
   "listHostEffectiveMcpPlugins",
@@ -92,6 +93,10 @@ function makeDependencies(calls: string[]) {
       calls.push("mcp-call");
       return { request };
     },
+    async executeLocalBrowserAction(request: unknown) {
+      calls.push("local-browser");
+      return { request };
+    },
     async listHostMcpServers() {
       calls.push("mcp-host-servers");
       return { servers: [{ id: "7" }] };
@@ -173,6 +178,9 @@ test("control executor routes gateway, MCP, WebAuthn, and telemetry without abso
   assert.deepEqual(await executors.executeRoutedMcpTool({ id: 7 }), {
     request: { id: 7 },
   });
+  assert.deepEqual(await executors.executeLocalBrowserAction({ type: "resolve-target", conversationId: "bot-a" }), {
+    request: { type: "resolve-target", conversationId: "bot-a" },
+  });
   assert.deepEqual(await executors.listHostMcpServers(), { servers: [{ id: "7" }] });
   assert.deepEqual(await executors.listHostMcpCatalog({ forceRefresh: true }), [{ id: "plugin-7" }]);
   assert.deepEqual(await executors.listHostEffectiveMcpPlugins(), [{ pluginId: "7" }]);
@@ -223,6 +231,7 @@ test("control executor routes gateway, MCP, WebAuthn, and telemetry without abso
     "credential",
     "mcp-list",
     "mcp-call",
+    "local-browser",
     "mcp-host-servers",
     "mcp-host-catalog:true",
     "mcp-host-effective",
@@ -266,6 +275,10 @@ test("MCP control methods fail closed when routing is not configured", async () 
   await assert.rejects(
     executors.executeRoutedMcpTool({}),
     /Desktop MCP routing is unavailable/,
+  );
+  await assert.rejects(
+    executors.executeLocalBrowserAction({ type: "resolve-target", conversationId: "bot-a" }),
+    /Local Browser Workspace routing is unavailable/,
   );
   await assert.rejects(executors.listHostMcpServers(), /Desktop MCP lifecycle routing is unavailable/);
   await assert.rejects(executors.listHostMcpCatalog({}), /Desktop MCP lifecycle routing is unavailable/);
