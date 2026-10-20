@@ -26,6 +26,10 @@
 }
 
 .sand-browser-workspace__tabs {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+  position: relative;
+  z-index: 5000;
   align-items: stretch;
   background: color-mix(in srgb, currentColor 4%, transparent);
   display: flex;
@@ -107,6 +111,10 @@
 }
 
 .sand-browser-workspace__toolbar {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+  position: relative;
+  z-index: 5000;
   align-items: center;
   border-bottom: 1px solid color-mix(in srgb, currentColor 10%, transparent);
   display: flex;
