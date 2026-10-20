@@ -251,7 +251,7 @@ test("Linux-only native capabilities are never advertised on macOS or Windows", 
   );
   const announced = await backend.capabilities();
   assert.deepEqual(announced.capabilities, ["offline", "selection"]);
-  assert.equal(announced.platform, "darwin");
+  assert.equal(announced.platform, "desktop");
 });
 
 test("production desktop bridge runs end-to-end without Electron from preload IPC through router, approval gate and dandelion CLI", async () => {

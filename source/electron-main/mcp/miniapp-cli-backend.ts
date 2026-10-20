@@ -190,7 +190,7 @@ export function createDandelionCliBackend(
         if (config.enableHotspot === true) capabilities.push("hotspot");
         if (config.enableUpdate === true) capabilities.push("update");
       }
-      return Promise.resolve({ capabilities, platform: platform === NATIVE_CLI_PLATFORM ? "linux" : platform, targetPools: [...config.targetPools] });
+      return Promise.resolve({ capabilities, platform: "desktop", targetPools: [...config.targetPools] });
     },
     readState() {
       return Promise.resolve({
@@ -208,8 +208,8 @@ export function createDandelionCliBackend(
       const root = await realpath(picked[0]!.path);
       const info = await stat(root);
       if (mode === "directory" && !info.isDirectory()) throw new Error("DIRECTORY_SELECTION_REQUIRED");
-      if (picked.length > limits.maxFiles || info.size > limits.maxBytes) throw new Error("SELECTION_LIMIT_EXCEEDED");
       if (!(await canonicalRoots()).some((allowed) => insideRoot(allowed, root))) throw new Error("ROOT_NOT_AUTHORIZED");
+      if (picked.length > limits.maxFiles || info.size > limits.maxBytes) throw new Error("SELECTION_LIMIT_EXCEEDED");
       pruneSelections();
       const selectionId = randomUUID();
       selections.set(selectionId, { root, expiresAt: Date.now() + SELECTION_TTL_MS });
