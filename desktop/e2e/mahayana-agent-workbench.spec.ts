@@ -469,6 +469,28 @@ async function ensureE2eAuthBackend(): Promise<string> {
         ].join(''));
         return;
       }
+      if (requestUrl.pathname === '/browser-workspace-fixture' && request.method === 'GET') {
+        const origin = `http://${request.headers.host ?? '127.0.0.1'}`;
+        response.setHeader('content-type', 'text/html; charset=utf-8');
+        response.statusCode = 200;
+        response.end(`<!doctype html><html><head><title>Fabushi Browser Fixture</title></head><body><main><h1>Fabushi Native Browser</h1><a id="download-link" href="${origin}/browser-workspace-download">Download fixture</a></main></body></html>`);
+        return;
+      }
+      if (requestUrl.pathname === '/browser-workspace-second' && request.method === 'GET') {
+        response.setHeader('content-type', 'text/html; charset=utf-8');
+        response.statusCode = 200;
+        response.end('<!doctype html><html><head><title>Fabushi Browser Second</title></head><body><h1>Second native page</h1></body></html>');
+        return;
+      }
+      if (requestUrl.pathname === '/browser-workspace-download' && request.method === 'GET') {
+        const bytes = Buffer.from('FABUSHI_BROWSER_DOWNLOAD_V1\\n', 'utf8');
+        response.setHeader('content-type', 'application/octet-stream');
+        response.setHeader('content-disposition', 'attachment; filename="fabushi-browser-fixture.txt"');
+        response.setHeader('content-length', String(bytes.length));
+        response.statusCode = 200;
+        response.end(bytes);
+        return;
+      }
       if (requestUrl.pathname === '/aiserver.v1.InferenceService/Stream') {
         const body = await readRequestBody(request);
         const authorization = request.headers.authorization;
@@ -759,6 +781,76 @@ async function expectHermesAssistantTurn(page: Page, expectedText: string): Prom
   expect(bodyText.split(expectedText).length - 1).toBe(1);
   return turn;
 }
+
+test('native Browser Workspace opens real Chromium pages, isolates tabs, and downloads verified bytes', async () => {
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-browser-workspace-'));
+  let app: ElectronApplication | null = null;
+
+  try {
+    const origin = await ensureE2eAuthBackend();
+    app = await launchDesktopApp(appDataDir);
+    const page = await app.firstWindow();
+    await completeBrowserLogin(page);
+    await openMahayanaConversation(page);
+
+    await page.getByRole('button', { name: 'Open browser workspace', exact: true }).click();
+    const workspace = page.getByTestId('browser-workspace');
+    await expect(workspace).toBeVisible({ timeout: 10_000 });
+    const address = workspace.getByRole('textbox', { name: 'Address and search' });
+
+    await address.fill(`${origin}/browser-workspace-fixture`);
+    await address.press('Enter');
+    await expect(workspace.getByRole('tab').filter({ hasText: 'Fabushi Browser Fixture' })).toHaveCount(1, { timeout: 15_000 });
+
+    await expect.poll(async () => app!.evaluate(({ webContents }) => webContents.getAllWebContents()
+      .map((contents) => ({ url: contents.getURL(), title: contents.getTitle() }))
+      .find((entry) => entry.url.includes('/browser-workspace-fixture')) ?? null), { timeout: 10_000 }).toEqual({
+      url: `${origin}/browser-workspace-fixture`,
+      title: 'Fabushi Browser Fixture',
+    });
+
+    await workspace.getByRole('button', { name: 'New browser tab', exact: true }).click();
+    await expect(workspace.getByRole('tab')).toHaveCount(2);
+    await address.fill(`${origin}/browser-workspace-second`);
+    await address.press('Enter');
+    await expect(workspace.getByRole('tab').filter({ hasText: 'Fabushi Browser Second' })).toHaveCount(1, { timeout: 15_000 });
+    await expect(workspace.getByRole('tab').filter({ hasText: 'Fabushi Browser Fixture' })).toHaveCount(1);
+
+    await address.fill(`${origin}/browser-workspace-download`);
+    await address.press('Enter');
+    await workspace.getByRole('button', { name: 'Downloads', exact: true }).click();
+    await expect(workspace.getByText('fabushi-browser-fixture.txt', { exact: true })).toBeVisible({ timeout: 15_000 });
+    await expect(workspace.getByText(/completed/)).toBeVisible({ timeout: 15_000 });
+
+    const browserUserData = await app.evaluate(({ app: electronApp }) => electronApp.getPath('userData'));
+    const downloadRoot = path.join(browserUserData, 'browser-workspace', 'downloads');
+    const expectedBytes = Buffer.from('FABUSHI_BROWSER_DOWNLOAD_V1\n', 'utf8');
+    await expect.poll(async () => {
+      const { readdir, readFile } = await import('node:fs/promises');
+      const accounts = await readdir(downloadRoot, { withFileTypes: true }).catch(() => []);
+      for (const account of accounts) {
+        if (!account.isDirectory()) continue;
+        const files = await readdir(path.join(downloadRoot, account.name)).catch(() => []);
+        for (const file of files) {
+          if (!file.endsWith('-fabushi-browser-fixture.txt')) continue;
+          const actual = await readFile(path.join(downloadRoot, account.name, file));
+          if (actual.equals(expectedBytes)) return true;
+        }
+      }
+      return false;
+    }, { timeout: 10_000 }).toBe(true);
+
+    const nativeEntries = await app.evaluate(({ webContents }) => webContents.getAllWebContents()
+      .map((contents) => ({ url: contents.getURL(), title: contents.getTitle() }))
+      .filter((entry) => entry.url.includes('/browser-workspace-')));
+    expect(nativeEntries.some((entry) => entry.url.includes('/browser-workspace-fixture'))).toBe(true);
+    expect(nativeEntries.some((entry) => entry.url.includes('/browser-workspace-second'))).toBe(true);
+  } finally {
+    await app?.close().catch(() => undefined);
+    await rm(appDataDir, { recursive: true, force: true });
+  }
+});
+
 
 test('Mahayana renders one Hermes-style assistant turn instead of a completion Workbench card', async () => {
   const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-mahayana-assistant-turn-'));
