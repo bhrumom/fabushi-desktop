@@ -64,7 +64,9 @@ function miniAppTooling(context: ProductionServiceContext, ipc: unknown): MiniAp
     envValue?.trim() || (typeof descriptorValue === "string" ? descriptorValue.trim() : "");
   const binaryPath = stringValue(env.FABUSHI_DANDELION_BIN, descriptor.binaryPath);
   const configPath = stringValue(env.FABUSHI_DANDELION_CONFIG, descriptor.configPath);
-  const preloadPath = stringValue(env.FABUSHI_MINIAPP_PRELOAD, undefined) || context.resources.preloadPath;
+  const preloadPath = stringValue(env.FABUSHI_MINIAPP_PRELOAD, undefined)
+    || (context.resources as unknown as { preloadPath?: string } | undefined)?.preloadPath
+    || "";
   const descriptorRoots = Array.isArray(descriptor.roots) ? descriptor.roots.filter((item): item is string => typeof item === "string") : [];
   const roots = (env.FABUSHI_DANDELION_ROOTS ?? "").split(delimiter).map((item) => item.trim()).filter(Boolean);
   const authorizedRoots = roots.length > 0 ? roots : descriptorRoots.map((item) => item.trim()).filter(Boolean);
