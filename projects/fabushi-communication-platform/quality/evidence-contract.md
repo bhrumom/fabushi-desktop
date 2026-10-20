@@ -54,6 +54,14 @@ Review-copy evidence additionally records the exact base/current source identity
 
 Scan/report evidence may aggregate clone pairs and clone-line totals and carry stable findings through the canonical quality ledger, but clone metrics remain investigation selectors rather than ownership or acceptance authority. Detector/process failure, incomplete exact-source input, stale source identity, or an unverifiable normalization/match cannot be rewritten as zero clones or a passing review. Successful clone detection provides no product mutation, task-routing, security authorization, ownership change, or release acceptance.
 
+## Repository source-derived build-model evidence
+
+Passing source-derived build-model evidence records the exact source revision, build-file scope, recognizer version/grammar and deterministic traversal/normalization rules, then preserves the recognized target/source/link/PCH/executable/library/test facts consumed by the quality check. It must be possible to distinguish a recognized negative from a relationship the recognizer did not model; unsupported variables, generator expressions, quoting, conditionals, helper commands or malformed/incomplete input remain explicit limitations rather than evidence of absence.
+
+Consumer evidence records the purpose for which each derived fact was used: include-cost/build-work estimation, cross-target layering investigation, coarse test-source attribution, or atlas drafting. It also records the caller-owned threshold/result semantics and any fallback/unknown state. The build-model library itself creates no finding history, owner approval, source edit, queue record or release verdict.
+
+When a claim crosses from source approximation into configured build truth, evidence must reference the existing Configured-build graph provenance evidence for the exact build directory/generator/configuration/manifest subject. Source-derived CMake text alone cannot prove actual target membership, producer/output identity, PCH consumption, evaluated link operands, compiler definitions, generated inputs, build execution, artifact identity, runtime reachability or release acceptance. Stale source, parser failure or undecidable syntax is non-passing for any claim that depends on that fact and may not be rewritten as a clean result.
+
 ## Repository responsibility-area-map evidence
 
 Passing area-map evidence records the exact source revision, parent atlas area and exact approved map text, then preserves the map's five semantic parts: Modules file/file-group ownership facts; Placement rules and forbidden homes; checkable Invariants with approval provenance; Leave-alone rationale; and Direction. It records the reviewer/source facts that motivated each material placement or boundary statement, stale-file-reference results, atlas-consistency checks, and the declared owner's approval identity/date or equivalent durable provenance. Unapproved invariant text is explicitly labeled proposal-only.
