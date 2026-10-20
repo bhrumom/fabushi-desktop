@@ -14963,9 +14963,8 @@
       ],
       "fabushi_target_symbols": [
         "Quality findings enter the ordinary task/review/evidence lifecycle rather than a parallel queue owner.",
-        "Repository quality-task class qualification",
-        "Repository quality-task class evidence",
-        "Repository quality-health command orchestration evidence"
+        "Routing limits, in-progress path conflicts, recent-authority drift, owner approvals, placement-map leave-alone rules and audit suspension are negative controls.",
+        "Routed proposal evidence includes finding identities, class, area, metric before/target, proportional proof, trust/approval state, conflicts with active ownership, and the ordinary task identity that received the work."
       ],
       "target_language": "Markdown",
       "language_rationale": "This source entry defines repository-development task/evidence orchestration policy. Applicable behavior is already source-neutrally governed in Fabushi repository policy/evidence contracts rather than shipping product code.",
@@ -15159,7 +15158,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral repository workflow contract read from telegramdesktop/tdesktop authority; no upstream Python scheduler implementation is copied into Fabushi shipping runtime.",
-      "notes": "Zero-based recursive authority index 37 is .agents/skills/continue/references/consolidate-pending-tasks.md@bd301d93f8f670ad041b3db72330e17cbb50eb5c. Its complete reference, continue skill, Grok/Claude callers, workspace consolidation implementation and direct regressions were traced against Fabushi exact-head repository task/evidence governance and shipping RunScheduler/prompt candidates. This closes one source entry: unknown=16,161, unread=16,136, omitted=0. Parent Rust run 39492471969 succeeded at 423d90406948a0e8b06a5c17a8aece30ce687346. Parent TDRP run 39492472036 attempt 2 failed on external chromium.googlesource.com/breakpad HTTP 503 in shard 7; downstream fixed-point/reachability were skipped, so it is incomplete/failed evidence and not accepted parent authority. The next strict source entry is index 38 .agents/skills/continue/references/split-required-task.md@552ad09b2fa022b7df94481746a51167305bf846.",
+      "notes": "Zero-based recursive authority index 37 is .agents/skills/continue/references/consolidate-pending-tasks.md@bd301d93f8f670ad041b3db72330e17cbb50eb5c. Its complete reference, continue skill, Grok/Claude callers, workspace consolidation implementation and direct regressions were traced against Fabushi exact-head repository task/evidence governance and shipping RunScheduler/prompt candidates. This closes one source entry: unknown=16,161, unread=16,136, omitted=0. Parent Rust run 39492471969 succeeded at 423d90406948a0e8b06a5c17a8aece30ce687346. Parent TDRP run 39492472036 attempt 2 failed on external chromium.googlesource.com/breakpad HTTP 503 in shard 7; downstream fixed-point/reachability were skipped, so it is incomplete/failed evidence and not accepted parent authority. The next strict source entry is index 38 .agents/skills/continue/references/split-required-task.md@552ad09b2fa022b7df94481746a51167305bf846. Exact-head run 39494999784 exposed and correctly rejected a duplicated target-symbol ownership key against TDRP-R9-CODE-HEALTH-TASK-CLASSES-001; this repair narrows the mapping to three distinct existing-owner contract sentences without changing responsibility, counters, source identity or closure gates.",
       "test_execution_evidence": []
     }
   ]
