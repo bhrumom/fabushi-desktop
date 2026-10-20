@@ -6,10 +6,10 @@
   "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
   "coverage": {
     "source_entries_total": 16201,
-    "unknown": 16162,
-    "unread": 16137,
+    "unknown": 16161,
+    "unread": 16136,
     "omitted": 0,
-    "responsibilities_total": 55,
+    "responsibilities_total": 56,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -14881,6 +14881,285 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral repository host-registration contract read from telegramdesktop/tdesktop authority; no OpenAI/Telegram adapter runtime copied into Fabushi shipping runtime.",
       "notes": "Zero-based recursive authority index 36 immediately after continue/SKILL.md index 35 is .agents/skills/continue/agents/openai.yaml@e981285ee10cbed9e27e358d60ce596c9e0b3d61. The complete registration YAML, Grok/Claude invocation callers and adapters, related Codex worker contract/tests, durable workspace owner/tests, and Fabushi exact-head native-invocation plus shipping AI/task owner candidates were traced. No in-repository parser or direct test for the YAML path itself was found; host discovery is the registration boundary, while $continue resolves to the already-mapped shared scheduler. This closes only one source entry: unknown=16,162, unread=16,137, omitted=0. Parent TDRP run 39486129504 and Rust run 39486129565 are historical-only for f605a520cb7d3dc21da795a35cb89b8479afdb8f; new exact-head verification is pending. The next strict source entry is .agents/skills/continue/references/consolidate-pending-tasks.md@bd301d93f8f670ad041b3db72330e17cbb50eb5c.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
+      "source_path": ".agents/skills/continue/references/consolidate-pending-tasks.md",
+      "source_blob_sha": "bd301d93f8f670ad041b3db72330e17cbb50eb5c",
+      "source_kind": "repository_ai_pending_task_consolidation_workflow",
+      "module_id": "tdesktop.continue-pending-task-consolidation",
+      "responsibility_id": "TDRP-R9-CONTINUE-PENDING-CONSOLIDATION-001",
+      "source_symbols": [
+        "Inputs and boundary",
+        "Inventory and eligibility",
+        "Aggressive merge decision",
+        "Build replacement tasks",
+        "Traceability and validation",
+        "Publish and return"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-TASK-EVIDENCE",
+        "CAP-REPOSITORY-AI-WORKER-LIFECYCLE",
+        "CAP-REPOSITORY-TASK-CONSOLIDATION"
+      ],
+      "dependency_ids": [
+        ".agents/skills/continue/SKILL.md",
+        ".grok/commands/continue.md",
+        ".claude/commands/continue.md",
+        ".agents/skills/process-inbox/scripts/workspace.py",
+        ".agents/skills/process-inbox/scripts/workspace_test.py",
+        "Fabushi ordinary repository task/review/evidence lifecycle",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/continue-pending-task-consolidation-complete-read.md",
+      "behavior_contract": "After discovery routing creates follow-up work, perform one bounded, race-safe repository-task consolidation pass over only semantically equivalent pristine pending tasks; preserve every criterion, input, dependency, project relation and retained historical artifact, publish durable superseded aliases/receipt/completion state atomically, and leave races/conflicts/incomplete evidence visible instead of weakening task truth.",
+      "state_machine": "durable consolidation-pending marker -> fresh non-delegating worker -> bounded unfinished-task snapshot -> eligibility and reverse-dependency fencing -> simulate merged acyclic dependency graph -> re-read for race -> NO_MERGE durable completion or build pristine replacement + retained-content digests + superseded aliases + rewritten dependents/project index + receipt -> consolidate-publish revalidation/CAS -> MERGED completion, RACED with no writes, or visible BLOCKED publication state",
+      "side_effects": [
+        "Repository development task/project/receipt state only; no Telegram/Fabushi product source, shipping runtime, build, test execution, claim, approval or product-task mutation.",
+        "Eligible merged source tasks lose live state only after their retained committed content is digest-sealed and durable superseded aliases are published."
+      ],
+      "failure_cases": [
+        "A non-pristine, claimed, started or semantically distinct task is merged",
+        "Acceptance criteria, input artifacts, source lineage or dependency edges are lost during consolidation",
+        "A retained task body changes after its digest was sealed",
+        "Reverse dependents are rewritten into a missing edge or dependency cycle",
+        "A stale pre-mutation snapshot publishes after a concurrent task/source change",
+        "A no-merge pass omits its durable completion marker and repeats after restart",
+        "Shipping RunScheduler/Task/Automation state is repurposed as repository-development queue truth",
+        "An incomplete/failed GitHub Actions run is presented as accepted source authority"
+      ],
+      "ui_disposition": "Not applicable; repository-development workflow reference and durable AI task/evidence state only.",
+      "non_ui_responsibilities": [
+        "Bounded unfinished-task inventory and pristine eligibility fencing",
+        "Semantics-preserving duplicate pending-task consolidation",
+        "Retained-content digest and durable old-to-new aliasing",
+        "Dependency/project-index rewrite with cycle and reverse-dependent guards",
+        "Durable receipt and completion marker for restart idempotence",
+        "Re-read/CAS publication fencing and fail-visible race/conflict handling"
+      ],
+      "platform_delta": "Fabushi already owns the applicable responsibility through source-neutral ordinary repository task/review/evidence governance. The upstream Markdown/Python mechanics are repository workflow provenance, not shipping product architecture; no Telegram-specific queue, copied Python runtime or second product Task owner is required.",
+      "existing_owner_candidates": [
+        "AGENTS.md ordinary repository task/review/evidence lifecycle, exact-authority and native workflow governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md repository task-class qualification and exact-head evidence",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md repository task/publication/conflict evidence",
+        "source/host/src/extensions/transcript/run_scheduler.rs shipping RunScheduler",
+        "source/host/src/runner/runner_prompt_glue.rs / system_prompt_assembly.rs / turn_agent_composition.rs shipping turn composition"
+      ],
+      "existing_owner": "Fabushi source-neutral ordinary repository task/review/evidence lifecycle and exact-head GitHub Actions evidence governance",
+      "rejected_existing_owners": [
+        "RunScheduler owns end-user User/Agent/Background shipping run lanes, watchdog and settlement; it does not own repository task aliases, dependency rewrites, Git publication or source-evidence state.",
+        "Runner prompt/system/turn composition owns shipping provider/tool turns, not repository-development task retirement or routing-worktree publication.",
+        "A copied Telegram/Python consolidation runtime or second repository queue would duplicate the existing source-neutral task/review/evidence owner."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Quality findings enter the ordinary task/review/evidence lifecycle rather than a parallel queue owner.",
+        "Repository quality-task class qualification",
+        "Repository quality-task class evidence",
+        "Repository quality-health command orchestration evidence"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "This source entry defines repository-development task/evidence orchestration policy. Applicable behavior is already source-neutrally governed in Fabushi repository policy/evidence contracts rather than shipping product code.",
+      "command_event_contracts": [
+        "discovery routing creates tasks -> durable consolidation-pending marker",
+        "pending marker + frozen batch -> one bounded consolidation worker",
+        "eligible old tasks -> task-content-digest -> superseded aliases -> pristine replacement + rewritten dependencies",
+        "NO_MERGE/MERGED -> durable consolidation-complete marker",
+        "consolidate-publish -> explicit-path commit -> post-rebase graph/alias revalidation -> publication boundary",
+        "concurrent mutation -> RACED/no writes; semantic/publication conflict -> visible incomplete state",
+        "new mapping commit -> parent evidence historical/supporting only until new exact-head workflows finish"
+      ],
+      "state_owner": "Existing Fabushi repository task/spec/review/evidence lifecycle; no shipping product state owner is added.",
+      "lifecycle_owner": "Root AGENTS.md ordinary repository development lifecycle plus Test Strategy and Test Evidence Contract exact-head governance.",
+      "persistence_and_restart": "Durable repository task descriptions/inputs remain historical; old live state is replaced only by digest-bound superseded aliases and an immutable consolidation receipt. A completion marker prevents restart repetition; a race leaves the pending marker for a later bounded attempt.",
+      "concurrency_and_cancellation": "The applicable contract is one consolidation transaction at a time, an immutable snapshot followed by immediate re-read, reverse-dependent fencing and publication revalidation/CAS. Races must not publish stale task state or force-push; unrelated active product/runtime work is outside this repository queue.",
+      "security_boundary": "The consolidation worker cannot authorize product execution, mutate Telegram/Fabushi source, widen repository task ownership, bypass approval/trust/evidence gates, force-push, or convert missing/failed CI proof into acceptance.",
+      "network_service_dependencies": [
+        "GitHub repository authority",
+        "GitHub Actions hosted runners",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi repository governance / GitHub Actions evidence lifecycle",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "Independent exact-head TDRP Revision 9 and Rust desktop runtime verification of this new mapping commit is pending.",
+        "Parent TDRP run 39492472036 is incomplete/failed external-503 evidence; its skipped fixed-point/reachability gates cannot be promoted to accepted authority.",
+        "Full recursive generated/resource/tool and remaining-open disposition remains open; source_closure_ready cannot be true while unknown/unread are non-zero."
+      ],
+      "production_entrypoints": [
+        "AGENTS.md -> ordinary repository task/review/evidence lifecycle",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> repository task-class and exact-head qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> task/publication/conflict and non-passing evidence"
+      ],
+      "production_evidence": [
+        "path:AGENTS.md#ordinary-repository-task-review-evidence-lifecycle",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Repository-quality-task-class-qualification",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Repository-quality-task-class-evidence",
+        "successful-parent-rust-run:39492471969/head:423d90406948a0e8b06a5c17a8aece30ce687346/jobs:6-of-6/artifact:12296766732/digest:sha256:fa685dbeff5ec979fa07ad913e4c8cda01b0f8c1f1108c0b0f74e705b07b622a",
+        "incomplete-parent-tdrp-run:39492472036/attempt:2/head:423d90406948a0e8b06a5c17a8aece30ce687346/failure-job:118870253577/external-http-503/not-accepted-authority",
+        "partial-parent-authority-artifact:12296064250/digest:sha256:37ac4fe26a6244d47c5e5b61c05b3bd2dc626a370aad34b19ce71b3e69ccb58e/not-fixed-point-authority",
+        "partial-parent-boost-artifact:12296446919/digest:sha256:493aa3266201c07f240c79764e580bc0467bd614b195e972431a50b9dedf0c70/582-of-582-open-0/not-whole-run-acceptance"
+      ],
+      "test_evidence": [
+        "dossier:projects/telegram-desktop-rust/dossiers/continue-pending-task-consolidation-complete-read.md",
+        "upstream-reference:.agents/skills/continue/references/consolidate-pending-tasks.md@bd301d93f8f670ad041b3db72330e17cbb50eb5c",
+        "upstream-skill:.agents/skills/continue/SKILL.md@aeb81dd57018abbc8f03ea3dbd34f91952128db5",
+        "upstream-grok-caller:.grok/commands/continue.md@1365e5a7dc4c167468f7b6f57ec92ff89389b32e",
+        "upstream-claude-caller:.claude/commands/continue.md@e81c86031f2e501f30d2b6ed908fb03d648324c8",
+        "upstream-workspace:.agents/skills/process-inbox/scripts/workspace.py@e1fdabbac9ccd635962b7b6dc1a62357fc5b931c",
+        "upstream-workspace-tests:.agents/skills/process-inbox/scripts/workspace_test.py@d045c95ca4415ffc02953ff02ac10e329dc69e7b",
+        "workspace_test.test_resolve_follows_durable_superseded_task_alias",
+        "workspace_test.test_dependency_validation_rejects_missing_and_cyclic_edges",
+        "workspace_test.test_queue_inventory_finds_pending_consolidation_markers",
+        "workspace_test.test_generic_publish_recognizes_consolidation_validation",
+        "workspace_test.test_no_merge_consolidation_publishes_durable_completion",
+        "workspace_test.test_merged_consolidation_publishes_a_removed_directory",
+        "workspace_test.test_merged_consolidation_validates_aliases_and_dependencies",
+        "parent-failure-log:run39492472036/job118870253577 HTTP 503 chromium.googlesource.com/breakpad"
+      ],
+      "target_commit": "423d90406948a0e8b06a5c17a8aece30ce687346",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development and evidence governance",
+      "composition_slot": "Ordinary repository task routing/maintenance optimization",
+      "capability_component": "Source-neutral repository pending-task consolidation and evidence-preserving publication",
+      "variation_axes": [
+        "MERGED vs NO_MERGE vs RACED/BLOCKED",
+        "startup recovery marker vs newly routed pending marker",
+        "pristine todo candidate vs claimed/started/blocked veto",
+        "parent supporting evidence vs new exact-head evidence"
+      ],
+      "shared_owner_contracts": [
+        "Root AGENTS.md development lifecycle",
+        "Ordinary repository task/review/evidence lifecycle",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract"
+      ],
+      "duplicate_root_check": "No Telegram consolidation runtime, second repository task queue, shipping Task store, RunScheduler lane, Automation scheduler, Workflow store or source-specific product owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "A durable pending marker survives scheduler context loss; MERGED/NO_MERGE publishes one durable complete marker, while a pre-commit race preserves pending state for a later bounded attempt. Old-to-new aliases preserve task lookup and historical traceability.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to workflow governance",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CONTINUE-PENDING-CONSOLIDATION-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CONTINUE-CONSOLIDATION-ELIGIBILITY-001",
+        "ORA-TDRP-CONTINUE-CONSOLIDATION-TRACEABILITY-001",
+        "ORA-TDRP-CONTINUE-CONSOLIDATION-CAS-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CONTINUE-CONSOLIDATION-NO-SEMANTIC-LOSS-001",
+        "INV-TDRP-CONTINUE-CONSOLIDATION-RETAINED-CONTENT-IMMUTABLE-001",
+        "INV-TDRP-CONTINUE-CONSOLIDATION-RACE-FAIL-VISIBLE-001",
+        "INV-TDRP-CONTINUE-CONSOLIDATION-NO-SHIPPING-QUEUE-COLLISION-001"
+      ],
+      "unit_case_ids": [
+        "workspace_test.test_resolve_follows_durable_superseded_task_alias",
+        "workspace_test.test_dependency_validation_rejects_missing_and_cyclic_edges",
+        "workspace_test.test_queue_inventory_finds_pending_consolidation_markers"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CONTINUE-CONSOLIDATION-PRESERVES-TASK-SEMANTICS-001",
+        "CONTRACT-TDRP-CONTINUE-CONSOLIDATION-FAILS-CLOSED-ON-RACE-001"
+      ],
+      "integration_case_ids": [
+        "workspace_test.test_no_merge_consolidation_publishes_durable_completion",
+        "workspace_test.test_merged_consolidation_publishes_a_removed_directory",
+        "workspace_test.test_merged_consolidation_validates_aliases_and_dependencies"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-CONTINUE-PARENT-EVIDENCE-DEMOTION-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CONTINUE-CONSOLIDATION-RETAINED-CONTENT-RACE-001",
+        "FAULT-TDRP-CONTINUE-CONSOLIDATION-DEPENDENCY-RACE-001",
+        "FAULT-TDRP-CONTINUE-PARENT-TDRP-EXTERNAL-503-INCOMPLETE-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CONTINUE-CONSOLIDATION-NO-FORCE-PUBLISH-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-CONTINUE-CONSOLIDATION-001"
+      ],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-INVENTORY",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "telegramdesktop/tdesktop exact upstream snapshot",
+        "workspace.py temporary Git/task fixtures"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral repository workflow contract read from telegramdesktop/tdesktop authority; no upstream Python scheduler implementation is copied into Fabushi shipping runtime.",
+      "notes": "Zero-based recursive authority index 37 is .agents/skills/continue/references/consolidate-pending-tasks.md@bd301d93f8f670ad041b3db72330e17cbb50eb5c. Its complete reference, continue skill, Grok/Claude callers, workspace consolidation implementation and direct regressions were traced against Fabushi exact-head repository task/evidence governance and shipping RunScheduler/prompt candidates. This closes one source entry: unknown=16,161, unread=16,136, omitted=0. Parent Rust run 39492471969 succeeded at 423d90406948a0e8b06a5c17a8aece30ce687346. Parent TDRP run 39492472036 attempt 2 failed on external chromium.googlesource.com/breakpad HTTP 503 in shard 7; downstream fixed-point/reachability were skipped, so it is incomplete/failed evidence and not accepted parent authority. The next strict source entry is index 38 .agents/skills/continue/references/split-required-task.md@552ad09b2fa022b7df94481746a51167305bf846.",
       "test_execution_evidence": []
     }
   ]

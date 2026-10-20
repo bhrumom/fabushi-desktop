@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16201,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16162,
-    "unread_minimum": 16137,
+    "unknown_minimum": 16161,
+    "unread_minimum": 16136,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -39,5 +39,5 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream is telegramdesktop/tdesktop@78ceaa548ae0e055aa56b53fde22064d13f250ef/tree 76b967833b38eb7aa2cb4047008c07331390e61e. Parent exact-head TDRP run 39486129504 and Rust run 39486129565 at f605a520cb7d3dc21da795a35cb89b8479afdb8f are historical-only for this newer mapping commit; their 60+1 artifacts were parent-head ZIP-hash verified. latest_recursive_evidence intentionally remains bound to previous_historical_baseline a0cfd60923a220894611b6fcb3c92157876dc4a5 because the validator uses that field for recursive count reconciliation. Recursive authority index 36 is .agents/skills/continue/agents/openai.yaml@e981285ee10cbed9e27e358d60ce596c9e0b3d61 immediately after continue/SKILL.md index 35. This closes only the OpenAI host-native registration entry: unknown=16,162, unread=16,137, omitted=0. The next strict source entry is .agents/skills/continue/references/consolidate-pending-tasks.md@bd301d93f8f670ad041b3db72330e17cbb50eb5c at index 37. Recursive generated/resource/tool disposition remains open and source_closure_ready=false."
+  "note": "Live upstream is telegramdesktop/tdesktop@78ceaa548ae0e055aa56b53fde22064d13f250ef/tree 76b967833b38eb7aa2cb4047008c07331390e61e. latest_recursive_evidence intentionally remains bound to previous_historical_baseline a0cfd60923a220894611b6fcb3c92157876dc4a5 for recursive count reconciliation. Recursive authority index 37 .agents/skills/continue/references/consolidate-pending-tasks.md@bd301d93f8f670ad041b3db72330e17cbb50eb5c is independently mapped: unknown=16,161, unread=16,136, omitted=0. Parent Rust run 39492471969 at 423d90406948a0e8b06a5c17a8aece30ce687346 succeeded. Parent TDRP run 39492472036 attempt 2 is explicitly incomplete/failed evidence because shard 7 hit chromium.googlesource.com/breakpad HTTP 503, dependency-skipping fixed-point and recursive reachability; its successful authority/Boost jobs do not constitute accepted authority. The next strict source entry is index 38 .agents/skills/continue/references/split-required-task.md@552ad09b2fa022b7df94481746a51167305bf846. Recursive generated/resource/tool disposition remains open and source_closure_ready=false."
 }
