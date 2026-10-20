@@ -28,6 +28,19 @@ stable errors, cancellation where applicable, and exact-source Actions evidence.
 The Web bundle remains unprivileged; it never receives a path, credential,
 private key, shell, socket or arbitrary native method.
 
+## Desktop runtime configuration
+
+The packaged Desktop Host may discover a user-approved runtime descriptor at
+`<userData>/global-dandelion/host-config.json`. This is Host-owned configuration,
+not Mini App input. It may contain the absolute `binaryPath`, `configPath`,
+authorized `roots`, target `pools`, state/compatibility directories, bounded
+receive settings, hotspot/update settings and trust metadata. The Host rejects
+malformed or oversized descriptors, requires absolute binary/config paths,
+revalidates roots before each operation, and keeps environment variables only
+as CI/development compatibility overrides. The descriptor does not control the
+Mini App preload, package identity, account scope, approval gate or capability
+policy.
+
 ## Non-goals
 
 - Giving Web/Wasm direct filesystem, socket, process, hotspot or key access.
