@@ -6,10 +6,10 @@
   "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16183,
-    "unread": 16156,
+    "unknown": 16182,
+    "unread": 16155,
     "omitted": 0,
-    "responsibilities_total": 41,
+    "responsibilities_total": 42,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -9919,6 +9919,267 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral repository host-registration contract read from telegramdesktop/tdesktop authority; no OpenAI/Telegram adapter runtime copied into Fabushi shipping runtime.",
       "notes": "Actual 1-based recursive array entry 19 is .agents/skills/code-health/agents/openai.yaml. Its referenced skill/command/scheduled callers remain independently accounted source entries unless already represented. This closure decrements only one independent source entry to unknown=16,183 and unread=16,156, omitted=0.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
+      "source_path": ".agents/skills/code-health/references/atlas.md",
+      "source_blob_sha": "7f43dd75fcfb670c327bc3e71c1de0589e7506f0",
+      "source_kind": "repository_quality_responsibility_atlas_reference",
+      "module_id": "tdesktop.code-health-responsibility-atlas",
+      "responsibility_id": "TDRP-R9-CODE-HEALTH-RESPONSIBILITY-ATLAS-001",
+      "source_symbols": [
+        "Source atlas scope",
+        "Format / area identity and path specificity",
+        "Draft lifecycle",
+        "Upkeep / narrow amendments"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-REPOSITORY-RESPONSIBILITY-MAPPING"
+      ],
+      "dependency_ids": [
+        ".agents/skills/code-health/SKILL.md",
+        ".agents/skills/code-health/scripts/atlas.py",
+        ".agents/skills/code-health/scripts/health.py",
+        ".agents/skills/code-health/scripts/report.py",
+        ".agents/skills/code-health/references/survey.md",
+        ".agents/skills/code-health/references/maps.md",
+        ".agents/skills/code-health/references/classes.md",
+        ".claude/commands/code-health.md",
+        "Fabushi repository AI development lifecycle",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/code-health-atlas-reference-complete-read.md",
+      "behavior_contract": "Define and maintain a stable responsibility-oriented atlas over an exact source authority: deterministic exact-file/glob/prefix ownership, one approved area per source file, layer/dependency direction, evidence-backed draft generation, independent source reading/consolidation/verification, explicit owner approval before repository instruction, and narrow amendments that keep area maps consistent.",
+      "state_machine": "fresh exact source -> generated candidate skeleton and source facts -> independent responsibility descriptions -> consolidation of split/merge/layer judgments -> independent verification plus coverage negatives -> owner approval -> committed canonical atlas -> scans/surveys/maps/tasks consume stable area identities -> source drift proposes narrow amendment -> owner approval or remains draft",
+      "side_effects": [
+        "Repository quality/evidence metadata only; no shipping product runtime, Telegram adapter, or second ownership store is introduced."
+      ],
+      "failure_cases": [
+        "Atlas draft is generated from mutable/stale source or loses exact revision identity",
+        "A source file is unmapped or equally claimed by multiple areas",
+        "A path pattern matches nothing but remains silently accepted",
+        "Metrics/thresholds are treated as authority for responsibility rather than investigation evidence",
+        "Generated or verifier-unchecked atlas text is committed without explicit owner approval",
+        "A known boundary violation is normalized by broadening responsibility",
+        "An area rename silently preserves old identity/history",
+        "Area map contradicts its approved atlas boundary",
+        "Atlas metadata becomes a copied Telegram code-health runtime or second product/repository owner"
+      ],
+      "ui_disposition": "Not applicable; repository quality/responsibility governance only.",
+      "non_ui_responsibilities": [
+        "Stable unique responsibility-area identities and layer ordering",
+        "Deterministic path classification with exact file > glob > prefix specificity",
+        "Complete one-area coverage and stale-pattern detection",
+        "Exact-revision skeleton/source-fact generation",
+        "Independent description, consolidation and verifier lifecycle",
+        "Explicit owner approval before canonical publication",
+        "Narrow amendment and area-map consistency rules",
+        "Use of atlas identities by health metrics, surveys and task placement without creating semantic runtime ownership"
+      ],
+      "platform_delta": "Fabushi already carries the applicable source-neutral responsibility in repository quality/evidence/task governance. This closure sharpens its atlas lifecycle contracts; upstream Python generation/checking mechanics, Telegram paths and provider adapters remain provenance/instruments, not Fabushi runtime owners.",
+      "existing_owner_candidates": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "ordinary Fabushi task/review lifecycle"
+      ],
+      "existing_owner": "Fabushi repository responsibility/quality evidence governance",
+      "rejected_existing_owners": [
+        "Shipping Agent/Coordinator/Host/Runner and product-domain stores do not own repository source atlases",
+        "Release/packaging consumes evidence but does not own responsibility classification",
+        "A copied Telegram code-health/atlas Python runtime would duplicate source-neutral repository governance",
+        "A second repository or product ownership graph would conflict with current canonical owner-first architecture"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository responsibility-atlas governance",
+        "Repository responsibility-atlas lifecycle qualification",
+        "Repository responsibility-atlas evidence"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The source entry is a repository governance/reference contract, not shipping product logic.",
+      "command_event_contracts": [
+        "atlas request/missing canonical map -> bind fresh exact source -> generate candidate skeleton/source facts",
+        "draft -> independent source descriptions -> consolidation -> independent verifier -> deterministic coverage check",
+        "owner approval -> canonical repository instruction; no approval -> draft remains non-authoritative",
+        "scan/survey/task placement -> consume approved stable area identity; source drift -> narrow amendment -> re-approval"
+      ],
+      "state_owner": "Existing Fabushi repository quality/evidence governance",
+      "lifecycle_owner": "Existing repository development lifecycle and GitHub Actions evidence production/review",
+      "persistence_and_restart": "Canonical atlas identity/text and approval provenance are durable repository instructions; draft skeletons/reports are evidence, not truth. Stable area names preserve historical metrics, while explicit renames reset identity rather than silently merging histories.",
+      "concurrency_and_cancellation": "Atlas generation/verification is read-only against an exact authority; publication must revalidate current source/owner state and cannot overwrite conflicting repository instruction changes. Ordinary task ownership/conflict rules remain authoritative.",
+      "security_boundary": "Atlas metadata cannot authorize product behavior, source edits, credential use, routing bypass, or stale-source publication. Exact-source provenance and owner approval remain fail-closed.",
+      "network_service_dependencies": [
+        "GitHub repository authority",
+        "GitHub Actions hosted runners",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi repository quality/release workflow / GitHub Actions",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "Independent exact-head GitHub Actions verification of this source-entry mapping commit is pending."
+      ],
+      "production_entrypoints": [
+        "AGENTS.md -> Repository responsibility-atlas governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Repository responsibility-atlas lifecycle qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Repository responsibility-atlas evidence"
+      ],
+      "production_evidence": [
+        "path:AGENTS.md#Repository responsibility-atlas governance",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Repository responsibility-atlas lifecycle qualification",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Repository responsibility-atlas evidence"
+      ],
+      "test_evidence": [
+        "dossier:projects/telegram-desktop-rust/dossiers/code-health-atlas-reference-complete-read.md",
+        "upstream-atlas-reference:.agents/skills/code-health/references/atlas.md@7f43dd75fcfb670c327bc3e71c1de0589e7506f0",
+        "upstream-skill:.agents/skills/code-health/SKILL.md@6885938b3d186b55f5d69cb8b9b9a96bbca0e097",
+        "upstream-atlas-script:.agents/skills/code-health/scripts/atlas.py@6680fa747a1ddc520f4396949f3c84ab25cd8c43",
+        "upstream-health:.agents/skills/code-health/scripts/health.py@f08675ef7a03c016d85f91c60b8f29e99454abe9",
+        "upstream-report:.agents/skills/code-health/scripts/report.py@a1177613670e933694f545f387ca7e7ed8cf0ee0",
+        "upstream-health-test:.agents/skills/code-health/scripts/health_test.py@2176aea672fd9ed16c01342939fbffb41490ae73",
+        "upstream-survey:.agents/skills/code-health/references/survey.md@d900e7a42b768679c69cd4c584559c783b59d47a",
+        "upstream-maps:.agents/skills/code-health/references/maps.md@89dd78f48283b15d6ad959b2d450895258a0980f",
+        "upstream-classes:.agents/skills/code-health/references/classes.md@27847cae96838be7ddf68d3759dba89279f7cf0e",
+        "upstream-command:.claude/commands/code-health.md@bcabd4bd5b5a1a2ed09b40a7f1fbdd502042329a",
+        "upstream-root-instructions:AGENTS.md@d8d59480277b7defbca1cdbccf7ed164ab2db086"
+      ],
+      "target_commit": "5d445687a2ae58a38f7934a9d1dc68c11f908ca3",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development and quality governance",
+      "composition_slot": "Responsibility atlas / source placement governance",
+      "capability_component": "Source-neutral repository responsibility atlas",
+      "variation_axes": [
+        "initial atlas creation vs narrow amendment",
+        "exact file vs glob vs directory-prefix path classification",
+        "generated candidate data vs human-authored draft vs owner-approved canonical atlas",
+        "whole-tree atlas vs per-area map",
+        "scheduled scan/survey/task consumer of stable area identity"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi repository AI development lifecycle",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract",
+        "ordinary task/review lifecycle"
+      ],
+      "duplicate_root_check": "No Telegram/code-health atlas runtime, second responsibility store, second task queue, or shipping owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Approved area identities remain stable across scans/surveys/tasks; narrow amendments preserve history, while explicit renames are recorded as identity resets.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to workflow governance",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CODE-HEALTH-RESPONSIBILITY-ATLAS-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CODE-HEALTH-ATLAS-COVERAGE-001",
+        "ORA-TDRP-CODE-HEALTH-ATLAS-OWNER-APPROVAL-001",
+        "ORA-TDRP-CODE-HEALTH-ATLAS-LIFECYCLE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CODE-HEALTH-ATLAS-ONE-AREA-001",
+        "INV-TDRP-CODE-HEALTH-ATLAS-STABLE-IDENTITY-001",
+        "INV-TDRP-CODE-HEALTH-ATLAS-EXACT-AUTHORITY-001",
+        "INV-TDRP-CODE-HEALTH-ATLAS-NO-SECOND-OWNER-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CODE-HEALTH-ATLAS-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-CODE-HEALTH-ATLAS-CONSUMERS-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CODE-HEALTH-ATLAS-STALE-AUTHORITY-001",
+        "FAULT-TDRP-CODE-HEALTH-ATLAS-AMBIGUOUS-OWNER-001",
+        "FAULT-TDRP-CODE-HEALTH-ATLAS-UNAPPROVED-PUBLISH-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CODE-HEALTH-ATLAS-PROVENANCE-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-CODE-HEALTH-ATLAS-001"
+      ],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-INVENTORY",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "code-health-atlas-reference-source-contract",
+        "code-health-atlas-script-classification-contract",
+        "code-health-atlas-consumer-chain"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral repository-quality/responsibility-atlas contract read from telegramdesktop/tdesktop authority; no upstream Python/C++ implementation copied into Fabushi shipping runtime.",
+      "notes": "Actual 1-based recursive array entry 20 is .agents/skills/code-health/references/atlas.md. The skill, scripts, tests, survey/maps/classes references and caller chain were read only to understand this entry and remain independently accounted inventory entries unless separately represented. This closure decrements only one independent source entry to unknown=16,182 and unread=16,155, omitted=0.",
       "test_execution_evidence": []
     }
   ]
