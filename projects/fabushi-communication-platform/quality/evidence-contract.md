@@ -79,6 +79,14 @@ Map-amendment evidence identifies the prior approved map, exact source/task chan
 A map is non-passing when it is stale, contradicts its atlas area, contains ambiguous/uncheckable invariants presented as approved, widens ownership to normalize a known break, lacks required owner approval, or becomes a parallel repository/product owner. Area-map evidence can prove placement governance and task preconditions; it cannot by itself prove product behavior, safe execution, security, successful build/runtime, packaging or release acceptance.
 
 
+## Repository quality-health integrated regression evidence
+
+Passing integrated repository-quality regression evidence identifies the exact test subject revision, fixture repository/build/map inputs, exercised existing owners, oracle or invariant for each case, and the positive or negative observation that decided the assertion. Coverage spans the composed source-text, source-build, include/dependency, clone, atlas, report, review and health-command contracts without treating the regression harness as an independent semantic owner.
+
+State-lifecycle evidence demonstrates exact-ref durable publication and scheduling-window idempotence, forced rerun history append, mutable-worktree nonpublication, exact published-revision cache rebuild, and exact-commit owned worktree create/reuse/remove behavior. Review/verification evidence preserves warning/error and present/resolved/changed/unknown distinctions; move evidence distinguishes relocation/reordering that retains substantive lines from changed values, statements or logic. A clean result is passing only when the relevant negative controls would fail under the prohibited behavior.
+
+Fixture helpers, subprocess wrappers, temporary Git repositories and sample C/C++ text are test mechanics. They do not become source authority, production code, a second scanner/findings store, ownership graph, task queue, configured-build proof, or release acceptance. Evidence remains attributable to the existing repository-quality owner and must be produced by the exact-head automated workflow selected for the task.
+
 ## Repository quality-health command orchestration evidence
 
 Passing command-orchestration evidence records the exact source revision selected for the run, acquisition/ref mode, whether the run is durable or explicitly temporary, the canonical state location when applicable, prior ledger identity, run directory, totals, stable finding/status merge result, atomic publication outcome, append-only history receipt, and any cache identity used or rebuilt. A scheduled idempotent skip records the already-published scheduling window and exact revision that justified the skip; it cannot be inferred from a local cache or wall-clock assumption. A working-tree scan records that it was noncanonical and proves canonical ledger/history were not mutated.
