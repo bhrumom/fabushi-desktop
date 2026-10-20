@@ -35,6 +35,7 @@ export function parseNativeRuntime(raw: unknown, resources: ReadonlyMap<string, 
   return d as unknown as NativeRuntimeDefinition;
 }
 export interface NativeRuntimePorts {
+  carrierPath: string;
   codeRoot: string;
   resources: ReadonlyMap<string, VerifiedMiniAppResource>;
   definition: NativeRuntimeDefinition;
@@ -86,7 +87,7 @@ export async function createInstalledNativeRuntime(ports: NativeRuntimePorts): P
     if (!ports.current()) throw new Error("MINIAPP_SCOPE_CHANGED");
     // Avoid inheriting authentication, Node injection options or domain overrides.
     const env: NodeJS.ProcessEnv = { ELECTRON_RUN_AS_NODE: "1", LANG: "en_US.UTF-8", PATH: "/usr/bin:/bin", TMPDIR: directory, FABUSHI_NATIVE_DATA_DIRECTORY: dataDirectory };
-    const child = spawn(ports.interpreter ?? process.execPath, [join(directory, definition.entrypoint)], {
+    const child = spawn(ports.interpreter ?? process.execPath, [ports.carrierPath, join(directory, definition.entrypoint), directory], {
       cwd: directory, env, detached: true, stdio: ["pipe", "pipe", "pipe"],
     });
     let closed = false, buffer = "", stderrBytes = 0;
@@ -103,7 +104,10 @@ export async function createInstalledNativeRuntime(ports: NativeRuntimePorts): P
       for (const p of pending.values()) { clearTimeout(p.timer); p.resolve(DENIED); }
       pending.clear();
       signalGroup("SIGTERM");
-      const timer = setTimeout(() => { signalGroup("SIGKILL"); void rm(directory, { recursive: true, force: true }); }, 3000);
+      const timer = setTimeout(() => {
+        if (child.exitCode === null && child.signalCode === null) signalGroup("SIGKILL");
+        void rm(directory, { recursive: true, force: true });
+      }, 4000);
       timer.unref();
     };
     child.on("error", close);

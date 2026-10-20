@@ -100,6 +100,7 @@ export function registerProductionMiniApps(context: ProductionServiceContext, ip
           if (!dialog?.showMessageBox || !dialog.showOpenDialog || !primary || typeof app.getPath !== "function") throw new Error("MINIAPP_UNSUPPORTED_HOST");
           const currentScope = () => !disposed && generation === ticket && current?.accountScope === accountScope;
           runtime = await createInstalledNativeRuntime({
+            carrierPath: join(dirname(primary), "..", "electron-main", "miniapp-native-carrier.cjs"),
             codeRoot: join(app.getPath("userData"), "native-miniapp-runtimes"), resources, definition,
             scope: { appId, version: descriptor.version, packageDigest: descriptor.digest, accountScope, accountGeneration: ticket },
             current: currentScope,

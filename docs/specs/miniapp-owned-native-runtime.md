@@ -54,6 +54,10 @@ the package and no automatic code download is permitted.
   worker process group and descendants, rejects pending calls and removes code.
   Persisted approved archive is removed by the existing uninstall owner; user
   settings are retained through the existing account-scoped storage owner.
+  A generic carrier remains alive after Host pipe loss, gives the owned process
+  group a bounded TERM grace, then removes temporary code and force-kills that
+  group. Its referenced cleanup timer must survive normal Electron shutdown;
+  never rely solely on an unreferenced parent timer for crash cleanup.
 - MNR-06: package-owned Dandelion worker reuses the current Rust engine and tool
   router/adapter; its build comes from one exact source revision. macOS native
   features need installed proof; Linux/mobile work is paused for this slice.

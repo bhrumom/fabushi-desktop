@@ -71,6 +71,12 @@ await build({
 
 console.log("built Fabushi product main/preload and Rust Coordinator carrier");
 
+await build({
+  ...common,
+  entryPoints: [path.join(repoRoot, "source", "electron-main", "mcp", "miniapp-native-carrier.ts")],
+  outfile: path.join(outMain, "miniapp-native-carrier.cjs"),
+});
+
 // Sandboxed Electron preloads cannot load the main runtime's node:url banner.
 // This bundle imports only electron and exposes the bounded Mini App IPC bridge.
 await build({

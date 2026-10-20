@@ -8,6 +8,7 @@ const desktopRoot = path.resolve(scriptDir, "..");
 
 const required = [
   ["Electron main", "dist/electron-main/main.cjs"],
+  ["generic Mini App native carrier", "dist/electron-main/miniapp-native-carrier.cjs"],
   ["primary preload", "dist/electron-preload/preload.cjs"],
   ["sandboxed Mini App preload", "dist/electron-preload/preload-miniapp-tools.cjs"],
   ["Rust Coordinator carrier", "dist/node-agent-coordinator/main.cjs"],
