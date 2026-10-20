@@ -54,6 +54,14 @@ Review-copy evidence additionally records the exact base/current source identity
 
 Scan/report evidence may aggregate clone pairs and clone-line totals and carry stable findings through the canonical quality ledger, but clone metrics remain investigation selectors rather than ownership or acceptance authority. Detector/process failure, incomplete exact-source input, stale source identity, or an unverifiable normalization/match cannot be rewritten as zero clones or a passing review. Successful clone detection provides no product mutation, task-routing, security authorization, ownership change, or release acceptance.
 
+## Repository source-text normalization evidence
+
+Passing source-text evidence records the exact source revision, source path/kind, scanner profile or recognizer contract, input identity and the deterministic transformation used for the claim. For line-oriented evidence it preserves physical input-line cardinality and original 1-based line provenance after comment blanking/removal; for normalized comparison it records that whitespace collapse and logic-free-line filtering are lexical preparation only. Include, identifier, definition, function and class observations retain the bounded pattern that recognized them so a reader can distinguish recognized evidence from unmodeled language semantics.
+
+Consumer evidence separately records the caller and the result semantics it owns: metric threshold/finding identity, include resolution/layering/build-cost interpretation, clone window/maximal-run identity, review warning/error/strictness, atlas candidate facts, or health command publication/error/routing outcome. A source-text helper creates no durable finding history, ownership fact, source edit, queue record, approval or release verdict on its own.
+
+Stale/partial source, scanner failure, malformed input, lost line provenance or an unsupported/ambiguous lexical case is non-passing for any dependent claim and cannot be rewritten as a clean negative. Lexical evidence cannot prove full C++ parse correctness, type resolution, overload binding, macro expansion, configured target membership, successful compilation, runtime behavior or release acceptance; those require their existing stronger evidence owners.
+
 ## Repository source-derived build-model evidence
 
 Passing source-derived build-model evidence records the exact source revision, build-file scope, recognizer version/grammar and deterministic traversal/normalization rules, then preserves the recognized target/source/link/PCH/executable/library/test facts consumed by the quality check. It must be possible to distinguish a recognized negative from a relationship the recognizer did not model; unsupported variables, generator expressions, quoting, conditionals, helper commands or malformed/incomplete input remain explicit limitations rather than evidence of absence.
