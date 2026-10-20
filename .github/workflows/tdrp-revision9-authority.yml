@@ -33,6 +33,8 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "${TDRP_TARGET_SHA}"
+      - name: Test Qt acquisition ref parsing
+        run: node --test scripts/test-tdrp-root-open-authority.mjs
       - name: Validate Revision 9 source authority
         env:
           GITHUB_TOKEN: ${{ github.token }}

@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { cleanToken, logicalLines, resolveQtCloneRef } from './tdrp-root-open-authority-parsing.mjs';
 
 const fail=(ok,msg)=>{if(!ok) throw new Error(msg);};
 const run=(cmd,args,opts={})=>{
@@ -29,6 +30,7 @@ const upstream=path.join(temp,'tdesktop');
 run('git',['clone','--filter=blob:none','--no-checkout','--quiet','https://github.com/'+lock.upstream.repository+'.git',upstream]);
 run('git',['-C',upstream,'checkout','--detach','--quiet',lock.upstream.commit]);
 fail(run('git',['-C',upstream,'rev-parse','HEAD']).trim()===lock.upstream.commit,'upstream checkout drift');
+const qtVersionSource=await fs.readFile(path.join(upstream,'Telegram/build/qt_version.py'),'utf8');
 
 const byPath=new Map();
 for(const item of selectedKeys.values()){
@@ -43,23 +45,6 @@ const candidates=[...selectedKeys.values()].sort((a,b)=>a.source_path.localeComp
   return {...item,text:lines[item.source_line-1],context:lines.slice(Math.max(0,item.source_line-3),Math.min(lines.length,item.source_line+2)).join('\n')};
 });
 
-function logicalLines(lines){
-  const out=[];
-  for(let i=0;i<lines.length;i++){
-    const start=i+1;
-    let text=lines[i];
-    let end=start;
-    while(/\\\s*$/.test(text) && i+1<lines.length){
-      text=text.replace(/\\\s*$/,' ') + lines[++i].trim();
-      end=i+1;
-    }
-    out.push({start,end,text});
-  }
-  return out;
-}
-function cleanToken(s){
-  return s.replace(/^['"]|['",;)]$/g,'').replace(/\\$/,'');
-}
 function normalizeRemote(url){
   let u=cleanToken(url);
   if(/^git@github\.com:/.test(u)) u='https://github.com/'+u.slice('git@github.com:'.length);
@@ -133,13 +118,9 @@ for(const [sourcePath,data] of byPath){
       ref='v'+value;
       authorityNote='resolved from preceding QT assignment in same Docker RUN block';
     }
-    if(sourcePath==='Telegram/build/prepare/prepare.py' && logical.start===1609){
-      ref='v5.15.19-lts-lgpl';
-      authorityNote='qt<6 branch; accepted qt_version.py selects Qt 5.15.19 for legacy Windows path';
-    }
-    if(sourcePath==='Telegram/build/prepare/prepare.py' && logical.start===1680){
-      ref='v6.11.2';
-      authorityNote='qt>=6 branch; accepted qt_version.py selects Qt 6.11.2 and this version is not 6.2 LTS';
+    if(sourcePath==='Telegram/build/prepare/prepare.py'){
+      const qtResolution=resolveQtCloneRef(logical.text,qtVersionSource);
+      if(qtResolution){ref=qtResolution.ref;authorityNote=qtResolution.authorityNote;}
     }
     const resolution=resolveRef(url,ref,null);
     acquisitions.push({kind:'git-clone-ref',source_path:sourcePath,line_start:logical.start,line_end:logical.end,repository:url,ref,resolution,authority_note:authorityNote,candidate_lines:keys.map(x=>x.source_line)});
