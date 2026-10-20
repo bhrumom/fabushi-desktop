@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import vm from "node:vm";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const desktopRoot = path.resolve(scriptDir, "..");
@@ -8,6 +9,7 @@ const desktopRoot = path.resolve(scriptDir, "..");
 const required = [
   ["Electron main", "dist/electron-main/main.cjs"],
   ["primary preload", "dist/electron-preload/preload.cjs"],
+  ["sandboxed Mini App preload", "dist/electron-preload/preload-miniapp-tools.cjs"],
   ["Rust Coordinator carrier", "dist/node-agent-coordinator/main.cjs"],
   ["Renderer HTML", "dist/renderer/index.html"],
 ];
@@ -22,6 +24,18 @@ if (missing.length > 0) {
     console.error(`- ${label}: ${relative}`);
   }
   process.exit(1);
+}
+
+const exposed = [];
+vm.runInNewContext(fs.readFileSync(path.join(desktopRoot, "dist/electron-preload/preload-miniapp-tools.cjs"), "utf8"), {
+  module: { exports: {} },
+  require(name) {
+    if (name !== "electron") throw new Error(`Mini App preload requires forbidden module ${name}`);
+    return { contextBridge: { exposeInMainWorld: (name, bridge) => exposed.push({ name, bridge }) }, ipcRenderer: { invoke: async () => ({ ok: true }) } };
+  },
+}, { timeout: 1000 });
+if (exposed.length !== 1 || exposed[0].name !== "fabushi" || Object.keys(exposed[0].bridge).join() !== "invoke") {
+  throw new Error("Mini App preload must expose exactly fabushi.invoke");
 }
 
 const coordinatorCarrierPath = path.join(

@@ -111,6 +111,7 @@ export interface MiniAppIpc {
 }
 
 export interface MiniAppToolBridgePorts {
+  readonly appId?: string;
   readonly router: MiniAppToolRouter;
   /** Absolute path to the compiled sandboxed preload. */
   readonly preloadPath: string;
@@ -238,7 +239,12 @@ export function createMiniAppWindowFactory(ports: MiniAppWindowFactoryPorts): Mi
         let frameUrl: URL;
         try { frameUrl = new URL(event.senderFrame?.url ?? ""); } catch { return denied; }
         if (!matchesOrigin(frameUrl, record.origin)) return denied;
-        return tools.router.invoke(record.toolScope, tool, args);
+        return tools.router.invoke(record.toolScope, tool, args, () => {
+          const latest = ports.currentAccount();
+          return [...windows.values()].includes(record)
+            && latest?.accountScope === record.toolScope.accountScope
+            && latest.generation === record.toolScope.accountGeneration;
+        });
       }
       return denied;
     });
@@ -248,6 +254,7 @@ export function createMiniAppWindowFactory(ports: MiniAppWindowFactoryPorts): Mi
     const record = windows.get(key);
     if (!record) return;
     windows.delete(key); // Fence callbacks before Electron tears down the renderer.
+    if (!ports.tools?.appId || ports.tools.appId === record.toolScope.appId) ports.tools?.cancelAll?.();
     if (!record.window.isDestroyed()) record.window.destroy();
     record.disposeSession();
   };
@@ -349,7 +356,11 @@ export function createMiniAppWindowFactory(ports: MiniAppWindowFactoryPorts): Mi
       };
       const record = { toolScope, origin, window, disposeSession };
       windows.set(key, record);
-      window.on("closed", () => { if (windows.get(key) === record) { windows.delete(key); disposeSession(); } });
+      window.on("closed", () => { if (windows.get(key) === record) {
+        windows.delete(key);
+        if (!ports.tools?.appId || ports.tools.appId === record.toolScope.appId) ports.tools?.cancelAll?.();
+        disposeSession();
+      } });
       window.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
       // Constrain only this Mini App; Host calls, Computer and browser networking stay unchanged.
       await window.webContents.setWebRTCIPHandlingPolicy("disable_non_proxied_udp");

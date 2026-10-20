@@ -10,8 +10,8 @@
  */
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { realpath, stat } from "node:fs/promises";
-import { basename, isAbsolute, relative, sep } from "node:path";
+import { lstat, realpath, stat } from "node:fs/promises";
+import { basename, dirname, isAbsolute, relative, sep } from "node:path";
 import type {
   MiniAppCapability,
   MiniAppSelectionEntry,
@@ -27,6 +27,8 @@ export interface DandelionCliConfig {
   readonly configPath: string;
   /** Roots the Host owner explicitly authorized for scanning and transfer. */
   readonly allowedRoots: readonly string[];
+  /** The native picker itself grants a bounded directory for bundled local-only defaults. */
+  readonly authorizePickedRoots?: boolean;
   /** Authorized destination pools; empty disables transfer. */
   readonly targetPools: readonly MiniAppTargetPool[];
   /** Trusted native state directory; never supplied by the renderer. */
@@ -52,7 +54,7 @@ export interface DandelionCliConfig {
   readonly enableHotspot?: boolean;
   readonly enableUpdate?: boolean;
   readonly timeoutMs?: number;
-  /** The host platform, injectable for contract tests. The Rust CLI is Linux-only. */
+  /** Host platform. Apple requires the live native contract probe before invocation. */
   readonly platform?: NodeJS.Platform;
 }
 
@@ -69,7 +71,7 @@ export interface MiniAppSpawnPort {
   (argv: readonly string[]): MiniAppChildHandle;
 }
 
-const NATIVE_CLI_PLATFORM: NodeJS.Platform = "linux";
+const APPLE_NATIVE_CONTRACT = "dandelion.native.apple.v1";
 
 const SELECTION_TTL_MS = 10 * 60_000;
 const MAX_SELECTIONS = 16;
@@ -88,20 +90,46 @@ function defaultSpawn(binaryPath: string, configPath: string): MiniAppSpawnPort 
       stdio: ["ignore", "pipe", "pipe"],
       env: { PATH: "/usr/local/bin:/usr/bin:/bin", LC_ALL: "C" },
     });
-    let stdout = "", stderr = "";
-    child.stdout.on("data", (chunk: Buffer) => { if (stdout.length < 1_048_576) stdout += chunk.toString("utf8"); });
-    child.stderr.on("data", (chunk: Buffer) => { if (stderr.length < 65_536) stderr += chunk.toString("utf8"); });
+    let stdout = "", stderr = "", stdoutBytes = 0, stderrBytes = 0;
+    let exceeded = false;
+    let killTimer: ReturnType<typeof setTimeout> | undefined;
+    let settled = false;
+    const kill = (): void => {
+      if (settled || killTimer) return;
+      child.kill("SIGTERM");
+      killTimer = setTimeout(() => { if (!settled) child.kill("SIGKILL"); }, 3000);
+    };
+    child.stdout.on("data", (chunk: Buffer) => {
+      stdoutBytes += chunk.length;
+      if (stdoutBytes > 1_048_576) { exceeded = true; kill(); }
+      else stdout += chunk.toString("utf8");
+    });
+    child.stderr.on("data", (chunk: Buffer) => {
+      stderrBytes += chunk.length;
+      if (stderrBytes > 65_536) { exceeded = true; kill(); }
+      else stderr += chunk.toString("utf8");
+    });
     const done = new Promise<{ code: number; stdout: string; stderr: string }>((settle) => {
       child.on("error", (error) => settle({ code: -1, stdout, stderr: String(error.message) }));
-      child.on("close", (code) => settle({ code: code ?? -1, stdout, stderr }));
+      child.on("close", (code) => {
+        settled = true;
+        if (killTimer) clearTimeout(killTimer);
+        settle({ code: exceeded ? -2 : code ?? -1, stdout, stderr });
+      });
     });
-    return { done, kill: () => { if (!child.killed) child.kill("SIGKILL"); } };
+    return { done, kill };
   };
 }
 
-interface Operation {
+interface NativeRun {
   readonly handle: MiniAppChildHandle;
-  readonly timer: ReturnType<typeof setTimeout>;
+  result: Promise<{ readonly code: number; readonly stdout: string; readonly stderr: string }>;
+  cancelled: boolean;
+  timedOut: boolean;
+}
+
+interface Operation {
+  readonly run: NativeRun;
   state: "running" | "complete" | "failed" | "cancelled";
   result?: unknown;
   error?: string;
@@ -112,11 +140,14 @@ export function createDandelionCliBackend(
   ports: { readonly pick: MiniAppPickPort; readonly spawn?: MiniAppSpawnPort },
 ): MiniAppToolBackend {
   const timeoutMs = config.timeoutMs ?? 30 * 60_000;
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 30 * 60_000) throw new Error("INVALID_NATIVE_TIMEOUT");
   const platform = config.platform ?? process.platform;
-  const nativeCliSupported = platform === NATIVE_CLI_PLATFORM;
+  const nativeCliSupported = platform === "linux" || platform === "darwin";
   const spawnCommand = ports.spawn ?? defaultSpawn(config.binaryPath, config.configPath);
-  const selections = new Map<string, { root: string; expiresAt: number }>();
+  const selections = new Map<string, { root: string; device: bigint; inode: bigint; expiresAt: number }>();
   const operations = new Map<string, Operation>();
+  const active = new Set<NativeRun>();
+  let generation = 0;
   const roots = config.allowedRoots.filter((root) => isAbsolute(root));
   const stateDirectory = config.stateDirectory && isAbsolute(config.stateDirectory) ? config.stateDirectory : null;
   const compatDirectory = config.compatDirectory && isAbsolute(config.compatDirectory) ? config.compatDirectory : null;
@@ -149,46 +180,110 @@ export function createDandelionCliBackend(
   };
 
   const pruneOperations = (): void => {
-    while (operations.size > MAX_OPERATIONS) {
+    while (operations.size >= MAX_OPERATIONS) {
       const oldest = [...operations].find(([, operation]) => operation.state !== "running")?.[0];
       if (oldest === undefined) break;
       operations.delete(oldest);
     }
   };
 
-  const requireSelection = (selectionId: string): string => {
+  const requireSelection = async (selectionId: string): Promise<string> => {
     pruneSelections();
     const record = selections.get(selectionId);
     if (!record) throw new Error("UNKNOWN_SELECTION");
     if (record.expiresAt <= Date.now()) { selections.delete(selectionId); throw new Error("SELECTION_EXPIRED"); }
+    const info = await lstat(record.root, { bigint: true });
+    if (!info.isDirectory() || info.isSymbolicLink() || info.dev !== record.device || info.ino !== record.inode) throw new Error("SELECTION_SOURCE_CHANGED");
     return record.root;
   };
 
-  const execute = async (argv: readonly string[]): Promise<unknown> => {
+  const admit = (argv: readonly string[]): NativeRun => {
+    if (active.size >= MAX_OPERATIONS) throw new Error("NATIVE_OPERATION_LIMIT");
     const handle = spawnCommand(argv);
-    const timer = setTimeout(() => handle.kill(), timeoutMs);
-    const result = await handle.done;
-    clearTimeout(timer);
-    if (result.code !== 0) {
-      const detail = (result.stderr || result.stdout).trim().slice(0, 240);
-      throw new Error(`DANDELION_EXIT_${result.code}${detail ? `: ${detail}` : ""}`);
+    const run: NativeRun = { handle, result: handle.done, cancelled: false, timedOut: false };
+    active.add(run);
+    const timer = setTimeout(() => { run.timedOut = true; handle.kill(); }, timeoutMs);
+    run.result = handle.done.finally(() => { clearTimeout(timer); active.delete(run); });
+    return run;
+  };
+
+  const parseResult = (text: string, mode: "single" | "receive" | "watch" = "single"): unknown => {
+    const trimmed = text.trim();
+    try {
+      if (mode === "single") return trimmed ? JSON.parse(trimmed) : {};
+      const records: unknown[] = trimmed.split(/\r?\n/).map((line) => JSON.parse(line));
+      if (mode === "watch") {
+        if (records.length < 1 || records.length > 10_000) throw new Error();
+        return { samples: records };
+      }
+      if (records.length !== 2) throw new Error();
+      const [ready, report] = records as Record<string, unknown>[];
+      if (!ready || ready.event !== "ready" || ready.mutual_tls !== true || !report
+        || typeof report.sessions !== "number" || typeof report.failed_sessions !== "number"
+        || typeof report.verified_payload_bytes !== "number" || typeof report.cancelled !== "boolean") throw new Error();
+      return report;
+    } catch { throw new Error("DANDELION_INVALID_JSON"); }
+  };
+
+  const finish = async (run: NativeRun, mode: "single" | "receive" | "watch" = "single"): Promise<unknown> => {
+    let result;
+    try { result = await run.result; }
+    catch { throw new Error("DANDELION_PROCESS_FAILED"); }
+    if (run.cancelled) throw new Error("DANDELION_CANCELLED");
+    if (run.timedOut) throw new Error("DANDELION_TIMEOUT");
+    if (result.code !== 0) throw new Error(`DANDELION_EXIT_${result.code}`);
+    return parseResult(result.stdout, mode);
+  };
+
+  const requireNative = async (): Promise<void> => {
+    if (!nativeCliSupported) throw new Error("PLATFORM_UNSUPPORTED");
+    if (platform === "darwin") {
+      const doctor = await finish(admit(["doctor", "--json"])) as Record<string, unknown>;
+      if (doctor?.native_contract !== APPLE_NATIVE_CONTRACT || doctor.os !== "macos"
+        || typeof doctor.target !== "string" || !doctor.target.endsWith("-apple-darwin")) {
+        throw new Error("NATIVE_RUNTIME_INCOMPATIBLE");
+      }
     }
-    const text = result.stdout.trim();
-    if (!text) return {};
-    try { return JSON.parse(text); }
-    catch { throw new Error("DANDELION_INVALID_JSON"); }
+  };
+
+  const execute = async (ticket: number, argv: readonly string[], mode: "single" | "watch" = "single"): Promise<unknown> => {
+    if (ticket !== generation) throw new Error("DANDELION_CANCELLED");
+    return finish(admit(argv), mode);
+  };
+
+  const startOperation = (argv: readonly string[], mode: "single" | "receive"): { operationId: string } => {
+    pruneOperations();
+    if (operations.size >= MAX_OPERATIONS) throw new Error("NATIVE_OPERATION_LIMIT");
+    const operationId = randomUUID();
+    const run = admit(argv);
+    const operation: Operation = { run, state: "running" };
+    operations.set(operationId, operation);
+    void finish(run, mode).then((result) => {
+      if (operation.state === "cancelled") return;
+      operation.state = "complete";
+      operation.result = result;
+    }, (error: unknown) => {
+      if (operation.state === "cancelled") return;
+      operation.state = "failed";
+      operation.error = error instanceof Error ? error.message : "DANDELION_PROCESS_FAILED";
+    });
+    return { operationId };
   };
 
   return {
-    capabilities() {
+    async capabilities() {
+      let available = false;
+      try { await requireNative(); available = true; } catch { /* keep offline operation available */ }
       const capabilities: MiniAppCapability[] = ["offline", "selection"];
-      if (nativeCliSupported) {
-        if (config.targetPools.length > 0 && roots.length > 0) capabilities.push("transfer");
-        if (roots.length > 0) capabilities.push("scan");
+      if (available) {
+        if (config.targetPools.length > 0 && (roots.length > 0 || config.authorizePickedRoots === true)) capabilities.push("transfer");
+        if (roots.length > 0 || config.authorizePickedRoots === true) capabilities.push("scan");
         if (stateDirectory) capabilities.push("state");
-        capabilities.push("config", "platform", "diagnostics");
+        capabilities.push("config");
+        if (platform === "linux") capabilities.push("platform");
+        capabilities.push("diagnostics");
         if (compatDirectory) capabilities.push("compat");
-        if (config.enableHotspot === true) capabilities.push("hotspot");
+        if (platform === "linux" && config.enableHotspot === true) capabilities.push("hotspot");
         if (config.enableUpdate === true) capabilities.push("update");
       }
       return Promise.resolve({ capabilities, platform: "desktop", targetPools: [...config.targetPools] });
@@ -202,20 +297,23 @@ export function createDandelionCliBackend(
       });
     },
     async pick(mode, limits) {
+      const ticket = generation;
       // The engine works on a source root; per-file selection would widen it.
       if (mode !== "directory") throw new Error("DIRECTORY_SELECTION_REQUIRED");
       const picked = await ports.pick(mode, limits);
       if (!picked || picked.length === 0) return null;
       const root = await realpath(picked[0]!.path);
-      const info = await stat(root);
+      const info = await stat(root, { bigint: true });
+      if (dirname(root) === root) throw new Error("FILESYSTEM_ROOT_NOT_AUTHORIZED");
       if (mode === "directory" && !info.isDirectory()) throw new Error("DIRECTORY_SELECTION_REQUIRED");
-      if (!(await canonicalRoots()).some((allowed) => insideRoot(allowed, root))) throw new Error("ROOT_NOT_AUTHORIZED");
+      if (config.authorizePickedRoots !== true && !(await canonicalRoots()).some((allowed) => insideRoot(allowed, root))) throw new Error("ROOT_NOT_AUTHORIZED");
       // Directory stat size is filesystem metadata, not the recursive payload
       // size. The Dandelion scanner enforces the configured recursive budget.
       if (picked.length > limits.maxFiles || (!info.isDirectory() && info.size > limits.maxBytes)) throw new Error("SELECTION_LIMIT_EXCEEDED");
+      if (ticket !== generation) throw new Error("DANDELION_CANCELLED");
       pruneSelections();
       const selectionId = randomUUID();
-      selections.set(selectionId, { root, expiresAt: Date.now() + SELECTION_TTL_MS });
+      selections.set(selectionId, { root, device: info.dev, inode: info.ino, expiresAt: Date.now() + SELECTION_TTL_MS });
       const entries: MiniAppSelectionEntry[] = [{ name: basename(root), size: picked[0]!.size }];
       return { selectionId, entries };
     },
@@ -224,11 +322,13 @@ export function createDandelionCliBackend(
       return Promise.resolve();
     },
     async send(sendConfig: MiniAppTransferSendConfig) {
-      if (!nativeCliSupported) throw new Error("PLATFORM_UNSUPPORTED");
-      const root = requireSelection(sendConfig.selectionId);
+      const ticket = generation;
+      await requireNative();
+      if (ticket !== generation) throw new Error("DANDELION_CANCELLED");
+      if (platform !== "linux" && sendConfig.resume === true) throw new Error("PLATFORM_UNSUPPORTED");
+      const root = await requireSelection(sendConfig.selectionId);
+      if (ticket !== generation) throw new Error("DANDELION_CANCELLED");
       if (!config.targetPools.some((pool) => pool.id === sendConfig.targetPoolId)) throw new Error("UNKNOWN_TARGET_POOL");
-      pruneOperations();
-      const operationId = randomUUID();
       const argv = ["run", "--source", root];
       if (sendConfig.repeat !== undefined) argv.push("--repeat", String(sendConfig.repeat));
       if (sendConfig.watch === true) argv.push("--watch");
@@ -239,58 +339,26 @@ export function createDandelionCliBackend(
       if (sendConfig.queueCapacity !== undefined) argv.push("--queue-capacity", String(sendConfig.queueCapacity));
       if (sendConfig.chunkBytes !== undefined) argv.push("--chunk-bytes", String(sendConfig.chunkBytes));
       argv.push("--json");
-      const handle = spawnCommand(argv);
-      const timer = setTimeout(() => handle.kill(), timeoutMs);
-      const operation: Operation = { handle, timer, state: "running" };
-      operations.set(operationId, operation);
-      void handle.done.then((result) => {
-        clearTimeout(timer);
-        if (operation.state === "cancelled") return;
-        if (result.code !== 0) {
-          operation.state = "failed";
-          operation.error = (result.stderr || result.stdout).trim().slice(0, 240) || `DANDELION_EXIT_${result.code}`;
-          return;
-        }
-        operation.state = "complete";
-        try { operation.result = result.stdout.trim() ? JSON.parse(result.stdout) : {}; }
-        catch { operation.error = "DANDELION_INVALID_JSON"; operation.state = "failed"; }
-      });
-      return { operationId };
+      return startOperation(argv, "single");
     },
     async receive(receiveConfig) {
-      if (!nativeCliSupported) throw new Error("PLATFORM_UNSUPPORTED");
+      const ticket = generation;
+      await requireNative();
+      if (ticket !== generation) throw new Error("DANDELION_CANCELLED");
       const settings = config.receive;
       if (!settings || settings.targetPoolId !== receiveConfig.targetPoolId) throw new Error("RECEIVE_DISABLED");
-      pruneOperations();
-      const operationId = randomUUID();
       const argv = ["receive", "--bind", settings.bind ?? "127.0.0.1:20000", "--ca-file", settings.caFile, "--certificate-file", settings.certificateFile, "--private-key-file", settings.privateKeyFile];
       const maxSessions = receiveConfig.maxSessions ?? settings.maxSessions;
       const trafficLimitBytes = receiveConfig.trafficLimitBytes ?? settings.trafficLimitBytes;
       const rateBytesPerSecond = receiveConfig.rateBytesPerSecond ?? settings.rateBytesPerSecond;
-      const timeoutMs = receiveConfig.timeoutMs ?? settings.timeoutMs;
+      const receiveTimeoutMs = receiveConfig.timeoutMs ?? settings.timeoutMs;
       if (maxSessions !== undefined) argv.push("--max-sessions", String(maxSessions));
       if (trafficLimitBytes !== undefined) argv.push("--traffic-limit-bytes", String(trafficLimitBytes));
       if (rateBytesPerSecond !== undefined) argv.push("--rate-bytes-per-second", String(rateBytesPerSecond));
-      if (timeoutMs !== undefined) argv.push("--timeout-ms", String(timeoutMs));
+      if (receiveTimeoutMs !== undefined) argv.push("--timeout-ms", String(receiveTimeoutMs));
       if (receiveConfig.once !== false) argv.push("--once");
       argv.push("--json");
-      const handle = spawnCommand(argv);
-      const timer = setTimeout(() => handle.kill(), timeoutMs);
-      const operation: Operation = { handle, timer, state: "running" };
-      operations.set(operationId, operation);
-      void handle.done.then((result) => {
-        clearTimeout(timer);
-        if (operation.state === "cancelled") return;
-        if (result.code !== 0) {
-          operation.state = "failed";
-          operation.error = (result.stderr || result.stdout).trim().slice(0, 240) || `DANDELION_EXIT_${result.code}`;
-          return;
-        }
-        operation.state = "complete";
-        try { operation.result = result.stdout.trim() ? JSON.parse(result.stdout) : {}; }
-        catch { operation.error = "DANDELION_INVALID_JSON"; operation.state = "failed"; }
-      });
-      return { operationId };
+      return startOperation(argv, "receive");
     },
     async status(operationId) {
       const operation = operations.get(operationId);
@@ -301,63 +369,76 @@ export function createDandelionCliBackend(
       const operation = operations.get(operationId);
       if (!operation) throw new Error("UNKNOWN_OPERATION");
       operation.state = "cancelled";
-      clearTimeout(operation.timer);
-      operation.handle.kill();
+      operation.run.cancelled = true;
+      operation.run.handle.kill();
     },
     cancelAll() {
+      generation += 1;
       for (const operation of operations.values()) {
-        if (operation.state === "running") {
-          operation.state = "cancelled";
-          clearTimeout(operation.timer);
-          operation.handle.kill();
-        }
+        if (operation.state === "running") operation.state = "cancelled";
       }
+      for (const run of active) { run.cancelled = true; run.handle.kill(); }
+      operations.clear();
       selections.clear();
     },
     async scan(mode, rootId) {
-      if (!nativeCliSupported) throw new Error("PLATFORM_UNSUPPORTED");
-      return execute(["scan", mode, "--source", requireSelection(rootId), "--json"]);
+      const ticket = generation;
+      await requireNative();
+      if (ticket !== generation) throw new Error("DANDELION_CANCELLED");
+      return execute(ticket, ["scan", mode, "--source", await requireSelection(rootId), "--json"]);
     },
     async state(action) {
-      if (!nativeCliSupported) throw new Error("PLATFORM_UNSUPPORTED");
+      const ticket = generation;
+      await requireNative();
+      if (ticket !== generation) throw new Error("DANDELION_CANCELLED");
       if (!stateDirectory) throw new Error("STATE_DISABLED");
-      if (action === "inspect") return execute(["state", "inspect", "--directory", stateDirectory, "--json"]);
+      if (action === "inspect") return execute(ticket, ["state", "inspect", "--directory", stateDirectory, "--json"]);
       const picked = await ports.pick("files", { maxFiles: 1, maxBytes: 1024 * 1024 });
       if (!picked || picked.length === 0) throw new Error("STATE_IMPORT_CANCELLED");
       const file = await realpath(picked[0]!.path);
       const fileInfo = await stat(file);
       if (!fileInfo.isFile()) throw new Error("STATE_IMPORT_FILE_REQUIRED");
       if (fileInfo.size > 1024 * 1024) throw new Error("STATE_IMPORT_TOO_LARGE");
-      return execute(["state", "import", "--directory", stateDirectory, "--file", file]);
+      return execute(ticket, ["state", "import", "--directory", stateDirectory, "--file", file]);
     },
     async config(action) {
-      if (!nativeCliSupported) throw new Error("PLATFORM_UNSUPPORTED");
-      return execute(["config", action === "defaults" ? "init" : "check", "--json"]);
+      const ticket = generation;
+      await requireNative();
+      if (ticket !== generation) throw new Error("DANDELION_CANCELLED");
+      return execute(ticket, ["config", action === "defaults" ? "init" : "check", "--json"]);
     },
     async platform(action) {
-      if (!nativeCliSupported) throw new Error("PLATFORM_UNSUPPORTED");
+      if (platform !== "linux") throw new Error("PLATFORM_UNSUPPORTED");
+      const ticket = generation;
+      await requireNative();
+      if (ticket !== generation) throw new Error("DANDELION_CANCELLED");
       const argv = action === "watch"
         ? ["platform", "watch", "--samples", "5", "--interval-ms", "1000", "--json"]
         : ["platform", action, "--json"];
-      return execute(argv);
+      return execute(ticket, argv, action === "watch" ? "watch" : "single");
     },
     async hotspot(action) {
-      if (!nativeCliSupported) throw new Error("PLATFORM_UNSUPPORTED");
+      if (platform !== "linux") throw new Error("PLATFORM_UNSUPPORTED");
+      const ticket = generation;
+      await requireNative();
+      if (ticket !== generation) throw new Error("DANDELION_CANCELLED");
       if (config.enableHotspot !== true) throw new Error("HOTSPOT_DISABLED");
       const iface = config.hotspotInterface;
       if (action === "plan") {
         if (!iface) throw new Error("HOTSPOT_INTERFACE_NOT_CONFIGURED");
-        return execute(["hotspot", "plan", "--interface", iface, "--ssid", config.hotspotSsid ?? "Global-Dandelion", "--band", config.hotspotBand ?? "a", "--json"]);
+        return execute(ticket, ["hotspot", "plan", "--interface", iface, "--ssid", config.hotspotSsid ?? "Global-Dandelion", "--band", config.hotspotBand ?? "a", "--json"]);
       }
       const journalDirectory = config.hotspotJournalDirectory;
       if (!journalDirectory || !isAbsolute(journalDirectory)) throw new Error("HOTSPOT_JOURNAL_NOT_CONFIGURED");
-      if (action === "status") return execute(["hotspot", "status", "--journal-directory", journalDirectory, "--json"]);
-      if (action === "stop") return execute(["hotspot", "stop", "--journal-directory", journalDirectory, "--confirm", "--json"]);
+      if (action === "status") return execute(ticket, ["hotspot", "status", "--journal-directory", journalDirectory, "--json"]);
+      if (action === "stop") return execute(ticket, ["hotspot", "stop", "--journal-directory", journalDirectory, "--confirm", "--json"]);
       if (!iface || !config.hotspotPasswordFile) throw new Error("HOTSPOT_APPLY_NOT_CONFIGURED");
-      return execute(["hotspot", "apply", "--interface", iface, "--ssid", config.hotspotSsid ?? "Global-Dandelion", "--band", config.hotspotBand ?? "a", "--journal-directory", journalDirectory, "--password-file", config.hotspotPasswordFile, "--confirm", "--json"]);
+      return execute(ticket, ["hotspot", "apply", "--interface", iface, "--ssid", config.hotspotSsid ?? "Global-Dandelion", "--band", config.hotspotBand ?? "a", "--journal-directory", journalDirectory, "--password-file", config.hotspotPasswordFile, "--confirm", "--json"]);
     },
     async update(action) {
-      if (!nativeCliSupported) throw new Error("PLATFORM_UNSUPPORTED");
+      const ticket = generation;
+      await requireNative();
+      if (ticket !== generation) throw new Error("DANDELION_CANCELLED");
       if (config.enableUpdate !== true) throw new Error("UPDATE_DISABLED");
       const trust = config.updateTrust;
       if (!trust?.publicKey) throw new Error("UPDATE_TRUST_NOT_CONFIGURED");
@@ -373,29 +454,33 @@ export function createDandelionCliBackend(
         else throw new Error("UPDATE_SOURCE_NOT_CONFIGURED");
       }
       argv.push("--json");
-      return execute(argv);
+      return execute(ticket, argv);
     },
     async diagnostics(action) {
-      if (!nativeCliSupported) throw new Error("PLATFORM_UNSUPPORTED");
+      const ticket = generation;
+      await requireNative();
+      if (ticket !== generation) throw new Error("DANDELION_CANCELLED");
       if (action === "status") {
         if (!stateDirectory) throw new Error("STATE_DISABLED");
-        return execute(["status", "--directory", stateDirectory, "--json"]);
+        return execute(ticket, ["status", "--directory", stateDirectory, "--json"]);
       }
-      return execute([action === "selfTest" ? "self-test" : "doctor", "--json"]);
+      return execute(ticket, [action === "selfTest" ? "self-test" : "doctor", "--json"]);
     },
     async compat(action, args) {
-      if (!nativeCliSupported) throw new Error("PLATFORM_UNSUPPORTED");
+      const ticket = generation;
+      await requireNative();
+      if (ticket !== generation) throw new Error("DANDELION_CANCELLED");
       if (!compatDirectory) throw new Error("COMPAT_DISABLED");
-      if (action === "packetInspect") return execute(["compat", "packet-inspect", "--file", await compatPath(args.file, "packet.bin"), "--json"]);
+      if (action === "packetInspect") return execute(ticket, ["compat", "packet-inspect", "--file", await compatPath(args.file, "packet.bin"), "--json"]);
       if (action === "countryLookup") {
         const address = typeof args.address === "string" ? args.address : null;
         if (!address) throw new Error("COMPAT_ADDRESS_REQUIRED");
-        return execute(["compat", "country-lookup", "--locations", await compatPath(args.locations, "locations.csv"), "--blocks", await compatPath(args.blocks, "blocks.csv"), "--address", address, "--json"]);
+        return execute(ticket, ["compat", "country-lookup", "--locations", await compatPath(args.locations, "locations.csv"), "--blocks", await compatPath(args.blocks, "blocks.csv"), "--address", address, "--json"]);
       }
       if (action === "linkExercise") {
-        return execute(["compat", "link-exercise", "--file", await compatPath(args.file, "link-target"), "--cycles", "10", "--interval-ms", "50", "--confirm", "--json"]);
+        return execute(ticket, ["compat", "link-exercise", "--file", await compatPath(args.file, "link-target"), "--cycles", "10", "--interval-ms", "50", "--confirm", "--json"]);
       }
-      return execute(["compat", "link-recover", "--journal-directory", await compatPath(args.journalDirectory, "."), "--confirm", "--json"]);
+      return execute(ticket, ["compat", "link-recover", "--journal-directory", await compatPath(args.journalDirectory, "."), "--confirm", "--json"]);
     },
   };
 }

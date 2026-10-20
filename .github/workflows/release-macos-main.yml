@@ -12,6 +12,16 @@ on:
         required: true
         default: false
         type: boolean
+      miniapp_version:
+        description: Exact approved Mini App version for installed acceptance
+        required: false
+        type: string
+        default: '0.3.4'
+      miniapp_digest:
+        description: Exact approved Mini App SHA-256 for installed acceptance
+        required: false
+        type: string
+        default: 'f6bcaf7cc5ab5640fb4b0ffdbb2f97738c1d2309b96f61720081e33f903c304b'
       iterate_existing_miniapp_candidate:
         description: Diagnose the fixed e62ea0 signed binary with this harness; never publish or claim this harness SHA is the binary source.
         required: false
@@ -259,6 +269,10 @@ jobs:
         shell: bash
         run: npm run build:host
 
+      - name: Build and stage exact-source Dandelion native engine
+        shell: bash
+        run: bash .github/scripts/stage-dandelion.sh
+
       - name: Build pinned offline ASR engine
         shell: bash
         run: |
@@ -356,6 +370,21 @@ jobs:
           APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
           APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
         run: npx electron-builder --mac --arm64 --publish never
+
+      - name: Verify native Dandelion inside the signed app
+        shell: bash
+        run: |
+          set -euo pipefail
+          app="$(find desktop/release -maxdepth 3 -type d -name '*.app' -print -quit)"
+          test -n "$app"
+          engine="$app/Contents/Resources/bin/dandelion"
+          config="$app/Contents/Resources/bin/dandelion-default.toml"
+          test -x "$engine"
+          codesign --verify --strict "$engine"
+          "$engine" self-test --json
+          "$engine" --config "$config" config check --json
+          test -s "$app/Contents/Resources/bin/LICENSE.dandelion-MIT"
+          test -s "$app/Contents/Resources/bin/LICENSE.dandelion-APACHE"
 
       - name: Notarize and staple DMG
         shell: bash
@@ -566,6 +595,9 @@ jobs:
         timeout-minutes: 40
         env:
           MINIAPP_REAL_ACCEPTANCE: '1'
+          MINIAPP_REQUIRE_NATIVE_ENGINE: '1'
+          MINIAPP_PACKAGE_VERSION: ${{ inputs.miniapp_version || '0.3.4' }}
+          MINIAPP_PACKAGE_DIGEST: ${{ inputs.miniapp_digest || 'f6bcaf7cc5ab5640fb4b0ffdbb2f97738c1d2309b96f61720081e33f903c304b' }}
           MINIAPP_EVIDENCE_DIR: ${{ runner.temp }}/fabushi-miniapp-acceptance
           OBF_SOURCE_SHA: ${{ steps.source.outputs.sha }}
           OBF_EXPECTED_SOURCE_SHA: ${{ steps.source.outputs.sha }}

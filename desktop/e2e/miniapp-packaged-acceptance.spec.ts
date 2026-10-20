@@ -12,7 +12,8 @@ const expectedSourceSha = process.env.OBF_EXPECTED_SOURCE_SHA?.trim() || sourceS
 const evidenceRoot = process.env.MINIAPP_EVIDENCE_DIR?.trim()
   || path.join(tmpdir(), `fabushi-miniapp-acceptance-${sourceSha.slice(0, 12) || 'unknown'}`);
 const appId = 'org.fabushi.global-dandelion';
-const packageDigest = '4f53dd5df129adb41feadf86016a5923ba792a9a7636a37694965ea4ad28f4db';
+const packageVersion = process.env.MINIAPP_PACKAGE_VERSION || '0.3.3';
+const packageDigest = process.env.MINIAPP_PACKAGE_DIGEST || '4f53dd5df129adb41feadf86016a5923ba792a9a7636a37694965ea4ad28f4db';
 const preferenceKey = 'global-dandelion-display-v1';
 const maxInputBytes = 16 * 1024 * 1024;
 const harnessSource = process.env.FABUSHI_MINIAPP_HARNESS_SOURCE || process.env.GITHUB_SHA || sourceSha;
@@ -215,7 +216,7 @@ async function refreshUntilCatalogItem(page: Page): Promise<{ dialog: Locator; s
   const { dialog, section } = await openPlugins(page);
   const row = section.locator('li').filter({ hasText: packageDigest });
   await expect(row, 'public approved catalog must expose the exact pinned package').toHaveCount(1, { timeout: 60_000 });
-  await expect(row).toContainText('0.3.3');
+  await expect(row).toContainText(packageVersion);
   await expect(row).toContainText('bhrumom');
   return { dialog, section, row };
 }
@@ -234,7 +235,7 @@ function bytesLabel(size: number): string {
 }
 
 async function verifyWasmFileReport(page: Page, inputFile: string, inputBytes: number): Promise<void> {
-  await expect(page.getByRole('status')).toContainText('本地 Rust 内核已就绪。', { timeout: 45_000 });
+  await expect(page.locator('#status')).toContainText('本地 Rust 内核已就绪。', { timeout: 45_000 });
   const fileInput = page.locator('#files');
   await expect(fileInput, 'the signed app must provide its genuine Web file input').toHaveCount(1);
   await fileInput.setInputFiles(inputFile);
@@ -250,6 +251,31 @@ async function verifyWasmFileReport(page: Page, inputFile: string, inputBytes: n
   await expect(result).toContainText(path.basename(inputFile));
   await expect(result).toContainText('完整校验');
   await expect(page.getByRole('button', { name: '导出报告', exact: true })).toBeEnabled();
+}
+
+async function verifyBundledNativeHost(page: Page): Promise<boolean> {
+  if (process.env.MINIAPP_REQUIRE_NATIVE_ENGINE !== '1') return false;
+  const observed = await page.evaluate(async () => {
+    const bridge = (globalThis as unknown as { fabushi?: { invoke(tool: string, args?: Record<string, unknown>): Promise<{ ok: boolean; data?: Record<string, unknown> }> } }).fabushi;
+    if (!bridge) throw new Error('INSTALLED_NATIVE_BRIDGE_MISSING');
+    return {
+      capabilities: await bridge.invoke('offline.capabilities'),
+      config: await bridge.invoke('config.check'),
+      diagnostic: await bridge.invoke('diagnostics.selfTest'),
+    };
+  });
+  expect(observed.capabilities.ok).toBe(true);
+  const capabilities = observed.capabilities.data?.capabilities as string[];
+  for (const capability of ['selection', 'scan', 'transfer', 'config', 'diagnostics']) expect(capabilities).toContain(capability);
+  expect(capabilities).not.toContain('hotspot');
+  expect(capabilities).not.toContain('platform');
+  expect(observed.config.ok).toBe(true);
+  expect((observed.config.data?.scanner as Record<string, unknown>).max_files).toBe(128);
+  expect((observed.config.data?.transport as Record<string, unknown>).mode).toBe('loopback');
+  expect(observed.diagnostic.ok).toBe(true);
+  expect(observed.diagnostic.data?.status).toBe('completed');
+  expect(observed.diagnostic.data?.verified_payload_bytes).toBe(65537);
+  return true;
 }
 
 async function exportAndVerifyReport(page: Page, appPid: number, downloadDir: string, inputFile: string, inputBytes: number): Promise<void> {
@@ -272,7 +298,7 @@ async function exportAndVerifyReport(page: Page, appPid: number, downloadDir: st
     const report: unknown = JSON.parse(await readFile(reportPath, 'utf8'));
     expect(report).toMatchObject({
       schemaVersion: 1,
-      appVersion: '0.3.3',
+      appVersion: packageVersion,
       verification: 'local-packet-roundtrip',
       networkSent: false,
       status: 'complete',
@@ -391,13 +417,14 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
       binarySource: sourceSha,
       harnessSource,
       appId,
-      version: '0.3.3',
+      version: packageVersion,
       packageDigest,
       inputBytes: fixtureStat.size,
       launchModes: [] as string[],
       wasmLoaded: [] as boolean[],
       reportObserved: [] as boolean[],
       reportVerified: [] as boolean[],
+      bundledNativeVerified: [] as boolean[],
       installedAfterColdLaunch: false,
       codeRemoved: false,
       reinstalledOnline: false,
@@ -415,6 +442,7 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
       await expect(catalog.row).toContainText('已安装', { timeout: 90_000 });
       await catalog.row.getByRole('button', { name: '打开', exact: true }).click();
       let mini = await findMiniAppPage(app.browser);
+      evidence.bundledNativeVerified.push(await verifyBundledNativeHost(mini));
       await verifyWasmFileReport(mini, inputFile, fixtureStat.size);
       await exportAndVerifyReport(mini, app.process.pid!, evidenceDir, inputFile, fixtureStat.size);
       evidence.launchModes.push('online-install');
@@ -436,6 +464,7 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
       evidence.installedAfterColdLaunch = true;
       await catalog.row.getByRole('button', { name: '打开', exact: true }).click();
       mini = await findMiniAppPage(app.browser);
+      evidence.bundledNativeVerified.push(await verifyBundledNativeHost(mini));
       await verifyWasmFileReport(mini, inputFile, fixtureStat.size);
       await exportAndVerifyReport(mini, app.process.pid!, evidenceDir, inputFile, fixtureStat.size);
       evidence.launchModes.push('os-network-disabled-cold-launch');
