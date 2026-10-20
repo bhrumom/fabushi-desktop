@@ -863,8 +863,8 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
     if (action.type === "tabs") {
       if (action.action !== "list") {
         if (workspace.agentTaskId !== action.expectedTaskId) throw new Error("BROWSER_AGENT_TASK_STALE");
-        ensureAgentTaskRunning(workspace);
         requireControlLease(action.expectedControlEpoch!, true);
+        ensureAgentTaskRunning(workspace);
       }
       switch (action.action) {
         case "list":
@@ -902,11 +902,11 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
 
     if (workspace.id !== action.workspaceId) throw new Error("BROWSER_WORKSPACE_MISMATCH");
     if (workspace.agentTaskId !== action.expectedTaskId) throw new Error("BROWSER_AGENT_TASK_STALE");
+    const mutation = !["snapshot", "screenshot", "wait"].includes(action.type);
+    requireControlLease(action.expectedControlEpoch, mutation);
     ensureAgentTaskRunning(workspace);
     const tab = requireTab(workspace, action.tabId);
     if (tab.generation !== action.expectedGeneration) throw new Error("BROWSER_STALE_GENERATION");
-    const mutation = !["snapshot", "screenshot", "wait"].includes(action.type);
-    requireControlLease(action.expectedControlEpoch, mutation);
     const page = tab.view.webContents;
     workspace.activeAgentOperationId = action.operationId;
     publish(workspace);
