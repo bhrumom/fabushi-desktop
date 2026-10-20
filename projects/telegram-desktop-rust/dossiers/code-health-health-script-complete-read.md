@@ -27,8 +27,22 @@ The module is the code-health command/orchestration boundary rather than a metri
 
 ## Traceability
 
-- Requirement: `TDRP-R9-CODE-HEALTH-COMMAND-ORCHESTRATION-001`
-- Oracle set: exact durable source fencing, noncanonical worktree isolation, delegated command-result preservation.
+The following IDs are the complete ledger traceability inventory for this source responsibility and are bound to the source observations and owner decision in this dossier.
+
+- capability_ids: `CAP-REPOSITORY-QUALITY-GOVERNANCE`, `CAP-REPOSITORY-RESPONSIBILITY-GOVERNANCE`, `CAP-REPOSITORY-TASK-EVIDENCE`
+- dependency_ids: `.agents/skills/code-health/SKILL.md`, `.agents/skills/code-health/scripts/atlas.py`, `.agents/skills/code-health/scripts/cmake_model.py`, `.agents/skills/code-health/scripts/cpp_text.py`, `.agents/skills/code-health/scripts/includes.py`, `.agents/skills/code-health/scripts/metrics.py`, `.agents/skills/code-health/scripts/report.py`, `.agents/skills/code-health/scripts/review.py`, `.agents/skills/code-health/scripts/sources.py`, `.agents/skills/code-health/scripts/health_test.py`, `.agents/skills/perform-task/SKILL.md`, `.agents/skills/process-inbox/SKILL.md`, `Fabushi repository AI development lifecycle`, `Fabushi Test Strategy`, `Fabushi Test Evidence Contract`
+- requirement_ids: `TDRP-R9-CODE-HEALTH-COMMAND-ORCHESTRATION-001`
+- oracle_ids: `ORA-TDRP-CODE-HEALTH-EXACT-DURABLE-SCAN-001`, `ORA-TDRP-CODE-HEALTH-NONCANONICAL-WORKTREE-001`, `ORA-TDRP-CODE-HEALTH-COMMAND-RESULTS-001`
+- invariant_ids: `INV-TDRP-CODE-HEALTH-EXACT-AUTHORITY-001`, `INV-TDRP-CODE-HEALTH-STABLE-STATE-001`, `INV-TDRP-CODE-HEALTH-NO-SECOND-OWNER-001`
+- unit_case_ids: `health_test.StateTests.test_recorded_scan_writes_state_once_a_day`, `health_test.StateTests.test_working_tree_scan_leaves_the_ledger_alone`, `health_test.StateTests.test_area_rebuilds_a_missing_snapshot_of_the_published_scan`, `health_test.StateTests.test_source_worktree_is_created_reused_and_removed`, `health_test.VerifyTests.test_deleted_candidate_is_resolved`, `health_test.MoveTests.test_extracting_a_function_into_a_new_file_is_move_only`
+- contract_case_ids: `CONTRACT-TDRP-CODE-HEALTH-COMMAND-ORCHESTRATION-001`
+- integration_case_ids: `INT-TDRP-CODE-HEALTH-SKILL-COMMANDS-001`
+- fault_recovery_case_ids: `FAULT-TDRP-CODE-HEALTH-FETCH-FAILURE-001`, `FAULT-TDRP-CODE-HEALTH-HEAD-MISMATCH-001`, `FAULT-TDRP-CODE-HEALTH-MALFORMED-STATE-001`
+- security_case_ids: `SEC-TDRP-CODE-HEALTH-AUTHORITY-BYPASS-001`
+- exploratory_charter_ids: `EXP-TDRP-CODE-HEALTH-COMMAND-ORCHESTRATION-001`
+- release_gate_ids: `G-EVIDENCE`, `G-INVENTORY`, `G-RELEASE`
+- test_fixture_ids: `code-health-health-command-contract`, `repository-quality-health-orchestration-contract`, `exact-source-canonical-state-contract`
+- test_environment_ids: `GitHub Actions hosted runners`
 
 ## Responsibility decision
 
