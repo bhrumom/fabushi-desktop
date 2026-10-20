@@ -470,6 +470,20 @@ fn local_browser_actions_carry_main_owned_control_epoch_and_tab_mutations_resolv
 }
 
 #[test]
+fn local_browser_actions_carry_main_owned_task_identity() {
+    for required in [
+        "target.get(\"taskId\")",
+        "\"expectedTaskId\".into(), Value::String(task_id.to_string())",
+        "request[\"expectedTaskId\"] = target.get(\"taskId\")",
+    ] {
+        assert!(
+            LOCAL_BROWSER_TOOLS_SOURCE.contains(required),
+            "local task-space fence lost invariant: {required}"
+        );
+    }
+}
+
+#[test]
 fn unsupported_local_browser_action_fails_before_auto_review_or_relay() {
     let reviewed = Arc::new(Mutex::new(Vec::<String>::new()));
     let reviewed_sink = Arc::clone(&reviewed);

@@ -41,6 +41,7 @@ import {
 const PERSISTENCE_VERSION = 1;
 const MAX_PERSISTED_BYTES = 4 * 1024 * 1024;
 const DEFAULT_TITLE = "New Tab";
+const MAX_CONCURRENT_AGENT_TASKS = 4;
 
 export interface BrowserWorkspaceDownloadItem {
   getURL(): string;
@@ -174,6 +175,8 @@ interface RuntimeWorkspace {
   downloads: BrowserWorkspaceDownload[];
   agentControlState: "available" | "paused" | "taken-over" | "stopped";
   agentControlEpoch: number;
+  agentTaskId: string;
+  agentTaskStatus: "idle" | "running" | "paused" | "taken-over" | "stopped";
   activeAgentOperationId: string | null;
 }
 
@@ -365,6 +368,8 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
       agentControl: {
         state: workspace.agentControlState,
         epoch: workspace.agentControlEpoch,
+        taskId: workspace.agentTaskId,
+        taskStatus: workspace.agentTaskStatus,
         activeOperationId: workspace.activeAgentOperationId,
       },
     };
@@ -625,6 +630,8 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
       downloads: [],
       agentControlState: "available",
       agentControlEpoch: 1,
+      agentTaskId: nextId(),
+      agentTaskStatus: "idle",
       activeAgentOperationId: null,
     };
     workspaces.set(workspace.id, workspace);
@@ -763,6 +770,7 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
         return publish(workspace);
       }
       case "agent-control": {
+        const previousState = workspace.agentControlState;
         workspace.agentControlEpoch += 1;
         workspace.activeAgentOperationId = null;
         workspace.agentControlState = command.action === "resume"
@@ -772,6 +780,18 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
             : command.action === "takeover"
               ? "taken-over"
               : "stopped";
+        if (command.action === "pause") {
+          if (workspace.agentTaskStatus === "running") workspace.agentTaskStatus = "paused";
+        } else if (command.action === "takeover") {
+          workspace.agentTaskStatus = "taken-over";
+        } else if (command.action === "stop") {
+          workspace.agentTaskStatus = "stopped";
+        } else if (previousState === "paused") {
+          if (workspace.agentTaskStatus === "paused") workspace.agentTaskStatus = "running";
+        } else {
+          workspace.agentTaskId = nextId();
+          workspace.agentTaskStatus = "idle";
+        }
         return publish(workspace);
       }
     }
@@ -789,6 +809,7 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
     tabId: tab.id,
     generation: tab.generation,
     controlEpoch: workspace.agentControlEpoch,
+    taskId: workspace.agentTaskId,
     observedUrl: tab.view.webContents.getURL() || tab.url,
     observedTitle: tab.view.webContents.getTitle() || tab.title,
     ...extra,
@@ -808,6 +829,20 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
     active: candidate.id === workspace.activeTabId,
   }));
 
+  const ensureAgentTaskRunning = (workspace: RuntimeWorkspace): void => {
+    if (workspace.agentTaskStatus === "running") return;
+    if (workspace.agentTaskStatus === "paused" || workspace.agentTaskStatus === "taken-over" || workspace.agentTaskStatus === "stopped") {
+      throw new Error("BROWSER_AGENT_CONTROL_REVOKED");
+    }
+    const activeTasks = [...workspaces.values()].filter((candidate) =>
+      candidate.id !== workspace.id
+      && (candidate.agentTaskStatus === "running" || candidate.agentTaskStatus === "paused")
+    ).length;
+    if (activeTasks >= MAX_CONCURRENT_AGENT_TASKS) throw new Error("BROWSER_AGENT_TASK_LIMIT");
+    workspace.agentTaskStatus = "running";
+    publish(workspace);
+  };
+
   const executeAgentActionNow = async (
     action: NonNullable<ReturnType<typeof parseLocalBrowserAgentAction>>,
   ): Promise<LocalBrowserAgentActionResult> => {
@@ -815,6 +850,7 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
     const workspace = requireExistingOwnedWorkspace(action.conversationId);
 
     if (action.type === "resolve-target") {
+      ensureAgentTaskRunning(workspace);
       const tab = action.tabId == null ? activeTab(workspace) : requireTab(workspace, action.tabId);
       return agentResult(action.operationId, workspace, tab, { tabs: agentTabs(workspace) });
     }
@@ -825,7 +861,11 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
     };
 
     if (action.type === "tabs") {
-      if (action.action !== "list") requireControlLease(action.expectedControlEpoch!, true);
+      if (action.action !== "list") {
+        if (workspace.agentTaskId !== action.expectedTaskId) throw new Error("BROWSER_AGENT_TASK_STALE");
+        ensureAgentTaskRunning(workspace);
+        requireControlLease(action.expectedControlEpoch!, true);
+      }
       switch (action.action) {
         case "list":
           break;
@@ -861,6 +901,8 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
     }
 
     if (workspace.id !== action.workspaceId) throw new Error("BROWSER_WORKSPACE_MISMATCH");
+    if (workspace.agentTaskId !== action.expectedTaskId) throw new Error("BROWSER_AGENT_TASK_STALE");
+    ensureAgentTaskRunning(workspace);
     const tab = requireTab(workspace, action.tabId);
     if (tab.generation !== action.expectedGeneration) throw new Error("BROWSER_STALE_GENERATION");
     const mutation = !["snapshot", "screenshot", "wait"].includes(action.type);

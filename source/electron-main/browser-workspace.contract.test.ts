@@ -335,7 +335,7 @@ test("agent action snapshot mints opaque generation refs and fixed actions rejec
     workspaceId: state.workspaceId,
     tabId: tab.id,
     expectedGeneration: tab.generation,
-    expectedControlEpoch: state.agentControl.epoch,
+    expectedControlEpoch: state.agentControl.epoch, expectedTaskId: state.agentControl.taskId,
     operationId: "op-snapshot",
   });
   assert.equal(snap.ok, true);
@@ -349,7 +349,7 @@ test("agent action snapshot mints opaque generation refs and fixed actions rejec
     workspaceId: state.workspaceId,
     tabId: tab.id,
     expectedGeneration: tab.generation,
-    expectedControlEpoch: state.agentControl.epoch,
+    expectedControlEpoch: state.agentControl.epoch, expectedTaskId: state.agentControl.taskId,
     operationId: "op-click",
     ref: snap.snapshot!.elements[0]!.ref,
   });
@@ -363,7 +363,7 @@ test("agent action snapshot mints opaque generation refs and fixed actions rejec
       workspaceId: state.workspaceId,
       tabId: tab.id,
       expectedGeneration: tab.generation,
-      expectedControlEpoch: state.agentControl.epoch,
+      expectedControlEpoch: state.agentControl.epoch, expectedTaskId: state.agentControl.taskId,
       operationId: "op-stale",
       ref: snap.snapshot!.elements[0]!.ref,
     }),
@@ -382,7 +382,7 @@ test("agent select-option is generation-fenced and rejects invalid payloads befo
     workspaceId: state.workspaceId,
     tabId: tab.id,
     expectedGeneration: tab.generation,
-    expectedControlEpoch: state.agentControl.epoch,
+    expectedControlEpoch: state.agentControl.epoch, expectedTaskId: state.agentControl.taskId,
     operationId: "op-select-snapshot",
   });
   assert.equal(snap.ok, true);
@@ -394,7 +394,7 @@ test("agent select-option is generation-fenced and rejects invalid payloads befo
     workspaceId: state.workspaceId,
     tabId: tab.id,
     expectedGeneration: tab.generation,
-    expectedControlEpoch: state.agentControl.epoch,
+    expectedControlEpoch: state.agentControl.epoch, expectedTaskId: state.agentControl.taskId,
     operationId: "op-select",
     ref: snap.snapshot!.elements[0]!.ref,
     values: ["ready"],
@@ -408,7 +408,7 @@ test("agent select-option is generation-fenced and rejects invalid payloads befo
       workspaceId: state.workspaceId,
       tabId: tab.id,
       expectedGeneration: tab.generation,
-      expectedControlEpoch: state.agentControl.epoch,
+      expectedControlEpoch: state.agentControl.epoch, expectedTaskId: state.agentControl.taskId,
       operationId: "op-invalid-select",
       ref: snap.snapshot!.elements[0]!.ref,
       values: [],
@@ -430,7 +430,7 @@ test("agent actions fence workspace identity and expose only bounded fixed keybo
       workspaceId: "wrong-workspace",
       tabId: tab.id,
       expectedGeneration: tab.generation,
-      expectedControlEpoch: state.agentControl.epoch,
+      expectedControlEpoch: state.agentControl.epoch, expectedTaskId: state.agentControl.taskId,
       operationId: "op-wrong",
     }),
     /BROWSER_WORKSPACE_MISMATCH/,
@@ -442,7 +442,7 @@ test("agent actions fence workspace identity and expose only bounded fixed keybo
     workspaceId: state.workspaceId,
     tabId: tab.id,
     expectedGeneration: tab.generation,
-    expectedControlEpoch: state.agentControl.epoch,
+    expectedControlEpoch: state.agentControl.epoch, expectedTaskId: state.agentControl.taskId,
     operationId: "op-key",
     key: "Enter",
   });
@@ -459,7 +459,7 @@ test("agent actions fence workspace identity and expose only bounded fixed keybo
       workspaceId: state.workspaceId,
       tabId: tab.id,
       expectedGeneration: tab.generation,
-      expectedControlEpoch: state.agentControl.epoch,
+      expectedControlEpoch: state.agentControl.epoch, expectedTaskId: state.agentControl.taskId,
       operationId: "op-key-denied",
       key: "Meta+A",
     }),
@@ -488,7 +488,7 @@ test("agent target discovery and tab management stay scoped to the conversation 
     action: "new",
     conversationId: "bot-a",
     operationId: "new-a",
-    expectedControlEpoch: resolved.controlEpoch,
+    expectedControlEpoch: resolved.controlEpoch, expectedTaskId: resolved.taskId,
     address: "https://example.com/local",
   });
   assert.equal(created.ok, true);
@@ -502,7 +502,7 @@ test("agent target discovery and tab management stay scoped to the conversation 
     action: "select",
     conversationId: "bot-a",
     operationId: "select-a",
-    expectedControlEpoch: resolved.controlEpoch,
+    expectedControlEpoch: resolved.controlEpoch, expectedTaskId: resolved.taskId,
     tabId: state.activeTabId,
   });
   assert.equal(selected.ok, true);
@@ -514,7 +514,7 @@ test("agent target discovery and tab management stay scoped to the conversation 
     action: "close",
     conversationId: "bot-a",
     operationId: "close-a",
-    expectedControlEpoch: resolved.controlEpoch,
+    expectedControlEpoch: resolved.controlEpoch, expectedTaskId: resolved.taskId,
     tabId: newTab!.tabId,
   });
   assert.equal(closed.ok, true);
@@ -554,7 +554,7 @@ test("snapshot includes frame identity and routes ref actions to the owning fram
 
   const snap = await h.service.executeAgentAction({
     type: "snapshot", conversationId: "bot-a", workspaceId: state.workspaceId, tabId: state.tabs[0]!.id,
-    expectedGeneration: state.tabs[0]!.generation, expectedControlEpoch: state.agentControl.epoch, operationId: "frame-snapshot",
+    expectedGeneration: state.tabs[0]!.generation, expectedControlEpoch: state.agentControl.epoch, expectedTaskId: state.agentControl.taskId, operationId: "frame-snapshot",
   });
   assert.equal(snap.ok, true);
   if (!snap.ok) return;
@@ -565,7 +565,7 @@ test("snapshot includes frame identity and routes ref actions to the owning fram
 
   const clicked = await h.service.executeAgentAction({
     type: "click", conversationId: "bot-a", workspaceId: state.workspaceId, tabId: state.tabs[0]!.id,
-    expectedGeneration: state.tabs[0]!.generation, expectedControlEpoch: state.agentControl.epoch,
+    expectedGeneration: state.tabs[0]!.generation, expectedControlEpoch: state.agentControl.epoch, expectedTaskId: state.agentControl.taskId,
     operationId: "frame-click", ref: child!.ref,
   });
   assert.equal(clicked.ok, true);
@@ -583,7 +583,7 @@ test("agent drag uses generation-scoped refs and bounded native mouse input", as
     workspaceId: state.workspaceId,
     tabId: tab.id,
     expectedGeneration: tab.generation,
-    expectedControlEpoch: state.agentControl.epoch,
+    expectedControlEpoch: state.agentControl.epoch, expectedTaskId: state.agentControl.taskId,
     operationId: "drag-snapshot",
   });
   assert.equal(snap.ok, true);
@@ -595,7 +595,7 @@ test("agent drag uses generation-scoped refs and bounded native mouse input", as
     workspaceId: state.workspaceId,
     tabId: tab.id,
     expectedGeneration: tab.generation,
-    expectedControlEpoch: state.agentControl.epoch,
+    expectedControlEpoch: state.agentControl.epoch, expectedTaskId: state.agentControl.taskId,
     operationId: "drag-bounded",
     sourceRef,
     targetX: 120,
@@ -614,7 +614,7 @@ test("agent drag uses generation-scoped refs and bounded native mouse input", as
       workspaceId: state.workspaceId,
       tabId: tab.id,
       expectedGeneration: tab.generation,
-      expectedControlEpoch: state.agentControl.epoch,
+      expectedControlEpoch: state.agentControl.epoch, expectedTaskId: state.agentControl.taskId,
       operationId: "drag-invalid",
       sourceRef,
       targetX: 20_000,
@@ -642,7 +642,7 @@ test("user takeover rotates the Main-owned mutation lease and requires an explic
     workspaceId: state.workspaceId,
     tabId: tab.id,
     expectedGeneration: tab.generation,
-    expectedControlEpoch: resolved.controlEpoch,
+    expectedControlEpoch: resolved.controlEpoch, expectedTaskId: resolved.taskId,
     operationId: "lease-snapshot",
   });
   assert.equal(snap.ok, true);
@@ -660,7 +660,7 @@ test("user takeover rotates the Main-owned mutation lease and requires an explic
       workspaceId: state.workspaceId,
       tabId: tab.id,
       expectedGeneration: tab.generation,
-      expectedControlEpoch: resolved.controlEpoch,
+      expectedControlEpoch: resolved.controlEpoch, expectedTaskId: resolved.taskId,
       operationId: "lease-stale-click",
       ref,
     }),
@@ -681,7 +681,7 @@ test("user takeover rotates the Main-owned mutation lease and requires an explic
       workspaceId: state.workspaceId,
       tabId: tab.id,
       expectedGeneration: tab.generation,
-      expectedControlEpoch: fresh.controlEpoch,
+      expectedControlEpoch: fresh.controlEpoch, expectedTaskId: fresh.taskId,
       operationId: "lease-revoked-click",
       ref,
     }),
@@ -703,7 +703,7 @@ test("user takeover rotates the Main-owned mutation lease and requires an explic
     workspaceId: state.workspaceId,
     tabId: tab.id,
     expectedGeneration: tab.generation,
-    expectedControlEpoch: resumedTarget.controlEpoch,
+    expectedControlEpoch: resumedTarget.controlEpoch, expectedTaskId: resumedTarget.taskId,
     operationId: "lease-resumed-click",
     ref,
   });
@@ -741,7 +741,7 @@ test("local Agent upload uses a trusted user selection and never exposes a local
     workspaceId: state.workspaceId,
     tabId: tab.id,
     expectedGeneration: tab.generation,
-    expectedControlEpoch: state.agentControl.epoch,
+    expectedControlEpoch: state.agentControl.epoch, expectedTaskId: state.agentControl.taskId,
     operationId: "upload-snapshot",
   });
   assert.equal(snap.ok, true);
@@ -752,7 +752,7 @@ test("local Agent upload uses a trusted user selection and never exposes a local
     workspaceId: state.workspaceId,
     tabId: tab.id,
     expectedGeneration: tab.generation,
-    expectedControlEpoch: state.agentControl.epoch,
+    expectedControlEpoch: state.agentControl.epoch, expectedTaskId: state.agentControl.taskId,
     operationId: "upload-file",
     ref: snap.snapshot!.elements[0]!.ref,
   });
@@ -779,7 +779,7 @@ test("local Agent upload cancellation is explicit and has no page side effect", 
     workspaceId: state.workspaceId,
     tabId: tab.id,
     expectedGeneration: tab.generation,
-    expectedControlEpoch: state.agentControl.epoch,
+    expectedControlEpoch: state.agentControl.epoch, expectedTaskId: state.agentControl.taskId,
     operationId: "upload-cancel-snapshot",
   });
   assert.equal(snap.ok, true);
@@ -792,7 +792,7 @@ test("local Agent upload cancellation is explicit and has no page side effect", 
       workspaceId: state.workspaceId,
       tabId: tab.id,
       expectedGeneration: tab.generation,
-      expectedControlEpoch: state.agentControl.epoch,
+      expectedControlEpoch: state.agentControl.epoch, expectedTaskId: state.agentControl.taskId,
       operationId: "upload-cancel",
       ref: snap.snapshot!.elements[0]!.ref,
     }),
@@ -831,20 +831,20 @@ test("workspace agent actions serialize and takeover invalidates queued mutation
   }];
   const snap = await h.service.executeAgentAction({
     type: "snapshot", conversationId: "bot-queue", workspaceId: state.workspaceId, tabId: tab.id,
-    expectedGeneration: tab.generation, expectedControlEpoch: state.agentControl.epoch, operationId: "queue-snapshot",
+    expectedGeneration: tab.generation, expectedControlEpoch: state.agentControl.epoch, expectedTaskId: state.agentControl.taskId, operationId: "queue-snapshot",
   });
   assert.equal(snap.ok, true);
   if (!snap.ok) return;
   const ref = snap.snapshot!.elements[0]!.ref;
   const upload = h.service.executeAgentAction({
     type: "upload-file", conversationId: "bot-queue", workspaceId: state.workspaceId, tabId: tab.id,
-    expectedGeneration: tab.generation, expectedControlEpoch: state.agentControl.epoch, operationId: "queue-upload", ref,
+    expectedGeneration: tab.generation, expectedControlEpoch: state.agentControl.epoch, expectedTaskId: state.agentControl.taskId, operationId: "queue-upload", ref,
   });
   await pickerStartedPromise;
   const scriptsBeforeQueued = contents.executedScripts.length;
   const queuedClick = h.service.executeAgentAction({
     type: "click", conversationId: "bot-queue", workspaceId: state.workspaceId, tabId: tab.id,
-    expectedGeneration: tab.generation, expectedControlEpoch: state.agentControl.epoch, operationId: "queue-click", ref,
+    expectedGeneration: tab.generation, expectedControlEpoch: state.agentControl.epoch, expectedTaskId: state.agentControl.taskId, operationId: "queue-click", ref,
   });
   await Promise.resolve();
   assert.equal(contents.executedScripts.length, scriptsBeforeQueued, "queued action must not execute while the prior operation owns the workspace lane");
@@ -858,6 +858,34 @@ test("workspace agent actions serialize and takeover invalidates queued mutation
     contents.executedScripts.some((script) => script.includes("element.click()")),
     false,
     "a queued mutation from the revoked lease must never reach the page",
+  );
+});
+
+test("takeover plus explicit reauthorization rotates task identity and rejects the old task lease", async () => {
+  const h = harness();
+  h.service.attachWindow(new FakeHostWindow());
+  const state = await h.invoke({ type: "activate", conversationId: "bot-task", bounds: { x: 1, y: 1, width: 500, height: 500 } });
+  const tab = state.tabs[0]!;
+  const first = await h.service.executeAgentAction({
+    type: "snapshot", conversationId: "bot-task", workspaceId: state.workspaceId, tabId: tab.id,
+    expectedGeneration: tab.generation, expectedControlEpoch: state.agentControl.epoch,
+    expectedTaskId: state.agentControl.taskId, operationId: "task-first",
+  });
+  assert.equal(first.ok, true);
+  if (!first.ok) return;
+  const taken = await h.invoke({ type: "agent-control", conversationId: "bot-task", action: "takeover" });
+  assert.equal(taken.agentControl.taskStatus, "taken-over");
+  const allowed = await h.invoke({ type: "agent-control", conversationId: "bot-task", action: "resume" });
+  assert.equal(allowed.agentControl.taskStatus, "idle");
+  assert.notEqual(allowed.agentControl.taskId, first.taskId);
+
+  await assert.rejects(
+    () => h.service.executeAgentAction({
+      type: "snapshot", conversationId: "bot-task", workspaceId: state.workspaceId, tabId: tab.id,
+      expectedGeneration: tab.generation, expectedControlEpoch: allowed.agentControl.epoch,
+      expectedTaskId: first.taskId, operationId: "task-stale",
+    }),
+    /BROWSER_AGENT_TASK_STALE/,
   );
 });
 

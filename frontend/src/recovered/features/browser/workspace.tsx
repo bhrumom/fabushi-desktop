@@ -162,7 +162,7 @@ export function BrowserWorkspacePane({ bridge, conversationId, onClose }: Browse
         {snapshot == null ? null : (
           <>
             <span className="sand-browser-workspace__agent-state" aria-live="polite">
-              Agent: {snapshot.agentControl.activeOperationId != null ? "working" : snapshot.agentControl.state}
+              Agent: {snapshot.agentControl.activeOperationId != null ? "working" : snapshot.agentControl.state} · task {snapshot.agentControl.taskStatus}
             </span>
             {snapshot.agentControl.state === "available" ? (
               <>
@@ -170,8 +170,10 @@ export function BrowserWorkspacePane({ bridge, conversationId, onClose }: Browse
                 <button onClick={() => void settle(bridge.setAgentControl(conversationId, "takeover"))} type="button">Take over</button>
                 <button onClick={() => void settle(bridge.setAgentControl(conversationId, "stop"))} type="button">Stop agent</button>
               </>
-            ) : (
+            ) : snapshot.agentControl.state === "paused" ? (
               <button onClick={() => void settle(bridge.setAgentControl(conversationId, "resume"))} type="button">Resume agent</button>
+            ) : (
+              <button onClick={() => void settle(bridge.setAgentControl(conversationId, "resume"))} type="button">Allow agent control</button>
             )}
           </>
         )}

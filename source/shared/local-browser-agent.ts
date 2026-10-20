@@ -19,6 +19,7 @@ export interface LocalBrowserAgentTarget {
   readonly tabId: string;
   readonly expectedGeneration: number;
   readonly expectedControlEpoch: number;
+  readonly expectedTaskId: string;
   readonly operationId: string;
 }
 
@@ -37,6 +38,7 @@ export interface LocalBrowserAgentTabsAction {
   readonly tabId?: string;
   readonly address?: string;
   readonly expectedControlEpoch?: number;
+  readonly expectedTaskId?: string;
 }
 
 export type LocalBrowserAgentAction =
@@ -99,6 +101,7 @@ export type LocalBrowserAgentActionResult =
       readonly tabId: string;
       readonly generation: number;
       readonly controlEpoch: number;
+      readonly taskId: string;
       readonly observedUrl: string;
       readonly observedTitle: string;
       readonly snapshot?: LocalBrowserStructuredSnapshot;
@@ -161,8 +164,10 @@ export function parseLocalBrowserAgentAction(value: unknown): LocalBrowserAgentA
     const expectedControlEpoch = source.expectedControlEpoch === undefined
       ? undefined
       : finiteInteger(source.expectedControlEpoch, 1, Number.MAX_SAFE_INTEGER);
+    const expectedTaskId = source.expectedTaskId === undefined ? undefined : boundedString(source.expectedTaskId, 128);
     if (source.expectedControlEpoch !== undefined && expectedControlEpoch == null) return null;
-    if (action !== "list" && expectedControlEpoch == null) return null;
+    if (source.expectedTaskId !== undefined && expectedTaskId == null) return null;
+    if (action !== "list" && (expectedControlEpoch == null || expectedTaskId == null)) return null;
     return {
       type: "tabs",
       ...base,
@@ -170,6 +175,7 @@ export function parseLocalBrowserAgentAction(value: unknown): LocalBrowserAgentA
       ...(tabId == null ? {} : { tabId }),
       ...(address == null ? {} : { address }),
       ...(expectedControlEpoch == null ? {} : { expectedControlEpoch }),
+      ...(expectedTaskId == null ? {} : { expectedTaskId }),
     };
   }
 
@@ -177,8 +183,9 @@ export function parseLocalBrowserAgentAction(value: unknown): LocalBrowserAgentA
   const tabId = boundedString(source.tabId, 128);
   const expectedGeneration = finiteInteger(source.expectedGeneration, 0, Number.MAX_SAFE_INTEGER);
   const expectedControlEpoch = finiteInteger(source.expectedControlEpoch, 1, Number.MAX_SAFE_INTEGER);
-  if (workspaceId == null || tabId == null || expectedGeneration == null || expectedControlEpoch == null) return null;
-  const target = { ...base, workspaceId, tabId, expectedGeneration, expectedControlEpoch };
+  const expectedTaskId = boundedString(source.expectedTaskId, 128);
+  if (workspaceId == null || tabId == null || expectedGeneration == null || expectedControlEpoch == null || expectedTaskId == null) return null;
+  const target = { ...base, workspaceId, tabId, expectedGeneration, expectedControlEpoch, expectedTaskId };
 
   switch (source.type) {
     case "snapshot":

@@ -61,9 +61,13 @@ export interface BrowserWorkspaceDownload {
 
 export type BrowserAgentControlState = "available" | "paused" | "taken-over" | "stopped";
 
+export type BrowserAgentTaskStatus = "idle" | "running" | "paused" | "taken-over" | "stopped";
+
 export interface BrowserAgentControlSnapshot {
   readonly state: BrowserAgentControlState;
   readonly epoch: number;
+  readonly taskId: string;
+  readonly taskStatus: BrowserAgentTaskStatus;
   readonly activeOperationId: string | null;
 }
 

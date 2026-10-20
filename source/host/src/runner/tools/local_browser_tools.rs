@@ -119,6 +119,12 @@ impl LocalBrowserCoordinatorExecutor {
             .ok_or_else(|| ProviderSessionError::Tool(
                 "Local Browser Workspace target is missing controlEpoch.".into(),
             ))?;
+        let task_id = target
+            .get("taskId")
+            .and_then(Value::as_str)
+            .ok_or_else(|| ProviderSessionError::Tool(
+                "Local Browser Workspace target is missing taskId.".into(),
+            ))?;
         Ok(Map::from_iter([
             ("type".into(), Value::String(action.to_string())),
             ("conversationId".into(), Value::String(self.conversation_id.clone())),
@@ -126,6 +132,7 @@ impl LocalBrowserCoordinatorExecutor {
             ("tabId".into(), Value::String(tab_id.to_string())),
             ("expectedGeneration".into(), Value::from(generation)),
             ("expectedControlEpoch".into(), Value::from(control_epoch)),
+            ("expectedTaskId".into(), Value::String(task_id.to_string())),
             ("operationId".into(), Value::String(tool_call_id.to_string())),
         ]))
     }
@@ -180,6 +187,9 @@ impl LocalBrowserCoordinatorExecutor {
             let target = self.resolve_target(args, tool_call_id)?;
             request["expectedControlEpoch"] = target.get("controlEpoch").cloned().ok_or_else(|| ProviderSessionError::Tool(
                 "Local Browser Workspace target is missing controlEpoch.".into(),
+            ))?;
+            request["expectedTaskId"] = target.get("taskId").cloned().ok_or_else(|| ProviderSessionError::Tool(
+                "Local Browser Workspace target is missing taskId.".into(),
             ))?;
         }
         if action == "new" {
