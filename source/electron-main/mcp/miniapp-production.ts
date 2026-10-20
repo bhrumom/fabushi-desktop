@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { lstatSync, readFileSync } from "node:fs";
-import { delimiter, isAbsolute, join } from "node:path";
+import { delimiter, dirname, isAbsolute, join } from "node:path";
 import type { ProductionServiceContext } from "../main-production-services.js";
 import { registerMiniAppManagement, type NativeMiniAppEntry } from "./miniapp-management.js";
 import { createDandelionCliBackend, type MiniAppPickPort } from "./miniapp-cli-backend.js";
@@ -84,9 +84,9 @@ function miniAppTooling(context: ProductionServiceContext, ipc: unknown): MiniAp
     envValue?.trim() || (typeof descriptorValue === "string" ? descriptorValue.trim() : "");
   const binaryPath = stringValue(env.FABUSHI_DANDELION_BIN, descriptor.binaryPath);
   const configPath = stringValue(env.FABUSHI_DANDELION_CONFIG, descriptor.configPath);
+  const primaryPreload = (context.resources as unknown as { preloadPath?: string } | undefined)?.preloadPath;
   const preloadPath = stringValue(env.FABUSHI_MINIAPP_PRELOAD, undefined)
-    || (context.resources as unknown as { preloadPath?: string } | undefined)?.preloadPath
-    || "";
+    || (primaryPreload ? join(dirname(primaryPreload), "preload-miniapp-tools.cjs") : "");
   const descriptorRoots = Array.isArray(descriptor.roots) ? descriptor.roots.filter((item): item is string => typeof item === "string") : [];
   const roots = (env.FABUSHI_DANDELION_ROOTS ?? "").split(delimiter).map((item) => item.trim()).filter(Boolean);
   const authorizedRoots = roots.length > 0 ? roots : descriptorRoots.map((item) => item.trim()).filter(Boolean);

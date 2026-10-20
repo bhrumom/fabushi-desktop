@@ -12,7 +12,8 @@ const expectedSourceSha = process.env.OBF_EXPECTED_SOURCE_SHA?.trim() || sourceS
 const evidenceRoot = process.env.MINIAPP_EVIDENCE_DIR?.trim()
   || path.join(tmpdir(), `fabushi-miniapp-acceptance-${sourceSha.slice(0, 12) || 'unknown'}`);
 const appId = 'org.fabushi.global-dandelion';
-const packageDigest = '4f53dd5df129adb41feadf86016a5923ba792a9a7636a37694965ea4ad28f4db';
+const packageVersion = process.env.MINIAPP_PACKAGE_VERSION || '0.3.3';
+const packageDigest = process.env.MINIAPP_PACKAGE_DIGEST || '4f53dd5df129adb41feadf86016a5923ba792a9a7636a37694965ea4ad28f4db';
 const preferenceKey = 'global-dandelion-display-v1';
 const maxInputBytes = 16 * 1024 * 1024;
 const harnessSource = process.env.FABUSHI_MINIAPP_HARNESS_SOURCE || process.env.GITHUB_SHA || sourceSha;
@@ -215,7 +216,7 @@ async function refreshUntilCatalogItem(page: Page): Promise<{ dialog: Locator; s
   const { dialog, section } = await openPlugins(page);
   const row = section.locator('li').filter({ hasText: packageDigest });
   await expect(row, 'public approved catalog must expose the exact pinned package').toHaveCount(1, { timeout: 60_000 });
-  await expect(row).toContainText('0.3.3');
+  await expect(row).toContainText(packageVersion);
   await expect(row).toContainText('bhrumom');
   return { dialog, section, row };
 }
@@ -234,7 +235,7 @@ function bytesLabel(size: number): string {
 }
 
 async function verifyWasmFileReport(page: Page, inputFile: string, inputBytes: number): Promise<void> {
-  await expect(page.getByRole('status')).toContainText('本地 Rust 内核已就绪。', { timeout: 45_000 });
+  await expect(page.locator('#status')).toContainText('本地 Rust 内核已就绪。', { timeout: 45_000 });
   const fileInput = page.locator('#files');
   await expect(fileInput, 'the signed app must provide its genuine Web file input').toHaveCount(1);
   await fileInput.setInputFiles(inputFile);
@@ -416,7 +417,7 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
       binarySource: sourceSha,
       harnessSource,
       appId,
-      version: '0.3.3',
+      version: packageVersion,
       packageDigest,
       inputBytes: fixtureStat.size,
       launchModes: [] as string[],

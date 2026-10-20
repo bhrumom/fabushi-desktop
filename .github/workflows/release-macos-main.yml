@@ -12,6 +12,16 @@ on:
         required: true
         default: false
         type: boolean
+      miniapp_version:
+        description: Exact approved Mini App version for installed acceptance
+        required: false
+        type: string
+        default: '0.3.3'
+      miniapp_digest:
+        description: Exact approved Mini App SHA-256 for installed acceptance
+        required: false
+        type: string
+        default: '4f53dd5df129adb41feadf86016a5923ba792a9a7636a37694965ea4ad28f4db'
       iterate_existing_miniapp_candidate:
         description: Diagnose the fixed e62ea0 signed binary with this harness; never publish or claim this harness SHA is the binary source.
         required: false
@@ -586,6 +596,8 @@ jobs:
         env:
           MINIAPP_REAL_ACCEPTANCE: '1'
           MINIAPP_REQUIRE_NATIVE_ENGINE: '1'
+          MINIAPP_PACKAGE_VERSION: ${{ inputs.miniapp_version || '0.3.3' }}
+          MINIAPP_PACKAGE_DIGEST: ${{ inputs.miniapp_digest || '4f53dd5df129adb41feadf86016a5923ba792a9a7636a37694965ea4ad28f4db' }}
           MINIAPP_EVIDENCE_DIR: ${{ runner.temp }}/fabushi-miniapp-acceptance
           OBF_SOURCE_SHA: ${{ steps.source.outputs.sha }}
           OBF_EXPECTED_SOURCE_SHA: ${{ steps.source.outputs.sha }}

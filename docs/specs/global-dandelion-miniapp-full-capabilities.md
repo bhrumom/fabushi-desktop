@@ -57,6 +57,12 @@ must not silently replace an invalid/incomplete user descriptor or environment
 override. Signed-package installation, native provisioning and installed operations
 are separate checks. Package acceptance must inspect and invoke the bundled engine.
 
+GD-P04: build and stage `preload-miniapp-tools.cjs` as a distinct sandbox-compatible
+artifact exposing only `fabushi.invoke`. Resolve it beside the production main-window
+preload, never reuse the primary preload. Do not inject a node:url/import.meta banner
+into the sandboxed Mini App preload. The runtime artifact graph requires this file,
+and signed-app acceptance invokes it through the installed isolated window.
+
 ## Context
 
 The approved Global Dandelion package currently exposes an offline Web/Wasm

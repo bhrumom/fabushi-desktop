@@ -6,7 +6,7 @@ on:
       source_sha:
         description: Exact Global Dandelion source commit
         required: true
-        default: fbc4270ac51ee8ff7c05d20b685ec509aa36ce85
+        default: 516102fc2a0fa131a92153190fb75d40231ed547
         type: string
   pull_request:
     paths:
@@ -35,7 +35,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 45
     env:
-      SOURCE_SHA: ${{ inputs.source_sha || 'fbc4270ac51ee8ff7c05d20b685ec509aa36ce85' }}
+      SOURCE_SHA: ${{ inputs.source_sha || '516102fc2a0fa131a92153190fb75d40231ed547' }}
     steps:
       - uses: actions/checkout@v6
         with:
