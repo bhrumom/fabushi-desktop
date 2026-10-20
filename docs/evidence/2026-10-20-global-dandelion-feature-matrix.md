@@ -8,12 +8,12 @@
 | --- | --- |
 | 源仓库 | `https://github.com/bhrumom/global-dandelion-rs` |
 | 源分支 | `main` |
-| 源提交 | `8af045367fcf7e6caa3756552629eb6eef96a3f5` |
+| 源提交 | `0fc0c7513ddac495a7149038583670c29cbe56fa` |
 | 源 native base | `aa6436315cde7b66868b0592d1c67b4590ebd1f9` |
-| 桌面宿主提交 | `afb489baef4f501a0b9a6b8ff8cefef7f90470b5` |
+| 桌面宿主提交 | `ad35ac8b1834d7bceb853759827de9196429e227` |
 | Host 协议 | `fabushi.miniapp.tools.v1` |
-| 生产小程序版本 | `0.3.2` |
-| 生产包摘要 | `a08f6fa285353bdb77c4376bd87ca747599597c03098d202359ba2e5f8b0f697` |
+| 生产小程序版本 | `0.3.3` |
+| 生产包摘要 | `4f53dd5df129adb41feadf86016a5923ba792a9a7636a37694965ea4ad28f4db` |
 | 源功能机器清单 | `global-dandelion-rs/docs/migration/parity.json`，37 行 |
 | 生产包能力声明 | `requestedCapabilities: []`；能力由当前 Host 运行时发现、授权和平台实现决定 |
 
@@ -63,15 +63,15 @@
 
 ## 结论与缺口
 
-1. 当前生产 0.3.2 已证明的是：离线 WebAssembly packet 编解码、真实安装包加载、冷启动/网络禁用启动、重装保留小程序设置，以及 Host 工具协议与隔离窗口契约。
+1. 当前生产 0.3.3 已证明的是：离线 WebAssembly packet 编解码、真实安装包加载、冷启动/网络禁用启动、重装保留小程序设置，以及 Host 工具协议与隔离窗口契约。
 2. 当前还不能证明“源版本全部功能已通过小程序”：网络发送/接收、Rust 状态恢复、Linux 挂载观察、热点硬件回滚、签名更新暂存、真实诊断/兼容数据和目标健康度均缺少对应的安装后真实证据。
 3. 源实现的原生能力是 Linux-first；macOS/Windows 当前 Host 不能把 Linux CLI 伪装成可用能力。应继续保持能力发现按平台真实返回，并为 macOS/Windows 分别实现共享核心或原生适配后再验收。
 4. 本矩阵区分了模拟契约、Rust/CLI CI、安装包验证和真实操作验收；没有证据的行不标记为通过。
 
 ## 当前交付证据索引
 
-- 源版本构建与准备包：Actions `39377126153`，源提交 `8af045367fcf7e6caa3756552629eb6eef96a3f5`。
-- 生产签名发布：backend Actions `39377448970`，发布 `v0.3.2`，包摘要见上表。
+- 源版本构建与准备包：Actions `39381221754`，源提交 `0fc0c7513ddac495a7149038583670c29cbe56fa`。
+- 生产签名发布：backend Actions `39381619105`，发布 `v0.3.3`，包摘要见上表。
 - macOS 当前源提交安装验收：Desktop Actions `39372081156`，提交 `afb489baef4f501a0b9a6b8ff8cefef7f90470b5`。
 - macOS 安装验收 JSON：`artifacts/macos-run-39372081156-miniapp/run-r1x5T8/acceptance.json`。
 - macOS 安装包：`artifacts/macos-run-39372081156-macos/fabushi-1.2.77-macos-arm64.dmg`。
