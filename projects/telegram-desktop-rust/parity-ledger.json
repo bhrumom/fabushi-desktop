@@ -6,10 +6,10 @@
   "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
   "coverage": {
     "source_entries_total": 16202,
-    "unknown": 16177,
-    "unread": 16150,
+    "unknown": 16176,
+    "unread": 16149,
     "omitted": 0,
-    "responsibilities_total": 47,
+    "responsibilities_total": 48,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -11563,6 +11563,298 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral repository-quality duplicate/clone evidence contract read from telegramdesktop/tdesktop authority; no upstream Python/C++ implementation copied into Fabushi shipping runtime.",
       "notes": "Actual 1-based recursive array entry 25 is .agents/skills/code-health/scripts/clones.py. Related normalization/scan/review/tests/classes/perform-task/scheduled callers were read to understand this entry and remain independently accounted inventory entries unless separately represented. This closure decrements only one independent source entry to unknown=16,177 and unread=16,150, omitted=0.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
+      "source_path": ".agents/skills/code-health/scripts/cmake_model.py",
+      "source_blob_sha": "e40ec0fc152958f96bd58d795f70d1a3a24ab1eb",
+      "source_kind": "repository_quality_source_derived_build_model_instrument",
+      "module_id": "tdesktop.code-health-source-build-model-instrument",
+      "responsibility_id": "TDRP-R9-CODE-HEALTH-SOURCE-BUILD-MODEL-001",
+      "source_symbols": [
+        "CMakeModel",
+        "target_of",
+        "dependencies",
+        "tests",
+        "tested_files",
+        "base_for",
+        "calls",
+        "local_name",
+        "build"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-CONFIGURED-BUILD-GRAPH-EVIDENCE",
+        "CAP-REPOSITORY-TASK-EVIDENCE"
+      ],
+      "dependency_ids": [
+        ".agents/skills/code-health/SKILL.md",
+        ".agents/skills/code-health/scripts/includes.py",
+        ".agents/skills/code-health/scripts/report.py",
+        ".agents/skills/code-health/scripts/review.py",
+        ".agents/skills/code-health/scripts/health.py",
+        ".agents/skills/code-health/scripts/health_test.py",
+        ".agents/skills/code-health/scripts/atlas.py",
+        ".agents/skills/code-health/scripts/clones.py",
+        ".agents/skills/code-health/references/atlas.md",
+        ".agents/skills/code-health/references/maps.md",
+        ".agents/skills/code-health/references/classes.md",
+        ".agents/skills/code-health/references/survey.md",
+        ".agents/skills/perform-task/SKILL.md",
+        ".agents/skills/perform-task/references/mechanical-lane.md",
+        ".agents/skills/perform-task/references/pipeline.md",
+        ".agents/skills/perform-task/references/phase-prompts.md",
+        ".agents/skills/process-inbox/SKILL.md",
+        ".agents/skills/continue/SKILL.md",
+        "Fabushi repository AI development lifecycle",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract",
+        "Configured-build graph provenance evidence"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/code-health-cmake-model-script-complete-read.md",
+      "behavior_contract": "Derive deterministic, source-level approximate CMake target/source/link/PCH/executable/library/test relationships from one exact source snapshot for repository quality consumers, while preserving unknown/unsupported syntax and escalating every evaluated configured-build claim to the existing configured-build graph provenance owner.",
+      "state_machine": "exact source snapshot -> sorted CMake/CMakeLists scope -> bounded recognized-call extraction -> target namespace/scope normalization -> approximate target/source/link/PCH/executable/library facts -> dependency closure + coarse tested-file attribution -> include-cost/layering/test/atlas quality evidence -> existing findings/class/placement/task owners; configured-build claims -> configured-build graph provenance owner",
+      "side_effects": [
+        "Read-only repository quality/build evidence only; no CMake configure/build execution, durable findings mutation, owner approval, source edit, task insertion, shipping runtime or parallel build-model store."
+      ],
+      "failure_cases": [
+        "Unsupported CMake variables/conditionals/generator expressions/helper functions treated as proof a real relationship is absent",
+        "Malformed or incomplete recognized call silently promoted to authoritative build truth",
+        "Namespace/scope/options normalization changes the modeled target or dependency unexpectedly",
+        "Duplicate source membership depends on nondeterministic traversal rather than sorted first-recognized assignment",
+        "Cyclic recognized link graph fails to terminate",
+        "Coarse test-name/direct-link heuristic is presented as behavioral test coverage",
+        "Source-derived target/PCH/link evidence is substituted for configured-build graph provenance",
+        "Parser/process/source-authority failure is rewritten as a clean quality result",
+        "Model evidence mutates source, findings, ownership or task routing, or creates a second build-model/findings/task owner"
+      ],
+      "ui_disposition": "Not applicable; repository quality/build-evidence tooling only.",
+      "non_ui_responsibilities": [
+        "Recognized CMake-call extraction without executing CMake",
+        "Deterministic CMake-file traversal and Telegram source-root normalization",
+        "Target namespace/scope/filter normalization",
+        "Source-to-target and target-to-source approximate mapping",
+        "Direct/transitive recognized link dependency closure",
+        "Recognized precompiled-header mapping",
+        "Executable/library and coarse test-target/source classification",
+        "Include-graph build-work and layering evidence input",
+        "Report test/build quality evidence input",
+        "Atlas candidate-skeleton target/test/dependency evidence input",
+        "Configured-build-authority escalation boundary",
+        "Existing findings/class/placement/task-routing boundaries"
+      ],
+      "platform_delta": "Fabushi already owns the applicable source-neutral repository quality/task-evidence and configured-build provenance responsibilities. This closure makes cmake_model.py recognition, normalization, caller usage and source-vs-configured authority boundary independently auditable without porting Telegram Python code-health runtime or introducing a second build-model/findings/ownership/task owner.",
+      "existing_owner_candidates": [
+        "AGENTS.md repository quality-health governance",
+        "AGENTS.md Configured-build graph provenance evidence",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "ordinary Fabushi task/review/evidence lifecycle"
+      ],
+      "existing_owner": "Fabushi repository responsibility/quality/task-evidence governance with configured-build graph provenance as stronger build authority",
+      "rejected_existing_owners": [
+        "Shipping Agent/Coordinator/Host/Runner do not own repository CMake/build-topology analysis",
+        "Product-domain stores, UI roots and packaging/updater owners do not own source-derived build quality evidence",
+        "Copying Telegram cmake_model.py/includes.py/health.py would create a source-specific parallel workflow runtime",
+        "A new build-model findings store, ownership graph or task queue would duplicate canonical repository governance",
+        "Treating the source parser as configured-build authority would weaken the existing configured-build graph provenance owner"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository source-derived build-model evidence governance",
+        "Repository source-derived build-model evidence qualification",
+        "Repository source-derived build-model evidence",
+        "Configured-build graph provenance evidence"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The upstream Python file implements a source-derived repository-quality approximation, not shipping product behavior or a configured build engine; Fabushi preserves the applicable responsibility in source-neutral governance/evidence contracts and reuses its stronger configured-build provenance owner.",
+      "command_event_contracts": [
+        "exact source -> recognized build files/calls -> deterministic normalized source-level target/source/link/PCH/test facts -> repository quality consumers",
+        "source-level fact is unsupported/undecidable -> preserve incomplete/unknown evidence; never infer absence",
+        "evaluated configured target/object/PCH/link/macro claim -> existing configured-build graph provenance evidence",
+        "quality finding/proposal -> existing class/placement/ordinary task lifecycle; model never edits/routes/approves"
+      ],
+      "state_owner": "Existing Fabushi repository responsibility/quality/task-evidence governance; configured-build truth remains owned by Configured-build graph provenance evidence",
+      "lifecycle_owner": "Existing repository development lifecycle and GitHub Actions evidence production/review",
+      "persistence_and_restart": "No build-model-owned durable state. Derived facts are recomputed from one exact source snapshot and consumed by existing quality evidence; durable configured-build claims use the separately bound configured-graph provenance contract.",
+      "concurrency_and_cancellation": "Model derivation is read-only over one exact source snapshot with deterministic traversal. Interrupted or failed derivation cannot mutate source/findings/ownership and cannot publish a clean negative result.",
+      "security_boundary": "Source-derived build evidence cannot authorize source mutation, task insertion, ownership changes, credentials, product behavior, configured-build truth or release acceptance. Stale/partial source, unsupported syntax and parser/process failure remain explicit non-passing/unknown evidence.",
+      "network_service_dependencies": [
+        "GitHub repository authority",
+        "GitHub Actions hosted runners",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi repository quality/release workflow / GitHub Actions",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "Independent exact-head GitHub Actions verification of this source-entry mapping commit is pending."
+      ],
+      "production_entrypoints": [
+        "AGENTS.md -> Repository source-derived build-model evidence governance",
+        "AGENTS.md -> Configured-build graph provenance evidence",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Repository source-derived build-model evidence qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Repository source-derived build-model evidence"
+      ],
+      "production_evidence": [
+        "path:AGENTS.md#Repository source-derived build-model evidence governance",
+        "path:AGENTS.md#Configured-build graph provenance evidence",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Repository source-derived build-model evidence qualification",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Repository source-derived build-model evidence"
+      ],
+      "test_evidence": [
+        "dossier:projects/telegram-desktop-rust/dossiers/code-health-cmake-model-script-complete-read.md",
+        "upstream-cmake-model:.agents/skills/code-health/scripts/cmake_model.py@e40ec0fc152958f96bd58d795f70d1a3a24ab1eb",
+        "upstream-includes:.agents/skills/code-health/scripts/includes.py@2c02b4e7eb821f123588e0a80056edef86fc084c",
+        "upstream-report:.agents/skills/code-health/scripts/report.py@a1177613670e933694f545f387ca7e7ed8cf0ee0",
+        "upstream-review:.agents/skills/code-health/scripts/review.py@070b55553052267e8fbc12d70985b447b24bbb02",
+        "upstream-health:.agents/skills/code-health/scripts/health.py@f08675ef7a03c016d85f91c60b8f29e99454abe9",
+        "upstream-health-test:.agents/skills/code-health/scripts/health_test.py@2176aea672fd9ed16c01342939fbffb41490ae73",
+        "upstream-atlas:.agents/skills/code-health/scripts/atlas.py@6680fa747a1ddc520f4396949f3c84ab25cd8c43",
+        "upstream-clones:.agents/skills/code-health/scripts/clones.py@b74e6e939a3ccaae894d1afa5978f422aec8ee65",
+        "upstream-classes:.agents/skills/code-health/references/classes.md@27847cae96838be7ddf68d3759dba89279f7cf0e",
+        "upstream-survey:.agents/skills/code-health/references/survey.md@d900e7a42b768679c69cd4c584559c783b59d47a",
+        "upstream-mechanical-lane:.agents/skills/perform-task/references/mechanical-lane.md@e5e3cc88ba80ece6a20df7c4dd6002491d66a4ef",
+        "upstream-process-inbox:.agents/skills/process-inbox/SKILL.md@0ce70794ac743d99e6d5c80894cde970b52842db",
+        "upstream-continue:.agents/skills/continue/SKILL.md@aeb81dd57018abbc8f03ea3dbd34f91952128db5"
+      ],
+      "target_commit": "49ff58f5a93de8548acd0a576f597255eaaa8d56",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development, quality and configured-build evidence governance",
+      "composition_slot": "Source-derived build topology evidence feeding quality consumers, with configured-build provenance escalation",
+      "capability_component": "Source-neutral source-derived build-model evidence",
+      "variation_axes": [
+        "root SourceFiles vs lib_* source base",
+        "library vs executable vs alias",
+        "namespaced vs local target",
+        "direct vs transitive recognized link dependency",
+        "recognized vs unsupported/unevaluated CMake syntax",
+        "PCH recognized form vs unmodeled PCH form",
+        "test executable own sources vs directly linked td_* project sources",
+        "source-derived quality fact vs configured-build authority claim"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi repository AI development lifecycle",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract",
+        "Configured-build graph provenance evidence",
+        "ordinary task/review lifecycle"
+      ],
+      "duplicate_root_check": "No Telegram/code-health Python build-model runtime, second configured-build authority, second findings ledger, second ownership graph, or second task queue introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Derived source-build facts own no durable state and must be recomputed/rebound to the exact source revision; configured-build facts remain separately bound to the exact configured graph subject.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to workflow governance",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CODE-HEALTH-SOURCE-BUILD-MODEL-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CODE-HEALTH-CMAKE-RECOGNITION-001",
+        "ORA-TDRP-CODE-HEALTH-BUILD-NORMALIZATION-001",
+        "ORA-TDRP-CODE-HEALTH-BUILD-CONSUMERS-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CODE-HEALTH-SOURCE-MODEL-NONCONFIGURED-001",
+        "INV-TDRP-CODE-HEALTH-BUILD-AUTHORITY-SEPARATION-001",
+        "INV-TDRP-CODE-HEALTH-BUILD-NO-SECOND-OWNER-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CODE-HEALTH-SOURCE-BUILD-MODEL-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-CODE-HEALTH-SOURCE-BUILD-MODEL-CONSUMERS-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CODE-HEALTH-CMAKE-UNRECOGNIZED-001",
+        "FAULT-TDRP-CODE-HEALTH-CMAKE-PARSER-001",
+        "FAULT-TDRP-CODE-HEALTH-STALE-SOURCE-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CODE-HEALTH-BUILD-AUTHORITY-BYPASS-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-CODE-HEALTH-SOURCE-BUILD-MODEL-001"
+      ],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-INVENTORY",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "code-health-cmake-model-source-contract",
+        "repository-source-build-model-evidence-contract",
+        "configured-build-authority-separation-contract"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral repository-quality source-derived CMake/build-model contract read from telegramdesktop/tdesktop authority; no upstream Python/C++ implementation copied into Fabushi shipping runtime.",
+      "notes": "Actual 1-based recursive array entry 26 is .agents/skills/code-health/scripts/cmake_model.py. Related include/report/review/health/tests/atlas/clones/references/perform-task/scheduled callers were read to understand this entry and remain independently accounted inventory entries unless separately represented. This closure decrements only one independent source entry to unknown=16,176 and unread=16,149, omitted=0.",
       "test_execution_evidence": []
     }
   ]
