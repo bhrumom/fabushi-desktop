@@ -203,7 +203,7 @@ jobs:
           DEBUG: pw:browser*
           ELECTRON_ENABLE_LOGGING: "1"
           ELECTRON_ENABLE_STACK_DUMPING: "1"
-        run: npx playwright test e2e/mahayana-agent-workbench.spec.ts --grep "Agent controls the real local Chromium form through Host tools"
+        run: npx playwright test e2e/mahayana-agent-workbench.spec.ts --grep "Agent (controls the real local Chromium form through Host tools|downloads verified bytes from the real local Chromium page through Host tools)"
       - name: Run Browser extension real Chromium acceptance
         env:
           FABUSHI_FEATURE_HOST_MODE: test

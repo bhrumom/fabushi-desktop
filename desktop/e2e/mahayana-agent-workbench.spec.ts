@@ -424,8 +424,10 @@ async function ensureE2eAuthBackend(): Promise<string> {
           && !Array.isArray(item)
           && 'type' in item
           && item.type === 'function_call_output');
-        const browserAgentE2e = body.includes(Buffer.from('FABUSHI_BROWSER_AGENT_E2E', 'utf8'))
-          || body.includes(Buffer.from('fabushi-e2e-browser-', 'utf8'));
+        const browserAgentDownloadE2e = body.includes(Buffer.from('FABUSHI_BROWSER_AGENT_DOWNLOAD_E2E', 'utf8'))
+          || body.includes(Buffer.from('fabushi-e2e-browser-download-', 'utf8'));
+        const browserAgentE2e = !browserAgentDownloadE2e && (body.includes(Buffer.from('FABUSHI_BROWSER_AGENT_E2E', 'utf8'))
+          || body.includes(Buffer.from('fabushi-e2e-browser-', 'utf8')));
         const functionOutput = (callId: string): Record<string, unknown> | null => {
           const item = providerInput.find((candidate) => candidate != null
             && typeof candidate === 'object'
@@ -457,6 +459,54 @@ async function ensureE2eAuthBackend(): Promise<string> {
         };
         response.setHeader('content-type', 'text/event-stream');
         response.statusCode = 200;
+        if (browserAgentDownloadE2e) {
+          const snapshotOutput = functionOutput('fabushi-e2e-browser-download-snapshot');
+          const downloadOutput = functionOutput('fabushi-e2e-browser-download-file');
+          if (snapshotOutput == null) {
+            sendFunctionCall('browser_snapshot', 'fabushi-e2e-browser-download-snapshot', { target: 'local' });
+            return;
+          }
+          let snapshot: { elements?: unknown } | null = null;
+          if (typeof snapshotOutput.text === 'string') {
+            try {
+              const parsed = JSON.parse(snapshotOutput.text);
+              if (parsed != null && typeof parsed === 'object' && !Array.isArray(parsed)) snapshot = parsed as { elements?: unknown };
+            } catch {}
+          }
+          const elements = Array.isArray(snapshot?.elements) ? snapshot.elements : [];
+          const link = elements.find((candidate) => candidate != null
+            && typeof candidate === 'object'
+            && !Array.isArray(candidate)
+            && (candidate as { name?: unknown }).name === 'Download fixture') as { ref?: unknown } | undefined;
+          if (typeof link?.ref !== 'string' || link.ref.length === 0) {
+            throw new Error('Focused Browser Agent download E2E snapshot did not expose Download fixture ref.');
+          }
+          if (downloadOutput == null) {
+            sendFunctionCall('browser_download', 'fabushi-e2e-browser-download-file', {
+              target: 'local',
+              ref: link.ref,
+            });
+            return;
+          }
+          const finalCall = {
+            type: 'function_call',
+            name: 'SendMessage',
+            call_id: 'fabushi-e2e-browser-download-final-message',
+            arguments: JSON.stringify({ type: 'text', content: 'Browser agent download complete' }),
+          };
+          response.end([
+            `data: ${JSON.stringify({ type: 'response.output_item.done', item: finalCall })}\n\n`,
+            `data: ${JSON.stringify({
+              type: 'response.completed',
+              response: {
+                id: 'fabushi-e2e-browser-download-response-final-message',
+                output: [finalCall],
+                usage: { input_tokens: 8, output_tokens: 8, input_tokens_details: { cached_tokens: 0 } },
+              },
+            })}\n\n`,
+          ].join(''));
+          return;
+        }
         if (browserAgentE2e) {
           const snapshotOutput = functionOutput('fabushi-e2e-browser-snapshot');
           const fillOutput = functionOutput('fabushi-e2e-browser-fill');
@@ -1105,6 +1155,54 @@ test('Browser extension installs into real Chromium, survives restart, disables,
     await app?.close().catch(() => undefined);
     await rm(appDataDir, { recursive: true, force: true });
     await rm(extensionDir, { recursive: true, force: true });
+  }
+});
+
+
+test('Agent downloads verified bytes from the real local Chromium page through Host tools', async () => {
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-browser-agent-download-e2e-'));
+  let app: ElectronApplication | null = null;
+
+  try {
+    const origin = await ensureE2eAuthBackend();
+    app = await launchDesktopApp(appDataDir);
+    const page = await app.firstWindow();
+    await completeBrowserLogin(page);
+    await openMahayanaConversation(page);
+
+    await page.getByRole('button', { name: 'Open browser workspace', exact: true }).click();
+    const workspace = page.getByTestId('browser-workspace');
+    await expect(workspace).toBeVisible({ timeout: 10_000 });
+    const address = workspace.getByRole('textbox', { name: 'Address and search' });
+    await address.fill(`${origin}/browser-workspace-fixture`);
+    await address.press('Enter');
+    await expect(workspace.getByRole('tab').filter({ hasText: 'Fabushi Browser Fixture' })).toHaveCount(1, { timeout: 15_000 });
+
+    const prompt = page.getByRole('textbox', { name: 'Prompt' });
+    await prompt.pressSequentially('FABUSHI_BROWSER_AGENT_DOWNLOAD_E2E download the visible fixture');
+    await page.getByRole('button', { name: 'Send message' }).click();
+
+    const browserUserData = await app.evaluate(({ app: electronApp }) => electronApp.getPath('userData'));
+    const downloadRoot = path.join(browserUserData, 'browser-workspace', 'downloads');
+    const expectedBytes = Buffer.from('FABUSHI_BROWSER_DOWNLOAD_V1\n', 'utf8');
+    await expect.poll(async () => {
+      const { readdir, readFile } = await import('node:fs/promises');
+      const accounts = await readdir(downloadRoot, { withFileTypes: true }).catch(() => []);
+      for (const account of accounts) {
+        if (!account.isDirectory()) continue;
+        const files = await readdir(path.join(downloadRoot, account.name)).catch(() => []);
+        for (const file of files) {
+          if (!file.endsWith('-fabushi-browser-fixture.txt')) continue;
+          if ((await readFile(path.join(downloadRoot, account.name, file))).equals(expectedBytes)) return true;
+        }
+      }
+      return false;
+    }, { timeout: 20_000 }).toBe(true);
+
+    await expectHermesAssistantTurn(page, 'Browser agent download complete');
+  } finally {
+    await app?.close().catch(() => undefined);
+    await rm(appDataDir, { recursive: true, force: true });
   }
 });
 
