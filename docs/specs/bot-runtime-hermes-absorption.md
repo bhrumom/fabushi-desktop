@@ -33,6 +33,9 @@ first delivery target. Never enable paid-model tests as a side effect of this wo
   request another model response from stale history; report uncertainty and require
   reconciliation. Cover Fabushi/Codex Responses, Cursor and OpenRouter adapters,
   batches, persistence failure and backward-compatible completed checkpoints.
+  Pending execution disarms the model first-output watchdog; only a completed
+  tool boundary starts the next model-response deadline. Tool duration is not
+  evidence that a model stream stalled.
 - HRA-03: oversized output must have explicit byte bounds, valid UTF-8 and truthful
   truncation evidence. Never present a capped artifact as a complete result. A
   failed materialization must not replay unbounded output into model context or

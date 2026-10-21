@@ -275,6 +275,9 @@ impl ProductionTurnRunShellAdapter {
             if cancellation.is_cancelled() {
                 return Err(cancelled_error(cancellation));
             }
+            if resume_from.as_ref().is_some_and(RoutedProviderCheckpoint::has_pending_tool_calls) {
+                return Err(ProviderSessionError::Tool("Recovered tool execution is uncertain. Reconcile the saved batch before any model or tool replay.".into()));
+            }
 
             let generation = runtime.begin_attempt();
             let attempt_done = Arc::new(AtomicBool::new(false));
@@ -316,16 +319,13 @@ impl ProductionTurnRunShellAdapter {
                         return Ok(());
                     }
                     let cursor = checkpoint_store.persist(checkpoint)?;
-                    // A durable tool-boundary checkpoint is observable provider
-                    // progress even when no text delta preceded it. It also
-                    // begins a fresh provider continuation, so persist first,
-                    // record the resumable boundary, then re-arm the watchdog
-                    // for the first output after that tool result. This keeps a
-                    // post-tool SSE stall bounded without making an unpersisted
-                    // checkpoint eligible for resume.
+                    // Persistence precedes effects. While tools are pending, their
+                    // duration is not a stalled model stream. Only a completed
+                    // boundary starts the next model-response deadline.
                     runtime_for_checkpoint.mark_stream_output(generation);
-                    runtime_for_checkpoint
-                        .rearm_output_deadline_after_checkpoint(generation);
+                    if !checkpoint.has_pending_tool_calls() {
+                        runtime_for_checkpoint.rearm_output_deadline_after_checkpoint(generation);
+                    }
                     let mut progress = progress.borrow_mut();
                     progress.record_output(0);
                     progress.checkpoint = Some(AttemptCheckpoint::new(

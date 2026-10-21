@@ -29,6 +29,8 @@ enum Behavior {
     OutputCheckpointThenFail,
     OutputThenFail,
     ToolCheckpointThenStallUntilCancelled,
+    PendingToolThenSlowSuccess,
+    PendingToolThenDisconnect,
     Success {
         delta: &'static str,
         accumulated: &'static str,
@@ -79,6 +81,18 @@ fn tool_only_checkpoint() -> RoutedProviderCheckpoint {
     })
 }
 
+fn pending_checkpoint() -> RoutedProviderCheckpoint {
+    let RoutedProviderCheckpoint::OpenRouter(mut checkpoint) = tool_only_checkpoint() else {
+        unreachable!("fixture uses OpenRouter");
+    };
+    checkpoint.completed_steps = 0;
+    checkpoint.tool_calls_completed = 0;
+    checkpoint.pending_tool_calls = vec![json!({
+        "id": "call-tool-only", "name": "write", "arguments": "{}"
+    })];
+    RoutedProviderCheckpoint::OpenRouter(checkpoint)
+}
+
 impl RoutedProviderAttemptExecutor for FakeExecutor {
     fn run_attempt(
         &mut self,
@@ -117,6 +131,21 @@ impl RoutedProviderAttemptExecutor for FakeExecutor {
                 }
                 Err(ProviderSessionError::Cancelled(
                     "post-tool continuation watchdog".into(),
+                ))
+            }
+            Behavior::PendingToolThenSlowSuccess => {
+                on_checkpoint(&pending_checkpoint())?;
+                for _ in 0..100 {
+                    assert!(!should_cancel(), "active tool must not expire model output deadline");
+                    thread::sleep(Duration::from_millis(1));
+                }
+                on_checkpoint(&tool_only_checkpoint())?;
+                Ok("done".into())
+            }
+            Behavior::PendingToolThenDisconnect => {
+                on_checkpoint(&pending_checkpoint())?;
+                Err(ProviderSessionError::Transport(
+                    "connection reset during uncertain tool execution".into(),
                 ))
             }
             Behavior::Success {
@@ -630,4 +659,41 @@ fn production_turn_lifecycle_unwinds_and_settles_failed_prepare() {
             ..
         })
     ));
+}
+
+#[test]
+fn pending_tool_execution_disarms_model_output_watchdog() {
+    let adapter = ProductionTurnRunShellAdapter {
+        policy: policy(2),
+        watchdog_poll_interval: Duration::from_millis(1),
+    };
+    let store = FakeStore::default();
+    let mut executor = FakeExecutor::new(VecDeque::from([Behavior::PendingToolThenSlowSuccess]));
+    let result = adapter.run(
+        &RoutedProviderCancellation::default(), &store, &mut executor, &mut |_, _| {},
+    ).expect("tool duration is not model stall");
+    assert_eq!(result, "done");
+    assert_eq!(executor.attempts, 1);
+    let saved = store.saved.lock().unwrap();
+    assert_eq!(saved.len(), 2);
+    assert!(saved[0].has_pending_tool_calls());
+    assert!(!saved[1].has_pending_tool_calls());
+}
+
+#[test]
+fn pending_tool_disconnect_never_reenters_executor() {
+    let adapter = ProductionTurnRunShellAdapter {
+        policy: policy(3),
+        watchdog_poll_interval: Duration::from_millis(1),
+    };
+    let store = FakeStore::default();
+    let mut executor = FakeExecutor::new(VecDeque::from([Behavior::PendingToolThenDisconnect]));
+    let result = adapter.run(
+        &RoutedProviderCancellation::default(), &store, &mut executor, &mut |_, _| {},
+    );
+    assert!(result.is_err());
+    assert_eq!(executor.attempts, 1, "uncertain effects cannot be replayed");
+    let saved = store.saved.lock().unwrap();
+    assert_eq!(saved.len(), 1);
+    assert!(saved[0].has_pending_tool_calls());
 }

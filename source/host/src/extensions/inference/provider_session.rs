@@ -211,6 +211,13 @@ pub enum RoutedProviderCheckpoint {
 }
 
 impl RoutedProviderCheckpoint {
+    pub fn has_pending_tool_calls(&self) -> bool {
+        match self {
+            Self::Fabushi(value) | Self::Codex(value) => !value.pending_tool_calls.is_empty(),
+            Self::Cursor(value) => !value.pending_tool_calls.is_empty(),
+            Self::OpenRouter(value) => !value.pending_tool_calls.is_empty(),
+        }
+    }
     pub fn emitted_text_bytes(&self) -> usize {
         match self {
             Self::Fabushi(checkpoint) => checkpoint.text.len(),
@@ -1433,11 +1440,7 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage_with_max_steps(
     tool_step_reminder: Option<&ProviderToolStepReminderHook>,
 ) -> Result<String, ProviderSessionError> {
     let max_steps = max_steps.max(1);
-    if resume_from.is_some_and(|checkpoint| match checkpoint {
-        RoutedProviderCheckpoint::Fabushi(value) | RoutedProviderCheckpoint::Codex(value) => !value.pending_tool_calls.is_empty(),
-        RoutedProviderCheckpoint::Cursor(value) => !value.pending_tool_calls.is_empty(),
-        RoutedProviderCheckpoint::OpenRouter(value) => !value.pending_tool_calls.is_empty(),
-    }) {
+    if resume_from.is_some_and(RoutedProviderCheckpoint::has_pending_tool_calls) {
         return Err(ProviderSessionError::Tool("A recovered tool batch has uncertain execution. Reconcile the recorded calls before retrying; no tool or model request was replayed.".into()));
     }
     if (options.should_cancel)() {
