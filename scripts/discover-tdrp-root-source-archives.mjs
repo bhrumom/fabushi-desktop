@@ -22,11 +22,18 @@ fail(lock.upstream.accepted===false&&lock.acceptance?.accepted===false&&lock.acc
 const authorityRecords=(discovery.records||[]).filter(x=>x.disposition==='immutable-source-archive');
 fail(authorityRecords.length===2,'immutable source archive count drift '+authorityRecords.length);
 const archives=[];
-for(const item of authorityRecords){
+const archiveIdByCandidateKey=Object.freeze({
+  'Telegram/build/docker/centos_env/Dockerfile:905':'ROOT-ARCHIVE-BOOST-190',
+  'Telegram/build/prepare/prepare.py:806':'ROOT-ARCHIVE-LIBICONV-118'
+});
+for(const record of authorityRecords){
+  const keys=record.candidate_keys||[];
+  fail(keys.length===1,'immutable source archive must map to exactly one source archive candidate');
+  const archiveId=record.id||archiveIdByCandidateKey[keys[0]];
+  fail(typeof archiveId==='string'&&archiveId.length>0,'unrecognized immutable source archive candidate '+keys[0]);
+  const item={...record,id:archiveId};
   fail(/^https?:\/\//.test(item.url||''),item.id+' URL invalid');
   fail(/^[0-9a-f]{64}$/.test(item.sha256||''),item.id+' SHA-256 invalid');
-  const keys=item.candidate_keys||[];
-  fail(keys.length===1,item.id+' must map to exactly one source archive candidate');
   const candidates=(discovery.candidates||[]).filter(c=>keys.includes(c.source_path+':'+c.source_line));
   fail(candidates.length===1,item.id+' source_path/source_line is not uniquely bound to live candidate authority');
   const candidate=candidates[0];
@@ -38,7 +45,6 @@ for(const item of authorityRecords){
   archives.push({...item,source_path:candidate.source_path,source_line:candidate.source_line,source_text:candidate.text,
     target_commit:targetCommit,upstream_commit:lock.upstream.commit,upstream_tree:lock.upstream.tree});
 }
-
 const acq=['git[[:space:]]+(clone|fetch|submodule)','curl[[:space:]]','wget[[:space:]]','git\\+https?://','GIT_REPOSITORY','GIT_TAG','URL[[:space:]]+https?://','pip(3)?[[:space:]]+install','cargo[[:space:]]+install','uses:[[:space:]]','^[[:space:]]*FROM[[:space:]]'].join('|');
 const temp=await fs.mkdtemp(path.join(process.env.RUNNER_TEMP||os.tmpdir(),'tdrp-source-archives-'));
 const reports=[];
