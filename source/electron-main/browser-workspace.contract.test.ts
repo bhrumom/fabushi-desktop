@@ -1010,6 +1010,56 @@ test("browser extension policy rejects privileged permissions before Electron lo
   }
 });
 
+test("download navigation accepts Chromium ERR_FAILED only after the owned session confirms a download", async () => {
+  const h = harness();
+  h.service.attachWindow(new FakeHostWindow());
+  const initial = await h.invoke({ type: "activate", conversationId: "bot-download", bounds: { x: 1, y: 1, width: 500, height: 500 } });
+  const contents = h.views[0]!.webContents;
+  const downloadUrl = "https://example.com/export.bin";
+
+  contents.loadURL = async (url: string): Promise<unknown> => {
+    contents.emit("did-start-loading");
+    const listeners = new Map<"updated" | "done", (_event?: unknown, state?: string) => void>();
+    const item: BrowserWorkspaceDownloadItem = {
+      getURL: () => url,
+      getFilename: () => "export.bin",
+      getTotalBytes: () => 7,
+      getReceivedBytes: () => 7,
+      setSavePath: () => undefined,
+      cancel: () => undefined,
+      on: (event, listener) => { listeners.set(event, listener); },
+    };
+    contents.session.download?.({}, item, contents);
+    contents.emit("did-fail-load", {}, -2, "ERR_FAILED", url, true);
+    listeners.get("done")?.({}, "completed");
+    throw Object.assign(new Error(`ERR_FAILED (-2) loading '${url}'`), { code: "ERR_FAILED", url });
+  };
+
+  const downloaded = await h.invoke({
+    type: "navigate",
+    conversationId: "bot-download",
+    tabId: initial.activeTabId,
+    address: downloadUrl,
+  });
+  assert.equal(downloaded.downloads.length, 1);
+  assert.equal(downloaded.downloads[0]?.fileName, "export.bin");
+  assert.equal(downloaded.downloads[0]?.state, "completed");
+  assert.equal(h.persistence.paths.length, 1);
+
+  contents.loadURL = async (url: string): Promise<unknown> => {
+    throw Object.assign(new Error(`ERR_FAILED (-2) loading '${url}'`), { code: "ERR_FAILED", url });
+  };
+  await assert.rejects(
+    () => h.invoke({
+      type: "navigate",
+      conversationId: "bot-download",
+      tabId: initial.activeTabId,
+      address: "https://example.com/not-a-download",
+    }),
+    /ERR_FAILED/,
+  );
+});
+
 test("invalid commands are rejected before any view is created", async () => {
   const h = harness();
   assert.ok(h.ipc.handler);

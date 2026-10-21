@@ -617,7 +617,7 @@ async function ensureE2eAuthBackend(): Promise<string> {
         return;
       }
       if (requestUrl.pathname === '/browser-workspace-download' && request.method === 'GET') {
-        const bytes = Buffer.from('FABUSHI_BROWSER_DOWNLOAD_V1\\n', 'utf8');
+        const bytes = Buffer.from('FABUSHI_BROWSER_DOWNLOAD_V1\n', 'utf8');
         response.setHeader('content-type', 'application/octet-stream');
         response.setHeader('content-disposition', 'attachment; filename="fabushi-browser-fixture.txt"');
         response.setHeader('content-length', String(bytes.length));

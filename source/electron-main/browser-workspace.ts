@@ -188,6 +188,8 @@ interface RuntimeTab {
   generation: number;
   crashed: boolean;
   error: { code: string; description: string } | null;
+  downloadSequence: number;
+  lastDownloadUrl: string | null;
   agentRefs: Map<string, LocalBrowserElementLocator>;
 }
 
@@ -317,6 +319,12 @@ export function createBrowserWorkspaceFilePersistence(rootDir: string): BrowserW
 
 function downloadState(value: string | undefined): BrowserDownloadState {
   return value === "cancelled" || value === "interrupted" || value === "completed" ? value : "progressing";
+}
+
+function isExpectedDownloadNavigationError(error: unknown): boolean {
+  const value = record(error);
+  return value?.code === "ERR_FAILED"
+    || (error instanceof Error && error.message.includes("ERR_FAILED"));
 }
 
 export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePorts): BrowserWorkspaceService {
@@ -569,6 +577,8 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
         return;
       }
       const { workspace, tab } = owner;
+      tab.downloadSequence += 1;
+      tab.lastDownloadUrl = item.getURL();
       const id = nextId();
       const fileName = safeDownloadFilename(item.getFilename());
       const entry: BrowserWorkspaceDownload = {
@@ -621,6 +631,8 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
       generation: 0,
       crashed: false,
       error: null,
+      downloadSequence: 0,
+      lastDownloadUrl: null,
       agentRefs: new Map(),
     };
     workspace.tabs.push(tab);
@@ -834,7 +846,17 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
         if (safe == null) throw new Error("BROWSER_NAVIGATION_BLOCKED");
         tab.url = safe;
         tab.error = null;
-        await tab.view.webContents.loadURL(safe);
+        const downloadSequence = tab.downloadSequence;
+        try {
+          await tab.view.webContents.loadURL(safe);
+        } catch (error) {
+          const failureUrl = record(error)?.url;
+          const matchesConfirmedDownload = tab.downloadSequence !== downloadSequence
+            && (tab.lastDownloadUrl === safe || (typeof failureUrl === "string" && failureUrl === tab.lastDownloadUrl));
+          if (!matchesConfirmedDownload || !isExpectedDownloadNavigationError(error)) throw error;
+          tab.loading = false;
+          tab.error = null;
+        }
         saveWorkspace(workspace);
         return publish(workspace);
       }
@@ -1211,7 +1233,17 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
         const safe = normalizeBrowserWorkspaceAddress(action.address);
         if (safe == null) throw new Error("BROWSER_NAVIGATION_BLOCKED");
         tab.error = null;
-        await page.loadURL(safe);
+        const downloadSequence = tab.downloadSequence;
+        try {
+          await page.loadURL(safe);
+        } catch (error) {
+          const failureUrl = record(error)?.url;
+          const matchesConfirmedDownload = tab.downloadSequence !== downloadSequence
+            && (tab.lastDownloadUrl === safe || (typeof failureUrl === "string" && failureUrl === tab.lastDownloadUrl));
+          if (!matchesConfirmedDownload || !isExpectedDownloadNavigationError(error)) throw error;
+          tab.loading = false;
+          tab.error = null;
+        }
         saveWorkspace(workspace);
         return agentResult(action.operationId, workspace, tab);
       }
