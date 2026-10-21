@@ -8,7 +8,7 @@ import {
   type CoordinatorMessageChannel,
   type CoordinatorMessagePort,
 } from "./coordinator-launcher.js";
-import { shouldBypassProxy } from "../../packages/cursor-config/auth/proxy-fetch.js";
+import { shouldBypassProxy } from "../../packages/cursor-config/auth/proxy-routing.js";
 
 class FakePort implements CoordinatorMessagePort {
   readonly posted: unknown[] = [];
