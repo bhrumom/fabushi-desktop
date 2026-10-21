@@ -1418,6 +1418,22 @@
       ],
       "rationale": " Official provider Add bypasses optional manual credentials and uses the existing install/native-auth/external-opener lifecycle; installed entries expose Connect for retry. Required custom/team setup and native permission, token, account and broker boundaries remain intact. Actions verifies ordering, failure propagation and manual/legacy preservation.",
       "targetBlobSha": "c7d49ff93d1d0f3df044ae1b67457ed65f7e441c"
+    },
+    {
+      "referencePath": "source/packages/cursor-config/auth/proxy-fetch.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "fda6d23944a79532079a8aa62308efc2a01449e0",
+      "behavioralEvidence": [
+        "source/packages/cursor-config/auth/proxy-fetch.ts",
+        "source/packages/cursor-config/auth/proxy-routing.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/coordinator/coordinator-launcher.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "The shipping proxy fetch wrapper intentionally ports the frozen helper boundary instead of byte-copying it: the loopback bypass predicate lives in the pure proxy-routing module so the coordinator contract test can exercise the same behavior without importing the undici runtime dependency. Production proxy fetch continues through the existing fetch/proxy owner; the change is narrowly scoped to routing-policy reuse and does not relax proxy, origin, or credential boundaries."
     }
   ]
 }
