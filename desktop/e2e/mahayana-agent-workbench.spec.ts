@@ -562,12 +562,15 @@ async function ensureE2eAuthBackend(): Promise<string> {
             } catch {}
           }
           const elements = Array.isArray(snapshot?.elements) ? snapshot.elements : [];
-          const link = elements.find((candidate) => candidate != null
-            && typeof candidate === 'object'
-            && !Array.isArray(candidate)
-            && (candidate as { name?: unknown }).name === 'Download fixture') as { ref?: unknown } | undefined;
+          const link = elements.find((candidate) => {
+            if (candidate == null || typeof candidate !== 'object' || Array.isArray(candidate)) return false;
+            const element = candidate as { name?: unknown; text?: unknown; href?: unknown };
+            return element.name === 'Download fixture'
+              || element.text === 'Download fixture'
+              || (typeof element.href === 'string' && element.href.endsWith('/browser-workspace-download'));
+          }) as { ref?: unknown } | undefined;
           if (typeof link?.ref !== 'string' || link.ref.length === 0) {
-            throw new Error('Focused Browser Agent download E2E snapshot did not expose Download fixture ref.');
+            throw new Error('Focused Browser Agent download E2E snapshot did not expose the bounded download fixture ref.');
           }
           if (downloadOutput == null) {
             sendFunctionCall('browser_download', 'fabushi-e2e-browser-download-file', {
@@ -1327,8 +1330,16 @@ test('Agent controls the real local Chromium form through Host tools, isolates t
     await openMahayanaConversation(page);
 
     const roster = page.getByRole('region', { name: 'Agent list' });
-    const alphaPeer = roster.getByRole('button', { name: 'New chat', exact: true });
-    await expect(alphaPeer).toBeVisible();
+    await page.getByRole('button', { name: 'New', exact: true }).click();
+    const createAlpha = page.getByRole('dialog', { name: 'Create agent' });
+    await expect(createAlpha).toBeVisible();
+    await createAlpha.getByPlaceholder('Agent name').fill('Browser Agent Alpha');
+    await createAlpha.getByRole('button', { name: 'Create', exact: true }).click();
+    await expect(createAlpha).toBeHidden();
+    const alphaPeer = roster.getByRole('button', { name: 'Browser Agent Alpha', exact: true });
+    await expect(alphaPeer).toBeVisible({ timeout: 15_000 });
+    await alphaPeer.click();
+    await expect(page.getByRole('textbox', { name: 'Prompt' })).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
 
     await page.getByRole('button', { name: 'Open browser workspace', exact: true }).click();
     let workspace = page.getByTestId('browser-workspace');

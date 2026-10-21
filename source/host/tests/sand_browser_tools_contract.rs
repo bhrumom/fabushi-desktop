@@ -537,7 +537,7 @@ fn local_upload_requires_user_authorized_sentinel_before_review_and_never_forwar
     assert!(sentinel < review, "local upload path sentinel must be checked before approval");
 
     for required in [
-        "\"click\" | \"upload_file\" | \"fill\"",
+        "\"click\" | \"download\" | \"upload_file\" | \"fill\"",
         "\"upload_file\" => {",
         "self.action_request(&target, tool_call_id, \"upload-file\")?",
         "request.insert(\"ref\".into(), args.get(\"ref\").cloned().unwrap_or(Value::Null));",
