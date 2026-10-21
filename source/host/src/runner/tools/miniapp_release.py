@@ -7,7 +7,6 @@ import re
 import urllib.error
 import urllib.parse
 import urllib.request
-import zipfile
 
 
 class PublicationError(ValueError):
@@ -52,11 +51,6 @@ def publish(root, destination, context, api):
             or receipt.get('sha256') != archive_digest
             or receipt.get('bytes') != len(files['miniapp.unsigned.zip'])):
         raise PublicationError('PUBLICATION_PREPARATION_MISMATCH')
-    import io
-    with zipfile.ZipFile(io.BytesIO(files['miniapp.unsigned.zip'])) as bundle:
-        if (bundle.read('manifest.json') != files['manifest.unsigned.json']
-                or bundle.read('BUILD-INFO.txt') != f'source={sha}\nkind=unsigned-web-miniapp\n'.encode()):
-            raise PublicationError('PUBLICATION_PREPARATION_MISMATCH')
     # Rebuild inert resources in the write-enabled job. A test subprocess in the
     # read-only job cannot substitute another ZIP while keeping a forged receipt.
     import tempfile
@@ -80,6 +74,8 @@ def publish(root, destination, context, api):
         ref = request(prefix + '/git/ref/tags/' + tag_path)
         obj = ref.get('object', {})
         for _ in range(8):
+            if not isinstance(obj, dict):
+                raise PublicationError('PUBLICATION_INVALID_RESPONSE')
             if obj.get('type') == 'commit' and obj.get('sha') == sha:
                 return
             if obj.get('type') != 'tag' or not re.fullmatch('[a-f0-9]{40}', str(obj.get('sha', ''))):
@@ -180,7 +176,7 @@ if __name__ == '__main__':
         result = publish(Path.cwd(), Path('dist'), os.environ,
                          github_api(os.environ['GH_TOKEN'], os.environ.get('GITHUB_REPOSITORY', '')))
         print(json.dumps(result, ensure_ascii=False))
-    except (ValueError, OSError, KeyError, zipfile.BadZipFile) as error:
+    except (ValueError, OSError, KeyError) as error:
         print(json.dumps({'state': 'unconfirmed', 'code': str(error) if isinstance(error, PublicationError)
                           else 'PUBLICATION_INVALID_INPUT', 'retry': False}))
         raise SystemExit(1)

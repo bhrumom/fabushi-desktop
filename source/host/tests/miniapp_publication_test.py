@@ -119,6 +119,17 @@ class Publication(unittest.TestCase):
             self.publish()
         self.assertEqual(self.api.calls, [])
 
+    def test_corrupt_archive_with_matching_receipt_is_rejected_without_unpacking(self):
+        data = b'untrusted compressed container is never extracted'
+        (self.root / 'dist/miniapp.unsigned.zip').write_bytes(data)
+        receipt_path = self.root / 'dist/provenance.json'
+        receipt = json.loads(receipt_path.read_text())
+        receipt.update(sha256=hashlib.sha256(data).hexdigest(), bytes=len(data))
+        receipt_path.write_text(json.dumps(receipt))
+        with self.assertRaisesRegex(self.publisher.PublicationError, 'SOURCE_BYTES_MISMATCH'):
+            self.publish()
+        self.assertEqual(self.api.calls, [])
+
     def test_lost_upload_response_is_not_retried_and_next_call_reconciles(self):
         self.api.lose_upload_response = True
         with self.assertRaisesRegex(self.publisher.PublicationError, 'UNCERTAIN'):
