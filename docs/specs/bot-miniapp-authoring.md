@@ -48,6 +48,9 @@ inside another tool and bypassing their approval/audit policy.
 - BA-06: real tool composition preserves Shell review and cancellation. A denied
   Shell request creates no project. Shared-room/subagent restrictions stay owned
   by existing toolset filters, never restored through this tool.
+  Invoke Python in isolated mode so an untrusted workspace module or PYTHONPATH
+  cannot replace the SDK's standard-library imports. Pin that negative control
+  through the actual Actions Bot tool execution.
 
 ## Failure, verification and delivery
 

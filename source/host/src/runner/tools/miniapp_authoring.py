@@ -97,7 +97,7 @@ jobs:
       - name: Prepare exact-source unsigned package
         env:
           MINIAPP_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-        run: python3 tools/package.py dist "$MINIAPP_SOURCE_SHA"
+        run: python3 -I tools/package.py dist "$MINIAPP_SOURCE_SHA"
       - uses: actions/upload-artifact@v7
         with:
           name: miniapp-preparation-${{ github.event.pull_request.head.sha || github.sha }}

@@ -67,7 +67,7 @@ try:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(file['content'])
     import subprocess
-    subprocess.run(['python3', 'tools/package.py', 'dist', owned_sha], cwd=root, check=True, timeout=30,
+    subprocess.run(['python3', '-I', 'tools/package.py', 'dist', owned_sha], cwd=root, check=True, timeout=30,
                    env={'PATH': os.environ['PATH'], 'LANG': 'C.UTF-8', 'GITHUB_ACTIONS': 'true'})
     receipt = json.loads((root / 'dist/provenance.json').read_text())
     if receipt['sourceSha'] != owned_sha or receipt['signed'] or receipt['installable']:

@@ -95,7 +95,7 @@ impl RoutedToolBridge for MiniAppAuthoringToolBridge {
             "import base64;exec(base64.b64decode(\"{}\"),{{\"__name__\":\"__main__\",\"PACKAGER_SOURCE\":base64.b64decode(\"{}\").decode()}})",
             STANDARD.encode(SDK), STANDARD.encode(PACKAGER)
         );
-        let command = format!("python3 -c {} {}", quote(&bootstrap), quote(&STANDARD.encode(payload)));
+        let command = format!("python3 -I -c {} {}", quote(&bootstrap), quote(&STANDARD.encode(payload)));
         // Delegate the real Shell invocation, rather than calling execute_write
         // directly: the existing Shell auto-review and transport remain active.
         let result = self.delegate.call_tool(&shell, json!({

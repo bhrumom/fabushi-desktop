@@ -56,7 +56,7 @@ fn authoring_uses_existing_shell_review_identity_and_cancellation() {
         else {
             let calls = port.0.lock().unwrap();
             assert_eq!(calls[0].working_directory,"/workspace");
-            assert!(calls[0].command.starts_with("python3 -c "));
+            assert!(calls[0].command.starts_with("python3 -I -c "));
             assert!(!calls[0].is_background);
         }
         cancellation.cancel("cancelled");
@@ -87,6 +87,10 @@ fn actions_executes_actual_bot_tool_create_modify_export_chain() {
     // contract suites retain their already-valid pure composition coverage.
     assert_eq!(std::env::var("FABUSHI_MINIAPP_BOT_EXECUTION").as_deref(), Ok("1"));
     assert_eq!(std::env::var("GITHUB_ACTIONS").as_deref(), Ok("true"));
+    let shadow = std::path::Path::new("/workspace/base64.py");
+    use std::io::Write;
+    let mut poison = std::fs::OpenOptions::new().write(true).create_new(true).open(shadow).unwrap();
+    poison.write_all(b"raise RuntimeError('untrusted workspace import was executed')\n").unwrap();
     let bridge = build_turn_toolset(Arc::new(Base), TurnToolsetDependencies {
         box_resources:Some(Arc::new(ActionsBox)), ..Default::default()
     });
@@ -107,4 +111,5 @@ fn actions_executes_actual_bot_tool_create_modify_export_chain() {
     assert_eq!(exported["installable"],false);
     let destination = std::env::var("FABUSHI_MINIAPP_EXPORT").unwrap();
     std::fs::write(destination,serde_json::to_vec(&exported).unwrap()).unwrap();
+    std::fs::remove_file(shadow).unwrap();
 }
