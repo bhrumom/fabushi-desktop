@@ -44,6 +44,13 @@ and model are inherited from the active session.
   push a branch/open PR/observe CI, then create the immutable tag/dispatch only
   when publication is requested. Final report requires observed remote release
   URL, source SHA and asset digest. It never calls an unsigned ZIP installable.
+- BP-06: on the Mac/Unix desktop, expose explicit local source authoring through
+  the existing ExternalShell executor, review and local permission gate when its
+  trusted per-agent binding exists. Use the same SDK with a private per-agent
+  home workspace; no model-supplied root, no unreviewed subprocess, no automatic
+  retry/fallback after a Box failure, and no app business code execution. Box and
+  local projects remain explicit separate targets. Missing Python/provider/grant
+  is truthful failure; do not call a merely listed tool ready.
 - BP-05: compare generic Registry submission to the actual backend protocol and
   current native account service. Marketplace submission/approval/signature and
   installation must remain explicit gaps until their real production invocation

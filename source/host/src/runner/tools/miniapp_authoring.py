@@ -303,6 +303,7 @@ def execute(args, workspace=Path('/workspace')):
                     pass
             os.fsync(directory)
         result = {'project': project, 'revision': revision, 'config': state['config'],
+                  'executionTarget': 'local' if globals().get('AUTHORING_LOCAL_AGENT') is not None else 'box',
                   'files': [{'path': p, 'sha256': digest(v.encode()), 'bytes': len(v.encode())} for p, v in sorted(state['files'].items())]}
         if action == 'read':
             if args.get('expectedRevision') != revision:
@@ -364,7 +365,26 @@ def execute(args, workspace=Path('/workspace')):
 def main():
     try:
         args = json.loads(base64.b64decode(sys.argv[1], validate=True))
-        print(json.dumps(execute(args), ensure_ascii=False))
+        local_key = globals().get('AUTHORING_LOCAL_AGENT')
+        if local_key is not None:
+            if not isinstance(local_key, str) or not re.fullmatch('[a-f0-9]{64}', local_key):
+                raise ValueError('LOCAL_IDENTITY_INVALID')
+            home = Path.home()
+            home_fd = os.open(home, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+            store = agent = None
+            try:
+                store = subdirectory(home_fd, '.fabushi-miniapps')
+                agent = subdirectory(store, local_key)
+            finally:
+                for fd in [agent, store, home_fd]:
+                    if fd is not None:
+                        os.close(fd)
+            result = execute(args, home / '.fabushi-miniapps' / local_key)
+            result['executionTarget'] = 'local'
+        else:
+            result = execute(args)
+            result['executionTarget'] = 'box'
+        print(json.dumps(result, ensure_ascii=False))
     except ValueError as error:
         code = str(error)
         raise SystemExit('MINIAPP_' + (code if re.fullmatch('[A-Z_]{1,48}', code) else 'REQUEST_INVALID')) from None

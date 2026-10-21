@@ -13,8 +13,11 @@ No new credential owner, server, agent runtime, marketplace or conversation UI.
 The hardcoded Dandelion0.2.1 publisher remains its historical bounded owner; it is
 not widened into a signing bypass or a generic GitHub token proxy.
 
-Expose a generic `MiniApp` authoring tool only when the current Bot has an isolated
-Box Shell. Its create/edit/inspect/export operations execute an included Python
+Expose a generic `MiniApp` authoring tool when the current Bot has an isolated
+Box Shell, or (under bot-miniapp-publication.md BP-06) a trusted per-agent local
+binding and the existing ExternalShell. Local source work uses the ordinary local
+review/permission gate and a private per-agent Unix home directory. Targets are
+explicit separate stores, never a silent retry/fallback after a resource failure. Its create/edit/inspect/export operations execute an included Python
 SDK through the existing reviewed Shell bridge. Per-project immutable revisions
 live only in that agent's /workspace. Bot supplies its generated HTML/CSS/JS via
 bounded edits, not host-bundled application business logic. Export produces a

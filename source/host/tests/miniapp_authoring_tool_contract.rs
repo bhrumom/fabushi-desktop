@@ -193,3 +193,87 @@ fn actions_executes_actual_bot_tool_create_modify_export_chain() {
     std::fs::write(destination,serde_json::to_vec(&exported).unwrap()).unwrap();
     std::fs::remove_file(shadow).unwrap();
 }
+
+#[cfg(unix)]
+#[test]
+fn local_authoring_exposure_and_existing_external_review_are_preserved() {
+    use mahayana_host_runtime::runner::tools::miniapp_authoring_tool::MiniAppAuthoringToolBridge;
+    use mahayana_host_runtime::runner::tools::sand_external_machine_tools::{
+        ExternalMachineExecutor, ExternalMachineShellArgs, ExternalMachineReadArgs, ExternalMachineToolBridge,
+    };
+    struct External(Arc<Mutex<Vec<ExternalMachineShellArgs>>>);
+    impl ExternalMachineExecutor for External {
+        fn execute_shell(&self, args: &ExternalMachineShellArgs) -> Result<Value,ProviderSessionError> {
+            self.0.lock().unwrap().push(args.clone()); Ok(json!({"executed":true}))
+        }
+        fn execute_read(&self, _: &ExternalMachineReadArgs) -> Result<Value,ProviderSessionError> {panic!("not a file bypass")}
+    }
+    for denied in [true,false] {
+        let calls=Arc::new(Mutex::new(Vec::new()));
+        let reviews=Arc::new(Mutex::new(Vec::new()));
+        let observed=reviews.clone();
+        let external=Arc::new(ExternalMachineToolBridge::new(Arc::new(Base),Arc::new(External(calls.clone())))
+            .with_shell_review(Arc::new(move |args| {
+                observed.lock().unwrap().push(args.tool_call_id.clone());
+                Ok(denied.then(||"local review denied".into()))
+            })));
+        let unbound=MiniAppAuthoringToolBridge::new(external.clone(),RoutedProviderCancellation::default());
+        assert!(!unbound.list_tools().unwrap().iter().any(|tool|tool.name=="MiniApp"));
+        let cancellation=RoutedProviderCancellation::default();
+        let bridge=MiniAppAuthoringToolBridge::new(external,cancellation.clone()).with_local_agent_id("private-agent-id");
+        let tool=bridge.list_tools().unwrap().into_iter().find(|tool|tool.name=="MiniApp").unwrap();
+        let result=bridge.call_tool(&tool,json!({"action":"create","project":"local","executionTarget":"local"}),"local-authoring").unwrap();
+        assert_eq!(reviews.lock().unwrap().as_slice(),["local-authoring"]);
+        assert_eq!(calls.lock().unwrap().len(),usize::from(!denied));
+        if denied {assert_eq!(result,json!("local review denied"));}
+        else {
+            let captured=calls.lock().unwrap();
+            assert_eq!(captured[0].working_directory,"/");
+            assert!(captured[0].command.starts_with("python3 -I -c "));
+            assert!(!captured[0].command.contains("private-agent-id"));
+            assert!(captured[0].command.contains("AUTHORING_LOCAL_AGENT"));
+        }
+        cancellation.cancel("user stopped local authoring");
+        assert!(bridge.call_tool(&tool,json!({"action":"inspect","project":"local","executionTarget":"local"}),"cancelled").is_err());
+        assert_eq!(reviews.lock().unwrap().len(),1);
+    }
+}
+
+#[cfg(all(feature = "actions-miniapp-bot", unix))]
+#[test]
+fn actions_local_authoring_runs_the_real_sdk_without_a_box() {
+    use mahayana_host_runtime::runner::tools::miniapp_authoring_tool::MiniAppAuthoringToolBridge;
+    use mahayana_host_runtime::runner::tools::sand_external_machine_tools::{
+        ExternalMachineExecutor, ExternalMachineShellArgs, ExternalMachineReadArgs, ExternalMachineToolBridge,
+    };
+    assert_eq!(std::env::var("GITHUB_ACTIONS").as_deref(),Ok("true"));
+    struct LocalSdk(std::path::PathBuf);
+    impl ExternalMachineExecutor for LocalSdk {
+        fn execute_shell(&self,args:&ExternalMachineShellArgs)->Result<Value,ProviderSessionError> {
+            let output=std::process::Command::new("sh").args(["-c",&args.command])
+                .env("HOME",&self.0).current_dir("/").output().unwrap();
+            assert!(output.status.success(),"SDK failed: {}",String::from_utf8_lossy(&output.stderr));
+            Ok(serde_json::from_slice(&output.stdout).unwrap())
+        }
+        fn execute_read(&self,_:&ExternalMachineReadArgs)->Result<Value,ProviderSessionError>{panic!("no file bypass")}
+    }
+    let root=std::env::temp_dir().join(format!("fabushi-local-miniapp-{}",uuid::Uuid::new_v4()));
+    std::fs::create_dir(&root).unwrap();
+    let external=Arc::new(ExternalMachineToolBridge::new(Arc::new(Base),Arc::new(LocalSdk(root.clone()))));
+    let bridge=MiniAppAuthoringToolBridge::new(external,RoutedProviderCancellation::default()).with_local_agent_id("local-ci-agent");
+    let tool=bridge.list_tools().unwrap().into_iter().find(|tool|tool.name=="MiniApp").unwrap();
+    let created=bridge.call_tool(&tool,json!({"action":"create","project":"counter","executionTarget":"local",
+        "appId":"org.fabushi.local-ci","publisherId":"ci","displayName":"Local Counter","version":"1.0.0"}),"create-local").unwrap();
+    assert_eq!(created["executionTarget"],"local");
+    let read=bridge.call_tool(&tool,json!({"action":"read","project":"counter","executionTarget":"local",
+        "expectedRevision":created["revision"],"path":"src/app.js"}),"read-local").unwrap();
+    assert!(read["source"]["content"].as_str().unwrap().contains("increment"));
+    let exported=bridge.call_tool(&tool,json!({"action":"export","project":"counter","executionTarget":"local"}),"export-local").unwrap();
+    assert_eq!(exported["executionTarget"],"local");
+    let export_path=std::path::Path::new(exported["exportPath"].as_str().unwrap());
+    assert!(export_path.starts_with(&root));
+    let saved:Value=serde_json::from_slice(&std::fs::read(export_path).unwrap()).unwrap();
+    assert_eq!(saved,exported,"the immutable handoff must match the actual tool result");
+    assert_eq!(exported["installable"],false);
+    std::fs::remove_dir_all(root).unwrap();
+}

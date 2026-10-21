@@ -231,6 +231,9 @@ struct LocalToolScopeBridge {
 impl LocalToolScopeBridge {
     fn scoped_action(tool: &RoutedToolDefinition) -> Option<Option<&'static str>> {
         let names = [tool.name.as_str(), tool.tool_name.as_str()];
+        if names.contains(&super::miniapp_authoring_tool::MINIAPP_AUTHORING_TOOL_NAME) {
+            return Some(None); // retire only this call's existing grant; grant enforcement remains in executor
+        }
         if names.contains(&SAND_EXTERNAL_SHELL_TOOL_NAME) {
             return Some(Some("run-command"));
         }
@@ -671,11 +674,7 @@ pub fn build_turn_toolset(
             if let Some(review) = dependencies.box_shell_review {
                 box_bridge = box_bridge.with_shell_review(review);
             }
-            if !role.is_subagent_runner && !role.is_shared_room_runner {
-                Arc::new(MiniAppAuthoringToolBridge::new(Arc::new(box_bridge), authoring_cancellation))
-            } else {
-                Arc::new(box_bridge)
-            }
+            Arc::new(box_bridge)
         }
         _ => bridge,
     };
@@ -725,6 +724,15 @@ pub fn build_turn_toolset(
         }
         _ => bridge,
     };
+    let bridge: Arc<dyn RoutedToolBridge> = if !role.is_subagent_runner && !role.is_shared_room_runner {
+        let mut authoring = MiniAppAuthoringToolBridge::new(bridge, authoring_cancellation);
+        if !role.is_box_scoped_subagent {
+            if let Some(binding) = dependencies.local_tool_permission.as_ref() {
+                authoring = authoring.with_local_agent_id(&binding.agent_id);
+            }
+        }
+        Arc::new(authoring)
+    } else { bridge };
     let bridge: Arc<dyn RoutedToolBridge> =
         match (
             role.is_box_scoped_subagent,
