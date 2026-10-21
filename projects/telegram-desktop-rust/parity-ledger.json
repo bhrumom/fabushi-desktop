@@ -6,10 +6,10 @@
   "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
   "coverage": {
     "source_entries_total": 16305,
-    "unknown": 16255,
-    "unread": 16230,
+    "unknown": 16254,
+    "unread": 16229,
     "omitted": 0,
-    "responsibilities_total": 66,
+    "responsibilities_total": 67,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -17783,6 +17783,270 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral repository verification mechanics read from exact telegramdesktop/tdesktop workflow source; no Codex Computer Use runtime, Telegram UI or shipping Computer implementation copied.",
       "notes": "Zero-based strict index 47 is .agents/skills/perform-task/references/computer-use-testing.md@b7fc92d604a55975f75047828d476e64667aa259 on live 0eca52223cceed229932add1cc80792763120844. Complete adapter and real SKILL/pipeline/phase-prompts/shared-test-loop call path inspected. Coverage after exactly this entry: unknown=16,255, unread=16,230, omitted=0, responsibilities_total=66. Parent exact-head TDRP 39523164637 is 61/61 success and Rust 39523164652 is 6/6 success on 8ee1201ef957348bc1f91255211221a7d77efaad. Child requires fresh exact-head workflows. Recursive fixed-point unresolved_gitlink_authorities=0 and Boost 582/582/open=0; reachability/disposition remains open (95,133,3865,4674,4602,4255), so baseline_identity_accepted/source_closure_ready=false. Next strict entry index48 is .agents/skills/perform-task/references/mechanical-lane.md@e5e3cc88ba80ece6a20df7c4dd6002491d66a4ef.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "0eca52223cceed229932add1cc80792763120844",
+      "source_path": ".agents/skills/perform-task/references/mechanical-lane.md",
+      "source_blob_sha": "e5e3cc88ba80ece6a20df7c4dd6002491d66a4ef",
+      "source_kind": "repository_ai_skill_mechanical_code_health_lane",
+      "module_id": "tdesktop.perform-task.mechanical-lane",
+      "responsibility_id": "TDRP-R9-PERFORM-TASK-MECHANICAL-LANE-001",
+      "source_symbols": [
+        "Q0 delete eligibility and bounds",
+        "Q1 move eligibility and bounds",
+        "Q2 identical-copy consolidation eligibility and bounds",
+        "Preflight",
+        "Recheck",
+        "Edit",
+        "Prove",
+        "Mechanical review",
+        "Fix once",
+        "Commit",
+        "Publish",
+        "Dropped-item and full-pipeline boundary"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-REPOSITORY-MECHANICAL-CODE-HEALTH",
+        "CAP-REPOSITORY-TASK-EVIDENCE"
+      ],
+      "dependency_ids": [
+        ".agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c",
+        ".agents/skills/perform-task/references/pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7",
+        ".agents/skills/code-health/references/classes.md@27847cae96838be7ddf68d3759dba89279f7cf0e",
+        ".agents/skills/code-health/scripts/health.py@f08675ef7a03c016d85f91c60b8f29e99454abe9",
+        "Fabushi root AGENTS.md repository quality-task classification governance",
+        "Fabushi quality TEST_STRATEGY.md repository quality-task class qualification",
+        "Fabushi quality evidence-contract.md repository quality-task class evidence"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/perform-task-skill-complete-read.md",
+      "behavior_contract": "Admit only task.md Code health Q0 delete, Q1 move, or Q2 identical-copy consolidation work whose behavior, stored formats, network traffic, test-observed logs, ordering and timing remain unchanged. Bound edits to class-allowed paths, prove the class directly, obtain one fresh mechanical review with at most one bounded repair/review, and drop or reclassify anything that needs semantic edits, broadened scope or unproven equivalence. A dropped item never falls through into the full perform-task pipeline inside the same mechanical task.",
+      "state_machine": "Code health Q0|Q1|Q2 -> preflight/source lineage -> finding recheck -> eligible item -> owned-path edit -> class-specific build/health/move/verify proof -> PASS | fix-within-bounds | drop -> fresh mechanical review -> APPROVED | one bounded fix plus same-reviewer resume -> approve or drop named items -> rerun affected/full remaining proofs -> source commit -> test/result -> finish; all items dropped -> restore base -> already-satisfied; semantic/broadened/unproven work -> leave mechanical classification and enter the ordinary full pipeline only through a separate reclassified/routed task",
+      "side_effects": [
+        "May change only repository source/build/map/style/lang paths allowed by the selected Q0/Q1/Q2 class and owned-path contract.",
+        "May create repository proof/review/result artifacts and a repository source commit after proof.",
+        "Does not create or mutate shipping Task, Agent, Computer, Host, Runner, conversation, account or product runtime state.",
+        "Does not treat scanner output or a clean ratchet as product-behavior or release acceptance evidence."
+      ],
+      "failure_cases": [
+        "Q0 deletes material still referenced by a platform file, generated input, build target or surviving writer/user.",
+        "Q1 edits or reorders substantive logic instead of moving it.",
+        "Q2 merges copies that differ in behavior rather than only names/literal parameters.",
+        "A proof failure is forced through instead of fixed within bounds or dropping the item.",
+        "A dropped item continues into the full pipeline inside the same mechanical task.",
+        "A clean scanner/health result is treated as behavior preservation without class-specific build/proof evidence.",
+        "Repository code-health mechanics are mapped into shipping Fabushi Task/Agent/Computer/Host/Runner ownership."
+      ],
+      "ui_disposition": "Not shipping UI; repository code-health workflow governance and evidence.",
+      "non_ui_responsibilities": [
+        "Q0/Q1/Q2 eligibility and exact class bounds",
+        "Owned-path and exact-base discipline",
+        "Class-specific direct proof selection",
+        "Drop/reclassification rather than semantic fallback",
+        "One-fresh-review plus one-fix review boundary",
+        "Mechanical test/result evidence format",
+        "Commit/finish integration with the ordinary repository task lifecycle"
+      ],
+      "platform_delta": "The upstream lane names Telegram Debug builds and Telegram code-health tooling. For FBCP/TDRP, preserve the source-neutral class eligibility, behavior-preservation, direct proof, review and drop/reclassification semantics under existing Fabushi repository-quality governance, while all executable migration verification remains GitHub-Actions-only. Do not copy Telegram workflow mechanics into any shipping product runtime.",
+      "existing_owner_candidates": [
+        "AGENTS.md — Repository quality-task classification governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md — Repository quality-task class qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md — Repository quality-task class evidence",
+        "Shipping Task/Agent/Computer/Host/Runner owners — explicitly rejected because they own product/runtime behavior, not repository code-health governance"
+      ],
+      "existing_owner": "Fabushi source-neutral repository quality-task classification, qualification and evidence governance",
+      "rejected_existing_owners": [
+        "Shipping Task and Agent owners execute end-user/product work, not repository maintainability classification or proof.",
+        "Shipping Computer owns end-user Computer/ForeverBox/VNC behavior, not code-health mechanics.",
+        "Shipping Host/Runner own product execution and takeover contracts, not repository proof/review lifecycle.",
+        "A copied Telegram perform-task/code-health runtime would duplicate the existing source-neutral repository-quality owner."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "##### Repository quality-task classification governance",
+        "### Repository quality-task class qualification",
+        "## Repository quality-task class evidence"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "Applicable responsibility is repository maintainability classification/review/evidence governance, not shipping Rust or TypeScript product logic.",
+      "command_event_contracts": [
+        "task Code health Q0|Q1|Q2 -> exact class eligibility and preflight/recheck",
+        "eligible item -> owned edit -> class-specific build/health/moves/verify proof",
+        "proof pass -> one fresh mechanical review -> at most one bounded repair/resume review",
+        "out-of-bounds/semantic/unproven item -> restore/drop and record precise reason; no same-task full-pipeline fallback",
+        "remaining approved items -> source commit -> test/result -> finish",
+        "governance mapping commit -> fresh exact-head TDRP and Rust Actions before next strict index"
+      ],
+      "state_owner": "Existing Fabushi repository quality-task governance; no product state.",
+      "lifecycle_owner": "Root AGENTS.md plus quality TEST_STRATEGY/evidence-contract and ordinary repository task/review/evidence lifecycle; GitHub Actions owns FBCP/TDRP executable verification.",
+      "persistence_and_restart": "No product persistence. Exact-base finding identities, owned paths, proof outputs, review/result records and repository commits are durable repository evidence; dropped items retain explicit reasons.",
+      "concurrency_and_cancellation": "Mechanical work is fenced to the task's owned paths and exact base; overlapping active ownership or authority drift suspends/reclassifies work rather than broadening the write set. Recovery restores only the affected owned item/files and reruns required proof.",
+      "security_boundary": "Repository/source integrity is protected by exact base/ref, owned-path limits, class bounds and fail-closed proof. No product credential, account, permission, payment or runtime control boundary is owned. FBCP/TDRP executable checks remain GitHub-Actions-only.",
+      "network_service_dependencies": [
+        "GitHub repository/ref/commit authority",
+        "GitHub Actions exact-head workflow evidence"
+      ],
+      "service_owner": "Existing Fabushi repository quality/task evidence pipeline; no shipping service added.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "repository-code-health-mechanical-lane-equivalent",
+      "blockers": [
+        "Fresh exact-head TDRP Revision 9 and Rust desktop runtime workflows required on the child governance commit.",
+        "Recursive reachability/disposition remains open; baseline_identity_accepted=false/source_closure_ready=false."
+      ],
+      "production_entrypoints": [
+        "AGENTS.md -> Repository quality-task classification governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Repository quality-task class qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Repository quality-task class evidence"
+      ],
+      "production_evidence": [
+        "path:AGENTS.md@57ed0d56acc64ef24ce4c1f5c2877a4ec3ab570b",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md@0d3a4c993784625f9b70279602c655d4788fe9fb",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70",
+        "parent-tdrp:39526012643@a822aa26c3b3c48337b473d7a4885e470eb216ab/success-61-of-61",
+        "parent-rust:39526012677@a822aa26c3b3c48337b473d7a4885e470eb216ab/success-6-of-6"
+      ],
+      "test_evidence": [
+        "upstream-index48:.agents/skills/perform-task/references/mechanical-lane.md@e5e3cc88ba80ece6a20df7c4dd6002491d66a4ef",
+        "upstream-performer:.agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c",
+        "upstream-pipeline:.agents/skills/perform-task/references/pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7",
+        "upstream-classes:.agents/skills/code-health/references/classes.md@27847cae96838be7ddf68d3759dba89279f7cf0e",
+        "upstream-health:.agents/skills/code-health/scripts/health.py@f08675ef7a03c016d85f91c60b8f29e99454abe9",
+        "complete-read:Q0-Q2 bounds, preflight/recheck/edit/prove/review/fix-once/commit/publish/result and dropped-item/full-pipeline boundaries",
+        "owner-boundary:shipping Task/Agent/Computer/Host/Runner remain product/runtime owners only"
+      ],
+      "target_commit": "a822aa26c3b3c48337b473d7a4885e470eb216ab",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development quality governance",
+      "composition_slot": "Repository quality-task class / mechanical code-health lane",
+      "capability_component": "Source-neutral Q0/Q1/Q2 mechanical eligibility, proof and review semantics",
+      "variation_axes": [
+        "Q0 delete/Q1 move/Q2 identical-copy consolidation",
+        "eligible/dropped/reclassified",
+        "initial proof/fix-within-bounds/drop",
+        "review approved/one repair review/drop named items",
+        "changed/already-satisfied"
+      ],
+      "shared_owner_contracts": [
+        "Root AGENTS.md repository quality-task classification",
+        "Fabushi quality TEST_STRATEGY class qualification",
+        "Fabushi quality evidence-contract class evidence",
+        "GitHub-Actions-only FBCP/TDRP"
+      ],
+      "duplicate_root_check": "No shipping Task, Agent, Computer, Host, Runner, scanner, findings store, queue, code-health product runtime or source-specific execution owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository maintainability task evidence only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "No shipping product route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "No shipping layout change.",
+      "accessibility_contract": "Not applicable to shipping UI; mechanical proof cannot replace an accessibility/product-risk check when the ordinary task/spec makes one applicable.",
+      "keyboard_contract": "Not applicable.",
+      "state_continuity_contract": "Exact-base/owned-path evidence and retained valid proofs remain bound to the mechanical diff; drops and reclassification are explicit.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-PERFORM-TASK-MECHANICAL-LANE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-PERFORM-TASK-MECHANICAL-ELIGIBILITY-001",
+        "ORA-TDRP-PERFORM-TASK-MECHANICAL-PROOF-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-PERFORM-TASK-MECHANICAL-NO-BEHAVIOR-CHANGE-001",
+        "INV-TDRP-PERFORM-TASK-MECHANICAL-BOUNDED-FILES-001",
+        "INV-TDRP-PERFORM-TASK-MECHANICAL-NO-SHIPPING-RUNTIME-COLLISION-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-PERFORM-TASK-MECHANICAL-LANE-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-PERFORM-TASK-MECHANICAL-TO-QUALITY-GOVERNANCE-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-PERFORM-TASK-MECHANICAL-ONE-FIX-BOUNDARY-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-PERFORM-TASK-MECHANICAL-OUT-OF-BOUNDS-DROP-001",
+        "FAULT-TDRP-PERFORM-TASK-MECHANICAL-PROOF-FAILURE-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-PERFORM-TASK-MECHANICAL-OWNED-PATHS-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-PERFORM-TASK-SEMANTIC-WORK-NOT-MECHANICAL-001"
+      ],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-INVENTORY",
+        "G-TRACEABILITY",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "exact immutable repository revision",
+        "owned Q0/Q1/Q2 candidate diff and finding identity"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral repository code-health workflow semantics read from exact telegramdesktop/tdesktop source; no Telegram product runtime, Task/Agent/Computer/Host/Runner implementation or source code copied.",
+      "notes": "Zero-based strict index 48 is .agents/skills/perform-task/references/mechanical-lane.md@e5e3cc88ba80ece6a20df7c4dd6002491d66a4ef on live 0eca52223cceed229932add1cc80792763120844. Complete Q0-Q2 eligibility/bounds, preflight/recheck/edit/prove/review/fix-once/commit/publish/result flow and real SKILL/pipeline/code-health class/tool call path inspected. Coverage after exactly this entry: unknown=16,254, unread=16,229, omitted=0, responsibilities_total=67. Parent exact-head TDRP 39526012643 is 61/61 success and Rust 39526012677 is 6/6 success on a822aa26c3b3c48337b473d7a4885e470eb216ab. Child requires fresh exact-head workflows. Recursive fixed-point unresolved_gitlink_authorities=0 and Boost 582/582/open=0; reachability/disposition remains open (95,133,3865,4674,4602,4255), so baseline_identity_accepted/source_closure_ready=false. Next strict entry index49 is .agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba.",
       "test_execution_evidence": []
     }
   ]

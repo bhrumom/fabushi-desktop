@@ -1,18 +1,19 @@
-# Perform-task skill complete read — strict recursive indices 45-47
+# Perform-task skill complete read — strict recursive indices 45-48
 
-Status: parent exact-head verified at 8ee1201ef957348bc1f91255211221a7d77efaad; strict index 47 source-grounded and existing-owner mapped; child exact-head verification pending. Earlier index46 validator repairs remain retained and index45/index46 traceability is preserved.
+Status: parent exact-head verified at a822aa26c3b3c48337b473d7a4885e470eb216ab; strict index 48 source-grounded and existing-owner mapped; child exact-head verification pending. Earlier index45-index47 traceability and validator repairs remain retained.
 
 Authority: telegramdesktop/tdesktop@0eca52223cceed229932add1cc80792763120844 tree 1fc479a4b448aed851181bf4a4796d3015368348.
 Index 45 source: `.agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c`.
 Index 46 source: `.agents/skills/perform-task/agents/openai.yaml@f238b707da7f39a4293b17d112ddd344dcb8253a`.
 Index 47 source: `.agents/skills/perform-task/references/computer-use-testing.md@b7fc92d604a55975f75047828d476e64667aa259` (14,178 bytes).
-Next strict entry: index 48 `.agents/skills/perform-task/references/mechanical-lane.md@e5e3cc88ba80ece6a20df7c4dd6002491d66a4ef`.
+Index 48 source: `.agents/skills/perform-task/references/mechanical-lane.md@e5e3cc88ba80ece6a20df7c4dd6002491d66a4ef` (9,933 bytes).
+Next strict entry: index 49 `.agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba`.
 
 ## Parent exact-head evidence
 
-TDRP Revision 9 run 39523164637 is terminal success on 8ee1201ef957348bc1f91255211221a7d77efaad with 61/61 jobs successful and every job bound to that exact head. Source authority artifact 12312202495 digest sha256:a374e7d53b3b71260bff8fd14addb5b7259bf135d66d27fe9b8dc443e1040bcd binds target 8ee1201ef957348bc1f91255211221a7d77efaad, upstream 0eca52223cceed229932add1cc80792763120844 and tree 1fc479a4b448aed851181bf4a4796d3015368348. Boost artifact 12311802679 digest sha256:6aa8176849937d0c2cb9327d37eaff86742056ac303b25dbdefe6a200f9f945c is 582/582/open=0. Root aggregate 12312222100 digest sha256:f6812550ef3eadc67c98abb1d87d7e28c280bc2874ec98c02cbfa6f0f37dfb47 covers 0-11; child aggregate 12311438106 digest sha256:b3cab5670ff66b7dab4112ca0393910c0bb3a1d70ee32c83094f954c3eed77ce covers 0-23; next aggregate 12311558479 digest sha256:77312c491c87d4a39e78b3ec26b700c159e278b4da64df2cb11e940c9ce5eca0 covers 0-15; root-source archive 12312412067 digest sha256:1341d3639a438d2aaaf3cff456af7266700ac77251f9e643b4962706e529f13d. Fixed-point artifact 12311308763 digest sha256:660c85192a30217ec493bc748e510791b5870d3c2b58e9dadaec94da81a6fe29 reaches final_scanned_authorities=203 and unresolved_gitlink_authorities=0 while source_closure_ready=false. Reachability artifact 12311603620 digest sha256:a56a6676732008b3cf416bbd3fd61ad57b3e189f73a8c41a4a36e70d1774cc62 remains partial-audited-open with remaining_open_totals authorities=95, gitlinks=133, acquisition_candidates=3865, generated_inputs=4674, resource_inputs=4602, tool_inputs=4255; baseline_identity_accepted=false and source_closure_ready=false.
+TDRP Revision 9 run 39526012643 is terminal success on a822aa26c3b3c48337b473d7a4885e470eb216ab with 61/61 jobs successful and every job bound to that exact head. Source authority artifact 12312732290 digest sha256:5165ee74c71b1bf112ae21ca9a3f8ecc387a9143e592e0fd1255779c2684ccfa binds target a822aa26c3b3c48337b473d7a4885e470eb216ab, upstream 0eca52223cceed229932add1cc80792763120844 and tree 1fc479a4b448aed851181bf4a4796d3015368348. Boost artifact 12312891818 digest sha256:f0dfe813f887deba2f8d028a0baf415a590a7942e00f86fbc4bd3cd73505410a is 582/582/open=0. Root aggregate 12313446458 digest sha256:2e523ddc50afb6fe519063d669c1cf4d27df8d78e27f54140e02af1223aa3ec5 covers 0-11; child aggregate 12313046811 digest sha256:a1fb780474ead2f2261a7f0cee96afb92e48ce6860bbee8264d0423ef89be82f covers 0-23; next aggregate 12313022389 digest sha256:2c7ba4b3fc0f227301f96fcf075a31ee71c4638dd6f7f6ad7d261273e0c00715 covers 0-15; root-source archive 12313911558 digest sha256:1e3569fe45c0a1f0fa3fd1dcaa85fb380c4e537cbd25dfd67c67d241bf1b1a88. Fixed-point artifact 12313932639 digest sha256:d65f58124493361e3a2c41b3480d7c08bd2500cb0e364cad866344a47245139a proves unresolved_gitlink_authorities=0 while source_closure_ready=false. Reachability artifact 12313827788 digest sha256:fc607272d97d85fa22a1fcca1a281ec34615cc648090844478d71beadad71c3a remains partial-audited-open with remaining_open_totals authorities=95, gitlinks=133, acquisition_candidates=3865, generated_inputs=4674, resource_inputs=4602, tool_inputs=4255; baseline_identity_accepted=false and source_closure_ready=false.
 
-Rust desktop runtime run 39523164652 is terminal success on 8ee1201ef957348bc1f91255211221a7d77efaad: rust-host, renderer, platform-worker and Ubuntu/Windows/macOS pressure-profiler are 6/6 success. Artifact 12311798004 `rust-messaging-responsibilities-8ee1201ef957348bc1f91255211221a7d77efaad` digest sha256:c422ca9a391c4d3ea3eb53e4e2a50ec4f43fb609a259464050f5bf31b167bfab binds the exact parent.
+Rust desktop runtime run 39526012677 is terminal success on a822aa26c3b3c48337b473d7a4885e470eb216ab: rust-host, renderer, platform-worker and Ubuntu/Windows/macOS pressure-profiler are 6/6 success. Artifact 12313941772 `rust-messaging-responsibilities-a822aa26c3b3c48337b473d7a4885e470eb216ab` digest sha256:c6d02b9d06ba49f3fb5ef47e9f8bcc3ea24e35a663f3d5f7cb120d71ca6b641d binds the exact parent.
 
 ## Strict index 46 complete source read
 
@@ -146,8 +147,68 @@ Invariants:
 - Security: SEC-TDRP-PERFORM-TASK-CU-SAFETY-ENVELOPE-001
 - Regression: REG-TDRP-PERFORM-TASK-CU-NARRATION-NOT-PROOF-001
 
+## Strict index 48 complete source read
+
+The complete `.agents/skills/perform-task/references/mechanical-lane.md@e5e3cc88ba80ece6a20df7c4dd6002491d66a4ef` is repository code-health workflow governance for behavior-preserving Q0/Q1/Q2 maintenance, not Telegram product behavior and not Fabushi shipping Task/Agent/Computer/Host/Runner runtime.
+
+- Eligibility is exact: only a task whose `task.md` has `## Code health` class Q0 delete, Q1 move or Q2 merge-identical-copies enters the lane.
+- Q0 removes only proven-dead material and its exclusive declarations/includes/CMake/style/language/field/function/class users after platform/generated/build references are proven absent.
+- Q1 relocates code without semantic edits; only includes, declarations, namespace scaffolding and CMake source-list entries may be newly introduced.
+- Q2 consolidates copies proven identical apart from names/literal values into one already-linkable shared function with caller-specific values parameterized.
+- The common bound forbids new strings/styles/settings/log lines, reordered side effects, templates, header-defined functions or variant dispatch and forbids silently growing build work or binary size.
+- Edit scope is bounded to task-named/receiving/shared files, direct-user includes, relevant CMake lists, area-map Module lines and only-exclusive style/language entries.
+- An item that leaves those bounds is restored and recorded as Dropped with a precise reason. It never falls through to the full pipeline inside the same mechanical task; semantic/broader work must be separately reclassified/routed.
+- The proof step retains complete command output and class-specific oracles: affected builds/targets, health ratchet/reference/last-use negatives, Q1 MOVE_ONLY accounting and finding verification. Proof failure is fixed only within class bounds or the item is dropped.
+- Review is one fresh mechanical reviewer. One bounded repair/resume review is allowed; a second NEEDS_CHANGES drops the named items, reruns required proof, and there is no third mechanical review.
+- Publication still uses the ordinary repository task lifecycle: preflight, owned paths, source commit, `work/test.md`, `work/result.md` and `finish --status approved`. An all-dropped task restores the base and finishes already-satisfied with evidence.
+
+## Real index 48 invocation and full-pipeline boundary
+
+1. `.agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c` selects index48 only for a `## Code health` Q0/Q1/Q2 task; it explicitly says to read the mechanical lane plus pipeline Contract/Preflight/Telegram commits/Final AI state and to skip the ordinary test-loop and Computer Use references.
+2. `.agents/skills/perform-task/references/pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7` defines Q0/Q1/Q2 as the one exception to the adaptive full implementation/review/evidence path because their class bounds what tools can prove.
+3. `.agents/skills/code-health/references/classes.md@27847cae96838be7ddf68d3759dba89279f7cf0e` supplies the semantic class definitions/proof contract, while `.agents/skills/code-health/scripts/health.py@f08675ef7a03c016d85f91c60b8f29e99454abe9` is the concrete health check/move/verify instrument named by the lane.
+4. Directness stays class-specific: exact reference/build/platform/generated-input negatives for Q0, line-level move-only accounting and build placement for Q1, and explicit pre-existing-difference/parameterization/call-site/clone-resolution proof for Q2.
+5. The fallback boundary is fail-closed: any required semantic edit, new behavior, broadened scope or unproven equivalence rejects the mechanical classification. The current task drops/restores that item; a stronger ordinary pipeline is entered only through a separate reclassified/routed task, never silently as a continuation of the mechanical lane.
+
+## Current Fabushi existing owner and shipping-runtime boundary
+
+Fabushi exact a822aa26c3b3c48337b473d7a4885e470eb216ab already owns this applicable source-neutral responsibility:
+
+- `AGENTS.md@57ed0d56acc64ef24ce4c1f5c2877a4ec3ab570b` has the unique `Repository quality-task classification governance` owner: narrow mechanical work is deletion of proven-dead material, relocation with no logic edit, and consolidation of copies equivalent apart from explicit parameters; it remains mechanical only while behavior/formats/network/logs/order/timing are unchanged, and semantic/broadened work is reclassified rather than forced through the lane.
+- `projects/fabushi-communication-platform/quality/TEST_STRATEGY.md@0d3a4c993784625f9b70279602c655d4788fe9fb` has `Repository quality-task class qualification`: Q0-Q2 direct class proof plus independent review, with deletion/move/consolidation oracles and a mandatory stronger ordinary pipeline whenever semantic edits, new behavior, widened scope or unproven equivalence appear.
+- `projects/fabushi-communication-platform/quality/evidence-contract.md@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70` has `Repository quality-task class evidence`: exact base, finding identity, before/after metric, owned paths, deletion reference/build/orphan negatives, move line accounting, consolidation differences/parameterization/call sites, and explicit dropped-item reasons.
+
+These are repository-quality owners. Shipping Task and Agent execute product work; shipping Computer owns end-user Computer/ForeverBox/VNC; shipping Host/Runner own product execution/takeover. None owns repository maintainability classification, proof or review. The generic repository-quality governance also explicitly says it is not a product runtime, second findings store or task queue. `novel_capability=false`; no new owner or ADR is required.
+
+## Index 48 Fabushi-equivalent contract
+
+`exact Q0|Q1|Q2 task class -> source/base/ownership preflight -> finding recheck -> bounded owned edit -> direct class proof -> fresh mechanical review -> at most one bounded repair/review -> approve remaining items or restore/drop failures -> ordinary source commit/result/finish; any semantic/broader/unproven work -> separate reclassification/full pipeline, never an in-task fallback`
+
+Invariants:
+- mechanical classification never weakens a product-risk check otherwise required by the ordinary task/spec;
+- Q0/Q1/Q2 remain behavior-preserving and source-neutral rather than becoming Telegram-specific owners;
+- direct proof is class-specific and a clean scanner result alone is never behavior or release proof;
+- edits never expand beyond the selected class/owned-path boundary to save an item;
+- dropped items are restored and explicitly recorded, not counted resolved;
+- one mechanical repair/review boundary does not become an unbounded rerun/review loop;
+- shipping Task/Agent/Computer/Host/Runner remain product runtime owners and never absorb repository code-health governance;
+- FBCP/TDRP executable verification remains GitHub-Actions-only;
+- open recursive coverage keeps baseline_identity_accepted=false and source_closure_ready=false.
+
+## Index 48 traceability
+
+- Requirement: TDRP-R9-PERFORM-TASK-MECHANICAL-LANE-001
+- Oracles: ORA-TDRP-PERFORM-TASK-MECHANICAL-ELIGIBILITY-001, ORA-TDRP-PERFORM-TASK-MECHANICAL-PROOF-001
+- Invariants: INV-TDRP-PERFORM-TASK-MECHANICAL-NO-BEHAVIOR-CHANGE-001, INV-TDRP-PERFORM-TASK-MECHANICAL-BOUNDED-FILES-001, INV-TDRP-PERFORM-TASK-MECHANICAL-NO-SHIPPING-RUNTIME-COLLISION-001
+- Contract: CONTRACT-TDRP-PERFORM-TASK-MECHANICAL-LANE-001
+- Integration: INT-TDRP-PERFORM-TASK-MECHANICAL-TO-QUALITY-GOVERNANCE-001
+- Temporal: TEMP-TDRP-PERFORM-TASK-MECHANICAL-ONE-FIX-BOUNDARY-001
+- Fault recovery: FAULT-TDRP-PERFORM-TASK-MECHANICAL-OUT-OF-BOUNDS-DROP-001, FAULT-TDRP-PERFORM-TASK-MECHANICAL-PROOF-FAILURE-001
+- Security: SEC-TDRP-PERFORM-TASK-MECHANICAL-OWNED-PATHS-001
+- Regression: REG-TDRP-PERFORM-TASK-SEMANTIC-WORK-NOT-MECHANICAL-001
+
 ## Verification disposition
 
-This closes only recursive strict index 47. Counters become source_entries_total=16,305, unknown=16,255, unread=16,230, omitted=0, responsibilities_total=66, unmapped=0. baseline_identity_accepted=false, baseline_ready=false, accepted=false and source_closure_ready=false because source coverage and recursive reachability/disposition remain open.
+This closes only recursive strict index 48. Counters become source_entries_total=16,305, unknown=16,254, unread=16,229, omitted=0, responsibilities_total=67, unmapped=0. baseline_identity_accepted=false, baseline_ready=false, accepted=false and source_closure_ready=false because source coverage and recursive reachability/disposition remain open.
 
-Parent 8ee1201ef957348bc1f91255211221a7d77efaad evidence is supporting evidence only after this write. Exact-head acceptance of index47 requires fresh TDRP Revision 9 61-job and Rust desktop runtime 6-job workflows on the immutable child. Only after every child job/step/log/artifact/digest closes without deterministic failure may the audit enter strict index48.
+Parent a822aa26c3b3c48337b473d7a4885e470eb216ab evidence is supporting evidence only after this write. Exact-head acceptance of index48 requires fresh TDRP Revision 9 61-job and Rust desktop runtime 6-job workflows on the immutable child. Only after every child job/step/full log/artifact/digest closes without deterministic failure may the audit enter strict index49.
