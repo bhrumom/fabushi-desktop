@@ -1,6 +1,6 @@
 # Perform-task skill complete read — strict recursive indices 45-46
 
-Status: parent exact-head verified at b34f18004a58db1c1341505fc4d0bf3ccb9b1ce6; strict index 46 source-grounded and existing-owner mapped; child exact-head verification pending.
+Status: parent exact-head verified at b34f18004a58db1c1341505fc4d0bf3ccb9b1ce6; strict index 46 source-grounded and existing-owner mapped. First child f83be332053e55181913c4a134b9142a806c2f63 exposed a deterministic dossier-only validator regression because the index 46 dossier rewrite omitted the retained index 45 traceability literals; this revision restores those literals without changing coverage or ownership. Fresh child exact-head verification pending.
 
 Authority: telegramdesktop/tdesktop@0eca52223cceed229932add1cc80792763120844 tree 1fc479a4b448aed851181bf4a4796d3015368348.
 Index 45 source: `.agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c`.
@@ -59,6 +59,16 @@ Invariants:
 - shipping Fabushi Task/Agent/Host/Runner state remains separate;
 - exact-head GitHub Actions evidence is required again after this governance-only mapping commit;
 - open recursive coverage keeps baseline_identity_accepted=false and source_closure_ready=false.
+
+## Index 45 retained traceability
+
+The index 46 dossier extension retains the traceability identifiers of the already-mapped index 45 shared perform-task semantic engine so the combined dossier remains a valid oracle for both ledger rows.
+
+- Requirement: TDRP-R9-PERFORM-TASK-WORKFLOW-001
+- Oracles: ORA-TDRP-PERFORM-TASK-SINGLE-OWNERSHIP-001, ORA-TDRP-PERFORM-TASK-REVIEW-EVIDENCE-001, ORA-TDRP-PERFORM-TASK-PUBLICATION-001
+- Invariants: INV-TDRP-PERFORM-TASK-ONE-TASK-ONLY-001, INV-TDRP-PERFORM-TASK-FAIL-CLOSED-EVIDENCE-001, INV-TDRP-PERFORM-TASK-RESUMABLE-STATE-001, INV-TDRP-PERFORM-TASK-NO-SHIPPING-TASK-COLLISION-001
+- Security: SEC-TDRP-PERFORM-TASK-EVIDENCE-DOWNGRADE-001
+- Fault recovery: FAULT-TDRP-PERFORM-TASK-SOURCE-DRIFT-001, FAULT-TDRP-PERFORM-TASK-TEST-FLAW-001, FAULT-TDRP-PERFORM-TASK-PUBLICATION-CONFLICT-001
 
 ## Traceability
 
