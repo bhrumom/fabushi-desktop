@@ -421,7 +421,7 @@
       "referencePath": "source/electron-main/main-production-services.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "4b69dbb984c2aa3f060293771aec04517d32fad4",
+      "targetBlobSha": "64ce8b18a8b921797be07fbaaa79bd9c90588995",
       "behavioralEvidence": [
         "source/electron-main/main-production-services.ts",
         "docs/specs/desktop-miniapp-publisher.md",
@@ -432,7 +432,9 @@
         "source/electron-main/mcp/miniapp-production.ts",
         "source/product/fabushi/fabushi-official-device-registry.ts",
         "source/product/fabushi/fabushi-account-adapters.ts",
-        "source/electron-main/browser-workspace.ts"
+        "source/electron-main/browser-workspace.ts",
+        "source/electron-main/main.ts",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts"
       ],
       "testEvidence": [
         "source/electron-main/foundations.test.ts",
@@ -446,9 +448,11 @@
         ".github/workflows/fdn-official-device-registration.yml",
         "source/electron-main/browser-workspace.contract.test.ts",
         ".github/workflows/browser-workspace-ci.yml",
-        "desktop/e2e/mahayana-agent-workbench.spec.ts"
+        "desktop/e2e/mahayana-agent-workbench.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/browser-workspace-packaged-ci.yml"
       ],
-      "rationale": "Preserves the frozen Grok production composition while applying two explicit Fabushi product adaptations without moving ownership: the existing Host lifecycle/Plugin Skills SDK-edge surface remains in the single Electron MCP owner, and renderer-scoped BrowserWindow delivery is narrowed at the shipping composition boundary to the trusted main WebContents. The frozen source/electron-main/window-broadcast.ts helper remains byte-identical to Grok for truly global fanout; MCP OAuth completion and dev-control renderer events no longer use that all-window helper in production. Coordinator, Host, Runner, MCP manager, and MainEdge ownership remain unchanged. MP-01..05 additionally routes an optional first-party publisher facet through this same native composition: exact trusted-main sender, current account auth kept internal, bounded OS-selected signed package, account-departure fence and no uncertain-write retry. Backend retains namespace/artifact/review authority; the bridge exposes no reviewer credential, approval or installation runtime. Existing MCP, Coordinator and Host responsibilities are preserved. MU production wiring uses only appId intents and public metadata at the existing MCP owner; Account supplies confirmed authId scope and departure fences, Host retains verification on MainData, and main alone decodes resources into isolated windows. First-party Account and publisher requests use Electron net with no cookies or weakened origin checks. Browser Workspace additionally composes its trusted OS file picker only at this existing Electron Main boundary: Agent requests carry no local filesystem path, Main requires an explicit user-selected regular file, bounds bytes before isolated page delivery, and account/control-generation fences remain authoritative. This is not a renderer or Host filesystem capability. Chromium extension installation remains in the same Browser Workspace Main owner and is separate from Plugins/MCP: only a user-picked unpacked Manifest V3 directory is inspected, permissions are surfaced before explicit confirmation, recursive content integrity is pinned, and Electron's persistent-session extension loader is invoked only after confirmation; renderer receives no source filesystem path. The sole non-dialog extension source path is gated by FABUSHI_E2E=1 for synthetic GitHub Actions Chromium acceptance and is never selected by Agent/renderer input. FDN-001 composes the existing Fabushi Account owner with the existing official device registry at this same production composition boundary: packaged Desktop authenticates only its current Fabushi account session on the outbound /agent WebSocket, account epoch/revoke closes stale registration, and the only newly advertised remote tool delegates read-only status to the existing private App Agent Surface. This creates neither a second device database nor a native executor; exact-head Actions enforce account-switch fencing, bearer non-disclosure, read-only preflight and no retry of stale/write-shaped calls."
+      "rationale": "Preserves the frozen Grok production composition while applying two explicit Fabushi product adaptations without moving ownership: the existing Host lifecycle/Plugin Skills SDK-edge surface remains in the single Electron MCP owner, and renderer-scoped BrowserWindow delivery is narrowed at the shipping composition boundary to the trusted main WebContents. The frozen source/electron-main/window-broadcast.ts helper remains byte-identical to Grok for truly global fanout; MCP OAuth completion and dev-control renderer events no longer use that all-window helper in production. Coordinator, Host, Runner, MCP manager, and MainEdge ownership remain unchanged. MP-01..05 additionally routes an optional first-party publisher facet through this same native composition: exact trusted-main sender, current account auth kept internal, bounded OS-selected signed package, account-departure fence and no uncertain-write retry. Backend retains namespace/artifact/review authority; the bridge exposes no reviewer credential, approval or installation runtime. Existing MCP, Coordinator and Host responsibilities are preserved. MU production wiring uses only appId intents and public metadata at the existing MCP owner; Account supplies confirmed authId scope and departure fences, Host retains verification on MainData, and main alone decodes resources into isolated windows. First-party Account and publisher requests use Electron net with no cookies or weakened origin checks. Browser Workspace additionally composes its trusted OS file picker only at this existing Electron Main boundary: Agent requests carry no local filesystem path, Main requires an explicit user-selected regular file, bounds bytes before isolated page delivery, and account/control-generation fences remain authoritative. This is not a renderer or Host filesystem capability. Chromium extension installation remains in the same Browser Workspace Main owner and is separate from Plugins/MCP: only a user-picked unpacked Manifest V3 directory is inspected, permissions are surfaced before explicit confirmation, recursive content integrity is pinned, and Electron's persistent-session extension loader is invoked only after confirmation; renderer receives no source filesystem path. The sole non-dialog extension source path is gated by FABUSHI_E2E=1 for synthetic GitHub Actions Chromium acceptance and is never selected by Agent/renderer input. FDN-001 composes the existing Fabushi Account owner with the existing official device registry at this same production composition boundary: packaged Desktop authenticates only its current Fabushi account session on the outbound /agent WebSocket, account epoch/revoke closes stale registration, and the only newly advertised remote tool delegates read-only status to the existing private App Agent Surface. This creates neither a second device database nor a native executor; exact-head Actions enforce account-switch fencing, bearer non-disclosure, read-only preflight and no retry of stale/write-shaped calls. The current bounded shutdown path disposes the Browser Workspace before the Coordinator/telemetry graph, fences Electron before-quit with the existing settlement deadline, then calls graceful app.quit; if settlement times out or Electron still has not exited after 5000ms, Main records the failure and uses app.exit(0) as a final bounded fallback so a stuck worker teardown cannot hold the desktop quit indefinitely."
     },
     {
       "referencePath": "source/electron-main/mcp/desktop-mcp-manager.ts",
@@ -1305,20 +1309,24 @@
       "referencePath": "source/electron-main/main.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "b8eeed322ec07e5c8f67fa367cd2f58ac212b4f0",
+      "targetBlobSha": "97cfefb7bbb227865147e2cbc7a33c547e5a44af",
       "behavioralEvidence": [
         "source/electron-main/main.ts",
         "source/electron-main/mcp/miniapp-window.ts",
         "docs/specs/desktop-miniapp-window.md",
-        "docs/specs/desktop-catalog-package-installation.md"
+        "docs/specs/desktop-catalog-package-installation.md",
+        "source/electron-main/main-production-services.ts",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts"
       ],
       "testEvidence": [
         "source/electron-main/mcp/miniapp-window.contract.test.ts",
         ".github/workflows/miniapp-window-ci.yml",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/release-macos-main.yml"
+        ".github/workflows/release-macos-main.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/browser-workspace-packaged-ci.yml"
       ],
-      "rationale": "DCI-07 and DMW-03 remove the process-wide no-sandbox switch, which would defeat the requested untrusted Mini App isolation even when a new window requests sandbox=true. All existing main startup, singleton, window/preload, GPU and lifecycle behavior remains intact; this does not globally force trusted first-party windows into a different preload mode or change Human calls/browser networking. Each downloaded app uses its own sandboxed no-preload window and partition. Actual Electron and same-source signed package gates must prove this security adaptation; no frozen inventory or reference blob is rewritten."
+      "rationale": "DCI-07 and DMW-03 remove the process-wide no-sandbox switch, which would defeat the requested untrusted Mini App isolation even when a new window requests sandbox=true. All existing main startup, singleton, window/preload, GPU and lifecycle behavior remains intact; this does not globally force trusted first-party windows into a different preload mode or change Human calls/browser networking. Each downloaded app uses its own sandboxed no-preload window and partition. Actual Electron and same-source signed package gates must prove this security adaptation; no frozen inventory or reference blob is rewritten. The Main app contract now also exposes optional app.exit for the production composition's bounded quit watchdog; graceful quit remains first choice, and force exit is used only after settlement timeout or the 5000ms post-quit deadline."
     },
     {
       "referencePath": "source/host/local-exec/local-exec-machine.ts",
