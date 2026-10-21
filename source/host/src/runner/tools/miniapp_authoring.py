@@ -48,11 +48,16 @@ def read_json(directory, name):
 
 
 def write_new(directory, name, data):
-    fd = os.open(name, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600, dir_fd=directory)
-    with os.fdopen(fd, 'wb') as stream:
-        stream.write(data)
-        stream.flush()
-        os.fsync(stream.fileno())
+    temporary = '.write-' + uuid.uuid4().hex
+    fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600, dir_fd=directory)
+    try:
+        with os.fdopen(fd, 'wb') as stream:
+            stream.write(data)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.link(temporary, name, src_dir_fd=directory, dst_dir_fd=directory, follow_symlinks=False)
+    finally:
+        os.unlink(temporary, dir_fd=directory)
 
 
 def validate_files(files):
@@ -61,8 +66,10 @@ def validate_files(files):
     total = 0
     for name, value in files.items():
         path = PurePosixPath(name)
-        if not re.fullmatch(r'src/[A-Za-z0-9_-]+(?:[./][A-Za-z0-9_-]+)*', name) or '..' in path.parts:
+        if len(name) > 240 or not re.fullmatch(r'src/[A-Za-z0-9_-]+(?:[./][A-Za-z0-9_-]+)*', name) or '..' in path.parts:
             raise ValueError('FILE_PATH_INVALID')
+        if path.suffix not in ['.html', '.css', '.js', '.json', '.txt']:
+            raise ValueError('RESOURCE_TYPE_UNSUPPORTED')
         if not isinstance(value, str) or len(value.encode()) > 128 * 1024:
             raise ValueError('FILE_LIMIT')
         total += len(value.encode())
@@ -126,6 +133,9 @@ def execute(args, workspace=Path('/workspace')):
             if action != 'create':
                 raise ValueError('PROJECT_MISSING')
             current = None
+        else:
+            if not isinstance(current, dict) or set(current) != {'revision'}:
+                raise ValueError('SNAPSHOT_INVALID')
         if current is not None:
             revision = current['revision']
             if not isinstance(revision, str) or not re.fullmatch('[0-9a-f]{64}', revision):
@@ -174,7 +184,7 @@ def execute(args, workspace=Path('/workspace')):
                     state['files'][path] = item['content']
             if 'version' in args:
                 state['config']['version'] = args['version']
-        if not re.fullmatch(r'\d+\.\d+\.\d+', state['config']['version']):
+        if not isinstance(state['config']['version'], str) or not re.fullmatch(r'(?:0|[1-9][0-9]{0,9})\.(?:0|[1-9][0-9]{0,9})\.(?:0|[1-9][0-9]{0,9})', state['config']['version']):
             raise ValueError('VERSION_INVALID')
         validate_files(state['files'])
         encoded = canonical(state)
@@ -196,7 +206,13 @@ def execute(args, workspace=Path('/workspace')):
             os.fsync(directory)
             temporary = '.current-' + uuid.uuid4().hex
             write_new(directory, temporary, canonical({'revision': revision}))
-            os.replace(temporary, 'current.json', src_dir_fd=directory, dst_dir_fd=directory)
+            try:
+                os.replace(temporary, 'current.json', src_dir_fd=directory, dst_dir_fd=directory)
+            finally:
+                try:
+                    os.unlink(temporary, dir_fd=directory)
+                except FileNotFoundError:
+                    pass
             os.fsync(directory)
         result = {'project': project, 'revision': revision, 'config': state['config'],
                   'files': [{'path': p, 'sha256': digest(v.encode()), 'bytes': len(v.encode())} for p, v in sorted(state['files'].items())]}
@@ -218,8 +234,13 @@ def main():
     try:
         args = json.loads(base64.b64decode(sys.argv[1], validate=True))
         print(json.dumps(execute(args), ensure_ascii=False))
-    except (ValueError, KeyError, TypeError, OSError):
-        raise SystemExit('MINIAPP_AUTHORING_FAILED: invalid input, conflict, storage or permissions; no automatic retry')
+    except ValueError as error:
+        code = str(error)
+        raise SystemExit('MINIAPP_' + (code if re.fullmatch('[A-Z_]{1,48}', code) else 'REQUEST_INVALID')) from None
+    except (KeyError, TypeError):
+        raise SystemExit('MINIAPP_REQUEST_INVALID') from None
+    except OSError:
+        raise SystemExit('MINIAPP_STORAGE_OR_PERMISSION_FAILED: inspect current revision before retrying') from None
 
 
 if __name__ == '__main__':

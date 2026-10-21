@@ -46,6 +46,10 @@ jobs:
         with:
           workspaces: source/host -> target
           shared-key: miniapp-bot-authoring-1.97.1
+      - name: Install existing Linux native computer dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
       - name: Reserve disk and prepare an exclusively owned disposable Bot workspace
         run: |
           python3 -c "import shutil; u=shutil.disk_usage('.'); assert u.free >= max(1073741824,u.total//20)+8589934592"
@@ -56,7 +60,7 @@ jobs:
           FABUSHI_MINIAPP_BOT_EXECUTION: '1'
           FABUSHI_MINIAPP_EXPORT: ${{ runner.temp }}/bot-miniapp-export.json
         run: |
-          cargo metadata --format-version 1 --manifest-path source/host/Cargo.toml > /dev/null
+          cargo metadata --locked --format-version 1 --manifest-path source/host/Cargo.toml > /dev/null
           cargo test --locked --features actions-miniapp-bot --manifest-path source/host/Cargo.toml --test miniapp_authoring_tool_contract
       - name: Preserve resolved lockfile for exact-source reconciliation
         if: always()

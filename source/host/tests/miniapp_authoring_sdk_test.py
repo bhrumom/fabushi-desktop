@@ -120,6 +120,17 @@ class Authoring(unittest.TestCase):
             packager.prepare(tree, tree / 'dist', 'a' * 40)
         self.assertFalse((tree / 'dist').exists())
 
+    def test_invalid_pointer_and_versions_cannot_reinitialize_a_project(self):
+        sdk.execute(self.create, self.workspace)
+        pointer = self.workspace / 'fabushi-miniapps/counter/current.json'
+        pointer.write_text('null')
+        with self.assertRaises(ValueError):
+            sdk.execute(self.create, self.workspace)
+        self.assertEqual(pointer.read_text(), 'null')
+        for version in ['01.0.0', '1.0', '1.0.0\n', '9' * 40 + '.0.0']:
+            with self.assertRaises(ValueError):
+                sdk.execute({**self.create, 'project': 'invalid-version', 'version': version}, self.workspace)
+
 
 if __name__ == '__main__':
     unittest.main()

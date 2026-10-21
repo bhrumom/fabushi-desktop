@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import re
 import stat
+import shutil
 import zipfile
 
 MIMES = {'.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript',
@@ -37,7 +38,7 @@ def prepare(root, destination, commit):
     for key in ['appId', 'publisherId']:
         if not isinstance(config[key], str) or not re.fullmatch('[a-z0-9][a-z0-9._-]{0,127}', config[key]):
             raise ValueError('IDENTITY_INVALID')
-    if not isinstance(config['version'], str) or not re.fullmatch(r'\d+\.\d+\.\d+', config['version']):
+    if not isinstance(config['version'], str) or not re.fullmatch(r'(?:0|[1-9][0-9]{0,9})\.(?:0|[1-9][0-9]{0,9})\.(?:0|[1-9][0-9]{0,9})', config['version']):
         raise ValueError('VERSION_INVALID')
     if not isinstance(config['displayName'], str) or not 1 <= len(config['displayName']) <= 160:
         raise ValueError('NAME_INVALID')
@@ -65,6 +66,9 @@ def prepare(root, destination, commit):
                 'networkPolicy': {'mode': 'deny', 'allowedOrigins': []},
                 'files': {name: {'sha256': hashlib.sha256(data).hexdigest(), 'bytes': len(data),
                                  'mime': MIMES[Path(name).suffix]} for name, data in resources.items()}}
+    usage = shutil.disk_usage(destination.parent)
+    if usage.free < max(1024 ** 3, usage.total // 20) + 4 * 1024 * 1024:
+        raise ValueError('DISK_RESERVE')
     destination.mkdir(parents=True, exist_ok=False)
     unsigned = canonical(manifest)
     (destination / 'manifest.unsigned.json').write_bytes(unsigned)
