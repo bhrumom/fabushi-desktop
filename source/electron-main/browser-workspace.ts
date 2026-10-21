@@ -117,6 +117,7 @@ export interface BrowserWorkspacePersistencePort {
   load(): unknown;
   save(value: unknown): void;
   prepareDownloadPath(accountHash: string, downloadId: string, fileName: string): string;
+  finalizeDownload(path: string, maxBytes: number): { readonly sizeBytes: number; readonly sha256: string };
 }
 
 export interface BrowserWorkspaceServicePorts {
@@ -190,6 +191,7 @@ interface RuntimeTab {
   error: { code: string; description: string } | null;
   downloadSequence: number;
   lastDownloadUrl: string | null;
+  pendingAgentDownloadOperationId: string | null;
   agentRefs: Map<string, LocalBrowserElementLocator>;
 }
 
@@ -314,6 +316,13 @@ export function createBrowserWorkspaceFilePersistence(rootDir: string): BrowserW
       mkdirSync(directory, { recursive: true });
       return join(directory, `${downloadId}-${safeDownloadFilename(fileName)}`);
     },
+    finalizeDownload(path, maxBytes) {
+      const info = statSync(path);
+      if (!info.isFile() || info.size < 0 || info.size > maxBytes) throw new Error("BROWSER_DOWNLOAD_SIZE_INVALID");
+      const bytes = readFileSync(path);
+      if (bytes.byteLength !== info.size || bytes.byteLength > maxBytes) throw new Error("BROWSER_DOWNLOAD_SIZE_CHANGED");
+      return { sizeBytes: bytes.byteLength, sha256: createHash("sha256").update(bytes).digest("hex") };
+    },
   };
 }
 
@@ -335,6 +344,7 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
   const workspaces = new Map<string, RuntimeWorkspace>();
   const agentQueues = new Map<string, Promise<void>>();
   const sessionConfigured = new WeakSet<object>();
+  const activeAgentDownloads = new Map<string, { readonly workspaceId: string; readonly item: BrowserWorkspaceDownloadItem }>();
   let hostWindow: BrowserWorkspaceHostWindowPort | null = null;
   let activeWorkspaceId: string | null = null;
   let mountedView: BrowserWorkspaceViewPort | null = null;
@@ -580,6 +590,9 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
       tab.downloadSequence += 1;
       tab.lastDownloadUrl = item.getURL();
       const id = nextId();
+      const agentOperationId = tab.pendingAgentDownloadOperationId;
+      tab.pendingAgentDownloadOperationId = null;
+      if (agentOperationId != null) activeAgentDownloads.set(id, { workspaceId: workspace.id, item });
       const fileName = safeDownloadFilename(item.getFilename());
       const entry: BrowserWorkspaceDownload = {
         id,
@@ -589,25 +602,44 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
         receivedBytes: Math.max(0, item.getReceivedBytes()),
         totalBytes: Math.max(0, item.getTotalBytes()),
         state: "progressing",
+        sha256: null,
         startedAtMs: now(),
       };
       workspace.downloads = [...workspace.downloads.slice(-99), entry];
+      let savePath: string;
       try {
-        item.setSavePath(ports.persistence.prepareDownloadPath(workspace.accountHash, id, fileName));
+        const announcedBytes = Math.max(0, item.getTotalBytes());
+        if (announcedBytes > BROWSER_WORKSPACE_LIMITS.maxDownloadBytes) throw new Error("BROWSER_DOWNLOAD_TOO_LARGE");
+        savePath = ports.persistence.prepareDownloadPath(workspace.accountHash, id, fileName);
+        item.setSavePath(savePath);
       } catch (error) {
         try { item.cancel(); } catch {}
+        activeAgentDownloads.delete(id);
         fail("download-path", error);
         workspace.downloads = workspace.downloads.map((download) => download.id === id ? { ...download, state: "cancelled" } : download);
         publish(workspace);
         return;
       }
       const update = (_event?: unknown, state?: string): void => {
-        workspace.downloads = workspace.downloads.map((download) => download.id === id ? {
-          ...download,
-          receivedBytes: Math.max(0, item.getReceivedBytes()),
-          totalBytes: Math.max(0, item.getTotalBytes()),
-          state: downloadState(state),
-        } : download);
+        let nextState = downloadState(state);
+        let sha256: string | null = null;
+        let receivedBytes = Math.max(0, item.getReceivedBytes());
+        const totalBytes = Math.max(0, item.getTotalBytes());
+        if (receivedBytes > BROWSER_WORKSPACE_LIMITS.maxDownloadBytes || totalBytes > BROWSER_WORKSPACE_LIMITS.maxDownloadBytes) {
+          try { item.cancel(); } catch {}
+          nextState = "cancelled";
+        } else if (nextState === "completed") {
+          try {
+            const evidence = ports.persistence.finalizeDownload(savePath, BROWSER_WORKSPACE_LIMITS.maxDownloadBytes);
+            receivedBytes = evidence.sizeBytes;
+            sha256 = evidence.sha256;
+          } catch (error) {
+            nextState = "interrupted";
+            fail("download-evidence", error);
+          }
+        }
+        workspace.downloads = workspace.downloads.map((download) => download.id === id ? { ...download, receivedBytes, totalBytes, state: nextState, sha256 } : download);
+        if (nextState !== "progressing") activeAgentDownloads.delete(id);
         publish(workspace);
       };
       item.on("updated", update);
@@ -633,6 +665,7 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
       error: null,
       downloadSequence: 0,
       lastDownloadUrl: null,
+      pendingAgentDownloadOperationId: null,
       agentRefs: new Map(),
     };
     workspace.tabs.push(tab);
@@ -995,6 +1028,14 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
       case "agent-control": {
         const previousState = workspace.agentControlState;
         workspace.agentControlEpoch += 1;
+        if (command.action !== "resume") {
+          for (const [downloadId, active] of activeAgentDownloads) {
+            if (active.workspaceId !== workspace.id) continue;
+            try { active.item.cancel(); } catch {}
+            activeAgentDownloads.delete(downloadId);
+          }
+          for (const tab of workspace.tabs) tab.pendingAgentDownloadOperationId = null;
+        }
         workspace.activeAgentOperationId = null;
         workspace.agentControlState = command.action === "resume"
           ? "available"
@@ -1154,6 +1195,30 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
       case "click":
         await clickLocalBrowserRef(page, requireAgentRef(tab, action.ref));
         return agentResult(action.operationId, workspace, tab);
+      case "download": {
+        const before = new Set(workspace.downloads.map((download) => download.id));
+        tab.pendingAgentDownloadOperationId = action.operationId;
+        try {
+          await clickLocalBrowserRef(page, requireAgentRef(tab, action.ref));
+          const attempts = Math.ceil(LOCAL_BROWSER_AGENT_LIMITS.maxWaitMs / 25);
+          for (let attempt = 0; attempt < attempts; attempt += 1) {
+            if (workspace.agentControlEpoch !== action.expectedControlEpoch) throw new Error("BROWSER_AGENT_CONTROL_STALE");
+            if (workspace.agentTaskId !== action.expectedTaskId) throw new Error("BROWSER_AGENT_TASK_STALE");
+            const download = workspace.downloads.find((candidate) => candidate.tabId === tab.id && !before.has(candidate.id));
+            if (download != null) {
+              if (download.state === "cancelled") throw new Error("BROWSER_DOWNLOAD_CANCELLED");
+              if (download.state === "interrupted") throw new Error("BROWSER_DOWNLOAD_INTERRUPTED");
+              if (download.state === "completed" && download.sha256 != null) {
+                return agentResult(action.operationId, workspace, tab, { downloadedFile: { downloadId: download.id, name: download.fileName, sizeBytes: download.receivedBytes, sha256: download.sha256 } });
+              }
+            }
+            await new Promise((resolve) => setTimeout(resolve, 25));
+          }
+          throw new Error("BROWSER_DOWNLOAD_TIMEOUT");
+        } finally {
+          if (tab.pendingAgentDownloadOperationId === action.operationId) tab.pendingAgentDownloadOperationId = null;
+        }
+      }
       case "upload-file": {
         if (ports.pickUploadFile == null) throw new Error("BROWSER_UPLOAD_UNAVAILABLE");
         const selectedPath = await ports.pickUploadFile();
@@ -1310,6 +1375,7 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
       }
     }
     workspaces.clear();
+    activeAgentDownloads.clear();
   };
 
   return {

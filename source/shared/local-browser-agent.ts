@@ -46,6 +46,7 @@ export type LocalBrowserAgentAction =
   | LocalBrowserAgentTabsAction
   | (LocalBrowserAgentTarget & { readonly type: "snapshot" })
   | (LocalBrowserAgentTarget & { readonly type: "click"; readonly ref: string })
+  | (LocalBrowserAgentTarget & { readonly type: "download"; readonly ref: string })
   | (LocalBrowserAgentTarget & { readonly type: "upload-file"; readonly ref: string })
   | (LocalBrowserAgentTarget & { readonly type: "fill"; readonly ref: string; readonly value: string })
   | (LocalBrowserAgentTarget & { readonly type: "select-option"; readonly ref: string; readonly values: readonly string[] })
@@ -108,6 +109,7 @@ export type LocalBrowserAgentActionResult =
       readonly screenshotBase64?: string;
       readonly waited?: boolean;
       readonly tabs?: readonly LocalBrowserAgentTabSummary[];
+      readonly downloadedFile?: { readonly downloadId: string; readonly name: string; readonly sizeBytes: number; readonly sha256: string };
       readonly uploadedFile?: { readonly name: string; readonly sizeBytes: number };
     }
   | {
@@ -197,6 +199,10 @@ export function parseLocalBrowserAgentAction(value: unknown): LocalBrowserAgentA
     case "click": {
       const ref = boundedString(source.ref, LOCAL_BROWSER_AGENT_LIMITS.maxElementRefLength);
       return ref == null ? null : { ...target, type: "click", ref };
+    }
+    case "download": {
+      const ref = boundedString(source.ref, LOCAL_BROWSER_AGENT_LIMITS.maxElementRefLength);
+      return ref == null ? null : { ...target, type: "download", ref };
     }
     case "upload-file": {
       const ref = boundedString(source.ref, LOCAL_BROWSER_AGENT_LIMITS.maxElementRefLength);

@@ -513,6 +513,20 @@ fn unsupported_local_browser_action_fails_before_auto_review_or_relay() {
 }
 
 #[test]
+fn local_download_uses_the_generation_and_control_fenced_main_path_without_local_cdp_or_paths() {
+    for required in [
+        "\"click\" | \"download\" | \"upload_file\"",
+        "\"download\" => {",
+        "self.action_request(&target, tool_call_id, \"download\")?",
+        "request.insert(\"ref\".into(), args.get(\"ref\").cloned().unwrap_or(Value::Null));",
+        "result.get(\"downloadedFile\")",
+    ] {
+        assert!(LOCAL_BROWSER_TOOLS_SOURCE.contains(required), "local download lost bounded Main relay invariant: {required}");
+    }
+    assert!(!LOCAL_BROWSER_TOOLS_SOURCE.contains("request.insert(\"downloadPath\""), "local download must never accept or return an Agent-controlled local path");
+}
+
+#[test]
 fn local_upload_requires_user_authorized_sentinel_before_review_and_never_forwards_a_path() {
     let sentinel = LOCAL_BROWSER_TOOLS_SOURCE
         .find("Some(\"user-authorized\")")

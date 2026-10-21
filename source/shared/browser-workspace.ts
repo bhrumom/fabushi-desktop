@@ -7,6 +7,7 @@ export const BROWSER_WORKSPACE_LIMITS = Object.freeze({
   maxTabs: 20,
   maxBookmarks: 500,
   maxHistory: 500,
+  maxDownloadBytes: 64 * 1024 * 1024,
   minZoomFactor: 0.5,
   maxZoomFactor: 3,
 });
@@ -56,6 +57,7 @@ export interface BrowserWorkspaceDownload {
   readonly receivedBytes: number;
   readonly totalBytes: number;
   readonly state: BrowserDownloadState;
+  readonly sha256: string | null;
   readonly startedAtMs: number;
 }
 

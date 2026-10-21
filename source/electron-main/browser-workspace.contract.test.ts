@@ -173,6 +173,11 @@ class MemoryPersistence implements BrowserWorkspacePersistencePort {
     this.paths.push(path);
     return path;
   }
+  finalizeDownload(_path: string, maxBytes: number): { readonly sizeBytes: number; readonly sha256: string } {
+    const bytes = Buffer.from("synthetic-download", "utf8");
+    assert.ok(bytes.byteLength <= maxBytes);
+    return { sizeBytes: bytes.byteLength, sha256: "synthetic-sha256" };
+  }
 }
 
 function harness(
@@ -816,6 +821,42 @@ test("local Agent upload cancellation is explicit and has no page side effect", 
     /BROWSER_UPLOAD_CANCELLED/,
   );
   assert.equal(h.views[0]!.webContents.executedScripts.length, beforeScripts);
+});
+
+test("local Agent download is lease-fenced, bounded, and returns integrity without exposing a path", async () => {
+  const h = harness();
+  h.service.attachWindow(new FakeHostWindow());
+  const state = await h.invoke({ type: "activate", conversationId: "bot-download-agent", bounds: { x: 1, y: 1, width: 500, height: 500 } });
+  const tab = state.tabs[0]!;
+  const contents = h.views[0]!.webContents;
+  const session = contents.session as FakeSession;
+  let cancelled = false;
+  const originalExecute = contents.executeJavaScript.bind(contents);
+  contents.executeJavaScript = async (script: string): Promise<unknown> => {
+    const result = await originalExecute(script);
+    if (script.includes("element.click()")) {
+      const listeners = new Map<"updated" | "done", (_event?: unknown, state?: string) => void>();
+      const item: BrowserWorkspaceDownloadItem = {
+        getURL: () => "https://example.com/export.bin", getFilename: () => "export.bin", getTotalBytes: () => 18, getReceivedBytes: () => 18,
+        setSavePath: () => undefined, cancel: () => { cancelled = true; }, on: (event, listener) => { listeners.set(event, listener); },
+      };
+      session.download?.({}, item, contents);
+      listeners.get("done")?.({}, "completed");
+    }
+    return result;
+  };
+  const snapshot = await h.service.executeAgentAction({ type: "snapshot", conversationId: "bot-download-agent", workspaceId: state.workspaceId, tabId: tab.id, expectedGeneration: tab.generation, expectedControlEpoch: state.agentControl.epoch, expectedTaskId: state.agentControl.taskId, operationId: "download-snapshot" });
+  assert.equal(snapshot.ok, true);
+  if (!snapshot.ok) return;
+  const downloaded = await h.service.executeAgentAction({ type: "download", conversationId: "bot-download-agent", workspaceId: state.workspaceId, tabId: tab.id, expectedGeneration: tab.generation, expectedControlEpoch: state.agentControl.epoch, expectedTaskId: state.agentControl.taskId, operationId: "download-file", ref: snapshot.snapshot!.elements[0]!.ref });
+  assert.equal(downloaded.ok, true);
+  if (!downloaded.ok) return;
+  assert.match(downloaded.downloadedFile!.downloadId, /^id-/);
+  assert.equal(downloaded.downloadedFile!.name, "export.bin");
+  assert.equal(downloaded.downloadedFile!.sizeBytes, Buffer.byteLength("synthetic-download"));
+  assert.equal(downloaded.downloadedFile!.sha256, "synthetic-sha256");
+  assert.equal(JSON.stringify(downloaded).includes("/downloads/"), false);
+  assert.equal(cancelled, false);
 });
 
 test("workspace agent actions serialize and takeover invalidates queued mutations before side effects", async () => {

@@ -251,7 +251,7 @@ impl BrowserToolExecutor for LocalBrowserCoordinatorExecutor {
     ) -> Result<BrowserDriverOutput, ProviderSessionError> {
         if !matches!(
             spec.op,
-            "tabs" | "snapshot" | "wait" | "click" | "upload_file" | "fill" | "select_option" | "type" | "press_key"
+            "tabs" | "snapshot" | "wait" | "click" | "download" | "upload_file" | "fill" | "select_option" | "type" | "press_key"
                 | "scroll" | "drag" | "screenshot" | "navigate" | "back" | "forward" | "refresh"
         ) {
             return Err(ProviderSessionError::Tool(format!(
@@ -286,6 +286,11 @@ impl BrowserToolExecutor for LocalBrowserCoordinatorExecutor {
             },
             "click" => {
                 let mut request = self.action_request(&target, tool_call_id, "click")?;
+                request.insert("ref".into(), args.get("ref").cloned().unwrap_or(Value::Null));
+                request
+            }
+            "download" => {
+                let mut request = self.action_request(&target, tool_call_id, "download")?;
                 request.insert("ref".into(), args.get("ref").cloned().unwrap_or(Value::Null));
                 request
             }
@@ -359,6 +364,9 @@ impl BrowserToolExecutor for LocalBrowserCoordinatorExecutor {
         let result = self.call_main(Value::Object(request))?;
         let text = if spec.op == "snapshot" {
             serde_json::to_string_pretty(result.get("snapshot").unwrap_or(&Value::Null))
+                .unwrap_or_else(|_| "{}".into())
+        } else if spec.op == "download" {
+            serde_json::to_string_pretty(result.get("downloadedFile").unwrap_or(&Value::Null))
                 .unwrap_or_else(|_| "{}".into())
         } else if spec.op == "upload_file" {
             serde_json::to_string_pretty(result.get("uploadedFile").unwrap_or(&Value::Null))
