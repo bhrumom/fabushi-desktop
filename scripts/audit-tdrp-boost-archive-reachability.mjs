@@ -13,7 +13,7 @@ fail(report.lock_commit===report.upstream_commit&&report.lock_tree===report.upst
 fail(report.baseline_identity_accepted===false&&report.source_closure_ready===false&&report.recursive_disposition_status==='open','source archive report must remain fail-closed');
 fail(boost.url==='https://archives.boost.io/release/1.90.0/source/boost_1_90_0.tar.gz','Boost archive URL drift');
 fail(typeof boost.source_path==='string'&&Number.isInteger(boost.source_line)&&boost.source_line>0,'Boost source archive origin missing');
-fail(boost.upstream_commit===report.upstream_commit&&boost.upstream_tree===report.upstream_tree&&boost.target_commit===report.target_commit,'Boost archive provenance drift');
+fail(boost.upstream_commit===report.upstream_commit&&boost.upstream_tree===report.upstream_tree&&boost.target_commit===report.target_commit&&boost.lock_commit===report.lock_commit&&boost.lock_tree===report.lock_tree,'Boost archive provenance drift');
 fail(boost.actual_sha256===boost.expected_sha256,'Boost archive digest mismatch in source archive evidence');
 fail(process.env.BOOST_BUILD_LOG_SHA256?.match(/^[0-9a-f]{64}$/),'Boost build execution log digest missing');
 

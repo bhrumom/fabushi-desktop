@@ -43,7 +43,8 @@ for(const record of authorityRecords){
   fail(typeof candidate.text==='string'&&candidate.text.replaceAll('$VERSION',item.version).includes(item.url),item.id+' live upstream source line does not contain archive URL after pinned version expansion');
   fail(candidate.covered===true,item.id+' source archive candidate is not covered by current discovery');
   archives.push({...item,source_path:candidate.source_path,source_line:candidate.source_line,source_text:candidate.text,
-    target_commit:targetCommit,upstream_commit:lock.upstream.commit,upstream_tree:lock.upstream.tree});
+    target_commit:targetCommit,upstream_commit:lock.upstream.commit,upstream_tree:lock.upstream.tree,
+    lock_commit:lock.upstream.commit,lock_tree:lock.upstream.tree});
 }
 const acq=['git[[:space:]]+(clone|fetch|submodule)','curl[[:space:]]','wget[[:space:]]','git\\+https?://','GIT_REPOSITORY','GIT_TAG','URL[[:space:]]+https?://','pip(3)?[[:space:]]+install','cargo[[:space:]]+install','uses:[[:space:]]','^[[:space:]]*FROM[[:space:]]'].join('|');
 const temp=await fs.mkdtemp(path.join(process.env.RUNNER_TEMP||os.tmpdir(),'tdrp-source-archives-'));

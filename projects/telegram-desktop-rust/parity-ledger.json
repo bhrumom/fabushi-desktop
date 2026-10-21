@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "0eca52223cceed229932add1cc80792763120844",
-  "target_commit": "0f5272fcb14d6f1e835c7282b001e4ee2aa572ea",
+  "target_commit": "90eee7251784f938ef3a7ef87713c1c2ee4fe0d1",
   "coverage": {
     "source_entries_total": 16305,
-    "unknown": 16251,
-    "unread": 16226,
+    "unknown": 16250,
+    "unread": 16225,
     "omitted": 0,
-    "responsibilities_total": 69,
+    "responsibilities_total": 70,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -18664,7 +18664,7 @@
         "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
         "projects/fabushi-communication-platform/quality/evidence-contract.md"
       ],
-      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/perform-task-skill-complete-read.md",
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/process-inbox-skill-complete-read.md",
       "behavior_contract": "Repository-only intake via digest-bound isolated inbox snapshot, task/project/receipt artifacts, duplicate-digest checks, explicit-path publication and digest-fenced finalization; local video probe/extract/sheet and provenance. Not shipping product runtime.",
       "state_machine": "inbox-ensure -> prepare/resume one .processing snapshot -> classify/dedupe/assign paths -> write task.md/state.yaml/receipt -> validate schema/receipt/digest -> inbox-publish explicit paths -> verify master HEAD and unchanged live digest -> finalize; preserve transaction on unsafe worktree/outage; abort only before generated inbox commit.",
       "side_effects": [
@@ -18743,25 +18743,29 @@
       "coverage_disposition": "toolchain-equivalent",
       "blockers": [
         "No focused test proves equivalent local inbox/worktree helper exists.",
-        "Recursive source closure remains open."
+        "Recursive source closure remains open.",
+        "Fresh exact-head TDRP and Rust verification for the child mapping commit is pending.",
+        "PR base remains at 2bfc3fd3638596b37a01c54e17a333c1798414f3 while live main is ba9ecce728ef021fee609796c8704d8af6fe4b5a; live-main reconciliation is required before independent acceptance."
       ],
       "production_entrypoints": [
         "projects/fabushi-communication-platform/quality/evidence-contract.md -> Context provenance and handoff evidence (normative repository context-provenance and task-handoff contract; not a shipping inbox runtime entrypoint)"
       ],
       "production_evidence": [
-        "TDRP 39537102683 exact-head parent 61/61 jobs",
-        "Rust runtime 39537102580 exact-head parent 6/6 jobs"
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70#Context provenance and handoff evidence",
+        "parent-exact-head:TDRP run 39555252098 at 90eee7251784f938ef3a7ef87713c1c2ee4fe0d1 (61/61 jobs; 508/508 steps)",
+        "parent-exact-head:Rust desktop runtime 39555252118 at 90eee7251784f938ef3a7ef87713c1c2ee4fe0d1 (6/6 jobs; 81/81 steps)",
+        "Archive caveat: parent report lacks per-record lock_commit/lock_tree; the child commit adds fail-closed assertions."
       ],
       "test_evidence": [
         "Source fully read: 0ce70794ac743d99e6d5c80894cde970b52842db; workspace.py e1fdabbac9ccd635962b7b6dc1a62357fc5b931c; video.py 977d75aca7aea0b6c74471d533a5ee0e2a156ac3",
         "CI gates are not inbox-helper behavior tests."
       ],
-      "target_commit": "0f5272fcb14d6f1e835c7282b001e4ee2aa572ea",
-      "workflow_run": "39537102683;39537102580",
+      "target_commit": "90eee7251784f938ef3a7ef87713c1c2ee4fe0d1",
+      "workflow_run": "39555252098;39555252118",
       "run_attempt": 1,
-      "job": "119016163001;119016163287;119016560210;119016560338;119016560551",
-      "artifact_id": "12318286826;12317737812;12318237159",
-      "artifact_digest": "sha256:1cd8c4c82a94600131d6103f9742d9553156190faf66483cc8f5308312ba8404;sha256:c0b5764046498af60ae37ca817f954fc6c8d5ccd2e08b37c391e2a4b94067a24;sha256:a93c6575eab099ca643c5ce10782689b5d16c0c6cdbe81897966b9a0236b9eb8",
+      "job": "119073416805;119073904864;119074093815;119074340338;119075927833;119073416996;119073417277;119073417320;119073417333;119073417462;119073417465",
+      "artifact_id": "12324684996;12324764539;12324869491;12325776454",
+      "artifact_digest": "sha256:9694cc3f366a0df8d9e79c1d0aa2e708c058bf64cdb462b2756681cbfb78d0d0;sha256:6f40f42043c1711acd344f5c8622dd656ed40d4c8f1e6e0718d178824e95ba84;sha256:0341e1af7ef947790584f93eaebb95aad351ccc9a85bfbf178fb554281c861d3;sha256:a7e7c3de768cabd9fa8bba9050fe366b39df42ff2dafc2c9f5bcc1ce64c6ef1e",
       "composition_root": "Fabushi repository governance",
       "composition_slot": "Repository task intake and receipt evidence",
       "capability_component": "Digest-bound repository task intake policy",
@@ -18882,7 +18886,224 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral repository workflow semantics read from exact telegramdesktop/tdesktop source; no Telegram product runtime or shipping Task/Agent/Computer/Host/Runner/Conversation implementation copied.",
-      "notes": "Strict index 51 source and dependency closure verified. This row targets only the unique existing heading `Context provenance and handoff evidence` in `projects/fabushi-communication-platform/quality/evidence-contract.md`; AGENTS.md lifecycle and TEST_STRATEGY.md review/convergence headings remain mapped by separate responsibility rows and are not targets for this row. This is repository governance/toolchain-equivalent only, not a shipping inbox implementation; no direct helper parity or focused behavior test is claimed. Recursive source closure remains open.",
+      "notes": "Strict index 51 source and dependency closure verified. This row targets only the unique existing heading `Context provenance and handoff evidence` in `projects/fabushi-communication-platform/quality/evidence-contract.md`; AGENTS.md lifecycle and TEST_STRATEGY.md review/convergence headings remain mapped by separate responsibility rows and are not targets for this row. This is repository governance/toolchain-equivalent only, not a shipping inbox implementation; no direct helper parity or focused behavior test is claimed. Recursive source closure remains open. The complete source call chain and helper lifecycle are now documented in projects/telegram-desktop-rust/dossiers/process-inbox-skill-complete-read.md. Parent exact-head workflows on 90eee7251784f938ef3a7ef87713c1c2ee4fe0d1 passed, but their archive records lacked per-record lock_commit/lock_tree; the child commit adds those checks and requires fresh exact-head Actions. Strict index 52 registration metadata is mapped in a separate row; next strict entry is index 53 video.py.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "0eca52223cceed229932add1cc80792763120844",
+      "source_path": ".agents/skills/process-inbox/agents/openai.yaml",
+      "source_blob_sha": "b664f98ad4440de7a8074dfe790d80f3d2201546",
+      "source_kind": "tooling",
+      "module_id": "tdesktop.process-inbox.native-registration",
+      "responsibility_id": "TDRP-R9-PROCESS-INBOX-OPENAI-INTERFACE-001",
+      "source_symbols": [
+        "display_name",
+        "short_description",
+        "default_prompt"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-TASK-ORCHESTRATION",
+        "CAP-REPOSITORY-SKILL-INVOCATION",
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE"
+      ],
+      "dependency_ids": [
+        ".agents/skills/process-inbox/SKILL.md@0ce70794ac743d99e6d5c80894cde970b52842db",
+        "AGENTS.md#Host-native skill registration metadata",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Native skill-surface qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md#Native skill-registration evidence"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/process-inbox-skill-complete-read.md",
+      "behavior_contract": "The OpenAI host registration exposes a display name, short description and default prompt that invokes the existing $process-inbox skill. It owns no task routing, transaction, persistence, media, publication or product state; the shared SKILL.md and its helpers remain the source behavior authority.",
+      "state_machine": "Host discovers registration -> displays metadata -> default prompt selects $process-inbox -> shared SKILL.md owns the repository workflow -> workspace.py manages the digest-bound transaction and guarded publication -> video.py is invoked by the skill only when supplied video inputs need probing or frame extraction. The YAML itself is stateless.",
+      "side_effects": [],
+      "failure_cases": [
+        "Host registration is missing or malformed and the skill cannot be discovered.",
+        "Default prompt is changed to bypass the canonical skill, exact-source authority, trust/conflict/approval gates or ordinary task lifecycle.",
+        "The delegated workflow rejects an unsafe worktree, symlinked input, digest drift, invalid receipt or unapproved publication path.",
+        "Video tooling is unavailable or frame metadata/extraction is inconsistent; the skill must report failure instead of claiming processed evidence."
+      ],
+      "ui_disposition": "External host-registration metadata only; no Fabushi shipping UI is added.",
+      "non_ui_responsibilities": [
+        "Host-visible display name and short description",
+        "Default invocation selector for the existing process-inbox skill",
+        "Preservation of canonical repository task, trust, routing and evidence lifecycle through delegation"
+      ],
+      "platform_delta": "Current live main ba9ecce728ef021fee609796c8704d8af6fe4b5a has no in-repository .agents skill-registration tree or local parser for this OpenAI YAML. The only applicable target is the existing source-neutral repository task/evidence and native invocation governance; no product runtime or second owner is warranted.",
+      "existing_owner_candidates": [
+        "AGENTS.md#Host-native skill registration metadata, command aliases, and default prompts are invocation surfaces only",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Native skill-surface qualification is intentionally smaller than scanner qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md#Native skill-registration evidence records the host-visible display/description metadata",
+        ".agents/skills/process-inbox/SKILL.md@0ce70794ac743d99e6d5c80894cde970b52842db (upstream semantic owner; not a Fabushi target owner)"
+      ],
+      "existing_owner": "Fabushi source-neutral repository task/review/evidence lifecycle and native skill-invocation governance",
+      "rejected_existing_owners": [
+        "Shipping Task is not repository inbox transaction state.",
+        "Shipping Agent/Coordinator is not repository task intake.",
+        "Host/Runner is not the semantic owner of provider registration metadata.",
+        "Conversation, Automations, Computer and Marketplace are unrelated shipping product roots and must not absorb repository-only intake."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Host-native skill registration metadata, command aliases, and default prompts are invocation surfaces only.",
+        "Native skill-surface qualification is intentionally smaller than scanner qualification.",
+        "Native skill-registration evidence records the host-visible display/description metadata, default prompt or equivalent invocation selector, the canonical source-neutral workflow owner it resolves to, and the exact skill/command/scheduled routing contract that remains authoritative."
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The YAML contains only provider-facing invocation metadata. The applicable Fabushi owner is the existing repository governance contract, not Rust/TypeScript shipping behavior; no code copy or product owner is justified.",
+      "command_event_contracts": [
+        "External host discovery -> display_name and short_description -> default_prompt -> $process-inbox.",
+        "The prompt must delegate to the shared process-inbox SKILL.md rather than create a second intake implementation.",
+        "Scheduled and ad-hoc invocation must preserve the same exact-source, trust/conflict/approval and durable task/review/evidence lifecycle."
+      ],
+      "state_owner": "The YAML is stateless; existing Fabushi repository task/review/evidence governance is the target owner.",
+      "lifecycle_owner": "Root AGENTS.md host-native registration rules plus quality TEST_STRATEGY and evidence-contract; the upstream SKILL.md and workspace.py remain source behavior authority.",
+      "persistence_and_restart": "No state is stored by the YAML. The upstream helper persists digest-bound processing snapshots, transaction metadata, backups and receipts; this is documented source behavior, not a claim of Fabushi helper parity.",
+      "concurrency_and_cancellation": "Registration itself has no concurrency. The delegated source workflow allows one active processing transaction, resumes only after identity checks, finalizes behind a digest fence and permits abort only before generated inbox publication; no direct target helper test is claimed.",
+      "security_boundary": "Provider syntax is an adapter detail. The default prompt must not bypass exact-source authority, approval/trust/conflict gates or ordinary task routing. The source helper rejects symlinks and unsafe worktrees, constrains publication paths and verifies receipt/digest identity. No product identity or authorization boundary is added.",
+      "network_service_dependencies": [
+        "External host-native skill discovery/invocation",
+        "GitHub Actions exact-head TDRP and Rust governance gates"
+      ],
+      "service_owner": "No shipping service; existing repository task/evidence workflow",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "interface-metadata-equivalent",
+      "blockers": [
+        "No local Fabushi host-registration parser or equivalent process-inbox helper behavior tests exist; this metadata mapping does not claim them.",
+        "Fresh exact-head TDRP and Rust verification for the child mapping commit is pending.",
+        "PR base is 2bfc3fd3638596b37a01c54e17a333c1798414f3 while live main is ba9ecce728ef021fee609796c8704d8af6fe4b5a; reconcile live main before independent release acceptance.",
+        "Recursive source disposition remains open."
+      ],
+      "production_entrypoints": [
+        "AGENTS.md#Host-native skill registration metadata, command aliases, and default prompts are invocation surfaces only (normative repository governance, not a shipping product entrypoint)",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Native skill-surface qualification is intentionally smaller than scanner qualification (normative verification contract)",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md#Native skill-registration evidence records the host-visible display/description metadata (normative evidence contract)"
+      ],
+      "production_evidence": [
+        "PR-branch anchor: AGENTS.md@57ed0d56acc64ef24ce4c1f5c2877a4ec3ab570b#Host-native skill registration metadata, command aliases, and default prompts are invocation surfaces only",
+        "PR-branch anchor: projects/fabushi-communication-platform/quality/TEST_STRATEGY.md@0d3a4c993784625f9b70279602c655d4788fe9fb#Native skill-surface qualification is intentionally smaller than scanner qualification",
+        "PR-branch anchor: projects/fabushi-communication-platform/quality/evidence-contract.md@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70#Native skill-registration evidence records the host-visible display/description metadata",
+        "Live-main confirmation: main ba9ecce728ef021fee609796c8704d8af6fe4b5a has corresponding anchors at AGENTS.md@9ebe5fabd9d37075620b3712d79edb59fe0cb3f3, TEST_STRATEGY.md@b00d4b5bd911d8a6b6202253527e830efbfa5f86 and evidence-contract.md@b1c3b67fef2ddb0d0a017700600c2395aeeac7a7",
+        "Parent exact-head TDRP run 39555252098 at 90eee7251784f938ef3a7ef87713c1c2ee4fe0d1: 61/61 jobs and 508/508 steps",
+        "Parent exact-head Rust runtime run 39555252118 at 90eee7251784f938ef3a7ef87713c1c2ee4fe0d1: 6/6 jobs and 81/81 steps",
+        "Parent archive report had no per-record lock_commit/lock_tree; this child commit adds explicit fields and fail-closed assertions."
+      ],
+      "test_evidence": [
+        "Exact upstream registration blob b664f98ad4440de7a8074dfe790d80f3d2201546; four lines, metadata only.",
+        "Related SKILL.md 0ce70794ac743d99e6d5c80894cde970b52842db (432 lines), workspace.py e1fdabbac9ccd635962b7b6dc1a62357fc5b931c (5649 lines) and video.py 977d75aca7aea0b6c74471d533a5ee0e2a156ac3 (293 lines) were read and traced in the dossier.",
+        "TDRP/Rust workflows are governance checks, not direct process-inbox helper behavior tests."
+      ],
+      "target_commit": "90eee7251784f938ef3a7ef87713c1c2ee4fe0d1",
+      "workflow_run": "39555252098;39555252118",
+      "run_attempt": 1,
+      "job": "119073416805;119073904864;119074093815;119074340338;119075927833;119073416996;119073417277;119073417320;119073417333;119073417462;119073417465",
+      "artifact_id": "12324684996;12324764539;12324869491;12325776454",
+      "artifact_digest": "sha256:9694cc3f366a0df8d9e79c1d0aa2e708c058bf64cdb462b2756681cbfb78d0d0;sha256:6f40f42043c1711acd344f5c8622dd656ed40d4c8f1e6e0718d178824e95ba84;sha256:0341e1af7ef947790584f93eaebb95aad351ccc9a85bfbf178fb554281c861d3;sha256:a7e7c3de768cabd9fa8bba9050fe366b39df42ff2dafc2c9f5bcc1ce64c6ef1e",
+      "composition_root": "Fabushi repository governance",
+      "composition_slot": "Host-native repository task-intake invocation metadata",
+      "capability_component": "Process Inbox host-native invocation selector",
+      "variation_axes": [
+        "host discovery",
+        "display/description metadata",
+        "default prompt invocation",
+        "delegation to the shared process-inbox skill"
+      ],
+      "shared_owner_contracts": [
+        "Root AGENTS.md lifecycle and native invocation rules",
+        "Fabushi quality TEST_STRATEGY",
+        "Fabushi quality evidence-contract",
+        "Shared process-inbox SKILL.md semantics",
+        "GitHub-Actions-only TDRP/Rust verification"
+      ],
+      "duplicate_root_check": "No second queue, transaction state owner, shipping Task/Agent/Coordinator/Host/Runner/Conversation/Automations root or Telegram-specific runtime is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable; external host registration metadata only",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Host discovery and default prompt selection only; no product object action",
+      "detail_section": "Not applicable",
+      "capability_surface": "Repository task/evidence tooling only",
+      "route_contract": "No shipping product route",
+      "search_scope": "Not applicable",
+      "search_provider": "External host skill discovery only",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable; this is not a product result surface",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "No shipping layout change",
+      "accessibility_contract": "Host registration accessibility is host-owned; no Fabushi UI changes",
+      "keyboard_contract": "No shipping keyboard surface changed",
+      "state_continuity_contract": "Registration is stateless; the upstream transaction helper owns snapshot continuity. Fabushi helper parity is not claimed.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [],
+      "oracle_ids": [],
+      "invariant_ids": [],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-PROCESS-INBOX-NO-SHIPPING-RUNTIME-COLLISION-001"
+      ],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "upstream source inventory entry 52",
+        "exact upstream host registration blob"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners (governance only)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "The exact tdesktop host registration YAML and delegated process-inbox source behavior were read at upstream commit 0eca52223cceed229932add1cc80792763120844. No source code was copied into Fabushi; this row maps only the provider-facing invocation metadata to existing source-neutral repository governance.",
+      "notes": "Strict inventory index 52 is the exact four-line OpenAI host registration metadata blob b664f98ad4440de7a8074dfe790d80f3d2201546. It selects the existing process-inbox skill and has no state or side effects. This is interface-metadata-equivalent governance mapping only, not a shipping feature and not a claim that Fabushi has a local host registration parser or helper behavior parity. The SKILL.md, workspace.py and video.py call chain is documented in projects/telegram-desktop-rust/dossiers/process-inbox-skill-complete-read.md. Parent exact-head evidence is 90eee7251784f938ef3a7ef87713c1c2ee4fe0d1; this child commit needs fresh exact-head Actions. PR base remains behind live main; recursive disposition stays open. Next strict entry is index 53 video.py.",
       "test_execution_evidence": []
     }
   ]
