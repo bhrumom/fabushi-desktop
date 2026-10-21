@@ -280,3 +280,18 @@ Parent 16d95f0607a203fb16a96afa99751a39892ec7f0 evidence is supporting evidence 
 Complete source read of pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7: preflight, validated resume/checkpoints, bounded delegation, owned implementation, independent/focused review and convergence, APPROVED/TEST_FLAW/IMPL_BUG/UNRECOVERABLE, two-campaign ceiling, exact-path publication, DONE/BLOCKED/SPLIT_REQUIRED. Existing owners: AGENTS.md, TEST_STRATEGY.md, evidence-contract.md. No shipping Task/Agent/Computer/Host/Runner/Conversation owner; novel_capability=false.
 
 Parent evidence: TDRP 39531160961 61/61 at 62b48720cbdbe455bf476faef2445801e9af622e; Rust 39531160843 6/6; artifact 12315168809 digest sha256:2642e30438a89d5231cc1944455e8a1ddc77a016fbfdc36c5d2ca51626f0290c. Coverage now unknown=16252, unread=16227, omitted=0, responsibilities=68, unmapped=0. baseline_identity_accepted=false/source_closure_ready=false. Strict index51 only after child gates.
+
+## Index 50 traceability
+
+- Source responsibility: `TDRP-R9-PERFORM-TASK-PIPELINE-001`
+- Requirement: `TDRP-R9-PERFORM-TASK-PIPELINE-001`
+- Oracles: `ORA-TDRP-PERFORM-TASK-PIPELINE-RESUME-001`, `ORA-TDRP-PERFORM-TASK-PIPELINE-REVIEW-EVIDENCE-001`, `ORA-TDRP-PERFORM-TASK-PIPELINE-PUBLICATION-001`
+- Invariants: `INV-TDRP-PERFORM-TASK-PIPELINE-STATEFUL-PERFORMER-001`, `INV-TDRP-PERFORM-TASK-PIPELINE-LEAF-NO-COMMIT-001`, `INV-TDRP-PERFORM-TASK-PIPELINE-NO-SHIPPING-RUNTIME-COLLISION-001`
+- Contract: `CONTRACT-TDRP-PERFORM-TASK-PHASE-PIPELINE-001`
+- Integration: `INT-TDRP-PERFORM-TASK-PHASES-TO-FABUSHI-REPOSITORY-GOVERNANCE-001`
+- Temporal: `TEMP-TDRP-PERFORM-TASK-CARRY-FORWARD-INVALIDATION-001`, `TEMP-TDRP-PERFORM-TASK-TWO-CAMPAIGN-CEILING-001`
+- Fault recovery: `FAULT-TDRP-PERFORM-TASK-PHASE-ARTIFACT-INCOMPLETE-001`, `FAULT-TDRP-PERFORM-TASK-TEST-FLAW-DIRECTNESS-001`, `FAULT-TDRP-PERFORM-TASK-CONVERGENCE-001`
+- Security: `SEC-TDRP-PERFORM-TASK-OWNED-PATH-AND-WORKER-IDENTITY-001`
+- Regression: `REG-TDRP-PERFORM-TASK-PRODUCT-RUNTIME-SEPARATION-001`
+- Source: `.agents/skills/perform-task/references/pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7`
+- Existing-owner boundary remains repository-only: `AGENTS.md`, `TEST_STRATEGY.md`, and `evidence-contract.md`; no shipping Task/Agent/Computer/Host/Runner/Conversation owner is introduced.
