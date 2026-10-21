@@ -7,7 +7,13 @@ const reportPath=process.env.SOURCE_ARCHIVE_REPORT||'artifacts/tdrp-source-archi
 const report=JSON.parse(await fs.readFile(reportPath,'utf8'));
 const boost=(report.archives||[]).find(item=>item.id==='ROOT-ARCHIVE-BOOST-190');
 fail(boost,'Boost 1.90.0 source archive report missing');
+fail(report.target_commit===(process.env.TDRP_TARGET_SHA||process.env.GITHUB_SHA),'source archive target_commit mismatch');
+fail(/^[0-9a-f]{40}$/.test(report.upstream_commit||''),'source archive upstream_commit missing');
+fail(report.lock_commit===report.upstream_commit&&report.lock_tree===report.upstream_tree,'source archive lock commit/tree mismatch');
+fail(report.baseline_identity_accepted===false&&report.source_closure_ready===false&&report.recursive_disposition_status==='open','source archive report must remain fail-closed');
 fail(boost.url==='https://archives.boost.io/release/1.90.0/source/boost_1_90_0.tar.gz','Boost archive URL drift');
+fail(typeof boost.source_path==='string'&&Number.isInteger(boost.source_line)&&boost.source_line>0,'Boost source archive origin missing');
+fail(boost.upstream_commit===report.upstream_commit&&boost.upstream_tree===report.upstream_tree&&boost.target_commit===report.target_commit,'Boost archive provenance drift');
 fail(boost.actual_sha256===boost.expected_sha256,'Boost archive digest mismatch in source archive evidence');
 fail(process.env.BOOST_BUILD_LOG_SHA256?.match(/^[0-9a-f]{64}$/),'Boost build execution log digest missing');
 
@@ -64,11 +70,11 @@ const result={
   project_id:'TDRP-001',
   spec_revision:9,
   target_commit:(process.env.TDRP_TARGET_SHA||process.env.GITHUB_SHA),
-  accepted_upstream_commit:report.accepted_upstream_commit,
+  upstream_commit:report.upstream_commit,\n  upstream_tree:report.upstream_tree,\n  lock_commit:report.lock_commit,\n  lock_tree:report.lock_tree,\n  baseline_identity_accepted:false,
   archive_id:boost.id,
   archive_url:boost.url,
   archive_sha256:boost.actual_sha256,
-  tdesktop_build_path:'Telegram/build/docker/centos_env/Dockerfile boost stage',
+  tdesktop_build_path:'observed Telegram/build/docker/centos_env/Dockerfile boost stage (upstream baseline remains unaccepted)',
   executed_build_contract:[
     './bootstrap.sh --prefix=<temp>/install --with-libraries=regex',
     './b2 release link=static -j2 install'
