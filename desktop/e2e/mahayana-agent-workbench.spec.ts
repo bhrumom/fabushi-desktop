@@ -1036,11 +1036,13 @@ test.afterAll(async () => {
   e2eHttpsServer = null;
   e2eHttpsOriginPromise = null;
   if (authServer != null && authServer.listening) {
+    authServer.closeAllConnections();
     await new Promise<void>((resolve, reject) => {
       authServer.close((error) => error == null ? resolve() : reject(error));
     });
   }
   if (httpsServer != null && httpsServer.listening) {
+    httpsServer.closeAllConnections();
     await new Promise<void>((resolve, reject) => {
       httpsServer.close((error) => error == null ? resolve() : reject(error));
     });
@@ -1110,7 +1112,7 @@ class PackagedMainInspector {
   async evaluate<T>(fn: Function, arg?: unknown): Promise<T> {
     const argument = arg === undefined ? 'undefined' : JSON.stringify(arg);
     if (argument === undefined) throw new Error('Packaged Electron inspector arguments must be JSON serializable.');
-    const expression = `(async () => { const __fn = (${fn.toString()}); return await __fn(require('electron'), ${argument}); })()`;
+    const expression = `(async () => { const __fn = (${fn.toString()}); const __electron = await import('electron'); return await __fn(__electron, ${argument}); })()`;
     const response = await this.request('Runtime.evaluate', {
       expression, awaitPromise: true, returnByValue: true, userGesture: true,
     }) as {
@@ -1195,7 +1197,23 @@ async function waitForChildExit(child: ChildProcess, timeoutMs: number): Promise
   });
 }
 
-function desktopE2eEnvironment(appDataDir: string, e2eAuthBackendUrl: string, extraEnv: Record<string, string>): NodeJS.ProcessEnv {
+async function allocateFreeLoopbackPort(): Promise<number> {
+  return await new Promise<number>((resolve, reject) => {
+    const server = createServer();
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', () => {
+      const address = server.address();
+      if (address == null || typeof address === 'string') {
+        server.close(() => reject(new Error('Could not allocate a loopback port for the focused Electron Host.')));
+        return;
+      }
+      const port = address.port;
+      server.close((error) => error == null ? resolve(port) : reject(error));
+    });
+  });
+}
+
+function desktopE2eEnvironment(appDataDir: string, e2eAuthBackendUrl: string, extraEnv: Record<string, string>, boxExecDaemonPort: number): NodeJS.ProcessEnv {
   return {
     ...process.env,
     FABUSHI_E2E: '1',
@@ -1208,6 +1226,9 @@ function desktopE2eEnvironment(appDataDir: string, e2eAuthBackendUrl: string, ex
     SAND_DISABLE_SENTRY: '1',
     FABUSHI_FEATURE_HOST_MODE: process.env.FABUSHI_FEATURE_HOST_MODE || 'test',
     MAHAYANA_APP_HOST_BIN: process.env.MAHAYANA_APP_HOST_BIN || '',
+    SAND_BOX_EXEC_DAEMON_PORT: String(boxExecDaemonPort),
+    SAND_BOX_WORKSPACE_ROOT: path.join(appDataDir, 'feature-host', 'runtime', `workspace-${boxExecDaemonPort}`),
+    SAND_BOX_TERMINALS_DIRECTORY: path.join(appDataDir, 'feature-host', 'runtime', `terminals-${boxExecDaemonPort}`),
     ...extraEnv,
   };
 }
@@ -1299,7 +1320,8 @@ async function launchDesktopApp(
   extraArgs: string[] = [],
 ): Promise<ElectronApplication> {
   const e2eAuthBackendUrl = await ensureE2eAuthBackend();
-  const env = desktopE2eEnvironment(appDataDir, e2eAuthBackendUrl, extraEnv);
+  const boxExecDaemonPort = await allocateFreeLoopbackPort();
+  const env = desktopE2eEnvironment(appDataDir, e2eAuthBackendUrl, extraEnv, boxExecDaemonPort);
   // Packaged executables own their main entrypoint; Playwright's npm-Electron
   // loader is not injected by electron.launch when executablePath is custom.
   // Attach to the real installed process through loopback-only Node inspector
@@ -1342,15 +1364,20 @@ async function closeDesktopApp(
   if (quitDispatchTimer != null) clearTimeout(quitDispatchTimer);
 
   let closeFinished = false;
+  let closeTimedOut = false;
   const closePromise = app.close().catch(() => undefined).finally(() => { closeFinished = true; });
   let closeTimer: ReturnType<typeof setTimeout> | undefined;
   await Promise.race([
     closePromise,
-    new Promise<void>((resolve) => { closeTimer = setTimeout(resolve, timeoutMs); }),
+    new Promise<void>((resolve) => { closeTimer = setTimeout(() => { closeTimedOut = true; resolve(); }, timeoutMs); }),
   ]);
   if (closeTimer != null) clearTimeout(closeTimer);
 
-  if (closeFinished) return;
+  const timeoutError = () => new Error(`Electron app did not exit within ${timeoutMs}ms after explicit app.quit; forced child-process cleanup was attempted.`);
+  if (closeFinished) {
+    if (closeTimedOut && options.failOnTimeout) throw timeoutError();
+    return;
+  }
 
   // Never let a stuck Electron child consume Playwright's entire worker
   // teardown budget. Strict restart/restore checkpoints still fail visibly.
@@ -1361,10 +1388,11 @@ async function closeDesktopApp(
     new Promise<void>((resolve) => { killTimer = setTimeout(resolve, 2_000); }),
   ]);
   if (killTimer != null) clearTimeout(killTimer);
-  if (closeFinished) return;
-  if (options.failOnTimeout) {
-    throw new Error(`Electron app did not exit within ${timeoutMs}ms after explicit app.quit; forced child-process cleanup was attempted.`);
+  if (closeFinished) {
+    if (options.failOnTimeout) throw timeoutError();
+    return;
   }
+  if (options.failOnTimeout) throw timeoutError();
 }
 
 function sameBrowserWorkspaceUrl(actualValue: string, expectedValue: string): boolean {
