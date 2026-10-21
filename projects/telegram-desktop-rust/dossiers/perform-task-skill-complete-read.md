@@ -1,13 +1,14 @@
-# Perform-task skill complete read — strict recursive indices 45-48
+# Perform-task skill complete read — strict recursive indices 45-49
 
-Status: parent exact-head verified at a822aa26c3b3c48337b473d7a4885e470eb216ab; strict index 48 source-grounded and existing-owner mapped; child exact-head verification pending. Earlier index45-index47 traceability and validator repairs remain retained.
+Status: parent exact-head verified at 16d95f0607a203fb16a96afa99751a39892ec7f0; strict index 49 source-grounded and existing-owner mapped; child exact-head verification pending. Earlier index45-index48 traceability and validator repairs remain retained.
 
 Authority: telegramdesktop/tdesktop@0eca52223cceed229932add1cc80792763120844 tree 1fc479a4b448aed851181bf4a4796d3015368348.
 Index 45 source: `.agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c`.
 Index 46 source: `.agents/skills/perform-task/agents/openai.yaml@f238b707da7f39a4293b17d112ddd344dcb8253a`.
 Index 47 source: `.agents/skills/perform-task/references/computer-use-testing.md@b7fc92d604a55975f75047828d476e64667aa259` (14,178 bytes).
 Index 48 source: `.agents/skills/perform-task/references/mechanical-lane.md@e5e3cc88ba80ece6a20df7c4dd6002491d66a4ef` (9,933 bytes).
-Next strict entry: index 49 `.agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba`.
+Index 49 source: `.agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba` (61,134 bytes; 1,163 lines).
+Next strict entry: index 50 `.agents/skills/perform-task/references/pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7`.
 
 ## Parent exact-head evidence
 
@@ -207,8 +208,69 @@ Invariants:
 - Security: SEC-TDRP-PERFORM-TASK-MECHANICAL-OWNED-PATHS-001
 - Regression: REG-TDRP-PERFORM-TASK-SEMANTIC-WORK-NOT-MECHANICAL-001
 
+## Strict index 49 complete source read
+
+The complete `.agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba` is repository perform-task orchestration and evidence governance, not Telegram product behavior and not Fabushi shipping Task/Agent/Computer/Host/Runner/Conversation runtime.
+
+- Phase transitions are artifact-gated. Delegation is selected only after a real phase spawn succeeds; a pre-work depth/capacity/policy rejection may select same-session checklists, but a delegated timeout or missing artifact cannot silently switch execution mode.
+- Phase 1 produces source-grounded context and plan artifacts. Phase 3 independently validates paths/APIs, containment, evidence design and intrinsic scope, with fail-closed Fast-Path rejected, Approach rejected, or Scope split-required outcomes before source edits.
+- Phase 4 executes one assessed owned write set at a time. Phase 5 runs the assessed direct validation and limits repair to task-owned failures; build locks use exact-subject bounded recovery.
+- Initial Phase 6 is one complete-diff general review plus all five mutually blind standard lenses. Blocking fixes alone proceed. Focused re-review carries unaffected approvals forward and reruns only invalidated/originating lenses and evidence.
+- Review convergence is decided by an independent CONTINUE|REPLAN_CURRENT|RESCOPE_REQUIRED|HARD_STOP assessment with durable rulings. A round count never converts an unresolved blocker into approval.
+- Evidence recovery distinguishes TEST_FLAW from IMPL_BUG. TEST_FLAW retains implementation and prior passes, forbids the failed technique, advances directness, and reruns only unmet/invalidated checks. IMPL_BUG alone authorizes implementation repair plus focused review.
+- The default automatic evidence ceiling is one normal campaign plus at most one focused recovery campaign. A cap, timeout, flake, blank capture or repeated signature is never pass or recovery exhaustion by itself.
+- Native-Windows Phase 7 is post-review and limited to task-touched textual files from result logs, preserving content/trailing-newline semantics while writing CRLF UTF-8 without BOM. WSL/Linux keep LF/no-BOM.
+- Prompt/result logs make state/evidence handoff reconstructable; incomplete artifacts, ambiguous ownership and unsupported recovery fail closed.
+
+## Real index 49 invocation and shared-reference path
+
+1. `.agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c` requires the complete engine and names `references/pipeline.md`, `references/phase-prompts.md`, phase effort, Codex delegation/CLI leaves, shared test loop and build-lock recovery before phase work.
+2. `.agents/skills/perform-task/references/pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7` remains the authoritative stateful performer contract and delegates exact leaf phase prompts/retry rules to index49.
+3. `.agents/shared/phase-effort.md@dd07a4c611922a29a6892332db98afe76cd58952` owns effort/model selection; `.agents/shared/codex-delegation.md@ed89d2a14344f50034a9363bd9ffe75f7972e652` owns native Codex completion/recovery; `.agents/shared/codex-cli-leaves.md@659da44a8083c433c4e9b59ca28f64ba525bfbf8` supplies the Claude review-leaf adapter.
+4. `.agents/shared/test-loop.md@83c4732bf6139f7c6557f18dd87bb35c3d68808d` owns APPROVED/TEST_FLAW/IMPL_BUG/UNRECOVERABLE evidence state, carry-forward invalidation and the two-campaign ceiling.
+5. `.agents/shared/project-context.md@53c8657eb7949a5a2fba7e7adc8d1073f3079ead` owns compact context provenance/amendments; `.agents/shared/build-lock-recovery.md@ec75573e7efe74e9c9a344f3e66f2fc43ac7680f` owns exact-subject bounded lock recovery.
+6. Phase 6's `health.py` invocation is supporting repository-quality tool output only; it never becomes review or product acceptance authority.
+
+## Current Fabushi existing owner and shipping-runtime boundary
+
+Fabushi exact 16d95f0607a203fb16a96afa99751a39892ec7f0 already owns this applicable source-neutral responsibility:
+
+- `AGENTS.md@57ed0d56acc64ef24ce4c1f5c2877a4ec3ab570b` owns the canonical Discover/Spec/Architecture-Plan/Implement/Verify/Review/Integrate-Deliver lifecycle, compact context handoff, worker effort, out-of-process AI-worker lifecycle/adapter safety and exact-head fail-closed delivery.
+- `projects/fabushi-communication-platform/quality/TEST_STRATEGY.md@0d3a4c993784625f9b70279602c655d4788fe9fb` owns independent/focused review, arbitration/convergence, AI review phase execution, adaptive evidence recovery, build-lock safety and AI-worker qualification.
+- `projects/fabushi-communication-platform/quality/evidence-contract.md@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70` owns frozen review scope, durable review ledger, context provenance/handoff, AI-worker execution evidence and append-only adaptive test-loop recovery history.
+
+Shipping Task, Agent/Coordinator, Computer, Host/Runner and Conversation continue to own end-user/product task state, agent/tool execution, Computer/ForeverBox/VNC, product execution/takeover and user transcript/participant/message state. None owns repository phase prompts, reviewer fanout, worker evidence or test-recovery governance. `novel_capability=false`; no new owner or ADR is required.
+
+## Index 49 Fabushi-equivalent contract
+
+`exact task/source authority -> context+plan artifacts -> independent assessment with reject/replan/split gates -> bounded owned implementation phases -> selected direct validation -> blind complete-diff general+five-lens review -> blocking-only fixes with focused invalidation-aware re-review -> convergence assessment when needed -> adaptive evidence with carried passes/directness recovery and at most one focused campaign -> optional native-Windows touched-file normalization -> durable exact-result publication`
+
+Invariants:
+- the performer is the only stateful repository task owner; leaf workers do not delegate or commit;
+- phase completion is established by required durable artifacts and actual effects, never narration, timeout or runner exit alone;
+- implementation/fixes remain inside assessed owned paths and invalidate only actually affected review/evidence scopes;
+- initial standard review remains complete and mutually blind; focused review carries unaffected approvals;
+- round/run/campaign caps, flake, timeout and missing captures never become approval;
+- TEST_FLAW advances evidence directness without mutating retained implementation absent sound IMPL_BUG proof;
+- host-specific worker and Telegram-specific test mechanics remain adapters, not shipping product owners;
+- shipping Task/Agent/Computer/Host/Runner/Conversation never absorb repository workflow governance;
+- FBCP/TDRP executable verification remains GitHub-Actions-only;
+- open recursive coverage keeps baseline_identity_accepted=false and source_closure_ready=false.
+
+## Index 49 traceability
+
+- Requirement: TDRP-R9-PERFORM-TASK-PHASE-PROMPTS-001
+- Oracles: ORA-TDRP-PERFORM-TASK-PHASE-ARTIFACT-COMPLETION-001, ORA-TDRP-PERFORM-TASK-FOCUSED-REVIEW-001, ORA-TDRP-PERFORM-TASK-EVIDENCE-DIRECTNESS-001
+- Invariants: INV-TDRP-PERFORM-TASK-STATEFUL-PERFORMER-001, INV-TDRP-PERFORM-TASK-LEAF-NO-DELEGATE-COMMIT-001, INV-TDRP-PERFORM-TASK-NO-SHIPPING-RUNTIME-COLLISION-001
+- Contract: CONTRACT-TDRP-PERFORM-TASK-PHASE-PIPELINE-001
+- Integration: INT-TDRP-PERFORM-TASK-PHASES-TO-FABUSHI-REPOSITORY-GOVERNANCE-001
+- Temporal: TEMP-TDRP-PERFORM-TASK-CARRY-FORWARD-INVALIDATION-001, TEMP-TDRP-PERFORM-TASK-TWO-CAMPAIGN-CEILING-001
+- Fault recovery: FAULT-TDRP-PERFORM-TASK-PHASE-ARTIFACT-INCOMPLETE-001, FAULT-TDRP-PERFORM-TASK-TEST-FLAW-DIRECTNESS-001, FAULT-TDRP-PERFORM-TASK-CONVERGENCE-001
+- Security: SEC-TDRP-PERFORM-TASK-OWNED-PATH-AND-WORKER-IDENTITY-001
+- Regression: REG-TDRP-PERFORM-TASK-PRODUCT-RUNTIME-SEPARATION-001
+
 ## Verification disposition
 
-This closes only recursive strict index 48. Counters become source_entries_total=16,305, unknown=16,254, unread=16,229, omitted=0, responsibilities_total=67, unmapped=0. baseline_identity_accepted=false, baseline_ready=false, accepted=false and source_closure_ready=false because source coverage and recursive reachability/disposition remain open.
+This closes only recursive strict index 49. Counters become source_entries_total=16,305, unknown=16,253, unread=16,228, omitted=0, responsibilities_total=68, unmapped=0. baseline_identity_accepted=false, baseline_ready=false, accepted=false and source_closure_ready=false because source coverage and recursive reachability/disposition remain open.
 
-Parent a822aa26c3b3c48337b473d7a4885e470eb216ab evidence is supporting evidence only after this write. Exact-head acceptance of index48 requires fresh TDRP Revision 9 61-job and Rust desktop runtime 6-job workflows on the immutable child. Only after every child job/step/full log/artifact/digest closes without deterministic failure may the audit enter strict index49.
+Parent 16d95f0607a203fb16a96afa99751a39892ec7f0 evidence is supporting evidence only after this write. Exact-head acceptance of index49 requires fresh TDRP Revision 9 61-job and Rust desktop runtime 6-job workflows on the immutable child. Only after every child job/step/full log/artifact/digest closes without deterministic failure may the audit enter strict index50.
