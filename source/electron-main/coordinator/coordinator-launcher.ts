@@ -29,7 +29,7 @@ export interface CoordinatorMessageChannel {
 export interface CoordinatorChildProcess {
   postMessage(value: unknown, ports: CoordinatorMessagePort[]): void;
   on(event: "exit", listener: (code: number | null) => void): void;
-  kill(): void;
+  kill(signal?: "SIGTERM" | "SIGKILL"): void;
 }
 
 export interface CoordinatorLaunchHandle {
@@ -51,6 +51,7 @@ export interface LaunchCoordinatorDependencies {
   readonly onEvent: Record<string, (payload: unknown) => void>;
   readonly onProblem: (problem: string) => void;
   readonly processConfig: unknown;
+  readonly shutdownGraceMs?: number;
   readonly reportFailure?: (leg: string, error: unknown) => void;
 }
 
@@ -82,16 +83,36 @@ export function launchCoordinator(
   );
 
   let exited = false;
+  let disposeRequested = false;
+  let gracefulKillRequested = false;
+  let forceKillRequested = false;
+  let disposeKillTimer: ReturnType<typeof setTimeout> | undefined;
   const { promise: processExited, resolve: resolveExited } =
     createDeferred<{ readonly code: number | null }>();
   let controlSettlementObserved = false;
+  const requestChildKill = (signal: "SIGTERM" | "SIGKILL") => {
+    if (exited) return;
+    if (signal === "SIGTERM") {
+      if (gracefulKillRequested) return;
+      gracefulKillRequested = true;
+    } else {
+      if (forceKillRequested) return;
+      forceKillRequested = true;
+    }
+    child.kill(signal);
+  };
   void server.settled.then(() => {
     controlSettlementObserved = true;
+    if (disposeRequested) requestChildKill("SIGTERM");
   });
 
   child.on("exit", (code) => {
     if (exited) return;
     exited = true;
+    if (disposeKillTimer !== undefined) {
+      clearTimeout(disposeKillTimer);
+      disposeKillTimer = undefined;
+    }
     resolveExited({ code });
     server.handlePortClosed();
     controlChannel.port2.close();
@@ -99,7 +120,6 @@ export function launchCoordinator(
     mainDataChannel.port2.close();
   });
 
-  let disposeRequested = false;
   return {
     rendererDataPort: dataChannel.port2,
     mainDataPort: mainDataChannel.port2,
@@ -109,13 +129,15 @@ export function launchCoordinator(
       if (disposeRequested || exited) return;
       disposeRequested = true;
       server.dispose();
-      if (controlSettlementObserved) {
-        child.kill();
-        return;
-      }
-      void server.settled.then(() => {
-        if (!exited) child.kill();
-      });
+      if (controlSettlementObserved) requestChildKill("SIGTERM");
+      const graceMs = Math.max(0, dependencies.shutdownGraceMs ?? 5_000);
+      disposeKillTimer = setTimeout(() => {
+        if (exited) return;
+        dependencies.onProblem(
+          "coordinator process did not exit within " + graceMs + "ms after shutdown; forcing child exit",
+        );
+        requestChildKill("SIGKILL");
+      }, graceMs);
     },
   };
 }
