@@ -6,6 +6,8 @@ on:
       - 'source/host/src/runner/**'
       - 'source/host/tests/**'
       - 'source/host/app/src/main.rs'
+      - 'source/host/app/Cargo.lock'
+      - 'source/host/app/Cargo.toml'
       - 'docs/specs/bot-runtime-hermes-absorption.md'
       - '.github/workflows/bot-runtime-hermes.yml'
   workflow_dispatch:
@@ -53,13 +55,5 @@ jobs:
         with:
           workspaces: source/host/app -> target
           shared-key: hermes-mac-host-check-1.97.1
-      - name: Reconcile stale app lockfile in Actions for source recovery
-        run: cargo metadata --format-version 1 --manifest-path source/host/app/Cargo.toml > /dev/null
-      - name: Preserve reconciled app lockfile
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: hermes-app-lock-${{ github.event.pull_request.head.sha || github.sha }}
-          path: source/host/app/Cargo.lock
       - name: Check shipping macOS Host without running it or calling a model
         run: cargo check --locked --manifest-path source/host/app/Cargo.toml

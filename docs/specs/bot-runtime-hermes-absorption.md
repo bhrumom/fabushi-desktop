@@ -79,18 +79,18 @@ first delivery target. Never enable paid-model tests as a side effect of this wo
 
 | Area | Hermes source | Existing Fabushi owner | Finding / state |
 |---|---|---|---|
-| Turn/final messages | agent/conversation_loop.py, turn_final_response.py | extensions/inference provider loops; Runner production_turn_agent_owner | Normal completion exists; provider edge cases under review |
-| Error truth/replay advice | tool_guardrails.py, tool_result_classification.py | ports/box; Runner box_tool_access | Implemented in #166; deterministic Actions 39542158117 passed |
-| Persist before effects | turn_tool_round.py | provider checkpoints; turn_agent_composition | Confirmed post-dispatch recording window; HRA-02 open |
-| Artifact/context bounds | tools/tool_output_truncate.py, tool_result_storage.py | Runner large_output_spill, context projection | Confirmed character-vs-byte cap and silent truncation; HRA-03 open |
-| Background wait/notify | tools/process_registry_wait_policy.py | background_work, shell_terminal_watch, AwaitShell, pending wake owners | Existing owners present; routing/ack/cancel proof under review |
-| API retry/cancellation | turn_retry_state.py, turn_api_error.py | stream_attempt; routed provider runtime | Existing bounded retry/checkpoint machinery present; side-effect boundary under review |
-| Context and compression | context_compressor*, turn_preflight* | conversation_state; generated history projection | Under review; no missing claim from naming alone |
-| Usage/budgets | iteration_budget.py, turn_iteration_prep.py | turn_usage, usage sink, provider step limit, subagent runtime | Present; cross-agent accounting/limits under review |
-| Multi-agent execution | tools/delegate_tool*, agent/subagent_lifecycle.py | subagent_runtime, task tools, durable handoffs | Present; identity/duplicate dispatch evidence under review |
-| Authorization/tools | agent/tool_executor.py, managed_tool_gateway.py | capability broker, auto_review, toolset fences | Present; policy ordering and uncertain writes under review |
-| Memory/skills/plugins | memory_manager_tools.py, skill_preprocessing.py, tools/mcp_tool* | sand_memory, skill/plugin/MCP owners | Under review; preserve existing owners and grants |
-| Session ingress/delivery | gateway/run_turn*, session_* | Rust conversation actors, RuntimeStore, common transcript | Present; recovery/terminal delivery evidence under review |
+| Turn/final messages | agent/conversation_loop.py, turn_final_response.py | extensions/inference provider loops; Runner production_turn_agent_owner | No-tool final ends normally, including a legitimate empty final after tool delivery; no automatic empty-response loop imported |
+| Error truth/replay advice | tool_guardrails.py, tool_result_classification.py | ports/box; Runner box_tool_access | Truthful resource errors in #166; all provider tool-result repeat feedback added here; Actions 39553703887 passed |
+| Persist before effects | turn_tool_round.py | provider checkpoints; turn_agent_composition | Implemented pre-dispatch pending checkpoints, uncertain-resume refusal and watchdog phase boundary; Actions 39553703887 passed |
+| Artifact/context bounds | tools/tool_output_truncate.py, tool_result_storage.py | Runner large_output_spill, context projection | Implemented UTF-8 byte bounds, explicit partial artifacts and bounded fallback; Actions 39553703887 passed |
+| Background wait/notify | tools/process_registry_wait_policy.py | background_work, shell_terminal_watch, AwaitShell, pending wake owners | Generation/parent fencing, dedupe and settlement ordering retained; worker spawn failure now rolls back without ghost pending; Actions 39553703887 passed; Mac rearm integration verification pending |
+| API retry/cancellation | turn_retry_state.py, turn_api_error.py | stream_attempt; routed provider runtime | Bounded transport retry and one auth refresh retained; uncertain effects no longer eligible for model/tool replay; Actions 39553703887 passed |
+| Context and compression | context_compressor*, turn_preflight* | conversation_state; generated history projection | OPEN: summary facade/config exists, but no production preflight or mid-loop summarization invocation was found in current routed path |
+| Usage/budgets | iteration_budget.py, turn_iteration_prep.py | turn_usage, usage sink, provider step limit, subagent runtime | Per-request Responses accounting repaired; OPEN: explicit root/child shared quota and admission policy not established |
+| Multi-agent execution | tools/delegate_tool*, agent/subagent_lifecycle.py | subagent_runtime, task tools, durable handoffs | Parent/root lineage, live-ID dedupe, steer/abort and depth fencing present; Actions 39553703887 passed; shared admission remains open |
+| Authorization/tools | agent/tool_executor.py, managed_tool_gateway.py | capability broker, auto_review, toolset fences | Role/capability and review fences retained at invocation; malformed arguments no longer default to {}; Actions 39553703887 passed; universal JSON-Schema validation remains open |
+| Memory/skills/plugins | memory_manager_tools.py, skill_preprocessing.py, tools/mcp_tool* | sand_memory, skill/plugin/MCP owners | Bounded recall, extraction/dedupe, skill budgets and installed-plugin identity/auth projection retained; focused contracts passed 39553703887 |
+| Session ingress/delivery | gateway/run_turn*, session_* | Rust conversation actors, RuntimeStore, common transcript | Blob reference validation and per-conversation recovery owners retained; contracts passed 39553703887; installed recovery acceptance not run |
 
 ## Verification and delivery
 
@@ -104,3 +104,32 @@ Review every requirement before completion. Integrate only accepted source;
 signed Mac delivery and installed acceptance remain separate evidence layers.
 Rollback restores the prior behavior without deleting user work or uncertain-call
 evidence. Source completeness cannot be claimed while this ledger has open gaps.
+
+## Remaining implementation gates (not completion)
+
+The current comparison is not a claim of whole-product parity. The following
+concrete gaps remain open after the immediate safety/cost fixes:
+
+1. Context management: bind the existing summarization service to the production
+   preflight and completed-tool boundary. Persist summaries/archives through the
+   canonical Agent checkpoint owner, retain system/authority and the newest user
+   request, preserve balanced tool pairs and pending effect identities, and never
+   repeatedly pay for a summary after the same failed compaction. Test summary
+   failure, cancellation, recovery and subsequent request size deterministically.
+2. Root/child resource policy: retain model-directed stopping. A configurable real
+   quota/admission policy, when supplied by the existing settings/budget owner,
+   must account for descendants atomically and release admission on every terminal
+   path. No new fixed interactive failure threshold or parallel quota ledger.
+3. Invocation validation: the new parser rejects malformed/non-object JSON. It
+   does not claim full JSON-Schema validation for every MCP schema. Reuse the
+   canonical validation/authorization boundary; cover schema errors before effects
+   and preserve truthful feedback without acquiring new grants.
+4. Background worker loss: spawn failure is repaired. An await callback panic or
+   disappearance after registration still needs typed watcher-failure handling,
+   preserving the backend job and recovery marker rather than inventing a job
+   completion or rerunning it.
+
+Mac compilation, signing, installation and real-model MiniApp authoring/GitHub
+acceptance are separate delivery gates. Real-model acceptance remains stopped
+following the user's token-consumption complaint. All current Actions checks use
+fake transports/resource ports and do not call paid models.
