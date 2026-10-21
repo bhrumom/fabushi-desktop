@@ -101,6 +101,9 @@ pub struct CursorCheckpoint {
     pub text: String,
     pub completed_steps: usize,
     pub tool_calls_completed: usize,
+    /// Proposed calls persisted before effects; recovery must reconcile, never replay.
+    #[serde(default)]
+    pub pending_tool_calls: Vec<Value>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -880,6 +883,9 @@ pub fn run_cursor_with_transport_reporting_usage_and_partials_with_max_steps(
     tool_step_reminder: Option<&(dyn Fn(&[(String, Value)]) -> Option<String> + Send + Sync)>,
 ) -> Result<String, ProviderSessionError> {
     let max_steps = max_steps.max(1);
+    if resume_from.is_some_and(|checkpoint| !checkpoint.pending_tool_calls.is_empty()) {
+        return Err(ProviderSessionError::Tool("A recovered Cursor tool batch has uncertain execution. Reconcile the recorded calls before retrying; no tool or model request was replayed.".into()));
+    }
     let tool_index = tools
         .iter()
         .map(|tool| (tool.name.clone(), tool))
@@ -909,6 +915,7 @@ pub fn run_cursor_with_transport_reporting_usage_and_partials_with_max_steps(
         )));
     }
 
+    let mut failure_observations = super::tool_feedback::ToolFailureObservations::default();
     for _step in completed_steps..max_steps {
         if should_cancel() {
             return Err(ProviderSessionError::Cancelled(
@@ -1008,6 +1015,13 @@ pub fn run_cursor_with_transport_reporting_usage_and_partials_with_max_steps(
         });
 
         let calls_in_step = calls.len();
+        on_checkpoint(&CursorCheckpoint {
+            conversation: conversation.clone(), text: text.clone(), completed_steps,
+            tool_calls_completed,
+            pending_tool_calls: calls.iter().map(|call| json!({
+                "id":call.tool_call_id,"name":call.tool_name,"arguments":call.args
+            })).collect(),
+        })?;
         let mut observed_tool_calls = Vec::with_capacity(calls_in_step);
         for call in calls {
             if should_cancel() {
@@ -1015,17 +1029,20 @@ pub fn run_cursor_with_transport_reporting_usage_and_partials_with_max_steps(
                     "Runner cancelled before Cursor tool execution".into(),
                 ));
             }
-            let args = serde_json::from_str::<Value>(&call.args)
-                .unwrap_or_else(|_| json!({}));
-            observed_tool_calls.push((call.tool_name.clone(), args.clone()));
-            let (result, is_error) = match tool_index.get(&call.tool_name).copied() {
-                None => (
+            let parsed = super::tool_arguments::parse_tool_arguments(&call.args);
+            if let Ok(args) = &parsed {
+                observed_tool_calls.push((call.tool_name.clone(), args.clone()));
+            }
+            let observed_args = parsed.as_ref().ok().cloned();
+            let (mut result, is_error) = match (parsed, tool_index.get(&call.tool_name).copied()) {
+                (Err(error), _) => (json!({"error": error}), true),
+                (Ok(_), None) => (
                     json!({
                         "error": format!("Unknown Fabushi tool: {}", call.tool_name)
                     }),
                     true,
                 ),
-                Some(tool) => match execute_tool(tool, args, &call.tool_call_id) {
+                (Ok(args), Some(tool)) => match execute_tool(tool, args, &call.tool_call_id) {
                     Ok(value) => (value, false),
                     Err(error) => (
                         json!({ "error": error.to_string() }),
@@ -1033,6 +1050,10 @@ pub fn run_cursor_with_transport_reporting_usage_and_partials_with_max_steps(
                     ),
                 },
             };
+            if let Some(args) = observed_args {
+                failure_observations.observe(&call.tool_name, &args, &mut result);
+            }
+            let is_error = is_error || super::tool_feedback::is_execution_failure(&result);
             conversation.push(CursorCheckpointMessage::ToolResult {
                 tool_call_id: call.tool_call_id,
                 tool_name: call.tool_name,
@@ -1056,6 +1077,7 @@ pub fn run_cursor_with_transport_reporting_usage_and_partials_with_max_steps(
             text: text.clone(),
             completed_steps,
             tool_calls_completed,
+            pending_tool_calls: Vec::new(),
         })?;
     }
 

@@ -73,6 +73,9 @@ pub struct CodexDirectCheckpoint {
     pub usage: CodexDirectUsage,
     pub completed_steps: usize,
     pub tool_calls_completed: usize,
+    /// Proposed calls persisted before effects; recovery must reconcile, never replay.
+    #[serde(default)]
+    pub pending_tool_calls: Vec<Value>,
 }
 
 #[derive(Debug, Error)]
@@ -413,7 +416,33 @@ pub fn run_codex_direct_responses_with_lifecycle_and_tool_step_reminder(
     should_cancel: &dyn Fn() -> bool,
     tool_step_reminder: Option<&(dyn Fn(&[(String, Value)]) -> Option<String> + Send + Sync)>,
 ) -> Result<CodexDirectResult, CodexDirectError> {
+    run_codex_direct_responses_with_lifecycle_reporting_usage(
+        transport, options, resume_from, execute_tool, on_text_delta,
+        on_checkpoint, should_cancel, tool_step_reminder, &mut |_| {},
+    )
+}
+
+pub fn run_codex_direct_responses_with_lifecycle_reporting_usage(
+    transport: &mut dyn CodexDirectTransport,
+    options: &CodexDirectOptions,
+    resume_from: Option<&CodexDirectCheckpoint>,
+    execute_tool: &mut dyn FnMut(
+        &CodexDirectTool,
+        Value,
+        &str,
+    ) -> Result<Value, CodexDirectError>,
+    on_text_delta: &mut dyn FnMut(&str, &str),
+    on_checkpoint: &mut dyn FnMut(
+        &CodexDirectCheckpoint,
+    ) -> Result<(), CodexDirectError>,
+    should_cancel: &dyn Fn() -> bool,
+    tool_step_reminder: Option<&(dyn Fn(&[(String, Value)]) -> Option<String> + Send + Sync)>,
+    on_usage: &mut dyn FnMut(CodexDirectUsage),
+) -> Result<CodexDirectResult, CodexDirectError> {
     let max_steps = options.max_steps.max(1);
+    if resume_from.is_some_and(|checkpoint| !checkpoint.pending_tool_calls.is_empty()) {
+        return Err(CodexDirectError::Tool("A recovered tool batch has uncertain execution. Reconcile the recorded calls before retrying; no tool or model request was replayed.".into()));
+    }
     let tools_by_name = options
         .tools
         .iter()
@@ -452,6 +481,7 @@ pub fn run_codex_direct_responses_with_lifecycle_and_tool_step_reminder(
         )));
     }
 
+    let mut failure_observations = super::tool_feedback::ToolFailureObservations::default();
     for _step in completed_steps..max_steps {
         if should_cancel() {
             return Err(CodexDirectError::Cancelled(
@@ -478,7 +508,19 @@ pub fn run_codex_direct_responses_with_lifecycle_and_tool_step_reminder(
         let step_text_start = text.len();
         let mut completed: Option<Value> = None;
         let mut observed_output = Vec::new();
+        let mut reported_usage = false;
         transport.stream_response(&request, &mut |event| {
+            // Account for a confirmed billable response even if cancellation,
+            // tool execution, persistence or trailing transport later fails.
+            if !reported_usage
+                && matches!(event.get("type").and_then(Value::as_str),
+                    Some("response.completed" | "response.failed"))
+                && let Some(response) = event.get("response")
+                && response.get("usage").is_some_and(Value::is_object)
+            {
+                on_usage(usage_of(response));
+                reported_usage = true;
+            }
             if should_cancel() {
                 return Err(CodexDirectError::Cancelled(
                     "Runner cancelled the provider stream".into(),
@@ -563,6 +605,12 @@ pub fn run_codex_direct_responses_with_lifecycle_and_tool_step_reminder(
         retain_executable_function_calls(&mut output, &calls);
 
         let calls_in_step = calls.len();
+        // Durability is a dispatch precondition, not post-effect housekeeping.
+        on_checkpoint(&CodexDirectCheckpoint {
+            input: input.clone(), text: text.clone(), response_id: response_id.clone(),
+            usage: total_usage, completed_steps, tool_calls_completed,
+            pending_tool_calls: calls.clone(),
+        })?;
         let mut results = Vec::new();
         let mut observed_tool_calls = Vec::with_capacity(calls_in_step);
         for call in calls {
@@ -576,16 +624,19 @@ pub fn run_codex_direct_responses_with_lifecycle_and_tool_step_reminder(
             let arguments = call
                 .get("arguments")
                 .and_then(Value::as_str)
-                .unwrap_or("{}");
-            let args = serde_json::from_str::<Value>(arguments)
-                .unwrap_or_else(|_| json!({}));
-            observed_tool_calls.push((name.to_string(), args.clone()));
-            let output = match tools_by_name.get(name).copied() {
-                None => json!({
+                .unwrap_or("");
+            let parsed = super::tool_arguments::parse_tool_arguments(arguments);
+            if let Ok(args) = &parsed {
+                observed_tool_calls.push((name.to_string(), args.clone()));
+            }
+            let observed_args = parsed.as_ref().ok().cloned();
+            let mut output = match (parsed, tools_by_name.get(name).copied()) {
+                (Err(error), _) => json!({"isError": true, "error": error}),
+                (Ok(_), None) => json!({
                     "isError": true,
                     "error": format!("Unknown Fabushi tool: {name}")
                 }),
-                Some(tool) => match execute_tool(tool, args, call_id) {
+                (Ok(args), Some(tool)) => match execute_tool(tool, args, call_id) {
                     Ok(value) => value,
                     Err(error) => json!({
                         "isError": true,
@@ -593,6 +644,9 @@ pub fn run_codex_direct_responses_with_lifecycle_and_tool_step_reminder(
                     }),
                 },
             };
+            if let Some(args) = observed_args {
+                failure_observations.observe(name, &args, &mut output);
+            }
             results.push(json!({
                 "type": "function_call_output",
                 "call_id": call_id,
@@ -628,6 +682,7 @@ pub fn run_codex_direct_responses_with_lifecycle_and_tool_step_reminder(
             usage: total_usage,
             completed_steps,
             tool_calls_completed,
+            pending_tool_calls: Vec::new(),
         })?;
     }
 

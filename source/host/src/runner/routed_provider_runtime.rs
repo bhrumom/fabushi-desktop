@@ -289,10 +289,14 @@ impl RoutedProviderCheckpointStore for ProductionRoutedProviderCheckpointStore {
             ))
         })?;
         let write_result = (|| -> std::io::Result<()> {
-            let mut file = OpenOptions::new()
-                .create_new(true)
-                .write(true)
-                .open(&temporary_path)?;
+            let mut options = OpenOptions::new();
+            options.create_new(true).write(true);
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::OpenOptionsExt;
+                options.mode(0o600);
+            }
+            let mut file = options.open(&temporary_path)?;
             file.write_all(&payload)?;
             file.sync_all()
         })();
@@ -308,6 +312,9 @@ impl RoutedProviderCheckpointStore for ProductionRoutedProviderCheckpointStore {
                 "could not commit Runner provider checkpoint: {error}"
             )));
         }
+        #[cfg(unix)]
+        fs::File::open(&self.directory).and_then(|directory| directory.sync_all())
+            .map_err(|error| ProviderSessionError::Transport(format!("could not sync Runner checkpoint directory: {error}")))?;
         Ok(final_path.to_string_lossy().into_owned())
     }
 }

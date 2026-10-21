@@ -26,16 +26,46 @@ fn is_inline_text(item: &Value) -> bool {
         && item.get("outputLocation").is_none()
 }
 
-fn cap_text(text: &str) -> String {
-    if text.chars().count() <= MAX_OUTPUT_FILE_SIZE {
+fn cap_text(text: &str, limit: usize) -> String {
+    if text.len() <= limit {
         return text.to_string();
     }
-    text.chars().take(MAX_OUTPUT_FILE_SIZE).collect()
+    let notice = format!("\n[OUTPUT TRUNCATED: original {} UTF-8 bytes; middle omitted]\n", text.len());
+    if limit < notice.len() { return notice[..limit].to_string(); }
+    let available = limit.saturating_sub(notice.len());
+    let mut head = available * 2 / 5;
+    let mut tail = text.len().saturating_sub(available - head);
+    while !text.is_char_boundary(head) { head -= 1; }
+    while !text.is_char_boundary(tail) { tail += 1; }
+    format!("{}{}{}", &text[..head], notice, &text[tail..])
+}
+
+/// Bounded fallback when storage is disabled/unavailable. Preserve error flags
+/// and non-text blocks; report partial data rather than pretending it is complete.
+pub fn bound_mcp_inline_text(mut result: Value, limit: usize) -> Value {
+    let Some(content) = result.get("content").and_then(Value::as_array) else { return result; };
+    let aggregate = content.iter().filter(|item| is_inline_text(item))
+        .filter_map(|item| item.get("text").and_then(Value::as_str)).collect::<Vec<_>>().join("\n\n");
+    if aggregate.len() <= limit { return result; }
+    let text = cap_text(&aggregate, limit);
+    let retained = text.len();
+    let mut emitted = false;
+    let bounded = content.iter().filter_map(|item| {
+        if !is_inline_text(item) { return Some(item.clone()); }
+        if emitted { return None; }
+        emitted = true;
+        Some(json!({"type":"text","text":text}))
+    }).collect::<Vec<_>>();
+    result["content"] = Value::Array(bounded);
+    result["outputTruncation"] = json!({"originalBytes":aggregate.len(),"retainedBytes":retained,
+        "truncated":true,"materialized":false,
+        "notice":"Only partial output is available. Query smaller read-only pages; reconcile any uncertain mutation before retrying it."});
+    result
 }
 
 /// Materializes oversized MCP text output into the Agent box, matching Grok's
 /// Runner-owned spill boundary. Failure to write is deliberately non-fatal:
-/// the original inline tool result is returned unchanged.
+/// a bounded, explicitly partial inline result is returned.
 pub fn maybe_spill_mcp_text_result(
     box_resources: &dyn RunnerBoxResourcePort,
     result: Value,
@@ -43,7 +73,7 @@ pub fn maybe_spill_mcp_text_result(
     threshold_bytes: usize,
 ) -> Value {
     if result.get("isError").and_then(Value::as_bool) == Some(true) {
-        return result;
+        return bound_mcp_inline_text(result, MCP_TEXT_FILE_THRESHOLD_BYTES);
     }
     let Some(content) = result.get("content").and_then(Value::as_array) else {
         return result;
@@ -61,7 +91,7 @@ pub fn maybe_spill_mcp_text_result(
         return result;
     }
 
-    let capped = cap_text(&aggregate);
+    let capped = cap_text(&aggregate, MAX_OUTPUT_FILE_SIZE);
     let relative_path = format!("{AGENT_TOOLS_DIR}/{}.txt", Uuid::new_v4());
     let data = capped.as_bytes().to_vec();
     if box_resources
@@ -72,13 +102,15 @@ pub fn maybe_spill_mcp_text_result(
         })
         .is_err()
     {
-        return result;
+        return bound_mcp_inline_text(result, MCP_TEXT_FILE_THRESHOLD_BYTES);
     }
 
     let output_location = json!({
         "filePath": relative_path,
         "sizeBytes": data.len(),
         "lineCount": capped.split('\n').count(),
+        "originalSizeBytes": aggregate.len(),
+        "truncated": aggregate.len() > data.len(),
     });
     let mut materialized = Vec::with_capacity(content.len());
     let mut emitted = false;

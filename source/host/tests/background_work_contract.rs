@@ -456,3 +456,103 @@ fn runner_background_shell_watch_cancellation_stops_terminal_delivery() {
     std::thread::sleep(Duration::from_millis(30));
     assert!(settled.lock().expect("settled").is_empty());
 }
+
+#[test]
+fn worker_spawn_failure_publishes_no_pending_and_allows_rearm() {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use mahayana_host_runtime::runner::background_work::BackgroundWatchWorkerSpawner;
+    let attempts = Arc::new(AtomicUsize::new(0));
+    let spawner: BackgroundWatchWorkerSpawner = Arc::new({
+        let attempts = Arc::clone(&attempts);
+        move |name, worker| {
+            if attempts.fetch_add(1, Ordering::SeqCst) < 2 {
+                return Err(std::io::Error::other("injected worker allocation failure"));
+            }
+            std::thread::Builder::new().name(name).spawn(worker).map(drop)
+        }
+    });
+    let pending = Arc::new(AtomicUsize::new(0));
+    let pending_shell = Arc::clone(&pending);
+    let pending_cloud = Arc::clone(&pending);
+    let (shell_tx, shell_rx) = mpsc::channel();
+    let shell_pending_at_await = Arc::clone(&pending);
+    let shell = RunnerBackgroundShellWatches::new(
+        Arc::new(move |_, _, _| {
+            assert!(shell_pending_at_await.load(Ordering::SeqCst) > 0);
+            Some(BackgroundShellWatchOutcome {
+                status: "success".into(), detail: None, output_path: None,
+            })
+        }),
+        Some(Arc::new(move |_| { pending_shell.fetch_add(1, Ordering::SeqCst); })),
+        Some(Arc::new(move |value| { shell_tx.send(value).unwrap(); })),
+        None,
+    ).with_worker_spawner(Arc::clone(&spawner));
+    let (cloud_tx, cloud_rx) = mpsc::channel();
+    let cloud_pending_at_await = Arc::clone(&pending);
+    let cloud = RunnerCloudAgentWatches::new(
+        Arc::new(move |_, _| {
+            assert_eq!(cloud_pending_at_await.load(Ordering::SeqCst), 2);
+            CloudAgentWatchOutcome { status: "completed".into(), text: "done".into() }
+        }),
+        Some(Arc::new(move |_| { pending_cloud.fetch_add(1, Ordering::SeqCst); })),
+        Some(Arc::new(move |value| { cloud_tx.send(value).unwrap(); })),
+        None,
+    ).with_worker_spawner(spawner);
+    assert!(!shell.watch_background_shell("parent", "42", BackgroundShellWatchOptions::new(None, None)));
+    assert!(!cloud.watch_cloud_agent("parent", "bc", CloudAgentWatchOptions::new(None, false)));
+    assert_eq!(pending.load(Ordering::SeqCst), 0, "failed workers must not persist phantom pending wakes");
+    assert!(!shell.is_shell_watch_armed("parent", "42"));
+    assert!(!cloud.is_cloud_watch_armed("parent", "bc"));
+    assert!(shell.watch_background_shell("parent", "42", BackgroundShellWatchOptions::new(None, None)));
+    assert_eq!(shell_rx.recv_timeout(Duration::from_secs(2)).unwrap().parent_agent_id, "parent");
+    assert!(cloud.watch_cloud_agent("parent", "bc", CloudAgentWatchOptions::new(None, false)));
+    assert_eq!(cloud_rx.recv_timeout(Duration::from_secs(2)).unwrap().parent_agent_id, "parent");
+    assert_eq!(pending.load(Ordering::SeqCst), 2);
+    assert_eq!(attempts.load(Ordering::SeqCst), 4);
+}
+
+#[test]
+fn await_worker_loss_preserves_backend_uncertainty_and_can_rearm_same_work() {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    let calls=Arc::new(AtomicUsize::new(0));
+    let pending=Arc::new(AtomicUsize::new(0));
+    let pending_count=Arc::clone(&pending);
+    let await_calls=Arc::clone(&calls);
+    let (failure_tx,failure_rx)=mpsc::channel();
+    let (completion_tx,completion_rx)=mpsc::channel();
+    let watches=RunnerBackgroundShellWatches::new(
+        Arc::new(move |_,_,_| {
+            if await_calls.fetch_add(1,Ordering::SeqCst)==0 {panic!("injected await worker loss");}
+            Some(BackgroundShellWatchOutcome{status:"success".into(),detail:None,output_path:None})
+        }),
+        Some(Arc::new(move |_| {pending_count.fetch_add(1,Ordering::SeqCst);})),
+        Some(Arc::new(move |value| {completion_tx.send(value).unwrap();})),None,
+    ).with_worker_failure_handler(Arc::new(move |failure| {failure_tx.send(failure).unwrap();}));
+    assert!(watches.watch_background_shell("parent","42",BackgroundShellWatchOptions::new(None,None)));
+    let failure=failure_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+    assert_eq!(failure.parent_agent_id,"parent");assert_eq!(failure.work_id,"42");
+    assert_eq!(failure.kind,"shell");assert_eq!(failure.reason,"await_worker_panicked");
+    assert!(!watches.is_shell_watch_armed("parent","42"));
+    assert!(completion_rx.try_recv().is_err(),"watcher loss is not a backend completion");
+    assert_eq!(pending.load(Ordering::SeqCst),1,"recovery marker must remain");
+    assert!(watches.watch_background_shell("parent","42",BackgroundShellWatchOptions::new(None,None)));
+    let completion=completion_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+    assert_eq!(completion.work_id,"42");assert_eq!(completion.status,"success");
+    assert_eq!(calls.load(Ordering::SeqCst),2,"rearm waits for the same job, not another command");
+}
+
+#[test]
+fn cloud_worker_loss_is_reported_without_false_completion() {
+    let (failure_tx,failure_rx)=mpsc::channel();
+    let settled=Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let settled_flag=Arc::clone(&settled);
+    let watches=RunnerCloudAgentWatches::new(
+        Arc::new(|_,_|panic!("injected cloud await loss")),None,
+        Some(Arc::new(move |_| {settled_flag.store(true,std::sync::atomic::Ordering::SeqCst);})),None,
+    ).with_worker_failure_handler(Arc::new(move |failure| {failure_tx.send(failure).unwrap();}));
+    assert!(watches.watch_cloud_agent("parent","bc",CloudAgentWatchOptions::new(None,false)));
+    let failure=failure_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+    assert_eq!(failure.kind,"cloud-agent");assert_eq!(failure.parent_agent_id,"parent");
+    assert_eq!(failure.work_id,"bc");assert!(!watches.is_cloud_watch_armed("parent","bc"));
+    assert!(!settled.load(std::sync::atomic::Ordering::SeqCst));
+}

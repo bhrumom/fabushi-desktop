@@ -386,7 +386,7 @@ use mahayana_host_runtime::runner::box_tool_access::{
 };
 use mahayana_host_runtime::cloud_agents::cloud_agent_tool::{CloudAgentReviewHook, CloudAgentToolDependencies};
 use mahayana_host_runtime::runner::background_work::{
-    BackgroundShellWatchOptions, BackgroundShellWatchOutcome,
+    BackgroundShellWatchOptions, BackgroundShellWatchOutcome, BackgroundWatchFailureCallback,
     CloudAgentWatchOptions, RunnerBackgroundShellWatches, RunnerCloudAgentWatches,
     shell_rewatch_poll_ms,
 };
@@ -1447,12 +1447,16 @@ impl PendingWakeRuntimePort for ProductionPendingWakeRuntime {
             .map(serde_json::to_value)
             .transpose()
             .map_err(|error| format!("could not encode quiet wake origin: {error}"))?;
-        let _ = self.cloud_agent_watches.watch_cloud_agent(
+        let registered = self.cloud_agent_watches.watch_cloud_agent(
             agent_id,
             work_id,
             CloudAgentWatchOptions::new(quiet_origin, false),
         );
-        Ok(())
+        if registered || self.cloud_agent_watches.is_cloud_watch_armed(agent_id, work_id) {
+            Ok(())
+        } else {
+            Err("cloud-agent completion watcher could not be registered".into())
+        }
     }
 
     fn watch_background_shell(
@@ -1466,12 +1470,16 @@ impl PendingWakeRuntimePort for ProductionPendingWakeRuntime {
             .map(serde_json::to_value)
             .transpose()
             .map_err(|error| format!("could not encode quiet wake origin: {error}"))?;
-        let _ = self.background_shell_watches.watch_background_shell(
+        let registered = self.background_shell_watches.watch_background_shell(
             agent_id,
             work_id,
             BackgroundShellWatchOptions::new(title.map(str::to_string), quiet_origin),
         );
-        Ok(())
+        if registered || self.background_shell_watches.is_shell_watch_armed(agent_id, work_id) {
+            Ok(())
+        } else {
+            Err("shell completion watcher could not be registered".into())
+        }
     }
 
     fn deliver_recreate_interrupted_shell_notice(
@@ -12325,6 +12333,21 @@ fn main() {
     let cloud_watch_async_generated = Arc::clone(&generated_agent_runtime);
     let cloud_watch_async_cloud_slot = Arc::clone(&cloud_agent_deletion_watches);
     let cloud_watch_async_shell_slot = Arc::clone(&background_shell_deletion_watches);
+    let watch_failure_events = gateway_events.clone();
+    let on_watch_failure: BackgroundWatchFailureCallback = Arc::new(move |failure| {
+        watch_failure_events.publish(serde_json::json!({
+            "channel": "pending-wake",
+            "payload": {
+                "agentId": failure.parent_agent_id,
+                "workId": failure.work_id,
+                "kind": failure.kind,
+                "outcome": "watch_failed",
+                "reason": failure.reason,
+                "backendOutcome": "unknown",
+                "recoveryMarkerAction": "unchanged",
+            }
+        }));
+    });
     let cloud_agent_watches = Arc::new(RunnerCloudAgentWatches::new(
         Arc::new(move |bc_id, wait_for_restart| {
             let result = cloud_watch_manager.await_completion(bc_id, wait_for_restart);
@@ -12374,10 +12397,8 @@ fn main() {
                     &completion.work_id,
                 );
             }
-            let completion_revivals = Arc::clone(&cloud_watch_settled);
-            let thread_name = format!("mahayana-cloud-agent-revival-{}", completion.work_id);
-            let _ = thread::Builder::new().name(thread_name).spawn(move || {
-                completion_revivals.handle_background_subagent_completion(SubagentCompletion {
+            // This callback already runs on the owned watcher thread.
+            cloud_watch_settled.handle_background_subagent_completion(SubagentCompletion {
                     parent_agent_id: completion.parent_agent_id,
                     subagent_agent_id: completion.work_id,
                     title: completion.title,
@@ -12389,7 +12410,6 @@ fn main() {
                         .as_ref()
                         .and_then(coerce_quiet_origin),
                 });
-            });
         })),
         Some(Arc::new(move |agent_id| {
             publish_async_tasks_changed_from_slots(
@@ -12401,7 +12421,7 @@ fn main() {
                 agent_id,
             );
         })),
-    ));
+    ).with_worker_failure_handler(Arc::clone(&on_watch_failure)));
     let shell_watch_box = Arc::clone(&forever_box);
     let shell_watch_local_tool_permission = local_tool_permission_extension.controller();
     let shell_watch_pending_store = transcript_runtime.pending_wake_store().cloned();
@@ -12487,10 +12507,8 @@ fn main() {
                     &completion.work_id,
                 );
             }
-            let completion_revivals = Arc::clone(&shell_watch_settled);
-            let thread_name = format!("mahayana-shell-revival-{}", completion.work_id);
-            let _ = thread::Builder::new().name(thread_name).spawn(move || {
-                completion_revivals.handle_background_shell_completion(ShellCompletion {
+            // This callback already runs on the owned watcher thread.
+            shell_watch_settled.handle_background_shell_completion(ShellCompletion {
                     agent_id: completion.parent_agent_id,
                     shell_id: completion.work_id,
                     title: completion.title,
@@ -12502,7 +12520,6 @@ fn main() {
                         .as_ref()
                         .and_then(coerce_quiet_origin),
                 });
-            });
         })),
         Some(Arc::new(move |agent_id| {
             publish_async_tasks_changed_from_slots(
@@ -12514,7 +12531,7 @@ fn main() {
                 agent_id,
             );
         })),
-    ));
+    ).with_worker_failure_handler(Arc::clone(&on_watch_failure)));
     *background_shell_deletion_watches
         .lock()
         .unwrap_or_else(|poisoned| poisoned.into_inner()) =

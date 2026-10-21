@@ -1,0 +1,59 @@
+name: Bot runtime Hermes-informed contracts
+on:
+  pull_request:
+    paths:
+      - 'source/host/src/extensions/inference/**'
+      - 'source/host/src/runner/**'
+      - 'source/host/tests/**'
+      - 'source/host/app/src/main.rs'
+      - 'source/host/app/Cargo.lock'
+      - 'source/host/app/Cargo.toml'
+      - 'docs/specs/bot-runtime-hermes-absorption.md'
+      - '.github/workflows/bot-runtime-hermes.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  runtime-contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - name: Reserve compiler, dependency and bounded fixture storage
+        run: python3 -c "import shutil; u=shutil.disk_usage('.'); assert u.free >= max(1073741824,u.total//20)+12884901888"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: source/host -> target
+          shared-key: miniapp-bot-authoring-1.97.1
+      - name: Install existing Linux computer dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
+      - name: Deterministic provider, durability, output and lifecycle contracts (no model credentials)
+        run: |
+          cargo test --locked --manifest-path source/host/Cargo.toml --test provider_tool_boundary_contract --test inference_codex_direct_contract --test inference_provider_session_contract --test cursor_inference_transport_contract --test large_output_spill_contract --test runner_routed_provider_contract --test production_turn_agent_owner_contract --test background_work_contract --test stream_attempt_outer_lifecycle_contract --test production_turn_run_shell_adapter_contract --test runner_box_tool_composition_contract --test pending_wake_rearm_contract --test background_wakes_production_contract --test generated_subagent_production_cutover_contract --test subagent_runtime_adapter_contract --test turn_toolset_contract --test turn_toolset_await_mcp_contract --test sand_memory_contract --test turn_memory_contract --test plugin_skills_contract --test managed_skills_runtime_contract --test session_conversation_state_contract --test conversation_recovery_contract --test runner_context_production_provider_contract --test turn_tool_session_reminder_contract
+  mac-host-check:
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - name: Reserve Mac compiler and dependency storage
+        run: python3 -c "import shutil; u=shutil.disk_usage('.'); assert u.free >= max(1073741824,u.total//20)+12884901888"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: source/host/app -> target
+          shared-key: hermes-mac-host-check-1.97.1
+      - name: Check shipping macOS Host without running it or calling a model
+        run: cargo check --locked --manifest-path source/host/app/Cargo.toml
