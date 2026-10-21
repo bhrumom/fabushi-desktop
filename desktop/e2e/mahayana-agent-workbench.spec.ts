@@ -992,6 +992,44 @@ async function launchDesktopApp(
   });
 }
 
+
+async function closeDesktopApp(
+  app: ElectronApplication | null,
+  options: { readonly timeoutMs?: number; readonly failOnTimeout?: boolean } = {},
+): Promise<void> {
+  if (app == null) return;
+
+  // On macOS, closing the last BrowserWindow does not imply app.quit().
+  // Ask Electron to traverse the production before-quit settlement path
+  // explicitly before waiting for Playwright's process teardown.
+  await app.evaluate(({ app: electronApp }) => electronApp.quit()).catch(() => undefined);
+
+  const timeoutMs = options.timeoutMs ?? 25_000;
+  let closeFinished = false;
+  const closePromise = app.close().catch(() => undefined).finally(() => { closeFinished = true; });
+  let closeTimer: ReturnType<typeof setTimeout> | undefined;
+  await Promise.race([
+    closePromise,
+    new Promise<void>((resolve) => { closeTimer = setTimeout(resolve, timeoutMs); }),
+  ]);
+  if (closeTimer != null) clearTimeout(closeTimer);
+
+  if (closeFinished) return;
+
+  // Never let a stuck Electron child consume Playwright's entire worker
+  // teardown budget. Strict restart/restore checkpoints still fail visibly.
+  try { app.process().kill(); } catch {}
+  let killTimer: ReturnType<typeof setTimeout> | undefined;
+  await Promise.race([
+    closePromise,
+    new Promise<void>((resolve) => { killTimer = setTimeout(resolve, 2_000); }),
+  ]);
+  if (killTimer != null) clearTimeout(killTimer);
+  if (options.failOnTimeout) {
+    throw new Error(`Electron app did not exit within ${timeoutMs}ms after explicit app.quit; forced child-process cleanup was attempted.`);
+  }
+}
+
 async function completeBrowserLogin(page: Page): Promise<void> {
   const rendererErrors: string[] = [];
   page.on('console', (message) => {
@@ -1272,7 +1310,7 @@ test('native Browser Workspace opens real Chromium pages, isolates tabs, and dow
     expect(nativeEntries.some((entry) => entry.url.includes('/browser-workspace-fixture'))).toBe(true);
     expect(nativeEntries.some((entry) => entry.url.includes('/browser-workspace-secure'))).toBe(true);
 
-    await app.close();
+    await closeDesktopApp(app, { failOnTimeout: true });
     app = null;
     app = await launchDesktopApp(appDataDir, {}, httpsArgs);
     const restartedPage = await app.firstWindow({ timeout: firstWindowTimeoutMs });
@@ -1295,7 +1333,7 @@ test('native Browser Workspace opens real Chromium pages, isolates tabs, and dow
     await restoredAddress.press('Enter');
     await expect(restoredWorkspace.getByRole('tab').filter({ hasText: 'Fabushi Browser Cookie retained' })).toHaveCount(1, { timeout: 15_000 });
   } finally {
-    await app?.close().catch(() => undefined);
+    await closeDesktopApp(app);
     await rm(appDataDir, { recursive: true, force: true });
   }
 });
@@ -1352,7 +1390,7 @@ test('Browser extension installs into real Chromium, survives restart, disables,
     await address.press('Enter');
     await expect.poll(() => observedMarker(fixtureUrl), { timeout: 15_000 }).toBe('v1');
 
-    await app.close();
+    await closeDesktopApp(app, { failOnTimeout: true });
     app = null;
     app = await launchDesktopApp(appDataDir, { FABUSHI_E2E_BROWSER_EXTENSION_DIR: extensionDir });
     page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
@@ -1393,7 +1431,7 @@ test('Browser extension installs into real Chromium, survives restart, disables,
     await address.press('Enter');
     await expect.poll(() => observedMarker(fixtureUrl), { timeout: 15_000 }).toBe(null);
   } finally {
-    await app?.close().catch(() => undefined);
+    await closeDesktopApp(app);
     await rm(appDataDir, { recursive: true, force: true });
     await rm(extensionDir, { recursive: true, force: true });
   }
@@ -1454,7 +1492,7 @@ test('Agent downloads verified bytes from the real local Chromium page through H
 
     await expectHermesAssistantTurn(page, 'Browser agent download complete');
   } finally {
-    await app?.close().catch(() => undefined);
+    await closeDesktopApp(app);
     await rm(appDataDir, { recursive: true, force: true });
   }
 });
@@ -1568,7 +1606,7 @@ test('Agent controls the real local Chromium form through Host tools, isolates t
   } finally {
     releaseE2eConcurrentAlphaClick?.();
     releaseE2eConcurrentAlphaClick = null;
-    await app?.close().catch(() => undefined);
+    await closeDesktopApp(app);
     await rm(appDataDir, { recursive: true, force: true });
   }
 });
@@ -1614,7 +1652,7 @@ test('Mahayana renders one Hermes-style assistant turn instead of a completion W
     await expect(page.getByRole('button', { name: 'New Human chat', exact: true })).toHaveCount(0);
     await expect(promptInput).toBeVisible();
   } finally {
-    await app?.close().catch(() => undefined);
+    await closeDesktopApp(app);
     await rm(appDataDir, { recursive: true, force: true });
   }
 });
@@ -1690,7 +1728,7 @@ test('Human reply, attachment, reaction, and search stay on the shipping convers
     await expect(page.locator('.sand-chat-find').getByRole('status')).toHaveText('1/1');
     await page.getByRole('button', { name: 'Close find' }).click();
 
-    await app.close();
+    await closeDesktopApp(app, { failOnTimeout: true });
     app = null;
     app = await launchDesktopApp(appDataDir);
     page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
@@ -1702,7 +1740,7 @@ test('Human reply, attachment, reaction, and search stay on the shipping convers
     await expect(restoredReply.getByRole('button', { name: 'Jump to replied message' })).toBeVisible();
     await expect(restoredReply.getByRole('button', { name: /You reacted with 👍/u })).toBeVisible();
   } finally {
-    await app?.close().catch(() => undefined);
+    await closeDesktopApp(app);
     await rm(appDataDir, { recursive: true, force: true });
   }
 });
@@ -1767,7 +1805,7 @@ test('shipping Human Forward uses the canonical picker and survives restart', as
     await expect(forwarded).toBeVisible({ timeout: 15_000 });
     await expect(forwarded).not.toHaveAttribute('data-pending');
 
-    await app.close();
+    await closeDesktopApp(app, { failOnTimeout: true });
     app = null;
     app = await launchDesktopApp(appDataDir);
     page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
@@ -1777,7 +1815,7 @@ test('shipping Human Forward uses the canonical picker and survives restart', as
       .click();
     await expect(page.getByRole('article').filter({ hasText: sourceText }).last()).toBeVisible({ timeout: 15_000 });
   } finally {
-    await app?.close().catch(() => undefined);
+    await closeDesktopApp(app);
     await rm(appDataDir, { recursive: true, force: true });
   }
 });
@@ -1852,8 +1890,8 @@ test('two shipping Electron device sessions converge one Human conversation thro
 
     expect(e2eObservedSocialDeviceIds.size).toBeGreaterThanOrEqual(2);
   } finally {
-    await appB?.close().catch(() => undefined);
-    await appA?.close().catch(() => undefined);
+    await closeDesktopApp(appB);
+    await closeDesktopApp(appA);
     await rm(appDataDirB, { recursive: true, force: true });
     await rm(appDataDirA, { recursive: true, force: true });
   }
@@ -2061,7 +2099,7 @@ test('Settings localization, accessibility, bidirectional text, and IME stay on 
       textScale: '1.25',
     });
 
-    await app.close();
+    await closeDesktopApp(app, { failOnTimeout: true });
     app = null;
     app = await launchDesktopApp(appDataDir);
     page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
@@ -2124,7 +2162,7 @@ test('Settings localization, accessibility, bidirectional text, and IME stay on 
     await page.keyboard.press('Escape');
     await expect(restoredSettings).toBeHidden();
   } finally {
-    await app?.close().catch(() => undefined);
+    await closeDesktopApp(app);
     await rm(appDataDir, { recursive: true, force: true });
   }
 });
@@ -2175,7 +2213,7 @@ test('Human call surface exposes the shipping WebRTC and Electron media bridge',
     expect(capability.permissionProbe).toEqual({ microphone: 'not-requested', camera: 'not-requested' });
     expect(capability.preferencesRoundTrip).toEqual({ microphoneId: 'call-mic-e2e', cameraId: 'call-camera-e2e' });
   } finally {
-    await app?.close().catch(() => undefined);
+    await closeDesktopApp(app);
     await rm(appDataDir, { recursive: true, force: true });
   }
 });
@@ -2223,7 +2261,7 @@ test('Human conversation survives restart and explicitly hands off into one Herm
 
     // Restart the packaged/runtime app data scope and prove the authenticated
     // Human identity resolves to the same durable Session/Transcript owner.
-    await app.close();
+    await closeDesktopApp(app, { failOnTimeout: true });
     app = null;
     app = await launchDesktopApp(appDataDir);
     page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
@@ -2253,7 +2291,7 @@ test('Human conversation survives restart and explicitly hands off into one Herm
 
     // A second restart proves the Agent-authored result is not renderer-only
     // state: it must be replayed from the durable Human Session transcript.
-    await app.close();
+    await closeDesktopApp(app, { failOnTimeout: true });
     app = null;
     app = await launchDesktopApp(appDataDir);
     page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
@@ -2263,7 +2301,7 @@ test('Human conversation survives restart and explicitly hands off into one Herm
     await expectHermesAssistantTurn(page, assistantReply);
     await expect(page.getByText('Human', { exact: true })).toBeVisible();
   } finally {
-    await app?.close().catch(() => undefined);
+    await closeDesktopApp(app);
     await rm(appDataDir, { recursive: true, force: true });
   }
 });
@@ -2302,7 +2340,7 @@ test('self-hosted Bot invocation projects into the same Hermes-style turn withou
         Boolean(claim && typeof claim === 'object' && (claim as { state?: string }).state === 'accepted'));
     })).toBe(true);
 
-    await app.close();
+    await closeDesktopApp(app, { failOnTimeout: true });
     app = null;
 
     // Restart coverage is intentionally limited to the canonical messaging
@@ -2316,7 +2354,7 @@ test('self-hosted Bot invocation projects into the same Hermes-style turn withou
     await restoredPeer.click();
     await expect(page.getByRole('article').filter({ hasText: prompt }).last()).toBeVisible({ timeout: 10_000 });
   } finally {
-    await app?.close().catch(() => undefined);
+    await closeDesktopApp(app);
     await rm(appDataDir, { recursive: true, force: true });
   }
 });
