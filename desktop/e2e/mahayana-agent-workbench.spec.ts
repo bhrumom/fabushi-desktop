@@ -1284,6 +1284,17 @@ test('Agent downloads verified bytes from the real local Chromium page through H
     await address.fill(`${origin}/browser-workspace-fixture`);
     await address.press('Enter');
     await expect(workspace.getByRole('tab').filter({ hasText: 'Fabushi Browser Fixture' })).toHaveCount(1, { timeout: 15_000 });
+    await expect.poll(async () => app!.evaluate(({ webContents }) => {
+      const contents = webContents.getAllWebContents().find((candidate) => candidate.getURL() === `${origin}/browser-workspace-fixture`);
+      if (contents == null) return null;
+      return await contents.executeJavaScript(`(() => {
+        const link = document.querySelector('#download-link');
+        return link instanceof HTMLAnchorElement ? { text: link.textContent?.trim() ?? '', href: link.href } : null;
+      })()`, true);
+    }), { timeout: 15_000 }).toEqual({
+      text: 'Download fixture',
+      href: `${origin}/browser-workspace-download`,
+    });
 
     const prompt = page.getByRole('textbox', { name: 'Prompt' });
     await prompt.pressSequentially('FABUSHI_BROWSER_AGENT_DOWNLOAD_E2E download the visible fixture');
@@ -1339,6 +1350,7 @@ test('Agent controls the real local Chromium form through Host tools, isolates t
     const alphaPeer = roster.getByRole('button', { name: 'Browser Agent Alpha', exact: true });
     await expect(alphaPeer).toBeVisible({ timeout: 15_000 });
     await alphaPeer.click();
+    await expect(page.getByRole('group', { name: 'Browser Agent Alpha', exact: true })).toBeVisible({ timeout: 15_000 });
     await expect(page.getByRole('textbox', { name: 'Prompt' })).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
 
     await page.getByRole('button', { name: 'Open browser workspace', exact: true }).click();
@@ -1368,6 +1380,7 @@ test('Agent controls the real local Chromium form through Host tools, isolates t
     await expect(workspace.getByRole('tab').filter({ hasText: 'Fabushi Concurrent beta' })).toHaveCount(1, { timeout: 15_000 });
 
     await alphaPeer.click();
+    await expect(page.getByRole('group', { name: 'Browser Agent Alpha', exact: true })).toBeVisible({ timeout: 15_000 });
     let prompt = page.getByRole('textbox', { name: 'Prompt' });
     await expect(prompt).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
     workspace = page.getByTestId('browser-workspace');
@@ -1379,6 +1392,7 @@ test('Agent controls the real local Chromium form through Host tools, isolates t
     await expect(workspace.locator('.sand-browser-workspace__agent-state')).toContainText('task running', { timeout: 10_000 });
 
     await betaPeer.click();
+    await expect(page.getByRole('group', { name: 'Browser Agent Beta', exact: true })).toBeVisible({ timeout: 15_000 });
     prompt = page.getByRole('textbox', { name: 'Prompt' });
     await expect(prompt).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
     workspace = page.getByTestId('browser-workspace');
@@ -1395,6 +1409,7 @@ test('Agent controls the real local Chromium form through Host tools, isolates t
     await expectHermesAssistantTurn(page, 'Concurrent beta complete');
 
     await alphaPeer.click();
+    await expect(page.getByRole('group', { name: 'Browser Agent Alpha', exact: true })).toBeVisible({ timeout: 15_000 });
     await expect(page.getByRole('textbox', { name: 'Prompt' })).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
     workspace = page.getByTestId('browser-workspace');
     await expect(workspace.getByRole('tab').filter({ hasText: 'Fabushi Concurrent alpha' })).toHaveCount(1, { timeout: 15_000 });
@@ -1409,6 +1424,7 @@ test('Agent controls the real local Chromium form through Host tools, isolates t
     expect(e2eConcurrentBrowserSubmissions).toEqual([{ task: 'beta', name: 'Beta Agent' }]);
 
     await betaPeer.click();
+    await expect(page.getByRole('group', { name: 'Browser Agent Beta', exact: true })).toBeVisible({ timeout: 15_000 });
     workspace = page.getByTestId('browser-workspace');
     await expect(workspace.getByRole('tab').filter({ hasText: 'Fabushi Concurrent beta submitted' })).toHaveCount(1, { timeout: 10_000 });
     expect(e2eConcurrentBrowserSubmissions).toEqual([{ task: 'beta', name: 'Beta Agent' }]);
