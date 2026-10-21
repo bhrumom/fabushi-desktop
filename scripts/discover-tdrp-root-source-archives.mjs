@@ -79,6 +79,7 @@ for(const item of archives){
     source_path:item.source_path,source_line:item.source_line,source_text:item.source_text,
     expected_sha256:item.sha256,actual_sha256:actual,target_commit:targetCommit,
     upstream_commit:lock.upstream.commit,upstream_tree:lock.upstream.tree,
+    lock_commit:item.lock_commit,lock_tree:item.lock_tree,
     archive_entries_non_directory:listing.filter(x=>!x.endsWith('/')).length,extracted_files:files.length,
     acquisition_candidates:(grep.stdout||'').split(/\r?\n/).filter(Boolean).map(relLine).sort(),
     patches:select(/\.(patch|diff)$/i),
