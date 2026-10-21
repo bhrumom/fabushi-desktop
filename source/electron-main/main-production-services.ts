@@ -1051,16 +1051,36 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
       }
     })();
     void (async () => {
+      let settlementTimedOut = false;
       try {
         // No service, telemetry sink, child process, or filesystem settle is
         // allowed to hold Electron's before-quit gate indefinitely.
         await settleDesktopQuit(settlement);
       } catch (error) {
         bindings.reportFailure("main", "quit-settlement", error);
-      } finally {
-        quitState = "settled";
-        bindings.native.app.quit();
+        settlementTimedOut = true;
       }
+
+      quitState = "settled";
+      const forceExit = (): void => {
+        if (typeof bindings.native.app.exit === "function") {
+          bindings.native.app.exit(0);
+          return;
+        }
+        bindings.reportFailure("main", "quit-force-exit-unavailable", new Error("Electron app.exit is unavailable after the bounded quit deadline."));
+      };
+
+      if (settlementTimedOut) {
+        forceExit();
+        return;
+      }
+
+      bindings.native.app.quit();
+      const exitWatchdog = setTimeout(() => {
+        bindings.reportFailure("main", "quit-watchdog", new Error("Electron did not exit within 5000ms after graceful quit."));
+        forceExit();
+      }, 5_000);
+      exitWatchdog.unref?.();
     })();
     return "prevent";
   };
