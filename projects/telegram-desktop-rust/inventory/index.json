@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16306,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16249,
-    "unread_minimum": 16224,
+    "unknown_minimum": 16248,
+    "unread_minimum": 16223,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -39,7 +39,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream remains telegramdesktop/tdesktop@5c674f1f6a0f6ace55b67f8bc295138680fe588b/tree 09a421891474be0da279f44a5bf8e0dcf3bc270a. Strict index 54 workspace.py@5d74a11083d66f2ebe9bbf0fcf2e991fa2c6c1c5 is fully read: 212 unique top-level functions decomposed in the process-inbox dossier, including checkout-specific private source-mirror semantics. workspace_test.py@6acfeadb6f9128a8b5c164d7c0265b03db1fee44 was read as dependency evidence (127 unique test methods) but remains open strict index 55. Counters unknown=16,249, unread=16,224, omitted=0; baseline_identity_accepted=false and source_closure_ready=false pending fresh exact-head Actions.",
+  "note": "Live upstream remains telegramdesktop/tdesktop@5c674f1f6a0f6ace55b67f8bc295138680fe588b/tree 09a421891474be0da279f44a5bf8e0dcf3bc270a. Strict index 55 workspace_test.py@6acfeadb6f9128a8b5c164d7c0265b03db1fee44 is fully read: 127 unique test methods across six unittest.TestCase classes are independently recorded in the process-inbox dossier, with support fixtures also accounted. Counters unknown=16,248, unread=16,223, omitted=0; baseline_identity_accepted=false and source_closure_ready=false pending fresh exact-head Actions. Next strict root entry is index 56 .agents/skills/rebase/SKILL.md@0660dc78b26614e40d7151d1da59241b1bad5430.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
