@@ -1284,14 +1284,15 @@ test('Agent downloads verified bytes from the real local Chromium page through H
     await address.fill(`${origin}/browser-workspace-fixture`);
     await address.press('Enter');
     await expect(workspace.getByRole('tab').filter({ hasText: 'Fabushi Browser Fixture' })).toHaveCount(1, { timeout: 15_000 });
-    await expect.poll(async () => app!.evaluate(({ webContents }) => {
-      const contents = webContents.getAllWebContents().find((candidate) => candidate.getURL() === `${origin}/browser-workspace-fixture`);
+    const fixtureUrl = `${origin}/browser-workspace-fixture`;
+    await expect.poll(async () => app!.evaluate(async ({ webContents }, expectedUrl) => {
+      const contents = webContents.getAllWebContents().find((candidate) => candidate.getURL() === expectedUrl);
       if (contents == null) return null;
       return await contents.executeJavaScript(`(() => {
         const link = document.querySelector('#download-link');
         return link instanceof HTMLAnchorElement ? { text: link.textContent?.trim() ?? '', href: link.href } : null;
       })()`, true);
-    }), { timeout: 15_000 }).toEqual({
+    }, fixtureUrl), { timeout: 15_000 }).toEqual({
       text: 'Download fixture',
       href: `${origin}/browser-workspace-download`,
     });
