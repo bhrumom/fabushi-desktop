@@ -83,6 +83,26 @@ def publish(root, destination, context, api):
             obj = request(prefix + '/git/tags/' + obj['sha']).get('object', {})
         raise PublicationError('PUBLICATION_TAG_MOVED')
 
+    def workflow_tree(commit):
+        tree = request(prefix + '/git/trees/' + urllib.parse.quote(commit, safe=''))
+        for component in ['.github', 'workflows']:
+            entries = tree.get('tree')
+            if tree.get('truncated') is not False or not isinstance(entries, list) or len(entries) > 10000:
+                raise PublicationError('PUBLICATION_INVALID_RESPONSE')
+            matches = [entry for entry in entries if isinstance(entry, dict) and entry.get('path') == component]
+            if len(matches) != 1 or matches[0].get('type') != 'tree' or not re.fullmatch('[a-f0-9]{40}', str(matches[0].get('sha', ''))):
+                raise PublicationError('PUBLICATION_WORKFLOW_TREE_UNCONFIRMED')
+            tree_sha = matches[0]['sha']
+            if component == 'workflows':
+                return tree_sha
+            tree = request(prefix + '/git/trees/' + tree_sha)
+
+    metadata = request(prefix)
+    default_branch = metadata.get('default_branch')
+    if not isinstance(default_branch, str) or not 1 <= len(default_branch) <= 255:
+        raise PublicationError('PUBLICATION_INVALID_RESPONSE')
+    if workflow_tree(sha) != workflow_tree(default_branch):
+        raise PublicationError('PUBLICATION_WORKFLOW_DEFAULT_BRANCH_INTEGRATION_REQUIRED')
     fence()
     release = request(prefix + '/releases/tags/' + tag_path, missing_ok=True)
     # Tag lookup only guarantees published releases. Reconcile interrupted drafts
@@ -161,7 +181,7 @@ def github_api(token, repository):
 
     def request(url, method='GET', body=None, missing_ok=False):
         parsed = urllib.parse.urlparse(url)
-        if not any(url.startswith(prefix) for prefix in allowed) or any(part in ['.', '..'] for part in parsed.path.split('/')) or parsed.fragment:
+        if not (url == allowed[0].rstrip('/') or any(url.startswith(prefix) for prefix in allowed)) or any(part in ['.', '..'] for part in parsed.path.split('/')) or parsed.fragment:
             raise PublicationError('PUBLICATION_ENDPOINT_DENIED')
         payload = body if isinstance(body, bytes) else None if body is None else json.dumps(body).encode()
         req = urllib.request.Request(url, method=method, data=payload, headers={

@@ -33,6 +33,10 @@ and model are inherited from the active session.
   and exact-source packaging. Only workflow_dispatch publish=true on an existing
   version tag can mutate Releases; expected SHA must match the checkout and the
   tag must match config version. Push/PR verification has read-only credentials.
+  Before any mutation, compare the target and default-branch workflow tree IDs
+  through bounded GitHub reads. Different workflows require normal integration
+  first: Actions' job token cannot acquire Workflows write permission. Report
+  this dependency explicitly, never auto-merge or request a broader secret.
 - BP-03: release draft first, upload exact bounded unsigned package, manifest and
   provenance, verify server SHA256/size, then publish. No asset overwrite, tag
   move, force push, deletion, merge, or blind retry of uncertain mutations.

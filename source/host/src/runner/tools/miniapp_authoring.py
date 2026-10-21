@@ -337,13 +337,13 @@ def execute(args, workspace=Path('/workspace')):
             files = {**state['files'], 'fabushi.json': canonical(state['config']).decode() + '\n',
                      'tools/package.py': PACKAGER_SOURCE, 'tools/publish.py': RELEASE_SOURCE, '.github/workflows/miniapp.yml': WORKFLOW,
                      '.gitignore': 'dist/\n__pycache__/\n',
-                     'README.md': '# ' + state['config']['displayName'] + '\n\nEdit src/ with Fabushi Bot. GitHub Actions tests behavior and prepares an unsigned ZIP. To publish on GitHub, create vVERSION at the verified commit using the existing GitHub connector, then explicitly dispatch miniapp.yml on that tag with publish=true and expectedSourceSha equal to that commit. Observe the published release URL and asset digest. Registry signing and approval are required before installation. No native code or network permission is granted by this scaffold.\n'}
+                     'README.md': '# ' + state['config']['displayName'] + '\n\nEdit src/ with Fabushi Bot. GitHub Actions tests behavior and prepares an unsigned ZIP. Before publication, integrate workflow changes into the default branch through normal repository review; the publication job token cannot publish a target whose workflow tree differs from the default branch. Never auto-merge or retry a permission failure. To publish on GitHub, create vVERSION at the verified commit using the existing GitHub connector, then explicitly dispatch miniapp.yml on that tag with publish=true and expectedSourceSha equal to that commit. Observe the published release URL and asset digest. Registry signing and approval are required before installation. No native code or network permission is granted by this scaffold.\n'}
             result['githubFiles'] = [{'path': p, 'content': v, 'sha256': digest(v.encode())} for p, v in sorted(files.items())]
             result['signed'] = result['installable'] = False
             result['publication'] = {'state': 'source_exported', 'versionTag': 'v' + state['config']['version'],
                 'workflow': 'miniapp.yml', 'dispatchInputs': {'publish': True, 'expectedSourceSha': 'EXACT_VERIFIED_REMOTE_COMMIT_REQUIRED'},
                 'githubPublished': False, 'registryState': 'not_submitted',
-                'requires': ['actual_behavior_test_and_package_success', 'explicit_publication_request',
+                'requires': ['actual_behavior_test_and_package_success', 'explicit_publication_request', 'workflow_tree_integrated_into_default_branch',
                              'existing_version_tag_at_exact_source', 'observed_release_asset_digest']}
 
             result['exportId'] = digest(canonical(files))

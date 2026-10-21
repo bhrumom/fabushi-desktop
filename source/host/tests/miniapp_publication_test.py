@@ -23,10 +23,21 @@ class GitHub:
         self.lose_upload_response = False
         self.move_after_upload = False
         self.list_entries = []
+        self.default_workflows = 'c' * 40
 
     def __call__(self, url, method='GET', body=None, missing_ok=False):
         self.calls.append((url, method, body))
         path = urllib.parse.urlparse(url).path
+        if method == 'GET' and path == '/repos/ci/example':
+            return {'default_branch': 'main'}
+        if method == 'GET' and '/git/trees/' in path:
+            tree = path.rsplit('/', 1)[-1]
+            if tree in ['a' * 40, 'main']:
+                return {'truncated': False, 'tree': [{'path': '.github', 'type': 'tree',
+                    'sha': 'd' * 40 if tree == 'main' else 'e' * 40}]}
+            if tree in ['d' * 40, 'e' * 40]:
+                return {'truncated': False, 'tree': [{'path': 'workflows', 'type': 'tree',
+                    'sha': self.default_workflows if tree == 'd' * 40 else 'c' * 40}]}
         if method == 'GET' and '/git/ref/tags/' in path:
             return {'object': {'type': 'commit', 'sha': self.tag_sha}}
         if method == 'GET' and '/releases/tags/' in path:
@@ -123,6 +134,12 @@ class Publication(unittest.TestCase):
         with self.assertRaisesRegex(self.publisher.PublicationError, 'SOURCE_BYTES_MISMATCH'):
             self.publish()
         self.assertEqual(self.api.calls, [])
+
+    def test_unintegrated_workflow_requires_default_branch_integration_without_writes(self):
+        self.api.default_workflows = 'f' * 40
+        with self.assertRaisesRegex(self.publisher.PublicationError, 'DEFAULT_BRANCH_INTEGRATION_REQUIRED'):
+            self.publish()
+        self.assertEqual(self.api.writes(), [])
 
     def test_corrupt_archive_with_matching_receipt_is_rejected_without_unpacking(self):
         data = b'untrusted compressed container is never extracted'
