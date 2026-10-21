@@ -1,4 +1,6 @@
-import { _electron as electron, expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test';
+import { _electron as electron, chromium, expect, test, type Browser, type BrowserContext, type ElectronApplication, type Locator, type Page } from '@playwright/test';
+import { spawn, type ChildProcess } from 'node:child_process';
+import { WebSocket } from 'ws';
 import { createHash, X509Certificate } from 'node:crypto';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
@@ -198,6 +200,32 @@ function parseE2eMultipartFile(contentType: string | undefined, body: Buffer): {
     contentType: partTypeMatch?.[1]?.trim() || 'application/octet-stream',
     bytes: body.subarray(payloadStart, payloadEnd),
   };
+}
+
+function snapshotElementsFromToolOutput(output: Record<string, unknown>): unknown[] {
+  const queue: unknown[] = [output];
+  const visited = new Set<object>();
+  while (queue.length > 0 && visited.size < 64) {
+    const candidate = queue.shift();
+    if (candidate == null || typeof candidate !== 'object') continue;
+    if (Array.isArray(candidate)) {
+      queue.push(...candidate.slice(0, 32));
+      continue;
+    }
+    if (visited.has(candidate)) continue;
+    visited.add(candidate);
+    const record = candidate as Record<string, unknown>;
+    if (Array.isArray(record.elements) && record.elements.length > 0) return record.elements;
+    for (const key of ['snapshot', 'data', 'result', 'content', 'output', 'text']) {
+      const nested = record[key];
+      if (typeof nested === 'string' && nested.length <= 64_000) {
+        try { queue.push(JSON.parse(nested)); } catch {}
+      } else if (nested != null && typeof nested === 'object') {
+        queue.push(nested);
+      }
+    }
+  }
+  return [];
 }
 
 async function ensureE2eAuthBackend(): Promise<string> {
@@ -542,14 +570,7 @@ async function ensureE2eAuthBackend(): Promise<string> {
             sendFunctionCall('browser_snapshot', `${prefix}snapshot`, { target: 'local' });
             return;
           }
-          let snapshot: { elements?: unknown } | null = null;
-          if (typeof snapshotOutput.text === 'string') {
-            try {
-              const parsed = JSON.parse(snapshotOutput.text);
-              if (parsed != null && typeof parsed === 'object' && !Array.isArray(parsed)) snapshot = parsed as { elements?: unknown };
-            } catch {}
-          }
-          const elements = Array.isArray(snapshot?.elements) ? snapshot.elements : [];
+          const elements = snapshotElementsFromToolOutput(snapshotOutput);
           const refNamed = (name: string): string => {
             const element = elements.find((candidate) => candidate != null
               && typeof candidate === 'object'
@@ -626,14 +647,7 @@ async function ensureE2eAuthBackend(): Promise<string> {
             sendFunctionCall('browser_snapshot', 'fabushi-e2e-browser-download-snapshot', { target: 'local' });
             return;
           }
-          let snapshot: { elements?: unknown } | null = null;
-          if (typeof snapshotOutput.text === 'string') {
-            try {
-              const parsed = JSON.parse(snapshotOutput.text);
-              if (parsed != null && typeof parsed === 'object' && !Array.isArray(parsed)) snapshot = parsed as { elements?: unknown };
-            } catch {}
-          }
-          const elements = Array.isArray(snapshot?.elements) ? snapshot.elements : [];
+          const elements = snapshotElementsFromToolOutput(snapshotOutput);
           const link = elements.find((candidate) => {
             if (candidate == null || typeof candidate !== 'object' || Array.isArray(candidate)) return false;
             const element = candidate as { name?: unknown; text?: unknown; href?: unknown };
@@ -683,14 +697,7 @@ async function ensureE2eAuthBackend(): Promise<string> {
             sendFunctionCall('browser_snapshot', 'fabushi-e2e-browser-snapshot', { target: 'local' });
             return;
           }
-          let snapshot: { elements?: unknown } | null = null;
-          if (typeof snapshotOutput.text === 'string') {
-            try {
-              const parsed = JSON.parse(snapshotOutput.text);
-              if (parsed != null && typeof parsed === 'object' && !Array.isArray(parsed)) snapshot = parsed as { elements?: unknown };
-            } catch {}
-          }
-          const elements = Array.isArray(snapshot?.elements) ? snapshot.elements : [];
+          const elements = snapshotElementsFromToolOutput(snapshotOutput);
           const refNamed = (name: string): string => {
             const element = elements.find((candidate) => candidate != null
               && typeof candidate === 'object'
@@ -958,47 +965,255 @@ test.afterAll(async () => {
   }
 });
 
+interface PackagedDebugEndpoints {
+  readonly inspectorUrl: string;
+  readonly cdpPort: number;
+}
+
+class PackagedMainInspector {
+  private nextId = 0;
+  private readonly pending = new Map<number, { resolve: (value: unknown) => void; reject: (error: Error) => void }>();
+
+  private constructor(private readonly socket: WebSocket) {
+    this.socket.on('message', (raw) => {
+      let message: { id?: number; result?: unknown; error?: { message?: string } };
+      try { message = JSON.parse(raw.toString()) as typeof message; } catch { return; }
+      if (typeof message.id !== 'number') return;
+      const pending = this.pending.get(message.id);
+      if (pending == null) return;
+      this.pending.delete(message.id);
+      if (message.error != null) pending.reject(new Error(message.error.message ?? 'Node inspector request failed.'));
+      else pending.resolve(message.result);
+    });
+    const rejectPending = (error: Error) => {
+      for (const request of this.pending.values()) request.reject(error);
+      this.pending.clear();
+    };
+    this.socket.on('close', () => rejectPending(new Error('Packaged Electron Node inspector disconnected.')));
+    this.socket.on('error', rejectPending);
+  }
+
+  static async connect(endpoint: string, timeoutMs: number): Promise<PackagedMainInspector> {
+    const socket = new WebSocket(endpoint);
+    return await new Promise<PackagedMainInspector>((resolve, reject) => {
+      let settled = false;
+      const timer = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        socket.terminate();
+        reject(new Error(`Timed out connecting to packaged Electron Node inspector after ${timeoutMs}ms.`));
+      }, timeoutMs);
+      const cleanup = () => {
+        clearTimeout(timer);
+        socket.removeListener('open', onOpen);
+        socket.removeListener('error', onError);
+      };
+      const onOpen = () => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        resolve(new PackagedMainInspector(socket));
+      };
+      const onError = (error: Error) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        reject(error);
+      };
+      socket.once('open', onOpen);
+      socket.once('error', onError);
+    });
+  }
+
+  async evaluate<T>(fn: Function, arg?: unknown): Promise<T> {
+    const argument = arg === undefined ? 'undefined' : JSON.stringify(arg);
+    if (argument === undefined) throw new Error('Packaged Electron inspector arguments must be JSON serializable.');
+    const expression = `(async () => { const __fn = (${fn.toString()}); return await __fn(require('electron'), ${argument}); })()`;
+    const response = await this.request('Runtime.evaluate', {
+      expression, awaitPromise: true, returnByValue: true, userGesture: true,
+    }) as {
+      result?: { value?: T; description?: string };
+      exceptionDetails?: { text?: string; exception?: { description?: string } };
+    };
+    if (response.exceptionDetails != null) {
+      throw new Error(response.exceptionDetails.exception?.description ?? response.exceptionDetails.text ?? 'Packaged Electron main-process evaluation failed.');
+    }
+    return response.result?.value as T;
+  }
+
+  close(): void { try { this.socket.close(); } catch {} }
+
+  private async request(method: string, params: Record<string, unknown>): Promise<unknown> {
+    const id = ++this.nextId;
+    return await new Promise<unknown>((resolve, reject) => {
+      this.pending.set(id, { resolve, reject });
+      this.socket.send(JSON.stringify({ id, method, params }), (error) => {
+        if (error == null) return;
+        this.pending.delete(id);
+        reject(error);
+      });
+    });
+  }
+}
+
+function waitForPackagedDebugEndpoints(child: ChildProcess, timeoutMs: number): Promise<PackagedDebugEndpoints> {
+  return new Promise<PackagedDebugEndpoints>((resolve, reject) => {
+    let inspectorUrl: string | null = null;
+    let cdpPort: number | null = null;
+    let logTail = '';
+    let settled = false;
+    const timer = setTimeout(() => finishError(new Error(
+      `Timed out waiting for packaged Electron inspector/CDP endpoints after ${timeoutMs}ms. Last process output:\n${logTail}`,
+    )), timeoutMs);
+    const cleanup = () => {
+      clearTimeout(timer);
+      child.stdout?.removeListener('data', onData);
+      child.stderr?.removeListener('data', onData);
+      child.removeListener('error', onError);
+      child.removeListener('exit', onExit);
+    };
+    const finish = () => {
+      if (settled || inspectorUrl == null || cdpPort == null) return;
+      settled = true;
+      cleanup();
+      resolve({ inspectorUrl, cdpPort });
+    };
+    const finishError = (error: Error) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(error);
+    };
+    const onData = (chunk: Buffer | string) => {
+      const text = chunk.toString();
+      logTail = (logTail + text).slice(-8_000);
+      const inspectorMatch = /Debugger listening on (ws:\/\/127\.0\.0\.1:\d+\/[^\s]+)/u.exec(logTail);
+      if (inspectorUrl == null && inspectorMatch != null) inspectorUrl = inspectorMatch[1] ?? null;
+      const cdpMatch = /DevTools listening on ws:\/\/127\.0\.0\.1:(\d+)\/devtools\/browser\/[^\s]+/u.exec(logTail);
+      if (cdpPort == null && cdpMatch != null) cdpPort = Number(cdpMatch[1]);
+      finish();
+    };
+    const onError = (error: Error) => finishError(error);
+    const onExit = (code: number | null, signal: NodeJS.Signals | null) => finishError(new Error(
+      `Packaged Electron exited before exposing inspector/CDP endpoints (code=${code ?? 'null'}, signal=${signal ?? 'null'}). Last process output:\n${logTail}`,
+    ));
+    child.stdout?.on('data', onData);
+    child.stderr?.on('data', onData);
+    child.once('error', onError);
+    child.once('exit', onExit);
+  });
+}
+
+async function waitForChildExit(child: ChildProcess, timeoutMs: number): Promise<boolean> {
+  if (child.exitCode !== null || child.signalCode !== null) return true;
+  return await new Promise<boolean>((resolve) => {
+    const onExit = () => { clearTimeout(timer); resolve(true); };
+    const timer = setTimeout(() => { child.removeListener('exit', onExit); resolve(false); }, timeoutMs);
+    child.once('exit', onExit);
+  });
+}
+
+function desktopE2eEnvironment(appDataDir: string, e2eAuthBackendUrl: string, extraEnv: Record<string, string>): NodeJS.ProcessEnv {
+  return {
+    ...process.env,
+    FABUSHI_E2E: '1',
+    SAND_USER_DATA_DIR: appDataDir,
+    SAND_BACKEND_URL: e2eAuthBackendUrl,
+    CURSOR_API_BASE_URL: e2eAuthBackendUrl,
+    FABUSHI_API_BASE_URL: e2eAuthBackendUrl,
+    FABUSHI_RESPONSES_URL: `${e2eAuthBackendUrl}/v1/ai/responses`,
+    SAND_CURSOR_WEBSITE_URL: e2eAuthBackendUrl,
+    SAND_DISABLE_SENTRY: '1',
+    FABUSHI_FEATURE_HOST_MODE: process.env.FABUSHI_FEATURE_HOST_MODE || 'test',
+    MAHAYANA_APP_HOST_BIN: process.env.MAHAYANA_APP_HOST_BIN || '',
+    ...extraEnv,
+  };
+}
+
+async function launchPackagedDesktopApp(env: NodeJS.ProcessEnv, extraArgs: string[]): Promise<ElectronApplication> {
+  if (packagedExecutable == null) throw new Error('Packaged Electron executable path is required.');
+  const args = [
+    '--inspect=0',
+    '--remote-debugging-port=0',
+    '--remote-debugging-address=127.0.0.1',
+    ...(process.platform === 'linux' ? ['--no-sandbox'] : []),
+    ...extraArgs,
+  ];
+  const childEnv = { ...env };
+  delete childEnv.NODE_OPTIONS;
+  const child = spawn(packagedExecutable, args, {
+    cwd: appRoot,
+    env: childEnv,
+    windowsHide: true,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  let inspector: PackagedMainInspector | null = null;
+  let browser: Browser | null = null;
+  try {
+    const endpoints = await waitForPackagedDebugEndpoints(child, firstWindowTimeoutMs);
+    inspector = await PackagedMainInspector.connect(endpoints.inspectorUrl, firstWindowTimeoutMs);
+    browser = await chromium.connectOverCDP(`http://127.0.0.1:${endpoints.cdpPort}`, { timeout: firstWindowTimeoutMs });
+    const context: BrowserContext | undefined = browser.contexts()[0];
+    if (context == null) throw new Error('Packaged Electron did not expose a default Chromium browser context.');
+    const application = {
+      firstWindow: async (options: { readonly timeout?: number } = {}): Promise<Page> => {
+        const timeoutMs = options.timeout ?? firstWindowTimeoutMs;
+        const deadline = Date.now() + timeoutMs;
+        while (Date.now() < deadline) {
+          for (const page of context.pages()) {
+            const isFabushiShell = await page.evaluate(() => {
+              const candidate = window as unknown as { desktop?: { cursorAccount?: { getStatus?: unknown } } };
+              return typeof candidate.desktop?.cursorAccount?.getStatus === 'function';
+            }).catch(() => false);
+            if (isFabushiShell) return page;
+          }
+          if (child.exitCode !== null || child.signalCode !== null) break;
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+        const observed = await Promise.all(context.pages().map(async (page) => ({
+          url: page.url(), title: await page.title().catch(() => ''),
+        })));
+        throw new Error(`Packaged Fabushi executable did not expose a trusted main window within ${timeoutMs}ms. Observed Chromium pages: ${JSON.stringify(observed)}`);
+      },
+      evaluate: (fn: Function, arg?: unknown) => inspector!.evaluate(fn, arg),
+      close: async () => {
+        try { await inspector!.evaluate(({ app }) => app.quit()); } catch {}
+        if (child.exitCode === null && child.signalCode === null) {
+          await new Promise<void>((resolve) => child.once('exit', () => resolve()));
+        }
+        inspector?.close();
+        try { await browser?.close(); } catch {}
+      },
+      process: () => child,
+      context: () => context,
+    };
+    return application as unknown as ElectronApplication;
+  } catch (error) {
+    inspector?.close();
+    try { await browser?.close(); } catch {}
+    try { child.kill('SIGTERM'); } catch {}
+    if (!await waitForChildExit(child, 3_000)) {
+      try { child.kill('SIGKILL'); } catch {}
+      await waitForChildExit(child, 2_000);
+    }
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Unable to attach Playwright to the real packaged Fabushi executable: ${message}`);
+  }
+}
+
 async function launchDesktopApp(
   appDataDir: string,
   extraEnv: Record<string, string> = {},
   extraArgs: string[] = [],
 ): Promise<ElectronApplication> {
   const e2eAuthBackendUrl = await ensureE2eAuthBackend();
-  // Exercise the shipping Fabushi account -> private Host credential ->
-  // Responses transport chain. The browser-first login below owns the token;
-  // focused acceptance must not seed a parallel Cursor inference credential.
-  return electron.launch({
-    ...(packagedExecutable
-      ? {
-          executablePath: packagedExecutable,
-          // Playwright injects this loader for its npm Electron binary. A
-          // packaged Fabushi executable is a custom path, so pass the same
-          // main-process hook explicitly for installed-app acceptance.
-          args: [
-            '-r',
-            path.join(appRoot, 'node_modules', 'playwright-core', 'lib', 'server', 'electron', 'loader.js'),
-            ...extraArgs,
-          ],
-        }
-      : { args: [...extraArgs, appRoot] }),
-    env: {
-      ...process.env,
-      // Focused Electron acceptance must opt out of production background
-      // persistence so Playwright app.close() reaches the real before-quit
-      // cleanup path instead of being converted into a hidden-window session.
-      FABUSHI_E2E: '1',
-      SAND_USER_DATA_DIR: appDataDir,
-      SAND_BACKEND_URL: e2eAuthBackendUrl,
-      CURSOR_API_BASE_URL: e2eAuthBackendUrl,
-      FABUSHI_API_BASE_URL: e2eAuthBackendUrl,
-      FABUSHI_RESPONSES_URL: `${e2eAuthBackendUrl}/v1/ai/responses`,
-      SAND_CURSOR_WEBSITE_URL: e2eAuthBackendUrl,
-      SAND_DISABLE_SENTRY: '1',
-      FABUSHI_FEATURE_HOST_MODE: process.env.FABUSHI_FEATURE_HOST_MODE || 'test',
-      MAHAYANA_APP_HOST_BIN: process.env.MAHAYANA_APP_HOST_BIN || '',
-      ...extraEnv,
-    },
-  });
+  const env = desktopE2eEnvironment(appDataDir, e2eAuthBackendUrl, extraEnv);
+  // Packaged executables own their main entrypoint; Playwright's npm-Electron
+  // loader is not injected by electron.launch when executablePath is custom.
+  // Attach to the real installed process through loopback-only Node inspector
+  // and Chromium DevTools Protocol endpoints instead of passing a fake -r arg.
+  if (packagedExecutable != null) return await launchPackagedDesktopApp(env, extraArgs);
+  return electron.launch({ args: [...extraArgs, appRoot], env });
 }
 
 
@@ -1047,6 +1262,100 @@ async function closeDesktopApp(
   if (options.failOnTimeout) {
     throw new Error(`Electron app did not exit within ${timeoutMs}ms after explicit app.quit; forced child-process cleanup was attempted.`);
   }
+}
+
+function sameBrowserWorkspaceUrl(actualValue: string, expectedValue: string): boolean {
+  try {
+    const actual = new URL(actualValue);
+    const expected = new URL(expectedValue);
+    const normalizePath = (value: string) => value.replace(/\/+$/u, '') || '/';
+    return actual.origin === expected.origin
+      && normalizePath(actual.pathname) === normalizePath(expected.pathname)
+      && actual.search === expected.search;
+  } catch {
+    return false;
+  }
+}
+
+async function findBrowserWorkspacePage(app: ElectronApplication, expectedUrl: string): Promise<Page | null> {
+  for (const page of app.context().pages()) {
+    if (sameBrowserWorkspaceUrl(page.url(), expectedUrl)) return page;
+  }
+  return null;
+}
+
+async function browserWorkspacePageDetails(app: ElectronApplication, expectedUrl: string): Promise<{ url: string; title: string } | null> {
+  const page = await findBrowserWorkspacePage(app, expectedUrl);
+  if (page != null) return { url: page.url(), title: await page.title().catch(() => '') };
+  return await app.evaluate(({ webContents }, url) => {
+    const expected = new URL(url);
+    const normalizePath = (value: string) => value.replace(/\/+$/u, '') || '/';
+    const contents = webContents.getAllWebContents().find((candidate) => {
+      try {
+        const actual = new URL(candidate.getURL());
+        return actual.origin === expected.origin
+          && normalizePath(actual.pathname) === normalizePath(expected.pathname)
+          && actual.search === expected.search;
+      } catch { return false; }
+    });
+    return contents == null ? null : { url: contents.getURL(), title: contents.getTitle() };
+  }, expectedUrl).catch(() => null);
+}
+
+async function browserWorkspacePageMatches(app: ElectronApplication, expectedUrl: string, expectedTitle: string): Promise<boolean> {
+  const details = await browserWorkspacePageDetails(app, expectedUrl);
+  return details != null && sameBrowserWorkspaceUrl(details.url, expectedUrl) && details.title === expectedTitle;
+}
+
+async function browserWorkspacePageEntries(app: ElectronApplication): Promise<Array<{ url: string; title: string }>> {
+  const cdpEntries = await Promise.all(app.context().pages().map(async (page) => ({
+    url: page.url(), title: await page.title().catch(() => ''),
+  })));
+  const mainEntries = await app.evaluate(({ webContents }) => webContents.getAllWebContents()
+    .map((contents) => ({ url: contents.getURL(), title: contents.getTitle() })), undefined).catch(() => []);
+  const entries = new Map<string, { url: string; title: string }>();
+  for (const entry of [...cdpEntries, ...mainEntries]) entries.set(`${entry.url}\n${entry.title}`, entry);
+  return [...entries.values()];
+}
+
+async function readBrowserWorkspaceDownloadLink(app: ElectronApplication, expectedUrl: string): Promise<{ text: string; href: string } | null> {
+  const page = await findBrowserWorkspacePage(app, expectedUrl);
+  if (page != null) {
+    return await page.evaluate(() => {
+      const link = document.querySelector('#download-link');
+      return link instanceof HTMLAnchorElement ? { text: link.textContent?.trim() ?? '', href: link.href } : null;
+    }).catch(() => null);
+  }
+  return await app.evaluate(async ({ webContents }, url) => {
+    const expected = new URL(url);
+    const contents = webContents.getAllWebContents().find((candidate) => {
+      try {
+        const actual = new URL(candidate.getURL());
+        return actual.origin === expected.origin && actual.pathname.replace(/\/+$/u, '') === expected.pathname.replace(/\/+$/u, '');
+      } catch { return false; }
+    });
+    if (contents == null) return null;
+    return await contents.executeJavaScript(`(() => {
+      const link = document.querySelector('#download-link');
+      return link instanceof HTMLAnchorElement ? { text: link.textContent?.trim() ?? '', href: link.href } : null;
+    })()`, true);
+  }, expectedUrl).catch(() => null);
+}
+
+async function observeBrowserExtensionMarker(app: ElectronApplication, expectedUrl: string): Promise<string | null> {
+  const page = await findBrowserWorkspacePage(app, expectedUrl);
+  if (page != null) return await page.evaluate(() => document.documentElement.dataset.fabushiExtension || null).catch(() => null);
+  return await app.evaluate(async ({ webContents }, url) => {
+    const expected = new URL(url);
+    const contents = webContents.getAllWebContents().find((candidate) => {
+      try {
+        const actual = new URL(candidate.getURL());
+        return actual.origin === expected.origin && actual.pathname.replace(/\/+$/u, '') === expected.pathname.replace(/\/+$/u, '');
+      } catch { return false; }
+    });
+    if (contents == null) return null;
+    return await contents.executeJavaScript('document.documentElement.dataset.fabushiExtension || null', true);
+  }, expectedUrl).catch(() => null);
 }
 
 async function completeBrowserLogin(page: Page): Promise<void> {
@@ -1135,6 +1444,7 @@ async function completeBrowserLogin(page: Page): Promise<void> {
   const emptyRoster = roster.getByText('No saved agents yet.', { exact: true });
   await expect.poll(async () => {
     if (await loadedAgentRows.count() > 0) return 'loaded';
+    if (await primary.isVisible().catch(() => false)) return 'loaded';
     return await emptyRoster.isVisible().catch(() => false) ? 'empty' : 'pending';
   }, { timeout: 15_000 }).not.toBe('pending');
   if (await primary.count() === 0) {
@@ -1280,12 +1590,10 @@ test('native Browser Workspace opens real Chromium pages, isolates tabs, and dow
     await address.press('Enter');
     await expect(workspace.getByRole('tab').filter({ hasText: 'Fabushi Browser Fixture' })).toHaveCount(1, { timeout: 15_000 });
 
-    await expect.poll(async () => app!.evaluate(({ webContents }) => webContents.getAllWebContents()
-      .map((contents) => ({ url: contents.getURL(), title: contents.getTitle() }))
-      .find((entry) => entry.url.includes('/browser-workspace-fixture')) ?? null), { timeout: 10_000 }).toEqual({
-      url: `${origin}/browser-workspace-fixture`,
-      title: 'Fabushi Browser Fixture',
-    });
+    await expect.poll(
+      async () => browserWorkspacePageMatches(app!, `${origin}/browser-workspace-fixture`, 'Fabushi Browser Fixture'),
+      { timeout: 10_000 },
+    ).toBe(true);
 
     await workspace.getByRole('button', { name: 'New browser tab', exact: true }).click();
     await expect(workspace.getByRole('tab')).toHaveCount(2);
@@ -1293,12 +1601,10 @@ test('native Browser Workspace opens real Chromium pages, isolates tabs, and dow
     await address.press('Enter');
     await expect(workspace.getByRole('tab').filter({ hasText: 'Fabushi Browser HTTPS' })).toHaveCount(1, { timeout: 15_000 });
     await expect(workspace.getByRole('tab').filter({ hasText: 'Fabushi Browser Fixture' })).toHaveCount(1);
-    await expect.poll(async () => app!.evaluate(({ webContents }) => webContents.getAllWebContents()
-      .map((contents) => ({ url: contents.getURL(), title: contents.getTitle() }))
-      .find((entry) => entry.url.includes('/browser-workspace-secure')) ?? null), { timeout: 10_000 }).toEqual({
-      url: `${httpsOrigin}/browser-workspace-secure`,
-      title: 'Fabushi Browser HTTPS',
-    });
+    await expect.poll(
+      async () => browserWorkspacePageMatches(app!, `${httpsOrigin}/browser-workspace-secure`, 'Fabushi Browser HTTPS'),
+      { timeout: 10_000 },
+    ).toBe(true);
 
     await address.fill(`${origin}/browser-workspace-download`);
     await address.press('Enter');
@@ -1324,11 +1630,9 @@ test('native Browser Workspace opens real Chromium pages, isolates tabs, and dow
       return false;
     }, { timeout: 10_000 }).toBe(true);
 
-    const nativeEntries = await app.evaluate(({ webContents }) => webContents.getAllWebContents()
-      .map((contents) => ({ url: contents.getURL(), title: contents.getTitle() }))
-      .filter((entry) => entry.url.includes('/browser-workspace-')));
-    expect(nativeEntries.some((entry) => entry.url.includes('/browser-workspace-fixture'))).toBe(true);
-    expect(nativeEntries.some((entry) => entry.url.includes('/browser-workspace-secure'))).toBe(true);
+    const nativeEntries = await browserWorkspacePageEntries(app);
+    expect(nativeEntries.some((entry) => sameBrowserWorkspaceUrl(entry.url, `${origin}/browser-workspace-fixture`))).toBe(true);
+    expect(nativeEntries.some((entry) => sameBrowserWorkspaceUrl(entry.url, `${httpsOrigin}/browser-workspace-secure`))).toBe(true);
 
     const closingApp = app;
     app = null;
@@ -1351,21 +1655,17 @@ test('native Browser Workspace opens real Chromium pages, isolates tabs, and dow
     // Select each restored native WebContentsView and prove its actual committed
     // URL and document title, not just the renderer's persisted tab label.
     await restoredTabs.nth(0).click();
-    await expect.poll(async () => app!.evaluate(({ webContents }) => webContents.getAllWebContents()
-      .map((contents) => ({ url: contents.getURL(), title: contents.getTitle() }))
-      .find((entry) => entry.url.includes('/browser-workspace-fixture')) ?? null), { timeout: 15_000 }).toEqual({
-      url: `${origin}/browser-workspace-fixture`,
-      title: 'Fabushi Browser Fixture',
-    });
+    await expect.poll(
+      async () => browserWorkspacePageMatches(app!, `${origin}/browser-workspace-fixture`, 'Fabushi Browser Fixture'),
+      { timeout: 15_000 },
+    ).toBe(true);
     await expect(restoredWorkspace.getByRole('tab').filter({ hasText: 'Fabushi Browser Fixture' })).toHaveCount(1, { timeout: 15_000 });
 
     await restoredTabs.nth(1).click();
-    await expect.poll(async () => app!.evaluate(({ webContents }) => webContents.getAllWebContents()
-      .map((contents) => ({ url: contents.getURL(), title: contents.getTitle() }))
-      .find((entry) => entry.url.includes('/browser-workspace-secure')) ?? null), { timeout: 15_000 }).toEqual({
-      url: `${httpsOrigin}/browser-workspace-secure`,
-      title: 'Fabushi Browser HTTPS',
-    });
+    await expect.poll(
+      async () => browserWorkspacePageMatches(app!, `${httpsOrigin}/browser-workspace-secure`, 'Fabushi Browser HTTPS'),
+      { timeout: 15_000 },
+    ).toBe(true);
     await expect(restoredWorkspace.getByRole('tab').filter({ hasText: 'Fabushi Browser HTTPS' })).toHaveCount(1, { timeout: 15_000 });
 
     const restoredAddress = restoredWorkspace.getByRole('textbox', { name: 'Address and search' });
@@ -1398,11 +1698,7 @@ test('Browser extension installs into real Chromium, survives restart, disables,
     }));
     await writeFile(path.join(extensionDir, 'content.js'), `document.documentElement.dataset.fabushiExtension = ${JSON.stringify(marker)};`);
   };
-  const observedMarker = async (expectedUrl: string) => await app!.evaluate(async ({ webContents }, url) => {
-    const contents = webContents.getAllWebContents().find((candidate) => candidate.getURL() === url);
-    if (contents == null) return null;
-    return await contents.executeJavaScript('document.documentElement.dataset.fabushiExtension || null');
-  }, expectedUrl);
+  const observedMarker = async (expectedUrl: string) => await observeBrowserExtensionMarker(app!, expectedUrl);
 
   try {
     await writeExtension('1.0.0', 'v1');
@@ -1497,14 +1793,10 @@ test('Agent downloads verified bytes from the real local Chromium page through H
     await address.press('Enter');
     await expect(workspace.getByRole('tab').filter({ hasText: 'Fabushi Browser Fixture' })).toHaveCount(1, { timeout: 15_000 });
     const fixtureUrl = `${origin}/browser-workspace-fixture`;
-    await expect.poll(async () => app!.evaluate(async ({ webContents }, expectedUrl) => {
-      const contents = webContents.getAllWebContents().find((candidate) => candidate.getURL() === expectedUrl);
-      if (contents == null) return null;
-      return await contents.executeJavaScript(`(() => {
-        const link = document.querySelector('#download-link');
-        return link instanceof HTMLAnchorElement ? { text: link.textContent?.trim() ?? '', href: link.href } : null;
-      })()`, true);
-    }, fixtureUrl), { timeout: 15_000 }).toEqual({
+    await expect.poll(
+      async () => readBrowserWorkspaceDownloadLink(app!, fixtureUrl),
+      { timeout: 15_000 },
+    ).toEqual({
       text: 'Download fixture',
       href: `${origin}/browser-workspace-download`,
     });
@@ -1618,9 +1910,10 @@ test('Agent controls the real local Chromium form through Host tools, isolates t
     await expect.poll(() => e2eConcurrentBrowserSubmissions, { timeout: 20_000 }).toEqual([
       { task: 'beta', name: 'Beta Agent' },
     ]);
-    await expect.poll(async () => app!.evaluate(({ webContents }) => webContents.getAllWebContents()
-      .some((contents) => contents.getURL().includes('/browser-agent-concurrency-form-submit?task=beta')
-        && contents.getTitle() === 'Fabushi Concurrent beta submitted')), { timeout: 10_000 }).toBe(true);
+    await expect.poll(
+      async () => browserWorkspacePageMatches(app!, `${origin}/browser-agent-concurrency-form-submit?task=beta`, 'Fabushi Concurrent beta submitted'),
+      { timeout: 10_000 },
+    ).toBe(true);
     await expectHermesAssistantTurn(page, 'Concurrent beta complete');
 
     await alphaPeer.click();
