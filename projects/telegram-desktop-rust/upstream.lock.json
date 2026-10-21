@@ -931,10 +931,10 @@
   "coverage": {
     "root_source_entries_total": 6820,
     "recursive_source_entries_total": 16306,
-    "unknown_minimum": 16250,
-    "unread_minimum": 16225,
+    "unknown_minimum": 16249,
+    "unread_minimum": 16224,
     "omitted_known": 0,
-    "note": "Live dev authority 5c674f1f6a0f6ace55b67f8bc295138680fe588b/09a421891474be0da279f44a5bf8e0dcf3bc270a: root non-directory=6,820 and recursively reconciled non-directory=16,306. Previously mapped/read responsibilities are retained only after source-blob revalidation; pipeline.md changed and was reread at 46e158ac86ebce97f9dcd010a98b3c581ffc114c. Counters remain unknown=16,250, unread=16,225, omitted=0. baseline_identity_accepted=false and source_closure_ready=false pending fresh exact-head GitHub Actions."
+    "note": "Live dev authority 5c674f1f6a0f6ace55b67f8bc295138680fe588b/09a421891474be0da279f44a5bf8e0dcf3bc270a remains unaccepted. Strict index 54 workspace.py@5d74a11083d66f2ebe9bbf0fcf2e991fa2c6c1c5 is fully read/decomposed across 212 functions; workspace_test.py@6acfeadb6f9128a8b5c164d7c0265b03db1fee44 is dependency evidence but remains open index 55. Counters unknown=16,249, unread=16,224, omitted=0. baseline_identity_accepted=false and source_closure_ready=false pending fresh exact-head Actions."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -1800,5 +1800,11 @@
       "historical_archive_upstream": "f23c37857220eb84f8559f0901ea26fb304b564b",
       "current_locked_upstream": "0eca52223cceed229932add1cc80792763120844"
     }
+  },
+  "current_head_validation_evidence": {
+    "status": "pending-current-head-revalidation",
+    "head_sha": null,
+    "baseline_identity_accepted": false,
+    "source_closure_ready": false
   }
 }

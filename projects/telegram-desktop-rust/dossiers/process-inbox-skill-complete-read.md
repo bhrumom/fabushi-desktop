@@ -95,3 +95,389 @@ At live upstream `5c674f1f6a0f6ace55b67f8bc295138680fe588b`, strict index 52 rem
 The validator exposed a target-owner collision with earlier native-registration responsibilities. For `TDRP-R9-PROCESS-INBOX-OPENAI-INTERFACE-001`, AGENTS.md and TEST_STRATEGY.md remain supporting policy candidates, while the unique target symbol is narrowed to the evidence-contract boundary `Provider-specific $skill, slash-command, or adapter spelling is provenance only.` This exactly captures the four-line OpenAI YAML's applicable responsibility without assigning a shared target symbol to multiple rows.
 
 No production runtime was changed. Recursive accounting remains 16,306 total, unknown=16,250, unread=16,225, omitted=0, with `baseline_identity_accepted=false` and `source_closure_ready=false`.
+
+
+## Strict index 54 — workspace.py complete read at live dev 5c674f1f6a0f6ace55b67f8bc295138680fe588b
+
+Authority: `telegramdesktop/tdesktop@5c674f1f6a0f6ace55b67f8bc295138680fe588b`, tree `09a421891474be0da279f44a5bf8e0dcf3bc270a`. Strict index 54 is `.agents/skills/process-inbox/scripts/workspace.py@5d74a11083d66f2ebe9bbf0fcf2e991fa2c6c1c5` (5,696 lines). The full file was read and contains exactly 212 unique top-level functions. Adjacent strict index 55 `workspace_test.py@6acfeadb6f9128a8b5c164d7c0265b03db1fee44` contains 127 unique test methods; those tests were read as dependency evidence only and index 55 remains independently open.
+
+The applicable responsibility is repository-development workflow control, not a shipping Fabushi Inbox, Task, Automation, Conversation, Agent, Host or Runner runtime. Existing-owner-first maps it to Fabushi's source-neutral repository task/review/evidence governance; no source-named product runtime, second queue owner, second task store or product route is introduced.
+
+### Live-dev delta: checkout-specific source mirroring
+
+The prior workspace blob had 211 functions. Live dev adds `mirror_source_head`: after `command_source_commit` validates ownership, stages and commits only allowed paths, validates the task commit and optionally marks source green, it mirrors HEAD to `private:refs/heads/ai-<checkout_tag>` using a bounded 120-second non-interactive force push. Missing tag/remote is an explicit skip. Timeout or remote rejection is mirror-failure evidence and does not roll back the already-created source commit. New focused tests `test_source_commit_force_mirrors_head_to_the_checkout_branch` and `test_source_commit_keeps_the_commit_when_the_mirror_is_unavailable` prove branch replacement and commit survival/worktree cleanliness on mirror failure.
+
+### 212-function responsibility decomposition
+
+Each function appears exactly once in one mutually exclusive domain.
+
+### A repository/worktree configuration, task state, queue, batch, split and consolidation preparation
+
+- `run_git` — line 109
+- `git_root` — line 121
+- `absolute_git_dir` — line 126
+- `source_root` — line 134
+- `read_machine_tag` — line 142
+- `repository_config` — line 156
+- `linked_worktree` — line 208
+- `worktree_config` — line 237
+- `inbox_worktree_config` — line 250
+- `ensure_clean` — line 263
+- `sync_local_slot` — line 269
+- `sync_inbox_worktree` — line 278
+- `sync_branch_worktree` — line 287
+- `routing_worktree_config` — line 309
+- `sync_routing_worktree` — line 322
+- `sync_routing_canonical` — line 331
+- `routing_unpublished_count` — line 336
+- `health_worktree_config` — line 351
+- `health_unpublished_count` — line 365
+- `publish_routing` — line 376
+- `has_origin` — line 386
+- `origin_master_exists` — line 390
+- `retryable_push_failure` — line 401
+- `sync_canonical` — line 406
+- `state_paths` — line 418
+- `task_id_for_state` — line 425
+- `state_path` — line 436
+- `parse_scalar` — line 445
+- `parse_dependencies` — line 454
+- `load_state` — line 467
+- `load_states` — line 535
+- `format_scalar` — line 542
+- `update_state` — line 548
+- `task_ready` — line 580
+- `queue_sort_key` — line 587
+- `changed_paths` — line 596
+- `is_linked_worktree` — line 609
+- `indexed_gitlinks` — line 642
+- `source_changed_paths` — line 652
+- `source_local_changes` — line 674
+- `mismatched_submodules` — line 692
+- `ensure_source_clean` — line 701
+- `registered_nested_worktrees` — line 711
+- `protect_worktrees_from_submodule_target` — line 732
+- `update_source_submodules` — line 753
+- `prepare_source` — line 767
+- `command_source_prepare` — line 782
+- `path_is_stageable` — line 792
+- `unpublished_counts` — line 799
+- `task_relative_dir` — line 810
+- `source_task_ref` — line 814
+- `resolved_ref` — line 820
+- `ensure_changes_scoped` — line 831
+- `update_main_from_origin` — line 844
+- `sync_inbox_canonical` — line 854
+- `publish_worktree` — line 859
+- `publish_slot` — line 902
+- `publish_inbox` — line 912
+- `commit_paths` — line 921
+- `task_summary` — line 931
+- `normalized_task_name` — line 942
+- `superseded_paths` — line 946
+- `split_paths` — line 953
+- `retained_task_digest` — line 960
+- `load_superseded` — line 1003
+- `load_splits` — line 1055
+- `resolve_split_targets` — line 1132
+- `split_task_summary` — line 1165
+- `resolve_task_reference` — line 1192
+- `resolve_task_id` — line 1215
+- `resolve_task` — line 1234
+- `pending_consolidations` — line 1287
+- `batch_relative_path` — line 1306
+- `task_record_status` — line 1312
+- `batch_task_order` — line 1328
+- `write_batch` — line 1348
+- `load_batch` — line 1363
+- `file_newline` — line 1388
+- `command_queue` — line 1392
+- `command_resolve` — line 1496
+
+### B task/source lineage validation, source refs, retry/checkpoint and source lifecycle
+
+- `command_start` — line 1526
+- `command_source_lineage` — line 1644
+- `command_retry` — line 1658
+- `task_action_config` — line 1722
+- `command_checkpoint` — line 1738
+- `task_commit_matches` — line 1750
+- `validate_task_commit` — line 1761
+- `task_series_refs` — line 1769
+- `task_tip_commits` — line 1795
+- `task_has_retained_source_change` — line 1816
+- `source_lineage_report` — line 1835
+- `is_ancestor` — line 1903
+- `task_type` — line 1914
+- `validate_source_state` — line 1918
+- `ensure_no_persisted_commit_hashes` — line 1958
+- `delete_source_refs` — line 1974
+- `transfer_source_refs` — line 1983
+- `command_source_begin` — line 2002
+- `mark_source_green` — line 2064
+- `command_source_mark_green` — line 2077
+
+### C test-account/process ownership, build-lock recovery, console-idle gating and test execution/cleanup
+
+- `run_git_binary` — line 2086
+- `literal_paths` — line 2100
+- `resolved_exe` — line 2108
+- `app_bundle_of` — line 2115
+- `portable_root_for` — line 2122
+- `background_launch_bundle` — line 2132
+- `unique_destination` — line 2150
+- `move_stale_leftover` — line 2161
+- `clear_stale_crash_state` — line 2177
+- `golden_test_account` — line 2205
+- `setup_test_account` — line 2212
+- `reset_broken_test_account` — line 2232
+- `processes_with_executable` — line 2242
+- `kill_processes_with_executable` — line 2286
+- `executable_killed_on_abort` — line 2305
+- `windows_process_records` — line 2325
+- `locking_process_ids` — line 2364
+- `normalized_path_text` — line 2468
+- `recoverable_build_processes` — line 2472
+- `terminate_process_ids` — line 2516
+- `path_inside` — line 2549
+- `build_root_matches_source` — line 2557
+- `command_build_lock_recover` — line 2571
+- `parse_test_log` — line 2671
+- `log_marks_complete` — line 2697
+- `tail_of_file` — line 2712
+- `parse_env_values` — line 2719
+- `console_unsupported_reason` — line 2731
+- `console_command_output` — line 2737
+- `plist_dicts` — line 2756
+- `console_idle_seconds` — line 2762
+- `console_screen_locked` — line 2778
+- `console_frontmost_app` — line 2798
+- `console_value` — line 2818
+- `console_input_reading` — line 2826
+- `wait_for_console_idle` — line 2844
+- `command_test_run` — line 2882
+- `command_test_cleanup` — line 3100
+- `command_test_account_reset` — line 3114
+
+### D test overlay, source commit/mirror, commit verification, fences, preflight and result validation
+
+- `overlay_work_dir` — line 3125
+- `read_overlay_paths` — line 3132
+- `initialized_submodule_paths` — line 3146
+- `overlay_inventory_groups` — line 3164
+- `overlay_coverage` — line 3202
+- `overlay_outside_inventory` — line 3213
+- `clear_overlay_submodule_bundle` — line 3234
+- `read_overlay_submodule_bundle` — line 3243
+- `command_overlay_save` — line 3280
+- `command_overlay_apply` — line 3403
+- `gitlink_paths` — line 3465
+- `mirror_source_head` — line 3474
+- `command_source_commit` — line 3516
+- `command_source_verify_commit` — line 3582
+- `file_sha256` — line 3596
+- `command_fence_create` — line 3607
+- `command_fence_check` — line 3628
+- `command_source_preflight` — line 3660
+- `required_result_value` — line 3698
+- `validate_outcome_result` — line 3711
+- `validate_blocked_result` — line 3736
+- `owned_source_paths` — line 3790
+- `source_worktree_snapshot` — line 3801
+- `validate_carried_worktree` — line 3883
+- `reconcile_split_source_refs` — line 3901
+- `validate_split_required_result` — line 3928
+
+### E finish/publish/approval, split/consolidation, archive, routing and health publication
+
+- `write_carried_work` — line 3968
+- `command_finish` — line 3979
+- `recover_approval_source_refs` — line 4079
+- `command_publish` — line 4116
+- `normalized_publish_path` — line 4142
+- `path_is_covered` — line 4165
+- `parse_consolidation_mapping` — line 4169
+- `validate_dependency_graph` — line 4183
+- `validate_superseded_graph` — line 4218
+- `validate_split_graph` — line 4249
+- `validate_split_tree` — line 4267
+- `approval_task_for_head` — line 4348
+- `split_validation_for_head` — line 4357
+- `write_split_record` — line 4377
+- `command_split_publish` — line 4393
+- `validate_consolidation_tree` — line 4538
+- `consolidation_validation_for_head` — line 4632
+- `command_task_content_digest` — line 4681
+- `command_consolidate_publish` — line 4691
+- `validate_receipt_text` — line 4851
+- `command_inbox_publish` — line 4858
+- `rewrite_project_links` — line 4941
+- `project_last_activity` — line 4952
+- `command_archive_stale` — line 4972
+- `unarchive_project` — line 5014
+- `command_unarchive` — line 5042
+- `command_inbox_unarchive` — line 5047
+- `payload_entries` — line 5052
+- `iter_payload_files` — line 5059
+- `payload_digest` — line 5073
+- `copy_payload` — line 5089
+- `unique_backup_name` — line 5100
+- `command_ensure` — line 5109
+- `command_route_ensure` — line 5114
+- `command_route_publish` — line 5128
+- `command_health_ensure` — line 5198
+- `command_health_publish` — line 5218
+- `command_inbox_ensure` — line 5265
+
+### F inbox transaction preparation, digest/receipt/finalize/abort and CLI dispatch
+
+- `command_prepare` — line 5270
+- `load_transaction` — line 5331
+- `write_local_receipt` — line 5343
+- `clear_payload` — line 5354
+- `command_finalize` — line 5363
+- `command_abort` — line 5407
+- `add_common_arguments` — line 5417
+- `parse_args` — line 5423
+- `main` — line 5684
+
+### workspace_test.py dependency evidence — 127 test methods; strict index 55 remains open
+
+- `test_rejects_explicit_commit_references` — line 25
+- `test_preserves_runtime_values_and_content_digests` — line 48
+- `test_inbox_publication_paths_must_be_specific` — line 367
+- `test_only_non_fast_forward_push_failures_are_retryable` — line 390
+- `test_inbox_worktree_config_does_not_create_task_slot` — line 401
+- `test_inbox_lifecycle_ignores_dirty_task_slot` — line 431
+- `test_inbox_publish_handles_restored_project_deletion` — line 517
+- `test_inbox_publish_stages_a_removed_non_ascii_publication_path` — line 583
+- `test_finalize_rejects_receipt_outside_master` — line 642
+- `test_finalize_requires_receipt_from_master_head` — line 675
+- `test_prepare_rejects_another_checkouts_transaction` — line 714
+- `test_resolve_prefers_blocked_over_approved_history` — line 750
+- `test_resolve_follows_durable_superseded_task_alias` — line 767
+- `test_dependency_validation_rejects_missing_and_cyclic_edges` — line 795
+- `test_queue_inventory_finds_pending_consolidation_markers` — line 810
+- `test_generic_publish_recognizes_consolidation_validation` — line 822
+- `test_consolidation_validation_rejects_a_non_ascii_superseded_path` — line 850
+- `test_no_merge_consolidation_publishes_durable_completion` — line 904
+- `test_merged_consolidation_publishes_a_removed_directory` — line 953
+- `test_merged_consolidation_validates_aliases_and_dependencies` — line 1075
+- `test_retry_reopens_owned_blocked_task_and_resets_routing_marker` — line 1186
+- `test_start_atomically_assigns_unclaimed_todo` — line 1221
+- `test_start_refuses_source_dependency_absent_from_branch` — line 1260
+- `test_source_lineage_finds_compatible_local_branch` — line 1303
+- `test_checkpoint_updates_only_local_task_state` — line 1393
+- `test_normal_lifecycle_publishes_only_start_and_approve` — line 1415
+- `test_retry_refuses_to_compete_with_active_task` — line 1502
+- `test_retained_task_commit_can_precede_later_work` — line 1539
+- `test_source_begin_initializes_new_task_without_a_green_ref` — line 1587
+- `test_archive_stale_moves_only_old_fully_approved_projects` — line 1616
+- `test_archive_stale_without_candidates_reports_nothing` — line 1663
+- `test_unarchive_restores_links_and_stages_the_project` — line 1682
+- `test_linked_worktrees_are_ignored_only_by_source_checks` — line 2063
+- `test_unregistered_repositories_and_moved_worktrees_still_block` — line 2089
+- `test_symlink_to_linked_worktree_is_not_ignored` — line 2105
+- `test_nested_module_worktree_does_not_make_parent_dirty` — line 2114
+- `test_preparation_updates_recursive_recorded_pins_without_following_remote` — line 2134
+- `test_preparation_preserves_local_and_staged_changes_before_any_update` — line 2171
+- `test_registered_worktree_at_gitlink_path_is_never_updated` — line 2202
+- `test_submodule_target_cannot_enter_an_existing_linked_worktree` — line 2224
+- `test_preflight_is_read_only_and_fresh_baseline_updates_modules` — line 2259
+- `test_source_lifecycle_overlay_and_carry_checks_ignore_linked_worktree` — line 2278
+- `test_build_lock_recovery_selects_only_exact_owned_processes` — line 2310
+- `test_build_lock_recovery_deletes_only_named_build_artifacts` — line 2375
+- `test_build_lock_recovery_rejects_artifact_outside_build_tree` — line 2450
+- `test_parse_env_values_requires_name_value_pairs` — line 2478
+- `test_setup_test_account_lifecycle` — line 2488
+- `test_test_run_reports_complete_markers` — line 2531
+- `test_test_run_redirects_the_launch_for_a_portable_root` — line 2546
+- `test_test_run_launches_without_activation_by_default` — line 2590
+- `test_test_run_activate_lets_the_launch_activate_the_client` — line 2620
+- `test_test_run_refuses_an_env_that_sets_the_activation_variable` — line 2651
+- `test_background_launch_bundle_needs_macos_and_the_bundle_executable` — line 2670
+- `test_test_run_launches_a_macos_bundle_in_the_background` — line 2704
+- `test_test_run_activate_keeps_the_direct_launch_for_a_macos_bundle` — line 2766
+- `test_test_run_reports_a_failed_background_launch` — line 2800
+- `test_test_run_ends_a_background_client_by_path` — line 2818
+- `test_test_run_ends_a_background_client_when_interrupted` — line 2849
+- `test_parse_test_log_lists_skipped_rows_beside_pass_and_fail` — line 2928
+- `test_log_marks_complete_reads_the_marker_as_a_whole_line` — line 2942
+- `test_test_run_reports_a_death_after_complete` — line 2964
+- `test_test_run_reports_both_death_signals_after_complete` — line 2989
+- `test_test_run_counts_a_crashpad_dump_written_during_the_run` — line 3009
+- `test_test_run_counts_a_breakpad_dump_written_during_the_run` — line 3029
+- `test_test_run_ignores_a_crashpad_dump_from_before_the_run` — line 3049
+- `test_test_run_reports_crash_diagnostics` — line 3073
+- `test_test_run_still_diagnoses_a_crash_after_clearing_stale_state` — line 3099
+- `test_test_run_kills_on_deadline` — line 3150
+- `test_test_run_keeps_a_grace_kill_complete` — line 3164
+- `test_test_run_refuses_a_line_that_only_contains_the_marker` — line 3184
+- `test_test_run_reports_a_grace_kill_with_a_dump` — line 3216
+- `test_test_run_clears_and_preserves_stale_crash_state` — line 3235
+- `test_test_run_without_leftovers_reports_nothing_cleared` — line 3294
+- `test_test_run_leaves_an_unmarked_live_folder_alone` — line 3307
+- `test_test_run_ignores_a_stale_crash_report_copied_from_golden` — line 3352
+- `test_test_run_refuses_to_launch_when_the_stale_report_cannot_move` — line 3379
+- `test_test_run_reports_a_dump_that_could_not_be_moved` — line 3398
+- `test_test_run_discards_a_partial_report_copy_from_a_failed_move` — line 3443
+- `test_test_run_reports_input_during_the_run` — line 3469
+- `test_test_run_reports_no_input_when_idle_covers_the_run` — line 3502
+- `test_test_run_leaves_input_unknown_when_a_reading_fails` — line 3518
+- `test_test_run_gate_launches_once_the_console_is_idle` — line 3603
+- `test_test_run_gate_launches_after_its_bound_when_never_idle` — line 3645
+- `test_test_run_skips_readings_and_gate_off_macos` — line 3671
+- `test_test_run_parses_the_screen_lock_state` — line 3706
+- `test_test_run_rejects_a_bad_idle_gate` — line 3722
+- `test_test_run_gate_fails_before_waiting_without_a_golden` — line 3745
+- `test_portable_root_for_prefers_app_bundle_parent` — line 3761
+- `test_unique_destination_avoids_an_existing_name` — line 3781
+- `test_overlay_save_and_apply_roundtrip` — line 3799
+- `test_overlay_apply_reports_a_non_ascii_conflict_literally` — line 3842
+- `test_overlay_save_rejects_uninventoried_and_untracked_paths` — line 3892
+- `test_overlay_save_preserves_bundle_when_repeat_save_is_empty` — line 3929
+- `test_overlay_save_preserves_bundle_when_candidate_collection_fails` — line 3987
+- `test_overlay_save_preserves_bundle_when_patch_does_not_verify` — line 4041
+- `test_overlay_save_replacement_removes_obsolete_nested_entries` — line 4105
+- `test_overlay_save_nested_only_replacement_unlinks_root_patch` — line 4167
+- `test_overlay_save_inventory_refusal_preserves_existing_bundle` — line 4223
+- `test_source_commit_stages_owned_paths_and_marks_green` — line 4266
+- `test_source_commit_force_mirrors_head_to_the_checkout_branch` — line 4316
+- `test_source_commit_keeps_the_commit_when_the_mirror_is_unavailable` — line 4364
+- `test_source_commit_stages_a_removed_tracked_file` — line 4400
+- `test_source_commit_stages_a_non_ascii_tracked_file` — line 4430
+- `test_source_commit_rejects_paths_outside_owned_set` — line 4481
+- `test_already_satisfied_source_state_requires_baseline` — line 4515
+- `test_adaptive_outcome_result_contract` — line 4531
+- `test_test_block_requires_real_recovery_exhaustion` — line 4573
+- `test_task_type_defaults_to_implementation` — line 4628
+- `test_fence_create_and_check_detects_changes` — line 4652
+- `test_source_preflight_reports_dirty_and_account_state` — line 4686
+- `test_finish_publishes_split_required_with_carried_work` — line 4713
+- `test_carried_work_snapshot_seals_owned_submodule_changes` — line 4770
+- `test_split_publish_routes_and_starts_implementation_carrier` — line 4801
+- `test_publish_recovers_approval_refs_after_fetch_failure` — line 4951
+- `test_publish_preserves_approval_refs_for_unsafe_source` — line 5016
+- `test_publish_cleans_refs_when_approval_landed_before_interruption` — line 5058
+- `test_publish_never_cleans_refs_without_owned_approval` — line 5114
+- `test_start_writes_the_batch_into_its_start_commit` — line 5300
+- `test_start_rejects_unknown_batch_ids_before_changing_anything` — line 5346
+- `test_start_without_a_batch_marks_only_the_started_task` — line 5365
+- `test_a_batch_marks_tasks_without_claiming_them` — line 5377
+- `test_a_lost_start_leaves_no_batch_published` — line 5432
+- `test_queue_lists_an_absent_batch_as_empty` — line 5462
+- `test_batch_option_collects_every_id_in_order` — line 5467
+- `test_reading_a_batch_ignores_what_it_cannot_use` — line 5485
+- `test_second_run_of_the_day_is_dropped` — line 5567
+- `test_only_code_health_paths_are_published` — line 5592
+
+### Traceability anchors for strict index 54
+
+- `TDRP-R9-PROCESS-INBOX-WORKSPACE-001`: repository-only worktree/task/source/test/inbox lifecycle and publication mechanics map to existing source-neutral development/evidence governance, not a shipping product owner.
+- `ORA-TDRP-WORKSPACE-OWNED-PUBLICATION-001`: publication stages/commits/pushes only the explicit owned write set and preserves dirty-path, gitlink, lineage and ambiguous-state failures.
+- `ORA-TDRP-WORKSPACE-SOURCE-COMMIT-MIRROR-001`: source mirroring is a separate bounded outcome after a validated commit; skip/timeout/failure cannot erase or reinterpret that commit.
+- `ORA-TDRP-WORKSPACE-TEST-RECOVERY-001`: build-lock/process/test recovery acts only on positively identified owned state; timeout/cancellation/incomplete evidence remains non-passing.
+- `INV-TDRP-WORKSPACE-NO-SHIPPING-OWNER-COLLISION-001`: repository workflow state never becomes a second shipping Task/Automation/Conversation/Agent/Host/Runner owner.
+- `INV-TDRP-WORKSPACE-MIRROR-FAILURE-NO-COMMIT-ROLLBACK-001`: mirror failure must not roll back the source commit, dirty the worktree, or fabricate publication success.
+
+Closing only index 54 changes counters to unknown=16,249, unread=16,224, omitted=0, responsibilities=72. `baseline_identity_accepted=false` and `source_closure_ready=false` remain mandatory. The next strict entry is index 55 `.agents/skills/process-inbox/scripts/workspace_test.py@6acfeadb6f9128a8b5c164d7c0265b03db1fee44`.
