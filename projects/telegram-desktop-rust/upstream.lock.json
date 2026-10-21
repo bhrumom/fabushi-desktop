@@ -896,10 +896,10 @@
   "coverage": {
     "root_source_entries_total": 6819,
     "recursive_source_entries_total": 16305,
-    "unknown_minimum": 16256,
-    "unread_minimum": 16231,
+    "unknown_minimum": 16255,
+    "unread_minimum": 16230,
     "omitted_known": 0,
-    "note": "Live dev authority remains 0eca52223cceed229932add1cc80792763120844/1fc479a4b448aed851181bf4a4796d3015368348. Exact recursive total is 16,305. Strict index 46 .agents/skills/perform-task/agents/openai.yaml@f238b707da7f39a4293b17d112ddd344dcb8253a is mapped as OpenAI invocation/interface metadata for the existing source-neutral repository perform-task governance: unknown=16,256, unread=16,231, omitted=0; next strict entry index 47 is .agents/skills/perform-task/references/computer-use-testing.md@b7fc92d604a55975f75047828d476e64667aa259. The YAML owns only display_name, short_description and a default_prompt that invokes $perform-task; shared SKILL.md remains the execution authority, and no second Fabushi product Task/Agent/runtime owner is introduced. Parent exact-head TDRP 39520394783 and Rust 39520394839 succeeded at b34f18004a58db1c1341505fc4d0bf3ccb9b1ce6. Recursive fixed-point remains unresolved_gitlink_authorities=0 and Boost 582/582/open=0, while recursive disposition remains open (95 authorities, 133 gitlinks, 3,865 acquisition candidates, 4,674 generated inputs, 4,602 resource inputs, 4,255 tool inputs), so source_closure_ready/baseline acceptance remain false."
+    "note": "Live dev authority remains 0eca52223cceed229932add1cc80792763120844/1fc479a4b448aed851181bf4a4796d3015368348. Exact recursive total is 16,305. Strict index 47 .agents/skills/perform-task/references/computer-use-testing.md@b7fc92d604a55975f75047828d476e64667aa259 is mapped to the existing source-neutral adaptive verification/test-evidence owner: unknown=16,255, unread=16,230, omitted=0; next strict entry index 48 is .agents/skills/perform-task/references/mechanical-lane.md@e5e3cc88ba80ece6a20df7c4dd6002491d66a4ef. The source entry is repository TEST tooling for bounded overlay/hybrid UI-driving, exact-app/safety gates and durable evidence, not the shipping Fabushi Computer/ForeverBox/VNC runtime. Parent exact-head TDRP 39523164637 is 61/61 success and Rust desktop runtime 39523164652 is 6/6 success at 8ee1201ef957348bc1f91255211221a7d77efaad. Recursive fixed-point remains unresolved_gitlink_authorities=0 and Boost 582/582/open=0, while recursive disposition remains open (95 authorities, 133 gitlinks, 3,865 acquisition candidates, 4,674 generated inputs, 4,602 resource inputs, 4,255 tool inputs), so baseline_identity_accepted/source_closure_ready remain false."
   },
   "acceptance": {
     "baseline_ready": false,

@@ -6,10 +6,10 @@
   "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
   "coverage": {
     "source_entries_total": 16305,
-    "unknown": 16256,
-    "unread": 16231,
+    "unknown": 16255,
+    "unread": 16230,
     "omitted": 0,
-    "responsibilities_total": 65,
+    "responsibilities_total": 66,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -17512,6 +17512,277 @@
       "reviewer": null,
       "license_and_provenance": "Declarative OpenAI host skill-interface metadata read from exact telegramdesktop/tdesktop source. No upstream product runtime, provider adapter or executable task engine is copied into Fabushi.",
       "notes": "Zero-based strict index 46 is .agents/skills/perform-task/agents/openai.yaml@f238b707da7f39a4293b17d112ddd344dcb8253a on live 0eca52223cceed229932add1cc80792763120844. The complete 4-line YAML contains only interface.display_name, interface.short_description and interface.default_prompt; the prompt invokes $perform-task, whose semantic engine is the already-audited SKILL.md. Sibling skill openai.yaml files confirm the same interface-only convention; Grok/Claude commands reach the shared skill through separate wrappers. Coverage after this one entry: unknown=16,256, unread=16,231, omitted=0. Parent b34f exact-head TDRP 39520394783 and Rust 39520394839 are terminal success; the child mapping commit requires fresh exact-head workflows. Fixed-point unresolved_gitlink_authorities=0 and Boost 582/582/open=0, but recursive reachability/disposition remains open (95 authorities, 133 gitlinks, 3,865 acquisition candidates, 4,674 generated inputs, 4,602 resource inputs, 4,255 tool inputs), so baseline accepted/source_closure_ready remain false. Next strict entry index 47 is .agents/skills/perform-task/references/computer-use-testing.md@b7fc92d604a55975f75047828d476e64667aa259. First child f83 exposed the retained-index45 traceability omission and child 74ef exposed an invalid/duplicative target-symbol selection; both are governance-validator defects only. The traceability dossier is retained, and this revision binds index46 to three exact, unique, source-neutral existing-owner symbols without changing coverage or product behavior.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "0eca52223cceed229932add1cc80792763120844",
+      "source_path": ".agents/skills/perform-task/references/computer-use-testing.md",
+      "source_blob_sha": "b7fc92d604a55975f75047828d476e64667aa259",
+      "source_kind": "repository_ai_skill_codex_computer_use_test_adapter",
+      "module_id": "tdesktop.perform-task.computer-use-testing",
+      "responsibility_id": "TDRP-R9-PERFORM-TASK-COMPUTER-USE-TESTING-001",
+      "source_symbols": [
+        "Driver policy",
+        "Capability gate",
+        "Locked macOS override",
+        "Interrupted driver sessions",
+        "Exact-app gate",
+        "Hybrid handshake",
+        "Safety envelope",
+        "Unavailable result mapping",
+        "Durable evidence"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-ADAPTIVE-UI-VERIFICATION",
+        "CAP-REPOSITORY-TEST-EVIDENCE",
+        "CAP-REPOSITORY-TEST-RECOVERY"
+      ],
+      "dependency_ids": [
+        ".agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c",
+        ".agents/skills/perform-task/references/pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7",
+        ".agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba",
+        ".agents/shared/test-loop.md@83c4732bf6139f7c6557f18dd87bb35c3d68808d",
+        "Fabushi root AGENTS.md adaptive verification governance",
+        "Fabushi quality TEST_STRATEGY.md adaptive evidence loop",
+        "Fabushi quality evidence-contract.md adaptive test-loop history"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/perform-task-skill-complete-read.md",
+      "behavior_contract": "Select physical UI driving only when pointer/keyboard/focus/scroll/drag/menu/window/native interaction is itself the acceptance subject; otherwise prefer deterministic instrumented evidence. Physical driving requires capability, exact-test-app identity and safety gates, one bounded declared action, durable semantic/AX/capture evidence, and directness-advancing bounded recovery. Narration or an uninstrumented click-through is never approval evidence.",
+      "state_machine": "planned check -> auto|overlay-only|required policy -> overlay unless physical interaction is itself the subject -> capability/exact-app/safety gates -> CU_READY instrumented handshake -> fresh state -> one bounded action -> exact-app revalidation -> semantic/AX/capture evidence -> APPROVED|TEST_FLAW|IMPL_BUG|BLOCKED(test)|hard-stop under bounded recovery; locked macOS uses complete overlay instead of physical driving",
+      "side_effects": [
+        "May drive only a prepared disposable test application when hybrid repository verification is selected.",
+        "Persists driver metadata, AX snapshots, tight screenshots and overlay evidence.",
+        "Does not operate terminals, Git, build tools, cleanup, real accounts or shipping Fabushi Computer state.",
+        "Does not create a product Computer session, Task/Agent store, scheduler or second runtime."
+      ],
+      "failure_cases": [
+        "Physical driving selected merely for broader E2E coverage.",
+        "Installed tooling mistaken for usable capability.",
+        "Stale or ambiguous process/target evidence accepted after focus or process replacement.",
+        "Narration or uninstrumented click-through treated as proof.",
+        "Interrupted driver cancels the whole task instead of bounded evidence recovery.",
+        "Run cap/blank capture/repeated flaky signature converted into pass or implementation defect without causal proof.",
+        "Repository test mechanics mapped into shipping Fabushi Computer runtime."
+      ],
+      "ui_disposition": "Not shipping UI; repository TEST tooling for evidence-instrument selection.",
+      "non_ui_responsibilities": [
+        "Driver policy resolution",
+        "Capability gating",
+        "Exact-app identity fencing",
+        "Locked-macOS overlay override",
+        "Interrupted-driver recovery",
+        "CU_READY hybrid handshake",
+        "Safety envelope",
+        "Unavailable-driver result mapping",
+        "Durable evidence precedence",
+        "Bounded directness recovery"
+      ],
+      "platform_delta": "FBCP/TDRP executable verification is GitHub-Actions-only. Preserve the source-neutral oracle/directness/fail-closed/evidence semantics in existing repository governance rather than copying a host-specific Computer Use wrapper. Shipping Computer remains a separate product runtime.",
+      "existing_owner_candidates": [
+        "AGENTS.md — adaptive verification/evidence recovery and GitHub-Actions-only FBCP/TDRP execution",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md — UI verification plus adaptive evidence loop and bounded recovery",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md — append-only run evidence and TEST_FLAW directness recovery",
+        "frontend/src/recovered/features/computer/* — shipping ForeverBox/VNC/status/handoff runtime, explicitly rejected"
+      ],
+      "existing_owner": "Fabushi source-neutral adaptive verification, test strategy and durable evidence governance",
+      "rejected_existing_owners": [
+        "Shipping Computer shell/controller/status-store/VNC owns end-user Computer sessions, not repository test-driver policy.",
+        "Host/Runner/Agent product owners must not become repository evidence authority.",
+        "A copied Telegram/Codex Computer Use adapter would duplicate repository verification governance."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "A verification run is one related execution set with an immutable run identity",
+        "The default managed campaign budget is two campaigns total",
+        "For `TEST_FLAW` recovery, preserve"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "Applicable responsibility is repository verification governance/evidence semantics, not shipping Rust/TypeScript product logic.",
+      "command_event_contracts": [
+        "task evidence plan -> declare whether physical interaction is an acceptance subject",
+        "ordinary check -> most direct deterministic Actions instrument",
+        "physical check -> capability + exact-subject + safety gates",
+        "TEST_FLAW -> preserve passes, forbid failed technique, advance directness",
+        "normal campaign -> at most one focused recovery campaign -> independent exhaustion/hard-stop",
+        "governance edit -> fresh exact-head Actions evidence before next strict index"
+      ],
+      "state_owner": "Existing Fabushi repository adaptive verification/test-evidence governance; no product state.",
+      "lifecycle_owner": "Root AGENTS.md plus quality TEST_STRATEGY/evidence-contract; GitHub Actions owns executable FBCP/TDRP verification.",
+      "persistence_and_restart": "No product persistence; append-only exact-run evidence carries valid passes until an explicit invalidator changes.",
+      "concurrency_and_cancellation": "One driver may own a selected test app at a time; interruption contaminates only that driver session. Cleanup is exact-owned-subject scoped and recovery is bounded.",
+      "security_boundary": "Physical verification uses isolated disposable state, exact-app identity and no credential/confirmation/payment/system-permission boundary. Ambiguous subjects fail closed. FBCP/TDRP execution remains GitHub-Actions-only.",
+      "network_service_dependencies": [
+        "GitHub Actions hosted runners/repository workflow evidence",
+        "Any UI test runner selected by existing Fabushi test strategy only when required"
+      ],
+      "service_owner": "Existing Fabushi repository verification/GitHub Actions evidence pipeline; no shipping Computer service added.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "repository-verification-adapter-equivalent",
+      "blockers": [
+        "Fresh exact-head TDRP Revision 9 and Rust desktop runtime workflows required on child commit.",
+        "Recursive reachability/disposition remains open; baseline_identity_accepted=false/source_closure_ready=false."
+      ],
+      "production_entrypoints": [
+        "AGENTS.md -> Adaptive verification and evidence recovery",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Adaptive evidence loop and bounded recovery",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Adaptive test-loop evidence and recovery history"
+      ],
+      "production_evidence": [
+        "path:AGENTS.md@57ed0d56acc64ef24ce4c1f5c2877a4ec3ab570b",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md@0d3a4c993784625f9b70279602c655d4788fe9fb",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70",
+        "shipping-computer:frontend/src/recovered/features/computer/shell/controller.ts@52887c16f3ca4b01871bf991b460be7873f25e36",
+        "shipping-computer:frontend/src/recovered/features/computer/shell/model.ts@b99b77f2299d83cd49e66875e7b78081ed6fec8c",
+        "shipping-computer:frontend/src/recovered/features/computer/shell/status-store.ts@e57c92249587250d310ab0c26ba187d77f47d41b",
+        "shipping-computer:frontend/src/recovered/features/computer/shell/vnc-webview.tsx@bdb077ea73e051afc67b80b18edbe6f86d70a885",
+        "parent-tdrp:39523164637@8ee1201ef957348bc1f91255211221a7d77efaad/success-61-of-61",
+        "parent-rust:39523164652@8ee1201ef957348bc1f91255211221a7d77efaad/success-6-of-6"
+      ],
+      "test_evidence": [
+        "upstream-index47:.agents/skills/perform-task/references/computer-use-testing.md@b7fc92d604a55975f75047828d476e64667aa259",
+        "upstream-performer:.agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c",
+        "upstream-pipeline:.agents/skills/perform-task/references/pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7",
+        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba",
+        "upstream-test-loop:.agents/shared/test-loop.md@83c4732bf6139f7c6557f18dd87bb35c3d68808d",
+        "complete-read:all index47 policy/capability/lock/interruption/exact-app/handshake/safety/unavailable/evidence sections",
+        "owner-boundary:shipping Computer controller/model/status-store/VNC remains product runtime only"
+      ],
+      "target_commit": "8ee1201ef957348bc1f91255211221a7d77efaad",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development verification governance",
+      "composition_slot": "Adaptive UI verification / evidence-instrument selection",
+      "capability_component": "Source-neutral bounded UI-driving verification semantics",
+      "variation_axes": [
+        "overlay-only/auto/required",
+        "available/unavailable/interrupted driver",
+        "supported host/locked-macOS overlay",
+        "semantic AX/coordinate fallback",
+        "IMPL_BUG/TEST_FLAW"
+      ],
+      "shared_owner_contracts": [
+        "Root AGENTS.md adaptive verification",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract",
+        "GitHub-Actions-only FBCP/TDRP"
+      ],
+      "duplicate_root_check": "No product Computer root, VNC session owner, Task/Agent runtime, second test-state store or source-specific UI runtime introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository acceptance evidence only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "No shipping product route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "No shipping layout change.",
+      "accessibility_contract": "Fresh AX evidence is causal only when accessibility is the acceptance subject; stale/ambiguous AX is TEST_FLAW.",
+      "keyboard_contract": "Physical keyboard/focus is driven only when it is the tested contract.",
+      "state_continuity_contract": "Evidence is append-only/exact-subject bound; valid passes carry until invalidated.",
+      "ui_acceptance_scenarios": [
+        "Physical-input-only checks cannot degrade to narration.",
+        "Non-physical UI checks remain deterministically verifiable without forced Computer Use.",
+        "Unavailable/interrupted driving preserves prior evidence and fails closed."
+      ],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-PERFORM-TASK-COMPUTER-USE-TESTING-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-PERFORM-TASK-CU-DRIVER-SELECTION-001",
+        "ORA-TDRP-PERFORM-TASK-CU-EVIDENCE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-PERFORM-TASK-CU-EXACT-APP-001",
+        "INV-TDRP-PERFORM-TASK-CU-SAFETY-001",
+        "INV-TDRP-PERFORM-TASK-CU-NO-SHIPPING-COMPUTER-COLLISION-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-PERFORM-TASK-CU-ADAPTER-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-PERFORM-TASK-CU-TO-SHARED-TEST-LOOP-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-PERFORM-TASK-CU-INTERRUPTION-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-PERFORM-TASK-CU-UNAVAILABLE-001",
+        "FAULT-TDRP-PERFORM-TASK-CU-INTERRUPTED-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-PERFORM-TASK-CU-SAFETY-ENVELOPE-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-PERFORM-TASK-CU-NARRATION-NOT-PROOF-001"
+      ],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-INVENTORY",
+        "G-TRACEABILITY",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "exact immutable repository revision",
+        "isolated disposable UI test subject"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral repository verification mechanics read from exact telegramdesktop/tdesktop workflow source; no Codex Computer Use runtime, Telegram UI or shipping Computer implementation copied.",
+      "notes": "Zero-based strict index 47 is .agents/skills/perform-task/references/computer-use-testing.md@b7fc92d604a55975f75047828d476e64667aa259 on live 0eca52223cceed229932add1cc80792763120844. Complete adapter and real SKILL/pipeline/phase-prompts/shared-test-loop call path inspected. Coverage after exactly this entry: unknown=16,255, unread=16,230, omitted=0, responsibilities_total=66. Parent exact-head TDRP 39523164637 is 61/61 success and Rust 39523164652 is 6/6 success on 8ee1201ef957348bc1f91255211221a7d77efaad. Child requires fresh exact-head workflows. Recursive fixed-point unresolved_gitlink_authorities=0 and Boost 582/582/open=0; reachability/disposition remains open (95,133,3865,4674,4602,4255), so baseline_identity_accepted/source_closure_ready=false. Next strict entry index48 is .agents/skills/perform-task/references/mechanical-lane.md@e5e3cc88ba80ece6a20df7c4dd6002491d66a4ef.",
       "test_execution_evidence": []
     }
   ]
