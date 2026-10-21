@@ -86,3 +86,12 @@ These IDs bind the strict `.agents/skills/process-inbox/SKILL.md` source entry t
 - `INV-TDRP-PROCESS-INBOX-RECEIPT-DIGEST-FENCE-001`: no finalize/clear operation may remove live inbox input unless the published canonical receipt and current live payload both match the accepted transaction digest; changed input is preserved.
 
 The validator may use these exact anchors for bidirectional traceability. Execution evidence remains separate: the current PR must pass its own exact-head TDRP source-authority workflow before any of these IDs can contribute to a verified disposition.
+
+
+## Exact-head owner uniqueness correction — 1d0439cd7122824dc9ccd84ff9b5f883fe3a6050
+
+At live upstream `5c674f1f6a0f6ace55b67f8bc295138680fe588b`, strict index 52 remains byte-identical at `.agents/skills/process-inbox/agents/openai.yaml@b664f98ad4440de7a8074dfe790d80f3d2201546`. PR #154 is based on live main `ba9ecce728ef021fee609796c8704d8af6fe4b5a`.
+
+The validator exposed a target-owner collision with earlier native-registration responsibilities. For `TDRP-R9-PROCESS-INBOX-OPENAI-INTERFACE-001`, AGENTS.md and TEST_STRATEGY.md remain supporting policy candidates, while the unique target symbol is narrowed to the evidence-contract boundary `Provider-specific $skill, slash-command, or adapter spelling is provenance only.` This exactly captures the four-line OpenAI YAML's applicable responsibility without assigning a shared target symbol to multiple rows.
+
+No production runtime was changed. Recursive accounting remains 16,306 total, unknown=16,250, unread=16,225, omitted=0, with `baseline_identity_accepted=false` and `source_closure_ready=false`.

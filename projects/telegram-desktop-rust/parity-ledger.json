@@ -18948,14 +18948,10 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "AGENTS.md",
-        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
         "projects/fabushi-communication-platform/quality/evidence-contract.md"
       ],
       "fabushi_target_symbols": [
-        "Host-native skill registration metadata, command aliases, and default prompts are invocation surfaces only.",
-        "Native skill-surface qualification is intentionally smaller than scanner qualification.",
-        "Native skill-registration evidence records the host-visible display/description metadata, default prompt or equivalent invocation selector, the canonical source-neutral workflow owner it resolves to, and the exact skill/command/scheduled routing contract that remains authoritative."
+        "Provider-specific `$skill`, slash-command, or adapter spelling is provenance only."
       ],
       "target_language": "Markdown",
       "language_rationale": "The YAML contains only provider-facing invocation metadata. The applicable Fabushi owner is the existing repository governance contract, not Rust/TypeScript shipping behavior; no code copy or product owner is justified.",
@@ -18965,7 +18961,7 @@
         "Scheduled and ad-hoc invocation must preserve the same exact-source, trust/conflict/approval and durable task/review/evidence lifecycle."
       ],
       "state_owner": "The YAML is stateless; existing Fabushi repository task/review/evidence governance is the target owner.",
-      "lifecycle_owner": "Root AGENTS.md host-native registration rules plus quality TEST_STRATEGY and evidence-contract; the upstream SKILL.md and workspace.py remain source behavior authority.",
+      "lifecycle_owner": "The unique target owner is the source-neutral native skill-registration evidence boundary; AGENTS.md and TEST_STRATEGY remain supporting policy candidates rather than duplicate target-symbol owners.",
       "persistence_and_restart": "No state is stored by the YAML. The upstream helper persists digest-bound processing snapshots, transaction metadata, backups and receipts; this is documented source behavior, not a claim of Fabushi helper parity.",
       "concurrency_and_cancellation": "Registration itself has no concurrency. The delegated source workflow allows one active processing transaction, resumes only after identity checks, finalizes behind a digest fence and permits abort only before generated inbox publication; no direct target helper test is claimed.",
       "security_boundary": "Provider syntax is an adapter detail. The default prompt must not bypass exact-source authority, approval/trust/conflict gates or ordinary task routing. The source helper rejects symlinks and unsafe worktrees, constrains publication paths and verifies receipt/digest identity. No product identity or authorization boundary is added.",
@@ -18979,24 +18975,15 @@
       "coverage_disposition": "interface-metadata-equivalent",
       "blockers": [
         "No local Fabushi host-registration parser or equivalent process-inbox helper behavior tests exist; this metadata mapping does not claim them.",
-        "Fresh exact-head TDRP and Rust verification for the child mapping commit is pending.",
-        "PR base is 2bfc3fd3638596b37a01c54e17a333c1798414f3 while live main is ba9ecce728ef021fee609796c8704d8af6fe4b5a; reconcile live main before independent release acceptance.",
-        "Recursive source disposition remains open.",
-        "The child exact-head TDRP run 39557717865 at 3ce96c7055646c5600f93a24bc17f6394bfa1c8c failed before archive accounting: ledger unknown=16250/unread=16225 was below lock minima 16251/16226. Root source archive accounting job 119081364795 and Boost source archive build reachability job 119081364793 were skipped; the per-record lock provenance patch remains unverified until a fresh exact-head run passes."
+        "Fresh exact-head TDRP and Rust verification is required after this ownership correction.",
+        "Recursive source disposition remains open."
       ],
       "production_entrypoints": [
-        "AGENTS.md#Host-native skill registration metadata, command aliases, and default prompts are invocation surfaces only (normative repository governance, not a shipping product entrypoint)",
-        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Native skill-surface qualification is intentionally smaller than scanner qualification (normative verification contract)",
-        "projects/fabushi-communication-platform/quality/evidence-contract.md#Native skill-registration evidence records the host-visible display/description metadata (normative evidence contract)"
+        "projects/fabushi-communication-platform/quality/evidence-contract.md#Provider-specific `$skill`, slash-command, or adapter spelling is provenance only (normative evidence boundary)"
       ],
       "production_evidence": [
-        "PR-branch anchor: AGENTS.md@57ed0d56acc64ef24ce4c1f5c2877a4ec3ab570b#Host-native skill registration metadata, command aliases, and default prompts are invocation surfaces only",
-        "PR-branch anchor: projects/fabushi-communication-platform/quality/TEST_STRATEGY.md@0d3a4c993784625f9b70279602c655d4788fe9fb#Native skill-surface qualification is intentionally smaller than scanner qualification",
-        "PR-branch anchor: projects/fabushi-communication-platform/quality/evidence-contract.md@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70#Native skill-registration evidence records the host-visible display/description metadata",
-        "Live-main confirmation: main ba9ecce728ef021fee609796c8704d8af6fe4b5a has corresponding anchors at AGENTS.md@9ebe5fabd9d37075620b3712d79edb59fe0cb3f3, TEST_STRATEGY.md@b00d4b5bd911d8a6b6202253527e830efbfa5f86 and evidence-contract.md@b1c3b67fef2ddb0d0a017700600c2395aeeac7a7",
-        "Parent exact-head TDRP run 39555252098 at 90eee7251784f938ef3a7ef87713c1c2ee4fe0d1: 61/61 jobs and 508/508 steps",
-        "Parent exact-head Rust runtime run 39555252118 at 90eee7251784f938ef3a7ef87713c1c2ee4fe0d1: 6/6 jobs and 81/81 steps",
-        "Parent archive report had no per-record lock_commit/lock_tree; this child commit adds explicit fields and fail-closed assertions."
+        "PR-head anchor: projects/fabushi-communication-platform/quality/evidence-contract.md@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70#Provider-specific `$skill`, slash-command, or adapter spelling is provenance only.",
+        "Live-main confirmation: ba9ecce728ef021fee609796c8704d8af6fe4b5a has the corresponding source-neutral evidence-contract boundary."
       ],
       "test_evidence": [
         "Exact upstream registration blob b664f98ad4440de7a8074dfe790d80f3d2201546; four lines, metadata only.",
@@ -19106,7 +19093,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "The exact tdesktop host registration YAML and delegated process-inbox source behavior were read at upstream commit 0eca52223cceed229932add1cc80792763120844. No source code was copied into Fabushi; this row maps only the provider-facing invocation metadata to existing source-neutral repository governance.",
-      "notes": "Strict inventory index 52 is the exact four-line OpenAI host registration metadata blob b664f98ad4440de7a8074dfe790d80f3d2201546. It selects the existing process-inbox skill and has no state or side effects. This is interface-metadata-equivalent governance mapping only, not a shipping feature and not a claim that Fabushi has a local host registration parser or helper behavior parity. The SKILL.md, workspace.py and video.py call chain is documented in projects/telegram-desktop-rust/dossiers/process-inbox-skill-complete-read.md. Parent exact-head evidence is 90eee7251784f938ef3a7ef87713c1c2ee4fe0d1; this child commit needs fresh exact-head Actions. PR base remains behind live main; recursive disposition stays open. Strict index 53 video.py is separately mapped as TDRP-R9-PROCESS-INBOX-VIDEO-HELPER-001 (toolchain disposition only, not local implementation). Next strict entry is index 54 workspace.py. The child exact-head TDRP run 39557717865 at 3ce96c7055646c5600f93a24bc17f6394bfa1c8c failed before archive accounting: ledger unknown=16250/unread=16225 was below lock minima 16251/16226. Root source archive accounting job 119081364795 and Boost source archive build reachability job 119081364793 were skipped; the per-record lock provenance patch remains unverified until a fresh exact-head run passes.",
+      "notes": "Strict inventory index 52 remains the exact four-line OpenAI host registration metadata blob b664f98ad4440de7a8074dfe790d80f3d2201546, unchanged at live upstream 5c674f1f6a0f6ace55b67f8bc295138680fe588b. The target owner is narrowed to the unique evidence-contract provider-spelling/provenance boundary so no target symbol has multiple responsibility owners. This is interface-metadata-equivalent governance mapping only, not shipping product implementation. PR #154 is reconciled to live main ba9ecce728ef021fee609796c8704d8af6fe4b5a; recursive closure remains open.",
       "test_execution_evidence": []
     },
     {
