@@ -73,6 +73,9 @@ pub struct CodexDirectCheckpoint {
     pub usage: CodexDirectUsage,
     pub completed_steps: usize,
     pub tool_calls_completed: usize,
+    /// Proposed calls persisted before effects; recovery must reconcile, never replay.
+    #[serde(default)]
+    pub pending_tool_calls: Vec<Value>,
 }
 
 #[derive(Debug, Error)]
@@ -414,6 +417,9 @@ pub fn run_codex_direct_responses_with_lifecycle_and_tool_step_reminder(
     tool_step_reminder: Option<&(dyn Fn(&[(String, Value)]) -> Option<String> + Send + Sync)>,
 ) -> Result<CodexDirectResult, CodexDirectError> {
     let max_steps = options.max_steps.max(1);
+    if resume_from.is_some_and(|checkpoint| !checkpoint.pending_tool_calls.is_empty()) {
+        return Err(CodexDirectError::Tool("A recovered tool batch has uncertain execution. Reconcile the recorded calls before retrying; no tool or model request was replayed.".into()));
+    }
     let tools_by_name = options
         .tools
         .iter()
@@ -563,6 +569,12 @@ pub fn run_codex_direct_responses_with_lifecycle_and_tool_step_reminder(
         retain_executable_function_calls(&mut output, &calls);
 
         let calls_in_step = calls.len();
+        // Durability is a dispatch precondition, not post-effect housekeeping.
+        on_checkpoint(&CodexDirectCheckpoint {
+            input: input.clone(), text: text.clone(), response_id: response_id.clone(),
+            usage: total_usage, completed_steps, tool_calls_completed,
+            pending_tool_calls: calls.clone(),
+        })?;
         let mut results = Vec::new();
         let mut observed_tool_calls = Vec::with_capacity(calls_in_step);
         for call in calls {
@@ -628,6 +640,7 @@ pub fn run_codex_direct_responses_with_lifecycle_and_tool_step_reminder(
             usage: total_usage,
             completed_steps,
             tool_calls_completed,
+            pending_tool_calls: Vec::new(),
         })?;
     }
 

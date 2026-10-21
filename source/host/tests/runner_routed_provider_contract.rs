@@ -166,6 +166,7 @@ fn production_routed_provider_checkpoint_store_persists_durable_json() {
         text: "Checking ".into(),
         completed_steps: 1,
         tool_calls_completed: 1,
+        pending_tool_calls: Vec::new(),
     });
     let cursor = store.persist(&checkpoint).expect("persist checkpoint");
     let cursor_path = Path::new(&cursor);

@@ -1,0 +1,84 @@
+# Hermes-informed Bot runtime completeness
+
+Status: active implementation, 2026-10-21. This is a continuation of the user's
+request to compare the complete Fabushi Bot design with Hermes, absorb suitable
+designs, and implement missing responsibilities. It does not replace the current
+Rust Runner, RuntimeStore, capability/authorization, conversation or message owner.
+
+## Authority and scope
+
+Fabushi starting source: `26ec2ebb7159b21b0382a8c6d46d3534a5cdfab4`, containing
+the MiniApp authoring PR #166. This follow-up uses a separate dependent branch.
+Hermes reference: NousResearch/hermes-agent
+`40cc180823d182826536416de2fc27be44b4ac57`.
+Root AGENTS.md and the current canonical Bot architecture remain authoritative;
+the old PR/version snapshots in post-1.2.74-agent-architecture-cutover.md are
+historical, while its Rust-owned execution/state and single-owner boundaries apply.
+Phase model/effort: inherited session configuration; no override applied.
+
+Compare responsibilities, not file counts or Python syntax. Existing implementations
+must be inspected before calling something missing. UI channels, provider brands
+and Hermes-specific deployment services are compared as capabilities and adapted
+to existing Fabushi owners; they are not new parallel products. Mac remains the
+first delivery target. Never enable paid-model tests as a side effect of this work.
+
+## Requirements and acceptance
+
+- HRA-01: retain the truthful resource diagnostics and observational (not turn-
+  cancelling) repeat advice already added in #166. Normal model completion remains
+  authoritative subject to existing user cancellation, approvals and real budgets.
+- HRA-02: persist a tool-call execution boundary through the existing provider
+  checkpoint owner before dispatching effects. A failed checkpoint prevents
+  dispatch. A recovered unresolved boundary must not silently reissue effects or
+  request another model response from stale history; report uncertainty and require
+  reconciliation. Cover Fabushi/Codex Responses, Cursor and OpenRouter adapters,
+  batches, persistence failure and backward-compatible completed checkpoints.
+- HRA-03: oversized output must have explicit byte bounds, valid UTF-8 and truthful
+  truncation evidence. Never present a capped artifact as a complete result. A
+  failed materialization must not replay unbounded output into model context or
+  cause an uncertain mutation to be retried automatically.
+- HRA-04: background completions preserve originating conversation/task identity,
+  routing and acknowledgment. Repeated observations do not create duplicate user
+  replies. Completion promises require an actual delivery path. Existing bounded
+  Host waits/AwaitShell own waits, not repeated model turns.
+- HRA-05: verify completion/cancellation/empty-output and partial-stream semantics
+  across the production provider adapters. Automatic transport/recovery attempts
+  are separate from model-directed business retries and remain bounded.
+- HRA-06: assess context compression, usage accounting, budgets, duplicate results,
+  memory/skills, plugin discovery, authorization and subagent lineage/lifecycle.
+  Fix concrete defects in current owners and add regression oracles. Do not adopt
+  a fixed interactive failure count, a new credential store or another scheduler.
+- HRA-07: durable evidence maps each audited responsibility to exact Hermes source,
+  current owner, observed behavior, gaps, changes and Actions evidence. Unknown,
+  blocked and not-run are not complete. All executable checks run in Actions;
+  source edits, read-only source inspection and Git/API operations run locally.
+
+## Responsibility audit (live task ledger)
+
+| Area | Hermes source | Existing Fabushi owner | Finding / state |
+|---|---|---|---|
+| Turn/final messages | agent/conversation_loop.py, turn_final_response.py | extensions/inference provider loops; Runner production_turn_agent_owner | Normal completion exists; provider edge cases under review |
+| Error truth/replay advice | tool_guardrails.py, tool_result_classification.py | ports/box; Runner box_tool_access | Implemented in #166; deterministic Actions 39542158117 passed |
+| Persist before effects | turn_tool_round.py | provider checkpoints; turn_agent_composition | Confirmed post-dispatch recording window; HRA-02 open |
+| Artifact/context bounds | tools/tool_output_truncate.py, tool_result_storage.py | Runner large_output_spill, context projection | Confirmed character-vs-byte cap and silent truncation; HRA-03 open |
+| Background wait/notify | tools/process_registry_wait_policy.py | background_work, shell_terminal_watch, AwaitShell, pending wake owners | Existing owners present; routing/ack/cancel proof under review |
+| API retry/cancellation | turn_retry_state.py, turn_api_error.py | stream_attempt; routed provider runtime | Existing bounded retry/checkpoint machinery present; side-effect boundary under review |
+| Context and compression | context_compressor*, turn_preflight* | conversation_state; generated history projection | Under review; no missing claim from naming alone |
+| Usage/budgets | iteration_budget.py, turn_iteration_prep.py | turn_usage, usage sink, provider step limit, subagent runtime | Present; cross-agent accounting/limits under review |
+| Multi-agent execution | tools/delegate_tool*, agent/subagent_lifecycle.py | subagent_runtime, task tools, durable handoffs | Present; identity/duplicate dispatch evidence under review |
+| Authorization/tools | agent/tool_executor.py, managed_tool_gateway.py | capability broker, auto_review, toolset fences | Present; policy ordering and uncertain writes under review |
+| Memory/skills/plugins | memory_manager_tools.py, skill_preprocessing.py, tools/mcp_tool* | sand_memory, skill/plugin/MCP owners | Under review; preserve existing owners and grants |
+| Session ingress/delivery | gateway/run_turn*, session_* | Rust conversation actors, RuntimeStore, common transcript | Present; recovery/terminal delivery evidence under review |
+
+## Verification and delivery
+
+Use deterministic transports/resource ports to inject failures at boundaries;
+assert actual dispatch counts, exact pending identities, recovery refusal, valid
+UTF-8/byte counts and original ownership. Fixtures do not claim real-model or
+installed-device acceptance. Carry forward applicable existing production-contract
+tests rather than introduce a second validation runtime.
+
+Review every requirement before completion. Integrate only accepted source;
+signed Mac delivery and installed acceptance remain separate evidence layers.
+Rollback restores the prior behavior without deleting user work or uncertain-call
+evidence. Source completeness cannot be claimed while this ledger has open gaps.

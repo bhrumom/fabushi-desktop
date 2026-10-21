@@ -278,6 +278,7 @@ fn durable_provider_checkpoint_drives_silent_tool_tail_projection() {
         text: String::new(),
         completed_steps: 2,
         tool_calls_completed: 2,
+        pending_tool_calls: Vec::new(),
     });
     assert!(checkpoint_ended_on_silent_tool_calls(&checkpoint, ""));
     assert!(!checkpoint_ended_on_silent_tool_calls(
@@ -304,6 +305,7 @@ fn durable_provider_checkpoint_drives_silent_tool_tail_projection() {
         text: String::new(),
         completed_steps: 3,
         tool_calls_completed: 3,
+        pending_tool_calls: Vec::new(),
     });
     assert!(!checkpoint_ended_on_silent_tool_calls(&visible, ""));
 }

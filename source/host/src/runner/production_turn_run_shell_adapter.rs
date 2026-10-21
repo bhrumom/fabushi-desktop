@@ -707,6 +707,7 @@ mod tests {
                         usage: CodexDirectUsage::default(),
                         completed_steps: 1,
                         tool_calls_completed: 1,
+                        pending_tool_calls: Vec::new(),
                     },
                 ))?;
                 let started = Instant::now();

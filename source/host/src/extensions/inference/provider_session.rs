@@ -1433,6 +1433,13 @@ pub fn run_routed_provider_text_with_lifecycle_reporting_usage_with_max_steps(
     tool_step_reminder: Option<&ProviderToolStepReminderHook>,
 ) -> Result<String, ProviderSessionError> {
     let max_steps = max_steps.max(1);
+    if resume_from.is_some_and(|checkpoint| match checkpoint {
+        RoutedProviderCheckpoint::Fabushi(value) | RoutedProviderCheckpoint::Codex(value) => !value.pending_tool_calls.is_empty(),
+        RoutedProviderCheckpoint::Cursor(value) => !value.pending_tool_calls.is_empty(),
+        RoutedProviderCheckpoint::OpenRouter(value) => !value.pending_tool_calls.is_empty(),
+    }) {
+        return Err(ProviderSessionError::Tool("A recovered tool batch has uncertain execution. Reconcile the recorded calls before retrying; no tool or model request was replayed.".into()));
+    }
     if (options.should_cancel)() {
         return Err(ProviderSessionError::Cancelled(
             "Runner cancelled before provider dispatch".into(),
@@ -1656,6 +1663,9 @@ pub struct OpenRouterCheckpoint {
     pub text: String,
     pub completed_steps: usize,
     pub tool_calls_completed: usize,
+    /// Proposed calls persisted before effects; recovery must reconcile, never replay.
+    #[serde(default)]
+    pub pending_tool_calls: Vec<Value>,
 }
 
 pub trait OpenRouterTransport {
@@ -1852,6 +1862,9 @@ pub fn run_openrouter_with_transport_reporting_usage_and_partials_with_max_steps
     tool_step_reminder: Option<&ProviderToolStepReminderHook>,
 ) -> Result<String, ProviderSessionError> {
     let max_steps = max_steps.max(1);
+    if resume_from.is_some_and(|checkpoint| !checkpoint.pending_tool_calls.is_empty()) {
+        return Err(ProviderSessionError::Tool("A recovered OpenRouter tool batch has uncertain execution. Reconcile the recorded calls before retrying; no tool or model request was replayed.".into()));
+    }
     let tool_index = tools
         .iter()
         .map(|tool| (tool.name.clone(), tool))
@@ -2037,6 +2050,13 @@ pub fn run_openrouter_with_transport_reporting_usage_and_partials_with_max_steps
         }));
 
         let mut observed_tool_calls = Vec::with_capacity(calls_in_step);
+        on_checkpoint(&OpenRouterCheckpoint {
+            conversation: conversation.clone(), text: text.clone(), completed_steps,
+            tool_calls_completed,
+            pending_tool_calls: partial_calls.values().map(|call| json!({
+                "id":call.id,"name":call.name,"arguments":call.arguments
+            })).collect(),
+        })?;
         for (_index, call) in partial_calls {
             if should_cancel() {
                 return Err(ProviderSessionError::Cancelled(
@@ -2088,6 +2108,7 @@ pub fn run_openrouter_with_transport_reporting_usage_and_partials_with_max_steps
             text: text.clone(),
             completed_steps,
             tool_calls_completed,
+            pending_tool_calls: Vec::new(),
         })?;
     }
 

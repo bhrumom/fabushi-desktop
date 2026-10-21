@@ -62,6 +62,7 @@ fn checkpoint() -> RoutedProviderCheckpoint {
         text: "Checking ".into(),
         completed_steps: 1,
         tool_calls_completed: 1,
+        pending_tool_calls: Vec::new(),
     })
 }
 
@@ -74,6 +75,7 @@ fn tool_only_checkpoint() -> RoutedProviderCheckpoint {
         text: String::new(),
         completed_steps: 1,
         tool_calls_completed: 1,
+        pending_tool_calls: Vec::new(),
     })
 }
 

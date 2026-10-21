@@ -472,6 +472,7 @@ mod tests {
             usage: CodexDirectUsage::default(),
             completed_steps: 2,
             tool_calls_completed: 2,
+            pending_tool_calls: Vec::new(),
         }
     }
 

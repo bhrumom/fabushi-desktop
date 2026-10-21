@@ -8,7 +8,7 @@ use crate::extensions::inference::provider_session::{
     ProviderSessionError, RoutedToolDefinition,
 };
 
-use super::large_output_spill::{MCP_TEXT_FILE_THRESHOLD_BYTES, is_large_output_spill_enabled, maybe_spill_mcp_text_result};
+use super::large_output_spill::{MCP_TEXT_FILE_THRESHOLD_BYTES, bound_mcp_inline_text, is_large_output_spill_enabled, maybe_spill_mcp_text_result};
 use super::shell_terminal_watch::ShellTerminalPollRead;
 use super::routed_provider_runtime::RoutedToolBridge;
 
@@ -365,7 +365,7 @@ impl RoutedToolBridge for RunnerBoxToolBridge {
                     MCP_TEXT_FILE_THRESHOLD_BYTES,
                 )
             } else {
-                result
+                bound_mcp_inline_text(result, MCP_TEXT_FILE_THRESHOLD_BYTES)
             });
         }
         // Box tool schemas use scalar fields. Sort their top-level keys so merely

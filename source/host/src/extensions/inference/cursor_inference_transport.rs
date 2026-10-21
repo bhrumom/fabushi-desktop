@@ -101,6 +101,9 @@ pub struct CursorCheckpoint {
     pub text: String,
     pub completed_steps: usize,
     pub tool_calls_completed: usize,
+    /// Proposed calls persisted before effects; recovery must reconcile, never replay.
+    #[serde(default)]
+    pub pending_tool_calls: Vec<Value>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -880,6 +883,9 @@ pub fn run_cursor_with_transport_reporting_usage_and_partials_with_max_steps(
     tool_step_reminder: Option<&(dyn Fn(&[(String, Value)]) -> Option<String> + Send + Sync)>,
 ) -> Result<String, ProviderSessionError> {
     let max_steps = max_steps.max(1);
+    if resume_from.is_some_and(|checkpoint| !checkpoint.pending_tool_calls.is_empty()) {
+        return Err(ProviderSessionError::Tool("A recovered Cursor tool batch has uncertain execution. Reconcile the recorded calls before retrying; no tool or model request was replayed.".into()));
+    }
     let tool_index = tools
         .iter()
         .map(|tool| (tool.name.clone(), tool))
@@ -1008,6 +1014,13 @@ pub fn run_cursor_with_transport_reporting_usage_and_partials_with_max_steps(
         });
 
         let calls_in_step = calls.len();
+        on_checkpoint(&CursorCheckpoint {
+            conversation: conversation.clone(), text: text.clone(), completed_steps,
+            tool_calls_completed,
+            pending_tool_calls: calls.iter().map(|call| json!({
+                "id":call.tool_call_id,"name":call.tool_name,"arguments":call.args
+            })).collect(),
+        })?;
         let mut observed_tool_calls = Vec::with_capacity(calls_in_step);
         for call in calls {
             if should_cancel() {
@@ -1056,6 +1069,7 @@ pub fn run_cursor_with_transport_reporting_usage_and_partials_with_max_steps(
             text: text.clone(),
             completed_steps,
             tool_calls_completed,
+            pending_tool_calls: Vec::new(),
         })?;
     }
 
