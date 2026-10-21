@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "0eca52223cceed229932add1cc80792763120844",
-  "target_commit": "90eee7251784f938ef3a7ef87713c1c2ee4fe0d1",
+  "target_commit": "3ce96c7055646c5600f93a24bc17f6394bfa1c8c",
   "coverage": {
     "source_entries_total": 16305,
-    "unknown": 16250,
-    "unread": 16225,
+    "unknown": 16249,
+    "unread": 16224,
     "omitted": 0,
-    "responsibilities_total": 70,
+    "responsibilities_total": 71,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -18979,7 +18979,8 @@
         "No local Fabushi host-registration parser or equivalent process-inbox helper behavior tests exist; this metadata mapping does not claim them.",
         "Fresh exact-head TDRP and Rust verification for the child mapping commit is pending.",
         "PR base is 2bfc3fd3638596b37a01c54e17a333c1798414f3 while live main is ba9ecce728ef021fee609796c8704d8af6fe4b5a; reconcile live main before independent release acceptance.",
-        "Recursive source disposition remains open."
+        "Recursive source disposition remains open.",
+        "The child exact-head TDRP run 39557717865 at 3ce96c7055646c5600f93a24bc17f6394bfa1c8c failed before archive accounting: ledger unknown=16250/unread=16225 was below lock minima 16251/16226. Root source archive accounting job 119081364795 and Boost source archive build reachability job 119081364793 were skipped; the per-record lock provenance patch remains unverified until a fresh exact-head run passes."
       ],
       "production_entrypoints": [
         "AGENTS.md#Host-native skill registration metadata, command aliases, and default prompts are invocation surfaces only (normative repository governance, not a shipping product entrypoint)",
@@ -19103,7 +19104,224 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "The exact tdesktop host registration YAML and delegated process-inbox source behavior were read at upstream commit 0eca52223cceed229932add1cc80792763120844. No source code was copied into Fabushi; this row maps only the provider-facing invocation metadata to existing source-neutral repository governance.",
-      "notes": "Strict inventory index 52 is the exact four-line OpenAI host registration metadata blob b664f98ad4440de7a8074dfe790d80f3d2201546. It selects the existing process-inbox skill and has no state or side effects. This is interface-metadata-equivalent governance mapping only, not a shipping feature and not a claim that Fabushi has a local host registration parser or helper behavior parity. The SKILL.md, workspace.py and video.py call chain is documented in projects/telegram-desktop-rust/dossiers/process-inbox-skill-complete-read.md. Parent exact-head evidence is 90eee7251784f938ef3a7ef87713c1c2ee4fe0d1; this child commit needs fresh exact-head Actions. PR base remains behind live main; recursive disposition stays open. Next strict entry is index 53 video.py.",
+      "notes": "Strict inventory index 52 is the exact four-line OpenAI host registration metadata blob b664f98ad4440de7a8074dfe790d80f3d2201546. It selects the existing process-inbox skill and has no state or side effects. This is interface-metadata-equivalent governance mapping only, not a shipping feature and not a claim that Fabushi has a local host registration parser or helper behavior parity. The SKILL.md, workspace.py and video.py call chain is documented in projects/telegram-desktop-rust/dossiers/process-inbox-skill-complete-read.md. Parent exact-head evidence is 90eee7251784f938ef3a7ef87713c1c2ee4fe0d1; this child commit needs fresh exact-head Actions. PR base remains behind live main; recursive disposition stays open. Strict index 53 video.py is separately mapped as TDRP-R9-PROCESS-INBOX-VIDEO-HELPER-001 (toolchain disposition only, not local implementation). Next strict entry is index 54 workspace.py. The child exact-head TDRP run 39557717865 at 3ce96c7055646c5600f93a24bc17f6394bfa1c8c failed before archive accounting: ledger unknown=16250/unread=16225 was below lock minima 16251/16226. Root source archive accounting job 119081364795 and Boost source archive build reachability job 119081364793 were skipped; the per-record lock provenance patch remains unverified until a fresh exact-head run passes.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "0eca52223cceed229932add1cc80792763120844",
+      "source_path": ".agents/skills/process-inbox/scripts/video.py",
+      "source_blob_sha": "977d75aca7aea0b6c74471d533a5ee0e2a156ac3",
+      "source_kind": "tooling",
+      "module_id": "tdesktop.process-inbox.video-helper",
+      "responsibility_id": "TDRP-R9-PROCESS-INBOX-VIDEO-HELPER-001",
+      "source_symbols": [
+        "VideoError",
+        "require_tool",
+        "frame_times",
+        "sha256",
+        "parse_frames",
+        "parse_crop",
+        "filter_chain",
+        "decode",
+        "command_probe",
+        "command_extract",
+        "command_sheet",
+        "main"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-TASK-ORCHESTRATION",
+        "CAP-REPOSITORY-SKILL-INVOCATION",
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE"
+      ],
+      "dependency_ids": [
+        ".agents/skills/process-inbox/SKILL.md@0ce70794ac743d99e6d5c80894cde970b52842db",
+        ".agents/skills/process-inbox/scripts/workspace.py@e1fdabbac9ccd635962b7b6dc1a62357fc5b931c (transaction and publication owner; does not call video.py)",
+        "ffprobe and ffmpeg executables on PATH",
+        "Pillow for the sheet command"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/process-inbox-skill-complete-read.md",
+      "behavior_contract": "The local video CLI supports probe, extract and sheet for supplied video files. Probe records the input SHA-256 and byte size plus codec, dimensions, duration, frame count, per-frame timestamps and frame-interval facts, so variable-frame-rate media is not reduced to nominal FPS. Extract validates selected frame indices and crop syntax, builds an ffmpeg filter chain, decodes with passthrough frame timing, requires the decoded count to equal the selected count, and names retained frames with source index/time provenance. Sheet uses Pillow to create a labelled contact sheet and rejects selections above 200 frames. Intermediate decoded frames are scoped to TemporaryDirectory; the helper does not upload media or own a persistent resource store.",
+      "state_machine": "SKILL.md conditionally invokes probe/extract/sheet for supplied video -> ffprobe enumerates stream/frame timing -> SHA-256/size and metadata are reported -> requested frame/range/crop/scale is parsed -> ffmpeg decodes selected frames into TemporaryDirectory -> extract moves frames to the explicit output path or sheet assembles a bounded Pillow contact sheet -> JSON output is emitted -> temporary intermediates are removed. Missing tools, invalid ranges/crops, no decoded frames or count mismatch fail. Empty selections are not explicitly rejected by this source and can cause an unhandled IndexError in extract/sheet.",
+      "side_effects": [
+        "Reads the supplied local video and computes its digest/size during probe.",
+        "Writes extracted frames or a contact-sheet image only to the caller-selected output path.",
+        "Deletes intermediate decoded frames when TemporaryDirectory exits; no network upload or persistent product resource store is created."
+      ],
+      "failure_cases": [
+        "ffprobe or ffmpeg is unavailable on PATH.",
+        "Pillow is unavailable for sheet generation.",
+        "The input has no video frames or lacks expected stream/format metadata.",
+        "Requested frame indices are negative or beyond the frame count.",
+        "Crop syntax does not match WxH+X+Y.",
+        "ffmpeg decodes a different frame count than requested.",
+        "An empty frame selection is not explicitly rejected and can reach unhandled IndexError in extract/sheet; a local equivalent would need a focused negative test and explicit failure behavior."
+      ],
+      "ui_disposition": "Not applicable; repository CLI tooling only, no Fabushi shipping screen.",
+      "non_ui_responsibilities": [
+        "Input media SHA-256 and byte-size provenance.",
+        "Frame-timestamp enumeration and constant/variable frame-rate observations.",
+        "Validated frame/range selection, crop and scale semantics.",
+        "Deterministic selected-frame decode count and source-time naming.",
+        "Bounded contact-sheet generation and temporary-file lifecycle."
+      ],
+      "platform_delta": "Python CLI with external ffmpeg/ffprobe and optional Pillow dependencies; behavior is local-filesystem-only and does not require a remote service. Tool availability and media-decoder behavior are platform/toolchain dependencies.",
+      "existing_owner_candidates": [
+        "projects/fabushi-communication-platform/quality/evidence-contract.md#Context provenance and handoff evidence",
+        "AGENTS.md#Mandatory development lifecycle",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Repository quality-health qualification",
+        ".agents/skills/process-inbox/SKILL.md@0ce70794ac743d99e6d5c80894cde970b52842db (upstream orchestrator, not a Fabushi target owner)",
+        ".agents/skills/process-inbox/scripts/workspace.py@e1fdabbac9ccd635962b7b6dc1a62357fc5b931c (upstream transaction/publish owner, not a Fabushi target owner)"
+      ],
+      "existing_owner": "Existing source-neutral repository task/review/evidence workflow; this is upstream local video-inspection tooling only, and no equivalent Fabushi helper or product media owner has been evidenced.",
+      "rejected_existing_owners": [
+        "Shipping Resource/attachment/media owners govern user-facing product resources, not transient developer-inbox video analysis.",
+        "Agent/Coordinator/Host/Runner/Conversation/Computer are shipping runtime owners, not the semantic owner of this repository CLI helper.",
+        "A new video/media product owner or persistent media store would duplicate canonical product resource ownership and misclassify repository-only tooling."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "When repository workflow evidence depends on project/task context, preserve enough provenance to reconstruct why each context source was selected without making the read set grow with unrelated history. Record the current request/task identity, exact live source/spec revision, applicable repository or nested instruction scope, selected project/reference paths, and the exact source/reference locations carried into the task handoff. A link or archived artifact is discovery input, not evidence that its contents govern the current behavior."
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The source is a Python development-workflow helper. This row records the existing repository task/evidence owner and source behavior only; no code is copied and no local video-processing implementation or behavior parity is claimed.",
+      "command_event_contracts": [
+        "The shared SKILL.md invokes video.py probe <video> to capture input identity and frame timing.",
+        "The shared SKILL.md invokes video.py extract for selected frames and video.py sheet for bounded contact sheets.",
+        "workspace.py does not directly call video.py; workspace.py owns the separate digest-bound inbox transaction, receipt, publication and finalization lifecycle."
+      ],
+      "state_owner": "Per-command local process; TemporaryDirectory owns intermediate decoded frames and the caller-selected output path owns retained frames/sheets. No shared or durable product state.",
+      "lifecycle_owner": "SKILL.md decides when video inspection is needed; workspace.py owns the inbox transaction/snapshot/digest/receipt/publication/finalization. video.py is called by the skill, not by workspace.py.",
+      "persistence_and_restart": "probe is read-only. extract/sheet write explicit outputs; temporary decoded frames are removed on scope exit. The shared skill retains original inputs and references output evidence through its transaction/receipt lifecycle. There is no persistent media database.",
+      "concurrency_and_cancellation": "Each invocation uses a private temporary directory and has no shared mutable state. Subprocess interruption, partial-output cleanup and retry behavior are not covered by local Fabushi tests because no equivalent helper exists.",
+      "security_boundary": "No network or upload. ffmpeg/ffprobe are invoked as subprocesses with argument arrays rather than shell interpolation. Frame indices and crop syntax are checked; output path is caller-supplied. No product identity, permission store or durable resource authorization is owned here.",
+      "network_service_dependencies": [],
+      "service_owner": "None; local repository development tooling only.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "toolchain-equivalent",
+      "blockers": [
+        "No local Fabushi video helper or focused behavior tests are present; this row is a source/owner disposition, not implementation parity.",
+        "The child exact-head TDRP run 39557717865 at 3ce96c7055646c5600f93a24bc17f6394bfa1c8c failed before archive accounting: ledger unknown=16250/unread=16225 was below lock minima 16251/16226. Root source archive accounting job 119081364795 and Boost source archive build reachability job 119081364793 were skipped; the per-record lock provenance patch remains unverified until a fresh exact-head run passes.",
+        "PR base still reports 2bfc3fd3638596b37a01c54e17a333c1798414f3 while live main is ba9ecce728ef021fee609796c8704d8af6fe4b5a; reconcile live main before independent release acceptance.",
+        "Recursive source disposition remains open; baseline_identity_accepted=false and source_closure_ready=false."
+      ],
+      "production_entrypoints": [
+        "projects/fabushi-communication-platform/quality/evidence-contract.md#Context provenance and handoff evidence (normative evidence contract only; no shipping video entrypoint)"
+      ],
+      "production_evidence": [
+        "PR-branch evidence-contract.md@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70#Context provenance and handoff evidence",
+        "Live-main evidence-contract.md@b1c3b67fef2ddb0d0a017700600c2395aeeac7a7#Context provenance and handoff evidence",
+        "Exact upstream source anchor .agents/skills/process-inbox/scripts/video.py@977d75aca7aea0b6c74471d533a5ee0e2a156ac3"
+      ],
+      "test_evidence": [
+        "Full 293-line upstream source was read at telegramdesktop/tdesktop@0eca52223cceed229932add1cc80792763120844, blob 977d75aca7aea0b6c74471d533a5ee0e2a156ac3.",
+        "SKILL.md@0ce70794ac743d99e6d5c80894cde970b52842db invokes probe/extract/sheet only for supplied video inputs; workspace.py@e1fdabbac9ccd635962b7b6dc1a62357fc5b931c does not directly call video.py.",
+        "No local Fabushi video helper or focused behavior test was found. TDRP/Rust Actions qualify governance and architecture only; they are not video-helper behavior tests."
+      ],
+      "target_commit": "3ce96c7055646c5600f93a24bc17f6394bfa1c8c",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository governance",
+      "composition_slot": "Repository task-inbox local media evidence disposition",
+      "capability_component": "Process Inbox video probe/extract/contact-sheet utility (upstream tooling only)",
+      "variation_axes": [
+        "probe vs extract vs sheet",
+        "constant vs variable frame rate",
+        "all vs selected frames/ranges",
+        "crop and scale",
+        "valid vs invalid toolchain/selection/decode count"
+      ],
+      "shared_owner_contracts": [
+        "AGENTS.md mandatory development lifecycle and source-neutral repository task/evidence ownership",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract: Context provenance and handoff evidence",
+        "Shared process-inbox SKILL.md source authority"
+      ],
+      "duplicate_root_check": "No second product Resource/attachment owner, video store, task queue, Agent/Host/Runner root or Telegram-specific runtime is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable; external host registration metadata only",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Host discovery and default prompt selection only; no product object action",
+      "detail_section": "Not applicable",
+      "capability_surface": "Repository task/evidence tooling only",
+      "route_contract": "No shipping product route",
+      "search_scope": "Not applicable",
+      "search_provider": "External host skill discovery only",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable; this is not a product result surface",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "No shipping layout change",
+      "accessibility_contract": "Host registration accessibility is host-owned; no Fabushi UI changes",
+      "keyboard_contract": "No shipping keyboard surface changed",
+      "state_continuity_contract": "Registration is stateless; the upstream transaction helper owns snapshot continuity. Fabushi helper parity is not claimed.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [],
+      "oracle_ids": [],
+      "invariant_ids": [],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners (governance only)"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "The exact tdesktop video.py source and delegated process-inbox behavior were read at upstream commit 0eca52223cceed229932add1cc80792763120844. No Python source was copied into Fabushi; the row maps the repository-tooling boundary only.",
+      "notes": "Strict inventory index 53 is .agents/skills/process-inbox/scripts/video.py@977d75aca7aea0b6c74471d533a5ee0e2a156ac3. This local CLI probes metadata and frame timestamps, extracts selected frames with source-time names, and builds bounded contact sheets with temporary-frame cleanup. The shared SKILL.md calls it conditionally for supplied videos; workspace.py does not directly call it. This is a source/toolchain disposition, not a local helper implementation, direct behavior-test pass or shipping media capability. Index 54 workspace.py@e1fdabbac9ccd635962b7b6dc1a62357fc5b931c and index 55 workspace_test.py@d045c95ca4415ffc02953ff02ac10e329dc69e7b remain independently open.",
       "test_execution_evidence": []
     }
   ]
