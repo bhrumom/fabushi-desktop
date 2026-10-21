@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "0eca52223cceed229932add1cc80792763120844",
-  "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
+  "target_commit": "0f5272fcb14d6f1e835c7282b001e4ee2aa572ea",
   "coverage": {
     "source_entries_total": 16305,
-    "unknown": 16252,
-    "unread": 16227,
+    "unknown": 16251,
+    "unread": 16226,
     "omitted": 0,
-    "responsibilities_total": 68,
+    "responsibilities_total": 69,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -18630,6 +18630,265 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral repository workflow semantics read from exact telegramdesktop/tdesktop source; no Telegram product runtime or shipping Task/Agent/Computer/Host/Runner/Conversation implementation copied.",
       "notes": "Strict index50 pipeline.md fully read at exact upstream commit; mapped to existing source-neutral repository governance. Parent TDRP 39531160961 61/61 and Rust 39531160843 6/6 success; live Rust artifact 12315168809 digest sha256:2642e30438a89d5231cc1944455e8a1ddc77a016fbfdc36c5d2ca51626f0290c. unknown=16252, unread=16227, omitted=0; source closure remains false.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "0eca52223cceed229932add1cc80792763120844",
+      "source_path": ".agents/skills/process-inbox/SKILL.md",
+      "source_blob_sha": "0ce70794ac743d99e6d5c80894cde970b52842db",
+      "source_kind": "tooling",
+      "module_id": "tdesktop.process-inbox",
+      "responsibility_id": "TDRP-R9-PROCESS-INBOX-001",
+      "source_symbols": [
+        "Process Inbox",
+        "Workspace",
+        "Route and plan",
+        "Assign task paths",
+        "Write tracked artifacts",
+        "Supplied videos",
+        "Validate and publish",
+        "Report"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-TASK-ORCHESTRATION",
+        "CAP-REPOSITORY-INDEPENDENT-REVIEW",
+        "CAP-REPOSITORY-ADAPTIVE-TEST-EVIDENCE",
+        "CAP-REPOSITORY-AI-WORKER-LIFECYCLE"
+      ],
+      "dependency_ids": [
+        ".agents/skills/process-inbox/SKILL.md@0ce70794ac743d99e6d5c80894cde970b52842db",
+        ".agents/skills/process-inbox/scripts/workspace.py@e1fdabbac9ccd635962b7b6dc1a62357fc5b931c",
+        ".agents/skills/process-inbox/scripts/video.py@977d75aca7aea0b6c74471d533a5ee0e2a156ac3",
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/perform-task-skill-complete-read.md",
+      "behavior_contract": "Repository-only intake via digest-bound isolated inbox snapshot, task/project/receipt artifacts, duplicate-digest checks, explicit-path publication and digest-fenced finalization; local video probe/extract/sheet and provenance. Not shipping product runtime.",
+      "state_machine": "inbox-ensure -> prepare/resume one .processing snapshot -> classify/dedupe/assign paths -> write task.md/state.yaml/receipt -> validate schema/receipt/digest -> inbox-publish explicit paths -> verify master HEAD and unchanged live digest -> finalize; preserve transaction on unsafe worktree/outage; abort only before generated inbox commit.",
+      "side_effects": [
+        "Isolated worktree transaction and snapshot",
+        "Tracked task/state/receipt files",
+        "Guarded Git publication",
+        "Local video extraction and provenance"
+      ],
+      "failure_cases": [
+        "Dirty/unsafe worktree",
+        "Digest drift",
+        "Duplicate receipt",
+        "Invalid task schema or path",
+        "Rebase/push outage",
+        "Finalize without receipt in master HEAD",
+        "Abort after generated inbox commit",
+        "Video extraction failure"
+      ],
+      "ui_disposition": "Not shipping UI; repository tooling.",
+      "non_ui_responsibilities": [
+        "Transaction snapshot/resume",
+        "Task lineage and duplicate detection",
+        "Explicit task/state/receipt artifacts",
+        "Guarded publish/finalize/abort",
+        "Video metadata and local frame extraction"
+      ],
+      "platform_delta": "Existing Fabushi repository lifecycle and evidence governance is the closest owner; no direct helper parity is proven. Do not add product Inbox/Task/Automation runtime.",
+      "existing_owner_candidates": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "Shipping Task/Agent/Coordinator/Host/Runner/Conversation (rejected)"
+      ],
+      "existing_owner": "Fabushi source-neutral repository lifecycle, test/review strategy and durable evidence governance",
+      "rejected_existing_owners": [
+        "Shipping Task is not repository inbox transaction state",
+        "Shipping Agent/Coordinator is not repository task intake",
+        "Host/Runner is not Git worktree/receipt publication",
+        "Conversation is not task files or receipts"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Mandatory development lifecycle",
+        "AI review phase execution policy",
+        "Context provenance and handoff evidence"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "Applicable responsibility is repository task/review/test orchestration and durable evidence governance, not shipping Rust/TypeScript product logic.",
+      "command_event_contracts": [
+        "Phase1 -> context/plan -> Phase3 assessment",
+        "Phase3 -> assessed|fresh Phase1 rerun|split-required",
+        "Phase4 -> bounded owned implementation -> Phase5 validation",
+        "Phase6 initial -> general+five blind lenses -> synthesis -> approve|blocking-only fix",
+        "fix -> focused general + invalidated lenses only -> carry unaffected approvals",
+        "convergence -> continue|replan|rescope|hard-stop with rulings",
+        "evidence -> APPROVED|TEST_FLAW|IMPL_BUG|UNRECOVERABLE; rerun only failed/invalidated checks",
+        "normal campaign -> at most one focused recovery campaign -> exhaustion/hard-stop",
+        "native Windows -> touched-text normalization -> completion",
+        "governance mapping commit -> fresh exact-head TDRP and Rust Actions before next strict index"
+      ],
+      "state_owner": "Existing Fabushi repository development workflow governance; no product state.",
+      "lifecycle_owner": "Root AGENTS.md plus quality TEST_STRATEGY/evidence-contract; GitHub Actions owns FBCP/TDRP executable verification.",
+      "persistence_and_restart": "Task-local phase/context/plan/review/test/result artifacts plus immutable exact-head workflow evidence persist repository progress; valid review/evidence carries until an explicit surface/oracle/fixture invalidates it.",
+      "concurrency_and_cancellation": "The performer owns one task state. Initial reviewers may run concurrently but remain mutually blind. Leaf workers are disposable; stop/replacement requires durable exact ownership and inactive proof. Focused reruns touch only invalidated review/evidence scopes.",
+      "security_boundary": "Owned paths, immutable run/scope identity, exact worker/session/process ownership, no global configuration mutation, exact-subject cleanup and fail-closed publication protect repository/source integrity. No product account/payment/permission boundary is owned. FBCP/TDRP executable checks remain GitHub-Actions-only.",
+      "network_service_dependencies": [
+        "GitHub repository/ref/commit authority",
+        "GitHub Actions exact-head workflow evidence",
+        "Host-specific repository AI worker provider only when selected by existing workflow policy"
+      ],
+      "service_owner": "Existing Fabushi repository task/review/evidence pipeline; no shipping service added.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "toolchain-equivalent",
+      "blockers": [
+        "No focused test proves equivalent local inbox/worktree helper exists.",
+        "Recursive source closure remains open."
+      ],
+      "production_entrypoints": [
+        "AGENTS.md -> Mandatory development lifecycle / worker lifecycle",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> review/convergence/evidence qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> durable review/worker/adaptive evidence"
+      ],
+      "production_evidence": [
+        "TDRP 39537102683 exact-head parent 61/61 jobs",
+        "Rust runtime 39537102580 exact-head parent 6/6 jobs"
+      ],
+      "test_evidence": [
+        "Source fully read: 0ce70794ac743d99e6d5c80894cde970b52842db; workspace.py e1fdabbac9ccd635962b7b6dc1a62357fc5b931c; video.py 977d75aca7aea0b6c74471d533a5ee0e2a156ac3",
+        "CI gates are not inbox-helper behavior tests."
+      ],
+      "target_commit": "0f5272fcb14d6f1e835c7282b001e4ee2aa572ea",
+      "workflow_run": "39537102683;39537102580",
+      "run_attempt": 1,
+      "job": "119016163001;119016163287;119016560210;119016560338;119016560551",
+      "artifact_id": "12318286826;12317737812;12318237159",
+      "artifact_digest": "sha256:1cd8c4c82a94600131d6103f9742d9553156190faf66483cc8f5308312ba8404;sha256:c0b5764046498af60ae37ca817f954fc6c8d5ccd2e08b37c391e2a4b94067a24;sha256:a93c6575eab099ca643c5ce10782689b5d16c0c6cdbe81897966b9a0236b9eb8",
+      "composition_root": "Fabushi repository governance",
+      "composition_slot": "Repository task intake and receipt evidence",
+      "capability_component": "Digest-bound repository task intake policy",
+      "variation_axes": [
+        "delegated/same-session fallback",
+        "fast-path accepted/rejected",
+        "assessed/replan/split-required",
+        "initial/focused review",
+        "continue/replan/rescope/hard-stop convergence",
+        "APPROVED/TEST_FLAW/IMPL_BUG/UNRECOVERABLE evidence",
+        "normal/focused recovery campaign",
+        "native-Windows/non-Windows"
+      ],
+      "shared_owner_contracts": [
+        "Root AGENTS.md lifecycle/worker governance",
+        "Fabushi quality TEST_STRATEGY",
+        "Fabushi quality evidence-contract",
+        "GitHub-Actions-only FBCP/TDRP"
+      ],
+      "duplicate_root_check": "No shipping Task, Agent, Computer, Host, Runner, Conversation, second queue, second review owner, second evidence state store or source-specific workflow runtime introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [
+        "No process-inbox path/helper in target tree"
+      ],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository task/review/evidence only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "No shipping product route.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "No shipping layout change.",
+      "accessibility_contract": "Repository review/evidence may verify accessibility when selected; phase orchestration owns no shipping accessibility UI.",
+      "keyboard_contract": "Not applicable.",
+      "state_continuity_contract": "Phase/review/evidence artifacts and carried passes remain valid until explicit changed-surface/oracle/fixture invalidation; incomplete artifacts fail closed.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-PROCESS-INBOX-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-PROCESS-INBOX-DIGEST-TRANSACTION-001",
+        "ORA-TDRP-PROCESS-INBOX-RECEIPT-PUBLICATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-PROCESS-INBOX-SINGLE-ACTIVE-TRANSACTION-001",
+        "INV-TDRP-PROCESS-INBOX-RECEIPT-DIGEST-FENCE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-PROCESS-INBOX-TRANSACTION-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-PROCESS-INBOX-TO-FABUSHI-GOVERNANCE-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-PROCESS-INBOX-RESUME-FINALIZE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-PROCESS-INBOX-REMOTE-OUTAGE-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-PROCESS-INBOX-WORKTREE-RECEIPT-FENCE-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-PROCESS-INBOX-NO-SHIPPING-RUNTIME-COLLISION-001"
+      ],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-INVENTORY",
+        "G-TRACEABILITY",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "exact immutable repository revision",
+        "task-local phase/review/evidence artifacts"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral repository workflow semantics read from exact telegramdesktop/tdesktop source; no Telegram product runtime or shipping Task/Agent/Computer/Host/Runner/Conversation implementation copied.",
+      "notes": "Strict index51 full source read and dependency closure verified; mapped to repository governance only, no direct helper parity or behavior test claimed.",
       "test_execution_evidence": []
     }
   ]

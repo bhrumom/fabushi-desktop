@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16305,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16252,
-    "unread_minimum": 16227,
+    "unknown_minimum": 16251,
+    "unread_minimum": 16226,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -53,5 +53,36 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream remains telegramdesktop/tdesktop@0eca52223cceed229932add1cc80792763120844/tree 1fc479a4b448aed851181bf4a4796d3015368348. Recursive total is 16,305. Strict index 49 .agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba is fully read and mapped to Fabushi's existing source-neutral repository development lifecycle, review/test orchestration and durable evidence governance: unknown=16,253, unread=16,228, omitted=0. It is repository perform-task phase orchestration, not shipping Task/Agent/Computer/Host/Runner/Conversation runtime. Parent exact-head TDRP 39528383951 attempt 2 is 61/61 success and Rust desktop runtime 39528383913 is 6/6 success at 16d95f0607a203fb16a96afa99751a39892ec7f0. Recursive disposition remains open, therefore baseline_identity_accepted/source_closure_ready remain false. Next strict entry is index 50 .agents/skills/perform-task/references/pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7."
+  "note": "Live upstream remains telegramdesktop/tdesktop@0eca52223cceed229932add1cc80792763120844/tree 1fc479a4b448aed851181bf4a4796d3015368348. Recursive total is 16,305. Strict index 49 .agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba is fully read and mapped to Fabushi's existing source-neutral repository development lifecycle, review/test orchestration and durable evidence governance: unknown=16,253, unread=16,228, omitted=0. It is repository perform-task phase orchestration, not shipping Task/Agent/Computer/Host/Runner/Conversation runtime. Parent exact-head TDRP 39528383951 attempt 2 is 61/61 success and Rust desktop runtime 39528383913 is 6/6 success at 16d95f0607a203fb16a96afa99751a39892ec7f0. Recursive disposition remains open, therefore baseline_identity_accepted/source_closure_ready remain false. Next strict entry is index 50 .agents/skills/perform-task/references/pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7. Strict index 51 .agents/skills/process-inbox/SKILL.md@0ce70794ac743d99e6d5c80894cde970b52842db was fully read with workspace.py and video.py dependency closure. Mapped toolchain-equivalent to existing repository governance only; exact local inbox helper parity and behavior tests are not claimed. Parent TDRP 39537102683 61/61 and Rust 39537102580 6/6 passed, but recursive disposition remains open. Counters unknown=16251, unread=16226, omitted=0, responsibilities=69, unmapped=0; baseline acceptance/source closure remain false.",
+  "current_head_validation_evidence": {
+    "head_sha": "0f5272fcb14d6f1e835c7282b001e4ee2aa572ea",
+    "tdrp_run": 39537102683,
+    "tdrp_jobs": "61/61 success",
+    "tdrp_steps": "506/506 success",
+    "source_authority_artifact": {
+      "id": 12318286826,
+      "digest": "sha256:1cd8c4c82a94600131d6103f9742d9553156190faf66483cc8f5308312ba8404"
+    },
+    "root_archive_artifact": {
+      "id": 12317737812,
+      "digest": "sha256:c0b5764046498af60ae37ca817f954fc6c8d5ccd2e08b37c391e2a4b94067a24"
+    },
+    "rust_run": 39537102580,
+    "rust_jobs": "6/6 success",
+    "rust_artifact": {
+      "id": 12318237159,
+      "digest": "sha256:a93c6575eab099ca643c5ce10782689b5d16c0c6cdbe81897966b9a0236b9eb8"
+    },
+    "recursive_total": 16305,
+    "open": {
+      "authorities": 95,
+      "gitlinks": 133,
+      "acquisition_candidates": 3865,
+      "generated_inputs": 4674,
+      "resource_inputs": 4602,
+      "tool_inputs": 4255
+    },
+    "baseline_identity_accepted": false,
+    "source_closure_ready": false
+  }
 }

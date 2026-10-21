@@ -896,8 +896,8 @@
   "coverage": {
     "root_source_entries_total": 6819,
     "recursive_source_entries_total": 16305,
-    "unknown_minimum": 16252,
-    "unread_minimum": 16227,
+    "unknown_minimum": 16251,
+    "unread_minimum": 16226,
     "omitted_known": 0,
     "note": "Live dev authority remains 0eca52223cceed229932add1cc80792763120844/1fc479a4b448aed851181bf4a4796d3015368348. Exact recursive total is 16,305. Strict index 49 .agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba is mapped to the existing source-neutral repository development lifecycle, review/test orchestration and durable evidence governance: unknown=16,253, unread=16,228, omitted=0; next strict entry index 50 is .agents/skills/perform-task/references/pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7. It governs artifact-gated context/plan, independent assessment, bounded owned implementation, selected validation, blind and focused review/convergence, directness-advancing evidence recovery with one focused campaign ceiling, native-Windows touched-file normalization, and host worker adapters. It is not shipping Fabushi Task, Agent, Computer, Host, Runner or Conversation runtime. Parent exact-head TDRP 39528383951 attempt 2 is 61/61 success and Rust desktop runtime 39528383913 is 6/6 success at 16d95f0607a203fb16a96afa99751a39892ec7f0. Recursive fixed-point remains unresolved_gitlink_authorities=0 and Boost 582/582/open=0, while recursive disposition remains open (95 authorities, 133 gitlinks, 3,865 acquisition candidates, 4,674 generated inputs, 4,602 resource inputs, 4,255 tool inputs), so source_closure_ready/baseline acceptance remain false."
   },
@@ -1095,6 +1095,37 @@
         "artifact_id": 12299250602,
         "artifact_digest": "sha256:56407823b6ac8397f653dfb75305effb84731c96e63206b8b01d8f324503b1e6"
       }
+    },
+    "current_head_validation_evidence": {
+      "head_sha": "0f5272fcb14d6f1e835c7282b001e4ee2aa572ea",
+      "tdrp_run": 39537102683,
+      "tdrp_jobs": "61/61 success",
+      "tdrp_steps": "506/506 success",
+      "source_authority_artifact": {
+        "id": 12318286826,
+        "digest": "sha256:1cd8c4c82a94600131d6103f9742d9553156190faf66483cc8f5308312ba8404"
+      },
+      "root_archive_artifact": {
+        "id": 12317737812,
+        "digest": "sha256:c0b5764046498af60ae37ca817f954fc6c8d5ccd2e08b37c391e2a4b94067a24"
+      },
+      "rust_run": 39537102580,
+      "rust_jobs": "6/6 success",
+      "rust_artifact": {
+        "id": 12318237159,
+        "digest": "sha256:a93c6575eab099ca643c5ce10782689b5d16c0c6cdbe81897966b9a0236b9eb8"
+      },
+      "recursive_total": 16305,
+      "open": {
+        "authorities": 95,
+        "gitlinks": 133,
+        "acquisition_candidates": 3865,
+        "generated_inputs": 4674,
+        "resource_inputs": 4602,
+        "tool_inputs": 4255
+      },
+      "baseline_identity_accepted": false,
+      "source_closure_ready": false
     }
   },
   "recursive_inventory_evidence": {
@@ -1580,6 +1611,37 @@
         "artifact_id": 12299250602,
         "artifact_digest": "sha256:56407823b6ac8397f653dfb75305effb84731c96e63206b8b01d8f324503b1e6"
       }
+    },
+    "current_head_validation_evidence": {
+      "head_sha": "0f5272fcb14d6f1e835c7282b001e4ee2aa572ea",
+      "tdrp_run": 39537102683,
+      "tdrp_jobs": "61/61 success",
+      "tdrp_steps": "506/506 success",
+      "source_authority_artifact": {
+        "id": 12318286826,
+        "digest": "sha256:1cd8c4c82a94600131d6103f9742d9553156190faf66483cc8f5308312ba8404"
+      },
+      "root_archive_artifact": {
+        "id": 12317737812,
+        "digest": "sha256:c0b5764046498af60ae37ca817f954fc6c8d5ccd2e08b37c391e2a4b94067a24"
+      },
+      "rust_run": 39537102580,
+      "rust_jobs": "6/6 success",
+      "rust_artifact": {
+        "id": 12318237159,
+        "digest": "sha256:a93c6575eab099ca643c5ce10782689b5d16c0c6cdbe81897966b9a0236b9eb8"
+      },
+      "recursive_total": 16305,
+      "open": {
+        "authorities": 95,
+        "gitlinks": 133,
+        "acquisition_candidates": 3865,
+        "generated_inputs": 4674,
+        "resource_inputs": 4602,
+        "tool_inputs": 4255
+      },
+      "baseline_identity_accepted": false,
+      "source_closure_ready": false
     }
   },
   "build_time_acquisition_inventory": {
@@ -1660,6 +1722,23 @@
         "artifact_id": 12298695193,
         "artifact_digest": "sha256:d087bd0bd7f834d370d259be40a238467b300bb5fcb4acc48c47c54527400228"
       }
+    },
+    "current_head_validation_evidence": {
+      "head_sha": "0f5272fcb14d6f1e835c7282b001e4ee2aa572ea",
+      "status": "disposition-open",
+      "root_archive_artifact_id": 12317737812,
+      "archive_totals": {
+        "archives": 2,
+        "entries": 94443,
+        "acquisitions": 582,
+        "patches": 7,
+        "lfs": 0,
+        "generated": 820,
+        "resources": 701,
+        "tools": 3224
+      },
+      "historical_archive_upstream": "f23c37857220eb84f8559f0901ea26fb304b564b",
+      "current_locked_upstream": "0eca52223cceed229932add1cc80792763120844"
     }
   }
 }

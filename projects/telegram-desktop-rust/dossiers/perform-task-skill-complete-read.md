@@ -295,3 +295,14 @@ Parent evidence: TDRP 39531160961 61/61 at 62b48720cbdbe455bf476faef2445801e9af6
 - Regression: `REG-TDRP-PERFORM-TASK-PRODUCT-RUNTIME-SEPARATION-001`
 - Source: `.agents/skills/perform-task/references/pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7`
 - Existing-owner boundary remains repository-only: `AGENTS.md`, `TEST_STRATEGY.md`, and `evidence-contract.md`; no shipping Task/Agent/Computer/Host/Runner/Conversation owner is introduced.
+
+
+## Strict index 51 — process-inbox
+
+Source `.agents/skills/process-inbox/SKILL.md@0ce70794ac743d99e6d5c80894cde970b52842db` was fully read at telegramdesktop/tdesktop@0eca52223cceed229932add1cc80792763120844 (432 lines). Dependencies `workspace.py@e1fdabbac9ccd635962b7b6dc1a62357fc5b931c` and `video.py@977d75aca7aea0b6c74471d533a5ee0e2a156ac3` were also read and SHA-verified. The workflow creates/resumes one digest-bound isolated inbox worktree transaction, resolves task lineage and duplicate digests, writes task/state/receipt artifacts, publishes explicit paths, and finalizes only after verifying the receipt in master HEAD and unchanged live inbox digest. Video inputs are probed/extracted locally and kept out of tracked artifacts.
+
+Existing-owner-first maps only the repository lifecycle/review/evidence policy in AGENTS.md, TEST_STRATEGY.md and evidence-contract.md. Shipping Task/Agent/Coordinator/Host/Runner/Conversation are rejected as unrelated runtime owners. This row is `mapped` / `toolchain-equivalent`, not implemented or verified: no equivalent local inbox helper or focused behavior test is proven. No product owner added.
+
+Traceability: TDRP-R9-PROCESS-INBOX-001; ORA-TDRP-PROCESS-INBOX-DIGEST-TRANSACTION-001; ORA-TDRP-PROCESS-INBOX-RECEIPT-PUBLICATION-001; INV-TDRP-PROCESS-INBOX-SINGLE-ACTIVE-TRANSACTION-001; INV-TDRP-PROCESS-INBOX-RECEIPT-DIGEST-FENCE-001; CONTRACT-TDRP-PROCESS-INBOX-TRANSACTION-001; INT-TDRP-PROCESS-INBOX-TO-FABUSHI-GOVERNANCE-001; TEMP-TDRP-PROCESS-INBOX-RESUME-FINALIZE-001; FAULT-TDRP-PROCESS-INBOX-REMOTE-OUTAGE-001; SEC-TDRP-PROCESS-INBOX-WORKTREE-RECEIPT-FENCE-001; REG-TDRP-PROCESS-INBOX-NO-SHIPPING-RUNTIME-COLLISION-001.
+
+Parent exact-head evidence: TDRP 39537102683 61/61 jobs, 506/506 steps; Rust 39537102580 6/6 jobs, 79 success steps and two expected platform-conditional skips. Source authority artifact 12318286826 sha256:1cd8c4c82a94600131d6103f9742d9553156190faf66483cc8f5308312ba8404; root archive artifact 12317737812 sha256:c0b5764046498af60ae37ca817f954fc6c8d5ccd2e08b37c391e2a4b94067a24; Rust artifact 12318237159 sha256:a93c6575eab099ca643c5ce10782689b5d16c0c6cdbe81897966b9a0236b9eb8. These are parent governance gates, not inbox helper behavior tests. Counters now unknown=16251, unread=16226, omitted=0, responsibilities=69, unmapped=0. Baseline acceptance/source closure remain false; recursive disposition has 95 authorities, 133 gitlinks, 3865 acquisition candidates, 4674 generated inputs, 4602 resource inputs and 4255 tool inputs open.
