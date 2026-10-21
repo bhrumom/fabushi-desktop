@@ -248,11 +248,34 @@ fn turn_toolset_composes_browser_capability_without_hiding_base_tools() {
 
 
 #[test]
-fn turn_toolset_hides_browser_from_non_browser_runner_roles() {
+fn canonical_user_runner_exposes_browser_tools_when_browser_executor_is_bound() {
     let browser: Arc<dyn BrowserToolExecutor> = Arc::new(FakeBrowserExecutor);
     let bridge = build_turn_toolset(
         Arc::new(BaseBridge),
         TurnToolsetDependencies {
+            browser_executor: Some(browser),
+            ..TurnToolsetDependencies::default()
+        },
+    );
+
+    let tools = bridge.list_tools().expect("tools");
+    assert!(tools.iter().any(|tool| tool.name == "browser_snapshot"));
+    assert!(tools.iter().any(|tool| tool.name == "browser_wait"));
+    assert!(tools.iter().any(|tool| tool.name == "base_tool"));
+}
+
+#[test]
+fn ordinary_non_browser_subagent_still_hides_browser_tools() {
+    let browser: Arc<dyn BrowserToolExecutor> = Arc::new(FakeBrowserExecutor);
+    let bridge = build_turn_toolset(
+        Arc::new(BaseBridge),
+        TurnToolsetDependencies {
+            role: TurnToolsetRole {
+                is_subagent_runner: true,
+                is_browser_use_subagent: false,
+                subagent_configs_present: true,
+                ..TurnToolsetRole::default()
+            },
             browser_executor: Some(browser),
             ..TurnToolsetDependencies::default()
         },

@@ -674,12 +674,14 @@ pub fn build_turn_toolset(
         _ => bridge,
     };
     let bridge: Arc<dyn RoutedToolBridge> = match (
+        role.is_subagent_runner,
         role.is_browser_use_subagent,
         role.remote_box_available,
         role.remote_box_has_desktop,
         dependencies.browser_executor,
     ) {
-        (true, true, true, Some(executor)) => Arc::new(SandBrowserToolBridge::new(bridge, executor)),
+        (false, _, _, _, Some(executor)) => Arc::new(SandBrowserToolBridge::new(bridge, executor)),
+        (true, true, true, true, Some(executor)) => Arc::new(SandBrowserToolBridge::new(bridge, executor)),
         _ => bridge,
     };
     let bridge: Arc<dyn RoutedToolBridge> =
