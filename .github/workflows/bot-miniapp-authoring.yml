@@ -30,8 +30,10 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
-      - name: SDK source and package transactions
+      - name: SDK source, import/read and package transactions
         run: python3 source/host/tests/miniapp_authoring_sdk_test.py
+      - name: Generated GitHub publication and uncertainty contracts (no model or user credentials)
+        run: python3 source/host/tests/miniapp_publication_test.py
   bot-tool-github:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-24.04

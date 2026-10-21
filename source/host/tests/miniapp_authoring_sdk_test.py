@@ -19,6 +19,7 @@ def load(name, path):
 
 sdk = load('sdk', TOOLS / 'miniapp_authoring.py')
 sdk.PACKAGER_SOURCE = (TOOLS / 'miniapp_package.py').read_text()
+sdk.RELEASE_SOURCE = (TOOLS / 'miniapp_release.py').read_text()
 packager = load('packager', TOOLS / 'miniapp_package.py')
 
 
@@ -131,6 +132,42 @@ class Authoring(unittest.TestCase):
         for version in ['01.0.0', '1.0', '1.0.0\n', '9' * 40 + '.0.0']:
             with self.assertRaises(ValueError):
                 sdk.execute({**self.create, 'project': 'invalid-version', 'version': version}, self.workspace)
+
+
+    def test_exact_revision_source_read_is_bounded_utf8_and_nonmutating(self):
+        first = sdk.execute(self.create, self.workspace)
+        old = next(f for f in first['files'] if f['path'] == 'src/app.js')
+        changed = self.call(action='edit', expectedRevision=first['revision'], files=[{
+            'path': old['path'], 'expectedSha256': old['sha256'], 'content': '中文内容' * 100}])
+        page = self.call(action='read', expectedRevision=changed['revision'], path=old['path'], maxBytes=7)
+        self.assertEqual(page['source']['content'], '中文')
+        self.assertEqual(page['source']['nextOffset'], 6)
+        self.assertTrue(page['source']['truncated'])
+        next_page = self.call(action='read', expectedRevision=changed['revision'], path=old['path'], offset=6, maxBytes=6)
+        self.assertEqual(next_page['source']['content'], '内容')
+        for extra in [dict(expectedRevision=first['revision']), dict(offset=1), dict(maxBytes=1),
+                      dict(offset=True), dict(path='../../secret'), dict(maxBytes=16385)]:
+            with self.assertRaises(ValueError):
+                self.call(action='read', **{**dict(expectedRevision=changed['revision'], path=old['path']), **extra})
+        self.assertEqual(self.call(action='inspect')['revision'], changed['revision'])
+
+    def test_import_preserves_existing_source_and_cannot_overwrite(self):
+        source = {'src/index.html': '<!doctype html><title>Existing</title>',
+                  'src/app.js': 'globalThis.existing = true;',
+                  'tests/existing.test.cjs': "require('node:test')('existing', () => {});"}
+        request = {**self.create, 'action': 'import', 'files': [
+            {'path': path, 'content': content, 'expectedSha256': None} for path, content in source.items()]}
+        imported = sdk.execute(request, self.workspace)
+        for path, content in source.items():
+            self.assertEqual(self.call(action='read', expectedRevision=imported['revision'], path=path)['source']['content'], content)
+        with self.assertRaises(ValueError):
+            sdk.execute(request, self.workspace)
+        self.assertEqual(self.call(action='inspect')['revision'], imported['revision'])
+        for entries in [[{'path': '../escape', 'content': 'x', 'expectedSha256': None}],
+                        [request['files'][0], request['files'][0]],
+                        [{'path': 'src/index.html', 'content': 'x', 'expectedSha256': 'a' * 64}]]:
+            with self.assertRaises(ValueError):
+                sdk.execute({**request, 'project': 'invalid-import', 'files': entries}, self.workspace)
 
 
 if __name__ == '__main__':

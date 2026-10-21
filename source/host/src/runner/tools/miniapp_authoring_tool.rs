@@ -14,6 +14,7 @@ use crate::runner::routed_provider_runtime::{RoutedProviderCancellation, RoutedT
 pub const MINIAPP_AUTHORING_TOOL_NAME: &str = "MiniApp";
 const SDK: &str = include_str!("miniapp_authoring.py");
 const PACKAGER: &str = include_str!("miniapp_package.py");
+const RELEASER: &str = include_str!("miniapp_release.py");
 
 pub struct MiniAppAuthoringToolBridge {
     delegate: Arc<dyn RoutedToolBridge>,
@@ -31,17 +32,20 @@ pub fn definition() -> RoutedToolDefinition {
         name: MINIAPP_AUTHORING_TOOL_NAME.into(),
         tool_name: MINIAPP_AUTHORING_TOOL_NAME.into(),
         provider_identifier: "fabushi-runner".into(),
-        description: Some("Create, inspect, edit and export an offline Mini App in your isolated Box. Generate application code in src/ and behavior tests in tests/*.test.cjs using edit, with expectedRevision and each file's expectedSha256 (null for a new file). Export returns exact githubFiles for the existing GitHub MCP connector. Continue through a repository branch, commit, pull request and actual CI behavior-test/package result when the user requests GitHub delivery. Export alone is not GitHub publication, signing, approval or installation. Existing native repositories retain their own build workflow.".into()),
+        description: Some("Create, import existing web source, read, inspect, edit and export an offline Mini App in your isolated Box. Generate application code in src/ and behavior tests in tests/*.test.cjs using edit, with expectedRevision and each file's expectedSha256 (null for a new file). Export returns exact githubFiles for the existing GitHub MCP connector. Continue through a repository branch, commit, pull request and actual CI behavior-test/package result when the user requests GitHub delivery. For requested GitHub publication, export includes an explicit tagged workflow_dispatch release pipeline: after actual tests succeed, dispatch on vVERSION with publish=true and the exact expectedSourceSha, then verify the remote release URL and asset digest. Read requires expectedRevision and a source path, with bounded UTF-8 byte pages. Import requires complete source/tests and config and never overwrites an existing project. Export alone is not GitHub publication, signing, approval or installation. Existing native repositories retain their own build workflow.".into()),
         input_schema: json!({
             "type":"object", "additionalProperties":false, "required":["action","project"],
             "properties": {
-                "action":{"type":"string","enum":["create","inspect","edit","export"]},
+                "action":{"type":"string","enum":["create","import","read","inspect","edit","export"]},
                 "project":{"type":"string","pattern":"^[a-z0-9][a-z0-9-]{0,63}$"},
                 "appId":{"type":"string","maxLength":128},
                 "publisherId":{"type":"string","maxLength":128},
                 "displayName":{"type":"string","maxLength":160},
                 "version":{"type":"string","pattern":"^[0-9]+[.][0-9]+[.][0-9]+$"},
                 "expectedRevision":{"type":"string","pattern":"^[a-f0-9]{64}$"},
+                "path":{"type":"string","maxLength":240},
+                "offset":{"type":"integer","minimum":0},
+                "maxBytes":{"type":"integer","minimum":1,"maximum":16384},
                 "files":{"type":"array","minItems":1,"maxItems":64,"items":{
                     "type":"object","additionalProperties":false,"required":["path","content","expectedSha256"],
                     "properties":{
@@ -93,8 +97,9 @@ impl RoutedToolBridge for MiniAppAuthoringToolBridge {
         ).ok_or_else(|| ProviderSessionError::Tool("MINIAPP_BOX_UNAVAILABLE".into()))?;
         // Keep the trusted SDK readable to the existing Shell auto-review.
         // Only user-authored file data is encoded; it is parsed as JSON, never code.
-        let bootstrap = format!("PACKAGER_SOURCE = {}\n{}", serde_json::to_string(PACKAGER)
-            .map_err(|_| ProviderSessionError::Tool("MINIAPP_SDK_INVALID".into()))?, SDK);
+        let bootstrap = format!("PACKAGER_SOURCE = {}\nRELEASE_SOURCE = {}\n{}",
+            serde_json::to_string(PACKAGER).map_err(|_| ProviderSessionError::Tool("MINIAPP_SDK_INVALID".into()))?,
+            serde_json::to_string(RELEASER).map_err(|_| ProviderSessionError::Tool("MINIAPP_SDK_INVALID".into()))?, SDK);
         let command = format!("python3 -I -c {} {}", quote(&bootstrap), quote(&STANDARD.encode(payload)));
         // Delegate the real Shell invocation, rather than calling execute_write
         // directly: the existing Shell auto-review and transport remain active.

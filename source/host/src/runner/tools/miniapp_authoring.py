@@ -77,8 +77,20 @@ def validate_files(files):
         raise ValueError('FILE_LIMIT_OR_ENTRYPOINT')
 
 
-WORKFLOW = '''name: Verify Mini App
-on: [push, pull_request, workflow_dispatch]
+WORKFLOW = '''name: Verify and publish Mini App
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish unsigned preparation to GitHub Releases
+        type: boolean
+        default: false
+      expectedSourceSha:
+        description: Exact verified source commit (required for publication)
+        type: string
+        default: ''
 permissions:
   contents: read
 jobs:
@@ -98,6 +110,12 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
+      - name: Verify explicit publication identity before tests
+        if: github.event_name == 'workflow_dispatch' && inputs.publish
+        env:
+          EXPECTED_SOURCE_SHA: ${{ inputs.expectedSourceSha }}
+        run: |
+          python3 -c "import json,os,re; c=json.load(open('fabushi.json')); assert os.environ['GITHUB_REF_TYPE']=='tag'; assert os.environ['GITHUB_REF_NAME']=='v'+c['version']; assert re.fullmatch('[a-f0-9]{40}',os.environ['EXPECTED_SOURCE_SHA']); assert os.environ['EXPECTED_SOURCE_SHA']==os.environ['GITHUB_SHA']"
       - name: Preserve disk reserve
         run: python3 -c "import shutil; u=shutil.disk_usage('.'); assert u.free >= max(1073741824,u.total//20)+16777216"
       - name: Test application behavior
@@ -111,6 +129,34 @@ jobs:
           name: miniapp-preparation-${{ github.event.pull_request.head.sha || github.sha }}
           path: dist/
           if-no-files-found: error
+  publish:
+    if: github.event_name == 'workflow_dispatch' && inputs.publish && github.ref_type == 'tag'
+    needs: package
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - name: Preserve publication storage reserve
+        run: python3 -c "import shutil; u=shutil.disk_usage('.'); assert u.free >= max(1073741824,u.total//20)+1073741824"
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v8
+        with:
+          name: miniapp-preparation-${{ github.sha }}
+          path: dist/
+      - name: Publish verified preparation (signing and Registry approval remain separate)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MINIAPP_PUBLISH: 'true'
+          EXPECTED_SOURCE_SHA: ${{ inputs.expectedSourceSha }}
+        run: python3 -I tools/publish.py
 '''
 
 BEHAVIOR_TEST = '''const {test} = require('node:test');
@@ -141,7 +187,9 @@ def execute(args, workspace=Path('/workspace')):
         raise ValueError('PROJECT_INVALID')
     keys = {'create': {'action', 'project', 'appId', 'publisherId', 'displayName', 'version'},
             'edit': {'action', 'project', 'expectedRevision', 'files', 'version'},
-            'inspect': {'action', 'project'}, 'export': {'action', 'project'}}
+            'inspect': {'action', 'project'}, 'export': {'action', 'project'},
+            'read': {'action', 'project', 'expectedRevision', 'path', 'offset', 'maxBytes'},
+            'import': {'action', 'project', 'appId', 'publisherId', 'displayName', 'version', 'files'}}
     if action not in keys or set(args) - keys[action]:
         raise ValueError('REQUEST_INVALID')
     check_space(workspace, 4 * 1024 * 1024)
@@ -157,7 +205,7 @@ def execute(args, workspace=Path('/workspace')):
         try:
             current = read_json(directory, 'current.json')
         except FileNotFoundError:
-            if action != 'create':
+            if action not in ['create', 'import']:
                 raise ValueError('PROJECT_MISSING')
             current = None
         else:
@@ -172,7 +220,7 @@ def execute(args, workspace=Path('/workspace')):
                 raise ValueError('SNAPSHOT_INVALID')
         else:
             state = None
-        if action == 'create':
+        if action in ['create', 'import']:
             if current is not None:
                 raise ValueError('PROJECT_EXISTS')
             for key in ['appId', 'publisherId']:
@@ -186,6 +234,18 @@ def execute(args, workspace=Path('/workspace')):
                 'src/app.css': 'body{font:18px system-ui;background:#f6f4fa;color:#24212b;margin:0}main{max-width:48rem;margin:4rem auto;padding:2rem}button{font:inherit;padding:.6rem 1rem;cursor:pointer}',
                 'src/app.js': 'let count=0;document.getElementById("increment").addEventListener("click",()=>{document.getElementById("count").textContent=String(++count)});\n',
                 'tests/app.test.cjs': BEHAVIOR_TEST}}
+            if action == 'import':
+                entries = args.get('files')
+                if not isinstance(entries, list) or not 1 <= len(entries) <= 64:
+                    raise ValueError('FILE_LIMIT')
+                imported = {}
+                for item in entries:
+                    if (not isinstance(item, dict) or set(item) != {'path', 'content', 'expectedSha256'}
+                            or not isinstance(item['path'], str) or item['path'] in imported
+                            or not isinstance(item['content'], str) or item['expectedSha256'] is not None):
+                        raise ValueError('IMPORT_INVALID')
+                    imported[item['path']] = item['content']
+                state['files'] = imported
         elif action == 'edit':
             if args.get('expectedRevision') != current['revision']:
                 raise ValueError('REVISION_CONFLICT')
@@ -219,7 +279,7 @@ def execute(args, workspace=Path('/workspace')):
         if len(encoded) > 768 * 1024:
             raise ValueError('SNAPSHOT_LIMIT')
         revision = digest(encoded)
-        if action in ['create', 'edit']:
+        if action in ['create', 'import', 'edit']:
             snapshots = 0
             with os.scandir(directory) as entries:
                 for item in entries:
@@ -244,13 +304,47 @@ def execute(args, workspace=Path('/workspace')):
             os.fsync(directory)
         result = {'project': project, 'revision': revision, 'config': state['config'],
                   'files': [{'path': p, 'sha256': digest(v.encode()), 'bytes': len(v.encode())} for p, v in sorted(state['files'].items())]}
+        if action == 'read':
+            if args.get('expectedRevision') != revision:
+                raise ValueError('REVISION_CONFLICT')
+            path = args.get('path')
+            if not isinstance(path, str) or path not in state['files']:
+                raise ValueError('FILE_MISSING')
+            data = state['files'][path].encode()
+            offset, limit = args.get('offset', 0), args.get('maxBytes', 8192)
+            if type(offset) is not int or type(limit) is not int or not 0 <= offset <= len(data) or not 1 <= limit <= 16384:
+                raise ValueError('READ_RANGE_INVALID')
+            try:
+                data[:offset].decode()
+            except UnicodeDecodeError:
+                raise ValueError('READ_RANGE_INVALID') from None
+            end = min(len(data), offset + limit)
+            while end > offset:
+                try:
+                    content = data[offset:end].decode()
+                    break
+                except UnicodeDecodeError:
+                    end -= 1
+            else:
+                if offset != len(data):
+                    raise ValueError('READ_RANGE_TOO_SMALL')
+                content = ''
+            result['source'] = {'path': path, 'sha256': digest(data), 'totalBytes': len(data),
+                                'content': content, 'offset': offset, 'nextOffset': end,
+                                'truncated': end < len(data)}
         if action == 'export':
             files = {**state['files'], 'fabushi.json': canonical(state['config']).decode() + '\n',
-                     'tools/package.py': PACKAGER_SOURCE, '.github/workflows/miniapp.yml': WORKFLOW,
+                     'tools/package.py': PACKAGER_SOURCE, 'tools/publish.py': RELEASE_SOURCE, '.github/workflows/miniapp.yml': WORKFLOW,
                      '.gitignore': 'dist/\n__pycache__/\n',
-                     'README.md': '# ' + state['config']['displayName'] + '\n\nEdit src/ with Fabushi Bot. GitHub Actions prepares an unsigned ZIP. Registry signing and approval are required before installation. No native code or network permission is granted by this scaffold.\n'}
+                     'README.md': '# ' + state['config']['displayName'] + '\n\nEdit src/ with Fabushi Bot. GitHub Actions tests behavior and prepares an unsigned ZIP. To publish on GitHub, create vVERSION at the verified commit using the existing GitHub connector, then explicitly dispatch miniapp.yml on that tag with publish=true and expectedSourceSha equal to that commit. Observe the published release URL and asset digest. Registry signing and approval are required before installation. No native code or network permission is granted by this scaffold.\n'}
             result['githubFiles'] = [{'path': p, 'content': v, 'sha256': digest(v.encode())} for p, v in sorted(files.items())]
             result['signed'] = result['installable'] = False
+            result['publication'] = {'state': 'source_exported', 'versionTag': 'v' + state['config']['version'],
+                'workflow': 'miniapp.yml', 'dispatchInputs': {'publish': True, 'expectedSourceSha': 'EXACT_VERIFIED_REMOTE_COMMIT_REQUIRED'},
+                'githubPublished': False, 'registryState': 'not_submitted',
+                'requires': ['actual_behavior_test_and_package_success', 'explicit_publication_request',
+                             'existing_version_tag_at_exact_source', 'observed_release_asset_digest']}
+
             result['exportId'] = digest(canonical(files))
             export_name = result['exportId'] + '.github.json'
             result['exportPath'] = str(workspace / 'fabushi-miniapps' / project / export_name)

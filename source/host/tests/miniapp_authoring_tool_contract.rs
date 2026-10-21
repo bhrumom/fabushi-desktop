@@ -171,9 +171,14 @@ fn actions_executes_actual_bot_tool_create_modify_export_chain() {
     let js = first["files"].as_array().unwrap().iter().find(|f| f["path"] == "src/app.js").unwrap();
     let tests = first["files"].as_array().unwrap().iter().find(|f| f["path"] == "tests/app.test.cjs").unwrap();
     let initial = bridge.call_tool(&tool,json!({"action":"export","project":project}),"inspect-source").unwrap();
-    let initial_files = initial["githubFiles"].as_array().unwrap();
-    let js_source = initial_files.iter().find(|f| f["path"] == "src/app.js").unwrap()["content"].as_str().unwrap().replace("++count", "count += 2");
-    let test_source = initial_files.iter().find(|f| f["path"] == "tests/app.test.cjs").unwrap()["content"].as_str().unwrap()
+    assert!(initial["githubFiles"].as_array().unwrap().iter().any(|file| file["path"] == "tools/publish.py"));
+    let read_js = bridge.call_tool(&tool,json!({"action":"read","project":project,
+        "expectedRevision":first["revision"],"path":"src/app.js","maxBytes":16384}),"read-source").unwrap();
+    assert_eq!(read_js["source"]["sha256"],js["sha256"]);
+    let read_tests = bridge.call_tool(&tool,json!({"action":"read","project":project,
+        "expectedRevision":first["revision"],"path":"tests/app.test.cjs","maxBytes":16384}),"read-tests").unwrap();
+    let js_source = read_js["source"]["content"].as_str().unwrap().replace("++count", "count += 2");
+    let test_source = read_tests["source"]["content"].as_str().unwrap()
         .replace("textContent, '2'", "textContent, '4'").replace("textContent, '1'", "textContent, '2'");
     let changed = bridge.call_tool(&tool,json!({"action":"edit","project":project,
         "expectedRevision":first["revision"],"version":"1.0.1","files":[{
