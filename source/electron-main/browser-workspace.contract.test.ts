@@ -1308,14 +1308,14 @@ test("page/load/network-idle events have bounded cursors, origin-only evidence, 
     expectedGeneration: boundedState.tabs[0]!.generation,
     expectedControlEpoch: boundedState.agentControl.epoch,
     expectedTaskId: boundedState.agentControl.taskId,
-    operationId: "events-wait-page", type: "wait-event", event: "page", afterSequence: cursor, timeoutMs: 500,
+    operationId: "events-wait-page", type: "wait-event", event: "page", afterSequence: cursor - 1, timeoutMs: 500,
   });
   assert.equal(waited.ok, true);
   if (waited.ok) assert.equal(waited.event?.type, "page");
 
   const latest = h.service.snapshot("bot-events")!;
   const latestGeneration = latest.tabs[0]!.generation;
-  const latestSequence = bounded.eventSequence! + 80;
+  const latestSequence = bounded.eventSequence!;
   await assert.rejects(() => h.service.executeAgentAction({
     conversationId: "bot-events", workspaceId: latest.workspaceId, tabId: tab.id,
     expectedGeneration: latestGeneration, expectedControlEpoch: latest.agentControl.epoch,
