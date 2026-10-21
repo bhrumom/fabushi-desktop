@@ -13,6 +13,17 @@ pub type BackgroundWatchWorkerSpawner = Arc<
     dyn Fn(String, Box<dyn FnOnce() + Send>) -> std::io::Result<()> + Send + Sync,
 >;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BackgroundWatchFailure {
+    pub parent_agent_id: String,
+    pub work_id: String,
+    pub kind: &'static str,
+    pub reason: &'static str,
+}
+
+pub type BackgroundWatchFailureCallback =
+    Arc<dyn Fn(BackgroundWatchFailure) + Send + Sync>;
+
 fn background_watch_worker_spawner() -> BackgroundWatchWorkerSpawner {
     Arc::new(|name, worker| std::thread::Builder::new().name(name).spawn(worker).map(drop))
 }
@@ -398,6 +409,7 @@ struct CloudAgentWatchState {
 pub struct RunnerCloudAgentWatches {
     state: Arc<Mutex<CloudAgentWatchState>>,
     spawn_worker: BackgroundWatchWorkerSpawner,
+    on_worker_failure: Option<BackgroundWatchFailureCallback>,
     await_completion: CloudAgentAwaitCallback,
     on_pending: Option<CloudAgentPendingCallback>,
     on_settled: Option<CloudAgentSettledCallback>,
@@ -414,11 +426,17 @@ impl RunnerCloudAgentWatches {
         Self {
             state: Arc::new(Mutex::new(CloudAgentWatchState::default())),
             spawn_worker: background_watch_worker_spawner(),
+            on_worker_failure: None,
             await_completion,
             on_pending,
             on_settled,
             on_async_tasks_changed,
         }
+    }
+
+    pub fn with_worker_failure_handler(mut self, callback: BackgroundWatchFailureCallback) -> Self {
+        self.on_worker_failure = Some(callback);
+        self
     }
 
     pub fn with_worker_spawner(mut self, spawn_worker: BackgroundWatchWorkerSpawner) -> Self {
@@ -463,6 +481,7 @@ impl RunnerCloudAgentWatches {
         let state = Arc::clone(&self.state);
         let await_completion = Arc::clone(&self.await_completion);
         let on_settled = self.on_settled.clone();
+        let on_worker_failure = self.on_worker_failure.clone();
         let on_async_tasks_changed = self.on_async_tasks_changed.clone();
         let after_followup = options.after_followup;
         let generation = armed.generation;
@@ -484,7 +503,33 @@ impl RunnerCloudAgentWatches {
                     }
                     return;
                 }
-                let outcome = await_completion(&work_id, after_followup);
+                let outcome = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    await_completion(&work_id, after_followup)
+                })) {
+                    Ok(outcome) => outcome,
+                    Err(_) => {
+                        let owned = {
+                            let mut state = state.lock().unwrap_or_else(|p| p.into_inner());
+                            let owned = state.armed.get(&key).is_some_and(|v| v.generation == generation);
+                            if owned { state.armed.remove(&key); }
+                            owned
+                        };
+                        if owned {
+                            // The backend job may still be running. Keep its
+                            // durable recovery marker; report watcher loss only.
+                            if let Some(callback) = on_worker_failure.as_ref() {
+                                callback(BackgroundWatchFailure {
+                                    parent_agent_id: parent_agent_id.clone(), work_id: work_id.clone(),
+                                    kind: "cloud-agent", reason: "await_worker_panicked",
+                                });
+                            }
+                            if let Some(callback) = on_async_tasks_changed.as_ref() {
+                                callback(&parent_agent_id);
+                            }
+                        }
+                        return;
+                    }
+                };
                 let still_owned = {
                     let mut state = state
                         .lock()
@@ -708,6 +753,7 @@ struct BackgroundShellWatchState {
 pub struct RunnerBackgroundShellWatches {
     state: Arc<Mutex<BackgroundShellWatchState>>,
     spawn_worker: BackgroundWatchWorkerSpawner,
+    on_worker_failure: Option<BackgroundWatchFailureCallback>,
     await_terminal: BackgroundShellAwaitCallback,
     on_pending: Option<BackgroundShellPendingCallback>,
     on_settled: Option<BackgroundShellSettledCallback>,
@@ -724,11 +770,17 @@ impl RunnerBackgroundShellWatches {
         Self {
             state: Arc::new(Mutex::new(BackgroundShellWatchState::default())),
             spawn_worker: background_watch_worker_spawner(),
+            on_worker_failure: None,
             await_terminal,
             on_pending,
             on_settled,
             on_async_tasks_changed,
         }
+    }
+
+    pub fn with_worker_failure_handler(mut self, callback: BackgroundWatchFailureCallback) -> Self {
+        self.on_worker_failure = Some(callback);
+        self
     }
 
     pub fn with_worker_spawner(mut self, spawn_worker: BackgroundWatchWorkerSpawner) -> Self {
@@ -782,6 +834,7 @@ impl RunnerBackgroundShellWatches {
         let state = Arc::clone(&self.state);
         let await_terminal = Arc::clone(&self.await_terminal);
         let on_settled = self.on_settled.clone();
+        let on_worker_failure = self.on_worker_failure.clone();
         let on_async_tasks_changed = self.on_async_tasks_changed.clone();
         let generation = armed.generation;
         let parent_agent_id = armed.parent_agent_id.clone();
@@ -803,8 +856,33 @@ impl RunnerBackgroundShellWatches {
                     }
                     return;
                 }
-                let outcome =
-                    await_terminal(&parent_agent_id, &work_id, Arc::clone(&cancelled));
+                let outcome = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    await_terminal(&parent_agent_id, &work_id, Arc::clone(&cancelled))
+                })) {
+                    Ok(outcome) => outcome,
+                    Err(_) => {
+                        let owned = {
+                            let mut state = state.lock().unwrap_or_else(|p| p.into_inner());
+                            let owned = state.armed.get(&key).is_some_and(|v| v.generation == generation);
+                            if owned { state.armed.remove(&key); }
+                            owned
+                        };
+                        if owned {
+                            // The backend job may still be running. Keep its
+                            // durable recovery marker; report watcher loss only.
+                            if let Some(callback) = on_worker_failure.as_ref() {
+                                callback(BackgroundWatchFailure {
+                                    parent_agent_id: parent_agent_id.clone(), work_id: work_id.clone(),
+                                    kind: "shell", reason: "await_worker_panicked",
+                                });
+                            }
+                            if let Some(callback) = on_async_tasks_changed.as_ref() {
+                                callback(&parent_agent_id);
+                            }
+                        }
+                        return;
+                    }
+                };
                 if cancelled.load(Ordering::Acquire) {
                     return;
                 }

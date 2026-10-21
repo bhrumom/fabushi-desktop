@@ -510,3 +510,49 @@ fn worker_spawn_failure_publishes_no_pending_and_allows_rearm() {
     assert_eq!(pending.load(Ordering::SeqCst), 2);
     assert_eq!(attempts.load(Ordering::SeqCst), 4);
 }
+
+#[test]
+fn await_worker_loss_preserves_backend_uncertainty_and_can_rearm_same_work() {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    let calls=Arc::new(AtomicUsize::new(0));
+    let pending=Arc::new(AtomicUsize::new(0));
+    let pending_count=Arc::clone(&pending);
+    let await_calls=Arc::clone(&calls);
+    let (failure_tx,failure_rx)=mpsc::channel();
+    let (completion_tx,completion_rx)=mpsc::channel();
+    let watches=RunnerBackgroundShellWatches::new(
+        Arc::new(move |_,_,_| {
+            if await_calls.fetch_add(1,Ordering::SeqCst)==0 {panic!("injected await worker loss");}
+            Some(BackgroundShellWatchOutcome{status:"success".into(),detail:None,output_path:None})
+        }),
+        Some(Arc::new(move |_| {pending_count.fetch_add(1,Ordering::SeqCst);})),
+        Some(Arc::new(move |value| {completion_tx.send(value).unwrap();})),None,
+    ).with_worker_failure_handler(Arc::new(move |failure| {failure_tx.send(failure).unwrap();}));
+    assert!(watches.watch_background_shell("parent","42",BackgroundShellWatchOptions::new(None,None)));
+    let failure=failure_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+    assert_eq!(failure.parent_agent_id,"parent");assert_eq!(failure.work_id,"42");
+    assert_eq!(failure.kind,"shell");assert_eq!(failure.reason,"await_worker_panicked");
+    assert!(!watches.is_shell_watch_armed("parent","42"));
+    assert!(completion_rx.try_recv().is_err(),"watcher loss is not a backend completion");
+    assert_eq!(pending.load(Ordering::SeqCst),1,"recovery marker must remain");
+    assert!(watches.watch_background_shell("parent","42",BackgroundShellWatchOptions::new(None,None)));
+    let completion=completion_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+    assert_eq!(completion.work_id,"42");assert_eq!(completion.status,"success");
+    assert_eq!(calls.load(Ordering::SeqCst),2,"rearm waits for the same job, not another command");
+}
+
+#[test]
+fn cloud_worker_loss_is_reported_without_false_completion() {
+    let (failure_tx,failure_rx)=mpsc::channel();
+    let settled=Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let settled_flag=Arc::clone(&settled);
+    let watches=RunnerCloudAgentWatches::new(
+        Arc::new(|_,_|panic!("injected cloud await loss")),None,
+        Some(Arc::new(move |_| {settled_flag.store(true,std::sync::atomic::Ordering::SeqCst);})),None,
+    ).with_worker_failure_handler(Arc::new(move |failure| {failure_tx.send(failure).unwrap();}));
+    assert!(watches.watch_cloud_agent("parent","bc",CloudAgentWatchOptions::new(None,false)));
+    let failure=failure_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+    assert_eq!(failure.kind,"cloud-agent");assert_eq!(failure.parent_agent_id,"parent");
+    assert_eq!(failure.work_id,"bc");assert!(!watches.is_cloud_watch_armed("parent","bc"));
+    assert!(!settled.load(std::sync::atomic::Ordering::SeqCst));
+}

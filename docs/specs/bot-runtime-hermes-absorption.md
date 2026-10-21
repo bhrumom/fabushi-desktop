@@ -49,6 +49,12 @@ first delivery target. Never enable paid-model tests as a side effect of this wo
   whether automatic completion delivery was registered; notification failure does
   not imply that the backend process failed and must not rerun it. Inject worker
   spawn failure through the existing watch owner, not a replacement scheduler.
+  Catch an await worker panic, release only its generation, retain the backend
+  pending marker, and emit a typed watcher failure through the existing pending-
+  wake event owner. Never invent backend completion, resend the command or start
+  another model request. A subsequent rearm monitors the same backend work ID.
+  Deliver completion from the already-owned watcher thread; do not clear its
+  durable marker then depend on an unchecked secondary thread allocation.
 - HRA-05: verify completion/cancellation/empty-output and partial-stream semantics
   across the production provider adapters. Automatic transport/recovery attempts
   are separate from model-directed business retries and remain bounded.
@@ -124,10 +130,11 @@ concrete gaps remain open after the immediate safety/cost fixes:
    does not claim full JSON-Schema validation for every MCP schema. Reuse the
    canonical validation/authorization boundary; cover schema errors before effects
    and preserve truthful feedback without acquiring new grants.
-4. Background worker loss: spawn failure is repaired. An await callback panic or
-   disappearance after registration still needs typed watcher-failure handling,
-   preserving the backend job and recovery marker rather than inventing a job
-   completion or rerunning it.
+Background worker loss follow-up is implemented pending Actions verification:
+await panics release only the current generation and emit a typed pending-wake
+failure; durable backend markers remain. The existing watcher thread now hands
+completion directly to CompletionRevivals, eliminating a second unchecked spawn.
+
 
 Mac compilation, signing, installation and real-model MiniApp authoring/GitHub
 acceptance are separate delivery gates. Real-model acceptance remains stopped

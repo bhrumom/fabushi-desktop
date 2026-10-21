@@ -62,7 +62,7 @@ Actions 39554253294 已生成并返回锁文件。实际差异仅补齐路径依
 核验已提交的锁文件。
 
 仍未补齐：生产长上下文压缩接入、根/子任务统一可配置预算、完整 MCP schema
-调用前验证，以及已启动监听 worker 丢失的类型化恢复。各项约束见规格的
+调用前验证。各项约束见规格的
 Remaining implementation gates；这些项目不能标记为完成。
 
 Mac 签名安装及真实 Bot 创建/修改小程序并更新 GitHub 的最终验收尚未完成。
@@ -76,3 +76,8 @@ Mac 签名安装及真实 Bot 创建/修改小程序并更新 GitHub 的最终�
 - [后台等待交付条件](https://github.com/NousResearch/hermes-agent/blob/40cc180823d182826536416de2fc27be44b4ac57/tools/process_registry_wait_policy.py)
 - [正常最终响应](https://github.com/NousResearch/hermes-agent/blob/40cc180823d182826536416de2fc27be44b4ac57/agent/turn_final_response.py)
 - [输出截断](https://github.com/NousResearch/hermes-agent/blob/40cc180823d182826536416de2fc27be44b4ac57/tools/tool_output_truncate.py)
+
+后台 worker 丢失跟进：代码已补上 await panic 的类型化失败事件，释放对应 generation，
+保留后台任务 pending marker，不伪造任务完成、不重跑命令；同 ID 可重新监听。
+Host 完成回调直接使用已有 watcher 线程，移除了另一处忽略 spawn 结果的交付窗口。
+该跟进尚待自身提交的 Actions 核验，不沿用旧提交通过状态。
