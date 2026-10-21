@@ -12,12 +12,14 @@ import { fileURLToPath } from 'node:url';
 const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const packagedExecutable = process.env.FABUSHI_ELECTRON_EXECUTABLE?.trim() || null;
 const firstWindowTimeoutMs = packagedExecutable ? 120_000 : 30_000;
+let e2eBrowserAgentToolFailures: string[] = [];
 
 // Production packaged startup includes the real Host/Coordinator graph and is
 // governed by the desktop's existing 120s startup-stuck watchdog. Ordinary
 // focused E2E keeps its 45s default; native workspace acceptance has an explicit
 // budget because it verifies real Chromium, clean shutdown, and profile restart.
 test.beforeEach(async ({}, testInfo) => {
+  e2eBrowserAgentToolFailures = [];
   if (packagedExecutable) testInfo.setTimeout(150_000);
 });
 
@@ -525,12 +527,35 @@ async function ensureE2eAuthBackend(): Promise<string> {
           || body.includes(Buffer.from('fabushi-e2e-browser-download-', 'utf8')));
         const browserAgentE2e = !browserAgentConcurrencyE2e && !browserAgentDownloadE2e && (body.includes(Buffer.from('FABUSHI_BROWSER_AGENT_E2E', 'utf8'))
           || body.includes(Buffer.from('fabushi-e2e-browser-', 'utf8')));
-        const functionOutput = (callId: string): Record<string, unknown> | null => {
-          const item = providerInput.find((candidate) => candidate != null
+        const functionOutputItem = (callId: string): { output?: unknown } | undefined =>
+          providerInput.find((candidate) => candidate != null
             && typeof candidate === 'object'
             && !Array.isArray(candidate)
             && (candidate as { type?: unknown }).type === 'function_call_output'
             && (candidate as { call_id?: unknown }).call_id === callId) as { output?: unknown } | undefined;
+        const hasFunctionOutput = (callId: string): boolean => functionOutputItem(callId) != null;
+        const functionOutputFailure = (callId: string): string | null => {
+          const item = functionOutputItem(callId);
+          if (item == null) return null;
+          let output = item.output;
+          if (typeof output === 'string') {
+            try { output = JSON.parse(output); } catch {
+              return /(?:error|failed|blocked|timed out|timeout|denied|not found)/iu.test(output)
+                ? output.slice(0, 1_024)
+                : null;
+            }
+          }
+          if (output == null || typeof output !== 'object' || Array.isArray(output)) return null;
+          const row = output as Record<string, unknown>;
+          if (row.isError !== true && row.ok !== false
+            && !(typeof row.error === 'string' && row.error.trim().length > 0)) return null;
+          const detail = typeof row.error === 'string' && row.error.trim().length > 0
+            ? row.error
+            : typeof row.text === 'string' ? row.text : JSON.stringify(row);
+          return detail.slice(0, 1_024);
+        };
+        const functionOutput = (callId: string): Record<string, unknown> | null => {
+          const item = functionOutputItem(callId);
           if (item == null) return null;
           let output = item.output;
           if (typeof output === 'string') {
@@ -554,6 +579,26 @@ async function ensureE2eAuthBackend(): Promise<string> {
             })}\n\n`,
           ].join(''));
         };
+        const finishProviderTurn = (turnId: string): void => {
+          response.end([
+            `data: ${JSON.stringify({ type: 'response.output_text.delta', delta: 'done' })}\n\n`,
+            `data: ${JSON.stringify({
+              type: 'response.completed',
+              response: {
+                id: 'fabushi-e2e-finished-' + turnId,
+                output: [],
+                usage: { input_tokens: 8, output_tokens: 1, input_tokens_details: { cached_tokens: 0 } },
+              },
+            })}\n\n`,
+          ].join(''));
+        };
+        const finishToolFailure = (callId: string): boolean => {
+          const failure = functionOutputFailure(callId);
+          if (failure == null) return false;
+          e2eBrowserAgentToolFailures.push(callId + ': ' + failure);
+          finishProviderTurn('tool-failure-' + callId);
+          return true;
+        };
         response.setHeader('content-type', 'text/event-stream');
         response.statusCode = 200;
         if (browserAgentConcurrencyE2e) {
@@ -562,10 +607,19 @@ async function ensureE2eAuthBackend(): Promise<string> {
             ? "alpha"
             : "beta";
           const prefix = `fabushi-e2e-browser-concurrency-${task}-`;
-          const snapshotOutput = functionOutput(`${prefix}snapshot`);
-          const fillOutput = functionOutput(`${prefix}fill`);
-          const clickOutput = functionOutput(`${prefix}click`);
-          const waitOutput = functionOutput(`${prefix}wait`);
+          const finalCallId = prefix + 'final-message';
+          if (finishToolFailure(finalCallId)) return;
+          if (hasFunctionOutput(finalCallId)) {
+            finishProviderTurn(finalCallId);
+            return;
+          }
+          for (const callId of [prefix + 'snapshot', prefix + 'fill', prefix + 'click', prefix + 'wait']) {
+            if (finishToolFailure(callId)) return;
+          }
+          const snapshotOutput = functionOutput(prefix + 'snapshot');
+          const fillOutput = functionOutput(prefix + 'fill');
+          const clickOutput = functionOutput(prefix + 'click');
+          const waitOutput = functionOutput(prefix + 'wait');
           if (snapshotOutput == null) {
             sendFunctionCall('browser_snapshot', `${prefix}snapshot`, { target: 'local' });
             return;
@@ -632,6 +686,19 @@ async function ensureE2eAuthBackend(): Promise<string> {
           return;
         }
         if (browserAgentDownloadE2e) {
+          const finalCallId = 'fabushi-e2e-browser-download-final-message';
+          if (finishToolFailure(finalCallId)) return;
+          if (hasFunctionOutput(finalCallId)) {
+            finishProviderTurn(finalCallId);
+            return;
+          }
+          for (const callId of [
+            'fabushi-e2e-browser-download-wait',
+            'fabushi-e2e-browser-download-snapshot',
+            'fabushi-e2e-browser-download-file',
+          ]) {
+            if (finishToolFailure(callId)) return;
+          }
           const waitOutput = functionOutput('fabushi-e2e-browser-download-wait');
           const snapshotOutput = functionOutput('fabushi-e2e-browser-download-snapshot');
           const downloadOutput = functionOutput('fabushi-e2e-browser-download-file');
@@ -688,6 +755,21 @@ async function ensureE2eAuthBackend(): Promise<string> {
           return;
         }
         if (browserAgentE2e) {
+          const finalCallId = 'fabushi-e2e-browser-final-message';
+          if (finishToolFailure(finalCallId)) return;
+          if (hasFunctionOutput(finalCallId)) {
+            finishProviderTurn(finalCallId);
+            return;
+          }
+          for (const callId of [
+            'fabushi-e2e-browser-snapshot',
+            'fabushi-e2e-browser-fill',
+            'fabushi-e2e-browser-select',
+            'fabushi-e2e-browser-click',
+            'fabushi-e2e-browser-wait',
+          ]) {
+            if (finishToolFailure(callId)) return;
+          }
           const snapshotOutput = functionOutput('fabushi-e2e-browser-snapshot');
           const fillOutput = functionOutput('fabushi-e2e-browser-fill');
           const selectOutput = functionOutput('fabushi-e2e-browser-select');
@@ -1227,6 +1309,17 @@ async function launchDesktopApp(
 }
 
 
+async function removeE2eAppDataDir(directory: string): Promise<void> {
+  try {
+    await rm(directory, { recursive: true, force: true, maxRetries: 24, retryDelay: 250 });
+  } catch (error) {
+    const code = error != null && typeof error === 'object' && 'code' in error
+      ? String((error as { code?: unknown }).code ?? 'unknown')
+      : 'unknown';
+    throw new Error('Could not remove isolated Electron user data after retrying transient file locks (' + code + '): ' + directory + ': ' + String(error));
+  }
+}
+
 async function closeDesktopApp(
   app: ElectronApplication | null,
   options: { readonly timeoutMs?: number; readonly failOnTimeout?: boolean } = {},
@@ -1566,7 +1659,26 @@ async function emitBotInvocationRequested(
 async function expectHermesAssistantTurn(page: Page, expectedText: string): Promise<Locator> {
   const transcript = page.getByRole('log', { name: 'Conversation transcript' });
   const matchingMessages = transcript.getByRole('group', { name: 'Agent message' }).filter({ hasText: expectedText });
-  await expect(matchingMessages).toHaveCount(1, { timeout: 15_000 });
+  const deadline = Date.now() + 15_000;
+  let matchingCount = 0;
+  while (Date.now() < deadline) {
+    if (e2eBrowserAgentToolFailures.length > 0) {
+      throw new Error('Browser Agent E2E tool failure(s): ' + e2eBrowserAgentToolFailures.join('; '));
+    }
+    matchingCount = await matchingMessages.count();
+    if (matchingCount === 1) break;
+    if (matchingCount > 1) {
+      throw new Error('Expected exactly one assistant turn containing "' + expectedText + '", found ' + matchingCount + '.');
+    }
+    await new Promise<void>((resolve) => setTimeout(resolve, 100));
+  }
+  if (e2eBrowserAgentToolFailures.length > 0) {
+    throw new Error('Browser Agent E2E tool failure(s): ' + e2eBrowserAgentToolFailures.join('; '));
+  }
+  if (matchingCount !== 1) {
+    throw new Error('Expected exactly one assistant turn containing "' + expectedText + '" within 15000ms, found ' + matchingCount + '.');
+  }
+  await expect(matchingMessages).toHaveCount(1, { timeout: 1_000 });
 
   const message = matchingMessages.first();
   await expect(message).toBeVisible();
@@ -1709,7 +1821,7 @@ test('native Browser Workspace opens real Chromium pages, isolates tabs, and dow
     await expect(restoredWorkspace.getByRole('tab').filter({ hasText: 'Fabushi Browser Cookie retained' })).toHaveCount(1, { timeout: 15_000 });
   } finally {
     await closeDesktopApp(app);
-    await rm(appDataDir, { recursive: true, force: true });
+    await removeE2eAppDataDir(appDataDir);
   }
 });
 
@@ -1803,7 +1915,7 @@ test('Browser extension installs into real Chromium, survives restart, disables,
     await expect.poll(() => observedMarker(fixtureUrl), { timeout: 15_000 }).toBe(null);
   } finally {
     await closeDesktopApp(app);
-    await rm(appDataDir, { recursive: true, force: true });
+    await removeE2eAppDataDir(appDataDir);
     await rm(extensionDir, { recursive: true, force: true });
   }
 });
@@ -1844,6 +1956,9 @@ test('Agent downloads verified bytes from the real local Chromium page through H
     const downloadRoot = path.join(browserUserData, 'browser-workspace', 'downloads');
     const expectedBytes = Buffer.from('FABUSHI_BROWSER_DOWNLOAD_V1\n', 'utf8');
     await expect.poll(async () => {
+      if (e2eBrowserAgentToolFailures.length > 0) {
+        return 'tool-failure: ' + e2eBrowserAgentToolFailures.join('; ');
+      }
       const { readdir, readFile } = await import('node:fs/promises');
       const accounts = await readdir(downloadRoot, { withFileTypes: true }).catch(() => []);
       for (const account of accounts) {
@@ -1851,16 +1966,17 @@ test('Agent downloads verified bytes from the real local Chromium page through H
         const files = await readdir(path.join(downloadRoot, account.name)).catch(() => []);
         for (const file of files) {
           if (!file.endsWith('-fabushi-browser-fixture.txt')) continue;
-          if ((await readFile(path.join(downloadRoot, account.name, file))).equals(expectedBytes)) return true;
+          if ((await readFile(path.join(downloadRoot, account.name, file))).equals(expectedBytes)) return 'downloaded';
         }
       }
-      return false;
-    }, { timeout: 20_000 }).toBe(true);
+      return 'pending';
+    }, { timeout: 20_000 }).not.toBe('pending');
+    expect(e2eBrowserAgentToolFailures, e2eBrowserAgentToolFailures.join('; ')).toEqual([]);
 
     await expectHermesAssistantTurn(page, 'Browser agent download complete');
   } finally {
     await closeDesktopApp(app);
-    await rm(appDataDir, { recursive: true, force: true });
+    await removeE2eAppDataDir(appDataDir);
   }
 });
 
@@ -1975,7 +2091,7 @@ test('Agent controls the real local Chromium form through Host tools, isolates t
     releaseE2eConcurrentAlphaClick?.();
     releaseE2eConcurrentAlphaClick = null;
     await closeDesktopApp(app);
-    await rm(appDataDir, { recursive: true, force: true });
+    await removeE2eAppDataDir(appDataDir);
   }
 });
 
@@ -2021,7 +2137,7 @@ test('Mahayana renders one Hermes-style assistant turn instead of a completion W
     await expect(promptInput).toBeVisible();
   } finally {
     await closeDesktopApp(app);
-    await rm(appDataDir, { recursive: true, force: true });
+    await removeE2eAppDataDir(appDataDir);
   }
 });
 
@@ -2109,7 +2225,7 @@ test('Human reply, attachment, reaction, and search stay on the shipping convers
     await expect(restoredReply.getByRole('button', { name: /You reacted with 👍/u })).toBeVisible();
   } finally {
     await closeDesktopApp(app);
-    await rm(appDataDir, { recursive: true, force: true });
+    await removeE2eAppDataDir(appDataDir);
   }
 });
 
@@ -2184,7 +2300,7 @@ test('shipping Human Forward uses the canonical picker and survives restart', as
     await expect(page.getByRole('article').filter({ hasText: sourceText }).last()).toBeVisible({ timeout: 15_000 });
   } finally {
     await closeDesktopApp(app);
-    await rm(appDataDir, { recursive: true, force: true });
+    await removeE2eAppDataDir(appDataDir);
   }
 });
 
@@ -2260,8 +2376,8 @@ test('two shipping Electron device sessions converge one Human conversation thro
   } finally {
     await closeDesktopApp(appB);
     await closeDesktopApp(appA);
-    await rm(appDataDirB, { recursive: true, force: true });
-    await rm(appDataDirA, { recursive: true, force: true });
+    await removeE2eAppDataDir(appDataDirB);
+    await removeE2eAppDataDir(appDataDirA);
   }
 });
 
@@ -2531,7 +2647,7 @@ test('Settings localization, accessibility, bidirectional text, and IME stay on 
     await expect(restoredSettings).toBeHidden();
   } finally {
     await closeDesktopApp(app);
-    await rm(appDataDir, { recursive: true, force: true });
+    await removeE2eAppDataDir(appDataDir);
   }
 });
 
@@ -2582,7 +2698,7 @@ test('Human call surface exposes the shipping WebRTC and Electron media bridge',
     expect(capability.preferencesRoundTrip).toEqual({ microphoneId: 'call-mic-e2e', cameraId: 'call-camera-e2e' });
   } finally {
     await closeDesktopApp(app);
-    await rm(appDataDir, { recursive: true, force: true });
+    await removeE2eAppDataDir(appDataDir);
   }
 });
 
@@ -2670,7 +2786,7 @@ test('Human conversation survives restart and explicitly hands off into one Herm
     await expect(page.getByText('Human', { exact: true })).toBeVisible();
   } finally {
     await closeDesktopApp(app);
-    await rm(appDataDir, { recursive: true, force: true });
+    await removeE2eAppDataDir(appDataDir);
   }
 });
 
@@ -2723,6 +2839,6 @@ test('self-hosted Bot invocation projects into the same Hermes-style turn withou
     await expect(page.getByRole('article').filter({ hasText: prompt }).last()).toBeVisible({ timeout: 10_000 });
   } finally {
     await closeDesktopApp(app);
-    await rm(appDataDir, { recursive: true, force: true });
+    await removeE2eAppDataDir(appDataDir);
   }
 });
