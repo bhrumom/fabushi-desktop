@@ -474,6 +474,7 @@ export interface DesktopMiniAppEntry {
   offlineCore: boolean;
   installed: boolean;
   supported: boolean;
+  availableUpdate?: { version: string; packageDigest: string };
 }
 
 export interface DesktopBridge {

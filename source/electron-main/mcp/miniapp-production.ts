@@ -57,7 +57,11 @@ export function registerProductionMiniApps(context: ProductionServiceContext, ip
         catch { return installed; } // Host still revalidates installed code on every launch.
         const merged = new Map(approved.map((item) => [item.appId, item]));
         // The catalog cannot replace installed/quarantined Host truth.
-        for (const item of installed) merged.set(item.appId, item);
+        for (const item of installed) {
+          const latest = merged.get(item.appId);
+          merged.set(item.appId, { ...item, ...(latest?.supported && latest.packageDigest !== item.packageDigest
+            ? { availableUpdate: { version: latest.version, packageDigest: latest.packageDigest } } : {}) });
+        }
         return [...merged.values()];
       },
       installApproved: async (appId, operationId) => { handles.get(appId)?.close(); handles.delete(appId); await call("installApprovedMiniApp", { appId, operationId }); },
