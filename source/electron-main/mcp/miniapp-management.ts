@@ -4,6 +4,7 @@ export interface NativeMiniAppEntry {
   appId: string; displayName: string; publisherId: string; version: string;
   packageDigest: string; sizeBytes: number; offlineCore: boolean;
   installed: boolean; supported: boolean;
+  availableUpdate?: { version: string; packageDigest: string };
 }
 export interface MiniAppManagementPorts {
   ipc: { handle(name: string, handler: (event: unknown, appId?: unknown) => Promise<unknown>): void };
@@ -39,10 +40,17 @@ function publicEntry(entry: NativeMiniAppEntry): NativeMiniAppEntry {
     || [entry.offlineCore, entry.installed, entry.supported].some((field) => typeof field !== "boolean")) {
     throw new Error("MINIAPP_DESCRIPTOR_INVALID");
   }
+  const update = entry.availableUpdate;
+  if (update != null && (typeof update !== "object" || Array.isArray(update)
+    || Object.keys(update).sort().join() !== "packageDigest,version"
+    || !/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(update.version)
+    || !/^[0-9a-f]{64}$/.test(update.packageDigest)
+    || update.packageDigest === entry.packageDigest || !entry.installed)) throw new Error("MINIAPP_DESCRIPTOR_INVALID");
   return { appId: identity(entry.appId), publisherId: identity(entry.publisherId),
     displayName: entry.displayName, version: entry.version, packageDigest: entry.packageDigest,
     sizeBytes: entry.sizeBytes, offlineCore: entry.offlineCore,
-    installed: entry.installed, supported: entry.supported };
+    installed: entry.installed, supported: entry.supported,
+    ...(update ? { availableUpdate: { version: update.version, packageDigest: update.packageDigest } } : {}) };
 }
 export function registerMiniAppManagement(ports: MiniAppManagementPorts): { dispose(): void } {
   let disposed = false, generation = 1;

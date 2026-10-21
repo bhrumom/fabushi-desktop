@@ -1,7 +1,8 @@
 import { chromium, expect, test, type Browser, type Locator, type Page } from '@playwright/test';
+import assert from 'node:assert/strict';
 import { execFileSync, spawn, type ChildProcess } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { lstat, mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
+import { access, lstat, mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -12,7 +13,8 @@ const expectedSourceSha = process.env.OBF_EXPECTED_SOURCE_SHA?.trim() || sourceS
 const evidenceRoot = process.env.MINIAPP_EVIDENCE_DIR?.trim()
   || path.join(tmpdir(), `fabushi-miniapp-acceptance-${sourceSha.slice(0, 12) || 'unknown'}`);
 const appId = 'org.fabushi.global-dandelion';
-const packageDigest = 'afc45ad273e4965fc272a89e775291444c683513ecbc3fa31769858431e8a6b6';
+const packageVersion = process.env.MINIAPP_PACKAGE_VERSION || '0.3.3';
+const packageDigest = process.env.MINIAPP_PACKAGE_DIGEST || '4f53dd5df129adb41feadf86016a5923ba792a9a7636a37694965ea4ad28f4db';
 const preferenceKey = 'global-dandelion-display-v1';
 const maxInputBytes = 16 * 1024 * 1024;
 const harnessSource = process.env.FABUSHI_MINIAPP_HARNESS_SOURCE || process.env.GITHUB_SHA || sourceSha;
@@ -215,7 +217,7 @@ async function refreshUntilCatalogItem(page: Page): Promise<{ dialog: Locator; s
   const { dialog, section } = await openPlugins(page);
   const row = section.locator('li').filter({ hasText: packageDigest });
   await expect(row, 'public approved catalog must expose the exact pinned package').toHaveCount(1, { timeout: 60_000 });
-  await expect(row).toContainText('0.2.1');
+  await expect(row).toContainText(packageVersion);
   await expect(row).toContainText('bhrumom');
   return { dialog, section, row };
 }
@@ -234,7 +236,7 @@ function bytesLabel(size: number): string {
 }
 
 async function verifyWasmFileReport(page: Page, inputFile: string, inputBytes: number): Promise<void> {
-  await expect(page.getByRole('status')).toContainText('本地 Rust 内核已就绪。', { timeout: 45_000 });
+  await expect(page.locator('#status')).toContainText('本地 Rust 内核已就绪。', { timeout: 45_000 });
   const fileInput = page.locator('#files');
   await expect(fileInput, 'the signed app must provide its genuine Web file input').toHaveCount(1);
   await fileInput.setInputFiles(inputFile);
@@ -250,6 +252,59 @@ async function verifyWasmFileReport(page: Page, inputFile: string, inputBytes: n
   await expect(result).toContainText(path.basename(inputFile));
   await expect(result).toContainText('完整校验');
   await expect(page.getByRole('button', { name: '导出报告', exact: true })).toBeEnabled();
+}
+
+async function verifyInstalledNativeRuntime(page: Page): Promise<boolean> {
+  if (process.env.MINIAPP_REQUIRE_NATIVE_ENGINE !== '1') return false;
+  const observed = await page.evaluate(async () => {
+    const bridge = (globalThis as unknown as { fabushi?: { invoke(tool: string, args?: Record<string, unknown>): Promise<{ ok: boolean; data?: Record<string, unknown> }> } }).fabushi;
+    if (!bridge) throw new Error('INSTALLED_NATIVE_BRIDGE_MISSING');
+    return {
+      capabilities: await bridge.invoke('offline.capabilities'),
+      config: await bridge.invoke('config.check'),
+      diagnostic: await bridge.invoke('diagnostics.selfTest'),
+      platform: await bridge.invoke('platform.time'),
+      state: await bridge.invoke('state.inspect'),
+    };
+  });
+  expect(observed.capabilities.ok).toBe(true);
+  const capabilities = observed.capabilities.data?.capabilities as string[];
+  for (const capability of ['selection', 'scan', 'transfer', 'state', 'config', 'platform', 'diagnostics', 'update', 'compat']) expect(capabilities).toContain(capability);
+  expect(capabilities).not.toContain('hotspot');
+  expect(observed.config.ok).toBe(true);
+  expect((observed.config.data?.scanner as Record<string, unknown>).max_files).toBe(128);
+  expect((observed.config.data?.transport as Record<string, unknown>).mode).toBe('loopback');
+  expect(observed.diagnostic.ok).toBe(true);
+  expect(observed.diagnostic.data?.status).toBe('completed');
+  expect(observed.diagnostic.data?.verified_payload_bytes).toBe(65537);
+  expect(observed.platform.ok).toBe(true);
+  expect(observed.platform.data?.system_clock_modified).toBe(false);
+  expect(observed.state.ok).toBe(true);
+  return true;
+}
+
+async function activeNativeDigests(appDataDir: string): Promise<string[]> {
+  const root = path.join(appDataDir, 'native-miniapp-runtimes');
+  let children: string[];
+  try { children = await readdir(root); } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return [];
+    throw error;
+  }
+  const digests: string[] = [];
+  for (const name of children.filter(name => name.startsWith('runtime-'))) {
+    try {
+      const binary = await readFile(path.join(root, name, 'native', 'dandelion.bin'));
+      digests.push(createHash('sha256').update(binary).digest('hex'));
+    } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
+  }
+  return digests;
+}
+
+async function openWithNativePermission(row: Locator, appPid: number, allow = true): Promise<void> {
+  await row.getByRole('button', { name: '打开', exact: true }).click();
+  if (process.env.MINIAPP_REQUIRE_NATIVE_ENGINE !== '1') return;
+  if (process.platform !== 'darwin' || process.env.GITHUB_ACTIONS !== 'true') throw new Error('Actions-only native-code permission gate');
+  execFileSync('/usr/bin/osascript', [path.resolve('../.github/scripts/miniapp-native-confirm.applescript'), String(appPid), allow ? '允许' : '取消'], { timeout: 30000, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
 }
 
 async function exportAndVerifyReport(page: Page, appPid: number, downloadDir: string, inputFile: string, inputBytes: number): Promise<void> {
@@ -272,7 +327,7 @@ async function exportAndVerifyReport(page: Page, appPid: number, downloadDir: st
     const report: unknown = JSON.parse(await readFile(reportPath, 'utf8'));
     expect(report).toMatchObject({
       schemaVersion: 1,
-      appVersion: '0.2.1',
+      appVersion: packageVersion,
       verification: 'local-packet-roundtrip',
       networkSent: false,
       status: 'complete',
@@ -391,13 +446,17 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
       binarySource: sourceSha,
       harnessSource,
       appId,
-      version: '0.2.1',
+      version: packageVersion,
       packageDigest,
       inputBytes: fixtureStat.size,
       launchModes: [] as string[],
       wasmLoaded: [] as boolean[],
       reportObserved: [] as boolean[],
       reportVerified: [] as boolean[],
+      installedNativeVerified: [] as boolean[],
+      installedNativeDigests: [] as string[],
+      nativePermissionDeniedWithoutExecution: false,
+      nativeCodeAbsentAfterRemove: false,
       installedAfterColdLaunch: false,
       codeRemoved: false,
       reinstalledOnline: false,
@@ -413,8 +472,21 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
       await expect(installButton).toBeEnabled();
       await installButton.click();
       await expect(catalog.row).toContainText('已安装', { timeout: 90_000 });
-      await catalog.row.getByRole('button', { name: '打开', exact: true }).click();
+      if (process.env.MINIAPP_REQUIRE_NATIVE_ENGINE === '1') {
+        await assert.rejects(access(path.resolve(path.dirname(executable), '../Resources/bin/dandelion')));
+        await openWithNativePermission(catalog.row, app.process.pid!, false);
+        expect(await activeNativeDigests(appDataDir)).toEqual([]);
+        expect(app.browser.contexts().flatMap(context => context.pages()).filter(page => page.url().startsWith('fabushi-miniapp://'))).toHaveLength(0);
+        evidence.nativePermissionDeniedWithoutExecution = true;
+      }
+      await openWithNativePermission(catalog.row, app.process.pid!);
       let mini = await findMiniAppPage(app.browser);
+      evidence.installedNativeVerified.push(await verifyInstalledNativeRuntime(mini));
+      if (process.env.MINIAPP_REQUIRE_NATIVE_ENGINE === '1') {
+        const digests = await activeNativeDigests(appDataDir);
+        expect(digests).toEqual([process.env.MINIAPP_NATIVE_EXECUTABLE_DIGEST]);
+        evidence.installedNativeDigests.push(...digests);
+      }
       await verifyWasmFileReport(mini, inputFile, fixtureStat.size);
       await exportAndVerifyReport(mini, app.process.pid!, evidenceDir, inputFile, fixtureStat.size);
       evidence.launchModes.push('online-install');
@@ -434,8 +506,9 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
       catalog = await refreshUntilCatalogItem(app.page);
       await expect(catalog.row).toContainText('已安装', { timeout: 60_000 });
       evidence.installedAfterColdLaunch = true;
-      await catalog.row.getByRole('button', { name: '打开', exact: true }).click();
+      await openWithNativePermission(catalog.row, app.process.pid!);
       mini = await findMiniAppPage(app.browser);
+      evidence.installedNativeVerified.push(await verifyInstalledNativeRuntime(mini));
       await verifyWasmFileReport(mini, inputFile, fixtureStat.size);
       await exportAndVerifyReport(mini, app.process.pid!, evidenceDir, inputFile, fixtureStat.size);
       evidence.launchModes.push('os-network-disabled-cold-launch');
@@ -452,6 +525,10 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
         message: 'removing code must close the still-open Mini App window',
       }).toBe(true);
       evidence.codeRemoved = true;
+      if (process.env.MINIAPP_REQUIRE_NATIVE_ENGINE === '1') {
+        await expect.poll(() => activeNativeDigests(appDataDir), { timeout: 15000 }).toEqual([]);
+        evidence.nativeCodeAbsentAfterRemove = true;
+      }
       await expect.poll(async () => app!.browser.contexts().flatMap((context) => context.pages())
         .filter((page) => page.url().startsWith('fabushi-miniapp://')).length,
       { timeout: 10_000, message: 'remove-code must leave no live Mini App window' }).toBe(0);
@@ -472,7 +549,7 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
       await catalog.row.getByRole('button', { name: '安装并验证', exact: true }).click();
       await expect(catalog.row).toContainText('已安装', { timeout: 90_000 });
       evidence.reinstalledOnline = true;
-      await catalog.row.getByRole('button', { name: '打开', exact: true }).click();
+      await openWithNativePermission(catalog.row, app.process.pid!);
       mini = await findMiniAppPage(app.browser);
       await setAndVerifyDisplayPreference(mini, false);
       evidence.launchModes.push('online-reinstall-retained-app-data');

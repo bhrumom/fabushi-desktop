@@ -624,7 +624,9 @@ pub fn verify_install_proof_with_anchor(
             == Some(true)
         || value_at(&proof.descriptor, &["release", "requestedCapabilities"])
             .and_then(Value::as_array)
-            .is_none_or(|items| !items.is_empty())
+            .is_none_or(|items| {
+                !(items.is_empty() || items.as_slice() == [Value::String("native.runtime".into())])
+            })
         || !descriptor_supports_desktop(&proof.descriptor)
     {
         return Err(ProofError::DescriptorBinding);
@@ -671,7 +673,17 @@ pub fn verify_install_proof_with_anchor(
         key_id: proof.release_signature.key_id.clone(),
         public_key: release_raw,
         trust_epoch: proof.release_signature.trust_epoch,
-        host_api: 1,
+        host_api: 2,
+        requested_capabilities: value_at(&proof.descriptor, &["release", "requestedCapabilities"])
+            .and_then(Value::as_array)
+            .ok_or(ProofError::DescriptorBinding)?
+            .iter()
+            .map(|v| {
+                v.as_str()
+                    .map(str::to_owned)
+                    .ok_or(ProofError::DescriptorBinding)
+            })
+            .collect::<Result<Vec<_>, _>>()?,
     };
     Ok(VerifiedInstallProof {
         descriptor: proof.descriptor,
@@ -1233,7 +1245,7 @@ mod tests {
         use super::super::{ledger, verify_catalog_bundle};
         let client = CatalogClient::production_from_environment().unwrap();
         let app_id = "org.fabushi.global-dandelion";
-        let descriptor = client
+        let _current_descriptor = client
             .list_descriptors()
             .unwrap()
             .into_iter()
@@ -1241,7 +1253,13 @@ mod tests {
             .expect("approved Dandelion must be in the public catalog");
         let feed_raw = client.fetch_install_trust().unwrap();
         let feed = verify_trust_feed(&feed_raw, now_ms(), false).unwrap();
-        let proof_raw = client.fetch_install_proof(&descriptor).unwrap();
+        // The immutable interoperability fixture must not follow the latest
+        // catalog version when a new package is published.
+        let route_descriptor = serde_json::json!({
+            "identity": {"kind": "web-miniapp", "namespace": "bhrumom", "name": "global-dandelion"},
+            "release": {"version": "0.1.0"}
+        });
+        let proof_raw = client.fetch_install_proof(&route_descriptor).unwrap();
         let proof_raw = overlay_trust(&proof_raw, &feed_raw).unwrap();
         let proof = verify_install_proof(&proof_raw, app_id, now_ms(), false).unwrap();
         assert_eq!(proof.authorization.version, "0.1.0");

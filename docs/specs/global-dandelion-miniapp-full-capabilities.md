@@ -5,10 +5,75 @@ Owner: existing Plugins/MCP Mini App owner plus the existing native Host/Coordin
 
 Review note 2026-10-20: the exact source and platform disposition are recorded
 in `docs/evidence/2026-10-20-global-dandelion-delivery.md`. The current source
-CLI is Linux-specific. Desktop Host discovery therefore exposes the native CLI
-capabilities only on Linux; macOS and Windows retain offline/selection
-compatibility until a real native adapter exists. Android and iOS remain
+CLI baseline is Linux-specific. Apple source composition is being added under
+Global Dandelion PR #7 / `docs/specs/native-apple-core.md`. macOS discovery may
+expose the implemented subset only after a live doctor probe proves the Apple
+native source contract. Windows retains offline/selection compatibility until a
+real native adapter exists. Android and iOS remain
 bridge-compatible but not Dandelion-native-configured.
+
+### Native operation correctness (2026-10-20)
+
+- GD-N01: consume bounded native JSON/NDJSON. Receiver readiness is an event,
+  not its final result. Preserve the final structured receipt; malformed/trailing
+  output fails, never turn readiness alone into completed receive.
+- GD-N02: admit at most eight active native processes, including synchronous
+  scan/config/diagnostics calls and receiver/sender jobs. Prune only settled
+  history. Cancellation retains capacity until the owned child actually exits.
+  Status/cancel of an existing owned operation must remain available when all
+  process slots are occupied or the binary probe fails. These control methods do
+  not start a new native operation; they recheck app/window/account ownership,
+  operation handle and cancellation approval without spawning a discovery probe.
+- GD-N03: timeout and account/window cancellation own all processes, including
+  operations awaiting a direct response; late results are rejected after teardown.
+  Stable errors contain no raw stderr, credentials or native paths.
+- GD-N04: Apple source support is proven by `doctor` contract
+  `dandelion.native.apple.v1`, matching OS/target. Recheck at invocation. Do not
+  advertise Linux inventory, resume or NetworkManager on Apple. Preserve the
+  full-parity gaps in the delivery matrix; enabling a subset is not completion.
+- GD-N05: Actions runs the real pinned CLI through Host routes on both Linux and
+  macOS. Validate native receive JSON, process admission, timeout and teardown
+  races, unsupported methods, missing/mismatched Apple binary and actual native
+  scan/loopback/config/diagnostic output. Mock contracts remain a separate layer.
+
+Extend the existing CLI backend and test workflow; no second process supervisor.
+Binary provisioning/installed Host acceptance remains required before claiming
+consumer delivery. Rollback restores the Host and reviewed native binary together.
+
+### Bundled native engine
+
+GD-P01: macOS packaging builds the exact Dandelion source pinned by
+`source/packaging/dandelion-engine.json`, using its own toolchain. Bundle the binary,
+both license texts, source identity, digest and a finite read-only default config
+inside the signed application resources. No runtime shell, download or environment
+variable is needed. A missing bundled engine preserves offline launch.
+
+GD-P02: the bundled default authorizes only a native-picker-selected directory and
+loopback verification. No filesystem-root selection or implicit LAN/WAN peer
+enrollment. The picker grant expires and is revoked with account/window teardown.
+The same limits and source-identity checks apply at invocation. The default config
+has at most 128 files / 1 GiB read budget and no implicit persistent shared account
+state; account-scoped persistent configuration remains a separate required feature.
+
+GD-P03: user-reviewed Host configuration remains the explicit opt-in route for
+authenticated remote peers, private state, updates and OS changes. Bundled defaults
+must not silently replace an invalid/incomplete user descriptor or environment
+override. Signed-package installation, native provisioning and installed operations
+are separate checks. Package acceptance must inspect and invoke the bundled engine.
+
+GD-P04: build and stage `preload-miniapp-tools.cjs` as a distinct sandbox-compatible
+artifact exposing only `fabushi.invoke`. Resolve it beside the production main-window
+preload, never reuse the primary preload. Do not inject a node:url/import.meta banner
+into the sandboxed Mini App preload. The runtime artifact graph requires this file,
+and signed-app acceptance invokes it through the installed isolated window.
+
+GD-P05: production native Dandelion tools are bound to
+`org.fabushi.global-dandelion`. Other installed apps cannot enumerate its selections
+or operations. Closing that app window (including renderer loss) invokes native
+revocation before teardown. Approval, capability discovery and result delivery
+must recheck that the exact window/account scope is still current; a late approval
+cannot start work after the window closes. Closing an unrelated app must not cancel
+Dandelion work. Account-wide teardown still revokes all owned work.
 
 ## Context
 
@@ -27,6 +92,19 @@ owned by the platform Host, explicit permission/approval, bounded arguments,
 stable errors, cancellation where applicable, and exact-source Actions evidence.
 The Web bundle remains unprivileged; it never receives a path, credential,
 private key, shell, socket or arbitrary native method.
+
+## Desktop runtime configuration
+
+The packaged Desktop Host may discover a user-approved runtime descriptor at
+`<userData>/global-dandelion/host-config.json`. This is Host-owned configuration,
+not Mini App input. It may contain the absolute `binaryPath`, `configPath`,
+authorized `roots`, target `pools`, state/compatibility directories, bounded
+receive settings, hotspot/update settings and trust metadata. The Host rejects
+malformed or oversized descriptors, requires absolute binary/config paths,
+revalidates roots before each operation, and keeps environment variables only
+as CI/development compatibility overrides. The descriptor does not control the
+Mini App preload, package identity, account scope, approval gate or capability
+policy.
 
 ## Non-goals
 

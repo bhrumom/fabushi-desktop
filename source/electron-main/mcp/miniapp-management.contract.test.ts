@@ -47,6 +47,26 @@ test("account departure closes windows synchronously and fences late activation"
   await assert.rejects(f.invoke("sand:miniapp-install", "org.test.app"), /SCOPE_CHANGED/);
   assert.deepEqual(f.calls, ["install:org.test.app", "close-all"]);
 });
+test("update hints retain installed identity and reject malformed metadata", async () => {
+  const f = fixture();
+  f.entry.installed = true;
+  const update = { version: "1.1.0", packageDigest: "b".repeat(64) };
+  f.entry.availableUpdate = update;
+  assert.deepEqual(await f.invoke("sand:miniapp-list"), { entries: [f.entry] });
+  for (const invalid of [
+    { ...update, packageDigest: f.entry.packageDigest },
+    { ...update, packageDigest: "invalid" },
+    { ...update, version: "invalid" },
+    { ...update, privatePath: "/private" },
+  ]) {
+    f.entry.availableUpdate = invalid;
+    await assert.rejects(f.invoke("sand:miniapp-list"), /DESCRIPTOR_INVALID/);
+  }
+  f.entry.availableUpdate = update;
+  f.entry.installed = false;
+  await assert.rejects(f.invoke("sand:miniapp-list"), /DESCRIPTOR_INVALID/);
+  f.service.dispose();
+});
 test("per-app serialization, code-only removal and disposal are explicit", async () => {
   const f = fixture();
   let release!: () => void;

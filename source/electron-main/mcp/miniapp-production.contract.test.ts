@@ -54,9 +54,19 @@ test("installed ready or quarantined truth wins newer catalog metadata", async (
       { ...f.entry, version: "0.2.0", packageDigest: "b".repeat(64), supported: true, installed: true },
       catalogOnly,
     ] });
-    assert.deepEqual(await f.invoke("sand:miniapp-list"), { entries: [f.entry, catalogOnly] });
+    assert.deepEqual(await f.invoke("sand:miniapp-list"), { entries: [{ ...f.entry,
+      availableUpdate: { version: "0.2.0", packageDigest: "b".repeat(64) } }, catalogOnly] });
     f.handle.dispose();
   }
+});
+
+test("unsupported catalog revisions never offer an update", async () => {
+  const f = fixture();
+  f.context.coordinatorLegs.legs.listApprovedMiniApps = async () => ({ items: [
+    { ...f.entry, version: "0.2.0", packageDigest: "b".repeat(64), supported: false },
+  ] });
+  assert.deepEqual(await f.invoke("sand:miniapp-list"), { entries: [f.entry] });
+  f.handle.dispose();
 });
 
 test("account notification fences an in-flight native catalog response", async () => {

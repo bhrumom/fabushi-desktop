@@ -1,9 +1,8 @@
 import { createHash, randomUUID } from "node:crypto";
-import { delimiter } from "node:path";
+import { dirname, join } from "node:path";
 import type { ProductionServiceContext } from "../main-production-services.js";
 import { registerMiniAppManagement, type NativeMiniAppEntry } from "./miniapp-management.js";
-import { createDandelionCliBackend, type MiniAppPickPort } from "./miniapp-cli-backend.js";
-import { createMiniAppToolRouter } from "./miniapp-tools.js";
+import { createInstalledNativeRuntime, parseNativeRuntime, type NativeRuntimeHandle } from "./miniapp-native-runtime.js";
 import { createMiniAppWindowFactory, type MiniAppIpc, type MiniAppToolBridgePorts, type MiniAppWindowFactoryPorts, type VerifiedMiniAppResource } from "./miniapp-window.js";
 
 type Method = "listApprovedMiniApps" | "listInstalledMiniApps" | "installApprovedMiniApp" | "getInstalledMiniAppResources" | "uninstallMiniApp";
@@ -17,85 +16,6 @@ function entries(value: unknown): NativeMiniAppEntry[] {
   return items.map((item) => record(item) as unknown as NativeMiniAppEntry);
 }
 
-/** Opt-in native tool bridge. Absent configuration keeps the window render-only. */
-interface MiniAppDialogPort {
-  showOpenDialog(options: { properties: string[] }): Promise<{ canceled: boolean; filePaths: string[] }>;
-  showMessageBox?(options: { type?: string; buttons: string[]; defaultId?: number; cancelId?: number; message: string; detail?: string }): Promise<{ response: number }>;
-}
-
-function miniAppTooling(context: ProductionServiceContext, ipc: unknown): MiniAppToolBridgePorts | undefined {
-  const env = process.env;
-  const binaryPath = env.FABUSHI_DANDELION_BIN?.trim() ?? "";
-  const configPath = env.FABUSHI_DANDELION_CONFIG?.trim() ?? "";
-  const preloadPath = env.FABUSHI_MINIAPP_PRELOAD?.trim() ?? "";
-  const roots = (env.FABUSHI_DANDELION_ROOTS ?? "").split(delimiter).map((item) => item.trim()).filter(Boolean);
-  const stateDirectory = env.FABUSHI_DANDELION_STATE_DIR?.trim() || undefined;
-  const compatDirectory = env.FABUSHI_DANDELION_COMPAT_DIR?.trim() || undefined;
-  const hotspotJournalDirectory = env.FABUSHI_DANDELION_HOTSPOT_JOURNAL_DIR?.trim() || undefined;
-  const hotspotInterface = env.FABUSHI_DANDELION_HOTSPOT_INTERFACE?.trim() || undefined;
-  const hotspotSsid = env.FABUSHI_DANDELION_HOTSPOT_SSID?.trim() || undefined;
-  const hotspotBand = env.FABUSHI_DANDELION_HOTSPOT_BAND?.trim() || undefined;
-  const hotspotPasswordFile = env.FABUSHI_DANDELION_HOTSPOT_PASSWORD_FILE?.trim() || undefined;
-  const updateTrust = env.FABUSHI_DANDELION_UPDATE_TRUST?.trim();
-  let receive: { targetPoolId: string; caFile: string; certificateFile: string; privateKeyFile: string; bind?: string } | undefined;
-  if (!binaryPath || !configPath || !preloadPath || roots.length === 0) return undefined;
-  let pools: { id: string; label: string }[];
-  try {
-    const parsed: unknown = JSON.parse(env.FABUSHI_DANDELION_POOLS ?? "[]");
-    if (!Array.isArray(parsed)) return undefined;
-    pools = parsed.filter((item): item is { id: string; label: string } =>
-      typeof item === "object" && item !== null
-      && typeof (item as { id?: unknown }).id === "string" && typeof (item as { label?: unknown }).label === "string");
-  } catch { return undefined; }
-  let parsedUpdateTrust: { manifest?: string; signature?: string; publicKey: string; directory?: string; artifact?: string; allowedHost?: string } | undefined;
-  if (updateTrust) {
-    try {
-      const value: unknown = JSON.parse(updateTrust);
-      if (value && typeof value === "object" && !Array.isArray(value)
-        && typeof (value as { publicKey?: unknown }).publicKey === "string") {
-        parsedUpdateTrust = value as typeof parsedUpdateTrust;
-      }
-    } catch { return undefined; }
-  }
-  try {
-    const parsed: unknown = JSON.parse(env.FABUSHI_DANDELION_RECEIVE ?? "null");
-    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-      const value = parsed as Record<string, unknown>;
-      if (typeof value.targetPoolId === "string" && typeof value.caFile === "string" && typeof value.certificateFile === "string" && typeof value.privateKeyFile === "string") {
-        receive = { targetPoolId: value.targetPoolId, caFile: value.caFile, certificateFile: value.certificateFile, privateKeyFile: value.privateKeyFile, bind: typeof value.bind === "string" ? value.bind : undefined };
-      }
-    }
-  } catch { return undefined; }
-  const dialog = (context.native as unknown as { dialog?: MiniAppDialogPort }).dialog;
-  if (!dialog) return undefined;
-  const pick: MiniAppPickPort = async (mode) => {
-    const selected = await dialog.showOpenDialog({ properties: [mode === "directory" ? "openDirectory" : "openFile"] });
-    if (selected.canceled || selected.filePaths.length === 0) return null;
-    return selected.filePaths.slice(0, 1).map((path) => ({ path, name: path, size: 0 }));
-  };
-  const backend = createDandelionCliBackend({
-    binaryPath, configPath, allowedRoots: roots, targetPools: pools,
-    stateDirectory, compatDirectory, receive,
-    hotspotJournalDirectory,
-    hotspotInterface, hotspotSsid, hotspotBand, hotspotPasswordFile,
-    updateTrust: parsedUpdateTrust,
-    enableHotspot: env.FABUSHI_DANDELION_HOTSPOT === "1",
-    enableUpdate: env.FABUSHI_DANDELION_UPDATE === "1",
-  }, { pick });
-  const router = createMiniAppToolRouter({
-    backend,
-    approve: async (tool) => {
-      if (!dialog.showMessageBox) return false;
-      const answer = await dialog.showMessageBox({
-        type: "question", buttons: ["取消", "允许"], defaultId: 0, cancelId: 0,
-        message: "小程序请求执行受控操作", detail: tool,
-      });
-      return answer.response === 1;
-    },
-  });
-  return { router, preloadPath, ipc: ipc as MiniAppIpc, cancelAll: () => backend.cancelAll?.() };
-}
-
 /** MainData only: no launch resources, credentials or paths cross desktop IPC. */
 export function registerProductionMiniApps(context: ProductionServiceContext, ipc: Parameters<typeof registerMiniAppManagement>[0]["ipc"]): { dispose(): void } {
   const account = context.requireAccount();
@@ -103,14 +23,13 @@ export function registerProductionMiniApps(context: ProductionServiceContext, ip
   let current: { accountScope: string; generation: number } | null = null;
   let disposed = false;
   const handles = new Map<string, { close(): void }>();
-  const tooling = miniAppTooling(context, ipc);
+  const runtimes = new Map<string, NativeRuntimeHandle>();
   const windows = context.native.session == null ? null : createMiniAppWindowFactory({
     BrowserWindow: context.native.BrowserWindow as unknown as MiniAppWindowFactoryPorts["BrowserWindow"],
     session: context.native.session,
     currentAccount: () => current,
-    ...(tooling ? { tools: tooling } : {}),
   });
-  const closeAll = () => { tooling?.cancelAll?.(); windows?.closeAll(); handles.clear(); };
+  const closeAll = () => { for (const runtime of runtimes.values()) runtime.cancelAll(); runtimes.clear(); windows?.closeAll(); handles.clear(); };
   const unsubscribe = account.subscribe(() => { generation += 1; current = null; closeAll(); });
   const scope = async (): Promise<string | null> => {
     const ticket = generation;
@@ -138,15 +57,19 @@ export function registerProductionMiniApps(context: ProductionServiceContext, ip
         catch { return installed; } // Host still revalidates installed code on every launch.
         const merged = new Map(approved.map((item) => [item.appId, item]));
         // The catalog cannot replace installed/quarantined Host truth.
-        for (const item of installed) merged.set(item.appId, item);
+        for (const item of installed) {
+          const latest = merged.get(item.appId);
+          merged.set(item.appId, { ...item, ...(latest?.supported && latest.packageDigest !== item.packageDigest
+            ? { availableUpdate: { version: latest.version, packageDigest: latest.packageDigest } } : {}) });
+        }
         return [...merged.values()];
       },
       installApproved: async (appId, operationId) => { handles.get(appId)?.close(); handles.delete(appId); await call("installApprovedMiniApp", { appId, operationId }); },
-      removeCode: async (appId, operationId) => { await call("uninstallMiniApp", { appId, operationId }); },
+      removeCode: async (appId, operationId) => { runtimes.get(appId)?.cancelAll(); runtimes.delete(appId); await call("uninstallMiniApp", { appId, operationId }); },
     },
     windows: {
       closeAll,
-      closeApp: (appId) => { handles.get(appId)?.close(); handles.delete(appId); },
+      closeApp: (appId) => { runtimes.get(appId)?.cancelAll(); runtimes.delete(appId); handles.get(appId)?.close(); handles.delete(appId); },
       launch: async (appId, accountScope, stillCurrent) => {
         if (!windows || context.native.app.commandLine.hasSwitch?.("no-sandbox") === true) throw new Error("MINIAPP_UNSUPPORTED_HOST");
         const ticket = generation;
@@ -167,9 +90,59 @@ export function registerProductionMiniApps(context: ProductionServiceContext, ip
           resources.set(item.path, { bytes, mime: item.mime });
         }
         if (!await stillCurrent() || ticket !== generation) throw new Error("MINIAPP_SCOPE_CHANGED");
-        const handle = await windows.open({ appId, accountScope, accountGeneration: ticket, version: descriptor.version, packageDigest: descriptor.digest, entrypoint: descriptor.entrypoint, resources });
-        if (!await stillCurrent() || ticket !== generation) { handle.close(); throw new Error("MINIAPP_SCOPE_CHANGED"); }
-        handles.set(appId, handle);
+        const launch = { appId, accountScope, accountGeneration: ticket, version: descriptor.version, packageDigest: descriptor.digest, entrypoint: descriptor.entrypoint, resources };
+        let tools: MiniAppToolBridgePorts | undefined;
+        let runtime: NativeRuntimeHandle | undefined;
+        if (descriptor.nativeRuntime != null) {
+          const definition = parseNativeRuntime(descriptor.nativeRuntime, resources);
+          const app = context.native.app as unknown as { getPath(name: string): string };
+          const dialog = context.native.dialog as unknown as {
+            showMessageBox(options: { type: string; buttons: string[]; defaultId: number; cancelId: number; message: string; detail: string }): Promise<{ response: number }>;
+            showOpenDialog(options: { properties: string[] }): Promise<{ canceled: boolean; filePaths: string[] }>;
+          } | undefined;
+          const primary = (context.resources as unknown as { preloadPath?: string } | undefined)?.preloadPath;
+          if (!dialog?.showMessageBox || !dialog.showOpenDialog || !primary || typeof app.getPath !== "function") throw new Error("MINIAPP_UNSUPPORTED_HOST");
+          const currentScope = () => !disposed && generation === ticket && current?.accountScope === accountScope;
+          runtime = await createInstalledNativeRuntime({
+            carrierPath: join(dirname(primary), "..", "electron-main", "miniapp-native-carrier.cjs"),
+            codeRoot: join(app.getPath("userData"), "native-miniapp-runtimes"), resources, definition,
+            scope: { appId, version: descriptor.version, packageDigest: descriptor.digest, accountScope, accountGeneration: ticket },
+            current: currentScope,
+            confirm: async detail => {
+              if (!currentScope()) return false;
+              const answer = await dialog.showMessageBox({ type: "question", buttons: ["取消", "允许"], defaultId: 0, cancelId: 0, message: "小程序请求本机执行权限", detail });
+              return currentScope() && answer.response === 1;
+            },
+            pick: async mode => {
+              if (!currentScope()) return null;
+              const result = await dialog.showOpenDialog({ properties: [mode === "directory" ? "openDirectory" : "openFile"] });
+              return currentScope() && !result.canceled ? result.filePaths.slice(0, 1).map(path => ({ path, name: path, size: 0 })) : null;
+            },
+            selfUpdate: async action => {
+              if (!currentScope()) throw new Error("MINIAPP_SCOPE_CHANGED");
+              const approved = entries(await call("listApprovedMiniApps")).find(item => item.appId === appId && item.supported);
+              if (!currentScope() || !approved) throw new Error("MINIAPP_POLICY_DENIED");
+              const available = approved.packageDigest !== descriptor.digest;
+              if (action === "stage" && available) {
+                await call("installApprovedMiniApp", { appId, operationId: randomUUID() });
+                if (!currentScope()) throw new Error("MINIAPP_SCOPE_CHANGED");
+                const timer = setTimeout(() => { handles.get(appId)?.close(); handles.delete(appId); runtimes.get(appId)?.cancelAll(); runtimes.delete(appId); }, 250);
+                timer.unref();
+              }
+              return { installedVersion: descriptor.version, availableVersion: approved.version, availableDigest: approved.packageDigest, updateAvailable: available, staged: action === "stage" && available, requiresReopen: action === "stage" && available };
+            },
+          });
+          if (!await stillCurrent() || ticket !== generation) { runtime.cancelAll(); throw new Error("MINIAPP_SCOPE_CHANGED"); }
+          runtimes.get(appId)?.cancelAll(); runtimes.set(appId, runtime);
+          tools = { appId, router: runtime.router, ipc: ipc as MiniAppIpc, preloadPath: join(dirname(primary), "preload-miniapp-tools.cjs"), cancelAll: () => runtime?.cancelAll() };
+          // Native resources never become WebView-addressable resources.
+          for (const name of [...resources.keys()]) if (name.startsWith("native/") || name === "native-runtime.json") resources.delete(name);
+        }
+        try {
+          const handle = await windows.open(launch, tools);
+          if (!await stillCurrent() || ticket !== generation) { handle.close(); throw new Error("MINIAPP_SCOPE_CHANGED"); }
+          handles.set(appId, handle);
+        } catch (error) { runtime?.cancelAll(); runtimes.delete(appId); throw error; }
       },
     },
   });

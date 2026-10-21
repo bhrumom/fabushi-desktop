@@ -23,17 +23,21 @@ export function MiniAppManagement({ bridge }: { bridge: DesktopBridge }) {
   };
   return <section aria-label="离线小程序" className="sand-miniapp-management">
     <h3>离线小程序</h3>
-    <p>完整验证并安装后可离线运行。包签名不等于额外权限；当前不提供原生网络传输。</p>
+    <p>完整验证并安装后可离线启动。业务功能由小程序安装包提供；原生能力仍需单独授权。</p>
     {!api ? <p role="status">当前客户端尚不支持离线小程序安装。</p> : <>
       <SandButton disabled={busy} onClick={() => void run(async () => {})}>刷新市场与安装状态</SandButton>
       <ul>{entries.map((entry) => <li key={entry.appId}>
         <h4>{entry.displayName}</h4>
         <p>{entry.publisherId} · {entry.version} · {Math.ceil(entry.sizeBytes / 1024)} KiB · {entry.offlineCore ? "离线包" : "非离线包"}</p>
         <p>{!entry.supported ? "宿主尚不支持" : entry.installed ? "已安装" : "未安装"}</p>
+        {entry.availableUpdate && <p>可更新至 {entry.availableUpdate.version}</p>}
         <details><summary>包摘要</summary><code>{entry.packageDigest}</code></details>
         <SandButton disabled={busy || !entry.supported} onClick={() => void run(async () => {
           if (entry.installed) await api.launch(entry.appId); else await api.install(entry.appId);
         })}>{entry.installed ? "打开" : "安装并验证"}</SandButton>
+        {entry.availableUpdate && <SandButton disabled={busy} onClick={() => void run(async () => {
+          await api.install(entry.appId);
+        })}>更新并验证</SandButton>}
         {entry.installed && <SandButton disabled={busy} onClick={() => void run(async () => {
           await api.removeCode(entry.appId);
         })}>移除代码，保留数据</SandButton>}
