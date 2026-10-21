@@ -330,8 +330,8 @@ export function parseLocalBrowserAgentAction(value: unknown): LocalBrowserAgentA
       return {
         ...target,
         type: "events",
-        ...(afterSequence === undefined ? {} : { afterSequence }),
-        ...(limit === undefined ? {} : { limit }),
+        ...(afterSequence == null ? {} : { afterSequence }),
+        ...(limit == null ? {} : { limit }),
       };
     }
     case "wait-event": {
@@ -349,8 +349,8 @@ export function parseLocalBrowserAgentAction(value: unknown): LocalBrowserAgentA
         ...target,
         type: "wait-event",
         event,
-        ...(afterSequence === undefined ? {} : { afterSequence }),
-        ...(timeoutMs === undefined ? {} : { timeoutMs }),
+        ...(afterSequence == null ? {} : { afterSequence }),
+        ...(timeoutMs == null ? {} : { timeoutMs }),
       };
     }
     case "navigate": {
