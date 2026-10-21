@@ -32,6 +32,7 @@ use super::mcp_meta_tools::{
     mcp_meta_tool_definitions,
 };
 use super::sand_await_shell_tool::SandAwaitShellToolBridge;
+use super::miniapp_authoring_tool::MiniAppAuthoringToolBridge;
 use super::sand_agent_management_tools::{
     AgentManagementSink, AgentManagementToolBridge,
 };
@@ -658,6 +659,7 @@ pub fn build_turn_toolset(
     let generate_image_box_resources = dependencies.box_resources.clone();
     let await_external_machine = dependencies.external_machine_executor.clone();
     let await_cancellation = dependencies.cancellation.clone();
+    let authoring_cancellation = dependencies.cancellation.clone();
     let bridge: Arc<dyn RoutedToolBridge> =
         match (role.is_subagent_runner, dependencies.mcp_management_sink) {
             (false, Some(management)) => Arc::new(McpManagementToolBridge::new(base, management)),
@@ -669,7 +671,11 @@ pub fn build_turn_toolset(
             if let Some(review) = dependencies.box_shell_review {
                 box_bridge = box_bridge.with_shell_review(review);
             }
-            Arc::new(box_bridge)
+            if !role.is_subagent_runner && !role.is_shared_room_runner {
+                Arc::new(MiniAppAuthoringToolBridge::new(Arc::new(box_bridge), authoring_cancellation))
+            } else {
+                Arc::new(box_bridge)
+            }
         }
         _ => bridge,
     };
