@@ -1,6 +1,8 @@
 import { _electron as electron, expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test';
+import { createHash, X509Certificate } from 'node:crypto';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
+import { createServer as createHttpsServer } from 'node:https';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,8 +10,60 @@ import { fileURLToPath } from 'node:url';
 const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const packagedExecutable = process.env.FABUSHI_ELECTRON_EXECUTABLE?.trim() || null;
 
+// Fixed, non-secret localhost-only certificate for synthetic HTTPS acceptance.
+// Chromium trusts only this certificate's SPKI in the focused test process.
+const E2E_HTTPS_KEY_PEM = `-----BEGIN PRIVATE KEY-----
+MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCysJO+Eylzs96X
+K02SIZYae7jpLJmlqMS2LuKmxSjKOhCIVWSjftNonuiIK9vGyr+Hk07x3qB+7oP5
+hQRpPf+HLrFTAnyHfa66IFK3cFBv6xHZH2vgPgK6T0Gd8ttB8/oMVGM8t52Wtqjg
+8iYxrqurrIUC0aWifJHRXdj4OcmvoGpQwKjkxJbAhi49w2UDDzypOvQxm0KPtNdB
+fBfUKc47QdxJvrhQ9rWkS7uJj2D6KjA6oLEnuaDdQIt6/L3mwEKgPighcyM3cxO6
+xA3k8oZCRQYdqftcA8fQEOo+HtVoh5tLKj6f7bRyxHykqgsmVRoA2ATV1HpZpm6y
+rNQ/N4VLAgMBAAECggEAUm4rkZT0W9gfeFv1ClLtFCV77TDyZh2/NQ3W57ju8q8r
+fkDqTpPMgahAu8SDu6Y/CZNWaTRalIOCJSKMIOKFVL6g9ZqhiL1dU6ZikhXBPYfS
+sXcRxB3HE1xJeEwWgkvCz1pEdzd6/pIfwLlkDio2LllE+MJuptDRUaR52TSLSjUv
+gMoVZXo4JUtASbin5JCb8tWccGPQFlQNpNW/VnKpvEFP2J2pdQmAlVlC9D2CsUTp
+WJSmFz8CPedtMQ8DF1KGfZIJ5bI73eK3CqLyDtkNE2S0DKQ/EC9DpgosvM2NKWsr
+TAjC2OeVKV52rqo/SLWoWO7VtgDjrEvJdkeC/Pk/hQKBgQDqO3/j3vAu14Qu72KA
+qkJRGXQc7Nwj1K4wey4FkBCI74TwzIEpqdLL+fI66ygy54VAN7xlKishf3j03fWV
+2P9wo946/K7a+peSm5On2EqzTDpf1+yb8TSdDn0Kfd+tveM83yT3fVrazajm7Pck
+jKEf+HFlW0pKfJjr68q9+M3VNwKBgQDDS7DwlZoZtwuCk7mqncyxAPBM+32DLoqQ
+3p70FMokg4kYvcOrDl7WqTHxZVs8oXSerL7fUi2GgnOtQH7O4suoAaDxEhX6ZKAW
+S2LpPcwHRVXIsemGnnsM2qbqYeJkOUCeDhinKnqUxwlr0XmiVHI2NTO0lfdCDgav
+Bjr1JBqajQKBgBQDwYnXIu7du43HJsOXyNLlOea+1pC5O6ko3WXcSY1p6hIpZ2AI
+AtsrIGeocGbpIZm7KX37fHQAUHWcAcAsKqeVWQfxT3+mqgz8/kD5Wmi3usU1ziIF
+GlnRQx4CY3qVHzW0W5RKQdkweZ5B4VxeJ+ZzdD0U7+QtgWOnYkuZVv1BAoGBAIAP
+PAEmOBwwmQ2QjKjCPJy8ftYb+ttwQ1BnileG4l47GkTs+kdKbwnXfHZL/h2tyWja
+4XZSzqNrGys6JWzH7r9GAiDRuTOtlAPKfxtueEE0R+IIN5cciJePMPB0Kx2JJUP+
+/k9vXV39fcIDY/z73sCI9lSuGapoxB00uqhQellpAoGAMWlmFD8hSI2g+vjE2acR
+L0w3zdkaN4nSOyY7KnAJKZzbtjzcAh5xy3n7Ir8O+aTeoOFjlmKdblwAoNHixHmH
+e48f+QRYQ8+9pQSDB1mBgaK/lhsif+0aw33eP5GLtCCKmwE0QBNlzopcp9dvroWn
+w3h5OEfNZ2qQwoQK8hda7wI=
+-----END PRIVATE KEY-----`;
+const E2E_HTTPS_CERT_PEM = `-----BEGIN CERTIFICATE-----
+MIIDJTCCAg2gAwIBAgIUDfSXyb07TfEsQMUuJakdy7QZIugwDQYJKoZIhvcNAQEL
+BQAwFDESMBAGA1UEAwwJMTI3LjAuMC4xMB4XDTI2MTAyMTAyNDgwN1oXDTM2MTAx
+ODAyNDgwN1owFDESMBAGA1UEAwwJMTI3LjAuMC4xMIIBIjANBgkqhkiG9w0BAQEF
+AAOCAQ8AMIIBCgKCAQEAsrCTvhMpc7PelytNkiGWGnu46SyZpajEti7ipsUoyjoQ
+iFVko37TaJ7oiCvbxsq/h5NO8d6gfu6D+YUEaT3/hy6xUwJ8h32uuiBSt3BQb+sR
+2R9r4D4Cuk9BnfLbQfP6DFRjPLedlrao4PImMa6rq6yFAtGlonyR0V3Y+DnJr6Bq
+UMCo5MSWwIYuPcNlAw88qTr0MZtCj7TXQXwX1CnOO0HcSb64UPa1pEu7iY9g+iow
+OqCxJ7mg3UCLevy95sBCoD4oIXMjN3MTusQN5PKGQkUGHan7XAPH0BDqPh7VaIeb
+Syo+n+20csR8pKoLJlUaANgE1dR6WaZusqzUPzeFSwIDAQABo28wbTAdBgNVHQ4E
+FgQU/3yr6LhhvqwZChYQQ3F2jWRLMxIwHwYDVR0jBBgwFoAU/3yr6LhhvqwZChYQ
+Q3F2jWRLMxIwDwYDVR0TAQH/BAUwAwEB/zAaBgNVHREEEzARhwR/AAABgglsb2Nh
+bGhvc3QwDQYJKoZIhvcNAQELBQADggEBADocU1XXu8c8wSi9BvQ1Kp5Acp6Z3ehR
+6CgOr58RU9mAS35WkdsFioYIs3KkP2bDPNCP7oFHdm7/lHare3z9DYqQ/uYWZ99f
+LkYhcZzW+SHh0McFImV36nl8cZL2vklW1WUtw4QaAfYx0Pj11SgRdwi8kpGLTHvk
+m3yfsWbU7Es2VfLmr37JXKsOdBsAcJrkK/XlsF7LY5m2IFtCugM4F3ml5Ksdf8S0
+8NpeSLc7pitnJWWH94zGvn3tkvF+j+fKg794M+wV0v2inIBh+LwVdG1PagG3jfaR
+xdeEQKo7fAxQ1pR0vH6bLdKCiPGGLvS2zlWIHoP5afq3/lQZRlrAEFI=
+-----END CERTIFICATE-----`;
+
 let e2eAuthServer: ReturnType<typeof createServer> | null = null;
 let e2eAuthBackendPromise: Promise<string> | null = null;
+let e2eHttpsServer: ReturnType<typeof createHttpsServer> | null = null;
+let e2eHttpsOriginPromise: Promise<string> | null = null;
 
 function e2eAuthToken(): string {
   const encode = (value: Record<string, unknown>) => Buffer.from(JSON.stringify(value), 'utf8').toString('base64url');
@@ -839,25 +893,75 @@ async function ensureE2eAuthBackend(): Promise<string> {
   return await e2eAuthBackendPromise;
 }
 
+function e2eHttpsSpkiHash(): string {
+  const certificate = new X509Certificate(E2E_HTTPS_CERT_PEM);
+  const spki = certificate.publicKey.export({ type: 'spki', format: 'der' });
+  return createHash('sha256').update(spki).digest('base64');
+}
+
+async function ensureE2eHttpsBrowserOrigin(): Promise<string> {
+  if (e2eHttpsOriginPromise != null) return await e2eHttpsOriginPromise;
+  e2eHttpsOriginPromise = new Promise<string>((resolve, reject) => {
+    const server = createHttpsServer({
+      key: E2E_HTTPS_KEY_PEM,
+      cert: E2E_HTTPS_CERT_PEM,
+    }, (request, response) => {
+      const requestUrl = new URL(request.url ?? '/', 'https://127.0.0.1');
+      if (requestUrl.pathname === '/browser-workspace-secure') {
+        response.setHeader('content-type', 'text/html; charset=utf-8');
+        response.statusCode = 200;
+        response.end('<!doctype html><html><head><title>Fabushi Browser HTTPS</title></head><body><main><h1>Secure synthetic HTTPS page</h1></main></body></html>');
+        return;
+      }
+      response.statusCode = 404;
+      response.end('not-found');
+    });
+    e2eHttpsServer = server;
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', () => {
+      const address = server.address();
+      if (address == null || typeof address === 'string') {
+        reject(new Error('Focused Electron HTTPS browser backend did not bind a TCP address.'));
+        return;
+      }
+      resolve(`https://127.0.0.1:${address.port}`);
+    });
+  });
+  return await e2eHttpsOriginPromise;
+}
+
 test.afterAll(async () => {
-  const server = e2eAuthServer;
+  const authServer = e2eAuthServer;
+  const httpsServer = e2eHttpsServer;
   e2eAuthServer = null;
   e2eAuthBackendPromise = null;
-  if (server == null || !server.listening) return;
-  await new Promise<void>((resolve, reject) => {
-    server.close((error) => error == null ? resolve() : reject(error));
-  });
+  e2eHttpsServer = null;
+  e2eHttpsOriginPromise = null;
+  if (authServer != null && authServer.listening) {
+    await new Promise<void>((resolve, reject) => {
+      authServer.close((error) => error == null ? resolve() : reject(error));
+    });
+  }
+  if (httpsServer != null && httpsServer.listening) {
+    await new Promise<void>((resolve, reject) => {
+      httpsServer.close((error) => error == null ? resolve() : reject(error));
+    });
+  }
 });
 
-async function launchDesktopApp(appDataDir: string, extraEnv: Record<string, string> = {}): Promise<ElectronApplication> {
+async function launchDesktopApp(
+  appDataDir: string,
+  extraEnv: Record<string, string> = {},
+  extraArgs: string[] = [],
+): Promise<ElectronApplication> {
   const e2eAuthBackendUrl = await ensureE2eAuthBackend();
   // Exercise the shipping Fabushi account -> private Host credential ->
   // Responses transport chain. The browser-first login below owns the token;
   // focused acceptance must not seed a parallel Cursor inference credential.
   return electron.launch({
     ...(packagedExecutable
-      ? { executablePath: packagedExecutable, args: [] }
-      : { args: [appRoot] }),
+      ? { executablePath: packagedExecutable, args: extraArgs }
+      : { args: [...extraArgs, appRoot] }),
     env: {
       ...process.env,
       // Focused Electron acceptance must opt out of production background
@@ -1092,7 +1196,9 @@ test('native Browser Workspace opens real Chromium pages, isolates tabs, and dow
 
   try {
     const origin = await ensureE2eAuthBackend();
-    app = await launchDesktopApp(appDataDir);
+    const httpsOrigin = await ensureE2eHttpsBrowserOrigin();
+    const httpsArgs = [`--ignore-certificate-errors-spki-list=${e2eHttpsSpkiHash()}`];
+    app = await launchDesktopApp(appDataDir, {}, httpsArgs);
     const page = await app.firstWindow();
     await completeBrowserLogin(page);
     await openMahayanaConversation(page);
@@ -1115,10 +1221,16 @@ test('native Browser Workspace opens real Chromium pages, isolates tabs, and dow
 
     await workspace.getByRole('button', { name: 'New browser tab', exact: true }).click();
     await expect(workspace.getByRole('tab')).toHaveCount(2);
-    await address.fill(`${origin}/browser-workspace-second`);
+    await address.fill(`${httpsOrigin}/browser-workspace-secure`);
     await address.press('Enter');
-    await expect(workspace.getByRole('tab').filter({ hasText: 'Fabushi Browser Second' })).toHaveCount(1, { timeout: 15_000 });
+    await expect(workspace.getByRole('tab').filter({ hasText: 'Fabushi Browser HTTPS' })).toHaveCount(1, { timeout: 15_000 });
     await expect(workspace.getByRole('tab').filter({ hasText: 'Fabushi Browser Fixture' })).toHaveCount(1);
+    await expect.poll(async () => app!.evaluate(({ webContents }) => webContents.getAllWebContents()
+      .map((contents) => ({ url: contents.getURL(), title: contents.getTitle() }))
+      .find((entry) => entry.url.includes('/browser-workspace-secure')) ?? null), { timeout: 10_000 }).toEqual({
+      url: `${httpsOrigin}/browser-workspace-secure`,
+      title: 'Fabushi Browser HTTPS',
+    });
 
     await address.fill(`${origin}/browser-workspace-download`);
     await address.press('Enter');
@@ -1148,11 +1260,11 @@ test('native Browser Workspace opens real Chromium pages, isolates tabs, and dow
       .map((contents) => ({ url: contents.getURL(), title: contents.getTitle() }))
       .filter((entry) => entry.url.includes('/browser-workspace-')));
     expect(nativeEntries.some((entry) => entry.url.includes('/browser-workspace-fixture'))).toBe(true);
-    expect(nativeEntries.some((entry) => entry.url.includes('/browser-workspace-second'))).toBe(true);
+    expect(nativeEntries.some((entry) => entry.url.includes('/browser-workspace-secure'))).toBe(true);
 
     await app.close();
     app = null;
-    app = await launchDesktopApp(appDataDir);
+    app = await launchDesktopApp(appDataDir, {}, httpsArgs);
     const restartedPage = await app.firstWindow();
     await completeBrowserLogin(restartedPage);
     const existingAgent = restartedPage.getByRole('region', { name: 'Agent list' }).locator('button.sand-agent-item').first();
@@ -1166,7 +1278,7 @@ test('native Browser Workspace opens real Chromium pages, isolates tabs, and dow
     await expect(restoredWorkspace).toBeVisible({ timeout: 10_000 });
     await expect(restoredWorkspace.getByRole('tab')).toHaveCount(2, { timeout: 15_000 });
     await expect(restoredWorkspace.getByRole('tab').filter({ hasText: 'Fabushi Browser Fixture' })).toHaveCount(1, { timeout: 15_000 });
-    await expect(restoredWorkspace.getByRole('tab').filter({ hasText: 'Fabushi Browser Second' })).toHaveCount(1, { timeout: 15_000 });
+    await expect(restoredWorkspace.getByRole('tab').filter({ hasText: 'Fabushi Browser HTTPS' })).toHaveCount(1, { timeout: 15_000 });
 
     const restoredAddress = restoredWorkspace.getByRole('textbox', { name: 'Address and search' });
     await restoredAddress.fill(`${origin}/browser-workspace-cookie`);

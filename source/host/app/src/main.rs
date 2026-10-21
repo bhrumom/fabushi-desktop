@@ -483,7 +483,9 @@ use std::sync::{
     Arc, Mutex, Weak, mpsc,
     atomic::{AtomicBool, Ordering},
 };
+#[cfg(unix)]
 use signal_hook::consts::signal::{SIGINT, SIGTERM};
+#[cfg(unix)]
 use signal_hook::iterator::Signals;
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
@@ -508,6 +510,7 @@ fn ensure_managed_runtime_layout(app_data_dir: &Path) -> io::Result<()> {
     fs::create_dir_all(app_data_dir.join("feature-host/runtime/workspace"))
 }
 
+#[cfg(unix)]
 fn install_shutdown_signal_worker(
     host_tx: mpsc::Sender<HostLaneRequest>,
     shutdown_complete: Arc<AtomicBool>,
@@ -529,6 +532,17 @@ fn install_shutdown_signal_worker(
             }
         });
     }))
+}
+
+#[cfg(not(unix))]
+fn install_shutdown_signal_worker(
+    _host_tx: mpsc::Sender<HostLaneRequest>,
+    _shutdown_complete: Arc<AtomicBool>,
+) -> io::Result<thread::JoinHandle<()>> {
+    // Windows packaged Hosts are child processes whose canonical graceful
+    // shutdown signal is stdin closure. signal-hook's iterator API is Unix-only,
+    // so do not invent a second Windows control plane merely to emulate SIGTERM.
+    Ok(thread::spawn(|| {}))
 }
 
 
