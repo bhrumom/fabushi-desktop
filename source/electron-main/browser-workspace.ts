@@ -161,7 +161,7 @@ export interface BrowserWorkspaceService {
   dispose(): void;
 }
 
-interface PersistedTab { readonly url: string }
+interface PersistedTab { readonly url: string; readonly title: string }
 interface PersistedWorkspace {
   readonly activeTabIndex: number;
   readonly tabs: readonly PersistedTab[];
@@ -300,7 +300,10 @@ function normalizePersistedRoot(value: unknown): PersistedRoot {
         const tabs = workspace.tabs.flatMap((item): PersistedTab[] => {
           const tab = record(item);
           const url = typeof tab?.url === "string" ? normalizeBrowserWorkspaceAddress(tab.url) : null;
-          return url == null ? [] : [{ url }];
+          const title = typeof tab?.title === "string"
+            ? tab.title.replace(/[\u0000-\u001f\u007f]/gu, "").trim().slice(0, 512)
+            : "";
+          return url == null ? [] : [{ url, title: title || "New Tab" }];
         }).slice(0, BROWSER_WORKSPACE_LIMITS.maxTabs);
         const activeTabIndex = typeof workspace.activeTabIndex === "number" && Number.isSafeInteger(workspace.activeTabIndex)
           ? Math.max(0, Math.min(tabs.length - 1, workspace.activeTabIndex))
@@ -364,6 +367,23 @@ function isExpectedDownloadNavigationError(error: unknown): boolean {
   const value = record(error);
   return value?.code === "ERR_FAILED"
     || (error instanceof Error && error.message.includes("ERR_FAILED"));
+}
+
+async function waitForConfirmedDownload(
+  tab: RuntimeTab,
+  sequence: number,
+  expectedUrl: string,
+  failureUrl: unknown,
+): Promise<boolean> {
+  // Electron may reject loadURL(ERR_FAILED) before the session emits
+  // will-download. Wait briefly for that owned-session evidence rather than
+  // turning a real download into a failed browser navigation.
+  for (let attempt = 0; attempt < 50 && tab.downloadSequence === sequence; attempt += 1) {
+    await new Promise<void>((resolve) => setTimeout(resolve, 10));
+  }
+  return tab.downloadSequence !== sequence
+    && (tab.lastDownloadUrl === expectedUrl
+      || (typeof failureUrl === "string" && failureUrl === tab.lastDownloadUrl));
 }
 
 export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePorts): BrowserWorkspaceService {
@@ -638,7 +658,8 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
       activeTabIndex: activeIndex,
       tabs: workspace.tabs.flatMap((tab): PersistedTab[] => {
         const url = normalizeBrowserWorkspaceAddress(tab.url);
-        return url == null ? [] : [{ url }];
+        const title = tab.title.replace(/[\u0000-\u001f\u007f]/gu, "").trim().slice(0, 512);
+        return url == null ? [] : [{ url, title: title || DEFAULT_TITLE }];
       }),
     };
     persist();
@@ -913,8 +934,14 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
     };
     contents.on("did-navigate", didNavigate);
     contents.on("did-navigate-in-page", didNavigate);
-    contents.on("did-fail-load", (_event: unknown, code: number, description: string, _validatedUrl: string, isMainFrame: boolean) => {
+    contents.on("did-fail-load", (_event: unknown, code: number, description: string, validatedUrl: string, isMainFrame: boolean) => {
       if (isMainFrame === false || code === -3) return;
+      if (code === -2 && tab.lastDownloadUrl != null && tab.lastDownloadUrl === validatedUrl) {
+        tab.loading = false;
+        tab.error = null;
+        publish(workspace);
+        return;
+      }
       tab.loading = false;
       tab.error = { code: `LOAD_${code}`, description: String(description || "Navigation failed").slice(0, 512) };
       updateState();
@@ -983,7 +1010,10 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
     };
     workspaces.set(workspace.id, workspace);
     for (const savedTab of saved?.tabs ?? []) {
-      try { createTab(workspace, savedTab.url, false); } catch (error) { fail("restore-tab", error); }
+      try {
+        const tab = createTab(workspace, savedTab.url, false);
+        tab.title = savedTab.title || DEFAULT_TITLE;
+      } catch (error) { fail("restore-tab", error); }
     }
     if (workspace.tabs.length === 0) createTab(workspace, undefined, false);
     const index = Math.max(0, Math.min(workspace.tabs.length - 1, saved?.activeTabIndex ?? 0));
@@ -1067,16 +1097,25 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
         const tab = requireTab(workspace, command.tabId);
         const safe = normalizeBrowserWorkspaceAddress(command.address);
         if (safe == null) throw new Error("BROWSER_NAVIGATION_BLOCKED");
+        const previousUrl = normalizeBrowserWorkspaceAddress(tab.view.webContents.getURL()) ?? tab.url;
         tab.url = safe;
         tab.error = null;
         const downloadSequence = tab.downloadSequence;
+        tab.lastDownloadUrl = null;
         try {
           await tab.view.webContents.loadURL(safe);
         } catch (error) {
           const failureUrl = record(error)?.url;
-          const matchesConfirmedDownload = tab.downloadSequence !== downloadSequence
-            && (tab.lastDownloadUrl === safe || (typeof failureUrl === "string" && failureUrl === tab.lastDownloadUrl));
-          if (!matchesConfirmedDownload || !isExpectedDownloadNavigationError(error)) throw error;
+          const matchesConfirmedDownload = isExpectedDownloadNavigationError(error)
+            && await waitForConfirmedDownload(tab, downloadSequence, safe, failureUrl);
+          if (!matchesConfirmedDownload) {
+            tab.url = normalizeBrowserWorkspaceAddress(tab.view.webContents.getURL()) ?? previousUrl;
+            throw error;
+          }
+          // A download is a transfer, not a committed page navigation. Keep
+          // the previously committed page address for the tab and its restore record.
+          tab.url = previousUrl;
+          tab.title = tab.view.webContents.getTitle() || tab.title;
           tab.loading = false;
           tab.error = null;
         }
@@ -1547,15 +1586,22 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
       case "navigate": {
         const safe = normalizeBrowserWorkspaceAddress(action.address);
         if (safe == null) throw new Error("BROWSER_NAVIGATION_BLOCKED");
+        const previousUrl = normalizeBrowserWorkspaceAddress(tab.view.webContents.getURL()) ?? tab.url;
         tab.error = null;
         const downloadSequence = tab.downloadSequence;
+        tab.lastDownloadUrl = null;
         try {
           await page.loadURL(safe);
         } catch (error) {
           const failureUrl = record(error)?.url;
-          const matchesConfirmedDownload = tab.downloadSequence !== downloadSequence
-            && (tab.lastDownloadUrl === safe || (typeof failureUrl === "string" && failureUrl === tab.lastDownloadUrl));
-          if (!matchesConfirmedDownload || !isExpectedDownloadNavigationError(error)) throw error;
+          const matchesConfirmedDownload = isExpectedDownloadNavigationError(error)
+            && await waitForConfirmedDownload(tab, downloadSequence, safe, failureUrl);
+          if (!matchesConfirmedDownload) {
+            tab.url = normalizeBrowserWorkspaceAddress(tab.view.webContents.getURL()) ?? previousUrl;
+            throw error;
+          }
+          tab.url = previousUrl;
+          tab.title = tab.view.webContents.getTitle() || tab.title;
           tab.loading = false;
           tab.error = null;
         }

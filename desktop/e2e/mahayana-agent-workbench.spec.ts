@@ -1335,8 +1335,27 @@ test('native Browser Workspace opens real Chromium pages, isolates tabs, and dow
     await restartedPage.getByRole('button', { name: 'Open browser workspace', exact: true }).click();
     const restoredWorkspace = restartedPage.getByTestId('browser-workspace');
     await expect(restoredWorkspace).toBeVisible({ timeout: 10_000 });
-    await expect(restoredWorkspace.getByRole('tab')).toHaveCount(2, { timeout: 15_000 });
+    const restoredTabs = restoredWorkspace.getByRole('tab');
+    await expect(restoredTabs).toHaveCount(2, { timeout: 15_000 });
+
+    // Select each restored native WebContentsView and prove its actual committed
+    // URL and document title, not just the renderer's persisted tab label.
+    await restoredTabs.nth(0).click();
+    await expect.poll(async () => app!.evaluate(({ webContents }) => webContents.getAllWebContents()
+      .map((contents) => ({ url: contents.getURL(), title: contents.getTitle() }))
+      .find((entry) => entry.url.includes('/browser-workspace-fixture')) ?? null), { timeout: 15_000 }).toEqual({
+      url: `${origin}/browser-workspace-fixture`,
+      title: 'Fabushi Browser Fixture',
+    });
     await expect(restoredWorkspace.getByRole('tab').filter({ hasText: 'Fabushi Browser Fixture' })).toHaveCount(1, { timeout: 15_000 });
+
+    await restoredTabs.nth(1).click();
+    await expect.poll(async () => app!.evaluate(({ webContents }) => webContents.getAllWebContents()
+      .map((contents) => ({ url: contents.getURL(), title: contents.getTitle() }))
+      .find((entry) => entry.url.includes('/browser-workspace-secure')) ?? null), { timeout: 15_000 }).toEqual({
+      url: `${httpsOrigin}/browser-workspace-secure`,
+      title: 'Fabushi Browser HTTPS',
+    });
     await expect(restoredWorkspace.getByRole('tab').filter({ hasText: 'Fabushi Browser HTTPS' })).toHaveCount(1, { timeout: 15_000 });
 
     const restoredAddress = restoredWorkspace.getByRole('textbox', { name: 'Address and search' });

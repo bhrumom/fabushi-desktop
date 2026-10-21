@@ -1136,14 +1136,15 @@ test("browser extension policy rejects privileged permissions before Electron lo
   }
 });
 
-test("download navigation accepts Chromium ERR_FAILED only after the owned session confirms a download", async () => {
+test("download navigation waits for late owned-session confirmation and preserves the committed page URL", async () => {
   const h = harness();
   h.service.attachWindow(new FakeHostWindow());
   const initial = await h.invoke({ type: "activate", conversationId: "bot-download", bounds: { x: 1, y: 1, width: 500, height: 500 } });
-  const contents = h.views[0]!.webContents;
+  await h.invoke({ type: "navigate", conversationId: "bot-download", tabId: initial.activeTabId, address: "https://example.com/start" });
+  const contents = h.views[0]!.webContents as FakeContents;
   const downloadUrl = "https://example.com/export.bin";
 
-  contents.loadURL = async (url: string): Promise<unknown> => {
+  const rejectBeforeDownloadStarts = (url: string): Promise<unknown> => {
     contents.emit("did-start-loading");
     const listeners = new Map<"updated" | "done", (_event?: unknown, state?: string) => void>();
     const item: BrowserWorkspaceDownloadItem = {
@@ -1155,11 +1156,16 @@ test("download navigation accepts Chromium ERR_FAILED only after the owned sessi
       cancel: () => undefined,
       on: (event, listener) => { listeners.set(event, listener); },
     };
-    contents.session.download?.({}, item, contents);
-    contents.emit("did-fail-load", {}, -2, "ERR_FAILED", url, true);
-    listeners.get("done")?.({}, "completed");
-    throw Object.assign(new Error(`ERR_FAILED (-2) loading '${url}'`), { code: "ERR_FAILED", url });
+    // Reproduce Electron ordering observed on macOS: loadURL rejects first,
+    // then did-fail-load and the owned session will-download arrive.
+    setTimeout(() => {
+      contents.emit("did-fail-load", {}, -2, "ERR_FAILED", url, true);
+      contents.session.download?.({}, item, contents);
+      listeners.get("done")?.({}, "completed");
+    }, 25);
+    throw Object.assign(new Error("ERR_FAILED (-2) loading " + url), { code: "ERR_FAILED", url });
   };
+  contents.loadURL = async (url: string): Promise<unknown> => await rejectBeforeDownloadStarts(url);
 
   const downloaded = await h.invoke({
     type: "navigate",
@@ -1170,10 +1176,27 @@ test("download navigation accepts Chromium ERR_FAILED only after the owned sessi
   assert.equal(downloaded.downloads.length, 1);
   assert.equal(downloaded.downloads[0]?.fileName, "export.bin");
   assert.equal(downloaded.downloads[0]?.state, "completed");
+  assert.equal(downloaded.tabs[0]?.url, "https://example.com/start");
+  assert.equal(downloaded.tabs[0]?.error, null);
   assert.equal(h.persistence.paths.length, 1);
 
+  const latest = h.service.snapshot("bot-download")!;
+  const agentDownload = await h.service.executeAgentAction({
+    conversationId: "bot-download",
+    workspaceId: latest.workspaceId,
+    tabId: initial.activeTabId,
+    expectedGeneration: latest.tabs[0]!.generation,
+    expectedControlEpoch: latest.agentControl.epoch,
+    expectedTaskId: latest.agentControl.taskId,
+    operationId: "agent-download-navigation",
+    type: "navigate",
+    address: "https://example.com/agent-export.bin",
+  });
+  assert.equal(agentDownload.ok, true);
+  assert.equal(h.service.snapshot("bot-download")?.tabs[0]?.url, "https://example.com/start");
+
   contents.loadURL = async (url: string): Promise<unknown> => {
-    throw Object.assign(new Error(`ERR_FAILED (-2) loading '${url}'`), { code: "ERR_FAILED", url });
+    throw Object.assign(new Error("ERR_FAILED (-2) loading " + url), { code: "ERR_FAILED", url });
   };
   await assert.rejects(
     () => h.invoke({
@@ -1184,6 +1207,7 @@ test("download navigation accepts Chromium ERR_FAILED only after the owned sessi
     }),
     /ERR_FAILED/,
   );
+  h.service.dispose();
 });
 
 test("invalid commands are rejected before any view is created", async () => {
@@ -1196,6 +1220,29 @@ test("invalid commands are rejected before any view is created", async () => {
   assert.equal(h.views.length, 0);
 });
 
+
+test("workspace persistence restores safe tab titles alongside committed URLs", async () => {
+  const first = harness();
+  first.service.attachWindow(new FakeHostWindow());
+  const opened = await first.invoke({ type: "activate", conversationId: "bot-persist-title", bounds: { x: 1, y: 1, width: 500, height: 500 } });
+  const navigated = await first.invoke({
+    type: "navigate",
+    conversationId: "bot-persist-title",
+    tabId: opened.activeTabId,
+    address: "https://example.com/saved",
+  });
+  assert.equal(navigated.tabs[0]?.title, "Title example.com");
+  const persisted = structuredClone(first.persistence.state);
+  first.service.dispose();
+
+  const second = harness(persisted);
+  second.service.attachWindow(new FakeHostWindow());
+  const restored = await second.invoke({ type: "activate", conversationId: "bot-persist-title", bounds: { x: 1, y: 1, width: 500, height: 500 } });
+  assert.equal(restored.tabs.length, 1);
+  assert.equal(restored.tabs[0]?.url, "https://example.com/saved");
+  assert.equal(restored.tabs[0]?.title, "Title example.com");
+  second.service.dispose();
+});
 
 test("Agent JavaScript dialogs use only the fixed Main-owned CDP handler and are control-fenced", async () => {
   const h = harness();
