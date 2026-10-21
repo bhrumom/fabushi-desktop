@@ -896,10 +896,10 @@
   "coverage": {
     "root_source_entries_total": 6819,
     "recursive_source_entries_total": 16305,
-    "unknown_minimum": 16258,
-    "unread_minimum": 16233,
+    "unknown_minimum": 16257,
+    "unread_minimum": 16232,
     "omitted_known": 0,
-    "note": "Live dev authority remains 0eca52223cceed229932add1cc80792763120844/1fc479a4b448aed851181bf4a4796d3015368348. Exact recursive total is 16,305. Strict index 44 .agents/skills/dependency-watch/scripts/watch_test.py@d3107c617be3e8780a99bebaeba19a4f235ae6ea is mapped to the existing source-neutral repository quality-health integrated-regression / command-orchestration evidence owner: unknown=16,258, unread=16,233, omitted=0; next strict entry index 45 is .agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c. Parent exact-head TDRP 39515594730 and Rust 39515594749 succeeded at aa3b353daca8b75be04a534f5643465297263962; the transient mini_chromium HTTP 503 was recovered by retrying the failed Source authority acquisition job without code changes. Recursive fixed-point remains unresolved_gitlink_authorities=0 and Boost 582/582/open=0, while recursive disposition remains open (95 authorities, 133 gitlinks, 3,865 acquisition candidates, 4,674 generated inputs, 4,602 resource inputs, 4,255 tool inputs), so source_closure_ready/baseline acceptance remain false."
+    "note": "Live dev authority remains 0eca52223cceed229932add1cc80792763120844/1fc479a4b448aed851181bf4a4796d3015368348. Exact recursive total is 16,305. Strict index 45 .agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c is mapped to the existing source-neutral repository task/review/evidence lifecycle and adaptive verification owner: unknown=16,257, unread=16,232, omitted=0; next strict entry index 46 is .agents/skills/perform-task/agents/openai.yaml@f238b707da7f39a4293b17d112ddd344dcb8253a. Parent exact-head TDRP 39518408374 and Rust 39518408392 succeeded at b8ceacbe9390d182ab61019ba9c75601e5f02426; the only TDRP rerun was for external chromium.googlesource.com HTTP 503 root acquisitions after the deterministic index-44 validator mapping defect had been minimally fixed. Recursive fixed-point remains unresolved_gitlink_authorities=0 and Boost 582/582/open=0, while recursive disposition remains open (95 authorities, 133 gitlinks, 3,865 acquisition candidates, 4,674 generated inputs, 4,602 resource inputs, 4,255 tool inputs), so source_closure_ready/baseline acceptance remain false."
   },
   "acceptance": {
     "baseline_ready": false,

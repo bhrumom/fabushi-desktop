@@ -6,10 +6,10 @@
   "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
   "coverage": {
     "source_entries_total": 16305,
-    "unknown": 16258,
-    "unread": 16233,
+    "unknown": 16257,
+    "unread": 16232,
     "omitted": 0,
-    "responsibilities_total": 63,
+    "responsibilities_total": 64,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -16979,6 +16979,293 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral repository exact-source/dependency regression contract read from exact telegramdesktop/tdesktop Python tests and implementation; no upstream Python test runtime or Telegram-specific product code is copied into Fabushi.",
       "notes": "Zero-based strict index 44 is .agents/skills/dependency-watch/scripts/watch_test.py@d3107c617be3e8780a99bebaeba19a4f235ae6ea on live 0eca52223cceed229932add1cc80792763120844. The suite imports watch.py and directly exercises stable version ordering, fresh exact remote fetch without mutable-worktree/HEAD mutation, exact gitlink capture, stale-ref rejection, required-manifest failure, offline-unverified state and linked-worktree Git-common storage. Coverage after this one entry: unknown=16,258, unread=16,233, omitted=0. Parent aa3b353daca8b75be04a534f5643465297263962 exact-head TDRP 39515594730 and Rust 39515594749 are both terminal success; the child mapping commit requires fresh exact-head workflows. Fixed-point unresolved_gitlink_authorities=0 and Boost 582/582/open=0, but recursive reachability/disposition remains open (95 authorities, 133 gitlinks, 3,865 acquisition candidates, 4,674 generated inputs, 4,602 resource inputs, 4,255 tool inputs), so baseline accepted/source_closure_ready remain false. No fresh upstream Python unittest execution is claimed. Next strict entry index 45 is .agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "0eca52223cceed229932add1cc80792763120844",
+      "source_path": ".agents/skills/perform-task/SKILL.md",
+      "source_blob_sha": "590e6660cfd8782b37dbc3c6959944f53bb4541c",
+      "source_kind": "repository_ai_single_task_performer_workflow",
+      "module_id": "tdesktop.perform-task",
+      "responsibility_id": "TDRP-R9-PERFORM-TASK-WORKFLOW-001",
+      "source_symbols": [
+        "Perform One AI Task",
+        "Read the complete engine",
+        "Resolve the workspace and task",
+        "Acquire exactly this task",
+        "Run and publish"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-TASK-EVIDENCE",
+        "CAP-REPOSITORY-AI-WORKER-LIFECYCLE",
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE"
+      ],
+      "dependency_ids": [
+        ".agents/skills/process-inbox/scripts/workspace.py",
+        ".agents/skills/continue/SKILL.md",
+        ".agents/skills/perform-task/references/pipeline.md",
+        ".agents/skills/perform-task/references/phase-prompts.md",
+        ".agents/skills/perform-task/references/mechanical-lane.md",
+        ".agents/skills/perform-task/references/computer-use-testing.md",
+        ".agents/shared/test-loop.md",
+        ".agents/shared/build-lock-recovery.md",
+        ".agents/shared/codex-delegation.md",
+        ".agents/shared/codex-cli-leaves.md",
+        ".grok/commands/perform-task.md",
+        ".claude/commands/perform-task.md",
+        ".grok/ai-workflow-adapter.md",
+        ".claude/ai-workflow-adapter.md",
+        "Fabushi ordinary repository task/review/evidence lifecycle",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/perform-task-skill-complete-read.md",
+      "behavior_contract": "Resolve one explicitly named existing repository-development task, acquire or resume exactly that task without draining unrelated queue work, preserve source-lineage/ownership readiness, execute the task through proportional planning/implementation/review/test/evidence phases, classify test flaws versus implementation bugs fail-closed, publish only canonical final task state or explicit split-required/block/hard-stop outcomes, and preserve resumable state across interruption or environment/tool loss.",
+      "state_machine": "named slug/full id -> resolve workspace/task and exact source lineage -> readiness/ownership check -> start/retry/resume exactly one task -> choose mechanical lane for Q0-Q2 or full pipeline -> context/plan/independent assessment -> implementation -> mandatory general+applicable lens review and focused rereview after accepted fixes -> adaptive evidence loop with directness/recovery classification -> canonical publication -> Approve, Block, split-required, already-satisfied or visible hard stop; interruption/environment loss preserves task-local resumable state rather than claiming completion",
+      "side_effects": [
+        "Repository-development task state, task-local worktree/source changes, review/evidence artifacts and canonical task publication only.",
+        "May build/test the selected task through the repository's approved execution environment and may use bounded UI/debug/build-lock recovery specified by shared contracts.",
+        "Does not own Fabushi shipping product Task/Agent/Conversation state, a second queue, a second scheduler, or a Telegram-specific runtime."
+      ],
+      "failure_cases": [
+        "An ambiguous or unknown task name is guessed, unrelated queue work is claimed, or multiple tasks are processed.",
+        "Source lineage/readiness/ownership drift is ignored before starting or resuming.",
+        "A broad task that requires split is partially approved instead of publishing split-required and stopping.",
+        "Review lenses are silently pruned without scope-specific NOT_APPLICABLE proof or accepted fixes skip focused rereview.",
+        "A test flaw is treated as implementation success, an implementation bug is hidden as harness failure, or flaky/indirect evidence is promoted to pass.",
+        "Crash/locked-session/build-lock/environment recovery weakens the required oracle instead of using the bounded fallback or remaining blocked/unverified.",
+        "A source commit alone is reported as success without canonical final publication.",
+        "Provider-specific Grok/Claude/Codex adapter mechanics are treated as semantic ownership.",
+        "The upstream perform-task workflow is copied into Fabushi as a second product Task store/scheduler/Agent runtime."
+      ],
+      "ui_disposition": "Not applicable as product UI; computer-use/UI-driving clauses are repository verification mechanics for selected tasks.",
+      "non_ui_responsibilities": [
+        "Exactly-one existing task resolution, acquisition, ownership and resumability",
+        "Source-lineage/readiness gating and no unrelated queue processing",
+        "Mechanical Q0-Q2 lane versus full task pipeline selection",
+        "Context, planning, independent assessment and bounded implementation attempts",
+        "General plus lifetime/reuse/structure/performance/security review with proof-based N/A and focused rereview",
+        "Adaptive task-derived evidence loop, directness ladder and test-flaw/implementation-bug classification",
+        "Crash/debugger, locked-macOS overlay, Computer Use and Windows build-lock bounded recovery",
+        "Approve/Block/split-required/already-satisfied/hard-stop publication semantics",
+        "Canonical final publication and compact task-id based final result without commit-hash identity"
+      ],
+      "platform_delta": "Fabushi already owns the applicable source-neutral repository task/review/evidence lifecycle and adaptive verification policy. The upstream skill is repository-development orchestration, not a shipping Telegram capability; preserve the behavioral contract in existing governance/evidence owners rather than porting provider adapters, workspace.py semantics or a second product Task scheduler.",
+      "existing_owner_candidates": [
+        "AGENTS.md — ordinary repository task/review/evidence lifecycle, repository quality-task classification, source-neutral worker effort and GitHub-Actions-only FBCP/TDRP execution",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md — repository quality-task qualification, AI review phase policy and adaptive evidence loop/bounded recovery",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md — independent/durable review ledger and task-local handoff/evidence contracts",
+        "Existing Fabushi shipping Task/Agent/Host/Runner owners — inspected but semantically separate product runtime"
+      ],
+      "existing_owner": "Fabushi source-neutral repository task/review/evidence lifecycle and adaptive verification governance",
+      "rejected_existing_owners": [
+        "source/host/src/agents/* and source/host/src/workflows/* own shipping Fabushi Agent/workflow behavior, not repository-development task acquisition/review/publication.",
+        "source/packages/agent/tools/task*.ts owns product/subagent tool execution, not repository ai-tdesktop task state or Git publication.",
+        "Creating a perform-task runtime, second Task store, second scheduler or provider-specific orchestration owner would duplicate existing source-neutral repository governance."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository quality-task classification governance",
+        "Durable review ledger evidence",
+        "AI review phase execution policy",
+        "Adaptive evidence loop and bounded recovery"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The upstream entry is a repository AI-development workflow contract. Its applicable responsibilities are repository task/review/test/evidence governance, not shipping product logic to retain as Telegram-specific executable code.",
+      "command_event_contracts": [
+        "named task -> resolve exact durable task id/workspace/source lineage; ambiguity or missing task -> stop without guessing",
+        "ready unclaimed/owned task -> start/retry/resume exactly that task; unrelated queue/follow-ups remain outside perform-task",
+        "Q0/Q1/Q2 code-health class -> mechanical lane; other tasks -> complete pipeline",
+        "assessment/review exposes intrinsically separable scope -> publish split-required with retained state and stop",
+        "sound evidence exposes implementation bug -> repair + focused review + rerun invalidated checks; test flaw -> repair instrument/fixture without changing retained implementation",
+        "required subject cannot safely be reached after bounded directness/recovery -> explicit unverified/block/hard stop, never synthetic pass",
+        "successful implementation/evidence -> canonical task publication; source commit alone is insufficient",
+        "new index-45 mapping commit -> b8ceacbe9390d182ab61019ba9c75601e5f02426 exact-head Actions are parent evidence; fresh child exact-head workflows required"
+      ],
+      "state_owner": "Existing Fabushi repository task/review/evidence governance; no shipping product state or second task store is introduced.",
+      "lifecycle_owner": "Root AGENTS.md ordinary repository lifecycle plus Test Strategy/Evidence Contract review and adaptive evidence owners.",
+      "persistence_and_restart": "Durable repository task state and task-local context/plan/review/evidence artifacts remain the restart authority. Interruption, tool loss, unavailable delegation or recoverable environment issues preserve resumable state; source-lineage/readiness and final publication are revalidated before continuation.",
+      "concurrency_and_cancellation": "Exactly one selected task runner owns its task/worktree boundary. Ambiguous ownership, conflicting source lineage, semantic publication conflict or unsafe checkout fails visibly. Concurrent-master publication races may retry only through the canonical publication path; cancellation/interruption cannot be rewritten as approval.",
+      "security_boundary": "Repository AI orchestration cannot weaken product permissions/security/release gates or synthesize acceptance from indirect evidence. Provider adapters, Computer Use, debugger/build-lock recovery and model/effort settings remain bounded evidence mechanics; FBCP/TDRP executable verification stays GitHub-Actions-only.",
+      "network_service_dependencies": [
+        "Git/GitHub repository authority and canonical task publication",
+        "GitHub Actions hosted runners and artifact storage for exact-head Fabushi evidence"
+      ],
+      "service_owner": "Existing Fabushi repository governance / GitHub Actions evidence lifecycle",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "The index-45 mapping commit requires fresh exact-head TDRP Revision 9 and Rust desktop runtime verification.",
+        "Recursive reachability/disposition remains open with unknown/unread non-zero; baseline accepted/source_closure_ready remain false."
+      ],
+      "production_entrypoints": [
+        "AGENTS.md -> ordinary repository task/review/evidence lifecycle and Repository quality-task classification governance",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Independent review / Durable review ledger / task-local handoff evidence",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> AI review phase execution policy and Adaptive evidence loop and bounded recovery"
+      ],
+      "production_evidence": [
+        "path:AGENTS.md@57ed0d56acc64ef24ce4c1f5c2877a4ec3ab570b",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md@0d3a4c993784625f9b70279602c655d4788fe9fb",
+        "parent-exact-head-tdrp:39518408374/head:b8ceacbe9390d182ab61019ba9c75601e5f02426/success-attempt-2/source-authority-artifact:12310445072/digest:sha256:8120984f56ec55171d3eb721056007a14e8bc5c7829dcb4b0581528fa3e863ae",
+        "parent-exact-head-tdrp-boost:artifact:12308702811/digest:sha256:ee91af54aaa4bfff39c873f7144822d11c7a7ed604e1b8d28c60a5b3a683b696/acquisition_candidates:582/dispositioned:582/open:0",
+        "parent-exact-head-tdrp-root:artifact:12309650974/digest:sha256:cfd6116112f3887cac148e8cd36ca681ef3976f65bd7d5c218994519886d8a68/shards:0-11",
+        "parent-exact-head-tdrp-child:artifact:12310870187/digest:sha256:48e65885486c5193d57402067cfff33578d4a0f636eee1af9f0d682f68912d5b/shards:0-23",
+        "parent-exact-head-tdrp-next:artifact:12310646025/digest:sha256:6bf36768de1cdfe8db0ce1c6ec17cc6c8c168c0486f5613e8366054e44f9e71e/shards:0-15",
+        "parent-exact-head-tdrp-closure:artifact:12310242033/digest:sha256:f3f984fb833cbfe8c9e1f547a2b2d6397193ef699bf89ce055af0d87017a2642/final_scanned_authorities:203/unresolved_gitlink_authorities:0/source_closure_ready:false",
+        "parent-exact-head-tdrp-reachability:artifact:12309837264/digest:sha256:418220709fc17168ae61061d97c9a2ab78a30a6322b93c56975ec2b09c8dd2d9/remaining_open:95,133,3865,4674,4602,4255",
+        "parent-exact-head-rust:39518408392/head:b8ceacbe9390d182ab61019ba9c75601e5f02426/success-6-of-6/artifact:12310365286/digest:sha256:283fb5a29a37310483c6ceb0139c7d4d3d96778ed76673fab5ebe87379ab764f/result:passed"
+      ],
+      "test_evidence": [
+        "upstream-perform-task:.agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c",
+        "upstream-grok-command:.grok/commands/perform-task.md@313e94a3202c39aa10944b832b45ee80a762f509",
+        "upstream-claude-command:.claude/commands/perform-task.md@98ec6ed4aa51d3cac043a70a23adc6834b147f8e",
+        "upstream-continue:.agents/skills/continue/SKILL.md@aeb81dd57018abbc8f03ea3dbd34f91952128db5",
+        "upstream-pipeline:.agents/skills/perform-task/references/pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7",
+        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba",
+        "upstream-mechanical-lane:.agents/skills/perform-task/references/mechanical-lane.md@e5e3cc88ba80ece6a20df7c4dd6002491d66a4ef",
+        "upstream-computer-use:.agents/skills/perform-task/references/computer-use-testing.md@b7fc92d604a55975f75047828d476e64667aa259",
+        "upstream-test-loop:.agents/shared/test-loop.md@83c4732bf6139f7c6557f18dd87bb35c3d68808d",
+        "upstream-build-lock:.agents/shared/build-lock-recovery.md@ec75573e7efe74e9c9a344f3e66f2fc43ac7680f",
+        "upstream-codex-delegation:.agents/shared/codex-delegation.md@ed89d2a14344f50034a9363bd9ffe75f7972e652",
+        "upstream-grok-adapter:.grok/ai-workflow-adapter.md@db447f204316d3991f6d20db3d8f097fcc021154",
+        "upstream-claude-adapter:.claude/ai-workflow-adapter.md@370ff84a1ab4c080b15b601a54162b0630c4f4df",
+        "source-read-complete:SKILL.md 234 lines at exact upstream commit; real caller/reference chain inspected",
+        "source-read-only:no upstream Telegram build/test execution claimed for this governance document"
+      ],
+      "target_commit": "b8ceacbe9390d182ab61019ba9c75601e5f02426",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development task/review/evidence governance",
+      "composition_slot": "Exactly-one task performer / adaptive review-test-publication lifecycle",
+      "capability_component": "Source-neutral repository task performer contract",
+      "variation_axes": [
+        "new start vs retry/resume",
+        "Q0-Q2 mechanical lane vs full pipeline",
+        "review clean/N-A vs accepted fix and focused rereview",
+        "test flaw vs implementation bug vs unrecoverable subject",
+        "interactive Computer Use available vs overlay/debugger fallback",
+        "canonical publish success vs race/conflict/hard stop",
+        "Approve vs Block vs split-required vs already-satisfied"
+      ],
+      "shared_owner_contracts": [
+        "Root AGENTS.md ordinary task/review/evidence lifecycle",
+        "Fabushi Test Strategy AI review and adaptive evidence policy",
+        "Fabushi Test Evidence Contract independent/durable review evidence"
+      ],
+      "duplicate_root_check": "No Telegram-specific perform-task runtime, second repository task store, second scheduler, product Task root, Agent runtime or provider-specific semantic owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "One explicitly named existing repository task enters the existing ordinary task/review/evidence lifecycle; shipping product navigation is unaffected.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Task-local durable state survives interruption/restart; source lineage, ownership/readiness, review/evidence validity and canonical publication are revalidated before continuation.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to repository workflow governance",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-PERFORM-TASK-WORKFLOW-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-PERFORM-TASK-SINGLE-OWNERSHIP-001",
+        "ORA-TDRP-PERFORM-TASK-REVIEW-EVIDENCE-001",
+        "ORA-TDRP-PERFORM-TASK-PUBLICATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-PERFORM-TASK-ONE-TASK-ONLY-001",
+        "INV-TDRP-PERFORM-TASK-FAIL-CLOSED-EVIDENCE-001",
+        "INV-TDRP-PERFORM-TASK-RESUMABLE-STATE-001",
+        "INV-TDRP-PERFORM-TASK-NO-SHIPPING-TASK-COLLISION-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-PERFORM-TASK-WORKFLOW-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-PERFORM-TASK-OWNER-ADAPTER-BOUNDARY-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-PERFORM-TASK-SOURCE-DRIFT-001",
+        "FAULT-TDRP-PERFORM-TASK-TEST-FLAW-001",
+        "FAULT-TDRP-PERFORM-TASK-PUBLICATION-CONFLICT-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-PERFORM-TASK-EVIDENCE-DOWNGRADE-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-PERFORM-TASK-RECOVERY-001"
+      ],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-INVENTORY",
+        "G-TRACEABILITY",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "perform-task source/caller/reference contract"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Behavioral repository task-performance/review/evidence contract read from exact telegramdesktop/tdesktop AI workflow sources; no upstream provider adapter, task runtime or product code is copied into Fabushi.",
+      "notes": "Zero-based strict index 45 is .agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c on live 0eca52223cceed229932add1cc80792763120844. The complete 234-line skill and its actual Grok/Claude commands, continue scheduler relationship, pipeline/phase/mechanical/computer-use references and shared test/recovery/delegation contracts were inspected. Coverage after this one entry: unknown=16,257, unread=16,232, omitted=0. Parent b8ceacbe9390d182ab61019ba9c75601e5f02426 exact-head TDRP 39518408374 and Rust 39518408392 are terminal success; the child mapping commit requires fresh exact-head workflows. Fixed-point unresolved_gitlink_authorities=0 and Boost 582/582/open=0, but recursive reachability/disposition remains open (95 authorities, 133 gitlinks, 3,865 acquisition candidates, 4,674 generated inputs, 4,602 resource inputs, 4,255 tool inputs), so baseline accepted/source_closure_ready remain false. Next strict entry index 46 is .agents/skills/perform-task/agents/openai.yaml@f238b707da7f39a4293b17d112ddd344dcb8253a.",
       "test_execution_evidence": []
     }
   ]
