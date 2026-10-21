@@ -1,6 +1,6 @@
-# Perform-task skill complete read — strict recursive indices 45-49
+# Perform-task skill complete read — strict recursive indices 45-50
 
-Status: parent exact-head verified at 16d95f0607a203fb16a96afa99751a39892ec7f0; strict index 49 source-grounded and existing-owner mapped; child exact-head verification pending. Earlier index45-index48 traceability and validator repairs remain retained.
+Status: parent exact-head verified at 62b48720cbdbe455bf476faef2445801e9af622e; strict index50 source-grounded and mapped; child gates pending.
 
 Authority: telegramdesktop/tdesktop@0eca52223cceed229932add1cc80792763120844 tree 1fc479a4b448aed851181bf4a4796d3015368348.
 Index 45 source: `.agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c`.
@@ -8,7 +8,7 @@ Index 46 source: `.agents/skills/perform-task/agents/openai.yaml@f238b707da7f39a
 Index 47 source: `.agents/skills/perform-task/references/computer-use-testing.md@b7fc92d604a55975f75047828d476e64667aa259` (14,178 bytes).
 Index 48 source: `.agents/skills/perform-task/references/mechanical-lane.md@e5e3cc88ba80ece6a20df7c4dd6002491d66a4ef` (9,933 bytes).
 Index 49 source: `.agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba` (61,134 bytes; 1,163 lines).
-Next strict entry: index 50 `.agents/skills/perform-task/references/pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7`.
+Index50 pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7 was fully read (1,086 lines) and mapped to existing source-neutral repository governance. Strict index51 is intentionally deferred until fresh child exact-head TDRP/Rust gates pass; its path/blob is not guessed.
 
 ## Parent exact-head evidence
 
@@ -274,3 +274,9 @@ Invariants:
 This closes only recursive strict index 49. Counters become source_entries_total=16,305, unknown=16,253, unread=16,228, omitted=0, responsibilities_total=68, unmapped=0. baseline_identity_accepted=false, baseline_ready=false, accepted=false and source_closure_ready=false because source coverage and recursive reachability/disposition remain open.
 
 Parent 16d95f0607a203fb16a96afa99751a39892ec7f0 evidence is supporting evidence only after this write. Exact-head acceptance of index49 requires fresh TDRP Revision 9 61-job and Rust desktop runtime 6-job workflows on the immutable child. Only after every child job/step/full log/artifact/digest closes without deterministic failure may the audit enter strict index50.
+
+## Index 50
+
+Complete source read of pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7: preflight, validated resume/checkpoints, bounded delegation, owned implementation, independent/focused review and convergence, APPROVED/TEST_FLAW/IMPL_BUG/UNRECOVERABLE, two-campaign ceiling, exact-path publication, DONE/BLOCKED/SPLIT_REQUIRED. Existing owners: AGENTS.md, TEST_STRATEGY.md, evidence-contract.md. No shipping Task/Agent/Computer/Host/Runner/Conversation owner; novel_capability=false.
+
+Parent evidence: TDRP 39531160961 61/61 at 62b48720cbdbe455bf476faef2445801e9af622e; Rust 39531160843 6/6; artifact 12315168809 digest sha256:2642e30438a89d5231cc1944455e8a1ddc77a016fbfdc36c5d2ca51626f0290c. Coverage now unknown=16252, unread=16227, omitted=0, responsibilities=68, unmapped=0. baseline_identity_accepted=false/source_closure_ready=false. Strict index51 only after child gates.

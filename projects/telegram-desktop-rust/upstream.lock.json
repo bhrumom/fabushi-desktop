@@ -896,8 +896,8 @@
   "coverage": {
     "root_source_entries_total": 6819,
     "recursive_source_entries_total": 16305,
-    "unknown_minimum": 16253,
-    "unread_minimum": 16228,
+    "unknown_minimum": 16252,
+    "unread_minimum": 16227,
     "omitted_known": 0,
     "note": "Live dev authority remains 0eca52223cceed229932add1cc80792763120844/1fc479a4b448aed851181bf4a4796d3015368348. Exact recursive total is 16,305. Strict index 49 .agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba is mapped to the existing source-neutral repository development lifecycle, review/test orchestration and durable evidence governance: unknown=16,253, unread=16,228, omitted=0; next strict entry index 50 is .agents/skills/perform-task/references/pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7. It governs artifact-gated context/plan, independent assessment, bounded owned implementation, selected validation, blind and focused review/convergence, directness-advancing evidence recovery with one focused campaign ceiling, native-Windows touched-file normalization, and host worker adapters. It is not shipping Fabushi Task, Agent, Computer, Host, Runner or Conversation runtime. Parent exact-head TDRP 39528383951 attempt 2 is 61/61 success and Rust desktop runtime 39528383913 is 6/6 success at 16d95f0607a203fb16a96afa99751a39892ec7f0. Recursive fixed-point remains unresolved_gitlink_authorities=0 and Boost 582/582/open=0, while recursive disposition remains open (95 authorities, 133 gitlinks, 3,865 acquisition candidates, 4,674 generated inputs, 4,602 resource inputs, 4,255 tool inputs), so source_closure_ready/baseline acceptance remain false."
   },
