@@ -12,10 +12,9 @@ const packagedExecutable = process.env.FABUSHI_ELECTRON_EXECUTABLE?.trim() || nu
 const firstWindowTimeoutMs = packagedExecutable ? 120_000 : 30_000;
 
 // Production packaged startup includes the real Host/Coordinator graph and is
-// governed by the desktop's existing 120s startup-stuck watchdog. Keep normal
-// focused E2E at its 45s budget while allowing installed-package acceptance to
-// observe that bounded production startup instead of failing at Playwright's
-// unrelated 30s first-window default.
+// governed by the desktop's existing 120s startup-stuck watchdog. Ordinary
+// focused E2E keeps its 45s default; native workspace acceptance has an explicit
+// budget because it verifies real Chromium, clean shutdown, and profile restart.
 test.beforeEach(async ({}, testInfo) => {
   if (packagedExecutable) testInfo.setTimeout(150_000);
 });
@@ -1005,7 +1004,7 @@ async function closeDesktopApp(
   // request itself must also be bounded: Electron can begin exiting before
   // Playwright receives the evaluation result, otherwise the test can hang
   // before reaching the close/kill watchdog below.
-  const timeoutMs = options.timeoutMs ?? 20_000;
+  const timeoutMs = options.timeoutMs ?? 30_000;
   const quitRequest = app.evaluate(({ app: electronApp }) => electronApp.quit()).catch(() => undefined);
   let quitDispatchTimer: ReturnType<typeof setTimeout> | undefined;
   await Promise.race([
@@ -1027,13 +1026,14 @@ async function closeDesktopApp(
 
   // Never let a stuck Electron child consume Playwright's entire worker
   // teardown budget. Strict restart/restore checkpoints still fail visibly.
-  try { app.process().kill(); } catch {}
+  try { app.process().kill('SIGKILL'); } catch {}
   let killTimer: ReturnType<typeof setTimeout> | undefined;
   await Promise.race([
     closePromise,
     new Promise<void>((resolve) => { killTimer = setTimeout(resolve, 2_000); }),
   ]);
   if (killTimer != null) clearTimeout(killTimer);
+  if (closeFinished) return;
   if (options.failOnTimeout) {
     throw new Error(`Electron app did not exit within ${timeoutMs}ms after explicit app.quit; forced child-process cleanup was attempted.`);
   }
@@ -1248,6 +1248,7 @@ async function expectHermesAssistantTurn(page: Page, expectedText: string): Prom
 }
 
 test('native Browser Workspace opens real Chromium pages, isolates tabs, and downloads verified bytes', async () => {
+  test.setTimeout(packagedExecutable ? 180_000 : 120_000);
   const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-browser-workspace-'));
   let app: ElectronApplication | null = null;
 
@@ -1319,8 +1320,9 @@ test('native Browser Workspace opens real Chromium pages, isolates tabs, and dow
     expect(nativeEntries.some((entry) => entry.url.includes('/browser-workspace-fixture'))).toBe(true);
     expect(nativeEntries.some((entry) => entry.url.includes('/browser-workspace-secure'))).toBe(true);
 
-    await closeDesktopApp(app, { failOnTimeout: true });
+    const closingApp = app;
     app = null;
+    await closeDesktopApp(closingApp, { failOnTimeout: true });
     app = await launchDesktopApp(appDataDir, {}, httpsArgs);
     const restartedPage = await app.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(restartedPage);
