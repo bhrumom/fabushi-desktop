@@ -64,6 +64,12 @@ first delivery target. Never enable paid-model tests as a side effect of this wo
   including a later tool/checkpoint/stream failure. A resumed aggregate is history,
   not new spend. Absent provider usage remains unknown; do not invent estimates.
   Both Fabushi first-party and Codex paths use the same reporting implementation.
+- HRA-10: extend observational repeat feedback to provider tool results, including
+  MCP success envelopes carrying `isError: true`. Preserve original result data;
+  null/false/zero/empty error fields and policy refusals are not execution failures.
+  Advise once for the second identical tool/arguments/failure; changed arguments,
+  diagnostics and a successful matching call are separate observations. Bound
+  hashed per-turn state; no extra requests, forced stop, or approval bypass.
 - HRA-07: durable evidence maps each audited responsibility to exact Hermes source,
   current owner, observed behavior, gaps, changes and Actions evidence. Unknown,
   blocked and not-run are not complete. All executable checks run in Actions;

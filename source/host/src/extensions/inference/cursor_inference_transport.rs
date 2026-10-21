@@ -915,6 +915,7 @@ pub fn run_cursor_with_transport_reporting_usage_and_partials_with_max_steps(
         )));
     }
 
+    let mut failure_observations = super::tool_feedback::ToolFailureObservations::default();
     for _step in completed_steps..max_steps {
         if should_cancel() {
             return Err(ProviderSessionError::Cancelled(
@@ -1032,7 +1033,8 @@ pub fn run_cursor_with_transport_reporting_usage_and_partials_with_max_steps(
             if let Ok(args) = &parsed {
                 observed_tool_calls.push((call.tool_name.clone(), args.clone()));
             }
-            let (result, is_error) = match (parsed, tool_index.get(&call.tool_name).copied()) {
+            let observed_args = parsed.as_ref().ok().cloned();
+            let (mut result, is_error) = match (parsed, tool_index.get(&call.tool_name).copied()) {
                 (Err(error), _) => (json!({"error": error}), true),
                 (Ok(_), None) => (
                     json!({
@@ -1048,6 +1050,10 @@ pub fn run_cursor_with_transport_reporting_usage_and_partials_with_max_steps(
                     ),
                 },
             };
+            if let Some(args) = observed_args {
+                failure_observations.observe(&call.tool_name, &args, &mut result);
+            }
+            let is_error = is_error || super::tool_feedback::is_execution_failure(&result);
             conversation.push(CursorCheckpointMessage::ToolResult {
                 tool_call_id: call.tool_call_id,
                 tool_name: call.tool_name,

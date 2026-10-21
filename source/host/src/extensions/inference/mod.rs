@@ -10,3 +10,4 @@ pub mod inference_service;
 pub mod generated_inference_codec;
 pub mod sand_labeling;
 mod tool_arguments;
+mod tool_feedback;

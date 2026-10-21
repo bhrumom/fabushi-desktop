@@ -481,6 +481,7 @@ pub fn run_codex_direct_responses_with_lifecycle_reporting_usage(
         )));
     }
 
+    let mut failure_observations = super::tool_feedback::ToolFailureObservations::default();
     for _step in completed_steps..max_steps {
         if should_cancel() {
             return Err(CodexDirectError::Cancelled(
@@ -628,7 +629,8 @@ pub fn run_codex_direct_responses_with_lifecycle_reporting_usage(
             if let Ok(args) = &parsed {
                 observed_tool_calls.push((name.to_string(), args.clone()));
             }
-            let output = match (parsed, tools_by_name.get(name).copied()) {
+            let observed_args = parsed.as_ref().ok().cloned();
+            let mut output = match (parsed, tools_by_name.get(name).copied()) {
                 (Err(error), _) => json!({"isError": true, "error": error}),
                 (Ok(_), None) => json!({
                     "isError": true,
@@ -642,6 +644,9 @@ pub fn run_codex_direct_responses_with_lifecycle_reporting_usage(
                     }),
                 },
             };
+            if let Some(args) = observed_args {
+                failure_observations.observe(name, &args, &mut output);
+            }
             results.push(json!({
                 "type": "function_call_output",
                 "call_id": call_id,

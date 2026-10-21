@@ -1916,6 +1916,7 @@ pub fn run_openrouter_with_transport_reporting_usage_and_partials_with_max_steps
         )));
     }
 
+    let mut failure_observations = super::tool_feedback::ToolFailureObservations::default();
     for _step in completed_steps..max_steps {
         if should_cancel() {
             return Err(ProviderSessionError::Cancelled(
@@ -2076,7 +2077,8 @@ pub fn run_openrouter_with_transport_reporting_usage_and_partials_with_max_steps
             if let Ok(args) = &parsed {
                 observed_tool_calls.push((call.name.clone(), args.clone()));
             }
-            let result = match (parsed, tool_index.get(&call.name).copied()) {
+            let observed_args = parsed.as_ref().ok().cloned();
+            let mut result = match (parsed, tool_index.get(&call.name).copied()) {
                 (Err(error), _) => json!({"isError": true, "error": error}),
                 (Ok(_), None) => json!({
                     "isError": true,
@@ -2090,6 +2092,9 @@ pub fn run_openrouter_with_transport_reporting_usage_and_partials_with_max_steps
                     }),
                 },
             };
+            if let Some(args) = observed_args {
+                failure_observations.observe(&call.name, &args, &mut result);
+            }
             conversation.push(json!({
                 "role": "tool",
                 "tool_call_id": tool_call_id,

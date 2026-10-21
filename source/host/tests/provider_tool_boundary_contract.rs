@@ -301,3 +301,63 @@ fn openrouter_missing_call_id_is_assigned_before_durable_intent() {
         }).unwrap();
     assert!(dispatched.get());
 }
+
+#[test]
+fn provider_repeat_observation_is_once_only_and_never_dispatches_extra_calls() {
+    let call=|id:&str,args:Value|vec![json!({"choices":[{"delta":{"tool_calls":[{
+        "index":0,"id":id,"function":{"name":"write","arguments":args.to_string()}
+    }]}}]})];
+    let same=json!({"nested":{"b":2,"a":1}});
+    let changed=json!({"nested":{"a":9,"b":2}});
+    let mut rounds=VecDeque::new();
+    for (index,args) in [same.clone(),same.clone(),same.clone(),changed,same.clone(),same.clone(),same.clone()].into_iter().enumerate() {
+        rounds.push_back(call(&format!("call-{index}"),args));
+    }
+    rounds.push_back(vec![json!({"choices":[{"delta":{"content":"done"}}]})]);
+    let mut transport=Transport{responses:rounds,requests:0};
+    let mut dispatched=0;
+    let mut feedback=Vec::new();
+    run_openrouter_with_transport(&mut transport,"fixture",&[],&tools(),
+        &mut |_,_,_| {
+            dispatched+=1;
+            if dispatched==5 {Ok(json!({"error":null,"failed":0}))}
+            else {Ok(json!({"isError":true,"error":"daemon refused"}))}
+        },&mut |_,_|{},&||false,None,&mut |checkpoint| {
+            if checkpoint.pending_tool_calls.is_empty() {
+                let result=checkpoint.conversation.last().unwrap()["content"].as_str().unwrap();
+                feedback.push(serde_json::from_str::<Value>(result).unwrap());
+            }
+            Ok(())
+        }).unwrap();
+    assert_eq!(dispatched,7,"only model-proposed calls execute");
+    assert_eq!(transport.requests,8,"observations cannot trigger another model request");
+    assert_eq!(feedback.iter().map(|v|v.get("toolObservation").is_some()).collect::<Vec<_>>(),
+        vec![false,true,false,false,false,false,true]);
+    assert_eq!(feedback[1]["error"],"daemon refused","original diagnostic is retained");
+}
+
+#[test]
+fn cursor_embedded_failure_is_error_but_empty_error_and_refusal_are_not() {
+    let results=[json!({"error":null,"failed":0}),json!({"error":false}),
+        json!({"rejected":"policy","error":"not allowed"}),json!({"isError":true,"error":"refused"})];
+    let mut rounds=VecDeque::new();
+    for index in 0..results.len() {
+        rounds.push_back(vec![CursorInferenceEvent::ToolCall {
+            tool_call_id:format!("call-{index}"),tool_name:"write".into(),args:"{}".into(),complete:true,tool_index:Some(0),
+        }]);
+    }
+    rounds.push_back(vec![]);
+    let transport=CursorSequenceTransport{rounds:Mutex::new(rounds)};
+    let mut outputs=results.into_iter();
+    let mut flags=Vec::new();
+    run_cursor_with_transport_reporting_usage(&transport,&[],&tools(),
+        &mut |_,_,_|Ok(outputs.next().unwrap()),&mut |_,_|{},&||false,None,&mut |checkpoint| {
+            if checkpoint.pending_tool_calls.is_empty() {
+                if let Some(CursorCheckpointMessage::ToolResult{is_error,..})=checkpoint.conversation.last() {
+                    flags.push(*is_error);
+                }
+            }
+            Ok(())
+        },&mut |_|{}).unwrap();
+    assert_eq!(flags,vec![false,false,false,true]);
+}
