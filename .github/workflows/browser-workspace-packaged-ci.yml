@@ -1,0 +1,334 @@
+name: Browser Workspace Packaged CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "desktop/**"
+      - "frontend/src/recovered/features/browser/**"
+      - "source/electron-main/browser-workspace.ts"
+      - "source/electron-main/browser-extension-policy.ts"
+      - "source/electron-main/local-browser-agent-page.ts"
+      - "source/electron-main/main-production-services.ts"
+      - "source/electron-preload/preload.ts"
+      - "source/shared/browser-workspace.ts"
+      - "source/shared/local-browser-agent.ts"
+      - "source/host/**"
+      - "source/node-agent-coordinator/**"
+      - ".github/workflows/browser-workspace-packaged-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: browser-workspace-packaged-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  packaged-browser:
+    name: Packaged Browser Workspace / ${{ matrix.name }}
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows-nsis
+            os: windows-2025
+          - name: linux-appimage-deb
+            os: ubuntu-24.04
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Bind exact tested HEAD
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          expected="${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}"
+          test "$actual" = "$expected"
+          echo "Exact tested HEAD: $actual" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Bind exact tested HEAD on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $actual = (git rev-parse HEAD).Trim()
+          $expected = "${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}"
+          if ($actual -ne $expected) { throw "HEAD mismatch: $actual != $expected" }
+          "Exact tested HEAD: $actual" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.27.1"
+          cache-dependency-path: source/fabushi-network-worker/go.mod
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            source/host -> target
+            source/node-agent-coordinator -> target
+            source/box-exec-daemon -> target
+          shared-key: browser-workspace-packaged-${{ runner.os }}-rust-1.97.1
+
+      - name: Install Linux desktop runtime dependencies
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends             xvfb libgtk-3-0 libnss3 libasound2t64 libxss1 libgbm1 libnotify4             libsecret-1-0 libxtst6 libatspi2.0-0 libdrm2 libxkbcommon0 fakeroot
+
+      - name: Install locked desktop dependencies
+        shell: bash
+        if: runner.os != 'Windows'
+        run: npm --prefix desktop ci --prefer-offline --no-audit --no-fund
+
+      - name: Install locked desktop dependencies on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: npm --prefix desktop ci --prefer-offline --no-audit --no-fund
+
+      - name: Build packaged FDN worker on Linux
+        if: runner.os == 'Linux'
+        working-directory: source/fabushi-network-worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p target/release
+          go mod tidy
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=0             go build -trimpath -ldflags='-s -w' -o target/release/fabushi-network-worker .
+          test -x target/release/fabushi-network-worker
+
+      - name: Build packaged FDN worker on Windows
+        if: runner.os == 'Windows'
+        working-directory: source/fabushi-network-worker
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path target/release | Out-Null
+          go mod tidy
+          $env:GOOS = "windows"
+          $env:GOARCH = "amd64"
+          $env:CGO_ENABLED = "0"
+          go build -trimpath -ldflags="-s -w" -o target/release/fabushi-network-worker.exe .
+          if (!(Test-Path target/release/fabushi-network-worker.exe)) { throw "FDN worker missing" }
+
+      - name: Build and stage shipping Host/Coordinator
+        working-directory: desktop
+        shell: bash
+        if: runner.os != 'Windows'
+        run: npm run build:host
+
+      - name: Build and stage shipping Host/Coordinator on Windows
+        if: runner.os == 'Windows'
+        working-directory: desktop
+        shell: pwsh
+        run: npm run build:host
+
+      - name: Build exact Electron runtime and renderer
+        working-directory: desktop
+        shell: bash
+        if: runner.os != 'Windows'
+        run: |
+          set -euo pipefail
+          npm run build:electron
+          npm run build:renderer
+          npm run check:desktop-runtime
+          node scripts/check-desktop-bundle.mjs
+
+      - name: Build exact Electron runtime and renderer on Windows
+        if: runner.os == 'Windows'
+        working-directory: desktop
+        shell: pwsh
+        run: |
+          npm run build:electron
+          npm run build:renderer
+          npm run check:desktop-runtime
+          node scripts/check-desktop-bundle.mjs
+
+      - name: Package Linux AppImage and deb
+        if: runner.os == 'Linux'
+        working-directory: desktop
+        shell: bash
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: |
+          set -euo pipefail
+          npx electron-builder --linux AppImage deb --x64 --publish never
+          test -n "$(find release -maxdepth 1 -type f -name '*.AppImage' -print -quit)"
+          test -n "$(find release -maxdepth 1 -type f -name '*.deb' -print -quit)"
+
+      - name: Package Windows NSIS
+        if: runner.os == 'Windows'
+        working-directory: desktop
+        shell: pwsh
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: |
+          npx electron-builder --win nsis --x64 --publish never
+          $installer = Get-ChildItem release -File -Filter "fabushi-*-setup.exe" | Select-Object -First 1
+          if ($null -eq $installer) { throw "NSIS installer missing" }
+
+      - name: Install Linux deb and bind packaged executable
+        if: runner.os == 'Linux'
+        working-directory: desktop
+        shell: bash
+        run: |
+          set -euo pipefail
+          deb="$(find release -maxdepth 1 -type f -name '*.deb' -print -quit)"
+          appimage="$(find release -maxdepth 1 -type f -name '*.AppImage' -print -quit)"
+          test -n "$deb"
+          test -n "$appimage"
+          chmod +x "$appimage"
+          sudo dpkg -i "$deb" || {
+            sudo apt-get -f install -y
+            sudo dpkg -i "$deb"
+          }
+          executable="$(command -v fabushi || true)"
+          if [ -z "$executable" ]; then
+            executable="$(find /opt /usr -type f -name fabushi -perm -111 -print -quit 2>/dev/null || true)"
+          fi
+          test -n "$executable"
+          test -x "$executable"
+          echo "FABUSHI_ELECTRON_EXECUTABLE=$executable" >> "$GITHUB_ENV"
+          echo "FABUSHI_PACKAGED_APPIMAGE=$appimage" >> "$GITHUB_ENV"
+          echo "FABUSHI_PACKAGED_DEB=$deb" >> "$GITHUB_ENV"
+
+      - name: Install Windows NSIS and bind packaged executable
+        if: runner.os == 'Windows'
+        working-directory: desktop
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem release -File -Filter "fabushi-*-setup.exe" | Select-Object -First 1
+          if ($null -eq $installer) { throw "NSIS installer missing" }
+          $process = Start-Process -FilePath $installer.FullName -ArgumentList "/S" -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw "NSIS silent install failed with $($process.ExitCode)" }
+          Start-Sleep -Seconds 2
+          $roots = @(
+            (Join-Path $env:LOCALAPPDATA "Programs"),
+            (Join-Path $env:LOCALAPPDATA "Fabushi")
+          ) | Where-Object { Test-Path $_ }
+          $candidate = $null
+          foreach ($root in $roots) {
+            $candidate = Get-ChildItem $root -Recurse -File -Filter "fabushi.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($null -ne $candidate) { break }
+          }
+          if ($null -eq $candidate) { throw "Installed fabushi.exe was not found under LOCALAPPDATA" }
+          "FABUSHI_ELECTRON_EXECUTABLE=$($candidate.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "FABUSHI_PACKAGED_NSIS=$($installer.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Run packaged native Browser Workspace/profile acceptance
+        if: runner.os == 'Linux'
+        working-directory: desktop
+        shell: bash
+        env:
+          FABUSHI_FEATURE_HOST_MODE: production
+        run: xvfb-run -a npx playwright test e2e/mahayana-agent-workbench.spec.ts --workers=1 --grep "native Browser Workspace opens real Chromium pages"
+
+      - name: Run packaged native Browser Workspace/profile acceptance on Windows
+        if: runner.os == 'Windows'
+        working-directory: desktop
+        shell: pwsh
+        env:
+          FABUSHI_FEATURE_HOST_MODE: production
+        run: npx playwright test e2e/mahayana-agent-workbench.spec.ts --workers=1 --grep "native Browser Workspace opens real Chromium pages"
+
+      - name: Run packaged two-Bot takeover and download acceptance
+        if: runner.os == 'Linux'
+        working-directory: desktop
+        shell: bash
+        env:
+          FABUSHI_FEATURE_HOST_MODE: production
+        run: >-
+          xvfb-run -a npx playwright test e2e/mahayana-agent-workbench.spec.ts --workers=1
+          --grep "Agent (controls the real local Chromium form through Host tools|downloads verified bytes from the real local Chromium page through Host tools)"
+
+      - name: Run packaged two-Bot takeover and download acceptance on Windows
+        if: runner.os == 'Windows'
+        working-directory: desktop
+        shell: pwsh
+        env:
+          FABUSHI_FEATURE_HOST_MODE: production
+        run: >-
+          npx playwright test e2e/mahayana-agent-workbench.spec.ts --workers=1
+          --grep "Agent (controls the real local Chromium form through Host tools|downloads verified bytes from the real local Chromium page through Host tools)"
+
+      - name: Run packaged extension lifecycle acceptance
+        if: runner.os == 'Linux'
+        working-directory: desktop
+        shell: bash
+        env:
+          FABUSHI_FEATURE_HOST_MODE: production
+        run: xvfb-run -a npx playwright test e2e/mahayana-agent-workbench.spec.ts --workers=1 --grep "Browser extension installs into real Chromium"
+
+      - name: Run packaged extension lifecycle acceptance on Windows
+        if: runner.os == 'Windows'
+        working-directory: desktop
+        shell: pwsh
+        env:
+          FABUSHI_FEATURE_HOST_MODE: production
+        run: npx playwright test e2e/mahayana-agent-workbench.spec.ts --workers=1 --grep "Browser extension installs into real Chromium"
+
+      - name: Record Linux package SHA-256 evidence
+        if: always() && runner.os == 'Linux'
+        working-directory: desktop
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p packaged-browser-evidence
+          find release -maxdepth 1 -type f \( -name '*.AppImage' -o -name '*.deb' \) -print0             | sort -z | xargs -0 sha256sum > packaged-browser-evidence/SHA256SUMS
+          node -e 'const fs=require("fs");const p=require("./package.json");fs.writeFileSync("packaged-browser-evidence/provenance.json",JSON.stringify({sourceSha:process.env.GITHUB_SHA,runner:process.env.RUNNER_OS,packageVersion:p.version,electron:p.devDependencies.electron,electronBuilder:p.devDependencies["electron-builder"],executable:process.env.FABUSHI_ELECTRON_EXECUTABLE||null},null,2)+"\n")'
+
+      - name: Record Windows package SHA-256 evidence
+        if: always() && runner.os == 'Windows'
+        working-directory: desktop
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path packaged-browser-evidence | Out-Null
+          $files = Get-ChildItem release -File -Filter "*.exe"
+          $lines = foreach ($file in $files) {
+            $hash = (Get-FileHash -Algorithm SHA256 $file.FullName).Hash.ToLowerInvariant()
+            "$hash  $($file.Name)"
+          }
+          $lines | Out-File -FilePath packaged-browser-evidence/SHA256SUMS -Encoding utf8
+          $pkg = Get-Content package.json -Raw | ConvertFrom-Json
+          [ordered]@{
+            sourceSha = $env:GITHUB_SHA
+            runner = $env:RUNNER_OS
+            packageVersion = $pkg.version
+            electron = $pkg.devDependencies.electron
+            electronBuilder = $pkg.devDependencies.'electron-builder'
+            executable = $env:FABUSHI_ELECTRON_EXECUTABLE
+          } | ConvertTo-Json | Out-File -FilePath packaged-browser-evidence/provenance.json -Encoding utf8
+
+      - name: Upload packaged Browser Workspace evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-workspace-packaged-${{ matrix.name }}-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            desktop/packaged-browser-evidence
+            desktop/playwright-report
+            desktop/test-results
+            desktop/release/*.AppImage
+            desktop/release/*.deb
+            desktop/release/*setup.exe
+          if-no-files-found: warn
+          retention-days: 14
