@@ -65,64 +65,32 @@ fn authoring_uses_existing_shell_review_identity_and_cancellation() {
     }
 }
 
-struct ReadinessBox {
-    calls: std::sync::atomic::AtomicUsize,
-    success_at: usize,
-    message: &'static str,
-}
-impl ReadinessBox {
-    fn result(&self) -> Result<Value, ProviderSessionError> {
-        let call = self.calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1;
-        if call == self.success_at { Ok(json!({"executed":true})) }
-        else { Err(ProviderSessionError::Tool(self.message.into())) }
+struct UnavailableBox(std::sync::atomic::AtomicUsize);
+impl RunnerBoxResourcePort for UnavailableBox {
+    fn execute_shell(&self, _: RunnerBoxShellRequest) -> Result<Value, ProviderSessionError> {
+        self.0.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        Err(ProviderSessionError::Tool("Computer connection failed [daemon_refused]; startup state is unknown. Diagnostic: connection refused".into()))
     }
-}
-impl RunnerBoxResourcePort for ReadinessBox {
-    fn execute_shell(&self, _: RunnerBoxShellRequest) -> Result<Value, ProviderSessionError> { self.result() }
-    fn execute_read(&self, _: RunnerBoxReadRequest) -> Result<Value, ProviderSessionError> { self.result() }
+    fn execute_read(&self, _: RunnerBoxReadRequest) -> Result<Value, ProviderSessionError> { unreachable!() }
     fn execute_write(&self, _: RunnerBoxWriteRequest) -> Result<(), ProviderSessionError> { unreachable!() }
 }
 
 #[test]
-fn box_startup_failure_cancels_the_turn_across_authoring_shell_and_read() {
-    use mahayana_host_runtime::ports::r#box::SAND_BOX_NOT_READY_MESSAGE;
-    for success_at in [0, 2] {
-        let port = Arc::new(ReadinessBox { calls: std::sync::atomic::AtomicUsize::new(0), success_at, message: SAND_BOX_NOT_READY_MESSAGE });
-        let cancellation = RoutedProviderCancellation::default();
-        let bridge = build_turn_toolset(Arc::new(Base), TurnToolsetDependencies {
-            box_resources:Some(port.clone()), cancellation:cancellation.clone(), ..Default::default()
-        });
-        let tools = bridge.list_tools().unwrap();
-        let limit = if success_at == 0 { 3 } else { 5 };
-        for index in 0..limit {
-            let (name, args) = match index % 3 {
-                0 => ("MiniApp", json!({"action":"inspect","project":"counter"})),
-                1 => ("Shell", json!({"command":format!("echo changed-{index}"),"workingDirectory":"/workspace"})),
-                _ => ("Read", json!({"path":"/workspace/status"})),
-            };
-            let tool = tools.iter().find(|tool| tool.name == name).unwrap();
-            let result = bridge.call_tool(tool,args,"readiness-probe");
-            if index + 1 == limit { assert!(matches!(result, Err(ProviderSessionError::Cancelled(_)))); }
-            else { assert_eq!(result.is_ok(), index + 1 == success_at); }
-        }
-        assert!(cancellation.is_cancelled());
-        assert!(cancellation.reason().unwrap().contains("model-token consumption"));
-        let shell = tools.iter().find(|tool| tool.name == "Shell").unwrap();
-        assert!(bridge.call_tool(shell,json!({"command":"echo no-more"}),"after-stop").is_err());
-        assert_eq!(port.calls.load(std::sync::atomic::Ordering::SeqCst), limit);
-    }
-}
-
-#[test]
-fn ordinary_command_errors_do_not_trigger_box_startup_cancellation() {
-    let port = Arc::new(ReadinessBox { calls: std::sync::atomic::AtomicUsize::new(0), success_at:0, message:"command failed" });
+fn ordinary_box_failures_remain_model_visible_without_cancelling_the_turn() {
+    let port = Arc::new(UnavailableBox(std::sync::atomic::AtomicUsize::new(0)));
     let cancellation = RoutedProviderCancellation::default();
     let bridge = build_turn_toolset(Arc::new(Base), TurnToolsetDependencies {
-        box_resources:Some(port), cancellation:cancellation.clone(), ..Default::default()
+        box_resources:Some(port.clone()), cancellation:cancellation.clone(), ..Default::default()
     });
-    let shell = bridge.list_tools().unwrap().into_iter().find(|tool| tool.name == "Shell").unwrap();
-    for _ in 0..5 { assert!(bridge.call_tool(&shell,json!({"command":"false"}),"ordinary-error").is_err()); }
-    assert!(!cancellation.is_cancelled());
+    let tool = bridge.list_tools().unwrap().into_iter().find(|tool| tool.name == "MiniApp").unwrap();
+    for _ in 0..5 {
+        let error = bridge.call_tool(&tool,json!({"action":"inspect","project":"counter"}),"tool-failure").unwrap_err();
+        assert!(matches!(error, ProviderSessionError::Tool(_)));
+        assert!(!cancellation.is_cancelled());
+    }
+    cancellation.cancel("user stopped the turn");
+    assert!(bridge.call_tool(&tool,json!({"action":"inspect","project":"counter"}),"after-user-stop").is_err());
+    assert_eq!(port.0.load(std::sync::atomic::Ordering::SeqCst), 5);
 }
 
 struct ActionsBox;

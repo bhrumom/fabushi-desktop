@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use mahayana_host_runtime::ports::r#box::{
     SAND_BOX_NOT_READY_MESSAGE, SAND_BOX_NO_MONITOR_AVAILABLE_MESSAGE,
-    SAND_BOX_NOT_RESPONDING_MESSAGE, SandBoxDaemonUnreachableError,
+    SandBoxDaemonUnreachableError,
 };
 use mahayana_host_runtime::runner::remote_box_resources::{
     RemoteBoxResourceCoordinator, RemoteConnection, RemoteConnectError,
@@ -75,7 +75,7 @@ fn preparing_status_can_delegate_to_the_host_owned_bounded_readiness_wait() {
     let failed = coordinator
         .connect(false, || Err(timeout))
         .unwrap_err();
-    assert_eq!(failed.0, SAND_BOX_NOT_RESPONDING_MESSAGE);
+    assert_eq!(failed.0, "Computer connection failed [daemon_timeout]; startup state is unknown. Diagnostic: deadline");
     assert!(!coordinator.has_cached_connection());
 
     let retried = coordinator
@@ -85,15 +85,40 @@ fn preparing_status_can_delegate_to_the_host_owned_bounded_readiness_wait() {
 }
 
 #[test]
-fn unknown_connect_failures_use_generic_not_ready_message() {
+fn unknown_connect_failures_preserve_diagnostics_without_inventing_startup() {
     let mut coordinator: RemoteBoxResourceCoordinator<String> =
         RemoteBoxResourceCoordinator::new(true, None);
     let error: RemoteConnectError =
         Arc::new(io::Error::new(io::ErrorKind::Other, "unknown"));
     assert_eq!(
         coordinator.connect(false, || Err(error)).unwrap_err().0,
-        SAND_BOX_NOT_READY_MESSAGE
+        "Computer connection failed [io/Other]; startup state is unknown. Diagnostic: unknown"
     );
+}
+
+#[test]
+fn explicit_preparation_and_wrapped_production_failures_remain_distinct() {
+    use mahayana_host_runtime::r#box::loopback_sand_box::LoopbackSandBoxError;
+    let mut coordinator: RemoteBoxResourceCoordinator<String> =
+        RemoteBoxResourceCoordinator::new(true, None);
+    assert_eq!(coordinator.connect(true, || panic!("explicit preparation must not connect")).unwrap_err().0,
+        SAND_BOX_NOT_READY_MESSAGE);
+    for (outcome, label) in [("refused", "daemon_refused"), ("timeout", "daemon_timeout"), ("crash", "daemon_crash")] {
+        let error: RemoteConnectError = Arc::new(LoopbackSandBoxError::from(
+            SandBoxDaemonUnreachableError::new(outcome, "observed daemon failure")));
+        let message = coordinator.connect(false, || Err(error)).unwrap_err().0;
+        assert!(message.contains(label), "{message}");
+        assert!(message.contains("observed daemon failure"));
+        assert!(!message.contains("Try again"));
+        assert_ne!(message, SAND_BOX_NOT_READY_MESSAGE);
+        assert!(!coordinator.has_cached_connection());
+    }
+    let denied: RemoteConnectError = Arc::new(LoopbackSandBoxError::from(
+        io::Error::new(io::ErrorKind::PermissionDenied, "daemon socket permission denied")));
+    let message = coordinator.connect(false, || Err(denied)).unwrap_err().0;
+    assert!(message.contains("io/PermissionDenied"));
+    assert!(message.contains("daemon socket permission denied"));
+    assert!(coordinator.connect(false, || Ok(connection("recovered", true))).is_ok());
 }
 
 #[test]

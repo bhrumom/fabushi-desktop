@@ -6,6 +6,13 @@ on:
       - 'source/host/src/runner/tools/mod.rs'
       - 'source/host/src/runner/tools/turn_toolset.rs'
       - 'source/host/src/runner/system_prompt_assembly.rs'
+      - 'source/host/src/runner/system_prompt.rs'
+      - 'source/host/src/runner/box_reference_docs.rs'
+      - 'source/host/src/runner/remote_box_resources.rs'
+      - 'source/host/src/ports/box.rs'
+      - 'source/host/src/box/loopback_sand_box.rs'
+      - 'source/host/tests/remote_box_resources_contract.rs'
+      - 'source/host/tests/box_foundation_contract.rs'
       - 'source/host/tests/miniapp*'
       - 'scripts/miniapp-github-roundtrip.py'
       - '.github/workflows/bot-miniapp-authoring.yml'
@@ -64,7 +71,7 @@ jobs:
           FABUSHI_MINIAPP_EXPORT: ${{ runner.temp }}/bot-miniapp-export.json
         run: |
           cargo metadata --locked --format-version 1 --manifest-path source/host/Cargo.toml > /dev/null
-          cargo test --locked --features actions-miniapp-bot --manifest-path source/host/Cargo.toml --test miniapp_authoring_tool_contract
+          cargo test --locked --features actions-miniapp-bot --manifest-path source/host/Cargo.toml --test miniapp_authoring_tool_contract --test remote_box_resources_contract --test box_foundation_contract
       - name: Preserve resolved lockfile for exact-source reconciliation
         if: always()
         uses: actions/upload-artifact@v7
