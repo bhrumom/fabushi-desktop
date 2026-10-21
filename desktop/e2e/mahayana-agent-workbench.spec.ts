@@ -9,6 +9,16 @@ import { fileURLToPath } from 'node:url';
 
 const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const packagedExecutable = process.env.FABUSHI_ELECTRON_EXECUTABLE?.trim() || null;
+const firstWindowTimeoutMs = packagedExecutable ? 120_000 : 30_000;
+
+// Production packaged startup includes the real Host/Coordinator graph and is
+// governed by the desktop's existing 120s startup-stuck watchdog. Keep normal
+// focused E2E at its 45s budget while allowing installed-package acceptance to
+// observe that bounded production startup instead of failing at Playwright's
+// unrelated 30s first-window default.
+test.beforeEach(async ({}, testInfo) => {
+  if (packagedExecutable) testInfo.setTimeout(150_000);
+});
 
 // Fixed, non-secret localhost-only certificate for synthetic HTTPS acceptance.
 // Chromium trusts only this certificate's SPKI in the focused test process.
@@ -1199,7 +1209,7 @@ test('native Browser Workspace opens real Chromium pages, isolates tabs, and dow
     const httpsOrigin = await ensureE2eHttpsBrowserOrigin();
     const httpsArgs = [`--ignore-certificate-errors-spki-list=${e2eHttpsSpkiHash()}`];
     app = await launchDesktopApp(appDataDir, {}, httpsArgs);
-    const page = await app.firstWindow();
+    const page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(page);
     await openMahayanaConversation(page);
 
@@ -1265,7 +1275,7 @@ test('native Browser Workspace opens real Chromium pages, isolates tabs, and dow
     await app.close();
     app = null;
     app = await launchDesktopApp(appDataDir, {}, httpsArgs);
-    const restartedPage = await app.firstWindow();
+    const restartedPage = await app.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(restartedPage);
     const existingAgent = restartedPage.getByRole('region', { name: 'Agent list' }).locator('button.sand-agent-item').first();
     await expect(existingAgent).toBeVisible({ timeout: 15_000 });
@@ -1321,7 +1331,7 @@ test('Browser extension installs into real Chromium, survives restart, disables,
     const origin = await ensureE2eAuthBackend();
     const fixtureUrl = `${origin}/browser-workspace-fixture`;
     app = await launchDesktopApp(appDataDir, { FABUSHI_E2E_BROWSER_EXTENSION_DIR: extensionDir });
-    let page = await app.firstWindow();
+    let page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(page);
     await openMahayanaConversation(page);
 
@@ -1345,7 +1355,7 @@ test('Browser extension installs into real Chromium, survives restart, disables,
     await app.close();
     app = null;
     app = await launchDesktopApp(appDataDir, { FABUSHI_E2E_BROWSER_EXTENSION_DIR: extensionDir });
-    page = await app.firstWindow();
+    page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(page);
     const existingAgent = page.getByRole('region', { name: 'Agent list' }).locator('button.sand-agent-item').first();
     await expect(existingAgent).toBeVisible({ timeout: 15_000 });
@@ -1397,7 +1407,7 @@ test('Agent downloads verified bytes from the real local Chromium page through H
   try {
     const origin = await ensureE2eAuthBackend();
     app = await launchDesktopApp(appDataDir);
-    const page = await app.firstWindow();
+    const page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(page);
     await openMahayanaConversation(page);
 
@@ -1461,7 +1471,7 @@ test('Agent controls the real local Chromium form through Host tools, isolates t
   try {
     const origin = await ensureE2eAuthBackend();
     app = await launchDesktopApp(appDataDir);
-    const page = await app.firstWindow();
+    const page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(page);
     await openMahayanaConversation(page);
 
@@ -1570,7 +1580,7 @@ test('Mahayana renders one Hermes-style assistant turn instead of a completion W
 
   try {
     app = await launchDesktopApp(appDataDir);
-    const page = await app.firstWindow();
+    const page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(page);
     await openMahayanaConversation(page);
 
@@ -1622,7 +1632,7 @@ test('Human reply, attachment, reaction, and search stay on the shipping convers
 
   try {
     app = await launchDesktopApp(appDataDir);
-    let page = await app.firstWindow();
+    let page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(page);
     await openMahayanaConversation(page);
     await page.getByRole('button', { name: 'New Human chat', exact: true }).click();
@@ -1683,7 +1693,7 @@ test('Human reply, attachment, reaction, and search stay on the shipping convers
     await app.close();
     app = null;
     app = await launchDesktopApp(appDataDir);
-    page = await app.firstWindow();
+    page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(page);
     await page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: 'Human Parity Peer', exact: true }).click();
     const restoredReply = page.getByRole('article').filter({ hasText: replyText }).last();
@@ -1718,7 +1728,7 @@ test('shipping Human Forward uses the canonical picker and survives restart', as
 
   try {
     app = await launchDesktopApp(appDataDir);
-    let page = await app.firstWindow();
+    let page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(page);
     await openMahayanaConversation(page);
 
@@ -1760,7 +1770,7 @@ test('shipping Human Forward uses the canonical picker and survives restart', as
     await app.close();
     app = null;
     app = await launchDesktopApp(appDataDir);
-    page = await app.firstWindow();
+    page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(page);
     await page.getByRole('region', { name: 'Agent list' })
       .getByRole('button', { name: 'Forward Destination', exact: true })
@@ -1811,12 +1821,12 @@ test('two shipping Electron device sessions converge one Human conversation thro
 
   try {
     appA = await launchDesktopApp(appDataDirA);
-    const pageA = await appA.firstWindow();
+    const pageA = await appA.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(pageA);
     await openMahayanaConversation(pageA);
 
     appB = await launchDesktopApp(appDataDirB);
-    const pageB = await appB.firstWindow();
+    const pageB = await appB.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(pageB);
     await openMahayanaConversation(pageB);
 
@@ -1855,7 +1865,7 @@ test('Settings localization, accessibility, bidirectional text, and IME stay on 
 
   try {
     app = await launchDesktopApp(appDataDir);
-    let page = await app.firstWindow();
+    let page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(page);
     await openMahayanaConversation(page);
 
@@ -2054,7 +2064,7 @@ test('Settings localization, accessibility, bidirectional text, and IME stay on 
     await app.close();
     app = null;
     app = await launchDesktopApp(appDataDir);
-    page = await app.firstWindow();
+    page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(page);
     await expect.poll(() => page.evaluate(() => ({
       lang: document.documentElement.lang,
@@ -2126,7 +2136,7 @@ test('Human call surface exposes the shipping WebRTC and Electron media bridge',
   let app: ElectronApplication | null = null;
   try {
     app = await launchDesktopApp(appDataDir);
-    const page = await app.firstWindow();
+    const page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(page);
     await openMahayanaConversation(page);
     await page.getByRole('button', { name: 'New Human chat', exact: true }).click();
@@ -2179,7 +2189,7 @@ test('Human conversation survives restart and explicitly hands off into one Herm
 
   try {
     app = await launchDesktopApp(appDataDir);
-    let page = await app.firstWindow();
+    let page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(page);
 
     // Create one real Agent through the shipping sidebar so the Human handoff
@@ -2216,7 +2226,7 @@ test('Human conversation survives restart and explicitly hands off into one Herm
     await app.close();
     app = null;
     app = await launchDesktopApp(appDataDir);
-    page = await app.firstWindow();
+    page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(page);
     await page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: 'Human Alice', exact: true }).click();
     await expect(page.getByRole('article').filter({ hasText: humanMessage }).last()).toBeVisible({ timeout: 10_000 });
@@ -2246,7 +2256,7 @@ test('Human conversation survives restart and explicitly hands off into one Herm
     await app.close();
     app = null;
     app = await launchDesktopApp(appDataDir);
-    page = await app.firstWindow();
+    page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(page);
     await page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: 'Human Alice', exact: true }).click();
     await expect(page.getByRole('article').filter({ hasText: humanMessage }).last()).toBeVisible({ timeout: 10_000 });
@@ -2265,7 +2275,7 @@ test('self-hosted Bot invocation projects into the same Hermes-style turn withou
 
   try {
     app = await launchDesktopApp(appDataDir);
-    let page = await app.firstWindow();
+    let page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(page);
     const { conversationId, peerTestId } = await createSelfHostedBotAcceptanceChannel(page);
 
@@ -2299,7 +2309,7 @@ test('self-hosted Bot invocation projects into the same Hermes-style turn withou
     // history here. Ordered AssistantTurn replay must come from the production
     // Rust gateway/session store and is a separate MSR-204 acceptance blocker.
     app = await launchDesktopApp(appDataDir);
-    page = await app.firstWindow();
+    page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(page);
     const restoredPeer = page.getByTestId(peerTestId);
     await expect(restoredPeer).toBeVisible({ timeout: 15_000 });

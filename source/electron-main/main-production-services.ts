@@ -570,6 +570,23 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
     desktopEventLoopSampler?.dispose();
     desktopEventLoopSampler = undefined;
   };
+  const desktopQuitSettlementTimeoutMs = 15_000;
+  const settleDesktopQuit = async (operation: Promise<void>): Promise<void> => {
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    try {
+      await Promise.race([
+        operation,
+        new Promise<never>((_resolve, reject) => {
+          timeout = setTimeout(
+            () => reject(new Error(`Desktop quit settlement exceeded ${desktopQuitSettlementTimeoutMs}ms.`)),
+            desktopQuitSettlementTimeoutMs,
+          );
+        }),
+      ]);
+    } finally {
+      if (timeout != null) clearTimeout(timeout);
+    }
+  };
   const disposeGraph = async (): Promise<void> => {
     if (disposed) return;
     disposed = true;
@@ -1000,7 +1017,7 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
     if (quitState === "settled" || context == null || telemetry == null) return "continue";
     if (quitState === "flushing") return "prevent";
     quitState = "flushing";
-    void (async () => {
+    const settlement = (async () => {
       try {
         desktopMetricsRuntime?.disposeProcessMetricsCollector();
         const numericMetrics = desktopMetricsRuntime?.takeClientNumericMetricsManager();
@@ -1026,8 +1043,24 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
         await disposeQuitPhase(update, "update");
         await disposeQuitPhase(mcp, "mcp");
         await disposeQuitPhase(experiments, "experiments");
-      } catch (error) { bindings.reportFailure("telemetry", "quit-flush-race", error); try { await telemetry?.spillPending?.(); } catch (spillError) { bindings.reportFailure("telemetry", "quit-preserve", spillError); } }
-      finally { await disposeGraph(); quitState = "settled"; bindings.native.app.quit(); }
+      } catch (error) {
+        bindings.reportFailure("telemetry", "quit-flush-race", error);
+        try { await telemetry?.spillPending?.(); } catch (spillError) { bindings.reportFailure("telemetry", "quit-preserve", spillError); }
+      } finally {
+        await disposeGraph();
+      }
+    })();
+    void (async () => {
+      try {
+        // No service, telemetry sink, child process, or filesystem settle is
+        // allowed to hold Electron's before-quit gate indefinitely.
+        await settleDesktopQuit(settlement);
+      } catch (error) {
+        bindings.reportFailure("main", "quit-settlement", error);
+      } finally {
+        quitState = "settled";
+        bindings.native.app.quit();
+      }
     })();
     return "prevent";
   };
