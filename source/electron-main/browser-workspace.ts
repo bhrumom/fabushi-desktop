@@ -1055,6 +1055,7 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
         const index = workspace.tabs.indexOf(tab);
         if (mountedView === tab.view) unmount();
         workspace.tabs.splice(index, 1);
+        disposeTabDebugger(tab);
         if (!tab.view.webContents.isDestroyed()) tab.view.webContents.destroy();
         if (workspace.tabs.length === 0) createTab(workspace, undefined, true);
         else if (workspace.activeTabId === tab.id) workspace.activeTabId = workspace.tabs[Math.min(index, workspace.tabs.length - 1)]!.id;
