@@ -99,6 +99,10 @@ let e2eHumanMessageSequence = 1;
 let e2eHumanResourceSequence = 1;
 let e2eHumanResources = new Map<string, E2eHumanResource>();
 let e2eBrowserAgentSubmissions: Array<{ name: string; plan: string }> = [];
+let e2eConcurrentBrowserSubmissions: Array<{ task: "alpha" | "beta"; name: string }> = [];
+let e2eConcurrentAlphaReadyForTakeover = false;
+let e2eConcurrentAlphaClickDispatched = false;
+let releaseE2eConcurrentAlphaClick: (() => void) | null = null;
 let e2eLoginDeviceSequence = 1;
 const e2eObservedSocialDeviceIds = new Set<string>();
 
@@ -424,9 +428,11 @@ async function ensureE2eAuthBackend(): Promise<string> {
           && !Array.isArray(item)
           && 'type' in item
           && item.type === 'function_call_output');
-        const browserAgentDownloadE2e = body.includes(Buffer.from('FABUSHI_BROWSER_AGENT_DOWNLOAD_E2E', 'utf8'))
-          || body.includes(Buffer.from('fabushi-e2e-browser-download-', 'utf8'));
-        const browserAgentE2e = !browserAgentDownloadE2e && (body.includes(Buffer.from('FABUSHI_BROWSER_AGENT_E2E', 'utf8'))
+        const browserAgentConcurrencyE2e = body.includes(Buffer.from('FABUSHI_BROWSER_AGENT_CONCURRENCY_E2E', 'utf8'))
+          || body.includes(Buffer.from('fabushi-e2e-browser-concurrency-', 'utf8'));
+        const browserAgentDownloadE2e = !browserAgentConcurrencyE2e && (body.includes(Buffer.from('FABUSHI_BROWSER_AGENT_DOWNLOAD_E2E', 'utf8'))
+          || body.includes(Buffer.from('fabushi-e2e-browser-download-', 'utf8')));
+        const browserAgentE2e = !browserAgentConcurrencyE2e && !browserAgentDownloadE2e && (body.includes(Buffer.from('FABUSHI_BROWSER_AGENT_E2E', 'utf8'))
           || body.includes(Buffer.from('fabushi-e2e-browser-', 'utf8')));
         const functionOutput = (callId: string): Record<string, unknown> | null => {
           const item = providerInput.find((candidate) => candidate != null
@@ -459,6 +465,88 @@ async function ensureE2eAuthBackend(): Promise<string> {
         };
         response.setHeader('content-type', 'text/event-stream');
         response.statusCode = 200;
+        if (browserAgentConcurrencyE2e) {
+          const task: "alpha" | "beta" = body.includes(Buffer.from('FABUSHI_BROWSER_AGENT_CONCURRENCY_E2E_ALPHA', 'utf8'))
+            || body.includes(Buffer.from('fabushi-e2e-browser-concurrency-alpha-', 'utf8'))
+            ? "alpha"
+            : "beta";
+          const prefix = `fabushi-e2e-browser-concurrency-${task}-`;
+          const snapshotOutput = functionOutput(`${prefix}snapshot`);
+          const fillOutput = functionOutput(`${prefix}fill`);
+          const clickOutput = functionOutput(`${prefix}click`);
+          const waitOutput = functionOutput(`${prefix}wait`);
+          if (snapshotOutput == null) {
+            sendFunctionCall('browser_snapshot', `${prefix}snapshot`, { target: 'local' });
+            return;
+          }
+          let snapshot: { elements?: unknown } | null = null;
+          if (typeof snapshotOutput.text === 'string') {
+            try {
+              const parsed = JSON.parse(snapshotOutput.text);
+              if (parsed != null && typeof parsed === 'object' && !Array.isArray(parsed)) snapshot = parsed as { elements?: unknown };
+            } catch {}
+          }
+          const elements = Array.isArray(snapshot?.elements) ? snapshot.elements : [];
+          const refNamed = (name: string): string => {
+            const element = elements.find((candidate) => candidate != null
+              && typeof candidate === 'object'
+              && !Array.isArray(candidate)
+              && (candidate as { name?: unknown }).name === name) as { ref?: unknown } | undefined;
+            if (typeof element?.ref !== 'string' || element.ref.length === 0) {
+              throw new Error(`Concurrent Browser Agent E2E snapshot did not expose ref for ${name}.`);
+            }
+            return element.ref;
+          };
+          if (fillOutput == null) {
+            sendFunctionCall('browser_fill', `${prefix}fill`, {
+              target: 'local',
+              ref: refNamed('Name'),
+              value: task === 'alpha' ? 'Alpha Agent' : 'Beta Agent',
+            });
+            return;
+          }
+          if (clickOutput == null) {
+            if (task === 'alpha') {
+              e2eConcurrentAlphaReadyForTakeover = true;
+              await new Promise<void>((resolve) => {
+                releaseE2eConcurrentAlphaClick = resolve;
+              });
+              releaseE2eConcurrentAlphaClick = null;
+              e2eConcurrentAlphaClickDispatched = true;
+            }
+            sendFunctionCall('browser_click', `${prefix}click`, {
+              target: 'local',
+              ref: refNamed('Submit concurrent'),
+            });
+            return;
+          }
+          if (waitOutput == null) {
+            sendFunctionCall('browser_wait', `${prefix}wait`, {
+              target: 'local',
+              text: `Concurrent ${task} received`,
+              timeoutMs: 10_000,
+            });
+            return;
+          }
+          const finalCall = {
+            type: 'function_call',
+            name: 'SendMessage',
+            call_id: `${prefix}final-message`,
+            arguments: JSON.stringify({ type: 'text', content: `Concurrent ${task} complete` }),
+          };
+          response.end([
+            `data: ${JSON.stringify({ type: 'response.output_item.done', item: finalCall })}\n\n`,
+            `data: ${JSON.stringify({
+              type: 'response.completed',
+              response: {
+                id: `${prefix}response-final-message`,
+                output: [finalCall],
+                usage: { input_tokens: 8, output_tokens: 8, input_tokens_details: { cached_tokens: 0 } },
+              },
+            })}\n\n`,
+          ].join(''));
+          return;
+        }
         if (browserAgentDownloadE2e) {
           const snapshotOutput = functionOutput('fabushi-e2e-browser-download-snapshot');
           const downloadOutput = functionOutput('fabushi-e2e-browser-download-file');
@@ -642,6 +730,22 @@ async function ensureE2eAuthBackend(): Promise<string> {
         response.setHeader('content-type', 'text/html; charset=utf-8');
         response.statusCode = 200;
         response.end(`<!doctype html><html><head><title>Fabushi Browser Cookie ${retained ? 'retained' : 'missing'}</title></head><body><main><h1>Profile cookie ${retained ? 'retained' : 'missing'}</h1></main></body></html>`);
+        return;
+      }
+      if (requestUrl.pathname === '/browser-agent-concurrency-form' && request.method === 'GET') {
+        const task = requestUrl.searchParams.get('task') === 'alpha' ? 'alpha' : 'beta';
+        response.setHeader('content-type', 'text/html; charset=utf-8');
+        response.statusCode = 200;
+        response.end(`<!doctype html><html><head><title>Fabushi Concurrent ${task}</title></head><body><main><h1>Concurrent ${task} form</h1><form method="post" action="/browser-agent-concurrency-form-submit?task=${task}"><label>Name <input name="name" autocomplete="off"></label><button type="submit">Submit concurrent</button></form></main></body></html>`);
+        return;
+      }
+      if (requestUrl.pathname === '/browser-agent-concurrency-form-submit' && request.method === 'POST') {
+        const task = requestUrl.searchParams.get('task') === 'alpha' ? 'alpha' : 'beta';
+        const body = new URLSearchParams((await readRequestBody(request)).toString('utf8'));
+        e2eConcurrentBrowserSubmissions.push({ task, name: body.get('name') ?? '' });
+        response.setHeader('content-type', 'text/html; charset=utf-8');
+        response.statusCode = 200;
+        response.end(`<!doctype html><html><head><title>Fabushi Concurrent ${task} submitted</title></head><body><main><h1>Concurrent ${task} received</h1></main></body></html>`);
         return;
       }
       if (requestUrl.pathname === '/browser-agent-form' && request.method === 'GET') {
@@ -1207,9 +1311,12 @@ test('Agent downloads verified bytes from the real local Chromium page through H
 });
 
 
-test('Agent controls the real local Chromium form through Host tools and the server observes the submission', async () => {
-  e2eBrowserAgentSubmissions = [];
-  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-browser-agent-e2e-'));
+test('Agent controls the real local Chromium form through Host tools, isolates two concurrent Bots, and fences takeover', async () => {
+  e2eConcurrentBrowserSubmissions = [];
+  e2eConcurrentAlphaReadyForTakeover = false;
+  e2eConcurrentAlphaClickDispatched = false;
+  releaseE2eConcurrentAlphaClick = null;
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-browser-agent-concurrency-e2e-'));
   let app: ElectronApplication | null = null;
 
   try {
@@ -1219,27 +1326,84 @@ test('Agent controls the real local Chromium form through Host tools and the ser
     await completeBrowserLogin(page);
     await openMahayanaConversation(page);
 
-    await page.getByRole('button', { name: 'Open browser workspace', exact: true }).click();
-    const workspace = page.getByTestId('browser-workspace');
-    await expect(workspace).toBeVisible({ timeout: 10_000 });
-    const address = workspace.getByRole('textbox', { name: 'Address and search' });
-    await address.fill(`${origin}/browser-agent-form`);
-    await address.press('Enter');
-    await expect(workspace.getByRole('tab').filter({ hasText: 'Fabushi Browser Agent Form' })).toHaveCount(1, { timeout: 15_000 });
+    const roster = page.getByRole('region', { name: 'Agent list' });
+    const alphaPeer = roster.getByRole('button', { name: 'New chat', exact: true });
+    await expect(alphaPeer).toBeVisible();
 
-    const prompt = page.getByRole('textbox', { name: 'Prompt' });
-    await prompt.pressSequentially('FABUSHI_BROWSER_AGENT_E2E submit the visible browser form');
+    await page.getByRole('button', { name: 'Open browser workspace', exact: true }).click();
+    let workspace = page.getByTestId('browser-workspace');
+    await expect(workspace).toBeVisible({ timeout: 10_000 });
+    let address = workspace.getByRole('textbox', { name: 'Address and search' });
+    await address.fill(`${origin}/browser-agent-concurrency-form?task=alpha`);
+    await address.press('Enter');
+    await expect(workspace.getByRole('tab').filter({ hasText: 'Fabushi Concurrent alpha' })).toHaveCount(1, { timeout: 15_000 });
+
+    await page.getByRole('button', { name: 'New', exact: true }).click();
+    const createAgent = page.getByRole('dialog', { name: 'Create agent' });
+    await expect(createAgent).toBeVisible();
+    await createAgent.getByPlaceholder('Agent name').fill('Browser Agent Beta');
+    await createAgent.getByRole('button', { name: 'Create', exact: true }).click();
+    await expect(createAgent).toBeHidden();
+    const betaPeer = roster.getByRole('button', { name: 'Browser Agent Beta', exact: true });
+    await expect(betaPeer).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('textbox', { name: 'Prompt' })).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
+
+    await page.getByRole('button', { name: 'Open browser workspace', exact: true }).click();
+    workspace = page.getByTestId('browser-workspace');
+    await expect(workspace).toBeVisible({ timeout: 10_000 });
+    address = workspace.getByRole('textbox', { name: 'Address and search' });
+    await address.fill(`${origin}/browser-agent-concurrency-form?task=beta`);
+    await address.press('Enter');
+    await expect(workspace.getByRole('tab').filter({ hasText: 'Fabushi Concurrent beta' })).toHaveCount(1, { timeout: 15_000 });
+
+    await alphaPeer.click();
+    let prompt = page.getByRole('textbox', { name: 'Prompt' });
+    await expect(prompt).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
+    workspace = page.getByTestId('browser-workspace');
+    await expect(workspace.getByRole('tab').filter({ hasText: 'Fabushi Concurrent alpha' })).toHaveCount(1, { timeout: 15_000 });
+    await prompt.pressSequentially('FABUSHI_BROWSER_AGENT_CONCURRENCY_E2E_ALPHA fill alpha but wait before submit');
     await page.getByRole('button', { name: 'Send message' }).click();
 
-    await expect.poll(() => e2eBrowserAgentSubmissions, { timeout: 20_000 }).toEqual([
-      { name: 'Ada Agent', plan: 'pro' },
+    await expect.poll(() => e2eConcurrentAlphaReadyForTakeover, { timeout: 20_000 }).toBe(true);
+    await expect(workspace.locator('.sand-browser-workspace__agent-state')).toContainText('task running', { timeout: 10_000 });
+
+    await betaPeer.click();
+    prompt = page.getByRole('textbox', { name: 'Prompt' });
+    await expect(prompt).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
+    workspace = page.getByTestId('browser-workspace');
+    await expect(workspace.getByRole('tab').filter({ hasText: 'Fabushi Concurrent beta' })).toHaveCount(1, { timeout: 15_000 });
+    await prompt.pressSequentially('FABUSHI_BROWSER_AGENT_CONCURRENCY_E2E_BETA submit beta while alpha is still running');
+    await page.getByRole('button', { name: 'Send message' }).click();
+
+    await expect.poll(() => e2eConcurrentBrowserSubmissions, { timeout: 20_000 }).toEqual([
+      { task: 'beta', name: 'Beta Agent' },
     ]);
     await expect.poll(async () => app!.evaluate(({ webContents }) => webContents.getAllWebContents()
-      .some((contents) => contents.getURL().includes('/browser-agent-form-submit')
-        && contents.getTitle() === 'Fabushi Browser Agent Submitted')), { timeout: 10_000 }).toBe(true);
+      .some((contents) => contents.getURL().includes('/browser-agent-concurrency-form-submit?task=beta')
+        && contents.getTitle() === 'Fabushi Concurrent beta submitted')), { timeout: 10_000 }).toBe(true);
+    await expectHermesAssistantTurn(page, 'Concurrent beta complete');
 
-    await expectHermesAssistantTurn(page, 'Browser agent submission complete');
+    await alphaPeer.click();
+    await expect(page.getByRole('textbox', { name: 'Prompt' })).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
+    workspace = page.getByTestId('browser-workspace');
+    await expect(workspace.getByRole('tab').filter({ hasText: 'Fabushi Concurrent alpha' })).toHaveCount(1, { timeout: 15_000 });
+    await workspace.getByRole('button', { name: 'Take over', exact: true }).click();
+    await expect(workspace.locator('.sand-browser-workspace__agent-state')).toContainText('Agent: taken-over · task taken-over', { timeout: 10_000 });
+
+    const releaseAlpha = releaseE2eConcurrentAlphaClick;
+    expect(releaseAlpha).not.toBeNull();
+    releaseAlpha?.();
+    await expect.poll(() => e2eConcurrentAlphaClickDispatched, { timeout: 10_000 }).toBe(true);
+    await page.waitForTimeout(1_500);
+    expect(e2eConcurrentBrowserSubmissions).toEqual([{ task: 'beta', name: 'Beta Agent' }]);
+
+    await betaPeer.click();
+    workspace = page.getByTestId('browser-workspace');
+    await expect(workspace.getByRole('tab').filter({ hasText: 'Fabushi Concurrent beta submitted' })).toHaveCount(1, { timeout: 10_000 });
+    expect(e2eConcurrentBrowserSubmissions).toEqual([{ task: 'beta', name: 'Beta Agent' }]);
   } finally {
+    releaseE2eConcurrentAlphaClick?.();
+    releaseE2eConcurrentAlphaClick = null;
     await app?.close().catch(() => undefined);
     await rm(appDataDir, { recursive: true, force: true });
   }
