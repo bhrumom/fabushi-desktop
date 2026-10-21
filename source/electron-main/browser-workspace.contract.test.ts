@@ -859,6 +859,53 @@ test("local Agent download is lease-fenced, bounded, and returns integrity witho
   assert.equal(cancelled, false);
 });
 
+test("takeover cancels an in-flight local Agent download and revokes the operation lease", async () => {
+  const h = harness();
+  h.service.attachWindow(new FakeHostWindow());
+  const state = await h.invoke({ type: "activate", conversationId: "bot-download-cancel", bounds: { x: 1, y: 1, width: 500, height: 500 } });
+  const tab = state.tabs[0]!;
+  const contents = h.views[0]!.webContents;
+  const session = contents.session as FakeSession;
+  let signalDownload!: () => void;
+  const downloadStarted = new Promise<void>((resolve) => { signalDownload = resolve; });
+  let cancelled = false;
+  const originalExecute = contents.executeJavaScript.bind(contents);
+  contents.executeJavaScript = async (script: string): Promise<unknown> => {
+    const result = await originalExecute(script);
+    if (script.includes("element.click()")) {
+      const item: BrowserWorkspaceDownloadItem = {
+        getURL: () => "https://example.com/slow.bin",
+        getFilename: () => "slow.bin",
+        getTotalBytes: () => 1024,
+        getReceivedBytes: () => 1,
+        setSavePath: () => undefined,
+        cancel: () => { cancelled = true; },
+        on: () => undefined,
+      };
+      session.download?.({}, item, contents);
+      signalDownload();
+    }
+    return result;
+  };
+  const snapshot = await h.service.executeAgentAction({
+    type: "snapshot", conversationId: "bot-download-cancel", workspaceId: state.workspaceId, tabId: tab.id,
+    expectedGeneration: tab.generation, expectedControlEpoch: state.agentControl.epoch, expectedTaskId: state.agentControl.taskId,
+    operationId: "cancel-snapshot",
+  });
+  assert.equal(snapshot.ok, true);
+  if (!snapshot.ok) return;
+  const pending = h.service.executeAgentAction({
+    type: "download", conversationId: "bot-download-cancel", workspaceId: state.workspaceId, tabId: tab.id,
+    expectedGeneration: tab.generation, expectedControlEpoch: state.agentControl.epoch, expectedTaskId: state.agentControl.taskId,
+    operationId: "cancel-download", ref: snapshot.snapshot!.elements[0]!.ref,
+  });
+  await downloadStarted;
+  const taken = await h.invoke({ type: "agent-control", conversationId: "bot-download-cancel", action: "takeover" });
+  assert.equal(taken.agentControl.state, "taken-over");
+  await assert.rejects(() => pending, /BROWSER_AGENT_CONTROL_STALE/);
+  assert.equal(cancelled, true, "takeover must cancel the owned in-flight download");
+});
+
 test("workspace agent actions serialize and takeover invalidates queued mutations before side effects", async () => {
   let releasePicker!: (path: string | null) => void;
   let pickerStarted!: () => void;
