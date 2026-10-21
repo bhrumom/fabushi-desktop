@@ -4,46 +4,32 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "0eca52223cceed229932add1cc80792763120844",
-    "tree": "1fc479a4b448aed851181bf4a4796d3015368348",
+    "commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+    "tree": "09a421891474be0da279f44a5bf8e0dcf3bc270a",
     "baseline_identity_accepted": false
   },
   "inventory": {
-    "root_non_directory_entries": 6819,
-    "recursive_non_directory_entries": 16305,
+    "root_non_directory_entries": 6820,
+    "recursive_non_directory_entries": 16306,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16249,
-    "unread_minimum": 16224,
+    "unknown_minimum": 16250,
+    "unread_minimum": 16225,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
-    "run_id": 39497897314,
+    "run_id": 39555252098,
     "run_attempt": 1,
-    "job_id": 118887598690,
-    "head_sha": "e709693ec625dc26cc027ac641f20fca348a5ed0",
-    "artifact_id": 12297708015,
-    "artifact_name": "tdrp-revision9-authority-e709693ec625dc26cc027ac641f20fca348a5ed0",
-    "artifact_digest": "sha256:e5daa7a9b49aa9fdf9db1f7328126a25591bac7c584fb27c325b1a9a39a08081",
+    "job_id": 119073416805,
+    "head_sha": "90eee7251784f938ef3a7ef87713c1c2ee4fe0d1",
+    "artifact_id": 12324684996,
+    "artifact_name": "tdrp-revision9-authority-90eee7251784f938ef3a7ef87713c1c2ee4fe0d1",
+    "artifact_digest": "sha256:9694cc3f366a0df8d9e79c1d0aa2e708c058bf64cdb462b2756681cbfb78d0d0",
     "evidence_status": "historical-only",
-    "upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
-    "upstream_tree": "76b967833b38eb7aa2cb4047008c07331390e61e",
-    "recursive_non_directory_entries": 16201,
-    "source_closure_ready": false,
-    "prior_history": {
-      "run_id": 39417471110,
-      "run_attempt": 1,
-      "job_id": 118609886145,
-      "head_sha": "885665d399d6c65b78f5ea048685109f3e8bbebc",
-      "artifact_id": 12261394728,
-      "artifact_name": "tdrp-revision9-authority-885665d399d6c65b78f5ea048685109f3e8bbebc",
-      "artifact_digest": "sha256:5bad99275a0524134eafe8a2116addaee89bd53b1e6453706e87d93bc94dbc8e",
-      "evidence_status": "historical-only",
-      "upstream_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
-      "upstream_tree": "5cc28eee8d541752295ce299b860303fcb4b687d",
-      "recursive_non_directory_entries": 16201,
-      "source_closure_ready": false
-    }
+    "upstream_commit": "0eca52223cceed229932add1cc80792763120844",
+    "upstream_tree": "1fc479a4b448aed851181bf4a4796d3015368348",
+    "recursive_non_directory_entries": 16305,
+    "source_closure_ready": false
   },
   "closure_rules": {
     "executable_runner": "github-actions",
@@ -53,27 +39,11 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream remains telegramdesktop/tdesktop@0eca52223cceed229932add1cc80792763120844/tree 1fc479a4b448aed851181bf4a4796d3015368348. Recursive total is 16,305. Strict index 49 .agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba is fully read and mapped to Fabushi's existing source-neutral repository development lifecycle, review/test orchestration and durable evidence governance: unknown=16,253, unread=16,228, omitted=0. It is repository perform-task phase orchestration, not shipping Task/Agent/Computer/Host/Runner/Conversation runtime. Parent exact-head TDRP 39528383951 attempt 2 is 61/61 success and Rust desktop runtime 39528383913 is 6/6 success at 16d95f0607a203fb16a96afa99751a39892ec7f0. Recursive disposition remains open, therefore baseline_identity_accepted/source_closure_ready remain false. Next strict entry is index 50 .agents/skills/perform-task/references/pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7. Strict index 51 .agents/skills/process-inbox/SKILL.md@0ce70794ac743d99e6d5c80894cde970b52842db was fully read with its workspace.py and video.py dependency closure. Its semantic responsibility remains repository-only task intake, not a shipping product Inbox/Task runtime. The complete call-chain and lifecycle analysis is recorded in projects/telegram-desktop-rust/dossiers/process-inbox-skill-complete-read.md.\n\nStrict index 52 .agents/skills/process-inbox/agents/openai.yaml@b664f98ad4440de7a8074dfe790d80f3d2201546 was fully read and mapped as host-registration metadata only: display_name, short_description and default_prompt select the existing $process-inbox skill; the YAML has no transaction, persistence, media, routing or product state of its own. This is mapped to the existing source-neutral repository task/evidence workflow and native skill-invocation governance. No new product owner or second runtime is introduced. workspace.py and video.py were read in full as dependencies, but their own strict inventory entries remain separately open at indices 54 and 53 respectively.\n\nParent exact-head TDRP run 39555252098 on 90eee7251784f938ef3a7ef87713c1c2ee4fe0d1 completed success: 61/61 jobs and 508/508 steps; Rust desktop runtime 39555252118 completed success: 6/6 jobs. Source authority artifact 12324684996 has SHA-256 sha256:9694cc3f366a0df8d9e79c1d0aa2e708c058bf64cdb462b2756681cbfb78d0d0. Root source archive artifact 12324764539 was downloaded and its ZIP SHA-256 6f40f42043c1711acd344f5c8622dd656ed40d4c8f1e6e0718d178824e95ba84 matched the GitHub artifact digest; the two records map to Boost 1.90.0 and libiconv 1.18, with correct source_path/source_line, URL, SHA-256, target_commit, upstream_commit and upstream_tree. Inspection found that lock_commit and lock_tree were present only at report top level, not on either archive record. The parent run therefore did not prove the required per-archive lock provenance; this commit adds the fields and fail-closed assertions, and its own exact-head Actions must verify them. Boost reachability artifact 12324869491 digest sha256:0341e1af7ef947790584f93eaebb95aad351ccc9a85bfbf178fb554281c861d3 is parent-head evidence only.\n\nThe old job 119035504866 in run 39543230323 still reports status=in_progress together with conclusion=success and completed_at set; this API inconsistency is recorded as non-terminal evidence and is not promoted to success.\n\nCounters after mapping index 52: unknown=16250, unread=16225, omitted=0, responsibilities=70, unmapped=0. The current upstream identity remains unaccepted and recursive disposition remains open; baseline_identity_accepted=false and source_closure_ready=false. The last terminal evidence above is parent-head evidence, not validation of this child commit. The PR base still reports 2bfc3fd3638596b37a01c54e17a333c1798414f3 while live main is ba9ecce728ef021fee609796c8704d8af6fe4b5a; this branch has not yet been reconciled with the live main tip. Next strict entry is index 53 .agents/skills/process-inbox/scripts/video.py@977d75aca7aea0b6c74471d533a5ee0e2a156ac3.\\n\\nCounters after mapping indices 52-53: unknown=16249, unread=16224, omitted=0, responsibilities=71, unmapped=0. Strict index 53 .agents/skills/process-inbox/scripts/video.py@977d75aca7aea0b6c74471d533a5ee0e2a156ac3 is mapped to existing source-neutral repository task/evidence governance as TDRP-R9-PROCESS-INBOX-VIDEO-HELPER-001. This is a tooling disposition only, not a local video implementation or direct behavior-test claim. Next strict entry is index 54 .agents/skills/process-inbox/scripts/workspace.py@e1fdabbac9ccd635962b7b6dc1a62357fc5b931c; index 55 .agents/skills/process-inbox/scripts/workspace_test.py@d045c95ca4415ffc02953ff02ac10e329dc69e7b remains independently open. Child exact-head TDRP run 39557717865 on 3ce96c7055646c5600f93a24bc17f6394bfa1c8c failed at validate-tdrp-revision9-authority.mjs:95 because lock minima 16251/16226 exceeded ledger counts 16250/16225; root source archive accounting job 119081364795 and Boost source archive build reachability job 119081364793 were skipped. The 3ce96 archive-script fix added per-record lock provenance assertions but was not exercised by those skipped jobs. Previous-head archive artifact 12324632136 ZIP SHA-256 5fdfd5d7ee3a42d5133c90f853fffa08a0266c9531e05c3d51259fe9837d5286 matched its GitHub digest, but both archive records had null lock_commit/lock_tree. Fresh exact-head Actions after aligning counts are required. The old job 119035504866 in run 39543230323 remains API-inconsistent (status=in_progress, conclusion=success, completed_at set) and is not terminal evidence. baseline_identity_accepted=false, source_closure_ready=false, recursive_disposition_status=open. PR base 2bfc3fd3638596b37a01c54e17a333c1798414f3 remains behind live main ba9ecce728ef021fee609796c8704d8af6fe4b5a; release acceptance remains blocked.",
+  "note": "Live upstream rebaselined to telegramdesktop/tdesktop@5c674f1f6a0f6ace55b67f8bc295138680fe588b/tree 09a421891474be0da279f44a5bf8e0dcf3bc270a. Root non-directory entries=6,820 and recursive non-directory entries=16,306. Prior exact-head authority run 39555252098 for 0eca52223cceed229932add1cc80792763120844 is historical-only. Of already mapped ledger paths only pipeline.md changed; it was reread at 46e158ac86ebce97f9dcd010a98b3c581ffc114c. Counters unknown=16,250, unread=16,225, omitted=0; baseline_identity_accepted=false and source_closure_ready=false until fresh exact-head Actions. Next strict entry remains index 54 workspace.py after rebaseline evidence passes.",
   "current_head_validation_evidence": {
-    "head_sha": "90eee7251784f938ef3a7ef87713c1c2ee4fe0d1",
-    "tdrp_run": 39555252098,
-    "tdrp_jobs": "61/61 success",
-    "tdrp_steps": "508/508 success",
-    "source_authority_artifact": {
-      "id": 12324684996,
-      "digest": "sha256:9694cc3f366a0df8d9e79c1d0aa2e708c058bf64cdb462b2756681cbfb78d0d0"
-    },
-    "root_archive_artifact": {
-      "id": 12324764539,
-      "digest": "sha256:6f40f42043c1711acd344f5c8622dd656ed40d4c8f1e6e0718d178824e95ba84"
-    },
-    "rust_run": 39555252118,
-    "rust_jobs": "6/6 success",
-    "rust_artifact": {
-      "id": 12325776454,
-      "digest": "sha256:a7e7c3de768cabd9fa8bba9050fe366b39df42ff2dafc2c9f5bcc1ce64c6ef1e"
-    },
-    "recursive_total": 16305,
+    "status": "pending-current-head-revalidation",
+    "head_sha": null,
+    "recursive_total": 16306,
     "open": {
       "authorities": 95,
       "gitlinks": 133,

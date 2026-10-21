@@ -3,7 +3,7 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_repository": "telegramdesktop/tdesktop",
-  "upstream_commit": "0eca52223cceed229932add1cc80792763120844",
+  "upstream_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
   "discovery": {
     "evidence_run_id": 39486129504,
     "evidence_head_sha": "f605a520cb7d3dc21da795a35cb89b8479afdb8f",
@@ -13,7 +13,7 @@
     "candidate_lines_total": 331,
     "immutable_commit_pin_occurrences_classified": 19,
     "candidate_lines_pending_classification": 0,
-    "note": "Live dev advanced 78ceaa548ae0e055aa56b53fde22064d13f250ef -> 0eca52223cceed229932add1cc80792763120844. prepare.py@4063cc766ffb60c018b7a6ad456453ec585d5566, Dockerfile@f72162089985263493c6e3f7e23b566f5df8e454 and snapcraft.yaml@38f0eb362832c3623b868c9aa90c03bc4f426d01 are byte-identical, so explicit candidate/disposition keys are retained; fresh exact-head discovery must revalidate them.",
+    "note": "Live dev advanced 0eca52223cceed229932add1cc80792763120844 -> 5c674f1f6a0f6ace55b67f8bc295138680fe588b. Build authorities are prepare.py@c090735b04151a886ea2c3e8fd84b42105437f18, Dockerfile@3135794864044f21d2a0092b32cff787c86704bf, snapcraft.yaml@261a6ca7d5bf19d5e23aa8e67dfe76ddd82850f3. Candidate accounting remains 331 classified / 0 pending; exact-head Actions must revalidate updated pins/reachability.",
     "candidate_lines_classified": 331,
     "disposition_closure_status": "complete",
     "recursive_authority_closure_status": "gitlink-fixed-point-closed-disposition-pending",
@@ -146,7 +146,7 @@
       "source_line": 164,
       "repository": "https://github.com/desktop-app/patches.git",
       "ref_kind": "commit",
-      "commit": "fe957833b84525e634a8d776a7f834ed536d9a21",
+      "commit": "a895fef40eaa7d66481cff542c623b039b7ce494",
       "disposition": "build-input-exact-pin",
       "status": "classified",
       "source_scope": "accepted-upstream"
@@ -267,7 +267,7 @@
       "source_line": 127,
       "repository": "https://github.com/desktop-app/patches.git",
       "ref_kind": "commit",
-      "commit": "fe957833b84525e634a8d776a7f834ed536d9a21",
+      "commit": "a895fef40eaa7d66481cff542c623b039b7ce494",
       "disposition": "build-input-exact-pin",
       "status": "classified",
       "source_scope": "accepted-upstream"
@@ -1229,7 +1229,7 @@
   ],
   "recursive_build_reachability": {
     "status": "partial-audited-disposition-open",
-    "accepted_upstream_commit": "0eca52223cceed229932add1cc80792763120844",
+    "accepted_upstream_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
     "rule": "A recursively discovered repository is source/build authority only when an accepted TDesktop build path actually initializes, downloads, generates, patches, or consumes it. Presence as an unselected superproject gitlink is not sufficient.",
     "qt_superproject": {
       "repository": "https://github.com/qt/qt5",
@@ -1265,21 +1265,21 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "blob": "4063cc766ffb60c018b7a6ad456453ec585d5566",
+          "blob": "c090735b04151a886ea2c3e8fd84b42105437f18",
           "evidence": "Qt 5 initializes only qtbase qtimageformats qtsvg; Qt 6 prepare initializes only qtbase qtimageformats qtshadertools qtsvg.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "blob": "f72162089985263493c6e3f7e23b566f5df8e454",
+          "blob": "3135794864044f21d2a0092b32cff787c86704bf",
           "evidence": "Qt 6 Linux image initializes only qtbase qtdeclarative qtwayland qtimageformats qtsvg qtshadertools.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         },
         {
           "path": "snap/snapcraft.yaml",
-          "blob": "38f0eb362832c3623b868c9aa90c03bc4f426d01",
+          "blob": "261a6ca7d5bf19d5e23aa8e67dfe76ddd82850f3",
           "evidence": "Snap Qt source-submodules lists only qtbase qtdeclarative qtimageformats qtshadertools qtsvg qtwayland.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         }
       ],
       "explicitly_non_reachable_dispositions": [
@@ -1365,21 +1365,21 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "blob": "4063cc766ffb60c018b7a6ad456453ec585d5566",
+          "blob": "c090735b04151a886ea2c3e8fd84b42105437f18",
           "evidence": "Clones OpenSSL and builds libraries directly; no git submodule init/update in the OpenSSL stage.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "blob": "f72162089985263493c6e3f7e23b566f5df8e454",
+          "blob": "3135794864044f21d2a0092b32cff787c86704bf",
           "evidence": "Shallow clones OpenSSL, configures no-tests/no-dso, builds and installs; no submodule init/update.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         },
         {
           "path": "snap/snapcraft.yaml",
-          "blob": "38f0eb362832c3623b868c9aa90c03bc4f426d01",
+          "blob": "261a6ca7d5bf19d5e23aa8e67dfe76ddd82850f3",
           "evidence": "Snap OpenSSL part uses source-tag/plugin make and does not request source-submodules.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         }
       ],
       "direct_gitlinks_not_fetched": [
@@ -1499,17 +1499,17 @@
         {
           "path": "Telegram/build/prepare/prepare.py",
           "evidence": "Clones tg_owt, checks out exact 07fb35bc33b3e79125a1beab7690e830f183f5d8, recursively initializes its pinned submodules, then invokes CMake build.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
           "evidence": "Initializes tg_owt at exact 07fb35bc33b3e79125a1beab7690e830f183f5d8, recursively initializes submodules, configures CMake, builds, and installs.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         },
         {
           "path": "snap/snapcraft.yaml",
           "evidence": "The webrtc part pins tg_owt source-commit 07fb35bc33b3e79125a1beab7690e830f183f5d8 and builds it with the CMake plugin.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         }
       ],
       "root_candidate_disposition_policy": [
@@ -1544,12 +1544,12 @@
         {
           "path": "Telegram/build/prepare/prepare.py",
           "evidence": "Clones libjxl v0.12.0 recursively with shallow submodules, then configures CMake with BUILD_TESTING/FUZZERS/DEVTOOLS/TOOLS/DOXYGEN/MANPAGES/EXAMPLES/JNI/SJPEG/OPENEXR/VIEWERS/TCMALLOC/PLUGINS/COVERAGE disabled.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
           "evidence": "Clones libjxl v0.12.0 shallow without recursive submodules, supplies lcms2/brotli/highway from prior build stages, disables testing/devtools/tools/docs/benchmarks/examples/JNI/SJPEG/OpenEXR, then builds and installs with CMake.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         }
       ],
       "root_candidate_disposition_policy": [
@@ -1641,17 +1641,17 @@
         {
           "path": "Telegram/build/prepare/prepare.py",
           "evidence": "Clones libavif v1.4.2 and configures AVIF_CODEC_DAV1D=SYSTEM, AVIF_LIBYUV=OFF, BUILD_SHARED_LIBS=OFF; it does not select LOCAL codec/dependency acquisition.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
           "evidence": "Clones libavif v1.4.2 shallow and uses system dav1d with AVIF_LIBYUV=OFF; no libavif ext helper or LOCAL dependency mode is invoked.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         },
         {
           "path": "snap/snapcraft.yaml",
           "evidence": "Pins libavif v1.3.0 and configures AVIF_CODEC_DAV1D=SYSTEM and AVIF_LIBYUV=OFF with libdav1d-dev as a build package.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         }
       ],
       "root_candidate_disposition_policy": [
@@ -1718,17 +1718,17 @@
         {
           "path": "Telegram/build/prepare/prepare.py",
           "evidence": "Clones ada v3.2.4 and configures ADA_TESTING=OFF, ADA_TOOLS=OFF, ADA_INCLUDE_URL_PATTERN=OFF before building/installing.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
           "evidence": "Clones ada v3.2.4 shallow and configures ADA_TESTING=OFF, ADA_TOOLS=OFF, ADA_INCLUDE_URL_PATTERN=OFF.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         },
         {
           "path": "snap/snapcraft.yaml",
           "evidence": "Pins ada v3.2.9 and passes ADA_TESTING=OFF, ADA_TOOLS=OFF, ADA_INCLUDE_URL_PATTERN=OFF.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         }
       ],
       "root_candidate_disposition_policy": [
@@ -1807,17 +1807,17 @@
         {
           "path": "Telegram/build/prepare/prepare.py",
           "evidence": "Builds the Telegram Desktop OpenAL fork from immutable Windows/Mac snapshots with CMake; utilities/examples/tests are disabled and no dependency download command is invoked.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
           "evidence": "Clones kcat/openal-soft 1.25.2 shallow and builds the checked-out tree with utilities/examples/config install disabled.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         },
         {
           "path": "snap/snapcraft.yaml",
           "evidence": "Pins kcat/openal-soft 1.24.3 and builds via CMake with utilities/examples/config disabled.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         }
       ],
       "root_candidate_disposition_policy": [
@@ -1874,17 +1874,17 @@
         {
           "path": "Telegram/build/prepare/prepare.py",
           "evidence": "Builds FFmpeg n8.1.3 with programs/docs/network/everything disabled and only an explicit codec/protocol/filter subset re-enabled; external libraries are supplied by TDesktop's prior dependency stages.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
           "evidence": "Builds FFmpeg n8.1.3 shallow with --disable-programs --disable-doc --disable-network --disable-autodetect --disable-everything and explicit local/system dependency inputs.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         },
         {
           "path": "snap/snapcraft.yaml",
           "evidence": "Pins FFmpeg n6.1.6 and configures --disable-programs --disable-doc --disable-network --disable-autodetect --disable-everything with explicit build packages/features.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         }
       ],
       "root_candidate_disposition_policy": [
@@ -1950,12 +1950,12 @@
         {
           "path": "Telegram/build/prepare/prepare.py",
           "evidence": "Clones libheif v1.23.5, applies the accepted TDesktop patch, disables documentation/tests/plugin loading/examples and unselected codec integrations, enables the existing FFmpeg decoder, then builds/installs with CMake. It does not invoke libheif CI/fuzz/bootstrap or third-party/*.cmd fetch helpers.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
           "evidence": "The heif stage clones libheif v1.23.5 shallow, applies the accepted patch, consumes the prior FFmpeg stage, disables documentation/tests/plugin loading/examples and unselected codecs, enables WITH_FFMPEG_DECODER, and builds/installs directly with CMake.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         }
       ],
       "root_candidate_disposition_policy": [
@@ -2026,12 +2026,12 @@
         {
           "path": "Telegram/build/prepare/prepare.py",
           "evidence": "The accepted stackwalk/breakpad stages clone Breakpad and pin dfcb7b6799, apply the pinned TDesktop breakpad.diff input, manually acquire googletest release-1.11.0, and on the applicable mac paths manually acquire linux-syscall-support at e1e7b0ad8e. The stages build with TDesktop-provided gyp/Xcode/CMake flows and do not run Breakpad DEPS/gclient, upstream GitHub Actions, or SWIG helper Makefiles.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
           "evidence": "The accepted Docker breakpad stage fetches exact Breakpad commit 9aebd3d8ef5a246deb2c929b5666aaba160ebce6, manually initializes only src/third_party/lss at exact commit 29164a80da4d41134950d76d55199ea33fbb9613, then runs ./configure, make, and make install. It does not initialize src/testing, execute DEPS/gclient, or invoke Breakpad upstream CI/bootstrap dependency fetches.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         }
       ],
       "root_candidate_disposition_policy": [
@@ -2083,7 +2083,7 @@
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
           "evidence": "The accepted highway stage shallow-clones tag 1.4.0, configures CMake with BUILD_TESTING=OFF, HWY_ENABLE_CONTRIB=OFF and HWY_ENABLE_EXAMPLES=OFF, builds and installs directly, and does not invoke Highway CI, docs, Bazel workspace acquisition, contrib helpers or test dependency templates.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         }
       ],
       "root_candidate_disposition_policy": [
@@ -2142,7 +2142,7 @@
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
           "evidence": "The accepted brotli stage shallow-clones v1.2.0, configures a static CMake build with BROTLI_DISABLE_TESTS=ON, builds and installs directly, and does not invoke upstream CI, language transpilers, testdata download scripts or README/package installation examples.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         }
       ],
       "root_candidate_disposition_policy": [
@@ -2191,12 +2191,12 @@
         {
           "path": "Telegram/build/prepare/prepare.py",
           "evidence": "The accepted Opus stage clones v1.5.2 and invokes CMake directly for the library. Upstream CMake defaults OPUS_BUILD_TESTING, OPUS_BUILD_PROGRAMS, OPUS_DRED and OPUS_OSCE to OFF; the TDesktop stage does not invoke Opus CI, local_build.py, documentation generators, DNN model download/training helpers or alternate package-manager instructions.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
           "evidence": "The accepted Docker opus stage shallow-clones v1.5.2, runs plain CMake build/install, and does not invoke Opus CI, docs, neural-training download helpers or local multi-build tooling.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         }
       ],
       "root_candidate_disposition_policy": [
@@ -2259,17 +2259,17 @@
         {
           "path": "Telegram/build/prepare/prepare.py",
           "evidence": "The accepted tde2e stage pins 51743df, configures TD_E2E_ONLY=ON, and builds the E2E library surface. It does not invoke TDLib examples, build-instruction generator, mobile/web helper scripts, benchmark utilities or example/ios patch acquisition.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
           "evidence": "The accepted Docker tde2e stage fetches exact commit 51743dfd01dff6179e2d8f7095729caa4e2222e9 and configures TD_E2E_ONLY=ON before build/install.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         },
         {
           "path": "snap/snapcraft.yaml",
           "evidence": "The accepted Snap tde2e part pins exact commit 51743dfd01dff6179e2d8f7095729caa4e2222e9 and configures TD_E2E_ONLY=ON.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         }
       ],
       "root_candidate_disposition_policy": [
@@ -2326,7 +2326,7 @@
         {
           "path": "Telegram/build/prepare/prepare.py",
           "evidence": "Accepted tg_owt is pinned to 07fb35bc33b3e79125a1beab7690e830f183f5d8 and fetched with git submodule update --init --recursive; its src/third_party/libsrtp gitlink resolves to a566a9cfcd619e8327784aa7cff4a1276dc1e895. TDesktop does not execute libsrtp's own GitHub/Travis CI, Coverity, config update URLs or test download comments.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         }
       ],
       "root_candidate_disposition_policy": [
@@ -2369,7 +2369,7 @@
         {
           "path": "Telegram/build/prepare/prepare.py",
           "evidence": "The accepted regex stage clones Boost.Regex tag boost-1.83.0 as a source input only. It does not execute Boost.Regex's upstream GitHub Actions workflow, clone the Boost superproject, initialize boostdep, or follow README installation examples.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         }
       ],
       "root_candidate_disposition_policy": [
@@ -2395,7 +2395,7 @@
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
           "evidence": "Accepted builder fetches exact Implib.so commit ecf7bb51..., then invokes only implib-gen.py plus compiler/archive commands for selected system libraries. Upstream CI, specs and architecture comments are not executed source acquisitions.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         }
       ],
       "root_candidate_disposition_policy": [
@@ -2427,12 +2427,12 @@
         {
           "path": "Telegram/build/prepare/prepare.py",
           "evidence": "Accepted zlib stage pins e3dc0a85..., builds zlib and contrib/minizip directly; Windows disables zlib/minizip tests, while macOS enters contrib/minizip explicitly and never enters contrib/ada.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
           "evidence": "Accepted Docker zlib stage fetches exact e3dc0a85..., sets ZLIB_BUILD_TESTING=OFF and ZLIB_MINIZIP_BUILD_TESTING=OFF, and builds zlib/minizip directly.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         }
       ],
       "root_candidate_disposition_policy": [
@@ -2461,12 +2461,12 @@
         {
           "path": "Telegram/build/prepare/prepare.py",
           "evidence": "Accepted OpenH264 stage clones v2.6.0 and builds with Meson; it does not invoke the upstream Makefile targets that clone gmp-api/googletest, upstream CI, or upstream build/Dockerfile.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
           "evidence": "Accepted Docker OpenH264 stage shallow-clones v2.6.0 and uses Meson compile/install directly.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         }
       ],
       "root_candidate_disposition_policy": [
@@ -2502,7 +2502,7 @@
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
           "evidence": "Accepted xkbcommon stage shallow-clones xkbcommon-1.6.0 and uses Meson with docs/Wayland/xkbregistry disabled. It does not execute upstream GitHub workflows or key-table update URL comments.",
-          "evidence_status": "historical-only"
+          "evidence_status": "pending-current-head-revalidation"
         }
       ],
       "root_candidate_disposition_policy": [
