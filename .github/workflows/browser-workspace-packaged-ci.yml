@@ -94,7 +94,7 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends             xvfb libgtk-3-0 libnss3 libasound2t64 libxss1 libgbm1 libnotify4             libsecret-1-0 libxtst6 libatspi2.0-0 libdrm2 libxkbcommon0 fakeroot libwayland-dev libxkbcommon-dev libx11-dev libx11-xcb-dev libxcb1-dev libxcb-dri3-0 libxcb-shm0 libxcb-randr0 libxcb-xfixes0 libxcb-render0 libxcb-render-util0 libxcb-shape0 libxcb-xkb1 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-util1
+          sudo apt-get install -y --no-install-recommends             xvfb libgtk-3-0 libnss3 libasound2t64 libxss1 libgbm1 libnotify4             libsecret-1-0 libxtst6 libatspi2.0-0 libdrm2 libxkbcommon0 fakeroot libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev libx11-dev libx11-xcb-dev libxcb1-dev libxcb-dri3-0 libxcb-shm0 libxcb-randr0 libxcb-xfixes0 libxcb-render0 libxcb-render-util0 libxcb-shape0 libxcb-xkb1 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-util1
 
       - name: Install locked desktop dependencies
         shell: bash
@@ -292,8 +292,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p packaged-browser-evidence
-          find release -maxdepth 1 -type f \( -name '*.AppImage' -o -name '*.deb' \) -print0             | sort -z | xargs -0 sha256sum > packaged-browser-evidence/SHA256SUMS
+          mkdir -p release packaged-browser-evidence
+          find release -maxdepth 1 -type f \( -name '*.AppImage' -o -name '*.deb' \) -print0             | sort -z | xargs -0 -r sha256sum > packaged-browser-evidence/SHA256SUMS
           node -e 'const fs=require("fs");const p=require("./package.json");fs.writeFileSync("packaged-browser-evidence/provenance.json",JSON.stringify({sourceSha:process.env.GITHUB_SHA,runner:process.env.RUNNER_OS,packageVersion:p.version,electron:p.devDependencies.electron,electronBuilder:p.devDependencies["electron-builder"],executable:process.env.FABUSHI_ELECTRON_EXECUTABLE||null},null,2)+"\n")'
 
       - name: Record Windows package SHA-256 evidence
