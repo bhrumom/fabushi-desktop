@@ -141,6 +141,13 @@ class Publication(unittest.TestCase):
             self.publish()
         self.assertEqual(self.api.writes(), [])
 
+    def test_completed_release_reconciles_after_default_workflow_changes(self):
+        result = self.publish()
+        writes = len(self.api.writes())
+        self.api.default_workflows = 'f' * 40
+        self.assertEqual(self.publish(), result)
+        self.assertEqual(len(self.api.writes()), writes)
+
     def test_corrupt_archive_with_matching_receipt_is_rejected_without_unpacking(self):
         data = b'untrusted compressed container is never extracted'
         (self.root / 'dist/miniapp.unsigned.zip').write_bytes(data)

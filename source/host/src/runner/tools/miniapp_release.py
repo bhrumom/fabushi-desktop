@@ -97,12 +97,6 @@ def publish(root, destination, context, api):
                 return tree_sha
             tree = request(prefix + '/git/trees/' + tree_sha)
 
-    metadata = request(prefix)
-    default_branch = metadata.get('default_branch')
-    if not isinstance(default_branch, str) or not 1 <= len(default_branch) <= 255:
-        raise PublicationError('PUBLICATION_INVALID_RESPONSE')
-    if workflow_tree(sha) != workflow_tree(default_branch):
-        raise PublicationError('PUBLICATION_WORKFLOW_DEFAULT_BRANCH_INTEGRATION_REQUIRED')
     fence()
     release = request(prefix + '/releases/tags/' + tag_path, missing_ok=True)
     # Tag lookup only guarantees published releases. Reconcile interrupted drafts
@@ -122,6 +116,15 @@ def publish(root, destination, context, api):
         else:
             raise PublicationError('PUBLICATION_LOOKUP_LIMIT')
     body = f'Fabushi MiniApp source: {sha}\n\nUnsigned preparation only. Registry signing and approval are required before installation.'
+    # Completed releases reconcile read-only even after the default workflow
+    # evolves. Only a new publication needs the job-token permission preflight.
+    if release is None or release.get('draft') is True:
+        metadata = request(prefix)
+        default_branch = metadata.get('default_branch')
+        if not isinstance(default_branch, str) or not 1 <= len(default_branch) <= 255:
+            raise PublicationError('PUBLICATION_INVALID_RESPONSE')
+        if workflow_tree(sha) != workflow_tree(default_branch):
+            raise PublicationError('PUBLICATION_WORKFLOW_DEFAULT_BRANCH_INTEGRATION_REQUIRED')
     if release is None:
         fence()
         release = request(prefix + '/releases', 'POST', {
