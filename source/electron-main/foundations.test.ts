@@ -33,6 +33,10 @@ import { createReleaseMetadata } from "./update/release-metadata.js";
 import { SandSettingsStore } from "../shared/node/settings/sand-settings-store.js";
 import { normalizeSandCallMediaPreferences, normalizeSandUiPreferences, resolveSandUiDirection } from "../shared/desktop.js";
 import { createDesktopCallMediaPort } from "./call-media.js";
+import {
+  createProductionStartupBinding,
+  type ElectronStartupProviderPorts,
+} from "./production-binding-providers.js";
 
 test("UI accessibility preferences normalize, persist, and resolve RTL", () => {
   const dir=mkdtempSync(join(tmpdir(),"fabushi-ui-prefs-"));
@@ -470,6 +474,37 @@ test("call media binding preserves native permission and desktopCapturer authori
   await assert.rejects(() => chromiumPrompt.listDisplaySources(), /desktopCapturer is unavailable/);
 });
 
+
+test("production startup binding only requires Applications-folder APIs on macOS", () => {
+  const make = (
+    platform: NodeJS.Platform,
+    includeIsInApplicationsFolder = false,
+    includeMoveToApplicationsFolder = false,
+  ) => {
+    const app = {
+      isPackaged: true,
+      setPath: (_name: string, _path: string) => undefined,
+      getPath: (_name: string) => "/tmp/fabushi-startup-binding",
+      relaunch: (_options: { readonly args: readonly string[] }) => undefined,
+      exit: (_code: number) => undefined,
+      ...(includeIsInApplicationsFolder ? { isInApplicationsFolder: () => true } : {}),
+      ...(includeMoveToApplicationsFolder ? { moveToApplicationsFolder: () => true } : {}),
+    } as unknown as ElectronStartupProviderPorts["app"];
+    return createProductionStartupBinding({
+      app,
+      dialog: { showMessageBox: async () => ({ response: 1 }) },
+      platform,
+      argv: [],
+      env: {},
+    });
+  };
+
+  assert.doesNotThrow(() => make("linux"));
+  assert.doesNotThrow(() => make("win32"));
+  assert.throws(() => make("darwin"), /electron\\.app\\.isInApplicationsFolder/);
+  assert.throws(() => make("darwin", true), /electron\\.app\\.moveToApplicationsFolder/);
+  assert.doesNotThrow(() => make("darwin", true, true));
+});
 
 test("MAS packaging declares camera and microphone authority for Human calls", () => {
   const desktopRoot = basename(process.cwd()) === "desktop" ? process.cwd() : join(process.cwd(), "desktop");

@@ -1685,16 +1685,22 @@ test('native Browser Workspace opens real Chromium pages, isolates tabs, and dow
     // URL and document title, not just the renderer's persisted tab label.
     await restoredTabs.nth(0).click();
     await expect.poll(
-      async () => browserWorkspacePageDiagnostic(app!, `${origin}/browser-workspace-fixture`, 'Fabushi Browser Fixture'),
+      async () => {
+        const diagnostic = await browserWorkspacePageDiagnostic(app!, `${origin}/browser-workspace-fixture`, 'Fabushi Browser Fixture');
+        return diagnostic.matches ? "matched" : JSON.stringify(diagnostic);
+      },
       { timeout: 15_000 },
-    ).toMatchObject({ matches: true });
+    ).toBe("matched");
     await expect(restoredWorkspace.getByRole('tab').filter({ hasText: 'Fabushi Browser Fixture' })).toHaveCount(1, { timeout: 15_000 });
 
     await restoredTabs.nth(1).click();
     await expect.poll(
-      async () => browserWorkspacePageDiagnostic(app!, `${httpsOrigin}/browser-workspace-secure`, 'Fabushi Browser HTTPS'),
+      async () => {
+        const diagnostic = await browserWorkspacePageDiagnostic(app!, `${httpsOrigin}/browser-workspace-secure`, 'Fabushi Browser HTTPS');
+        return diagnostic.matches ? "matched" : JSON.stringify(diagnostic);
+      },
       { timeout: 15_000 },
-    ).toMatchObject({ matches: true });
+    ).toBe("matched");
     await expect(restoredWorkspace.getByRole('tab').filter({ hasText: 'Fabushi Browser HTTPS' })).toHaveCount(1, { timeout: 15_000 });
 
     const restoredAddress = restoredWorkspace.getByRole('textbox', { name: 'Address and search' });
