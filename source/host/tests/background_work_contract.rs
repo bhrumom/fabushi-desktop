@@ -456,3 +456,57 @@ fn runner_background_shell_watch_cancellation_stops_terminal_delivery() {
     std::thread::sleep(Duration::from_millis(30));
     assert!(settled.lock().expect("settled").is_empty());
 }
+
+#[test]
+fn worker_spawn_failure_publishes_no_pending_and_allows_rearm() {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use mahayana_host_runtime::runner::background_work::BackgroundWatchWorkerSpawner;
+    let attempts = Arc::new(AtomicUsize::new(0));
+    let spawner: BackgroundWatchWorkerSpawner = Arc::new({
+        let attempts = Arc::clone(&attempts);
+        move |name, worker| {
+            if attempts.fetch_add(1, Ordering::SeqCst) < 2 {
+                return Err(std::io::Error::other("injected worker allocation failure"));
+            }
+            std::thread::Builder::new().name(name).spawn(worker).map(drop)
+        }
+    });
+    let pending = Arc::new(AtomicUsize::new(0));
+    let pending_shell = Arc::clone(&pending);
+    let pending_cloud = Arc::clone(&pending);
+    let (shell_tx, shell_rx) = mpsc::channel();
+    let shell_pending_at_await = Arc::clone(&pending);
+    let shell = RunnerBackgroundShellWatches::new(
+        Arc::new(move |_, _, _| {
+            assert!(shell_pending_at_await.load(Ordering::SeqCst) > 0);
+            Some(BackgroundShellWatchOutcome {
+                status: "success".into(), detail: None, output_path: None,
+            })
+        }),
+        Some(Arc::new(move |_| { pending_shell.fetch_add(1, Ordering::SeqCst); })),
+        Some(Arc::new(move |value| { shell_tx.send(value).unwrap(); })),
+        None,
+    ).with_worker_spawner(Arc::clone(&spawner));
+    let (cloud_tx, cloud_rx) = mpsc::channel();
+    let cloud_pending_at_await = Arc::clone(&pending);
+    let cloud = RunnerCloudAgentWatches::new(
+        Arc::new(move |_, _| {
+            assert_eq!(cloud_pending_at_await.load(Ordering::SeqCst), 2);
+            CloudAgentWatchOutcome { status: "completed".into(), text: "done".into() }
+        }),
+        Some(Arc::new(move |_| { pending_cloud.fetch_add(1, Ordering::SeqCst); })),
+        Some(Arc::new(move |value| { cloud_tx.send(value).unwrap(); })),
+        None,
+    ).with_worker_spawner(spawner);
+    assert!(!shell.watch_background_shell("parent", "42", BackgroundShellWatchOptions::new(None, None)));
+    assert!(!cloud.watch_cloud_agent("parent", "bc", CloudAgentWatchOptions::new(None, false)));
+    assert_eq!(pending.load(Ordering::SeqCst), 0, "failed workers must not persist phantom pending wakes");
+    assert!(!shell.is_shell_watch_armed("parent", "42"));
+    assert!(!cloud.is_cloud_watch_armed("parent", "bc"));
+    assert!(shell.watch_background_shell("parent", "42", BackgroundShellWatchOptions::new(None, None)));
+    assert_eq!(shell_rx.recv_timeout(Duration::from_secs(2)).unwrap().parent_agent_id, "parent");
+    assert!(cloud.watch_cloud_agent("parent", "bc", CloudAgentWatchOptions::new(None, false)));
+    assert_eq!(cloud_rx.recv_timeout(Duration::from_secs(2)).unwrap().parent_agent_id, "parent");
+    assert_eq!(pending.load(Ordering::SeqCst), 2);
+    assert_eq!(attempts.load(Ordering::SeqCst), 4);
+}

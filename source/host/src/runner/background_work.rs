@@ -7,6 +7,16 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde_json::Value;
 
+/// Execution port of the existing watch owner; also permits deterministic OS
+/// worker-allocation failure injection without starting a backend job again.
+pub type BackgroundWatchWorkerSpawner = Arc<
+    dyn Fn(String, Box<dyn FnOnce() + Send>) -> std::io::Result<()> + Send + Sync,
+>;
+
+fn background_watch_worker_spawner() -> BackgroundWatchWorkerSpawner {
+    Arc::new(|name, worker| std::thread::Builder::new().name(name).spawn(worker).map(drop))
+}
+
 fn background_task_started_at_ms() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -387,6 +397,7 @@ struct CloudAgentWatchState {
 #[derive(Clone)]
 pub struct RunnerCloudAgentWatches {
     state: Arc<Mutex<CloudAgentWatchState>>,
+    spawn_worker: BackgroundWatchWorkerSpawner,
     await_completion: CloudAgentAwaitCallback,
     on_pending: Option<CloudAgentPendingCallback>,
     on_settled: Option<CloudAgentSettledCallback>,
@@ -402,11 +413,17 @@ impl RunnerCloudAgentWatches {
     ) -> Self {
         Self {
             state: Arc::new(Mutex::new(CloudAgentWatchState::default())),
+            spawn_worker: background_watch_worker_spawner(),
             await_completion,
             on_pending,
             on_settled,
             on_async_tasks_changed,
         }
+    }
+
+    pub fn with_worker_spawner(mut self, spawn_worker: BackgroundWatchWorkerSpawner) -> Self {
+        self.spawn_worker = spawn_worker;
+        self
     }
 
     pub fn watch_cloud_agent(
@@ -443,16 +460,6 @@ impl RunnerCloudAgentWatches {
             armed
         };
 
-        if let Some(callback) = self.on_pending.as_ref() {
-            callback(&CloudAgentPendingWatch {
-                parent_agent_id: armed.parent_agent_id.clone(),
-                work_id: armed.work_id.clone(),
-                title: armed.title.clone(),
-                quiet_origin: armed.quiet_origin.clone(),
-            });
-        }
-        self.emit_async_tasks_changed(parent_agent_id);
-
         let state = Arc::clone(&self.state);
         let await_completion = Arc::clone(&self.await_completion);
         let on_settled = self.on_settled.clone();
@@ -464,9 +471,19 @@ impl RunnerCloudAgentWatches {
         let title = armed.title.clone();
         let quiet_origin = armed.quiet_origin.clone();
 
-        let _ = std::thread::Builder::new()
-            .name(format!("mahayana-cloud-agent-watch-{work_id}"))
-            .spawn(move || {
+        let rollback_key = key.clone();
+        let (start_tx, start_rx) = std::sync::mpsc::channel::<()>();
+        let spawned = (self.spawn_worker)(
+            format!("mahayana-cloud-agent-watch-{work_id}"),
+            Box::new(move || {
+                // Completion cannot race ahead of durable pending publication.
+                if start_rx.recv().is_err() {
+                    let mut state = state.lock().unwrap_or_else(|p| p.into_inner());
+                    if state.armed.get(&key).is_some_and(|v| v.generation == generation) {
+                        state.armed.remove(&key);
+                    }
+                    return;
+                }
                 let outcome = await_completion(&work_id, after_followup);
                 let still_owned = {
                     let mut state = state
@@ -509,8 +526,26 @@ impl RunnerCloudAgentWatches {
                 if let Some(callback) = on_async_tasks_changed.as_ref() {
                     callback(&parent_agent_id);
                 }
+            }),
+        );
+        if spawned.is_err() {
+            let mut state = self.state.lock().unwrap_or_else(|p| p.into_inner());
+            if state.armed.get(&rollback_key).is_some_and(|v| v.generation == generation) {
+                state.armed.remove(&rollback_key);
+            }
+            return false;
+        }
+        if let Some(callback) = self.on_pending.as_ref() {
+            callback(&CloudAgentPendingWatch {
+                parent_agent_id: armed.parent_agent_id.clone(),
+                work_id: armed.work_id.clone(),
+                title: armed.title.clone(),
+                quiet_origin: armed.quiet_origin.clone(),
             });
-        true
+        }
+        self.emit_async_tasks_changed(&armed.parent_agent_id);
+
+        start_tx.send(()).is_ok()
     }
 
     pub fn is_cloud_watch_armed(&self, parent_agent_id: &str, bc_id: &str) -> bool {
@@ -667,14 +702,12 @@ struct BackgroundShellWatchState {
     armed: HashMap<String, ArmedBackgroundShellWatch>,
 }
 
-/// Single shipping owner for Grok-style background-shell terminal rewatches.
-///
-/// The durable pending marker is armed before duplicate detection, matching
-/// frozen Grok 0.18. This is important during Host recreate because
-/// PendingWakeRearm clears the old marker before invoking this owner.
+/// Single shipping owner for background-shell terminal rewatches. A worker
+/// must exist before pending publication; its start gate preserves ordering.
 #[derive(Clone)]
 pub struct RunnerBackgroundShellWatches {
     state: Arc<Mutex<BackgroundShellWatchState>>,
+    spawn_worker: BackgroundWatchWorkerSpawner,
     await_terminal: BackgroundShellAwaitCallback,
     on_pending: Option<BackgroundShellPendingCallback>,
     on_settled: Option<BackgroundShellSettledCallback>,
@@ -690,11 +723,17 @@ impl RunnerBackgroundShellWatches {
     ) -> Self {
         Self {
             state: Arc::new(Mutex::new(BackgroundShellWatchState::default())),
+            spawn_worker: background_watch_worker_spawner(),
             await_terminal,
             on_pending,
             on_settled,
             on_async_tasks_changed,
         }
+    }
+
+    pub fn with_worker_spawner(mut self, spawn_worker: BackgroundWatchWorkerSpawner) -> Self {
+        self.spawn_worker = spawn_worker;
+        self
     }
 
     pub fn watch_background_shell(
@@ -740,19 +779,6 @@ impl RunnerBackgroundShellWatches {
             armed
         };
 
-        // Persist/project only after this owner successfully claims the watch.
-        // Duplicate restart rearm attempts therefore cannot emit a second
-        // durable pending marker or duplicate async-task projection.
-        if let Some(callback) = self.on_pending.as_ref() {
-            callback(&BackgroundShellPendingWatch {
-                parent_agent_id: armed.parent_agent_id.clone(),
-                work_id: armed.work_id.clone(),
-                title: armed.title.clone(),
-                quiet_origin: armed.quiet_origin.clone(),
-            });
-        }
-        self.emit_async_tasks_changed(parent_agent_id);
-
         let state = Arc::clone(&self.state);
         let await_terminal = Arc::clone(&self.await_terminal);
         let on_settled = self.on_settled.clone();
@@ -764,9 +790,19 @@ impl RunnerBackgroundShellWatches {
         let quiet_origin = armed.quiet_origin.clone();
         let cancelled = Arc::clone(&armed.cancelled);
 
-        let _ = std::thread::Builder::new()
-            .name(format!("mahayana-background-shell-watch-{work_id}"))
-            .spawn(move || {
+        let rollback_key = key.clone();
+        let (start_tx, start_rx) = std::sync::mpsc::channel::<()>();
+        let spawned = (self.spawn_worker)(
+            format!("mahayana-background-shell-watch-{work_id}"),
+            Box::new(move || {
+                // Completion cannot race ahead of durable pending publication.
+                if start_rx.recv().is_err() {
+                    let mut state = state.lock().unwrap_or_else(|p| p.into_inner());
+                    if state.armed.get(&key).is_some_and(|v| v.generation == generation) {
+                        state.armed.remove(&key);
+                    }
+                    return;
+                }
                 let outcome =
                     await_terminal(&parent_agent_id, &work_id, Arc::clone(&cancelled));
                 if cancelled.load(Ordering::Acquire) {
@@ -806,8 +842,33 @@ impl RunnerBackgroundShellWatches {
                 if let Some(callback) = on_async_tasks_changed.as_ref() {
                     callback(&parent_agent_id);
                 }
+            }),
+        );
+        if spawned.is_err() {
+            let mut state = self.state.lock().unwrap_or_else(|p| p.into_inner());
+            if state.armed.get(&rollback_key).is_some_and(|v| v.generation == generation) {
+                state.armed.remove(&rollback_key);
+            }
+            return false;
+        }
+        // Persist/project only after this owner successfully claims the watch.
+        // Duplicate restart rearm attempts therefore cannot emit a second
+        // durable pending marker or duplicate async-task projection.
+        if let Some(callback) = self.on_pending.as_ref() {
+            callback(&BackgroundShellPendingWatch {
+                parent_agent_id: armed.parent_agent_id.clone(),
+                work_id: armed.work_id.clone(),
+                title: armed.title.clone(),
+                quiet_origin: armed.quiet_origin.clone(),
             });
-        true
+        }
+        self.emit_async_tasks_changed(&armed.parent_agent_id);
+
+        start_tx.send(()).is_ok()
+    }
+
+    pub fn has_completion_delivery(&self) -> bool {
+        self.on_settled.is_some()
     }
 
     pub fn is_shell_watch_armed(&self, parent_agent_id: &str, shell_id: &str) -> bool {

@@ -43,7 +43,12 @@ first delivery target. Never enable paid-model tests as a side effect of this wo
 - HRA-04: background completions preserve originating conversation/task identity,
   routing and acknowledgment. Repeated observations do not create duplicate user
   replies. Completion promises require an actual delivery path. Existing bounded
-  Host waits/AwaitShell own waits, not repeated model turns.
+  Host waits/AwaitShell own waits, not repeated model turns. Worker spawn failure
+  must release the claimed watch and publish no durable pending marker. A start
+  gate orders pending publication before terminal completion. Shell results expose
+  whether automatic completion delivery was registered; notification failure does
+  not imply that the backend process failed and must not rerun it. Inject worker
+  spawn failure through the existing watch owner, not a replacement scheduler.
 - HRA-05: verify completion/cancellation/empty-output and partial-stream semantics
   across the production provider adapters. Automatic transport/recovery attempts
   are separate from model-directed business retries and remain bounded.

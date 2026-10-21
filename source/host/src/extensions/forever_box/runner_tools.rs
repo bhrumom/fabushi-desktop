@@ -541,13 +541,15 @@ impl RunnerBoxResourcePort for ForeverBoxRunnerResourcePort {
                                     ));
                                 }
                                 let shell_work_id = shell_id.to_string();
-                                watches.watch_background_shell(
+                                let registered = watches.watch_background_shell(
                                     &self.agent_id,
                                     &shell_work_id,
                                     BackgroundShellWatchOptions::new(Some(command.clone()), None),
                                 );
                                 json!({
                                     "kind": "backgrounded",
+                                    "completionNotificationRegistered": watches.has_completion_delivery()
+                                        && (registered || watches.is_shell_watch_armed(&self.agent_id, &shell_work_id)),
                                     "shellId": shell_id,
                                     "command": command,
                                     "workingDirectory": working_directory,
@@ -709,13 +711,15 @@ impl RunnerBoxResourcePort for ForeverBoxRunnerResourcePort {
                                         ));
                                     }
                                     let shell_work_id = shell_id.to_string();
-                                    watches.watch_background_shell(
+                                    let registered = watches.watch_background_shell(
                                         &self.agent_id,
                                         &shell_work_id,
                                         BackgroundShellWatchOptions::new(Some(command.clone()), None),
                                     );
                                     return Ok(json!({
                                         "kind": "backgrounded",
+                                        "completionNotificationRegistered": watches.has_completion_delivery()
+                                            && (registered || watches.is_shell_watch_armed(&self.agent_id, &shell_work_id)),
                                         "shellId": shell_id,
                                         "command": command,
                                         "workingDirectory": working_directory,
