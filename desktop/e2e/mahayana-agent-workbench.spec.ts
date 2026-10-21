@@ -1147,6 +1147,16 @@ async function launchPackagedDesktopApp(env: NodeJS.ProcessEnv, extraArgs: strin
     windowsHide: true,
     stdio: ['ignore', 'pipe', 'pipe'],
   });
+  // Keep draining both pipes for the entire packaged-app lifetime. The endpoint
+  // waiter below removes its temporary listeners as soon as inspector/CDP
+  // starts; leaving the child pipes unread can fill the OS pipe buffer and
+  // stall production startup before the first BrowserWindow is created.
+  let processOutputTail = '';
+  const captureProcessOutput = (stream: 'stdout' | 'stderr') => (chunk: Buffer | string): void => {
+    processOutputTail = `${processOutputTail}${stream}: ${chunk.toString()}`.slice(-12_000);
+  };
+  child.stdout?.on('data', captureProcessOutput('stdout'));
+  child.stderr?.on('data', captureProcessOutput('stderr'));
   let inspector: PackagedMainInspector | null = null;
   let browser: Browser | null = null;
   try {
@@ -1173,7 +1183,7 @@ async function launchPackagedDesktopApp(env: NodeJS.ProcessEnv, extraArgs: strin
         const observed = await Promise.all(context.pages().map(async (page) => ({
           url: page.url(), title: await page.title().catch(() => ''),
         })));
-        throw new Error(`Packaged Fabushi executable did not expose a trusted main window within ${timeoutMs}ms. Observed Chromium pages: ${JSON.stringify(observed)}`);
+        throw new Error(`Packaged Fabushi executable did not expose a trusted main window within ${timeoutMs}ms. Observed Chromium pages: ${JSON.stringify(observed)}. Recent packaged process output:\\n${processOutputTail.trim() || '(no process output captured)'}`);
       },
       evaluate: (fn: Function, arg?: unknown) => inspector!.evaluate(fn, arg),
       close: async () => {
@@ -1316,6 +1326,25 @@ async function browserWorkspacePageEntries(app: ElectronApplication): Promise<Ar
   const entries = new Map<string, { url: string; title: string }>();
   for (const entry of [...cdpEntries, ...mainEntries]) entries.set(`${entry.url}\n${entry.title}`, entry);
   return [...entries.values()];
+}
+
+async function browserWorkspacePageDiagnostic(
+  app: ElectronApplication,
+  expectedUrl: string,
+  expectedTitle: string,
+): Promise<{
+  matches: boolean;
+  details: { url: string; title: string } | null;
+  entries: Array<{ url: string; title: string }>;
+}> {
+  const details = await browserWorkspacePageDetails(app, expectedUrl);
+  return {
+    matches: details != null
+      && sameBrowserWorkspaceUrl(details.url, expectedUrl)
+      && details.title === expectedTitle,
+    details,
+    entries: await browserWorkspacePageEntries(app),
+  };
 }
 
 async function readBrowserWorkspaceDownloadLink(app: ElectronApplication, expectedUrl: string): Promise<{ text: string; href: string } | null> {
@@ -1656,16 +1685,16 @@ test('native Browser Workspace opens real Chromium pages, isolates tabs, and dow
     // URL and document title, not just the renderer's persisted tab label.
     await restoredTabs.nth(0).click();
     await expect.poll(
-      async () => browserWorkspacePageMatches(app!, `${origin}/browser-workspace-fixture`, 'Fabushi Browser Fixture'),
+      async () => browserWorkspacePageDiagnostic(app!, `${origin}/browser-workspace-fixture`, 'Fabushi Browser Fixture'),
       { timeout: 15_000 },
-    ).toBe(true);
+    ).toMatchObject({ matches: true });
     await expect(restoredWorkspace.getByRole('tab').filter({ hasText: 'Fabushi Browser Fixture' })).toHaveCount(1, { timeout: 15_000 });
 
     await restoredTabs.nth(1).click();
     await expect.poll(
-      async () => browserWorkspacePageMatches(app!, `${httpsOrigin}/browser-workspace-secure`, 'Fabushi Browser HTTPS'),
+      async () => browserWorkspacePageDiagnostic(app!, `${httpsOrigin}/browser-workspace-secure`, 'Fabushi Browser HTTPS'),
       { timeout: 15_000 },
-    ).toBe(true);
+    ).toMatchObject({ matches: true });
     await expect(restoredWorkspace.getByRole('tab').filter({ hasText: 'Fabushi Browser HTTPS' })).toHaveCount(1, { timeout: 15_000 });
 
     const restoredAddress = restoredWorkspace.getByRole('textbox', { name: 'Address and search' });
