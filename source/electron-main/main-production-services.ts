@@ -561,6 +561,10 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
   const deepLinks = new SandDeepLinkController({ dispatch: (parsed) => requireValue(mainEdge, "main-edge").emit("deep-link", parsed.link), focusWindow, log: (message) => console.log(`[sand] ${message}`) });
   const track = <T extends ProductionDisposable>(value: T): T => { disposables.push(value); return value; };
   const requireDisposable = <T extends ProductionDisposable>(value: T, name: string): T => { if (value == null || typeof value.dispose !== "function") throw new Error(`Electron production service ${name} did not provide dispose().`); return value; };
+  const traceQuit = (phase: string): void => {
+    if (process.env.FABUSHI_E2E_QUIT_TRACE !== "1") return;
+    try { console.error(`[sand:quit-trace] ${phase}`); } catch {}
+  };
   const disposeOnce = async (value: ProductionDisposable | undefined): Promise<void> => {
     if (value == null || disposedValues.has(value)) return;
     disposedValues.add(value);
@@ -577,10 +581,10 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
       await Promise.race([
         operation,
         new Promise<never>((_resolve, reject) => {
-          timeout = setTimeout(
-            () => reject(new Error(`Desktop quit settlement exceeded ${desktopQuitSettlementTimeoutMs}ms.`)),
-            desktopQuitSettlementTimeoutMs,
-          );
+          timeout = setTimeout(() => {
+            traceQuit(`settlement:deadline-fired-after-${desktopQuitSettlementTimeoutMs}ms`);
+            reject(new Error(`Desktop quit settlement exceeded ${desktopQuitSettlementTimeoutMs}ms.`));
+          }, desktopQuitSettlementTimeoutMs);
         }),
       ]);
     } finally {
@@ -588,17 +592,33 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
     }
   };
   const disposeGraph = async (): Promise<void> => {
-    if (disposed) return;
+    if (disposed) {
+      traceQuit("disposeGraph:already-disposed");
+      return;
+    }
     disposed = true;
+    traceQuit("disposeGraph:start");
     disposeDesktopEventLoopSampler();
     accountStatusSequence += 1;
     try { accountStatusUnsubscribe?.(); } catch (error) { bindings.reportFailure("account", "status-unsubscribe", error); }
     accountStatusUnsubscribe = undefined;
+    traceQuit("disposeGraph:product-analytics:start");
     try { await disposeOnce(productAnalytics); } catch (error) { bindings.reportFailure("product-analytics", "dispose", error); }
+    traceQuit("disposeGraph:product-analytics:complete");
+    let disposalIndex = 0;
     for (const disposable of [...disposables].reverse()) {
+      const label = disposable.constructor?.name ?? "anonymous";
+      traceQuit(`disposeGraph:item-${disposalIndex}:${label}:start`);
       try { await disposeOnce(disposable); } catch (error) { bindings.reportFailure("main", "dispose", error); }
+      traceQuit(`disposeGraph:item-${disposalIndex}:${label}:complete`);
+      disposalIndex += 1;
     }
-    try { coordinatorLegs.dispose(); } finally { disposeLocalExecLifecycleReporter(); }
+    traceQuit("disposeGraph:coordinator-legs:start");
+    try { coordinatorLegs.dispose(); } finally {
+      disposeLocalExecLifecycleReporter();
+      traceQuit("disposeGraph:coordinator-legs:complete");
+    }
+    traceQuit("disposeGraph:complete");
   };
   const initializeFoundation = (): void => {
     if (foundationInitialized) return;
@@ -1009,79 +1029,128 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
             void appAgentSurfaceServer.start().catch((error) => bindings.reportFailure("app-agent-surface", "start", error));
           }
         },
-        dispose: () => void (async () => { await appAgentSurfaceServer?.close(); appAgentSurfaceServer = undefined; await disposeGraph(); })(),
+        dispose: () => void (async () => {
+          traceQuit("services.dispose:start");
+          traceQuit("services.dispose:app-agent-surface-close:start");
+          await appAgentSurfaceServer?.close();
+          traceQuit("services.dispose:app-agent-surface-close:complete");
+          appAgentSurfaceServer = undefined;
+          await disposeGraph();
+          traceQuit("services.dispose:complete");
+        })(),
       };
     } catch (error) { await disposeGraph(); throw error; }
   })();
   const beginBeforeQuit = (): "continue" | "prevent" => {
-    if (quitState === "settled" || context == null || telemetry == null) return "continue";
-    if (quitState === "flushing") return "prevent";
+    traceQuit(`before-quit:enter state=${quitState} context=${context != null} telemetry=${telemetry != null}`);
+    if (quitState === "settled" || context == null || telemetry == null) {
+      traceQuit("before-quit:continue-no-settlement");
+      return "continue";
+    }
+    if (quitState === "flushing") {
+      traceQuit("before-quit:prevent-already-flushing");
+      return "prevent";
+    }
     quitState = "flushing";
+    traceQuit("before-quit:prevent-and-settle");
     const settlement = (async () => {
+      traceQuit("settlement:body-start");
       try {
+        traceQuit("phase:metrics:start");
         desktopMetricsRuntime?.disposeProcessMetricsCollector();
         const numericMetrics = desktopMetricsRuntime?.takeClientNumericMetricsManager();
         boxVisibilityTracker?.abandonAll();
+        traceQuit("phase:metrics:complete");
         const disposeQuitPhase = async (value: ProductionDisposable | undefined, area: string): Promise<void> => {
+          traceQuit(`phase:${area}:start`);
           try { await disposeOnce(value); } catch (error) { bindings.reportFailure(area, "dispose", error); }
+          traceQuit(`phase:${area}:complete`);
         };
         // Close local Chromium WebContents and detach its Main-owned CDP sessions
         // before coordinator/telemetry shutdown can hold the quit path open.
         await disposeQuitPhase(browserWorkspace, "browser-workspace");
         await disposeQuitPhase(coordinator, "coordinator");
+        traceQuit("phase:coordinator-legs:start");
         try { coordinatorLegs.dispose(); } catch (error) { bindings.reportFailure("coordinator", "legs-dispose", error); }
+        traceQuit("phase:coordinator-legs:complete");
         await disposeQuitPhase(boxRecovery, "box-recovery");
+        traceQuit("phase:box-secrets-quiesce:start");
         await secretsStores?.pushBoxSecrets.quiesce();
+        traceQuit("phase:box-secrets-quiesce:complete");
+        traceQuit("phase:push-telemetry-settled:start");
         await secretsStores?.pushTelemetry.settled();
+        traceQuit("phase:push-telemetry-settled:complete");
         disposeDesktopEventLoopSampler();
+        traceQuit("phase:telemetry-flush:start");
         await Promise.all([telemetry!.flushBeforeQuit(), numericMetrics?.flush() ?? Promise.resolve()]);
+        traceQuit("phase:telemetry-flush:complete");
         numericMetrics?.dispose();
-        if (update?.willRunStagedInstallerOnQuit?.() === true) await bindings.services.killLocalExecDaemon?.();
+        if (update?.willRunStagedInstallerOnQuit?.() === true) {
+          traceQuit("phase:kill-local-exec-daemon:start");
+          await bindings.services.killLocalExecDaemon?.();
+          traceQuit("phase:kill-local-exec-daemon:complete");
+        }
+        traceQuit("phase:apply-staged-update:start");
         update?.applyStagedOnQuit?.();
+        traceQuit("phase:apply-staged-update:complete");
         await disposeQuitPhase(telemetry, "telemetry");
         await disposeQuitPhase(productAnalytics, "product-analytics");
         await disposeQuitPhase(update, "update");
         await disposeQuitPhase(mcp, "mcp");
         await disposeQuitPhase(experiments, "experiments");
       } catch (error) {
+        traceQuit("settlement:body-error");
         bindings.reportFailure("telemetry", "quit-flush-race", error);
         try { await telemetry?.spillPending?.(); } catch (spillError) { bindings.reportFailure("telemetry", "quit-preserve", spillError); }
       } finally {
+        traceQuit("settlement:disposeGraph:start");
         await disposeGraph();
+        traceQuit("settlement:disposeGraph:complete");
       }
     })();
     void (async () => {
+      traceQuit("settlement:watchdog-start");
       let settlementTimedOut = false;
       try {
-        // No service, telemetry sink, child process, or filesystem settle is
-        // allowed to hold Electron's before-quit gate indefinitely.
         await settleDesktopQuit(settlement);
+        traceQuit("settlement:completed");
       } catch (error) {
+        traceQuit("settlement:timeout-report-start");
         bindings.reportFailure("main", "quit-settlement", error);
         settlementTimedOut = true;
+        traceQuit("settlement:timeout-report-complete");
       }
 
       quitState = "settled";
       const forceExit = (): void => {
+        traceQuit("force-exit:calling-app-exit");
         if (typeof bindings.native.app.exit === "function") {
           bindings.native.app.exit(0);
+          traceQuit("force-exit:app-exit-returned");
           return;
         }
         bindings.reportFailure("main", "quit-force-exit-unavailable", new Error("Electron app.exit is unavailable after the bounded quit deadline."));
+        traceQuit("force-exit:app-exit-unavailable");
       };
 
       if (settlementTimedOut) {
+        traceQuit("settlement:deadline-force-exit");
         forceExit();
         return;
       }
 
+      traceQuit("graceful-quit:calling-app-quit");
       bindings.native.app.quit();
+      traceQuit("graceful-quit:app-quit-returned");
       const exitWatchdog = setTimeout(() => {
+        traceQuit("exit-watchdog:fired");
         bindings.reportFailure("main", "quit-watchdog", new Error("Electron did not exit within 5000ms after graceful quit."));
         forceExit();
       }, 5_000);
       exitWatchdog.unref?.();
+      traceQuit("exit-watchdog:scheduled");
     })();
+    traceQuit("before-quit:return-prevent");
     return "prevent";
   };
   const dependencies: ElectronMainDependencies = {

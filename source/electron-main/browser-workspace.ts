@@ -1772,18 +1772,35 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
     return await execute(command);
   });
 
+  const traceBrowserWorkspaceDispose = (phase: string): void => {
+    if (process.env.FABUSHI_E2E_QUIT_TRACE !== "1") return;
+    try { console.error(`[sand:browser-workspace-dispose] ${phase}`); } catch {}
+  };
+
   const destroyAllRuntime = (): void => {
+    traceBrowserWorkspaceDispose("destroy-all-runtime:start");
+    traceBrowserWorkspaceDispose("unmount:start");
     unmount();
+    traceBrowserWorkspaceDispose("unmount:complete");
     activeWorkspaceId = null;
+    let workspaceIndex = 0;
     for (const workspace of workspaces.values()) {
       workspace.visible = false;
+      let tabIndex = 0;
       for (const tab of workspace.tabs) {
+        traceBrowserWorkspaceDispose(`workspace-${workspaceIndex}:tab-${tabIndex}:debugger-detach:start`);
         disposeTabDebugger(tab);
+        traceBrowserWorkspaceDispose(`workspace-${workspaceIndex}:tab-${tabIndex}:debugger-detach:complete`);
+        traceBrowserWorkspaceDispose(`workspace-${workspaceIndex}:tab-${tabIndex}:destroy:start`);
         try { if (!tab.view.webContents.isDestroyed()) tab.view.webContents.destroy(); } catch (error) { fail("destroy-tab", error); }
+        traceBrowserWorkspaceDispose(`workspace-${workspaceIndex}:tab-${tabIndex}:destroy:complete`);
+        tabIndex += 1;
       }
+      workspaceIndex += 1;
     }
     workspaces.clear();
     activeAgentDownloads.clear();
+    traceBrowserWorkspaceDispose("destroy-all-runtime:complete");
   };
 
   return {
@@ -1815,12 +1832,19 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
     },
     executeAgentAction,
     dispose() {
-      if (disposed) return;
+      if (disposed) {
+        traceBrowserWorkspaceDispose("dispose:already-disposed");
+        return;
+      }
+      traceBrowserWorkspaceDispose("dispose:start");
       disposed = true;
       agentQueues.clear();
+      traceBrowserWorkspaceDispose("dispose:remove-ipc-handler:start");
       ports.ipcMain.removeHandler?.(BROWSER_WORKSPACE_INVOKE_CHANNEL);
+      traceBrowserWorkspaceDispose("dispose:remove-ipc-handler:complete");
       destroyAllRuntime();
       hostWindow = null;
+      traceBrowserWorkspaceDispose("dispose:complete");
     },
   };
 }

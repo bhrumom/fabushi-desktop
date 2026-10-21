@@ -389,6 +389,19 @@ async function ensureE2eAuthBackend(): Promise<string> {
         response.end(resource.bytes);
         return;
       }
+      if (requestUrl.pathname === '/api/social/calls' && request.method === 'GET') {
+        if (request.headers.authorization !== `Bearer ${token}`
+          || !isE2eSocialDeviceId(request.headers['x-fabushi-device-id'])) {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 401;
+          response.end(JSON.stringify({ success: false, error: 'invalid-social-credential' }));
+          return;
+        }
+        response.setHeader('content-type', 'application/json');
+        response.statusCode = 200;
+        response.end(JSON.stringify({ success: true, calls: [] }));
+        return;
+      }
       if (requestUrl.pathname === '/api/social/messages' && request.method === 'GET') {
         if (request.headers.authorization !== `Bearer ${token}`
           || !isE2eSocialDeviceId(request.headers['x-fabushi-device-id'])) {
@@ -1217,6 +1230,7 @@ function desktopE2eEnvironment(appDataDir: string, e2eAuthBackendUrl: string, ex
   return {
     ...process.env,
     FABUSHI_E2E: '1',
+    FABUSHI_E2E_QUIT_TRACE: '1',
     SAND_USER_DATA_DIR: appDataDir,
     SAND_BACKEND_URL: e2eAuthBackendUrl,
     CURSOR_API_BASE_URL: e2eAuthBackendUrl,
@@ -1355,6 +1369,7 @@ async function closeDesktopApp(
   // Playwright receives the evaluation result, otherwise the test can hang
   // before reaching the close/kill watchdog below.
   const timeoutMs = options.timeoutMs ?? 30_000;
+  const childProcess = app.process();
   const quitRequest = app.evaluate(({ app: electronApp }) => electronApp.quit()).catch(() => undefined);
   let quitDispatchTimer: ReturnType<typeof setTimeout> | undefined;
   await Promise.race([
@@ -1373,7 +1388,7 @@ async function closeDesktopApp(
   ]);
   if (closeTimer != null) clearTimeout(closeTimer);
 
-  const timeoutError = () => new Error(`Electron app did not exit within ${timeoutMs}ms after explicit app.quit; forced child-process cleanup was attempted.`);
+  const timeoutError = () => new Error(`Electron app did not exit within ${timeoutMs}ms after explicit app.quit; forced child-process cleanup was attempted (pid=${childProcess.pid ?? 'unknown'}, exitCode=${childProcess.exitCode ?? 'null'}, signalCode=${childProcess.signalCode ?? 'null'}).`);
   if (closeFinished) {
     if (closeTimedOut && options.failOnTimeout) throw timeoutError();
     return;
@@ -1381,7 +1396,7 @@ async function closeDesktopApp(
 
   // Never let a stuck Electron child consume Playwright's entire worker
   // teardown budget. Strict restart/restore checkpoints still fail visibly.
-  try { app.process().kill('SIGKILL'); } catch {}
+  try { childProcess.kill('SIGKILL'); } catch {}
   let killTimer: ReturnType<typeof setTimeout> | undefined;
   await Promise.race([
     closePromise,
@@ -1735,6 +1750,32 @@ async function expectHermesAssistantTurn(page: Page, expectedText: string): Prom
   expect(bodyText.split(expectedText).length - 1).toBe(1);
   return turn;
 }
+
+test('E2E auth fixture requires Bearer and device credentials for social call discovery', async () => {
+  const origin = await ensureE2eAuthBackend();
+  const endpoint = `${origin}/api/social/calls`;
+  const deviceId = 'fabushi-e2e-device-4242';
+  const validHeaders = {
+    authorization: `Bearer ${e2eAuthToken()}`,
+    'x-fabushi-device-id': deviceId,
+  };
+
+  const accepted = await fetch(endpoint, { headers: validHeaders });
+  expect(accepted.status).toBe(200);
+  expect(await accepted.json()).toEqual({ success: true, calls: [] });
+
+  const unauthorizedCases = [
+    { name: 'invalid Bearer token', headers: { authorization: 'Bearer invalid', 'x-fabushi-device-id': deviceId } },
+    { name: 'missing Bearer token', headers: { 'x-fabushi-device-id': deviceId } },
+    { name: 'missing device id', headers: { authorization: `Bearer ${e2eAuthToken()}` } },
+    { name: 'invalid device id', headers: { authorization: `Bearer ${e2eAuthToken()}`, 'x-fabushi-device-id': 'untrusted-device' } },
+  ];
+  for (const { name, headers } of unauthorizedCases) {
+    const rejected = await fetch(endpoint, { headers });
+    expect(rejected.status, name).toBe(401);
+    expect(await rejected.json(), name).toEqual({ success: false, error: 'invalid-social-credential' });
+  }
+});
 
 test('native Browser Workspace opens real Chromium pages, isolates tabs, and downloads verified bytes', async () => {
   test.setTimeout(packagedExecutable ? 180_000 : 120_000);

@@ -1442,3 +1442,26 @@ test("page/load/network-idle events have bounded cursors, origin-only evidence, 
   }), /BROWSER_AGENT_INVALID_ACTION/);
   h.service.dispose();
 });
+test("dispose synchronously detaches CDP sessions and destroys all runtime tabs idempotently", async () => {
+  const h = harness();
+  const host = new FakeHostWindow();
+  h.service.attachWindow(host);
+  const initial = await h.invoke({ type: "activate", conversationId: "bot-dispose", bounds: { x: 1, y: 1, width: 500, height: 500 } });
+  assert.equal(initial.tabs.length, 1);
+  const firstContents = h.views[0]!.webContents;
+  const second = await h.invoke({ type: "new-tab", conversationId: "bot-dispose", address: "https://example.com/second" });
+  const secondContents = h.views.at(-1)!.webContents;
+  assert.equal(second.tabs.length, 2);
+
+  assert.equal(h.service.dispose(), undefined);
+  assert.equal(h.ipc.handler, null);
+  assert.equal(h.service.snapshot("bot-dispose"), null);
+  assert.equal(host.mounted.length, 0);
+  for (const contents of [firstContents, secondContents]) {
+    assert.equal(contents.destroyed, true);
+    assert.equal(contents.destroyedWithDebuggerAttached, false, "dispose must detach Main-owned CDP sessions before destroying WebContents");
+    assert.equal(contents.debugger.attached, false);
+  }
+  assert.equal(h.service.dispose(), undefined);
+});
+
