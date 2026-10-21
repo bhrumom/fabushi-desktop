@@ -381,9 +381,12 @@ test("restored native URL survives an about:blank load racing debugger setup", a
   initial.service.dispose();
 
   let blankLoadRacedDebuggerSetup = false;
+  let restoredUrlCommittedBeforeDebuggerSetup = false;
   const restored = harness(persisted, undefined, undefined, undefined, (view) => {
     view.webContents.debugger.beforeSendCommand = (method) => {
-      if (!blankLoadRacedDebuggerSetup && method === "Page.enable") {
+      if (method !== "Page.enable") return;
+      restoredUrlCommittedBeforeDebuggerSetup = view.webContents.getURL() === "https://example.com/restored";
+      if (!blankLoadRacedDebuggerSetup) {
         blankLoadRacedDebuggerSetup = true;
         view.webContents.emit("did-start-loading");
       }
@@ -398,6 +401,7 @@ test("restored native URL survives an about:blank load racing debugger setup", a
   await new Promise((resolve) => setTimeout(resolve, 0));
 
   assert.equal(blankLoadRacedDebuggerSetup, true);
+  assert.equal(restoredUrlCommittedBeforeDebuggerSetup, true);
   assert.equal(restored.views[0]?.webContents.getURL(), "https://example.com/restored");
   assert.equal(restored.views[0]?.webContents.getTitle(), "Title example.com");
   assert.equal(restored.service.snapshot("bot-restore-race")?.tabs[0]?.url, "https://example.com/restored");

@@ -779,7 +779,11 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
     }
     try { tab.view.setBounds(workspace.bounds); } catch (error) { fail("bounds", error); }
     if (tab.pendingInitialUrl != null || tab.initialLoadPromise != null) {
-      void startPendingInitialNavigation(workspace, tab).catch(() => undefined);
+      // A restored WebContents has no committed document yet. Load its persisted
+      // target before attaching CDP: on freshly recreated native views, debugger
+      // setup can otherwise leave the restored tab blank. Instrumentation is
+      // attached immediately after the initial document commits.
+      void startPendingInitialNavigation(workspace, tab, true).catch(() => undefined);
     }
   };
 

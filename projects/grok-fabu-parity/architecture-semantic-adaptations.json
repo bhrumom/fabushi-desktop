@@ -265,13 +265,14 @@
       "referencePath": "source/electron-main/production-binding-providers.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "e65c2b1e9160d30dad1b549558e3d01826069dce",
+      "targetBlobSha": "1650adcd0b07625044def55ec9df2f5252f9c448",
       "behavioralEvidence": [
         "source/electron-main/production-binding-providers.ts",
         "source/electron-main/local-exec/local-exec-daemon-protocol.ts",
         "source/shared/node/sand-data-root.ts",
         "docs/specs/desktop-miniapp-window.md",
-        "source/electron-main/mcp/miniapp-window.ts"
+        "source/electron-main/mcp/miniapp-window.ts",
+        "source/electron-main/startup-platform-capabilities.ts"
       ],
       "testEvidence": [
         "source/electron-main/local-exec/local-exec-daemon-protocol.test.ts",
@@ -280,7 +281,7 @@
         "source/electron-main/mcp/miniapp-window.contract.test.ts",
         ".github/workflows/miniapp-window-ci.yml"
       ],
-      "rationale": "Preserves the frozen Grok production binding graph while cutting two legacy Host-TypeScript imports: local-exec daemon protocol ownership is now in Electron Main and the data-root resolver is shared. The actual local-exec supervision still belongs to Mahayana Coordinator, so this adaptation strengthens rather than collapses the Grok process boundary. DMW-01 additionally injects the mini-app scheme through the existing MediaProtocol registration owner, with an empty default for existing callers. No second protocol bootstrap, Host or account owner is introduced."
+      "rationale": "Preserves the frozen Grok production binding graph while cutting two legacy Host-TypeScript imports: local-exec daemon protocol ownership is now in Electron Main and the data-root resolver is shared. The actual local-exec supervision still belongs to Mahayana Coordinator, so this adaptation strengthens rather than collapses the Grok process boundary. DMW-01 additionally injects the mini-app scheme through the existing MediaProtocol registration owner, with an empty default for existing callers. No second protocol bootstrap, Host or account owner is introduced. The platform-specific Applications-folder requirement is isolated in startup-platform-capabilities.ts, so Windows and Linux production startup do not require the macOS-only API while preserving the existing production binding boundary."
     },
     {
       "referencePath": "source/electron-main/startup/desktop-user-data-bootstrap.ts",
