@@ -6,10 +6,10 @@
   "target_commit": "667a5f4369e344e8376f1bda90d2bba78e453f49",
   "coverage": {
     "source_entries_total": 16305,
-    "unknown": 16257,
-    "unread": 16232,
+    "unknown": 16256,
+    "unread": 16231,
     "omitted": 0,
-    "responsibilities_total": 64,
+    "responsibilities_total": 65,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -17266,6 +17266,254 @@
       "reviewer": null,
       "license_and_provenance": "Behavioral repository task-performance/review/evidence contract read from exact telegramdesktop/tdesktop AI workflow sources; no upstream provider adapter, task runtime or product code is copied into Fabushi.",
       "notes": "Zero-based strict index 45 is .agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c on live 0eca52223cceed229932add1cc80792763120844. The complete 234-line skill and its actual Grok/Claude commands, continue scheduler relationship, pipeline/phase/mechanical/computer-use references and shared test/recovery/delegation contracts were inspected. Coverage after this one entry: unknown=16,257, unread=16,232, omitted=0. Parent b8ceacbe9390d182ab61019ba9c75601e5f02426 exact-head TDRP 39518408374 and Rust 39518408392 are terminal success; the child mapping commit requires fresh exact-head workflows. Fixed-point unresolved_gitlink_authorities=0 and Boost 582/582/open=0, but recursive reachability/disposition remains open (95 authorities, 133 gitlinks, 3,865 acquisition candidates, 4,674 generated inputs, 4,602 resource inputs, 4,255 tool inputs), so baseline accepted/source_closure_ready remain false. Next strict entry index 46 is .agents/skills/perform-task/agents/openai.yaml@f238b707da7f39a4293b17d112ddd344dcb8253a.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "0eca52223cceed229932add1cc80792763120844",
+      "source_path": ".agents/skills/perform-task/agents/openai.yaml",
+      "source_blob_sha": "f238b707da7f39a4293b17d112ddd344dcb8253a",
+      "source_kind": "repository_ai_skill_openai_invocation_interface_metadata",
+      "module_id": "tdesktop.perform-task.openai-interface",
+      "responsibility_id": "TDRP-R9-PERFORM-TASK-OPENAI-INTERFACE-001",
+      "source_symbols": [
+        "interface.display_name",
+        "interface.short_description",
+        "interface.default_prompt"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-TASK-EVIDENCE",
+        "CAP-REPOSITORY-AI-WORKER-LIFECYCLE",
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE"
+      ],
+      "dependency_ids": [
+        ".agents/skills/perform-task/SKILL.md",
+        ".agents/skills/continue/agents/openai.yaml",
+        ".agents/skills/process-inbox/agents/openai.yaml",
+        ".agents/skills/code-health/agents/openai.yaml",
+        ".agents/skills/dependency-watch/agents/openai.yaml",
+        ".grok/commands/perform-task.md",
+        ".claude/commands/perform-task.md",
+        "Fabushi ordinary repository task/review/evidence lifecycle",
+        "Fabushi Test Strategy",
+        "Fabushi Test Evidence Contract"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/perform-task-skill-complete-read.md",
+      "behavior_contract": "Expose host-facing discoverability/invocation metadata for the perform-task repository-development skill: a human-readable name and description plus a default prompt that invokes $perform-task. The metadata delegates all task resolution, lifecycle, review, testing, evidence and publication semantics to the shared perform-task SKILL.md and owns no product runtime.",
+      "state_machine": "OpenAI host discovers sibling agents/openai.yaml interface metadata -> presents Perform AI Task label/description -> default invocation prompt references $perform-task -> skill name perform-task resolves to .agents/skills/perform-task/SKILL.md -> existing repository-development performer owns all execution; Grok/Claude command wrappers reach the same shared skill through their own host adapters without using this OpenAI metadata as a semantic owner",
+      "side_effects": [
+        "No repository or product state is mutated by the metadata file itself.",
+        "Its default prompt can initiate the existing perform-task repository-development skill through the host skill interface.",
+        "It does not own Fabushi shipping Task, Agent, Host, Runner, Conversation, workflow, queue or scheduler state."
+      ],
+      "failure_cases": [
+        "Host interface metadata points to the wrong skill or silently changes the one-task performer intent.",
+        "display/description/default-prompt metadata is mistaken for the semantic task engine.",
+        "The host-specific metadata is copied into Fabushi as a second Task/Agent/runtime owner instead of mapping to existing repository-development governance.",
+        "Provider-specific interface wording is promoted to product UI or release acceptance evidence."
+      ],
+      "ui_disposition": "Not product UI. This is OpenAI host skill invocation/interface metadata for repository development.",
+      "non_ui_responsibilities": [
+        "Host-facing skill display name",
+        "Host-facing short description",
+        "Default prompt that invokes the existing $perform-task skill",
+        "Preservation of provider-interface/semantic-engine separation"
+      ],
+      "platform_delta": "Fabushi exact-head already owns the applicable source-neutral repository task/review/evidence lifecycle in root AGENTS.md, TEST_STRATEGY.md and evidence-contract.md. There is no Fabushi .agents/skills/perform-task copy at b34f; that absence does not create a novel product capability because index46 is only provider interface metadata. Preserve the behavioral boundary in existing governance rather than adding a second shipping Task/Agent/runtime owner.",
+      "existing_owner_candidates": [
+        "AGENTS.md — ordinary repository task/review/evidence lifecycle and source-neutral quality governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md — repository quality-task qualification, AI review policy and adaptive evidence loop",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md — independent/durable review and task-local evidence contracts",
+        "Existing Fabushi shipping Task/Agent/Host/Runner owners — explicitly not the owner of repository-development host interface metadata"
+      ],
+      "existing_owner": "Fabushi source-neutral repository task/review/evidence governance; index46 is only provider invocation/interface metadata for that lifecycle",
+      "rejected_existing_owners": [
+        "Shipping Fabushi Task/Agent/Host/Runner owners implement product runtime behavior and must not absorb repository-development host metadata.",
+        "A new OpenAI-task product runtime, second task store, second scheduler or Telegram-specific AI runtime would duplicate existing source-neutral governance.",
+        "Copying .agents/skills/perform-task/agents/openai.yaml into the shipping product would turn host tooling metadata into a false product owner."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Ordinary repository task/review/evidence lifecycle",
+        "Repository quality-task class qualification",
+        "AI review phase execution policy",
+        "Adaptive evidence loop and bounded recovery",
+        "Independent review evidence / task-local handoff evidence"
+      ],
+      "target_language": "Markdown",
+      "language_rationale": "The source entry is declarative OpenAI host interface metadata for a repository-development skill. Its applicable responsibility is an invocation boundary into existing source-neutral governance, not shipping product logic requiring Rust/TypeScript implementation.",
+      "command_event_contracts": [
+        "host discovers interface metadata -> expose Perform AI Task label and short description",
+        "default prompt -> invoke $perform-task, never a second runtime",
+        "$perform-task -> shared SKILL.md remains semantic authority for exactly-one-task execution",
+        "Grok/Claude commands -> use host-specific wrappers that still read the same shared SKILL.md",
+        "new index-46 mapping commit -> b34f exact-head Actions are parent evidence; fresh child exact-head TDRP/Rust workflows required"
+      ],
+      "state_owner": "Existing Fabushi repository task/review/evidence governance; metadata owns no state.",
+      "lifecycle_owner": "Root AGENTS.md ordinary repository lifecycle plus TEST_STRATEGY/evidence-contract verification owners.",
+      "persistence_and_restart": "No persistence in openai.yaml. Durable task/review/evidence state remains owned by the existing repository lifecycle invoked through $perform-task.",
+      "concurrency_and_cancellation": "No independent concurrency or cancellation semantics in the metadata. Those remain in the shared perform-task/repository evidence lifecycle; host invocation cannot create parallel ownership.",
+      "security_boundary": "Host interface metadata cannot bypass repository permissions, evidence gates, GitHub-Actions-only FBCP/TDRP verification or product security/release owners; it supplies no tokens or product runtime authority.",
+      "network_service_dependencies": [
+        "OpenAI host skill-discovery/invocation surface for repository tooling",
+        "Git/GitHub repository authority and GitHub Actions evidence after governance changes"
+      ],
+      "service_owner": "Existing repository governance and host skill interface; no Fabushi product service owner is added.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "interface-metadata-equivalent",
+      "blockers": [
+        "The index-46 mapping commit requires fresh exact-head TDRP Revision 9 and Rust desktop runtime verification.",
+        "Recursive reachability/disposition remains open with unknown/unread non-zero; baseline accepted/source_closure_ready remain false."
+      ],
+      "production_entrypoints": [
+        "AGENTS.md -> ordinary repository task/review/evidence lifecycle",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> Repository quality-task class qualification / AI review phase execution policy / adaptive evidence loop",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Independent review evidence / task-local handoff evidence"
+      ],
+      "production_evidence": [
+        "path:AGENTS.md@57ed0d56acc64ef24ce4c1f5c2877a4ec3ab570b",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md@0d3a4c993784625f9b70279602c655d4788fe9fb",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70",
+        "parent-exact-head-tdrp:39520394783/head:b34f18004a58db1c1341505fc4d0bf3ccb9b1ce6/success/source-authority-artifact:12310588122/digest:sha256:55b710b2f6cbfbe5ca63634d9fe8ba13ab8d44915754ae05395c1d38bd2b68bd",
+        "parent-exact-head-tdrp-boost:artifact:12310877766/digest:sha256:dfa75b7258ba4312d757fa9133b7f21677aba2358271e9d93febf74279a03638/acquisition_candidates:582/dispositioned:582/open:0",
+        "parent-exact-head-tdrp-root:artifact:12309843951/digest:sha256:a4dcb74e68aa544f25f72a690a1dd11694719a22aede6c27e41452fa3d3b1b54/shards:0-11",
+        "parent-exact-head-tdrp-child:artifact:12310528420/digest:sha256:688b6882a552ae23129da57c19aa2c62dad55990b41723ea20c903c829784d5c/shards:0-23",
+        "parent-exact-head-tdrp-next:artifact:12310004502/digest:sha256:157ec5d6649751b022c3d3f44aac4720fd356f4cb13f150458e3fc16c0b6c67e/shards:0-15",
+        "parent-exact-head-tdrp-closure:artifact:12310818800/digest:sha256:713214558c41b8f39ed1ac7a8923414314c82f914de19832543192ba0b730401/final_scanned_authorities:203/unresolved_gitlink_authorities:0/source_closure_ready:false",
+        "parent-exact-head-tdrp-reachability:artifact:12309949569/digest:sha256:1897b118f890815eaa1f10dffb72f3b4c977899e18047a22db9543e9c20b1a10/remaining_open:95,133,3865,4674,4602,4255",
+        "parent-exact-head-rust:39520394839/head:b34f18004a58db1c1341505fc4d0bf3ccb9b1ce6/success-6-of-6/artifact:12310398263/digest:sha256:412b57aa056eff120f32fd1ccb3c33223a396ac82e23b6adaf31b84fe9b6b45f"
+      ],
+      "test_evidence": [
+        "upstream-openai-interface:.agents/skills/perform-task/agents/openai.yaml@f238b707da7f39a4293b17d112ddd344dcb8253a",
+        "upstream-perform-task:.agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c",
+        "upstream-openai-sibling:continue/agents/openai.yaml@e981285ee10cbed9e27e358d60ce596c9e0b3d61",
+        "upstream-openai-sibling:process-inbox/agents/openai.yaml@b664f98ad4440de7a8074dfe790d80f3d2201546",
+        "upstream-openai-sibling:code-health/agents/openai.yaml@59bb6304445f21e2a3ee1a97a69a8e231f934d30",
+        "upstream-openai-sibling:dependency-watch/agents/openai.yaml@a61c118c41e3b50d6bc4bde12dc6d4c1b3756b5d",
+        "upstream-grok-command:.grok/commands/perform-task.md@313e94a3202c39aa10944b832b45ee80a762f509",
+        "upstream-claude-command:.claude/commands/perform-task.md@98ec6ed4aa51d3cac043a70a23adc6834b147f8e",
+        "target-absence-check:b34f .agents/skills/perform-task/SKILL.md and agents/openai.yaml both GitHub Contents 404; no copied second performer exists",
+        "source-read-complete:4-line YAML exact source read; interface-only responsibility verified",
+        "source-read-only:no upstream build/test execution claimed for declarative host metadata"
+      ],
+      "target_commit": "b34f18004a58db1c1341505fc4d0bf3ccb9b1ce6",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development task/review/evidence governance",
+      "composition_slot": "Host invocation/interface metadata boundary into the existing one-task performer contract",
+      "capability_component": "Source-neutral repository skill interface metadata",
+      "variation_axes": [
+        "OpenAI host metadata discovery vs Grok/Claude command adapter",
+        "manual $perform-task invocation vs scheduler delegation handled by shared SKILL.md",
+        "display/description/default prompt changes that do not alter semantic ownership"
+      ],
+      "shared_owner_contracts": [
+        "Root AGENTS.md ordinary task/review/evidence lifecycle",
+        "Fabushi Test Strategy AI review and adaptive evidence policy",
+        "Fabushi Test Evidence Contract independent/durable review evidence"
+      ],
+      "duplicate_root_check": "No OpenAI-specific product Task runtime, second task store, second scheduler, second Agent runtime or Telegram-specific AI owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Not applicable",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "OpenAI host interface metadata invokes the existing repository perform-task lifecycle; shipping product navigation and runtime are unaffected.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "No state in metadata; continuity remains the existing perform-task/repository task evidence contract.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable to repository host interface metadata",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "low",
+      "requirement_ids": [
+        "TDRP-R9-PERFORM-TASK-OPENAI-INTERFACE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-PERFORM-TASK-OPENAI-INTERFACE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-PERFORM-TASK-OPENAI-METADATA-ONLY-001",
+        "INV-TDRP-PERFORM-TASK-NO-SHIPPING-TASK-COLLISION-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-PERFORM-TASK-OPENAI-INTERFACE-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-PERFORM-TASK-OPENAI-TO-SHARED-SKILL-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-PERFORM-TASK-HOST-METADATA-NO-AUTHORITY-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [],
+      "release_gate_ids": [
+        "G-EVIDENCE",
+        "G-INVENTORY",
+        "G-TRACEABILITY",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "perform-task OpenAI interface metadata and shared skill contract"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Declarative OpenAI host skill-interface metadata read from exact telegramdesktop/tdesktop source. No upstream product runtime, provider adapter or executable task engine is copied into Fabushi.",
+      "notes": "Zero-based strict index 46 is .agents/skills/perform-task/agents/openai.yaml@f238b707da7f39a4293b17d112ddd344dcb8253a on live 0eca52223cceed229932add1cc80792763120844. The complete 4-line YAML contains only interface.display_name, interface.short_description and interface.default_prompt; the prompt invokes $perform-task, whose semantic engine is the already-audited SKILL.md. Sibling skill openai.yaml files confirm the same interface-only convention; Grok/Claude commands reach the shared skill through separate wrappers. Coverage after this one entry: unknown=16,256, unread=16,231, omitted=0. Parent b34f exact-head TDRP 39520394783 and Rust 39520394839 are terminal success; the child mapping commit requires fresh exact-head workflows. Fixed-point unresolved_gitlink_authorities=0 and Boost 582/582/open=0, but recursive reachability/disposition remains open (95 authorities, 133 gitlinks, 3,865 acquisition candidates, 4,674 generated inputs, 4,602 resource inputs, 4,255 tool inputs), so baseline accepted/source_closure_ready remain false. Next strict entry index 47 is .agents/skills/perform-task/references/computer-use-testing.md@b7fc92d604a55975f75047828d476e64667aa259.",
       "test_execution_evidence": []
     }
   ]
