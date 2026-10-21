@@ -600,7 +600,7 @@ jobs:
           if (!Array.isArray(report.archives) || report.archives.length !== 2) throw new Error('archive provenance cardinality mismatch');
           for (const archive of report.archives) {
             if (archive.target_commit !== target || archive.upstream_commit !== lock.upstream.commit || archive.upstream_tree !== lock.upstream.tree) throw new Error('archive target/upstream provenance mismatch: ' + archive.id);
-            if (!archive.source_path || !Number.isInteger(archive.source_line) || archive.source_line < 1 || !archive.source_text.includes(archive.url)) throw new Error('archive source path/line/URL provenance mismatch: ' + archive.id);
+            if (!archive.source_path || !Number.isInteger(archive.source_line) || archive.source_line < 1 || !archive.source_text.replaceAll('$VERSION', archive.version).includes(archive.url)) throw new Error('archive source path/line/URL provenance mismatch: ' + archive.id);
             if (!/^[0-9a-f]{64}$/.test(archive.expected_sha256) || archive.actual_sha256 !== archive.expected_sha256) throw new Error('archive SHA-256 provenance mismatch: ' + archive.id);
             if (archive.recursive_disposition_status !== 'open') throw new Error('archive recursive disposition must remain open: ' + archive.id);
           }

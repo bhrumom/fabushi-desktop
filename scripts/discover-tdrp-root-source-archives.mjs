@@ -33,7 +33,7 @@ for(const item of authorityRecords){
   fail(typeof candidate.source_path==='string'&&candidate.source_path.length>0,item.id+' source_path missing');
   fail(Number.isInteger(candidate.source_line)&&candidate.source_line>0,item.id+' source_line invalid');
   fail(candidate.disposition==='versioned-download-input',item.id+' source candidate disposition drift');
-  fail(typeof candidate.text==='string'&&candidate.text.includes(item.url),item.id+' live upstream source line does not contain archive URL');
+  fail(typeof candidate.text==='string'&&candidate.text.replaceAll('$VERSION',item.version).includes(item.url),item.id+' live upstream source line does not contain archive URL after pinned version expansion');
   fail(candidate.covered===true,item.id+' source archive candidate is not covered by current discovery');
   archives.push({...item,source_path:candidate.source_path,source_line:candidate.source_line,source_text:candidate.text,
     target_commit:targetCommit,upstream_commit:lock.upstream.commit,upstream_tree:lock.upstream.tree});
