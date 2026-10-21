@@ -251,7 +251,7 @@ impl BrowserToolExecutor for LocalBrowserCoordinatorExecutor {
     ) -> Result<BrowserDriverOutput, ProviderSessionError> {
         if !matches!(
             spec.op,
-            "tabs" | "snapshot" | "wait" | "click" | "download" | "upload_file" | "fill" | "select_option" | "type" | "press_key"
+            "tabs" | "snapshot" | "wait" | "wait_event" | "events" | "dialog" | "click" | "download" | "upload_file" | "fill" | "select_option" | "type" | "press_key"
                 | "scroll" | "drag" | "screenshot" | "navigate" | "back" | "forward" | "refresh"
         ) {
             return Err(ProviderSessionError::Tool(format!(
@@ -279,6 +279,34 @@ impl BrowserToolExecutor for LocalBrowserCoordinatorExecutor {
             "wait" => {
                 let mut request = self.action_request(&target, tool_call_id, "wait")?;
                 request.insert("text".into(), args.get("text").cloned().unwrap_or(Value::Null));
+                if let Some(timeout_ms) = args.get("timeoutMs") {
+                    request.insert("timeoutMs".into(), timeout_ms.clone());
+                }
+                request
+            },
+            "dialog" => {
+                let mut request = self.action_request(&target, tool_call_id, "dialog")?;
+                request.insert("decision".into(), args.get("decision").cloned().unwrap_or(Value::Null));
+                if let Some(prompt_text) = args.get("promptText") {
+                    request.insert("promptText".into(), prompt_text.clone());
+                }
+                request
+            }
+            "events" => {
+                let mut request = self.action_request(&target, tool_call_id, "events")?;
+                request.insert("afterSequence".into(), args.get("afterSequence").cloned().unwrap_or(Value::from(0)));
+                if let Some(limit) = args.get("limit") {
+                    request.insert("limit".into(), limit.clone());
+                }
+                request
+            }
+            "wait_event" => {
+                let mut request = self.action_request(&target, tool_call_id, "wait-event")?;
+                request.insert("event".into(), args.get("event").cloned().unwrap_or(Value::Null));
+                request.insert(
+                    "afterSequence".into(),
+                    args.get("afterSequence").cloned().or_else(|| target.get("eventSequence").cloned()).unwrap_or(Value::from(0)),
+                );
                 if let Some(timeout_ms) = args.get("timeoutMs") {
                     request.insert("timeoutMs".into(), timeout_ms.clone());
                 }
@@ -370,6 +398,15 @@ impl BrowserToolExecutor for LocalBrowserCoordinatorExecutor {
                 .unwrap_or_else(|_| "{}".into())
         } else if spec.op == "upload_file" {
             serde_json::to_string_pretty(result.get("uploadedFile").unwrap_or(&Value::Null))
+                .unwrap_or_else(|_| "{}".into())
+        } else if spec.op == "dialog" {
+            serde_json::to_string_pretty(result.get("dialogResult").unwrap_or(&Value::Null))
+                .unwrap_or_else(|_| "{}".into())
+        } else if spec.op == "events" {
+            serde_json::to_string_pretty(result.get("events").unwrap_or(&Value::Array(Vec::new())))
+                .unwrap_or_else(|_| "[]".into())
+        } else if spec.op == "wait_event" {
+            serde_json::to_string_pretty(result.get("event").unwrap_or(&Value::Null))
                 .unwrap_or_else(|_| "{}".into())
         } else {
             let title = result

@@ -307,6 +307,11 @@ pub struct BrowserReviewAction {
     pub button: Option<String>,
     pub modifiers: Option<Vec<String>>,
     pub file_path: Option<String>,
+    pub decision: Option<String>,
+    pub prompt_text: Option<String>,
+    pub event: Option<String>,
+    pub after_sequence: Option<u64>,
+    pub limit: Option<u64>,
 }
 
 pub fn to_browser_review_action(
@@ -351,6 +356,11 @@ pub fn to_browser_review_action(
         button: string_field(args, "button"),
         modifiers: string_array(args, "modifiers"),
         file_path: string_field(args, "filePath"),
+        decision: string_field(args, "decision"),
+        prompt_text: string_field(args, "promptText"),
+        event: string_field(args, "event"),
+        after_sequence: args.get("afterSequence").and_then(Value::as_u64),
+        limit: args.get("limit").and_then(Value::as_u64),
     }
 }
 
@@ -360,6 +370,8 @@ pub struct BrowserToolSchema {
     pub enum_values: BTreeMap<&'static str, Vec<&'static str>>,
     pub max_text_len: Option<usize>,
     pub max_timeout_ms: Option<u64>,
+    pub max_prompt_text_len: Option<usize>,
+    pub max_event_limit: Option<u64>,
 }
 
 impl Default for BrowserToolSchema {
@@ -369,6 +381,8 @@ impl Default for BrowserToolSchema {
             enum_values: BTreeMap::new(),
             max_text_len: None,
             max_timeout_ms: None,
+            max_prompt_text_len: None,
+            max_event_limit: None,
         }
     }
 }
@@ -392,6 +406,9 @@ pub fn browser_tool_specs() -> Vec<BrowserToolSpec> {
         spec("BROWSER_FORWARD", "browser_forward", "forward", "Navigate the exact claimed browser tab forward in history. Requires the current expectedGeneration and returns a new generation.", &[], &[], true, false),
         spec("BROWSER_SNAPSHOT", "browser_snapshot", "snapshot", "Capture a structured snapshot of the current page with ref handles for interactive elements.", &[], &[], false, false),
         wait_spec(),
+        dialog_spec(),
+        wait_event_spec(),
+        events_spec(),
         spec("BROWSER_CLICK", "browser_click", "click", "Click an element by ref from browser_snapshot.", &["ref"], &[], true, false),
         spec("BROWSER_MOUSE_CLICK_XY", "browser_mouse_click_xy", "mouse_click_xy", "Click at viewport coordinates.", &["x","y"], &[], true, false),
         spec("BROWSER_DOWNLOAD", "browser_download", "download", "Click an element and track the resulting download into the authorized workspace download area with bounded size and SHA-256 evidence.", &["ref"], &[], true, false),
@@ -435,6 +452,31 @@ pub fn validate_browser_arguments(
             return Err(BrowserDriverError::new(format!(
                 "text must be a non-empty string of at most {max} bytes"
             )));
+        }
+    }
+    if let Some(max) = schema.max_prompt_text_len {
+        if let Some(value) = args.get("promptText") {
+            let prompt = value.as_str().ok_or_else(|| BrowserDriverError::new("promptText must be a string"))?;
+            if prompt.chars().count() > max {
+                return Err(BrowserDriverError::new(format!("promptText exceeds the {max}-character limit")));
+            }
+            if args.get("decision").and_then(Value::as_str) == Some("dismiss") {
+                return Err(BrowserDriverError::new("promptText is only valid when accepting a prompt dialog"));
+            }
+        }
+    }
+    if let Some(value) = args.get("afterSequence") {
+        let sequence = value.as_u64().ok_or_else(|| BrowserDriverError::new("afterSequence must be a non-negative safe integer"))?;
+        if sequence > 9_007_199_254_740_991 {
+            return Err(BrowserDriverError::new("afterSequence exceeds the safe integer limit"));
+        }
+    }
+    if let Some(max) = schema.max_event_limit {
+        if let Some(value) = args.get("limit") {
+            let limit = value.as_u64().ok_or_else(|| BrowserDriverError::new("limit must be a positive integer"))?;
+            if limit == 0 || limit > max {
+                return Err(BrowserDriverError::new(format!("limit must be between 1 and {max}")));
+            }
         }
     }
     if let Some(max) = schema.max_timeout_ms {
@@ -1029,6 +1071,8 @@ fn spec(
                 .collect(),
             max_text_len: None,
             max_timeout_ms: None,
+            max_prompt_text_len: None,
+            max_event_limit: None,
         },
         can_navigate,
         skip_screenshot,
@@ -1048,6 +1092,51 @@ fn wait_spec() -> BrowserToolSpec {
     );
     spec.schema.max_text_len = Some(1_024);
     spec.schema.max_timeout_ms = Some(15_000);
+    spec
+}
+
+fn dialog_spec() -> BrowserToolSpec {
+    let mut spec = spec(
+        "BROWSER_DIALOG",
+        "browser_dialog",
+        "dialog",
+        "For target=local only, accept or dismiss the active JavaScript dialog through Main's fixed CDP handler. promptText is permitted only for accepting prompt dialogs.",
+        &["decision"],
+        &[("decision", &["accept", "dismiss"])],
+        false,
+        true,
+    );
+    spec.schema.max_prompt_text_len = Some(4_096);
+    spec
+}
+
+fn wait_event_spec() -> BrowserToolSpec {
+    let mut spec = spec(
+        "BROWSER_WAIT_EVENT",
+        "browser_wait_event",
+        "wait_event",
+        "For target=local only, wait for a committed main-frame page event, load completion, or a 500ms network-idle window. The wait is bounded to 15 seconds.",
+        &["event"],
+        &[("event", &["page", "load", "network-idle"])],
+        false,
+        true,
+    );
+    spec.schema.max_timeout_ms = Some(15_000);
+    spec
+}
+
+fn events_spec() -> BrowserToolSpec {
+    let mut spec = spec(
+        "BROWSER_EVENTS",
+        "browser_events",
+        "events",
+        "For target=local only, read a bounded page/load/network event buffer. Results contain only event type, sequence, timestamp, and page origin; request URLs, headers, and bodies are not exposed.",
+        &[],
+        &[],
+        false,
+        true,
+    );
+    spec.schema.max_event_limit = Some(32);
     spec
 }
 

@@ -14,6 +14,7 @@ import {
   type BrowserWorkspaceViewPort,
   type BrowserWorkspaceWebContentsPort,
 } from "./browser-workspace.js";
+import { LOCAL_BROWSER_AGENT_LIMITS } from "../shared/local-browser-agent.js";
 import {
   BROWSER_WORKSPACE_INVOKE_CHANNEL,
   normalizeBrowserWorkspaceAddress,
@@ -40,7 +41,32 @@ class FakeSession implements BrowserWorkspaceSessionPort {
   on(_event: "will-download", listener: NonNullable<FakeSession["download"]>): void { this.download = listener; }
 }
 
+class FakeDebugger {
+  attached = false;
+  readonly commands: Array<{ readonly method: string; readonly params?: Record<string, unknown> }> = [];
+  readonly listeners = new Map<string, Array<(event: unknown, method: string, params: unknown, sessionId?: string) => void>>();
+  isAttached(): boolean { return this.attached; }
+  attach(_protocolVersion?: string): void { this.attached = true; }
+  detach(): void { this.attached = false; }
+  async sendCommand(method: string, params?: Record<string, unknown>): Promise<unknown> {
+    this.commands.push({ method, ...(params === undefined ? {} : { params: structuredClone(params) }) });
+    return {};
+  }
+  on(event: "message", listener: (event: unknown, method: string, params: unknown, sessionId?: string) => void): void {
+    const listeners = this.listeners.get(event) ?? [];
+    listeners.push(listener);
+    this.listeners.set(event, listeners);
+  }
+  removeListener(event: "message", listener: (event: unknown, method: string, params: unknown, sessionId?: string) => void): void {
+    this.listeners.set(event, (this.listeners.get(event) ?? []).filter((candidate) => candidate !== listener));
+  }
+  emitMessage(method: string, params: unknown): void {
+    for (const listener of this.listeners.get("message") ?? []) listener({}, method, params);
+  }
+}
+
 class FakeContents implements BrowserWorkspaceWebContentsPort {
+  readonly debugger = new FakeDebugger();
   readonly mainFrame: import("./local-browser-agent-page.js").LocalBrowserFramePort = {
     url: "https://example.com/",
     name: "",
@@ -90,6 +116,7 @@ class FakeContents implements BrowserWorkspaceWebContentsPort {
     this.title = `Title ${new URL(url).hostname}`;
     this.emit("did-navigate", {}, url);
     this.emit("page-title-updated", {}, this.title);
+    this.emit("did-finish-load");
     this.emit("did-stop-loading");
     return undefined;
   }
@@ -184,6 +211,7 @@ function harness(
   initialState: unknown = null,
   pickUploadFile?: () => Promise<string | null>,
   pickExtensionDirectory?: () => Promise<string | null>,
+  nowOverride?: () => number,
 ) {
   const ipc = new FakeIpc();
   const persistence = new MemoryPersistence();
@@ -211,7 +239,7 @@ function harness(
     ...(pickExtensionDirectory == null ? {} : { pickExtensionDirectory }),
     broadcast: (_channel, payload) => broadcasts.push(payload),
     id: () => `id-${++id}`,
-    now: () => 1_700_000_000_000 + id,
+    now: nowOverride ?? (() => 1_700_000_000_000 + id),
   });
   const invoke = async (command: BrowserWorkspaceCommand): Promise<BrowserWorkspaceSnapshot> => {
     assert.equal(ipc.channel, BROWSER_WORKSPACE_INVOKE_CHANNEL);
@@ -1156,4 +1184,155 @@ test("invalid commands are rejected before any view is created", async () => {
     /BROWSER_INVALID_COMMAND/,
   );
   assert.equal(h.views.length, 0);
+});
+
+
+test("Agent JavaScript dialogs use only the fixed Main-owned CDP handler and are control-fenced", async () => {
+  const h = harness();
+  h.service.attachWindow(new FakeHostWindow());
+  const state = await h.invoke({ type: "activate", conversationId: "bot-dialog", bounds: { x: 1, y: 1, width: 500, height: 500 } });
+  const tab = state.tabs[0]!;
+  const contents = h.views[0]!.webContents as FakeContents;
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  const target = {
+    conversationId: "bot-dialog",
+    workspaceId: state.workspaceId,
+    tabId: tab.id,
+    expectedGeneration: tab.generation,
+    expectedControlEpoch: state.agentControl.epoch,
+    expectedTaskId: state.agentControl.taskId,
+  };
+
+  contents.debugger.emitMessage("Page.javascriptDialogOpening", {
+    type: "prompt",
+    message: "Enter a one-time value",
+    url: "https://example.com/login?secret=must-not-be-recorded",
+    defaultPrompt: "",
+  });
+  const accepted = await h.service.executeAgentAction({
+    ...target, type: "dialog", decision: "accept", promptText: "approved", operationId: "dialog-accept",
+  });
+  assert.equal(accepted.ok, true);
+  if (accepted.ok) {
+    assert.deepEqual(accepted.dialogResult, { type: "prompt", decision: "accept" });
+    assert.equal(accepted.dialog, null);
+    assert.equal(JSON.stringify(accepted).includes("must-not-be-recorded"), false);
+  }
+  assert.deepEqual(contents.debugger.commands.filter((command) => command.method === "Page.handleJavaScriptDialog").at(-1), {
+    method: "Page.handleJavaScriptDialog",
+    params: { accept: true, promptText: "approved" },
+  });
+
+  contents.debugger.emitMessage("Page.javascriptDialogOpening", {
+    type: "confirm", message: "Continue?", url: "https://example.com/confirm",
+  });
+  const dismissed = await h.service.executeAgentAction({
+    ...target, type: "dialog", decision: "dismiss", operationId: "dialog-dismiss",
+  });
+  assert.equal(dismissed.ok, true);
+  assert.deepEqual(contents.debugger.commands.filter((command) => command.method === "Page.handleJavaScriptDialog").at(-1), {
+    method: "Page.handleJavaScriptDialog",
+    params: { accept: false },
+  });
+
+  await assert.rejects(() => h.service.executeAgentAction({
+    ...target, type: "dialog", decision: "accept", promptText: "x".repeat(LOCAL_BROWSER_AGENT_LIMITS.maxPromptTextLength + 1), operationId: "dialog-too-long",
+  }), /BROWSER_AGENT_INVALID_ACTION/);
+
+  contents.debugger.emitMessage("Page.javascriptDialogOpening", {
+    type: "alert", message: "Do not accept after takeover", url: "https://example.com/",
+  });
+  await h.invoke({ type: "agent-control", conversationId: "bot-dialog", action: "takeover" });
+  const commandCount = contents.debugger.commands.filter((command) => command.method === "Page.handleJavaScriptDialog").length;
+  await assert.rejects(() => h.service.executeAgentAction({
+    ...target, type: "dialog", decision: "accept", operationId: "dialog-stale-control",
+  }), /BROWSER_AGENT_CONTROL_STALE/);
+  assert.equal(contents.debugger.commands.filter((command) => command.method === "Page.handleJavaScriptDialog").length, commandCount);
+  h.service.dispose();
+});
+
+test("page/load/network-idle events have bounded cursors, origin-only evidence, and finite waits", async () => {
+  let clock = 0;
+  const h = harness(null, undefined, undefined, () => 1_700_000_000_000 + (clock += 100));
+  h.service.attachWindow(new FakeHostWindow());
+  const state = await h.invoke({ type: "activate", conversationId: "bot-events", bounds: { x: 1, y: 1, width: 500, height: 500 } });
+  const tab = state.tabs[0]!;
+  const contents = h.views[0]!.webContents as FakeContents;
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  await h.invoke({ type: "navigate", conversationId: "bot-events", tabId: tab.id, address: "https://example.com/start" });
+  contents.debugger.emitMessage("Network.requestWillBeSent", {
+    requestId: "request-1",
+    type: "Fetch",
+    request: { url: "https://example.com/api?token=private" },
+  });
+  contents.debugger.emitMessage("Network.loadingFinished", { requestId: "request-1" });
+
+  const initialState = h.service.snapshot("bot-events")!;
+  const initial = await h.service.executeAgentAction({
+    conversationId: "bot-events", workspaceId: initialState.workspaceId, tabId: tab.id,
+    expectedGeneration: initialState.tabs[0]!.generation,
+    expectedControlEpoch: initialState.agentControl.epoch,
+    expectedTaskId: initialState.agentControl.taskId,
+    operationId: "events-initial", type: "events", afterSequence: 0, limit: 32,
+  });
+  assert.equal(initial.ok, true);
+  if (!initial.ok) return;
+  assert.ok(initial.events?.some((event) => event.type === "page"));
+  assert.ok(initial.events?.some((event) => event.type === "load"));
+  assert.ok(initial.events?.some((event) => event.type === "network-request"));
+  assert.ok(initial.events?.some((event) => event.type === "network-finished"));
+  assert.ok((initial.events?.length ?? 0) <= LOCAL_BROWSER_AGENT_LIMITS.maxEventBatch);
+  assert.equal(JSON.stringify(initial).includes("token=private"), false);
+
+  for (let index = 0; index < 80; index += 1) {
+    contents.emit("did-navigate", {}, `https://example.com/page/${index}?token=private`);
+  }
+  const boundedState = h.service.snapshot("bot-events")!;
+  const bounded = await h.service.executeAgentAction({
+    conversationId: "bot-events", workspaceId: boundedState.workspaceId, tabId: tab.id,
+    expectedGeneration: boundedState.tabs[0]!.generation,
+    expectedControlEpoch: boundedState.agentControl.epoch,
+    expectedTaskId: boundedState.agentControl.taskId,
+    operationId: "events-bounded", type: "events", afterSequence: 0, limit: 32,
+  });
+  assert.equal(bounded.ok, true);
+  if (!bounded.ok) return;
+  assert.ok((bounded.events?.length ?? 0) <= 32);
+  assert.ok((bounded.eventSequence ?? 0) > LOCAL_BROWSER_AGENT_LIMITS.maxEvents);
+  assert.equal(JSON.stringify(bounded).includes("token=private"), false);
+  assert.ok(bounded.events?.every((event) => event.urlOrigin === "https://example.com"));
+
+  const cursor = bounded.eventSequence!;
+  const waited = await h.service.executeAgentAction({
+    conversationId: "bot-events", workspaceId: boundedState.workspaceId, tabId: tab.id,
+    expectedGeneration: boundedState.tabs[0]!.generation,
+    expectedControlEpoch: boundedState.agentControl.epoch,
+    expectedTaskId: boundedState.agentControl.taskId,
+    operationId: "events-wait-page", type: "wait-event", event: "page", afterSequence: cursor, timeoutMs: 500,
+  });
+  assert.equal(waited.ok, true);
+  if (waited.ok) assert.equal(waited.event?.type, "page");
+
+  const latest = h.service.snapshot("bot-events")!;
+  const latestGeneration = latest.tabs[0]!.generation;
+  const latestSequence = bounded.eventSequence! + 80;
+  await assert.rejects(() => h.service.executeAgentAction({
+    conversationId: "bot-events", workspaceId: latest.workspaceId, tabId: tab.id,
+    expectedGeneration: latestGeneration, expectedControlEpoch: latest.agentControl.epoch,
+    expectedTaskId: latest.agentControl.taskId, operationId: "events-invalid-cursor", type: "wait-event",
+    event: "page", afterSequence: latestSequence + 1, timeoutMs: 100,
+  }), /BROWSER_EVENT_CURSOR_INVALID/);
+  await assert.rejects(() => h.service.executeAgentAction({
+    conversationId: "bot-events", workspaceId: latest.workspaceId, tabId: tab.id,
+    expectedGeneration: latestGeneration, expectedControlEpoch: latest.agentControl.epoch,
+    expectedTaskId: latest.agentControl.taskId, operationId: "events-timeout", type: "wait-event",
+    event: "page", afterSequence: latestSequence, timeoutMs: 100,
+  }), /BROWSER_EVENT_WAIT_TIMEOUT/);
+  await assert.rejects(() => h.service.executeAgentAction({
+    conversationId: "bot-events", workspaceId: latest.workspaceId, tabId: tab.id,
+    expectedGeneration: latestGeneration, expectedControlEpoch: latest.agentControl.epoch,
+    expectedTaskId: latest.agentControl.taskId, operationId: "events-timeout-bounded", type: "wait-event",
+    event: "page", afterSequence: latestSequence, timeoutMs: LOCAL_BROWSER_AGENT_LIMITS.maxWaitMs + 1,
+  }), /BROWSER_AGENT_INVALID_ACTION/);
+  h.service.dispose();
 });

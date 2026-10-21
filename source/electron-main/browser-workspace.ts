@@ -6,6 +6,8 @@ import {
   LOCAL_BROWSER_AGENT_LIMITS,
   parseLocalBrowserAgentAction,
   type LocalBrowserAgentActionResult,
+  type LocalBrowserAgentDialog,
+  type LocalBrowserAgentEvent,
   type LocalBrowserStructuredSnapshot,
 } from "../shared/local-browser-agent.js";
 import {
@@ -71,8 +73,25 @@ export interface BrowserWorkspaceSessionPort {
   };
 }
 
+export type BrowserWorkspaceDebuggerMessageListener = (
+  event: unknown,
+  method: string,
+  params: unknown,
+  sessionId?: string,
+) => void;
+
+export interface BrowserWorkspaceDebuggerPort {
+  isAttached(): boolean;
+  attach(protocolVersion?: string): void;
+  detach(): void;
+  sendCommand(method: string, commandParams?: Record<string, unknown>): Promise<unknown>;
+  on(event: "message", listener: BrowserWorkspaceDebuggerMessageListener): void;
+  removeListener?(event: "message", listener: BrowserWorkspaceDebuggerMessageListener): void;
+}
+
 export interface BrowserWorkspaceWebContentsPort {
   readonly session: BrowserWorkspaceSessionPort;
+  readonly debugger?: BrowserWorkspaceDebuggerPort;
   readonly mainFrame?: LocalBrowserFramePort;
   loadURL(url: string): Promise<unknown>;
   getURL(): string;
@@ -193,6 +212,17 @@ interface RuntimeTab {
   lastDownloadUrl: string | null;
   pendingAgentDownloadOperationId: string | null;
   agentRefs: Map<string, LocalBrowserElementLocator>;
+  pendingDialog: LocalBrowserAgentDialog | null;
+  events: LocalBrowserAgentEvent[];
+  eventSequence: number;
+  activeNetworkRequests: Set<string>;
+  lastNetworkActivityAt: number;
+  networkIdleToken: number;
+  networkIdleEmittedToken: number;
+  networkIdleTimer: ReturnType<typeof setTimeout> | null;
+  debuggerListener: BrowserWorkspaceDebuggerMessageListener | null;
+  debuggerReady: boolean;
+  debuggerOwned: boolean;
 }
 
 interface RuntimeWorkspace {
@@ -352,6 +382,144 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
 
   const fail = (leg: string, error: unknown): void => {
     ports.reportFailure?.(leg, error);
+  };
+
+  const safeBrowserOrigin = (value: unknown): string | null => {
+    if (typeof value !== "string") return null;
+    try {
+      const parsed = new URL(value);
+      return parsed.protocol === "http:" || parsed.protocol === "https:" ? parsed.origin : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const appendAgentEvent = (
+    tab: RuntimeTab,
+    type: LocalBrowserAgentEvent["type"],
+  ): LocalBrowserAgentEvent => {
+    let currentUrl = tab.url;
+    try { currentUrl = tab.view.webContents.getURL() || currentUrl; } catch {}
+    const event: LocalBrowserAgentEvent = {
+      sequence: ++tab.eventSequence,
+      type,
+      atMs: now(),
+      urlOrigin: safeBrowserOrigin(currentUrl),
+    };
+    tab.events.push(event);
+    if (tab.events.length > LOCAL_BROWSER_AGENT_LIMITS.maxEvents) {
+      tab.events.splice(0, tab.events.length - LOCAL_BROWSER_AGENT_LIMITS.maxEvents);
+    }
+    return event;
+  };
+
+  const scheduleNetworkIdle = (tab: RuntimeTab): void => {
+    if (tab.networkIdleTimer != null) clearTimeout(tab.networkIdleTimer);
+    tab.networkIdleTimer = null;
+    if (!tab.debuggerReady || tab.activeNetworkRequests.size !== 0) return;
+    const token = tab.networkIdleToken;
+    const delay = Math.max(0, LOCAL_BROWSER_AGENT_LIMITS.networkIdleMs - (now() - tab.lastNetworkActivityAt));
+    tab.networkIdleTimer = setTimeout(() => {
+      tab.networkIdleTimer = null;
+      if (disposed || tab.view.webContents.isDestroyed() || !tab.debuggerReady) return;
+      if (tab.activeNetworkRequests.size !== 0 || tab.networkIdleToken !== token) return;
+      if (tab.networkIdleEmittedToken === token) return;
+      tab.networkIdleEmittedToken = token;
+      appendAgentEvent(tab, "network-idle");
+    }, delay);
+  };
+
+  const disposeTabDebugger = (tab: RuntimeTab): void => {
+    if (tab.networkIdleTimer != null) clearTimeout(tab.networkIdleTimer);
+    tab.networkIdleTimer = null;
+    const debuggerPort = tab.view.webContents.debugger;
+    if (debuggerPort != null && tab.debuggerListener != null) {
+      try { debuggerPort.removeListener?.("message", tab.debuggerListener); } catch {}
+    }
+    tab.debuggerListener = null;
+    if (debuggerPort != null && tab.debuggerOwned) {
+      try { if (debuggerPort.isAttached()) debuggerPort.detach(); } catch {}
+    }
+    tab.debuggerOwned = false;
+    tab.debuggerReady = false;
+    tab.activeNetworkRequests.clear();
+  };
+
+  const configureTabDebugger = async (tab: RuntimeTab): Promise<void> => {
+    const debuggerPort = tab.view.webContents.debugger;
+    if (debuggerPort == null) return;
+    const listener: BrowserWorkspaceDebuggerMessageListener = (_event, method, rawParams) => {
+      const params = record(rawParams);
+      if (method === "Page.javascriptDialogOpening") {
+        const rawType = params?.type;
+        const type: LocalBrowserAgentDialog["type"] =
+          rawType === "alert" || rawType === "confirm" || rawType === "prompt" || rawType === "beforeunload"
+            ? rawType
+            : "alert";
+        const message = typeof params?.message === "string"
+          ? params.message.slice(0, LOCAL_BROWSER_AGENT_LIMITS.maxDialogMessageLength)
+          : "";
+        const defaultPrompt = typeof params?.defaultPrompt === "string"
+          ? params.defaultPrompt.slice(0, LOCAL_BROWSER_AGENT_LIMITS.maxPromptTextLength)
+          : undefined;
+        tab.pendingDialog = {
+          type,
+          message,
+          urlOrigin: safeBrowserOrigin(params?.url),
+          ...(defaultPrompt === undefined ? {} : { defaultPrompt }),
+        };
+        appendAgentEvent(tab, "dialog-opened");
+        return;
+      }
+      if (method === "Page.javascriptDialogClosed") {
+        if (tab.pendingDialog != null) {
+          tab.pendingDialog = null;
+          appendAgentEvent(tab, "dialog-closed");
+        }
+        return;
+      }
+      if (method === "Network.requestWillBeSent") {
+        const requestId = boundedString(params?.requestId, 256);
+        if (requestId == null) return;
+        appendAgentEvent(tab, "network-request");
+        const resourceType = params?.type;
+        if (resourceType === "WebSocket" || resourceType === "EventSource") return;
+        tab.activeNetworkRequests.add(requestId);
+        tab.networkIdleToken += 1;
+        tab.lastNetworkActivityAt = now();
+        if (tab.networkIdleTimer != null) clearTimeout(tab.networkIdleTimer);
+        tab.networkIdleTimer = null;
+        return;
+      }
+      if (method === "Network.loadingFinished" || method === "Network.loadingFailed") {
+        const requestId = boundedString(params?.requestId, 256);
+        if (requestId == null || !tab.activeNetworkRequests.delete(requestId)) return;
+        tab.lastNetworkActivityAt = now();
+        tab.networkIdleToken += 1;
+        appendAgentEvent(tab, method === "Network.loadingFailed" ? "network-failed" : "network-finished");
+        scheduleNetworkIdle(tab);
+      }
+    };
+    tab.debuggerListener = listener;
+    debuggerPort.on("message", listener);
+    try {
+      if (!debuggerPort.isAttached()) {
+        debuggerPort.attach("1.3");
+        tab.debuggerOwned = true;
+      }
+      await debuggerPort.sendCommand("Page.enable");
+      await debuggerPort.sendCommand("Network.enable");
+      tab.debuggerReady = true;
+    } catch (error) {
+      tab.debuggerReady = false;
+      fail("browser-debugger", error);
+      try { debuggerPort.removeListener?.("message", listener); } catch {}
+      tab.debuggerListener = null;
+      if (tab.debuggerOwned) {
+        try { if (debuggerPort.isAttached()) debuggerPort.detach(); } catch {}
+        tab.debuggerOwned = false;
+      }
+    }
   };
 
   const persist = (): void => {
@@ -667,6 +835,17 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
       lastDownloadUrl: null,
       pendingAgentDownloadOperationId: null,
       agentRefs: new Map(),
+      pendingDialog: null,
+      events: [],
+      eventSequence: 0,
+      activeNetworkRequests: new Set(),
+      lastNetworkActivityAt: now(),
+      networkIdleToken: 0,
+      networkIdleEmittedToken: -1,
+      networkIdleTimer: null,
+      debuggerListener: null,
+      debuggerReady: false,
+      debuggerOwned: false,
     };
     workspace.tabs.push(tab);
     if (select) workspace.activeTabId = tab.id;
@@ -711,6 +890,10 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
       tab.loading = false;
       updateState();
     });
+    contents.on("did-finish-load", () => {
+      appendAgentEvent(tab, "load");
+      scheduleNetworkIdle(tab);
+    });
     contents.on("page-title-updated", (_event: unknown, title: string) => {
       if (typeof title === "string" && title.trim().length > 0) tab.title = title.slice(0, 512);
       updateState();
@@ -723,6 +906,7 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
     const didNavigate = (_event: unknown, url: string) => {
       const safe = normalizeBrowserWorkspaceAddress(url);
       if (safe != null) tab.url = safe;
+      appendAgentEvent(tab, "page");
       updateState();
       addHistory(workspace, tab, url);
       saveWorkspace(workspace);
@@ -743,6 +927,7 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
       updateState();
     });
     contents.on("destroyed", () => {
+      disposeTabDebugger(tab);
       if (disposed) return;
       tab.loading = false;
       tab.crashed = true;
@@ -751,6 +936,7 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
       publish(workspace);
     });
 
+    const debuggerSetup = configureTabDebugger(tab);
     if (requestedAddress != null) {
       const safe = normalizeBrowserWorkspaceAddress(requestedAddress);
       if (safe == null) {
@@ -759,7 +945,10 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
         throw new Error("BROWSER_NAVIGATION_BLOCKED");
       }
       tab.url = safe;
-      void contents.loadURL(safe).catch((error: unknown) => {
+      void debuggerSetup.then(() => {
+        if (contents.isDestroyed() || disposed) return undefined;
+        return contents.loadURL(safe);
+      }).catch((error: unknown) => {
         tab.loading = false;
         tab.error = { code: "LOAD_REJECTED", description: error instanceof Error ? error.message.slice(0, 512) : "Navigation failed" };
         publish(workspace);
@@ -1076,6 +1265,8 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
     taskId: workspace.agentTaskId,
     observedUrl: tab.view.webContents.getURL() || tab.url,
     observedTitle: tab.view.webContents.getTitle() || tab.title,
+    eventSequence: tab.eventSequence,
+    dialog: tab.pendingDialog,
     ...extra,
   });
 
@@ -1166,12 +1357,15 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
 
     if (workspace.id !== action.workspaceId) throw new Error("BROWSER_WORKSPACE_MISMATCH");
     if (workspace.agentTaskId !== action.expectedTaskId) throw new Error("BROWSER_AGENT_TASK_STALE");
-    const mutation = !["snapshot", "screenshot", "wait"].includes(action.type);
+    const mutation = !["snapshot", "screenshot", "wait", "events", "wait-event"].includes(action.type);
     requireControlLease(action.expectedControlEpoch, mutation);
     ensureAgentTaskRunning(workspace);
     const tab = requireTab(workspace, action.tabId);
     if (tab.generation !== action.expectedGeneration) throw new Error("BROWSER_STALE_GENERATION");
     const page = tab.view.webContents;
+    if (tab.pendingDialog != null && !["dialog", "events", "wait-event"].includes(action.type)) {
+      throw new Error("BROWSER_DIALOG_OPEN");
+    }
     workspace.activeAgentOperationId = action.operationId;
     publish(workspace);
 
@@ -1293,6 +1487,60 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
         } while (now() < deadline);
         if (!matched) throw new Error("BROWSER_WAIT_TIMEOUT");
         return agentResult(action.operationId, workspace, tab, { waited: true });
+      }
+      case "dialog": {
+        const pending = tab.pendingDialog;
+        if (pending == null) throw new Error("BROWSER_DIALOG_NOT_OPEN");
+        const debuggerPort = page.debugger;
+        if (!tab.debuggerReady || debuggerPort == null || !debuggerPort.isAttached()) {
+          throw new Error("BROWSER_DIALOG_CONTROL_UNAVAILABLE");
+        }
+        if (action.promptText !== undefined && pending.type !== "prompt") {
+          throw new Error("BROWSER_DIALOG_PROMPT_TEXT_NOT_APPLICABLE");
+        }
+        await debuggerPort.sendCommand("Page.handleJavaScriptDialog", {
+          accept: action.decision === "accept",
+          ...(action.promptText === undefined ? {} : { promptText: action.promptText }),
+        });
+        if (tab.pendingDialog === pending) {
+          tab.pendingDialog = null;
+          appendAgentEvent(tab, "dialog-closed");
+        }
+        return agentResult(action.operationId, workspace, tab, {
+          dialogResult: { type: pending.type, decision: action.decision },
+        });
+      }
+      case "events": {
+        const afterSequence = action.afterSequence ?? 0;
+        if (afterSequence > tab.eventSequence) throw new Error("BROWSER_EVENT_CURSOR_INVALID");
+        const limit = action.limit ?? LOCAL_BROWSER_AGENT_LIMITS.maxEventBatch;
+        const events = tab.events
+          .filter((event) => event.sequence > afterSequence)
+          .slice(-limit);
+        return agentResult(action.operationId, workspace, tab, { events });
+      }
+      case "wait-event": {
+        const afterSequence = action.afterSequence ?? tab.eventSequence;
+        if (afterSequence > tab.eventSequence) throw new Error("BROWSER_EVENT_CURSOR_INVALID");
+        if (action.event === "network-idle" && !tab.debuggerReady) {
+          throw new Error("BROWSER_NETWORK_OBSERVATION_UNAVAILABLE");
+        }
+        const deadline = now() + Math.min(action.timeoutMs ?? 5_000, LOCAL_BROWSER_AGENT_LIMITS.maxWaitMs);
+        do {
+          if (tab.generation !== action.expectedGeneration) throw new Error("BROWSER_STALE_GENERATION");
+          requireControlLease(action.expectedControlEpoch, false);
+          const observed = tab.events.find((event) => event.sequence > afterSequence && event.type === action.event);
+          if (observed != null) return agentResult(action.operationId, workspace, tab, { event: observed, waited: true });
+          if (action.event === "network-idle"
+            && tab.activeNetworkRequests.size === 0
+            && now() - tab.lastNetworkActivityAt >= LOCAL_BROWSER_AGENT_LIMITS.networkIdleMs) {
+            const event = appendAgentEvent(tab, "network-idle");
+            tab.networkIdleEmittedToken = tab.networkIdleToken;
+            return agentResult(action.operationId, workspace, tab, { event, waited: true });
+          }
+          await new Promise((resolve) => setTimeout(resolve, 25));
+        } while (now() < deadline);
+        throw new Error("BROWSER_EVENT_WAIT_TIMEOUT");
       }
       case "navigate": {
         const safe = normalizeBrowserWorkspaceAddress(action.address);

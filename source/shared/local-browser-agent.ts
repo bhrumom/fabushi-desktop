@@ -11,6 +11,11 @@ export const LOCAL_BROWSER_AGENT_LIMITS = Object.freeze({
   maxScrollDelta: 20_000,
   maxScreenshotBytes: 8 * 1024 * 1024,
   maxUploadBytes: 8 * 1024 * 1024,
+  maxDialogMessageLength: 1_024,
+  maxPromptTextLength: 4_096,
+  maxEvents: 64,
+  maxEventBatch: 32,
+  networkIdleMs: 500,
 });
 
 export interface LocalBrowserAgentTarget {
@@ -57,7 +62,34 @@ export type LocalBrowserAgentAction =
   | (LocalBrowserAgentTarget & { readonly type: "screenshot" })
   | (LocalBrowserAgentTarget & { readonly type: "wait"; readonly text?: string; readonly ref?: string; readonly timeoutMs?: number })
   | (LocalBrowserAgentTarget & { readonly type: "navigate"; readonly address: string })
-  | (LocalBrowserAgentTarget & { readonly type: "back" | "forward" | "reload" });
+  | (LocalBrowserAgentTarget & { readonly type: "back" | "forward" | "reload" })
+  | (LocalBrowserAgentTarget & { readonly type: "dialog"; readonly decision: "accept" | "dismiss"; readonly promptText?: string })
+  | (LocalBrowserAgentTarget & { readonly type: "events"; readonly afterSequence?: number; readonly limit?: number })
+  | (LocalBrowserAgentTarget & { readonly type: "wait-event"; readonly event: LocalBrowserWaitEventType; readonly afterSequence?: number; readonly timeoutMs?: number });
+
+export type LocalBrowserWaitEventType = "page" | "load" | "network-idle";
+export type LocalBrowserAgentEventType =
+  | LocalBrowserWaitEventType
+  | "network-request"
+  | "network-finished"
+  | "network-failed"
+  | "dialog-opened"
+  | "dialog-closed";
+export type LocalBrowserDialogType = "alert" | "confirm" | "prompt" | "beforeunload";
+
+export interface LocalBrowserAgentEvent {
+  readonly sequence: number;
+  readonly type: LocalBrowserAgentEventType;
+  readonly atMs: number;
+  readonly urlOrigin: string | null;
+}
+
+export interface LocalBrowserAgentDialog {
+  readonly type: LocalBrowserDialogType;
+  readonly message: string;
+  readonly urlOrigin: string | null;
+  readonly defaultPrompt?: string;
+}
 
 export interface LocalBrowserSnapshotElement {
   readonly ref: string;
@@ -111,6 +143,11 @@ export type LocalBrowserAgentActionResult =
       readonly tabs?: readonly LocalBrowserAgentTabSummary[];
       readonly downloadedFile?: { readonly downloadId: string; readonly name: string; readonly sizeBytes: number; readonly sha256: string };
       readonly uploadedFile?: { readonly name: string; readonly sizeBytes: number };
+      readonly eventSequence: number;
+      readonly dialog: LocalBrowserAgentDialog | null;
+      readonly event?: LocalBrowserAgentEvent;
+      readonly events?: readonly LocalBrowserAgentEvent[];
+      readonly dialogResult?: { readonly type: LocalBrowserDialogType; readonly decision: "accept" | "dismiss" };
     }
   | {
       readonly ok: false;
@@ -267,6 +304,54 @@ export function parseLocalBrowserAgentAction(value: unknown): LocalBrowserAgentA
       if (source.timeoutMs !== undefined && timeoutMs == null) return null;
       if (text == null && ref == null) return null;
       return { ...target, type: "wait", ...(text == null ? {} : { text }), ...(ref == null ? {} : { ref }), ...(timeoutMs == null ? {} : { timeoutMs }) };
+    }
+    case "dialog": {
+      const decision = source.decision;
+      const promptText = source.promptText;
+      if (decision !== "accept" && decision !== "dismiss") return null;
+      if (promptText !== undefined && (typeof promptText !== "string" || promptText.length > LOCAL_BROWSER_AGENT_LIMITS.maxPromptTextLength)) return null;
+      if (decision === "dismiss" && promptText !== undefined) return null;
+      return {
+        ...target,
+        type: "dialog",
+        decision,
+        ...(promptText === undefined ? {} : { promptText }),
+      };
+    }
+    case "events": {
+      const afterSequence = source.afterSequence === undefined
+        ? undefined
+        : finiteInteger(source.afterSequence, 0, Number.MAX_SAFE_INTEGER);
+      const limit = source.limit === undefined
+        ? undefined
+        : finiteInteger(source.limit, 1, LOCAL_BROWSER_AGENT_LIMITS.maxEventBatch);
+      if (source.afterSequence !== undefined && afterSequence == null) return null;
+      if (source.limit !== undefined && limit == null) return null;
+      return {
+        ...target,
+        type: "events",
+        ...(afterSequence === undefined ? {} : { afterSequence }),
+        ...(limit === undefined ? {} : { limit }),
+      };
+    }
+    case "wait-event": {
+      if (!["page", "load", "network-idle"].includes(String(source.event))) return null;
+      const event = source.event as LocalBrowserWaitEventType;
+      const afterSequence = source.afterSequence === undefined
+        ? undefined
+        : finiteInteger(source.afterSequence, 0, Number.MAX_SAFE_INTEGER);
+      const timeoutMs = source.timeoutMs === undefined
+        ? undefined
+        : finiteInteger(source.timeoutMs, 1, LOCAL_BROWSER_AGENT_LIMITS.maxWaitMs);
+      if (source.afterSequence !== undefined && afterSequence == null) return null;
+      if (source.timeoutMs !== undefined && timeoutMs == null) return null;
+      return {
+        ...target,
+        type: "wait-event",
+        event,
+        ...(afterSequence === undefined ? {} : { afterSequence }),
+        ...(timeoutMs === undefined ? {} : { timeoutMs }),
+      };
     }
     case "navigate": {
       if (typeof source.address !== "string" || source.address.length === 0 || source.address.length > 4096) return null;

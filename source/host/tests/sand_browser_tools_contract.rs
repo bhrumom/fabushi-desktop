@@ -418,6 +418,72 @@ fn browser_wait_is_bounded_generation_fenced_and_shared_by_explicit_targets() {
 }
 
 #[test]
+fn browser_dialog_and_event_tools_have_fixed_bounded_schemas_and_main_relay() {
+    let specs = browser_tool_specs();
+    let dialog = specs.iter().find(|spec| spec.name == "browser_dialog").expect("dialog");
+    assert_eq!(dialog.op, "dialog");
+    assert_eq!(dialog.schema.required, vec!["decision"]);
+    assert_eq!(dialog.schema.enum_values.get("decision").unwrap(), &vec!["accept", "dismiss"]);
+    assert_eq!(dialog.schema.max_prompt_text_len, Some(4_096));
+
+    let valid_dialog = json!({"decision":"accept","promptText":"confirmed","target":"local"});
+    validate_browser_arguments(&dialog.schema, valid_dialog.as_object().expect("valid dialog"))
+        .expect("bounded dialog acceptance");
+    for invalid in [
+        json!({"decision":"approve","target":"local"}),
+        json!({"decision":"dismiss","promptText":"ignored","target":"local"}),
+        json!({"decision":"accept","promptText":"x".repeat(4_097),"target":"local"}),
+    ] {
+        assert!(validate_browser_arguments(&dialog.schema, invalid.as_object().expect("invalid dialog")).is_err());
+    }
+
+    let wait_event = specs.iter().find(|spec| spec.name == "browser_wait_event").expect("wait event");
+    assert_eq!(wait_event.op, "wait_event");
+    assert_eq!(wait_event.schema.required, vec!["event"]);
+    assert_eq!(wait_event.schema.max_timeout_ms, Some(15_000));
+    assert_eq!(wait_event.schema.enum_values.get("event").unwrap(), &vec!["page", "load", "network-idle"]);
+    validate_browser_arguments(
+        &wait_event.schema,
+        json!({"event":"network-idle","timeoutMs":15_000,"afterSequence":12,"target":"local"}).as_object().unwrap(),
+    ).expect("bounded network idle wait");
+    for invalid in [
+        json!({"event":"response-body","target":"local"}),
+        json!({"event":"load","timeoutMs":15_001,"target":"local"}),
+        json!({"event":"load","afterSequence":-1,"target":"local"}),
+    ] {
+        assert!(validate_browser_arguments(&wait_event.schema, invalid.as_object().expect("invalid event wait")).is_err());
+    }
+
+    let events = specs.iter().find(|spec| spec.name == "browser_events").expect("events");
+    assert_eq!(events.op, "events");
+    assert_eq!(events.schema.max_event_limit, Some(32));
+    for invalid in [json!({"limit":0}), json!({"limit":33}), json!({"limit":"32"})] {
+        assert!(validate_browser_arguments(&events.schema, invalid.as_object().expect("invalid event limit")).is_err());
+    }
+
+    let review = to_browser_review_action(
+        "dialog",
+        json!({"decision":"accept","promptText":"approved"}).as_object().expect("review args"),
+        "default",
+    );
+    assert_eq!(review.decision.as_deref(), Some("accept"));
+    assert_eq!(review.prompt_text.as_deref(), Some("approved"));
+
+    for required in [
+        "\"dialog\" | \"events\" | \"wait_event\"",
+        "\"dialog\" => {",
+        "self.action_request(&target, tool_call_id, \"dialog\")?",
+        "\"events\" => {",
+        "self.action_request(&target, tool_call_id, \"events\")?",
+        "\"wait_event\" => {",
+        "self.action_request(&target, tool_call_id, \"wait-event\")?",
+        "target.get(\"eventSequence\")",
+    ] {
+        assert!(LOCAL_BROWSER_TOOLS_SOURCE.contains(required), "missing fixed local browser relay: {required}");
+    }
+}
+
+#[test]
 fn local_select_option_uses_the_generation_fenced_workspace_ref_path() {
     let spec = browser_tool_specs().into_iter()
         .find(|spec| spec.name == "browser_select_option")
