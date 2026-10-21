@@ -151,11 +151,21 @@ class Publication(unittest.TestCase):
             self.publish()
         self.assertEqual(self.api.writes(), [])
 
+    def test_malformed_remote_response_stops_before_any_write(self):
+        requests = []
+        def malformed(url, method='GET', body=None, missing_ok=False):
+            requests.append(method)
+            return []
+        with self.assertRaisesRegex(self.publisher.PublicationError, 'INVALID_RESPONSE'):
+            self.publisher.publish(self.root, self.root / 'dist', self.context, malformed)
+        self.assertEqual(requests, ['GET'])
+
     def test_credential_transport_cannot_be_redirected_to_another_host_or_repository(self):
         api = self.publisher.github_api('fixture-not-a-secret', 'ci/example')
         for url in ['https://evil.example/repos/ci/example/releases',
                     'https://api.github.com/repos/ci/other/releases',
-                    'http://api.github.com/repos/ci/example/releases']:
+                    'http://api.github.com/repos/ci/example/releases',
+                    'https://api.github.com/repos/ci/example/../../other/releases']:
             with self.assertRaisesRegex(self.publisher.PublicationError, 'ENDPOINT_DENIED'):
                 api(url)
         self.assertIsNone(release.NoRedirect().redirect_request(None, None, 302, '', {}, 'https://evil.example'))

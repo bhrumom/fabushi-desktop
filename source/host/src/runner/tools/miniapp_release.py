@@ -36,12 +36,16 @@ def publish(root, destination, context, api):
     spec.loader.exec_module(package)
     regular = package.regular
     config = json.loads(regular(root / 'fabushi.json', 8192))
+    if not isinstance(config, dict):
+        raise PublicationError('PUBLICATION_CONFIG_INVALID')
     version = config.get('version', '')
     if not isinstance(version, str) or not re.fullmatch(r'(?:0|[1-9][0-9]{0,9})\.(?:0|[1-9][0-9]{0,9})\.(?:0|[1-9][0-9]{0,9})', version) or tag != 'v' + version:
         raise PublicationError('PUBLICATION_VERSION_MISMATCH')
     files = {name: regular(destination / name, 2 * 1024 * 1024) for name in
              ['miniapp.unsigned.zip', 'manifest.unsigned.json', 'provenance.json']}
     receipt = json.loads(files['provenance.json'])
+    if not isinstance(receipt, dict):
+        raise PublicationError('PUBLICATION_PREPARATION_MISMATCH')
     archive_digest = hashlib.sha256(files['miniapp.unsigned.zip']).hexdigest()
     if (receipt.get('sourceSha') != sha or receipt.get('version') != version
             or receipt.get('signed') is not False or receipt.get('installable') is not False
@@ -64,23 +68,31 @@ def publish(root, destination, context, api):
     prefix = 'https://api.github.com/repos/' + repository
     tag_path = urllib.parse.quote(tag, safe='')
 
+    def request(url, method='GET', body=None, missing_ok=False):
+        result = api(url, method, body, missing_ok=missing_ok)
+        if result is None and missing_ok:
+            return None
+        if not isinstance(result, dict):
+            raise PublicationError('PUBLICATION_INVALID_RESPONSE')
+        return result
+
     def fence():
-        ref = api(prefix + '/git/ref/tags/' + tag_path)
+        ref = request(prefix + '/git/ref/tags/' + tag_path)
         obj = ref.get('object', {})
         for _ in range(8):
             if obj.get('type') == 'commit' and obj.get('sha') == sha:
                 return
             if obj.get('type') != 'tag' or not re.fullmatch('[a-f0-9]{40}', str(obj.get('sha', ''))):
                 break
-            obj = api(prefix + '/git/tags/' + obj['sha']).get('object', {})
+            obj = request(prefix + '/git/tags/' + obj['sha']).get('object', {})
         raise PublicationError('PUBLICATION_TAG_MOVED')
 
     fence()
-    release = api(prefix + '/releases/tags/' + tag_path, missing_ok=True)
+    release = request(prefix + '/releases/tags/' + tag_path, missing_ok=True)
     body = f'Fabushi MiniApp source: {sha}\n\nUnsigned preparation only. Registry signing and approval are required before installation.'
     if release is None:
         fence()
-        release = api(prefix + '/releases', 'POST', {
+        release = request(prefix + '/releases', 'POST', {
             'tag_name': tag, 'target_commitish': sha, 'name': tag,
             'body': body, 'draft': True, 'prerelease': True,
         })
@@ -96,6 +108,8 @@ def publish(root, destination, context, api):
         raise PublicationError('PUBLICATION_ASSET_CONFLICT')
     known = {}
     for asset in assets:
+        if not isinstance(asset, dict):
+            raise PublicationError('PUBLICATION_ASSET_CONFLICT')
         name = asset.get('name')
         if name not in files or name in known:
             raise PublicationError('PUBLICATION_ASSET_CONFLICT')
@@ -107,14 +121,14 @@ def publish(root, destination, context, api):
             if not release['draft']:
                 raise PublicationError('PUBLICATION_ASSET_CONFLICT')
             fence()
-            asset = api('https://uploads.github.com/repos/' + repository
+            asset = request('https://uploads.github.com/repos/' + repository
                         + '/releases/' + str(release_id) + '/assets?name=' + urllib.parse.quote(name),
                         'POST', data)
         if asset.get('state') != 'uploaded' or asset.get('size') != len(data) or asset.get('digest') != expected:
             raise PublicationError('PUBLICATION_ASSET_MISMATCH')
     fence()
     if release['draft']:
-        release = api(prefix + '/releases/' + str(release_id), 'PATCH', {'draft': False})
+        release = request(prefix + '/releases/' + str(release_id), 'PATCH', {'draft': False})
     if release.get('draft') is not False or release.get('html_url') != url or release.get('tag_name') != tag:
         raise PublicationError('PUBLICATION_STATE_UNCONFIRMED')
     fence()
@@ -134,7 +148,8 @@ def github_api(token, repository):
                'https://uploads.github.com/repos/' + repository + '/']
 
     def request(url, method='GET', body=None, missing_ok=False):
-        if not any(url.startswith(prefix) for prefix in allowed):
+        parsed = urllib.parse.urlparse(url)
+        if not any(url.startswith(prefix) for prefix in allowed) or any(part in ['.', '..'] for part in parsed.path.split('/')) or parsed.fragment:
             raise PublicationError('PUBLICATION_ENDPOINT_DENIED')
         payload = body if isinstance(body, bytes) else None if body is None else json.dumps(body).encode()
         req = urllib.request.Request(url, method=method, data=payload, headers={
