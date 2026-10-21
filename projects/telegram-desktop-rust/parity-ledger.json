@@ -18154,16 +18154,10 @@
       "fabushi_target_symbols": [
         "Mandatory development lifecycle",
         "Repository/project context discovery and handoff",
-        "Out-of-process AI worker lifecycle safety",
-        "Out-of-process AI worker adapter execution",
         "Arbitration semantics",
         "Focused re-review and stopping",
-        "AI review phase execution policy",
-        "AI worker lifecycle qualification",
         "Independent review evidence",
-        "Durable review ledger evidence",
-        "AI worker adapter execution evidence",
-        "Adaptive test-loop evidence and recovery history"
+        "Durable review ledger evidence"
       ],
       "target_language": "Markdown",
       "language_rationale": "Applicable responsibility is repository task/review/test orchestration and durable evidence governance, not shipping Rust/TypeScript product logic.",
