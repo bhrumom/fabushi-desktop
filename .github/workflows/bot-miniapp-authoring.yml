@@ -55,7 +55,16 @@ jobs:
         env:
           FABUSHI_MINIAPP_BOT_EXECUTION: '1'
           FABUSHI_MINIAPP_EXPORT: ${{ runner.temp }}/bot-miniapp-export.json
-        run: cargo test --locked --features actions-miniapp-bot --manifest-path source/host/Cargo.toml --test miniapp_authoring_tool_contract
+        run: |
+          cargo metadata --format-version 1 --manifest-path source/host/Cargo.toml > /dev/null
+          cargo test --locked --features actions-miniapp-bot --manifest-path source/host/Cargo.toml --test miniapp_authoring_tool_contract
+      - name: Preserve resolved lockfile for exact-source reconciliation
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bot-miniapp-resolved-lock-${{ env.MINIAPP_SOURCE_SHA }}
+          path: source/host/Cargo.lock
+          if-no-files-found: error
       - name: Verify remote GitHub source, exact preparation and owned branch cleanup
         env:
           GH_TOKEN: ${{ github.token }}
