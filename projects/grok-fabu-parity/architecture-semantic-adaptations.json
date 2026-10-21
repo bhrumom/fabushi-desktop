@@ -421,7 +421,7 @@
       "referencePath": "source/electron-main/main-production-services.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "453e9fc335db92994f574747d462545c346c2029",
+      "targetBlobSha": "09d68286bbd0c385341c4123f95e8d81f71c88b2",
       "behavioralEvidence": [
         "source/electron-main/main-production-services.ts",
         "docs/specs/desktop-miniapp-publisher.md",
