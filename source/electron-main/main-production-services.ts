@@ -1008,6 +1008,9 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
         const disposeQuitPhase = async (value: ProductionDisposable | undefined, area: string): Promise<void> => {
           try { await disposeOnce(value); } catch (error) { bindings.reportFailure(area, "dispose", error); }
         };
+        // Close local Chromium WebContents and detach its Main-owned CDP sessions
+        // before coordinator/telemetry shutdown can hold the quit path open.
+        await disposeQuitPhase(browserWorkspace, "browser-workspace");
         await disposeQuitPhase(coordinator, "coordinator");
         try { coordinatorLegs.dispose(); } catch (error) { bindings.reportFailure("coordinator", "legs-dispose", error); }
         await disposeQuitPhase(boxRecovery, "box-recovery");

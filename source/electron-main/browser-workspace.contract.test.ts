@@ -81,6 +81,7 @@ class FakeContents implements BrowserWorkspaceWebContentsPort {
   title = "New Tab";
   zoom = 1;
   destroyed = false;
+  destroyedWithDebuggerAttached = false;
   stopped = false;
   reloaded = false;
   back = false;
@@ -153,7 +154,11 @@ class FakeContents implements BrowserWorkspaceWebContentsPort {
     this.inputEvents.push(event);
   }
   isDestroyed(): boolean { return this.destroyed; }
-  destroy(): void { this.destroyed = true; this.emit("destroyed"); }
+  destroy(): void {
+    this.destroyedWithDebuggerAttached = this.debugger.attached;
+    this.destroyed = true;
+    this.emit("destroyed");
+  }
   setWindowOpenHandler(handler: NonNullable<FakeContents["popup"]>): void { this.popup = handler; }
 }
 
@@ -309,6 +314,7 @@ test("select/close/zoom/navigation operations preserve the selected workspace", 
   const firstTab = first.activeTabId;
   const withSecond = await h.invoke({ type: "new-tab", conversationId: "bot-a", address: "https://example.com/path" });
   const secondTab = withSecond.activeTabId;
+  const secondContents = h.views.at(-1)!.webContents;
   assert.equal(withSecond.tabs.find((tab) => tab.id === secondTab)?.url, "https://example.com/path");
   await h.invoke({ type: "set-zoom", conversationId: "bot-a", tabId: secondTab, factor: 99 });
   assert.equal(h.views.at(-1)?.webContents.zoom, 3);
@@ -316,6 +322,8 @@ test("select/close/zoom/navigation operations preserve the selected workspace", 
   const closed = await h.invoke({ type: "close-tab", conversationId: "bot-a", tabId: secondTab });
   assert.equal(closed.tabs.length, 1);
   assert.equal(closed.activeTabId, firstTab);
+  assert.equal(secondContents.destroyedWithDebuggerAttached, false, "close-tab must detach the CDP session before destroying WebContents");
+  assert.equal(secondContents.debugger.attached, false);
 });
 
 test("popup policy denies Chromium windows and converts only allowed URLs into managed tabs", async () => {
@@ -368,6 +376,8 @@ test("account revocation destroys runtime tabs and the next account gets a disti
   const oldContents = h.views[0]!.webContents;
   h.service.revokeAccount();
   assert.equal(oldContents.destroyed, true);
+  assert.equal(oldContents.destroyedWithDebuggerAttached, false, "account revocation must detach the CDP session before destroying WebContents");
+  assert.equal(oldContents.debugger.attached, false);
   h.setAccountScope("account-b");
   const b = await h.invoke({ type: "activate", conversationId: "bot-a", bounds: { x: 1, y: 1, width: 500, height: 500 } });
   assert.notEqual(a.workspaceId, b.workspaceId);

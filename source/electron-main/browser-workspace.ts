@@ -1340,6 +1340,7 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
           const index = workspace.tabs.indexOf(closing);
           if (mountedView === closing.view) unmount();
           workspace.tabs.splice(index, 1);
+          disposeTabDebugger(closing);
           if (!closing.view.webContents.isDestroyed()) closing.view.webContents.destroy();
           if (workspace.tabs.length === 0) createTab(workspace, undefined, true);
           else if (workspace.activeTabId === closing.id) {
@@ -1619,6 +1620,7 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
     for (const workspace of workspaces.values()) {
       workspace.visible = false;
       for (const tab of workspace.tabs) {
+        disposeTabDebugger(tab);
         try { if (!tab.view.webContents.isDestroyed()) tab.view.webContents.destroy(); } catch (error) { fail("destroy-tab", error); }
       }
     }
