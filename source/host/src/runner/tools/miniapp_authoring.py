@@ -251,6 +251,15 @@ def execute(args, workspace=Path('/workspace')):
                      'README.md': '# ' + state['config']['displayName'] + '\n\nEdit src/ with Fabushi Bot. GitHub Actions prepares an unsigned ZIP. Registry signing and approval are required before installation. No native code or network permission is granted by this scaffold.\n'}
             result['githubFiles'] = [{'path': p, 'content': v, 'sha256': digest(v.encode())} for p, v in sorted(files.items())]
             result['signed'] = result['installable'] = False
+            result['exportId'] = digest(canonical(files))
+            export_name = result['exportId'] + '.github.json'
+            result['exportPath'] = str(workspace / 'fabushi-miniapps' / project / export_name)
+            try:
+                write_new(directory, export_name, canonical(result))
+            except FileExistsError:
+                if read_json(directory, export_name) != result:
+                    raise ValueError('EXPORT_CONFLICT')
+            os.fsync(directory)
         return result
     finally:
         for fd in [lock, directory, store, base]:

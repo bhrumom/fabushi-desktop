@@ -43,6 +43,7 @@ class Authoring(unittest.TestCase):
                             files=[{'path': js['path'], 'expectedSha256': js['sha256'], 'content': source}])
         self.assertNotEqual(first['revision'], changed['revision'])
         exported = self.call(action='export')
+        self.assertEqual(json.loads(Path(exported['exportPath']).read_text()), exported)
         tree = self.workspace / 'repository'
         tree.mkdir()
         for file in exported['githubFiles']:

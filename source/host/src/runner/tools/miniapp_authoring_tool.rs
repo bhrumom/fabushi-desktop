@@ -91,10 +91,10 @@ impl RoutedToolBridge for MiniAppAuthoringToolBridge {
         let shell = self.delegate.list_tools()?.into_iter().find(|t|
             t.name == RUNNER_BOX_SHELL_TOOL_NAME && t.provider_identifier == RUNNER_BOX_TOOL_PROVIDER
         ).ok_or_else(|| ProviderSessionError::Tool("MINIAPP_BOX_UNAVAILABLE".into()))?;
-        let bootstrap = format!(
-            "import base64;exec(base64.b64decode(\"{}\"),{{\"__name__\":\"__main__\",\"PACKAGER_SOURCE\":base64.b64decode(\"{}\").decode()}})",
-            STANDARD.encode(SDK), STANDARD.encode(PACKAGER)
-        );
+        // Keep the trusted SDK readable to the existing Shell auto-review.
+        // Only user-authored file data is encoded; it is parsed as JSON, never code.
+        let bootstrap = format!("PACKAGER_SOURCE = {}\n{}", serde_json::to_string(PACKAGER)
+            .map_err(|_| ProviderSessionError::Tool("MINIAPP_SDK_INVALID".into()))?, SDK);
         let command = format!("python3 -I -c {} {}", quote(&bootstrap), quote(&STANDARD.encode(payload)));
         // Delegate the real Shell invocation, rather than calling execute_write
         // directly: the existing Shell auto-review and transport remain active.

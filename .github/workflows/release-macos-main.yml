@@ -12,6 +12,11 @@ on:
         required: true
         default: false
         type: boolean
+      bot_miniapp_acceptance:
+        description: Require the real production Bot to author, edit, export and publish a disposable GitHub Mini App PR.
+        required: false
+        type: boolean
+        default: false
       miniapp_version:
         description: Exact approved Mini App version for installed acceptance
         required: false
@@ -61,6 +66,7 @@ on:
 permissions:
   contents: write
   actions: read
+  pull-requests: write
 
 concurrency:
   group: package-macos-${{ github.event_name == 'push' && github.sha || inputs.source_sha || github.ref }}
@@ -557,6 +563,8 @@ jobs:
           OBF_SOURCE_SHA: ${{ steps.source.outputs.sha }}
           OBF_EXPECTED_SOURCE_SHA: ${{ steps.source.outputs.sha }}
           OBF_EVIDENCE_DIR: ${{ runner.temp }}/fabushi-candidate-acceptance
+          FABUSHI_BOT_MINIAPP_ACCEPTANCE: ${{ inputs.bot_miniapp_acceptance && '1' || '0' }}
+          FABUSHI_MINIAPP_SOURCE_BRANCH: ${{ github.ref_name }}
           FABUSHI_ELECTRON_EXECUTABLE: ${{ steps.candidate.outputs.executable }}
           FABUSHI_FEATURE_HOST_MODE: production
           FABUSHI_E2E: '0'
@@ -584,6 +592,18 @@ jobs:
           test -s "$OBF_EVIDENCE_DIR/candidate.json"
           find "$OBF_EVIDENCE_DIR/screenshots" -type f -name '*.png' -size +0c -print -quit | grep -q .
           find "$OBF_EVIDENCE_DIR" -type f \( -name '*.mp4' -o -name '*.mov' -o -name '*.webm' \) -size +0c -print -quit | grep -q .
+
+      - name: Verify the real Bot's GitHub Mini App PR and remove its exact disposable fixture
+        if: ${{ inputs.bot_miniapp_acceptance }}
+        shell: bash
+        timeout-minutes: 5
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MINIAPP_SOURCE_SHA: ${{ steps.source.outputs.sha }}
+          MINIAPP_SOURCE_BRANCH: ${{ github.ref_name }}
+          FABUSHI_MINIAPP_EXPORT: ${{ runner.temp }}/fabushi-candidate-acceptance/bot-miniapp-export.json
+          MINIAPP_MODEL_PROOF: ${{ runner.temp }}/fabushi-candidate-acceptance/bot-miniapp-model-proof.json
+        run: python3 -I scripts/miniapp-model-github-proof.py
 
       - name: Run approved Mini App installed and OS-offline lifecycle acceptance
         working-directory: desktop

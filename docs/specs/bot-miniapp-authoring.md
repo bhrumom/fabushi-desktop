@@ -38,6 +38,10 @@ inside another tool and bypassing their approval/audit policy.
 - BA-03: inspect/export return exact revision and per-file SHA256 with bounded
   UTF-8 source. Export is a GitHub-compatible file list including config, packager
   and Actions workflow. A source update never implies installed-code mutation.
+  Export also writes an immutable, content-addressed JSON handoff in the agent's
+  workspace. Its exportId covers the complete source tree including SDK build
+  tooling; project revision alone covers user config/source/tests. SDK upgrades
+  therefore do not overwrite an older export or masquerade as identical bytes.
 - BA-04: include a deterministic dependency-free packager. Actions derives the
   exact GITHUB_SHA, validates resources, and emits manifest.unsigned.json, an
   unsigned ZIP and SHA256 evidence. Never call unsigned bytes installable .fabapp,
@@ -73,6 +77,14 @@ of exported source with exact remote contents/digests and cleanup. This last tes
 uses only the job's repo-scoped token, never production user credentials. Separate
 real-model installed Bot acceptance is required before claiming live end-to-end
 completion. Preserve current Mini App lifecycle/permission regressions.
+The opt-in signed macOS gate asks the production Bot to create/edit/export and
+copy the immutable JSON through CopyFromBox, then use its already-authorized
+GitHub MCP to open a disposable draft PR. Independently check source digests,
+counter behavior, exact remote blobs, candidate ancestry and draft PR ownership.
+The verifier never creates or pushes source in place of the Bot. Only after
+verification does it close that exact draft and remove its unchanged branch.
+Missing Box, file transfer or GitHub grant fails the gate; job tokens are used
+only by the independent verifier, never supplied to the Bot or its generated code.
 
 Roll out through reviewed source PR, exact-head CI, signed macOS package and Bot
 acceptance. Rollback removes authoring exposure without deleting user projects,
