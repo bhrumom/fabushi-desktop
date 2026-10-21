@@ -700,9 +700,7 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
     if (tab.initialLoadPromise != null) return tab.initialLoadPromise;
     const safe = tab.pendingInitialUrl;
     if (safe == null) return tab.debuggerSetup;
-    tab.pendingInitialUrl = null;
     const contents = tab.view.webContents;
-    const expectedGeneration = tab.generation;
     const setupDebugger = (): Promise<void> => {
       if (tab.debuggerSetupStarted) return tab.debuggerSetup;
       tab.debuggerSetupStarted = true;
@@ -711,14 +709,35 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
     };
     const load = async (): Promise<void> => {
       if (contents.isDestroyed() || disposed) return;
-      if (tab.generation !== expectedGeneration || tab.url !== safe) return;
+      // A restored WebContents may emit a blank-document loading event while
+      // the debugger is being configured. That advances generation but must
+      // not discard the still-current persisted URL. URL ownership, not that
+      // unrelated startup generation, fences this one-time initial navigation.
+      if (tab.url !== safe) {
+        if (tab.pendingInitialUrl === safe) tab.pendingInitialUrl = null;
+        return;
+      }
+      if (normalizeBrowserWorkspaceAddress(contents.getURL()) === safe) {
+        if (tab.pendingInitialUrl === safe) tab.pendingInitialUrl = null;
+        return;
+      }
       await contents.loadURL(safe);
+      if (tab.pendingInitialUrl === safe
+        && normalizeBrowserWorkspaceAddress(contents.getURL()) === safe) {
+        tab.pendingInitialUrl = null;
+      }
     };
-    const start = loadBeforeDebugger
-      ? load().then(async () => { await setupDebugger(); })
-      : setupDebugger().then(load);
     let initialLoadPromise: Promise<void>;
-    initialLoadPromise = start.then(() => {
+    // Defer the asynchronous body one microtask so the in-flight promise is
+    // installed before debugger callbacks can re-enter layout().
+    initialLoadPromise = Promise.resolve().then(async () => {
+      if (loadBeforeDebugger) {
+        await load();
+        await setupDebugger();
+      } else {
+        await setupDebugger();
+        await load();
+      }
       if (tab.debuggerReady) {
         tab.lastNetworkActivityAt = now();
         scheduleNetworkIdle(tab);
@@ -939,7 +958,13 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
     const updateState = (): void => {
       if (contents.isDestroyed() || disposed) return;
       try {
-        tab.url = contents.getURL() || tab.url;
+        const observedUrl = contents.getURL();
+        // A restored WebContents starts at about:blank. Keep its persisted
+        // target authoritative until that target is actually committed.
+        if (tab.pendingInitialUrl == null
+          || normalizeBrowserWorkspaceAddress(observedUrl) === tab.pendingInitialUrl) {
+          tab.url = observedUrl || tab.url;
+        }
         tab.title = contents.getTitle() || tab.title || DEFAULT_TITLE;
       } catch {}
       if (workspace.visible && activeWorkspaceId === workspace.id && workspace.activeTabId === tab.id) layout(workspace);
@@ -991,7 +1016,12 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
     });
     const didNavigate = (_event: unknown, url: string) => {
       const safe = normalizeBrowserWorkspaceAddress(url);
-      if (safe != null) tab.url = safe;
+      if (safe != null) {
+        tab.url = safe;
+        // Any committed HTTP(S) navigation supersedes a not-yet-committed
+        // restored target, including an explicit user navigation.
+        if (tab.pendingInitialUrl != null) tab.pendingInitialUrl = null;
+      }
       appendAgentEvent(tab, "page");
       updateState();
       addHistory(workspace, tab, url);

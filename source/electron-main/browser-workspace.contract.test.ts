@@ -43,6 +43,7 @@ class FakeSession implements BrowserWorkspaceSessionPort {
 
 class FakeDebugger {
   attached = false;
+  beforeSendCommand: ((method: string, params?: Record<string, unknown>) => void) | null = null;
   readonly commands: Array<{ readonly method: string; readonly params?: Record<string, unknown> }> = [];
   readonly listeners = new Map<string, Array<(event: unknown, method: string, params: unknown, sessionId?: string) => void>>();
   isAttached(): boolean { return this.attached; }
@@ -50,6 +51,7 @@ class FakeDebugger {
   detach(): void { this.attached = false; }
   async sendCommand(method: string, params?: Record<string, unknown>): Promise<unknown> {
     this.commands.push({ method, ...(params === undefined ? {} : { params: structuredClone(params) }) });
+    this.beforeSendCommand?.(method, params);
     return {};
   }
   on(event: "message", listener: (event: unknown, method: string, params: unknown, sessionId?: string) => void): void {
@@ -217,6 +219,7 @@ function harness(
   pickUploadFile?: () => Promise<string | null>,
   pickExtensionDirectory?: () => Promise<string | null>,
   nowOverride?: () => number,
+  onViewCreated?: (view: FakeView) => void,
 ) {
   const ipc = new FakeIpc();
   const persistence = new MemoryPersistence();
@@ -234,6 +237,7 @@ function harness(
       const session = sessions.get(partition) ?? new FakeSession();
       sessions.set(partition, session);
       const view = new FakeView(new FakeContents(session));
+      onViewCreated?.(view);
       views.push(view);
       return view;
     },
@@ -357,6 +361,47 @@ test("history/bookmarks persist URLs only and restore bounded tabs after service
   assert.equal(next.tabs.length, 1);
   assert.equal(next.tabs[0]?.url, "https://example.com/persisted");
   assert.equal(next.bookmarks[0]?.url, "https://example.com/persisted");
+});
+
+test("restored native URL survives an about:blank load racing debugger setup", async () => {
+  const initial = harness();
+  initial.service.attachWindow(new FakeHostWindow());
+  const first = await initial.invoke({
+    type: "activate",
+    conversationId: "bot-restore-race",
+    bounds: { x: 1, y: 1, width: 500, height: 500 },
+  });
+  await initial.invoke({
+    type: "navigate",
+    conversationId: "bot-restore-race",
+    tabId: first.activeTabId,
+    address: "https://example.com/restored",
+  });
+  const persisted = initial.persistence.state;
+  initial.service.dispose();
+
+  let blankLoadRacedDebuggerSetup = false;
+  const restored = harness(persisted, undefined, undefined, undefined, (view) => {
+    view.webContents.debugger.beforeSendCommand = (method) => {
+      if (!blankLoadRacedDebuggerSetup && method === "Page.enable") {
+        blankLoadRacedDebuggerSetup = true;
+        view.webContents.emit("did-start-loading");
+      }
+    };
+  });
+  restored.service.attachWindow(new FakeHostWindow());
+  await restored.invoke({
+    type: "activate",
+    conversationId: "bot-restore-race",
+    bounds: { x: 1, y: 1, width: 500, height: 500 },
+  });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+
+  assert.equal(blankLoadRacedDebuggerSetup, true);
+  assert.equal(restored.views[0]?.webContents.getURL(), "https://example.com/restored");
+  assert.equal(restored.views[0]?.webContents.getTitle(), "Title example.com");
+  assert.equal(restored.service.snapshot("bot-restore-race")?.tabs[0]?.url, "https://example.com/restored");
+  restored.service.dispose();
 });
 
 test("untrusted renderer cannot reach browser commands", async () => {
