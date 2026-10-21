@@ -1447,12 +1447,16 @@ impl PendingWakeRuntimePort for ProductionPendingWakeRuntime {
             .map(serde_json::to_value)
             .transpose()
             .map_err(|error| format!("could not encode quiet wake origin: {error}"))?;
-        let _ = self.cloud_agent_watches.watch_cloud_agent(
+        let registered = self.cloud_agent_watches.watch_cloud_agent(
             agent_id,
             work_id,
             CloudAgentWatchOptions::new(quiet_origin, false),
         );
-        Ok(())
+        if registered || self.cloud_agent_watches.is_cloud_watch_armed(agent_id, work_id) {
+            Ok(())
+        } else {
+            Err("cloud-agent completion watcher could not be registered".into())
+        }
     }
 
     fn watch_background_shell(
@@ -1466,12 +1470,16 @@ impl PendingWakeRuntimePort for ProductionPendingWakeRuntime {
             .map(serde_json::to_value)
             .transpose()
             .map_err(|error| format!("could not encode quiet wake origin: {error}"))?;
-        let _ = self.background_shell_watches.watch_background_shell(
+        let registered = self.background_shell_watches.watch_background_shell(
             agent_id,
             work_id,
             BackgroundShellWatchOptions::new(title.map(str::to_string), quiet_origin),
         );
-        Ok(())
+        if registered || self.background_shell_watches.is_shell_watch_armed(agent_id, work_id) {
+            Ok(())
+        } else {
+            Err("shell completion watcher could not be registered".into())
+        }
     }
 
     fn deliver_recreate_interrupted_shell_notice(

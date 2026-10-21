@@ -176,6 +176,11 @@ fn production_routed_provider_checkpoint_store_persists_durable_json() {
         Some("json")
     );
 
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        assert_eq!(fs::metadata(cursor_path).unwrap().permissions().mode() & 0o777, 0o600);
+    }
     let decoded: RoutedProviderCheckpoint =
         serde_json::from_slice(&fs::read(cursor_path).expect("read persisted checkpoint"))
             .expect("decode persisted checkpoint");
