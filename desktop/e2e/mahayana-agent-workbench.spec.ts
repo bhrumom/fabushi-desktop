@@ -548,8 +548,17 @@ async function ensureE2eAuthBackend(): Promise<string> {
           return;
         }
         if (browserAgentDownloadE2e) {
+          const waitOutput = functionOutput('fabushi-e2e-browser-download-wait');
           const snapshotOutput = functionOutput('fabushi-e2e-browser-download-snapshot');
           const downloadOutput = functionOutput('fabushi-e2e-browser-download-file');
+          if (waitOutput == null) {
+            sendFunctionCall('browser_wait', 'fabushi-e2e-browser-download-wait', {
+              target: 'local',
+              text: 'Download fixture',
+              timeoutMs: 10_000,
+            });
+            return;
+          }
           if (snapshotOutput == null) {
             sendFunctionCall('browser_snapshot', 'fabushi-e2e-browser-download-snapshot', { target: 'local' });
             return;
@@ -570,7 +579,10 @@ async function ensureE2eAuthBackend(): Promise<string> {
               || (typeof element.href === 'string' && element.href.endsWith('/browser-workspace-download'));
           }) as { ref?: unknown } | undefined;
           if (typeof link?.ref !== 'string' || link.ref.length === 0) {
-            throw new Error('Focused Browser Agent download E2E snapshot did not expose the bounded download fixture ref.');
+            const diagnostic = typeof snapshotOutput.text === 'string'
+              ? snapshotOutput.text.slice(0, 2_048)
+              : JSON.stringify(snapshotOutput).slice(0, 2_048);
+            throw new Error(`Focused Browser Agent download E2E snapshot did not expose the bounded download fixture ref: ${diagnostic}`);
           }
           if (downloadOutput == null) {
             sendFunctionCall('browser_download', 'fabushi-e2e-browser-download-file', {
@@ -1370,6 +1382,8 @@ test('Agent controls the real local Chromium form through Host tools, isolates t
     await expect(createAgent).toBeHidden();
     const betaPeer = roster.getByRole('button', { name: 'Browser Agent Beta', exact: true });
     await expect(betaPeer).toBeVisible({ timeout: 15_000 });
+    await betaPeer.click();
+    await expect(page.getByRole('group', { name: 'Browser Agent Beta', exact: true })).toBeVisible({ timeout: 15_000 });
     await expect(page.getByRole('textbox', { name: 'Prompt' })).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
 
     await page.getByRole('button', { name: 'Open browser workspace', exact: true }).click();
