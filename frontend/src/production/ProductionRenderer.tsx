@@ -2982,7 +2982,13 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         if (clientLifecycleGenerationRef.current === lifecycleGeneration) client.dispose();
       });
     };
-  }, [account?.kind, client, clientLifecycleGenerationRef, connectionController, pinnedAccountKey, reactionRoot, reconcileCompleteRosterSelection, refreshAgentNetworkAvailability, refreshRoster, selectionStore, transcriptAccountSlot]);
+  }, [client, clientLifecycleGenerationRef, connectionController, pinnedAccountKey, reactionRoot, reconcileCompleteRosterSelection, refreshAgentNetworkAvailability, refreshRoster, selectionStore, transcriptAccountSlot]);
+
+  useEffect(() => {
+    if (client == null || account?.kind !== "logged-in" || transport !== "connected") return;
+    void refreshRoster().catch((error: unknown) => setNotice(error instanceof Error ? error.message : String(error)));
+    void refreshAgentNetworkAvailability();
+  }, [account?.kind, client, refreshAgentNetworkAvailability, refreshRoster, transport]);
 
   useEffect(() => {
     if (bridge == null || account?.kind !== "logged-in") {
