@@ -405,7 +405,7 @@ fn browser_wait_is_bounded_generation_fenced_and_shared_by_explicit_targets() {
         );
     }
     for required in [
-        "\"tabs\" | \"snapshot\" | \"wait\" | \"click\"",
+        "\"tabs\" | \"snapshot\" | \"wait\" | \"wait_event\"",
         "\"wait\" => {",
         "self.action_request(&target, tool_call_id, \"wait\")?",
         "request.insert(\"timeoutMs\".into(), timeout_ms.clone());",
@@ -470,7 +470,7 @@ fn browser_dialog_and_event_tools_have_fixed_bounded_schemas_and_main_relay() {
     assert_eq!(review.prompt_text.as_deref(), Some("approved"));
 
     for required in [
-        "\"dialog\" | \"events\" | \"wait_event\"",
+        "\"wait_event\" | \"events\" | \"dialog\"",
         "\"dialog\" => {",
         "self.action_request(&target, tool_call_id, \"dialog\")?",
         "\"events\" => {",
