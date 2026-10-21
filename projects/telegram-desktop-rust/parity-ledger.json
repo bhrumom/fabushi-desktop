@@ -18693,10 +18693,10 @@
       ],
       "platform_delta": "Existing Fabushi repository lifecycle and evidence governance is the closest owner; no direct helper parity is proven. Do not add product Inbox/Task/Automation runtime.",
       "existing_owner_candidates": [
-        "AGENTS.md",
-        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
-        "projects/fabushi-communication-platform/quality/evidence-contract.md",
-        "Shipping Task/Agent/Coordinator/Host/Runner/Conversation (rejected)"
+        "projects/fabushi-communication-platform/quality/evidence-contract.md#Context provenance and handoff evidence (selected existing normative context/handoff evidence contract)",
+        "AGENTS.md (considered but not selected as this row's target; lifecycle heading is tracked by separate responsibility rows)",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md (considered but not selected as this row's target; review/convergence qualification is tracked by separate responsibility rows)",
+        "Shipping Task/Agent/Coordinator/Host/Runner/Conversation (rejected: product runtime owners do not implement repository inbox transaction state)"
       ],
       "existing_owner": "Fabushi source-neutral repository lifecycle, test/review strategy and durable evidence governance",
       "rejected_existing_owners": [
@@ -18708,13 +18708,9 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "AGENTS.md",
-        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
         "projects/fabushi-communication-platform/quality/evidence-contract.md"
       ],
       "fabushi_target_symbols": [
-        "Mandatory development lifecycle",
-        "AI review phase execution policy",
         "Context provenance and handoff evidence"
       ],
       "target_language": "Markdown",
@@ -18750,9 +18746,7 @@
         "Recursive source closure remains open."
       ],
       "production_entrypoints": [
-        "AGENTS.md -> Mandatory development lifecycle / worker lifecycle",
-        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md -> review/convergence/evidence qualification",
-        "projects/fabushi-communication-platform/quality/evidence-contract.md -> durable review/worker/adaptive evidence"
+        "projects/fabushi-communication-platform/quality/evidence-contract.md -> Context provenance and handoff evidence (normative repository context-provenance and task-handoff contract; not a shipping inbox runtime entrypoint)"
       ],
       "production_evidence": [
         "TDRP 39537102683 exact-head parent 61/61 jobs",
@@ -18888,7 +18882,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral repository workflow semantics read from exact telegramdesktop/tdesktop source; no Telegram product runtime or shipping Task/Agent/Computer/Host/Runner/Conversation implementation copied.",
-      "notes": "Strict index51 full source read and dependency closure verified; mapped to repository governance only, no direct helper parity or behavior test claimed.",
+      "notes": "Strict index 51 source and dependency closure verified. This row targets only the unique existing heading `Context provenance and handoff evidence` in `projects/fabushi-communication-platform/quality/evidence-contract.md`; AGENTS.md lifecycle and TEST_STRATEGY.md review/convergence headings remain mapped by separate responsibility rows and are not targets for this row. This is repository governance/toolchain-equivalent only, not a shipping inbox implementation; no direct helper parity or focused behavior test is claimed. Recursive source closure remains open.",
       "test_execution_evidence": []
     }
   ]
