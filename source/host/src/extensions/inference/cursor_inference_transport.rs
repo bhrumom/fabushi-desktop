@@ -1028,17 +1028,19 @@ pub fn run_cursor_with_transport_reporting_usage_and_partials_with_max_steps(
                     "Runner cancelled before Cursor tool execution".into(),
                 ));
             }
-            let args = serde_json::from_str::<Value>(&call.args)
-                .unwrap_or_else(|_| json!({}));
-            observed_tool_calls.push((call.tool_name.clone(), args.clone()));
-            let (result, is_error) = match tool_index.get(&call.tool_name).copied() {
-                None => (
+            let parsed = super::tool_arguments::parse_tool_arguments(&call.args);
+            if let Ok(args) = &parsed {
+                observed_tool_calls.push((call.tool_name.clone(), args.clone()));
+            }
+            let (result, is_error) = match (parsed, tool_index.get(&call.tool_name).copied()) {
+                (Err(error), _) => (json!({"error": error}), true),
+                (Ok(_), None) => (
                     json!({
                         "error": format!("Unknown Fabushi tool: {}", call.tool_name)
                     }),
                     true,
                 ),
-                Some(tool) => match execute_tool(tool, args, &call.tool_call_id) {
+                (Ok(args), Some(tool)) => match execute_tool(tool, args, &call.tool_call_id) {
                     Ok(value) => (value, false),
                     Err(error) => (
                         json!({ "error": error.to_string() }),

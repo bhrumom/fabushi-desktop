@@ -56,6 +56,10 @@ first delivery target. Never enable paid-model tests as a side effect of this wo
   memory/skills, plugin discovery, authorization and subagent lineage/lifecycle.
   Fix concrete defects in current owners and add regression oracles. Do not adopt
   a fixed interactive failure count, a new credential store or another scheduler.
+- HRA-08: malformed or non-object provider tool arguments must never become an
+  empty object and reach an effect-capable tool. Return an explicit tool error to
+  the model, keep the call/result pair balanced, allow a corrected call, and do
+  not perform an automatic model retry. Preserve per-tool semantic validation.
 - HRA-07: durable evidence maps each audited responsibility to exact Hermes source,
   current owner, observed behavior, gaps, changes and Actions evidence. Unknown,
   blocked and not-run are not complete. All executable checks run in Actions;

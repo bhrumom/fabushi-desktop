@@ -2071,15 +2071,17 @@ pub fn run_openrouter_with_transport_reporting_usage_and_partials_with_max_steps
             } else {
                 call.id
             };
-            let args = serde_json::from_str::<Value>(&call.arguments)
-                .unwrap_or_else(|_| json!({}));
-            observed_tool_calls.push((call.name.clone(), args.clone()));
-            let result = match tool_index.get(&call.name).copied() {
-                None => json!({
+            let parsed = super::tool_arguments::parse_tool_arguments(&call.arguments);
+            if let Ok(args) = &parsed {
+                observed_tool_calls.push((call.name.clone(), args.clone()));
+            }
+            let result = match (parsed, tool_index.get(&call.name).copied()) {
+                (Err(error), _) => json!({"isError": true, "error": error}),
+                (Ok(_), None) => json!({
                     "isError": true,
                     "error": format!("Unknown Fabushi tool: {}", call.name)
                 }),
-                Some(tool) => match execute_tool(tool, args, &tool_call_id) {
+                (Ok(args), Some(tool)) => match execute_tool(tool, args, &tool_call_id) {
                     Ok(value) => value,
                     Err(error) => json!({
                         "isError": true,

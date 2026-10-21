@@ -588,16 +588,18 @@ pub fn run_codex_direct_responses_with_lifecycle_and_tool_step_reminder(
             let arguments = call
                 .get("arguments")
                 .and_then(Value::as_str)
-                .unwrap_or("{}");
-            let args = serde_json::from_str::<Value>(arguments)
-                .unwrap_or_else(|_| json!({}));
-            observed_tool_calls.push((name.to_string(), args.clone()));
-            let output = match tools_by_name.get(name).copied() {
-                None => json!({
+                .unwrap_or("");
+            let parsed = super::tool_arguments::parse_tool_arguments(arguments);
+            if let Ok(args) = &parsed {
+                observed_tool_calls.push((name.to_string(), args.clone()));
+            }
+            let output = match (parsed, tools_by_name.get(name).copied()) {
+                (Err(error), _) => json!({"isError": true, "error": error}),
+                (Ok(_), None) => json!({
                     "isError": true,
                     "error": format!("Unknown Fabushi tool: {name}")
                 }),
-                Some(tool) => match execute_tool(tool, args, call_id) {
+                (Ok(args), Some(tool)) => match execute_tool(tool, args, call_id) {
                     Ok(value) => value,
                     Err(error) => json!({
                         "isError": true,

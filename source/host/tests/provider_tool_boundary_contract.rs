@@ -145,3 +145,90 @@ fn historical_completed_checkpoints_default_to_no_pending_effects() {
         else {assert!(serde_json::from_value::<CursorCheckpoint>(value).unwrap().pending_tool_calls.is_empty());}
     }
 }
+
+#[test]
+fn responses_bad_arguments_are_feedback_and_corrected_call_executes_once() {
+    for raw in ["{broken", "[]", "null", "42", ""] {
+        let call = |id: &str, args: &str| vec![json!({"type":"response.completed","response":{
+            "id": id, "output":[{"type":"function_call","name":"write","call_id":id,"arguments":args}]
+        }})];
+        let mut transport = Transport { responses: VecDeque::from([
+            call("bad", raw), call("corrected", r#"{"value":1}"#),
+            vec![json!({"type":"response.completed","response":{"id":"done","output":[]}})],
+        ]), requests:0 };
+        let mut options = CodexDirectOptions::new("fixture", "", vec![]);
+        options.tools = vec![CodexDirectTool { name:"write".into(), description:None,
+            parameters:json!({"type":"object"}), source:Value::Null }];
+        let mut effects = 0;
+        let mut saw_error = false;
+        run_codex_direct_responses_with_lifecycle(&mut transport, &options, None,
+            &mut |_, args, id| { assert_eq!(id,"corrected");assert_eq!(args,json!({"value":1}));effects+=1;Ok(Value::Null) },
+            &mut |_,_| {}, &mut |checkpoint| {
+                if checkpoint.completed_steps == 1 && checkpoint.pending_tool_calls.is_empty() {
+                    saw_error = checkpoint.input.iter().any(|item| item["call_id"] == "bad"
+                        && item["output"].as_str().is_some_and(|s| s.contains("Invalid tool arguments")));
+                }
+                Ok(())
+            }, &||false).unwrap();
+        assert_eq!(effects,1);assert!(saw_error);assert_eq!(transport.requests,3);
+    }
+}
+
+#[test]
+fn openrouter_bad_arguments_are_feedback_and_corrected_call_executes_once() {
+    for raw in ["{broken", "[]", "null", "42", ""] {
+        let call = |id: &str, args: &str| vec![json!({"choices":[{"delta":{"tool_calls":[{
+            "index":0,"id":id,"function":{"name":"write","arguments":args}
+        }]}}]})];
+        let mut transport = Transport { responses:VecDeque::from([
+            call("bad",raw), call("corrected",r#"{"value":1}"#),
+            vec![json!({"choices":[{"delta":{"content":"done"},"finish_reason":"stop"}]})],
+        ]), requests:0 };
+        let mut effects=0;
+        let mut saw_error=false;
+        run_openrouter_with_transport(&mut transport,"fixture",&[],&tools(),
+            &mut |_,args,id| {assert_eq!(id,"corrected");assert_eq!(args,json!({"value":1}));effects+=1;Ok(Value::Null)},
+            &mut |_,_|{},&||false,None,&mut |checkpoint| {
+                if checkpoint.completed_steps==1 && checkpoint.pending_tool_calls.is_empty() {
+                    saw_error=checkpoint.conversation.iter().any(|item|item["tool_call_id"]=="bad"
+                        && item["content"].as_str().is_some_and(|s|s.contains("Invalid tool arguments")));
+                }
+                Ok(())
+            }).unwrap();
+        assert_eq!(effects,1);assert!(saw_error);assert_eq!(transport.requests,3);
+    }
+}
+
+struct CursorSequenceTransport { rounds:Mutex<VecDeque<Vec<CursorInferenceEvent>>> }
+impl CursorInferenceStreamTransport for CursorSequenceTransport {
+    fn stream_conversation(&self,_:&[CursorCheckpointMessage],_:&[RoutedToolDefinition],_:&dyn Fn()->bool,
+        event:&mut dyn FnMut(CursorInferenceEvent)->Result<(),ProviderSessionError>)->Result<(),ProviderSessionError> {
+        let round=self.rounds.lock().unwrap().pop_front().expect("unexpected model call");
+        for value in round {event(value)?;}
+        Ok(())
+    }
+}
+#[test]
+fn cursor_bad_arguments_are_feedback_and_corrected_call_executes_once() {
+    for raw in ["{broken", "[]", "null", "42", ""] {
+        let call=|id:&str,args:&str|vec![CursorInferenceEvent::ToolCall {
+            tool_call_id:id.into(),tool_name:"write".into(),args:args.into(),complete:true,tool_index:Some(0),
+        }];
+        let transport=CursorSequenceTransport {rounds:Mutex::new(VecDeque::from([
+            call("bad",raw),call("corrected",r#"{"value":1}"#),vec![],
+        ]))};
+        let mut effects=0;
+        let mut saw_error=false;
+        run_cursor_with_transport_reporting_usage(&transport,&[],&tools(),
+            &mut |_,args,id| {assert_eq!(id,"corrected");assert_eq!(args,json!({"value":1}));effects+=1;Ok(Value::Null)},
+            &mut |_,_|{},&||false,None,&mut |checkpoint| {
+                if checkpoint.completed_steps==1 && checkpoint.pending_tool_calls.is_empty() {
+                    saw_error=checkpoint.conversation.iter().any(|item| matches!(item,
+                        CursorCheckpointMessage::ToolResult{tool_call_id,is_error:true,result,..}
+                        if tool_call_id=="bad" && result.to_string().contains("Invalid tool arguments")));
+                }
+                Ok(())
+            },&mut |_|{}).unwrap();
+        assert_eq!(effects,1);assert!(saw_error);assert!(transport.rounds.lock().unwrap().is_empty());
+    }
+}
