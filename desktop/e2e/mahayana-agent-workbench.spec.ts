@@ -1001,10 +1001,19 @@ async function closeDesktopApp(
 
   // On macOS, closing the last BrowserWindow does not imply app.quit().
   // Ask Electron to traverse the production before-quit settlement path
-  // explicitly before waiting for Playwright's process teardown.
-  await app.evaluate(({ app: electronApp }) => electronApp.quit()).catch(() => undefined);
+  // explicitly before waiting for Playwright's process teardown. The quit
+  // request itself must also be bounded: Electron can begin exiting before
+  // Playwright receives the evaluation result, otherwise the test can hang
+  // before reaching the close/kill watchdog below.
+  const timeoutMs = options.timeoutMs ?? 20_000;
+  const quitRequest = app.evaluate(({ app: electronApp }) => electronApp.quit()).catch(() => undefined);
+  let quitDispatchTimer: ReturnType<typeof setTimeout> | undefined;
+  await Promise.race([
+    quitRequest,
+    new Promise<void>((resolve) => { quitDispatchTimer = setTimeout(resolve, 2_000); }),
+  ]);
+  if (quitDispatchTimer != null) clearTimeout(quitDispatchTimer);
 
-  const timeoutMs = options.timeoutMs ?? 25_000;
   let closeFinished = false;
   const closePromise = app.close().catch(() => undefined).finally(() => { closeFinished = true; });
   let closeTimer: ReturnType<typeof setTimeout> | undefined;
