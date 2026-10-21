@@ -62,11 +62,11 @@ def publish(root, destination, context, api):
     prefix = 'https://api.github.com/repos/' + repository
     tag_path = urllib.parse.quote(tag, safe='')
 
-    def request(url, method='GET', body=None, missing_ok=False):
+    def request(url, method='GET', body=None, missing_ok=False, expect_list=False):
         result = api(url, method, body, missing_ok=missing_ok)
         if result is None and missing_ok:
             return None
-        if not isinstance(result, dict):
+        if not isinstance(result, list if expect_list else dict):
             raise PublicationError('PUBLICATION_INVALID_RESPONSE')
         return result
 
@@ -85,6 +85,22 @@ def publish(root, destination, context, api):
 
     fence()
     release = request(prefix + '/releases/tags/' + tag_path, missing_ok=True)
+    # Tag lookup only guarantees published releases. Reconcile interrupted drafts
+    # through the writer-visible list before considering any creation.
+    if release is None:
+        matches = []
+        for page in range(1, 11):
+            entries = request(prefix + '/releases?per_page=100&page=' + str(page), expect_list=True)
+            if len(entries) > 100 or any(not isinstance(entry, dict) for entry in entries):
+                raise PublicationError('PUBLICATION_INVALID_RESPONSE')
+            matches.extend(entry for entry in entries if entry.get('tag_name') == tag)
+            if len(matches) > 1:
+                raise PublicationError('PUBLICATION_RELEASE_CONFLICT')
+            if len(entries) < 100:
+                release = matches[0] if matches else None
+                break
+        else:
+            raise PublicationError('PUBLICATION_LOOKUP_LIMIT')
     body = f'Fabushi MiniApp source: {sha}\n\nUnsigned preparation only. Registry signing and approval are required before installation.'
     if release is None:
         fence()

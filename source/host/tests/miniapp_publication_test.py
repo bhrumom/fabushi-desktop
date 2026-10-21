@@ -22,6 +22,7 @@ class GitHub:
         self.bad_digest = False
         self.lose_upload_response = False
         self.move_after_upload = False
+        self.list_entries = []
 
     def __call__(self, url, method='GET', body=None, missing_ok=False):
         self.calls.append((url, method, body))
@@ -29,7 +30,11 @@ class GitHub:
         if method == 'GET' and '/git/ref/tags/' in path:
             return {'object': {'type': 'commit', 'sha': self.tag_sha}}
         if method == 'GET' and '/releases/tags/' in path:
-            return copy.deepcopy(self.release)
+            return copy.deepcopy(self.release) if self.release and not self.release['draft'] else None
+        if method == 'GET' and path.endswith('/releases'):
+            page = int(urllib.parse.parse_qs(urllib.parse.urlparse(url).query)['page'][0])
+            entries = self.list_entries + ([self.release] if self.release else [])
+            return copy.deepcopy(entries[(page - 1) * 100:page * 100])
         if method == 'POST' and path.endswith('/releases'):
             if self.release is not None:
                 raise AssertionError('duplicate release creation')
@@ -160,6 +165,36 @@ class Publication(unittest.TestCase):
         self.api.release = {'id': 42, 'tag_name': 'v1.0.0', 'draft': True, 'body': 'other release'}
         with self.assertRaisesRegex(self.publisher.PublicationError, 'RELEASE_CONFLICT'):
             self.publish()
+        self.assertEqual(self.api.writes(), [])
+
+    def test_draft_recovery_searches_later_pages_without_duplicate_writes(self):
+        self.api.lose_upload_response = True
+        with self.assertRaisesRegex(self.publisher.PublicationError, 'UNCERTAIN'):
+            self.publish()
+        self.api.list_entries = [{'tag_name': 'unrelated-' + str(i)} for i in range(100)]
+        self.assertEqual(self.publish()['state'], 'github_published')
+        self.assertEqual(len(self.api.writes()), 5)
+        self.assertTrue(any('page=2' in call[0] for call in self.api.calls))
+
+    def test_duplicate_drafts_and_lookup_limit_block_all_writes(self):
+        self.api.list_entries = [{'tag_name': 'v1.0.0'}, {'tag_name': 'v1.0.0'}]
+        with self.assertRaisesRegex(self.publisher.PublicationError, 'RELEASE_CONFLICT'):
+            self.publish()
+        self.assertEqual(self.api.writes(), [])
+        self.api.list_entries = [{'tag_name': 'unrelated-' + str(i)} for i in range(1000)]
+        with self.assertRaisesRegex(self.publisher.PublicationError, 'LOOKUP_LIMIT'):
+            self.publish()
+        self.assertEqual(self.api.writes(), [])
+
+    def test_invalid_release_list_blocks_all_writes(self):
+        for entries in [[None], {'message': 'unexpected envelope'}]:
+            with self.subTest(entries=entries):
+                def malformed(url, method='GET', body=None, missing_ok=False):
+                    if '/releases?' in url:
+                        return entries
+                    return self.api(url, method, body, missing_ok)
+                with self.assertRaisesRegex(self.publisher.PublicationError, 'INVALID_RESPONSE'):
+                    self.publisher.publish(self.root, self.root / 'dist', self.context, malformed)
         self.assertEqual(self.api.writes(), [])
 
     def test_malformed_remote_response_stops_before_any_write(self):

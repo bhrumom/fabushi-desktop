@@ -37,6 +37,10 @@ and model are inherited from the active session.
   provenance, verify server SHA256/size, then publish. No asset overwrite, tag
   move, force push, deletion, merge, or blind retry of uncertain mutations.
   Existing matching releases may be read/reconciled; conflicting content blocks.
+  A tag lookup that cannot find a published release must search writer-visible
+  releases, including drafts, at 100 items/page for at most 10 pages. Only a
+  terminal short page proves absence; duplicate matching tags, malformed pages
+  or an exhausted lookup budget block all mutations.
   Errors retain draft/release identity without secrets. Production uses fixed
   GitHub endpoints, rejects redirects, and never passes job tokens to tests.
 - BP-04: export includes editable behavior tests, source tooling and publication
