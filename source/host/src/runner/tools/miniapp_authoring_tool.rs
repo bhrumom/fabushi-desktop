@@ -31,7 +31,7 @@ pub fn definition() -> RoutedToolDefinition {
         name: MINIAPP_AUTHORING_TOOL_NAME.into(),
         tool_name: MINIAPP_AUTHORING_TOOL_NAME.into(),
         provider_identifier: "fabushi-runner".into(),
-        description: Some("Create, inspect, edit and export an offline Mini App in your isolated Box. Generate application code in src/ using edit, with expectedRevision and each file's expectedSha256 (null for a new file). Export returns exact githubFiles for the existing GitHub MCP connector. Continue through a repository branch, commit, pull request and actual CI result when the user requests GitHub delivery. Export alone is not GitHub publication, signing, approval or installation. Existing native repositories retain their own build workflow.".into()),
+        description: Some("Create, inspect, edit and export an offline Mini App in your isolated Box. Generate application code in src/ and behavior tests in tests/*.test.cjs using edit, with expectedRevision and each file's expectedSha256 (null for a new file). Export returns exact githubFiles for the existing GitHub MCP connector. Continue through a repository branch, commit, pull request and actual CI behavior-test/package result when the user requests GitHub delivery. Export alone is not GitHub publication, signing, approval or installation. Existing native repositories retain their own build workflow.".into()),
         input_schema: json!({
             "type":"object", "additionalProperties":false, "required":["action","project"],
             "properties": {

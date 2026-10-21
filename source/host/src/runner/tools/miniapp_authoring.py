@@ -66,9 +66,9 @@ def validate_files(files):
     total = 0
     for name, value in files.items():
         path = PurePosixPath(name)
-        if len(name) > 240 or not re.fullmatch(r'src/[A-Za-z0-9_-]+(?:[./][A-Za-z0-9_-]+)*', name) or '..' in path.parts:
+        if len(name) > 240 or not re.fullmatch(r'(?:src|tests)/[A-Za-z0-9_-]+(?:[./][A-Za-z0-9_-]+)*', name) or '..' in path.parts:
             raise ValueError('FILE_PATH_INVALID')
-        if path.suffix not in ['.html', '.css', '.js', '.json', '.txt']:
+        if (path.parts[0] == 'tests' and not name.endswith('.test.cjs')) or (path.parts[0] == 'src' and path.suffix not in ['.html', '.css', '.js', '.json', '.txt']):
             raise ValueError('RESOURCE_TYPE_UNSUPPORTED')
         if not isinstance(value, str) or len(value.encode()) > 128 * 1024:
             raise ValueError('FILE_LIMIT')
@@ -84,7 +84,10 @@ permissions:
 jobs:
   package:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
+      - name: Preserve source and runtime installation reserve
+        run: python3 -c "import shutil; u=shutil.disk_usage('.'); assert u.free >= max(1073741824,u.total//20)+1073741824"
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -92,8 +95,13 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
       - name: Preserve disk reserve
         run: python3 -c "import shutil; u=shutil.disk_usage('.'); assert u.free >= max(1073741824,u.total//20)+16777216"
+      - name: Test application behavior
+        run: node --test --test-timeout=30000 tests/*.test.cjs
       - name: Prepare exact-source unsigned package
         env:
           MINIAPP_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -103,6 +111,25 @@ jobs:
           name: miniapp-preparation-${{ github.event.pull_request.head.sha || github.sha }}
           path: dist/
           if-no-files-found: error
+'''
+
+BEHAVIOR_TEST = '''const {test} = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+test('the generated application handles two actual button callbacks', () => {
+  const html = fs.readFileSync('src/index.html','utf8');
+  const ids = new Set([...html.matchAll(/id="([^"]+)"/g)].map(match => match[1]));
+  const listeners = new Map();
+  const elements = new Map([...ids].map(id => [id, {textContent:'0',
+    addEventListener(type, callback) { listeners.set(id + ':' + type,callback); }}]));
+  const document = {getElementById(id) { assert.ok(elements.has(id), 'HTML element must exist'); return elements.get(id); }};
+  vm.runInNewContext(fs.readFileSync('src/app.js','utf8'), {document}, {timeout:1000});
+  const click = listeners.get('increment:click');
+  assert.equal(typeof click, 'function');
+  click(); assert.equal(elements.get('count').textContent, '1');
+  click(); assert.equal(elements.get('count').textContent, '2');
+});
 '''
 
 
@@ -157,7 +184,8 @@ def execute(args, workspace=Path('/workspace')):
             state = {'config': {k: args[k] for k in ['appId', 'publisherId', 'displayName', 'version']}, 'files': {
                 'src/index.html': '<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; script-src \'self\'; style-src \'self\'; connect-src \'none\'; object-src \'none\'; base-uri \'none\'; form-action \'none\'"><title>' + html.escape(name) + '</title><link rel="stylesheet" href="app.css"></head><body><main><h1>' + html.escape(name) + '</h1><p>由 Fabushi Bot 创建，在小程序内运行。</p><button id="increment">增加计数</button><p role="status" aria-live="polite" id="count">0</p></main><script src="app.js"></script></body></html>',
                 'src/app.css': 'body{font:18px system-ui;background:#f6f4fa;color:#24212b;margin:0}main{max-width:48rem;margin:4rem auto;padding:2rem}button{font:inherit;padding:.6rem 1rem;cursor:pointer}',
-                'src/app.js': 'let count=0;document.getElementById("increment").addEventListener("click",()=>{document.getElementById("count").textContent=String(++count)});\n'}}
+                'src/app.js': 'let count=0;document.getElementById("increment").addEventListener("click",()=>{document.getElementById("count").textContent=String(++count)});\n',
+                'tests/app.test.cjs': BEHAVIOR_TEST}}
         elif action == 'edit':
             if args.get('expectedRevision') != current['revision']:
                 raise ValueError('REVISION_CONFLICT')

@@ -100,11 +100,17 @@ fn actions_executes_actual_bot_tool_create_modify_export_chain() {
         "appId":"org.fabushi.ci-counter","publisherId":"fabushi-ci",
         "displayName":"Bot CI counter","version":"1.0.0"}),"create").unwrap();
     let js = first["files"].as_array().unwrap().iter().find(|f| f["path"] == "src/app.js").unwrap();
+    let tests = first["files"].as_array().unwrap().iter().find(|f| f["path"] == "tests/app.test.cjs").unwrap();
+    let initial = bridge.call_tool(&tool,json!({"action":"export","project":project}),"inspect-source").unwrap();
+    let initial_files = initial["githubFiles"].as_array().unwrap();
+    let js_source = initial_files.iter().find(|f| f["path"] == "src/app.js").unwrap()["content"].as_str().unwrap().replace("++count", "count += 2");
+    let test_source = initial_files.iter().find(|f| f["path"] == "tests/app.test.cjs").unwrap()["content"].as_str().unwrap()
+        .replace("textContent, '2'", "textContent, '4'").replace("textContent, '1'", "textContent, '2'");
     let changed = bridge.call_tool(&tool,json!({"action":"edit","project":project,
         "expectedRevision":first["revision"],"version":"1.0.1","files":[{
             "path":"src/app.js","expectedSha256":js["sha256"],
-            "content":"document.getElementById(\"count\").textContent=\"Bot modified this Mini App\";\n"
-        }]}),"modify").unwrap();
+            "content":js_source
+        }, {"path":"tests/app.test.cjs","expectedSha256":tests["sha256"],"content":test_source}]}),"modify").unwrap();
     assert_ne!(first["revision"],changed["revision"]);
     let exported = bridge.call_tool(&tool,json!({"action":"export","project":project}),"export").unwrap();
     assert_eq!(exported["revision"],changed["revision"]);

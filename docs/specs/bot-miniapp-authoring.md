@@ -27,6 +27,10 @@ inside another tool and bypassing their approval/audit policy.
 
 - BA-01: create a working offline project with bounded valid identity/version,
   accessible HTML/CSS/JS, no remote network, unsigned catalog preparation and CI.
+  Include editable behavior tests under tests/ and execute them with pinned Node
+  on Actions before packaging; the starter test exercises its actual script and
+  click handlers against a bounded DOM seam. This is unit behavior evidence, not
+  a claim of browser/visual acceptance for arbitrary generated applications.
 - BA-02: edits require an exact expected revision and per-file expected digest
   (null for a new file). Validate the whole batch before an atomic current-pointer
   switch. Retain immutable previous revisions. Reject traversal, symlinks,
@@ -56,7 +60,9 @@ inside another tool and bypassing their approval/audit policy.
 
 Single writer lock and immutable snapshots bound each project transaction. Disk
 reserve is max(1GiB,5% capacity) before writes. Source limits:64files,128KiB/file,
-512KiB total; package assets currently UTF-8 web resources. Unknown native/network
+512KiB total across src/ and tests/; package assets currently UTF-8 web resources.
+Only src/ enters the installed resources; tests/ stays developer source.
+Unknown native/network
 capabilities fail closed; existing native repositories use their own exact-source
 pipeline instead of being converted into a web scaffold.
 
