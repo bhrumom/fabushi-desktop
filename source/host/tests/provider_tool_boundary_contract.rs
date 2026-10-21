@@ -232,3 +232,72 @@ fn cursor_bad_arguments_are_feedback_and_corrected_call_executes_once() {
         assert_eq!(effects,1);assert!(saw_error);assert!(transport.rounds.lock().unwrap().is_empty());
     }
 }
+
+#[test]
+fn responses_usage_survives_later_failure_and_resume_reports_only_new_spend() {
+    use mahayana_host_runtime::extensions::inference::codex_direct_responses::{
+        CodexDirectUsage, run_codex_direct_responses_with_lifecycle_reporting_usage,
+    };
+    let mut options=CodexDirectOptions::new("fixture","",vec![]);
+    options.tools=vec![CodexDirectTool { name:"write".into(),description:None,
+        parameters:json!({"type":"object"}),source:Value::Null }];
+    let response=json!({"type":"response.completed","response":{
+        "id":"paid","usage":{"input_tokens":11,"output_tokens":7},
+        "output":[{"type":"function_call","name":"write","call_id":"effect","arguments":"{}"}]
+    }});
+    let mut transport=Transport {responses:VecDeque::from([vec![response]]),requests:0};
+    let mut spend=Vec::new();
+    let error=run_codex_direct_responses_with_lifecycle_reporting_usage(
+        &mut transport,&options,None,&mut |_,_,_|panic!("rejected intent cannot dispatch"),
+        &mut |_,_|{},&mut |_|Err(CodexDirectError::Transport("disk rejected".into())),
+        &||false,None,&mut |usage|spend.push(usage),
+    ).unwrap_err();
+    assert!(error.to_string().contains("disk rejected"));
+    assert_eq!(spend.len(),1);assert_eq!(spend[0].input_tokens,11);assert_eq!(spend[0].output_tokens,7);
+
+    let previous=CodexDirectCheckpoint {input:vec![],text:String::new(),response_id:"old".into(),
+        usage:CodexDirectUsage {input_tokens:100,output_tokens:50,..Default::default()},
+        completed_steps:1,tool_calls_completed:1,pending_tool_calls:vec![]};
+    let response=json!({"type":"response.completed","response":{
+        "id":"new","usage":{"input_tokens":13,"output_tokens":3},"output":[]
+    }});
+    // Duplicate terminal frames must not double-report a single request's usage.
+    let mut transport=Transport {responses:VecDeque::from([vec![response.clone(),response]]),requests:0};
+    spend.clear();
+    let result=run_codex_direct_responses_with_lifecycle_reporting_usage(
+        &mut transport,&options,Some(&previous),&mut |_,_,_|panic!("no effect"),
+        &mut |_,_|{},&mut |_|Ok(()),&||false,None,&mut |usage|spend.push(usage),
+    ).unwrap();
+    assert_eq!(spend.len(),1);assert_eq!(spend[0].input_tokens,13);
+    assert_eq!(result.usage.input_tokens,113,"checkpoint aggregates remain historical totals");
+
+    let mut transport=Transport {responses:VecDeque::from([vec![json!({"type":"response.failed","response":{
+        "usage":{"input_tokens":5,"output_tokens":2},"error":{"message":"failed after billing"}
+    }})]]),requests:0};
+    spend.clear();
+    assert!(run_codex_direct_responses_with_lifecycle_reporting_usage(
+        &mut transport,&options,None,&mut |_,_,_|panic!("failed response has no effects"),
+        &mut |_,_|{},&mut |_|Ok(()),&||false,None,&mut |usage|spend.push(usage),
+    ).is_err());
+    assert_eq!(spend.len(),1);assert_eq!(spend[0].input_tokens,5);
+}
+
+#[test]
+fn openrouter_missing_call_id_is_assigned_before_durable_intent() {
+    let mut transport=Transport {responses:VecDeque::from([
+        vec![json!({"choices":[{"delta":{"tool_calls":[{"index":0,"function":{"name":"write","arguments":"{}"}}]}}]})],
+        vec![json!({"choices":[{"delta":{"content":"done"}}]})],
+    ]),requests:0};
+    let recorded=RefCell::new(String::new());
+    let dispatched=Cell::new(false);
+    run_openrouter_with_transport(&mut transport,"fixture",&[],&tools(),
+        &mut |_,_,id| {assert!(!id.is_empty());assert_eq!(id,recorded.borrow().as_str());dispatched.set(true);Ok(Value::Null)},
+        &mut |_,_|{},&||false,None,&mut |checkpoint| {
+            if let Some(call)=checkpoint.pending_tool_calls.first() {
+                *recorded.borrow_mut()=call["id"].as_str().unwrap().to_string();
+                assert!(!recorded.borrow().is_empty());
+            }
+            Ok(())
+        }).unwrap();
+    assert!(dispatched.get());
+}

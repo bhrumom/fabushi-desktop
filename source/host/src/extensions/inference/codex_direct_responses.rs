@@ -416,6 +416,29 @@ pub fn run_codex_direct_responses_with_lifecycle_and_tool_step_reminder(
     should_cancel: &dyn Fn() -> bool,
     tool_step_reminder: Option<&(dyn Fn(&[(String, Value)]) -> Option<String> + Send + Sync)>,
 ) -> Result<CodexDirectResult, CodexDirectError> {
+    run_codex_direct_responses_with_lifecycle_reporting_usage(
+        transport, options, resume_from, execute_tool, on_text_delta,
+        on_checkpoint, should_cancel, tool_step_reminder, &mut |_| {},
+    )
+}
+
+pub fn run_codex_direct_responses_with_lifecycle_reporting_usage(
+    transport: &mut dyn CodexDirectTransport,
+    options: &CodexDirectOptions,
+    resume_from: Option<&CodexDirectCheckpoint>,
+    execute_tool: &mut dyn FnMut(
+        &CodexDirectTool,
+        Value,
+        &str,
+    ) -> Result<Value, CodexDirectError>,
+    on_text_delta: &mut dyn FnMut(&str, &str),
+    on_checkpoint: &mut dyn FnMut(
+        &CodexDirectCheckpoint,
+    ) -> Result<(), CodexDirectError>,
+    should_cancel: &dyn Fn() -> bool,
+    tool_step_reminder: Option<&(dyn Fn(&[(String, Value)]) -> Option<String> + Send + Sync)>,
+    on_usage: &mut dyn FnMut(CodexDirectUsage),
+) -> Result<CodexDirectResult, CodexDirectError> {
     let max_steps = options.max_steps.max(1);
     if resume_from.is_some_and(|checkpoint| !checkpoint.pending_tool_calls.is_empty()) {
         return Err(CodexDirectError::Tool("A recovered tool batch has uncertain execution. Reconcile the recorded calls before retrying; no tool or model request was replayed.".into()));
@@ -484,7 +507,19 @@ pub fn run_codex_direct_responses_with_lifecycle_and_tool_step_reminder(
         let step_text_start = text.len();
         let mut completed: Option<Value> = None;
         let mut observed_output = Vec::new();
+        let mut reported_usage = false;
         transport.stream_response(&request, &mut |event| {
+            // Account for a confirmed billable response even if cancellation,
+            // tool execution, persistence or trailing transport later fails.
+            if !reported_usage
+                && matches!(event.get("type").and_then(Value::as_str),
+                    Some("response.completed" | "response.failed"))
+                && let Some(response) = event.get("response")
+                && response.get("usage").is_some_and(Value::is_object)
+            {
+                on_usage(usage_of(response));
+                reported_usage = true;
+            }
             if should_cancel() {
                 return Err(CodexDirectError::Cancelled(
                     "Runner cancelled the provider stream".into(),

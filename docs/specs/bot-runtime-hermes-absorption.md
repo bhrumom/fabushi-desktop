@@ -60,6 +60,10 @@ first delivery target. Never enable paid-model tests as a side effect of this wo
   empty object and reach an effect-capable tool. Return an explicit tool error to
   the model, keep the call/result pair balanced, allow a corrected call, and do
   not perform an automatic model retry. Preserve per-tool semantic validation.
+- HRA-09: report confirmed Responses usage once per received request usage event,
+  including a later tool/checkpoint/stream failure. A resumed aggregate is history,
+  not new spend. Absent provider usage remains unknown; do not invent estimates.
+  Both Fabushi first-party and Codex paths use the same reporting implementation.
 - HRA-07: durable evidence maps each audited responsibility to exact Hermes source,
   current owner, observed behavior, gaps, changes and Actions evidence. Unknown,
   blocked and not-run are not complete. All executable checks run in Actions;

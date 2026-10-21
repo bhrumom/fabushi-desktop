@@ -28,7 +28,7 @@ use super::cursor_inference_transport::{
 use super::codex_direct_responses::{
     CodexDirectCheckpoint, CodexDirectError, CodexDirectOptions, CodexDirectTool,
     CodexDirectTransport, CodexDirectUsage, run_codex_direct_responses_with_cancel,
-    run_codex_direct_responses_with_lifecycle_and_tool_step_reminder,
+    run_codex_direct_responses_with_lifecycle_reporting_usage,
 };
 
 pub const FABUSHI_ROUTER_SYSTEM_PROMPT: &str =
@@ -1255,7 +1255,7 @@ pub fn run_codex_provider_text_with_lifecycle_reporting_usage_with_max_steps(
         .iter()
         .map(|tool| (tool.name.clone(), tool))
         .collect::<BTreeMap<_, _>>();
-    let result = run_codex_direct_responses_with_lifecycle_and_tool_step_reminder(
+    let result = run_codex_direct_responses_with_lifecycle_reporting_usage(
         &mut transport,
         &request,
         resume_from,
@@ -1276,8 +1276,8 @@ pub fn run_codex_provider_text_with_lifecycle_reporting_usage_with_max_steps(
         },
         should_cancel,
         tool_step_reminder,
+        &mut |usage| on_usage(usage.into()),
     )?;
-    on_usage(result.usage.into());
     Ok(result.text)
 }
 
@@ -1327,7 +1327,7 @@ fn run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps(
         .iter()
         .map(|tool| (tool.name.clone(), tool))
         .collect::<BTreeMap<_, _>>();
-    let result = run_codex_direct_responses_with_lifecycle_and_tool_step_reminder(
+    let result = run_codex_direct_responses_with_lifecycle_reporting_usage(
         &mut transport,
         &request,
         resume_from,
@@ -1348,8 +1348,8 @@ fn run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps(
         },
         should_cancel,
         tool_step_reminder,
+        &mut |usage| on_usage(usage.into()),
     )?;
-    on_usage(result.usage.into());
     Ok(result.text)
 }
 
@@ -2027,6 +2027,11 @@ pub fn run_openrouter_with_transport_reporting_usage_and_partials_with_max_steps
             return Ok(text);
         }
 
+        for call in partial_calls.values_mut() {
+            if call.id.is_empty() {
+                call.id = Uuid::new_v4().to_string();
+            }
+        }
         let calls_in_step = partial_calls.len();
         let tool_calls = partial_calls
             .iter()
@@ -2066,11 +2071,7 @@ pub fn run_openrouter_with_transport_reporting_usage_and_partials_with_max_steps
                     "Runner cancelled before OpenRouter tool execution".into(),
                 ));
             }
-            let tool_call_id = if call.id.is_empty() {
-                Uuid::new_v4().to_string()
-            } else {
-                call.id
-            };
+            let tool_call_id = call.id;
             let parsed = super::tool_arguments::parse_tool_arguments(&call.arguments);
             if let Ok(args) = &parsed {
                 observed_tool_calls.push((call.name.clone(), args.clone()));
