@@ -21,6 +21,9 @@ on:
 permissions:
   contents: read
 
+env:
+  FABUSHI_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+
 concurrency:
   group: browser-workspace-packaged-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -206,10 +209,11 @@ jobs:
             executable="$(find /opt /usr -type f -name fabushi -perm -111 -print -quit 2>/dev/null || true)"
           fi
           test -n "$executable"
+          executable="$(readlink -f "$executable")"
           test -x "$executable"
           echo "FABUSHI_ELECTRON_EXECUTABLE=$executable" >> "$GITHUB_ENV"
-          echo "FABUSHI_PACKAGED_APPIMAGE=$appimage" >> "$GITHUB_ENV"
-          echo "FABUSHI_PACKAGED_DEB=$deb" >> "$GITHUB_ENV"
+          echo "FABUSHI_PACKAGED_APPIMAGE=$PWD/$appimage" >> "$GITHUB_ENV"
+          echo "FABUSHI_PACKAGED_DEB=$PWD/$deb" >> "$GITHUB_ENV"
 
       - name: Install Windows NSIS and bind packaged executable
         if: runner.os == 'Windows'
@@ -240,7 +244,7 @@ jobs:
         shell: bash
         env:
           FABUSHI_FEATURE_HOST_MODE: production
-        run: xvfb-run -a npx playwright test e2e/mahayana-agent-workbench.spec.ts --workers=1 --grep "native Browser Workspace opens real Chromium pages"
+        run: xvfb-run -a npx playwright test e2e/mahayana-agent-workbench.spec.ts --workers=1 --output=test-results-packaged-deb-native --grep "native Browser Workspace opens real Chromium pages"
 
       - name: Run packaged native Browser Workspace/profile acceptance on Windows
         if: runner.os == 'Windows'
@@ -248,7 +252,7 @@ jobs:
         shell: pwsh
         env:
           FABUSHI_FEATURE_HOST_MODE: production
-        run: npx playwright test e2e/mahayana-agent-workbench.spec.ts --workers=1 --grep "native Browser Workspace opens real Chromium pages"
+        run: npx playwright test e2e/mahayana-agent-workbench.spec.ts --workers=1 --output=test-results-packaged-nsis-native --grep "native Browser Workspace opens real Chromium pages"
 
       - name: Run packaged two-Bot takeover and download acceptance
         if: runner.os == 'Linux'
@@ -258,7 +262,7 @@ jobs:
           FABUSHI_FEATURE_HOST_MODE: production
         run: >-
           xvfb-run -a npx playwright test e2e/mahayana-agent-workbench.spec.ts --workers=1
-          --grep "Agent (controls the real local Chromium form through Host tools|downloads verified bytes from the real local Chromium page through Host tools)"
+          --output=test-results-packaged-deb-agent --grep "Agent (controls the real local Chromium form through Host tools|downloads verified bytes from the real local Chromium page through Host tools)"
 
       - name: Run packaged two-Bot takeover and download acceptance on Windows
         if: runner.os == 'Windows'
@@ -268,7 +272,7 @@ jobs:
           FABUSHI_FEATURE_HOST_MODE: production
         run: >-
           npx playwright test e2e/mahayana-agent-workbench.spec.ts --workers=1
-          --grep "Agent (controls the real local Chromium form through Host tools|downloads verified bytes from the real local Chromium page through Host tools)"
+          --output=test-results-packaged-nsis-agent --grep "Agent (controls the real local Chromium form through Host tools|downloads verified bytes from the real local Chromium page through Host tools)"
 
       - name: Run packaged extension lifecycle acceptance
         if: runner.os == 'Linux'
@@ -276,7 +280,7 @@ jobs:
         shell: bash
         env:
           FABUSHI_FEATURE_HOST_MODE: production
-        run: xvfb-run -a npx playwright test e2e/mahayana-agent-workbench.spec.ts --workers=1 --grep "Browser extension installs into real Chromium"
+        run: xvfb-run -a npx playwright test e2e/mahayana-agent-workbench.spec.ts --workers=1 --output=test-results-packaged-deb-extension --grep "Browser extension installs into real Chromium"
 
       - name: Run packaged extension lifecycle acceptance on Windows
         if: runner.os == 'Windows'
@@ -284,7 +288,17 @@ jobs:
         shell: pwsh
         env:
           FABUSHI_FEATURE_HOST_MODE: production
-        run: npx playwright test e2e/mahayana-agent-workbench.spec.ts --workers=1 --grep "Browser extension installs into real Chromium"
+        run: npx playwright test e2e/mahayana-agent-workbench.spec.ts --workers=1 --output=test-results-packaged-nsis-extension --grep "Browser extension installs into real Chromium"
+
+      - name: Run AppImage native Browser Workspace acceptance
+        if: runner.os == 'Linux'
+        working-directory: desktop
+        shell: bash
+        env:
+          FABUSHI_FEATURE_HOST_MODE: production
+          FABUSHI_ELECTRON_EXECUTABLE: ${{ env.FABUSHI_PACKAGED_APPIMAGE }}
+          APPIMAGE_EXTRACT_AND_RUN: "1"
+        run: xvfb-run -a npx playwright test e2e/mahayana-agent-workbench.spec.ts --workers=1 --output=test-results-packaged-appimage-native --grep "native Browser Workspace opens real Chromium pages"
 
       - name: Record Linux package SHA-256 evidence
         if: always() && runner.os == 'Linux'
@@ -293,8 +307,8 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p release packaged-browser-evidence
-          find release -maxdepth 1 -type f \( -name '*.AppImage' -o -name '*.deb' \) -print0             | sort -z | xargs -0 -r sha256sum > packaged-browser-evidence/SHA256SUMS
-          node -e 'const fs=require("fs");const p=require("./package.json");fs.writeFileSync("packaged-browser-evidence/provenance.json",JSON.stringify({sourceSha:process.env.GITHUB_SHA,runner:process.env.RUNNER_OS,packageVersion:p.version,electron:p.devDependencies.electron,electronBuilder:p.devDependencies["electron-builder"],executable:process.env.FABUSHI_ELECTRON_EXECUTABLE||null},null,2)+"\n")'
+          { find release -maxdepth 1 -type f \( -name '*.AppImage' -o -name '*.deb' \) -print0 | sort -z | xargs -0 -r sha256sum; sha256sum "$FABUSHI_ELECTRON_EXECUTABLE"; } > packaged-browser-evidence/SHA256SUMS
+          node -e 'const fs=require("fs");const p=require("./package.json");fs.writeFileSync("packaged-browser-evidence/provenance.json",JSON.stringify({sourceSha:process.env.FABUSHI_SOURCE_SHA||process.env.GITHUB_SHA,runner:process.env.RUNNER_OS,packageVersion:p.version,electron:p.devDependencies.electron,electronBuilder:p.devDependencies["electron-builder"],executable:process.env.FABUSHI_ELECTRON_EXECUTABLE||null},null,2)+"\n")'
 
       - name: Record Windows package SHA-256 evidence
         if: always() && runner.os == 'Windows'
@@ -302,15 +316,18 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path packaged-browser-evidence | Out-Null
-          $files = Get-ChildItem release -File -Filter "*.exe" -ErrorAction SilentlyContinue
+          $files = @(
+            Get-ChildItem release -File -Filter "*.exe" -ErrorAction SilentlyContinue
+            Get-Item $env:FABUSHI_ELECTRON_EXECUTABLE -ErrorAction Stop
+          ) | Sort-Object FullName -Unique
           $lines = foreach ($file in $files) {
             $hash = (Get-FileHash -Algorithm SHA256 $file.FullName).Hash.ToLowerInvariant()
-            "$hash  $($file.Name)"
+            "$hash  $($file.FullName)"
           }
           $lines | Out-File -FilePath packaged-browser-evidence/SHA256SUMS -Encoding utf8
           $pkg = Get-Content package.json -Raw | ConvertFrom-Json
           [ordered]@{
-            sourceSha = $env:GITHUB_SHA
+            sourceSha = $env:FABUSHI_SOURCE_SHA
             runner = $env:RUNNER_OS
             packageVersion = $pkg.version
             electron = $pkg.devDependencies.electron
@@ -318,15 +335,24 @@ jobs:
             executable = $env:FABUSHI_ELECTRON_EXECUTABLE
           } | ConvertTo-Json | Out-File -FilePath packaged-browser-evidence/provenance.json -Encoding utf8
 
-      - name: Upload packaged Browser Workspace evidence
+      - name: Upload packaged Browser Workspace test evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: browser-workspace-packaged-${{ matrix.name }}-${{ github.event.pull_request.head.sha || github.sha }}
+          name: browser-workspace-packaged-evidence-${{ matrix.name }}-${{ github.event.pull_request.head.sha || github.sha }}
           path: |
             desktop/packaged-browser-evidence
             desktop/playwright-report
-            desktop/test-results
+            desktop/test-results-packaged-*
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload packaged Browser Workspace binaries
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-workspace-packages-${{ matrix.name }}-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
             desktop/release/*.AppImage
             desktop/release/*.deb
             desktop/release/*setup.exe

@@ -223,6 +223,10 @@ interface RuntimeTab {
   debuggerListener: BrowserWorkspaceDebuggerMessageListener | null;
   debuggerReady: boolean;
   debuggerOwned: boolean;
+  debuggerSetup: Promise<void>;
+  debuggerSetupStarted: boolean;
+  pendingInitialUrl: string | null;
+  initialLoadPromise: Promise<void> | null;
 }
 
 interface RuntimeWorkspace {
@@ -688,6 +692,55 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
     return tab;
   };
 
+  const startPendingInitialNavigation = (
+    workspace: RuntimeWorkspace,
+    tab: RuntimeTab,
+    loadBeforeDebugger = false,
+  ): Promise<void> => {
+    if (tab.initialLoadPromise != null) return tab.initialLoadPromise;
+    const safe = tab.pendingInitialUrl;
+    if (safe == null) return tab.debuggerSetup;
+    tab.pendingInitialUrl = null;
+    const contents = tab.view.webContents;
+    const expectedGeneration = tab.generation;
+    const setupDebugger = (): Promise<void> => {
+      if (tab.debuggerSetupStarted) return tab.debuggerSetup;
+      tab.debuggerSetupStarted = true;
+      tab.debuggerSetup = configureTabDebugger(tab);
+      return tab.debuggerSetup;
+    };
+    const load = async (): Promise<void> => {
+      if (contents.isDestroyed() || disposed) return;
+      if (tab.generation !== expectedGeneration || tab.url !== safe) return;
+      await contents.loadURL(safe);
+    };
+    const start = loadBeforeDebugger
+      ? load().then(async () => { await setupDebugger(); })
+      : setupDebugger().then(load);
+    let initialLoadPromise: Promise<void>;
+    initialLoadPromise = start.then(() => {
+      if (tab.debuggerReady) {
+        tab.lastNetworkActivityAt = now();
+        scheduleNetworkIdle(tab);
+      }
+    }).catch((error: unknown) => {
+      if (!contents.isDestroyed() && !disposed && tab.url === safe) {
+        tab.pendingInitialUrl = safe;
+        tab.loading = false;
+        tab.error = {
+          code: "LOAD_REJECTED",
+          description: error instanceof Error ? error.message.slice(0, 512) : "Navigation failed",
+        };
+        publish(workspace);
+      }
+      throw error;
+    }).finally(() => {
+      if (tab.initialLoadPromise === initialLoadPromise) tab.initialLoadPromise = null;
+    });
+    tab.initialLoadPromise = initialLoadPromise;
+    return initialLoadPromise;
+  };
+
   const layout = (workspace: RuntimeWorkspace): void => {
     if (hostWindow == null || hostWindow.isDestroyed() || !workspace.visible || activeWorkspaceId !== workspace.id) {
       unmount();
@@ -706,6 +759,9 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
       }
     }
     try { tab.view.setBounds(workspace.bounds); } catch (error) { fail("bounds", error); }
+    if (tab.pendingInitialUrl != null || tab.initialLoadPromise != null) {
+      void startPendingInitialNavigation(workspace, tab).catch(() => undefined);
+    }
   };
 
   const findTabByContents = (contents: BrowserWorkspaceWebContentsPort): { workspace: RuntimeWorkspace; tab: RuntimeTab } | null => {
@@ -837,7 +893,12 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
     });
   };
 
-  const createTab = (workspace: RuntimeWorkspace, requestedAddress?: string, select = true): RuntimeTab => {
+  const createTab = (
+    workspace: RuntimeWorkspace,
+    requestedAddress?: string,
+    select = true,
+    deferDebuggerUntilMounted = false,
+  ): RuntimeTab => {
     if (workspace.tabs.length >= BROWSER_WORKSPACE_LIMITS.maxTabs) throw new Error("BROWSER_TAB_LIMIT");
     const view = ports.createView({ partition: workspace.partition });
     const contents = view.webContents;
@@ -867,6 +928,10 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
       debuggerListener: null,
       debuggerReady: false,
       debuggerOwned: false,
+      debuggerSetup: Promise.resolve(),
+      debuggerSetupStarted: false,
+      pendingInitialUrl: null,
+      initialLoadPromise: null,
     };
     workspace.tabs.push(tab);
     if (select) workspace.activeTabId = tab.id;
@@ -963,7 +1028,9 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
       publish(workspace);
     });
 
-    const debuggerSetup = configureTabDebugger(tab);
+    const debuggerSetup = deferDebuggerUntilMounted ? Promise.resolve() : configureTabDebugger(tab);
+    tab.debuggerSetup = debuggerSetup;
+    tab.debuggerSetupStarted = !deferDebuggerUntilMounted;
     if (requestedAddress != null) {
       const safe = normalizeBrowserWorkspaceAddress(requestedAddress);
       if (safe == null) {
@@ -972,14 +1039,18 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
         throw new Error("BROWSER_NAVIGATION_BLOCKED");
       }
       tab.url = safe;
-      void debuggerSetup.then(() => {
-        if (contents.isDestroyed() || disposed) return undefined;
-        return contents.loadURL(safe);
-      }).catch((error: unknown) => {
-        tab.loading = false;
-        tab.error = { code: "LOAD_REJECTED", description: error instanceof Error ? error.message.slice(0, 512) : "Navigation failed" };
-        publish(workspace);
-      });
+      if (deferDebuggerUntilMounted) {
+        tab.pendingInitialUrl = safe;
+      } else {
+        void debuggerSetup.then(() => {
+          if (contents.isDestroyed() || disposed) return undefined;
+          return contents.loadURL(safe);
+        }).catch((error: unknown) => {
+          tab.loading = false;
+          tab.error = { code: "LOAD_REJECTED", description: error instanceof Error ? error.message.slice(0, 512) : "Navigation failed" };
+          publish(workspace);
+        });
+      }
     }
     return tab;
   };
@@ -1011,7 +1082,7 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
     workspaces.set(workspace.id, workspace);
     for (const savedTab of saved?.tabs ?? []) {
       try {
-        const tab = createTab(workspace, savedTab.url, false);
+        const tab = createTab(workspace, savedTab.url, false, true);
         tab.title = savedTab.title || DEFAULT_TITLE;
       } catch (error) { fail("restore-tab", error); }
     }
@@ -1345,8 +1416,11 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
     const workspace = requireExistingOwnedWorkspace(action.conversationId);
 
     if (action.type === "resolve-target") {
-      if (workspace.agentControlState === "available") ensureAgentTaskRunning(workspace);
       const tab = action.tabId == null ? activeTab(workspace) : requireTab(workspace, action.tabId);
+      if (tab.pendingInitialUrl != null || tab.initialLoadPromise != null) {
+        await startPendingInitialNavigation(workspace, tab, true);
+      }
+      if (workspace.agentControlState === "available") ensureAgentTaskRunning(workspace);
       return agentResult(action.operationId, workspace, tab, { tabs: agentTabs(workspace) });
     }
 
@@ -1402,6 +1476,9 @@ export function createBrowserWorkspaceService(ports: BrowserWorkspaceServicePort
     requireControlLease(action.expectedControlEpoch, mutation);
     ensureAgentTaskRunning(workspace);
     const tab = requireTab(workspace, action.tabId);
+    if (tab.pendingInitialUrl != null || tab.initialLoadPromise != null) {
+      await startPendingInitialNavigation(workspace, tab, true);
+    }
     if (tab.generation !== action.expectedGeneration) throw new Error("BROWSER_STALE_GENERATION");
     const page = tab.view.webContents;
     if (tab.pendingDialog != null && !["dialog", "events", "wait-event"].includes(action.type)) {

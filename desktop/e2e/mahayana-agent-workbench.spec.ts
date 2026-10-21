@@ -969,7 +969,17 @@ async function launchDesktopApp(
   // focused acceptance must not seed a parallel Cursor inference credential.
   return electron.launch({
     ...(packagedExecutable
-      ? { executablePath: packagedExecutable, args: extraArgs }
+      ? {
+          executablePath: packagedExecutable,
+          // Playwright injects this loader for its npm Electron binary. A
+          // packaged Fabushi executable is a custom path, so pass the same
+          // main-process hook explicitly for installed-app acceptance.
+          args: [
+            '-r',
+            path.join(appRoot, 'node_modules', 'playwright-core', 'lib', 'server', 'electron', 'loader.js'),
+            ...extraArgs,
+          ],
+        }
       : { args: [...extraArgs, appRoot] }),
     env: {
       ...process.env,
