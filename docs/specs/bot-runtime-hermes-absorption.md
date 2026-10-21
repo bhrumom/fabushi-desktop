@@ -130,7 +130,8 @@ concrete gaps remain open after the immediate safety/cost fixes:
    does not claim full JSON-Schema validation for every MCP schema. Reuse the
    canonical validation/authorization boundary; cover schema errors before effects
    and preserve truthful feedback without acquiring new grants.
-Background worker loss follow-up is implemented pending Actions verification:
+
+Background worker loss follow-up passed Actions 39554897013:
 await panics release only the current generation and emit a typed pending-wake
 failure; durable backend markers remain. The existing watcher thread now hands
 completion directly to CompletionRevivals, eliminating a second unchecked spawn.

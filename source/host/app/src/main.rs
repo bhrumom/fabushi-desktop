@@ -12344,7 +12344,7 @@ fn main() {
                 "outcome": "watch_failed",
                 "reason": failure.reason,
                 "backendOutcome": "unknown",
-                "recoveryMarkerRetained": true,
+                "recoveryMarkerAction": "unchanged",
             }
         }));
     });

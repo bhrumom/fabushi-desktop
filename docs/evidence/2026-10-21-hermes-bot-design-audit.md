@@ -80,4 +80,7 @@ Mac 签名安装及真实 Bot 创建/修改小程序并更新 GitHub 的最终�
 后台 worker 丢失跟进：代码已补上 await panic 的类型化失败事件，释放对应 generation，
 保留后台任务 pending marker，不伪造任务完成、不重跑命令；同 ID 可重新监听。
 Host 完成回调直接使用已有 watcher 线程，移除了另一处忽略 spawn 结果的交付窗口。
-该跟进尚待自身提交的 Actions 核验，不沿用旧提交通过状态。
+该跟进的 [Actions 39554897013](https://github.com/bhrumom/fabushi-desktop/actions/runs/39554897013)
+在 `3889f49f3cb5afbbfcdda8974e0c6c9bc4b633c1` 通过 25 组、149 项合同测试，
+Mac Host 在已提交锁文件下的 `cargo check --locked` 同样通过。
+失败事件记录恢复标记动作 `unchanged`，不声称在没有 pending store 时已经落盘。
