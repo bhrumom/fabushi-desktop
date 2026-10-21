@@ -83,14 +83,55 @@ fn ordinary_box_failures_remain_model_visible_without_cancelling_the_turn() {
         box_resources:Some(port.clone()), cancellation:cancellation.clone(), ..Default::default()
     });
     let tool = bridge.list_tools().unwrap().into_iter().find(|tool| tool.name == "MiniApp").unwrap();
-    for _ in 0..5 {
+    for attempt in 0..5 {
         let error = bridge.call_tool(&tool,json!({"action":"inspect","project":"counter"}),"tool-failure").unwrap_err();
-        assert!(matches!(error, ProviderSessionError::Tool(_)));
+        match error {
+            ProviderSessionError::Tool(message) => {
+                assert!(message.contains("Diagnostic: connection refused"));
+                assert_eq!(message.contains("[Tool observation:"), attempt == 1);
+            }
+            other => panic!("ordinary tool failure must not cancel the turn: {other}"),
+        }
         assert!(!cancellation.is_cancelled());
     }
     cancellation.cancel("user stopped the turn");
     assert!(bridge.call_tool(&tool,json!({"action":"inspect","project":"counter"}),"after-user-stop").is_err());
     assert_eq!(port.0.load(std::sync::atomic::Ordering::SeqCst), 5);
+}
+
+struct ScriptedBox(Mutex<std::collections::VecDeque<Result<Value, ProviderSessionError>>>);
+impl RunnerBoxResourcePort for ScriptedBox {
+    fn execute_shell(&self, _: RunnerBoxShellRequest) -> Result<Value, ProviderSessionError> {
+        self.0.lock().unwrap().pop_front().expect("scripted Box outcome")
+    }
+    fn execute_read(&self, _: RunnerBoxReadRequest) -> Result<Value, ProviderSessionError> { unreachable!() }
+    fn execute_write(&self, _: RunnerBoxWriteRequest) -> Result<(), ProviderSessionError> { unreachable!() }
+}
+
+#[test]
+fn repetition_advisory_distinguishes_changed_calls_errors_and_real_recovery() {
+    let failure = |text: &str| Err(ProviderSessionError::Tool(text.into()));
+    let port = Arc::new(ScriptedBox(Mutex::new(std::collections::VecDeque::from([
+        failure("refused"), failure("refused"), failure("refused"),
+        failure("permission denied"), failure("permission denied"),
+        Ok(json!({"executed":true})), failure("permission denied"), failure("permission denied"),
+    ]))));
+    let cancellation = RoutedProviderCancellation::default();
+    let bridge = build_turn_toolset(Arc::new(Base), TurnToolsetDependencies {
+        box_resources:Some(port), cancellation:cancellation.clone(), ..Default::default()
+    });
+    let shell = bridge.list_tools().unwrap().into_iter().find(|tool| tool.name == "Shell").unwrap();
+    for (index, expected_warning) in [false, true, false, false, true, false, false, true].into_iter().enumerate() {
+        // The third call is a distinct diagnostic, not a replay of the first.
+        let command = if index == 2 { "diagnose changed-state" } else { "diagnose" };
+        let args = if index == 1 {
+            serde_json::from_str(&format!("{{\"workingDirectory\":\"/workspace\",\"command\":\"{command}\"}}")).unwrap()
+        } else { json!({"command":command,"workingDirectory":"/workspace"}) };
+        let result = bridge.call_tool(&shell,args,"diagnostic");
+        if index == 5 { assert!(result.is_ok()); }
+        else { assert_eq!(result.unwrap_err().to_string().contains("[Tool observation:"), expected_warning); }
+        assert!(!cancellation.is_cancelled());
+    }
 }
 
 struct ActionsBox;

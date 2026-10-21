@@ -77,6 +77,32 @@ inside another tool and bypassing their approval/audit policy.
   negative evidence, not live feature acceptance. Do not restart live-model
   acceptance until truthful diagnostics and the underlying readiness problem are
   addressed. This change must not itself restart paid-model acceptance.
+- BA-08: learn from Hermes Agent's interactive warn-only tool guardrails without
+  adopting a new runtime or a fixed failure-count cancellation policy. In the
+  existing Box tool bridge, a second identical (tool, canonical arguments,
+  resource error) observation adds one model-visible advisory while preserving
+  the actual error. It never invokes another model, retries a tool, grants access
+  or cancels the turn. Different arguments/errors are separate observations;
+  success for that same call clears its observation. Sending status messages is
+  not resource progress. Keep only bounded hashed signatures (64 per turn), not
+  retained source or credentials. Test the real MiniApp->Shell composition and
+  negative controls for changed calls/errors, successful recovery and user stop.
+  Existing Host ensure_ready and AwaitShell own waits; only promise asynchronous
+  completion when a real owner-routed notification is registered. A readiness
+  failure is not evidence of a running job or a future completion notification.
+
+### Hermes source comparison
+
+Read-only upstream baseline: NousResearch/hermes-agent
+`40cc180823d182826536416de2fc27be44b4ac57` (2026-10-21).
+`agent/tool_guardrails.py` separates exact replay from changed diagnostic commands,
+warns by default on interactive surfaces, and supports configurable stronger
+controls for unattended runs. `tools/process_registry_wait_policy.py` replaces
+silent polling with completion notification only after proving delivery ownership.
+`agent/turn_final_response.py` normally ends on final text, with bounded recovery
+exceptions; `agent/repetition_guard.py` addresses pathological text repetition,
+which is distinct from our repeated Box failures. We adopt the bounded advisory
+principle, not its Python implementation or its unattended hard-stop defaults.
 
 ## Failure, verification and delivery
 
