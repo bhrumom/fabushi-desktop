@@ -659,7 +659,7 @@ pub fn build_turn_toolset(
     let generate_image_box_resources = dependencies.box_resources.clone();
     let await_external_machine = dependencies.external_machine_executor.clone();
     let await_cancellation = dependencies.cancellation.clone();
-    let authoring_cancellation = dependencies.cancellation.clone();
+    let turn_cancellation = dependencies.cancellation.clone();
     let bridge: Arc<dyn RoutedToolBridge> =
         match (role.is_subagent_runner, dependencies.mcp_management_sink) {
             (false, Some(management)) => Arc::new(McpManagementToolBridge::new(base, management)),
@@ -667,12 +667,13 @@ pub fn build_turn_toolset(
         };
     let bridge: Arc<dyn RoutedToolBridge> = match (role.remote_box_available, dependencies.box_resources) {
         (true, Some(box_resources)) => {
-            let mut box_bridge = RunnerBoxToolBridge::new(bridge, box_resources);
+            let mut box_bridge = RunnerBoxToolBridge::new(bridge, box_resources)
+                .with_readiness_guard(turn_cancellation.clone());
             if let Some(review) = dependencies.box_shell_review {
                 box_bridge = box_bridge.with_shell_review(review);
             }
             if !role.is_subagent_runner && !role.is_shared_room_runner {
-                Arc::new(MiniAppAuthoringToolBridge::new(Arc::new(box_bridge), authoring_cancellation))
+                Arc::new(MiniAppAuthoringToolBridge::new(Arc::new(box_bridge), turn_cancellation))
             } else {
                 Arc::new(box_bridge)
             }

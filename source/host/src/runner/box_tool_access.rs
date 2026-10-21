@@ -1,5 +1,5 @@
 use std::collections::BTreeSet;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use serde_json::{Value, json};
 
@@ -9,7 +9,9 @@ use crate::extensions::inference::provider_session::{
 
 use super::large_output_spill::{MCP_TEXT_FILE_THRESHOLD_BYTES, is_large_output_spill_enabled, maybe_spill_mcp_text_result};
 use super::shell_terminal_watch::ShellTerminalPollRead;
-use super::routed_provider_runtime::RoutedToolBridge;
+use super::routed_provider_runtime::{RoutedProviderCancellation, RoutedToolBridge};
+use crate::ports::r#box::{SAND_BOX_NOT_READY_MESSAGE, SAND_BOX_NOT_RESPONDING_MESSAGE,
+    SAND_BOX_NO_MONITOR_AVAILABLE_MESSAGE};
 
 pub const RUNNER_BOX_TOOL_PROVIDER: &str = "mahayana-box";
 pub const RUNNER_BOX_SHELL_TOOL_NAME: &str = "Shell";
@@ -173,6 +175,7 @@ pub struct RunnerBoxToolBridge {
     upstream: Arc<dyn RoutedToolBridge>,
     box_resources: Arc<dyn RunnerBoxResourcePort>,
     shell_review: Option<BoxShellAutoReviewCallback>,
+    readiness_guard: Option<(RoutedProviderCancellation, Arc<Mutex<usize>>)>,
 }
 
 impl RunnerBoxToolBridge {
@@ -184,12 +187,40 @@ impl RunnerBoxToolBridge {
             upstream,
             box_resources,
             shell_review: None,
+            readiness_guard: None,
         }
     }
 
     pub fn with_shell_review(mut self, review: BoxShellAutoReviewCallback) -> Self {
         self.shell_review = Some(review);
         self
+    }
+
+    /// Bound unavailable-resource retries with the existing provider turn owner.
+    pub fn with_readiness_guard(mut self, cancellation: RoutedProviderCancellation) -> Self {
+        self.readiness_guard = Some((cancellation, Arc::new(Mutex::new(0))));
+        self
+    }
+
+    fn observe_readiness(&self, result: Result<Value, ProviderSessionError>) -> Result<Value, ProviderSessionError> {
+        if let Some((cancellation, failures)) = &self.readiness_guard {
+            let unavailable = matches!(&result,
+                Err(ProviderSessionError::Tool(message) | ProviderSessionError::Transport(message))
+                if [SAND_BOX_NOT_READY_MESSAGE, SAND_BOX_NOT_RESPONDING_MESSAGE,
+                    SAND_BOX_NO_MONITOR_AVAILABLE_MESSAGE].contains(&message.as_str()));
+            let mut count = failures.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+            if unavailable {
+                *count += 1;
+                if *count >= 3 {
+                    let reason = "Box unavailable after three readiness failures. This turn was stopped to prevent repeated model-token consumption. Wait for the computer to become ready, or use Settings → Updates → Update Fabushi's Computer, before starting another turn.";
+                    cancellation.cancel(reason);
+                    return Err(ProviderSessionError::Cancelled(reason.into()));
+                }
+            } else if result.is_ok() {
+                *count = 0;
+            }
+        }
+        result
     }
 
     fn is_box_tool(tool: &RoutedToolDefinition) -> bool {
@@ -329,7 +360,10 @@ impl RoutedToolBridge for RunnerBoxToolBridge {
                 result
             });
         }
-        match tool.name.as_str() {
+        if let Some((cancellation, _)) = &self.readiness_guard {
+            cancellation.check()?;
+        }
+        let result = match tool.name.as_str() {
             RUNNER_BOX_SHELL_TOOL_NAME => {
                 let request = Self::parse_shell_request(&args, tool_call_id)?;
                 if let Some(review) = self.shell_review.as_ref() {
@@ -346,6 +380,7 @@ impl RoutedToolBridge for RunnerBoxToolBridge {
                 "Unsupported Runner box tool {}",
                 tool.name
             ))),
-        }
+        };
+        self.observe_readiness(result)
     }
 }

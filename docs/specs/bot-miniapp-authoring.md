@@ -59,6 +59,17 @@ inside another tool and bypassing their approval/audit policy.
   Invoke Python in isolated mode so an untrusted workspace module or PYTHONPATH
   cannot replace the SDK's standard-library imports. Pin that negative control
   through the actual Actions Bot tool execution.
+- BA-07: stop the active provider turn after three consecutive canonical Box
+  readiness/unresponsive failures across Shell/Read (including MiniApp's delegated
+  Shell). Rewording commands or sending status messages must not reset the count;
+  a successful Box operation does. Use the existing turn cancellation owner, not
+  a prompt-only instruction or another retry scheduler. Never restart/reset the
+  user's Box automatically. Verify this with deterministic resource-port errors
+  and cancellation assertions, without spending model tokens on a stuck Box.
+  The 2026-10-21 signed run 39533420595 demonstrated repeated boot failures for
+  eight minutes with no project/export/GitHub progress and was cancelled. It is
+  negative evidence, not live feature acceptance. Do not restart live-model
+  acceptance until the readiness problem and retry guard are addressed.
 
 ## Failure, verification and delivery
 
