@@ -1,5 +1,7 @@
 import { join } from "node:path";
 
+import { startupApplicationFolderMethodsForPlatform } from "./startup-platform-capabilities.js";
+
 import { createGetOrCreateMachineId } from "./account/cursor-machine-id.js";
 import {
   getLocalExecDaemonDiscoveryPath,
@@ -472,13 +474,9 @@ export function createProductionStartupBinding(
     [ports?.app?.exit, "electron.app.exit()."],
     [ports?.dialog?.showMessageBox, "electron.dialog.showMessageBox()."],
   ] as const) requireFunction(value, label);
-  // Electron exposes Applications-folder helpers only on macOS. Requiring them
-  // unconditionally prevents the production main process from starting on
-  // Windows and Linux, even though moveToApplicationsFolderIfNeeded is a no-op
-  // on those platforms.
-  if (platform === "darwin") {
-    requireFunction(ports?.app?.isInApplicationsFolder, "electron.app.isInApplicationsFolder().");
-    requireFunction(ports?.app?.moveToApplicationsFolder, "electron.app.moveToApplicationsFolder().");
+  // Electron exposes Applications-folder helpers only on macOS.
+  for (const method of startupApplicationFolderMethodsForPlatform(platform)) {
+    requireFunction(ports?.app?.[method], `electron.app.${method}().`);
   }
   const argv = ports.argv ?? process.argv;
   const env = ports.env ?? process.env;
