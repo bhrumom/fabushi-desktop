@@ -51,7 +51,9 @@ use mahayana_host_runtime::runner::sand_automation_auto_review::{
     review_sand_automation_write,
 };
 use mahayana_host_runtime::runner::sand_auto_review_summaries::CloudLifecycleAction;
-use mahayana_host_runtime::runner::sand_browser_auto_review::run_sand_browser_auto_review_preflight;
+use mahayana_host_runtime::runner::sand_browser_auto_review::{
+    is_sand_browser_auto_review_mutating_action, run_sand_browser_auto_review_preflight,
+};
 use mahayana_host_runtime::runner::sand_computer_auto_review::{
     BoxIdentity, InstructionPermissions, SAND_COMPUTER_AUTO_REVIEW_CLASSIFIER_ERROR_REASON,
     run_sand_computer_auto_review_preflight,
@@ -6992,6 +6994,31 @@ fn start_routed_provider_task(
             let browser_auto_review: BrowserAutoReviewCallback =
                 Arc::new(move |spec, args, tool_call_id| {
                     let mode = browser_review_auto_review.current_modes().computer;
+                    // Local Chromium is owned by Electron Main, not the managed Box.
+                    // Never probe the Box display for target=local: that used to make
+                    // every local action fail before its Main-owned authorization and
+                    // generation fences ran. Shadow mode is observational and remains
+                    // non-blocking; Enforce mode fails closed for local mutations until
+                    // a local-page risk classifier is wired to the Main-owned snapshot.
+                    if args.get("target").and_then(serde_json::Value::as_str) == Some("local") {
+                        let exact_action = serde_json::to_value(to_browser_review_action(
+                            spec.op,
+                            args,
+                            &browser_review_agent_id,
+                        ))
+                        .map_err(|error| ProviderSessionError::Tool(format!(
+                            "Local Browser Auto-review action projection failed: {error}"
+                        )))?;
+                        if mode == SandAutoReviewMode::Off
+                            || mode == SandAutoReviewMode::Shadow
+                            || !is_sand_browser_auto_review_mutating_action(&exact_action)
+                        {
+                            return Ok(());
+                        }
+                        return Err(ProviderSessionError::Tool(
+                            "Local Browser Workspace mutation is blocked in Auto-review enforce mode until Main-owned page-state classification is available.".into(),
+                        ));
+                    }
                     let initial_display = browser_review_box.browser_window_index()?;
                     let exact_action = serde_json::to_value(to_browser_review_action(
                         spec.op,
