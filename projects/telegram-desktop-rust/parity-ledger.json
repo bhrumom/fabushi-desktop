@@ -17340,11 +17340,9 @@
         "projects/fabushi-communication-platform/quality/evidence-contract.md"
       ],
       "fabushi_target_symbols": [
-        "Ordinary repository task/review/evidence lifecycle",
-        "Repository quality-task class qualification",
-        "AI review phase execution policy",
-        "Adaptive evidence loop and bounded recovery",
-        "Independent review evidence / task-local handoff evidence"
+        "The repository quality-health command surface is the source-neutral orchestration boundary",
+        "Repository AI review/test phases use the source-neutral worker-effort contract in root `AGENTS.md`",
+        "Task-local handoff evidence stays compact"
       ],
       "target_language": "Markdown",
       "language_rationale": "The source entry is declarative OpenAI host interface metadata for a repository-development skill. Its applicable responsibility is an invocation boundary into existing source-neutral governance, not shipping product logic requiring Rust/TypeScript implementation.",
@@ -17513,7 +17511,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Declarative OpenAI host skill-interface metadata read from exact telegramdesktop/tdesktop source. No upstream product runtime, provider adapter or executable task engine is copied into Fabushi.",
-      "notes": "Zero-based strict index 46 is .agents/skills/perform-task/agents/openai.yaml@f238b707da7f39a4293b17d112ddd344dcb8253a on live 0eca52223cceed229932add1cc80792763120844. The complete 4-line YAML contains only interface.display_name, interface.short_description and interface.default_prompt; the prompt invokes $perform-task, whose semantic engine is the already-audited SKILL.md. Sibling skill openai.yaml files confirm the same interface-only convention; Grok/Claude commands reach the shared skill through separate wrappers. Coverage after this one entry: unknown=16,256, unread=16,231, omitted=0. Parent b34f exact-head TDRP 39520394783 and Rust 39520394839 are terminal success; the child mapping commit requires fresh exact-head workflows. Fixed-point unresolved_gitlink_authorities=0 and Boost 582/582/open=0, but recursive reachability/disposition remains open (95 authorities, 133 gitlinks, 3,865 acquisition candidates, 4,674 generated inputs, 4,602 resource inputs, 4,255 tool inputs), so baseline accepted/source_closure_ready remain false. Next strict entry index 47 is .agents/skills/perform-task/references/computer-use-testing.md@b7fc92d604a55975f75047828d476e64667aa259.",
+      "notes": "Zero-based strict index 46 is .agents/skills/perform-task/agents/openai.yaml@f238b707da7f39a4293b17d112ddd344dcb8253a on live 0eca52223cceed229932add1cc80792763120844. The complete 4-line YAML contains only interface.display_name, interface.short_description and interface.default_prompt; the prompt invokes $perform-task, whose semantic engine is the already-audited SKILL.md. Sibling skill openai.yaml files confirm the same interface-only convention; Grok/Claude commands reach the shared skill through separate wrappers. Coverage after this one entry: unknown=16,256, unread=16,231, omitted=0. Parent b34f exact-head TDRP 39520394783 and Rust 39520394839 are terminal success; the child mapping commit requires fresh exact-head workflows. Fixed-point unresolved_gitlink_authorities=0 and Boost 582/582/open=0, but recursive reachability/disposition remains open (95 authorities, 133 gitlinks, 3,865 acquisition candidates, 4,674 generated inputs, 4,602 resource inputs, 4,255 tool inputs), so baseline accepted/source_closure_ready remain false. Next strict entry index 47 is .agents/skills/perform-task/references/computer-use-testing.md@b7fc92d604a55975f75047828d476e64667aa259. First child f83 exposed the retained-index45 traceability omission and child 74ef exposed an invalid/duplicative target-symbol selection; both are governance-validator defects only. The traceability dossier is retained, and this revision binds index46 to three exact, unique, source-neutral existing-owner symbols without changing coverage or product behavior.",
       "test_execution_evidence": []
     }
   ]
