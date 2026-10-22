@@ -931,10 +931,10 @@
   "coverage": {
     "root_source_entries_total": 6820,
     "recursive_source_entries_total": 16306,
-    "unknown_minimum": 16242,
-    "unread_minimum": 16217,
+    "unknown_minimum": 16241,
+    "unread_minimum": 16216,
     "omitted_known": 0,
-    "note": "Live dev authority 5c674f1f6a0f6ace55b67f8bc295138680fe588b/09a421891474be0da279f44a5bf8e0dcf3bc270a remains unaccepted. Strict index 61 .claude/commands/crash-reports-process.md@5ac555406670721694e78c4e1e6b2a96b3e98fb5 is fully read and mapped to the existing source-neutral defect/regression and verification-evidence lifecycle; .claude/scripts/crash_triage.py@2db6cc14d8e529c4e61c5dcf169aade31fd35c58 remains dependency evidence only. Counters unknown=16,242, unread=16,217, omitted=0. Next strict root index 62 .claude/commands/cross-review.md@7769d03de798cde66987cd41303d2ea529321361. baseline_identity_accepted=false and source_closure_ready=false pending fresh exact-head Actions."
+    "note": "Live dev authority 5c674f1f6a0f6ace55b67f8bc295138680fe588b/09a421891474be0da279f44a5bf8e0dcf3bc270a remains unaccepted. Strict index 62 .claude/commands/cross-review.md@7769d03de798cde66987cd41303d2ea529321361 is fully read with its locked shared protocol/prompts/Codex-leaf dependencies and mapped to the existing source-neutral independent-review lifecycle. Counters unknown=16,241, unread=16,216, omitted=0. Next strict root index 63 .claude/commands/icon.md@479e23eceb019477fd7f2ffe4e2c13aadcfc556e. baseline_identity_accepted=false and source_closure_ready=false pending fresh exact-head Actions."
   },
   "acceptance": {
     "baseline_ready": false,
