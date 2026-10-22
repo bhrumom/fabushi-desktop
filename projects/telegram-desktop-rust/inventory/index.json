@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16371,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16282,
-    "unread_minimum": 16257,
+    "unknown_minimum": 16281,
+    "unread_minimum": 16256,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -94,7 +94,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live dev advanced linearly by 6 commits 5380230173ea60a5222aa9d977f074dd41e76139 -> 52a47639d9aa38713098974dd2ce07e631cb3381 (tree 42998681c09cdffcf75c0f38df71f663fc7b7b28), modifying nine existing paths and adding/removing none. Six SourceFiles changes have no existing parity-ledger source row or acquisition anchor. The three build-authority inputs repin desktop-app/patches 1f43f0f1d5ba8643ea45bbd8404782d4d840e421 -> 845a383f7abe8e44f92dfdcd566d603066ec2696; that repository advanced linearly by one commit and only added qtbase_6.11.2/0073-guard-stale-rhi-in-qrhiwidget.patch. Root/recursive non-directory counts remain 6,885/16,371; direct/nested gitlinks and acquisition candidate cardinality remain unchanged. Exact-head 6fd8c9ecc96706e977a389e947406338bbc58ae8 TDRP run 39790915088 completed 61/61 success (authority 12430393507 sha256:12c602206a68c76eee9fcc0456945e2d8cf19589cb8b37ad5bc7ca4bc4742221; closure 12430884136 sha256:d666816ad44c5cd304e4a6e32b03ef69b5cd0a6ebe7ab4e14e411a2416f5b188; reachability 12431542855 sha256:a8a5c5de792b95666b9bbc5ffb4abf3acdfec9a69286ad4ac9552e5d92929cda). Its Rust run 39790915090 was 5/6 success because ubuntu pressure profiling timed out in apt mirror resolution; child 021c084f540adbac9693955800ad97ea32f48904 fixes only that CI network boundary and exact-head ubuntu pressure job 119889673665 completed success, while TDRP run 39797817596 correctly failed closed because the lock still pinned 5380230173ea60a5222aa9d977f074dd41e76139. Counters remain unknown=16,282 unread=16,257 omitted=0 responsibilities=104; baseline_identity_accepted=false/source_closure_ready=false.",
+  "note": "Live upstream dev authority remains 52a47639d9aa38713098974dd2ce07e631cb3381/42998681c09cdffcf75c0f38df71f663fc7b7b28. Parent exact-head 74d6348d1c42d0020a2154f4c9e7ac6d71178b33 completed TDRP run 39799900496 at 61/61 success (authority 12434433392 sha256:ad24881bfd0eea83cb64e9df5a7470b8023cb909f533484ed471e07e5e0b9bf3; closure 12435227835 sha256:53c1ca96926cf956b46862290d86a5652cfd929a8a3802c1fb770763831b8166; reachability 12434998390 sha256:7d183985c5b597559f2043330e848f0b4f17aeefbfd6a7421334a2f607e935ee) and Rust desktop runtime run 39799900499 at 6/6 success (artifact 12435053136 sha256:b7020766f9d25105ad59d15740b7f68925e944edaa8bcfb05c622e2f1c3bb4e2). Strict index 87 .github/workflows/lock.yml@7904e79591f79a4ea61c0dc194c189f048bf5c67 fully read and mapped to existing FQT defect/evidence governance as repository maintenance provenance only. Counters unknown=16,281 unread=16,256 omitted=0 responsibilities=105. Next strict root index 88 .github/workflows/mac.yml@184a94b091d2d7bab19ae67d7f3a5881b18213ba. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,

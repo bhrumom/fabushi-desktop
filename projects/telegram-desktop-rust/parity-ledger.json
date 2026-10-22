@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "52a47639d9aa38713098974dd2ce07e631cb3381",
-  "target_commit": "021c084f540adbac9693955800ad97ea32f48904",
+  "target_commit": "74d6348d1c42d0020a2154f4c9e7ac6d71178b33",
   "coverage": {
     "source_entries_total": 16371,
-    "unknown": 16282,
-    "unread": 16257,
+    "unknown": 16281,
+    "unread": 16256,
     "omitted": 0,
-    "responsibilities_total": 104,
+    "responsibilities_total": 105,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -28073,6 +28073,252 @@
       "license_and_provenance": "Exact workflow/provider refs/blobs/licenses and ccache/centos_env inputs retained; mutable tags/installers/assets/runner/cache/one-day binaries are provenance only.",
       "reviewer": null,
       "notes": "Strict index 86 closes only .github/workflows/linux.yml. Counters become unknown=16,282 unread=16,257 omitted=0 responsibilities=104. Next strict root index 87 .github/workflows/lock.yml@7904e79591f79a4ea61c0dc194c189f048bf5c67. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required. Live rebaseline through 52a47639d9aa38713098974dd2ce07e631cb3381 refreshed centos_env Dockerfile provenance to 3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2 and desktop-app/patches to 845a383f7abe8e44f92dfdcd566d603066ec2696; linux.yml itself and its exact-head evidence boundary remain unchanged."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "52a47639d9aa38713098974dd2ce07e631cb3381",
+      "source_path": ".github/workflows/lock.yml",
+      "source_blob_sha": "7904e79591f79a4ea61c0dc194c189f048bf5c67",
+      "source_kind": "repository_thread_lock_maintenance_workflow",
+      "module_id": "tdesktop.github.workflows.lock",
+      "responsibility_id": "TDRP-R9-LOCK-THREAD-MAINTENANCE-PROVENANCE-001",
+      "source_symbols": [
+        "cron: '0 0 * * *'",
+        "dessant/lock-threads@v6",
+        "github-token: ${{ github.token }}",
+        "issue-inactive-days: 45",
+        "pr-inactive-days: 45"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-THREAD-MAINTENANCE",
+        "CAP-ISSUE-PR-DISCUSSION-ADMINISTRATION",
+        "CAP-DEFECT-CLOSURE-AUTHORITY-BOUNDARY"
+      ],
+      "dependency_ids": [
+        "dessant/lock-threads@v6 -> 89ae32b08ed1a541efecbab17912962a5e38981c",
+        "dessant/lock-threads action.yml@dd441d19ed1f3fe3d6e5d0c00c77d3b2b767a240",
+        "dessant/lock-threads package-lock.json@8eb0c7b72beeedceadf9d2bb9df5aaeed288bb88; audited runtime closure 33 exact packages",
+        "dessant/lock-threads src/index.js@2782ee7dd3137660021496bbef987f649a548d35",
+        "dessant/lock-threads src/schema.js@6a2850f10abff4dd2be93d156455ea1828741f8e",
+        "dessant/lock-threads src/data.js@740d1d9a67d344614dacedd6ce606908c4aed7c8",
+        "dessant/lock-threads src/utils.js@7daaca323090861a6315409c090178b6aff71155",
+        "dessant/lock-threads LICENSE@a4ac43133b3847adb439a1d5103075a6e9078fa9 (MIT)",
+        "FQT-DEF-001@b31ecd424cac2abf8a2322e2996bb1b53c561378"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/lock-thread-maintenance-workflow-complete-read.md",
+      "behavior_contract": "Treat lock.yml as scheduled GitHub thread-maintenance provenance only. Locking already closed inactive issues, pull requests or discussions cannot become Fabushi defect closure, product state, test acceptance or release authority; FQT-DEF-001 remains the unique defect-closure contract.",
+      "state_machine": "daily schedule -> provider enumerates closed+unlocked issues/PRs/discussions -> inactivity threshold (45d issues/PRs; provider-default 365d discussions) -> bounded/retried GitHub API traversal -> lock qualifying thread -> repeat next schedule",
+      "side_effects": [
+        "GitHub API reads",
+        "repository github.token use",
+        "GitHub issue/PR/discussion locked-state mutation",
+        "provider retry/throttling"
+      ],
+      "failure_cases": [
+        "mutable v6 tag drift",
+        "provider dependency drift",
+        "GitHub token/permission denial",
+        "rate limiting",
+        "bounded 50-item traversal leaves later items for future runs",
+        "partial provider/API failure",
+        "inactivity clock/updated-at changes",
+        "administrative locked state mistaken for defect closure"
+      ],
+      "ui_disposition": "Repository administration only; no shipping Fabushi UI capability.",
+      "non_ui_responsibilities": [
+        "scheduled thread maintenance",
+        "closed/unlocked eligibility",
+        "inactivity thresholding",
+        "bounded traversal",
+        "retry/throttling provenance",
+        "GitHub lock-state mutation",
+        "defect/release authority separation"
+      ],
+      "platform_delta": "Upstream repository thread locking is retained only as source-neutral administration provenance; Fabushi reuses existing FQT defect/evidence governance and does not adopt Telegram issue state as product/runtime state.",
+      "existing_owner_candidates": [
+        "FQT-DEF-001 defect closure/evidence governance (selected boundary owner)",
+        "repository exact-head GitHub-Actions governance (shared)",
+        "new issue/defect state owner (rejected)",
+        "new product moderation/retention owner (rejected)"
+      ],
+      "existing_owner": "FQT-DEF-001 defect closure authority with existing exact-head repository evidence governance",
+      "rejected_existing_owners": [
+        "GitHub locked state is not defect closure",
+        "workflow is not product conversation moderation",
+        "workflow is not release acceptance",
+        "no product persistence/state machine is required"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/fabushi-communication-platform/quality/defect-regression-policy.md"
+      ],
+      "fabushi_target_symbols": [
+        "FQT-DEF-001",
+        "reproduce -> fix -> targeted regression -> affected regression -> current-head evidence"
+      ],
+      "target_language": "Repository quality/evidence governance",
+      "language_rationale": "Scheduled GitHub administration maps to existing source-neutral defect/evidence governance, not production Rust/React.",
+      "command_event_contracts": [
+        "daily scheduled maintenance only",
+        "only closed and currently unlocked threads are eligible",
+        "issues/PRs use 45-day inactivity override",
+        "discussions retain provider-default 365-day inactivity",
+        "provider bounded traversal/retry cannot establish completeness",
+        "thread locking never closes defects or accepts releases"
+      ],
+      "state_owner": "GitHub owns repository locked state; FQT-DEF-001 owns Fabushi defect closure truth and evidence.",
+      "lifecycle_owner": "Existing defect intake/reproduce/fix/regression/current-head evidence lifecycle; lock.yml is post-closure administrative maintenance only.",
+      "persistence_and_restart": "GitHub persists thread locked state. A missed/failed schedule can retry later; no Fabushi product persistence is introduced.",
+      "concurrency_and_cancellation": "Daily independent runs; provider processes bounded sets with retry/throttling and filters already locked threads. Cancellation/partial traversal is non-passing maintenance provenance.",
+      "security_boundary": "Repository github.token and third-party action execution are administrative supply-chain boundaries; they cannot mutate Fabushi product state or bypass FQT/release gates.",
+      "network_service_dependencies": [
+        "GitHub Actions",
+        "GitHub Issues/Pulls/Discussions APIs",
+        "dessant/lock-threads provider dependencies"
+      ],
+      "service_owner": "Existing GitHub repository administration and Fabushi FQT evidence governance",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "policy-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required.",
+        "Recursive source closure remains open.",
+        "Independent release acceptance remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "lock.yml fully read: 16 line slots / 274 bytes.",
+        "dessant/lock-threads@v6 resolved at audit to 89ae32b08ed1a541efecbab17912962a5e38981c; action/runtime/package-lock/license blobs SHA-anchored.",
+        "Provider source confirms closed+unlocked selection, bounded 50-item issue/PR and discussion traversal, retry/throttling, and default discussion inactivity behavior.",
+        "FQT-DEF-001@b31ecd424cac2abf8a2322e2996bb1b53c561378 re-read as the unique defect close contract requiring reproduce -> fix -> targeted regression -> affected regression -> current-head evidence.",
+        "Parent exact-head 74d6348d1c42d0020a2154f4c9e7ac6d71178b33 completed TDRP run 39799900496 at 61/61 success (authority 12434433392 sha256:ad24881bfd0eea83cb64e9df5a7470b8023cb909f533484ed471e07e5e0b9bf3; closure 12435227835 sha256:53c1ca96926cf956b46862290d86a5652cfd929a8a3802c1fb770763831b8166; reachability 12434998390 sha256:7d183985c5b597559f2043330e848f0b4f17aeefbfd6a7421334a2f607e935ee) and Rust desktop runtime run 39799900499 at 6/6 success (artifact 12435053136 sha256:b7020766f9d25105ad59d15740b7f68925e944edaa8bcfb05c622e2f1c3bb4e2)."
+      ],
+      "target_commit": "74d6348d1c42d0020a2154f4c9e7ac6d71178b33",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository quality/test/evidence governance",
+      "composition_slot": "GitHub closed-thread maintenance provenance adapter",
+      "capability_component": "Scheduled thread-lock administration mapping",
+      "variation_axes": [
+        "issue/pull request/discussion",
+        "45-day/365-day inactivity",
+        "locked/unlocked",
+        "provider tag drift",
+        "token permission",
+        "rate limit/retry",
+        "bounded traversal",
+        "GitHub administrative state/Fabushi defect truth"
+      ],
+      "shared_owner_contracts": [
+        "FQT-DEF-001",
+        "exact-head GitHub Actions evidence governance",
+        "independent release acceptance"
+      ],
+      "duplicate_root_check": "No second defect tracker/closure owner, product moderation runtime, repository truth store or release authority.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository issue/PR/discussion administration",
+      "detail_section": "Not applicable",
+      "capability_surface": "Scheduled thread maintenance provenance",
+      "route_contract": "schedule -> closed+unlocked thread query -> inactivity evaluation -> bounded lock mutation",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Only GitHub locked state persists; defect closure continuity remains exclusively in FQT evidence/current-head regression state.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-LOCK-THREAD-MAINTENANCE-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-LOCK-THREAD-EXACT-SOURCE-001",
+        "ORA-TDRP-LOCK-THREAD-PROVIDER-001",
+        "ORA-TDRP-LOCK-THREAD-NO-CLOSURE-AUTHORITY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-LOCK-THREAD-CLOSED-ONLY-001",
+        "INV-TDRP-LOCK-THREAD-NO-DEFECT-CLOSURE-001",
+        "INV-TDRP-LOCK-THREAD-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-LOCK-THREAD-MAINTENANCE-001",
+        "CONTRACT-TDRP-LOCK-THREAD-FABUSHI-CLOSURE-BOUNDARY-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-LOCK-THREAD-ACTION-TAG-DRIFT-001",
+        "TEMP-TDRP-LOCK-THREAD-INACTIVITY-WINDOW-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-LOCK-THREAD-RATE-LIMIT-001",
+        "FAULT-TDRP-LOCK-THREAD-PROVIDER-PARTIAL-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-LOCK-THREAD-TOKEN-001",
+        "SEC-TDRP-LOCK-THREAD-ADMIN-BOUNDARY-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-LOCK-THREAD-DEFECT-OWNER-REUSED-001",
+        "REG-TDRP-LOCK-THREAD-NO-RELEASE-ACCEPT-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [],
+      "test_fixture_ids": [
+        "locked lock.yml + lock-threads provider commit/runtime/package closure + FQT-DEF-001 + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact lock.yml/provider commit/tree/runtime/package-lock/license identities retained. dessant/lock-threads is MIT; mutable v6 tag, GitHub runner/API state and provider dependency graph are provenance only, never Fabushi defect or release authority.",
+      "reviewer": null,
+      "notes": "Strict index 87 closes only .github/workflows/lock.yml as repository thread-maintenance provenance. Counters become unknown=16,281 unread=16,256 omitted=0 responsibilities=105. Next strict root index 88 .github/workflows/mac.yml@184a94b091d2d7bab19ae67d7f3a5881b18213ba. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required."
     }
   ]
 }
