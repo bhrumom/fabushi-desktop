@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "42e2af80cdd20a99edecb4255470f0aa6bae6bcb",
-  "target_commit": "4261f91555c49daba7ac761aa1439d8b677f6a4c",
+  "target_commit": "712b92e0503adb72bbbd64d996568dbe64d763c0",
   "coverage": {
     "source_entries_total": 16306,
-    "unknown": 16220,
-    "unread": 16195,
+    "unknown": 16219,
+    "unread": 16194,
     "omitted": 0,
-    "responsibilities_total": 101,
+    "responsibilities_total": 102,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -27284,6 +27284,266 @@
       "license_and_provenance": "Exact upstream copyright-year workflow is retained as source provenance. Telegram-specific year range, provider branch naming, mutable action master ref, GitHub token use and runtime npm installs are not copied into a product runtime or promoted to Fabushi immutable evidence authority.",
       "reviewer": null,
       "notes": "Strict index 83 closes only .github/workflows/copyright_year_updater.yml as retained legal/repository-maintenance provenance. Counters become unknown=16,220 unread=16,195 omitted=0 responsibilities=101. Next strict root index 84 .github/workflows/docker.yml@cba00688d935d50454bfb891fc37e001626cf9a0. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions are required."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "42e2af80cdd20a99edecb4255470f0aa6bae6bcb",
+      "source_path": ".github/workflows/docker.yml",
+      "source_blob_sha": "cba00688d935d50454bfb891fc37e001626cf9a0",
+      "source_kind": "linux_build_environment_image_publish_workflow",
+      "module_id": "tdesktop.github.workflows.docker",
+      "responsibility_id": "TDRP-R9-LINUX-BUILD-ENV-IMAGE-PUBLISH-PROVENANCE-001",
+      "source_symbols": [
+        "push branches: [master, dev]",
+        "IMAGE_TAG: ghcr.io/${{ github.repository }}/centos_env:latest",
+        "actions/checkout@v7 with submodules: recursive",
+        "curl -sSL https://install.python-poetry.org | python3 -",
+        "poetry install",
+        "DEBUG= LTO= poetry run gen_dockerfile > Dockerfile",
+        "jlumbroso/free-disk-space@ceedf095f4ec1a097402bc6bd80831f2e1a6fde6",
+        "docker login ghcr.io",
+        "docker build -t $IMAGE_TAG .",
+        "docker push $IMAGE_TAG"
+      ],
+      "capability_ids": [
+        "CAP-BUILD-ENVIRONMENT-CONTAINER-PROVENANCE",
+        "CAP-EXACT-SOURCE-BUILD-INPUT-BOUNDARY",
+        "CAP-RELEASE-SUPPORT-SUPPLY-CHAIN-BOUNDARY"
+      ],
+      "dependency_ids": [
+        "AGENTS.md@da3e37258c74963970ff5cfc5d54671a37558b97#Repository-release-support-container-provenance-governance",
+        "actions/checkout@v7 -> 3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "jlumbroso/free-disk-space@ceedf095f4ec1a097402bc6bd80831f2e1a6fde6",
+        "Telegram/build/docker/centos_env/Dockerfile@3135794864044f21d2a0092b32cff787c86704bf",
+        "Telegram/build/docker/centos_env/gen_dockerfile.py@86d27c96e1f732a1faf3e85397ea3ba38e493a0d",
+        "Telegram/build/docker/centos_env/pyproject.toml@8f43692fb217f075ccc588c3b677177e42b5688f",
+        "Telegram/build/docker/centos_env/poetry.lock@9d857912774d68b1f8adda1dbbccb87adefda788",
+        "Telegram/build/prepare/linux.sh@e4d2f920e4becdff6292d296efe6f21455a19fcb",
+        ".oss-scanner/Dockerfile@0ba260f72ad88b10a0d613ff5027b7a7640be7f2",
+        "docs/building-linux.md@fbdf25355734f35617849224da106f1b9fafb3c9"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/linux-build-environment-image-publish-workflow-complete-read.md",
+      "behavior_contract": "Treat upstream centos_env image publication as a bounded build-support provenance adapter: only exact reviewed source and dependency identities may contribute to Fabushi evidence; mutable registry tags, base-image tags, action major tags, online installers and tag-based third-party fetches remain upstream provenance and can never become canonical Fabushi source, product runtime, packaging, release or acceptance authority.",
+      "state_machine": "push to upstream master/dev touching docker workflow or centos_env inputs -> recursive checkout -> online Poetry installer -> Poetry dependency environment -> render generated Dockerfile -> runner disk cleanup -> install Docker -> authenticate GHCR with workflow token -> build centos_env image -> push mutable :latest -> downstream build/scanner consumers may resolve latest; any provider/input drift or publish ambiguity remains provenance-only and cannot advance Fabushi acceptance",
+      "side_effects": [
+        "Downloads and executes the Poetry installer from the network.",
+        "Resolves Python dependencies from poetry.lock/registry and renders a Dockerfile.",
+        "Deletes runner packages/caches through the pinned free-disk-space action.",
+        "Uses GITHUB_TOKEN to authenticate to GHCR.",
+        "Builds and pushes ghcr.io/telegramdesktop/tdesktop/centos_env:latest.",
+        "The published image can affect upstream OSS Scanner and Linux build-support consumers."
+      ],
+      "failure_cases": [
+        "mutable actions/checkout@v7 resolves to different code",
+        "online Poetry installer content changes or is unavailable",
+        "Poetry/package registry resolution differs",
+        "rockylinux:8 or other tag-based/base inputs resolve to different bytes",
+        "Dockerfile source acquisitions use mutable tags or online archives without immutable digest binding",
+        "recursive submodule/materialization changes",
+        "runner cleanup removes a dependency required by later steps",
+        "GHCR authentication/build/push fails",
+        "mutable centos_env:latest is consumed as if digest-qualified",
+        "a successful image push is mistaken for exact-head Fabushi evidence or release acceptance"
+      ],
+      "ui_disposition": "Build/release-support infrastructure only; no shipping Fabushi UI capability.",
+      "non_ui_responsibilities": [
+        "recursive source checkout provenance",
+        "build-environment image generation provenance",
+        "container registry authentication boundary",
+        "published-image identity/digest discipline",
+        "mutable base/tag/installer supply-chain accounting",
+        "downstream build/scanner consumer traceability",
+        "separation from shipping product/release acceptance"
+      ],
+      "platform_delta": "Upstream publishes a Telegram-specific CentOS/Rocky Linux build image under mutable :latest. Fabushi reuses its source-neutral release-support container provenance governance and exact-head Actions evidence model; it does not import the Telegram image, mutable tag, build runtime or registry state as a canonical product owner.",
+      "existing_owner_candidates": [
+        "AGENTS.md Repository release-support container provenance governance (selected)",
+        "existing exact-head TDRP source/dependency evidence contract (selected shared evidence boundary)",
+        "existing release/packaging owners (shared consumer boundary, not image truth)",
+        "new Linux build-container runtime owner (rejected)",
+        "new Telegram container/release authority (rejected)"
+      ],
+      "existing_owner": "AGENTS.md source-neutral Repository release-support container provenance governance established by strict77; strict84 is its Linux build-environment image publication adapter",
+      "rejected_existing_owners": [
+        "The upstream centos_env image is build support, not a shipping Fabushi product runtime.",
+        "A mutable GHCR :latest tag cannot become a canonical packaging/release/evidence owner.",
+        "Individual Dockerfile acquisitions remain separate source inventory responsibilities rather than being falsely closed by the workflow row."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md"
+      ],
+      "fabushi_target_symbols": [
+        "Release-support containers and canary-only service images are bounded build/test/release adapters over existing source, dependency, security, packaging and evidence owners; they are not shipping Fabushi product runtimes and do not create a second service or protocol owner."
+      ],
+      "target_language": "Repository build/release/security governance",
+      "language_rationale": "This workflow expresses build-support image provenance and provider-side publication, not application runtime behavior. Applicable responsibility belongs to existing source-neutral repository/container governance rather than new Rust or React production code.",
+      "command_event_contracts": [
+        "only reviewed upstream push/path changes trigger image rebuild",
+        "recursive checkout must be accounted as build input",
+        "generated Dockerfile and lockfile are source inputs, not opaque environment state",
+        "registry credentials remain CI provider secrets",
+        "mutable :latest is not sufficient evidence identity",
+        "downstream consumers must not promote mutable image resolution to exact-head acceptance",
+        "workflow success never substitutes for Fabushi exact-source/release acceptance"
+      ],
+      "state_owner": "Reviewed repository source plus exact dependency/image identities; GHCR mutable :latest is a provider pointer, not canonical state.",
+      "lifecycle_owner": "Existing release-support container provenance governance and exact-head GitHub Actions evidence lifecycle.",
+      "persistence_and_restart": "Durable authority is the reviewed source/lock/dependency identity and exact Actions evidence. Runner workspace and Docker daemon state are ephemeral; the registry tag may move and therefore must be re-resolved/digest-qualified for any evidence use.",
+      "concurrency_and_cancellation": "Concurrent master/dev publishes can race on the same :latest tag. Fabushi does not treat tag order as canonical; evidence must bind exact source and immutable artifact/digest identities.",
+      "security_boundary": "GITHUB_TOKEN is used for GHCR login; external installer, registry, base images, action tags and Dockerfile acquisitions are supply-chain inputs. No registry credential, image tag or upstream build container may become a Fabushi identity, messaging, storage, runtime or release authority.",
+      "network_service_dependencies": [
+        "GitHub checkout/submodule transport",
+        "install.python-poetry.org",
+        "Python package registry used by Poetry",
+        "Ubuntu package mirrors for docker.io",
+        "GHCR authentication and image registry",
+        "third-party source hosts/archive endpoints referenced by the generated Dockerfile"
+      ],
+      "service_owner": "Existing GitHub Actions/container-registry build infrastructure; no new Fabushi product service owner",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "policy-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions are required after this strict84 mapping commit.",
+        "Individual centos_env Dockerfile/generator/lock/build-script and recursive third-party source entries remain open in source inventory.",
+        "Recursive source disposition remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "Strict84 .github/workflows/docker.yml@cba00688d935d50454bfb891fc37e001626cf9a0 fully read: 43 line slots / 1121 bytes.",
+        "actions/checkout@v7 resolved during audit to 3d3c42e5aac5ba805825da76410c181273ba90b1; jlumbroso/free-disk-space is exact-pinned at ceedf095f4ec1a097402bc6bd80831f2e1a6fde6.",
+        "centos_env generator/lock inputs were read and SHA-anchored: gen_dockerfile.py@86d27c96e1f732a1faf3e85397ea3ba38e493a0d, pyproject.toml@8f43692fb217f075ccc588c3b677177e42b5688f, poetry.lock@9d857912774d68b1f8adda1dbbccb87adefda788.",
+        "Generated Dockerfile@3135794864044f21d2a0092b32cff787c86704bf uses rockylinux:8 and a mix of exact commits, tags and online archives/installers; those acquisition responsibilities remain separately open.",
+        ".oss-scanner/Dockerfile@0ba260f72ad88b10a0d613ff5027b7a7640be7f2 directly consumes ghcr.io/telegramdesktop/tdesktop/centos_env:latest; docs/building-linux.md and Telegram/build/prepare/linux.sh consume the locally generated tdesktop:centos_env build-support image.",
+        "AGENTS.md@da3e37258c74963970ff5cfc5d54671a37558b97 contains the selected source-neutral release-support container provenance owner symbol with no existing ledger target-key collision.",
+        "Parent exact-head 712b92e0503adb72bbbd64d996568dbe64d763c0 completed TDRP run 39771425432 at 61/61 success (authority 12421549778 sha256:8c1b5525bc43eca99a0f308ff1ae3e5aa5944762ac165e36cd3a74f3a15f8e41; closure 12423575035 sha256:6ad8318faefdff18fffab56d24b2c49100b2ee8409141a5d14919b5627dbea52; reachability 12423330472 sha256:f9082755de4aecc8020e28ab03913c173ac9a1d7073ae704b35239cf7436bde0) and Rust desktop runtime run 39771425437 at 6/6 success (artifact 12423225318 sha256:9285ee0266657d4b587fa584a56810cf4c258e343e0e2cd25e148cde4d5474ef)."
+      ],
+      "target_commit": "712b92e0503adb72bbbd64d996568dbe64d763c0",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository build/release/security governance",
+      "composition_slot": "release-support build-environment image provenance adapter",
+      "capability_component": "Source-neutral build-container publication provenance mapping",
+      "variation_axes": [
+        "master/dev push",
+        "docker workflow/centos_env path change",
+        "stable/drifted action major tag",
+        "stable/drifted online installer/base image/tagged dependency",
+        "registry login/build/push success/failure",
+        "mutable latest resolved to old/new digest",
+        "local Linux build/OSS scanner consumer"
+      ],
+      "shared_owner_contracts": [
+        "AGENTS.md Repository release-support container provenance governance",
+        "TDRP exact-source and dependency evidence accounting",
+        "existing release/packaging evidence owners"
+      ],
+      "duplicate_root_check": "No Linux build-container product runtime, Telegram container owner, second source store, registry authority, packaging owner, release owner or acceptance authority is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository build/release support only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Build-environment image provenance adapter",
+      "route_contract": "source/path trigger -> exact checkout/generation -> image build/publish -> downstream build-support consumer; no product route",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Only exact reviewed source/dependency identities and digest-qualified artifacts preserve evidence continuity; mutable registry tags and ephemeral runner/container state do not.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-LINUX-BUILD-ENV-IMAGE-PUBLISH-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-LINUX-BUILD-IMAGE-EXACT-SOURCE-001",
+        "ORA-TDRP-LINUX-BUILD-IMAGE-DOWNSTREAM-CONSUMER-001",
+        "ORA-TDRP-LINUX-BUILD-IMAGE-NO-RELEASE-AUTHORITY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-LINUX-BUILD-IMAGE-MUTABLE-TAG-NO-AUTHORITY-001",
+        "INV-TDRP-LINUX-BUILD-IMAGE-NO-PRODUCT-RUNTIME-001",
+        "INV-TDRP-LINUX-BUILD-IMAGE-SECRETS-BOUNDARY-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-LINUX-BUILD-IMAGE-PROVENANCE-001",
+        "CONTRACT-TDRP-LINUX-BUILD-IMAGE-CONSUMER-HANDOFF-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-LINUX-BUILD-IMAGE-LATEST-DRIFT-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-LINUX-BUILD-IMAGE-INSTALLER-001",
+        "FAULT-TDRP-LINUX-BUILD-IMAGE-REGISTRY-001",
+        "FAULT-TDRP-LINUX-BUILD-IMAGE-TAG-DRIFT-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-LINUX-BUILD-IMAGE-GITHUB-TOKEN-001",
+        "SEC-TDRP-LINUX-BUILD-IMAGE-SUPPLY-CHAIN-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-LINUX-BUILD-IMAGE-NO-PRODUCT-RUNTIME-001",
+        "REG-TDRP-LINUX-BUILD-IMAGE-NO-RELEASE-ACCEPT-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [],
+      "test_fixture_ids": [
+        "locked docker.yml + centos_env generator/lock/Dockerfile inputs + direct consumers + parent exact-head PR/ref/tree/upstream lease + TDRP/Rust artifacts"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact upstream docker workflow is retained as build-support provenance. Telegram GHCR namespace, mutable :latest image, base/tagged dependencies, online Poetry/Rust/tool downloads and provider credentials are not promoted to Fabushi runtime or exact evidence authority.",
+      "reviewer": null,
+      "notes": "Strict index 84 closes only .github/workflows/docker.yml. The centos_env Dockerfile/generator/lock/build scripts and recursive external inputs remain separate inventory responsibilities. Counters become unknown=16,219 unread=16,194 omitted=0 responsibilities=102. Next strict root index 85 .github/workflows/issue_closer.yml@355405165590712b1826b2f92a8f867c8d568dd9. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions are required."
     }
   ]
 }
