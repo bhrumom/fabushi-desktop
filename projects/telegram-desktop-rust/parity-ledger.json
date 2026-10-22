@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
-  "target_commit": "833e1b0ff6826177c5aef2baff8f99c9c8980f4e",
+  "target_commit": "ea1ba98cdc69863e5ca595d488c9da903a3b678d",
   "coverage": {
     "source_entries_total": 16306,
-    "unknown": 16225,
-    "unread": 16200,
+    "unknown": 16224,
+    "unread": 16199,
     "omitted": 0,
-    "responsibilities_total": 96,
+    "responsibilities_total": 97,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -25583,7 +25583,7 @@
       "responsibility_id": "TDRP-R9-RELEASE-SUPPORT-CONTAINER-PROVENANCE-001",
       "source_symbols": [
         "FROM ubuntu@sha256",
-        "ARG TELEGRAM_BOT_API_VERSION",
+        "ARG TELEGRAM_BOT_API_REF",
         "git checkout --recurse-submodules",
         "cmake --build",
         "USER 999",
@@ -26042,6 +26042,256 @@
       "reviewer": null,
       "license_and_provenance": "Exact upstream entrypoint.sh blob retained. Telegram Bot API binary path, port, data/temp paths and TELEGRAM_LOCAL flag remain source provenance only.",
       "notes": "Strict index 78 closes only .github/telegram-bot-api/entrypoint.sh. Counters become unknown=16225 unread=16200 omitted=0 responsibilities=96. strict79/strict80 were read for consumer context but remain independent unread strict entries. Next strict root index 79 .github/workflows/canary-bot-api.yml@7285f29ed2a09695a02b8f7821c10df5aa50bc44. Closure flags remain false.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
+      "source_path": ".github/workflows/canary-bot-api.yml",
+      "source_blob_sha": "7285f29ed2a09695a02b8f7821c10df5aa50bc44",
+      "source_kind": "repository_release_support_container_image_workflow",
+      "module_id": "tdesktop.github.workflows.canary_bot_api",
+      "responsibility_id": "TDRP-R9-RELEASE-SUPPORT-IMAGE-PUBLISH-PROVENANCE-001",
+      "source_symbols": [
+        "workflow_dispatch.inputs.ref",
+        "^[0-9a-f]{40}$",
+        "permissions.contents=read",
+        "permissions.packages=write",
+        "environment=canary",
+        "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "docker/login-action@dbcb813823bdd20940b903addbd779551569679f",
+        "docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a",
+        "TELEGRAM_BOT_API_REF=${{ inputs.ref }}",
+        "ghcr.io/${{ github.repository_owner }}/telegram-bot-api:${{ inputs.ref }}",
+        "ghcr.io/${{ github.repository_owner }}/telegram-bot-api@${{ steps.push.outputs.digest }}"
+      ],
+      "capability_ids": [
+        "CAP-RELEASE-SUPPORT-IMAGE-PROVENANCE",
+        "CAP-EXACT-EXTERNAL-SOURCE-BUILD",
+        "CAP-IMMUTABLE-DIGEST-HANDOFF"
+      ],
+      "dependency_ids": [
+        "AGENTS.md@da3e37258c74963970ff5cfc5d54671a37558b97#Repository release-support container provenance governance",
+        ".github/telegram-bot-api/Dockerfile@a361602441040028a3332c3732c4902d9c880122",
+        ".github/telegram-bot-api/entrypoint.sh@d40a7372efd8e5862e00f9b214b36a840688797e",
+        ".github/workflows/canary.yml@0d460c617c2a3910a0d11ac793d07533ac966947"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/release-support-container-image-workflow-complete-read.md",
+      "behavior_contract": "Accept only an explicit immutable external source commit, run the image build in the protected canary workflow boundary with pinned actions and least required permissions, build from the reviewed local container context, push the resulting image, and hand downstream publication an immutable digest-qualified image identity rather than a mutable tag or third-party substitution.",
+      "state_machine": "manual workflow dispatch -> validate full 40-hex external ref -> checkout exact Fabushi workflow source -> authenticate to declared registry under canary environment -> build reviewed local Dockerfile with exact external ref -> push image -> capture registry digest -> emit digest-qualified downstream reference; malformed ref/build/push/digest failure is non-passing and image success does not create release ACCEPT",
+      "side_effects": [
+        "Authenticates GitHub Actions to GHCR with the workflow token inside the declared canary environment.",
+        "Builds the reviewed release-support Dockerfile using the exact requested telegram-bot-api commit as a build argument.",
+        "Pushes a source-ref tag for discoverability and emits the immutable registry digest for downstream consumption.",
+        "Must not create Fabushi product messaging, identity, storage, updater or release-acceptance state."
+      ],
+      "failure_cases": [
+        "external source ref is empty, malformed, abbreviated, branch- or tag-based",
+        "checkout/login/build action identity is mutable or not reviewable",
+        "workflow permissions exceed the declared release-support boundary without justification",
+        "build context or exact external ref silently diverges from the reviewed inputs",
+        "push succeeds but immutable digest is absent or not bound to the reviewed build",
+        "downstream consumes the source-ref tag rather than the digest-qualified image",
+        "a digest-shaped third-party or unreviewed image is substituted for the reviewed build",
+        "registry/API/bot credentials escape the existing workflow permission boundary",
+        "a green image build is mistaken for packaged acceptance or release authorization"
+      ],
+      "ui_disposition": "Repository release-support image build/publish workflow only; no shipping Fabushi UI capability.",
+      "non_ui_responsibilities": [
+        "immutable external source-ref validation",
+        "commit-pinned workflow action provenance",
+        "least workflow permission and protected-environment boundary",
+        "reviewed local build-context binding",
+        "exact external ref projection into the Dockerfile build",
+        "immutable registry digest capture and downstream handoff",
+        "secret-bearing downstream consumer provenance",
+        "no second runtime/service/release authority"
+      ],
+      "platform_delta": "Upstream builds a Telegram Bot API canary-support image and prints a GHCR digest for a manually configured downstream variable. Fabushi retains the source-neutral exact-source/image/digest provenance contract under existing release-support governance; Telegram Bot API, GHCR naming and the repository variable are provenance only. The Fabushi owner is stricter than the upstream syntax check: downstream must prove the digest is the exact image built and reviewed, not merely any digest-shaped GHCR reference.",
+      "existing_owner_candidates": [
+        "AGENTS.md Repository release-support container provenance governance (selected)",
+        "existing exact-source release/evidence lifecycle (shared downstream owner)",
+        "new Telegram Bot API image/runtime owner (rejected)",
+        "new GHCR release authority (rejected)"
+      ],
+      "existing_owner": "AGENTS.md source-neutral Repository release-support container provenance governance established by strict77; strict79 is its exact-source image-build/digest-handoff adapter",
+      "rejected_existing_owners": [
+        "A canary image build workflow does not own shipping messaging/service behavior.",
+        "GHCR publication is an artifact transport, not a second release authority.",
+        "The existing provenance owner already requires exact external refs, exact built/reviewed digests, bounded secrets and no Telegram runtime adoption."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md"
+      ],
+      "fabushi_target_symbols": [
+        "External refs and published images are fail-closed inputs.",
+        "If a workflow publishes a canary image, downstream release jobs must consume the exact digest-qualified image that was built and reviewed; registry credentials, API credentials, bot tokens, release files and other secrets remain within the existing workflow permission boundary and must not turn the container into a canonical identity, messaging, storage or release owner."
+      ],
+      "target_language": "Repository governance / GitHub Actions release-support adapter",
+      "language_rationale": "The source is repository CI/release-support orchestration. Its applicable behavior is exact-source and immutable-image provenance already owned by repository governance, not Rust/React shipping product code.",
+      "command_event_contracts": [
+        "accept only a full immutable external commit ref",
+        "use commit-pinned workflow actions",
+        "keep registry write and source read permissions bounded",
+        "build only the reviewed local container context",
+        "project the exact external ref into the image build",
+        "capture and expose the immutable pushed-image digest",
+        "require downstream to consume the exact built-and-reviewed digest",
+        "fail closed on ref/action/build/push/digest/provenance mismatch",
+        "never turn image success into release ACCEPT"
+      ],
+      "state_owner": "GitHub Actions run plus immutable registry artifact identity; no canonical Fabushi product state is owned by this workflow.",
+      "lifecycle_owner": "Explicit canary workflow dispatch -> exact source validation -> protected registry login/build/push -> digest handoff -> strict80 downstream release consumer -> existing release/evidence gates.",
+      "persistence_and_restart": "The durable output is immutable registry content addressed by digest plus GitHub run evidence. A rerun must revalidate the exact external ref and cannot rely on a mutable tag as identity.",
+      "concurrency_and_cancellation": "Each workflow dispatch is independently keyed by its exact requested ref and resulting digest. Cancellation or rerun cannot rewrite an already reviewed digest into a different identity; downstream provenance must select the exact accepted digest.",
+      "security_boundary": "Workflow-level contents:read/packages:write plus environment=canary bound registry authentication. The image may later receive API credentials, bot token and release files, so third-party/unreviewed substitution is non-passing and secrets remain owned by the existing workflow permission boundary.",
+      "network_service_dependencies": [
+        "GitHub Container Registry for release-support image storage; artifact transport only.",
+        "github.com/tdlib/telegram-bot-api exact commit fetched by the strict77 Dockerfile; upstream canary provenance only."
+      ],
+      "service_owner": "Existing GitHub Actions/release-support infrastructure; no new Fabushi product service owner",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "policy-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required.",
+        "Recursive source disposition remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "Strict79 .github/workflows/canary-bot-api.yml@7285f29ed2a09695a02b8f7821c10df5aa50bc44 fully read: 69 line slots including trailing newline / 2364 bytes.",
+        "Workflow rejects refs that do not match ^[0-9a-f]{40}$, uses contents:read/packages:write under environment=canary, and pins checkout/login/build-push actions to full commit SHAs.",
+        "Build context is .github/telegram-bot-api and passes TELEGRAM_BOT_API_REF=${{ inputs.ref }} to Dockerfile@a361602441040028a3332c3732c4902d9c880122; strict77 ledger source symbol corrected from the stale VERSION spelling to exact ARG TELEGRAM_BOT_API_REF.",
+        "Workflow pushes the source-ref tag but explicitly emits ghcr.io/${{ github.repository_owner }}/telegram-bot-api@${{ steps.push.outputs.digest }} for immutable downstream use.",
+        "Exact upstream code search for CANARY_BOT_API_IMAGE returns only canary-bot-api.yml and canary.yml at the locked commit; canary.yml consumes the variable in three publish jobs and shape-validates a digest-qualified GHCR reference.",
+        "Consumer audit found canary.yml does not independently prove the configured digest came from this reviewed workflow; existing Fabushi AGENTS governance therefore correctly requires the stronger exact built-and-reviewed digest provenance edge.",
+        "Parent exact-head TDRP run 39756506131 completed 61/61 success: authority 12415958133 sha256:1a523f19d54911965cd5b962c930586445f2b930cc9135ac30a7388b2dd5b92a; closure 12415549488 sha256:e2aff7a4690ca8b58974dc958adb5e073028ca98a71069719f21e2d4b171c2c9; reachability 12416800901 sha256:3cf4628f5080b7d778cfa5c639d6594a258a80ee8b9a4de727006130789793a3.",
+        "Parent exact-head Rust run 39756506145 completed 6/6 success: artifact 12415568854 sha256:57ffc4fb1e896b99ae9f3c4d62a58dc94d2549164408d929ed9fb95e3c54e1c0."
+      ],
+      "target_commit": "ea1ba98cdc69863e5ca595d488c9da903a3b678d",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository release-support container provenance and exact-head release/evidence lifecycle",
+      "composition_slot": "Exact external-source image build and immutable digest handoff before downstream canary publication",
+      "capability_component": "Source-neutral immutable build-input/image provenance adapter",
+      "variation_axes": [
+        "valid/invalid external ref",
+        "build success/failure",
+        "digest present/absent",
+        "reviewed digest/tag-only/unreviewed digest downstream reference",
+        "protected registry authentication available/unavailable"
+      ],
+      "shared_owner_contracts": [
+        "AGENTS.md Repository release-support container provenance governance",
+        "strict77 immutable Dockerfile/source provenance",
+        "strict78 bounded PID1 entrypoint adapter",
+        "strict80 digest-pinned release consumer"
+      ],
+      "duplicate_root_check": "No Telegram Bot API runtime/provider, GHCR release authority, second messaging service, updater, identity/storage root or release-acceptance owner is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository canary image build/publish workflow only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Bounded release-support image provenance adapter",
+      "route_contract": "explicit exact external commit -> reviewed Dockerfile build -> pushed immutable digest -> downstream exact digest consumer -> existing release/evidence gates",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Immutable commit/digest identities and GitHub run evidence reconstruct provenance; mutable tag or repository variable value alone is never canonical proof.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-RELEASE-SUPPORT-IMAGE-PUBLISH-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CANARY-IMAGE-REF-001",
+        "ORA-TDRP-CANARY-IMAGE-ACTIONS-PINNED-001",
+        "ORA-TDRP-CANARY-IMAGE-DIGEST-001",
+        "ORA-TDRP-CANARY-IMAGE-REVIEWED-PROVENANCE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CANARY-IMAGE-NO-MUTABLE-REF-001",
+        "INV-TDRP-CANARY-IMAGE-NO-TAG-IDENTITY-001",
+        "INV-TDRP-CANARY-IMAGE-NO-SECOND-RUNTIME-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CANARY-IMAGE-REF-001",
+        "CONTRACT-TDRP-CANARY-IMAGE-DIGEST-HANDOFF-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CANARY-IMAGE-BUILD-PUSH-001",
+        "FAULT-TDRP-CANARY-IMAGE-DIGEST-DRIFT-001",
+        "FAULT-TDRP-CANARY-IMAGE-UNREVIEWED-SUBSTITUTION-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CANARY-IMAGE-LEAST-PERMISSION-001",
+        "SEC-TDRP-CANARY-IMAGE-SECRET-BOUNDARY-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-CANARY-IMAGE-NO-TELEGRAM-RUNTIME-001",
+        "REG-TDRP-CANARY-IMAGE-EXACT-HEAD-GATES-001",
+        "REG-TDRP-STRICT77-ARG-REF-SYMBOL-001"
+      ],
+      "release_gate_ids": [],
+      "test_fixture_ids": [
+        "locked canary-bot-api.yml + Dockerfile/entrypoint/canary.yml consumer chain + parent exact-head PR/ref/tree/upstream lease + TDRP/Rust artifacts"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "release_gate_status": "open",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact upstream canary-bot-api.yml blob retained. Telegram Bot API repository/image name, GHCR path, canary environment, repository variable and provider-specific credentials remain source provenance only.",
+      "notes": "Strict index 79 closes only .github/workflows/canary-bot-api.yml and carries one evidence-backed typo correction in the strict77 ledger source_symbols (TELEGRAM_BOT_API_VERSION -> TELEGRAM_BOT_API_REF); no strict77 responsibility/disposition changes. Counters become unknown=16224 unread=16199 omitted=0 responsibilities=97. strict80 canary.yml is already complete-read for consumer context but remains an independent unread strict entry. Next strict root index 80 .github/workflows/canary.yml@0d460c617c2a3910a0d11ac793d07533ac966947. Closure flags remain false.",
       "test_execution_evidence": []
     }
   ]
