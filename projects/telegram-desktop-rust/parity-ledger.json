@@ -21665,12 +21665,12 @@
         "AGENTS.md"
       ],
       "fabushi_target_symbols": [
-        "Defect & Regression Policy / Record",
-        "Defect & Regression Policy / Escaped defect",
-        "Defect & Regression Policy / Closure/flaky",
-        "TEST_STRATEGY / Adaptive evidence loop and bounded recovery",
-        "AGENTS.md / Adaptive verification and evidence recovery",
-        "AGENTS.md / Build and test execution environment"
+        "## Record",
+        "## Escaped defect",
+        "## Closure/flaky",
+        "## Adaptive evidence loop and bounded recovery",
+        "##### Adaptive verification and evidence recovery",
+        "## Build and test execution environment"
       ],
       "target_language": "Markdown repository governance and existing language-native test/evidence tooling",
       "language_rationale": "The applicable responsibility is developer defect triage/evidence governance. The upstream Python/Claude workflow is not a product runtime to retain; shipping crash behavior continues through existing Rust/TypeScript/platform owners.",
