@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "42e2af80cdd20a99edecb4255470f0aa6bae6bcb",
-  "target_commit": "a23bef39fecccc6bdba36fdd90805ab139cd26fa",
+  "target_commit": "4de4218f66aed12d2fde323ba0ec7ff987f18ae5",
   "coverage": {
     "source_entries_total": 16306,
-    "unknown": 16222,
-    "unread": 16197,
+    "unknown": 16221,
+    "unread": 16196,
     "omitted": 0,
-    "responsibilities_total": 99,
+    "responsibilities_total": 100,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -26796,6 +26796,258 @@
       "license_and_provenance": "Exact upstream workflow retained; label wording, close comment, 14-day cadence and GitHub provider behavior are provenance/issue-maintenance semantics only.",
       "reviewer": null,
       "notes": "Strict index 81 closes only .github/workflows/cant-reproduce.yml. FQT-DEF-001 remains sole canonical defect closure owner. Counters unknown=16,222, unread=16,197, omitted=0, responsibilities=99. Next strict root index 82 .github/workflows/changelog.yml@445277fe4b44dc9ccef17b7b602016572c08fe7c. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions are required."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "42e2af80cdd20a99edecb4255470f0aa6bae6bcb",
+      "source_path": ".github/workflows/changelog.yml",
+      "source_blob_sha": "445277fe4b44dc9ccef17b7b602016572c08fe7c",
+      "source_kind": "repository_release_changelog_pages_workflow",
+      "module_id": "tdesktop.github.workflows.changelog",
+      "responsibility_id": "TDRP-R9-RELEASE-CHANGELOG-PAGES-PUBLICATION-001",
+      "source_symbols": [
+        "push.branches: [dev] + paths: [changelog.txt]",
+        "workflow_dispatch",
+        "permissions contents:read/pages:write/id-token:write",
+        "concurrency group: pages / cancel-in-progress: true",
+        "actions/checkout@v7",
+        "actions/setup-python@v7",
+        "python .github/scripts/generate_changelog.py",
+        "actions/upload-pages-artifact@v5 path: docs",
+        "deploy needs: build / environment: github-pages",
+        "actions/deploy-pages@v5",
+        "steps.deploy.outputs.page_url"
+      ],
+      "capability_ids": [
+        "CAP-RELEASE-NOTE-PRESENTATION-GENERATION",
+        "CAP-RELEASE-HISTORY-STATIC-PUBLICATION",
+        "CAP-REPOSITORY-PAGES-DEPLOYMENT-PROVENANCE"
+      ],
+      "dependency_ids": [
+        "changelog.txt@41b7466f8a11a1866a66ff583809dfe74ad9a3c3",
+        ".github/scripts/generate_changelog.py@6cdd12652d31b2a47ed9a8ef906308af59cca3d0",
+        "Telegram/Resources/art/icon16.png@561369d2b2688cc3799fc2b7a7a2f918d99cc155",
+        "Telegram/Resources/art/icon32.png@cff636894428e42c4fa5a063e3aa472c4bded8fc",
+        "actions/checkout@v7/3d3c42e5aac5ba805825da76410c181273ba90b1/action.yml@5b0524f730db83f9513c18ab31a6c086c7239076",
+        "actions/setup-python@v7/6d4fd22b20465ccc0f7354476588e8df7c9ca0e0/action.yml@645de4f5108b28bcc7ed043ee171770b0754cc35",
+        "actions/upload-pages-artifact@v5/fc324d3547104276b827a68afc52ff2a11cc49c9/action.yml@82713b4cbb35ccf98dfa8f2e0deedc5e83b6d845",
+        "actions/deploy-pages@v5/368f82528645a54fb793d4d04e342629a3f51346/action.yml@9640517bb026e0790a53bd6d35fd13a94617c48e",
+        "projects/telegram-desktop-rust/dossiers/release-changelog-generator-complete-read.md@947bb0396d1873f928768ecce5bb676565b4c564",
+        "projects/fabushi-communication-platform/quality/release-entry-exit-criteria.md@c5eb9d0897234bb2fdad4f505549b2350c44aa72",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/release-changelog-pages-workflow-complete-read.md",
+      "behavior_contract": "Treat the changelog workflow as a bounded repository publication adapter over canonical release-note/evidence owners: only a dev push changing changelog.txt or an explicit dispatch may generate the derived documentation, build must succeed before deployment, Pages credentials remain provider-scoped, and generated/deployed state never becomes canonical release/version/artifact or acceptance truth.",
+      "state_machine": "eligible dev/changelog.txt push or manual dispatch -> build checkout/setup-python -> strict76 generator consumes changelog.txt and bounded icons -> docs artifact upload -> deploy job after successful build -> github-pages environment deployment -> page_url provider state; superseded concurrent Pages runs may be cancelled; any failure/stale input leaves publication incomplete and cannot advance release acceptance",
+      "side_effects": [
+        "Reads repository contents and generates derived docs/changelog output through the already-mapped strict76 generator.",
+        "Uploads the docs directory as a GitHub Pages artifact.",
+        "Uses pages:write and id-token:write only for the github-pages deployment adapter.",
+        "May cancel an older in-progress Pages workflow in the shared pages concurrency group.",
+        "Does not select version truth, package/sign/notarize shipping artifacts, or create release ACCEPT."
+      ],
+      "failure_cases": [
+        "changelog.txt or generator input is stale/partial relative to source revision",
+        "generator or Pages artifact upload fails but deployment is treated as successful",
+        "deploy runs without build dependency succeeding",
+        "mutable major action tags are mistaken for immutable Fabushi evidence authority",
+        "GitHub Pages page_url/deployment state is mistaken for canonical release acceptance",
+        "provider OIDC/pages permission scope leaks into product credentials",
+        "cancelled/superseded concurrency state is interpreted as release completion"
+      ],
+      "ui_disposition": "Repository-generated release-history documentation and provider hosting only; not a shipping Fabushi product UI capability.",
+      "non_ui_responsibilities": [
+        "bounded workflow trigger/path filtering",
+        "build-before-deploy dependency ordering",
+        "derived Pages artifact handoff",
+        "provider-scoped Pages/OIDC permission boundary",
+        "concurrency cancellation for stale publication runs",
+        "strict separation between provider publication state and canonical release/evidence acceptance"
+      ],
+      "platform_delta": "Upstream publishes a Telegram-branded static changelog to GitHub Pages. Fabushi retains only source-neutral release-history presentation/publication provenance and fail-closed evidence semantics; shipping release/version/package/sign/notarize/acceptance remains with existing Fabushi owners.",
+      "existing_owner_candidates": [
+        "FQT-REL-001 release entry/exit and artifact identity gate (selected canonical release truth)",
+        "FQT-EVID-001 exact-head artifact/evidence contract (selected canonical evidence truth)",
+        "strict76 release changelog generator mapping (selected derived presentation behavior)",
+        ".github/workflows/release-macos-main.yml exact-source package/sign/notarize/publish lifecycle (related shipping release owner)",
+        "new GitHub Pages release/version/acceptance owner (rejected)"
+      ],
+      "existing_owner": "FQT-REL-001 + FQT-EVID-001 remain canonical release/evidence owners; strict76 remains the derived changelog generator owner and GitHub Pages is a replaceable provider publication adapter",
+      "rejected_existing_owners": [
+        "GitHub Pages deployment state cannot own canonical version, release artifact identity, signing/notarization or release acceptance.",
+        "The workflow composes strict76 rather than creating a second release-note parser/store.",
+        "Provider action tags, OIDC tokens, page URLs, environment names and concurrency groups are adapter provenance."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/fabushi-communication-platform/quality/release-entry-exit-criteria.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "FQT-REL-001",
+        "artifact name/ID/digest"
+      ],
+      "target_language": "Repository governance / provider publication provenance adapter",
+      "language_rationale": "GitHub Actions/Pages orchestration around an already-mapped generator, not shipping product logic.",
+      "command_event_contracts": [
+        "trigger only from declared changelog source change or explicit dispatch",
+        "build/generate/upload must complete before deploy",
+        "provider deployment credentials remain least-privilege and Pages-scoped",
+        "superseded publication runs may be cancelled but cannot change canonical release truth",
+        "mutable provider tags are provenance and resolve to immutable reviewed commits for audit",
+        "Pages deployment/page_url never substitutes for FQT-REL-001 or FQT-EVID-001"
+      ],
+      "state_owner": "Canonical release-note/version and release evidence remain repository/FQT state; generated docs artifact, github-pages deployment and page_url are disposable provider presentation state.",
+      "lifecycle_owner": "Existing release-note generator -> repository evidence/release gates -> optional provider documentation publication; shipping package/sign/notarize/release acceptance remains outside this workflow.",
+      "persistence_and_restart": "Canonical changelog source persists in repository; generated Pages artifacts/deployments are reproducible provider state and may be superseded/regenerated from exact source revision.",
+      "concurrency_and_cancellation": "Provider uses concurrency group pages with cancel-in-progress=true; cancellation or stale deployment cannot advance canonical release/evidence state.",
+      "security_boundary": "Repository contents are read-only in build; pages:write and id-token:write are scoped to GitHub Pages deployment. No product credential or shipping-release owner is introduced.",
+      "network_service_dependencies": [
+        "GitHub Actions checkout/setup-python provider actions.",
+        "GitHub Actions artifact service / upload-pages-artifact.",
+        "GitHub Pages deployment service / deploy-pages.",
+        "GitHub OIDC token exchange for Pages deployment."
+      ],
+      "service_owner": "GitHub Pages is replaceable documentation hosting; canonical release/evidence ownership remains FQT-REL-001/FQT-EVID-001",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "policy-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions are required after this strict82 mapping commit.",
+        "Recursive source disposition remains open.",
+        "Provider major action tags are mutable and cannot be promoted to Fabushi immutable-input authority."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "Strict82 .github/workflows/changelog.yml@445277fe4b44dc9ccef17b7b602016572c08fe7c fully read: 46 line slots / 847 bytes.",
+        "Direct generator/input/assets revalidated at current upstream 42e2af80cdd20a99edecb4255470f0aa6bae6bcb: generate_changelog.py@6cdd12652d31b2a47ed9a8ef906308af59cca3d0; changelog.txt@41b7466f8a11a1866a66ff583809dfe74ad9a3c3; icon16@561369d2b2688cc3799fc2b7a7a2f918d99cc155; icon32@cff636894428e42c4fa5a063e3aa472c4bded8fc.",
+        "Provider action refs resolved immediately before publication: actions/checkout@v7 -> 3d3c42e5aac5ba805825da76410c181273ba90b1 (action.yml@5b0524f730db83f9513c18ab31a6c086c7239076); actions/setup-python@v7 -> 6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 (action.yml@645de4f5108b28bcc7ed043ee171770b0754cc35); actions/upload-pages-artifact@v5 -> fc324d3547104276b827a68afc52ff2a11cc49c9 (action.yml@82713b4cbb35ccf98dfa8f2e0deedc5e83b6d845); actions/deploy-pages@v5 -> 368f82528645a54fb793d4d04e342629a3f51346 (action.yml@9640517bb026e0790a53bd6d35fd13a94617c48e).",
+        "Existing owners revalidated at FQT-REL-001@c5eb9d0897234bb2fdad4f505549b2350c44aa72, FQT-EVID-001@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70 and release-macos-main@b0a3a4d5503e6104c083f85e31475523a2b30643.",
+        "Parent TDRP 39766704100 61/61 success: authority 12420023650 sha256:16b170f1e943573da9ee8a01abeb8b6b71cb0b2ff1b714b106fb73fcd11f4d5c; closure 12420024429 sha256:e51dbf050bc378c54f3b71c4b165ce736f6b0ac8d4ecc1f3f8f7d7c8439f0a69; reachability 12421096128 sha256:65142f0f7cc55a328777ddfd48a1f2852ea4aff2031f52a808e4e62ce0f01661.",
+        "Parent Rust 39766703937 6/6 success: artifact 12419514479 sha256:4aa37ba990f3c1a8e217fb6064bfc18c5c86d993ddd9c7c092bcb23b648295b8."
+      ],
+      "target_commit": "4de4218f66aed12d2fde323ba0ec7ff987f18ae5",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi canonical release/evidence lifecycle with release-history presentation and GitHub Pages as subordinate provider adapters",
+      "composition_slot": "canonical changelog/release-note input -> strict76 deterministic renderer -> Pages artifact/deploy adapter -> FQT release/evidence truth unchanged",
+      "capability_component": "Source-neutral release-history publication provenance adapter",
+      "variation_axes": [
+        "dev changelog push/manual dispatch",
+        "build success/failure",
+        "artifact upload success/failure",
+        "deploy success/failure",
+        "current/superseded concurrent run",
+        "immutable-resolved/mutable provider action reference",
+        "provider page present/absent versus canonical release accepted/open"
+      ],
+      "shared_owner_contracts": [
+        "strict76 TDRP-R9-RELEASE-CHANGELOG-RENDERING-001",
+        "FQT-REL-001",
+        "FQT-EVID-001",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "duplicate_root_check": "No second changelog store/parser, Pages-owned release root, version authority, packaging/signing owner, artifact truth or release-acceptance owner is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository release-history documentation publication only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Derived static changelog publication adapter",
+      "route_contract": "eligible changelog source event -> deterministic build -> Pages artifact -> provider deployment; canonical release/evidence remains independent",
+      "search_scope": "Generated-page local filter belongs to strict76 presentation provenance; not canonical Fabushi Search.",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Repository documentation provider surface only; no shipping Fabushi responsive contract.",
+      "accessibility_contract": "Generated documentation accessibility belongs to strict76 presentation output; Pages orchestration adds no product accessibility owner.",
+      "keyboard_contract": "Not applicable to workflow orchestration.",
+      "state_continuity_contract": "Provider artifact/deployment state may be cancelled or regenerated; canonical release/version/evidence continuity remains repository/FQT-owned.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Telegram icon16/icon32 are bounded generator inputs and provenance only.",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-RELEASE-CHANGELOG-PAGES-PUBLICATION-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CHANGELOG-WORKFLOW-EXACT-INPUT-001",
+        "ORA-TDRP-CHANGELOG-PAGES-NOT-RELEASE-AUTHORITY-001",
+        "ORA-TDRP-CHANGELOG-PROVIDER-PERMISSIONS-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CHANGELOG-PAGES-DERIVED-ONLY-001",
+        "INV-TDRP-CHANGELOG-NO-SECOND-RELEASE-OWNER-002",
+        "INV-TDRP-CHANGELOG-MUTABLE-ACTION-NO-EVIDENCE-UPGRADE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CHANGELOG-BUILD-DEPLOY-ORDER-001",
+        "CONTRACT-TDRP-CHANGELOG-PAGES-PERMISSIONS-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CHANGELOG-BUILD-FAIL-BLOCKS-DEPLOY-001",
+        "FAULT-TDRP-CHANGELOG-STALE-PAGES-RUN-CANCELLED-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CHANGELOG-PAGES-OIDC-BOUNDARY-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-CHANGELOG-STRICT76-GENERATOR-REUSED-001",
+        "REG-TDRP-CHANGELOG-PAGES-NO-RELEASE-ACCEPT-001"
+      ],
+      "release_gate_ids": [],
+      "test_fixture_ids": [
+        "locked changelog.yml + strict76 generator/input/assets + resolved Pages action commits + parent exact-head TDRP/Rust evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "release_gate_status": "open",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact upstream changelog.yml retained. Telegram dev/changelog.txt path, GitHub Pages environment/page URL, mutable major tags, presentation assets and hosting behavior are provenance only.",
+      "notes": "Strict index 82 closes only .github/workflows/changelog.yml. It reuses strict76 deterministic changelog generation plus FQT release/evidence owners and introduces no second release/Pages truth. Counters unknown=16,221, unread=16,196, omitted=0, responsibilities=100. Next strict root index 83 .github/workflows/copyright_year_updater.yml@7ddb3d0403a77812df954d8bb2f480672831a082. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions are required.",
+      "test_execution_evidence": []
     }
   ]
 }
