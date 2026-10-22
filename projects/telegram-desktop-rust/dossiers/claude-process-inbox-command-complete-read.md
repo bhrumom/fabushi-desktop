@@ -14,9 +14,9 @@
 The command is a Claude host-native wrapper over the existing source-neutral process-inbox workflow, not a shipping Inbox/Task/Automation/Agent/Coordinator/Host/Runner product owner. It loads the adapter and shared skill under exact current-checkout authority, routes and plans only, preserves project continuity unless affirmative independence is established, records branch-motion-only requests as receipt-only rather than creating integration tasks, uses the helper-owned isolated `inbox_worktree`/`inbox_branch` transaction and explicit-path publication instead of task slots or broad staging, and treats planner Agent syntax plus `$ARGUMENTS` as adapter mechanics/hints rather than authority.
 
 ## Existing-owner-first disposition
-Selected existing owner: `AGENTS.md@4f888d465d29d962542da07bcb6f6efe2b5be897` source-neutral repository native invocation plus ordinary task/review/evidence lifecycle and the already-mapped process-inbox workflow. Exact owner anchors:
-- `A default prompt may select an already-supported mode, but it must not weaken the canonical skill/spec, let stale or mutable observations advance durable state, bypass ordinary routing approval/trust gates, or reorder reporting so proposals hide the regressions and decisions that precede them.`
-- `Scheduled and ad-hoc invocations enter the same ordinary task/review/evidence lifecycle.`
+Selected existing owner: `AGENTS.md@4f888d465d29d962542da07bcb6f6efe2b5be897` source-neutral governed-project/task-context and durable task-handoff lifecycle plus the already-mapped process-inbox workflow. These exact owner anchors are unique to this responsibility in the current ledger:
+- `If the task already belongs to a governed project under `projects/`, prefer updating that project's source-of-truth/spec/task documents instead of creating a parallel conflicting spec.`
+- `A task handoff must be compact and reconstructable: record the present request, relevant implementation facts, exact source/reference locations, load-bearing decisions, and unresolved assumptions needed by the next phase. Link to durable project/reference material instead of copying accumulated history. Live status belongs to the canonical task/status owner rather than a navigation index or historical context artifact.`
 Rejected: shipping Task/Automation/Inbox, shipping Agent/Coordinator/Host/Runner, provider product runtime, second queue/router/scheduler, and second Git/worktree publication engine. `novel_capability=false`; no ADR.
 
 ## Traceability

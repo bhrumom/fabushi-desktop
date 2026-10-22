@@ -22746,8 +22746,8 @@
         "AGENTS.md"
       ],
       "fabushi_target_symbols": [
-        "A default prompt may select an already-supported mode, but it must not weaken the canonical skill/spec, let stale or mutable observations advance durable state, bypass ordinary routing approval/trust gates, or reorder reporting so proposals hide the regressions and decisions that precede them.",
-        "Scheduled and ad-hoc invocations enter the same ordinary task/review/evidence lifecycle."
+        "If the task already belongs to a governed project under `projects/`, prefer updating that project's source-of-truth/spec/task documents instead of creating a parallel conflicting spec.",
+        "A task handoff must be compact and reconstructable: record the present request, relevant implementation facts, exact source/reference locations, load-bearing decisions, and unresolved assumptions needed by the next phase. Link to durable project/reference material instead of copying accumulated history. Live status belongs to the canonical task/status owner rather than a navigation index or historical context artifact."
       ],
       "target_language": "Repository governance / source-neutral developer workflow",
       "language_rationale": "This source is a 40-line provider command wrapper over an already-audited shared repository workflow. Its applicable responsibility is governance/toolchain-equivalent; no shipping Rust/TypeScript implementation or provider-specific subsystem is warranted.",
