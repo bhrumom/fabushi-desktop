@@ -3,7 +3,7 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_repository": "telegramdesktop/tdesktop",
-  "upstream_commit": "cade9c628cc62a777d13ae4c449c91101a6c823b",
+  "upstream_commit": "5380230173ea60a5222aa9d977f074dd41e76139",
   "discovery": {
     "evidence_run_id": 39486129504,
     "evidence_head_sha": "f605a520cb7d3dc21da795a35cb89b8479afdb8f",
@@ -13,7 +13,7 @@
     "candidate_lines_total": 331,
     "immutable_commit_pin_occurrences_classified": 19,
     "candidate_lines_pending_classification": 0,
-    "note": "Live dev advanced fe4afa4fbe9f5fd33fdb8f755ff42a975942b670 -> cade9c628cc62a777d13ae4c449c91101a6c823b. Only prepare.py, centos_env Dockerfile and snapcraft.yaml changed, each repinning desktop-app/patches 97b2b514c76666b24b43b31e2aacfa703b6aa6b2 -> 1f43f0f1d5ba8643ea45bbd8404782d4d840e421. Candidate locations/patterns and 331/331/0 classification remain unchanged; root/recursive counts and direct gitlinks are unchanged.",
+    "note": "Live dev advanced cade9c628cc62a777d13ae4c449c91101a6c823b -> 5380230173ea60a5222aa9d977f074dd41e76139. The one added resource and four modified SourceFiles/style paths are outside build-time acquisition scanner roots. Candidate locations/patterns and 331/331/0 classification remain unchanged; desktop-app/patches and all direct/nested gitlinks are unchanged.",
     "candidate_lines_classified": 331,
     "disposition_closure_status": "complete",
     "recursive_authority_closure_status": "gitlink-fixed-point-closed-disposition-pending",
@@ -1229,7 +1229,7 @@
   ],
   "recursive_build_reachability": {
     "status": "partial-audited-disposition-open",
-    "accepted_upstream_commit": "cade9c628cc62a777d13ae4c449c91101a6c823b",
+    "accepted_upstream_commit": "5380230173ea60a5222aa9d977f074dd41e76139",
     "rule": "A recursively discovered repository is source/build authority only when an accepted TDesktop build path actually initializes, downloads, generates, patches, or consumes it. Presence as an unselected superproject gitlink is not sufficient.",
     "qt_superproject": {
       "repository": "https://github.com/qt/qt5",
