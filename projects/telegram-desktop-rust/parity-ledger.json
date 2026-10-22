@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "52a47639d9aa38713098974dd2ce07e631cb3381",
-  "target_commit": "7ec8ba94ecce7c73ce1e4e64094d48078390f6ff",
+  "target_commit": "44a08f74abfd16706e9b2ba0b7a4bf90b6e6b417",
   "coverage": {
     "source_entries_total": 16371,
-    "unknown": 16279,
-    "unread": 16254,
+    "unknown": 16278,
+    "unread": 16253,
     "omitted": 0,
-    "responsibilities_total": 107,
+    "responsibilities_total": 108,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -28876,6 +28876,266 @@
       "license_and_provenance": "Exact workflow, action and pinned third-party commit identities retained with available license manifests. RNNoise/tg_owt master observations are explicitly not checkout pins; rustup/Homebrew/runner state and one-day signature-stripped Telegram.app remain mutable/non-release provenance.",
       "reviewer": null,
       "notes": "Strict index 89 closes only .github/workflows/mac_packaged.yml. Counters become unknown=16,279 unread=16,254 omitted=0 responsibilities=107. Next strict root index 90 .github/workflows/master_updater.yml@fedc24f8e5d781a0bbdcdf80e24baf3eb2fe199f. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "52a47639d9aa38713098974dd2ce07e631cb3381",
+      "source_path": ".github/workflows/master_updater.yml",
+      "source_blob_sha": "fedc24f8e5d781a0bbdcdf80e24baf3eb2fe199f",
+      "source_kind": "release_branch_sync_automation_provenance",
+      "module_id": "tdesktop.github.workflows.master_updater",
+      "responsibility_id": "TDRP-R9-MASTER-UPDATER-RELEASE-SYNC-PROVENANCE-001",
+      "source_symbols": [
+        "release.types: released",
+        "desktop-app/action_code_updater@master",
+        "type: \"dev-to-master\"",
+        "if (process.argv[3] === \"dev-to-master\") -> exit(0)",
+        "DevToMaster sourceBranch=dev / targetBranch=master (dormant)",
+        "npm init -y",
+        "npm install --no-fund simple-git isbinaryfile",
+        "npm install --no-fund @actions/core @actions/github"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-RELEASE-BRANCH-SYNC",
+        "CAP-AUTOMATED-CHANGE-PROPOSAL",
+        "CAP-SOURCE-PUBLICATION-AUTHORITY-BOUNDARY",
+        "CAP-MUTABLE-ACTION-SUPPLY-CHAIN"
+      ],
+      "dependency_ids": [
+        "desktop-app/action_code_updater@master -> audit-time 0a8d3ebb437e5c77cf5d066d4a54cc93d34b534a",
+        "action.yml@5a9c7dff415a31f18a614119809f2d396b0e47c7",
+        "index.mjs@322bfa9e3e874299a09c35650611c2cd753cca3f",
+        "provider root has no committed package manifest/package lock/license file at audited commit",
+        "runtime npm install: simple-git (unversioned)",
+        "runtime npm install: isbinaryfile (unversioned)",
+        "runtime npm install: @actions/core (unversioned)",
+        "runtime npm install: @actions/github (unversioned)",
+        "AGENTS.md@da3e37258c74963970ff5cfc5d54671a37558b97#repository-contribution-and-atomic-change-governance"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/master-updater-release-sync-workflow-complete-read.md",
+      "behavior_contract": "Treat master_updater.yml as release-triggered repository synchronization/proposal provenance only. The current mutable action bootstrap installs unversioned npm dependencies and then exits success before dev-to-master logic, so green execution cannot establish branch synchronization, publication, release preparation, source closure, migration completion, or release acceptance. Any real Fabushi repository mutation remains governed by live authority reconciliation, atomic CAS and fresh exact-head evidence.",
+      "state_machine": "release.released -> resolve mutable action_code_updater@master -> composite npm init/install -> run index.mjs type=dev-to-master -> explicit temporary-disable guard -> log -> exit 0; dormant unreachable path would clone repo -> base=master/head=dev -> create/reuse PR",
+      "side_effects": [
+        "GitHub Actions runner allocation",
+        "mutable GitHub action checkout/resolution",
+        "npm init and unversioned registry dependency installation",
+        "current path: console log and successful no-op",
+        "dormant path only: authenticated repository clone and GitHub pull-request API calls"
+      ],
+      "failure_cases": [
+        "mutable action master drift",
+        "unversioned npm dependency drift",
+        "npm registry/network failure",
+        "provider checkout failure",
+        "GitHub token/permission failure",
+        "release workflow reports success while dev-to-master is intentionally disabled",
+        "dormant PR creation error is logged without establishing publication",
+        "stale branch/ref assumptions",
+        "workflow success mistaken for Fabushi release acceptance"
+      ],
+      "ui_disposition": "Repository synchronization/release automation only; no shipping Fabushi UI capability.",
+      "non_ui_responsibilities": [
+        "release-event trigger provenance",
+        "branch synchronization intent",
+        "automated PR proposal intent",
+        "explicit disabled/no-op state",
+        "mutable action/runtime dependency provenance",
+        "repository publication authority separation",
+        "exact-head evidence boundary"
+      ],
+      "platform_delta": "Upstream Telegram release-branch automation remains repository provenance only. Fabushi reuses its existing contribution, synchronization, atomic CAS, release-preparation and exact-head evidence governance; Telegram dev/master naming and provider automation are not copied into product/runtime architecture.",
+      "existing_owner_candidates": [
+        "AGENTS repository contribution and atomic change governance (selected)",
+        "AGENTS release-preparation governance (shared)",
+        "exact-head GitHub Actions evidence governance (shared)",
+        "new release-branch synchronization runtime owner (rejected)",
+        "new Telegram publication/release owner (rejected)"
+      ],
+      "existing_owner": "AGENTS repository contribution and atomic change governance with existing release-preparation and exact-head GitHub Actions evidence owners",
+      "rejected_existing_owners": [
+        "a disabled upstream provider cannot become a Fabushi publication owner",
+        "Telegram dev/master branch topology is source-specific provenance",
+        "green no-op automation is not synchronization evidence",
+        "repository automation is not shipping product state or release acceptance"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md"
+      ],
+      "fabushi_target_symbols": [
+        "Synchronization and publication must preserve live authority. Re-read the current head, ref, tree, relevant blobs, upstream lease, and required exact-head evidence before writing. Publish multi-file governance changes as one atomic commit through a compare-and-swap boundary; lease drift stops publication and requires reconciliation.",
+        "For FBCP/TDRP, executable acceptance remains exact-head GitHub-Actions-only."
+      ],
+      "target_language": "Repository synchronization/publication/evidence governance",
+      "language_rationale": "Release-triggered branch maintenance maps to existing source-neutral repository synchronization, CAS publication and release evidence owners rather than production Rust/React.",
+      "command_event_contracts": [
+        "trigger only on release event type released",
+        "provider ref is mutable master and must be treated as fail-closed supply-chain provenance",
+        "composite action performs unversioned npm bootstrap before provider logic",
+        "current dev-to-master mode exits success before repository/token mutation",
+        "dormant provider intent is dev head -> master base pull request, not direct Fabushi release",
+        "workflow success cannot prove branch equivalence, publication, migration completion or release acceptance",
+        "Fabushi writes require fresh head/ref/tree/upstream reconciliation plus atomic CAS and child exact-head evidence"
+      ],
+      "state_owner": "GitHub owns workflow/run/ref state; Fabushi repository authority remains the exact reconciled head/ref/tree plus canonical governance. No-op provider status owns no migration or release truth.",
+      "lifecycle_owner": "Exact source audit -> reconcile live repository/upstream authority -> bounded atomic CAS mutation when authorized -> fresh exact-head Actions -> release-preparation/FQT gates -> independent acceptance.",
+      "persistence_and_restart": "The current workflow persists no branch-sync result. Runner/npm state is disposable; exact commit/ref/run/artifact identities are evidence. Any future real synchronization must re-read branch authority after interruption or retry.",
+      "concurrency_and_cancellation": "No workflow concurrency group. Release events and mutable provider/dependency state may race; disabled current execution makes no repository change. Cancellation/failure/stale refs/no-op success cannot advance publication or acceptance.",
+      "security_boundary": "Repository github.token, mutable third-party action code, unversioned npm dependencies, runner environment and dormant authenticated clone/PR APIs are administrative supply-chain boundaries only; they cannot bypass Fabushi CAS, review, signing, release or acceptance controls.",
+      "network_service_dependencies": [
+        "GitHub Actions",
+        "desktop-app/action_code_updater repository",
+        "npm registry",
+        "GitHub repository/Pull Requests APIs in dormant provider path"
+      ],
+      "service_owner": "Existing GitHub repository administration plus Fabushi contribution/synchronization/release evidence governance",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "policy-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required after this strict90 mapping commit.",
+        "action_code_updater@master and its runtime npm package resolution are mutable and cannot establish immutable execution provenance.",
+        "Recursive source closure remains open.",
+        "Fabushi signed/package/device/independent release acceptance remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "master_updater.yml fully read: 13 line slots / 221 bytes at blob fedc24f8e5d781a0bbdcdf80e24baf3eb2fe199f.",
+        "desktop-app/action_code_updater@master resolved at audit to 0a8d3ebb437e5c77cf5d066d4a54cc93d34b534a; root listing contains only action.yml@5a9c7dff415a31f18a614119809f2d396b0e47c7, check_unused_styles.py, and index.mjs@322bfa9e3e874299a09c35650611c2cd753cca3f.",
+        "Provider action.yml performs npm init plus four unversioned npm package installs before invoking index.mjs; no committed package manifest/package lock or repository license file exists in the audited root.",
+        "Provider index.mjs explicitly exits 0 for dev-to-master before token parsing/updater construction; dormant DevToMaster code would otherwise propose dev -> master via PR.",
+        "Parent exact-head 44a08f74abfd16706e9b2ba0b7a4bf90b6e6b417 completed TDRP run 39808592290 at 61/61 success (authority 12438084729 sha256:a57a11d7c3476e729f2bedf378c7bc47b1049cc462f6fbdc094d4fa7da08548c; closure 12438847564 sha256:eb85f2de333e38f9ef2294c7e122e4577f25134399d39c871c372b31f546767f; reachability 12440535032 sha256:5e80a4cdde9397567c4bd0fd1dba5a1b4c220d641d01c3a2aa53cbd95fdd3e53) and Rust desktop runtime run 39808592196 at 6/6 success (artifact 12438339603 sha256:7c11102dcd095a10f1c8654f3ba11f3afc2aa15e9cda23fb4ebfb9e248efe6fc)."
+      ],
+      "target_commit": "44a08f74abfd16706e9b2ba0b7a4bf90b6e6b417",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository contribution/synchronization/release evidence governance",
+      "composition_slot": "Release-triggered branch-sync automation provenance adapter",
+      "capability_component": "Repository release-branch synchronization provenance mapping",
+      "variation_axes": [
+        "release event/non-release event",
+        "provider master drift/stable",
+        "npm dependency drift/outage",
+        "dev-to-master disabled/re-enabled",
+        "token permission success/failure",
+        "PR absent/existing/API failure in dormant path",
+        "stale/current branch authority",
+        "automation success/actual synchronization",
+        "repository publication/Fabushi release acceptance"
+      ],
+      "shared_owner_contracts": [
+        "AGENTS repository contribution and atomic change governance",
+        "AGENTS release-preparation governance",
+        "exact-head GitHub Actions evidence",
+        "FQT-REL-001",
+        "FQT-EVID-001"
+      ],
+      "duplicate_root_check": "No second branch authority, publication owner, updater runtime, release root, migration owner or acceptance owner is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository release/synchronization administration",
+      "detail_section": "Not applicable",
+      "capability_surface": "Release branch-sync provenance adapter",
+      "route_contract": "release.released -> mutable action bootstrap -> unversioned npm install -> explicit dev-to-master no-op; any future mutation must re-enter Fabushi live-authority/CAS governance",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Only exact reconciled repository refs and exact-head evidence carry Fabushi continuity; mutable provider/npm state and no-op workflow success do not.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MASTER-UPDATER-RELEASE-SYNC-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MASTER-UPDATER-EXACT-SOURCE-001",
+        "ORA-TDRP-MASTER-UPDATER-DISABLED-NOOP-001",
+        "ORA-TDRP-MASTER-UPDATER-NO-PUBLICATION-AUTHORITY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MASTER-UPDATER-DISABLED-NO-MUTATION-001",
+        "INV-TDRP-MASTER-UPDATER-MUTABLE-ACTION-NO-AUTHORITY-001",
+        "INV-TDRP-MASTER-UPDATER-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MASTER-UPDATER-RELEASE-SYNC-001",
+        "CONTRACT-TDRP-MASTER-UPDATER-FABUSHI-PUBLICATION-BOUNDARY-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-MASTER-UPDATER-ACTION-MASTER-DRIFT-001",
+        "TEMP-TDRP-MASTER-UPDATER-NPM-DEPENDENCY-DRIFT-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-MASTER-UPDATER-ACTION-FETCH-001",
+        "FAULT-TDRP-MASTER-UPDATER-NPM-INSTALL-001",
+        "FAULT-TDRP-MASTER-UPDATER-NOOP-MISREAD-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MASTER-UPDATER-TOKEN-001",
+        "SEC-TDRP-MASTER-UPDATER-MUTABLE-SUPPLY-CHAIN-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-MASTER-UPDATER-NO-AUTO-PUBLISH-001",
+        "REG-TDRP-MASTER-UPDATER-OWNER-REUSED-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [],
+      "test_fixture_ids": [
+        "locked master_updater.yml + audit-time provider commit/action/index + provider root listing + AGENTS publication governance + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact workflow and audit-time provider commit/action/index identities retained. The workflow references mutable action_code_updater@master; provider runtime packages are unversioned and there is no repository license/package lock in the audited root, so provider/runtime provenance remains fail-closed and cannot establish Fabushi publication or release authority.",
+      "reviewer": null,
+      "notes": "Strict index 90 closes only .github/workflows/master_updater.yml. Counters become unknown=16,278 unread=16,253 omitted=0 responsibilities=108. Next strict root index 91 .github/workflows/needs-user-action.yml@55ad7891ce36682accae01d739203aa487876053. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required."
     }
   ]
 }
