@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16306,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16223,
-    "unread_minimum": 16198,
+    "unknown_minimum": 16222,
+    "unread_minimum": 16197,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -39,7 +39,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream dev authority remains e14f1566d277d2204f4c8e553bf7cc157047e88b/241f8ab614292cc90e395ef0c966e289fdb3e985. Parent exact-head 8f2347f579f86208226bd0c73ded67b16dae8213 completed TDRP run 39758423395 at 61/61 success (authority 12417620767 sha256:0b0bfea8aae8fcf1b840748d5e0134b5ac4ebb54406ab58130e4254c2154222e; closure 12417496834 sha256:03b1f75888572529b62040fb684281bd63669583ce87c96b465ac5585f1e5ead; reachability 12416569182 sha256:6cb8aecf64716c7e006a1e36e7ee8474b8adacc5d26bd94e9b7be302ddd1829c) and Rust desktop runtime run 39758423417 at 6/6 success (artifact 12416941871 sha256:40b48cb9baddce151bd325b9ae4d04232e8150a57026c946401338be59920ff0). Strict index 80 .github/workflows/canary.yml@0d460c617c2a3910a0d11ac793d07533ac966947 is fully read (1708 line slots / 77724 bytes) and maps to the existing source-neutral release-preparation, exact-source packaging, signing/notarization, immutable artifact provenance and FQT release/evidence owners. Applicable responsibilities are exact branch-tip freshness, lane/version validation, monotonic release identity, pinned build inputs/actions, platform build/sign/package gates, immutable per-platform artifact handoff, publish-side signature/provenance checks, bounded secret/image-digest consumption and independent per-platform failure isolation. Telegram channel/Bot API transport, KeyLocker/Azure product names and CANARY_ALLOW_UNSIGNED are provenance only; Fabushi does not adopt an unsigned-release escape hatch. Mapping does not claim Windows/Linux Fabushi release implementation or evidence. Counters unknown=16,223, unread=16,198, omitted=0. Next strict root index 81 .github/workflows/cant-reproduce.yml@8e20e07349b5b43277f5371a4e931066bece4186. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions are required.",
+  "note": "Live upstream dev authority remains e14f1566d277d2204f4c8e553bf7cc157047e88b/241f8ab614292cc90e395ef0c966e289fdb3e985. Parent exact-head 38e568c9a98ad428a23aef5024d11b50bc989062 completed TDRP run 39761337683 at 61/61 success (authority 12418356033 sha256:dd2fdbe8f8bf9351409290904ac9b2f2e65e181168973122abed1052690611dc; closure 12418014415 sha256:5e4c1daddf0d9de1f83ac24c828eccf3cd809b62a3dd33afedffa16b8e5bdcf6; reachability 12419260305 sha256:1dcbf3ec7b0251169ef359cacb27748434d8b6c2a767c3ae243f6d4a3c274302) and Rust desktop runtime run 39761337691 at 6/6 success (artifact 12418720447 sha256:e5d6c81bfdd66cdb82027f2339a5539876224d5352ce917e02dab9453a2cc470). Strict index 81 .github/workflows/cant-reproduce.yml@8e20e07349b5b43277f5371a4e931066bece4186 is fully read (26 line slots / 902 bytes). lee-dohm/no-response@v0.5.0 resolves to 9bb0a4b5e6a45046f00353d5de7d90fb8bd773bb, action.yml@1eb04cb05934c6b5d299918356d4042115026b2a and dist/index.js@7dada7580c55196f93eb911f8a4646152b7d039e; its default 14-day labelled-issue auto-close is repository issue-maintenance provenance only. FQT-DEF-001 remains the sole canonical defect-closure owner and still requires reproduce -> fix -> targeted regression -> affected regression -> current-head evidence. Counters unknown=16,222, unread=16,197, omitted=0, responsibilities=99. Next strict root index 82 .github/workflows/changelog.yml@445277fe4b44dc9ccef17b7b602016572c08fe7c. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions are required.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
