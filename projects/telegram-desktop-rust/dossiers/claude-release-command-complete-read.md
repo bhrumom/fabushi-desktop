@@ -16,3 +16,8 @@ The command is repository release preparation, not shipping runtime. Map clean e
 Requirement `TDRP-R9-CLAUDE-RELEASE-COMMAND-001`; oracles cover clean authority, version sequence, exact release range, approval fence and commit provenance; invariants forbid version reuse, historical-note rewrite, pre-approval mutation, auto-publish and Telegram release runtime; contracts cover version authority, release notes, human approval and separation from actual release; fault cases cover dirty state, duplicate version, partial mutation and commit mismatch; security forbids unauthorized tag/publish bypass.
 
 Closing strict index 67 changes counters to unknown=16,236, unread=16,211, omitted=0, responsibilities=85. `baseline_identity_accepted=false` and `source_closure_ready=false` remain mandatory. Next strict root: index 68 `.claude/settings.json@d47520dc0e3b7e8d6067456e33062140c75f7c79`.
+
+### Exact traceability IDs
+- Requirement: `TDRP-R9-CLAUDE-RELEASE-COMMAND-001`
+- Oracles: `ORA-TDRP-RELEASE-COMMAND-CLEAN-AUTHORITY-001`, `ORA-TDRP-RELEASE-COMMAND-VERSION-SEQUENCE-001`, `ORA-TDRP-RELEASE-COMMAND-RELEASE-RANGE-001`, `ORA-TDRP-RELEASE-COMMAND-APPROVAL-FENCE-001`, `ORA-TDRP-RELEASE-COMMAND-COMMIT-PROVENANCE-001`
+- Invariants: `INV-TDRP-RELEASE-COMMAND-NO-VERSION-REUSE-001`, `INV-TDRP-RELEASE-COMMAND-NO-HISTORICAL-RELEASE-NOTE-REWRITE-001`, `INV-TDRP-RELEASE-COMMAND-NO-PREAPPROVAL-VERSION-MUTATION-001`, `INV-TDRP-RELEASE-COMMAND-NO-AUTO-PUBLISH-001`, `INV-TDRP-RELEASE-COMMAND-NO-TELEGRAM-VERSION-RUNTIME-001`
