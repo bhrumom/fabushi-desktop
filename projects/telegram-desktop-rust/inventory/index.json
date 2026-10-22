@@ -18,17 +18,17 @@
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
-    "run_id": 39555252098,
+    "run_id": 39743918294,
     "run_attempt": 1,
-    "job_id": 119073416805,
-    "head_sha": "90eee7251784f938ef3a7ef87713c1c2ee4fe0d1",
-    "artifact_id": 12324684996,
-    "artifact_name": "tdrp-revision9-authority-90eee7251784f938ef3a7ef87713c1c2ee4fe0d1",
-    "artifact_digest": "sha256:9694cc3f366a0df8d9e79c1d0aa2e708c058bf64cdb462b2756681cbfb78d0d0",
+    "job_id": 119707576971,
+    "head_sha": "51e019e3afd13d7132d5da27bc273f0203a03eae",
+    "artifact_id": 12410423121,
+    "artifact_name": "tdrp-revision9-authority-51e019e3afd13d7132d5da27bc273f0203a03eae",
+    "artifact_digest": "sha256:842b833317a5a1303957fc36a8152a2aad7863e0b60dab8c90e40a59a6898db2",
     "evidence_status": "historical-only",
-    "upstream_commit": "0eca52223cceed229932add1cc80792763120844",
-    "upstream_tree": "1fc479a4b448aed851181bf4a4796d3015368348",
-    "recursive_non_directory_entries": 16305,
+    "upstream_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+    "upstream_tree": "09a421891474be0da279f44a5bf8e0dcf3bc270a",
+    "recursive_non_directory_entries": 16306,
     "source_closure_ready": false
   },
   "closure_rules": {
