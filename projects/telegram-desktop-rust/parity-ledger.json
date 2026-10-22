@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
-  "target_commit": "36772e87ef576f1eb409dbaa1bb9817c91d0f3d1",
+  "target_commit": "17cbe4d71ce710895466949adad9e52eafed039a",
   "coverage": {
     "source_entries_total": 16306,
-    "unknown": 16237,
-    "unread": 16212,
+    "unknown": 16236,
+    "unread": 16211,
     "omitted": 0,
-    "responsibilities_total": 84,
+    "responsibilities_total": 85,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -23170,6 +23170,268 @@
       "reviewer": null,
       "license_and_provenance": "Exact Claude command and shared skill SHAs retained only as source provenance.",
       "notes": "Strict index 66 closes only .claude/commands/rebase.md. Counters become unknown=16237 unread=16212 omitted=0 responsibilities=84. Next strict root index 67 .claude/commands/release.md@baaa7c261db67dced2ce052c8cde016147031a7d. Closure flags remain false.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_path": ".claude/commands/release.md",
+      "source_blob_sha": "baaa7c261db67dced2ce052c8cde016147031a7d",
+      "source_kind": "repository_release_preparation_host_command_wrapper",
+      "module_id": "tdesktop.claude.commands.release",
+      "responsibility_id": "TDRP-R9-CLAUDE-RELEASE-COMMAND-001",
+      "source_symbols": [
+        "argument/version+beta parsing",
+        "clean-worktree fence",
+        "latest version + shared prerelease/stable sequence",
+        "version confirmation",
+        "tag baseline + exact commit interval",
+        "user-facing release-note synthesis",
+        "historical release-note preservation",
+        "stable-across-prerelease span",
+        "release-note approval fence",
+        "canonical version mutation",
+        "release-preparation commit + reread"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-RELEASE-PREPARATION-NATIVE-INVOCATION"
+      ],
+      "dependency_ids": [
+        "changelog.txt@41b7466f8a11a1866a66ff583809dfe74ad9a3c3",
+        "Telegram/build/set_version.bat@7e7c3f69e8706905032e58cc05dcc25802dccebe",
+        "Telegram/build/set_version.py@305a2a5f37aa13c8bef29d13ea37cab7a776cde6",
+        "AGENTS.md@4f888d465d29d962542da07bcb6f6efe2b5be897#Stage 6",
+        "desktop/package.json@3d500622ce9b26e3452d98d0c4a7e7dcc019ac84",
+        "projects/fabushi-communication-platform/quality/release-entry-exit-criteria.md@c5eb9d0897234bb2fdad4f505549b2350c44aa72",
+        "Git tag/commit authority",
+        "GitHub Actions exact-head verification"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/claude-release-command-complete-read.md",
+      "behavior_contract": "Bind one clean exact repository state; derive one non-reused canonical version and exact release interval; prepare user-facing release notes without rewriting history; require explicit human approval before canonical version mutation; create only a release-preparation commit; hand off tagging/publishing/deployment to separate release acceptance.",
+      "state_machine": "request -> reconcile clean exact candidate/version/release-note/tag authority -> choose non-reused version -> confirm version -> resolve exact release interval -> draft and prepend notes -> approve notes -> mutate canonical version metadata -> commit -> reread ref -> separate release acceptance",
+      "side_effects": [
+        "May refresh authorized tag authority.",
+        "May update canonical release-note/version metadata after approval.",
+        "May create one release-preparation commit.",
+        "Never itself tags, publishes, signs, deploys, rolls out, or marks release ACCEPT."
+      ],
+      "failure_cases": [
+        "dirty or drifted authority",
+        "missing/stale/ambiguous version/tag/release-note authority",
+        "duplicate/unsupported version",
+        "wrong release baseline",
+        "unapproved mutation",
+        "partial version fan-out",
+        "commit/ref mismatch",
+        "automatic publish/acceptance bypass"
+      ],
+      "ui_disposition": "Not a shipping UI capability.",
+      "non_ui_responsibilities": [
+        "exact release-preparation authority",
+        "single-use version sequencing",
+        "release-range provenance",
+        "user-facing release-note synthesis",
+        "approval fences",
+        "deterministic version mutation",
+        "release-preparation commit provenance",
+        "separation from actual release acceptance"
+      ],
+      "platform_delta": "Telegram changelog/set_version paths, Windows/Python fan-out, Telegram version conventions and Claude syntax are provenance only; Fabushi uses current canonical version/package/release owners.",
+      "existing_owner_candidates": [
+        "AGENTS.md Stage 6 Integrate / Deliver",
+        "desktop/package.json version/build.publish",
+        "FQT-REL-001 release acceptance",
+        "shipping packaging/updater (rejected as developer orchestration)",
+        "Task/Automation/Agent/Host/Runner (rejected)",
+        "Telegram/Claude release runtime (rejected)"
+      ],
+      "existing_owner": "AGENTS.md source-neutral Stage 6 Integrate / Deliver release-preparation lifecycle",
+      "rejected_existing_owners": [
+        "desktop/package.json owns metadata, not preparation orchestration.",
+        "FQT-REL-001 owns acceptance, not preparation.",
+        "shipping packaging/updater owns delivery behavior, not developer preparation.",
+        "product Task/Automation/Agent/Host/Runner is not repository release preparation.",
+        "provider-specific release runtime would duplicate canonical ownership."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository release-preparation governance under Stage 6 Integrate / Deliver"
+      ],
+      "target_language": "Repository governance / source-neutral release preparation workflow",
+      "language_rationale": "Provider wrapper over Telegram-specific changelog/version scripts maps to existing repository governance and version/package/release owners; no shipping Rust/TypeScript owner warranted.",
+      "command_event_contracts": [
+        "explicit/automatic version resolves one non-reused identity",
+        "dirty/stale/ambiguous/duplicate authority fails closed",
+        "release notes require human approval before version mutation",
+        "preparation creates only a commit",
+        "tag/publish/sign/deploy/acceptance remain separate"
+      ],
+      "state_owner": "Exact Git branch/worktree, canonical Fabushi version metadata, release-note history, and tag baseline.",
+      "lifecycle_owner": "AGENTS.md Stage 6 Integrate / Deliver plus FQT-REL-001 release acceptance.",
+      "persistence_and_restart": "Git commit/tag history and canonical version/release-note files are authoritative; provider session state is not.",
+      "concurrency_and_cancellation": "One clean branch/worktree; drift requires re-reconciliation; no mutation before approval.",
+      "security_boundary": "Only authorized Git remote/tag authority; never auto-tag/publish/sign/deploy or bypass independent acceptance.",
+      "network_service_dependencies": [
+        "authorized Git remote/tag authority",
+        "GitHub Actions exact-head verification",
+        "existing release infrastructure after separate acceptance"
+      ],
+      "service_owner": "Existing repository Integrate/Deliver + release evidence lifecycle",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "toolchain-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required.",
+        "Recursive source disposition remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "Strict67 release.md@baaa7c261db67dced2ce052c8cde016147031a7d fully read: 120 lines / 5822 chars.",
+        "Read changelog.txt@41b7466f8a11a1866a66ff583809dfe74ad9a3c3, set_version.bat@7e7c3f69e8706905032e58cc05dcc25802dccebe, set_version.py@305a2a5f37aa13c8bef29d13ea37cab7a776cde6.",
+        "Read AGENTS.md@4f888d465d29d962542da07bcb6f6efe2b5be897 Stage 6, desktop/package.json@3d500622ce9b26e3452d98d0c4a7e7dcc019ac84 version 1.2.77, FQT-REL-001@c5eb9d0897234bb2fdad4f505549b2350c44aa72.",
+        "Parent TDRP 39725439132 success 61/61: authority 12403141162 sha256:f7c555318af709ed801121c6d89f375248093344cd74fbc01f8dd0472a8ed445; closure 12403550709 sha256:2d860a64d0ae3cdd4d90a03e9650823db689d20ca422d696f7f019ded658443c; reachability 12402679596 sha256:47df356257a960edc496254431113c894f93e7a346d775a9d503b7af46691797.",
+        "Parent Rust 39725438916 success 6/6: artifact 12402637306 sha256:4173e4a3f892a895e558365da9e527084b0d08d1fdf0cfbb6d5660c886ba9446."
+      ],
+      "target_commit": "17cbe4d71ce710895466949adad9e52eafed039a",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi source-neutral repository development lifecycle",
+      "composition_slot": "Release preparation native command",
+      "capability_component": "Repository release-preparation invocation adapter",
+      "variation_axes": [
+        "explicit/automatic version",
+        "stable/prerelease",
+        "clean/dirty authority",
+        "fresh/stale tag state",
+        "ordinary/prerelease-spanning release range",
+        "draft/approved notes",
+        "mutation success/failure"
+      ],
+      "shared_owner_contracts": [
+        "AGENTS Stage 6",
+        "desktop/package.json version/package metadata",
+        "FQT-REL-001",
+        "Git tag/commit provenance",
+        "GitHub Actions exact-head verification"
+      ],
+      "duplicate_root_check": "No second release/version/release-note owner, provider-specific runtime, updater owner, task queue, or auto-publish path.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository developer release preparation only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Host-native repository release-preparation wrapper",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Re-entry recomputes exact candidate SHA, canonical version, release-note history, and tag baseline; chat/provider memory cannot advance release state.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-CLAUDE-RELEASE-COMMAND-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-RELEASE-COMMAND-CLEAN-AUTHORITY-001",
+        "ORA-TDRP-RELEASE-COMMAND-VERSION-SEQUENCE-001",
+        "ORA-TDRP-RELEASE-COMMAND-RELEASE-RANGE-001",
+        "ORA-TDRP-RELEASE-COMMAND-APPROVAL-FENCE-001",
+        "ORA-TDRP-RELEASE-COMMAND-COMMIT-PROVENANCE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-RELEASE-COMMAND-NO-VERSION-REUSE-001",
+        "INV-TDRP-RELEASE-COMMAND-NO-HISTORICAL-RELEASE-NOTE-REWRITE-001",
+        "INV-TDRP-RELEASE-COMMAND-NO-PREAPPROVAL-VERSION-MUTATION-001",
+        "INV-TDRP-RELEASE-COMMAND-NO-AUTO-PUBLISH-001",
+        "INV-TDRP-RELEASE-COMMAND-NO-TELEGRAM-VERSION-RUNTIME-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-RELEASE-COMMAND-VERSION-AUTHORITY-001",
+        "CONTRACT-TDRP-RELEASE-COMMAND-RELEASE-NOTES-001",
+        "CONTRACT-TDRP-RELEASE-COMMAND-HUMAN-APPROVAL-001",
+        "CONTRACT-TDRP-RELEASE-COMMAND-RELEASE-SEPARATION-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-RELEASE-COMMAND-DIRTY-WORKTREE-001",
+        "FAULT-TDRP-RELEASE-COMMAND-DUPLICATE-VERSION-001",
+        "FAULT-TDRP-RELEASE-COMMAND-PARTIAL-VERSION-MUTATION-001",
+        "FAULT-TDRP-RELEASE-COMMAND-COMMIT-MISMATCH-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-RELEASE-COMMAND-AUTHORIZED-TAG-REFRESH-001",
+        "SEC-TDRP-RELEASE-COMMAND-NO-PUBLISH-BYPASS-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-RELEASE-COMMAND-NO-SECOND-RELEASE-OWNER-001",
+        "REG-TDRP-RELEASE-COMMAND-NO-UPDATER-RUNTIME-COUPLING-001"
+      ],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "locked release command + version/changelog provenance + AGENTS Stage 6 + package metadata + FQT-REL-001"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact Claude command and Telegram changelog/version-script SHAs retained only as provenance; source-specific names, scripts and numbering do not become Fabushi runtime identifiers.",
+      "notes": "Strict index 67 closes only .claude/commands/release.md. Counters become unknown=16236 unread=16211 omitted=0 responsibilities=85. Next strict root index 68 .claude/settings.json@d47520dc0e3b7e8d6067456e33062140c75f7c79. Closure flags remain false.",
       "test_execution_evidence": []
     }
   ]

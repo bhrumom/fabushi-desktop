@@ -931,10 +931,10 @@
   "coverage": {
     "root_source_entries_total": 6820,
     "recursive_source_entries_total": 16306,
-    "unknown_minimum": 16237,
-    "unread_minimum": 16212,
+    "unknown_minimum": 16236,
+    "unread_minimum": 16211,
     "omitted_known": 0,
-    "note": "Live dev authority 5c674f1f6a0f6ace55b67f8bc295138680fe588b/09a421891474be0da279f44a5bf8e0dcf3bc270a remains unaccepted. Strict index 66 .claude/commands/rebase.md@df14e750067aeac1258a92068886cd2b33f83120 is fully read and mapped to the existing source-neutral intent-preserving branch integration/rebase lifecycle; Claude host substitutions are provenance only. Counters unknown=16,237, unread=16,212, omitted=0. Next strict root index 67 .claude/commands/release.md@baaa7c261db67dced2ce052c8cde016147031a7d. baseline_identity_accepted=false and source_closure_ready=false pending fresh exact-head Actions."
+    "note": "Live dev authority 5c674f1f6a0f6ace55b67f8bc295138680fe588b/09a421891474be0da279f44a5bf8e0dcf3bc270a remains unaccepted. Strict index 67 .claude/commands/release.md@baaa7c261db67dced2ce052c8cde016147031a7d is fully read and mapped to the existing source-neutral Stage 6 release-preparation/version/package/release-evidence lifecycle; Telegram changelog/set_version paths and Claude syntax are provenance only. Counters unknown=16,236, unread=16,211, omitted=0. Next strict root index 68 .claude/settings.json@d47520dc0e3b7e8d6067456e33062140c75f7c79. baseline_identity_accepted=false and source_closure_ready=false pending fresh exact-head Actions."
   },
   "acceptance": {
     "baseline_ready": false,
