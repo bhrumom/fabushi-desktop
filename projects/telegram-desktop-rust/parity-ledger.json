@@ -20734,7 +20734,7 @@
       "production_entrypoints": [],
       "production_evidence": [],
       "test_evidence": [
-        "Full locked .clang-tidy read: 39 lines, one enabled warning-as-error check, 31 custom Qt/helper replacement entries, explicit empty HeaderFilterRegex.",
+        "Full locked .clang-tidy read: 39 lines, one enabled warning-as-error check, 30 custom Qt/helper replacement entries, explicit empty HeaderFilterRegex.",
         "Parent exact-head TDRP run 39699476395 completed success 61/61 and validates only the parent index-56 state."
       ],
       "target_commit": "1be25d01d4c235ec38461db748cb600e155e58eb",
