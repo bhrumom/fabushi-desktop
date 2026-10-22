@@ -27294,15 +27294,15 @@
       "module_id": "tdesktop.github.workflows.docker",
       "responsibility_id": "TDRP-R9-LINUX-BUILD-ENV-IMAGE-PUBLISH-PROVENANCE-001",
       "source_symbols": [
-        "push branches: [master, dev]",
+        "push.paths: .github/workflows/docker.yml + Telegram/build/docker/centos_env/**",
+        "if: github.ref_name == github.event.repository.default_branch",
         "IMAGE_TAG: ghcr.io/${{ github.repository }}/centos_env:latest",
         "actions/checkout@v7 with submodules: recursive",
         "curl -sSL https://install.python-poetry.org | python3 -",
         "poetry install",
-        "DEBUG= LTO= poetry run gen_dockerfile > Dockerfile",
+        "DEBUG= LTO= poetry run gen_dockerfile | DOCKER_BUILDKIT=1 docker build -t $IMAGE_TAG -",
         "jlumbroso/free-disk-space@ceedf095f4ec1a097402bc6bd80831f2e1a6fde6",
         "docker login ghcr.io",
-        "docker build -t $IMAGE_TAG .",
         "docker push $IMAGE_TAG"
       ],
       "capability_ids": [
@@ -27324,7 +27324,7 @@
       ],
       "source_analysis_path": "projects/telegram-desktop-rust/dossiers/linux-build-environment-image-publish-workflow-complete-read.md",
       "behavior_contract": "Treat upstream centos_env image publication as a bounded build-support provenance adapter: only exact reviewed source and dependency identities may contribute to Fabushi evidence; mutable registry tags, base-image tags, action major tags, online installers and tag-based third-party fetches remain upstream provenance and can never become canonical Fabushi source, product runtime, packaging, release or acceptance authority.",
-      "state_machine": "push to upstream master/dev touching docker workflow or centos_env inputs -> recursive checkout -> online Poetry installer -> Poetry dependency environment -> render generated Dockerfile -> runner disk cleanup -> install Docker -> authenticate GHCR with workflow token -> build centos_env image -> push mutable :latest -> downstream build/scanner consumers may resolve latest; any provider/input drift or publish ambiguity remains provenance-only and cannot advance Fabushi acceptance",
+      "state_machine": "push touching docker workflow or centos_env inputs -> default-branch job fence -> recursive checkout -> apt refresh + online Poetry installer -> Poetry dependency environment -> runner disk cleanup -> authenticate GHCR with workflow token -> stream generated Dockerfile into BuildKit build tagged centos_env:latest -> push mutable :latest -> downstream build/scanner consumers may later resolve latest; any provider/input drift or publish ambiguity remains provenance-only and cannot advance Fabushi acceptance",
       "side_effects": [
         "Downloads and executes the Poetry installer from the network.",
         "Resolves Python dependencies from poetry.lock/registry and renders a Dockerfile.",
@@ -27380,7 +27380,7 @@
       "target_language": "Repository build/release/security governance",
       "language_rationale": "This workflow expresses build-support image provenance and provider-side publication, not application runtime behavior. Applicable responsibility belongs to existing source-neutral repository/container governance rather than new Rust or React production code.",
       "command_event_contracts": [
-        "only reviewed upstream push/path changes trigger image rebuild",
+        "only matching-path pushes whose ref is the repository default branch may execute the image rebuild/publish job",
         "recursive checkout must be accounted as build input",
         "generated Dockerfile and lockfile are source inputs, not opaque environment state",
         "registry credentials remain CI provider secrets",
@@ -27391,7 +27391,7 @@
       "state_owner": "Reviewed repository source plus exact dependency/image identities; GHCR mutable :latest is a provider pointer, not canonical state.",
       "lifecycle_owner": "Existing release-support container provenance governance and exact-head GitHub Actions evidence lifecycle.",
       "persistence_and_restart": "Durable authority is the reviewed source/lock/dependency identity and exact Actions evidence. Runner workspace and Docker daemon state are ephemeral; the registry tag may move and therefore must be re-resolved/digest-qualified for any evidence use.",
-      "concurrency_and_cancellation": "Concurrent master/dev publishes can race on the same :latest tag. Fabushi does not treat tag order as canonical; evidence must bind exact source and immutable artifact/digest identities.",
+      "concurrency_and_cancellation": "No explicit concurrency group is declared. Multiple qualifying runs on the repository default branch can overlap and race to retag the same :latest pointer; Fabushi does not treat tag order as canonical and requires exact source plus immutable artifact/digest identities for evidence.",
       "security_boundary": "GITHUB_TOKEN is used for GHCR login; external installer, registry, base images, action tags and Dockerfile acquisitions are supply-chain inputs. No registry credential, image tag or upstream build container may become a Fabushi identity, messaging, storage, runtime or release authority.",
       "network_service_dependencies": [
         "GitHub checkout/submodule transport",
@@ -27431,7 +27431,7 @@
       "composition_slot": "release-support build-environment image provenance adapter",
       "capability_component": "Source-neutral build-container publication provenance mapping",
       "variation_axes": [
-        "master/dev push",
+        "default-branch versus non-default-branch push",
         "docker workflow/centos_env path change",
         "stable/drifted action major tag",
         "stable/drifted online installer/base image/tagged dependency",
@@ -27455,7 +27455,7 @@
       "object_action_scope": "Repository build/release support only",
       "detail_section": "Not applicable",
       "capability_surface": "Build-environment image provenance adapter",
-      "route_contract": "source/path trigger -> exact checkout/generation -> image build/publish -> downstream build-support consumer; no product route",
+      "route_contract": "matching-path push -> default-branch job fence -> exact checkout/generation -> image build/publish -> downstream build-support consumer; no product route",
       "search_scope": "Not applicable",
       "search_provider": "Not applicable",
       "search_result_types": [],
@@ -27543,7 +27543,7 @@
       "release_gate_status": "open",
       "license_and_provenance": "Exact upstream docker workflow is retained as build-support provenance. Telegram GHCR namespace, mutable :latest image, base/tagged dependencies, online Poetry/Rust/tool downloads and provider credentials are not promoted to Fabushi runtime or exact evidence authority.",
       "reviewer": null,
-      "notes": "Strict index 84 closes only .github/workflows/docker.yml. The centos_env Dockerfile/generator/lock/build scripts and recursive external inputs remain separate inventory responsibilities. Counters become unknown=16,219 unread=16,194 omitted=0 responsibilities=102. Next strict root index 85 .github/workflows/issue_closer.yml@355405165590712b1826b2f92a8f867c8d568dd9. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions are required."
+      "notes": "Strict index 84 closes only .github/workflows/docker.yml. Source semantics corrected against the locked workflow: push is path-filtered and the job is gated by github.ref_name == github.event.repository.default_branch; the workflow does not install Docker, and gen_dockerfile output is streamed to docker build stdin. Coverage, existing-owner disposition and product code are unchanged. Counters remain unknown=16,219 unread=16,194 omitted=0 responsibilities=102. Next strict root index 85 .github/workflows/issue_closer.yml@355405165590712b1826b2f92a8f867c8d568dd9. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions are required after this correction commit."
     }
   ]
 }

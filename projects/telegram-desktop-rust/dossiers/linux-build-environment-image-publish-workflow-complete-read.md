@@ -9,7 +9,7 @@
 - Existing owner: `AGENTS.md@da3e37258c74963970ff5cfc5d54671a37558b97` — Repository release-support container provenance governance.
 
 ## Complete-read workflow behavior
-The workflow triggers on pushes to upstream `master` or `dev` when the workflow itself or `Telegram/build/docker/centos_env/**` changes. It checks out the repository recursively, downloads and executes the Poetry installer, installs the locked Python environment, renders the generated Dockerfile, frees hosted-runner disk space, installs Docker, authenticates to GHCR with `GITHUB_TOKEN`, builds the image and pushes `ghcr.io/${{ github.repository }}/centos_env:latest`.
+The workflow is path-filtered to pushes that touch the workflow itself or `Telegram/build/docker/centos_env/**`, and the job is additionally gated by `github.ref_name == github.event.repository.default_branch`. It checks out the repository recursively, runs `apt update`, downloads and executes the Poetry installer, authenticates Docker to GHCR with `GITHUB_TOKEN`, frees hosted-runner disk space, runs `poetry install`, streams the reviewed Jinja-generated Dockerfile directly into BuildKit, builds the image, and pushes `ghcr.io/${{ github.repository }}/centos_env:latest`. The workflow does not contain a Docker installation step.
 
 The workflow publishes a mutable build-support pointer. It does not digest-bind the consumer-facing `:latest` tag and does not declare an explicit permissions block in this source file.
 
@@ -37,7 +37,7 @@ The workflow remains a provenance adapter under that owner. Exact source, depend
 - The Poetry installer is executed from a network URL without a digest in the workflow.
 - `rockylinux:8`, many Dockerfile dependency tags and `centos_env:latest` are mutable pointers.
 - The workflow token authenticates GHCR; registry credentials remain inside CI/provider boundaries.
-- Concurrent master/dev publications may race on the same `:latest` tag.
+- No explicit concurrency group is declared. Multiple qualifying default-branch runs may race on the same `:latest` tag; later successful pushes may retarget it.
 - A successful push does not prove what digest a later consumer resolves.
 - A successful image build/push cannot satisfy Fabushi production, packaging, release or migration acceptance by itself.
 - The direct OSS Scanner consumer makes mutable-tag drift a real build-environment provenance risk, not merely cosmetic CI metadata.
@@ -53,3 +53,6 @@ The workflow remains a provenance adapter under that owner. Exact source, depend
 - Regression: `REG-TDRP-LINUX-BUILD-IMAGE-NO-PRODUCT-RUNTIME-001`, `REG-TDRP-LINUX-BUILD-IMAGE-NO-RELEASE-ACCEPT-001`
 
 Closing strict index 84 changes counters to unknown=16,219, unread=16,194, omitted=0, responsibilities=102. `baseline_identity_accepted=false` and `source_closure_ready=false` remain mandatory. Next strict root: index 85 `.github/workflows/issue_closer.yml@355405165590712b1826b2f92a8f867c8d568dd9`.
+
+## Source-semantic correction
+The first strict84 publication used inaccurate shorthand for the trigger and runner preparation. The locked workflow has no `master`/`dev` branch list and no Docker installation step: it path-filters `push`, fences the job to the repository default branch, and streams `gen_dockerfile` output to `docker build -`. This correction changes no source disposition, owner, coverage count, product code, or acceptance flag.
