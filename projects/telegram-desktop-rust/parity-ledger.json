@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
-  "target_commit": "33019a2459f3ed8dbd2b62cbe6d9dcf863a69ac5",
+  "target_commit": "e2c301c1e2b032ec024e378c4fe754afa2ddc46e",
   "coverage": {
     "source_entries_total": 16306,
-    "unknown": 16245,
-    "unread": 16220,
+    "unknown": 16244,
+    "unread": 16219,
     "omitted": 0,
-    "responsibilities_total": 76,
+    "responsibilities_total": 77,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -21087,6 +21087,235 @@
       "reviewer": null,
       "license_and_provenance": "Exact Claude adapter policy read from locked telegramdesktop/tdesktop live-dev blob and adapted source-neutrally; no provider runtime source copied.",
       "notes": "Strict index 58 closes only .claude/ai-workflow-adapter.md. Counters become unknown=16245 unread=16220 omitted=0 responsibilities=76. Next strict root index 59 .claude/commands/code-health.md@bcabd4bd5b5a1a2ed09b40a7f1fbdd502042329a. Closure flags remain false.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_path": ".claude/commands/code-health.md",
+      "source_blob_sha": "bcabd4bd5b5a1a2ed09b40a7f1fbdd502042329a",
+      "source_kind": "repository_quality_health_host_command_alias",
+      "module_id": "tdesktop.claude.commands.code-health",
+      "responsibility_id": "TDRP-R9-CLAUDE-CODE-HEALTH-COMMAND-001",
+      "source_symbols": [
+        "frontmatter description",
+        "allowed-tools",
+        "# Code Health",
+        "adapter read",
+        "shared code-health skill read",
+        "scan mode",
+        "survey [area] mode",
+        "check [base] mode",
+        "explicit route argument",
+        "scheduled scan route",
+        "$ARGUMENTS"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-QUALITY-HEALTH-NATIVE-INVOCATION"
+      ],
+      "dependency_ids": [
+        ".claude/ai-workflow-adapter.md@370ff84a1ab4c080b15b601a54162b0630c4f4df",
+        ".agents/skills/code-health/SKILL.md@6885938b3d186b55f5d69cb8b9b9a96bbca0e097",
+        "GitHub Actions exact-head verification boundary"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/claude-code-health-command-complete-read.md",
+      "behavior_contract": "Expose Claude /code-health as an invocation alias over the existing shared code-health owner: select scan/survey/check from arguments, allow routing only with explicit route, and use scan route for the scheduled form without owning scanner/state/task semantics.",
+      "state_machine": "command invocation -> read Claude adapter + shared code-health skill -> select supported mode -> run canonical code-health lifecycle -> optionally route only when route is explicit -> ordinary review/evidence publication",
+      "side_effects": [
+        "May invoke the existing repository code-health workflow.",
+        "May permit canonical proposal routing only when the user/scheduled invocation includes route.",
+        "Creates no shipping Fabushi runtime state and owns no independent findings/task store."
+      ],
+      "failure_cases": [
+        "Command alias is treated as a second code-health semantic owner.",
+        "A mode not supported by the shared skill is invented.",
+        "Proposals route without an explicit route argument.",
+        "Provider syntax weakens fresh-authority, trust, conflict, audit or approval gates.",
+        "Stale/mutable observations advance durable findings.",
+        "Fresh child exact-head TDRP/Rust evidence is absent."
+      ],
+      "ui_disposition": "Not applicable; repository-development command alias only.",
+      "non_ui_responsibilities": [
+        "Host command registration",
+        "Canonical skill/adapter delegation",
+        "Supported mode selection",
+        "Explicit routing gate",
+        "Scheduled invocation selection"
+      ],
+      "platform_delta": "Claude slash-command syntax and allowed-tools metadata are host mechanics. All code-health semantics remain in the existing source-neutral repository owner.",
+      "existing_owner_candidates": [
+        "AGENTS.md#Repository quality-health native invocation",
+        "Existing .agents/skills/code-health/SKILL.md source-neutral workflow",
+        "Shipping Agent/Coordinator/Host/Runner (rejected)",
+        "Shipping Task/Automation/Workflow (rejected)"
+      ],
+      "existing_owner": "Fabushi repository quality-health native invocation lifecycle",
+      "rejected_existing_owners": [
+        "Shipping Agent/Coordinator/Host/Runner own product execution, not repository command aliases.",
+        "Shipping Task/Automation/Workflow own end-user work, not repository quality proposals.",
+        "A Claude-specific scanner/findings/task owner would duplicate the shared code-health owner.",
+        "The command file cannot become an independent semantic owner because it explicitly delegates to the shared skill and adapter."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md"
+      ],
+      "fabushi_target_symbols": [
+        "A default prompt may select an already-supported mode, but it must not weaken the canonical skill/spec, let stale or mutable observations advance durable state, bypass ordinary routing approval/trust gates, or reorder reporting so proposals hide the regressions and decisions that precede them.",
+        "Scheduled and ad-hoc invocations enter the same ordinary task/review/evidence lifecycle."
+      ],
+      "target_language": "Markdown repository governance / host invocation metadata",
+      "language_rationale": "This is a 14-line provider command registration surface; applicable semantics are preserved as source-neutral repository governance, not copied into shipping Rust/TypeScript.",
+      "command_event_contracts": [
+        "/code-health or /code-health scan -> canonical scan",
+        "/code-health survey <area> -> canonical one-area survey",
+        "/code-health check <base> -> canonical change check",
+        "route absent -> no proposal routing",
+        "route present -> canonical trust-gated routing",
+        "scheduled invocation -> scan route"
+      ],
+      "state_owner": "Existing repository code-health workflow and ordinary review/evidence lifecycle.",
+      "lifecycle_owner": "Fabushi root AGENTS.md repository quality-health native invocation owner.",
+      "persistence_and_restart": "No product persistence. Durable findings/task publication remains owned by the canonical code-health/task lifecycle; this alias stores no parallel state.",
+      "concurrency_and_cancellation": "No independent worker or scheduler state is introduced; concurrency/cancellation follow the shared code-health skill and Claude adapter.",
+      "security_boundary": "The command may expose only declared host tools and cannot bypass canonical exact-authority, routing trust, ownership conflict, audit or approval gates.",
+      "network_service_dependencies": [
+        "GitHub Actions for exact-head executable verification"
+      ],
+      "service_owner": "Fabushi repository quality-health/review/evidence lifecycle",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "toolchain-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP and Rust Actions are required.",
+        "Recursive source disposition remains open; baseline_identity_accepted=false and source_closure_ready=false."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "Full locked .claude/commands/code-health.md read: 14 lines.",
+        "Same-upstream semantic owner .agents/skills/code-health/SKILL.md@6885938b3d186b55f5d69cb8b9b9a96bbca0e097 read.",
+        "Same-upstream Claude adapter .claude/ai-workflow-adapter.md@370ff84a1ab4c080b15b601a54162b0630c4f4df read.",
+        "Parent exact-head TDRP run 39703486928: 61/61 success; Rust run 39703486941: 6/6 success."
+      ],
+      "target_commit": "e2c301c1e2b032ec024e378c4fe754afa2ddc46e",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository quality-health lifecycle",
+      "composition_slot": "Host-native invocation alias",
+      "capability_component": "Repository quality-health command registration",
+      "variation_axes": [
+        "scan vs survey vs check",
+        "explicit route absent vs present",
+        "ad-hoc vs scheduled invocation"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi root AGENTS.md",
+        "Existing shared code-health workflow",
+        "Claude host adapter",
+        "GitHub Actions exact-head verification"
+      ],
+      "duplicate_root_check": "No second scanner, findings ledger, scheduler, task queue, review owner or shipping runtime introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository-development command invocation only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Repository quality-health native invocation",
+      "route_contract": "No shipping route; repository proposals use existing process-inbox/task lifecycle.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Command arguments and exact source/owner identities select an existing workflow; durable lifecycle state remains in canonical repository evidence, not the alias.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CLAUDE-CODE-HEALTH-COMMAND-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CLAUDE-CODE-HEALTH-MODE-SELECTION-001",
+        "ORA-TDRP-CLAUDE-CODE-HEALTH-EXPLICIT-ROUTE-001",
+        "ORA-TDRP-CLAUDE-CODE-HEALTH-SHARED-OWNER-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CLAUDE-CODE-HEALTH-NO-SECOND-OWNER-001",
+        "INV-TDRP-CLAUDE-CODE-HEALTH-NO-IMPLICIT-ROUTE-001",
+        "INV-TDRP-CLAUDE-CODE-HEALTH-HOST-SYNTAX-ONLY-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CLAUDE-CODE-HEALTH-SCAN-001",
+        "CONTRACT-TDRP-CLAUDE-CODE-HEALTH-SURVEY-001",
+        "CONTRACT-TDRP-CLAUDE-CODE-HEALTH-CHECK-001",
+        "CONTRACT-TDRP-CLAUDE-CODE-HEALTH-ROUTE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-CLAUDE-CODE-HEALTH-NO-ROUTE-WITHOUT-ARG-001"
+      ],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "locked Claude code-health command and canonical shared skill blobs"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact host command policy read from locked telegramdesktop/tdesktop live-dev blob; provider syntax retained only as provenance and no runtime source copied.",
+      "notes": "Strict index 59 closes only .claude/commands/code-health.md. Counters become unknown=16244 unread=16219 omitted=0 responsibilities=77. Next strict root index 60 .claude/commands/continue.md@e81c86031f2e501f30d2b6ed908fb03d648324c8. Closure flags remain false.",
       "test_execution_evidence": []
     }
   ]

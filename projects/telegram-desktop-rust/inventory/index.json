@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16306,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16245,
-    "unread_minimum": 16220,
+    "unknown_minimum": 16244,
+    "unread_minimum": 16219,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -39,7 +39,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream remains telegramdesktop/tdesktop@5c674f1f6a0f6ace55b67f8bc295138680fe588b/tree 09a421891474be0da279f44a5bf8e0dcf3bc270a. Strict index 58 .claude/ai-workflow-adapter.md@370ff84a1ab4c080b15b601a54162b0630c4f4df is fully read and mapped into existing source-neutral repository AI development/review/evidence governance. Counters unknown=16,245, unread=16,220, omitted=0; closure flags remain false pending fresh exact-head Actions. Next strict root index 59 .claude/commands/code-health.md@bcabd4bd5b5a1a2ed09b40a7f1fbdd502042329a.",
+  "note": "Live upstream remains telegramdesktop/tdesktop@5c674f1f6a0f6ace55b67f8bc295138680fe588b/tree 09a421891474be0da279f44a5bf8e0dcf3bc270a. Strict index 59 .claude/commands/code-health.md@bcabd4bd5b5a1a2ed09b40a7f1fbdd502042329a is fully read and mapped to the existing source-neutral repository quality-health native-invocation owner. Counters unknown=16,244, unread=16,219, omitted=0; closure flags remain false pending fresh exact-head Actions. Next strict root index 60 .claude/commands/continue.md@e81c86031f2e501f30d2b6ed908fb03d648324c8.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
