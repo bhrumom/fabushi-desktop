@@ -27122,8 +27122,8 @@
         "projects/telegram-desktop-rust/module-map.md"
       ],
       "fabushi_target_symbols": [
-        "TDRP-SRC-03 documentation_or_license retained legal provenance",
-        "module-map build/generator/resources/dependencies legal/provenance disposition"
+        "documentation_or_license",
+        "build/generator/resources/dependencies"
       ],
       "target_language": "Repository governance / retained legal-record provenance",
       "language_rationale": "The source carries repository/legal maintenance semantics rather than application behavior; the applicable responsibility is accounted under existing migration governance and review, not rewritten as meaningless runtime code.",
