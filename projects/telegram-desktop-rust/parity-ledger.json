@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
-  "target_commit": "f2d36ac256b9a3b0bedceabce279876940d0b475",
+  "target_commit": "3c5f80e65c726f4ada2d70492f0ddc961d6a34b6",
   "coverage": {
     "source_entries_total": 16306,
-    "unknown": 16239,
-    "unread": 16214,
+    "unknown": 16238,
+    "unread": 16213,
     "omitted": 0,
-    "responsibilities_total": 82,
+    "responsibilities_total": 83,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -22664,6 +22664,254 @@
       "reviewer": null,
       "license_and_provenance": "Exact Claude host command and dependency SHAs are retained only as source provenance. Provider names, slash-command syntax, $skill spelling and adapter mechanics do not become Fabushi shipping product/runtime identifiers.",
       "notes": "Strict index 64 closes only .claude/commands/perform-task.md. Counters become unknown=16239 unread=16214 omitted=0 responsibilities=82. Its direct/transitive dependencies remain independent inventory rows already audited at their exact SHAs. Next strict root index 65 .claude/commands/process-inbox.md@3bd1c22b06c735ff92cf2260bd893c9de2653f21. Closure flags remain false.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_path": ".claude/commands/process-inbox.md",
+      "source_blob_sha": "3bd1c22b06c735ff92cf2260bd893c9de2653f21",
+      "source_kind": "repository_ai_inbox_routing_host_command_wrapper",
+      "module_id": "tdesktop.claude.commands.process-inbox",
+      "responsibility_id": "TDRP-R9-CLAUDE-PROCESS-INBOX-COMMAND-001",
+      "source_symbols": [
+        "frontmatter description / allowed tools",
+        "Claude adapter + shared process-inbox skill complete-read delegation",
+        "current-checkout ignored inbox selection",
+        "route-and-plan-only boundary",
+        "project-continuity / affirmative-independence rule",
+        "receipt-only branch-integration disposition",
+        "isolated inbox_worktree / inbox_branch / inbox-* publication",
+        "Agent-tool planner delegation / no Claude subprocess",
+        "$ARGUMENTS routing hints only"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-AI-INBOX-ROUTING-NATIVE-INVOCATION"
+      ],
+      "dependency_ids": [
+        ".claude/ai-workflow-adapter.md@370ff84a1ab4c080b15b601a54162b0630c4f4df",
+        ".agents/skills/process-inbox/SKILL.md@0ce70794ac743d99e6d5c80894cde970b52842db",
+        ".agents/skills/process-inbox/scripts/workspace.py@5d74a11083d66f2ebe9bbf0fcf2e991fa2c6c1c5",
+        ".agents/shared/phase-effort.md@dd07a4c611922a29a6892332db98afe76cd58952",
+        "GitHub Actions exact-head verification boundary"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/claude-process-inbox-command-complete-read.md",
+      "behavior_contract": "The Claude command is only a host-native adapter over the shared process-inbox repository workflow. It routes ignored inbox material into durable planning evidence under exact live authority, preserves project continuity and receipt-only integration disposition, uses the isolated inbox helper/publication lifecycle, and stops before product implementation/build/test. It does not create a product Inbox, second task queue, second Git publication engine, or provider-owned runtime.",
+      "state_machine": "current checkout + ignored inbox -> load Claude adapter and shared process-inbox skill -> helper-owned snapshot/transaction preparation -> route/classify with project-continuity and ordinary approval rules -> branch-motion-only request becomes receipt-only, otherwise create/update durable planned task evidence -> helper-owned isolated inbox publication/finalization -> report routing result; product implementation/build/test remain outside this wrapper",
+      "side_effects": [
+        "May create or update durable repository planning/task/receipt artifacts only through the shared process-inbox lifecycle.",
+        "May publish the isolated inbox transaction through the shared helper's exact path/digest/receipt fences.",
+        "May delegate planning through the sanctioned host Agent tool after loading the adapter.",
+        "Does not modify shipping product/source code, run builds/tests, or create end-user Task/Automation/Inbox state."
+      ],
+      "failure_cases": [
+        "Reading mutable live inbox content instead of the helper-owned transaction snapshot.",
+        "Treating shared/cross-surface paths as proof that an existing-project request is independent.",
+        "Creating a backport/forward-port/cherry-pick/rebase/merge/branch-sync companion task for integration-only work.",
+        "Using a task slot worktree, stopping merely because that slot is dirty, or using broad Git staging instead of inbox helper publication.",
+        "Launching Claude subprocesses through Bash or letting provider mechanics bypass shared routing/evidence rules.",
+        "Treating $ARGUMENTS as authority rather than non-authoritative routing hints.",
+        "Claiming the wrapper completed implementation/build/test work that it is explicitly forbidden to perform."
+      ],
+      "ui_disposition": "Not a shipping UI capability. Claude command/Agent syntax and local inbox mechanics are developer-tool provenance only.",
+      "non_ui_responsibilities": [
+        "Host-native process-inbox invocation boundary",
+        "Exact current-checkout/source authority",
+        "Route/plan-only fence",
+        "Project-continuity and affirmative-independence routing",
+        "Receipt-only handling for branch-motion requests",
+        "Isolated inbox worktree/branch transaction and helper-owned publication",
+        "Planner Agent adapter ordering and no-subprocess rule",
+        "Routing hints remain subordinate to canonical authority"
+      ],
+      "platform_delta": "Upstream command syntax and Claude Agent mechanics are provider-specific. Fabushi retains the source-neutral repository intake/routing/evidence contract only; no provider runtime, product Inbox, or source-specific queue is introduced.",
+      "existing_owner_candidates": [
+        "AGENTS.md#Repository quality-health native invocation",
+        "AGENTS.md#Mandatory development lifecycle / ordinary task-review-evidence lifecycle",
+        "Already-mapped source-neutral process-inbox repository task/evidence workflow",
+        "Shipping Task/Automation/Inbox owners (rejected)",
+        "Shipping Agent/Coordinator/Host/Runner owners (rejected)",
+        "A second repository queue/router/Git publication engine (rejected)"
+      ],
+      "existing_owner": "Fabushi source-neutral repository native-invocation plus existing process-inbox task/routing/evidence lifecycle",
+      "rejected_existing_owners": [
+        "Shipping Task/Automation/Inbox owns end-user product semantics, not developer repository intake/routing.",
+        "Shipping Agent/Coordinator/Host/Runner owns product execution, not developer host command semantics.",
+        "A Claude/Codex runtime would preserve provider mechanics rather than the source-neutral workflow responsibility.",
+        "A second queue/router/scheduler or Git/worktree publication engine would duplicate the shared process-inbox helper and violate its exact transaction/publication fences."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md"
+      ],
+      "fabushi_target_symbols": [
+        "A default prompt may select an already-supported mode, but it must not weaken the canonical skill/spec, let stale or mutable observations advance durable state, bypass ordinary routing approval/trust gates, or reorder reporting so proposals hide the regressions and decisions that precede them.",
+        "Scheduled and ad-hoc invocations enter the same ordinary task/review/evidence lifecycle."
+      ],
+      "target_language": "Repository governance / source-neutral developer workflow",
+      "language_rationale": "This source is a 40-line provider command wrapper over an already-audited shared repository workflow. Its applicable responsibility is governance/toolchain-equivalent; no shipping Rust/TypeScript implementation or provider-specific subsystem is warranted.",
+      "command_event_contracts": [
+        "current checkout + ignored inbox -> shared process-inbox snapshot/routing lifecycle",
+        "existing project work -> remain in project unless affirmative independence test passes",
+        "branch-motion-only request -> receipt-only disposition with no integration companion task",
+        "parallel task slots -> use isolated inbox_worktree/inbox_branch rather than slot_worktree",
+        "planner delegation -> Claude adapter first, then shared skill, Agent tool only",
+        "$ARGUMENTS -> routing hints only, never source/task authority"
+      ],
+      "state_owner": "Existing repository inbox transaction plus durable project/task/receipt records; no new persistent owner.",
+      "lifecycle_owner": "Existing process-inbox repository intake/routing/publication workflow under AGENTS.md task/review/evidence governance.",
+      "persistence_and_restart": "Durable helper transaction metadata, digest-bound snapshot, tracked task/receipt artifacts, and repository commits remain source of truth. Provider session state and mutable live inbox text are not authoritative on restart.",
+      "concurrency_and_cancellation": "Parallel task execution is isolated from inbox routing. The shared helper owns one valid inbox transaction, inbox_worktree/inbox_branch publication, conflict/rebase recovery, and path/digest fencing; the wrapper does not use task slot worktrees or create another writer.",
+      "security_boundary": "Provider/Agent mechanics remain developer tooling under repository trust/evidence rules. Exact transaction digest, receipt, allowed-path and publication fences cannot be bypassed by command arguments, Bash staging, or provider session state.",
+      "network_service_dependencies": [
+        "Existing repository Git publication path used by the shared helper",
+        "GitHub Actions for TDRP/Rust exact-head verification"
+      ],
+      "service_owner": "Existing repository workflow/evidence lifecycle",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "toolchain-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions are required after this mapping commit.",
+        "Recursive source disposition remains open; baseline_identity_accepted=false and source_closure_ready=false."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "Strict65 .claude/commands/process-inbox.md@3bd1c22b06c735ff92cf2260bd893c9de2653f21 fully read in the pre-gate audit: 40 lines, 1761 chars; source SHA revalidated against live upstream immediately before this mapping.",
+        "Direct dependencies .claude/ai-workflow-adapter.md@370ff84a1ab4c080b15b601a54162b0630c4f4df and .agents/skills/process-inbox/SKILL.md@0ce70794ac743d99e6d5c80894cde970b52842db were previously fully read and revalidated unchanged.",
+        "Current transitive helper identities were rechecked; helper changes remain separate source-inventory responsibilities and are not silently closed by this command row.",
+        "AGENTS.md@4f888d465d29d962542da07bcb6f6efe2b5be897 contains both selected exact native-invocation target sentences.",
+        "Parent exact-head TDRP run 39720206628 attempt 1 completed success, 61/61 jobs; authority artifact 12400362925 digest sha256:c69402e57adb48a830bf41837f63e4859939c0efa2d9e051710d1dc5df7381bd; recursive closure artifact 12400888602 digest sha256:096921bee04678000cf3469ad98dfb0e2810f85f94b05a043fdb0fe1d6093d6d; recursive reachability artifact 12401325822 digest sha256:91680968b3718b522f8a8c3c918830932cba64b64a64635dc9c8de4394a076f5.",
+        "Parent exact-head Rust desktop runtime run 39720206566 attempt 1 completed success, 6/6 jobs; messaging artifact 12400409018 digest sha256:380bcf41ae4d917c862cdb2730b8e97f4059e2680e66924e0c1ac7c8e336115f."
+      ],
+      "target_commit": "3c5f80e65c726f4ada2d70492f0ddc961d6a34b6",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi source-neutral repository development lifecycle",
+      "composition_slot": "Host-native inbox routing/planning invocation wrapper",
+      "capability_component": "Repository process-inbox invocation adapter",
+      "variation_axes": [
+        "existing-project vs affirmatively independent routing",
+        "ordinary product task vs branch-motion receipt-only request",
+        "parallel dirty task slots vs isolated inbox worktree",
+        "planner Agent vs no planner Agent",
+        "routing hints present vs absent"
+      ],
+      "shared_owner_contracts": [
+        "AGENTS.md host-native invocation governance",
+        "AGENTS.md ordinary task/review/evidence lifecycle",
+        "existing process-inbox exact transaction/publication contract",
+        "GitHub Actions exact-head verification"
+      ],
+      "duplicate_root_check": "No product Inbox, second repository task queue/router/scheduler, second Git/worktree publication engine, Claude/Codex product runtime, or duplicate Task/Automation owner is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository developer inbox routing/planning only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Host-native repository process-inbox command wrapper",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Restart/re-entry must resume/revalidate the helper-owned digest-bound transaction and exact live repository authority; mutable inbox text and host-session state cannot advance durable routing state.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CLAUDE-PROCESS-INBOX-COMMAND-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-PROCESS-INBOX-COMMAND-EXACT-AUTHORITY-001",
+        "ORA-TDRP-PROCESS-INBOX-COMMAND-ROUTE-ONLY-001",
+        "ORA-TDRP-PROCESS-INBOX-COMMAND-PROJECT-CONTINUITY-001",
+        "ORA-TDRP-PROCESS-INBOX-COMMAND-RECEIPT-ONLY-INTEGRATION-001",
+        "ORA-TDRP-PROCESS-INBOX-COMMAND-ISOLATED-WORKTREE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-PROCESS-INBOX-COMMAND-NO-IMPLEMENT-BUILD-TEST-001",
+        "INV-TDRP-PROCESS-INBOX-COMMAND-NO-INTEGRATION-TASK-001",
+        "INV-TDRP-PROCESS-INBOX-COMMAND-NO-SLOT-WORKTREE-001",
+        "INV-TDRP-PROCESS-INBOX-COMMAND-NO-PROVIDER-RUNTIME-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-PROCESS-INBOX-COMMAND-SHARED-SKILL-001",
+        "CONTRACT-TDRP-PROCESS-INBOX-COMMAND-ROUTING-HINTS-ONLY-001",
+        "CONTRACT-TDRP-PROCESS-INBOX-COMMAND-HELPER-PUBLICATION-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-PROCESS-INBOX-COMMAND-MUTABLE-LIVE-INBOX-001",
+        "FAULT-TDRP-PROCESS-INBOX-COMMAND-BROAD-STAGE-OR-WORKTREE-BYPASS-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-PROCESS-INBOX-COMMAND-NO-PROVIDER-PRIVILEGE-BYPASS-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-PROCESS-INBOX-COMMAND-NO-SECOND-TASK-QUEUE-001"
+      ],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "locked process-inbox command + Claude adapter + shared process-inbox skill + current helper identities + AGENTS native-invocation owner"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact Claude command, adapter, shared skill and helper SHAs are retained only as source provenance. Telegram/Claude naming, slash-command syntax, Agent tool spelling, local inbox/worktree paths and provider mechanics do not become Fabushi shipping product/runtime identifiers.",
+      "notes": "Strict index 65 closes only .claude/commands/process-inbox.md. Counters become unknown=16238 unread=16213 omitted=0 responsibilities=83. Direct/transitive dependencies remain independent inventory rows at their own source disposition. Next strict root index 66 .claude/commands/rebase.md@df14e750067aeac1258a92068886cd2b33f83120. Closure flags remain false.",
       "test_execution_evidence": []
     }
   ]
