@@ -88,3 +88,9 @@ Invariants: `INV-TDRP-EFFORT-WHOLE-SCOPE-001`, `INV-TDRP-EFFORT-ESCALATION-PRESE
 Existing owner: Fabushi repository lifecycle / Test Strategy / Test Evidence Contract.  
 New owner: none.  
 Current disposition: implemented as source-neutral workflow/test/evidence governance; exact-head GitHub Actions verification is required before acceptance into main.
+
+## Live dev rebaseline reread — e14f1566d277d2204f4c8e553bf7cc157047e88b
+- Full source reread: `.agents/shared/phase-effort.md@8d7b385dbb526e87fc090774ee35191e1619bb08`, 85 lines.
+- Delta: for `Code: harness` work, Codex plan assessment, general review/synthesis, selected lenses, convergence and evidence assessments pin `gpt-6.1-sol`; other phases retain the configured model and unavailable pins fall back with recorded evidence.
+- Existing owner remains repository lifecycle/Test Strategy/Test Evidence Contract; no product owner is introduced.
+- Parent exact-head 51e019e3afd13d7132d5da27bc273f0203a03eae became historical after live dev advanced: TDRP run 39743918294 completed 61/61 success with authority 12410423121/sha256:842b833317a5a1303957fc36a8152a2aad7863e0b60dab8c90e40a59a6898db2, closure 12411320551/sha256:2ed7335ec4abf02148d00427e8914da0212789bfdc136765f018c2043130a6a1, reachability 12410951384/sha256:a9337bc5ba21ff89398df9f012cbfdc3e8b31898614d3bd11354b3f905c9bd90; Rust run 39743918410 completed 6/6 success with artifact 12409889590/sha256:858be7d3c3c48657053fd8a9d576e854e04dbf2d9c4db300627376e90b7ed38d. These runs validate old 5c674f1f6a0f6ace55b67f8bc295138680fe588b only and are not reused as current evidence for e14f1566d277d2204f4c8e553bf7cc157047e88b.

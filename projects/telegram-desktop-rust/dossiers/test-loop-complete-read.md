@@ -89,3 +89,9 @@ These anchors bind the ledger row to this exact source-read dossier. Exact-head 
 ## Verification boundary
 
 This closure is documentation/governance mapping only. It does not claim that the whole upstream inventory is closed or that Fabushi product/release acceptance is complete. The exact mapping commit must pass the existing TDRP Revision 9 source-authority workflow and Rust desktop runtime workflow on the same PR head before the row's exact-head blocker can be cleared. Even after those runs pass, unknown=16,188 and unread=16,161 keep baseline/source closure fail-closed.
+
+## Live dev rebaseline reread — e14f1566d277d2204f4c8e553bf7cc157047e88b
+- Full source reread: `.agents/shared/test-loop.md@f3b38415883c95a6086766f965d8130333c1b09c`, 1,160 lines.
+- Delta: Windows `--host-load` can boundedly wait for low non-client CPU/no build tools, trace host load during the client run, preserve process-incarnation/client-tree exclusions, and write wait/trace/JSONL evidence. Unsupported hosts and sampler/read/write failures remain diagnostic and do not alter the run outcome.
+- Existing-owner-first: this is test instrumentation and evidence-quality governance, not a shipping platform/runtime capability.
+- Parent exact-head 51e019e3afd13d7132d5da27bc273f0203a03eae became historical after live dev advanced: TDRP run 39743918294 completed 61/61 success with authority 12410423121/sha256:842b833317a5a1303957fc36a8152a2aad7863e0b60dab8c90e40a59a6898db2, closure 12411320551/sha256:2ed7335ec4abf02148d00427e8914da0212789bfdc136765f018c2043130a6a1, reachability 12410951384/sha256:a9337bc5ba21ff89398df9f012cbfdc3e8b31898614d3bd11354b3f905c9bd90; Rust run 39743918410 completed 6/6 success with artifact 12409889590/sha256:858be7d3c3c48657053fd8a9d576e854e04dbf2d9c4db300627376e90b7ed38d. These runs validate old 5c674f1f6a0f6ace55b67f8bc295138680fe588b only and are not reused as current evidence for e14f1566d277d2204f4c8e553bf7cc157047e88b.

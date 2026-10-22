@@ -3,7 +3,7 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_repository": "telegramdesktop/tdesktop",
-  "upstream_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+  "upstream_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
   "discovery": {
     "evidence_run_id": 39486129504,
     "evidence_head_sha": "f605a520cb7d3dc21da795a35cb89b8479afdb8f",
@@ -13,7 +13,7 @@
     "candidate_lines_total": 331,
     "immutable_commit_pin_occurrences_classified": 19,
     "candidate_lines_pending_classification": 0,
-    "note": "Live dev advanced 0eca52223cceed229932add1cc80792763120844 -> 5c674f1f6a0f6ace55b67f8bc295138680fe588b. Build authorities are prepare.py@c090735b04151a886ea2c3e8fd84b42105437f18, Dockerfile@3135794864044f21d2a0092b32cff787c86704bf, snapcraft.yaml@261a6ca7d5bf19d5e23aa8e67dfe76ddd82850f3. Candidate accounting remains 331 classified / 0 pending; exact-head Actions must revalidate updated pins/reachability.",
+    "note": "Live dev advanced 5c674f1f6a0f6ace55b67f8bc295138680fe588b -> e14f1566d277d2204f4c8e553bf7cc157047e88b without modifying the accepted build-acquisition authority paths used by this inventory. Existing classified candidate/disposition records are retained; fresh exact-head Actions must revalidate recursive reachability against the new source authority.",
     "candidate_lines_classified": 331,
     "disposition_closure_status": "complete",
     "recursive_authority_closure_status": "gitlink-fixed-point-closed-disposition-pending",
@@ -1229,7 +1229,7 @@
   ],
   "recursive_build_reachability": {
     "status": "partial-audited-disposition-open",
-    "accepted_upstream_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+    "accepted_upstream_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
     "rule": "A recursively discovered repository is source/build authority only when an accepted TDesktop build path actually initializes, downloads, generates, patches, or consumes it. Presence as an unselected superproject gitlink is not sufficient.",
     "qt_superproject": {
       "repository": "https://github.com/qt/qt5",

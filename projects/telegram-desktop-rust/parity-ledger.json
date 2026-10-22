@@ -2,7 +2,7 @@
   "format_version": 3,
   "project_id": "TDRP-001",
   "spec_revision": 9,
-  "upstream_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+  "upstream_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
   "target_commit": "69c8375ba01f5699096d085a45a37c4a5d13b441",
   "coverage": {
     "source_entries_total": 16306,
@@ -15,7 +15,7 @@
   "rows": [
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "f4787dbb34cdb5fb2af78a69ae7537e91e06395a",
       "source_kind": "source",
@@ -263,7 +263,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": "Telegram/SourceFiles/boxes/url_auth_box.cpp",
       "source_blob_sha": "1fa4309f2091cf148b0b6f249efa029bdc171c53",
       "source_kind": "source",
@@ -508,7 +508,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "f4787dbb34cdb5fb2af78a69ae7537e91e06395a",
       "source_kind": "source",
@@ -732,7 +732,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "f4787dbb34cdb5fb2af78a69ae7537e91e06395a",
       "source_kind": "source",
@@ -964,7 +964,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "f4787dbb34cdb5fb2af78a69ae7537e91e06395a",
       "source_kind": "source",
@@ -1179,7 +1179,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "f4787dbb34cdb5fb2af78a69ae7537e91e06395a",
       "source_kind": "source",
@@ -1434,7 +1434,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "f4787dbb34cdb5fb2af78a69ae7537e91e06395a",
       "source_kind": "source",
@@ -1682,7 +1682,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "f4787dbb34cdb5fb2af78a69ae7537e91e06395a",
       "source_kind": "source",
@@ -1904,7 +1904,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "f4787dbb34cdb5fb2af78a69ae7537e91e06395a",
       "source_kind": "source",
@@ -2156,7 +2156,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": "Telegram/SourceFiles/boxes/share_box.cpp",
       "source_blob_sha": "f4787dbb34cdb5fb2af78a69ae7537e91e06395a",
       "source_kind": "source",
@@ -2425,7 +2425,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/shared/build-lock-recovery.md",
       "source_blob_sha": "ec75573e7efe74e9c9a344f3e66f2fc43ac7680f",
       "source_kind": "tooling",
@@ -2636,9 +2636,9 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/shared/codex-cli-leaves.md",
-      "source_blob_sha": "659da44a8083c433c4e9b59ca28f64ba525bfbf8",
+      "source_blob_sha": "11c59b68df43e442e596c3052296fc51a044d46a",
       "source_kind": "tooling",
       "module_id": "tdesktop.agent-review-tooling",
       "responsibility_id": "TDRP-R9-CODEX-LEAF-REVIEW-001",
@@ -2649,7 +2649,8 @@
         "Run directory",
         "Start and wait",
         "Continuing a leaf",
-        "Recovery"
+        "Recovery",
+        "Harness task review/assessment model pinning"
       ],
       "capability_ids": [
         "CAP-INDEPENDENT-FAIL-CLOSED-REVIEW"
@@ -2660,7 +2661,7 @@
         "Test Evidence Contract"
       ],
       "source_analysis_path": "projects/telegram-desktop-rust/dossiers/codex-cli-leaves-complete-read.md",
-      "behavior_contract": "AI-assisted review must be provider-neutral, sandboxed from source mutation, provenance-bound, independently reviewed, and fail closed when the review provider or evidence is unavailable or incomplete.",
+      "behavior_contract": "AI-assisted review must be provider-neutral, sandboxed from source mutation, provenance-bound, independently reviewed, and fail closed when the review provider or evidence is unavailable or incomplete. For a harness task on Codex, every review and assessment leaf is pinned to gpt-6.1-sol (with configured-model fallback recorded); non-review phases retain the configured model.",
       "state_machine": "implementation -> exact-head GitHub Actions verification -> evidence review -> independent acceptance -> integrate only on pass; provider/tool availability failure never becomes pass",
       "side_effects": [
         "No shipped Codex CLI dependency",
@@ -2853,11 +2854,11 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Provider-specific upstream tooling behavior was read from the accepted tdesktop authority; no Codex CLI helper/runtime code is copied into Fabushi.",
       "reviewer": null,
-      "notes": "Second previously unread recursive inventory entry. Provider-specific CLI/process/session mechanics are intentionally not ported; applicable review independence, sandbox/no-source-mutation, provenance and fail-closed guarantees map to existing Fabushi quality owners. Exact-head verification of this mapping commit is pending. Prior production/test/Actions evidence is historical-only; not accepted for current upstream authority 6c2ee90618bf69683a1c466e3b0550260b82e129 or current PR HEAD."
+      "notes": "Full live-dev rebaseline reread at codex-cli-leaves.md@11c59b68df43e442e596c3052296fc51a044d46a, 173 lines. Harness review/assessment model pinning is repository workflow governance only; existing independent review/evidence owners remain authoritative. Counters unchanged; fresh exact-head Actions required."
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/shared/codex-delegation.md",
       "source_blob_sha": "ed89d2a14344f50034a9363bd9ffe75f7972e652",
       "source_kind": "tooling",
@@ -3067,7 +3068,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/shared/codex-delegation.md",
       "source_blob_sha": "ed89d2a14344f50034a9363bd9ffe75f7972e652",
       "source_kind": "tooling",
@@ -3277,7 +3278,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/shared/codex-delegation.md",
       "source_blob_sha": "ed89d2a14344f50034a9363bd9ffe75f7972e652",
       "source_kind": "tooling",
@@ -3487,7 +3488,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/shared/cross-review/prompts.md",
       "source_blob_sha": "4e155d2bd7e647c12df7b008c279969bfd65e44d",
       "source_kind": "tooling",
@@ -3698,7 +3699,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/shared/cross-review/prompts.md",
       "source_blob_sha": "4e155d2bd7e647c12df7b008c279969bfd65e44d",
       "source_kind": "tooling",
@@ -3910,7 +3911,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/shared/cross-review/prompts.md",
       "source_blob_sha": "4e155d2bd7e647c12df7b008c279969bfd65e44d",
       "source_kind": "tooling",
@@ -4123,7 +4124,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/shared/cross-review/protocol.md",
       "source_blob_sha": "51dabe142d5c3c7247e4050790c4e74b40f35b27",
       "source_kind": "tooling",
@@ -4333,7 +4334,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/shared/cross-review/protocol.md",
       "source_blob_sha": "51dabe142d5c3c7247e4050790c4e74b40f35b27",
       "source_kind": "tooling",
@@ -4541,7 +4542,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/shared/cross-review/protocol.md",
       "source_blob_sha": "51dabe142d5c3c7247e4050790c4e74b40f35b27",
       "source_kind": "tooling",
@@ -4752,7 +4753,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/shared/cross-review/protocol.md",
       "source_blob_sha": "51dabe142d5c3c7247e4050790c4e74b40f35b27",
       "source_kind": "tooling",
@@ -4968,7 +4969,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/shared/evidence/elf-copies.md",
       "source_blob_sha": "49fc28d671276e1787753267ae92397266d6bacd",
       "source_kind": "tooling",
@@ -5180,7 +5181,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/shared/evidence/elf-copies.md",
       "source_blob_sha": "49fc28d671276e1787753267ae92397266d6bacd",
       "source_kind": "tooling",
@@ -5392,7 +5393,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/shared/evidence/elf-copies.md",
       "source_blob_sha": "49fc28d671276e1787753267ae92397266d6bacd",
       "source_kind": "tooling",
@@ -5604,7 +5605,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/shared/evidence/elf_identity.py",
       "source_blob_sha": "70dc54620651e8c6fd9cce6966c9964b1a6c90d7",
       "source_kind": "tooling",
@@ -5823,7 +5824,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/shared/evidence/elf_identity.py",
       "source_blob_sha": "70dc54620651e8c6fd9cce6966c9964b1a6c90d7",
       "source_kind": "tooling",
@@ -6042,7 +6043,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/shared/evidence/elf_identity.py",
       "source_blob_sha": "70dc54620651e8c6fd9cce6966c9964b1a6c90d7",
       "source_kind": "tooling",
@@ -6262,7 +6263,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/shared/evidence/elf_identity.py",
       "source_blob_sha": "70dc54620651e8c6fd9cce6966c9964b1a6c90d7",
       "source_kind": "tooling",
@@ -6481,7 +6482,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/shared/evidence/elf_identity.py",
       "source_blob_sha": "70dc54620651e8c6fd9cce6966c9964b1a6c90d7",
       "source_kind": "tooling",
@@ -6700,7 +6701,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/shared/evidence/elf_identity_test.py",
       "source_blob_sha": "a75a29225b6eb70f255848e30026d02523d808f3",
       "source_kind": "tooling",
@@ -6928,7 +6929,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/shared/evidence/elf_identity_test.py",
       "source_blob_sha": "a75a29225b6eb70f255848e30026d02523d808f3",
       "source_kind": "tooling",
@@ -7153,7 +7154,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/shared/evidence/ninja_target.py",
       "source_blob_sha": "f638b0e9c039784832155269b5931ab0cabdb16b",
       "source_kind": "tooling",
@@ -7378,7 +7379,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/shared/evidence/ninja_target_test.py",
       "source_blob_sha": "a9c635eeb46a6ddf4295a815ef29bcae15ba2208",
       "source_kind": "test_tooling",
@@ -7622,7 +7623,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/shared/ninja-target-evidence.md",
       "source_blob_sha": "7d73d0c8acbefb01b5dd748296db931c58d59b18",
       "source_kind": "evidence_documentation",
@@ -7727,7 +7728,7 @@
       ],
       "test_evidence": [
         "dossier:projects/telegram-desktop-rust/dossiers/ninja-target-evidence-complete-read.md",
-        "upstream-caller:.agents/shared/test-loop.md@83c4732bf6139f7c6557f18dd87bb35c3d68808d",
+        "upstream-caller:.agents/shared/test-loop.md@f3b38415883c95a6086766f965d8130333c1b09c",
         "upstream-oracle:.agents/shared/evidence/ninja_target.py@f638b0e9c039784832155269b5931ab0cabdb16b",
         "upstream-qualification:.agents/shared/evidence/ninja_target_test.py@a9c635eeb46a6ddf4295a815ef29bcae15ba2208"
       ],
@@ -7853,16 +7854,17 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/shared/phase-effort.md",
-      "source_blob_sha": "dd07a4c611922a29a6892332db98afe76cd58952",
+      "source_blob_sha": "8d7b385dbb526e87fc090774ee35191e1619bb08",
       "source_kind": "workflow_governance_documentation",
       "module_id": "tdesktop.workflow-phase-effort",
       "responsibility_id": "TDRP-R9-AI-PHASE-EFFORT-GOVERNANCE-001",
       "source_symbols": [
         "Select effort",
         "Lens models",
-        "Apply on the current host"
+        "Apply on the current host",
+        "Harness task Codex review and assessment model policy"
       ],
       "capability_ids": [
         "CAP-AI-WORKFLOW-EFFORT-GOVERNANCE",
@@ -7875,7 +7877,7 @@
         "Fabushi Test Evidence Contract"
       ],
       "source_analysis_path": "projects/telegram-desktop-rust/dossiers/phase-effort-complete-read.md",
-      "behavior_contract": "Before each AI phase/worker, classify the whole assignment from actual scope/evidence; medium is routine execution only, xhigh is the default for planning/implementation/review/evidence/judgment/diagnosis/convergence/stateful performer work, and high requires a concrete inspected-scope reason. Preserve completed evidence when failures or complexity force escalation. On Codex review providers pin reuse/structure/performance lenses to gpt-6.1-sol with configured-model fallback recorded; all host adapters must use only supported effort/model controls and record inheritance/fallback honestly.",
+      "behavior_contract": "Before each AI phase/worker, classify the whole assignment from actual scope/evidence; medium is routine execution only, xhigh is the default for planning/implementation/review/evidence/judgment/diagnosis/convergence/stateful performer work, and high requires a concrete inspected-scope reason. Preserve completed evidence when failures or complexity force escalation. On Codex review providers pin reuse/structure/performance lenses to gpt-6.1-sol with configured-model fallback recorded; all host adapters must use only supported effort/model controls and record inheritance/fallback honestly. Harness tasks whose code is not user-run pin all Codex review and assessment leaves to gpt-6.1-sol while leaving implementation/other phases on the configured model; unavailable pins fall back with evidence.",
       "state_machine": "inspect complete scope/current evidence -> select medium|high|xhigh -> record reason -> apply supported host setting or inheritance fallback -> execute phase -> if failure/complexity exceeds class preserve valid outputs -> escalate medium/high to xhigh (or justified high from medium) -> retain review/evidence contract -> re-evaluate before new child scope",
       "side_effects": [
         "Repository workflow/test/evidence governance only; no new shipping runtime."
@@ -7966,9 +7968,9 @@
         "dossier:projects/telegram-desktop-rust/dossiers/phase-effort-complete-read.md",
         "upstream-perform-task:.agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c",
         "upstream-continue:.agents/skills/continue/SKILL.md@aeb81dd57018abbc8f03ea3dbd34f91952128db5",
-        "upstream-process-inbox:.agents/skills/process-inbox/SKILL.md@0ce70794ac743d99e6d5c80894cde970b52842db",
-        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba",
-        "upstream-evidence-loop:.agents/shared/test-loop.md@83c4732bf6139f7c6557f18dd87bb35c3d68808d",
+        "upstream-process-inbox:.agents/skills/process-inbox/SKILL.md@73bd3c360232679a0ebfe3b990073ecc4f322b7d",
+        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@ce3f355bc7226b57f6e9938a0938e18727bd6b30",
+        "upstream-evidence-loop:.agents/shared/test-loop.md@f3b38415883c95a6086766f965d8130333c1b09c",
         "upstream-codex-leaf:.agents/shared/scripts/codex_leaf.py@313c4941c61a4ec0e3b3b65cdaa59cc213916fdd",
         "upstream-codex-leaf-tests:.agents/shared/scripts/codex_leaf_test.py@2831841e6b131ca2c42688fe24e00b739f825ccb",
         "upstream-claude-adapter:.claude/ai-workflow-adapter.md@370ff84a1ab4c080b15b601a54162b0630c4f4df",
@@ -8094,12 +8096,12 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral workflow-governance contract read from telegramdesktop/tdesktop authority; no upstream implementation copied into Fabushi shipping runtime.",
-      "notes": "Twelfth previously unread recursive source entry at live dev 351204f3695b4a39bc3f4d2f230c061b9a01fe2a. Recursive inventory remains 16,202; after this source-entry closure unknown=16,190, unread=16,163, omitted=0. Baseline acceptance and full source closure remain false. Prior production/test/Actions evidence is historical-only; not accepted for current upstream authority 6c2ee90618bf69683a1c466e3b0550260b82e129 or current PR HEAD.",
+      "notes": "Full live-dev rebaseline reread at phase-effort.md@8d7b385dbb526e87fc090774ee35191e1619bb08, 85 lines. New harness-task model policy remains source-neutral repository phase governance; no product runtime owner. Counters unchanged; fresh exact-head Actions required.",
       "test_execution_evidence": []
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/shared/project-context.md",
       "source_blob_sha": "53c8657eb7949a5a2fba7e7adc8d1073f3079ead",
       "source_kind": "workflow_context_governance_documentation",
@@ -8203,9 +8205,9 @@
       "test_evidence": [
         "dossier:projects/telegram-desktop-rust/dossiers/project-context-complete-read.md",
         "upstream-project-context:.agents/shared/project-context.md@53c8657eb7949a5a2fba7e7adc8d1073f3079ead",
-        "upstream-process-inbox:.agents/skills/process-inbox/SKILL.md@0ce70794ac743d99e6d5c80894cde970b52842db",
+        "upstream-process-inbox:.agents/skills/process-inbox/SKILL.md@73bd3c360232679a0ebfe3b990073ecc4f322b7d",
         "upstream-pipeline:.agents/skills/perform-task/references/pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7",
-        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba",
+        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@ce3f355bc7226b57f6e9938a0938e18727bd6b30",
         "upstream-consolidation:.agents/skills/continue/references/consolidate-pending-tasks.md@bd301d93f8f670ad041b3db72330e17cbb50eb5c",
         "upstream-agents:AGENTS.md@d8d59480277b7defbca1cdbccf7ed164ab2db086",
         "upstream-claude:CLAUDE.md@f8564d18cef4b9c545767025995d31deb3fa7155",
@@ -8335,9 +8337,9 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/shared/test-loop.md",
-      "source_blob_sha": "83c4732bf6139f7c6557f18dd87bb35c3d68808d",
+      "source_blob_sha": "f3b38415883c95a6086766f965d8130333c1b09c",
       "source_kind": "workflow_test_evidence_governance_documentation",
       "module_id": "tdesktop.adaptive-test-loop-governance",
       "responsibility_id": "TDRP-R9-ADAPTIVE-TEST-LOOP-GOVERNANCE-001",
@@ -8355,7 +8357,8 @@
         "Crashes & assertions",
         "Hangs & freezes",
         "Telegram runtime assessment",
-        "Test report"
+        "Test report",
+        "Host load gate (Windows)"
       ],
       "capability_ids": [
         "CAP-TEST-EVIDENCE-GOVERNANCE",
@@ -8368,7 +8371,7 @@
         "Fabushi Test Evidence Contract"
       ],
       "source_analysis_path": "projects/telegram-desktop-rust/dossiers/test-loop-complete-read.md",
-      "behavior_contract": "Derive deterministic evidence checks from the current requirement, risk, oracle/invariants and final changed surface; execute related checks under unique run identities with exact command/environment/log evidence; causally classify APPROVED, TEST_FLAW, IMPL_BUG or blocked/unrecoverable; carry still-valid passes forward, rerun only invalidated/unmet checks, use at most one focused recovery campaign after the normal campaign, and preserve exact process/build ownership and bounded recovery before any hard stop.",
+      "behavior_contract": "Derive deterministic evidence checks from the current requirement, risk, oracle/invariants and final changed surface; execute related checks under unique run identities with exact command/environment/log evidence; causally classify APPROVED, TEST_FLAW, IMPL_BUG or blocked/unrecoverable; carry still-valid passes forward, rerun only invalidated/unmet checks, use at most one focused recovery campaign after the normal campaign, and preserve exact process/build ownership and bounded recovery before any hard stop. For timing-sensitive Windows harness launches, optionally gate launch on bounded low host load and no build tools, sample non-client CPU during the run, preserve process-identity exclusions, and record wait/trace/sample-file evidence without changing the test outcome when sampling fails or is unsupported.",
       "state_machine": "requirement + final diff/proposition -> evidence design with direct instrument/oracle/control/falsifier -> run related selected checks -> causal assessment -> APPROVED or TEST_FLAW recovery or IMPL_BUG fix/focused review or independently-proved hard stop -> preserve prior passes -> rerun only invalidated/unmet checks -> bounded focused recovery/exhaustion assessment",
       "side_effects": [
         "Repository quality/evidence governance only; no new shipping runtime."
@@ -8402,7 +8405,7 @@
         "Implementation-fix handoff with failing check/root cause/evidence/fix hint",
         "Telegram-specific runtime instrumentation kept outside Fabushi product ownership"
       ],
-      "platform_delta": "Fabushi absorbs the source-neutral verification/evidence state machine and recovery-safety contracts into existing repository quality governance. Telegram portable account, overlay, Debug runner, Crashpad and OS-specific harness mechanics remain upstream instrumentation details rather than a Fabushi runtime/test owner.",
+      "platform_delta": "Fabushi absorbs the source-neutral verification/evidence state machine and recovery-safety contracts into existing repository quality governance. Telegram portable account, overlay, Debug runner, Crashpad and OS-specific harness mechanics remain upstream instrumentation details rather than a Fabushi runtime/test owner. The Windows host-load sampler is upstream test instrumentation: Fabushi absorbs its evidence-quality, bounded-wait, process-identity and fail-open-observation semantics into repository test governance; it is not a shipping platform/runtime owner.",
       "existing_owner_candidates": [
         "AGENTS.md",
         "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
@@ -8462,10 +8465,10 @@
       ],
       "test_evidence": [
         "dossier:projects/telegram-desktop-rust/dossiers/test-loop-complete-read.md",
-        "upstream-test-loop:.agents/shared/test-loop.md@83c4732bf6139f7c6557f18dd87bb35c3d68808d",
+        "upstream-test-loop:.agents/shared/test-loop.md@f3b38415883c95a6086766f965d8130333c1b09c",
         "upstream-perform-task:.agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c",
         "upstream-pipeline:.agents/skills/perform-task/references/pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7",
-        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba",
+        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@ce3f355bc7226b57f6e9938a0938e18727bd6b30",
         "upstream-continue:.agents/skills/continue/SKILL.md@aeb81dd57018abbc8f03ea3dbd34f91952128db5",
         "upstream-build-lock:.agents/shared/build-lock-recovery.md@ec75573e7efe74e9c9a344f3e66f2fc43ac7680f",
         "upstream-workspace:.agents/skills/process-inbox/scripts/workspace.py@e1fdabbac9ccd635962b7b6dc1a62357fc5b931c"
@@ -8593,12 +8596,12 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral workflow/evidence-governance contract read from telegramdesktop/tdesktop authority; no upstream Telegram runtime/testing implementation copied into Fabushi shipping runtime.",
-      "notes": "Fourteenth previously unread recursive source entry at live dev 351204f3695b4a39bc3f4d2f230c061b9a01fe2a. Recursive inventory remains 16,202; after this source-entry closure unknown=16,188, unread=16,161, omitted=0. Baseline acceptance and full source closure remain false. Prior production/test/Actions evidence is historical-only; not accepted for current upstream authority 6c2ee90618bf69683a1c466e3b0550260b82e129 or current PR HEAD.",
+      "notes": "Full live-dev rebaseline reread at test-loop.md@f3b38415883c95a6086766f965d8130333c1b09c, 1,160 lines. New host-load gate/trace contract is harness evidence instrumentation and remains under existing test/evidence ownership. Counters unchanged; fresh exact-head Actions required.",
       "test_execution_evidence": []
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/shared/scripts/codex_leaf_test.py",
       "source_blob_sha": "2831841e6b131ca2c42688fe24e00b739f825ccb",
       "source_kind": "workflow_worker_lifecycle_qualification_tests",
@@ -8732,11 +8735,11 @@
         "dossier:projects/telegram-desktop-rust/dossiers/codex-leaf-test-complete-read.md",
         "upstream-codex-leaf-test:.agents/shared/scripts/codex_leaf_test.py@2831841e6b131ca2c42688fe24e00b739f825ccb",
         "upstream-codex-leaf:.agents/shared/scripts/codex_leaf.py@313c4941c61a4ec0e3b3b65cdaa59cc213916fdd",
-        "upstream-codex-leaves-doc:.agents/shared/codex-cli-leaves.md@659da44a8083c433c4e9b59ca28f64ba525bfbf8",
+        "upstream-codex-leaves-doc:.agents/shared/codex-cli-leaves.md@11c59b68df43e442e596c3052296fc51a044d46a",
         "upstream-cross-review-command:.claude/commands/cross-review.md@7769d03de798cde66987cd41303d2ea529321361",
         "upstream-claude-adapter:.claude/ai-workflow-adapter.md@370ff84a1ab4c080b15b601a54162b0630c4f4df",
-        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba",
-        "upstream-phase-effort:.agents/shared/phase-effort.md@dd07a4c611922a29a6892332db98afe76cd58952"
+        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@ce3f355bc7226b57f6e9938a0938e18727bd6b30",
+        "upstream-phase-effort:.agents/shared/phase-effort.md@8d7b385dbb526e87fc090774ee35191e1619bb08"
       ],
       "target_commit": "e0c07740a8386fc01c6b9e6cc5078b3fab1bcb86",
       "workflow_run": null,
@@ -8869,7 +8872,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/shared/scripts/codex_leaf.py",
       "source_blob_sha": "313c4941c61a4ec0e3b3b65cdaa59cc213916fdd",
       "source_kind": "workflow_worker_lifecycle_adapter",
@@ -9001,11 +9004,11 @@
         "dossier:projects/telegram-desktop-rust/dossiers/codex-leaf-complete-read.md",
         "upstream-codex-leaf:.agents/shared/scripts/codex_leaf.py@313c4941c61a4ec0e3b3b65cdaa59cc213916fdd",
         "upstream-codex-leaf-tests:.agents/shared/scripts/codex_leaf_test.py@2831841e6b131ca2c42688fe24e00b739f825ccb",
-        "upstream-codex-leaves-doc:.agents/shared/codex-cli-leaves.md@659da44a8083c433c4e9b59ca28f64ba525bfbf8",
+        "upstream-codex-leaves-doc:.agents/shared/codex-cli-leaves.md@11c59b68df43e442e596c3052296fc51a044d46a",
         "upstream-cross-review-command:.claude/commands/cross-review.md@7769d03de798cde66987cd41303d2ea529321361",
         "upstream-claude-adapter:.claude/ai-workflow-adapter.md@370ff84a1ab4c080b15b601a54162b0630c4f4df",
-        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba",
-        "upstream-phase-effort:.agents/shared/phase-effort.md@dd07a4c611922a29a6892332db98afe76cd58952",
+        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@ce3f355bc7226b57f6e9938a0938e18727bd6b30",
+        "upstream-phase-effort:.agents/shared/phase-effort.md@8d7b385dbb526e87fc090774ee35191e1619bb08",
         "upstream-cross-review-protocol:.agents/shared/cross-review/protocol.md@51dabe142d5c3c7247e4050790c4e74b40f35b27",
         "upstream-cross-review-prompts:.agents/shared/cross-review/prompts.md@4e155d2bd7e647c12df7b008c279969bfd65e44d"
       ],
@@ -9145,7 +9148,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/shared/scripts/cross_review_scope.py",
       "source_blob_sha": "d9fafdf9fa0857cc83f0ccb49d15d4fad8782768",
       "source_kind": "cross_review_scope_snapshot_helper",
@@ -9389,7 +9392,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/code-health/SKILL.md",
       "source_blob_sha": "6885938b3d186b55f5d69cb8b9b9a96bbca0e097",
       "source_kind": "repository_quality_health_governance_skill",
@@ -9518,7 +9521,7 @@
         "upstream-health:.agents/skills/code-health/scripts/health.py@f08675ef7a03c016d85f91c60b8f29e99454abe9",
         "upstream-health-test:.agents/skills/code-health/scripts/health_test.py@2176aea672fd9ed16c01342939fbffb41490ae73",
         "upstream-workspace:.agents/skills/process-inbox/scripts/workspace.py@e1fdabbac9ccd635962b7b6dc1a62357fc5b931c",
-        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba",
+        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@ce3f355bc7226b57f6e9938a0938e18727bd6b30",
         "upstream-mechanical-lane:.agents/skills/perform-task/references/mechanical-lane.md@e5e3cc88ba80ece6a20df7c4dd6002491d66a4ef",
         "upstream-pipeline:.agents/skills/perform-task/references/pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7"
       ],
@@ -9652,7 +9655,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/code-health/agents/openai.yaml",
       "source_blob_sha": "59bb6304445f21e2a3ee1a97a69a8e231f934d30",
       "source_kind": "repository_skill_native_registration",
@@ -9759,7 +9762,7 @@
         "upstream-skill:.agents/skills/code-health/SKILL.md@6885938b3d186b55f5d69cb8b9b9a96bbca0e097",
         "upstream-command:.claude/commands/code-health.md@bcabd4bd5b5a1a2ed09b40a7f1fbdd502042329a",
         "upstream-workspace:.agents/skills/process-inbox/scripts/workspace.py@e1fdabbac9ccd635962b7b6dc1a62357fc5b931c",
-        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba"
+        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@ce3f355bc7226b57f6e9938a0938e18727bd6b30"
       ],
       "target_commit": "be031eae9f178ab080b076cd4bd48ceeabab7de7",
       "workflow_run": null,
@@ -9882,7 +9885,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/code-health/references/atlas.md",
       "source_blob_sha": "7f43dd75fcfb670c327bc3e71c1de0589e7506f0",
       "source_kind": "repository_quality_responsibility_atlas_reference",
@@ -10143,7 +10146,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/code-health/references/classes.md",
       "source_blob_sha": "27847cae96838be7ddf68d3759dba89279f7cf0e",
       "source_kind": "repository_quality_task_classes_reference",
@@ -10412,7 +10415,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/code-health/references/maps.md",
       "source_blob_sha": "89dd78f48283b15d6ad959b2d450895258a0980f",
       "source_kind": "repository_responsibility_area_map_reference",
@@ -10560,7 +10563,7 @@
         "upstream-perform-task:.agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c",
         "upstream-mechanical-lane:.agents/skills/perform-task/references/mechanical-lane.md@e5e3cc88ba80ece6a20df7c4dd6002491d66a4ef",
         "upstream-pipeline:.agents/skills/perform-task/references/pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7",
-        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba",
+        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@ce3f355bc7226b57f6e9938a0938e18727bd6b30",
         "upstream-command:.claude/commands/code-health.md@bcabd4bd5b5a1a2ed09b40a7f1fbdd502042329a",
         "upstream-openai-surface:.agents/skills/code-health/agents/openai.yaml@59bb6304445f21e2a3ee1a97a69a8e231f934d30",
         "upstream-root-agents:AGENTS.md@d8d59480277b7defbca1cdbccf7ed164ab2db086"
@@ -10693,7 +10696,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/code-health/references/survey.md",
       "source_blob_sha": "d900e7a42b768679c69cd4c584559c783b59d47a",
       "source_kind": "repository_quality_area_survey_reference",
@@ -10839,7 +10842,7 @@
         "upstream-perform-task:.agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c",
         "upstream-mechanical-lane:.agents/skills/perform-task/references/mechanical-lane.md@e5e3cc88ba80ece6a20df7c4dd6002491d66a4ef",
         "upstream-pipeline:.agents/skills/perform-task/references/pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7",
-        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba",
+        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@ce3f355bc7226b57f6e9938a0938e18727bd6b30",
         "upstream-command:.claude/commands/code-health.md@bcabd4bd5b5a1a2ed09b40a7f1fbdd502042329a",
         "upstream-openai-surface:.agents/skills/code-health/agents/openai.yaml@59bb6304445f21e2a3ee1a97a69a8e231f934d30",
         "upstream-root-agents:AGENTS.md@d8d59480277b7defbca1cdbccf7ed164ab2db086"
@@ -10977,7 +10980,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/code-health/scripts/atlas.py",
       "source_blob_sha": "6680fa747a1ddc520f4396949f3c84ab25cd8c43",
       "source_kind": "repository_quality_responsibility_atlas_instrument",
@@ -11128,7 +11131,7 @@
         "upstream-perform-task:.agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c",
         "upstream-mechanical-lane:.agents/skills/perform-task/references/mechanical-lane.md@e5e3cc88ba80ece6a20df7c4dd6002491d66a4ef",
         "upstream-pipeline:.agents/skills/perform-task/references/pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7",
-        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba",
+        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@ce3f355bc7226b57f6e9938a0938e18727bd6b30",
         "upstream-command:.claude/commands/code-health.md@bcabd4bd5b5a1a2ed09b40a7f1fbdd502042329a",
         "upstream-openai-surface:.agents/skills/code-health/agents/openai.yaml@59bb6304445f21e2a3ee1a97a69a8e231f934d30",
         "upstream-root-agents:AGENTS.md@d8d59480277b7defbca1cdbccf7ed164ab2db086"
@@ -11263,7 +11266,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/code-health/scripts/clones.py",
       "source_blob_sha": "b74e6e939a3ccaae894d1afa5978f422aec8ee65",
       "source_kind": "repository_quality_clone_evidence_instrument",
@@ -11526,7 +11529,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/code-health/scripts/cmake_model.py",
       "source_blob_sha": "e40ec0fc152958f96bd58d795f70d1a3a24ab1eb",
       "source_kind": "repository_quality_source_derived_build_model_instrument",
@@ -11683,7 +11686,7 @@
         "upstream-classes:.agents/skills/code-health/references/classes.md@27847cae96838be7ddf68d3759dba89279f7cf0e",
         "upstream-survey:.agents/skills/code-health/references/survey.md@d900e7a42b768679c69cd4c584559c783b59d47a",
         "upstream-mechanical-lane:.agents/skills/perform-task/references/mechanical-lane.md@e5e3cc88ba80ece6a20df7c4dd6002491d66a4ef",
-        "upstream-process-inbox:.agents/skills/process-inbox/SKILL.md@0ce70794ac743d99e6d5c80894cde970b52842db",
+        "upstream-process-inbox:.agents/skills/process-inbox/SKILL.md@73bd3c360232679a0ebfe3b990073ecc4f322b7d",
         "upstream-continue:.agents/skills/continue/SKILL.md@aeb81dd57018abbc8f03ea3dbd34f91952128db5"
       ],
       "target_commit": "49ff58f5a93de8548acd0a576f597255eaaa8d56",
@@ -11818,7 +11821,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/code-health/scripts/cpp_text.py",
       "source_blob_sha": "366f173248add43c34317c8fe17d9ca31d46b1d4",
       "source_kind": "repository_quality_source_text_normalization_instrument",
@@ -11984,8 +11987,8 @@
         "upstream-perform-task:.agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c",
         "upstream-mechanical-lane:.agents/skills/perform-task/references/mechanical-lane.md@e5e3cc88ba80ece6a20df7c4dd6002491d66a4ef",
         "upstream-pipeline:.agents/skills/perform-task/references/pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7",
-        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba",
-        "upstream-process-inbox:.agents/skills/process-inbox/SKILL.md@0ce70794ac743d99e6d5c80894cde970b52842db",
+        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@ce3f355bc7226b57f6e9938a0938e18727bd6b30",
+        "upstream-process-inbox:.agents/skills/process-inbox/SKILL.md@73bd3c360232679a0ebfe3b990073ecc4f322b7d",
         "upstream-continue:.agents/skills/continue/SKILL.md@aeb81dd57018abbc8f03ea3dbd34f91952128db5"
       ],
       "target_commit": "6550d08c6f73d6c75dc9651a3d06de84f956212f",
@@ -12128,7 +12131,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/code-health/scripts/health.py",
       "source_blob_sha": "f08675ef7a03c016d85f91c60b8f29e99454abe9",
       "source_kind": "repository_quality_health_command_orchestration",
@@ -12426,7 +12429,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/code-health/scripts/health_test.py",
       "source_blob_sha": "a79addaaceb35848dbd17e94e01ea428aede7788",
       "source_kind": "repository_quality_integrated_regression_harness",
@@ -12681,7 +12684,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/code-health/scripts/history.py",
       "source_blob_sha": "7c12f5b091936723c6ad005dda4bb8e2b1e549df",
       "source_kind": "repository_quality_history_measurement_helper",
@@ -12925,7 +12928,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/code-health/scripts/includes.py",
       "source_blob_sha": "2c02b4e7eb821f123588e0a80056edef86fc084c",
       "source_kind": "repository_quality_include_graph_helper",
@@ -13191,7 +13194,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/code-health/scripts/metrics.py",
       "source_blob_sha": "ebab29607cb52782899d5424636f0bd5e0c126cd",
       "source_kind": "repository_quality_structural_metrics_helper",
@@ -13437,7 +13440,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/code-health/scripts/report.py",
       "source_blob_sha": "a1177613670e933694f545f387ca7e7ed8cf0ee0",
       "source_kind": "repository_quality_report_aggregation_and_finding_lifecycle",
@@ -13705,7 +13708,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/code-health/scripts/review.py",
       "source_blob_sha": "070b55553052267e8fbc12d70985b447b24bbb02",
       "source_kind": "repository_quality_change_ratchet_and_move_proof",
@@ -14017,7 +14020,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/code-health/scripts/sources.py",
       "source_blob_sha": "688aa05c4223d0d45b8572cff89fbc5148254844",
       "source_kind": "repository_source_snapshot_acquisition_and_scoped_text_set",
@@ -14318,7 +14321,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/continue/SKILL.md",
       "source_blob_sha": "aeb81dd57018abbc8f03ea3dbd34f91952128db5",
       "source_kind": "repository_ai_task_queue_scheduler_and_continuation_workflow",
@@ -14629,7 +14632,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/continue/agents/openai.yaml",
       "source_blob_sha": "e981285ee10cbed9e27e358d60ce596c9e0b3d61",
       "source_kind": "repository_skill_native_registration",
@@ -14757,7 +14760,7 @@
         "upstream-claude-caller:.claude/commands/continue.md@e81c86031f2e501f30d2b6ed908fb03d648324c8",
         "upstream-grok-adapter:.grok/ai-workflow-adapter.md@db447f204316d3991f6d20db3d8f097fcc021154",
         "upstream-claude-adapter:.claude/ai-workflow-adapter.md@370ff84a1ab4c080b15b601a54162b0630c4f4df",
-        "upstream-codex-leaf-contract:.agents/shared/codex-cli-leaves.md@659da44a8083c433c4e9b59ca28f64ba525bfbf8",
+        "upstream-codex-leaf-contract:.agents/shared/codex-cli-leaves.md@11c59b68df43e442e596c3052296fc51a044d46a",
         "upstream-codex-leaf-tests:.agents/shared/scripts/codex_leaf_test.py@2831841e6b131ca2c42688fe24e00b739f825ccb",
         "upstream-workspace:.agents/skills/process-inbox/scripts/workspace.py@e1fdabbac9ccd635962b7b6dc1a62357fc5b931c",
         "upstream-workspace-tests:.agents/skills/process-inbox/scripts/workspace_test.py@d045c95ca4415ffc02953ff02ac10e329dc69e7b"
@@ -14885,7 +14888,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/continue/references/consolidate-pending-tasks.md",
       "source_blob_sha": "bd301d93f8f670ad041b3db72330e17cbb50eb5c",
       "source_kind": "repository_ai_pending_task_consolidation_workflow",
@@ -15163,7 +15166,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/continue/references/split-required-task.md",
       "source_blob_sha": "552ad09b2fa022b7df94481746a51167305bf846",
       "source_kind": "repository_ai_split_required_task_routing_transaction",
@@ -15443,7 +15446,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/dependency-watch/SKILL.md",
       "source_blob_sha": "482b3a8d0c939d4bb7bd32ab146e0cc988d29fd8",
       "source_kind": "repository_dependency_security_advisory_monitor_contract",
@@ -15703,7 +15706,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/dependency-watch/agents/openai.yaml",
       "source_blob_sha": "a61c118c41e3b50d6bc4bde12dc6d4c1b3756b5d",
       "source_kind": "repository_dependency_watch_native_skill_registration",
@@ -15926,7 +15929,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/dependency-watch/references/forks.md",
       "source_blob_sha": "29a7aa587ae26118a0611a2e4037a69141a3ffde",
       "source_kind": "repository_dependency_watch_patched_fork_provenance_contract",
@@ -16191,7 +16194,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/dependency-watch/references/release-trust.md",
       "source_blob_sha": "81a68395f9ad54ed651a84464a933ed7e57c9d32",
       "source_kind": "repository_dependency_watch_release_trust_contract",
@@ -16447,7 +16450,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/dependency-watch/scripts/watch.py",
       "source_blob_sha": "231c5a13e8d7e3cd337dbbad08e8f4434a943a38",
       "source_kind": "repository_dependency_watch_snapshot_and_version_tool",
@@ -16712,7 +16715,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/dependency-watch/scripts/watch_test.py",
       "source_blob_sha": "d3107c617be3e8780a99bebaeba19a4f235ae6ea",
       "source_kind": "repository_dependency_watch_snapshot_and_version_regression_tests",
@@ -16983,7 +16986,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/perform-task/SKILL.md",
       "source_blob_sha": "590e6660cfd8782b37dbc3c6959944f53bb4541c",
       "source_kind": "repository_ai_single_task_performer_workflow",
@@ -17130,10 +17133,10 @@
         "upstream-claude-command:.claude/commands/perform-task.md@98ec6ed4aa51d3cac043a70a23adc6834b147f8e",
         "upstream-continue:.agents/skills/continue/SKILL.md@aeb81dd57018abbc8f03ea3dbd34f91952128db5",
         "upstream-pipeline:.agents/skills/perform-task/references/pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7",
-        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba",
+        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@ce3f355bc7226b57f6e9938a0938e18727bd6b30",
         "upstream-mechanical-lane:.agents/skills/perform-task/references/mechanical-lane.md@e5e3cc88ba80ece6a20df7c4dd6002491d66a4ef",
         "upstream-computer-use:.agents/skills/perform-task/references/computer-use-testing.md@b7fc92d604a55975f75047828d476e64667aa259",
-        "upstream-test-loop:.agents/shared/test-loop.md@83c4732bf6139f7c6557f18dd87bb35c3d68808d",
+        "upstream-test-loop:.agents/shared/test-loop.md@f3b38415883c95a6086766f965d8130333c1b09c",
         "upstream-build-lock:.agents/shared/build-lock-recovery.md@ec75573e7efe74e9c9a344f3e66f2fc43ac7680f",
         "upstream-codex-delegation:.agents/shared/codex-delegation.md@ed89d2a14344f50034a9363bd9ffe75f7972e652",
         "upstream-grok-adapter:.grok/ai-workflow-adapter.md@db447f204316d3991f6d20db3d8f097fcc021154",
@@ -17270,7 +17273,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/perform-task/agents/openai.yaml",
       "source_blob_sha": "f238b707da7f39a4293b17d112ddd344dcb8253a",
       "source_kind": "repository_ai_skill_openai_invocation_interface_metadata",
@@ -17516,7 +17519,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/perform-task/references/computer-use-testing.md",
       "source_blob_sha": "b7fc92d604a55975f75047828d476e64667aa259",
       "source_kind": "repository_ai_skill_codex_computer_use_test_adapter",
@@ -17541,8 +17544,8 @@
       "dependency_ids": [
         ".agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c",
         ".agents/skills/perform-task/references/pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7",
-        ".agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba",
-        ".agents/shared/test-loop.md@83c4732bf6139f7c6557f18dd87bb35c3d68808d",
+        ".agents/skills/perform-task/references/phase-prompts.md@ce3f355bc7226b57f6e9938a0938e18727bd6b30",
+        ".agents/shared/test-loop.md@f3b38415883c95a6086766f965d8130333c1b09c",
         "Fabushi root AGENTS.md adaptive verification governance",
         "Fabushi quality TEST_STRATEGY.md adaptive evidence loop",
         "Fabushi quality evidence-contract.md adaptive test-loop history"
@@ -17650,8 +17653,8 @@
         "upstream-index47:.agents/skills/perform-task/references/computer-use-testing.md@b7fc92d604a55975f75047828d476e64667aa259",
         "upstream-performer:.agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c",
         "upstream-pipeline:.agents/skills/perform-task/references/pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7",
-        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba",
-        "upstream-test-loop:.agents/shared/test-loop.md@83c4732bf6139f7c6557f18dd87bb35c3d68808d",
+        "upstream-phase-prompts:.agents/skills/perform-task/references/phase-prompts.md@ce3f355bc7226b57f6e9938a0938e18727bd6b30",
+        "upstream-test-loop:.agents/shared/test-loop.md@f3b38415883c95a6086766f965d8130333c1b09c",
         "complete-read:all index47 policy/capability/lock/interruption/exact-app/handshake/safety/unavailable/evidence sections",
         "owner-boundary:shipping Computer controller/model/status-store/VNC remains product runtime only"
       ],
@@ -17787,7 +17790,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/perform-task/references/mechanical-lane.md",
       "source_blob_sha": "e5e3cc88ba80ece6a20df7c4dd6002491d66a4ef",
       "source_kind": "repository_ai_skill_mechanical_code_health_lane",
@@ -18051,9 +18054,9 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/perform-task/references/phase-prompts.md",
-      "source_blob_sha": "9e9eac194ffbcf9dd7125876e71dad651a7cabba",
+      "source_blob_sha": "ce3f355bc7226b57f6e9938a0938e18727bd6b30",
       "source_kind": "repository_ai_task_phase_orchestration_prompts",
       "module_id": "tdesktop.perform-task.phase-prompts",
       "responsibility_id": "TDRP-R9-PERFORM-TASK-PHASE-PROMPTS-001",
@@ -18074,7 +18077,9 @@
         "Completion",
         "Error Handling",
         "Prompt Delivery And Logs",
-        "Host subagent patterns"
+        "Host subagent patterns",
+        "Harness tasks",
+        "Harness review blocking bar"
       ],
       "capability_ids": [
         "CAP-REPOSITORY-TASK-ORCHESTRATION",
@@ -18085,10 +18090,10 @@
       "dependency_ids": [
         ".agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c",
         ".agents/skills/perform-task/references/pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7",
-        ".agents/shared/phase-effort.md@dd07a4c611922a29a6892332db98afe76cd58952",
+        ".agents/shared/phase-effort.md@8d7b385dbb526e87fc090774ee35191e1619bb08",
         ".agents/shared/codex-delegation.md@ed89d2a14344f50034a9363bd9ffe75f7972e652",
-        ".agents/shared/codex-cli-leaves.md@659da44a8083c433c4e9b59ca28f64ba525bfbf8",
-        ".agents/shared/test-loop.md@83c4732bf6139f7c6557f18dd87bb35c3d68808d",
+        ".agents/shared/codex-cli-leaves.md@11c59b68df43e442e596c3052296fc51a044d46a",
+        ".agents/shared/test-loop.md@f3b38415883c95a6086766f965d8130333c1b09c",
         ".agents/shared/project-context.md@53c8657eb7949a5a2fba7e7adc8d1073f3079ead",
         ".agents/shared/build-lock-recovery.md@ec75573e7efe74e9c9a344f3e66f2fc43ac7680f",
         "Fabushi root AGENTS.md repository development/worker governance",
@@ -18096,7 +18101,7 @@
         "Fabushi quality evidence-contract.md durable workflow evidence"
       ],
       "source_analysis_path": "projects/telegram-desktop-rust/dossiers/perform-task-skill-complete-read.md",
-      "behavior_contract": "Drive one repository task through artifact-validated context/plan, independent plan/scope assessment, bounded owned implementation phases, selected validation, complete-diff blind independent review plus focused invalidation-aware re-review, convergence assessment, adaptive evidence/recovery with carried-forward passes and at most one focused campaign, optional native-Windows touched-file normalization, and fail-closed completion/publication. Leaf workers never own task state, commit or delegate.",
+      "behavior_contract": "Drive one repository task through artifact-validated context/plan, independent plan/scope assessment, bounded owned implementation phases, selected validation, complete-diff blind independent review plus focused invalidation-aware re-review, convergence assessment, adaptive evidence/recovery with carried-forward passes and at most one focused campaign, optional native-Windows touched-file normalization, and fail-closed completion/publication. Leaf workers never own task state, commit or delegate. Plans explicitly classify Code: harness|product. Harness work is sized to named consumers, initial review begins with the general reviewer selecting only concrete-risk lenses, and blocking findings are limited to wrong results, run crash/hang, out-of-sandbox damage, product/build/repository-rule impact.",
       "state_machine": "exact task authority -> Phase1 context/plan -> Phase3 assessed|fast-path rejected|approach rejected|split-required -> Phase4 bounded phases -> Phase5 validation -> Phase6 initial general+5 blind lenses -> APPROVED|blocking-only fix -> focused re-review -> convergence CONTINUE|REPLAN_CURRENT|RESCOPE_REQUIRED|HARD_STOP -> adaptive evidence APPROVED|TEST_FLAW|IMPL_BUG|UNRECOVERABLE -> at most one focused recovery campaign -> optional Phase7 native-Windows normalization -> result/publication; incomplete artifacts or unresolved ownership fail closed",
       "side_effects": [
         "Creates task-local context/plan/test-design/review/recovery/result/log artifacts and bounded owned source edits through implementation/fix leaves.",
@@ -18204,13 +18209,13 @@
         "parent-exact-head-rust:39531160843/head:62b48720cbdbe455bf476faef2445801e9af622e/success-6-of-6/artifact:12315168809/digest:sha256:2642e30438a89d5231cc1944455e8a1ddc77a016fbfdc36c5d2ca51626f0290c"
       ],
       "test_evidence": [
-        "upstream-index49:.agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba",
+        "upstream-index49:.agents/skills/perform-task/references/phase-prompts.md@ce3f355bc7226b57f6e9938a0938e18727bd6b30",
         "upstream-performer:.agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c",
         "upstream-pipeline:.agents/skills/perform-task/references/pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7",
-        "upstream-phase-effort:.agents/shared/phase-effort.md@dd07a4c611922a29a6892332db98afe76cd58952",
+        "upstream-phase-effort:.agents/shared/phase-effort.md@8d7b385dbb526e87fc090774ee35191e1619bb08",
         "upstream-codex-delegation:.agents/shared/codex-delegation.md@ed89d2a14344f50034a9363bd9ffe75f7972e652",
-        "upstream-codex-cli-leaves:.agents/shared/codex-cli-leaves.md@659da44a8083c433c4e9b59ca28f64ba525bfbf8",
-        "upstream-test-loop:.agents/shared/test-loop.md@83c4732bf6139f7c6557f18dd87bb35c3d68808d",
+        "upstream-codex-cli-leaves:.agents/shared/codex-cli-leaves.md@11c59b68df43e442e596c3052296fc51a044d46a",
+        "upstream-test-loop:.agents/shared/test-loop.md@f3b38415883c95a6086766f965d8130333c1b09c",
         "upstream-project-context:.agents/shared/project-context.md@53c8657eb7949a5a2fba7e7adc8d1073f3079ead",
         "upstream-build-lock:.agents/shared/build-lock-recovery.md@ec75573e7efe74e9c9a344f3e66f2fc43ac7680f",
         "complete-read:all 1,163 source lines covering phase/review/recovery/completion/host patterns",
@@ -18345,14 +18350,14 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral repository workflow semantics read from exact telegramdesktop/tdesktop source; no Telegram product runtime or shipping Task/Agent/Computer/Host/Runner/Conversation implementation copied.",
-      "notes": "Zero-based strict index 49 is .agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba on live 0eca52223cceed229932add1cc80792763120844. Complete 1,163-line orchestration/completion/context-plan/assessment/implementation/validation/review/fix/convergence/evidence-recovery/campaign-cap/native-Windows/completion/error/host pattern contract plus real SKILL/pipeline/shared reference call path inspected. Coverage after exactly this entry: unknown=16,253, unread=16,228, omitted=0, responsibilities_total=68. Parent exact-head TDRP 39528383951 attempt2 is 61/61 success and Rust 39528383913 is 6/6 success on 16d95f0607a203fb16a96afa99751a39892ec7f0. Child requires fresh exact-head workflows. Recursive fixed-point unresolved_gitlink_authorities=0 and Boost 582/582/open=0; reachability/disposition remains open (95,133,3865,4674,4602,4255), so baseline_identity_accepted/source_closure_ready=false. Next strict entry index50 is .agents/skills/perform-task/references/pipeline.md@8a3dd7428be2f0976ef94863f801263ee330a9a7.",
+      "notes": "Full live-dev rebaseline reread at phase-prompts.md@ce3f355bc7226b57f6e9938a0938e18727bd6b30, 1,212 lines. Harness-task scoping/review semantics map to existing repository governance; no shipping owner added. Counters unchanged; fresh exact-head Actions required.",
       "test_execution_evidence": []
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/perform-task/references/pipeline.md",
-      "source_blob_sha": "46e158ac86ebce97f9dcd010a98b3c581ffc114c",
+      "source_blob_sha": "71d26895fe4198ee64123d96feec8431e83ce0c7",
       "source_kind": "tooling",
       "module_id": "tdesktop.perform-task.pipeline",
       "responsibility_id": "TDRP-R9-PERFORM-TASK-PIPELINE-001",
@@ -18370,7 +18375,8 @@
         "Evidence loop adapter",
         "Final AI state",
         "Failure handling",
-        "Private remote checkout-tip mirror"
+        "Private remote checkout-tip mirror",
+        "Harness tasks"
       ],
       "capability_ids": [
         "CAP-REPOSITORY-TASK-ORCHESTRATION",
@@ -18380,11 +18386,11 @@
       ],
       "dependency_ids": [
         ".agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c",
-        ".agents/skills/perform-task/references/pipeline.md@46e158ac86ebce97f9dcd010a98b3c581ffc114c",
-        ".agents/shared/phase-effort.md@dd07a4c611922a29a6892332db98afe76cd58952",
+        ".agents/skills/perform-task/references/pipeline.md@71d26895fe4198ee64123d96feec8431e83ce0c7",
+        ".agents/shared/phase-effort.md@8d7b385dbb526e87fc090774ee35191e1619bb08",
         ".agents/shared/codex-delegation.md@ed89d2a14344f50034a9363bd9ffe75f7972e652",
-        ".agents/shared/codex-cli-leaves.md@659da44a8083c433c4e9b59ca28f64ba525bfbf8",
-        ".agents/shared/test-loop.md@83c4732bf6139f7c6557f18dd87bb35c3d68808d",
+        ".agents/shared/codex-cli-leaves.md@11c59b68df43e442e596c3052296fc51a044d46a",
+        ".agents/shared/test-loop.md@f3b38415883c95a6086766f965d8130333c1b09c",
         ".agents/shared/project-context.md@53c8657eb7949a5a2fba7e7adc8d1073f3079ead",
         ".agents/shared/build-lock-recovery.md@ec75573e7efe74e9c9a344f3e66f2fc43ac7680f",
         "Fabushi root AGENTS.md repository development/worker governance",
@@ -18392,7 +18398,7 @@
         "Fabushi quality evidence-contract.md durable workflow evidence"
       ],
       "source_analysis_path": "projects/telegram-desktop-rust/dossiers/perform-task-skill-complete-read.md",
-      "behavior_contract": "Drive one repository task through artifact-validated context/plan, independent plan/scope assessment, bounded owned implementation phases, selected validation, complete-diff blind independent review plus focused invalidation-aware re-review, convergence assessment, adaptive evidence/recovery with carried-forward passes and at most one focused campaign, optional native-Windows touched-file normalization, and fail-closed completion/publication. Leaf workers never own task state, commit or delegate. Live dev additionally mirrors each source-commit tip to a checkout-specific private-remote branch when present; that mirror is non-authoritative, overwrite-only, never lineage, and push failure is reported but non-blocking.",
+      "behavior_contract": "Drive one repository task through artifact-validated context/plan, independent plan/scope assessment, bounded owned implementation phases, selected validation, complete-diff blind independent review plus focused invalidation-aware re-review, convergence assessment, adaptive evidence/recovery with carried-forward passes and at most one focused campaign, optional native-Windows touched-file normalization, and fail-closed completion/publication. Leaf workers never own task state, commit or delegate. Live dev additionally mirrors each source-commit tip to a checkout-specific private-remote branch when present; that mirror is non-authoritative, overwrite-only, never lineage, and push failure is reported but non-blocking. Harness tasks keep the same performer phases but size plans/tests to actual consumers and begin review with the general reviewer selecting only concrete-risk lenses; any product-path need reclassifies the task as product and restores full initial fanout.",
       "state_machine": "exact task authority -> Phase1 context/plan -> Phase3 assessed|fast-path rejected|approach rejected|split-required -> Phase4 bounded phases -> Phase5 validation -> Phase6 initial general+5 blind lenses -> APPROVED|blocking-only fix -> focused re-review -> convergence CONTINUE|REPLAN_CURRENT|RESCOPE_REQUIRED|HARD_STOP -> adaptive evidence APPROVED|TEST_FLAW|IMPL_BUG|UNRECOVERABLE -> at most one focused recovery campaign -> optional Phase7 native-Windows normalization -> result/publication; incomplete artifacts or unresolved ownership fail closed",
       "side_effects": [
         "Creates task-local context/plan/test-design/review/recovery/result/log artifacts and bounded owned source edits through implementation/fix leaves.",
@@ -18498,7 +18504,7 @@
         "parent-exact-head-rust:39531160843/head:62b48720cbdbe455bf476faef2445801e9af622e/success-6-of-6/artifact:12315168809/digest:sha256:2642e30438a89d5231cc1944455e8a1ddc77a016fbfdc36c5d2ca51626f0290c"
       ],
       "test_evidence": [
-        "upstream-index50:.agents/skills/perform-task/references/pipeline.md@46e158ac86ebce97f9dcd010a98b3c581ffc114c",
+        "upstream-index50:.agents/skills/perform-task/references/pipeline.md@71d26895fe4198ee64123d96feec8431e83ce0c7",
         "complete-read:all 1,086 source lines",
         "owner-boundary:no shipping Task/Agent/Computer/Host/Runner/Conversation owner"
       ],
@@ -18631,14 +18637,14 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral repository workflow semantics read from exact telegramdesktop/tdesktop source; no Telegram product runtime or shipping Task/Agent/Computer/Host/Runner/Conversation implementation copied.",
-      "notes": "Full reread at pipeline.md@46e158ac86ebce97f9dcd010a98b3c581ffc114c after 49-commit live-dev advance. New private-remote checkout-tip mirror is non-authoritative, never lineage, and non-blocking on push failure. Repository-governance mapping remains source-neutral; no shipping runtime owner added. Rebaseline counters unknown=16250 unread=16225 omitted=0; exact-head Actions pending.",
+      "notes": "Full live-dev rebaseline reread at pipeline.md@71d26895fe4198ee64123d96feec8431e83ce0c7, 1,142 lines. Prior private-remote mirror semantics remain; new harness-review scaling is source-neutral repository governance. Counters unchanged; fresh exact-head Actions required.",
       "test_execution_evidence": []
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/process-inbox/SKILL.md",
-      "source_blob_sha": "0ce70794ac743d99e6d5c80894cde970b52842db",
+      "source_blob_sha": "73bd3c360232679a0ebfe3b990073ecc4f322b7d",
       "source_kind": "tooling",
       "module_id": "tdesktop.process-inbox",
       "responsibility_id": "TDRP-R9-PROCESS-INBOX-001",
@@ -18650,7 +18656,8 @@
         "Write tracked artifacts",
         "Supplied videos",
         "Validate and publish",
-        "Report"
+        "Report",
+        "Harness task intake and consumer-scoped acceptance"
       ],
       "capability_ids": [
         "CAP-REPOSITORY-TASK-ORCHESTRATION",
@@ -18659,7 +18666,7 @@
         "CAP-REPOSITORY-AI-WORKER-LIFECYCLE"
       ],
       "dependency_ids": [
-        ".agents/skills/process-inbox/SKILL.md@0ce70794ac743d99e6d5c80894cde970b52842db",
+        ".agents/skills/process-inbox/SKILL.md@73bd3c360232679a0ebfe3b990073ecc4f322b7d",
         ".agents/skills/process-inbox/scripts/workspace.py@e1fdabbac9ccd635962b7b6dc1a62357fc5b931c",
         ".agents/skills/process-inbox/scripts/video.py@977d75aca7aea0b6c74471d533a5ee0e2a156ac3",
         "AGENTS.md",
@@ -18667,7 +18674,7 @@
         "projects/fabushi-communication-platform/quality/evidence-contract.md"
       ],
       "source_analysis_path": "projects/telegram-desktop-rust/dossiers/process-inbox-skill-complete-read.md",
-      "behavior_contract": "Repository-only intake via digest-bound isolated inbox snapshot, task/project/receipt artifacts, duplicate-digest checks, explicit-path publication and digest-fenced finalization; local video probe/extract/sheet and provenance. Not shipping product runtime.",
+      "behavior_contract": "Repository-only intake via digest-bound isolated inbox snapshot, task/project/receipt artifacts, duplicate-digest checks, explicit-path publication and digest-fenced finalization; local video probe/extract/sheet and provenance. Not shipping product runtime. Harness/testing-infrastructure intake names the actual consuming tasks/tests/agents and limits acceptance to the few observable results those consumers need, avoiding mechanism prescriptions and unreachable framework edge cases.",
       "state_machine": "inbox-ensure -> prepare/resume one .processing snapshot -> classify/dedupe/assign paths -> write task.md/state.yaml/receipt -> validate schema/receipt/digest -> inbox-publish explicit paths -> verify master HEAD and unchanged live digest -> finalize; preserve transaction on unsafe worktree/outage; abort only before generated inbox commit.",
       "side_effects": [
         "Isolated worktree transaction and snapshot",
@@ -18759,7 +18766,7 @@
         "Archive caveat: parent report lacks per-record lock_commit/lock_tree; the child commit adds fail-closed assertions."
       ],
       "test_evidence": [
-        "Source fully read: 0ce70794ac743d99e6d5c80894cde970b52842db; workspace.py e1fdabbac9ccd635962b7b6dc1a62357fc5b931c; video.py 977d75aca7aea0b6c74471d533a5ee0e2a156ac3",
+        "Source fully read: 73bd3c360232679a0ebfe3b990073ecc4f322b7d; workspace.py e1fdabbac9ccd635962b7b6dc1a62357fc5b931c; video.py 977d75aca7aea0b6c74471d533a5ee0e2a156ac3",
         "CI gates are not inbox-helper behavior tests."
       ],
       "target_commit": "90eee7251784f938ef3a7ef87713c1c2ee4fe0d1",
@@ -18888,12 +18895,12 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Behavioral repository workflow semantics read from exact telegramdesktop/tdesktop source; no Telegram product runtime or shipping Task/Agent/Computer/Host/Runner/Conversation implementation copied.",
-      "notes": "Strict index 51 source and dependency closure verified. This row targets only the unique existing heading `Context provenance and handoff evidence` in `projects/fabushi-communication-platform/quality/evidence-contract.md`; AGENTS.md lifecycle and TEST_STRATEGY.md review/convergence headings remain mapped by separate responsibility rows and are not targets for this row. This is repository governance/toolchain-equivalent only, not a shipping inbox implementation; no direct helper parity or focused behavior test is claimed. Recursive source closure remains open. The complete source call chain and helper lifecycle are now documented in projects/telegram-desktop-rust/dossiers/process-inbox-skill-complete-read.md. Parent exact-head workflows on 90eee7251784f938ef3a7ef87713c1c2ee4fe0d1 passed, but their archive records lacked per-record lock_commit/lock_tree; the child commit adds those checks and requires fresh exact-head Actions. Strict index 52 registration metadata is mapped in a separate row; next strict entry is index 53 video.py.",
+      "notes": "Full live-dev rebaseline reread at process-inbox/SKILL.md@73bd3c360232679a0ebfe3b990073ecc4f322b7d, 440 lines. Consumer-scoped harness intake remains repository governance; no shipping inbox/product owner. Counters unchanged; fresh exact-head Actions required.",
       "test_execution_evidence": []
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/process-inbox/agents/openai.yaml",
       "source_blob_sha": "b664f98ad4440de7a8074dfe790d80f3d2201546",
       "source_kind": "tooling",
@@ -18910,7 +18917,7 @@
         "CAP-REPOSITORY-QUALITY-GOVERNANCE"
       ],
       "dependency_ids": [
-        ".agents/skills/process-inbox/SKILL.md@0ce70794ac743d99e6d5c80894cde970b52842db",
+        ".agents/skills/process-inbox/SKILL.md@73bd3c360232679a0ebfe3b990073ecc4f322b7d",
         "AGENTS.md#Host-native skill registration metadata",
         "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Native skill-surface qualification",
         "projects/fabushi-communication-platform/quality/evidence-contract.md#Native skill-registration evidence"
@@ -18987,7 +18994,7 @@
       ],
       "test_evidence": [
         "Exact upstream registration blob b664f98ad4440de7a8074dfe790d80f3d2201546; four lines, metadata only.",
-        "Related SKILL.md 0ce70794ac743d99e6d5c80894cde970b52842db (432 lines), workspace.py e1fdabbac9ccd635962b7b6dc1a62357fc5b931c (5649 lines) and video.py 977d75aca7aea0b6c74471d533a5ee0e2a156ac3 (293 lines) were read and traced in the dossier.",
+        "Related SKILL.md 73bd3c360232679a0ebfe3b990073ecc4f322b7d (432 lines), workspace.py e1fdabbac9ccd635962b7b6dc1a62357fc5b931c (5649 lines) and video.py 977d75aca7aea0b6c74471d533a5ee0e2a156ac3 (293 lines) were read and traced in the dossier.",
         "TDRP/Rust workflows are governance checks, not direct process-inbox helper behavior tests."
       ],
       "target_commit": "90eee7251784f938ef3a7ef87713c1c2ee4fe0d1",
@@ -19098,7 +19105,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/process-inbox/scripts/video.py",
       "source_blob_sha": "977d75aca7aea0b6c74471d533a5ee0e2a156ac3",
       "source_kind": "tooling",
@@ -19124,7 +19131,7 @@
         "CAP-REPOSITORY-QUALITY-GOVERNANCE"
       ],
       "dependency_ids": [
-        ".agents/skills/process-inbox/SKILL.md@0ce70794ac743d99e6d5c80894cde970b52842db",
+        ".agents/skills/process-inbox/SKILL.md@73bd3c360232679a0ebfe3b990073ecc4f322b7d",
         ".agents/skills/process-inbox/scripts/workspace.py@e1fdabbac9ccd635962b7b6dc1a62357fc5b931c (transaction and publication owner; does not call video.py)",
         "ffprobe and ffmpeg executables on PATH",
         "Pillow for the sheet command"
@@ -19209,7 +19216,7 @@
       ],
       "test_evidence": [
         "Full 293-line upstream source was read at telegramdesktop/tdesktop@0eca52223cceed229932add1cc80792763120844, blob 977d75aca7aea0b6c74471d533a5ee0e2a156ac3.",
-        "SKILL.md@0ce70794ac743d99e6d5c80894cde970b52842db invokes probe/extract/sheet only for supplied video inputs; workspace.py@e1fdabbac9ccd635962b7b6dc1a62357fc5b931c does not directly call video.py.",
+        "SKILL.md@73bd3c360232679a0ebfe3b990073ecc4f322b7d invokes probe/extract/sheet only for supplied video inputs; workspace.py@e1fdabbac9ccd635962b7b6dc1a62357fc5b931c does not directly call video.py.",
         "No local Fabushi video helper or focused behavior test was found. TDRP/Rust Actions qualify governance and architecture only; they are not video-helper behavior tests."
       ],
       "target_commit": "3ce96c7055646c5600f93a24bc17f6394bfa1c8c",
@@ -19315,9 +19322,9 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/process-inbox/scripts/workspace.py",
-      "source_blob_sha": "5d74a11083d66f2ebe9bbf0fcf2e991fa2c6c1c5",
+      "source_blob_sha": "3cd99d173fcc3a6e293cfe36058a5fd9e492887d",
       "source_kind": "repository_worktree_task_source_test_and_inbox_workflow_helper",
       "module_id": "tdesktop.process-inbox.workspace-helper",
       "responsibility_id": "TDRP-R9-PROCESS-INBOX-WORKSPACE-001",
@@ -19533,7 +19540,23 @@
         "command_abort",
         "add_common_arguments",
         "parse_args",
-        "main"
+        "main",
+        "windows_process_snapshot",
+        "host_load_parameters",
+        "host_load_unsupported_reason",
+        "host_load_tools_json",
+        "host_load_sample_json",
+        "host_load_error",
+        "HostLoadMonitor.__init__",
+        "HostLoadMonitor._excluded",
+        "HostLoadMonitor._client_child",
+        "HostLoadMonitor._grow_client",
+        "HostLoadMonitor._observe",
+        "HostLoadMonitor.wait",
+        "HostLoadMonitor.start_trace",
+        "HostLoadMonitor._trace",
+        "HostLoadMonitor.stop_trace",
+        "HostLoadMonitor.report"
       ],
       "capability_ids": [
         "CAP-REPOSITORY-TASK-ORCHESTRATION",
@@ -19541,13 +19564,13 @@
         "CAP-REPOSITORY-TASK-EVIDENCE"
       ],
       "dependency_ids": [
-        ".agents/skills/process-inbox/SKILL.md@0ce70794ac743d99e6d5c80894cde970b52842db",
-        ".agents/skills/process-inbox/scripts/workspace_test.py@6acfeadb6f9128a8b5c164d7c0265b03db1fee44 (dependency evidence only; strict index 55 remains open)",
+        ".agents/skills/process-inbox/SKILL.md@73bd3c360232679a0ebfe3b990073ecc4f322b7d",
+        ".agents/skills/process-inbox/scripts/workspace_test.py@79f943a99809bc6acf173872d9a780346648b5cf (dependency evidence only; strict index 55 remains open)",
         "Git worktree/ref/commit/submodule semantics",
         "GitHub Actions hosted-runner evidence boundary"
       ],
       "source_analysis_path": "projects/telegram-desktop-rust/dossiers/process-inbox-skill-complete-read.md",
-      "behavior_contract": "Repository-only helper for isolated worktrees, durable task state, source-lineage validation, guarded source prepare/commit/mirror, test/build-lock recovery, overlay/fence/result validation, split/consolidation/archive/routing/health publication, and digest/receipt-fenced inbox transactions.",
+      "behavior_contract": "Repository-only helper for isolated worktrees, durable task state, source-lineage validation, guarded source prepare/commit/mirror, test/build-lock recovery, overlay/fence/result validation, split/consolidation/archive/routing/health publication, and digest/receipt-fenced inbox transactions. The test-run helper now optionally validates host-load options, samples Windows process CPU/identity with NtQuerySystemInformation, waits boundedly for build-tool/CPU quiescence, excludes the launched client tree from load, traces load during execution, and writes diagnostic JSONL/report evidence; unsupported/read/write failures remain observational and do not alter product/test outcome.",
       "state_machine": "repository/worktree identity -> queue/task resolution -> source preparation/lineage fence -> owned-path commit -> optional private mirror -> test/build-lock/overlay evidence -> finish/publish/split/consolidate/archive/route/health -> inbox prepare/digest/publish/finalize-or-abort",
       "side_effects": [
         "Creates/synchronizes isolated Git worktrees and task/source refs.",
@@ -19627,8 +19650,8 @@
       "production_entrypoints": [],
       "production_evidence": [],
       "test_evidence": [
-        "Full live workspace.py read at 5d74a11083d66f2ebe9bbf0fcf2e991fa2c6c1c5: 212 unique top-level functions.",
-        "Full live workspace_test.py dependency read at 6acfeadb6f9128a8b5c164d7c0265b03db1fee44: 127 unique tests; index 55 remains open.",
+        "Full live workspace.py read at 3cd99d173fcc3a6e293cfe36058a5fd9e492887d: 212 unique top-level functions.",
+        "Full live workspace_test.py dependency read at 79f943a99809bc6acf173872d9a780346648b5cf: 127 unique tests; index 55 remains open.",
         "workspace_test.test_source_commit_force_mirrors_head_to_the_checkout_branch",
         "workspace_test.test_source_commit_keeps_the_commit_when_the_mirror_is_unavailable"
       ],
@@ -19752,14 +19775,14 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Exact tdesktop workspace.py and workspace_test.py dependency read at live upstream; no Python copied; repository-tooling responsibility maps to existing source-neutral governance.",
-      "notes": "Strict index 54 closes only workspace.py. All 212 functions are uniquely listed in dossier. workspace_test.py is dependency evidence only and remains open strict index 55. Exact-head Actions remain required.",
+      "notes": "Full live-dev rebaseline reread at workspace.py@3cd99d173fcc3a6e293cfe36058a5fd9e492887d, 6,122 lines: 218 unique top-level functions plus HostLoadMonitor with 10 methods. New host-load instrumentation remains repository test tooling mapped to existing evidence governance, not shipping runtime. Counters unchanged; fresh exact-head Actions required.",
       "test_execution_evidence": []
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/process-inbox/scripts/workspace_test.py",
-      "source_blob_sha": "6acfeadb6f9128a8b5c164d7c0265b03db1fee44",
+      "source_blob_sha": "79f943a99809bc6acf173872d9a780346648b5cf",
       "source_kind": "repository_workflow_regression_contract_suite",
       "module_id": "tdesktop.process-inbox.workspace-tests",
       "responsibility_id": "TDRP-R9-PROCESS-INBOX-WORKSPACE-TESTS-001",
@@ -19963,7 +19986,20 @@
         "BatchMarkTest.test_batch_option_collects_every_id_in_order",
         "BatchMarkTest.test_reading_a_batch_ignores_what_it_cannot_use",
         "HealthWorktreeTest.test_second_run_of_the_day_is_dropped",
-        "HealthWorktreeTest.test_only_code_health_paths_are_published"
+        "HealthWorktreeTest.test_only_code_health_paths_are_published",
+        "MechanicsTest.test_test_run_host_load_waits_out_a_burner_and_ignores_a_busy_client",
+        "MechanicsTest.test_test_run_host_load_launches_at_its_bound_and_traces_a_burner",
+        "MechanicsTest.test_test_run_host_load_quiet_control_ignores_its_own_cpu",
+        "MechanicsTest.test_test_run_host_load_waits_while_a_build_tool_runs",
+        "MechanicsTest.test_windows_process_snapshot_grows_and_reads_this_process",
+        "MechanicsTest.test_host_load_wait_meets_its_hold_and_bound",
+        "MechanicsTest.test_host_load_sample_math_and_process_identities",
+        "MechanicsTest.test_test_run_host_load_stays_off_without_its_flag",
+        "MechanicsTest.test_test_run_host_load_records_an_unsupported_host",
+        "MechanicsTest.test_test_run_host_load_refuses_bad_values_before_setup",
+        "MechanicsTest.test_test_run_host_load_prerequisites_fail_before_any_reading",
+        "MechanicsTest.test_test_run_host_load_waits_after_the_idle_gate_and_setup",
+        "MechanicsTest.test_test_run_host_load_keeps_readings_past_a_failed_one"
       ],
       "capability_ids": [
         "CAP-REPOSITORY-TASK-ORCHESTRATION",
@@ -19971,13 +20007,13 @@
         "CAP-REPOSITORY-TASK-EVIDENCE"
       ],
       "dependency_ids": [
-        ".agents/skills/process-inbox/scripts/workspace.py@5d74a11083d66f2ebe9bbf0fcf2e991fa2c6c1c5",
+        ".agents/skills/process-inbox/scripts/workspace.py@3cd99d173fcc3a6e293cfe36058a5fd9e492887d",
         "Python unittest/mock/tempfile/subprocess fixtures",
         "Git worktree/ref/commit/submodule semantics",
         "GitHub Actions hosted-runner evidence boundary"
       ],
       "source_analysis_path": "projects/telegram-desktop-rust/dossiers/process-inbox-skill-complete-read.md",
-      "behavior_contract": "Exact repository-workflow regression oracle covering task/inbox/source/worktree publication, lineage, dependency/split/consolidation, source preparation, build-lock/process/test execution, crash/console state, overlay/fence/result validation, batching and code-health publication. Each of 127 test methods is independently inventoried; the suite remains repository tooling evidence, not a shipping product owner.",
+      "behavior_contract": "Exact repository-workflow regression oracle covering task/inbox/source/worktree publication, lineage, dependency/split/consolidation, source preparation, build-lock/process/test execution, crash/console state, overlay/fence/result validation, batching and code-health publication. Each of 127 test methods is independently inventoried; the suite remains repository tooling evidence, not a shipping product owner. The suite now includes 13 focused host-load tests covering busy/quiet controls, build-tool waits, process snapshot growth, CPU/process-identity math, option-off behavior, unsupported hosts, bad-value/prerequisite refusal, gate ordering and partial-read failure retention.",
       "state_machine": "fixture/setup -> exact repository helper/command action -> positive or fail-closed state/Git/evidence assertion -> cleanup; publication tests additionally bind worktree/ref/path/digest/receipt identity before canonical state is accepted",
       "side_effects": [
         "Creates temporary Git repositories/worktrees/remotes and synthetic task/inbox/test-account state inside test fixtures.",
@@ -20050,9 +20086,10 @@
       "production_entrypoints": [],
       "production_evidence": [],
       "test_evidence": [
-        "Full locked workspace_test.py read at 6acfeadb6f9128a8b5c164d7c0265b03db1fee44: 5602 lines, 127 unique test methods.",
+        "Full locked workspace_test.py read at 79f943a99809bc6acf173872d9a780346648b5cf: 5602 lines, 127 unique test methods.",
         "Dossier records 127/127 methods independently with class, exact source line range, directly exercised workspace subjects and expected-failure marker.",
-        "Support fixtures/top-level helper functions/non-test class methods are separately accounted in the same dossier section."
+        "Support fixtures/top-level helper functions/non-test class methods are separately accounted in the same dossier section.",
+        "Full live workspace_test.py read at 79f943a99809bc6acf173872d9a780346648b5cf: 6447 lines, 140 unique test methods; exactly 13 host-load methods added."
       ],
       "target_commit": "f89b8e45b51591ff10bb2d390f78c0ed0f18f1d3",
       "workflow_run": null,
@@ -20257,7 +20294,20 @@
         "BatchMarkTest.test_batch_option_collects_every_id_in_order",
         "BatchMarkTest.test_reading_a_batch_ignores_what_it_cannot_use",
         "HealthWorktreeTest.test_second_run_of_the_day_is_dropped",
-        "HealthWorktreeTest.test_only_code_health_paths_are_published"
+        "HealthWorktreeTest.test_only_code_health_paths_are_published",
+        "MechanicsTest.test_test_run_host_load_waits_out_a_burner_and_ignores_a_busy_client",
+        "MechanicsTest.test_test_run_host_load_launches_at_its_bound_and_traces_a_burner",
+        "MechanicsTest.test_test_run_host_load_quiet_control_ignores_its_own_cpu",
+        "MechanicsTest.test_test_run_host_load_waits_while_a_build_tool_runs",
+        "MechanicsTest.test_windows_process_snapshot_grows_and_reads_this_process",
+        "MechanicsTest.test_host_load_wait_meets_its_hold_and_bound",
+        "MechanicsTest.test_host_load_sample_math_and_process_identities",
+        "MechanicsTest.test_test_run_host_load_stays_off_without_its_flag",
+        "MechanicsTest.test_test_run_host_load_records_an_unsupported_host",
+        "MechanicsTest.test_test_run_host_load_refuses_bad_values_before_setup",
+        "MechanicsTest.test_test_run_host_load_prerequisites_fail_before_any_reading",
+        "MechanicsTest.test_test_run_host_load_waits_after_the_idle_gate_and_setup",
+        "MechanicsTest.test_test_run_host_load_keeps_readings_past_a_failed_one"
       ],
       "property_state_case_ids": [],
       "contract_case_ids": [
@@ -20336,7 +20386,7 @@
       "soak_case_ids": [],
       "exploratory_charter_ids": [],
       "regression_ids": [
-        "REG-TDRP-WORKSPACE-TEST-127-METHOD-COVERAGE-001"
+        "REG-TDRP-WORKSPACE-TEST-140-METHOD-COVERAGE-001"
       ],
       "release_gate_ids": [
         "G-INVENTORY",
@@ -20358,12 +20408,12 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Exact telegramdesktop/tdesktop workspace_test.py behavior/test authority read from locked live-dev blob; no upstream Python harness copied into Fabushi shipping runtime.",
-      "notes": "Strict index 55 closes only workspace_test.py after independent 127/127 test-method records and support-fixture accounting. Parent f89 source-authority evidence is not reused as child exact-head validation. Next strict root entry is index 56 .agents/skills/rebase/SKILL.md@0660dc78b26614e40d7151d1da59241b1bad5430. baseline_identity_accepted=false and source_closure_ready=false remain mandatory.",
+      "notes": "Full live-dev rebaseline reread at workspace_test.py@79f943a99809bc6acf173872d9a780346648b5cf, 6,447 lines and 140 unique test methods. Exactly 13 new host-load methods are inventoried in unit_case_ids. This remains repository-tooling oracle evidence, not shipping product behavior. Counters unchanged; fresh exact-head Actions required.",
       "test_execution_evidence": []
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".agents/skills/rebase/SKILL.md",
       "source_blob_sha": "0660dc78b26614e40d7151d1da59241b1bad5430",
       "source_kind": "repository_branch_integration_policy",
@@ -20612,7 +20662,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".clang-tidy",
       "source_blob_sha": "5610bd13664ca77549993def241eb3edaffeff7a",
       "source_kind": "repository_cpp_static_analysis_configuration",
@@ -20854,7 +20904,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".claude/ai-workflow-adapter.md",
       "source_blob_sha": "370ff84a1ab4c080b15b601a54162b0630c4f4df",
       "source_kind": "repository_ai_workflow_host_adapter_policy",
@@ -20875,11 +20925,11 @@
         "CAP-REPOSITORY-REVIEW-EVIDENCE"
       ],
       "dependency_ids": [
-        ".agents/shared/phase-effort.md@dd07a4c611922a29a6892332db98afe76cd58952",
-        ".agents/shared/codex-cli-leaves.md@659da44a8083c433c4e9b59ca28f64ba525bfbf8",
+        ".agents/shared/phase-effort.md@8d7b385dbb526e87fc090774ee35191e1619bb08",
+        ".agents/shared/codex-cli-leaves.md@11c59b68df43e442e596c3052296fc51a044d46a",
         ".agents/skills/continue/SKILL.md@aeb81dd57018abbc8f03ea3dbd34f91952128db5",
         ".agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c",
-        ".agents/skills/process-inbox/scripts/workspace.py@5d74a11083d66f2ebe9bbf0fcf2e991fa2c6c1c5",
+        ".agents/skills/process-inbox/scripts/workspace.py@3cd99d173fcc3a6e293cfe36058a5fd9e492887d",
         "GitHub Actions exact-head verification boundary"
       ],
       "source_analysis_path": "projects/telegram-desktop-rust/dossiers/claude-ai-workflow-adapter-complete-read.md",
@@ -21091,7 +21141,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".claude/commands/code-health.md",
       "source_blob_sha": "bcabd4bd5b5a1a2ed09b40a7f1fbdd502042329a",
       "source_kind": "repository_quality_health_host_command_alias",
@@ -21320,7 +21370,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".claude/commands/continue.md",
       "source_blob_sha": "e81c86031f2e501f30d2b6ed908fb03d648324c8",
       "source_kind": "repository_ai_batch_continuation_host_command_alias",
@@ -21578,7 +21628,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".claude/commands/crash-reports-process.md",
       "source_blob_sha": "5ac555406670721694e78c4e1e6b2a96b3e98fb5",
       "source_kind": "repository_crash_report_triage_and_fix_host_command",
@@ -21840,7 +21890,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".claude/commands/cross-review.md",
       "source_blob_sha": "7769d03de798cde66987cd41303d2ea529321361",
       "source_kind": "repository_cross_provider_independent_review_host_command",
@@ -21880,7 +21930,7 @@
       "dependency_ids": [
         ".agents/shared/cross-review/protocol.md@51dabe142d5c3c7247e4050790c4e74b40f35b27",
         ".agents/shared/cross-review/prompts.md@4e155d2bd7e647c12df7b008c279969bfd65e44d",
-        ".agents/shared/codex-cli-leaves.md@659da44a8083c433c4e9b59ca28f64ba525bfbf8",
+        ".agents/shared/codex-cli-leaves.md@11c59b68df43e442e596c3052296fc51a044d46a",
         "AGENTS.md",
         "GitHub Actions exact-head verification boundary"
       ],
@@ -21982,7 +22032,7 @@
         "Full locked .claude/commands/cross-review.md@7769d03de798cde66987cd41303d2ea529321361 read: 75 lines.",
         "Locked .agents/shared/cross-review/protocol.md@51dabe142d5c3c7247e4050790c4e74b40f35b27 read: 150 lines.",
         "Locked .agents/shared/cross-review/prompts.md@4e155d2bd7e647c12df7b008c279969bfd65e44d read: 161 lines.",
-        "Locked .agents/shared/codex-cli-leaves.md@659da44a8083c433c4e9b59ca28f64ba525bfbf8 read: 173 lines.",
+        "Locked .agents/shared/codex-cli-leaves.md@11c59b68df43e442e596c3052296fc51a044d46a read: 173 lines.",
         "Existing Fabushi AGENTS.md@4f888d465d29d962542da07bcb6f6efe2b5be897 contains literal Independent review contract, Frozen scope and bounded lifecycle, and Immutable review-scope snapshots owners with fresh/blind reviewers, durable FIX/REJECT/DEFER/COMPROMISE arbitration, reversal fencing, focused re-review and convergence.",
         "Parent exact-head TDRP run 39707946439 attempt 1: completed success, 61/61 jobs; authority artifact 12396355548 digest sha256:95b103e093f5322ee54a124d528c691bb1383f52b20e9eb54f6a8ca06d407c3f; recursive closure artifact 12396131868 digest sha256:694a11c8ed2ef5ebcc3a7fb9c04ffc268bbaa3c30623276e54b836d4854cc600; recursive reachability artifact 12396301477 digest sha256:9d214ba609a3f6c01bab53712e465cca4e85ca212c768515bc27899e70169077.",
         "Parent exact-head Rust run 39707946474 attempt 1: completed success, 6/6 jobs; messaging artifact 12395797796 digest sha256:3906cf03e638637347653c51ecc0679e2d7a3d341a7ab9962689d0338c29d1ce."
@@ -22115,7 +22165,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".claude/commands/icon.md",
       "source_blob_sha": "479e23eceb019477fd7f2ffe4e2c13aadcfc556e",
       "source_kind": "repository_icon_asset_generation_host_command",
@@ -22422,7 +22472,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".claude/commands/perform-task.md",
       "source_blob_sha": "98ec6ed4aa51d3cac043a70a23adc6834b147f8e",
       "source_kind": "repository_ai_single_task_host_command_wrapper",
@@ -22444,13 +22494,13 @@
       "dependency_ids": [
         ".claude/ai-workflow-adapter.md@370ff84a1ab4c080b15b601a54162b0630c4f4df",
         ".agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c",
-        ".agents/shared/phase-effort.md@dd07a4c611922a29a6892332db98afe76cd58952",
-        ".agents/shared/codex-cli-leaves.md@659da44a8083c433c4e9b59ca28f64ba525bfbf8",
+        ".agents/shared/phase-effort.md@8d7b385dbb526e87fc090774ee35191e1619bb08",
+        ".agents/shared/codex-cli-leaves.md@11c59b68df43e442e596c3052296fc51a044d46a",
         ".agents/shared/codex-delegation.md@ed89d2a14344f50034a9363bd9ffe75f7972e652",
-        ".agents/shared/test-loop.md@83c4732bf6139f7c6557f18dd87bb35c3d68808d",
+        ".agents/shared/test-loop.md@f3b38415883c95a6086766f965d8130333c1b09c",
         ".agents/shared/build-lock-recovery.md@ec75573e7efe74e9c9a344f3e66f2fc43ac7680f",
-        ".agents/skills/perform-task/references/pipeline.md@46e158ac86ebce97f9dcd010a98b3c581ffc114c",
-        ".agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba",
+        ".agents/skills/perform-task/references/pipeline.md@71d26895fe4198ee64123d96feec8431e83ce0c7",
+        ".agents/skills/perform-task/references/phase-prompts.md@ce3f355bc7226b57f6e9938a0938e18727bd6b30",
         ".agents/skills/perform-task/references/computer-use-testing.md@b7fc92d604a55975f75047828d476e64667aa259",
         ".agents/skills/perform-task/references/mechanical-lane.md@e5e3cc88ba80ece6a20df7c4dd6002491d66a4ef",
         "GitHub Actions exact-head verification boundary"
@@ -22668,7 +22718,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".claude/commands/process-inbox.md",
       "source_blob_sha": "3bd1c22b06c735ff92cf2260bd893c9de2653f21",
       "source_kind": "repository_ai_inbox_routing_host_command_wrapper",
@@ -22690,9 +22740,9 @@
       ],
       "dependency_ids": [
         ".claude/ai-workflow-adapter.md@370ff84a1ab4c080b15b601a54162b0630c4f4df",
-        ".agents/skills/process-inbox/SKILL.md@0ce70794ac743d99e6d5c80894cde970b52842db",
-        ".agents/skills/process-inbox/scripts/workspace.py@5d74a11083d66f2ebe9bbf0fcf2e991fa2c6c1c5",
-        ".agents/shared/phase-effort.md@dd07a4c611922a29a6892332db98afe76cd58952",
+        ".agents/skills/process-inbox/SKILL.md@73bd3c360232679a0ebfe3b990073ecc4f322b7d",
+        ".agents/skills/process-inbox/scripts/workspace.py@3cd99d173fcc3a6e293cfe36058a5fd9e492887d",
+        ".agents/shared/phase-effort.md@8d7b385dbb526e87fc090774ee35191e1619bb08",
         "GitHub Actions exact-head verification boundary"
       ],
       "source_analysis_path": "projects/telegram-desktop-rust/dossiers/claude-process-inbox-command-complete-read.md",
@@ -22780,7 +22830,7 @@
       "production_evidence": [],
       "test_evidence": [
         "Strict65 .claude/commands/process-inbox.md@3bd1c22b06c735ff92cf2260bd893c9de2653f21 fully read in the pre-gate audit: 40 lines, 1761 chars; source SHA revalidated against live upstream immediately before this mapping.",
-        "Direct dependencies .claude/ai-workflow-adapter.md@370ff84a1ab4c080b15b601a54162b0630c4f4df and .agents/skills/process-inbox/SKILL.md@0ce70794ac743d99e6d5c80894cde970b52842db were previously fully read and revalidated unchanged.",
+        "Direct dependencies .claude/ai-workflow-adapter.md@370ff84a1ab4c080b15b601a54162b0630c4f4df and .agents/skills/process-inbox/SKILL.md@73bd3c360232679a0ebfe3b990073ecc4f322b7d were previously fully read and revalidated unchanged.",
         "Current transitive helper identities were rechecked; helper changes remain separate source-inventory responsibilities and are not silently closed by this command row.",
         "AGENTS.md@4f888d465d29d962542da07bcb6f6efe2b5be897 contains both selected exact native-invocation target sentences.",
         "Parent exact-head TDRP run 39720206628 attempt 1 completed success, 61/61 jobs; authority artifact 12400362925 digest sha256:c69402e57adb48a830bf41837f63e4859939c0efa2d9e051710d1dc5df7381bd; recursive closure artifact 12400888602 digest sha256:096921bee04678000cf3469ad98dfb0e2810f85f94b05a043fdb0fe1d6093d6d; recursive reachability artifact 12401325822 digest sha256:91680968b3718b522f8a8c3c918830932cba64b64a64635dc9c8de4394a076f5.",
@@ -22916,7 +22966,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".claude/commands/rebase.md",
       "source_blob_sha": "df14e750067aeac1258a92068886cd2b33f83120",
       "source_kind": "repository_intent_preserving_rebase_host_command_wrapper",
@@ -23174,7 +23224,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".claude/commands/release.md",
       "source_blob_sha": "baaa7c261db67dced2ce052c8cde016147031a7d",
       "source_kind": "repository_release_preparation_host_command_wrapper",
@@ -23436,7 +23486,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".claude/settings.json",
       "source_blob_sha": "d47520dc0e3b7e8d6067456e33062140c75f7c79",
       "source_kind": "repository_editor_policy_feedback_adapter_configuration",
@@ -23666,7 +23716,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".devcontainer.json",
       "source_blob_sha": "16a1bcc1192bed87c5211da3dc63b0b0ed99a93e",
       "source_kind": "repository_development_environment_adapter_configuration",
@@ -23898,7 +23948,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".gitattributes",
       "source_blob_sha": "d7f1c6218bd3bd6b595385b1308c86ba9923fa14",
       "source_kind": "repository_file_attribute_worktree_policy",
@@ -24119,7 +24169,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".github/CONTRIBUTING.md",
       "source_blob_sha": "4265e974d0b87622af223d5b8096b67edcbd4aab",
       "source_kind": "repository_contribution_atomic_change_governance",
@@ -24354,7 +24404,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".github/ISSUE_TEMPLATE/BUG_REPORT.yml",
       "source_blob_sha": "847b56e543fc28586ad281640218dfe8954d8bee",
       "source_kind": "repository_defect_intake_schema",
@@ -24590,7 +24640,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".github/ISSUE_TEMPLATE/FEATURE_REQUEST.yml",
       "source_blob_sha": "e2a8becdb9afcbd028b62378321458a2028fe348",
       "source_kind": "repository_feature_request_intake_schema",
@@ -24825,7 +24875,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".github/ISSUE_TEMPLATE/config.yml",
       "source_blob_sha": "1b864704be6a3e3aafdb1e02519bec84886942ce",
       "source_kind": "repository_issue_intake_routing_config",
@@ -25066,7 +25116,7 @@
     },
     {
       "source_repository": "telegramdesktop/tdesktop",
-      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_path": ".github/dependabot.yml",
       "source_blob_sha": "5ace4600a1f26e6892982f3e2f069ebfab108d87",
       "source_kind": "repository_dependency_update_proposal_config",

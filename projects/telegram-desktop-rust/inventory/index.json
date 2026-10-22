@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
-    "tree": "09a421891474be0da279f44a5bf8e0dcf3bc270a",
+    "commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
+    "tree": "241f8ab614292cc90e395ef0c966e289fdb3e985",
     "baseline_identity_accepted": false
   },
   "inventory": {
@@ -39,7 +39,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream remains telegramdesktop/tdesktop@5c674f1f6a0f6ace55b67f8bc295138680fe588b/tree 09a421891474be0da279f44a5bf8e0dcf3bc270a. Strict index 75 .github/dependabot.yml@5ace4600a1f26e6892982f3e2f069ebfab108d87 is fully read and mapped existing-owner-first to source-neutral repository dependency-update proposal governance over existing dependency/workflow owners, ordinary review, and exact-head GitHub Actions. Upstream Dependabot provider syntax, github-actions ecosystem selection, root-directory scope and weekly cadence remain provenance only; provider absence/staleness is not a clean dependency state, and an update proposal cannot auto-merge, release, or advance migration acceptance. Counters unknown=16,228, unread=16,203, omitted=0; baseline_identity_accepted=false and source_closure_ready=false pending fresh exact-head Actions. Next strict root index 76 .github/scripts/generate_changelog.py@6cdd12652d31b2a47ed9a8ef906308af59cca3d0.",
+  "note": "Live upstream dev advanced linearly by 3 commits from 5c674f1f6a0f6ace55b67f8bc295138680fe588b/09a421891474be0da279f44a5bf8e0dcf3bc270a to e14f1566d277d2204f4c8e553bf7cc157047e88b/241f8ab614292cc90e395ef0c966e289fdb3e985 with 11 modified paths and no added/removed source entries. The eight changed entries already mapped in the ledger were fully reread at their new blobs; the three QR UI paths remain later unread inventory work and are not claimed closed. Strict index 75 remains fully read; strict index 76 .github/scripts/generate_changelog.py@6cdd12652d31b2a47ed9a8ef906308af59cca3d0 is byte-identical on the new dev but cannot publish until this relock obtains fresh exact-head Actions. Counters remain unknown=16,228, unread=16,203, omitted=0; baseline_identity_accepted=false and source_closure_ready=false.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
