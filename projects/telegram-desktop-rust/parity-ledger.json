@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "42e2af80cdd20a99edecb4255470f0aa6bae6bcb",
-  "target_commit": "4de4218f66aed12d2fde323ba0ec7ff987f18ae5",
+  "target_commit": "4261f91555c49daba7ac761aa1439d8b677f6a4c",
   "coverage": {
     "source_entries_total": 16306,
-    "unknown": 16221,
-    "unread": 16196,
+    "unknown": 16220,
+    "unread": 16195,
     "omitted": 0,
-    "responsibilities_total": 100,
+    "responsibilities_total": 101,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -27048,6 +27048,242 @@
       "license_and_provenance": "Exact upstream changelog.yml retained. Telegram dev/changelog.txt path, GitHub Pages environment/page URL, mutable major tags, presentation assets and hosting behavior are provenance only.",
       "notes": "Strict index 82 closes only .github/workflows/changelog.yml. It reuses strict76 deterministic changelog generation plus FQT release/evidence owners and introduces no second release/Pages truth. Counters unknown=16,221, unread=16,196, omitted=0, responsibilities=100. Next strict root index 83 .github/workflows/copyright_year_updater.yml@7ddb3d0403a77812df954d8bb2f480672831a082. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions are required.",
       "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "42e2af80cdd20a99edecb4255470f0aa6bae6bcb",
+      "source_path": ".github/workflows/copyright_year_updater.yml",
+      "source_blob_sha": "7ddb3d0403a77812df954d8bb2f480672831a082",
+      "source_kind": "repository_legal_text_maintenance_workflow",
+      "module_id": "tdesktop.github.workflows.copyright_year_updater",
+      "responsibility_id": "TDRP-R9-COPYRIGHT-YEAR-LEGAL-PROVENANCE-001",
+      "source_symbols": [
+        "repository_dispatch.types: Restart copyright_year_updater workflow.",
+        "schedule.cron: 0 3 1 1 *",
+        "desktop-app/action_code_updater@master",
+        "type: license-year"
+      ],
+      "capability_ids": [
+        "CAP-LEGAL-NOTICE-YEAR-MAINTENANCE-PROVENANCE",
+        "CAP-REVIEWABLE-REPOSITORY-MAINTENANCE"
+      ],
+      "dependency_ids": [
+        "desktop-app/action_code_updater@master -> 0a8d3ebb437e5c77cf5d066d4a54cc93d34b534a",
+        "desktop-app/action_code_updater/action.yml@5a9c7dff415a31f18a614119809f2d396b0e47c7",
+        "desktop-app/action_code_updater/index.mjs@322bfa9e3e874299a09c35650611c2cd753cca3f",
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md@439c9a3871a31f007cc914227d4ce5aa5fa87a09#TDRP-SRC-03",
+        "projects/telegram-desktop-rust/module-map.md@69f739b17a241386e3f22a5e8ed2d842e72baa43"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/copyright-year-updater-workflow-complete-read.md",
+      "behavior_contract": "Treat automated copyright-year maintenance as a reviewable repository legal-record proposal, not shipping product behavior: only the declared annual/manual trigger may request the provider adapter, textual changes remain ordinary repository diffs subject to review, and mutable provider dependencies or workflow success cannot become canonical product, release, packaging, evidence, or legal-acceptance truth.",
+      "state_machine": "annual January 1 schedule or explicit repository_dispatch -> mutable provider action resolves and clones repository -> recursively scans non-binary text -> for license-year replaces the exact prior-year 2014-YYYY range when present -> if no changes, clean no-op -> otherwise create copyright_to_YEAR branch -> commit/push -> create PR if absent; provider/action/dependency/push/PR failure or ambiguous mutation remains non-passing provenance and cannot advance Fabushi acceptance",
+      "side_effects": [
+        "May modify repository text files whose copyright range exactly matches the previous year.",
+        "May create and push a copyright_to_YEAR branch and open a reviewable pull request.",
+        "Uses the workflow GitHub token inside the upstream provider adapter.",
+        "Creates no Fabushi runtime state, shipping artifact, release verdict, identity, conversation, storage, service, or UI owner."
+      ],
+      "failure_cases": [
+        "desktop-app/action_code_updater@master moves after review or executes different code.",
+        "Unpinned npm installs inside the provider action resolve different packages or behavior.",
+        "Broad recursive text scanning changes a non-legal string that happens to match the year pattern.",
+        "The expected prior-year range is absent and no-op is mistaken for proof that legal records are complete.",
+        "copyright_to_YEAR already exists, push fails, or token permission is insufficient.",
+        "Provider PR creation logs an error without propagating a failing exit status.",
+        "A green maintenance workflow is mistaken for release, packaging, evidence, or legal acceptance."
+      ],
+      "ui_disposition": "Repository legal/provenance maintenance only; no shipping Fabushi UI capability.",
+      "non_ui_responsibilities": [
+        "bounded annual/manual maintenance trigger provenance",
+        "deterministic predecessor-year text replacement semantics",
+        "binary exclusion and no-change no-op semantics",
+        "branch/commit/push/PR proposal lifecycle",
+        "write-token and mutable dependency supply-chain boundary",
+        "strict separation from shipping product/release acceptance"
+      ],
+      "platform_delta": "Upstream delegates a repository-wide legal-year proposal to a mutable external GitHub Action. Fabushi retains the source-neutral legal-record/provenance responsibility under TDRP-SRC-03 and ordinary repository review; it does not adopt the mutable updater as a product runtime or evidence authority.",
+      "existing_owner_candidates": [
+        "TDRP-SRC-03 documentation_or_license retained legal-record disposition (selected)",
+        "projects/telegram-desktop-rust/module-map.md build/generator/resources/dependencies legal/provenance mapping (selected support)",
+        "ordinary Fabushi repository PR/review lifecycle (selected mutation/review boundary)",
+        "new product legal/copyright runtime owner (rejected)",
+        "release/packaging acceptance owner (rejected)"
+      ],
+      "existing_owner": "TDRP-SRC-03 documentation_or_license provenance disposition plus the existing Fabushi repository PR/review lifecycle",
+      "rejected_existing_owners": [
+        "Copyright-year text maintenance is not shipping product behavior and does not justify a new Rust/TypeScript runtime owner.",
+        "Release and packaging owners consume reviewed source/artifacts but do not delegate release ACCEPT to a copyright-year maintenance run.",
+        "The mutable external action and npm dependencies are provider provenance, not immutable Fabushi evidence authority."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md",
+        "projects/telegram-desktop-rust/module-map.md"
+      ],
+      "fabushi_target_symbols": [
+        "TDRP-SRC-03 documentation_or_license retained legal provenance",
+        "module-map build/generator/resources/dependencies legal/provenance disposition"
+      ],
+      "target_language": "Repository governance / retained legal-record provenance",
+      "language_rationale": "The source carries repository/legal maintenance semantics rather than application behavior; the applicable responsibility is accounted under existing migration governance and review, not rewritten as meaningless runtime code.",
+      "command_event_contracts": [
+        "annual/manual trigger may propose legal-year maintenance",
+        "only matching prior-year textual ranges are candidate changes; binaries are skipped",
+        "no matching change is a no-op, not acceptance evidence",
+        "all mutations remain branch/commit/PR review proposals",
+        "mutable provider refs/packages remain provenance and never establish Fabushi immutable authority",
+        "maintenance success never advances release/product acceptance"
+      ],
+      "state_owner": "Canonical legal/source text remains the reviewed repository revision; provider branch/PR state is a proposal only.",
+      "lifecycle_owner": "Existing repository review lifecycle from proposed legal-text diff through ordinary acceptance/merge; shipping release lifecycle remains separate.",
+      "persistence_and_restart": "Durable state is the reviewed repository commit history and PR. Provider workspace, npm install state, and action master resolution are ephemeral and must be re-resolved for any later audit.",
+      "concurrency_and_cancellation": "Annual/manual runs may overlap or encounter an existing copyright_to_YEAR branch. That conflict is a maintenance failure/review condition, never permission to overwrite canonical source or infer completion.",
+      "security_boundary": "The external action receives github.token and performs authenticated clone/push/PR operations. Its mutable master ref and runtime npm resolution are untrusted supply-chain inputs for Fabushi evidence purposes; only reviewed exact repository changes can become canonical source.",
+      "network_service_dependencies": [
+        "GitHub Actions/GitHub repository APIs for trigger, clone, branch push and pull request creation.",
+        "npm registry/runtime dependency resolution performed by the external composite action."
+      ],
+      "service_owner": "Existing repository hosting/CI and review infrastructure; no product service owner",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "retained-legal-record",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions are required after this strict83 mapping commit.",
+        "Recursive source disposition remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "Strict83 .github/workflows/copyright_year_updater.yml@7ddb3d0403a77812df954d8bb2f480672831a082 fully read: 17 line slots / 338 bytes.",
+        "desktop-app/action_code_updater@master resolved immediately before publication to 0a8d3ebb437e5c77cf5d066d4a54cc93d34b534a; action.yml@5a9c7dff415a31f18a614119809f2d396b0e47c7 and index.mjs@322bfa9e3e874299a09c35650611c2cd753cca3f were read for license-year, scan, branch/push and PR behavior.",
+        "Provider action installs simple-git, isbinaryfile, @actions/core and @actions/github at runtime without immutable lock pins; those dependencies are recorded as mutable provenance only.",
+        "LicenseYear uses current UTC/runtime year, searches case-insensitively for copyright (c) 2014-(year-1), replaces the literal year range, and creates copyright_to_YEAR / Update copyright year to YEAR.",
+        "processFiles recursively skips .git and binary files; no modified files exits cleanly. processGit branches/commits/pushes; processPullRequest opens a PR when absent and catches/logs API errors.",
+        "Parent exact-head 4261f91555c49daba7ac761aa1439d8b677f6a4c completed TDRP run 39768716075 at 61/61 success (authority 12421323101 sha256:6f77d0ea6cff72cfd1b26d2b4c10ec6cdc5ee1235dc77d83a9a7138ca540fd99; closure 12421337564 sha256:834c7d0b823ea4005d78d83ed19d9380d9156925b26ac936e100d3c19dd7258b; reachability 12421028190 sha256:cd24aeedea5f4a0ee5c1fa9b536b4ad48f0d3c130865e0a0765d16ba140e9d8f) and Rust desktop runtime run 39768715965 at 6/6 success (artifact 12421582351 sha256:a60d59a9e4af0d3f1ed00a4ddb0e47c96799fd1461d78445abb553c8bcae187b)."
+      ],
+      "target_commit": "4261f91555c49daba7ac761aa1439d8b677f6a4c",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository source/legal provenance and ordinary review lifecycle",
+      "composition_slot": "reviewable legal-record year-maintenance provenance",
+      "capability_component": "Source-neutral retained legal-record maintenance mapping",
+      "variation_axes": [
+        "annual schedule/manual dispatch",
+        "matching legal range/no matching range",
+        "text/binary file",
+        "new/existing yearly branch",
+        "provider dependency stable/drifted",
+        "push/PR success/failure"
+      ],
+      "shared_owner_contracts": [
+        "TDRP-SRC-03 documentation_or_license",
+        "module-map build/generator/resources/dependencies",
+        "existing repository PR/review lifecycle",
+        "exact-head TDRP evidence contract"
+      ],
+      "duplicate_root_check": "No legal/copyright product runtime, second release owner, second packaging owner, source store, identity, messaging, storage, settings or acceptance authority is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository maintenance only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Reviewable repository legal-record maintenance provenance",
+      "route_contract": "annual/manual repository trigger -> provider proposal branch/PR -> ordinary review; no product route",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Only reviewed repository commits are durable canonical source; provider execution state and mutable dependency resolution do not carry acceptance across runs.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-COPYRIGHT-YEAR-LEGAL-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-COPYRIGHT-YEAR-EXACT-SOURCE-001",
+        "ORA-TDRP-COPYRIGHT-YEAR-PR-ONLY-001",
+        "ORA-TDRP-COPYRIGHT-YEAR-NO-RELEASE-AUTHORITY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-COPYRIGHT-YEAR-NO-PRODUCT-RUNTIME-001",
+        "INV-TDRP-COPYRIGHT-YEAR-MUTABLE-PROVIDER-NO-AUTHORITY-001",
+        "INV-TDRP-COPYRIGHT-YEAR-NO-AUTO-ACCEPT-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-COPYRIGHT-YEAR-REVIEWABLE-PROPOSAL-001",
+        "CONTRACT-TDRP-COPYRIGHT-YEAR-PROVENANCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-COPYRIGHT-YEAR-ANNUAL-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-COPYRIGHT-YEAR-PROVIDER-DRIFT-001",
+        "FAULT-TDRP-COPYRIGHT-YEAR-BRANCH-PUSH-PR-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-COPYRIGHT-YEAR-GITHUB-TOKEN-001",
+        "SEC-TDRP-COPYRIGHT-YEAR-MUTABLE-SUPPLY-CHAIN-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-COPYRIGHT-YEAR-NO-RUNTIME-001",
+        "REG-TDRP-COPYRIGHT-YEAR-NO-RELEASE-ACCEPT-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [],
+      "test_fixture_ids": [
+        "locked copyright_year_updater.yml + resolved action_code_updater bundle + parent exact-head PR/ref/tree/upstream lease + TDRP/Rust artifacts"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact upstream copyright-year workflow is retained as source provenance. Telegram-specific year range, provider branch naming, mutable action master ref, GitHub token use and runtime npm installs are not copied into a product runtime or promoted to Fabushi immutable evidence authority.",
+      "reviewer": null,
+      "notes": "Strict index 83 closes only .github/workflows/copyright_year_updater.yml as retained legal/repository-maintenance provenance. Counters become unknown=16,220 unread=16,195 omitted=0 responsibilities=101. Next strict root index 84 .github/workflows/docker.yml@cba00688d935d50454bfb891fc37e001626cf9a0. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions are required."
     }
   ]
 }
