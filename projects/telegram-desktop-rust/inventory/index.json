@@ -25,7 +25,7 @@
     "artifact_id": 12425906432,
     "artifact_name": "tdrp-revision9-authority-7a63a7f3028b2f2c14493e4c61a65aefe0159573",
     "artifact_digest": "sha256:15b0d0da0328a5558728fdd571cf4d875a49f39dea1019011942d626d5dacb1e",
-    "evidence_status": "historical-only-after-upstream-drift",
+    "evidence_status": "historical-only",
     "upstream_commit": "42e2af80cdd20a99edecb4255470f0aa6bae6bcb",
     "upstream_tree": "19740740209ea84bf3768f3f63ca92ea8d861087",
     "recursive_non_directory_entries": 16306,
