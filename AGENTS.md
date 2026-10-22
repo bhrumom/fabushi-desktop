@@ -138,6 +138,15 @@ Durable Git/LFS content is fail-closed: a missing object, pointer-only materiali
 
 For FBCP/TDRP, exact-head GitHub Actions remains executable acceptance. Repository attribute policy may make checkout/materialization deterministic, but it cannot by itself establish source closure, production behavior, or acceptance; Telegram-specific attribute patterns are not copied merely because they exist upstream.
 
+
+##### Repository contribution and atomic change governance
+
+Repository changes are bounded, reviewable units of responsibility. Keep each change focused on one issue or migration responsibility; separate unrelated cleanup and whitespace-only churn; use clear names and straightforward code; exercise the changed behavior through the repository's selected checks; and make the commit message explain why the change exists and identify the tracked issue when applicable.
+
+Synchronization and publication must preserve live authority. Re-read the current head, ref, tree, relevant blobs, upstream lease, and required exact-head evidence before writing. Publish multi-file governance changes as one atomic commit through a compare-and-swap boundary; lease drift stops publication and requires reconciliation. Upstream branch names, squash recipes, rebase commands, and unconditional force-push instructions are source-specific provenance, not Fabushi policy.
+
+For FBCP/TDRP, executable acceptance remains exact-head GitHub-Actions-only. Telegram-specific contribution exclusions for features, translations, user interface, product roadmap, and branded links do not constrain Fabushi product evolution and are not copied into a second contribution owner. A clean local diff or locally tested change cannot replace current-head artifacts and post-publication head/ref/tree verification.
+
 #### Stage 4 — Verify
 - Execute or inspect the verification required by the spec and repository workflow.
 - Verify the exact source revision being accepted.

@@ -931,10 +931,10 @@
   "coverage": {
     "root_source_entries_total": 6820,
     "recursive_source_entries_total": 16306,
-    "unknown_minimum": 16233,
-    "unread_minimum": 16208,
+    "unknown_minimum": 16232,
+    "unread_minimum": 16207,
     "omitted_known": 0,
-    "note": "Live dev authority 5c674f1f6a0f6ace55b67f8bc295138680fe588b/09a421891474be0da279f44a5bf8e0dcf3bc270a remains unaccepted. Strict index 70 .gitattributes@d7f1c6218bd3bd6b595385b1308c86ba9923fa14 is fully read and mapped to existing source-neutral repository file-attribute / worktree byte-integrity governance plus exact-head GitHub Actions verification. Upstream Telegram path-specific EOL and binary globs are provenance only; applicable text normalization, binary byte preservation and fail-closed LFS/source-integrity semantics stay with existing Fabushi repository governance/validators. Counters unknown=16,233, unread=16,208, omitted=0. Next strict root index 71 .github/CONTRIBUTING.md@4265e974d0b87622af223d5b8096b67edcbd4aab. baseline_identity_accepted=false and source_closure_ready=false pending fresh exact-head Actions."
+    "note": "Live dev authority 5c674f1f6a0f6ace55b67f8bc295138680fe588b/09a421891474be0da279f44a5bf8e0dcf3bc270a remains unaccepted. Strict index 71 .github/CONTRIBUTING.md@4265e974d0b87622af223d5b8096b67edcbd4aab is fully read and mapped to existing source-neutral repository contribution / atomic-change governance plus exact-head GitHub Actions verification. Atomic scope, unrelated-diff exclusion, clear implementation, change testing, commit rationale and live-base/CAS publication remain with existing Fabushi repository governance. Telegram product-contribution policy, branded links and master/rebase/squash/force-push recipes are provenance only. Counters unknown=16,232, unread=16,207, omitted=0. Next strict root index 72 .github/ISSUE_TEMPLATE/BUG_REPORT.yml@847b56e543fc28586ad281640218dfe8954d8bee. baseline_identity_accepted=false and source_closure_ready=false pending fresh exact-head Actions."
   },
   "acceptance": {
     "baseline_ready": false,

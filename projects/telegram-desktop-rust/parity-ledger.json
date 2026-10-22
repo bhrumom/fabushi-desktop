@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
-  "target_commit": "0f9742ad0a23d513d3f6b83691fe01fae79156a6",
+  "target_commit": "e454838702f688c78540e7b3f53b8b427b2f5682",
   "coverage": {
     "source_entries_total": 16306,
-    "unknown": 16233,
-    "unread": 16208,
+    "unknown": 16232,
+    "unread": 16207,
     "omitted": 0,
-    "responsibilities_total": 88,
+    "responsibilities_total": 89,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -24115,6 +24115,241 @@
       "reviewer": null,
       "license_and_provenance": "Exact upstream .gitattributes SHA is retained as source provenance. Telegram-specific zxcvbn path, extension globs and EOL choices are not copied as Fabushi product identifiers or runtime policy.",
       "notes": "Strict index 70 closes only .gitattributes. Counters become unknown=16233 unread=16208 omitted=0 responsibilities=88. Attribute pattern targets remain independent inventory entries at their own source dispositions. Next strict root index 71 .github/CONTRIBUTING.md@4265e974d0b87622af223d5b8096b67edcbd4aab. Closure flags remain false.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_path": ".github/CONTRIBUTING.md",
+      "source_blob_sha": "4265e974d0b87622af223d5b8096b67edcbd4aab",
+      "source_kind": "repository_contribution_atomic_change_governance",
+      "module_id": "tdesktop.github.contributing",
+      "responsibility_id": "TDRP-R9-CONTRIBUTING-CHANGE-GOVERNANCE-001",
+      "source_symbols": [
+        "What contributions are accepted",
+        "Build instructions",
+        "Pull upstream changes into your fork regularly",
+        "Keep your pull requests limited to a single issue",
+        "Squash your commits to a single commit",
+        "Don't mix code changes with whitespace cleanup",
+        "Keep your code simple",
+        "Test your changes",
+        "Write a good commit message"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-ATOMIC-CHANGE-GOVERNANCE",
+        "CAP-REPOSITORY-CHANGE-QUALITY-EVIDENCE"
+      ],
+      "dependency_ids": [
+        "AGENTS.md@bb33d18fc1dbf2c776ebb7c84c6daddc42666e3e#Stage 3/Stage 4",
+        "projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md@c181c90ac52043975ef508042f4c20181211d9f5",
+        ".github/workflows/tdrp-revision9-authority.yml@7c8fa40cc64ab804732eef7a0b2d809b1e00a337",
+        ".github/workflows/rust-desktop-runtime.yml@13c87f4910394fb5d110747728959f21bb4abef6"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/contributing-change-governance-complete-read.md",
+      "behavior_contract": "Keep repository changes atomic, scope- and issue-bounded, free of unrelated cleanup, clear in implementation and rationale, exercised by the selected exact-head checks, and published only after live authority/lease reconciliation through an atomic compare-and-swap boundary; source-specific contribution policy and branch rewrite commands must not become a duplicate Fabushi owner.",
+      "state_machine": "select one issue or migration responsibility -> reconcile live head/ref/tree/blobs and upstream lease -> make a bounded change -> review diff for unrelated code/whitespace -> run selected exact-head GitHub Actions checks -> record clear commit rationale -> CAS-publish one atomic commit -> re-read resulting head/ref/tree",
+      "side_effects": [
+        "May create one reviewable repository commit and advance its branch ref through a lease-checked publication.",
+        "May reject or split a change whose scope, whitespace churn, rationale, or evidence is not reviewable.",
+        "May require reconciliation when the base or upstream lease moves.",
+        "Must not create shipping runtime state, product policy, or a Telegram contribution subsystem."
+      ],
+      "failure_cases": [
+        "change mixes multiple unrelated issues or migration responsibilities",
+        "functional edits are obscured by unrelated cleanup or whitespace churn",
+        "implementation or commit message does not explain intent",
+        "selected checks are missing, stale, local-only, or bound to another head",
+        "base head, ref, tree, blobs, or upstream lease drift before publication",
+        "unconditional force push or stale rebase overwrites live work",
+        "Telegram feature/UI/translation contribution policy is imported as Fabushi product governance"
+      ],
+      "ui_disposition": "Not a shipping UI capability; upstream UI-contribution restrictions remain provenance only.",
+      "non_ui_responsibilities": [
+        "atomic issue/responsibility scope",
+        "unrelated-diff and whitespace separation",
+        "clear implementation and naming",
+        "change-specific exact-head verification",
+        "commit rationale and issue traceability",
+        "live-base synchronization and CAS publication"
+      ],
+      "platform_delta": "The upstream document is coupled to Telegram product contribution policy, branded destinations, master-branch fork workflow, manual squash/rebase instructions and force push. Fabushi retains only source-neutral bounded change, diff hygiene, clarity, verification, rationale and live-authority publication responsibilities. Branch names, commands, feature/UI/translation exclusions and Telegram roadmap decisions remain provenance.",
+      "existing_owner_candidates": [
+        "AGENTS.md Stage 2 Plan / Stage 3 Implement / Stage 4 Verify",
+        "AGENTS.md exact-head GitHub Actions acceptance boundary",
+        "Existing GitHub atomic commit and compare-and-swap publication workflow",
+        "Telegram contribution-policy owner (rejected)",
+        "shipping ProductShell/Conversation/Resource owners (rejected)"
+      ],
+      "existing_owner": "Root AGENTS.md source-neutral implementation/verification governance plus existing exact-head GitHub Actions and lease-checked atomic publication workflow",
+      "rejected_existing_owners": [
+        "Telegram contribution policy is source-specific provenance and cannot govern Fabushi product scope or roadmap.",
+        "Shipping product owners implement user capabilities and do not own repository contribution workflow.",
+        "Local Git aliases, worktree state, branch names, rebase/squash recipes and force-push commands are mutable adapters, not durable authority."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository contribution and atomic change governance"
+      ],
+      "target_language": "Repository governance / source-neutral change and publication policy",
+      "language_rationale": "The source is contribution-process documentation, not shipping C++ product logic. Applicable responsibilities belong to durable repository governance, exact-head Actions and atomic Git publication rather than Rust or React runtime code.",
+      "command_event_contracts": [
+        "one commit/change closes one bounded issue or migration responsibility",
+        "unrelated cleanup and whitespace churn are split from functional edits",
+        "names, implementation and commit message explain intent and rationale",
+        "selected checks are bound to the exact candidate head and remain fail-closed",
+        "publication rechecks live head/ref/tree/blob/upstream lease and uses CAS semantics",
+        "lease drift stops the write; unconditional force push is never accepted as governance"
+      ],
+      "state_owner": "Durable repository specs, the exact candidate diff, live Git head/ref/tree/blob identities, upstream lease and exact-head Actions evidence; local branch/worktree state is non-authoritative.",
+      "lifecycle_owner": "Existing AGENTS.md plan/implement/verify lifecycle and GitHub exact-head validation plus atomic publication lifecycle.",
+      "persistence_and_restart": "A resumed change rereads durable specs and live Git authority; commit/diff/evidence identities survive in Git and Actions, while local rebase, editor and shell state never advance canonical acceptance.",
+      "concurrency_and_cancellation": "Independent bounded changes may proceed concurrently, but publication is serialized by expected-head/CAS lease. Cancellation leaves the branch unchanged unless the single atomic ref update succeeded.",
+      "security_boundary": "Contribution guidance grants no credential, branch-protection, release, product-policy or broad mutation authority. A stale or unconditional history rewrite must not overwrite live work or bypass exact-head evidence.",
+      "network_service_dependencies": [
+        "GitHub repository/ref service for durable commit and CAS publication",
+        "GitHub Actions hosted runners for exact-head executable acceptance"
+      ],
+      "service_owner": "Existing repository development, Git publication and exact-head verification governance",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "policy-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required.",
+        "Recursive source disposition remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "Strict71 .github/CONTRIBUTING.md@4265e974d0b87622af223d5b8096b67edcbd4aab fully read: 119 lines / 6074 bytes.",
+        "Applicable atomic scope, unrelated-whitespace exclusion, clear code/naming, change testing and commit-rationale responsibilities were mapped existing-owner-first; Telegram product/UI/translation policy and branch commands remain provenance.",
+        "Parent strict70 exact-head TDRP run 39732868580 success 61/61: authority 12406301512 sha256:2efa151e2a2a32f4760a6e725948a855bb710a882c3b7d3464a0906c9f2ba9db; closure 12406072858 sha256:432d89fc25974c4923ba5eb947c7d54afc5d152c4ed7dc2e2b4774560f43843d; reachability 12405692806 sha256:61b6a672ff92d78e435f0942b03062f0d501c64b6ebda34dccdc63895b4dd9b2.",
+        "Parent strict70 exact-head Rust run 39732868588 success 6/6: artifact 12405354776 sha256:339b7e1b1189783064ed9e0a698896fe22e505364f186795c3e5447d2003b9ba."
+      ],
+      "target_commit": "e454838702f688c78540e7b3f53b8b427b2f5682",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi source-neutral repository development and publication lifecycle",
+      "composition_slot": "Atomic change, reviewable diff and evidence-bound publication governance",
+      "capability_component": "Provider-neutral bounded change, diff hygiene, verification and CAS publication policy",
+      "variation_axes": [
+        "single/wide change scope",
+        "clean/mixed unrelated diff",
+        "current/stale base and upstream lease",
+        "exact-head checks pass/fail/missing",
+        "CAS publication succeeds/lease drifts"
+      ],
+      "shared_owner_contracts": [
+        "AGENTS.md Stage 2 Plan",
+        "AGENTS.md Stage 3 Implement",
+        "AGENTS.md Stage 4 Verify",
+        "GitHub Actions exact-head TDRP/Rust validators",
+        "Git atomic commit and expected-head ref publication"
+      ],
+      "duplicate_root_check": "No Telegram contribution-policy owner, fork/rebase runtime, second product roadmap, local-test acceptance authority, or shipping product owner is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository contribution and atomic publication governance only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Provider-neutral bounded-change and evidence-bound publication governance",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Every retry/recovery rereads the live head/ref/tree/blob/upstream lease and exact-head evidence; chat memory, local branch history and prior green runs cannot authorize a new publication.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CONTRIBUTING-CHANGE-GOVERNANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CONTRIBUTING-ATOMIC-SCOPE-001",
+        "ORA-TDRP-CONTRIBUTING-CHANGE-CLARITY-TEST-001",
+        "ORA-TDRP-CONTRIBUTING-PROVENANCE-SAFE-PUBLICATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CONTRIBUTING-NO-UPSTREAM-BRANCH-COMMAND-AUTHORITY-001",
+        "INV-TDRP-CONTRIBUTING-NO-TELEGRAM-PRODUCT-POLICY-IMPORT-001",
+        "INV-TDRP-CONTRIBUTING-NO-LOCAL-TEST-AUTHORITY-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CONTRIBUTING-ATOMIC-CHANGE-001",
+        "CONTRACT-TDRP-CONTRIBUTING-DIFF-HYGIENE-001",
+        "CONTRACT-TDRP-CONTRIBUTING-COMMIT-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CONTRIBUTING-STALE-BASE-001",
+        "FAULT-TDRP-CONTRIBUTING-UNRELATED-DIFF-001",
+        "FAULT-TDRP-CONTRIBUTING-UNSAFE-FORCE-PUSH-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CONTRIBUTING-CAS-PUBLICATION-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-CONTRIBUTING-NO-TELEGRAM-WORKFLOW-OWNER-001",
+        "REG-TDRP-CONTRIBUTING-NO-PRODUCT-POLICY-REGRESSION-001"
+      ],
+      "release_gate_ids": [],
+      "test_fixture_ids": [
+        "locked CONTRIBUTING.md + parent exact-head AGENTS/PR/ref/tree/blob/upstream lease + TDRP/Rust artifacts"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "release_gate_status": "open",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact upstream CONTRIBUTING.md SHA is retained as source provenance. Telegram branding, project links, feature/UI/translation policy and master/rebase/squash/force-push instructions are not copied as Fabushi product identity, roadmap or publication authority.",
+      "notes": "Strict index 71 closes only .github/CONTRIBUTING.md. Counters become unknown=16232 unread=16207 omitted=0 responsibilities=89. Linked README/help/translation destinations and issue-template files remain independent inventory entries at their own source dispositions. Next strict root index 72 .github/ISSUE_TEMPLATE/BUG_REPORT.yml@847b56e543fc28586ad281640218dfe8954d8bee. Closure flags remain false.",
       "test_execution_evidence": []
     }
   ]
