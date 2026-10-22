@@ -24429,7 +24429,8 @@
       ],
       "fabushi_target_symbols": [
         "Repository defect-intake adapter governance",
-        "FQT-DEF-001 Record / Closure"
+        "## Record",
+        "## Closure/flaky"
       ],
       "target_language": "Repository governance / structured defect evidence intake",
       "language_rationale": "The source is declarative repository issue-form metadata, not shipping C++ product behavior. Applicable fields map to existing defect/evidence governance; provider YAML and Telegram diagnostic routes remain adapter provenance.",
