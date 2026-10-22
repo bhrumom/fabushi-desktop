@@ -161,6 +161,13 @@ Repository feature-request forms are optional proposal adapters into the canonic
 
 Provider field syntax, labels, emoji and Telegram product/roadmap language are source-specific provenance, not Fabushi policy. Submission does not establish priority, scope, owner, commitment, release target, implementation completeness or acceptance; rejection or deferral does not make an applicable source responsibility N/A. Context and screenshots must be minimized and redacted. An issue form must not become a second roadmap, backlog, spec, product owner or acceptance authority, and a missing or disabled form cannot be interpreted as absence of a product need.
 
+
+##### Repository issue-intake routing adapter governance
+
+Repository issue configuration is an optional routing adapter over the canonical defect and product-proposal lifecycles. Ambiguous blank issues may be disabled when typed defect/proposal intake exists. Every contact link or alternate route must resolve to a live canonical owner or service, state what belongs there, preserve authentication/authorization and privacy boundaries, and retain enough provenance to return misrouted work without losing the report. Routing never proves a defect invalid, a proposal rejected, a support outcome complete, or an applicable source responsibility unnecessary.
+
+Provider YAML, labels, emoji, Telegram brands, mobile/UI/translation/account/group-chat URLs, and source-specific refusal copy are provenance only. Fabushi routes account/login concerns through canonical Identity/Account support, privacy/settings concerns through existing Settings/Permission owners, defects through FQT-DEF-001, and product proposals through the durable Discover → Spec → Architecture/Plan lifecycle. An external link must not become a second support product, identity owner, issue store, roadmap or acceptance authority; a disabled blank form cannot suppress security, accessibility, privacy, data-loss or release-critical reports.
+
 #### Stage 4 — Verify
 - Execute or inspect the verification required by the spec and repository workflow.
 - Verify the exact source revision being accepted.

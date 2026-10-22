@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
-  "target_commit": "766545243a9cfab9429a08f2491ab7bbe70cff06",
+  "target_commit": "1c21f76f69373b938b819ac379eeddfac7bb6868",
   "coverage": {
     "source_entries_total": 16306,
-    "unknown": 16230,
-    "unread": 16205,
+    "unknown": 16229,
+    "unread": 16204,
     "omitted": 0,
-    "responsibilities_total": 91,
+    "responsibilities_total": 92,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -24821,6 +24821,247 @@
       "reviewer": null,
       "license_and_provenance": "Exact upstream FEATURE_REQUEST.yml SHA is retained as provenance. Telegram branding, labels, emoji and generic product/roadmap wording are not copied as Fabushi roadmap, priority, commitment or acceptance policy.",
       "notes": "Strict index 73 closes only .github/ISSUE_TEMPLATE/FEATURE_REQUEST.yml. Counters become unknown=16230 unread=16205 omitted=0 responsibilities=91. Actual feature implementation, product surfaces and issue routing remain independent inventory entries. Next strict root index 74 .github/ISSUE_TEMPLATE/config.yml@1b864704be6a3e3aafdb1e02519bec84886942ce. Closure flags remain false.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_path": ".github/ISSUE_TEMPLATE/config.yml",
+      "source_blob_sha": "1b864704be6a3e3aafdb1e02519bec84886942ce",
+      "source_kind": "repository_issue_intake_routing_config",
+      "module_id": "tdesktop.github.issue_template.config",
+      "responsibility_id": "TDRP-R9-ISSUE-INTAKE-ROUTING-001",
+      "source_symbols": [
+        "blank_issues_enabled: false",
+        "Mobile apps, UI/UX Design, or Missing Features",
+        "I found a typo or translation error",
+        "My account is banned / I can't log in",
+        "I just want to ask a question"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-TYPED-ISSUE-ROUTING",
+        "CAP-CANONICAL-SUPPORT-OWNER-ROUTING"
+      ],
+      "dependency_ids": [
+        "AGENTS.md@3ff8ce34d6641117b90fa1925cae711fb51410ba#repository issue intake",
+        "projects/fabushi-communication-platform/SOURCE_OF_TRUTH.md@283858bb70bab14e240da781a20e749ed1f1359e#current existing owner first",
+        "projects/fabushi-communication-platform/architecture-map.md@77a314c1c982da3aa85bb65165d80468b2663db3#identity/auth/settings/privacy/routing",
+        "projects/fabushi-communication-platform/quality/defect-regression-policy.md@b31ecd424cac2abf8a2322e2996bb1b53c561378#FQT-DEF-001"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/issue-intake-routing-complete-read.md",
+      "behavior_contract": "Disable ambiguous blank issue creation when typed intake exists and route each alternate concern to a live canonical owner or support service with explicit scope, preserved provenance and safe return of misrouted work; routing must not become closure, rejection, acceptance, identity ownership or suppression of critical reports.",
+      "state_machine": "open repository issue entry -> offer typed defect/proposal paths and explicit alternate routes -> classify concern by canonical domain owner -> validate route availability/auth/privacy scope -> transfer with provenance or return misrouted report -> canonical owner performs its own lifecycle -> repository record remains open or closes only under that owner evidence, never merely because a link was shown",
+      "side_effects": [
+        "May disable untyped blank issue creation while preserving typed defect/proposal paths.",
+        "May navigate a reporter to a live canonical support or domain owner.",
+        "May return or reclassify a misrouted report without losing source evidence.",
+        "Must not mutate product/account state, infer issue validity, close records, grant support access or suppress critical reports."
+      ],
+      "failure_cases": [
+        "blank issues are disabled without an accessible typed route for a valid concern",
+        "contact link is stale, unavailable, unauthenticated or points to a non-canonical owner",
+        "routing loses report content, source provenance or reporter-visible recovery path",
+        "account/login concern creates a second identity or account-support truth",
+        "external translation/mobile/UI/group route is imported as Fabushi product architecture",
+        "showing a link is treated as defect closure, proposal rejection or acceptance",
+        "security, privacy, accessibility, data-loss or release-critical reports are suppressed by route policy"
+      ],
+      "ui_disposition": "Repository issue-entry routing adapter only; not a shipping Fabushi product surface.",
+      "non_ui_responsibilities": [
+        "typed issue-entry requirement",
+        "canonical domain/support owner routing",
+        "route availability and scope validation",
+        "provenance-preserving transfer and return",
+        "critical-report non-suppression"
+      ],
+      "platform_delta": "Telegram hard-codes its bugs portal, translations portal, web account support and public group chat. Fabushi retains only typed routing and canonical-owner semantics; actual account, settings/privacy, defect, proposal and support endpoints are current Fabushi owners/services and provider YAML remains replaceable provenance.",
+      "existing_owner_candidates": [
+        "AGENTS.md repository defect/proposal intake governance (selected)",
+        "communication-platform Source of Truth current-existing-owner-first rule (selected)",
+        "architecture-map canonical identity/auth and settings/privacy owners (selected)",
+        "provider contact_links as durable support topology (rejected)",
+        "new Telegram support/router product (rejected)"
+      ],
+      "existing_owner": "Root AGENTS.md typed defect/proposal intake governance plus canonical Identity/Account, Settings/Permission, quality and domain-support owners selected through the current-existing-owner-first rule",
+      "rejected_existing_owners": [
+        "Provider contact links cannot own durable support topology, account state, issue validity or closure.",
+        "A public group chat or branded external portal cannot become a Fabushi support or product owner.",
+        "Issue configuration cannot replace canonical defect, proposal, identity, privacy or release evidence lifecycles."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/SOURCE_OF_TRUTH.md",
+        "projects/fabushi-communication-platform/architecture-map.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository issue-intake routing adapter governance",
+        "##### Repository defect-intake adapter governance",
+        "##### Repository feature-request intake adapter governance",
+        "current existing owner first",
+        "identity/auth service",
+        "settings/privacy"
+      ],
+      "target_language": "Repository governance / typed issue and canonical support-owner routing policy",
+      "language_rationale": "The source is provider issue-configuration metadata, not shipping C++ product behavior. Applicable routing responsibilities belong to durable repository governance and existing domain/support owners; URLs/copy remain adapters.",
+      "command_event_contracts": [
+        "untyped blank issue creation may be disabled only when valid typed intake remains reachable",
+        "each alternate route names its scope and resolves to a live canonical owner/service",
+        "routing preserves report provenance and a return/reclassification path",
+        "account/login, settings/privacy, defect and proposal concerns retain their canonical owners",
+        "showing or following a route cannot establish closure, rejection, implementation or acceptance",
+        "security/privacy/accessibility/data-loss/release-critical reports remain reportable regardless of routing policy"
+      ],
+      "state_owner": "Canonical defect/proposal records and actual Identity/Account, Settings/Permission or domain-support services own state; provider config and contact links are non-authoritative routing metadata.",
+      "lifecycle_owner": "Existing typed defect/proposal intake followed by the selected canonical owner lifecycle; route configuration only classifies and transfers, while evidence-based close/reject/accept decisions remain downstream.",
+      "persistence_and_restart": "A resumed routing action reloads live issue configuration, canonical owner/service availability and the durable report record; browser navigation, stale URLs and chat membership are not canonical state.",
+      "concurrency_and_cancellation": "Concurrent reports may route independently and duplicate correlation remains with canonical owners. Cancelled navigation or an unavailable route leaves the report recoverable and cannot close or discard it.",
+      "security_boundary": "Routing must not leak issue content, account identifiers, secrets or personal data to public/external channels. Each destination must enforce its own authentication/authorization and provider links grant no product or repo authority.",
+      "network_service_dependencies": [
+        "GitHub Issues or equivalent typed repository intake service when enabled",
+        "Live Fabushi account/support/domain services for routes that actually require remote handling"
+      ],
+      "service_owner": "Existing repository intake plus canonical Fabushi domain/support owners; provider links are replaceable adapters",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "policy-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required.",
+        "Recursive source disposition remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "Strict74 .github/ISSUE_TEMPLATE/config.yml@1b864704be6a3e3aafdb1e02519bec84886942ce fully read: 14 lines / 753 bytes.",
+        "The source disables blank issues and exposes four Telegram-specific external routes; exact current Fabushi has no parallel ISSUE_TEMPLATE/config owner.",
+        "AGENTS.md@3ff8ce34d6641117b90fa1925cae711fb51410ba already owns typed defect/proposal intake; Source of Truth@283858bb70bab14e240da781a20e749ed1f1359e requires current-existing-owner-first; architecture-map@77a314c1c982da3aa85bb65165d80468b2663db3 identifies canonical identity/auth and settings/privacy owners.",
+        "Parent strict73 exact-head TDRP run 39739960113 success 61/61: authority 12408951517 sha256:3ba9c59cfb641c431ca8c097facb20166f183be4e937daf655c25a7bb9e1f5d5; closure 12409057645 sha256:eaf5f6ac35899eae4214db6538252a2da976e07c711c6a4ec84d06714854dc0f; reachability 12409072729 sha256:4c9ee9478f2d7902cc2d2d04975278efd0a102b50b2e266730dd6287f5cf70b0.",
+        "Parent strict73 exact-head Rust run 39739959983 success 6/6: artifact 12408244214 sha256:cae0d85b0f3ac102f7fe277805778d0337ecdb2973359b6581a95c65445db2fd."
+      ],
+      "target_commit": "1c21f76f69373b938b819ac379eeddfac7bb6868",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository intake and canonical domain/support ownership",
+      "composition_slot": "Typed issue entry and alternate-route classification before canonical owner lifecycle",
+      "capability_component": "Provider-neutral typed intake, owner routing and critical-report non-suppression contract",
+      "variation_axes": [
+        "typed defect/typed proposal/alternate support concern",
+        "route live/stale/unavailable",
+        "authenticated/private/public destination",
+        "correctly routed/misrouted/duplicate report",
+        "normal/critical security-privacy-accessibility-data-loss report"
+      ],
+      "shared_owner_contracts": [
+        "AGENTS.md repository defect-intake governance",
+        "AGENTS.md repository feature-request governance",
+        "communication-platform current-existing-owner-first rule",
+        "canonical Identity/Account and Settings/Permission owners",
+        "FQT-DEF-001 and durable product Spec/Task lifecycle"
+      ],
+      "duplicate_root_check": "No Telegram support product, second issue store, identity/account owner, translations/mobile app, public-chat support root, roadmap or acceptance gate is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository issue-entry routing only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Optional repository issue configuration and contact-link adapter",
+      "route_contract": "typed issue entry -> classify concern -> canonical owner/service -> provenance-preserving return or downstream lifecycle",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Provider issue-entry behavior; not a shipping Fabushi responsive contract.",
+      "accessibility_contract": "Typed issue and alternate-route links must remain keyboard/screen-reader operable with unambiguous names and destinations.",
+      "keyboard_contract": "Provider default issue-entry keyboard behavior only; no product keyboard owner.",
+      "state_continuity_contract": "Canonical continuity lives in the durable report and destination owner state; closing a tab, failed navigation or changed provider link cannot erase or advance issue status.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Provider emoji are provenance only.",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-ISSUE-INTAKE-ROUTING-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-ISSUE-ROUTING-TYPED-ENTRY-001",
+        "ORA-TDRP-ISSUE-ROUTING-CANONICAL-OWNER-001",
+        "ORA-TDRP-ISSUE-ROUTING-PROVENANCE-RETURN-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-ISSUE-ROUTING-NO-LINK-AS-CLOSURE-001",
+        "INV-TDRP-ISSUE-ROUTING-NO-SECOND-SUPPORT-ROOT-001",
+        "INV-TDRP-ISSUE-ROUTING-CRITICAL-REPORTS-REMAIN-OPEN-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-ISSUE-ROUTING-TYPED-PATHS-001",
+        "CONTRACT-TDRP-ISSUE-ROUTING-LIVE-DESTINATION-001",
+        "CONTRACT-TDRP-ISSUE-ROUTING-RETURN-PATH-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [
+        "A11Y-TDRP-ISSUE-ROUTING-LINK-NAMES-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-ISSUE-ROUTING-STALE-LINK-001",
+        "FAULT-TDRP-ISSUE-ROUTING-MISROUTED-REPORT-001",
+        "FAULT-TDRP-ISSUE-ROUTING-NO-TYPED-FALLBACK-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-ISSUE-ROUTING-EXTERNAL-DATA-BOUNDARY-001",
+        "SEC-TDRP-ISSUE-ROUTING-AUTHZ-DESTINATION-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-ISSUE-ROUTING-NO-TELEGRAM-SUPPORT-OWNER-001",
+        "REG-TDRP-ISSUE-ROUTING-NO-CRITICAL-REPORT-SUPPRESSION-001"
+      ],
+      "release_gate_ids": [],
+      "test_fixture_ids": [
+        "locked config.yml + parent exact-head intake/owner/PR/ref/tree/blob/upstream lease + TDRP/Rust artifacts"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "release_gate_status": "open",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact upstream config.yml SHA is retained as provenance. Telegram URLs, product categories, support topology, branding, emoji and refusal copy are not copied as Fabushi domain ownership or product policy.",
+      "notes": "Strict index 74 closes only .github/ISSUE_TEMPLATE/config.yml. Counters become unknown=16229 unread=16204 omitted=0 responsibilities=92. Actual domain services, support surfaces and issue-form files remain independent inventory entries. Next strict root index 75 .github/dependabot.yml@5ace4600a1f26e6892982f3e2f069ebfab108d87. Closure flags remain false.",
       "test_execution_evidence": []
     }
   ]
