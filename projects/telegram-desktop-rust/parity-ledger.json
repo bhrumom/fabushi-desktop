@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
-  "target_commit": "7d81d55c7de65566dd2b8a2f62bc77ba28a10bd2",
+  "target_commit": "1be25d01d4c235ec38461db748cb600e155e58eb",
   "coverage": {
     "source_entries_total": 16306,
-    "unknown": 16247,
-    "unread": 16222,
+    "unknown": 16246,
+    "unread": 16221,
     "omitted": 0,
-    "responsibilities_total": 74,
+    "responsibilities_total": 75,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -20608,6 +20608,248 @@
       "reviewer": null,
       "license_and_provenance": "Exact upstream rebase policy read from locked live-dev blob and adapted source-neutrally; no source-specific runtime copied.",
       "notes": "Strict index 56 closes only .agents/skills/rebase/SKILL.md. Counters unknown=16247 unread=16222 omitted=0 responsibilities=74. Next index 57 .clang-tidy@5610bd13664ca77549993def241eb3edaffeff7a. Closure flags remain false.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_path": ".clang-tidy",
+      "source_blob_sha": "5610bd13664ca77549993def241eb3edaffeff7a",
+      "source_kind": "repository_cpp_static_analysis_configuration",
+      "module_id": "tdesktop.repository.clang-tidy",
+      "responsibility_id": "TDRP-R9-CLANG-TIDY-SAFETY-MIGRATION-001",
+      "source_symbols": [
+        "Checks",
+        "WarningsAsErrors",
+        "bugprone-unsafe-functions.CustomFunctions",
+        "HeaderFilterRegex",
+        "qMin",
+        "qMax",
+        "qAbs",
+        "qBound",
+        "qSwap",
+        "qMakePair",
+        "qExchange",
+        "qAsConst",
+        "qFabs",
+        "qSin",
+        "qCos",
+        "qTan",
+        "qAcos",
+        "qAsin",
+        "qAtan",
+        "qAtan2",
+        "qSqrt",
+        "qLn",
+        "qExp",
+        "qPow",
+        "qHypot",
+        "qIsNaN",
+        "qIsInf",
+        "qIsFinite",
+        "qPopulationCount",
+        "qCountLeadingZeroBits",
+        "qCountTrailingZeroBits",
+        "qCeil",
+        "qFloor",
+        "qRound"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-STATIC-ANALYSIS",
+        "CAP-SOURCE-SAFETY-MIGRATION",
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE"
+      ],
+      "dependency_ids": [
+        "clang-tidy bugprone-unsafe-functions semantics",
+        "Qt helper API semantics",
+        "C++ standard library replacement semantics",
+        "GitHub Actions exact-head verification boundary"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/clang-tidy-complete-read.md",
+      "behavior_contract": "Narrow C++ static-analysis policy enabling only bugprone-unsafe-functions as warning-as-error, with exact Qt-helper replacement semantics and an explicit no-header/no-submodule finding boundary.",
+      "state_machine": "locked config -> enumerate enabled checks and fail policy -> interpret each custom replacement semantically -> preserve owned-source filter boundary -> map applicable safety intent into target-language quality gates -> exact-head Actions evidence",
+      "side_effects": [
+        "Changes developer static-analysis diagnostics when applied to upstream C++ source.",
+        "Does not create product/runtime state, network state, user data, or a Fabushi C++ runtime."
+      ],
+      "failure_cases": [
+        "Enabled check or warning-as-error policy is omitted.",
+        "Qt helper replacement is treated as blind textual substitution despite argument/type/rounding differences.",
+        "Header/submodule filtering is misread as proof of safety.",
+        "A new C++/Qt shipping owner is created solely to preserve the checker.",
+        "Local analyzer output is claimed as Fabushi acceptance instead of exact-head Actions."
+      ],
+      "ui_disposition": "Not applicable; repository static-analysis configuration only.",
+      "non_ui_responsibilities": [
+        "Exact enabled-check set",
+        "Warnings-as-errors boundary",
+        "Semantic helper replacement mapping",
+        "Header/submodule finding scope",
+        "Target-language quality-intent adaptation"
+      ],
+      "platform_delta": "C++/Qt-specific checker configuration maps to Fabushi source-neutral quality governance; applicable safety semantics are preserved in Rust/TypeScript/platform verification without introducing a C++ runtime.",
+      "existing_owner_candidates": [
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Repository source static-analysis migration qualification",
+        "Repository quality-health evidence governance",
+        "Shipping runtime owners (rejected)"
+      ],
+      "existing_owner": "Fabushi repository quality/test-evidence governance",
+      "rejected_existing_owners": [
+        "Shipping product owners do not own developer C++ lint configuration.",
+        "A new C++/Qt runtime would violate target architecture and existing-owner-first.",
+        "Upstream helper spellings are migration provenance, not a Fabushi product API."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository source static-analysis migration qualification"
+      ],
+      "target_language": "Markdown quality governance / GitHub Actions evidence",
+      "language_rationale": "The source entry is toolchain policy. Its applicable safety intent is retained by existing cross-language quality governance rather than shipping C++ code.",
+      "command_event_contracts": [
+        "locked analyzer config -> exact check/fail policy inventory",
+        "custom helper rule -> typed semantic replacement requirement",
+        "header/submodule filter -> explicit ownership scope",
+        "mapping commit -> exact-head Actions validation"
+      ],
+      "state_owner": "Existing repository quality/test-evidence lifecycle; analyzer configuration owns no product state.",
+      "lifecycle_owner": "Fabushi Test Strategy and exact-head GitHub Actions evidence lifecycle.",
+      "persistence_and_restart": "No product persistence. Durable state is the locked upstream blob, dossier/ledger mapping, target quality contract, and Actions evidence.",
+      "concurrency_and_cancellation": "Not a runtime concurrency owner. Analyzer executions are evidence jobs; stale/mismatched exact-head results are non-passing.",
+      "security_boundary": "No product security authority. Unsafe-function findings inform source-quality migration only; release/security acceptance remains under existing dedicated gates.",
+      "network_service_dependencies": [
+        "GitHub Actions for exact-head executable verification"
+      ],
+      "service_owner": "Fabushi repository quality/evidence lifecycle",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "toolchain-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP Actions must validate strict index 57.",
+        "Recursive source disposition remains open; closure flags remain false."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "Full locked .clang-tidy read: 39 lines, one enabled warning-as-error check, 31 custom Qt/helper replacement entries, explicit empty HeaderFilterRegex.",
+        "Parent exact-head TDRP run 39699476395 completed success 61/61 and validates only the parent index-56 state."
+      ],
+      "target_commit": "1be25d01d4c235ec38461db748cb600e155e58eb",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository quality/test-evidence lifecycle",
+      "composition_slot": "Repository source static-analysis migration qualification",
+      "capability_component": "Source static-analysis migration policy",
+      "variation_axes": [
+        "exact vs non-exact helper replacement",
+        "typed/argument-order-sensitive replacements",
+        "owned source vs repeated header/submodule findings",
+        "source-language checker vs target-language safety intent"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi Test Strategy",
+        "GitHub Actions exact-head evidence governance"
+      ],
+      "duplicate_root_check": "No Telegram/C++/Qt static-analysis runtime or shipping owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository static analysis only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Quality/tooling",
+      "route_contract": "No shipping route",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Locked config identity plus dossier/ledger/quality contract reconstructs the mapping; no durable product state exists.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CLANG-TIDY-SAFETY-MIGRATION-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CLANG-TIDY-EXACT-CHECK-SET-001",
+        "ORA-TDRP-CLANG-TIDY-SEMANTIC-REPLACEMENT-001",
+        "ORA-TDRP-CLANG-TIDY-SCOPE-BOUNDARY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CLANG-TIDY-NO-CXX-RUNTIME-001",
+        "INV-TDRP-CLANG-TIDY-EXACT-SEMANTICS-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CLANG-TIDY-CHECK-SET-001",
+        "CONTRACT-TDRP-CLANG-TIDY-REPLACEMENT-SEMANTICS-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-CLANG-TIDY-CONFIG-001"
+      ],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "locked .clang-tidy source blob"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact .clang-tidy policy read from locked telegramdesktop/tdesktop live-dev blob; no upstream C++ or Qt runtime copied.",
+      "notes": "Strict index 57 closes only .clang-tidy. Counters become unknown=16246 unread=16221 omitted=0 responsibilities=75. Next strict root index 58 .claude/ai-workflow-adapter.md@370ff84a1ab4c080b15b601a54162b0630c4f4df. Closure flags remain false.",
       "test_execution_evidence": []
     }
   ]
