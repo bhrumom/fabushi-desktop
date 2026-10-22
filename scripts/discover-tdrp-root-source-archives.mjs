@@ -52,7 +52,11 @@ const reports=[];
 for(const item of archives){
   const bundle=path.join(temp,item.id+'.tar.gz');
   const urls=[item.url];
-  if(item.url.startsWith('https://ftp.gnu.org/pub/gnu/')) urls.push('https://ftpmirror.gnu.org/'+item.url.slice('https://ftp.gnu.org/pub/gnu/'.length));
+  if(item.url.startsWith('https://ftp.gnu.org/pub/gnu/')){
+    const relative=item.url.slice('https://ftp.gnu.org/pub/gnu/'.length);
+    urls.push('https://mirrors.kernel.org/gnu/'+relative);
+    urls.push('https://ftpmirror.gnu.org/'+relative);
+  }
   let fetchedUrl=null;
   const downloadErrors=[];
   for(const url of urls){
