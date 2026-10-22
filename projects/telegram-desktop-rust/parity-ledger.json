@@ -23259,7 +23259,7 @@
         "AGENTS.md"
       ],
       "fabushi_target_symbols": [
-        "Repository release-preparation governance under Stage 6 Integrate / Deliver"
+        "Repository release-preparation governance"
       ],
       "target_language": "Repository governance / source-neutral release preparation workflow",
       "language_rationale": "Provider wrapper over Telegram-specific changelog/version scripts maps to existing repository governance and version/package/release owners; no shipping Rust/TypeScript owner warranted.",
