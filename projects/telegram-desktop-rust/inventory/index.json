@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16306,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16238,
-    "unread_minimum": 16213,
+    "unknown_minimum": 16237,
+    "unread_minimum": 16212,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -39,7 +39,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream remains telegramdesktop/tdesktop@5c674f1f6a0f6ace55b67f8bc295138680fe588b/tree 09a421891474be0da279f44a5bf8e0dcf3bc270a. Strict index 65 .claude/commands/process-inbox.md@3bd1c22b06c735ff92cf2260bd893c9de2653f21 is fully read and mapped existing-owner-first as a Claude host invocation wrapper over the already-owned source-neutral process-inbox routing/planning, isolated inbox transaction/publication, and ordinary task/review/evidence lifecycle. Counters unknown=16,238, unread=16,213, omitted=0; baseline_identity_accepted=false and source_closure_ready=false pending fresh exact-head Actions. Next strict root index 66 .claude/commands/rebase.md@df14e750067aeac1258a92068886cd2b33f83120.",
+  "note": "Live upstream remains telegramdesktop/tdesktop@5c674f1f6a0f6ace55b67f8bc295138680fe588b/tree 09a421891474be0da279f44a5bf8e0dcf3bc270a. Strict index 66 .claude/commands/rebase.md@df14e750067aeac1258a92068886cd2b33f83120 is fully read and mapped existing-owner-first as a Claude host-native wrapper over the existing source-neutral intent-preserving branch integration/rebase governance. Counters unknown=16,237, unread=16,212, omitted=0; baseline_identity_accepted=false and source_closure_ready=false pending fresh exact-head Actions. Next strict root index 67 .claude/commands/release.md@baaa7c261db67dced2ce052c8cde016147031a7d.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,

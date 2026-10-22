@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
-  "target_commit": "3c5f80e65c726f4ada2d70492f0ddc961d6a34b6",
+  "target_commit": "36772e87ef576f1eb409dbaa1bb9817c91d0f3d1",
   "coverage": {
     "source_entries_total": 16306,
-    "unknown": 16238,
-    "unread": 16213,
+    "unknown": 16237,
+    "unread": 16212,
     "omitted": 0,
-    "responsibilities_total": 83,
+    "responsibilities_total": 84,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -22912,6 +22912,264 @@
       "reviewer": null,
       "license_and_provenance": "Exact Claude command, adapter, shared skill and helper SHAs are retained only as source provenance. Telegram/Claude naming, slash-command syntax, Agent tool spelling, local inbox/worktree paths and provider mechanics do not become Fabushi shipping product/runtime identifiers.",
       "notes": "Strict index 65 closes only .claude/commands/process-inbox.md. Counters become unknown=16238 unread=16213 omitted=0 responsibilities=83. Direct/transitive dependencies remain independent inventory rows at their own source disposition. Next strict root index 66 .claude/commands/rebase.md@df14e750067aeac1258a92068886cd2b33f83120. Closure flags remain false.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_path": ".claude/commands/rebase.md",
+      "source_blob_sha": "df14e750067aeac1258a92068886cd2b33f83120",
+      "source_kind": "repository_intent_preserving_rebase_host_command_wrapper",
+      "module_id": "tdesktop.claude.commands.rebase",
+      "responsibility_id": "TDRP-R9-CLAUDE-REBASE-COMMAND-001",
+      "source_symbols": [
+        "frontmatter description / argument-hint / allowed tools",
+        "shared rebase skill complete-read delegation",
+        "branch-integration-not-AI-queue boundary",
+        "structured ambiguity question fence",
+        "TodoWrite replay-list projection",
+        "non-interactive rebase continue / sequence-editor substitutions",
+        "no delegation for conflict-resolution decisions",
+        "session-scratchpad-only stage/report rule",
+        "$ARGUMENTS intent-aware rebase request"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-INTENT-PRESERVING-REBASE-NATIVE-INVOCATION"
+      ],
+      "dependency_ids": [
+        ".agents/skills/rebase/SKILL.md@0660dc78b26614e40d7151d1da59241b1bad5430",
+        "AGENTS.md@4f888d465d29d962542da07bcb6f6efe2b5be897#Repository intent-preserving branch integration governance",
+        "Git worktree/reflog/rebase metadata",
+        "GitHub Actions exact-head verification boundary"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/claude-rebase-command-complete-read.md",
+      "behavior_contract": "Host-native adapter over the shared intent-aware rebase workflow: resolve exact ONTO/REPLAY_BASE/OLD_TIP authority, fail closed on ambiguous ranges, dirty/foreign worktrees or unanswered semantic contradictions, keep Git non-interactive, resolve conflicts by both sides' intent, verify the rewritten series with range-diff, and never auto-push rewritten history or route the operation through the task queue.",
+      "state_machine": "request -> resolve exact ONTO/REPLAY_BASE/OLD_TIP and replay list -> preflight active-rebase/worktree/dirty-state/ref freshness -> start or resume one non-interactive rebase -> orient conflict stages and read both histories -> resolve or ask on genuine contradiction -> verify and continue -> whole-series range-diff + final log/status -> report undo path; abort only on explicit request, never auto-push",
+      "side_effects": [
+        "May rewrite only the selected current Git branch/worktree through the requested rebase.",
+        "May update Git rebase metadata and branch reflog.",
+        "May ask for explicit user decisions before ambiguous replay or genuinely contradictory behavior.",
+        "Does not create task records, mutate sibling worktrees, create backup refs, silently stash, fetch without authorization, or push/force-push."
+      ],
+      "failure_cases": [
+        "Ambiguous replay set.",
+        "Unauthorized remote refresh.",
+        "Foreign/dirty worktree.",
+        "Nested rebase.",
+        "Interactive editor hang.",
+        "Conflict sides reversed or intent not read.",
+        "Unreviewed rerere.",
+        "Unproven empty-commit skip.",
+        "Hard-conflict skip/ours-theirs/marker leakage/range-diff mismatch.",
+        "Automatic push/force-push."
+      ],
+      "ui_disposition": "Not a shipping UI capability.",
+      "non_ui_responsibilities": [
+        "Exact rebase target/replay-range authority and undo path",
+        "Worktree and dirty-state fences",
+        "Non-interactive Git mechanics",
+        "Intent-aware conflict resolution",
+        "User-decision fence",
+        "rerere and empty-commit recovery",
+        "Whole-series range-diff verification",
+        "No unauthorized fetch or auto-push"
+      ],
+      "platform_delta": "Claude host substitutions and Telegram checkout-specific compile/Windows/WSL mechanics are provenance only; Fabushi retains source-neutral branch-integration authority, conflict-intent, worktree, recovery, verification and no-auto-push responsibilities.",
+      "existing_owner_candidates": [
+        "AGENTS.md#Repository intent-preserving branch integration governance",
+        "AGENTS.md#Mandatory development lifecycle / GitHub Actions verification boundary",
+        "process-inbox/perform-task lifecycle (rejected)",
+        "Shipping product owners (rejected)",
+        "Second Git/rebase owner (rejected)"
+      ],
+      "existing_owner": "AGENTS.md source-neutral repository intent-preserving branch integration governance",
+      "rejected_existing_owners": [
+        "process-inbox/perform-task owns ordinary repository task routing, not branch integration.",
+        "Shipping Task/Automation/Agent/Coordinator/Host/Runner owns product behavior, not developer Git history integration.",
+        "Claude-specific rebase runtime would preserve provider mechanics.",
+        "Second Git/worktree publication owner would duplicate canonical repository ownership."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md"
+      ],
+      "fabushi_target_symbols": [
+        "A rebase is an Integrate/Deliver operation on one current Git worktree, not an ordinary product task, repository task queue item, or shipping runtime. Resolve the requested target and replay range to exact commits, record `OLD_TIP`, `ONTO`, and exclusive `REPLAY_BASE`, show the replay list and likely conflict surface, and stop when ambiguous interpretations would replay different commits. Remote-tracking refs are local snapshots and must not be refreshed without explicit authorization.",
+        "Branch and worktree ownership is fail-closed. Do not rebase a branch checked out in another worktree, mutate sibling worktrees, silently stash a dirty tree, create backup refs when reflog preserves the prior tip, or automatically push or force-push rewritten history. Resume or abort an already-active rebase rather than nesting another operation, and keep the operation non-interactive.",
+        "Resolve conflicts by intent, not textual side selection. For overlapping logic, orient the merge stages, read the replayed commit and surrounding series plus the competing base-side history, state both intents, and reapply the moved change in the current code shape. Review rerere-applied resolutions; skip an empty commit only after proving its intended state already exists. Never use whole-file ours/theirs selection, delete a hard hunk merely to pass, skip a hard conflict, or guess through a genuine semantic contradiction.",
+        "Verify each resolved conflict and the whole rewritten series. The completed rebase must use `git range-diff` over the original and rewritten ranges plus final branch log/status to account for every replayed or deliberately empty commit. Any executable Fabushi build/test verification runs only in exact-head GitHub Actions; upstream host-specific local compile commands are not Fabushi acceptance authority. Report the exact rebase command, `OLD_TIP` undo path, replayed/skipped commits with evidence, each conflict's competing intents and resolution, decisions, and lower-confidence results. A later force-push may be required for an already-published branch, but this workflow never performs it automatically."
+      ],
+      "target_language": "Repository governance / source-neutral Git integration workflow",
+      "language_rationale": "37-line provider wrapper over existing rebase workflow; toolchain/governance-equivalent, no shipping Rust/TypeScript owner warranted.",
+      "command_event_contracts": [
+        "onto/ref forms resolve exact replay set",
+        "continue/resume reconstruct active rebase state",
+        "abort explicitly restores prior tip",
+        "ambiguity or genuine contradiction requires user decision",
+        "published rewritten branch is reported as needing later force-push but never pushed automatically"
+      ],
+      "state_owner": "Existing current Git worktree/branch, Git rebase metadata and branch reflog.",
+      "lifecycle_owner": "Existing AGENTS.md intent-preserving branch integration lifecycle.",
+      "persistence_and_restart": "Git branch/ref state, reflog OLD_TIP and rebase metadata are authoritative; scratchpad/provider state is not.",
+      "concurrency_and_cancellation": "One current worktree owns the operation; foreign checkout, dirty state or conflicting ownership fails closed; abort is explicit.",
+      "security_boundary": "Remote-tracking refs are local snapshots until explicit fetch authorization; rewritten history is never pushed automatically.",
+      "network_service_dependencies": [
+        "Existing repository Git authority; remote fetch only with explicit authorization",
+        "GitHub Actions exact-head verification"
+      ],
+      "service_owner": "Existing repository branch-integration/evidence lifecycle",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "toolchain-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required.",
+        "Recursive source disposition remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "Strict66 rebase.md@df14e750067aeac1258a92068886cd2b33f83120 fully read: 37 lines, 1673 chars.",
+        "Shared rebase/SKILL.md@0660dc78b26614e40d7151d1da59241b1bad5430 fully read: 322 lines, 15036 chars.",
+        "AGENTS.md@4f888d465d29d962542da07bcb6f6efe2b5be897 contains four unique branch-integration owner anchors.",
+        "Parent exact-head TDRP run 39723472073 success 61/61; authority 12401894072 sha256:dff6e1754b4a8df9479720d00474acac4bb6e2fd3c8ff1fcaff6fe7ec890d0b2; closure 12402670180 sha256:16841d9012dd8ff4a902253c211d8f32c36d78be0d697b7b6db10c620ee58a70; reachability 12402053099 sha256:1f246881edf5eb9faf4ffcf80bfb6e646a7078015232525066e579bafd2cc78d.",
+        "Parent Rust run 39723472157 success 6/6; artifact 12401794170 sha256:bdddfc9b92ce59cf90ca6713327177fb0271af90118d91fa564dd081481225a9."
+      ],
+      "target_commit": "36772e87ef576f1eb409dbaa1bb9817c91d0f3d1",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi source-neutral repository development lifecycle",
+      "composition_slot": "Intent-preserving branch integration native command",
+      "capability_component": "Repository rebase invocation adapter",
+      "variation_axes": [
+        "current/named/tail rebase",
+        "start/resume/abort",
+        "clean/dirty/foreign worktree",
+        "fresh/stale ref",
+        "mechanical/semantic conflict",
+        "rerere/manual resolution",
+        "ordinary/empty commit",
+        "linear/merge replay"
+      ],
+      "shared_owner_contracts": [
+        "AGENTS.md branch-integration governance",
+        "AGENTS.md GitHub-Actions-only verification",
+        "Git/reflog recovery",
+        "GitHub Actions exact-head verification"
+      ],
+      "duplicate_root_check": "No second rebase/Git owner, task queue, product owner, Claude runtime or auto-push path.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository developer branch integration only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Host-native repository intent-preserving rebase wrapper",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Re-entry must reconstruct exact Git rebase state, ONTO/replay range and OLD_TIP before continuation.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-CLAUDE-REBASE-COMMAND-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-REBASE-COMMAND-EXACT-RANGE-001",
+        "ORA-TDRP-REBASE-COMMAND-WORKTREE-OWNERSHIP-001",
+        "ORA-TDRP-REBASE-COMMAND-INTENT-RESOLUTION-001",
+        "ORA-TDRP-REBASE-COMMAND-RANGE-DIFF-001",
+        "ORA-TDRP-REBASE-COMMAND-UNDO-PATH-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-REBASE-COMMAND-NO-SIBLING-WORKTREE-MUTATION-001",
+        "INV-TDRP-REBASE-COMMAND-NO-SILENT-STASH-001",
+        "INV-TDRP-REBASE-COMMAND-NO-BACKUP-REF-001",
+        "INV-TDRP-REBASE-COMMAND-NO-HARD-CONFLICT-SKIP-001",
+        "INV-TDRP-REBASE-COMMAND-NO-AUTO-PUSH-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-REBASE-COMMAND-SHARED-SKILL-001",
+        "CONTRACT-TDRP-REBASE-COMMAND-NONINTERACTIVE-GIT-001",
+        "CONTRACT-TDRP-REBASE-COMMAND-USER-DECISION-FENCE-001",
+        "CONTRACT-TDRP-REBASE-COMMAND-WHOLE-SERIES-VERIFY-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-REBASE-COMMAND-ACTIVE-REBASE-RESUME-001",
+        "FAULT-TDRP-REBASE-COMMAND-RERERE-REVIEW-001",
+        "FAULT-TDRP-REBASE-COMMAND-EMPTY-COMMIT-PROOF-001",
+        "FAULT-TDRP-REBASE-COMMAND-RANGE-MISMATCH-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-REBASE-COMMAND-NO-UNAUTHORIZED-FETCH-001",
+        "SEC-TDRP-REBASE-COMMAND-NO-FORCE-PUSH-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-REBASE-COMMAND-NO-TASK-QUEUE-ROUTING-001",
+        "REG-TDRP-REBASE-COMMAND-NO-SECOND-GIT-OWNER-001"
+      ],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "locked rebase command + shared rebase skill + AGENTS branch-integration owner"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact Claude command and shared skill SHAs retained only as source provenance.",
+      "notes": "Strict index 66 closes only .claude/commands/rebase.md. Counters become unknown=16237 unread=16212 omitted=0 responsibilities=84. Next strict root index 67 .claude/commands/release.md@baaa7c261db67dced2ce052c8cde016147031a7d. Closure flags remain false.",
       "test_execution_evidence": []
     }
   ]
