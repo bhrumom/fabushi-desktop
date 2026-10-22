@@ -48,6 +48,7 @@ fn grant_and_broker_identity_fences_are_explicit() {
     assert!(source.contains("Some(grant.grant_id.as_str())"));
     assert!(source.contains("Some(credential.device_id.as_str())"));
     assert!(source.contains("Some(grant.cell_id.as_str())"));
+    assert!(source.contains("Some(started.cell_id.as_str())"));
     assert!(source.contains("Some(grant.generation)"));
     assert!(source.contains("Some(started.generation)"));
     assert!(source.contains("Some(true)"));

@@ -475,6 +475,7 @@ impl RemoteNetworkEnrollmentStarted {
 pub struct RemoteNetworkEnrollmentCompleted {
     pub grant_id: String,
     pub device_id: String,
+    pub cell_id: String,
     pub node_id: String,
     pub generation: i64,
     pub reconciled: bool,
@@ -1311,6 +1312,7 @@ impl FabushiNetworkEnrollmentBrokerClient {
             .ok_or(RemoteComputerTargetError::InvalidResponse)?;
         if enrollment.get("grantId").and_then(Value::as_str) != Some(started.grant_id.as_str())
             || enrollment.get("deviceId").and_then(Value::as_str) != Some(started.device_id.as_str())
+            || enrollment.get("cellId").and_then(Value::as_str) != Some(started.cell_id.as_str())
             || enrollment.get("generation").and_then(Value::as_i64) != Some(started.generation)
             || enrollment.get("completed").and_then(Value::as_bool) != Some(true)
         {
@@ -1319,6 +1321,7 @@ impl FabushiNetworkEnrollmentBrokerClient {
         Ok(RemoteNetworkEnrollmentCompleted {
             grant_id: started.grant_id.clone(),
             device_id: started.device_id.clone(),
+            cell_id: started.cell_id.clone(),
             node_id: required_text(&Value::Object(enrollment.clone()), "nodeId")?,
             generation: started.generation,
             reconciled: enrollment.get("reconciled").and_then(Value::as_bool).unwrap_or(false),
