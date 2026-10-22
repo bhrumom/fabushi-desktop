@@ -26401,17 +26401,10 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "AGENTS.md",
-        ".github/workflows/release-macos-main.yml",
-        "projects/fabushi-communication-platform/quality/release-entry-exit-criteria.md",
-        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+        ".github/workflows/release-macos-main.yml"
       ],
       "fabushi_target_symbols": [
-        "Repository release-preparation governance",
-        "Repository release-support container provenance governance",
-        "Package macOS installer from exact source",
-        "FQT-REL-001",
-        "FQT-EVID-001"
+        "Package macOS installer from exact source"
       ],
       "target_language": "Repository governance / GitHub Actions release adapter",
       "language_rationale": "The source is CI/release orchestration. Its applicable behavior is source-neutral exact-tip/version/build/sign/package/artifact/publish provenance already owned by Fabushi repository policy and release workflows, not Rust/React shipping product code.",
@@ -26585,7 +26578,7 @@
       "acceptance_reviewer": null,
       "reviewer": null,
       "license_and_provenance": "Exact upstream canary.yml blob retained. Telegram public/private canary channel metadata, Bot API transport, KeyLocker/Azure provider names, binary names, update file names and CANARY_ALLOW_UNSIGNED remain source provenance only.",
-      "notes": "Strict index 80 closes only .github/workflows/canary.yml. Direct build/sign/publish scripts remain independent inventory entries and were SHA-anchored here only as dependencies. Counters become unknown=16223 unread=16198 omitted=0 responsibilities=98. Next strict root index 81 .github/workflows/cant-reproduce.yml@8e20e07349b5b43277f5371a4e931066bece4186. Windows/Linux Fabushi packaged release evidence remains open; baseline/source closure flags remain false.",
+      "notes": "Strict index 80 closes only .github/workflows/canary.yml. Direct build/sign/publish scripts remain independent inventory entries and were SHA-anchored here only as dependencies. Counters become unknown=16223 unread=16198 omitted=0 responsibilities=98. Next strict root index 81 .github/workflows/cant-reproduce.yml@8e20e07349b5b43277f5371a4e931066bece4186. Child exact-head run 39761026486 exposed a target-owner-key collision with strict76; strict80 target anchoring is narrowed to the existing release-macos-main execution owner without changing responsibility/disposition. Windows/Linux Fabushi packaged release evidence remains open; baseline/source closure flags remain false.",
       "test_execution_evidence": []
     }
   ]
