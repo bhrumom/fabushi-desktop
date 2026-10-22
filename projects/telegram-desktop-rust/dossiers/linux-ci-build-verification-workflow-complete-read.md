@@ -37,3 +37,6 @@ Mutable action tags, the online Poetry installer, unchecksummed ccache release a
 - Security: `SEC-TDRP-LINUX-CI-SUPPLY-CHAIN-001`, `SEC-TDRP-LINUX-CI-RUNNER-BOUNDARY-001`
 
 Closing strict index 86 changes counters to unknown=16,282, unread=16,257, omitted=0, responsibilities=104. `baseline_identity_accepted=false` and `source_closure_ready=false`. Next strict root is index 87 `.github/workflows/lock.yml@7904e79591f79a4ea61c0dc194c189f048bf5c67`.
+
+## Live build-input rebaseline 52a47639d9aa
+The workflow source `.github/workflows/linux.yml@dbedd23593c5ea66ff9b8b880bda6a8bc5a4cc55` is unchanged. Its centos_env input is now `Dockerfile@3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2` and `desktop-app/patches@845a383f7abe8e44f92dfdcd566d603066ec2696`; the repin adds the Qt RHI stale-access guard only. The existing exact-head GitHub-Actions owner, cache non-authority rule, supply-chain boundary and release-evidence separation remain unchanged.

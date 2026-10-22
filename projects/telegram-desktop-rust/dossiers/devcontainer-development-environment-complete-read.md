@@ -25,3 +25,6 @@ Closing strict index 69 changes counters to unknown=16,234, unread=16,209, omitt
 
 ## Live build-input rebaseline cade9c628cc62
 The source responsibility and devcontainer owner remain unchanged. Its declared centos_env build-image dependency is now backed by `Telegram/build/docker/centos_env/Dockerfile@0105fe2123efdc2fc361e546fdbacb6305acbfe6`; the only intervening upstream change is the immutable `desktop-app/patches` pin advancing to `1f43f0f1d5ba8643ea45bbd8404782d4d840e421`. This refreshes dependency provenance only and does not convert the optional development environment into build or acceptance authority.
+
+## Live build-input rebaseline 52a47639d9aa
+The source responsibility and devcontainer owner remain unchanged. Its declared centos_env build-image dependency is now backed by `Telegram/build/docker/centos_env/Dockerfile@3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2`; `desktop-app/patches` advanced linearly from `1f43f0f1d5ba8643ea45bbd8404782d4d840e421` to `845a383f7abe8e44f92dfdcd566d603066ec2696` by adding the Qt RHI stale-access guard patch. This refreshes dependency provenance only and does not convert the optional development environment into build or acceptance authority.

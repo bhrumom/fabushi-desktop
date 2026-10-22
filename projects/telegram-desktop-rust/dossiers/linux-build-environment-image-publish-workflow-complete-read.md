@@ -59,3 +59,6 @@ The first strict84 publication used inaccurate shorthand for the trigger and run
 
 ## Live build-input rebaseline cade9c628cc62
 The workflow source `.github/workflows/docker.yml@cba00688d935d50454bfb891fc37e001626cf9a0` is unchanged. Its generated build-input dependency is now `Telegram/build/docker/centos_env/Dockerfile@0105fe2123efdc2fc361e546fdbacb6305acbfe6`, with `desktop-app/patches` advanced linearly from `97b2b514c76666b24b43b31e2aacfa703b6aa6b2` to `1f43f0f1d5ba8643ea45bbd8404782d4d840e421`. Build-container provenance/owner disposition is unchanged; the mutable published image remains non-authoritative and fresh exact-head Actions are required for the new upstream lease.
+
+## Live build-input rebaseline 52a47639d9aa
+The workflow source `.github/workflows/docker.yml@cba00688d935d50454bfb891fc37e001626cf9a0` is unchanged. Its generated build-input dependency is now `Telegram/build/docker/centos_env/Dockerfile@3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2`, with `desktop-app/patches` advanced linearly from `1f43f0f1d5ba8643ea45bbd8404782d4d840e421` to `845a383f7abe8e44f92dfdcd566d603066ec2696`. Build-container provenance/owner disposition is unchanged; the mutable published image remains non-authoritative and fresh exact-head Actions are required for the new upstream lease.
