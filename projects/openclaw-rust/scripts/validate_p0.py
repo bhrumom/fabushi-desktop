@@ -205,6 +205,13 @@ if "--negative-probes" in sys.argv:
         record["responsibility_ids"] = old_refs
     print(f"OCRM G02 negative probes: {', '.join(probes)} rejected")
 
+shard_manifest = ROOT / "inventory/shards/manifest.json"
+if shard_manifest.exists():
+    subprocess.run(
+        ["python3", str(ROOT / "scripts/shard_inventory.py"), "--verify", str(EVIDENCE / "upstream-recursive-inventory.json")],
+        check=True,
+    )
+
 receipt_files = [
     ROOT / "upstream.lock.json", ROOT / "inventory/index.json", ROOT / "parity-ledger.json",
     ROOT / "requirements-traceability-matrix.json",
@@ -212,8 +219,11 @@ receipt_files = [
     ROOT / "schemas/parity-ledger.schema.json",
     ROOT / "schemas/requirements-traceability-matrix.schema.json",
     ROOT / "scripts/expand_inventory.py", ROOT / "scripts/validate_p0.py",
+    ROOT / "scripts/shard_inventory.py",
     Path(".github/workflows/ocrm-p0-authority.yml"),
 ]
+if shard_manifest.exists():
+    receipt_files.extend([shard_manifest, ROOT / "dependencies/source-manifest-inputs.json"])
 input_hashes = {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in receipt_files}
 input_hashes["upstream-recursive-inventory.json"] = manifest_sha
 receipt = {

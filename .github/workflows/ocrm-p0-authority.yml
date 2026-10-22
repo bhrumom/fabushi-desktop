@@ -139,3 +139,70 @@ jobs:
           path: ocrm-evidence/
           if-no-files-found: error
           retention-days: 30
+
+  persist-verified-inventory:
+    # P0 source-derived files only; never overwrite a moved PR head.
+    needs: source-authority
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.number == 169 && github.event.pull_request.head.repo.full_name == 'bhrumom/fabushi-desktop' && github.event.pull_request.head.ref == 'ocrm/p0-source-authority-20261022' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - name: Checkout guarded original subject
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+
+      - name: Download this exact-subject verified canonical manifest
+        uses: actions/download-artifact@v4
+        with:
+          name: ocrm-p0-authority-${{ github.event.pull_request.head.sha }}
+          path: ocrm-evidence
+
+      - name: Materialize deterministic shards and dependency declarations in Actions
+        shell: bash
+        env:
+          EXPECTED_SUBJECT: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SUBJECT"
+          python3 - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          root=Path("ocrm-evidence")
+          summary=json.loads((root/"authority-summary.json").read_text())
+          receipt=json.loads((root/"p0-structural-receipt.json").read_text())
+          assert summary["subject_commit"] == receipt["subject_commit"] == os.environ["EXPECTED_SUBJECT"]
+          assert receipt["gate_verdicts"]["OCRM-G01-tracked-tree"] == "success"
+          assert receipt["gate_verdicts"]["OCRM-G02-structural"] == "success"
+          raw=(root/"upstream-recursive-inventory.json").read_bytes()
+          expected=(root/"upstream-recursive-inventory.sha256").read_text().strip()
+          assert hashlib.sha256(raw).hexdigest() == expected == summary["canonical_inventory_sha256"]
+          assert summary["canonical_file_records"] == 58750
+          PY
+          python3 projects/openclaw-rust/scripts/shard_inventory.py --write ocrm-evidence/upstream-recursive-inventory.json
+
+      - name: CAS commit derived source shards to PR branch (non-force)
+        shell: bash
+        env:
+          EXPECTED_SUBJECT: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git add projects/openclaw-rust/inventory/index.json \
+                  projects/openclaw-rust/inventory/shards \
+                  projects/openclaw-rust/dependencies/source-manifest-inputs.json
+          if git diff --cached --quiet; then
+            echo "No new source-derived shard content"
+            exit 0
+          fi
+          branch="ocrm/p0-source-authority-20261022"
+          current="$(git ls-remote origin "refs/heads/$branch" | cut -f1)"
+          test "$current" = "$EXPECTED_SUBJECT" || { echo "PR lease moved: refusing derived snapshot write"; exit 1; }
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore(ocrm): persist locked canonical inventory shards and manifest inputs"
+          git push origin "HEAD:refs/heads/$branch"
+          echo "Committed source-derived shard snapshot; new commit requires its own exact-head Actions receipt"
