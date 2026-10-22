@@ -323,10 +323,10 @@
   "coverage": {
     "root_source_entries_total": 6885,
     "recursive_source_entries_total": 16371,
-    "unknown_minimum": 16283,
-    "unread_minimum": 16258,
+    "unknown_minimum": 16282,
+    "unread_minimum": 16257,
     "omitted_known": 0,
-    "note": "Live dev advanced linearly by 1 commit cade9c628cc62a777d13ae4c449c91101a6c823b -> 5380230173ea60a5222aa9d977f074dd41e76139 (tree bd6a23621d2a6d69bd986d3a0f01514c2f2cf96b), adding Telegram/Resources/icons/chat/large_zip.svg and modifying send_files_box.cpp, chat_helpers.style, history_drag_area.cpp and history_drag_area.h. The five delta paths had no existing parity-ledger row or dependency anchor; direct and nested gitlink pins and build-time acquisition scanner inputs are unchanged. Root/recursive non-directory counts increase by one to 6,885/16,371. Parent exact-head 661b9b1fc4e41c8dfaa20cd26489b50f649df61b TDRP run 39784881105 completed 61/61 success (authority 12428832434, closure 12428154030, reachability 12428936687) and Rust run 39784880573 completed 6/6 success (artifact 12428626537); both become historical-only after this upstream drift. Counters become recursive=16,371 unknown=16,283 unread=16,258 omitted=0 responsibilities=103; baseline_identity_accepted=false/source_closure_ready=false."
+    "note": "Live upstream dev authority remains 5380230173ea60a5222aa9d977f074dd41e76139/bd6a23621d2a6d69bd986d3a0f01514c2f2cf96b. Parent exact-head 783610caea5af7a7ae94aad698321cc72934d2e7 completed TDRP run 39788414121 at 61/61 success (authority 12429847473 sha256:59083262c52d76c9c0452e0244236d1987bc927b2c828a114ae6c779686c11cc; closure 12430960879 sha256:9ceedbbab0f9f21be13e63ce726c46e1df18586a1858141808c34e9226e8ee94; reachability 12430561986 sha256:ce804ecae7c497be8f7dd6edb41b704a79d04faa6b45f582937c8449f720a695) and Rust desktop runtime run 39788414127 at 6/6 success (artifact 12429937087 sha256:fc657b28ef7c56bd010fb445a10088d09f58eefb145d2a7b594ecc9202e04ac1). Strict index 86 .github/workflows/linux.yml@dbedd23593c5ea66ff9b8b880bda6a8bc5a4cc55 fully read and mapped to existing exact-head GitHub-Actions governance. Counters unknown=16,282 unread=16,257 omitted=0 responsibilities=104. Next strict root index 87 .github/workflows/lock.yml@7904e79591f79a4ea61c0dc194c189f048bf5c67. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required."
   },
   "acceptance": {
     "baseline_ready": false,

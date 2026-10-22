@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "5380230173ea60a5222aa9d977f074dd41e76139",
-  "target_commit": "661b9b1fc4e41c8dfaa20cd26489b50f649df61b",
+  "target_commit": "783610caea5af7a7ae94aad698321cc72934d2e7",
   "coverage": {
     "source_entries_total": 16371,
-    "unknown": 16283,
-    "unread": 16258,
+    "unknown": 16282,
+    "unread": 16257,
     "omitted": 0,
-    "responsibilities_total": 103,
+    "responsibilities_total": 104,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -27807,6 +27807,272 @@
       "license_and_provenance": "Exact upstream workflow and audit-time provider commit/blob identities are retained. Telegram/macOS labels, version heuristics, external XML endpoint, provider issue copy and runtime npm resolution are provenance only unless independently adopted by current Fabushi owners.",
       "reviewer": null,
       "notes": "Strict index 85 closes only .github/workflows/issue_closer.yml as provider issue-intake routing maintenance provenance. The mutable action repository and external/runtime dependencies remain separate provenance inputs. Counters become unknown=16,218 unread=16,193 omitted=0 responsibilities=103. Next strict root index 86 .github/workflows/linux.yml@dbedd23593c5ea66ff9b8b880bda6a8bc5a4cc55. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions are required."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "5380230173ea60a5222aa9d977f074dd41e76139",
+      "source_path": ".github/workflows/linux.yml",
+      "source_blob_sha": "dbedd23593c5ea66ff9b8b880bda6a8bc5a4cc55",
+      "source_kind": "linux_ci_build_verification_workflow",
+      "module_id": "tdesktop.github.workflows.linux",
+      "responsibility_id": "TDRP-R9-LINUX-CI-BUILD-VERIFICATION-PROVENANCE-001",
+      "source_symbols": [
+        "branches-ignore:",
+        "actions/checkout@v7",
+        "ccache-4.13.6-linux-x86_64-glibc.tar.xz",
+        "docker/setup-buildx-action@v4",
+        "actions/cache@v6",
+        "reproducible-containers/buildkit-cache-dance@5422eac04292c961a382e0f584ea0f03ad9da723",
+        "docker/build-push-action@v7",
+        "actions/cache/restore@v6",
+        "/usr/src/tdesktop/Telegram/build/docker/centos_env/build.sh",
+        "actions/cache/save@v6",
+        "actions/upload-artifact@v7"
+      ],
+      "capability_ids": [
+        "CAP-LINUX-CI-BUILD-VERIFICATION",
+        "CAP-BUILD-CACHE-PROVENANCE",
+        "CAP-EXACT-HEAD-EVIDENCE-BOUNDARY"
+      ],
+      "dependency_ids": [
+        "AGENTS.md@da3e37258c74963970ff5cfc5d54671a37558b97#exact-head-GitHub-Actions-only",
+        "actions/checkout@v7 -> 3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "docker/setup-buildx-action@v4 -> f87e5991a6d7451dcb8d9637bfbc97413f497069",
+        "actions/cache@v6 -> 55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "reproducible-containers/buildkit-cache-dance@5422eac04292c961a382e0f584ea0f03ad9da723",
+        "docker/build-push-action@v7 -> c3c9e263c25d99ce0380d002d59b67737d91b0dc",
+        "jlumbroso/free-disk-space@ceedf095f4ec1a097402bc6bd80831f2e1a6fde6",
+        "actions/upload-artifact@v7 -> cf430e030ddbb5b0abf93d22962f4752f3646cd9",
+        "ccache v4.13.6 -> c6f36725ddaa247678ff130cf4349055962ac072; release asset unchecksummed",
+        "centos_env Dockerfile@0105fe2123efdc2fc361e546fdbacb6305acbfe6",
+        "centos_env gen_dockerfile.py@86d27c96e1f732a1faf3e85397ea3ba38e493a0d",
+        "centos_env pyproject.toml@8f43692fb217f075ccc588c3b677177e42b5688f",
+        "centos_env poetry.lock@9d857912774d68b1f8adda1dbbccb87adefda788",
+        "centos_env build.sh@00b5c9a2faf5e25fb981325f654d3458ce074a7d"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/linux-ci-build-verification-workflow-complete-read.md",
+      "behavior_contract": "Treat linux.yml as CI source-build verification provenance only. Upstream Linux build/cache/artifact success cannot become Fabushi source, runtime, packaging, release or acceptance authority; Fabushi executable acceptance remains exact-head GitHub-Actions-only.",
+      "state_machine": "Linux-relevant push/PR -> recursive checkout -> Poetry+ccache setup -> generate centos_env Dockerfile -> Buildx/cache -> build/load local image -> restore ccache -> Debug/API-test build -> optional cache save -> assert Telegram -> stage Telegram+Updater -> one-day artifact",
+      "side_effects": [
+        "network Poetry installer",
+        "unchecksummed ccache release asset",
+        "BuildKit/cache restore/write",
+        "local tdesktop:centos_env image build/load",
+        "Debug Telegram build",
+        "conditional ccache save",
+        "one-day Telegram+Updater artifact"
+      ],
+      "failure_cases": [
+        "mutable action tag drift",
+        "Poetry/package drift",
+        "ccache asset drift",
+        "generated Dockerfile/acquisition drift",
+        "runner drift",
+        "cache corruption",
+        "build failure",
+        "missing output",
+        "artifact failure/expiry",
+        "upstream green mistaken for Fabushi acceptance"
+      ],
+      "ui_disposition": "Repository CI/build verification only; no shipping Fabushi UI capability.",
+      "non_ui_responsibilities": [
+        "Linux trigger scope",
+        "recursive build provenance",
+        "local build-image materialization",
+        "cache boundary",
+        "Debug source-build verification",
+        "ephemeral artifact provenance",
+        "Fabushi release-evidence separation"
+      ],
+      "platform_delta": "Upstream Telegram Linux CI is preserved as source provenance only; Fabushi retains existing source-neutral GitHub Actions/FQT build and evidence owners.",
+      "existing_owner_candidates": [
+        "AGENTS exact-head GitHub-Actions governance (selected)",
+        "AGENTS release-support container governance (shared)",
+        "FQT evidence/release owners (shared)",
+        "new Linux build/cache owner (rejected)",
+        "new Telegram CI/release owner (rejected)"
+      ],
+      "existing_owner": "AGENTS.md exact-head GitHub-Actions executable validation governance with existing container/FQT owners",
+      "rejected_existing_owners": [
+        "not product behavior",
+        "cache is not correctness state",
+        "ephemeral artifact is not Fabushi release evidence",
+        "centos_env files remain separate inventory"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md"
+      ],
+      "fabushi_target_symbols": [
+        "For FBCP/TDRP, executable validation remains exact-head GitHub-Actions-only."
+      ],
+      "target_language": "Repository build/test/evidence governance",
+      "language_rationale": "CI orchestration maps to existing exact-head evidence governance, not production Rust/React.",
+      "command_event_contracts": [
+        "Linux-relevant push/PR only",
+        "recursive checkout/generated inputs are provenance",
+        "cache cannot decide correctness",
+        "expected binary and staged artifact are required",
+        "provider drift is non-passing",
+        "upstream success never substitutes for Fabushi release acceptance"
+      ],
+      "state_owner": "Exact source/dependency/run/artifact identities; caches and upstream binaries are non-authoritative.",
+      "lifecycle_owner": "Existing exact-source -> GitHub Actions -> evidence -> FQT/release acceptance.",
+      "persistence_and_restart": "Caches and one-day artifact are disposable; canonical evidence is commit/run/artifact ID+digest.",
+      "concurrency_and_cancellation": "No workflow concurrency group; cancelled/failed runs are non-passing and cache sharing cannot promote evidence.",
+      "security_boundary": "Actions/runners/installers/assets/registries/generated acquisitions/caches are supply-chain inputs, not Fabushi product/release authority.",
+      "network_service_dependencies": [
+        "GitHub checkout/cache/artifact",
+        "Poetry/package registry",
+        "GitHub ccache release",
+        "Depot/GitHub runners",
+        "Docker Buildx/BuildKit external acquisitions"
+      ],
+      "service_owner": "Existing GitHub Actions/build infrastructure and Fabushi evidence governance",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "policy-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required.",
+        "centos_env files/acquisitions remain open.",
+        "recursive source/release acceptance remain open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "linux.yml fully read: 216 line slots / 7284 bytes.",
+        "mutable action refs resolved at publication to checkout 3d3c42e5..., buildx f87e5991..., cache 55cc8345..., build-push c3c9e263..., upload cf430e03....",
+        "ccache v4.13.6 -> c6f36725...; GPL-3.0-or-later; release asset unchecksummed.",
+        "centos_env generator/lock/build inputs SHA-anchored.",
+        "AGENTS owner symbol re-read with no target-key collision.",
+        "Parent exact-head 783610caea5af7a7ae94aad698321cc72934d2e7 completed TDRP run 39788414121 at 61/61 success (authority 12429847473 sha256:59083262c52d76c9c0452e0244236d1987bc927b2c828a114ae6c779686c11cc; closure 12430960879 sha256:9ceedbbab0f9f21be13e63ce726c46e1df18586a1858141808c34e9226e8ee94; reachability 12430561986 sha256:ce804ecae7c497be8f7dd6edb41b704a79d04faa6b45f582937c8449f720a695) and Rust desktop runtime run 39788414127 at 6/6 success (artifact 12429937087 sha256:fc657b28ef7c56bd010fb445a10088d09f58eefb145d2a7b594ecc9202e04ac1)."
+      ],
+      "target_commit": "783610caea5af7a7ae94aad698321cc72934d2e7",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository build/test/evidence governance",
+      "composition_slot": "CI build-verification provenance adapter",
+      "capability_component": "Linux CI source-build verification mapping",
+      "variation_axes": [
+        "push/PR",
+        "canary/ordinary branch",
+        "GitHub/Depot runner",
+        "provider drift",
+        "cache hit/miss/corrupt",
+        "build success/missing output",
+        "artifact expiry",
+        "upstream/Fabushi evidence"
+      ],
+      "shared_owner_contracts": [
+        "AGENTS exact-head Actions",
+        "AGENTS release-support container provenance",
+        "FQT-EVID-001/release owners"
+      ],
+      "duplicate_root_check": "No second build system/runtime/cache truth/packaging/release/acceptance owner.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository CI/build verification",
+      "detail_section": "Not applicable",
+      "capability_surface": "Linux CI provenance adapter",
+      "route_contract": "push/PR -> checkout -> build inputs/cache -> local image -> source build -> check -> ephemeral artifact",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Only exact source/run/artifact identities carry evidence continuity.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-LINUX-CI-BUILD-VERIFICATION-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-LINUX-CI-EXACT-SOURCE-001",
+        "ORA-TDRP-LINUX-CI-BUILD-RESULT-001",
+        "ORA-TDRP-LINUX-CI-NO-RELEASE-AUTHORITY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-LINUX-CI-CACHE-NO-AUTHORITY-001",
+        "INV-TDRP-LINUX-CI-NO-PRODUCT-RUNTIME-001",
+        "INV-TDRP-LINUX-CI-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-LINUX-CI-BUILD-PROVENANCE-001",
+        "CONTRACT-TDRP-LINUX-CI-FABUSHI-EVIDENCE-BOUNDARY-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-LINUX-CI-ACTION-TAG-DRIFT-001",
+        "TEMP-TDRP-LINUX-CI-CACHE-DRIFT-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-LINUX-CI-POETRY-INSTALLER-001",
+        "FAULT-TDRP-LINUX-CI-CCACHE-ASSET-001",
+        "FAULT-TDRP-LINUX-CI-BUILDX-CACHE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-LINUX-CI-SUPPLY-CHAIN-001",
+        "SEC-TDRP-LINUX-CI-RUNNER-BOUNDARY-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-LINUX-CI-EXACT-HEAD-OWNER-REUSED-001",
+        "REG-TDRP-LINUX-CI-NO-RELEASE-ACCEPT-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [],
+      "test_fixture_ids": [
+        "locked linux.yml + provider/action/cache/ccache/centos_env identities + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact workflow/provider refs/blobs/licenses and ccache/centos_env inputs retained; mutable tags/installers/assets/runner/cache/one-day binaries are provenance only.",
+      "reviewer": null,
+      "notes": "Strict index 86 closes only .github/workflows/linux.yml. Counters become unknown=16,282 unread=16,257 omitted=0 responsibilities=104. Next strict root index 87 .github/workflows/lock.yml@7904e79591f79a4ea61c0dc194c189f048bf5c67. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required."
     }
   ]
 }
