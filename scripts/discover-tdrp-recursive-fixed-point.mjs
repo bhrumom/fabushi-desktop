@@ -248,7 +248,7 @@ await fs.mkdir(outDir, { recursive: true });
 await fs.writeFile(path.join(outDir, 'recursive-closure-authorities.json'), JSON.stringify({
   project_id: 'TDRP-001',
   spec_revision: 9,
-  target_commit: process.env.GITHUB_SHA,
+  target_commit: (process.env.TDRP_TARGET_SHA||process.env.GITHUB_SHA),
   authorities: newlyScanned
 }, null, 2) + '\n');
 
@@ -257,7 +257,7 @@ const newTotals = reduceTotals(newlyScanned);
 await fs.writeFile(path.join(outDir, 'recursive-closure-aggregate.json'), JSON.stringify({
   project_id: 'TDRP-001',
   spec_revision: 9,
-  target_commit: process.env.GITHUB_SHA,
+  target_commit: (process.env.TDRP_TARGET_SHA||process.env.GITHUB_SHA),
   scanned_report_dirs: scannedDirs,
   initial_scanned_authorities: initialScannedAuthorities,
   initial_unresolved_child_authorities: initialUnresolvedChildAuthorities,

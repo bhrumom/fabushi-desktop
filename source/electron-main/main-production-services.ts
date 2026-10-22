@@ -32,6 +32,7 @@ import { createWindowChromeEdgePort, type WindowChromeBrowserWindow } from "./wi
 import { createProductionWindowBroadcaster } from "./window-broadcast.js";
 import type { SandUpdateService } from "./update/sand-update-service.js";
 import { createWindowStatePersistence, type WindowStatePersistenceScreen } from "./window-state-persistence.js";
+import { createAppAgentSurfaceServer } from "./app-agent-surface-server.js";
 import { submitFeedbackReport } from "./feedback/feedback-report.js";
 import { createSecretsStores } from "./secrets/secrets-ipc.js";
 import { desktopStructuredLogAccountSlot } from "./telemetry/desktop-structured-log-spill.js";
@@ -88,7 +89,10 @@ export interface ElectronProductionNativeBindings {
     setApplicationMenu(menu: unknown): void;
   };
   readonly shell: { openExternal(url: string): Promise<unknown> };
+  readonly net?: { fetch: typeof globalThis.fetch };
+  readonly session?: import("./mcp/miniapp-window.js").MiniAppWindowFactoryPorts["session"];
   readonly screen: WindowStatePersistenceScreen;
+  readonly dialog?: ElectronProductionDialog;
   readonly desktopCapturer?: {
     getSources(options: {
       readonly types: readonly ("screen" | "window")[];
@@ -102,6 +106,18 @@ export interface ElectronProductionNativeBindings {
   };
 }
 
+/**
+ * The existing Electron dialog owner serves both trusted package selection and
+ * Host-authorized directory selection. Keep the two intents in one ABI while
+ * preserving the publisher's file-only filter at its call site.
+ */
+export interface ElectronProductionDialog {
+  showOpenDialog(options: {
+    readonly properties: readonly ("openFile" | "openDirectory")[];
+    readonly filters?: readonly { readonly name: string; readonly extensions: readonly string[] }[];
+  }): Promise<{ canceled: boolean; filePaths: string[] }>;
+}
+
 export function createElectronProductionNativeBindings(electron: {
   readonly app: ElectronProductionApp;
   readonly safeStorage: SecureStorageCodec;
@@ -110,6 +126,9 @@ export function createElectronProductionNativeBindings(electron: {
   readonly Menu: ElectronProductionNativeBindings["Menu"];
   readonly shell: ElectronProductionNativeBindings["shell"];
   readonly screen: ElectronProductionNativeBindings["screen"];
+  readonly dialog?: ElectronProductionDialog;
+  readonly net?: ElectronProductionNativeBindings["net"];
+  readonly session?: ElectronProductionNativeBindings["session"];
   readonly desktopCapturer?: ElectronProductionNativeBindings["desktopCapturer"];
   readonly systemPreferences?: ElectronProductionNativeBindings["systemPreferences"];
 }): ElectronProductionNativeBindings {
@@ -121,7 +140,7 @@ export function createElectronProductionNativeBindings(electron: {
   if (typeof electron.Menu.buildFromTemplate !== "function" || typeof electron.Menu.setApplicationMenu !== "function") throw new Error("Electron production ABI requires Menu construction and installation.");
   if (typeof electron.shell.openExternal !== "function") throw new Error("Electron production ABI requires shell.openExternal().");
   if (typeof electron.safeStorage.isEncryptionAvailable !== "function" || typeof electron.safeStorage.encryptString !== "function" || typeof electron.safeStorage.decryptString !== "function") throw new Error("Electron production ABI requires safeStorage encryption methods.");
-  return { app: electron.app, safeStorage: electron.safeStorage, ipcMain: electron.ipcMain, BrowserWindow: electron.BrowserWindow, Menu: electron.Menu, shell: electron.shell, screen: electron.screen, ...(electron.desktopCapturer == null ? {} : { desktopCapturer: electron.desktopCapturer }), ...(electron.systemPreferences == null ? {} : { systemPreferences: electron.systemPreferences }) };
+  return { app: electron.app, safeStorage: electron.safeStorage, ipcMain: electron.ipcMain, BrowserWindow: electron.BrowserWindow, Menu: electron.Menu, shell: electron.shell, screen: electron.screen, ...(electron.dialog == null ? {} : { dialog: electron.dialog }), ...(electron.net == null ? {} : { net: electron.net }), ...(electron.session == null ? {} : { session: electron.session }), ...(electron.desktopCapturer == null ? {} : { desktopCapturer: electron.desktopCapturer }), ...(electron.systemPreferences == null ? {} : { systemPreferences: electron.systemPreferences }) };
 }
 
 export interface ElectronProductionResources {
@@ -504,7 +523,7 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
     return { induced: Reflect.get(result, "induced") as boolean };
   });
   type ProductionClientPauseControl = ReturnType<typeof createSandClientPauseControl<BoxConnectionInfo, { readonly preserveData: boolean; readonly force?: boolean }, RecreateResult, { readonly credential: string; readonly backendUrl: string; readonly expiresAtMs?: number }>>;
-  let runtime: ElectronMainRuntime | undefined, settings: ProductionSettingsService | undefined, mainEdge: (MainEdge & Partial<ProductionDisposable>) | undefined, account: ProductionAccountService | undefined, cursorAccount: unknown, ensureTranscriptionManager: (() => Promise<unknown>) | undefined, experiments: ProductionExperimentsService | undefined, update: ProductionUpdateService | undefined, mcp: ProductionMcpService | undefined, telemetry: ProductionTelemetryService | undefined, notifications: ProductionNotificationsService | undefined, coordinator: ProductionCoordinatorService | undefined, egressTunnelController: EgressTunnelController | undefined, context: ProductionServiceContext | undefined, secretsStores: ReturnType<typeof createSecretsStores> | undefined, boxRecovery: ReturnType<typeof createProductionBoxRecovery> | undefined, clientPauseControl: ProductionClientPauseControl | undefined, boxVisibilityTracker: SandBoxVisibilityTracker | undefined, desktopMetricsRuntime: DesktopMetricsRuntime | undefined, productAnalytics: SandProductAnalytics | undefined, vncTrust: ReturnType<typeof registerElectronProductionVncTrust> | undefined;
+  let runtime: ElectronMainRuntime | undefined, settings: ProductionSettingsService | undefined, mainEdge: (MainEdge & Partial<ProductionDisposable>) | undefined, account: ProductionAccountService | undefined, cursorAccount: unknown, ensureTranscriptionManager: (() => Promise<unknown>) | undefined, experiments: ProductionExperimentsService | undefined, update: ProductionUpdateService | undefined, mcp: ProductionMcpService | undefined, telemetry: ProductionTelemetryService | undefined, notifications: ProductionNotificationsService | undefined, coordinator: ProductionCoordinatorService | undefined, egressTunnelController: EgressTunnelController | undefined, context: ProductionServiceContext | undefined, secretsStores: ReturnType<typeof createSecretsStores> | undefined, boxRecovery: ReturnType<typeof createProductionBoxRecovery> | undefined, clientPauseControl: ProductionClientPauseControl | undefined, boxVisibilityTracker: SandBoxVisibilityTracker | undefined, desktopMetricsRuntime: DesktopMetricsRuntime | undefined, productAnalytics: SandProductAnalytics | undefined, vncTrust: ReturnType<typeof registerElectronProductionVncTrust> | undefined, appAgentSurfaceServer: ReturnType<typeof createAppAgentSurfaceServer> | undefined;
   let sessionDeathSettlement: ReturnType<typeof wireDesktopUncleanExitSettlement> | undefined;
   const desktopLifecycle = createDesktopLifecycleReporter();
   const disposeLocalExecLifecycleReporter = installLocalExecLifecycleReporter(desktopLifecycle.reportDesktopLocalExecLifecycle);
@@ -905,8 +924,12 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
           if (sessionDeathSettlement != null) settleUncleanExitOnSessionEnd(window, sessionDeathSettlement);
           installBoxVisibilityDocumentReset(window.webContents, () => boxVisibilityTracker?.abandonAll());
           bindings.services.onWindowCreated?.(window, context!);
+          if (appAgentSurfaceServer == null) {
+            appAgentSurfaceServer = createAppAgentSurfaceServer({ app: bindings.native.app, getWindow: () => runtime?.getMainWindow() ?? null, appVersion: bindings.native.app.getVersion?.(), env });
+            void appAgentSurfaceServer.start().catch((error) => bindings.reportFailure("app-agent-surface", "start", error));
+          }
         },
-        dispose: () => void disposeGraph(),
+        dispose: () => void (async () => { await appAgentSurfaceServer?.close(); appAgentSurfaceServer = undefined; await disposeGraph(); })(),
       };
     } catch (error) { await disposeGraph(); throw error; }
   })();

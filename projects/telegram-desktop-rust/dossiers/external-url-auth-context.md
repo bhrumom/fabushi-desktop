@@ -7,17 +7,19 @@ Responsibility: `TDRP-R9-EXTERNAL-URL-AUTH-CONTEXT-001`
 ## Source authority
 
 - Repository: `telegramdesktop/tdesktop`
-- Commit: `72b3b71c3d6e450e5ef94a3112dd750a0168aa0b`
+- Commit: `0a11537c220df35fe59a96aebe413b1e52bc6e47`
 - Primary source path: `Telegram/SourceFiles/boxes/url_auth_box.cpp`
-- Blob: `f68ea15d650a07ed52839020fb46711012b288ae`
+- Blob: `1fa4309f2091cf148b0b6f249efa029bdc171c53`
 - Relevant source symbols: `AcceptedUrlContext`, `ActivateButton`, `ActivateUrl`, `RequestButton`, `RequestUrl`
-- Related behavior was cross-read in `core/click_handler_types.cpp` and `core/ui_integration.cpp` to understand stripping and dispatch semantics.
+- Related behavior was cross-read in `core/click_handler_types.cpp` and `core/ui_integration.cpp` to understand stripping and dispatch semantics. At `0a11537c220df35fe59a96aebe413b1e52bc6e47`, Telegram additionally passes `ClickHandlerContext` into hidden URL activation and derives trusted domains from per-account `AppConfig`; this delta was re-read as an upstream policy change, not as permission to weaken Fabushi's exact-origin accepted-auth boundary.
 
 This dossier covers only the accepted-auth-context / foreign web-auth token security responsibility. It does **not** mark those complete source files read or migrated.
 
+At `0a11537c220df35fe59a96aebe413b1e52bc6e47`, `AcceptedUrlContext` remains the same privileged token-preservation boundary, while the same upstream file additionally introduces account-session loss fencing, account switching/reload, match-code/device context, and TonConnect wallet authorization paths. Those new responsibilities are deliberately **not** claimed by this scoped row; they remain unknown source responsibilities until separately decomposed and mapped to canonical Fabushi owners.
+
 ## Source behavior
 
-The accepted upstream separates ordinary external URL activation from server-accepted login URLs. Ordinary links remove foreign web-login credential parameters before dispatch. A server-returned accepted URL receives a privileged context that permits the server-issued login parameters to survive the final open.
+The accepted upstream separates ordinary external URL activation from server-accepted login URLs. The current upstream also makes its trusted-domain policy account-configurable, while preserving the distinction between an ordinary hidden URL and context-aware handling. Ordinary links remove foreign web-login credential parameters before dispatch. A server-returned accepted URL receives a privileged context that permits the server-issued login parameters to survive the final open.
 
 The source recognizes credential parameter names rather than values, handles case-insensitive names, repeatedly percent-decodes the parameter name with a bounded loop, handles leading question marks, and sanitizes query and fragment parameter forms. This prevents an arbitrary message/link from carrying a login credential that could authenticate the user into a sender-controlled account.
 

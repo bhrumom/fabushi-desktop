@@ -9,7 +9,7 @@ use std::path::Path;
 #[cfg(not(target_arch = "wasm32"))]
 use rusqlite::{params, Connection, OptionalExtension};
 #[cfg(not(target_arch = "wasm32"))]
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 /// Local-first durable store for Agent runtime state.
 ///
@@ -18,7 +18,44 @@ use std::sync::Mutex;
 /// Web/WASM builds keep the same API but intentionally do not open SQLite.
 pub struct RuntimeStore {
     #[cfg(not(target_arch = "wasm32"))]
-    connection: Option<Mutex<Connection>>,
+    connection: Option<Arc<Mutex<Connection>>>,
+}
+
+/// Native-only callback boundary into the RuntimeStore connection. This is
+/// intentionally not a connection accessor: callers can execute a typed
+/// operation while RuntimeStore keeps ownership and synchronization of its
+/// SQLite connection.
+#[cfg(not(target_arch = "wasm32"))]
+#[derive(Clone)]
+pub struct MiniAppRuntimeStorePort {
+    store: Arc<RuntimeStore>,
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+#[derive(Debug, thiserror::Error)]
+pub enum MiniAppRuntimeStorePortError<E> {
+    #[error("Runtime SQLite connection is not configured")]
+    NotConfigured,
+    #[error("Runtime SQLite connection is unavailable")]
+    Store(#[source] RuntimeStoreError),
+    #[error("mini-app storage operation failed")]
+    Operation(E),
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl MiniAppRuntimeStorePort {
+    pub fn with_connection<T, E>(
+        &self,
+        operation: impl FnOnce(&mut Connection) -> Result<T, E>,
+    ) -> Result<T, MiniAppRuntimeStorePortError<E>> {
+        let Some(connection) = &self.store.connection else {
+            return Err(MiniAppRuntimeStorePortError::NotConfigured);
+        };
+        let mut connection = connection
+            .lock()
+            .map_err(|_| MiniAppRuntimeStorePortError::Store(RuntimeStoreError::Poisoned))?;
+        operation(&mut connection).map_err(MiniAppRuntimeStorePortError::Operation)
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -196,9 +233,19 @@ impl RuntimeStore {
                 )
                 .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
             Ok(Self {
-                connection: Some(Mutex::new(connection)),
+                connection: Some(Arc::new(Mutex::new(connection))),
             })
         }
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(crate) fn mini_app_port(self: &Arc<Self>) -> Result<MiniAppRuntimeStorePort, RuntimeStoreError> {
+        if self.connection.is_none() {
+            return Err(RuntimeStoreError::NotConfigured);
+        }
+        Ok(MiniAppRuntimeStorePort {
+            store: Arc::clone(self),
+        })
     }
 
     pub fn record_turn(&self, turn: &LogicalTurn) -> Result<(), RuntimeStoreError> {
@@ -1186,6 +1233,8 @@ mod tests {
 
 #[derive(Debug, thiserror::Error)]
 pub enum RuntimeStoreError {
+    #[error("runtime store is not configured")]
+    NotConfigured,
     #[error("runtime store I/O failed: {0}")]
     Io(String),
     #[error("runtime store SQLite failed: {0}")]

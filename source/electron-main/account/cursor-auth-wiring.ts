@@ -1,9 +1,12 @@
 import { createSandAccessReader, readSandAccessOnce, type SandAccess } from "./access.js";
-import { SandCursorAuthService, type AccessTokenReader, type SandAuthStatus, type SandCursorAuthServiceOptions } from "./cursor-auth.js";
+import { SandCursorAuthService, type AccessTokenReader, type SandCursorAuthServiceOptions } from "./cursor-auth.js";
+import type { AuthServicePort, SandAuthStatus } from "./auth-service-contract.js";
 import { fetchCursorProfile, fetchLocalToolPermissionCeiling, fetchUserPrivacyMode, updateCursorProfileName } from "./cursor-profile.js";
 import { SandTranscriptionManager, type SandTranscriptionOptions } from "./cursor-transcribe.js";
 import { syncSandSentryAccount } from "../telemetry/sentry.js";
 import type { PrivacyMode } from "../../shared/observability/sentry-privacy-mode.js";
+
+export type { AuthServicePort } from "./auth-service-contract.js";
 
 export const SUPPORTED_DASHBOARD_ACTIONS = new Set(["requestLimitIncrease"] as const);
 export const NO_SAND_PR_REVIEW_PREFERENCES = { user: undefined, team: undefined } as const;
@@ -11,18 +14,6 @@ export interface DashboardActionRequest { readonly action: "requestLimitIncrease
 export interface AccountRuntime {
   observe(status: SandAuthStatus): void;
   whenIdle(): Promise<SandAuthStatus | null | undefined>;
-}
-export interface AuthServicePort {
-  subscribe(listener: (status: SandAuthStatus) => void): () => void;
-  getStatus(): Promise<SandAuthStatus>;
-  getValidAccessToken(options?: { readonly backendUrl?: string }): Promise<string>;
-  peekAccessToken?(): Promise<string | null>;
-  revokeForAccountRefusal(): Promise<{ readonly kind: "completed"; readonly status: SandAuthStatus } | { readonly kind: "failed"; readonly status: SandAuthStatus; readonly error: unknown }>;
-  login(): Promise<SandAuthStatus>;
-  cancelLogin(): Promise<SandAuthStatus>;
-  logout(): Promise<SandAuthStatus>;
-  updateDisplayName(name: string): Promise<SandAuthStatus>;
-  devLogin?(options: { readonly tier?: string; readonly email?: string }): Promise<SandAuthStatus>;
 }
 
 export function createCursorAuthWiring(deps: {

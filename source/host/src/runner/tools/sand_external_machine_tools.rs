@@ -9,6 +9,9 @@ use crate::runner::shell_terminal_watch::ShellTerminalPollRead;
 use crate::sand_activity::{SAND_EXTERNAL_READ_TOOL_NAME, SAND_EXTERNAL_SHELL_TOOL_NAME};
 
 pub const EXTERNAL_MACHINE_TOOL_PROVIDER: &str = "mahayana-local-exec";
+pub const EXTERNAL_SHELL_STATUS_TOOL_NAME: &str = "ExternalShellStatus";
+pub const EXTERNAL_SHELL_HISTORY_TOOL_NAME: &str = "ExternalShellHistory";
+pub const EXTERNAL_SHELL_CANCEL_TOOL_NAME: &str = "ExternalShellCancel";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExternalMachineShellArgs {
@@ -29,6 +32,24 @@ pub struct ExternalMachineReadArgs {
 pub trait ExternalMachineExecutor: Send + Sync {
     fn execute_shell(&self, args: &ExternalMachineShellArgs) -> Result<Value, ProviderSessionError>;
     fn execute_read(&self, args: &ExternalMachineReadArgs) -> Result<Value, ProviderSessionError>;
+
+    fn operation_status(&self, _operation_id: &str) -> Result<Value, ProviderSessionError> {
+        Err(ProviderSessionError::Tool(
+            "External shell operation status is unavailable".into(),
+        ))
+    }
+
+    fn operation_history(&self) -> Result<Value, ProviderSessionError> {
+        Err(ProviderSessionError::Tool(
+            "External shell operation history is unavailable".into(),
+        ))
+    }
+
+    fn cancel_operation(&self, _operation_id: &str) -> Result<Value, ProviderSessionError> {
+        Err(ProviderSessionError::Tool(
+            "External shell cancellation is unavailable".into(),
+        ))
+    }
 
     fn poll_background_shell_terminal(
         &self,
@@ -70,7 +91,7 @@ fn definitions() -> Vec<RoutedToolDefinition> {
             name: SAND_EXTERNAL_SHELL_TOOL_NAME.into(),
             provider_identifier: EXTERNAL_MACHINE_TOOL_PROVIDER.into(),
             tool_name: SAND_EXTERNAL_SHELL_TOOL_NAME.into(),
-            description: Some("Run a shell command on the user's connected computer.".into()),
+            description: Some("Run a shell command on the user's connected computer. The operation has a stable operationId/requestId; if delivery or the result is lost and outcomeUnknown is true, it is never automatically retried after a lost result. Query ExternalShellStatus or ExternalShellHistory instead of blindly replaying the command.".into()),
             input_schema: json!({
                 "type":"object","additionalProperties":false,"required":["command"],
                 "properties":{"command":{"type":"string","minLength":1},"workingDirectory":{"type":"string"}}
@@ -87,6 +108,33 @@ fn definitions() -> Vec<RoutedToolDefinition> {
                     "path":{"type":"string","minLength":1},"offset":{"type":"integer"},
                     "limit":{"type":"integer","minimum":0},"encodingHint":{"type":"string"}
                 }
+            }),
+        },
+        RoutedToolDefinition {
+            name: EXTERNAL_SHELL_STATUS_TOOL_NAME.into(),
+            provider_identifier: EXTERNAL_MACHINE_TOOL_PROVIDER.into(),
+            tool_name: EXTERNAL_SHELL_STATUS_TOOL_NAME.into(),
+            description: Some("Query one shell operation started by this conversation without re-running it.".into()),
+            input_schema: json!({
+                "type":"object","additionalProperties":false,"required":["operationId"],
+                "properties":{"operationId":{"type":"string","minLength":1}}
+            }),
+        },
+        RoutedToolDefinition {
+            name: EXTERNAL_SHELL_HISTORY_TOOL_NAME.into(),
+            provider_identifier: EXTERNAL_MACHINE_TOOL_PROVIDER.into(),
+            tool_name: EXTERNAL_SHELL_HISTORY_TOOL_NAME.into(),
+            description: Some("List the bounded shell operation history owned by this conversation.".into()),
+            input_schema: json!({"type":"object","additionalProperties":false}),
+        },
+        RoutedToolDefinition {
+            name: EXTERNAL_SHELL_CANCEL_TOOL_NAME.into(),
+            provider_identifier: EXTERNAL_MACHINE_TOOL_PROVIDER.into(),
+            tool_name: EXTERNAL_SHELL_CANCEL_TOOL_NAME.into(),
+            description: Some("Request cancellation of one active shell operation owned by this conversation.".into()),
+            input_schema: json!({
+                "type":"object","additionalProperties":false,"required":["operationId"],
+                "properties":{"operationId":{"type":"string","minLength":1}}
             }),
         },
     ]
@@ -134,6 +182,13 @@ impl RoutedToolBridge for ExternalMachineToolBridge {
                 encoding_hint: optional_string(&args, "encodingHint"),
                 tool_call_id: tool_call_id.to_string(),
             }),
+            EXTERNAL_SHELL_STATUS_TOOL_NAME => self.executor.operation_status(&required_string(
+                &args, "operationId", EXTERNAL_SHELL_STATUS_TOOL_NAME,
+            )?),
+            EXTERNAL_SHELL_HISTORY_TOOL_NAME => self.executor.operation_history(),
+            EXTERNAL_SHELL_CANCEL_TOOL_NAME => self.executor.cancel_operation(&required_string(
+                &args, "operationId", EXTERNAL_SHELL_CANCEL_TOOL_NAME,
+            )?),
             _ => self.delegate.call_tool(tool, args, tool_call_id),
         }
     }

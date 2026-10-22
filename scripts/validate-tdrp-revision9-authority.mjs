@@ -147,9 +147,9 @@ const qtReachability=recursiveReachability.qt_superproject;
 fail(qtReachability?.repository==='https://github.com/qt/qt5','Qt reachability authority missing');
 const qtEvidenceByPath=new Map((qtReachability.accepted_upstream_evidence||[]).map(item=>[item.path,item]));
 const expectedQtEvidence=[
-  ['Telegram/build/prepare/prepare.py','698ccd839591d4497ff5a932885f45724f95b890'],
-  ['Telegram/build/docker/centos_env/Dockerfile','126b74a759c4e09a51a37e951fa694c407b2a747'],
-  ['snap/snapcraft.yaml','824d6a30f1d4b85a29eece886bc1c1e2f42f59d4']
+  ['Telegram/build/prepare/prepare.py','4063cc766ffb60c018b7a6ad456453ec585d5566'],
+  ['Telegram/build/docker/centos_env/Dockerfile','f72162089985263493c6e3f7e23b566f5df8e454'],
+  ['snap/snapcraft.yaml','38f0eb362832c3623b868c9aa90c03bc4f426d01']
 ];
 for (const [sourcePath,blob] of expectedQtEvidence) {
   const evidence=qtEvidenceByPath.get(sourcePath);
@@ -169,6 +169,8 @@ fail(dockerQt.includes('qtbase qtdeclarative qtwayland qtimageformats qtsvg qtsh
 for (const module of ['qtbase','qtdeclarative','qtimageformats','qtshadertools','qtsvg','qtwayland']) {
   fail(snapQt.includes('      - '+module),'accepted Snap Qt submodule selection missing '+module);
 }
+fail(prepareQt.includes('git clone https://github.com/desktop-app/qt6_windows7_patches.git qt6_windows7'),'accepted prepare.py Qt 6 Windows compatibility acquisition drift');
+fail(prepareQt.includes('git checkout bf64e7264237ffd371493f1780ef71d3f41373c9'),'accepted prepare.py Qt 6 Windows compatibility pin drift');
 fail(!prepareQt.includes('qttools'),'prepare.py unexpectedly initializes qttools');
 fail(!dockerQt.includes('qttools'),'Docker Qt build unexpectedly initializes qttools');
 fail(!snapQt.includes('      - qttools'),'Snap Qt build unexpectedly initializes qttools');
@@ -276,7 +278,7 @@ fail(openalReachability?.root_candidate_policy_status==='complete-for-current-op
 const expectedOpenalAuthorities=new Set([
   'https://github.com/kcat/openal-soft@b2c48f7718ef3fcf67921a8b6534c4914e328970',
   'https://github.com/kcat/openal-soft@dc7d7054a5b4f3bec1dc23a42fd616a0847af948',
-  'https://github.com/telegramdesktop/openal-soft@291c0fdbbdd767f00c45c7fca562614faea57647',
+  'https://github.com/telegramdesktop/openal-soft@00cb9b649c1a6ad1802d88ee4458979164529238',
   'https://github.com/telegramdesktop/openal-soft@c2eab43d72890c58d4b51d5d98eafb9f011e1c89'
 ]);
 for (const authority of openalReachability.observed_authorities||[]) expectedOpenalAuthorities.delete(authority.repository+'@'+authority.commit);
@@ -294,7 +296,7 @@ for (const option of ['ALSOFT_EXAMPLES=OFF','ALSOFT_UTILS=OFF']) {
   fail(dockerOpenalStage.includes(option),'accepted Docker OpenAL option drift: '+option);
   fail(snapOpenalStage.includes(option),'accepted Snap OpenAL option drift: '+option);
 }
-fail(prepareOpenalStage.includes('git checkout 291c0fdbbd'),'accepted Windows OpenAL pin drift');
+fail(prepareOpenalStage.includes('git checkout 00cb9b649c'),'accepted Windows OpenAL pin drift');
 fail(prepareOpenalStage.includes('git checkout coreaudio_device_uid'),'accepted Mac OpenAL branch evidence drift');
 fail(dockerOpenalStage.includes('git clone -b 1.25.2 --depth=1'),'accepted Docker OpenAL ref drift');
 fail(snapOpenalStage.includes('source-tag: 1.24.3'),'accepted Snap OpenAL ref drift');
@@ -677,6 +679,8 @@ recursiveInventory.push(...childEntries.map(e=>({
   path:e.path,mode:e.mode,type:e.type,object:e.sha,size:e.size??null
 })));
 
+fail(recursiveInventory.length===lock.coverage.recursive_source_entries_total,`recursive inventory count drift ${recursiveInventory.length} != ${lock.coverage.recursive_source_entries_total}`);
+
 const attrs=await get(`https://raw.githubusercontent.com/${u.repository}/${u.commit}/.gitattributes`,false);
 fail(!/filter=lfs|diff=lfs|merge=lfs/.test(attrs),'Git LFS attributes detected; explicit LFS closure required');
 for (const p of lock.build_time_pin_changes) {
@@ -696,7 +700,7 @@ await fs.writeFile(path.join(root,'artifacts/tdrp-authority/upstream-recursive-i
   entries:recursiveInventory
 },null,2)+'\n');
 const report={
-  project_id:'TDRP-001',spec_revision:9,target_commit:process.env.GITHUB_SHA||null,
+  project_id:'TDRP-001',spec_revision:9,target_commit:(process.env.TDRP_TARGET_SHA||process.env.GITHUB_SHA)||null,
   upstream_commit:u.commit,upstream_tree:u.tree,root_tree_truncated:false,
   root_entries:tree.length,root_blobs:blobs.length,direct_gitlinks:links.length,recursive_non_directory_entries:recursiveInventory.length,
   direct_component_counts:directComponentCounts,github_nested_gitlinks:nested,github_nested_component_counts:githubNestedCounts,
@@ -714,7 +718,7 @@ if (requireAccepted) {
   fail(ledger.coverage.unread===0,'G-INVENTORY unread must be 0');
   fail(ledger.coverage.omitted===0,'G-INVENTORY omitted must be 0');
   fail(ledger.coverage.unmapped_responsibilities===0,'G-TRACEABILITY unmapped responsibilities must be 0');
-  fail(ledger.target_commit===(process.env.GITHUB_SHA||ledger.target_commit),'G-EVIDENCE ledger target_commit must equal exact GitHub Actions HEAD');
+  fail(ledger.target_commit===((process.env.TDRP_TARGET_SHA||process.env.GITHUB_SHA)||ledger.target_commit),'G-EVIDENCE ledger target_commit must equal exact GitHub Actions HEAD');
   fail(ledger.rows.length>0,'G-FILE/G-TRACEABILITY ledger cannot be empty at closure');
 }
 console.log(JSON.stringify(report,null,2));

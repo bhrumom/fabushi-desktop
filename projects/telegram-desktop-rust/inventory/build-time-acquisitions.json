@@ -3,24 +3,35 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_repository": "telegramdesktop/tdesktop",
-  "upstream_commit": "d77f486228a98e15d6695514d5f2b28ce1c6a872",
+  "upstream_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
   "discovery": {
     "evidence_run_id": 38547900810,
     "evidence_head_sha": "9a3e22f5ab8e3522bb27ff682f29703870e2f802",
     "artifact_id": 11885536485,
     "artifact_digest": "sha256:f0067de9aa30612734e5214ae88fadaf86e01ce7bfbc8183cb99002436359811",
     "candidate_file": "build-time-acquisition-candidates.txt",
-    "candidate_lines_total": 330,
+    "candidate_lines_total": 331,
     "immutable_commit_pin_occurrences_classified": 19,
     "candidate_lines_pending_classification": 0,
-    "note": "Exact-upstream diagnostic scan at d77f486228a98e15d6695514d5f2b28ce1c6a872 produced 330 live candidate lines. All 330 are explicitly dispositioned from the artifact: 19 immutable commit-pin occurrences plus 311 grouped live path:line responsibilities. The remap follows current upstream line positions rather than stale predecessor line numbers; wallet-engine is retained as exact-pinned source support. The discovery artifact came from a deliberately fail-closed run while stale inventory still expected 320 candidates; it is evidence of the live candidate set, not acceptance provenance. Recursive authority closure and baseline acceptance remain open until the corrected inventory passes a later exact-HEAD authority run.",
-    "candidate_lines_classified": 330,
+    "note": "Live upstream 351204f3695b4a39bc3f4d2f230c061b9a01fe2a is one commit / one prepare.py path ahead of 392b83b3091edaaaf0637ff92526db90ce6542e8. The Qt cache-key change inserts two net lines after prepare.py line 1675; eight registered acquisition anchors are shifted +2 with zero content mismatches. Candidate cardinality remains 331/19/0, direct gitlinks are unchanged, and accepted prepare.py blob is 4063cc766ffb60c018b7a6ad456453ec585d5566. Windows OpenAL short-ref resolution is 00cb9b649c -> 00cb9b649c1a6ad1802d88ee4458979164529238.",
+    "candidate_lines_classified": 331,
     "disposition_closure_status": "complete",
     "recursive_authority_closure_status": "open",
     "recursive_child_input_occurrences_recorded": 11,
     "recursive_child_unique_repositories_recorded": 9,
     "recursive_child_unique_external_nested_scans_pending": 0,
-    "recursive_child_unique_external_nested_scans_complete": 3
+    "recursive_child_unique_external_nested_scans_complete": 3,
+    "evidence_status": "pending-current-head-revalidation",
+    "previous_historical_evidence": {
+      "runner": "github-actions",
+      "run_id": 38547900810,
+      "run_attempt": 1,
+      "evidence_head_sha": "9a3e22f5ab8e3522bb27ff682f29703870e2f802",
+      "artifact_id": 11885536485,
+      "artifact_digest": "sha256:f0067de9aa30612734e5214ae88fadaf86e01ce7bfbc8183cb99002436359811",
+      "upstream_commit": "c317da960b2664962aeb17892adbd6dda59c98fe",
+      "evidence_status": "historical-only"
+    }
   },
   "immutable_commit_pin_occurrences": [
     {
@@ -40,7 +51,7 @@
       "source_line": 164,
       "repository": "https://github.com/desktop-app/patches.git",
       "ref_kind": "commit",
-      "commit": "f7433965ed33996c641a822c78a81eef3526c9e7",
+      "commit": "fe957833b84525e634a8d776a7f834ed536d9a21",
       "disposition": "build-input-exact-pin",
       "status": "classified",
       "source_scope": "accepted-upstream"
@@ -103,7 +114,7 @@
     {
       "id": "ACQ-R9-IMMUTABLE-008",
       "source_path": "Telegram/build/docker/centos_env/Dockerfile",
-      "source_line": 917,
+      "source_line": 918,
       "repository": "https://chromium.googlesource.com/breakpad/breakpad.git",
       "ref_kind": "commit",
       "commit": "9aebd3d8ef5a246deb2c929b5666aaba160ebce6",
@@ -114,7 +125,7 @@
     {
       "id": "ACQ-R9-IMMUTABLE-009",
       "source_path": "Telegram/build/docker/centos_env/Dockerfile",
-      "source_line": 922,
+      "source_line": 923,
       "repository": "https://chromium.googlesource.com/linux-syscall-support.git",
       "ref_kind": "commit",
       "commit": "29164a80da4d41134950d76d55199ea33fbb9613",
@@ -125,7 +136,7 @@
     {
       "id": "ACQ-R9-IMMUTABLE-010",
       "source_path": "Telegram/build/docker/centos_env/Dockerfile",
-      "source_line": 955,
+      "source_line": 956,
       "repository": "https://github.com/desktop-app/tg_owt.git",
       "ref_kind": "commit",
       "commit": "07fb35bc33b3e79125a1beab7690e830f183f5d8",
@@ -136,7 +147,7 @@
     {
       "id": "ACQ-R9-IMMUTABLE-011",
       "source_path": "Telegram/build/docker/centos_env/Dockerfile",
-      "source_line": 985,
+      "source_line": 986,
       "repository": "https://github.com/tdlib/td.git",
       "ref_kind": "commit",
       "commit": "51743dfd01dff6179e2d8f7095729caa4e2222e9",
@@ -147,7 +158,7 @@
     {
       "id": "ACQ-R9-IMMUTABLE-012",
       "source_path": "Telegram/build/docker/centos_env/Dockerfile",
-      "source_line": 1009,
+      "source_line": 1010,
       "repository": "https://github.com/dkaraush/tlottie.git",
       "ref_kind": "commit",
       "commit": "92df98dc209bc39b1e567ec74a8c86a0af5239de",
@@ -158,10 +169,10 @@
     {
       "id": "ACQ-R9-IMMUTABLE-013",
       "source_path": "snap/snapcraft.yaml",
-      "source_line": 126,
+      "source_line": 127,
       "repository": "https://github.com/desktop-app/patches.git",
       "ref_kind": "commit",
-      "commit": "f7433965ed33996c641a822c78a81eef3526c9e7",
+      "commit": "fe957833b84525e634a8d776a7f834ed536d9a21",
       "disposition": "build-input-exact-pin",
       "status": "classified",
       "source_scope": "accepted-upstream"
@@ -169,7 +180,7 @@
     {
       "id": "ACQ-R9-IMMUTABLE-014",
       "source_path": "snap/snapcraft.yaml",
-      "source_line": 324,
+      "source_line": 325,
       "repository": "https://github.com/madler/zlib.git",
       "ref_kind": "commit",
       "commit": "e3dc0a85b7032e98380dec011bc8f2c2ee0d8fca",
@@ -180,7 +191,7 @@
     {
       "id": "ACQ-R9-IMMUTABLE-015",
       "source_path": "snap/snapcraft.yaml",
-      "source_line": 462,
+      "source_line": 464,
       "repository": "https://github.com/tdlib/td.git",
       "ref_kind": "commit",
       "commit": "51743dfd01dff6179e2d8f7095729caa4e2222e9",
@@ -191,7 +202,7 @@
     {
       "id": "ACQ-R9-IMMUTABLE-016",
       "source_path": "snap/snapcraft.yaml",
-      "source_line": 510,
+      "source_line": 512,
       "repository": "https://github.com/dkaraush/tlottie.git",
       "ref_kind": "commit",
       "commit": "92df98dc209bc39b1e567ec74a8c86a0af5239de",
@@ -202,7 +213,7 @@
     {
       "id": "ACQ-R9-IMMUTABLE-017",
       "source_path": "snap/snapcraft.yaml",
-      "source_line": 529,
+      "source_line": 531,
       "repository": "https://github.com/desktop-app/tg_owt.git",
       "ref_kind": "commit",
       "commit": "07fb35bc33b3e79125a1beab7690e830f183f5d8",
@@ -213,7 +224,7 @@
     {
       "id": "ACQ-R9-IMMUTABLE-018",
       "source_path": "Telegram/build/docker/centos_env/Dockerfile",
-      "source_line": 1015,
+      "source_line": 1016,
       "repository": "https://github.com/i582/wallet-engine.git",
       "ref_kind": "commit",
       "commit": "e59e0d89d7ee90c388bf36e3334c5b276f396697",
@@ -224,7 +235,7 @@
     {
       "id": "ACQ-R9-IMMUTABLE-019",
       "source_path": "snap/snapcraft.yaml",
-      "source_line": 517,
+      "source_line": 519,
       "repository": "https://github.com/i582/wallet-engine.git",
       "ref_kind": "commit",
       "commit": "e59e0d89d7ee90c388bf36e3334c5b276f396697",
@@ -526,10 +537,10 @@
         452,
         467,
         486,
-        954,
-        984,
-        1008,
-        1014
+        955,
+        985,
+        1009,
+        1015
       ],
       "authority_scope": "build-source-authority"
     },
@@ -537,13 +548,13 @@
       "disposition": "exact-immutable-input-support",
       "source_path": "Telegram/build/prepare/prepare.py",
       "source_lines": [
-        521,
-        526,
-        634,
-        1786,
-        1905,
-        1992,
-        2005
+        522,
+        527,
+        635,
+        1834,
+        1953,
+        2040,
+        2053
       ],
       "authority_scope": "build-source-authority"
     },
@@ -551,13 +562,13 @@
       "disposition": "exact-immutable-input-support",
       "source_path": "snap/snapcraft.yaml",
       "source_lines": [
-        124,
-        322,
-        460,
-        477,
-        508,
-        515,
-        527
+        125,
+        323,
+        462,
+        479,
+        510,
+        517,
+        529
       ],
       "authority_scope": "build-source-authority"
     },
@@ -565,14 +576,15 @@
       "disposition": "exact-ref-requires-full-resolution",
       "source_path": "Telegram/build/prepare/prepare.py",
       "source_lines": [
-        576,
-        774,
-        1448,
-        1454,
-        1488,
-        1518,
-        1526,
-        1588
+        577,
+        775,
+        1449,
+        1455,
+        1489,
+        1519,
+        1527,
+        1589,
+        1597
       ],
       "authority_scope": "build-source-authority"
     },
@@ -619,13 +631,13 @@
         824,
         836,
         857,
-        902,
-        912,
-        932,
-        965,
-        976,
-        994,
-        1044
+        903,
+        913,
+        933,
+        966,
+        977,
+        995,
+        1045
       ],
       "authority_scope": "internal-build-stage"
     },
@@ -671,7 +683,7 @@
         826,
         840,
         874,
-        967
+        968
       ],
       "authority_scope": "build-source-authority"
     },
@@ -679,29 +691,29 @@
       "disposition": "mutable-tag-or-branch-input",
       "source_path": "Telegram/build/prepare/prepare.py",
       "source_lines": [
-        609,
-        622,
-        672,
-        709,
-        756,
-        826,
-        834,
-        899,
-        957,
-        986,
-        1025,
-        1068,
-        1130,
-        1165,
-        1169,
-        1173,
-        1356,
-        1418,
-        1453,
-        1493,
-        1600,
-        1669,
-        1884
+        610,
+        623,
+        673,
+        710,
+        757,
+        827,
+        835,
+        900,
+        958,
+        987,
+        1026,
+        1069,
+        1131,
+        1166,
+        1170,
+        1174,
+        1357,
+        1419,
+        1454,
+        1494,
+        1610,
+        1683,
+        1932
       ],
       "authority_scope": "build-source-authority"
     },
@@ -709,24 +721,24 @@
       "disposition": "mutable-tag-or-branch-input",
       "source_path": "snap/snapcraft.yaml",
       "source_lines": [
-        135,
-        137,
-        149,
-        151,
-        165,
-        167,
-        334,
-        336,
-        349,
-        351,
-        368,
-        370,
-        386,
-        388,
-        396,
-        398,
-        442,
-        444
+        136,
+        138,
+        150,
+        152,
+        166,
+        168,
+        335,
+        337,
+        350,
+        352,
+        369,
+        371,
+        387,
+        389,
+        397,
+        399,
+        444,
+        446
       ],
       "authority_scope": "build-source-authority"
     },
@@ -738,7 +750,7 @@
         470,
         489,
         876,
-        957
+        958
       ],
       "authority_scope": "build-source-authority"
     },
@@ -746,11 +758,11 @@
       "disposition": "recursive-child-input",
       "source_path": "Telegram/build/prepare/prepare.py",
       "source_lines": [
-        1529,
         1530,
-        1602,
-        1671,
-        1789
+        1531,
+        1612,
+        1685,
+        1837
       ],
       "authority_scope": "build-source-authority"
     },
@@ -768,7 +780,7 @@
       "disposition": "self-repository-local-source",
       "source_path": "snap/snapcraft.yaml",
       "source_lines": [
-        39
+        40
       ],
       "authority_scope": "self-repository-source"
     },
@@ -806,7 +818,7 @@
         16,
         18,
         31,
-        1000
+        1001
       ],
       "authority_scope": "toolchain-authority"
     },
@@ -814,12 +826,12 @@
       "disposition": "tool-bootstrap",
       "source_path": "Telegram/build/prepare/prepare.py",
       "source_lines": [
-        541,
         542,
-        556,
-        580,
-        583,
-        597
+        543,
+        557,
+        581,
+        584,
+        598
       ],
       "authority_scope": "toolchain-authority"
     },
@@ -827,7 +839,7 @@
       "disposition": "versioned-download-input",
       "source_path": "Telegram/build/docker/centos_env/Dockerfile",
       "source_lines": [
-        904
+        905
       ],
       "authority_scope": "build-source-authority"
     },
@@ -835,7 +847,7 @@
       "disposition": "versioned-download-input",
       "source_path": "Telegram/build/prepare/prepare.py",
       "source_lines": [
-        805
+        806
       ],
       "authority_scope": "build-source-authority"
     }
@@ -843,7 +855,7 @@
   "resolved_short_ref_contexts": [
     {
       "source_path": "Telegram/build/prepare/prepare.py",
-      "source_line": 576,
+      "source_line": 577,
       "repository": "https://github.com/desktop-app/gyp.git",
       "observed_short_ref": "5e2425c47b",
       "resolved_commit": "5e2425c47ba62aea63b20887ce545058b2dddec6",
@@ -851,7 +863,7 @@
     },
     {
       "source_path": "Telegram/build/prepare/prepare.py",
-      "source_line": 773,
+      "source_line": 774,
       "repository": "https://github.com/desktop-app/rnnoise.git",
       "observed_short_ref": "d8ea2b0",
       "resolved_commit": "d8ea2b0ec6a88f8a68d6904d75e33b4f09cb2987",
@@ -859,7 +871,7 @@
     },
     {
       "source_path": "Telegram/build/prepare/prepare.py",
-      "source_line": 1525,
+      "source_line": 1526,
       "repository": "https://github.com/desktop-app/crashpad.git",
       "observed_short_ref": "3279fae3f0",
       "resolved_commit": "3279fae3f02a0370ef54d4f9d264f52f337b0f1d",
@@ -867,23 +879,15 @@
     },
     {
       "source_path": "Telegram/build/prepare/prepare.py",
-      "source_line": 1587,
-      "repository": "https://github.com/desktop-app/tg_angle.git",
-      "observed_short_ref": "48bc60bdb1",
-      "resolved_commit": "48bc60bdb15c9603fd426cf87949e5a4342cee43",
-      "status": "resolved"
-    },
-    {
-      "source_path": "Telegram/build/prepare/prepare.py",
-      "source_line": 1417,
+      "source_line": 1418,
       "repository": "https://github.com/telegramdesktop/openal-soft.git",
-      "observed_short_ref": "291c0fdbbd",
-      "resolved_commit": "291c0fdbbdd767f00c45c7fca562614faea57647",
+      "observed_short_ref": "00cb9b649c",
+      "resolved_commit": "00cb9b649c1a6ad1802d88ee4458979164529238",
       "status": "resolved-windows-ref-with-separate-mutable-macos-branch"
     },
     {
       "source_path": "Telegram/build/prepare/prepare.py",
-      "source_line": 1447,
+      "source_line": 1448,
       "repository": "https://chromium.googlesource.com/breakpad/breakpad",
       "observed_short_ref": "dfcb7b6799",
       "resolved_commit": "dfcb7b6799b7c1e2c8d65e857d8afede185471d8",
@@ -891,7 +895,7 @@
     },
     {
       "source_path": "Telegram/build/prepare/prepare.py",
-      "source_line": 1453,
+      "source_line": 1454,
       "repository": "https://chromium.googlesource.com/linux-syscall-support",
       "observed_short_ref": "e1e7b0ad8e",
       "resolved_commit": "e1e7b0ad8ee99a875b272c8e33e308472e897660",
@@ -900,7 +904,7 @@
     },
     {
       "source_path": "Telegram/build/prepare/prepare.py",
-      "source_line": 1487,
+      "source_line": 1488,
       "repository": "https://chromium.googlesource.com/breakpad/breakpad",
       "observed_short_ref": "dfcb7b6799",
       "resolved_commit": "dfcb7b6799b7c1e2c8d65e857d8afede185471d8",
@@ -908,7 +912,7 @@
     },
     {
       "source_path": "Telegram/build/prepare/prepare.py",
-      "source_line": 1517,
+      "source_line": 1518,
       "repository": "https://chromium.googlesource.com/linux-syscall-support",
       "observed_short_ref": "e1e7b0ad8e",
       "resolved_commit": "e1e7b0ad8ee99a875b272c8e33e308472e897660",
@@ -1127,7 +1131,7 @@
   ],
   "recursive_build_reachability": {
     "status": "partial-audited-disposition-open",
-    "accepted_upstream_commit": "d77f486228a98e15d6695514d5f2b28ce1c6a872",
+    "accepted_upstream_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
     "rule": "A recursively discovered repository is source/build authority only when an accepted TDesktop build path actually initializes, downloads, generates, patches, or consumes it. Presence as an unselected superproject gitlink is not sufficient.",
     "qt_superproject": {
       "repository": "https://github.com/qt/qt5",
@@ -1163,17 +1167,17 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "blob": "698ccd839591d4497ff5a932885f45724f95b890",
+          "blob": "4063cc766ffb60c018b7a6ad456453ec585d5566",
           "evidence": "Qt 5 initializes only qtbase qtimageformats qtsvg; Qt 6 prepare initializes only qtbase qtimageformats qtshadertools qtsvg."
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "blob": "126b74a759c4e09a51a37e951fa694c407b2a747",
+          "blob": "f72162089985263493c6e3f7e23b566f5df8e454",
           "evidence": "Qt 6 Linux image initializes only qtbase qtdeclarative qtwayland qtimageformats qtsvg qtshadertools."
         },
         {
           "path": "snap/snapcraft.yaml",
-          "blob": "824d6a30f1d4b85a29eece886bc1c1e2f42f59d4",
+          "blob": "38f0eb362832c3623b868c9aa90c03bc4f426d01",
           "evidence": "Snap Qt source-submodules lists only qtbase qtdeclarative qtimageformats qtshadertools qtsvg qtwayland."
         }
       ],
@@ -1260,17 +1264,17 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "blob": "9482a53e60386743ae797d75cecc36767cd63646",
+          "blob": "a8bd8d6a5c1e190a27702cbcf7f00d10ce6f9dda",
           "evidence": "Clones OpenSSL and builds libraries directly; no git submodule init/update in the OpenSSL stage."
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "blob": "5516c448c628d5928d690687ed948d67b5cdaac3",
+          "blob": "39b185c7277b1bb1819761d112a6799d4152ff04",
           "evidence": "Shallow clones OpenSSL, configures no-tests/no-dso, builds and installs; no submodule init/update."
         },
         {
           "path": "snap/snapcraft.yaml",
-          "blob": "5cff7cf59aedc430b0a9a2d6d66ab6fe3c29bd9f",
+          "blob": "618110dba69e4f18c78fe65f282f1342a631cbfb",
           "evidence": "Snap OpenSSL part uses source-tag/plugin make and does not request source-submodules."
         }
       ],
@@ -1669,8 +1673,8 @@
         },
         {
           "repository": "https://github.com/telegramdesktop/openal-soft",
-          "commit": "291c0fdbbdd767f00c45c7fca562614faea57647",
-          "ref": "291c0fdbbd",
+          "commit": "00cb9b649c1a6ad1802d88ee4458979164529238",
+          "ref": "00cb9b649c",
           "build_entries": [
             "Telegram/build/prepare/prepare.py"
           ]

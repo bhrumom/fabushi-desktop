@@ -55,6 +55,8 @@ use mahayana_core::capability::CapabilityRequest;
 use mahayana_host::HostCreateConfig;
 #[cfg(feature = "production")]
 use mahayana_host::MahayanaHost;
+#[cfg(all(feature = "production", not(target_arch = "wasm32")))]
+use mahayana_host::{MiniAppRuntimeStorePort, RuntimeStoreError};
 use mahayana_host_protocol::AgentBroadcastResult;
 use mahayana_host_protocol::AgentMode;
 use mahayana_host_protocol::AgentPeerMessage;
@@ -148,6 +150,7 @@ use std::io::SeekFrom;
 use std::io::Write;
 use std::path::Path;
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::MutexGuard;
 use std::sync::OnceLock;
@@ -330,7 +333,27 @@ pub struct FeatureHostController {
     /// This is deliberately not a credential; it is only an identity marker
     /// used to prevent transcript/state reuse across account boundaries.
     active_account_id: Mutex<Option<String>>,
+    /// Changes whenever the authenticated account boundary changes. This is
+    /// process-local fencing state, not a second account/session authority.
+    mini_app_account_generation: Mutex<u64>,
     state: Mutex<FeatureState>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MiniAppAccountScope {
+    pub account_id: String,
+    pub generation: u64,
+}
+
+#[derive(Clone)]
+pub struct MiniAppAccountPort {
+    controller: Arc<FeatureHostController>,
+}
+
+impl MiniAppAccountPort {
+    pub fn current_scope(&self) -> Result<MiniAppAccountScope, FeatureHostError> {
+        self.controller.current_mini_app_account_scope()
+    }
 }
 
 impl FeatureHostController {
@@ -398,6 +421,7 @@ impl FeatureHostController {
             workflow_root_path,
             teach_recording: Mutex::new(None),
             active_account_id: Mutex::new(None),
+            mini_app_account_generation: Mutex::new(0),
             state: Mutex::new(state),
         }
     }
@@ -497,6 +521,7 @@ impl FeatureHostController {
             workflow_root_path,
             teach_recording: Mutex::new(None),
             active_account_id: Mutex::new(None),
+            mini_app_account_generation: Mutex::new(0),
             state: Mutex::new(state),
         };
         controller.ensure_account_boundary(&controller.auth_status()?)?;
@@ -509,6 +534,65 @@ impl FeatureHostController {
 
     pub fn info(&self) -> HostInfo {
         self.info.clone()
+    }
+
+    pub fn mini_app_account_port(self: &Arc<Self>) -> MiniAppAccountPort {
+        MiniAppAccountPort {
+            controller: Arc::clone(self),
+        }
+    }
+
+    #[cfg(all(feature = "production", not(target_arch = "wasm32")))]
+    pub fn mini_app_store_port(&self) -> Result<MiniAppRuntimeStorePort, FeatureHostError> {
+        self.runtime()?
+            .mini_app_store_port()
+            .map_err(|error: RuntimeStoreError| {
+                FeatureHostError::Contract(format!("mini-app storage is unavailable: {error}"))
+            })
+    }
+
+    fn current_mini_app_account_scope(
+        &self,
+    ) -> Result<MiniAppAccountScope, FeatureHostError> {
+        if self.config.mode != HostMode::Production {
+            return Err(FeatureHostError::Contract(
+                "mini-app account scope is unavailable outside the production account owner".into(),
+            ));
+        }
+        let status = self.auth_status()?;
+        let auth = auth_payload(&status);
+        if auth.get("loggedIn").and_then(Value::as_bool) != Some(true) {
+            return Err(FeatureHostError::Contract(
+                "mini-app operation requires an authenticated account".into(),
+            ));
+        }
+        let account_id = auth_account_id(auth).ok_or_else(|| {
+            FeatureHostError::Contract(
+                "authenticated account has no verified stable identity".into(),
+            )
+        })?;
+        let active = self
+            .active_account_id
+            .lock()
+            .map_err(|_| FeatureHostError::StatePoisoned)?;
+        if active.as_deref() != Some(account_id.as_str()) {
+            return Err(FeatureHostError::Contract(
+                "mini-app account changed during scope resolution".into(),
+            ));
+        }
+        let generation = *self
+            .mini_app_account_generation
+            .lock()
+            .map_err(|_| FeatureHostError::StatePoisoned)?;
+        if generation == 0 {
+            return Err(FeatureHostError::Contract(
+                "mini-app account generation is unavailable".into(),
+            ));
+        }
+        Ok(MiniAppAccountScope {
+            account_id,
+            generation,
+        })
     }
 
     /// Return UI-safe account state. Credentials stay inside the Rust product
@@ -6962,6 +7046,16 @@ impl FeatureHostController {
             *active != next_account_id
         };
         if changed {
+            let next_generation = self
+                .mini_app_account_generation
+                .lock()
+                .map_err(|_| FeatureHostError::StatePoisoned)?
+                .checked_add(1)
+                .ok_or_else(|| {
+                    FeatureHostError::Contract(
+                        "mini-app account generation is exhausted".into(),
+                    )
+                })?;
             let account_id = next_account_id.as_deref();
             let history_path = match (self.memory_root_path.as_deref(), account_id) {
                 (Some(root), Some(id)) => Some(
@@ -7054,6 +7148,10 @@ impl FeatureHostController {
                 .active_account_id
                 .lock()
                 .map_err(|_| FeatureHostError::StatePoisoned)? = next_account_id.clone();
+            *self
+                .mini_app_account_generation
+                .lock()
+                .map_err(|_| FeatureHostError::StatePoisoned)? = next_generation;
 
             // Materialize Fabu-compatible per-Agent profile/settings files after
             // the account scope becomes authoritative. This also migrates older

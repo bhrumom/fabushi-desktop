@@ -312,7 +312,7 @@ for (const [rulesKey,status,scope] of [
 const result={
   project_id:'TDRP-001',
   spec_revision:9,
-  target_commit:process.env.GITHUB_SHA,
+  target_commit:(process.env.TDRP_TARGET_SHA||process.env.GITHUB_SHA),
   accepted_upstream_commit:inventory.upstream_commit,
   scanned_authorities:all.size,
   independently_acquired_root_authorities:rootKeys.size,

@@ -69,7 +69,7 @@ add([key('.github/workflows/linux.yml',73)],{
   kind:'tool-bootstrap-versioned-archive',disposition:'non-product-source-toolchain',version:'4.13.6',...ccache
 });
 const rustup=hashUrl('https://sh.rustup.rs','rustup-init.sh');
-add([key('Telegram/build/docker/centos_env/Dockerfile',1000),key('Telegram/build/prepare/prepare.py',597)],{
+add([key('Telegram/build/docker/centos_env/Dockerfile',1001),key('Telegram/build/prepare/prepare.py',598)],{
   kind:'tool-bootstrap-content-snapshot',disposition:'non-product-source-toolchain',...rustup,
   rationale:'rustup installer is toolchain bootstrap; accepted sources separately pin the Rust toolchain version.'
 });
@@ -85,9 +85,9 @@ add([
   rationale:'Rocky Linux dnf and pip packages provide compilers/build tools; they are not source inputs whose product responsibilities are migrated. The base image is separately resolved to an OCI digest.'
 });
 add([
-  key('Telegram/build/prepare/prepare.py',541),
+  key('Telegram/build/prepare/prepare.py',543),
   key('Telegram/build/prepare/prepare.py',542),
-  key('Telegram/build/prepare/prepare.py',556),
+  key('Telegram/build/prepare/prepare.py',557),
 ],{
   kind:'package-manager-toolchain',disposition:'non-product-source-toolchain',
   rationale:'MSYS2/pip bootstrap packages are build environment tools, not product source authority.'
@@ -96,18 +96,18 @@ add([
 // gyp@master is tool source, but is not product source; snapshot the moving ref to an immutable commit.
 const gyp=resolveRef('https://chromium.googlesource.com/external/gyp','master');
 fail(gyp.status==='resolved','gyp@master resolution failed: '+JSON.stringify(gyp));
-add([key('Telegram/build/prepare/prepare.py',580),key('Telegram/build/prepare/prepare.py',583)],{
+add([key('Telegram/build/prepare/prepare.py',581),key('Telegram/build/prepare/prepare.py',584)],{
   kind:'tool-source-ref-snapshot',disposition:'non-product-source-toolchain',resolution:gyp,
   rationale:'gyp executes generation/build logic and is not a product responsibility source; moving master is nevertheless resolved to an immutable commit snapshot.'
 });
 
 // Actual source archives remain source authority and are content-addressed.
 const boost=hashUrl('https://archives.boost.io/release/1.90.0/source/boost_1_90_0.tar.gz','boost-1.90.0.tar.gz');
-add([key('Telegram/build/docker/centos_env/Dockerfile',904)],{
+add([key('Telegram/build/docker/centos_env/Dockerfile',905)],{
   kind:'source-archive-content-authority',disposition:'immutable-source-archive',version:'1.90.0',...boost
 });
 const libiconv=hashUrl('https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.18.tar.gz','libiconv-1.18.tar.gz');
-add([key('Telegram/build/prepare/prepare.py',805)],{
+add([key('Telegram/build/prepare/prepare.py',806)],{
   kind:'source-archive-content-authority',disposition:'immutable-source-archive',version:'1.18',...libiconv
 });
 
@@ -117,7 +117,7 @@ const missing=candidateDetails.filter(x=>!x.covered);
 fail(missing.length===0,'uncovered tool/versioned authority candidates: '+JSON.stringify(missing));
 fail(covered.size===candidates.length,'tool/versioned authority coverage cardinality drift');
 const report={
-  project_id:'TDRP-001',spec_revision:9,target_commit:process.env.GITHUB_SHA||null,upstream_commit:lock.upstream.commit,
+  project_id:'TDRP-001',spec_revision:9,target_commit:(process.env.TDRP_TARGET_SHA||process.env.GITHUB_SHA)||null,upstream_commit:lock.upstream.commit,
   candidate_lines_total:candidates.length,
   tool_bootstrap_lines:candidates.filter(x=>x.disposition==='tool-bootstrap').length,
   versioned_download_lines:candidates.filter(x=>x.disposition==='versioned-download-input').length,

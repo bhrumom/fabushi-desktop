@@ -40,6 +40,9 @@ on:
 permissions:
   contents: read
 
+env:
+  FABUSHI_TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+
 concurrency:
   group: rust-desktop-runtime-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -93,7 +96,7 @@ jobs:
           mkdir -p .evidence
           cat > .evidence/messaging-responsibilities.json <<EOF
           {
-            "head_sha": "${{ github.sha }}",
+            "head_sha": "${{ env.FABUSHI_TARGET_SHA }}",
             "manifest": "native/mahayana-messaging/Cargo.toml",
             "responsibilities": [
               "scheduled-and-silent-forward-preservation",
@@ -108,7 +111,7 @@ jobs:
       - name: Upload canonical Fabushi messaging evidence
         uses: actions/upload-artifact@v4
         with:
-          name: rust-messaging-responsibilities-${{ github.sha }}
+          name: rust-messaging-responsibilities-${{ env.FABUSHI_TARGET_SHA }}
           path: .evidence/messaging-responsibilities.json
           if-no-files-found: error
           retention-days: 90
@@ -140,6 +143,12 @@ jobs:
       - name: Test ConversationActor and CapabilityBroker ownership
         shell: bash
         run: cargo test -p mahayana-runtime --manifest-path source/mahayana/mahayana-rs/Cargo.toml
+      - name: Test Native-only Desktop credential hand-off on macOS
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-platform-client --lib
+          cargo test --manifest-path source/mahayana/mahayana-rs/Cargo.toml -p mahayana-app-host --test native_desktop_account_handoff
 
   pressure-profiler-platform:
     name: Pressure profiler / ${{ matrix.os }}
@@ -173,13 +182,14 @@ jobs:
         with:
           workspaces: source/host -> target
           shared-key: pressure-profiler-${{ matrix.os }}-1.97.1
-      - name: Enable Linux perf sampling
+      - name: Enable Linux perf sampling and native desktop dependencies
         if: runner.os == 'Linux'
         shell: bash
         run: |
           set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
           if ! command -v perf >/dev/null 2>&1; then
-            sudo apt-get update
             sudo apt-get install -y linux-tools-common linux-tools-generic
           fi
           sudo sysctl -w kernel.perf_event_paranoid=-1 || true

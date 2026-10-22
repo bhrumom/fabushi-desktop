@@ -7,9 +7,12 @@ use std::time::Duration;
 use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use sha2::{Digest, Sha256};
 use url::Url;
 
 const DEFAULT_FABUSHI_API_BASE_URL: &str = "https://api.ombhrum.com";
+const CI_ISOLATED_FABUSHI_AUTH_BASE_URL: &str = "https://fabushi-ci-isolated-auth.bhrumom.workers.dev";
+const ISOLATED_AUTH_ID_DOMAIN: &str = "fabushi-native-auth-id-v1";
 const FABUSHI_API_BASE_URL_ENV: &str = "FABUSHI_API_BASE_URL";
 const FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV: &str = "FABUSHI_HOST_ACCESS_CREDENTIAL_FILE";
 
@@ -103,12 +106,52 @@ pub struct FabushiRemoteHumanCallEvent {
 
 #[derive(Debug, Deserialize)]
 struct CredentialFile {
+    #[serde(default)]
+    issuer: Option<String>,
     #[serde(rename = "accessToken")]
     access_token: String,
     #[serde(rename = "deviceId")]
     device_id: String,
     #[serde(rename = "userId")]
     user_id: Value,
+    #[serde(rename = "sessionId", default)]
+    session_id: String,
+    #[serde(rename = "expiresAtMs", default)]
+    expires_at_ms: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FabushiNativeCredentialClaim {
+    pub user_id: String,
+    pub issuer: String,
+    pub device_id: String,
+    /// SHA-256 of the opaque Native sessionId; the identifier itself never leaves this owner.
+    pub session_binding_hash: String,
+    pub expires_at_ms: u64,
+}
+
+impl FabushiNativeCredentialClaim {
+    /// Matches Electron's account-slot hash of the issuer-qualified Native authId.
+    pub fn account_scope_hash(&self) -> String {
+        let auth_id = if self.issuer == DEFAULT_FABUSHI_API_BASE_URL {
+            self.user_id.clone()
+        } else if self.issuer == CI_ISOLATED_FABUSHI_AUTH_BASE_URL {
+            format!("fabushi-ci-isolated:v1:{}", sha256_hex(
+                format!("{ISOLATED_AUTH_ID_DOMAIN}\0{}\0{}", self.issuer, self.user_id).as_bytes()
+            ))
+        } else {
+            self.user_id.clone()
+        };
+        sha256_hex(auth_id.as_bytes())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FabushiIdentityVerificationError {
+    Unauthenticated,
+    Network,
+    Rejected,
+    IdentityMismatch,
 }
 
 #[derive(Debug, Deserialize)]
@@ -292,11 +335,54 @@ impl FabushiNativeMessagingClient {
     }
 
     pub fn identity(&self) -> Result<FabushiNativeIdentity, String> {
-        let credentials = read_credentials(&self.credential_path)?;
+        let credentials = self.read_bound_credentials()?;
         Ok(FabushiNativeIdentity {
             user_id: fabushi_identity_text(&credentials.user_id)?,
             device_id: required_trimmed(&credentials.device_id, "deviceId")?.to_string(),
         })
+    }
+
+    /// Read only the existing private credential owner and produce a bounded
+    /// local claim. The bearer token and raw sessionId remain private here.
+    pub fn credential_claim(&self) -> Result<FabushiNativeCredentialClaim, String> {
+        let credentials = self.read_bound_credentials()?;
+        credential_claim_from(&credentials)
+    }
+
+    /// Confirm the private credential's userId with Fabushi's authenticated
+    /// identity endpoint; never trust a caller-provided account identifier.
+    pub fn verify_account_identity(&self) -> Result<FabushiNativeCredentialClaim, FabushiIdentityVerificationError> {
+        let credentials = read_credentials(&self.credential_path)
+            .map_err(|_| FabushiIdentityVerificationError::Unauthenticated)?;
+        let claim = credential_claim_from(&credentials)
+            .map_err(|_| FabushiIdentityVerificationError::Unauthenticated)?;
+        if !issuer_matches_base(&claim.issuer, &self.base_url) {
+            return Err(FabushiIdentityVerificationError::Rejected);
+        }
+        let response = self.client.get(self.endpoint("/api/auth/user-info")
+                .map_err(|_| FabushiIdentityVerificationError::Rejected)?)
+            .bearer_auth(required_trimmed(&credentials.access_token, "accessToken")
+                .map_err(|_| FabushiIdentityVerificationError::Unauthenticated)?)
+            .header("accept", "application/json")
+            .send()
+            .map_err(|_| FabushiIdentityVerificationError::Network)?;
+        classify_identity_http_status(response.status())?;
+        let mut limited = response.take(1024 * 1024 + 1);
+        let mut bytes = Vec::new();
+        limited.read_to_end(&mut bytes).map_err(|_| FabushiIdentityVerificationError::Network)?;
+        if bytes.len() > 1024 * 1024 { return Err(FabushiIdentityVerificationError::Rejected); }
+        let payload: Value = serde_json::from_slice(&bytes).map_err(|_| FabushiIdentityVerificationError::Rejected)?;
+        let data = payload.get("data").unwrap_or(&payload);
+        let user = data.get("user");
+        let remote_id = [data.get("userId"), data.get("user_id"), data.get("userNo"), data.get("user_no"), data.get("id"),
+            user.and_then(|value| value.get("userId")), user.and_then(|value| value.get("user_id")),
+            user.and_then(|value| value.get("userNo")), user.and_then(|value| value.get("user_no")),
+            user.and_then(|value| value.get("id"))]
+            .into_iter().flatten().find_map(|value| fabushi_identity_text(value).ok());
+        if remote_id.as_deref() != Some(claim.user_id.as_str()) {
+            return Err(FabushiIdentityVerificationError::IdentityMismatch);
+        }
+        Ok(claim)
     }
 
     pub fn upload_direct_message_resource(
@@ -310,7 +396,7 @@ impl FabushiNativeMessagingClient {
         if bytes.is_empty() {
             return Err("Fabushi Human attachment is empty".into());
         }
-        let credentials = read_credentials(&self.credential_path)?;
+        let credentials = self.read_bound_credentials()?;
         let part = reqwest::blocking::multipart::Part::bytes(bytes)
             .file_name(name.to_string())
             .mime_str("application/octet-stream")
@@ -362,7 +448,7 @@ impl FabushiNativeMessagingClient {
         if expected_size == 0 || expected_size > MAX_RESOURCE_BYTES {
             return Err("Fabushi Human attachment size exceeds the backend limit".into());
         }
-        let credentials = read_credentials(&self.credential_path)?;
+        let credentials = self.read_bound_credentials()?;
         let encoded_resource_id: String =
             url::form_urlencoded::byte_serialize(resource_id.as_bytes()).collect();
         let response = self
@@ -425,7 +511,7 @@ impl FabushiNativeMessagingClient {
         if text.is_empty() && attachments.is_empty() {
             return Err("Fabushi Human message requires text or attachments".into());
         }
-        let credentials = read_credentials(&self.credential_path)?;
+        let credentials = self.read_bound_credentials()?;
         let response = self
             .client
             .post(self.endpoint("/api/social/messages")?)
@@ -490,7 +576,7 @@ impl FabushiNativeMessagingClient {
         if emoji.as_bytes().len() > 32 {
             return Err("Fabushi Human reaction emoji exceeds the backend limit".into());
         }
-        let credentials = read_credentials(&self.credential_path)?;
+        let credentials = self.read_bound_credentials()?;
         let path = format!("/api/social/messages/{message_id}/reactions");
         let response = self
             .client
@@ -533,7 +619,7 @@ impl FabushiNativeMessagingClient {
     }
 
     pub fn list_friends(&self) -> Result<Vec<FabushiRemoteHumanContact>, String> {
-        let credentials = read_credentials(&self.credential_path)?;
+        let credentials = self.read_bound_credentials()?;
         let response = self
             .client
             .get(self.endpoint("/api/social/friends")?)
@@ -572,7 +658,7 @@ impl FabushiNativeMessagingClient {
         limit: usize,
     ) -> Result<Vec<FabushiRemoteHumanMessage>, String> {
         let peer_human_id = required_trimmed(peer_human_id, "peer Human id")?;
-        let credentials = read_credentials(&self.credential_path)?;
+        let credentials = self.read_bound_credentials()?;
         let mut url = self.endpoint("/api/social/messages")?;
         {
             let mut query = url.query_pairs_mut();
@@ -616,7 +702,7 @@ impl FabushiNativeMessagingClient {
     pub fn get_human_call_ice_servers(
         &self,
     ) -> Result<(Vec<FabushiCallIceServer>, u64), String> {
-        let credentials = read_credentials(&self.credential_path)?;
+        let credentials = self.read_bound_credentials()?;
         let response = self
             .client
             .get(self.endpoint("/api/social/calls/ice")?)
@@ -664,7 +750,7 @@ impl FabushiNativeMessagingClient {
     }
 
     pub fn list_human_calls(&self, limit: usize) -> Result<Vec<FabushiRemoteHumanCall>, String> {
-        let credentials = read_credentials(&self.credential_path)?;
+        let credentials = self.read_bound_credentials()?;
         let mut url = self.endpoint("/api/social/calls")?;
         url.query_pairs_mut()
             .append_pair("limit", &limit.clamp(1, 200).to_string());
@@ -706,7 +792,7 @@ impl FabushiNativeMessagingClient {
     ) -> Result<FabushiRemoteHumanCall, String> {
         let call_id = required_trimmed(call_id, "call id")?;
         let peer_human_id = required_trimmed(peer_human_id, "peer Human id")?;
-        let credentials = read_credentials(&self.credential_path)?;
+        let credentials = self.read_bound_credentials()?;
         let response = self
             .client
             .post(self.endpoint("/api/social/calls")?)
@@ -757,7 +843,7 @@ impl FabushiNativeMessagingClient {
         let call_id = required_trimmed(call_id, "call id")?;
         let encoded_call_id: String =
             url::form_urlencoded::byte_serialize(call_id.as_bytes()).collect();
-        let credentials = read_credentials(&self.credential_path)?;
+        let credentials = self.read_bound_credentials()?;
         let mut url = self.endpoint(&format!("/api/social/calls/{encoded_call_id}"))?;
         {
             let mut query = url.query_pairs_mut();
@@ -820,7 +906,7 @@ impl FabushiNativeMessagingClient {
         }
         let encoded_call_id: String =
             url::form_urlencoded::byte_serialize(call_id.as_bytes()).collect();
-        let credentials = read_credentials(&self.credential_path)?;
+        let credentials = self.read_bound_credentials()?;
         let response = self
             .client
             .post(self.endpoint(&format!(
@@ -881,6 +967,15 @@ impl FabushiNativeMessagingClient {
             .join(path.trim_start_matches('/'))
             .map_err(|error| format!("Fabushi messaging endpoint is invalid: {error}"))
     }
+
+    fn read_bound_credentials(&self) -> Result<CredentialFile, String> {
+        let credentials = read_credentials(&self.credential_path)?;
+        let issuer = credential_issuer(credentials.issuer.as_deref())?;
+        if !issuer_matches_base(&issuer, &self.base_url) {
+            return Err("Fabushi native credential issuer does not match the configured service origin.".into());
+        }
+        Ok(credentials)
+    }
 }
 
 fn validate_base_url(raw: &str) -> Result<Url, String> {
@@ -899,6 +994,14 @@ fn validate_base_url(raw: &str) -> Result<Url, String> {
         return Err(
             "Fabushi messaging API base URL must not contain credentials, query, or fragment.".into(),
         );
+    }
+    let origin = url.origin().ascii_serialization();
+    if !loopback && origin != DEFAULT_FABUSHI_API_BASE_URL
+        && origin != CI_ISOLATED_FABUSHI_AUTH_BASE_URL {
+        return Err("Fabushi messaging API must use an approved Native issuer origin.".into());
+    }
+    if !loopback && url.path() != "/" {
+        return Err("Fabushi messaging API origin must not include a path.".into());
     }
     url.set_query(None);
     url.set_fragment(None);
@@ -925,6 +1028,46 @@ fn read_credentials(path: &Path) -> Result<CredentialFile, String> {
     .map_err(|error| format!("Fabushi messaging credential JSON is invalid: {error}"))
 }
 
+fn credential_claim_from(credentials: &CredentialFile) -> Result<FabushiNativeCredentialClaim, String> {
+    let user_id = fabushi_identity_text(&credentials.user_id)?;
+    if credentials.user_id.as_str().is_some_and(|raw| raw != user_id) {
+        return Err("Fabushi native userId is not in canonical untrimmed form.".into());
+    }
+    let session_id = required_trimmed(&credentials.session_id, "sessionId")?;
+    let device_id = required_trimmed(&credentials.device_id, "deviceId")?.to_string();
+    let issuer = credential_issuer(credentials.issuer.as_deref())?;
+    if credentials.expires_at_ms <= unix_now_ms() {
+        return Err("Fabushi native account credential has expired.".into());
+    }
+    Ok(FabushiNativeCredentialClaim {
+        user_id,
+        issuer,
+        device_id,
+        session_binding_hash: sha256_hex(session_id.as_bytes()),
+        expires_at_ms: credentials.expires_at_ms,
+    })
+}
+
+fn credential_issuer(raw: Option<&str>) -> Result<String, String> {
+    let Some(raw) = raw else {
+        // Existing account-owner credentials predate issuer metadata and remain
+        // valid only for production; they cannot be reinterpreted as isolated.
+        return Ok(DEFAULT_FABUSHI_API_BASE_URL.to_string());
+    };
+    let url = validate_base_url(raw)?;
+    let origin = url.origin().ascii_serialization();
+    if origin == DEFAULT_FABUSHI_API_BASE_URL || origin == CI_ISOLATED_FABUSHI_AUTH_BASE_URL
+        || matches!(url.host_str(), Some("localhost" | "127.0.0.1" | "::1")) {
+        Ok(origin)
+    } else {
+        Err("Fabushi native credential issuer is unsupported.".into())
+    }
+}
+
+fn issuer_matches_base(issuer: &str, base_url: &Url) -> bool {
+    issuer == base_url.origin().ascii_serialization()
+}
+
 fn required_trimmed<'a>(value: &'a str, name: &str) -> Result<&'a str, String> {
     let value = value.trim();
     if value.is_empty() {
@@ -934,10 +1077,148 @@ fn required_trimmed<'a>(value: &'a str, name: &str) -> Result<&'a str, String> {
     }
 }
 
+fn sha256_hex(bytes: &[u8]) -> String {
+    format!("{:x}", Sha256::digest(bytes))
+}
+
+fn unix_now_ms() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|duration| duration.as_millis().min(u64::MAX as u128) as u64)
+        .unwrap_or(0)
+}
+
 pub fn fabushi_identity_text(value: &Value) -> Result<String, String> {
     match value {
         Value::String(value) => required_trimmed(value, "userId").map(str::to_string),
         Value::Number(value) => Ok(value.to_string()),
         _ => Err("Fabushi messaging userId is invalid.".into()),
+    }
+}
+
+fn classify_identity_http_status(
+    status: reqwest::StatusCode,
+) -> Result<(), FabushiIdentityVerificationError> {
+    match status {
+        reqwest::StatusCode::OK => Ok(()),
+        reqwest::StatusCode::UNAUTHORIZED | reqwest::StatusCode::FORBIDDEN => {
+            Err(FabushiIdentityVerificationError::Unauthenticated)
+        }
+        // Any received non-success HTTP response is an identity rejection, not
+        // a transport outage eligible for the mini-app last-good fallback.
+        _ => Err(FabushiIdentityVerificationError::Rejected),
+    }
+}
+
+#[cfg(test)]
+mod native_account_scope_tests {
+    use super::{
+        classify_identity_http_status, credential_issuer, issuer_matches_base,
+        unix_now_ms, validate_base_url, FabushiIdentityVerificationError,
+        FabushiNativeCredentialClaim, FabushiNativeMessagingClient,
+        CI_ISOLATED_FABUSHI_AUTH_BASE_URL, DEFAULT_FABUSHI_API_BASE_URL,
+        ISOLATED_AUTH_ID_DOMAIN, sha256_hex,
+    };
+    use std::fs;
+
+    #[test]
+    fn account_scope_hash_is_sha256_of_exact_user_id_utf8() {
+        let claim = FabushiNativeCredentialClaim {
+            user_id: "123".into(),
+            issuer: DEFAULT_FABUSHI_API_BASE_URL.into(),
+            device_id: "device".into(),
+            session_binding_hash: "not-used-for-account-scope".into(),
+            expires_at_ms: u64::MAX,
+        };
+        assert_eq!(
+            claim.account_scope_hash(),
+            "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3"
+        );
+    }
+
+    #[test]
+    fn equal_raw_user_ids_have_issuer_separated_mini_app_scopes() {
+        let production = FabushiNativeCredentialClaim {
+            user_id: "123".into(),
+            issuer: DEFAULT_FABUSHI_API_BASE_URL.into(),
+            device_id: "device".into(),
+            session_binding_hash: "binding".into(),
+            expires_at_ms: u64::MAX,
+        };
+        let isolated = FabushiNativeCredentialClaim {
+            issuer: CI_ISOLATED_FABUSHI_AUTH_BASE_URL.into(),
+            ..production.clone()
+        };
+        assert_eq!(production.account_scope_hash(), sha256_hex(b"123"));
+        assert_ne!(production.account_scope_hash(), isolated.account_scope_hash());
+        let opaque = format!(
+            "fabushi-ci-isolated:v1:{}",
+            sha256_hex(format!("{ISOLATED_AUTH_ID_DOMAIN}\0{}\0{}", isolated.issuer, isolated.user_id).as_bytes())
+        );
+        assert_eq!(isolated.account_scope_hash(), sha256_hex(opaque.as_bytes()));
+    }
+
+    #[test]
+    fn unknown_or_cross_issuer_targets_are_rejected_before_authenticated_transport() {
+        assert!(validate_base_url("https://untrusted.example").is_err());
+        assert_eq!(
+            credential_issuer(None).expect("legacy issuer"),
+            DEFAULT_FABUSHI_API_BASE_URL,
+        );
+        assert!(credential_issuer(Some("https://untrusted.example")).is_err());
+        let production = validate_base_url(DEFAULT_FABUSHI_API_BASE_URL).expect("production origin");
+        assert!(!issuer_matches_base(CI_ISOLATED_FABUSHI_AUTH_BASE_URL, &production));
+        let isolated = validate_base_url(CI_ISOLATED_FABUSHI_AUTH_BASE_URL).expect("isolated origin");
+        assert!(!issuer_matches_base(DEFAULT_FABUSHI_API_BASE_URL, &isolated));
+        let loopback_target = validate_base_url("http://127.0.0.1:4200").expect("loopback target");
+        assert!(!issuer_matches_base("http://127.0.0.1:4300", &loopback_target));
+    }
+
+    #[test]
+    fn bound_credential_rejects_cross_issuer_before_any_http_request() {
+        let path = std::env::temp_dir().join(format!(
+            "fabushi-native-issuer-contract-{}-{}.json",
+            std::process::id(),
+            unix_now_ms(),
+        ));
+        fs::write(&path, format!(
+            r#"{{"accessToken":"fixture-only","deviceId":"device","userId":"123","issuer":"{CI_ISOLATED_FABUSHI_AUTH_BASE_URL}"}}"#
+        )).expect("write disposable credential fixture");
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            fs::set_permissions(&path, fs::Permissions::from_mode(0o600)).expect("private fixture mode");
+        }
+        let production = FabushiNativeMessagingClient::new(DEFAULT_FABUSHI_API_BASE_URL, &path)
+            .expect("fixed production client");
+        let result = production.read_bound_credentials();
+        let _ = fs::remove_file(&path);
+        assert!(result.is_err(), "isolated bearer must be rejected before transport");
+    }
+
+    #[test]
+    fn identity_http_statuses_only_allow_success_and_explicit_auth_expiry() {
+        use reqwest::StatusCode;
+
+        assert_eq!(classify_identity_http_status(StatusCode::OK), Ok(()));
+        for status in [StatusCode::UNAUTHORIZED, StatusCode::FORBIDDEN] {
+            assert_eq!(
+                classify_identity_http_status(status),
+                Err(FabushiIdentityVerificationError::Unauthenticated),
+                "status {status} must invalidate the confirmed Native identity"
+            );
+        }
+        for status in [
+            StatusCode::TOO_MANY_REQUESTS,
+            StatusCode::INTERNAL_SERVER_ERROR,
+            StatusCode::BAD_GATEWAY,
+            StatusCode::SERVICE_UNAVAILABLE,
+        ] {
+            assert_eq!(
+                classify_identity_http_status(status),
+                Err(FabushiIdentityVerificationError::Rejected),
+                "received status {status} must not be eligible for cached-identity fallback"
+            );
+        }
     }
 }

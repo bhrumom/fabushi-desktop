@@ -14,7 +14,10 @@ use fabushi_official_miniapps::home_html;
 use capability_broker::CapabilityBroker;
 use conversation_actor::{ConversationActor, ConversationActorRegistry};
 use kernel_conversation::KernelConversationProvider;
-use runtime_store::{RuntimeStore, RuntimeStoreError};
+use runtime_store::RuntimeStore;
+pub use runtime_store::RuntimeStoreError;
+#[cfg(not(target_arch = "wasm32"))]
+pub use runtime_store::{MiniAppRuntimeStorePort, MiniAppRuntimeStorePortError};
 use mahayana_agent::AgentBackend;
 use mahayana_agent::AgentError;
 use mahayana_agent_kernel_bridge::LegacyAgentKernelBridge;
@@ -209,6 +212,11 @@ pub struct MahayanaRuntime {
 }
 
 impl MahayanaRuntime {
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn mini_app_store_port(&self) -> Result<MiniAppRuntimeStorePort, RuntimeStoreError> {
+        self.store.mini_app_port()
+    }
+
     fn new(
         config: RuntimeConfig,
         providers: ProviderRegistry,

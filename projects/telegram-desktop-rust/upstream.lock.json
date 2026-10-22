@@ -3,33 +3,34 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "parent_product_id": "FBCP-001",
-  "status": "baseline-identity-accepted-source-closure-open",
+  "status": "rebaseline-in-progress-source-closure-open",
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
     "url": "https://github.com/telegramdesktop/tdesktop",
     "discovery_ref": "refs/heads/dev",
-    "commit": "d77f486228a98e15d6695514d5f2b28ce1c6a872",
-    "tree": "c7b1a84d6ae8c4bb63a835ee24a593c740b147a2",
-    "committed_at": "2026-10-14T08:21:16Z",
+    "commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
+    "tree": "5151db79560ed40bf3802482fcfb74b950be6c40",
+    "committed_at": "2026-10-19T19:08:59Z",
     "accepted": false
   },
   "previous_historical_baseline": {
-    "commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+    "commit": "392b83b3091edaaaf0637ff92526db90ce6542e8",
+    "tree": "f8d3613b850cee75f156b762ef5399315302120e",
     "evidence_status": "historical-only",
-    "reason": "Upstream dev advanced; previous accepted baseline retained only as predecessor evidence."
+    "reason": "Live dev advanced one commit to 351204f3695b4a39bc3f4d2f230c061b9a01fe2a, changing only Telegram/build/prepare/prepare.py Qt cache-key mechanics. Entry-8 blob, direct gitlinks and cardinalities are unchanged; prior candidate evidence is historical-only."
   },
   "observed_root_inventory": {
     "tree_truncated": false,
-    "entry_count": 6990,
-    "blob_count": 6658,
+    "entry_count": 7014,
+    "blob_count": 6681,
     "direct_gitlink_count": 36,
-    "sourcefiles_blob_count": 3258,
-    "resource_blob_count": 3122,
-    "root_non_directory_count": 6694
+    "sourcefiles_blob_count": 3271,
+    "resource_blob_count": 3129,
+    "root_non_directory_count": 6717
   },
   "delta_from_previous_baseline": {
-    "ahead_by": 784,
-    "changed_paths": 300
+    "ahead_by": 1,
+    "changed_paths": 1
   },
   "direct_gitlinks": [
     {
@@ -150,7 +151,7 @@
     {
       "path": "Telegram/lib_base",
       "repository": "desktop-app/lib_base",
-      "commit": "de35c7abcbf6464a0845695a55568bdac12a5fba"
+      "commit": "ad56a40232ba542ceb796af7c6b4f474c64df851"
     },
     {
       "path": "Telegram/lib_crl",
@@ -195,7 +196,7 @@
     {
       "path": "Telegram/lib_ui",
       "repository": "desktop-app/lib_ui",
-      "commit": "cd0b8a32687a8ee40e6f232dac5c4a8e2e96eba1"
+      "commit": "af1132e87d75f80926dbce1017a96312af3d0bbe"
     },
     {
       "path": "Telegram/lib_webrtc",
@@ -205,12 +206,12 @@
     {
       "path": "Telegram/lib_webview",
       "repository": "desktop-app/lib_webview",
-      "commit": "d6e2e0b8b171a104cd7b63bd351f056563e964b0"
+      "commit": "48c72924706c37addb5f0bcf70b2df8b227f1313"
     },
     {
       "path": "cmake",
       "repository": "desktop-app/cmake_helpers",
-      "commit": "699262e441dbc6270f0ba6cc74f2e7a8e4c7e422"
+      "commit": "c90e6a1236142cbd80ac0ea3cdf219dabab2ed53"
     }
   ],
   "known_nested_gitlinks": [
@@ -227,7 +228,7 @@
       "commit": "2dae74bb693e42d850fb0adcc9045c5b71fbdeae"
     },
     {
-      "parent": "desktop-app/cmake_helpers@699262e441dbc6270f0ba6cc74f2e7a8e4c7e422",
+      "parent": "desktop-app/cmake_helpers@c90e6a1236142cbd80ac0ea3cdf219dabab2ed53",
       "path": "external/glib/cppgir",
       "repository": "gitlab.com/mnauw/cppgir",
       "commit": "47cf94f83b54cda59018135601e19d7fb0c77776"
@@ -237,17 +238,17 @@
     {
       "path": "Telegram/build/prepare/prepare.py",
       "dependency": "desktop-app/patches",
-      "commit": "f7433965ed33996c641a822c78a81eef3526c9e7"
+      "commit": "fe957833b84525e634a8d776a7f834ed536d9a21"
     },
     {
       "path": "Telegram/build/docker/centos_env/Dockerfile",
       "dependency": "desktop-app/patches",
-      "commit": "f7433965ed33996c641a822c78a81eef3526c9e7"
+      "commit": "fe957833b84525e634a8d776a7f834ed536d9a21"
     },
     {
       "path": "snap/snapcraft.yaml",
       "dependency": "desktop-app/patches",
-      "commit": "f7433965ed33996c641a822c78a81eef3526c9e7"
+      "commit": "fe957833b84525e634a8d776a7f834ed536d9a21"
     }
   ],
   "lfs": {
@@ -255,12 +256,12 @@
     "pointer_scan_required_in_github_actions": true
   },
   "coverage": {
-    "root_source_entries_total": 6694,
-    "recursive_source_entries_total": 15788,
-    "unknown_minimum": 15788,
-    "unread_minimum": 15761,
+    "root_source_entries_total": 6717,
+    "recursive_source_entries_total": 16202,
+    "unknown_minimum": 16172,
+    "unread_minimum": 16145,
     "omitted_known": 0,
-    "note": "Revision 9 rebaseline in progress for d77f486228a98e15d6695514d5f2b28ce1c6a872. Root non-directory count is 6694; recursive count remains predecessor value until current-head Actions recomputes and validates all direct/nested gitlinks. Existing reviewed ledger source blobs are unchanged on the new upstream, but full source closure remains open."
+    "note": "Revision 9 live rebaseline remains in progress for telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a (tree 5151db79560ed40bf3802482fcfb74b950be6c40). Root non-directory inventory remains 6,717 and recursive authority remains 16,202. Recursive array index 29 .agents/skills/code-health/scripts/history.py is independently mapped to existing repository quality/test-evidence governance: churn stays exact-revision/lookback bounded across root and pinned submodule histories, unavailable history remains absent rather than synthetic zero, Task trailers plus complete Start/Approve lifecycle and recognized review rounds yield optional task-effort observations, and churn/hotspot/cost remain prioritization evidence rather than ownership or acceptance. No Telegram Python history helper, second task store, review owner or queue is introduced. Counters are unknown=16,172, unread=16,145, omitted=0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -274,50 +275,133 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Rebaseline to telegramdesktop/tdesktop@d77f486228a98e15d6695514d5f2b28ce1c6a872 remains unaccepted pending current-head GitHub Actions provenance. Full Revision 9 source closure remains open; predecessor evidence stays historical-only."
+    "note": "Live rebaseline identity for telegramdesktop/tdesktop@351204f3695b4a39bc3f4d2f230c061b9a01fe2a remains source-closure open. Actual recursive array entry 27 .agents/skills/code-health/scripts/cpp_text.py is mapped to existing repository responsibility/quality/task-evidence governance with source-text provenance and non-compiler authority boundaries preserved; full closure remains unknown=16,175, unread=16,148, omitted=0, so acceptance remains fail-closed."
   },
   "baseline_identity_evidence": {
     "status": "pending-current-head-revalidation",
+    "upstream_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
     "previous_historical_evidence": {
       "status": "accepted",
       "runner": "github-actions",
-      "run_id": 37652251698,
+      "run_id": 39267321482,
       "run_attempt": 1,
-      "job_id": 112898298716,
-      "validation_head_sha": "9e7b4e3ada9876019aac02a1562dcc4ad7d059b7",
-      "artifact_id": 11497690488,
-      "artifact_name": "tdrp-revision9-authority-9e7b4e3ada9876019aac02a1562dcc4ad7d059b7",
-      "artifact_digest": "sha256:2282fdfe4cdc4835240a503092b107ae6037749e1d615978a34a36829f9affca",
-      "upstream_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
-      "recursive_non_directory_entries": 15788,
+      "job_id": 118110183925,
+      "validation_head_sha": "5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+      "artifact_id": 12193803207,
+      "artifact_name": "tdrp-revision9-authority-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+      "artifact_digest": "sha256:7526811deaba969c6cf3c4a442a79ba5a2020811a993655c3dac457b146db9e0",
+      "upstream_commit": "0a11537c220df35fe59a96aebe413b1e52bc6e47",
+      "recursive_non_directory_entries": 16186,
+      "previous_historical_evidence": {
+        "status": "accepted",
+        "runner": "github-actions",
+        "run_id": 37652251698,
+        "run_attempt": 1,
+        "job_id": 112898298716,
+        "validation_head_sha": "9e7b4e3ada9876019aac02a1562dcc4ad7d059b7",
+        "artifact_id": 11497690488,
+        "artifact_name": "tdrp-revision9-authority-9e7b4e3ada9876019aac02a1562dcc4ad7d059b7",
+        "artifact_digest": "sha256:2282fdfe4cdc4835240a503092b107ae6037749e1d615978a34a36829f9affca",
+        "upstream_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+        "recursive_non_directory_entries": 15788,
+        "evidence_status": "historical-only"
+      },
       "evidence_status": "historical-only"
     }
   },
   "recursive_inventory_evidence": {
     "status": "pending-current-head-revalidation",
+    "upstream_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
+    "source_closure_ready": false,
     "previous_historical_evidence": {
       "status": "accepted-baseline-identity-only-source-closure-open",
       "runner": "github-actions",
-      "run_id": 37652251698,
+      "run_id": 39267321482,
       "run_attempt": 1,
-      "job_id": 112898298716,
-      "validation_head_sha": "9e7b4e3ada9876019aac02a1562dcc4ad7d059b7",
-      "artifact_id": 11497690488,
-      "artifact_name": "tdrp-revision9-authority-9e7b4e3ada9876019aac02a1562dcc4ad7d059b7",
-      "artifact_digest": "sha256:2282fdfe4cdc4835240a503092b107ae6037749e1d615978a34a36829f9affca",
-      "upstream_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
-      "recursive_non_directory_entries": 15788,
+      "job_id": 118110183925,
+      "validation_head_sha": "5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+      "artifact_id": 12193803207,
+      "artifact_name": "tdrp-revision9-authority-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+      "artifact_digest": "sha256:7526811deaba969c6cf3c4a442a79ba5a2020811a993655c3dac457b146db9e0",
+      "upstream_commit": "0a11537c220df35fe59a96aebe413b1e52bc6e47",
+      "recursive_non_directory_entries": 16186,
       "source_closure_ready": false,
+      "supporting_artifacts": [
+        {
+          "kind": "recursive-root-aggregate",
+          "job_id": 118110671436,
+          "artifact_id": 12192619393,
+          "artifact_name": "tdrp-recursive-root-aggregate-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+          "artifact_digest": "sha256:c44a0247eb8977732373d08e06bf8cb52f4a72e2b22d10a587c451162a077b0e"
+        },
+        {
+          "kind": "recursive-child-aggregate",
+          "job_id": 118111905184,
+          "artifact_id": 12193158582,
+          "artifact_name": "tdrp-recursive-child-aggregate-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+          "artifact_digest": "sha256:6eaf637f330f01469dee3771e90e904f3f36d079e57217ae67d5373af1164e63"
+        },
+        {
+          "kind": "recursive-next-aggregate",
+          "job_id": 118114082297,
+          "artifact_id": 12193324860,
+          "artifact_name": "tdrp-recursive-next-aggregate-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+          "artifact_digest": "sha256:1afe55fae04e55577cc7c35254678f0b5ccfbde8b75b7821c2d47bb09471dd02"
+        },
+        {
+          "kind": "recursive-fixed-point",
+          "job_id": 118114176711,
+          "artifact_id": 12194136074,
+          "artifact_name": "tdrp-recursive-closure-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+          "artifact_digest": "sha256:87d18391079527ffce7a4d588e8dec08579e354a1ad02612a511e590e31233b2"
+        },
+        {
+          "kind": "recursive-build-reachability",
+          "job_id": 118114339699,
+          "artifact_id": 12193419380,
+          "artifact_name": "tdrp-recursive-reachability-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+          "artifact_digest": "sha256:1fd0f2411814962d74f2f8b991e6fd9a01bfc7c1da67e9590b8e9c49d5bf6d89"
+        },
+        {
+          "kind": "root-source-archives",
+          "job_id": 118110183972,
+          "artifact_id": 12192789573,
+          "artifact_name": "tdrp-root-source-archives-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+          "artifact_digest": "sha256:d461dd8f78d7e25b5ada127aaf10e08abedb1dc7c77d80d478cd235336a2cb2d"
+        },
+        {
+          "kind": "boost-build-reachability",
+          "job_id": 118110617587,
+          "artifact_id": 12193702905,
+          "artifact_name": "tdrp-boost-reachability-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+          "artifact_digest": "sha256:a5e1383f1a6e51093a92acc383d6bfb52e4e4f9cfec1d99e3739cf92d7b1af33"
+        }
+      ],
+      "previous_historical_evidence": {
+        "status": "accepted-baseline-identity-only-source-closure-open",
+        "runner": "github-actions",
+        "run_id": 37652251698,
+        "run_attempt": 1,
+        "job_id": 112898298716,
+        "validation_head_sha": "9e7b4e3ada9876019aac02a1562dcc4ad7d059b7",
+        "artifact_id": 11497690488,
+        "artifact_name": "tdrp-revision9-authority-9e7b4e3ada9876019aac02a1562dcc4ad7d059b7",
+        "artifact_digest": "sha256:2282fdfe4cdc4835240a503092b107ae6037749e1d615978a34a36829f9affca",
+        "upstream_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+        "recursive_non_directory_entries": 15788,
+        "source_closure_ready": false,
+        "evidence_status": "historical-only"
+      },
       "evidence_status": "historical-only"
     }
   },
   "build_time_acquisition_inventory": {
     "path": "projects/telegram-desktop-rust/inventory/build-time-acquisitions.json",
-    "candidate_lines_total": 330,
+    "candidate_lines_total": 331,
     "immutable_commit_pin_occurrences_classified": 19,
     "candidate_lines_pending_classification": 0,
     "closure_status": "open",
-    "candidate_lines_classified": 330,
+    "candidate_lines_classified": 331,
     "disposition_closure_status": "complete",
     "recursive_authority_closure_status": "open",
     "recursive_child_input_occurrences_recorded": 11,

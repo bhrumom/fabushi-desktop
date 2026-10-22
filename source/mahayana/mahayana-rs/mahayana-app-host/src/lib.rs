@@ -1,6 +1,9 @@
 use base64::Engine as _;
 use mahayana_core::{ModelProviderMode, RuntimeConfig};
 use mahayana_feature_host::FeatureHostController;
+pub use mahayana_feature_host::MiniAppAccountPort;
+#[cfg(not(target_arch = "wasm32"))]
+pub use mahayana_host::MiniAppRuntimeStorePort;
 use mahayana_host::{HostCreateConfig, ModelRouteConfig};
 use mahayana_host_protocol::{
     ApprovalResolution, FeatureCommand, HostConfig, HostMode, SurfacePlatform,
@@ -192,6 +195,17 @@ pub fn is_platform_request_json(input: &str) -> bool {
 }
 
 impl AppHost {
+    pub fn mini_app_account_port(&self) -> MiniAppAccountPort {
+        self.feature.mini_app_account_port()
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn mini_app_store_port(&self) -> Result<MiniAppRuntimeStorePort, AppHostError> {
+        self.feature
+            .mini_app_store_port()
+            .map_err(|error| AppHostError::Operation(error.to_string()))
+    }
+
     pub fn new(app_data_dir: impl Into<PathBuf>) -> Result<Self, AppHostError> {
         let feature_mode = configured_feature_host_mode()?;
         Self::new_with_feature_mode(app_data_dir, feature_mode)

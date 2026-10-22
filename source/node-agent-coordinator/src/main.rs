@@ -1,4 +1,5 @@
 use chrono::{SecondsFormat, Utc};
+use mahayana_node_agent_coordinator::miniapp_management_relay::miniapp_carrier_allowed;
 use mahayana_node_agent_coordinator::carrier::{
     parse_bootstrap_argument, CarrierChannel, CarrierEnvelope, CoordinatorBootstrap,
 };
@@ -378,12 +379,17 @@ impl LocalExecControl for CoordinatorLocalExecControl {
         &mut self,
         request: SpawnLocalExecDaemonRequest,
     ) -> Result<LocalExecProcessIdentity, LocalExecSupervisorError> {
+        let SpawnLocalExecDaemonRequest { mut env, log_path } = request;
+        env.insert(
+            "MAHAYANA_APP_HOST_BIN".into(),
+            self.state.host_bin.to_string_lossy().into_owned(),
+        );
         let value = control_command(
             &self.state,
             "spawnLocalExecDaemon",
             json!({
-                "env": request.env,
-                "logPath": request.log_path.to_string_lossy(),
+                "env": env,
+                "logPath": log_path.to_string_lossy(),
             }),
         )
         .map_err(local_exec_error)?;
@@ -2708,6 +2714,16 @@ fn execute_actions(
                 method,
                 args,
             } => {
+                if !miniapp_carrier_allowed(&method, channel) {
+                    state.complete_request(
+                        channel,
+                        &request_id,
+                        ReplyOutcome::Failed {
+                            failure: Failure::new("MINIAPP_NATIVE_ONLY", "mini app intent requires native main-data carrier"),
+                        },
+                    );
+                    continue;
+                }
                 if channel == CarrierChannel::MainData && method == "setGatewayPaused" {
                     let paused = args
                         .get("paused")

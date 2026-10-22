@@ -35,3 +35,14 @@ Start with:
 This work is source-informed, not clean-room. Source/provenance and licensing review remain release gates.
 
 Repository-wide execution follows `AGENTS.md`; FBCP/TDRP executable verification and acceptance run in GitHub Actions only.
+
+## OpenClaw full-source Rust migration
+
+[OCRM-001](docs/specs/openclaw-rust-equivalence-migration.md) specifies file-by-file and module-by-module Rust equivalence for the complete OpenClaw source responsibility scope, integrated into the existing Fabushi architecture while preserving all current Bot capabilities.
+
+- [Project source of truth](projects/openclaw-rust/SOURCE_OF_TRUTH.md)
+- [Source modules and existing-owner map](projects/openclaw-rust/module-map.md)
+- [P0 source baseline and owner audit](projects/openclaw-rust/management/tasks/P0-source-baseline-and-owner-audit.md)
+
+This establishes implementation requirements, not completed migration or acceptance. OpenClaw-derived business responsibilities belong to canonical Rust owners; existing React/Electron surfaces remain the unified Fabushi UI. All executable verification for OCRM runs only in GitHub Actions.
+

@@ -8,8 +8,10 @@
 //! translating them to the freshly replayed runtime identifiers.
 
 use mahayana_app_host::{
-    AppHost, AppHostError, AppHostFeatureMode, HostRequest, HostResponse, default_app_data_dir,
+    AppHost, AppHostError, AppHostFeatureMode, HostRequest, HostResponse, MiniAppAccountPort, default_app_data_dir,
 };
+#[cfg(not(target_arch = "wasm32"))]
+pub use mahayana_app_host::MiniAppRuntimeStorePort;
 pub use mahayana_app_host::{FeatureEventSource, PlatformRequestHost, is_platform_request_json};
 use mahayana_core::BuildProfile;
 use mahayana_harness_protocol::HarnessApi;
@@ -157,6 +159,19 @@ pub struct UnifiedAppHost {
 }
 
 impl UnifiedAppHost {
+    /// Native account lifecycle port; it resolves the authenticated FeatureHost
+    /// identity and generation at call time.
+    pub fn mini_app_account_port(&self) -> MiniAppAccountPort {
+        self.app.mini_app_account_port()
+    }
+
+    /// Transaction callback into the existing RuntimeStore SQLite connection.
+    /// Test/WASM configurations without that connection fail closed.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn mini_app_store_port(&self) -> Result<MiniAppRuntimeStorePort, AppHostError> {
+        self.app.mini_app_store_port()
+    }
+
     pub fn new(app_data_dir: impl Into<PathBuf>) -> Result<Self, AppHostError> {
         let app_data_dir = app_data_dir.into();
         let app = AppHost::new(app_data_dir.clone())?;

@@ -2,15 +2,15 @@
 
 Status: read-complete / responsibility closure open  
 Project: TDRP-001 Revision 9  
-Accepted upstream: `telegramdesktop/tdesktop@72b3b71c3d6e450e5ef94a3112dd750a0168aa0b`
-Rebaseline inheritance: source entries cited below retain the same blob/content hashes on `72b3b71c3d6e450e5ef94a3112dd750a0168aa0b`; read status is inherited by blob identity, while execution evidence must be reacquired on the current Fabushi HEAD.
+Rebaseline candidate upstream: `telegramdesktop/tdesktop@1e18da644e37856c9b1d87434bfcd6a2e3d11c57`
+Rebaseline reconciliation: the UI build-authority entry was reread in full at `1e18da644e37856c9b1d87434bfcd6a2e3d11c57`. `Telegram/cmake/td_ui.cmake` changed only by adding `boxes/keys_legend.style` to the style generator; its build/source-reachability classification remains open and no responsibility is closed by this reread.
 
 ## Exact source identities
 
 | path | blob | read status | classification | mapping status |
 | --- | --- | --- | --- | --- |
 | `Telegram/SourceFiles/boxes/share_box.style` | `74f8bb7657e43815a81989f21517c54d5e94c0fe` | complete, 963 bytes | pure_ui_presentation | open |
-| `Telegram/cmake/td_ui.cmake` | `852019c31aff60443ffcf216d5646330e969c185` | complete, 25,343 bytes | build_test_tooling / source-reachability authority | open |
+| `Telegram/cmake/td_ui.cmake` | `62b2ef773a1db6ab7fde9bb27001ae33441e081b` | complete, reread at current candidate | build_test_tooling / source-reachability authority | open |
 
 These entries are credited only against `unread`. Neither entry leaves `unknown` because their transferable responsibilities are not yet fully mapped, implemented, wired, tested, and supported by exact-head evidence.
 

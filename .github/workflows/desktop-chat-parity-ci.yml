@@ -7,6 +7,11 @@ on:
       - "desktop/**"
       - "frontend/**"
       - "source/product/fabushi/**"
+      - "source/fabushi-network-worker/**"
+      - "source/host/src/network_worker_process.rs"
+      - "source/mahayana/mahayana-rs/mahayana-product/**"
+      - "source/mahayana/mahayana-rs/mahayana-app-host/**"
+      - "source/mahayana/mahayana-rs/mahayana-host/**"
       - "projects/grok-fabu-parity/architecture-semantic-adaptations.json"
       - ".github/workflows/desktop-chat-parity-ci.yml"
   pull_request:
@@ -15,6 +20,11 @@ on:
       - "desktop/**"
       - "frontend/**"
       - "source/product/fabushi/**"
+      - "source/fabushi-network-worker/**"
+      - "source/host/src/network_worker_process.rs"
+      - "source/mahayana/mahayana-rs/mahayana-product/**"
+      - "source/mahayana/mahayana-rs/mahayana-app-host/**"
+      - "source/mahayana/mahayana-rs/mahayana-host/**"
       - "projects/desktop-chat-streaming-parity/**"
       - "projects/grok-fabu-parity/architecture-semantic-adaptations.json"
       - "scripts/check-grok-architecture.mjs"
@@ -153,10 +163,24 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.97.1
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.27.1"
+          cache-dependency-path: source/fabushi-network-worker/go.mod
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: source/mahayana/mahayana-rs -> target
           shared-key: desktop-restored-rust-1.97.1
+      - name: Build deterministic FDN network worker
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p source/fabushi-network-worker/target/ci
+          cd source/fabushi-network-worker
+          go mod tidy
+          go build -trimpath -ldflags='-s -w' -o target/ci/fabushi-network-worker .
+          test -x target/ci/fabushi-network-worker
       - name: Build deterministic Mahayana test host
         run: npm run build:host:ci
       - run: npm run build:renderer

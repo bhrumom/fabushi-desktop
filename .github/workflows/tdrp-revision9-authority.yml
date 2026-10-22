@@ -3,10 +3,19 @@ name: TDRP Revision 9 source authority
 on:
   push:
     branches: [main]
+  pull_request:
+    paths:
+      - "scripts/*tdrp*.mjs"
+      - "projects/telegram-desktop-rust/**"
+      - ".github/workflows/tdrp-revision9-authority.yml"
   workflow_dispatch:
 
 permissions:
   contents: read
+
+env:
+  # pull_request github.sha is a synthetic merge commit; bind evidence to the branch exact HEAD.
+  TDRP_TARGET_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
 jobs:
   candidate-authority:
@@ -14,16 +23,16 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - name: Checkout exact event SHA
+      - name: Checkout exact target SHA
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ env.TDRP_TARGET_SHA }}
           fetch-depth: 1
       - name: Assert exact checkout
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test "$(git rev-parse HEAD)" = "${TDRP_TARGET_SHA}"
       - name: Validate Revision 9 source authority
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -41,7 +50,10 @@ jobs:
             }
           }
           if (lock.acceptance.accepted !== false || lock.acceptance.baseline_ready !== false) throw new Error('source closure must remain false until zero-counter closure');
-          if (!(lock.coverage.unknown_minimum > 0 && lock.coverage.unread_minimum > 0)) throw new Error('source closure must not fabricate semantic coverage');
+          for (const key of ['unknown_minimum', 'unread_minimum', 'omitted_known']) {
+            if (!Number.isInteger(lock.coverage[key]) || lock.coverage[key] < 0) throw new Error('source closure coverage must be non-negative integers');
+          }
+          if (lock.coverage.unread_minimum > lock.coverage.unknown_minimum) throw new Error('unread coverage cannot exceed unknown coverage');
           NODE
       - name: Discover build-time acquisition candidates at exact upstream
         shell: bash
@@ -135,7 +147,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: tdrp-revision9-authority-${{ github.sha }}
+          name: tdrp-revision9-authority-${{ env.TDRP_TARGET_SHA }}
           path: artifacts/tdrp-authority
           if-no-files-found: error
           retention-days: 90
@@ -148,7 +160,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ env.TDRP_TARGET_SHA }}
           fetch-depth: 1
       - name: Verify full source-closure mode rejects current open baseline
         shell: bash
@@ -178,13 +190,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ env.TDRP_TARGET_SHA }}
           fetch-depth: 1
       - name: Assert exact checkout
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test "$(git rev-parse HEAD)" = "${TDRP_TARGET_SHA}"
       - name: Recursively discover locked root source authorities
         shell: bash
         run: |
@@ -193,7 +205,7 @@ jobs:
       - name: Upload recursive root authority shard
         uses: actions/upload-artifact@v4
         with:
-          name: tdrp-recursive-root-${{ github.sha }}-${{ matrix.shard }}
+          name: tdrp-recursive-root-${{ env.TDRP_TARGET_SHA }}-${{ matrix.shard }}
           path: artifacts/tdrp-recursive-root
           if-no-files-found: error
           retention-days: 90
@@ -209,17 +221,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ env.TDRP_TARGET_SHA }}
           fetch-depth: 1
       - name: Assert exact checkout
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test "$(git rev-parse HEAD)" = "${TDRP_TARGET_SHA}"
       - name: Download all recursive authority shards
         uses: actions/download-artifact@v4
         with:
-          pattern: tdrp-recursive-root-${{ github.sha }}-*
+          pattern: tdrp-recursive-root-${{ env.TDRP_TARGET_SHA }}-*
           path: artifacts/tdrp-recursive-merged
           merge-multiple: true
       - name: Prove every locked source authority was scanned exactly once
@@ -230,7 +242,7 @@ jobs:
       - name: Upload aggregate recursive authority evidence
         uses: actions/upload-artifact@v4
         with:
-          name: tdrp-recursive-root-aggregate-${{ github.sha }}
+          name: tdrp-recursive-root-aggregate-${{ env.TDRP_TARGET_SHA }}
           path: artifacts/tdrp-recursive-merged
           if-no-files-found: error
           retention-days: 90
@@ -252,17 +264,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ env.TDRP_TARGET_SHA }}
           fetch-depth: 1
       - name: Assert exact checkout
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test "$(git rev-parse HEAD)" = "${TDRP_TARGET_SHA}"
       - name: Download parent recursive authority evidence
         uses: actions/download-artifact@v4
         with:
-          name: tdrp-recursive-root-aggregate-${{ github.sha }}
+          name: tdrp-recursive-root-aggregate-${{ env.TDRP_TARGET_SHA }}
           path: artifacts/tdrp-parent-recursive
       - name: Recursively discover next immutable child layer
         shell: bash
@@ -272,7 +284,7 @@ jobs:
       - name: Upload child recursive authority shard
         uses: actions/upload-artifact@v4
         with:
-          name: tdrp-recursive-child-${{ github.sha }}-${{ matrix.shard }}
+          name: tdrp-recursive-child-${{ env.TDRP_TARGET_SHA }}-${{ matrix.shard }}
           path: artifacts/tdrp-recursive-child
           if-no-files-found: error
           retention-days: 90
@@ -289,22 +301,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ env.TDRP_TARGET_SHA }}
           fetch-depth: 1
       - name: Assert exact checkout
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test "$(git rev-parse HEAD)" = "${TDRP_TARGET_SHA}"
       - name: Download parent recursive authority evidence
         uses: actions/download-artifact@v4
         with:
-          name: tdrp-recursive-root-aggregate-${{ github.sha }}
+          name: tdrp-recursive-root-aggregate-${{ env.TDRP_TARGET_SHA }}
           path: artifacts/tdrp-parent-recursive
       - name: Download child recursive authority shards
         uses: actions/download-artifact@v4
         with:
-          pattern: tdrp-recursive-child-${{ github.sha }}-*
+          pattern: tdrp-recursive-child-${{ env.TDRP_TARGET_SHA }}-*
           path: artifacts/tdrp-recursive-child-merged
           merge-multiple: true
       - name: Prove every newly discovered immutable child was scanned exactly once
@@ -315,7 +327,7 @@ jobs:
       - name: Upload aggregate child recursive authority evidence
         uses: actions/upload-artifact@v4
         with:
-          name: tdrp-recursive-child-aggregate-${{ github.sha }}
+          name: tdrp-recursive-child-aggregate-${{ env.TDRP_TARGET_SHA }}
           path: artifacts/tdrp-recursive-child-merged
           if-no-files-found: error
           retention-days: 90
@@ -338,22 +350,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ env.TDRP_TARGET_SHA }}
           fetch-depth: 1
       - name: Assert exact checkout
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test "$(git rev-parse HEAD)" = "${TDRP_TARGET_SHA}"
       - name: Download root recursive authority evidence
         uses: actions/download-artifact@v4
         with:
-          name: tdrp-recursive-root-aggregate-${{ github.sha }}
+          name: tdrp-recursive-root-aggregate-${{ env.TDRP_TARGET_SHA }}
           path: artifacts/tdrp-layer-root
       - name: Download child recursive authority evidence
         uses: actions/download-artifact@v4
         with:
-          name: tdrp-recursive-child-aggregate-${{ github.sha }}
+          name: tdrp-recursive-child-aggregate-${{ env.TDRP_TARGET_SHA }}
           path: artifacts/tdrp-layer-parent
       - name: Recursively discover third immutable authority layer
         shell: bash
@@ -363,7 +375,7 @@ jobs:
       - name: Upload next recursive authority shard
         uses: actions/upload-artifact@v4
         with:
-          name: tdrp-recursive-next-${{ github.sha }}-${{ matrix.shard }}
+          name: tdrp-recursive-next-${{ env.TDRP_TARGET_SHA }}-${{ matrix.shard }}
           path: artifacts/tdrp-recursive-next
           if-no-files-found: error
           retention-days: 90
@@ -381,27 +393,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ env.TDRP_TARGET_SHA }}
           fetch-depth: 1
       - name: Assert exact checkout
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test "$(git rev-parse HEAD)" = "${TDRP_TARGET_SHA}"
       - name: Download root recursive authority evidence
         uses: actions/download-artifact@v4
         with:
-          name: tdrp-recursive-root-aggregate-${{ github.sha }}
+          name: tdrp-recursive-root-aggregate-${{ env.TDRP_TARGET_SHA }}
           path: artifacts/tdrp-layer-root
       - name: Download child recursive authority evidence
         uses: actions/download-artifact@v4
         with:
-          name: tdrp-recursive-child-aggregate-${{ github.sha }}
+          name: tdrp-recursive-child-aggregate-${{ env.TDRP_TARGET_SHA }}
           path: artifacts/tdrp-layer-parent
       - name: Download next recursive authority shards
         uses: actions/download-artifact@v4
         with:
-          pattern: tdrp-recursive-next-${{ github.sha }}-*
+          pattern: tdrp-recursive-next-${{ env.TDRP_TARGET_SHA }}-*
           path: artifacts/tdrp-recursive-next-merged
           merge-multiple: true
       - name: Prove every third-layer immutable authority was scanned exactly once
@@ -412,7 +424,7 @@ jobs:
       - name: Upload aggregate next recursive authority evidence
         uses: actions/upload-artifact@v4
         with:
-          name: tdrp-recursive-next-aggregate-${{ github.sha }}
+          name: tdrp-recursive-next-aggregate-${{ env.TDRP_TARGET_SHA }}
           path: artifacts/tdrp-recursive-next-merged
           if-no-files-found: error
           retention-days: 90
@@ -429,27 +441,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ env.TDRP_TARGET_SHA }}
           fetch-depth: 1
       - name: Assert exact checkout
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test "$(git rev-parse HEAD)" = "${TDRP_TARGET_SHA}"
       - name: Download root recursive authority evidence
         uses: actions/download-artifact@v4
         with:
-          name: tdrp-recursive-root-aggregate-${{ github.sha }}
+          name: tdrp-recursive-root-aggregate-${{ env.TDRP_TARGET_SHA }}
           path: artifacts/tdrp-layer-root
       - name: Download child recursive authority evidence
         uses: actions/download-artifact@v4
         with:
-          name: tdrp-recursive-child-aggregate-${{ github.sha }}
+          name: tdrp-recursive-child-aggregate-${{ env.TDRP_TARGET_SHA }}
           path: artifacts/tdrp-layer-child
       - name: Download third-layer recursive authority evidence
         uses: actions/download-artifact@v4
         with:
-          name: tdrp-recursive-next-aggregate-${{ github.sha }}
+          name: tdrp-recursive-next-aggregate-${{ env.TDRP_TARGET_SHA }}
           path: artifacts/tdrp-layer-next
       - name: Recursively scan until immutable gitlink authority fixed point
         shell: bash
@@ -471,7 +483,7 @@ jobs:
       - name: Upload recursive fixed-point evidence
         uses: actions/upload-artifact@v4
         with:
-          name: tdrp-recursive-closure-${{ github.sha }}
+          name: tdrp-recursive-closure-${{ env.TDRP_TARGET_SHA }}
           path: artifacts/tdrp-recursive-closure
           if-no-files-found: error
           retention-days: 90
@@ -488,32 +500,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ env.TDRP_TARGET_SHA }}
           fetch-depth: 1
       - name: Assert exact checkout
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test "$(git rev-parse HEAD)" = "${TDRP_TARGET_SHA}"
       - name: Download root authority evidence
         uses: actions/download-artifact@v4
         with:
-          name: tdrp-recursive-root-aggregate-${{ github.sha }}
+          name: tdrp-recursive-root-aggregate-${{ env.TDRP_TARGET_SHA }}
           path: artifacts/tdrp-layer-root
       - name: Download child authority evidence
         uses: actions/download-artifact@v4
         with:
-          name: tdrp-recursive-child-aggregate-${{ github.sha }}
+          name: tdrp-recursive-child-aggregate-${{ env.TDRP_TARGET_SHA }}
           path: artifacts/tdrp-layer-child
       - name: Download third-layer authority evidence
         uses: actions/download-artifact@v4
         with:
-          name: tdrp-recursive-next-aggregate-${{ github.sha }}
+          name: tdrp-recursive-next-aggregate-${{ env.TDRP_TARGET_SHA }}
           path: artifacts/tdrp-layer-next
       - name: Download fixed-point authority evidence
         uses: actions/download-artifact@v4
         with:
-          name: tdrp-recursive-closure-${{ github.sha }}
+          name: tdrp-recursive-closure-${{ env.TDRP_TARGET_SHA }}
           path: artifacts/tdrp-layer-closure
       - name: Audit recursive build reachability from accepted TDesktop build paths
         shell: bash
@@ -527,7 +539,7 @@ jobs:
           node - <<'NODE'
           const fs = require('node:fs');
           const report = JSON.parse(fs.readFileSync('artifacts/tdrp-recursive-reachability/recursive-build-reachability.json','utf8'));
-          if (report.target_commit !== process.env.GITHUB_SHA) throw new Error('reachability evidence HEAD drift');
+          if (report.target_commit !== process.env.TDRP_TARGET_SHA) throw new Error('reachability evidence HEAD drift');
           if (report.proven_non_reachable_authorities <= 0) throw new Error('reachability audit proved no dispositions');
           if (report.reachability_disposition_status !== 'partial-audited-open') throw new Error('reachability audit must remain partial/open');
           if (report.source_closure_ready !== false) throw new Error('partial reachability must not fabricate source closure');
@@ -535,7 +547,7 @@ jobs:
       - name: Upload recursive build reachability evidence
         uses: actions/upload-artifact@v4
         with:
-          name: tdrp-recursive-reachability-${{ github.sha }}
+          name: tdrp-recursive-reachability-${{ env.TDRP_TARGET_SHA }}
           path: artifacts/tdrp-recursive-reachability
           if-no-files-found: error
           retention-days: 90
@@ -548,13 +560,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ env.TDRP_TARGET_SHA }}
           fetch-depth: 1
       - name: Assert exact checkout
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test "$(git rev-parse HEAD)" = "${TDRP_TARGET_SHA}"
       - name: Verify and inspect immutable source archives
         shell: bash
         run: |
@@ -563,7 +575,7 @@ jobs:
       - name: Upload source archive evidence
         uses: actions/upload-artifact@v4
         with:
-          name: tdrp-root-source-archives-${{ github.sha }}
+          name: tdrp-root-source-archives-${{ env.TDRP_TARGET_SHA }}
           path: artifacts/tdrp-root-source-archives
           if-no-files-found: error
           retention-days: 90
@@ -578,17 +590,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ env.TDRP_TARGET_SHA }}
           fetch-depth: 1
       - name: Assert exact checkout
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test "$(git rev-parse HEAD)" = "${TDRP_TARGET_SHA}"
       - name: Download current-head source archive discovery
         uses: actions/download-artifact@v4
         with:
-          name: tdrp-root-source-archives-${{ github.sha }}
+          name: tdrp-root-source-archives-${{ env.TDRP_TARGET_SHA }}
           path: artifacts/tdrp-source-archives
       - name: Download and verify exact Boost 1.90.0 archive
         shell: bash
@@ -633,7 +645,7 @@ jobs:
           node - <<'NODE'
           const fs = require('node:fs');
           const report = JSON.parse(fs.readFileSync('artifacts/tdrp-boost-reachability/boost-build-reachability.json','utf8'));
-          if (report.target_commit !== process.env.GITHUB_SHA) throw new Error('Boost reachability HEAD drift');
+          if (report.target_commit !== process.env.TDRP_TARGET_SHA) throw new Error('Boost reachability HEAD drift');
           if (report.acquisition_candidates !== 582 || report.dispositioned !== 582 || report.open !== 0) throw new Error('Boost acquisition accounting is not closed');
           if (report.status !== 'complete-for-boost-acquisition-candidates') throw new Error('Boost candidate status is not complete');
           if (report.source_closure_ready !== false) throw new Error('Boost candidate closure must not fabricate full source closure');
@@ -641,7 +653,7 @@ jobs:
       - name: Upload Boost build-reachability evidence
         uses: actions/upload-artifact@v4
         with:
-          name: tdrp-boost-reachability-${{ github.sha }}
+          name: tdrp-boost-reachability-${{ env.TDRP_TARGET_SHA }}
           path: artifacts/tdrp-boost-reachability
           if-no-files-found: error
           retention-days: 90

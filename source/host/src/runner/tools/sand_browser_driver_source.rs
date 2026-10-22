@@ -1,6 +1,6 @@
 pub const SAND_BROWSER_DRIVER_VERSION: u32 = 2;
-pub const SAND_BROWSER_DRIVER_BOX_DIR: &str = "/tmp/.sand-browser";
-pub const SAND_BROWSER_DRIVER_BOX_PATH: &str = "/tmp/.sand-browser/driver-v2.mjs";
+pub const SAND_BROWSER_DRIVER_BOX_DIR: &str = "/workspace/.sand-browser";
+pub const SAND_BROWSER_DRIVER_BOX_PATH: &str = "/workspace/.sand-browser/driver-v2.mjs";
 pub const SAND_BROWSER_RESULT_MARKER: &str = "__SAND_BROWSER_RESULT__";
 
 /// Frozen Grok Bot 0.18 browser driver payload.
@@ -10,15 +10,67 @@ pub const SAND_BROWSER_RESULT_MARKER: &str = "__SAND_BROWSER_RESULT__";
 /// the language required by the box browser/Playwright runtime.
 pub const SAND_BROWSER_DRIVER_SOURCE: &str = r#"
 import { spawn } from "node:child_process";
-import { mkdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import { createHash, randomUUID } from "node:crypto";
+import { mkdirSync, readFileSync, realpathSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import { isAbsolute, relative } from "node:path";
 
 const RESULT_MARKER = "__SAND_BROWSER_RESULT__";
-const STATE_DIR = "/tmp/.sand-browser";
+const STATE_DIR = "/workspace/.sand-browser";
 const ACTION_TIMEOUT_MS = 10000;
 const NAVIGATE_TIMEOUT_MS = 25000;
+const WORKSPACE_ROOT = "/workspace";
+const DOWNLOAD_DIR = WORKSPACE_ROOT + "/.fabushi-downloads";
+const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
+const MAX_DOWNLOAD_BYTES = 64 * 1024 * 1024;
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function restrictedUploadFile(rawPath) {
+  if (typeof rawPath !== "string" || rawPath.length === 0) {
+    throw new Error("Browser upload requires a filePath.");
+  }
+  const resolved = realpathSync(rawPath);
+  const rel = relative(WORKSPACE_ROOT, resolved);
+  if (rel === ".." || rel.startsWith("../") || isAbsolute(rel)) {
+    throw new Error("Browser upload filePath escapes the authorized /workspace root.");
+  }
+  const info = statSync(resolved);
+  if (!info.isFile()) {
+    throw new Error("Browser upload filePath must resolve to a regular file.");
+  }
+  if (info.size > MAX_UPLOAD_BYTES) {
+    throw new Error("Browser upload file exceeds the 25 MiB limit.");
+  }
+  return { path: resolved, sizeBytes: info.size };
+}
+
+function safeDownloadFilename(value) {
+  const raw = typeof value === "string" ? value : "download";
+  const cleaned = raw.replace(/[^A-Za-z0-9._-]+/g, "_").replace(/^\.+/, "").slice(0, 120);
+  return cleaned.length > 0 ? cleaned : "download";
+}
+
+async function persistTrackedDownload(download) {
+  mkdirSync(DOWNLOAD_DIR, { recursive: true });
+  const downloadId = randomUUID();
+  const path = DOWNLOAD_DIR + "/" + downloadId + "-" + safeDownloadFilename(download.suggestedFilename());
+  await download.saveAs(path);
+  const info = statSync(path);
+  if (!info.isFile() || info.size > MAX_DOWNLOAD_BYTES) {
+    unlinkSync(path);
+    throw new Error("Browser download exceeded the 64 MiB tracked-download limit.");
+  }
+  const bytes = readFileSync(path);
+  const sha256 = createHash("sha256").update(bytes).digest("hex");
+  return {
+    downloadId,
+    path,
+    suggestedFilename: download.suggestedFilename(),
+    sizeBytes: info.size,
+    sha256,
+  };
 }
 
 function statePath(display) {
@@ -32,32 +84,38 @@ function loadState(display) {
       return {
         views: parsed.views && typeof parsed.views === "object" ? parsed.views : {},
         urls: parsed.urls && typeof parsed.urls === "object" ? parsed.urls : {},
+        generations:
+          parsed.generations && typeof parsed.generations === "object" ? parsed.generations : {},
         lastViewId: typeof parsed.lastViewId === "string" ? parsed.lastViewId : undefined,
       };
     }
   } catch {}
-  return { views: {}, urls: {}, lastViewId: undefined };
+  return { views: {}, urls: {}, generations: {}, lastViewId: undefined };
 }
 
-function saveState(display, state) {
+function saveState(display, state, required = false) {
   try {
     mkdirSync(STATE_DIR, { recursive: true });
     const current = loadState(display);
-    const views = { ...current.views, ...state.views };
-    const urls = { ...current.urls, ...state.urls };
+    const views = { ...current.views, ...(state.views ?? {}) };
+    const urls = { ...current.urls, ...(state.urls ?? {}) };
+    const generations = { ...current.generations, ...(state.generations ?? {}) };
     for (const removed of state.deletedViews ?? []) {
       delete views[removed];
       delete urls[removed];
+      delete generations[removed];
     }
     let lastViewId = state.lastViewId ?? current.lastViewId;
     if (lastViewId !== undefined && (state.deletedViews ?? []).includes(lastViewId)) {
       lastViewId = undefined;
     }
-    const merged = { views, urls, lastViewId };
+    const merged = { views, urls, generations, lastViewId };
     const tmp = statePath(display) + "." + String(process.pid) + ".tmp";
     writeFileSync(tmp, JSON.stringify(merged));
     renameSync(tmp, statePath(display));
-  } catch {}
+  } catch (error) {
+    if (required) throw error;
+  }
 }
 
 // Serializes cross-process claims on a live tab: two concurrent driver calls
@@ -67,7 +125,7 @@ function saveState(display, state) {
 // its own turn sees the tab as taken. A lock older than 5s is treated as
 // leaked by a crashed driver and broken. Failure to lock degrades to the
 // unlocked behavior instead of failing the op.
-async function withViewClaimLock(display, fn) {
+async function withViewClaimLock(display, fn, required = false) {
   const lockPath = statePath(display) + ".lock";
   const deadline = Date.now() + 3000;
   let locked = false;
@@ -83,6 +141,9 @@ async function withViewClaimLock(display, fn) {
       await sleep(50);
     }
   }
+  if (required && !locked) {
+    throw new Error("Could not acquire the browser view claim lock for generation-safe state.");
+  }
   try {
     return await fn();
   } finally {
@@ -92,6 +153,42 @@ async function withViewClaimLock(display, fn) {
       } catch {}
     }
   }
+}
+
+function freshViewGeneration() {
+  return String(Date.now()) + "-" + String(process.pid) + "-" + randomUUID();
+}
+
+async function ensureViewGeneration(display, state, viewId) {
+  return withViewClaimLock(
+    display,
+    async () => {
+      const persisted = loadState(display);
+      const existing = persisted.generations[viewId];
+      if (typeof existing === "string" && existing.length > 0) {
+        state.generations[viewId] = existing;
+        return existing;
+      }
+      const generation = freshViewGeneration();
+      state.generations[viewId] = generation;
+      saveState(display, { generations: { [viewId]: generation } }, true);
+      return generation;
+    },
+    true
+  );
+}
+
+async function bumpViewGeneration(display, state, viewId) {
+  return withViewClaimLock(
+    display,
+    async () => {
+      const generation = freshViewGeneration();
+      state.generations[viewId] = generation;
+      saveState(display, { generations: { [viewId]: generation } }, true);
+      return generation;
+    },
+    true
+  );
 }
 
 async function cdpAlive(port) {
@@ -313,6 +410,45 @@ async function pagesByTargetId(context) {
   return byTarget;
 }
 
+const GENERATION_FENCED_OPS = new Set([
+  "navigate",
+  "refresh",
+  "back",
+  "forward",
+  "click",
+  "mouse_click_xy",
+  "type",
+  "fill",
+  "select_option",
+  "press_key",
+  "scroll",
+  "drag",
+  "get_bounding_box",
+  "highlight",
+  "cdp",
+  "screenshot",
+  "download",
+  "upload_file",
+]);
+
+function requireExpectedGeneration(request, viewId, generation) {
+  if (!GENERATION_FENCED_OPS.has(request.op)) return;
+  if (request.op === "navigate" && request.newTab === true) return;
+  const expected = request.expectedGeneration;
+  if (typeof expected !== "string" || expected.length === 0) {
+    throw new Error(
+      "Browser action requires expectedGeneration for view " + JSON.stringify(viewId) +
+        ". Take a fresh browser_snapshot or select the tab again."
+    );
+  }
+  if (expected !== generation) {
+    throw new Error(
+      "Stale browser view generation for " + JSON.stringify(viewId) +
+        ": expected " + JSON.stringify(expected) + ", current " + JSON.stringify(generation) + "."
+    );
+  }
+}
+
 async function resolvePage(request, context, state) {
   const explicit = typeof request.viewId === "string" && request.viewId.length > 0;
   const viewId = explicit ? request.viewId : state.lastViewId ?? "default";
@@ -347,11 +483,20 @@ async function resolvePage(request, context, state) {
           if (candidate.url() === lastUrl && !claimed.has(candidateId)) {
             page = candidate;
             state.views[viewId] = candidateId;
-            saveState(request.display, { views: { [viewId]: candidateId } });
+            const generation = freshViewGeneration();
+            state.generations[viewId] = generation;
+            saveState(
+              request.display,
+              {
+                views: { [viewId]: candidateId },
+                generations: { [viewId]: generation },
+              },
+              true
+            );
             break;
           }
         }
-      });
+      }, true);
     }
   }
   if (page === undefined && !explicit && byTarget.size > 0) {
@@ -363,12 +508,47 @@ async function resolvePage(request, context, state) {
   }
   state.views[viewId] = await targetIdOf(context, page);
   state.lastViewId = viewId;
+  const generation = await ensureViewGeneration(request.display, state, viewId);
+  requireExpectedGeneration(request, viewId, generation);
   page.setDefaultTimeout(ACTION_TIMEOUT_MS);
   return { page, viewId };
 }
 
-async function refHandle(page, ref) {
-  const handle = await page.evaluateHandle((r) => {
+function resolveFrameScope(page, request) {
+  const frameName =
+    typeof request.frameName === "string" && request.frameName.length > 0
+      ? request.frameName
+      : undefined;
+  const frameUrl =
+    typeof request.frameUrl === "string" && request.frameUrl.length > 0
+      ? request.frameUrl
+      : undefined;
+  if (frameName === undefined && frameUrl === undefined) {
+    return { scope: page, frameName: undefined, frameUrl: undefined };
+  }
+  const matches = page.frames().filter((frame) => {
+    if (frame === page.mainFrame()) return false;
+    if (frameName !== undefined && frame.name() !== frameName) return false;
+    if (frameUrl !== undefined && frame.url() !== frameUrl) return false;
+    return true;
+  });
+  if (matches.length === 0) {
+    throw new Error(
+      "No browser frame matches frameName=" + JSON.stringify(frameName) +
+        " frameUrl=" + JSON.stringify(frameUrl) + "."
+    );
+  }
+  if (matches.length > 1) {
+    throw new Error(
+      "Browser frame selector is ambiguous; provide both exact frameName and frameUrl."
+    );
+  }
+  const frame = matches[0];
+  return { scope: frame, frameName: frame.name(), frameUrl: frame.url() };
+}
+
+async function refHandle(scope, ref) {
+  const handle = await scope.evaluateHandle((r) => {
     const map = globalThis.__sandRefs;
     return map instanceof Map ? map.get(r) : undefined;
   }, ref);
@@ -497,6 +677,30 @@ function clickOptionsFor(args) {
   return options;
 }
 
+async function navigateHistory(request, context, state, direction) {
+  const { page, viewId } = await resolvePage(request, context, state);
+  const session = await context.newCDPSession(page);
+  try {
+    const history = await session.send("Page.getNavigationHistory");
+    const entry = history.entries[history.currentIndex + direction];
+    if (!entry) {
+      throw new Error(direction < 0 ? "No previous browser history entry is available for this tab." : "No forward browser history entry is available for this tab.");
+    }
+    // Fence old refs before dispatch: response loss or a restored document must
+    // not leave an already-used generation valid. Never retry this dispatch.
+    await bumpViewGeneration(request.display, state, viewId);
+    await Promise.race([
+      session.send("Page.navigateToHistoryEntry", { entryId: entry.id }),
+      sleep(NAVIGATE_TIMEOUT_MS).then(() => { throw new Error("Browser history navigation outcome is unknown; take a fresh snapshot before continuing."); }),
+    ]);
+    await page.waitForURL(entry.url, { waitUntil: "commit", timeout: NAVIGATE_TIMEOUT_MS });
+    await page.waitForLoadState("load", { timeout: 5000 }).catch(() => {});
+    return { page, viewId, summary: direction < 0 ? "Navigated back in the current tab" : "Navigated forward in the current tab" };
+  } finally {
+    await Promise.race([session.detach().catch(() => {}), sleep(1000)]);
+  }
+}
+
 const OPS = {
   navigate: async ({ request, context, state }) => {
     if (request.newTab === true) {
@@ -504,19 +708,36 @@ const OPS = {
       const viewId = typeof request.viewId === "string" && request.viewId.length > 0 ? request.viewId : "tab-" + String(Date.now());
       state.views[viewId] = await targetIdOf(context, page);
       state.lastViewId = viewId;
+      await ensureViewGeneration(request.display, state, viewId);
       page.setDefaultTimeout(ACTION_TIMEOUT_MS);
       await page.goto(request.url, { waitUntil: "domcontentloaded", timeout: NAVIGATE_TIMEOUT_MS });
       await page.waitForLoadState("load", { timeout: 5000 }).catch(() => {});
+      await bumpViewGeneration(request.display, state, viewId);
       return { page, viewId, summary: "Opened " + request.url + " in a new tab" };
     }
     const { page, viewId } = await resolvePage(request, context, state);
     await page.goto(request.url, { waitUntil: "domcontentloaded", timeout: NAVIGATE_TIMEOUT_MS });
     await page.waitForLoadState("load", { timeout: 5000 }).catch(() => {});
+    await bumpViewGeneration(request.display, state, viewId);
     return { page, viewId, summary: "Navigated to " + request.url };
+  },
+  refresh: async ({ request, context, state }) => {
+    const { page, viewId } = await resolvePage(request, context, state);
+    await page.reload({ waitUntil: "domcontentloaded", timeout: NAVIGATE_TIMEOUT_MS });
+    await page.waitForLoadState("load", { timeout: 5000 }).catch(() => {});
+    await bumpViewGeneration(request.display, state, viewId);
+    return { page, viewId, summary: "Refreshed the current tab" };
+  },
+  back: async ({ request, context, state }) => {
+    return navigateHistory(request, context, state, -1);
+  },
+  forward: async ({ request, context, state }) => {
+    return navigateHistory(request, context, state, 1);
   },
   snapshot: async ({ request, context, state }) => {
     const { page, viewId } = await resolvePage(request, context, state);
-    const result = await page.evaluate(SNAPSHOT_FN, {
+    const { scope, frameName, frameUrl } = resolveFrameScope(page, request);
+    const result = await scope.evaluate(SNAPSHOT_FN, {
       interactive: request.interactive === true,
       maxDepth: typeof request.maxDepth === "number" ? request.maxDepth : 20,
       selector: typeof request.selector === "string" && request.selector.length > 0 ? request.selector : undefined,
@@ -527,11 +748,14 @@ const OPS = {
       viewId,
       summary: "Captured page snapshot (" + String(result.refCount) + " interactive refs)",
       data,
+      frameName,
+      frameUrl,
     };
   },
   click: async ({ request, context, state }) => {
     const { page, viewId } = await resolvePage(request, context, state);
-    const element = await refHandle(page, request.ref);
+    const { scope, frameName, frameUrl } = resolveFrameScope(page, request);
+    const element = await refHandle(scope, request.ref);
     const options = clickOptionsFor(request);
     if (typeof request.offsetX === "number" || typeof request.offsetY === "number") {
       const box = await element.boundingBox();
@@ -544,7 +768,39 @@ const OPS = {
     }
     await element.click(options);
     await page.waitForLoadState("domcontentloaded", { timeout: 3000 }).catch(() => {});
-    return { page, viewId, summary: "Clicked " + (request.element ?? request.ref) };
+    return { page, viewId, frameName, frameUrl, summary: "Clicked " + (request.element ?? request.ref) };
+  },
+  download: async ({ request, context, state }) => {
+    const { page, viewId } = await resolvePage(request, context, state);
+    const { scope, frameName, frameUrl } = resolveFrameScope(page, request);
+    const element = await refHandle(scope, request.ref);
+    const pending = page.waitForEvent("download", { timeout: NAVIGATE_TIMEOUT_MS });
+    await element.click(clickOptionsFor(request));
+    const download = await pending;
+    const tracked = await persistTrackedDownload(download);
+    return {
+      page,
+      viewId,
+      frameName,
+      frameUrl,
+      summary: "Downloaded " + tracked.suggestedFilename,
+      data: JSON.stringify(tracked),
+    };
+  },
+  upload_file: async ({ request, context, state }) => {
+    const { page, viewId } = await resolvePage(request, context, state);
+    const { scope, frameName, frameUrl } = resolveFrameScope(page, request);
+    const element = await refHandle(scope, request.ref);
+    const upload = restrictedUploadFile(request.filePath);
+    await element.setInputFiles(upload.path);
+    return {
+      page,
+      viewId,
+      frameName,
+      frameUrl,
+      summary: "Uploaded an authorized workspace file",
+      data: JSON.stringify({ sizeBytes: upload.sizeBytes }),
+    };
   },
   mouse_click_xy: async ({ request, context, state }) => {
     const { page, viewId } = await resolvePage(request, context, state);
@@ -556,7 +812,8 @@ const OPS = {
   },
   type: async ({ request, context, state }) => {
     const { page, viewId } = await resolvePage(request, context, state);
-    const element = await refHandle(page, request.ref);
+    const { scope, frameName, frameUrl } = resolveFrameScope(page, request);
+    const element = await refHandle(scope, request.ref);
     await element.click({ timeout: ACTION_TIMEOUT_MS });
     if (request.clear === true) {
       await element.fill("").catch(() => {});
@@ -566,17 +823,19 @@ const OPS = {
       await page.keyboard.press("Enter");
       await page.waitForLoadState("domcontentloaded", { timeout: 5000 }).catch(() => {});
     }
-    return { page, viewId, summary: "Typed into " + (request.element ?? request.ref) };
+    return { page, viewId, frameName, frameUrl, summary: "Typed into " + (request.element ?? request.ref) };
   },
   fill: async ({ request, context, state }) => {
     const { page, viewId } = await resolvePage(request, context, state);
-    const element = await refHandle(page, request.ref);
+    const { scope, frameName, frameUrl } = resolveFrameScope(page, request);
+    const element = await refHandle(scope, request.ref);
     await element.fill(request.value);
-    return { page, viewId, summary: "Filled " + (request.element ?? request.ref) };
+    return { page, viewId, frameName, frameUrl, summary: "Filled " + (request.element ?? request.ref) };
   },
   select_option: async ({ request, context, state }) => {
     const { page, viewId } = await resolvePage(request, context, state);
-    const element = await refHandle(page, request.ref);
+    const { scope, frameName, frameUrl } = resolveFrameScope(page, request);
+    const element = await refHandle(scope, request.ref);
     const values = Array.isArray(request.values) ? request.values : [];
     let selected;
     try {
@@ -587,6 +846,8 @@ const OPS = {
     return {
       page,
       viewId,
+      frameName,
+      frameUrl,
       summary: "Selected " + JSON.stringify(selected) + " in " + (request.element ?? request.ref),
     };
   },
@@ -599,9 +860,10 @@ const OPS = {
   scroll: async ({ request, context, state }) => {
     const { page, viewId } = await resolvePage(request, context, state);
     if (typeof request.ref === "string" && request.ref.length > 0) {
-      const element = await refHandle(page, request.ref);
+      const { scope, frameName, frameUrl } = resolveFrameScope(page, request);
+      const element = await refHandle(scope, request.ref);
       await element.scrollIntoViewIfNeeded();
-      return { page, viewId, summary: "Scrolled " + (request.element ?? request.ref) + " into view" };
+      return { page, viewId, frameName, frameUrl, summary: "Scrolled " + (request.element ?? request.ref) + " into view" };
     }
     const amount = typeof request.amount === "number" && request.amount > 0 ? request.amount : 300;
     let deltaX = typeof request.deltaX === "number" ? request.deltaX : 0;
@@ -635,6 +897,7 @@ const OPS = {
       const viewId = "tab-" + String(Date.now());
       state.views[viewId] = await targetIdOf(context, page);
       state.lastViewId = viewId;
+      await ensureViewGeneration(request.display, state, viewId);
       return { page, viewId, summary: "Opened a new tab" };
     }
     let page;
@@ -670,6 +933,7 @@ const OPS = {
         state.views[viewId] = targetId;
       }
       state.lastViewId = viewId;
+      await ensureViewGeneration(request.display, state, viewId);
       return { page, viewId, summary: "Selected tab " + String(request.index) };
     }
     if (request.action === "close") {
@@ -696,14 +960,15 @@ const OPS = {
   },
   drag: async ({ request, context, state }) => {
     const { page, viewId } = await resolvePage(request, context, state);
-    const source = await refHandle(page, request.sourceRef);
+    const { scope, frameName, frameUrl } = resolveFrameScope(page, request);
+    const source = await refHandle(scope, request.sourceRef);
     await source.scrollIntoViewIfNeeded();
     const sourceBox = await source.boundingBox();
     if (sourceBox === null) throw new Error("The drag source has no visible bounding box.");
     let targetX;
     let targetY;
     if (typeof request.targetRef === "string" && request.targetRef.length > 0) {
-      const target = await refHandle(page, request.targetRef);
+      const target = await refHandle(scope, request.targetRef);
       const targetBox = await target.boundingBox();
       if (targetBox === null) throw new Error("The drag target has no visible bounding box.");
       targetX = targetBox.x + targetBox.width / 2;
@@ -729,18 +994,23 @@ const OPS = {
     return {
       page,
       viewId,
+      frameName,
+      frameUrl,
       summary:
         "Dragged " + request.sourceRef + " to (" + String(Math.round(targetX)) + ", " + String(Math.round(targetY)) + ")",
     };
   },
   get_bounding_box: async ({ request, context, state }) => {
     const { page, viewId } = await resolvePage(request, context, state);
-    const element = await refHandle(page, request.ref);
+    const { scope, frameName, frameUrl } = resolveFrameScope(page, request);
+    const element = await refHandle(scope, request.ref);
     const box = await element.boundingBox();
     if (box === null) throw new Error("The element has no visible bounding box.");
     return {
       page,
       viewId,
+      frameName,
+      frameUrl,
       summary: "Bounding box for " + (request.element ?? request.ref),
       data: JSON.stringify({
         x: Math.round(box.x),
@@ -753,7 +1023,8 @@ const OPS = {
   highlight: async ({ request, context, state }) => {
     const { page, viewId } = await resolvePage(request, context, state);
     await page.bringToFront().catch(() => {});
-    const element = await refHandle(page, request.ref);
+    const { scope, frameName, frameUrl } = resolveFrameScope(page, request);
+    const element = await refHandle(scope, request.ref);
     await element.scrollIntoViewIfNeeded();
     const durationMs = Math.min(
       typeof request.durationMs === "number" && request.durationMs > 0 ? request.durationMs : 2000,
@@ -772,36 +1043,24 @@ const OPS = {
       setTimeout(() => overlay.remove(), ms);
     }, durationMs);
     await sleep(300);
-    return { page, viewId, summary: "Highlighted " + (request.element ?? request.ref) + " for " + String(durationMs) + "ms" };
+    return { page, viewId, frameName, frameUrl, summary: "Highlighted " + (request.element ?? request.ref) + " for " + String(durationMs) + "ms" };
   },
   cdp: async ({ request, context, state }) => {
     const method = typeof request.method === "string" ? request.method : "";
-    const deniedPrefixes = [
-      "Browser.",
-      "Target.",
-      "Storage.",
-      "SystemInfo.",
-      "Security.",
-      "Input.",
-      "Tethering.",
-      "Cast.",
-    ];
-    const deniedMethods = [
-      "Network.setCookie",
-      "Network.setCookies",
-      "Network.getCookies",
-      "Network.getAllCookies",
-      "Network.deleteCookies",
-      "Network.clearBrowserCookies",
-      "Network.clearBrowserCache",
-    ];
-    if (
-      method.length === 0 ||
-      deniedPrefixes.some((p) => method.startsWith(p)) ||
-      deniedMethods.includes(method)
-    ) {
+    // CDP is a narrow observation surface. A denylist cannot fence indirect
+    // secret reads such as Runtime.evaluate(document.cookie) or response bodies.
+    const allowedMethods = new Set([
+      "Page.getLayoutMetrics",
+      "Page.captureScreenshot",
+      "DOM.getBoxModel",
+      "DOM.getContentQuads",
+      "DOM.getNodeForLocation",
+      "Accessibility.getFullAXTree",
+      "Accessibility.getPartialAXTree",
+    ]);
+    if (!allowedMethods.has(method)) {
       throw new Error(
-        "CDP method " + JSON.stringify(method) + " is denied. Browser-wide, storage, cookie, cache, permission, target-management, and input commands are not allowed; use the dedicated browser tools instead."
+        "CDP method " + JSON.stringify(method) + " is denied. Only explicit geometry, accessibility and screenshot observation commands are allowed; use dedicated browser tools for interaction."
       );
     }
     const { page, viewId } = await resolvePage(request, context, state);
@@ -865,10 +1124,16 @@ async function run(request) {
     });
     const out = { ok: true, summary: result.summary };
     if (result.data !== undefined) out.data = result.data;
-    if (result.viewId !== undefined) out.viewId = result.viewId;
+    if (result.frameName !== undefined) out.frameName = result.frameName;
+    if (result.frameUrl !== undefined) out.frameUrl = result.frameUrl;
+    if (result.viewId !== undefined) {
+      out.viewId = result.viewId;
+      const generation = state.generations[result.viewId];
+      if (typeof generation === "string" && generation.length > 0) out.generation = generation;
+    }
     if (result.page !== undefined) {
       out.url = result.page.url();
-      out.title = await result.page.title().catch(() => "");
+      out.title = await Promise.race([result.page.title().catch(() => ""), sleep(2000).then(() => "")]);
       if (typeof request.screenshotPath === "string" && request.screenshotPath.length > 0) {
         mkdirSync(STATE_DIR, { recursive: true });
         await result.page
@@ -885,7 +1150,7 @@ async function run(request) {
     }
     return out;
   } finally {
-    await browser.close().catch(() => {});
+    await Promise.race([browser.close().catch(() => {}), sleep(2000)]);
   }
 }
 

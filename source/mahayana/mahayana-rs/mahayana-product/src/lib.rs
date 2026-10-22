@@ -1,5 +1,7 @@
 //! First-party Mahayana platform client.
 
+pub mod native_desktop_session;
+
 use codex_login::token_data::parse_jwt_expiration;
 use codex_secrets::LocalSecretsNamespace;
 use codex_secrets::SecretName;
@@ -449,6 +451,7 @@ fn default_surface_listeners() -> Vec<ListenerIntegrationSummary> {
 #[derive(Clone)]
 pub struct MahayanaProductClient {
     api_base_url: String,
+    uses_default_api_base_url: bool,
     /// Stable Mahayana home anchor used to locate Codex encrypted secrets.
     session_path: PathBuf,
     /// Shared non-secret product state used by CLI and native application shells.
@@ -565,7 +568,9 @@ impl MahayanaProductClient {
             .ok()
             .filter(|value| !value.trim().is_empty())
             .unwrap_or_else(|| DEFAULT_API_BASE_URL.to_string());
-        Self::new_with_surface_state_path(api_base_url, session_path, surface_state_path)
+        let mut client = Self::new_with_surface_state_path(api_base_url, session_path, surface_state_path);
+        client.uses_default_api_base_url = true;
+        client
     }
 
     pub fn new(api_base_url: impl Into<String>, session_path: impl Into<PathBuf>) -> Self {
@@ -614,12 +619,14 @@ impl MahayanaProductClient {
             .ok()
             .filter(|value| !value.trim().is_empty())
             .unwrap_or_else(|| DEFAULT_API_BASE_URL.to_string());
-        Self::new_with_surface_state_path_and_storage_passphrase(
+        let mut client = Self::new_with_surface_state_path_and_storage_passphrase(
             api_base_url,
             session_path,
             surface_state_path,
             storage_passphrase,
-        )
+        );
+        client.uses_default_api_base_url = true;
+        client
     }
 
     fn new_with_surface_state_path_and_optional_passphrase(
@@ -637,6 +644,7 @@ impl MahayanaProductClient {
         let browser_login_poll_dir = mahayana_home.join("browser-login");
         let client = Self {
             api_base_url: api_base_url.into().trim_end_matches('/').to_string(),
+            uses_default_api_base_url: false,
             session_path,
             surface_state_path: surface_state_path.into(),
             browser_login_poll_dir,
@@ -682,6 +690,20 @@ impl MahayanaProductClient {
 
     pub fn api_base_url(&self) -> &str {
         &self.api_base_url
+    }
+
+    fn effective_api_base_url(&self) -> Result<String, ProductError> {
+        if native_desktop_session::enabled() {
+            return native_desktop_session::target_origin(
+                (!self.uses_default_api_base_url).then_some(self.api_base_url.as_str()),
+            );
+        }
+        Ok(self.api_base_url.clone())
+    }
+
+    fn native_credential(&self) -> Result<Option<native_desktop_session::NativeCredential>, ProductError> {
+        self.effective_api_base_url()?;
+        native_desktop_session::read_current()
     }
 
     /// Returns a previously stored first-party requested secret without ever
@@ -754,6 +776,9 @@ impl MahayanaProductClient {
     /// a private file owned by the workflow. Ordinary application launches do
     /// not accept this path, even if an inherited environment variable exists.
     pub fn bootstrap_ci_test_account_session(&self) -> Result<bool, ProductError> {
+        if native_desktop_session::enabled() {
+            return self.native_credential().map(|credential| credential.is_some());
+        }
         if env::var(GITHUB_ACTIONS_ENV).ok().as_deref() != Some("true") {
             return Ok(false);
         }
@@ -770,6 +795,9 @@ impl MahayanaProductClient {
     /// main process so the installed application can register its own remote
     /// device. Refresh credentials never leave the Rust-owned session store.
     pub fn device_agent_session(&self) -> Result<Value, ProductError> {
+        if native_desktop_session::enabled() {
+            return Err(ProductError::UnsupportedRequest("Native device credentials are owned by Electron".into()));
+        }
         let session = self.required_session()?;
         let access_token = self.active_session_token(session)?;
         let current = self.required_session()?;
@@ -817,6 +845,9 @@ impl MahayanaProductClient {
     /// written; later CLI processes read the credential from the existing
     /// GitHub Actions secret environment instead of persisting it on disk.
     pub fn store_test_account_session(&self, token: &str) -> Result<(), ProductError> {
+        if native_desktop_session::enabled() {
+            return Err(ProductError::UnsupportedRequest("Native account mutation".into()));
+        }
         let token = safe_test_account_token(token)?;
         let session = json!({
             "accessToken": token,
@@ -909,11 +940,11 @@ impl MahayanaProductClient {
     ) -> Result<Vec<u8>, ProductError> {
         let plugin_id = safe_path_identifier(plugin_id, "pluginId")?;
         let version = safe_marketplace_version(version)?;
-        let client = http_client()?;
+        let client = if native_desktop_session::enabled() { native_http_client()? } else { http_client()? };
         let response = client
             .get(format!(
                 "{}/v1/marketplace/plugins/{plugin_id}/releases/{version}/download",
-                self.api_base_url
+                self.effective_api_base_url()?
             ))
             .header("Accept", "application/gzip, application/octet-stream")
             .send()
@@ -1059,10 +1090,20 @@ impl MahayanaProductClient {
             )
             .text("releaseManifest", release_manifest_json)
             .part("package", package_part);
+        let target = format!("{}/v1/marketplace/releases", self.effective_api_base_url()?);
+        if native_desktop_session::enabled() {
+            let client = native_http_client()?;
+            let current = self.native_credential()?.ok_or(ProductError::NotLoggedIn)?;
+            current.guard_request(&target, &token)?;
+            let response = client.post(&target)
+                .header("Accept", "application/json").bearer_auth(&token).multipart(form).send()
+                .map_err(|_| ProductError::Transport("Native product request failed".into()))?;
+            return decode_native_response(response, Some(&token));
+        }
         let client = http_client()?;
         decode_response(
             client
-                .post(format!("{}/v1/marketplace/releases", self.api_base_url))
+                .post(target)
                 .header("Accept", "application/json")
                 .bearer_auth(token)
                 .multipart(form)
@@ -1226,6 +1267,14 @@ impl MahayanaProductClient {
     /// first-party Responses provider. The value must stay in memory and must
     /// not be copied into Codex `auth.json` or logs.
     pub fn session_token(&self) -> Result<String, ProductError> {
+        // This legacy target-less port is used by the production model adapter.
+        // Isolated credentials may only leave through an explicitly bound HTTP
+        // target, never through the production model credential resolver.
+        if native_desktop_session::enabled()
+            && self.effective_api_base_url()? != native_desktop_session::PRODUCTION_ISSUER
+        {
+            return Err(ProductError::UnsupportedRequest("Native unscoped token export".into()));
+        }
         self.authorization_token(&Value::Null)
     }
 
@@ -1689,6 +1738,11 @@ impl MahayanaProductClient {
     }
 
     pub fn execute(&self, request_type: &str, request: &Value) -> Result<Value, ProductError> {
+        if native_desktop_session::enabled() && request_type.starts_with("mahayana.auth.")
+            && !matches!(request_type, "mahayana.auth.status" | "mahayana.auth.session.restore")
+        {
+            return Err(ProductError::UnsupportedRequest("Native account mutation".into()));
+        }
         if request_type.starts_with("mahayana.connector.")
             || request_type.starts_with("mahayana.skill.")
             || request_type.starts_with("mahayana.bot.")
@@ -1917,6 +1971,27 @@ impl MahayanaProductClient {
     }
 
     fn auth_status(&self, request: &Value) -> Result<Value, ProductError> {
+        if native_desktop_session::enabled() {
+            let Some(credential) = self.native_credential()? else {
+                return Ok(json!({"@type":"mahayana.auth.status", "loggedIn":false, "provider":"native"}));
+            };
+            if access_token(request).is_some_and(|token| token != credential.token()) {
+                return Err(ProductError::Session("NATIVE_BEARER_BINDING_MISMATCH".into()));
+            }
+            let user = match self.get_json("/api/auth/user-info", &[], Some(credential.token())) {
+                Ok(user) => user,
+                Err(ProductError::HttpStatus { status: 401, .. }) => {
+                    return Ok(json!({"@type":"mahayana.auth.status", "loggedIn":false, "provider":"native", "expired":true}));
+                }
+                Err(error) => return Err(error),
+            };
+            credential.validate_user_info(&user)?;
+            let current = self.native_credential()?.ok_or(ProductError::NotLoggedIn)?;
+            if !credential.same_binding(&current) {
+                return Err(ProductError::Session("NATIVE_CREDENTIAL_CHANGED".into()));
+            }
+            return Ok(current.ui_status(false));
+        }
         let command_token = access_token(request);
         let session = self.load_session()?;
         let token = match command_token {
@@ -2157,6 +2232,10 @@ impl MahayanaProductClient {
     /// Restores UI-safe account state. Access and refresh credentials never
     /// cross the Rust ABI into a native host shell.
     fn restore_session(&self) -> Result<Value, ProductError> {
+        if native_desktop_session::enabled() {
+            return self.native_credential()?.map(|credential| credential.ui_status(true))
+                .ok_or(ProductError::NotLoggedIn);
+        }
         let session = self.required_session()?;
         let mut output = session.as_object().cloned().unwrap_or_default();
         strip_credentials(&mut output);
@@ -2173,6 +2252,7 @@ impl MahayanaProductClient {
     /// readable only here and are normalized before entering the encrypted
     /// Mahayana auth namespace; no token alias is accepted by normal APIs.
     fn import_legacy_session_if_needed(&self) {
+        if native_desktop_session::enabled() { return; }
         if !matches!(self.load_session(), Ok(None)) {
             return;
         }
@@ -2341,6 +2421,33 @@ impl MahayanaProductClient {
             .transpose()?;
         let body = request.get("body").filter(|body| !body.is_null());
         let query = request.get("query").and_then(Value::as_object);
+        if native_desktop_session::enabled() {
+            native_desktop_session::reject_auth_mutation(path, method.as_str())?;
+            let mut url = url::Url::parse(&format!("{}{}", self.effective_api_base_url()?, path))
+                .map_err(|_| ProductError::Configuration("NATIVE_TARGET_INVALID".into()))?;
+            if let Some(query) = query {
+                let mut pairs = url.query_pairs_mut();
+                for (name, value) in query {
+                    if let Some(value) = platform_query_value(value)? {
+                        pairs.append_pair(name, &value);
+                    }
+                }
+            }
+            let response = self.native_send(method, url, body, token.as_deref())?;
+            let status = response.status().as_u16();
+            let content_type = response.headers().get(reqwest::header::CONTENT_TYPE)
+                .and_then(|value| value.to_str().ok())
+                .map(|value| native_desktop_session::redact(&Value::String(value.into()), token.as_deref()));
+            let text = native_response_text(response)?;
+            let decoded = serde_json::from_str::<Value>(&text).unwrap_or(Value::String(text));
+            let data = native_desktop_session::redact(&decoded, token.as_deref());
+            let body_text = match &data {
+                Value::String(text) => text.clone(),
+                _ => data.to_string(),
+            };
+            return Ok(json!({"@type":"mahayana.platform.response", "ok":(200..300).contains(&status),
+                "statusCode":status, "contentType":content_type, "bodyText":body_text, "data":data}));
+        }
         let client = http_client()?;
 
         let send = |base_url: &str| -> Result<(u16, Option<String>, String), ProductError> {
@@ -2415,6 +2522,32 @@ impl MahayanaProductClient {
     /// Publishes a locally generated, scan-ready mini-app to the user's
     /// personal sandbox. The backend intentionally accepts anonymous users,
     /// so login enriches ownership but is never a prerequisite for creation.
+    /// Reload immediately before bearer dispatch; no token captured by a prior
+    /// session read can authorize another account, issuer, or logged-out session.
+    fn native_send(
+        &self,
+        method: reqwest::Method,
+        url: url::Url,
+        body: Option<&Value>,
+        token: Option<&str>,
+    ) -> Result<reqwest::blocking::Response, ProductError> {
+        let target = self.effective_api_base_url()?;
+        if url.origin().ascii_serialization() != target || !url.username().is_empty()
+            || url.password().is_some() || url.fragment().is_some() {
+            return Err(ProductError::Session("NATIVE_TARGET_MISMATCH".into()));
+        }
+        native_desktop_session::reject_auth_mutation(url.path(), method.as_str())?;
+        let client = native_http_client()?;
+        let mut builder = client.request(method, url.clone()).header("Accept", "application/json");
+        if let Some(body) = body { builder = builder.json(body); }
+        if let Some(token) = token {
+            let current = self.native_credential()?.ok_or(ProductError::NotLoggedIn)?;
+            current.guard_request(url.as_str(), token)?;
+            builder = builder.bearer_auth(current.token());
+        }
+        builder.send().map_err(|_| ProductError::Transport("NATIVE_REQUEST_FAILED".into()))
+    }
+
     fn authorized_get(
         &self,
         command: &Value,
@@ -2436,6 +2569,13 @@ impl MahayanaProductClient {
     }
 
     fn authorization_token(&self, command: &Value) -> Result<String, ProductError> {
+        if native_desktop_session::enabled() {
+            let current = self.native_credential()?.ok_or(ProductError::NotLoggedIn)?;
+            if access_token(command).is_some_and(|token| token != current.token()) {
+                return Err(ProductError::Session("NATIVE_BEARER_BINDING_MISMATCH".into()));
+            }
+            return Ok(current.token().to_string());
+        }
         if let Some(token) = access_token(command) {
             return Ok(token.to_string());
         }
@@ -2450,6 +2590,13 @@ impl MahayanaProductClient {
         &self,
         command: &Value,
     ) -> Result<Option<String>, ProductError> {
+        if native_desktop_session::enabled() {
+            return match self.native_credential()? {
+                Some(_) => self.authorization_token(command).map(Some),
+                None if access_token(command).is_some() => Err(ProductError::NotLoggedIn),
+                None => Ok(None),
+            };
+        }
         if let Some(token) = access_token(command) {
             return Ok(Some(token.to_string()));
         }
@@ -2467,6 +2614,14 @@ impl MahayanaProductClient {
         query: &[(&str, &str)],
         token: Option<&str>,
     ) -> Result<Value, ProductError> {
+        if native_desktop_session::enabled() {
+            native_desktop_session::reject_auth_mutation(path, "GET")?;
+            let mut url = url::Url::parse(&format!("{}{}", self.effective_api_base_url()?, path))
+                .map_err(|_| ProductError::Configuration("NATIVE_TARGET_INVALID".into()))?;
+            url.query_pairs_mut().extend_pairs(query.iter().copied());
+            let response = self.native_send(reqwest::Method::GET, url, None, token)?;
+            return decode_native_response(response, token);
+        }
         let mut url = url::Url::parse(&format!("{}{}", self.api_base_url, path))
             .map_err(|error| ProductError::Configuration(error.to_string()))?;
         url.query_pairs_mut().extend_pairs(query.iter().copied());
@@ -2486,6 +2641,13 @@ impl MahayanaProductClient {
         body: Value,
         token: Option<&str>,
     ) -> Result<Value, ProductError> {
+        if native_desktop_session::enabled() {
+            native_desktop_session::reject_auth_mutation(path, "POST")?;
+            let url = url::Url::parse(&format!("{}{}", self.effective_api_base_url()?, path))
+                .map_err(|_| ProductError::Configuration("NATIVE_TARGET_INVALID".into()))?;
+            let response = self.native_send(reqwest::Method::POST, url, Some(&body), token)?;
+            return decode_native_response(response, token);
+        }
         let url = format!("{}{}", self.api_base_url, path);
         let response = send_with_ipv4_fallback(|client| {
             let mut request = client
@@ -2505,6 +2667,13 @@ impl MahayanaProductClient {
     }
 
     fn active_session_token(&self, session: Value) -> Result<String, ProductError> {
+        if native_desktop_session::enabled() {
+            let current = self.native_credential()?.ok_or(ProductError::NotLoggedIn)?;
+            if !current.matches_private_session(&session) {
+                return Err(ProductError::Session("NATIVE_CREDENTIAL_CHANGED".into()));
+            }
+            return Ok(current.token().to_string());
+        }
         let token = access_token(&session)
             .map(str::to_string)
             .ok_or(ProductError::NotLoggedIn)?;
@@ -2535,6 +2704,9 @@ impl MahayanaProductClient {
     }
 
     fn load_session(&self) -> Result<Option<Value>, ProductError> {
+        if native_desktop_session::enabled() {
+            return self.native_credential().map(|credential| credential.map(|value| value.private_session()));
+        }
         if let Some(path) =
             env::var_os(FABUSHI_CI_ACCOUNT_SESSION_FILE_ENV).filter(|value| !value.is_empty())
         {
@@ -2628,6 +2800,9 @@ impl MahayanaProductClient {
     }
 
     fn save_session(&self, session: &Value) -> Result<(), ProductError> {
+        if native_desktop_session::enabled() {
+            return Err(ProductError::UnsupportedRequest("Native account mutation".into()));
+        }
         let name = account_session_secret_name()?;
         let contents = serde_json::to_string(session)
             .map_err(|error| ProductError::Session(error.to_string()))?;
@@ -2637,6 +2812,9 @@ impl MahayanaProductClient {
     }
 
     fn remove_session(&self) -> Result<(), ProductError> {
+        if native_desktop_session::enabled() {
+            return Err(ProductError::UnsupportedRequest("Native account mutation".into()));
+        }
         let name = account_session_secret_name()?;
         let encrypted_result = self
             .secrets_manager
@@ -3151,6 +3329,11 @@ fn typed_session(
 }
 
 fn strip_credentials(output: &mut Map<String, Value>) {
+    if output.get("provider").and_then(Value::as_str) == Some("native") {
+        for key in ["issuer", "sessionId", "deviceId"] {
+            output.remove(key);
+        }
+    }
     for key in [
         "token",
         "accessToken",
@@ -3158,6 +3341,8 @@ fn strip_credentials(output: &mut Map<String, Value>) {
         "accessTokenExpiresAt",
         "refreshTokenExpiresAt",
         "tokenType",
+        "_nativeBinding",
+        "_nativeRawUserId",
     ] {
         output.remove(key);
     }
@@ -3188,6 +3373,37 @@ fn platform_query_value(value: &Value) -> Result<Option<String>, ProductError> {
 
 fn http_client() -> Result<reqwest::blocking::Client, ProductError> {
     build_http_client(false)
+}
+
+fn native_http_client() -> Result<reqwest::blocking::Client, ProductError> {
+    reqwest::blocking::Client::builder()
+        .connect_timeout(Duration::from_secs(10))
+        .timeout(Duration::from_secs(30))
+        .redirect(reqwest::redirect::Policy::none())
+        .build().map_err(|_| ProductError::Configuration("NATIVE_HTTP_CLIENT".into()))
+}
+
+fn native_response_text(response: reqwest::blocking::Response) -> Result<String, ProductError> {
+    use std::io::Read;
+    const LIMIT: u64 = 1024 * 1024;
+    let mut bytes = Vec::new();
+    response.take(LIMIT + 1).read_to_end(&mut bytes)
+        .map_err(|_| ProductError::Transport("NATIVE_RESPONSE_READ".into()))?;
+    if bytes.len() as u64 > LIMIT {
+        return Err(ProductError::Response("NATIVE_RESPONSE_SIZE".into()));
+    }
+    String::from_utf8(bytes).map_err(|_| ProductError::Response("NATIVE_RESPONSE_ENCODING".into()))
+}
+
+fn decode_native_response(response: reqwest::blocking::Response, token: Option<&str>) -> Result<Value, ProductError> {
+    let status = response.status();
+    if !status.is_success() {
+        return Err(ProductError::HttpStatus { status: status.as_u16(), message: "Native request rejected".into() });
+    }
+    let text = native_response_text(response)?;
+    let value = serde_json::from_str(&text)
+        .map_err(|_| ProductError::Response("NATIVE_RESPONSE_JSON".into()))?;
+    Ok(native_desktop_session::redact(&value, token))
 }
 
 fn ipv4_http_client() -> Result<reqwest::blocking::Client, ProductError> {

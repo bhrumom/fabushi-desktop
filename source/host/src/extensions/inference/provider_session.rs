@@ -812,6 +812,8 @@ where
 
 const FABUSHI_RESPONSES_URL_ENV: &str = "FABUSHI_RESPONSES_URL";
 const FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV: &str = "FABUSHI_HOST_ACCESS_CREDENTIAL_FILE";
+const DEFAULT_FABUSHI_NATIVE_ISSUER: &str = "https://api.ombhrum.com";
+const CI_ISOLATED_FABUSHI_NATIVE_ISSUER: &str = "https://fabushi-ci-isolated-auth.bhrumom.workers.dev";
 
 #[derive(Debug, Clone)]
 enum ResponsesHttpCredentials {
@@ -840,7 +842,47 @@ fn validate_fabushi_responses_url(raw: &str) -> Result<String, ProviderSessionEr
             "Fabushi Responses URL must not contain credentials, query, or fragment.".into(),
         ));
     }
+    let origin = url.origin().ascii_serialization();
+    if !loopback && origin != DEFAULT_FABUSHI_NATIVE_ISSUER
+        && origin != CI_ISOLATED_FABUSHI_NATIVE_ISSUER {
+        return Err(ProviderSessionError::Configuration(
+            "Fabushi Responses URL must use an approved Native issuer origin.".into(),
+        ));
+    }
     Ok(url.to_string())
+}
+
+fn credential_issuer(document: &Value) -> Result<String, ProviderSessionError> {
+    let raw = document.get("issuer").and_then(Value::as_str)
+        .unwrap_or(DEFAULT_FABUSHI_NATIVE_ISSUER);
+    let url = url::Url::parse(raw).map_err(|_| ProviderSessionError::Authentication(
+        "Fabushi account credential issuer is invalid.".into(),
+    ))?;
+    let origin = url.origin().ascii_serialization();
+    if !url.username().is_empty() || url.password().is_some()
+        || url.query().is_some() || url.fragment().is_some()
+        || (url.scheme() != "https" && !(url.scheme() == "http"
+            && matches!(url.host_str(), Some("localhost" | "127.0.0.1" | "::1"))))
+        || (!matches!(url.host_str(), Some("localhost" | "127.0.0.1" | "::1"))
+            && origin != DEFAULT_FABUSHI_NATIVE_ISSUER
+            && origin != CI_ISOLATED_FABUSHI_NATIVE_ISSUER) {
+        return Err(ProviderSessionError::Authentication(
+            "Fabushi account credential issuer is unsupported.".into(),
+        ));
+    }
+    Ok(origin)
+}
+
+fn ensure_responses_issuer_matches(endpoint: &str, issuer: &str) -> Result<(), ProviderSessionError> {
+    let endpoint_url = url::Url::parse(endpoint).map_err(|_| ProviderSessionError::Configuration(
+        "Fabushi Responses URL is invalid.".into(),
+    ))?;
+    if endpoint_url.origin().ascii_serialization() != issuer {
+        return Err(ProviderSessionError::Authentication(
+            "Fabushi account credential issuer does not match the inference service origin.".into(),
+        ));
+    }
+    Ok(())
 }
 
 fn read_fabushi_responses_credentials(
@@ -878,6 +920,8 @@ fn read_fabushi_responses_credentials(
             "Fabushi account-bound inference credential JSON is invalid: {error}"
         ))
     })?;
+    let issuer = credential_issuer(&document)?;
+    ensure_responses_issuer_matches(endpoint, &issuer)?;
     let access_token = document
         .get("accessToken")
         .and_then(Value::as_str)
@@ -2325,8 +2369,11 @@ fn run_claude_code_provider_text(
 #[cfg(test)]
 mod tests {
     use super::{
-        FABUSHI_ROUTER_SYSTEM_PROMPT, RoutedProvider, await_cancelable_provider_io, jwt_audience,
-        provider_io_runtime, responses_http_client, toml_string_setting,
+        CI_ISOLATED_FABUSHI_NATIVE_ISSUER, DEFAULT_FABUSHI_NATIVE_ISSUER,
+        FABUSHI_ROUTER_SYSTEM_PROMPT, RoutedProvider, await_cancelable_provider_io,
+        credential_issuer, ensure_responses_issuer_matches, jwt_audience,
+        provider_io_runtime, responses_http_client,
+        toml_string_setting, validate_fabushi_responses_url,
     };
     use base64::Engine;
     use base64::engine::general_purpose::URL_SAFE_NO_PAD;
@@ -2337,6 +2384,23 @@ mod tests {
     fn fabushi_router_prompt_declares_product_identity() {
         assert!(FABUSHI_ROUTER_SYSTEM_PROMPT.contains("You are Fabushi"));
         assert!(FABUSHI_ROUTER_SYSTEM_PROMPT.contains("Fabushi's already-connected plugins"));
+    }
+
+    #[test]
+    fn fabushi_inference_rejects_cross_issuer_targets_before_bearer_dispatch() {
+        let production = validate_fabushi_responses_url("https://api.ombhrum.com/responses").unwrap();
+        let isolated = validate_fabushi_responses_url(CI_ISOLATED_FABUSHI_NATIVE_ISSUER).unwrap();
+        assert_eq!(credential_issuer(&serde_json::json!({})).unwrap(), DEFAULT_FABUSHI_NATIVE_ISSUER);
+        assert_eq!(
+            credential_issuer(&serde_json::json!({"issuer": CI_ISOLATED_FABUSHI_NATIVE_ISSUER})).unwrap(),
+            CI_ISOLATED_FABUSHI_NATIVE_ISSUER,
+        );
+        assert!(ensure_responses_issuer_matches(&production, DEFAULT_FABUSHI_NATIVE_ISSUER).is_ok());
+        assert!(ensure_responses_issuer_matches(&isolated, CI_ISOLATED_FABUSHI_NATIVE_ISSUER).is_ok());
+        assert!(ensure_responses_issuer_matches(&production, CI_ISOLATED_FABUSHI_NATIVE_ISSUER).is_err());
+        assert!(ensure_responses_issuer_matches(&isolated, DEFAULT_FABUSHI_NATIVE_ISSUER).is_err());
+        assert!(validate_fabushi_responses_url("https://untrusted.example/responses").is_err());
+        assert!(credential_issuer(&serde_json::json!({"issuer": "https://untrusted.example"})).is_err());
     }
 
     #[test]

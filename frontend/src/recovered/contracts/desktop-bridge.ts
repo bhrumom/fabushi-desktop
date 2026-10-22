@@ -193,6 +193,7 @@ export interface McpServerSummary {
 
 export interface McpServerState {
   servers: McpServerSummary[];
+  warnings?: string[];
 }
 
 export interface PluginVariableField {
@@ -461,6 +462,19 @@ export interface DesktopCallMediaBridge {
   listDisplaySources(): Promise<Array<{ id: string; name: string; displayId?: string }>>;
 }
 
+export interface DesktopMiniAppEntry {
+  appId: string;
+  displayName: string;
+  publisherId: string;
+  version: string;
+  packageDigest: string;
+  sizeBytes: number;
+  offlineCore: boolean;
+  installed: boolean;
+  supported: boolean;
+  availableUpdate?: { version: string; packageDigest: string };
+}
+
 export interface DesktopBridge {
   resolveAttachmentMedia(url: string): Promise<AttachmentMedia | null>;
   readAttachmentText(path: string): Promise<AttachmentTextResult | null>;
@@ -476,6 +490,17 @@ export interface DesktopBridge {
   ): Promise<string[] | null>;
   discardStagedAttachment(path: string): Promise<void>;
   readonly mcp: McpDesktopBridge;
+  readonly marketplacePublisher?: {
+    ownedNamespaces(): Promise<{ namespaces: string[] }>;
+    claimDandelionNamespace(): Promise<{ namespace: string }>;
+    submitDandelion(): Promise<{ state: "cancelled" | "draft" | "pending_review" | "approved"; digest?: string }>;
+  };
+  readonly marketplaceMiniApps?: {
+    list(): Promise<{ entries: DesktopMiniAppEntry[] }>;
+    install(appId: string): Promise<void>;
+    launch(appId: string): Promise<void>;
+    removeCode(appId: string): Promise<void>;
+  };
   readonly callMedia: DesktopCallMediaBridge;
   forceGatewayReconnect(): Promise<void>;
   pickAvatarSource(): Promise<string | null>;

@@ -60,6 +60,9 @@ pub struct BrowserDriverResponse {
     pub url: Option<String>,
     pub title: Option<String>,
     pub view_id: Option<String>,
+    pub generation: Option<String>,
+    pub frame_name: Option<String>,
+    pub frame_url: Option<String>,
     pub screenshot: Option<bool>,
 }
 
@@ -72,6 +75,9 @@ pub fn to_driver_response(parsed: &Map<String, Value>) -> BrowserDriverResponse 
         url: string_field(parsed, "url"),
         title: string_field(parsed, "title"),
         view_id: string_field(parsed, "viewId"),
+        generation: string_field(parsed, "generation"),
+        frame_name: string_field(parsed, "frameName"),
+        frame_url: string_field(parsed, "frameUrl"),
         screenshot: parsed.get("screenshot").and_then(Value::as_bool),
     }
 }
@@ -300,6 +306,7 @@ pub struct BrowserReviewAction {
     pub double_click: Option<bool>,
     pub button: Option<String>,
     pub modifiers: Option<Vec<String>>,
+    pub file_path: Option<String>,
 }
 
 pub fn to_browser_review_action(
@@ -343,6 +350,7 @@ pub fn to_browser_review_action(
         double_click: args.get("doubleClick").and_then(Value::as_bool),
         button: string_field(args, "button"),
         modifiers: string_array(args, "modifiers"),
+        file_path: string_field(args, "filePath"),
     }
 }
 
@@ -375,9 +383,14 @@ pub struct BrowserToolSpec {
 pub fn browser_tool_specs() -> Vec<BrowserToolSpec> {
     vec![
         spec("BROWSER_NAVIGATE", "browser_navigate", "navigate", "Navigate the box browser to a URL. By default reuses your tab; set newTab: true to open in a new tab. Returns the resulting page state with a screenshot.", &["url"], &[], true, false),
+        spec("BROWSER_REFRESH", "browser_refresh", "refresh", "Refresh the exact claimed browser tab. Requires the current expectedGeneration and returns a new generation after navigation.", &[], &[], true, false),
+        spec("BROWSER_BACK", "browser_back", "back", "Navigate the exact claimed browser tab backward in history. Requires the current expectedGeneration and returns a new generation.", &[], &[], true, false),
+        spec("BROWSER_FORWARD", "browser_forward", "forward", "Navigate the exact claimed browser tab forward in history. Requires the current expectedGeneration and returns a new generation.", &[], &[], true, false),
         spec("BROWSER_SNAPSHOT", "browser_snapshot", "snapshot", "Capture a structured snapshot of the current page with ref handles for interactive elements.", &[], &[], false, false),
         spec("BROWSER_CLICK", "browser_click", "click", "Click an element by ref from browser_snapshot.", &["ref"], &[], true, false),
         spec("BROWSER_MOUSE_CLICK_XY", "browser_mouse_click_xy", "mouse_click_xy", "Click at viewport coordinates.", &["x","y"], &[], true, false),
+        spec("BROWSER_DOWNLOAD", "browser_download", "download", "Click an element and track the resulting download into the authorized workspace download area with bounded size and SHA-256 evidence.", &["ref"], &[], true, false),
+        spec("BROWSER_UPLOAD_FILE", "browser_upload_file", "upload_file", "Upload one explicitly authorized regular file from the box /workspace root into a file input.", &["ref","filePath"], &[], false, false),
         spec("BROWSER_TYPE", "browser_type", "type", "Type text into an editable element by ref.", &["ref","text"], &[], true, false),
         spec("BROWSER_FILL", "browser_fill", "fill", "Set the value of an editable element by ref.", &["ref","value"], &[], false, false),
         spec("BROWSER_SELECT_OPTION", "browser_select_option", "select_option", "Select one or more options in a select element by ref.", &["ref","values"], &[], false, false),
@@ -399,6 +412,43 @@ pub fn validate_browser_arguments(
     for key in &schema.required {
         if args.get(*key).is_none_or(|value| value.is_null() || value.as_str() == Some("")) {
             return Err(BrowserDriverError::new(format!("{key} is required")));
+        }
+    }
+    if let Some(value) = args.get("filePath") {
+        let path = value.as_str().ok_or_else(|| {
+            BrowserDriverError::new("filePath must be a non-empty string")
+        })?;
+        if path.is_empty() || path.len() > 4096 || path.chars().any(char::is_control) {
+            return Err(BrowserDriverError::new(
+                "filePath must be a non-empty string of at most 4096 non-control characters",
+            ));
+        }
+    }
+    for key in ["frameName", "frameUrl"] {
+        if let Some(value) = args.get(key) {
+            let value = value.as_str().ok_or_else(|| {
+                BrowserDriverError::new(format!("{key} must be a non-empty string"))
+            })?;
+            if value.is_empty() || value.chars().any(char::is_control) {
+                return Err(BrowserDriverError::new(format!(
+                    "{key} must be a non-empty string without control characters"
+                )));
+            }
+            if (key == "frameName" && value.len() > 240)
+                || (key == "frameUrl" && value.len() > 2048)
+            {
+                return Err(BrowserDriverError::new(format!("{key} is too long")));
+            }
+        }
+    }
+    if let Some(value) = args.get("expectedGeneration") {
+        let generation = value.as_str().ok_or_else(|| {
+            BrowserDriverError::new("expectedGeneration must be a non-empty string")
+        })?;
+        if generation.is_empty() || generation.len() > 240 || generation.chars().any(char::is_control) {
+            return Err(BrowserDriverError::new(
+                "expectedGeneration must be a non-empty string of at most 240 non-control characters",
+            ));
         }
     }
     for (key, values) in &schema.enum_values {
@@ -476,6 +526,10 @@ pub struct BrowserDriverOutput {
     pub text: String,
     pub image_b64: Option<String>,
     pub is_error: bool,
+    pub view_id: Option<String>,
+    pub generation: Option<String>,
+    pub frame_name: Option<String>,
+    pub frame_url: Option<String>,
 }
 
 pub fn render_driver_response(
@@ -490,6 +544,10 @@ pub fn render_driver_response(
                 .unwrap_or_else(|| "The browser action failed.".into()),
             image_b64: None,
             is_error: true,
+            view_id: response.view_id.clone(),
+            generation: response.generation.clone(),
+            frame_name: response.frame_name.clone(),
+            frame_url: response.frame_url.clone(),
         };
     }
     let mut parts = vec![response.summary.clone().unwrap_or_else(|| "Done.".into())];
@@ -510,6 +568,10 @@ pub fn render_driver_response(
             None
         },
         is_error: false,
+        view_id: response.view_id.clone(),
+        generation: response.generation.clone(),
+        frame_name: response.frame_name.clone(),
+        frame_url: response.frame_url.clone(),
     }
 }
 
@@ -614,7 +676,7 @@ impl ProductionBrowserToolExecutor {
     fn ensure_driver_uploaded(&self, tool_call_id: &str) -> Result<(), ProviderSessionError> {
         self.ensure_shell_success(
             self.execute_shell(RunnerBoxShellRequest {
-                command: format!("mkdir -p {SAND_BROWSER_DRIVER_BOX_DIR}"),
+                command: format!("mkdir -p {SAND_BROWSER_DRIVER_BOX_DIR} && chmod 700 {SAND_BROWSER_DRIVER_BOX_DIR}"),
                 working_directory: "/workspace".into(),
                 tool_call_id: format!("{tool_call_id}:browser-driver-dir"),
                 is_background: false,
@@ -856,6 +918,10 @@ impl RoutedToolBridge for SandBrowserToolBridge {
             "text": output.text,
             "imageB64": output.image_b64,
             "isError": output.is_error,
+            "viewId": output.view_id,
+            "generation": output.generation,
+            "frameName": output.frame_name,
+            "frameUrl": output.frame_url,
         }))
     }
 }
@@ -869,6 +935,12 @@ fn browser_tool_definition(spec: &BrowserToolSpec) -> RoutedToolDefinition {
         properties.insert((*key).to_string(), json!({"type":"string","enum":values}));
     }
     properties.entry("viewId").or_insert_with(|| json!({"type":"string"}));
+    properties
+        .entry("expectedGeneration")
+        .or_insert_with(|| json!({"type":"string","minLength":1,"maxLength":240}));
+    properties.entry("frameName").or_insert_with(|| json!({"type":"string","minLength":1,"maxLength":240}));
+    properties.entry("frameUrl").or_insert_with(|| json!({"type":"string","minLength":1,"maxLength":2048}));
+    properties.insert("filePath".into(), json!({"type":"string","minLength":1,"maxLength":4096}));
     RoutedToolDefinition {
         name: spec.name.into(),
         provider_identifier: "fabushi-runner".into(),

@@ -26,7 +26,7 @@ Parent: FBCP-001 Revision 7
 
 ## Baseline
 
-2026-10-07 live rebaseline 后 tdesktop accepted discovery HEAD 为 `72b3b71c3d6e450e5ef94a3112dd750a0168aa0b`（tree `b4095fab77f923fca2a4b99d710ec333aa6757ab`）；历史 baseline `f23c37857220eb84f8559f0901ea26fb304b564b` 与更早 research baseline `33261535a0e747f125e0ed25486f01e556330677` 仅作历史证据。当前 source closure 仍 open，baseline_ready/acceptance.accepted 仍必须为 false。
+2026-10-19 live reconciliation 后，当前 fail-closed rebaseline candidate 为 `1e18da644e37856c9b1d87434bfcd6a2e3d11c57`（tree `30c1d5cce4c1bde962882c1f2ca4b2e51bb03ae6`）；前一 baseline `0a11537c220df35fe59a96aebe413b1e52bc6e47` 与更早历史 baseline 仅作历史证据。当前 source closure 仍 open，baseline_ready/acceptance.accepted 仍必须为 false。
 
 accepted baseline 必须在 GitHub Actions 中重新确认，并递归闭合：
 - root tracked files / gitlinks；

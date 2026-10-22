@@ -7,7 +7,7 @@ Responsibility: `TDRP-R9-SEARCH-ROW-REPLACEMENT-001`
 ## Source authority
 
 - Repository: `telegramdesktop/tdesktop`
-- Commit: `72b3b71c3d6e450e5ef94a3112dd750a0168aa0b`
+- Commit: `0a11537c220df35fe59a96aebe413b1e52bc6e47`
 - Path: `Telegram/SourceFiles/boxes/share_box.cpp`
 - Blob: `b7bf9f0d1f253d8e1a333ec1daa61d224fb188be`
 - Relevant symbols:

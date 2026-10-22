@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/base64"
 	"errors"
 	"path/filepath"
@@ -18,6 +19,38 @@ func validInitializeRequest(t *testing.T) workerRequest {
 		AuthKey:         "enrollment-secret",
 		StateDir:        filepath.Join(t.TempDir(), "state"),
 		StateKeyB64:     base64.StdEncoding.EncodeToString(make([]byte, 32)),
+	}
+}
+
+func TestReadRequestContinuesAfterRecoverableMalformedFrame(t *testing.T) {
+	scanner := bufio.NewScanner(strings.NewReader("{invalid-json}\n{\"type\":\"status\"}\n"))
+	scanner.Buffer(make([]byte, 16), maxControlFrameBytes)
+	if _, err := readRequest(scanner); err == nil {
+		t.Fatal("malformed JSON frame unexpectedly accepted")
+	}
+	request, err := readRequest(scanner)
+	if err != nil {
+		t.Fatalf("valid frame after malformed frame was not read: %v", err)
+	}
+	if request.Type != "status" {
+		t.Fatalf("unexpected request type: %q", request.Type)
+	}
+}
+
+func TestReadRequestMarksOversizedFrameAsTerminal(t *testing.T) {
+	input := strings.Repeat("x", maxControlFrameBytes+1) + "\\n"
+	scanner := bufio.NewScanner(strings.NewReader(input))
+	scanner.Buffer(make([]byte, 4096), maxControlFrameBytes)
+	_, err := readRequest(scanner)
+	if err == nil {
+		t.Fatal("oversized frame unexpectedly accepted")
+	}
+	var terminal terminalReadError
+	if !errors.As(err, &terminal) {
+		t.Fatalf("oversized frame must be terminal, got %T: %v", err, err)
+	}
+	if terminal.Error() != "terminal_input_error" {
+		t.Fatalf("terminal error classification leaked input details: %q", terminal.Error())
 	}
 }
 

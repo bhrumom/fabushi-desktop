@@ -49,7 +49,7 @@ if(validateIndex>=0){
   const seen=new Map();
   for(const rel of files){
     const report=JSON.parse(await fs.readFile(path.join(dir,rel),'utf8'));
-    fail(report.target_commit===process.env.GITHUB_SHA,'shard report target HEAD drift: '+rel);
+    fail(report.target_commit===(process.env.TDRP_TARGET_SHA||process.env.GITHUB_SHA),'shard report target HEAD drift: '+rel);
     for(const a of report.authorities||[]){
       const key=authorityKey(a.repository,a.commit);
       fail(!seen.has(key),'duplicate recursive authority report: '+key);
@@ -78,7 +78,7 @@ if(validateIndex>=0){
     return o;
   },{authorities:0,tree_entries:0,gitlinks:0,acquisition_candidates:0,patches:0,lfs_pointers:0,generated_inputs:0,resource_inputs:0,tool_inputs:0});
   await fs.writeFile(path.join(dir,'recursive-root-authority-aggregate.json'),JSON.stringify({
-    project_id:'TDRP-001',spec_revision:9,target_commit:process.env.GITHUB_SHA,
+    project_id:'TDRP-001',spec_revision:9,target_commit:(process.env.TDRP_TARGET_SHA||process.env.GITHUB_SHA),
     expected_authorities:authorities.length,covered_authorities:seen.size,totals,
     closure_status:'discovery-complete-disposition-pending'
   },null,2)+'\n');
@@ -158,7 +158,7 @@ for(const authority of selected){
 const outDir='artifacts/tdrp-recursive-root';
 await fs.mkdir(outDir,{recursive:true});
 await fs.writeFile(path.join(outDir,'recursive-root-authority-shard-'+shard+'.json'),JSON.stringify({
- project_id:'TDRP-001',spec_revision:9,target_commit:process.env.GITHUB_SHA,shard,shard_count:shardCount,
+ project_id:'TDRP-001',spec_revision:9,target_commit:(process.env.TDRP_TARGET_SHA||process.env.GITHUB_SHA),shard,shard_count:shardCount,
  selected_authorities:selected.length,authorities:reports
 },null,2)+'\n');
-console.log(JSON.stringify({target_commit:process.env.GITHUB_SHA,shard,selected_authorities:selected.length,total_authorities:authorities.length},null,2));
+console.log(JSON.stringify({target_commit:(process.env.TDRP_TARGET_SHA||process.env.GITHUB_SHA),shard,selected_authorities:selected.length,total_authorities:authorities.length},null,2));

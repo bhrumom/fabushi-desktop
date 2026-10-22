@@ -161,6 +161,22 @@ pub enum HostPermission {
     DesktopAccessibility,
     #[serde(rename = "desktop.chatgpt.approvals")]
     DesktopChatGptApprovals,
+    #[serde(rename = "dandelion.transfer")]
+    DandelionTransfer,
+    #[serde(rename = "dandelion.scan")]
+    DandelionScan,
+    #[serde(rename = "dandelion.state")]
+    DandelionState,
+    #[serde(rename = "dandelion.platform")]
+    DandelionPlatform,
+    #[serde(rename = "dandelion.hotspot")]
+    DandelionHotspot,
+    #[serde(rename = "dandelion.update")]
+    DandelionUpdate,
+    #[serde(rename = "dandelion.diagnostics")]
+    DandelionDiagnostics,
+    #[serde(rename = "dandelion.compat")]
+    DandelionCompat,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
