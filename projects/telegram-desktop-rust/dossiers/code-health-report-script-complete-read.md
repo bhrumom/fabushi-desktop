@@ -49,3 +49,6 @@ Finding scores and classes are prioritization aids, not proof of product correct
 - Direct regression cases: `MapTests.test_map_naming_a_missing_file_is_stale`, `AtlasTests.test_scan_names_areas_by_the_atlas`, `StateTests.test_recorded_scan_writes_state_once_a_day`, `StateTests.test_working_tree_scan_leaves_the_ledger_alone`.
 
 This closes only `report.py`. Generated/resource/tool disposition and the remaining semantic migration remain open; `source_closure_ready` stays false.
+
+## Live rebaseline fe4afa4fbe9f
+The source blob changed to `40d9512e3be2e075154230e7fa214d4b52e2bc12`. The report aggregator now consumes delegated harness facts, emits harness totals, creates retention/docs review findings, and fail-closes unavailable usage by retaining prior findings as unverified rather than resolved. Existing quality-health finding/evidence governance remains the owner; `harness.py` remains an independent unread source entry.

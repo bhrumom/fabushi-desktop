@@ -175,9 +175,9 @@ const qtReachability=recursiveReachability.qt_superproject;
 fail(qtReachability?.repository==='https://github.com/qt/qt5','Qt reachability authority missing');
 const qtEvidenceByPath=new Map((qtReachability.accepted_upstream_evidence||[]).map(item=>[item.path,item]));
 const expectedQtEvidence=[
-  ['Telegram/build/prepare/prepare.py','c090735b04151a886ea2c3e8fd84b42105437f18'],
-  ['Telegram/build/docker/centos_env/Dockerfile','3135794864044f21d2a0092b32cff787c86704bf'],
-  ['snap/snapcraft.yaml','261a6ca7d5bf19d5e23aa8e67dfe76ddd82850f3']
+  ['Telegram/build/prepare/prepare.py','1172c275233185982b702b47578656de463479a7'],
+  ['Telegram/build/docker/centos_env/Dockerfile','f7c7fb41dd7cdaf5612b6958ecbec40210a1152d'],
+  ['snap/snapcraft.yaml','9221bba2c335f08733b97156b85b184b4ce63127']
 ];
 for (const [sourcePath,blob] of expectedQtEvidence) {
   const evidence=qtEvidenceByPath.get(sourcePath);
