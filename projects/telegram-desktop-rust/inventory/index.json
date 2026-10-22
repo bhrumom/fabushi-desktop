@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16306,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16228,
-    "unread_minimum": 16203,
+    "unknown_minimum": 16227,
+    "unread_minimum": 16202,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -39,7 +39,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream dev advanced linearly by 3 commits from 5c674f1f6a0f6ace55b67f8bc295138680fe588b/09a421891474be0da279f44a5bf8e0dcf3bc270a to e14f1566d277d2204f4c8e553bf7cc157047e88b/241f8ab614292cc90e395ef0c966e289fdb3e985 with 11 modified paths and no added/removed source entries. The eight changed entries already mapped in the ledger were fully reread at their new blobs; the three QR UI paths remain later unread inventory work and are not claimed closed. Strict index 75 remains fully read; strict index 76 .github/scripts/generate_changelog.py@6cdd12652d31b2a47ed9a8ef906308af59cca3d0 is byte-identical on the new dev but cannot publish until this relock obtains fresh exact-head Actions. Counters remain unknown=16,228, unread=16,203, omitted=0; baseline_identity_accepted=false and source_closure_ready=false.",
+  "note": "Live upstream dev authority remains e14f1566d277d2204f4c8e553bf7cc157047e88b/241f8ab614292cc90e395ef0c966e289fdb3e985. Parent exact-head 44bedab87bff3e7ac1f872215c0f67312b4aa942 completed TDRP run 39749565989 at 61/61 success and Rust desktop runtime run 39749565996 at 6/6 success before this strict mapping mutation. Strict index 76 .github/scripts/generate_changelog.py@6cdd12652d31b2a47ed9a8ef906308af59cca3d0 is fully read and mapped to existing source-neutral release-preparation, exact-source packaging, FQT-REL-001 and FQT-EVID-001 owners; Telegram-branded HTML, links, favicon choices and GitHub Pages presentation remain provenance only. Counters unknown=16,227, unread=16,202, omitted=0. Next strict root index 77 .github/telegram-bot-api/Dockerfile@a361602441040028a3332c3732c4902d9c880122. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions are required.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,

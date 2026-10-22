@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
-  "target_commit": "69c8375ba01f5699096d085a45a37c4a5d13b441",
+  "target_commit": "44bedab87bff3e7ac1f872215c0f67312b4aa942",
   "coverage": {
     "source_entries_total": 16306,
-    "unknown": 16228,
-    "unread": 16203,
+    "unknown": 16227,
+    "unread": 16202,
     "omitted": 0,
-    "responsibilities_total": 93,
+    "responsibilities_total": 94,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -25336,6 +25336,241 @@
       "reviewer": null,
       "license_and_provenance": "Exact upstream dependabot.yml SHA is retained as source provenance. Dependabot provider syntax, GitHub Actions ecosystem selector, root-directory setting and weekly cadence are not copied as Fabushi product/runtime identifiers or canonical dependency ownership.",
       "notes": "Strict index 75 closes only .github/dependabot.yml. Counters become unknown=16228 unread=16203 omitted=0 responsibilities=93. Individual workflows, dependency manifests/locks and later maintenance scripts remain independent inventory entries. Next strict root index 76 .github/scripts/generate_changelog.py@6cdd12652d31b2a47ed9a8ef906308af59cca3d0. Closure flags remain false.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
+      "source_path": ".github/scripts/generate_changelog.py",
+      "source_blob_sha": "6cdd12652d31b2a47ed9a8ef906308af59cca3d0",
+      "source_kind": "repository_release_changelog_generator",
+      "module_id": "tdesktop.github.scripts.generate_changelog",
+      "responsibility_id": "TDRP-R9-RELEASE-CHANGELOG-RENDERING-001",
+      "source_symbols": [
+        "parse_date",
+        "parse_changelog",
+        "render_entry",
+        "build_html",
+        "main"
+      ],
+      "capability_ids": [
+        "CAP-RELEASE-NOTE-PRESENTATION-GENERATION",
+        "CAP-RELEASE-HISTORY-STATIC-RENDERING"
+      ],
+      "dependency_ids": [
+        "AGENTS.md@ff07a5abee9e124f4d4f104da0dbedb51f0ddc1b#release-preparation governance",
+        ".github/workflows/release-macos-main.yml@b0a3a4d5503e6104c083f85e31475523a2b30643",
+        "projects/fabushi-communication-platform/quality/release-entry-exit-criteria.md@c5eb9d0897234bb2fdad4f505549b2350c44aa72",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/release-changelog-generator-complete-read.md",
+      "behavior_contract": "Deterministically transform exact canonical release/change-history input into a bounded reviewable static presentation while preserving version/date/order/provenance, escaping source text before HTML emission, and keeping the generated page subordinate to canonical release/version and release-acceptance owners.",
+      "state_machine": "exact canonical release-note/version input -> validate supported headers and dates -> parse ordered entries -> escape and render deterministic static document -> write declared output and bounded approved assets -> review against exact source/release evidence -> optional existing publication lifecycle; malformed, ambiguous, stale or failed generation remains non-passing",
+      "side_effects": [
+        "May write a generated static release-history document at an explicitly declared destination.",
+        "May copy a bounded declared set of presentation assets into that output directory.",
+        "Must not mutate canonical release-note/version truth, tag/publish a release, sign/notarize/deploy artifacts, or create release acceptance."
+      ],
+      "failure_cases": [
+        "release header/version/date syntax is malformed or ambiguous but generation continues as if valid",
+        "source text is emitted into HTML without escaping",
+        "source input is stale or partial relative to candidate revision",
+        "output or asset copy escapes declared destination",
+        "Telegram branding/links/favicon/GitHub Pages layout become Fabushi release authority",
+        "generated page is mistaken for canonical version, signed artifact provenance, publication approval or independent release ACCEPT"
+      ],
+      "ui_disposition": "Repository-generated release-history documentation surface only; not a shipping Fabushi product UI capability.",
+      "non_ui_responsibilities": [
+        "deterministic release-note parsing and supported date normalization",
+        "stable version/order/provenance projection",
+        "HTML escaping before static rendering",
+        "bounded output and asset-copy behavior",
+        "fail-closed separation between generated presentation and release authority"
+      ],
+      "platform_delta": "Upstream renders Telegram-branded GitHub Pages HTML from changelog.txt. Fabushi preserves source-neutral deterministic release-history presentation responsibilities; canonical versioning, packaging, signing, notarization, evidence, publication and acceptance remain with current Fabushi owners.",
+      "existing_owner_candidates": [
+        "AGENTS.md release-preparation and exact-head publication governance (selected)",
+        ".github/workflows/release-macos-main.yml exact-source version/package/sign/notarize/publish lifecycle (selected)",
+        "FQT-REL-001 release entry/exit and artifact identity gate (selected)",
+        "FQT-EVID-001 exact-head evidence contract (selected)",
+        "generated HTML as canonical release/version truth (rejected)",
+        "new Telegram changelog/release runtime owner (rejected)"
+      ],
+      "existing_owner": "Root AGENTS.md release-preparation governance plus the existing exact-source macOS release workflow, FQT-REL-001 release criteria and FQT-EVID-001 evidence contract",
+      "rejected_existing_owners": [
+        "A generated static page is derived presentation and cannot own canonical version, release-note, artifact or acceptance truth.",
+        "The packaging workflow already owns exact-source package/sign/notarize/publish mechanics and must not be duplicated by a changelog runtime.",
+        "Telegram GitHub Pages branding, links, favicon choices and client-side search are presentation provenance."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        ".github/workflows/release-macos-main.yml",
+        "projects/fabushi-communication-platform/quality/release-entry-exit-criteria.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository release-note presentation generation governance",
+        "Bind exact source",
+        "FQT-REL-001",
+        "FQT-EVID-001"
+      ],
+      "target_language": "Repository governance / deterministic release-note presentation adapter",
+      "language_rationale": "Repository release-documentation tooling, not shipping C++ product behavior; applicable responsibilities map to source-neutral release/evidence governance.",
+      "command_event_contracts": [
+        "bind generation to exact canonical input/revision",
+        "parse supported version/date syntax deterministically and preserve order",
+        "HTML-escape source-controlled text",
+        "bound writes/assets to declared destinations",
+        "fail closed on malformed/stale/partial/failed generation",
+        "never select version truth/tag/publish/sign/notarize/deploy/accept"
+      ],
+      "state_owner": "Canonical release-note/version source and Git history; generated HTML/icons are disposable derived presentation state.",
+      "lifecycle_owner": "Existing release-preparation -> exact-source packaging/signing/notarization -> packaged acceptance -> independent FQT-REL-001 verdict -> optional publication.",
+      "persistence_and_restart": "Regenerate derived page from exact canonical release-note/version input; generated output may be discarded and rebuilt.",
+      "concurrency_and_cancellation": "Concurrent generation valid only against same exact input/revision and destination discipline; cancelled/stale output cannot advance release state.",
+      "security_boundary": "Escape source text before HTML emission; constrain writes/assets; no signing/notarization/deployment/publication/acceptance credentials or authority.",
+      "network_service_dependencies": [
+        "No network service required for deterministic generation; optional repository/static-page hosting is downstream publication adapter."
+      ],
+      "service_owner": "Existing release/repository publication governance; generated documentation hosting is replaceable downstream adapter",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "policy-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required.",
+        "Recursive source disposition remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "Strict76 .github/scripts/generate_changelog.py@6cdd12652d31b2a47ed9a8ef906308af59cca3d0 fully read: 329 lines / 9036 bytes.",
+        "Complete read covers parse_date, parse_changelog, render_entry, build_html and main; changelog.txt input, UTF-8 static HTML output, HTML escaping, search/anchor presentation and bounded favicon copying were inspected.",
+        "Existing owners revalidated at AGENTS.md@ff07a5abee9e124f4d4f104da0dbedb51f0ddc1b, .github/workflows/release-macos-main.yml@b0a3a4d5503e6104c083f85e31475523a2b30643, FQT-REL-001@c5eb9d0897234bb2fdad4f505549b2350c44aa72 and FQT-EVID-001@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70.",
+        "Parent exact-head TDRP run 39749565989 completed 61/61 success: authority 12412044470 sha256:936249af78f1cf50661545f621291e591a4a1d8fea41ac60a8c357e4bd0c71be; closure 12412189536 sha256:de237dfeb817b931e2c6072ba12224c49635fe9be08025f9609619ac94262ff9; reachability 12413068729 sha256:5f2b0b71daff60cb6ea98d33e2de0e87063ff88c535ff4883f42ea3d642b16c4.",
+        "Parent exact-head Rust run 39749565996 completed 6/6 success: artifact 12412164987 sha256:c804472b6e1e7233dda567c081820853e699a5a7ee5d34f7a1e65a48e521ba7f."
+      ],
+      "target_commit": "44bedab87bff3e7ac1f872215c0f67312b4aa942",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi release-preparation, exact-source packaging and release-evidence lifecycle",
+      "composition_slot": "Deterministic release-note presentation adapter before optional publication",
+      "capability_component": "Source-neutral release-history parsing, escaping and static rendering contract",
+      "variation_axes": [
+        "valid/malformed version-date header",
+        "empty/non-empty release history",
+        "plain/bulleted content",
+        "default/explicit input-output path",
+        "asset present/absent",
+        "current/stale revision"
+      ],
+      "shared_owner_contracts": [
+        "AGENTS.md release-preparation/exact-head verification",
+        "release-macos-main exact-source packaging/sign/notarization/publish gates",
+        "FQT-REL-001 release criteria",
+        "FQT-EVID-001 evidence provenance"
+      ],
+      "duplicate_root_check": "No Telegram changelog runtime, second release-note store, version authority, documentation root, packaging owner or release-acceptance owner is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository-generated release-history documentation only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Generated static release-history documentation adapter",
+      "route_contract": "canonical exact release-note/version input -> deterministic renderer -> reviewable static artifact -> existing release/publication lifecycle",
+      "search_scope": "Generated-page local filtering only; not canonical Fabushi Search",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Repository documentation presentation only; no shipping Fabushi responsive contract.",
+      "accessibility_contract": "Generated documentation preserves semantic headings/lists/links and identifiable local filter control if retained; no release authority.",
+      "keyboard_contract": "Repository documentation controls must remain keyboard-operable if retained; no product keyboard owner.",
+      "state_continuity_contract": "Canonical release/version continuity lives in repository source and exact revision history; generated page/filter state is disposable.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Telegram favicon assets/names are provenance only.",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-RELEASE-CHANGELOG-RENDERING-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CHANGELOG-DETERMINISTIC-PARSE-001",
+        "ORA-TDRP-CHANGELOG-HTML-ESCAPE-001",
+        "ORA-TDRP-CHANGELOG-RELEASE-AUTHORITY-SEPARATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CHANGELOG-NO-GENERATED-AS-TRUTH-001",
+        "INV-TDRP-CHANGELOG-NO-PUBLISH-AUTHORITY-001",
+        "INV-TDRP-CHANGELOG-EXACT-SOURCE-BOUND-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CHANGELOG-EXACT-INPUT-001",
+        "CONTRACT-TDRP-CHANGELOG-ESCAPED-OUTPUT-001",
+        "CONTRACT-TDRP-CHANGELOG-BOUNDED-WRITE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CHANGELOG-MALFORMED-INPUT-001",
+        "FAULT-TDRP-CHANGELOG-STALE-INPUT-001",
+        "FAULT-TDRP-CHANGELOG-WRITE-FAILURE-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CHANGELOG-HTML-OUTPUT-ESCAPE-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-CHANGELOG-NO-SECOND-RELEASE-OWNER-001",
+        "REG-TDRP-CHANGELOG-NO-TELEGRAM-PRESENTATION-AUTHORITY-001"
+      ],
+      "release_gate_ids": [],
+      "test_fixture_ids": [
+        "locked generate_changelog.py + parent exact-head release/evidence owners + PR/ref/tree/upstream lease + TDRP/Rust artifacts"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "release_gate_status": "open",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact upstream generate_changelog.py blob SHA retained; Telegram branding, GitHub links, page markup/script, favicon names and changelog path are provenance only.",
+      "notes": "Strict index 76 closes only .github/scripts/generate_changelog.py. Counters become unknown=16227 unread=16202 omitted=0 responsibilities=94. Next strict root index 77 .github/telegram-bot-api/Dockerfile@a361602441040028a3332c3732c4902d9c880122. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions remain required.",
       "test_execution_evidence": []
     }
   ]

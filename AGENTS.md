@@ -176,6 +176,14 @@ Every proposed update must preserve exact dependency provenance, scope only the 
 
 For FBCP/TDRP, executable validation remains exact-head GitHub-Actions-only. Upstream Dependabot provider syntax, the `github-actions` ecosystem selector, root-directory choice, and weekly cadence are provenance only unless current Fabushi dependency owners independently adopt the same adapter settings; no dependency bot becomes a second package, workflow, release, security, or acceptance owner.
 
+##### Repository release-note presentation generation governance
+
+A changelog or release-history generator is a deterministic presentation adapter over the repository's canonical release-note, version, source-provenance, and release-preparation owners. It may parse a declared canonical input, normalize explicitly supported version/date syntax, escape source text, and render a reviewable static output with bounded declared assets; the generated page is disposable presentation state, not release truth.
+
+Generation must bind the input and output to an exact repository revision, preserve source order and provenance, fail closed on malformed or ambiguous input, escape untrusted text before HTML emission, and constrain writes or asset copies to declared destinations. A stale, partial, malformed, or failed generation cannot be treated as a clean changelog, and provider-specific branding, links, page scripts, icon names, or hosting layout remain provenance unless independently adopted by the current Fabushi documentation surface.
+
+For FBCP/TDRP, release-note rendering cannot select or mutate the canonical version, authorize tagging or publication, sign/notarize/deploy artifacts, satisfy packaged acceptance, or create release ACCEPT. Those responsibilities remain with the existing release-preparation governance, exact-source packaging workflow, FQT-REL-001, and FQT-EVID-001; no changelog generator becomes a second release, documentation, packaging, or acceptance owner.
+
 #### Stage 4 — Verify
 - Execute or inspect the verification required by the spec and repository workflow.
 - Verify the exact source revision being accepted.
