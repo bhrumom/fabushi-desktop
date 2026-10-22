@@ -9,20 +9,34 @@
     "baseline_identity_accepted": false
   },
   "inventory": {
-    "tracked_entries_total": null,
-    "blob_entries_total": null,
-    "symlink_entries_total": null,
-    "gitlink_entries_total": null,
+    "tracked_entries_total": 58750,
+    "blob_entries_total": 58748,
+    "symlink_entries_total": 2,
+    "gitlink_entries_total": 0,
     "lfs_pointer_entries_total": null,
+    "lfs_pointer_candidates_observed": 0,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unread": "unknown",
-    "unclassified": "unknown",
-    "omitted_known": 0
+    "unread": 58750,
+    "unclassified": 58750,
+    "omitted_known": 0,
+    "canonical_manifest_format": "projects/openclaw-rust/schemas/source-inventory.schema.json",
+    "itemized_manifest_location": "immutable GitHub Actions artifact; candidate not yet promoted into committed shards"
   },
   "authority": {
     "generator": ".github/workflows/ocrm-p0-authority.yml",
     "latest_exact_head_evidence": null,
-    "source_closure_ready": false
+    "source_closure_ready": false,
+    "dependency_closure_enumerated": false,
+    "lfs_content_closed": false,
+    "candidate_evidence": {
+      "prior_subject_commit": "8fdc06b2e3dd698ae7ea84032bae53655f6230cd",
+      "prior_artifact_id": 12407594187,
+      "prior_artifact_digest": "sha256:20e1b112073b37bea00d5355f3a4aaccf95db61f96cd2a2475bc68991b489d01",
+      "prior_raw_inventory_sha256": "9859fbb9355eea03fa15e51e6908f52e9f3418d142182685cbc62dcf716e9c8d",
+      "prior_run_id": 39738623376,
+      "prior_run_attempt": 1,
+      "source_scope": "tracked Git tree only"
+    }
   }
 }

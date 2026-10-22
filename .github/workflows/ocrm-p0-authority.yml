@@ -124,6 +124,14 @@ jobs:
             done
           } > ocrm-evidence/dependency-root-inputs.tsv
 
+      - name: Expand canonical source records and verify P0 G01/G02 structural
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check --no-input 'jsonschema==4.25.1'
+          python3 projects/openclaw-rust/scripts/expand_inventory.py ocrm-evidence/upstream-recursive-inventory.json
+          python3 projects/openclaw-rust/scripts/validate_p0.py ocrm-evidence --negative-probes
+
       - name: Upload immutable authority evidence
         uses: actions/upload-artifact@v4
         with:
