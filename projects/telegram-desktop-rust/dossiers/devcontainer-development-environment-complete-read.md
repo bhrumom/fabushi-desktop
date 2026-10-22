@@ -22,3 +22,6 @@ The applicable responsibility is a reproducible repository development/editor en
 - Regression: `REG-TDRP-DEVCONTAINER-NO-TDESKTOP-RUNTIME-001`, `REG-TDRP-DEVCONTAINER-NO-LOCAL-TEST-AUTHORITY-001`
 
 Closing strict index 69 changes counters to unknown=16,234, unread=16,209, omitted=0, responsibilities=87. `baseline_identity_accepted=false` and `source_closure_ready=false` remain mandatory. Next strict root: index 70 `.gitattributes@d7f1c6218bd3bd6b595385b1308c86ba9923fa14`.
+
+## Live build-input rebaseline cade9c628cc62
+The source responsibility and devcontainer owner remain unchanged. Its declared centos_env build-image dependency is now backed by `Telegram/build/docker/centos_env/Dockerfile@0105fe2123efdc2fc361e546fdbacb6305acbfe6`; the only intervening upstream change is the immutable `desktop-app/patches` pin advancing to `1f43f0f1d5ba8643ea45bbd8404782d4d840e421`. This refreshes dependency provenance only and does not convert the optional development environment into build or acceptance authority.

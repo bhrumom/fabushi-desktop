@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "fe4afa4fbe9f5fd33fdb8f755ff42a975942b670",
-    "tree": "66602c9da1ce59199a3f0983c2c526283e386d63",
+    "commit": "cade9c628cc62a777d13ae4c449c91101a6c823b",
+    "tree": "2d5bfab9a2595d19e9d6c3327e6199ace8ed478f",
     "baseline_identity_accepted": false
   },
   "inventory": {
@@ -18,31 +18,44 @@
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
-    "run_id": 39778877315,
+    "run_id": 39783170356,
     "run_attempt": 1,
-    "job_id": 119824723125,
-    "head_sha": "7a63a7f3028b2f2c14493e4c61a65aefe0159573",
-    "artifact_id": 12425906432,
-    "artifact_name": "tdrp-revision9-authority-7a63a7f3028b2f2c14493e4c61a65aefe0159573",
-    "artifact_digest": "sha256:15b0d0da0328a5558728fdd571cf4d875a49f39dea1019011942d626d5dacb1e",
+    "head_sha": "0142e94d679523093c7f534785cd86737f7c7b7a",
+    "artifact_id": 12427354242,
+    "artifact_name": "tdrp-revision9-authority-0142e94d679523093c7f534785cd86737f7c7b7a",
+    "artifact_digest": "sha256:9c1f3c409cd306de6e3ff498b842852205211fda54b29745763e0383db6a586d",
     "evidence_status": "historical-only",
-    "upstream_commit": "42e2af80cdd20a99edecb4255470f0aa6bae6bcb",
-    "upstream_tree": "19740740209ea84bf3768f3f63ca92ea8d861087",
-    "recursive_non_directory_entries": 16306,
+    "upstream_commit": "fe4afa4fbe9f5fd33fdb8f755ff42a975942b670",
+    "upstream_tree": "66602c9da1ce59199a3f0983c2c526283e386d63",
+    "recursive_non_directory_entries": 16370,
     "source_closure_ready": false,
     "previous_historical_evidence": {
-      "run_id": 39763526560,
+      "run_id": 39778877315,
       "run_attempt": 1,
-      "job_id": 119773278418,
-      "head_sha": "a23bef39fecccc6bdba36fdd90805ab139cd26fa",
-      "artifact_id": 12418569928,
-      "artifact_name": "tdrp-revision9-authority-a23bef39fecccc6bdba36fdd90805ab139cd26fa",
-      "artifact_digest": "sha256:e6cbfee3985f5558611e6c5000fe68d2183f16397b2f354d2c6802c4d44a209c",
+      "job_id": 119824723125,
+      "head_sha": "7a63a7f3028b2f2c14493e4c61a65aefe0159573",
+      "artifact_id": 12425906432,
+      "artifact_name": "tdrp-revision9-authority-7a63a7f3028b2f2c14493e4c61a65aefe0159573",
+      "artifact_digest": "sha256:15b0d0da0328a5558728fdd571cf4d875a49f39dea1019011942d626d5dacb1e",
       "evidence_status": "historical-only",
-      "upstream_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
-      "upstream_tree": "241f8ab614292cc90e395ef0c966e289fdb3e985",
+      "upstream_commit": "42e2af80cdd20a99edecb4255470f0aa6bae6bcb",
+      "upstream_tree": "19740740209ea84bf3768f3f63ca92ea8d861087",
       "recursive_non_directory_entries": 16306,
-      "source_closure_ready": false
+      "source_closure_ready": false,
+      "previous_historical_evidence": {
+        "run_id": 39763526560,
+        "run_attempt": 1,
+        "job_id": 119773278418,
+        "head_sha": "a23bef39fecccc6bdba36fdd90805ab139cd26fa",
+        "artifact_id": 12418569928,
+        "artifact_name": "tdrp-revision9-authority-a23bef39fecccc6bdba36fdd90805ab139cd26fa",
+        "artifact_digest": "sha256:e6cbfee3985f5558611e6c5000fe68d2183f16397b2f354d2c6802c4d44a209c",
+        "evidence_status": "historical-only",
+        "upstream_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
+        "upstream_tree": "241f8ab614292cc90e395ef0c966e289fdb3e985",
+        "recursive_non_directory_entries": 16306,
+        "source_closure_ready": false
+      }
     }
   },
   "closure_rules": {
@@ -53,7 +66,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream dev rebaselined from 42e2af80cdd20a99edecb4255470f0aa6bae6bcb to fe4afa4fbe9f5fd33fdb8f755ff42a975942b670 (tree 66602c9da1ce59199a3f0983c2c526283e386d63), ahead by 7 commits with 64 added root entries, 35 modified, 0 removed and unchanged direct gitlinks. Seven previously mapped tooling paths were delta-reread; all 64 added files remain independent unread/unknown entries. desktop-app/patches advanced to 97b2b514c76666b24b43b31e2aacfa703b6aa6b2. Parent 7a63a7f3028b2f2c14493e4c61a65aefe0159573 TDRP 39778877315 61/61 and Rust 39778877293 6/6 are historical-only after drift. Inventory now recursive=16,370, unknown=16,282, unread=16,257, omitted=0. Next strict root remains index 86 .github/workflows/linux.yml@dbedd23593c5ea66ff9b8b880bda6a8bc5a4cc55 after fresh rebaseline validation.",
+  "note": "Live upstream dev rebaselined from fe4afa4fbe9f5fd33fdb8f755ff42a975942b670 to cade9c628cc62a777d13ae4c449c91101a6c823b (tree 2d5bfab9a2595d19e9d6c3327e6199ace8ed478f), ahead by 1 commit modifying only prepare.py, centos_env Dockerfile and snapcraft patches pin. Root/recursive counts and direct gitlinks are unchanged. desktop-app/patches is now 1f43f0f1d5ba8643ea45bbd8404782d4d840e421. Parent 0142e94d TDRP 39783170356 completed 61/61; Rust 39783170383 was 5/6 with rust-host still running at publication, so not passing evidence. Counters remain recursive=16,370 unknown=16,282 unread=16,257 omitted=0 responsibilities=103. Next strict root remains index86 linux.yml after fresh rebaseline validation.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,

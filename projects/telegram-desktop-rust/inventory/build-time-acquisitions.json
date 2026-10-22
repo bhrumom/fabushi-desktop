@@ -3,7 +3,7 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_repository": "telegramdesktop/tdesktop",
-  "upstream_commit": "fe4afa4fbe9f5fd33fdb8f755ff42a975942b670",
+  "upstream_commit": "cade9c628cc62a777d13ae4c449c91101a6c823b",
   "discovery": {
     "evidence_run_id": 39486129504,
     "evidence_head_sha": "f605a520cb7d3dc21da795a35cb89b8479afdb8f",
@@ -13,7 +13,7 @@
     "candidate_lines_total": 331,
     "immutable_commit_pin_occurrences_classified": 19,
     "candidate_lines_pending_classification": 0,
-    "note": "Live dev advanced 42e2af80cdd20a99edecb4255470f0aa6bae6bcb -> fe4afa4fbe9f5fd33fdb8f755ff42a975942b670. The 64 added paths are outside acquisition scanner roots; scanner-root changes are Telegram/build/prepare/prepare.py, Telegram/build/docker/centos_env/Dockerfile and snap/snapcraft.yaml. Acquisition line positions/patterns remain stable, desktop-app/patches advances a895fef40eaa7d66481cff542c623b039b7ce494 -> 97b2b514c76666b24b43b31e2aacfa703b6aa6b2, candidate cardinality/classified keys remain 331/331/0, and direct gitlinks remain unchanged.",
+    "note": "Live dev advanced fe4afa4fbe9f5fd33fdb8f755ff42a975942b670 -> cade9c628cc62a777d13ae4c449c91101a6c823b. Only prepare.py, centos_env Dockerfile and snapcraft.yaml changed, each repinning desktop-app/patches 97b2b514c76666b24b43b31e2aacfa703b6aa6b2 -> 1f43f0f1d5ba8643ea45bbd8404782d4d840e421. Candidate locations/patterns and 331/331/0 classification remain unchanged; root/recursive counts and direct gitlinks are unchanged.",
     "candidate_lines_classified": 331,
     "disposition_closure_status": "complete",
     "recursive_authority_closure_status": "gitlink-fixed-point-closed-disposition-pending",
@@ -146,7 +146,7 @@
       "source_line": 164,
       "repository": "https://github.com/desktop-app/patches.git",
       "ref_kind": "commit",
-      "commit": "97b2b514c76666b24b43b31e2aacfa703b6aa6b2",
+      "commit": "1f43f0f1d5ba8643ea45bbd8404782d4d840e421",
       "disposition": "build-input-exact-pin",
       "status": "classified",
       "source_scope": "accepted-upstream"
@@ -267,7 +267,7 @@
       "source_line": 127,
       "repository": "https://github.com/desktop-app/patches.git",
       "ref_kind": "commit",
-      "commit": "97b2b514c76666b24b43b31e2aacfa703b6aa6b2",
+      "commit": "1f43f0f1d5ba8643ea45bbd8404782d4d840e421",
       "disposition": "build-input-exact-pin",
       "status": "classified",
       "source_scope": "accepted-upstream"
@@ -1229,7 +1229,7 @@
   ],
   "recursive_build_reachability": {
     "status": "partial-audited-disposition-open",
-    "accepted_upstream_commit": "fe4afa4fbe9f5fd33fdb8f755ff42a975942b670",
+    "accepted_upstream_commit": "cade9c628cc62a777d13ae4c449c91101a6c823b",
     "rule": "A recursively discovered repository is source/build authority only when an accepted TDesktop build path actually initializes, downloads, generates, patches, or consumes it. Presence as an unselected superproject gitlink is not sufficient.",
     "qt_superproject": {
       "repository": "https://github.com/qt/qt5",
@@ -1265,19 +1265,19 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "blob": "1172c275233185982b702b47578656de463479a7",
+          "blob": "083717addc1fbc6554bbed6dc73203c9d2f65295",
           "evidence": "Qt 5 initializes only qtbase qtimageformats qtsvg; Qt 6 prepare initializes only qtbase qtimageformats qtshadertools qtsvg.",
           "evidence_status": "pending-current-head-revalidation"
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "blob": "f7c7fb41dd7cdaf5612b6958ecbec40210a1152d",
+          "blob": "0105fe2123efdc2fc361e546fdbacb6305acbfe6",
           "evidence": "Qt 6 Linux image initializes only qtbase qtdeclarative qtwayland qtimageformats qtsvg qtshadertools.",
           "evidence_status": "pending-current-head-revalidation"
         },
         {
           "path": "snap/snapcraft.yaml",
-          "blob": "9221bba2c335f08733b97156b85b184b4ce63127",
+          "blob": "6cbad91b31df4cc9f6072a5a628c8046a1e5a511",
           "evidence": "Snap Qt source-submodules lists only qtbase qtdeclarative qtimageformats qtshadertools qtsvg qtwayland.",
           "evidence_status": "pending-current-head-revalidation"
         }
@@ -1365,19 +1365,19 @@
       "accepted_upstream_evidence": [
         {
           "path": "Telegram/build/prepare/prepare.py",
-          "blob": "1172c275233185982b702b47578656de463479a7",
+          "blob": "083717addc1fbc6554bbed6dc73203c9d2f65295",
           "evidence": "Clones OpenSSL and builds libraries directly; no git submodule init/update in the OpenSSL stage.",
           "evidence_status": "pending-current-head-revalidation"
         },
         {
           "path": "Telegram/build/docker/centos_env/Dockerfile",
-          "blob": "f7c7fb41dd7cdaf5612b6958ecbec40210a1152d",
+          "blob": "0105fe2123efdc2fc361e546fdbacb6305acbfe6",
           "evidence": "Shallow clones OpenSSL, configures no-tests/no-dso, builds and installs; no submodule init/update.",
           "evidence_status": "pending-current-head-revalidation"
         },
         {
           "path": "snap/snapcraft.yaml",
-          "blob": "9221bba2c335f08733b97156b85b184b4ce63127",
+          "blob": "6cbad91b31df4cc9f6072a5a628c8046a1e5a511",
           "evidence": "Snap OpenSSL part uses source-tag/plugin make and does not request source-submodules.",
           "evidence_status": "pending-current-head-revalidation"
         }

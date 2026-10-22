@@ -56,3 +56,6 @@ Closing strict index 84 changes counters to unknown=16,219, unread=16,194, omitt
 
 ## Source-semantic correction
 The first strict84 publication used inaccurate shorthand for the trigger and runner preparation. The locked workflow has no `master`/`dev` branch list and no Docker installation step: it path-filters `push`, fences the job to the repository default branch, and streams `gen_dockerfile` output to `docker build -`. This correction changes no source disposition, owner, coverage count, product code, or acceptance flag.
+
+## Live build-input rebaseline cade9c628cc62
+The workflow source `.github/workflows/docker.yml@cba00688d935d50454bfb891fc37e001626cf9a0` is unchanged. Its generated build-input dependency is now `Telegram/build/docker/centos_env/Dockerfile@0105fe2123efdc2fc361e546fdbacb6305acbfe6`, with `desktop-app/patches` advanced linearly from `97b2b514c76666b24b43b31e2aacfa703b6aa6b2` to `1f43f0f1d5ba8643ea45bbd8404782d4d840e421`. Build-container provenance/owner disposition is unchanged; the mutable published image remains non-authoritative and fresh exact-head Actions are required for the new upstream lease.
