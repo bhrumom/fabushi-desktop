@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
-  "target_commit": "e2c301c1e2b032ec024e378c4fe754afa2ddc46e",
+  "target_commit": "227e16a89b602bee9874eff993f767f9cb471f84",
   "coverage": {
     "source_entries_total": 16306,
-    "unknown": 16244,
-    "unread": 16219,
+    "unknown": 16243,
+    "unread": 16218,
     "omitted": 0,
-    "responsibilities_total": 77,
+    "responsibilities_total": 78,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -21316,6 +21316,264 @@
       "reviewer": null,
       "license_and_provenance": "Exact host command policy read from locked telegramdesktop/tdesktop live-dev blob; provider syntax retained only as provenance and no runtime source copied.",
       "notes": "Strict index 59 closes only .claude/commands/code-health.md. Counters become unknown=16244 unread=16219 omitted=0 responsibilities=77. Next strict root index 60 .claude/commands/continue.md@e81c86031f2e501f30d2b6ed908fb03d648324c8. Closure flags remain false.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_path": ".claude/commands/continue.md",
+      "source_blob_sha": "e81c86031f2e501f30d2b6ed908fb03d648324c8",
+      "source_kind": "repository_ai_batch_continuation_host_command_alias",
+      "module_id": "tdesktop.claude.commands.continue",
+      "responsibility_id": "TDRP-R9-CLAUDE-CONTINUE-COMMAND-001",
+      "source_symbols": [
+        "frontmatter description",
+        "allowed-tools",
+        "# Continue AI Work",
+        "adapter read",
+        "shared continue skill read",
+        "required batch specification",
+        "read-only queue boundary",
+        "exactly one shared-skill mode",
+        "frozen task ids",
+        "active-task-first selection",
+        "single inbox transaction",
+        "all pending tasks startup freeze",
+        "derived follow-up task expansion",
+        "source-project inheritance",
+        "split-required routing",
+        "source-lineage gate",
+        "pending-task consolidation",
+        "Agent-only workers",
+        "review provider selection",
+        "$ARGUMENTS"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-AI-BATCH-CONTINUATION-NATIVE-INVOCATION"
+      ],
+      "dependency_ids": [
+        ".claude/ai-workflow-adapter.md@370ff84a1ab4c080b15b601a54162b0630c4f4df",
+        ".agents/skills/continue/SKILL.md@aeb81dd57018abbc8f03ea3dbd34f91952128db5",
+        "GitHub Actions exact-head verification boundary"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/claude-continue-command-complete-read.md",
+      "behavior_contract": "Expose Claude /continue only as a host invocation surface over the shared continue scheduler: require an explicit batch specification for mutation, freeze exactly selected work plus the checkout's exclusive active state, append only causally discovered follow-ups, preserve source-lineage/split/consolidation boundaries, and keep provider/delegation mechanics subordinate to the shared source-neutral lifecycle.",
+      "state_machine": "command invocation -> read Claude adapter + shared continue skill -> no specification: read-only queue/report/question; specification: choose one mode -> freeze active + selected batch -> enforce source lineage -> run one stateful performer at a time -> route split/discovered follow-ups and bounded consolidation through canonical helpers -> stop at shared normal/global-hard-stop boundary",
+      "side_effects": [
+        "May invoke the existing repository task/review/evidence lifecycle for exactly the frozen-and-derived batch.",
+        "May route split-required/discovered work and pending-task consolidation only through the shared lifecycle's dedicated publication boundaries.",
+        "Creates no shipping Fabushi product state, user task store, conversation state or second scheduler."
+      ],
+      "failure_cases": [
+        "The Claude command becomes a second semantic scheduler or task queue.",
+        "No-spec invocation mutates queue or source instead of remaining read-only.",
+        "Unrelated tasks observed after startup are added to the frozen batch.",
+        "Source-lineage or compatible-branch safety gates are bypassed.",
+        "A second stateful performer or competing publisher is launched.",
+        "Split-required retained source state is reset or detached from its designated carrier.",
+        "Pending consolidation/routing publication is abandoned at normal stop.",
+        "Provider choice or Claude host syntax changes canonical task semantics.",
+        "Fresh child exact-head TDRP/Rust evidence is absent."
+      ],
+      "ui_disposition": "Not applicable; repository-development host command only.",
+      "non_ui_responsibilities": [
+        "Host command registration",
+        "Batch-specification admission",
+        "Frozen-batch selection",
+        "Active-task-first resumption",
+        "Source-lineage gating",
+        "Split-required routing",
+        "Discovered-follow-up scope control",
+        "Pending-task consolidation lane",
+        "Review-provider host selection"
+      ],
+      "platform_delta": "Claude Agent/AskUserQuestion/tool metadata and Codex/native provider selection are host mechanics. Task selection, state ownership, publication, source lineage, split/consolidation and evidence semantics remain in the shared source-neutral workflow.",
+      "existing_owner_candidates": [
+        "AGENTS.md source-neutral repository AI development/review/evidence lifecycle",
+        "Existing shared repository task/review/evidence lifecycle",
+        "Shipping Agent/Coordinator/Host/Runner (rejected)",
+        "Shipping Task/Automation/Workflow (rejected)"
+      ],
+      "existing_owner": "Fabushi source-neutral repository AI development/review/evidence lifecycle",
+      "rejected_existing_owners": [
+        "Shipping Agent/Coordinator/Host/Runner own product execution, not developer queue scheduling.",
+        "Shipping Task/Automation/Workflow own end-user work, not repository development batches.",
+        "A Claude-specific task queue/scheduler would duplicate the shared lifecycle explicitly referenced by the command.",
+        "A second source-lineage, split or consolidation owner would create competing durable task state."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md"
+      ],
+      "fabushi_target_symbols": [
+        "Do not start implementation from chat memory alone.",
+        "Build task context selectively from the current explicit request, exact live repository state, applicable source/spec authority, task lineage, and only the project/reference material that is concretely relevant to the requested behavior or an unresolved ambiguity.",
+        "Stay within declared scope.",
+        "A detached launcher returning successfully proves only that the run was accepted for execution, not that the worker completed.",
+        "Completion uses the adapter's sanctioned foreground wait against that same durable run."
+      ],
+      "target_language": "Markdown repository governance / host invocation metadata",
+      "language_rationale": "This is a provider command surface over an already-owned repository workflow; applicable semantics stay in source-neutral repository governance rather than shipping Rust/TypeScript.",
+      "command_event_contracts": [
+        "/continue with no batch specification -> read-only queue report + one human specification question",
+        "/continue <specification> -> freeze exactly the selected startup batch plus exclusive active checkout state",
+        "active task -> resume before selected shared work",
+        "inbox specification -> at most one inbox transaction and only its routed task ids join",
+        "new unrelated queue work -> deferred",
+        "split-required -> dedicated split transaction, ordered replacements, retained carrier first when present",
+        "post-freeze pre-Phase-1 lineage mismatch -> only safe existing-compatible-branch switch by parent",
+        "post-Phase-1 lineage mismatch -> task-local Block and continue independent batch work",
+        "discovered result -> only causally routed follow-ups may append to frozen batch",
+        "pending consolidation -> at most one dedicated consolidation publication lane",
+        "review provider -> decided once from invocation arguments and recorded in performer prompts"
+      ],
+      "state_owner": "Existing canonical repository task/review/evidence state and helper-owned task artifacts.",
+      "lifecycle_owner": "Fabushi root AGENTS.md source-neutral AI development/review/evidence lifecycle.",
+      "persistence_and_restart": "No product persistence. Durable task state, split seals, routing markers, batch soft marks, receipts and evidence remain owned by the canonical repository workflow; the command alias owns no parallel store.",
+      "concurrency_and_cancellation": "One stateful performer at a time; split workers are fresh foreground workers; routing and pending consolidation are bounded dedicated lanes with at most one of each in flight; interrupted durable publication is resumed rather than duplicated.",
+      "security_boundary": "Batch scope, source-lineage, clean-worktree/compatible-branch rules, immutable worker identity, single-writer publication, and explicit human boundary before unsafe pre-freeze branch decisions remain fail-closed. Host syntax cannot bypass them.",
+      "network_service_dependencies": [
+        "GitHub Actions for exact-head executable verification"
+      ],
+      "service_owner": "Fabushi repository development/review/evidence lifecycle",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "toolchain-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP and Rust Actions are required.",
+        "Recursive source disposition remains open; baseline_identity_accepted=false and source_closure_ready=false."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "Full locked .claude/commands/continue.md read: 68 lines / 3,700 bytes.",
+        "Same-upstream shared semantic owner .agents/skills/continue/SKILL.md@aeb81dd57018abbc8f03ea3dbd34f91952128db5 fully read: 722 lines / 39,726 bytes.",
+        "Same-upstream Claude adapter .claude/ai-workflow-adapter.md@370ff84a1ab4c080b15b601a54162b0630c4f4df already fully read and revalidated at the locked tree.",
+        "Parent exact-head TDRP run 39704746797: 61/61 jobs success; authority artifact 12394586968 digest sha256:20344001bdba23c547af8a6cd5b3c6b49f845405d76f6c44f717e15f32d95cc5.",
+        "Parent exact-head Rust run 39704746955: 6/6 jobs success; messaging artifact 12395030136 digest sha256:8aefb21bdea01817bfbc4c50bae53d82f75dcd2afc2c3bb6eb2d83f9569f4e11."
+      ],
+      "target_commit": "227e16a89b602bee9874eff993f767f9cb471f84",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository AI development/review/evidence lifecycle",
+      "composition_slot": "Host-native batch continuation invocation",
+      "capability_component": "Repository batch continuation command registration",
+      "variation_axes": [
+        "no specification vs explicit specification",
+        "active vs queue vs inbox startup mode",
+        "Codex vs native review provider",
+        "split-required present vs absent",
+        "lineage compatible vs human/safe-switch/task-local block boundary",
+        "discovered/consolidation follow-up present vs absent"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi root AGENTS.md",
+        "Shared repository task/review/evidence lifecycle",
+        "Claude host adapter",
+        "GitHub Actions exact-head verification"
+      ],
+      "duplicate_root_check": "No second repository scheduler, task queue, batch store, source-lineage owner, split/consolidation owner, review owner or shipping runtime introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository-development batch continuation only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Repository AI batch continuation native invocation",
+      "route_contract": "No shipping route; developer work uses the existing canonical repository task/review/evidence lifecycle.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "The frozen batch and durable canonical task artifacts govern continuation; interruption resumes existing owned state and never broadens to later unrelated queue observations.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CLAUDE-CONTINUE-COMMAND-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CLAUDE-CONTINUE-FROZEN-BATCH-001",
+        "ORA-TDRP-CLAUDE-CONTINUE-SOURCE-LINEAGE-001",
+        "ORA-TDRP-CLAUDE-CONTINUE-SPLIT-CONSOLIDATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CLAUDE-CONTINUE-NO-UNRELATED-DRAIN-001",
+        "INV-TDRP-CLAUDE-CONTINUE-NO-SECOND-SCHEDULER-001",
+        "INV-TDRP-CLAUDE-CONTINUE-SINGLE-PERFORMER-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CLAUDE-CONTINUE-NO-SPEC-001",
+        "CONTRACT-TDRP-CLAUDE-CONTINUE-FROZEN-BATCH-001",
+        "CONTRACT-TDRP-CLAUDE-CONTINUE-SOURCE-LINEAGE-001",
+        "CONTRACT-TDRP-CLAUDE-CONTINUE-SPLIT-001",
+        "CONTRACT-TDRP-CLAUDE-CONTINUE-CONSOLIDATION-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-CLAUDE-CONTINUE-NO-UNRELATED-TASK-001"
+      ],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "locked Claude continue command, shared continue skill and Claude adapter blobs"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact host command policy read from locked telegramdesktop/tdesktop live-dev blob; provider syntax retained only as provenance and no runtime source copied.",
+      "notes": "Strict index 60 closes only .claude/commands/continue.md. Counters become unknown=16243 unread=16218 omitted=0 responsibilities=78. Next strict root index 61 .claude/commands/crash-reports-process.md@5ac555406670721694e78c4e1e6b2a96b3e98fb5. Closure flags remain false.",
       "test_execution_evidence": []
     }
   ]
