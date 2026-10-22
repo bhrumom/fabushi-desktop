@@ -59,3 +59,92 @@ Exit when the linked task records exact source/target dependency closure and all
 4. Once authority is positively accepted, implement one coherent Rust ingress behavior end-to-end under current owner with negative/timeout/unknown-result and packaged path proofs.
 
 Global source closure and G02 final remain open regardless of any future scoped success.
+
+## 6. GW-AUTH-01/02 exact-source follow-up: 2026-10-22 (read-only, **not** a G01/G02 acceptance)
+
+**Source lease:** openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70, tree 04ccce62f1d74dc8e0c88290ae8ded027b7b0f16, gateway subtree 0a0b92dd355ab0054af724ea469dd6571c0fa30a. **Target read lease:** bhrumom/fabushi-desktop@2a2c2669b580e40b20f71e2187a0109841e14197, tree 471266e9da4e028df5ac4bf2c04acc33e7ddaf57. These identities describe the examined input; a later documentation carrier does not inherit its parent's Actions verdict. This addendum supersedes the older reading-progress claims for the specific full-text files named here only, not their unresolved imports.
+
+### 6.1 GW-AUTH-01 source anchors and behavior
+
+| Frozen source file | Git blob SHA | Bounded observation |
+| --- | --- | --- |
+| src/gateway/auth.ts | 9769ec1697b1fb81812b987ca59a840c07fc0233 | Reviewed 571-line auth implementation: token/password/none, trusted proxy and Tailscale pathways, credential timing-safe comparison, proxy/origin provenance, rate limiting and failure behavior. |
+| src/gateway/auth-policy.ts | 8fcf9bc3834e4185e69fa530fa68426ac2586b09 | Auth policy snapshot vs grant-generation/currentness: rejected stale grant must not revive across reload. |
+| src/gateway/auth-mode-policy.ts | 7186d5401547885993a876ac31cb103aebabe833 | Conflicting token and password without an explicit mode is a configuration error. |
+| src/gateway/auth-resolve.ts | 8d1f04f1e2756527769d4146d0d3f5c07629d2b7 | Auth-mode resolution, explicit/implicit credential sources and hot config. |
+| src/gateway/auth-surface-resolution.ts | a64a6ae3e284c177d7a1a6cdf6c20fce608a564f | Different passive probe vs interactive-client credential sourcing; unresolved references cannot silently use ambient fallback. |
+| src/gateway/auth-token-resolution.ts | d6a58912dc677110e7e8e7e0f4da7ff6d74e3679 | Token override/config/ref/environment precedence; unresolved ref fails closed. |
+| src/gateway/auth-token-store-ref.ts | 30af61fbae743028638c8666cab9f457db94bfe0 | Credential-store provisioning/reuse preserves secret lifecycle, avoiding accidental rotation. |
+| src/gateway/role-policy.ts | 09247fd9cfeb26a2bf5642d325d41f3d397a709a | Closed operator/node role model and node RPC boundary. |
+| src/gateway/method-scopes.ts | 1e5a8343fe315afa88eeb5ebeb3c96b569a670d8 | Admin/read/write/approvals/questions/pairing and session scopes; dynamic methods do not default to ambient write. |
+| src/gateway/server-methods.ts | 5bebd34bd2b3e5765947fb58a5b71be98588c10a | Entire 604-line dispatcher read: core/plugin/aux registry, root-work admission, predispatch authority, post-await and pre-invocation guard, response/error settlement. |
+| src/gateway/server-methods/request-authorization.ts | a6230b631de50d0ad282e108d0af5e62717cfcd2 | Inspected predispatch access/startup/session-pairing fences, including lines 251-661 in full; source-dependency closure remains open. |
+| src/gateway/server-methods/method-authorization.ts | a4dda8be141ad623d9e2e668f51e2e6bf2227cd3 | Role/scope and session-operator authorization before handlers; current operator role-policy rechecked. |
+| src/gateway/server-methods/gateway-client-identity.ts | d7bf828d12d055a669ed9bc6257523559bf1c960 | Verified-profile hydration and caller attribution; unresolved profile returns retryable unavailable instead of identity fabrication. |
+| src/gateway/methods/core-method-policy.ts | 2b64d1738783b5261d091ef40e7f34606fd1f0f3 | Unclassified core method rejects descriptor creation. |
+| src/gateway/methods/registry.ts | e073cd9d480820c47662a786c90de9558a9d379e | Duplicate method name rejected, plugin namespace scope normalization, own-session requires write+profile, sharing restricted to bounded reads. |
+| src/gateway/server/ws-connection/connect-auth.ts | 708e34da5847a31d4d839b7917eeb65ae53c2496 | Complete 608-line connect authentication read: signed device ID/public key, nonce, +/-120s clock window, shared/session generation and credential revalidation. |
+| src/gateway/server/ws-connection/connect-device-pairing.ts | 57cf297e7d50f725ce657553972c8da17f214712 | Complete 624-line pairing approval read: pending request identity, current durable row, role/scope/key, approval/revocation races, token issuance fences. |
+| src/gateway/server/ws-connection/connect-policy.ts | fbcd9f470e079f31d20eef3fc2b332431cb2eea0 | Device-less path limited to specified local/Control-UI authenticated operator cases; no blanket node bypass. |
+| src/gateway/server/ws-connection/connect-operator-access.ts | e9e777538b720f424872b8e84fd515d8ac44cae7 | Operator profile access and revocable grant tied to current device-token record. |
+| src/gateway/server/ws-connection/connect-device-tokens.ts | 443df70b1e67d60b14c3041d4d2bef2e3b28f6d9 | Tokens issued only for approved live baseline, with scope allowlist / shared-generation. |
+| src/gateway/agent-runtime-identity-token.ts | 851d02ddf54b353e450028f78f70a51052369165 | Complete 661-line typed signed identity token: operational run and delegated authority, 60s action/cron claims, current HMAC and run/claim verification. |
+| src/gateway/device-revocation.ts | d4b14934c45c5cb63f127846bebc8c49744e36b4 | Complete 304-line retained source capture and revocation of in-flight accepted request; no recapture of later grant. |
+| src/gateway/device-scope-upgrade.ts | 4f3311114fd5ce0b7618e5db9bd4e58acfb3b5b3 | Durable pairing-row reconciliation, scope upgrade by same exact device public key, observer cancellation. |
+| src/gateway/device-pair-setup-completion.ts | e3c7b362ac0dab6f4d165c2be9138b5e723c765a | Handoff delivery can be confirmed or outcome-uncertain; consuming bearer is not proof peer received it. |
+
+### 6.2 Source oracles directly inspected, **not run or accepted**
+
+| Source test | Git blob SHA | Falsifiable negative case |
+| --- | --- | --- |
+| src/gateway/server-methods.dispatch-authorization.test.ts | fcc55a7d5efee9b9c3dff52104f3a9bf92f74d39 | Attached registry governs dispatch despite newer global plugin registry; operator.read cannot invoke operator.write; a stale node pairing rejects all node RPCs with PAIRING_CHANGED. |
+| src/gateway/server-methods.authorization.test.ts | e0cbbe87dbf58486d824ddc5bf31f72d6d4a9714 | Admin-only setup; profile self-service denies other owner; session replacement/reassignment during await prevents stale mutation/response. |
+| src/gateway/server/ws-connection/connect-policy.test.ts | 9dbb41f3e3ba6296ca474df7d602277b1357b352 | auth.mode none only skips operator Control UI pairing, never node or all clients; trusted-proxy exception requires valid matching auth+role. |
+| src/gateway/server/connection.test.ts | 269276112f1887b9060e327a2228cfc60b60a253 | Single admitted connect, a single hello-ok and receive registration, cleanup once regardless of hello frame delivery success. |
+| src/gateway/server-methods/device-management-authz.test.ts | 7faa48ca9e3e21d94bf50b2c84137eb4e1945fb0 | Self-asserted shared-auth device metadata is untrusted; actual device-token auth can bind self-service device identity. |
+| src/gateway/server/ws-connection/auth-messages.test.ts | 69f9be2eb45def8e496fdb70aec8917a72d03b6a | Precise pairing/scope/auth refusal, bounded close-reason and redacted sensitive material. |
+
+### 6.3 Scoped transitive dependencies: explicit non-closure
+
+The gateway ingress graph is larger than the above anchors. Mandatory unread or incompletely audited direct/transitive inputs include src/gateway/server/ws-connection/message-handler.ts, connect-session.ts, connect-admission.ts, connect-device-metadata.ts, connect-pairing-approval-plan.ts, connect-hello.ts, authenticated-request-dispatch.ts, src/gateway/server/connection.ts (first 190/608 inspected), request-authorization.ts supporting session-sharing modules, src/infra/device-pairing* persistence/approvals, src/gateway/operator-role-policy.ts, credential and audit modules, packages/gateway-protocol/src/schema.ts, protocol-codec exports, packages/gateway-client and normalization/retry packages; dynamic plugins, version compatibility, build/generator declarations and tests must all receive exact blob identities and full type-adapted reading. The earlier manifest counts 5,080 src/gateway paths and 318 gateway-protocol paths are prefix inventory only, not a computed transitive closure. Scoped G01 completeness and G02 reviewer verdict remain **false**.
+
+### 6.4 GW-AUTH-02 actual existing production seam (partial caller/consumer proof)
+
+| Fabushi target source at investigated exact H | Git blob SHA | Proven call/writer responsibility |
+| --- | --- | --- |
+| source/host/src/gateway_server.rs | 1ce506ae0bc75ee96418e55eb64a935dd7865ac0 | Complete 1244-line read. Existing HTTP/TLS listener, Origin denial, loopback Host guard for tokenless mode, timing-safe Bearer check, known-method whitelist, /health, events/bridge routes; no WS role/scope/pairing handshake equivalent exists in this file. |
+| source/host/src/host_gateway_api.rs | e93659285baf4903d3c97cf85629864341ad4126 | Complete read: explicit method-to-Host feature-owner mapping; not an OpenClaw plugin descriptor registry. |
+| source/host/src/gateway_protocol.rs | 13b6a5bad55c133ed67e39bc94b7e500808a82a5 | Complete read: existing Grok/Fabushi façade; does not prove OpenClaw schema/protocol parity. |
+| source/host/src/gateway_config.rs | 64af7f6354047fe18b3e94fe629236ee0ade1942 | Complete read: configured/random auth token, loopback/TLS guards and Host discovery; no role-specific reusable device grant owner proven. |
+| source/host/src/gateway_command_error.rs | a7827b29c7f53899b1f34e7c989849816f4090fb | Complete read: existing errors/status classes. |
+| source/node-agent-coordinator/src/gateway/gateway_request_dispatcher.rs | 38ca19db76493f9c2bca8862b484d61b7e74f47c | Complete read: Coordinator POST /api/{method}, HTTP auth headers, bounded timeout/error classification; client is not canonical business writer. |
+| source/node-agent-coordinator/src/gateway/host_supervisor.rs | ea7d370c0a79948e7e6a0a179405d3aacd9e3a56 | Complete read: Host discovery bearer injection, health/reconnect epochs and endpoint generations. |
+| source/node-agent-coordinator/src/gateway/gateway_client.rs | 67c666d4b3ec716aca60763bb53c594f066d0660 | Complete 1064-line read: SSE + bounded retries for sendPrompt/createAgent only after original endpoint and dedupe capability guard; no automatic replay if admission outcome not proven safe. |
+| source/host/src/runner_production_bridge.rs | 56b1af467b70d7f2ac8f1f156e1e497441928801 | Complete read: immutable per-turn Host→Runner dependency projection; not a Gateway account/scope owner. |
+| source/host/app/src/main.rs | 8e19361b3b278d085927a84ea4c8ce8c3fe3de80 | TARGETED ranges 8920-9060, 10390-10530, 13120-13220: UnifiedGatewayApi impl routes approved existing method into transcript/session, runner acceptance/start; app launches gateway and writes host discovery. Remainder of 13719 lines, related state write/callers not full-read. |
+| source/node-agent-coordinator/src/main.rs | c822c07dff3027a22a658d1ece6aefe919691365 | TARGETED ranges 1715-1795, 2030-2180, 2575-2635: Coordinator dispatches via HTTP Host, runner.acceptRoutedPrompt then runner.startRoutedProvider, inference store projection vs Host-owned Transcript. Remainder not fully read. |
+
+Observed partial live chain: Coordinator incoming command → dispatch_gateway_value → CoordinatorGatewayClient / dispatch_http_json_response → Host /api/{method} Bearer boundary → GatewayApi::call_with_context → UnifiedGatewayApi → existing Transcript/Session/Runner services → SSE/HTTP consumer. Host app also calls sendPrompt from native TeachRecording. Renderer/UI/CLI/companion consumers and auth/storage owner call graph remain unread, so **no full G02 assertion**. Candidate disposition: extend existing Host Gateway admission plus typed routing; keep Coordinator as transport/lifetime supervisor and Runner as attempt executor; preserve Host-owned Session/Transcript persistence and reject a second Gateway runtime/second writer. This is a candidate, pending owner/ADR independent review.
+
+### 6.5 Falsifiable scoped G01/G02 oracle table to publish only after positive admission
+
+| Oracle ID | Input / manipulated boundary | Required assertion in Actions oracle lane |
+| --- | --- | --- |
+| OCRM-GW-AUTH-O01 | Missing/incorrect bearer, remote Host spoof, untrusted browser Origin | No handler invocation, correct denial; current local health and established Fabushi authorized traffic preserved. |
+| OCRM-GW-AUTH-O02 | Shared token/password/none, trusted proxy and Tailscale, inactive secretRef | Exact mode authority and origin handling; no ambient credential escalation, config conflict or unverified proxy identity. |
+| OCRM-GW-AUTH-O03 | Node vs operator scopes, admin-only method, plugin collides with core method | Scope-bound error before side effects; descriptor selected for policy and execution is the same; default-deny unclassified. |
+| OCRM-GW-AUTH-O04 | Signed device nonce mismatch, key substitution, stale timestamp, scope escalation, user-profile absence | Refuse pairing or mutation; never issue reusable credentials from an unverified or revoked principal. |
+| OCRM-GW-AUTH-O05 | Approval/revoke/credential rotation while awaiting pairing/auth/session fact | Current durable row and source generation fence after all awaits; late connection fails with PAIRING_CHANGED or appropriate denial. |
+| OCRM-GW-AUTH-O06 | Session replaced/reassigned while mutation handler is parked | Mutation guard blocks old write; no stale or unpermitted response content emitted. |
+| OCRM-GW-AUTH-O07 | Accepted message/tool turn disconnects, timeout or Host restart | No blind duplicate mutation: stable request id, explicit accepted vs denied vs outcome unknown, reconcile before retry. |
+| OCRM-GW-AUTH-O08 | Hello response delivered vs transport write failure, connection close/reconnect | Receive registration once and lifecycle cleanup exactly once, without upgrading socket delivery to peer-confirmed completion. |
+| OCRM-GW-AUTH-O09 | Probe/registry/source closure negative changes, altered upstream SHA, missing declared dependency/test | Scoped validator fails closed, exact subject head/tree + dependency digest tied to artifact and independent verdict. |
+
+### 6.6 G01/G02 and §11.1 verdict / blockers
+
+- GW-AUTH-01: **READ PARTIAL**. Many exact blobs now anchored, but indirect and dynamic imports, schema/generator/dependency/package closure, selected source/test ranges and all required oracle inputs are **not** read/locked. Scoped G01 unavailable, not passed.
+- GW-AUTH-02: **OWNER TRACE PARTIAL**. Existing Host/Coordinator/Runner route is supported by exact code above; actual account, OAuth, plugin, UI/CLI, remote node and channel consumers plus permanent auth/storage owner remain open. Scoped G02 independent verdict unavailable.
+- GW-AUTH-03 / §11.1: **NOT ADMITTED**. No approved source closure, independent reviewer, exact-head scoped G01/G02 Actions receipt, or verified protocol equivalence. Production Rust and ledger/RTM acceptance flags must remain unchanged.
+- Follow-up: read complete frozen ws connect/session authorization and infra/device-pairing persistence + app/UI/CLI consumers, expand a real scoped import/manifest graph with blob SHA and negative probes, run only in GitHub Actions once Actions approval is unblocked, then obtain independent review before any production mutation.
+
+**Evidence discipline:** This document is a non-production, unaccepted audit snapshot. File blobs prove identity and visible reading, not tested execution, implementation, wiring, G01/G02 acceptance or global migration. The previous exact-head run 39743564294 (action_required at old target H) does not prove a subsequent documentation carrier H2. No secret/token value is recorded here.
