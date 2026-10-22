@@ -4,8 +4,8 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
-    "tree": "241f8ab614292cc90e395ef0c966e289fdb3e985",
+    "commit": "42e2af80cdd20a99edecb4255470f0aa6bae6bcb",
+    "tree": "19740740209ea84bf3768f3f63ca92ea8d861087",
     "baseline_identity_accepted": false
   },
   "inventory": {
@@ -39,7 +39,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream dev authority remains e14f1566d277d2204f4c8e553bf7cc157047e88b/241f8ab614292cc90e395ef0c966e289fdb3e985. Parent exact-head 38e568c9a98ad428a23aef5024d11b50bc989062 completed TDRP run 39761337683 at 61/61 success (authority 12418356033 sha256:dd2fdbe8f8bf9351409290904ac9b2f2e65e181168973122abed1052690611dc; closure 12418014415 sha256:5e4c1daddf0d9de1f83ac24c828eccf3cd809b62a3dd33afedffa16b8e5bdcf6; reachability 12419260305 sha256:1dcbf3ec7b0251169ef359cacb27748434d8b6c2a767c3ae243f6d4a3c274302) and Rust desktop runtime run 39761337691 at 6/6 success (artifact 12418720447 sha256:e5d6c81bfdd66cdb82027f2339a5539876224d5352ce917e02dab9453a2cc470). Strict index 81 .github/workflows/cant-reproduce.yml@8e20e07349b5b43277f5371a4e931066bece4186 is fully read (26 line slots / 902 bytes). lee-dohm/no-response@v0.5.0 resolves to 9bb0a4b5e6a45046f00353d5de7d90fb8bd773bb, action.yml@1eb04cb05934c6b5d299918356d4042115026b2a and dist/index.js@7dada7580c55196f93eb911f8a4646152b7d039e; its default 14-day labelled-issue auto-close is repository issue-maintenance provenance only. FQT-DEF-001 remains the sole canonical defect-closure owner and still requires reproduce -> fix -> targeted regression -> affected regression -> current-head evidence. Counters unknown=16,222, unread=16,197, omitted=0, responsibilities=99. Next strict root index 82 .github/workflows/changelog.yml@445277fe4b44dc9ccef17b7b602016572c08fe7c. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions are required.",
+  "note": "Live upstream dev authority advanced linearly from e14f1566d277d2204f4c8e553bf7cc157047e88b/241f8ab614292cc90e395ef0c966e289fdb3e985 to 42e2af80cdd20a99edecb4255470f0aa6bae6bcb/19740740209ea84bf3768f3f63ca92ea8d861087 by one commit, modifying only Telegram/SourceFiles/history/view/history_view_list_widget.cpp (7a2d1becd98a678de9e2a2a5d5f5c7b5367bfee2 -> a685630919fad4dddc8e2655f501f017cc6b6e90) and history_view_list_widget.h (6cc72bf1357ccf3beca772c4b314b97c5fed7591 -> 4edd4357a1a1b8d211c211c4f36765c44c51343a); neither path has a mapped ledger row and both remain unread later inventory work. No source entries were added or removed, so root/recursive counts remain 6,820/16,306 and counters remain unknown=16,222, unread=16,197, omitted=0, responsibilities=99. Parent exact-head a23bef39fecccc6bdba36fdd90805ab139cd26fa completed TDRP run 39763526560 at 61/61 success (authority 12418569928 sha256:e6cbfee3985f5558611e6c5000fe68d2183f16397b2f354d2c6802c4d44a209c; closure 12420055290 sha256:2d782f137289e29c08afd81c63504e88c20d1097354d52780abd1e618d8f81dc; reachability 12418194916 sha256:f01b4be27a8ee076b122a65f49d97f374fd203b2a143e7c2710ad1a7ba7913bb) and Rust run 39763526593 at 6/6 success (artifact 12418639882 sha256:1e8b6950ca174fed92bc9e2fde895c53a77b45838200df22ce16b2a0b8e0f133), but those executions validated e14f1566d277d2204f4c8e553bf7cc157047e88b and are historical-only after upstream drift. Strict index 82 .github/workflows/changelog.yml remains byte-identical at 445277fe4b44dc9ccef17b7b602016572c08fe7c and stays next; fresh relock exact-head Actions are required before publication. baseline_identity_accepted=false and source_closure_ready=false.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,

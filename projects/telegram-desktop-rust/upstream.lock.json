@@ -8,9 +8,9 @@
     "repository": "telegramdesktop/tdesktop",
     "url": "https://github.com/telegramdesktop/tdesktop",
     "discovery_ref": "refs/heads/dev",
-    "commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
-    "tree": "241f8ab614292cc90e395ef0c966e289fdb3e985",
-    "committed_at": "2026-10-22T08:17:17Z",
+    "commit": "42e2af80cdd20a99edecb4255470f0aa6bae6bcb",
+    "tree": "19740740209ea84bf3768f3f63ca92ea8d861087",
+    "committed_at": "2026-10-22T10:39:52Z",
     "accepted": false
   },
   "previous_historical_baseline": {
@@ -31,75 +31,30 @@
     "root_non_directory_count": 6820
   },
   "delta_from_previous_baseline": {
-    "base_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
-    "base_tree": "09a421891474be0da279f44a5bf8e0dcf3bc270a",
-    "current_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
-    "current_tree": "241f8ab614292cc90e395ef0c966e289fdb3e985",
-    "ahead_by": 3,
-    "history_relation": "linear-history-ahead-by-3",
-    "changed_paths": 11,
+    "base_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
+    "base_tree": "241f8ab614292cc90e395ef0c966e289fdb3e985",
+    "current_commit": "42e2af80cdd20a99edecb4255470f0aa6bae6bcb",
+    "current_tree": "19740740209ea84bf3768f3f63ca92ea8d861087",
+    "ahead_by": 1,
+    "history_relation": "linear-history-ahead-by-1",
+    "changed_paths": 2,
     "added_path_count": 0,
     "added_paths": [],
     "modified_paths": [
       {
-        "path": ".agents/shared/codex-cli-leaves.md",
-        "previous_blob_sha": "659da44a8083c433c4e9b59ca28f64ba525bfbf8",
-        "current_blob_sha": "11c59b68df43e442e596c3052296fc51a044d46a"
+        "path": "Telegram/SourceFiles/history/view/history_view_list_widget.cpp",
+        "previous_blob_sha": "7a2d1becd98a678de9e2a2a5d5f5c7b5367bfee2",
+        "current_blob_sha": "a685630919fad4dddc8e2655f501f017cc6b6e90"
       },
       {
-        "path": ".agents/shared/phase-effort.md",
-        "previous_blob_sha": "dd07a4c611922a29a6892332db98afe76cd58952",
-        "current_blob_sha": "8d7b385dbb526e87fc090774ee35191e1619bb08"
-      },
-      {
-        "path": ".agents/shared/test-loop.md",
-        "previous_blob_sha": "83c4732bf6139f7c6557f18dd87bb35c3d68808d",
-        "current_blob_sha": "f3b38415883c95a6086766f965d8130333c1b09c"
-      },
-      {
-        "path": ".agents/skills/perform-task/references/phase-prompts.md",
-        "previous_blob_sha": "9e9eac194ffbcf9dd7125876e71dad651a7cabba",
-        "current_blob_sha": "ce3f355bc7226b57f6e9938a0938e18727bd6b30"
-      },
-      {
-        "path": ".agents/skills/perform-task/references/pipeline.md",
-        "previous_blob_sha": "46e158ac86ebce97f9dcd010a98b3c581ffc114c",
-        "current_blob_sha": "71d26895fe4198ee64123d96feec8431e83ce0c7"
-      },
-      {
-        "path": ".agents/skills/process-inbox/SKILL.md",
-        "previous_blob_sha": "0ce70794ac743d99e6d5c80894cde970b52842db",
-        "current_blob_sha": "73bd3c360232679a0ebfe3b990073ecc4f322b7d"
-      },
-      {
-        "path": ".agents/skills/process-inbox/scripts/workspace.py",
-        "previous_blob_sha": "5d74a11083d66f2ebe9bbf0fcf2e991fa2c6c1c5",
-        "current_blob_sha": "3cd99d173fcc3a6e293cfe36058a5fd9e492887d"
-      },
-      {
-        "path": ".agents/skills/process-inbox/scripts/workspace_test.py",
-        "previous_blob_sha": "6acfeadb6f9128a8b5c164d7c0265b03db1fee44",
-        "current_blob_sha": "79f943a99809bc6acf173872d9a780346648b5cf"
-      },
-      {
-        "path": "Telegram/SourceFiles/ui/boxes/peer_qr_box.cpp",
-        "previous_blob_sha": "c04b6cd4215234360e9bdf54673f261c15f9fb03",
-        "current_blob_sha": "e56babfd4efa54354b22e2747f436b38361aa138"
-      },
-      {
-        "path": "Telegram/SourceFiles/ui/effects/peer_qr_surface.cpp",
-        "previous_blob_sha": "3a422ea8619ba0bee458122e19a066d04fb2b000",
-        "current_blob_sha": "43146cb19c9836148a116a449a50caeae600578f"
-      },
-      {
-        "path": "Telegram/SourceFiles/ui/effects/peer_qr_surface.h",
-        "previous_blob_sha": "dc3179d4a8a99e45611f3e9e4b15c8b2e1c4b360",
-        "current_blob_sha": "4cbb036ea384907601bb1af62e863bdc610e4b0d"
+        "path": "Telegram/SourceFiles/history/view/history_view_list_widget.h",
+        "previous_blob_sha": "6cc72bf1357ccf3beca772c4b314b97c5fed7591",
+        "current_blob_sha": "4edd4357a1a1b8d211c211c4f36765c44c51343a"
       }
     ],
     "removed_paths": [],
     "deleted_path_count": 0,
-    "note": "Live dev advanced by three commits with eleven modified paths and no additions/deletions. Eight already-mapped repository harness/governance entries were fully reread and rebound to their new blobs; three QR UI files remain unread later inventory entries. Recursive entry count remains 16,306. Fresh exact-head GitHub Actions are required before this baseline can supply current evidence."
+    "note": "Live dev advanced by one commit with exactly two modified history-view source files and no additions/deletions. Neither changed path has a mapped ledger row yet, so prior strict mappings keep their blob anchors; both changed paths remain unread later inventory work. Root/recursive source-entry counts remain 6,820/16,306. Fresh exact-head GitHub Actions are required before this baseline can supply current evidence."
   },
   "direct_gitlinks": [
     {
@@ -340,7 +295,7 @@
     "unknown_minimum": 16222,
     "unread_minimum": 16197,
     "omitted_known": 0,
-    "note": "Live dev authority e14f1566d277d2204f4c8e553bf7cc157047e88b/241f8ab614292cc90e395ef0c966e289fdb3e985 remains unaccepted because full recursive source closure is open. Parent exact-head 38e568c9a98ad428a23aef5024d11b50bc989062 completed TDRP run 39761337683 at 61/61 success (authority 12418356033 sha256:dd2fdbe8f8bf9351409290904ac9b2f2e65e181168973122abed1052690611dc; closure 12418014415 sha256:5e4c1daddf0d9de1f83ac24c828eccf3cd809b62a3dd33afedffa16b8e5bdcf6; reachability 12419260305 sha256:1dcbf3ec7b0251169ef359cacb27748434d8b6c2a767c3ae243f6d4a3c274302) and Rust desktop runtime run 39761337691 at 6/6 success (artifact 12418720447 sha256:e5d6c81bfdd66cdb82027f2339a5539876224d5352ce917e02dab9453a2cc470). Strict index 81 .github/workflows/cant-reproduce.yml@8e20e07349b5b43277f5371a4e931066bece4186 is fully read (26 line slots / 902 bytes). lee-dohm/no-response@v0.5.0 resolves to 9bb0a4b5e6a45046f00353d5de7d90fb8bd773bb, action.yml@1eb04cb05934c6b5d299918356d4042115026b2a and dist/index.js@7dada7580c55196f93eb911f8a4646152b7d039e; its default 14-day labelled-issue auto-close is repository issue-maintenance provenance only. FQT-DEF-001 remains the sole canonical defect-closure owner and still requires reproduce -> fix -> targeted regression -> affected regression -> current-head evidence. Counters unknown=16,222, unread=16,197, omitted=0, responsibilities=99. Next strict root index 82 .github/workflows/changelog.yml@445277fe4b44dc9ccef17b7b602016572c08fe7c. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions are required."
+    "note": "Live upstream dev authority advanced linearly from e14f1566d277d2204f4c8e553bf7cc157047e88b/241f8ab614292cc90e395ef0c966e289fdb3e985 to 42e2af80cdd20a99edecb4255470f0aa6bae6bcb/19740740209ea84bf3768f3f63ca92ea8d861087 by one commit, modifying only Telegram/SourceFiles/history/view/history_view_list_widget.cpp (7a2d1becd98a678de9e2a2a5d5f5c7b5367bfee2 -> a685630919fad4dddc8e2655f501f017cc6b6e90) and history_view_list_widget.h (6cc72bf1357ccf3beca772c4b314b97c5fed7591 -> 4edd4357a1a1b8d211c211c4f36765c44c51343a); neither path has a mapped ledger row and both remain unread later inventory work. No source entries were added or removed, so root/recursive counts remain 6,820/16,306 and counters remain unknown=16,222, unread=16,197, omitted=0, responsibilities=99. Parent exact-head a23bef39fecccc6bdba36fdd90805ab139cd26fa completed TDRP run 39763526560 at 61/61 success (authority 12418569928 sha256:e6cbfee3985f5558611e6c5000fe68d2183f16397b2f354d2c6802c4d44a209c; closure 12420055290 sha256:2d782f137289e29c08afd81c63504e88c20d1097354d52780abd1e618d8f81dc; reachability 12418194916 sha256:f01b4be27a8ee076b122a65f49d97f374fd203b2a143e7c2710ad1a7ba7913bb) and Rust run 39763526593 at 6/6 success (artifact 12418639882 sha256:1e8b6950ca174fed92bc9e2fde895c53a77b45838200df22ce16b2a0b8e0f133), but those executions validated e14f1566d277d2204f4c8e553bf7cc157047e88b and are historical-only after upstream drift. Strict index 82 .github/workflows/changelog.yml remains byte-identical at 445277fe4b44dc9ccef17b7b602016572c08fe7c and stays next; fresh relock exact-head Actions are required before publication. baseline_identity_accepted=false and source_closure_ready=false."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -358,147 +313,152 @@
   },
   "baseline_identity_evidence": {
     "status": "pending-current-head-revalidation",
-    "upstream_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
-    "upstream_tree": "241f8ab614292cc90e395ef0c966e289fdb3e985",
+    "upstream_commit": "42e2af80cdd20a99edecb4255470f0aa6bae6bcb",
+    "upstream_tree": "19740740209ea84bf3768f3f63ca92ea8d861087",
     "previous_historical_evidence": {
       "status": "workflow-success-historical-after-upstream-drift",
-      "upstream_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
-      "upstream_tree": "09a421891474be0da279f44a5bf8e0dcf3bc270a",
+      "upstream_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
+      "upstream_tree": "241f8ab614292cc90e395ef0c966e289fdb3e985",
       "previous_historical_evidence": {
-        "status": "pending-current-head-revalidation",
-        "upstream_commit": "0eca52223cceed229932add1cc80792763120844",
-        "upstream_tree": "1fc479a4b448aed851181bf4a4796d3015368348",
+        "status": "workflow-success-historical-after-upstream-drift",
+        "upstream_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+        "upstream_tree": "09a421891474be0da279f44a5bf8e0dcf3bc270a",
         "previous_historical_evidence": {
-          "run_id": 39497897314,
-          "run_attempt": 1,
-          "job_id": 118887598690,
-          "validation_head_sha": "e709693ec625dc26cc027ac641f20fca348a5ed0",
-          "artifact_id": 12297708015,
-          "artifact_name": "tdrp-revision9-authority-e709693ec625dc26cc027ac641f20fca348a5ed0",
-          "artifact_digest": "sha256:e5daa7a9b49aa9fdf9db1f7328126a25591bac7c584fb27c325b1a9a39a08081",
-          "upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
-          "upstream_tree": "76b967833b38eb7aa2cb4047008c07331390e61e",
-          "recursive_non_directory_entries": 16201,
-          "source_closure_ready": false,
-          "evidence_status": "historical-only",
-          "prior_history": {
-            "run_id": 39486129504,
+          "status": "pending-current-head-revalidation",
+          "upstream_commit": "0eca52223cceed229932add1cc80792763120844",
+          "upstream_tree": "1fc479a4b448aed851181bf4a4796d3015368348",
+          "previous_historical_evidence": {
+            "run_id": 39497897314,
             "run_attempt": 1,
-            "job_id": 118846890476,
-            "validation_head_sha": "f605a520cb7d3dc21da795a35cb89b8479afdb8f",
-            "artifact_id": 12292833722,
-            "artifact_name": "tdrp-revision9-authority-f605a520cb7d3dc21da795a35cb89b8479afdb8f",
-            "artifact_digest": "sha256:bdb9370eabb49b7e9cecc271c6e078c1aa7dd2f67c6db5b4879cc1a42195c9fe",
+            "job_id": 118887598690,
+            "validation_head_sha": "e709693ec625dc26cc027ac641f20fca348a5ed0",
+            "artifact_id": 12297708015,
+            "artifact_name": "tdrp-revision9-authority-e709693ec625dc26cc027ac641f20fca348a5ed0",
+            "artifact_digest": "sha256:e5daa7a9b49aa9fdf9db1f7328126a25591bac7c584fb27c325b1a9a39a08081",
             "upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
             "upstream_tree": "76b967833b38eb7aa2cb4047008c07331390e61e",
             "recursive_non_directory_entries": 16201,
             "source_closure_ready": false,
             "evidence_status": "historical-only",
             "prior_history": {
-              "run_id": 39481285146,
+              "run_id": 39486129504,
               "run_attempt": 1,
-              "job_id": 118830205800,
-              "validation_head_sha": "fb04df3f5e3b5f3d077a1c216205001970981fa8",
-              "artifact_id": 12290068816,
-              "artifact_name": "tdrp-revision9-authority-fb04df3f5e3b5f3d077a1c216205001970981fa8",
-              "artifact_digest": "sha256:64ebf5a260fa6931ba5a69a21fb8b78aae06e65f9eeaa9e28b49492e67ae1371",
+              "job_id": 118846890476,
+              "validation_head_sha": "f605a520cb7d3dc21da795a35cb89b8479afdb8f",
+              "artifact_id": 12292833722,
+              "artifact_name": "tdrp-revision9-authority-f605a520cb7d3dc21da795a35cb89b8479afdb8f",
+              "artifact_digest": "sha256:bdb9370eabb49b7e9cecc271c6e078c1aa7dd2f67c6db5b4879cc1a42195c9fe",
               "upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
               "upstream_tree": "76b967833b38eb7aa2cb4047008c07331390e61e",
               "recursive_non_directory_entries": 16201,
               "source_closure_ready": false,
               "evidence_status": "historical-only",
               "prior_history": {
-                "run_id": 39478280087,
+                "run_id": 39481285146,
                 "run_attempt": 1,
-                "job_id": 118819855616,
-                "validation_head_sha": "a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
-                "artifact_id": 12291075807,
-                "artifact_name": "tdrp-revision9-authority-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
-                "artifact_digest": "sha256:9dc2c056af519a0a3ab50995a688759297b8c3dd7a412288724e08c31c020d72",
+                "job_id": 118830205800,
+                "validation_head_sha": "fb04df3f5e3b5f3d077a1c216205001970981fa8",
+                "artifact_id": 12290068816,
+                "artifact_name": "tdrp-revision9-authority-fb04df3f5e3b5f3d077a1c216205001970981fa8",
+                "artifact_digest": "sha256:64ebf5a260fa6931ba5a69a21fb8b78aae06e65f9eeaa9e28b49492e67ae1371",
                 "upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
                 "upstream_tree": "76b967833b38eb7aa2cb4047008c07331390e61e",
                 "recursive_non_directory_entries": 16201,
                 "source_closure_ready": false,
                 "evidence_status": "historical-only",
                 "prior_history": {
-                  "run_id": 39467249963,
+                  "run_id": 39478280087,
                   "run_attempt": 1,
-                  "job_id": 118781736304,
-                  "validation_head_sha": "a9953cffaa81da2b672b41529bc8b598b7340334",
-                  "artifact_id": 12284788852,
-                  "artifact_name": "tdrp-revision9-authority-a9953cffaa81da2b672b41529bc8b598b7340334",
-                  "artifact_digest": "sha256:fd8e508f10482125e95a2b5a8ef6f1411e25135fd71052a7b122a793060fca0d",
+                  "job_id": 118819855616,
+                  "validation_head_sha": "a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
+                  "artifact_id": 12291075807,
+                  "artifact_name": "tdrp-revision9-authority-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
+                  "artifact_digest": "sha256:9dc2c056af519a0a3ab50995a688759297b8c3dd7a412288724e08c31c020d72",
                   "upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
                   "upstream_tree": "76b967833b38eb7aa2cb4047008c07331390e61e",
                   "recursive_non_directory_entries": 16201,
                   "source_closure_ready": false,
                   "evidence_status": "historical-only",
                   "prior_history": {
-                    "run_id": 39462234441,
+                    "run_id": 39467249963,
                     "run_attempt": 1,
-                    "job_id": 118764390860,
-                    "validation_head_sha": "15fc3dc90dd3f7f19e67b5c261ce95e0498f6dcf",
-                    "artifact_id": 12283925998,
-                    "artifact_name": "tdrp-revision9-authority-15fc3dc90dd3f7f19e67b5c261ce95e0498f6dcf",
-                    "artifact_digest": "sha256:c8ba6f0117d1e32603d523e6cf6d5a7610a980585e8ecb94f488475a7a3e33cb",
+                    "job_id": 118781736304,
+                    "validation_head_sha": "a9953cffaa81da2b672b41529bc8b598b7340334",
+                    "artifact_id": 12284788852,
+                    "artifact_name": "tdrp-revision9-authority-a9953cffaa81da2b672b41529bc8b598b7340334",
+                    "artifact_digest": "sha256:fd8e508f10482125e95a2b5a8ef6f1411e25135fd71052a7b122a793060fca0d",
                     "upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
                     "upstream_tree": "76b967833b38eb7aa2cb4047008c07331390e61e",
                     "recursive_non_directory_entries": 16201,
                     "source_closure_ready": false,
                     "evidence_status": "historical-only",
                     "prior_history": {
-                      "run_id": 39417471110,
+                      "run_id": 39462234441,
                       "run_attempt": 1,
-                      "job_id": 118609886145,
-                      "validation_head_sha": "885665d399d6c65b78f5ea048685109f3e8bbebc",
-                      "artifact_id": 12261394728,
-                      "artifact_name": "tdrp-revision9-authority-885665d399d6c65b78f5ea048685109f3e8bbebc",
-                      "artifact_digest": "sha256:5bad99275a0524134eafe8a2116addaee89bd53b1e6453706e87d93bc94dbc8e",
-                      "upstream_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
-                      "upstream_tree": "5cc28eee8d541752295ce299b860303fcb4b687d",
+                      "job_id": 118764390860,
+                      "validation_head_sha": "15fc3dc90dd3f7f19e67b5c261ce95e0498f6dcf",
+                      "artifact_id": 12283925998,
+                      "artifact_name": "tdrp-revision9-authority-15fc3dc90dd3f7f19e67b5c261ce95e0498f6dcf",
+                      "artifact_digest": "sha256:c8ba6f0117d1e32603d523e6cf6d5a7610a980585e8ecb94f488475a7a3e33cb",
+                      "upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
+                      "upstream_tree": "76b967833b38eb7aa2cb4047008c07331390e61e",
                       "recursive_non_directory_entries": 16201,
                       "source_closure_ready": false,
                       "evidence_status": "historical-only",
                       "prior_history": {
-                        "run_id": 39408064448,
+                        "run_id": 39417471110,
                         "run_attempt": 1,
-                        "job_id": 118578755584,
-                        "validation_head_sha": "abcd30172faf46684b6c46905f61264be99a5b4a",
-                        "artifact_id": 12257803423,
-                        "artifact_name": "tdrp-revision9-authority-abcd30172faf46684b6c46905f61264be99a5b4a",
-                        "artifact_digest": "sha256:90817b28fb14446175360707a31554c08af216bfa2ddb831cda9d2f90f95f36d",
-                        "upstream_commit": "6c2ee90618bf69683a1c466e3b0550260b82e129",
-                        "upstream_tree": "c0b745cdee2cf0e2ab560ebcedc49cbbaafbfeaa",
+                        "job_id": 118609886145,
+                        "validation_head_sha": "885665d399d6c65b78f5ea048685109f3e8bbebc",
+                        "artifact_id": 12261394728,
+                        "artifact_name": "tdrp-revision9-authority-885665d399d6c65b78f5ea048685109f3e8bbebc",
+                        "artifact_digest": "sha256:5bad99275a0524134eafe8a2116addaee89bd53b1e6453706e87d93bc94dbc8e",
+                        "upstream_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+                        "upstream_tree": "5cc28eee8d541752295ce299b860303fcb4b687d",
                         "recursive_non_directory_entries": 16201,
                         "source_closure_ready": false,
                         "evidence_status": "historical-only",
                         "prior_history": {
-                          "status": "accepted",
-                          "runner": "github-actions",
-                          "run_id": 39267321482,
+                          "run_id": 39408064448,
                           "run_attempt": 1,
-                          "job_id": 118110183925,
-                          "validation_head_sha": "5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-                          "artifact_id": 12193803207,
-                          "artifact_name": "tdrp-revision9-authority-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-                          "artifact_digest": "sha256:7526811deaba969c6cf3c4a442a79ba5a2020811a993655c3dac457b146db9e0",
-                          "upstream_commit": "0a11537c220df35fe59a96aebe413b1e52bc6e47",
-                          "recursive_non_directory_entries": 16186,
-                          "previous_historical_evidence": {
+                          "job_id": 118578755584,
+                          "validation_head_sha": "abcd30172faf46684b6c46905f61264be99a5b4a",
+                          "artifact_id": 12257803423,
+                          "artifact_name": "tdrp-revision9-authority-abcd30172faf46684b6c46905f61264be99a5b4a",
+                          "artifact_digest": "sha256:90817b28fb14446175360707a31554c08af216bfa2ddb831cda9d2f90f95f36d",
+                          "upstream_commit": "6c2ee90618bf69683a1c466e3b0550260b82e129",
+                          "upstream_tree": "c0b745cdee2cf0e2ab560ebcedc49cbbaafbfeaa",
+                          "recursive_non_directory_entries": 16201,
+                          "source_closure_ready": false,
+                          "evidence_status": "historical-only",
+                          "prior_history": {
                             "status": "accepted",
                             "runner": "github-actions",
-                            "run_id": 37652251698,
+                            "run_id": 39267321482,
                             "run_attempt": 1,
-                            "job_id": 112898298716,
-                            "validation_head_sha": "9e7b4e3ada9876019aac02a1562dcc4ad7d059b7",
-                            "artifact_id": 11497690488,
-                            "artifact_name": "tdrp-revision9-authority-9e7b4e3ada9876019aac02a1562dcc4ad7d059b7",
-                            "artifact_digest": "sha256:2282fdfe4cdc4835240a503092b107ae6037749e1d615978a34a36829f9affca",
-                            "upstream_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
-                            "recursive_non_directory_entries": 15788,
+                            "job_id": 118110183925,
+                            "validation_head_sha": "5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+                            "artifact_id": 12193803207,
+                            "artifact_name": "tdrp-revision9-authority-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+                            "artifact_digest": "sha256:7526811deaba969c6cf3c4a442a79ba5a2020811a993655c3dac457b146db9e0",
+                            "upstream_commit": "0a11537c220df35fe59a96aebe413b1e52bc6e47",
+                            "recursive_non_directory_entries": 16186,
+                            "previous_historical_evidence": {
+                              "status": "accepted",
+                              "runner": "github-actions",
+                              "run_id": 37652251698,
+                              "run_attempt": 1,
+                              "job_id": 112898298716,
+                              "validation_head_sha": "9e7b4e3ada9876019aac02a1562dcc4ad7d059b7",
+                              "artifact_id": 11497690488,
+                              "artifact_name": "tdrp-revision9-authority-9e7b4e3ada9876019aac02a1562dcc4ad7d059b7",
+                              "artifact_digest": "sha256:2282fdfe4cdc4835240a503092b107ae6037749e1d615978a34a36829f9affca",
+                              "upstream_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+                              "recursive_non_directory_entries": 15788,
+                              "evidence_status": "historical-only"
+                            },
                             "evidence_status": "historical-only"
-                          },
-                          "evidence_status": "historical-only"
+                          }
                         }
                       }
                     }
@@ -506,65 +466,99 @@
                 }
               }
             }
-          }
-        },
-        "previous_incomplete_attempt": {
-          "runner": "github-actions",
-          "head_sha": "e709693ec625dc26cc027ac641f20fca348a5ed0",
-          "tdrp_run_id": 39497897314,
-          "run_attempt": 1,
-          "run_conclusion": "success",
-          "status": "workflow-success-authority-incomplete-recursive-disposition-open-historical-after-upstream-drift",
-          "source_authority_job_id": 118887598690,
-          "source_authority_artifact_id": 12297708015,
-          "source_authority_artifact_digest": "sha256:e5daa7a9b49aa9fdf9db1f7328126a25591bac7c584fb27c325b1a9a39a08081",
-          "boost_job_id": 118887858224,
-          "boost_artifact_id": 12298697939,
-          "boost_artifact_digest": "sha256:f880cd469830e6b494a1f23ac5e57fcf68cd745beb6542d0bc57d70e7f6c9b18",
-          "fixed_point_job_id": 118890649712,
-          "fixed_point_artifact_id": 12298583879,
-          "fixed_point_artifact_digest": "sha256:d37a714a601385bf38db06f397aae5cff28fdafbca50c90b451660b7d574c1c1",
-          "recursive_reachability_job_id": 118890784676,
-          "recursive_reachability_artifact_id": 12298094517,
-          "recursive_reachability_artifact_digest": "sha256:8453ba411cccd01d1a713b0800fe904d49f8da0dc02edb1ae0d3372a4eeaa2d2",
-          "remaining_open_totals": {
-            "authorities": 95,
-            "gitlinks": 133,
-            "acquisition_candidates": 3865,
-            "generated_inputs": 4674,
-            "resource_inputs": 4602,
-            "tool_inputs": 4255
           },
-          "accepted_authority": false,
-          "rust_parent_run": {
-            "run_id": 39497897342,
-            "status": "success",
-            "jobs": "6/6 success",
-            "steps": "79 success + 2 expected platform-conditional skipped",
-            "artifact_id": 12299250602,
-            "artifact_digest": "sha256:56407823b6ac8397f653dfb75305effb84731c96e63206b8b01d8f324503b1e6"
+          "previous_incomplete_attempt": {
+            "runner": "github-actions",
+            "head_sha": "e709693ec625dc26cc027ac641f20fca348a5ed0",
+            "tdrp_run_id": 39497897314,
+            "run_attempt": 1,
+            "run_conclusion": "success",
+            "status": "workflow-success-authority-incomplete-recursive-disposition-open-historical-after-upstream-drift",
+            "source_authority_job_id": 118887598690,
+            "source_authority_artifact_id": 12297708015,
+            "source_authority_artifact_digest": "sha256:e5daa7a9b49aa9fdf9db1f7328126a25591bac7c584fb27c325b1a9a39a08081",
+            "boost_job_id": 118887858224,
+            "boost_artifact_id": 12298697939,
+            "boost_artifact_digest": "sha256:f880cd469830e6b494a1f23ac5e57fcf68cd745beb6542d0bc57d70e7f6c9b18",
+            "fixed_point_job_id": 118890649712,
+            "fixed_point_artifact_id": 12298583879,
+            "fixed_point_artifact_digest": "sha256:d37a714a601385bf38db06f397aae5cff28fdafbca50c90b451660b7d574c1c1",
+            "recursive_reachability_job_id": 118890784676,
+            "recursive_reachability_artifact_id": 12298094517,
+            "recursive_reachability_artifact_digest": "sha256:8453ba411cccd01d1a713b0800fe904d49f8da0dc02edb1ae0d3372a4eeaa2d2",
+            "remaining_open_totals": {
+              "authorities": 95,
+              "gitlinks": 133,
+              "acquisition_candidates": 3865,
+              "generated_inputs": 4674,
+              "resource_inputs": 4602,
+              "tool_inputs": 4255
+            },
+            "accepted_authority": false,
+            "rust_parent_run": {
+              "run_id": 39497897342,
+              "status": "success",
+              "jobs": "6/6 success",
+              "steps": "79 success + 2 expected platform-conditional skipped",
+              "artifact_id": 12299250602,
+              "artifact_digest": "sha256:56407823b6ac8397f653dfb75305effb84731c96e63206b8b01d8f324503b1e6"
+            }
+          },
+          "current_head_validation_evidence": {
+            "head_sha": "0f5272fcb14d6f1e835c7282b001e4ee2aa572ea",
+            "tdrp_run": 39537102683,
+            "tdrp_jobs": "61/61 success",
+            "tdrp_steps": "506/506 success",
+            "source_authority_artifact": {
+              "id": 12318286826,
+              "digest": "sha256:1cd8c4c82a94600131d6103f9742d9553156190faf66483cc8f5308312ba8404"
+            },
+            "root_archive_artifact": {
+              "id": 12317737812,
+              "digest": "sha256:c0b5764046498af60ae37ca817f954fc6c8d5ccd2e08b37c391e2a4b94067a24"
+            },
+            "rust_run": 39537102580,
+            "rust_jobs": "6/6 success",
+            "rust_artifact": {
+              "id": 12318237159,
+              "digest": "sha256:a93c6575eab099ca643c5ce10782689b5d16c0c6cdbe81897966b9a0236b9eb8"
+            },
+            "recursive_total": 16305,
+            "open": {
+              "authorities": 95,
+              "gitlinks": 133,
+              "acquisition_candidates": 3865,
+              "generated_inputs": 4674,
+              "resource_inputs": 4602,
+              "tool_inputs": 4255
+            },
+            "baseline_identity_accepted": false,
+            "source_closure_ready": false
           }
         },
         "current_head_validation_evidence": {
-          "head_sha": "0f5272fcb14d6f1e835c7282b001e4ee2aa572ea",
-          "tdrp_run": 39537102683,
+          "head_sha": "51e019e3afd13d7132d5da27bc273f0203a03eae",
+          "tdrp_run": 39743918294,
           "tdrp_jobs": "61/61 success",
-          "tdrp_steps": "506/506 success",
           "source_authority_artifact": {
-            "id": 12318286826,
-            "digest": "sha256:1cd8c4c82a94600131d6103f9742d9553156190faf66483cc8f5308312ba8404"
+            "id": 12410423121,
+            "digest": "sha256:842b833317a5a1303957fc36a8152a2aad7863e0b60dab8c90e40a59a6898db2"
           },
-          "root_archive_artifact": {
-            "id": 12317737812,
-            "digest": "sha256:c0b5764046498af60ae37ca817f954fc6c8d5ccd2e08b37c391e2a4b94067a24"
+          "recursive_closure_artifact": {
+            "id": 12411320551,
+            "digest": "sha256:2ed7335ec4abf02148d00427e8914da0212789bfdc136765f018c2043130a6a1"
           },
-          "rust_run": 39537102580,
+          "recursive_reachability_artifact": {
+            "id": 12410951384,
+            "digest": "sha256:a9337bc5ba21ff89398df9f012cbfdc3e8b31898614d3bd11354b3f905c9bd90"
+          },
+          "rust_run": 39743918410,
           "rust_jobs": "6/6 success",
           "rust_artifact": {
-            "id": 12318237159,
-            "digest": "sha256:a93c6575eab099ca643c5ce10782689b5d16c0c6cdbe81897966b9a0236b9eb8"
+            "id": 12409889590,
+            "digest": "sha256:858be7d3c3c48657053fd8a9d576e854e04dbf2d9c4db300627376e90b7ed38d"
           },
-          "recursive_total": 16305,
+          "recursive_total": 16306,
           "open": {
             "authorities": 95,
             "gitlinks": 133,
@@ -575,29 +569,30 @@
           },
           "baseline_identity_accepted": false,
           "source_closure_ready": false
-        }
+        },
+        "evidence_status": "historical-only"
       },
       "current_head_validation_evidence": {
-        "head_sha": "51e019e3afd13d7132d5da27bc273f0203a03eae",
-        "tdrp_run": 39743918294,
+        "head_sha": "a23bef39fecccc6bdba36fdd90805ab139cd26fa",
+        "tdrp_run": 39763526560,
         "tdrp_jobs": "61/61 success",
         "source_authority_artifact": {
-          "id": 12410423121,
-          "digest": "sha256:842b833317a5a1303957fc36a8152a2aad7863e0b60dab8c90e40a59a6898db2"
+          "id": 12418569928,
+          "digest": "sha256:e6cbfee3985f5558611e6c5000fe68d2183f16397b2f354d2c6802c4d44a209c"
         },
         "recursive_closure_artifact": {
-          "id": 12411320551,
-          "digest": "sha256:2ed7335ec4abf02148d00427e8914da0212789bfdc136765f018c2043130a6a1"
+          "id": 12420055290,
+          "digest": "sha256:2d782f137289e29c08afd81c63504e88c20d1097354d52780abd1e618d8f81dc"
         },
         "recursive_reachability_artifact": {
-          "id": 12410951384,
-          "digest": "sha256:a9337bc5ba21ff89398df9f012cbfdc3e8b31898614d3bd11354b3f905c9bd90"
+          "id": 12418194916,
+          "digest": "sha256:f01b4be27a8ee076b122a65f49d97f374fd203b2a143e7c2710ad1a7ba7913bb"
         },
-        "rust_run": 39743918410,
+        "rust_run": 39763526593,
         "rust_jobs": "6/6 success",
         "rust_artifact": {
-          "id": 12409889590,
-          "digest": "sha256:858be7d3c3c48657053fd8a9d576e854e04dbf2d9c4db300627376e90b7ed38d"
+          "id": 12418639882,
+          "digest": "sha256:1e8b6950ca174fed92bc9e2fde895c53a77b45838200df22ce16b2a0b8e0f133"
         },
         "recursive_total": 16306,
         "open": {
@@ -630,94 +625,41 @@
   },
   "recursive_inventory_evidence": {
     "status": "pending-current-head-revalidation",
-    "upstream_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
+    "upstream_commit": "42e2af80cdd20a99edecb4255470f0aa6bae6bcb",
     "source_closure_ready": false,
     "previous_historical_evidence": {
       "status": "workflow-success-historical-after-upstream-drift",
-      "upstream_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "upstream_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
       "source_closure_ready": false,
       "previous_historical_evidence": {
-        "status": "pending-current-head-revalidation",
-        "upstream_commit": "0eca52223cceed229932add1cc80792763120844",
+        "status": "workflow-success-historical-after-upstream-drift",
+        "upstream_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
         "source_closure_ready": false,
         "previous_historical_evidence": {
-          "run_id": 39497897314,
-          "run_attempt": 1,
-          "job_id": 118887598690,
-          "validation_head_sha": "e709693ec625dc26cc027ac641f20fca348a5ed0",
-          "artifact_id": 12297708015,
-          "artifact_name": "tdrp-revision9-authority-e709693ec625dc26cc027ac641f20fca348a5ed0",
-          "artifact_digest": "sha256:e5daa7a9b49aa9fdf9db1f7328126a25591bac7c584fb27c325b1a9a39a08081",
-          "upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
-          "upstream_tree": "76b967833b38eb7aa2cb4047008c07331390e61e",
-          "recursive_non_directory_entries": 16201,
+          "status": "pending-current-head-revalidation",
+          "upstream_commit": "0eca52223cceed229932add1cc80792763120844",
           "source_closure_ready": false,
-          "evidence_status": "historical-only",
-          "prior_history": {
-            "run_id": 39486129504,
+          "previous_historical_evidence": {
+            "run_id": 39497897314,
             "run_attempt": 1,
-            "job_id": 118846890476,
-            "validation_head_sha": "f605a520cb7d3dc21da795a35cb89b8479afdb8f",
-            "artifact_id": 12292833722,
-            "artifact_name": "tdrp-revision9-authority-f605a520cb7d3dc21da795a35cb89b8479afdb8f",
-            "artifact_digest": "sha256:bdb9370eabb49b7e9cecc271c6e078c1aa7dd2f67c6db5b4879cc1a42195c9fe",
+            "job_id": 118887598690,
+            "validation_head_sha": "e709693ec625dc26cc027ac641f20fca348a5ed0",
+            "artifact_id": 12297708015,
+            "artifact_name": "tdrp-revision9-authority-e709693ec625dc26cc027ac641f20fca348a5ed0",
+            "artifact_digest": "sha256:e5daa7a9b49aa9fdf9db1f7328126a25591bac7c584fb27c325b1a9a39a08081",
             "upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
             "upstream_tree": "76b967833b38eb7aa2cb4047008c07331390e61e",
             "recursive_non_directory_entries": 16201,
             "source_closure_ready": false,
             "evidence_status": "historical-only",
-            "supporting_artifacts": [
-              {
-                "kind": "recursive-root-aggregate",
-                "artifact_id": 12293537080,
-                "artifact_name": "tdrp-recursive-root-aggregate-f605a520cb7d3dc21da795a35cb89b8479afdb8f",
-                "artifact_digest": "sha256:51d05d9a517f8cf0c8773fa37644b99a3b817bf3678f362499ed48e96bffda21"
-              },
-              {
-                "kind": "recursive-child-aggregate",
-                "artifact_id": 12293158211,
-                "artifact_name": "tdrp-recursive-child-aggregate-f605a520cb7d3dc21da795a35cb89b8479afdb8f",
-                "artifact_digest": "sha256:605da01b7cfda863c4a09369e9c5c8d96e8674e8ca6e2dde74fa6f48626a0ab6"
-              },
-              {
-                "kind": "recursive-next-aggregate",
-                "artifact_id": 12294176470,
-                "artifact_name": "tdrp-recursive-next-aggregate-f605a520cb7d3dc21da795a35cb89b8479afdb8f",
-                "artifact_digest": "sha256:3e4db50613f527ff929fbe73f145f48b936411919f8f4cf713ee2f374e13b61f"
-              },
-              {
-                "kind": "recursive-fixed-point",
-                "artifact_id": 12294056962,
-                "artifact_name": "tdrp-recursive-closure-f605a520cb7d3dc21da795a35cb89b8479afdb8f",
-                "artifact_digest": "sha256:a8b659d178741256e635e3210b901da81cce0cb425d5407697e677a4d0d6eeaa"
-              },
-              {
-                "kind": "recursive-build-reachability",
-                "artifact_id": 12294066334,
-                "artifact_name": "tdrp-recursive-reachability-f605a520cb7d3dc21da795a35cb89b8479afdb8f",
-                "artifact_digest": "sha256:a0ff469b1fadd641ca2451d50c5761a833969c20a4ddc7c1041c1b2c6cce3ccd"
-              },
-              {
-                "kind": "root-source-archives",
-                "artifact_id": 12294015854,
-                "artifact_name": "tdrp-root-source-archives-f605a520cb7d3dc21da795a35cb89b8479afdb8f",
-                "artifact_digest": "sha256:09da2f58d1626c9ce6e51190201a9d0e423203930bbe473bcd2ebd9bfd325a4f"
-              },
-              {
-                "kind": "boost-build-reachability",
-                "artifact_id": 12293452349,
-                "artifact_name": "tdrp-boost-reachability-f605a520cb7d3dc21da795a35cb89b8479afdb8f",
-                "artifact_digest": "sha256:3fda123dc3f28312e395c786cb0ae656af68a6835f3510c4cb7af16ac34c9eaf"
-              }
-            ],
             "prior_history": {
-              "run_id": 39481285146,
+              "run_id": 39486129504,
               "run_attempt": 1,
-              "job_id": 118830205800,
-              "validation_head_sha": "fb04df3f5e3b5f3d077a1c216205001970981fa8",
-              "artifact_id": 12290068816,
-              "artifact_name": "tdrp-revision9-authority-fb04df3f5e3b5f3d077a1c216205001970981fa8",
-              "artifact_digest": "sha256:64ebf5a260fa6931ba5a69a21fb8b78aae06e65f9eeaa9e28b49492e67ae1371",
+              "job_id": 118846890476,
+              "validation_head_sha": "f605a520cb7d3dc21da795a35cb89b8479afdb8f",
+              "artifact_id": 12292833722,
+              "artifact_name": "tdrp-revision9-authority-f605a520cb7d3dc21da795a35cb89b8479afdb8f",
+              "artifact_digest": "sha256:bdb9370eabb49b7e9cecc271c6e078c1aa7dd2f67c6db5b4879cc1a42195c9fe",
               "upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
               "upstream_tree": "76b967833b38eb7aa2cb4047008c07331390e61e",
               "recursive_non_directory_entries": 16201,
@@ -726,55 +668,55 @@
               "supporting_artifacts": [
                 {
                   "kind": "recursive-root-aggregate",
-                  "artifact_id": 12290724824,
-                  "artifact_name": "tdrp-recursive-root-aggregate-fb04df3f5e3b5f3d077a1c216205001970981fa8",
-                  "artifact_digest": "sha256:9d166ddd8d2fac5ec516f00ab96e826f913249d88ea350aa8ae384652b513a4b"
+                  "artifact_id": 12293537080,
+                  "artifact_name": "tdrp-recursive-root-aggregate-f605a520cb7d3dc21da795a35cb89b8479afdb8f",
+                  "artifact_digest": "sha256:51d05d9a517f8cf0c8773fa37644b99a3b817bf3678f362499ed48e96bffda21"
                 },
                 {
                   "kind": "recursive-child-aggregate",
-                  "artifact_id": 12290859311,
-                  "artifact_name": "tdrp-recursive-child-aggregate-fb04df3f5e3b5f3d077a1c216205001970981fa8",
-                  "artifact_digest": "sha256:f5aae7bc58baa617dc4e5f067f730d80b8de35ab432728c1756a02fd8b68d8ad"
+                  "artifact_id": 12293158211,
+                  "artifact_name": "tdrp-recursive-child-aggregate-f605a520cb7d3dc21da795a35cb89b8479afdb8f",
+                  "artifact_digest": "sha256:605da01b7cfda863c4a09369e9c5c8d96e8674e8ca6e2dde74fa6f48626a0ab6"
                 },
                 {
                   "kind": "recursive-next-aggregate",
-                  "artifact_id": 12290109350,
-                  "artifact_name": "tdrp-recursive-next-aggregate-fb04df3f5e3b5f3d077a1c216205001970981fa8",
-                  "artifact_digest": "sha256:625c66b39eb13422dd4bd5d41365ccf6328aa863f52491957d04ce90f60a0f2c"
+                  "artifact_id": 12294176470,
+                  "artifact_name": "tdrp-recursive-next-aggregate-f605a520cb7d3dc21da795a35cb89b8479afdb8f",
+                  "artifact_digest": "sha256:3e4db50613f527ff929fbe73f145f48b936411919f8f4cf713ee2f374e13b61f"
                 },
                 {
                   "kind": "recursive-fixed-point",
-                  "artifact_id": 12292016692,
-                  "artifact_name": "tdrp-recursive-closure-fb04df3f5e3b5f3d077a1c216205001970981fa8",
-                  "artifact_digest": "sha256:e59f04a2feab78b87f30e4b469f2a1efe9b038ac59b2624c815e9175e2429765"
+                  "artifact_id": 12294056962,
+                  "artifact_name": "tdrp-recursive-closure-f605a520cb7d3dc21da795a35cb89b8479afdb8f",
+                  "artifact_digest": "sha256:a8b659d178741256e635e3210b901da81cce0cb425d5407697e677a4d0d6eeaa"
                 },
                 {
                   "kind": "recursive-build-reachability",
-                  "artifact_id": 12292021649,
-                  "artifact_name": "tdrp-recursive-reachability-fb04df3f5e3b5f3d077a1c216205001970981fa8",
-                  "artifact_digest": "sha256:2a15d5d7e46c32ab10aa46909165bc9aa75a05b1d112a7564c1eb47df71ae362"
+                  "artifact_id": 12294066334,
+                  "artifact_name": "tdrp-recursive-reachability-f605a520cb7d3dc21da795a35cb89b8479afdb8f",
+                  "artifact_digest": "sha256:a0ff469b1fadd641ca2451d50c5761a833969c20a4ddc7c1041c1b2c6cce3ccd"
                 },
                 {
                   "kind": "root-source-archives",
-                  "artifact_id": 12290199662,
-                  "artifact_name": "tdrp-root-source-archives-fb04df3f5e3b5f3d077a1c216205001970981fa8",
-                  "artifact_digest": "sha256:88597a323880795d7e3957e496b49d7d0b58e1ffd90947ce6cd317e3571acaf3"
+                  "artifact_id": 12294015854,
+                  "artifact_name": "tdrp-root-source-archives-f605a520cb7d3dc21da795a35cb89b8479afdb8f",
+                  "artifact_digest": "sha256:09da2f58d1626c9ce6e51190201a9d0e423203930bbe473bcd2ebd9bfd325a4f"
                 },
                 {
                   "kind": "boost-build-reachability",
-                  "artifact_id": 12292030237,
-                  "artifact_name": "tdrp-boost-reachability-fb04df3f5e3b5f3d077a1c216205001970981fa8",
-                  "artifact_digest": "sha256:70ed313ddbc0155954882a82c1a48370d937bd9b4c2c22a08a7e9a302df6440a"
+                  "artifact_id": 12293452349,
+                  "artifact_name": "tdrp-boost-reachability-f605a520cb7d3dc21da795a35cb89b8479afdb8f",
+                  "artifact_digest": "sha256:3fda123dc3f28312e395c786cb0ae656af68a6835f3510c4cb7af16ac34c9eaf"
                 }
               ],
               "prior_history": {
-                "run_id": 39478280087,
+                "run_id": 39481285146,
                 "run_attempt": 1,
-                "job_id": 118819855616,
-                "validation_head_sha": "a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
-                "artifact_id": 12291075807,
-                "artifact_name": "tdrp-revision9-authority-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
-                "artifact_digest": "sha256:9dc2c056af519a0a3ab50995a688759297b8c3dd7a412288724e08c31c020d72",
+                "job_id": 118830205800,
+                "validation_head_sha": "fb04df3f5e3b5f3d077a1c216205001970981fa8",
+                "artifact_id": 12290068816,
+                "artifact_name": "tdrp-revision9-authority-fb04df3f5e3b5f3d077a1c216205001970981fa8",
+                "artifact_digest": "sha256:64ebf5a260fa6931ba5a69a21fb8b78aae06e65f9eeaa9e28b49492e67ae1371",
                 "upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
                 "upstream_tree": "76b967833b38eb7aa2cb4047008c07331390e61e",
                 "recursive_non_directory_entries": 16201,
@@ -783,55 +725,55 @@
                 "supporting_artifacts": [
                   {
                     "kind": "recursive-root-aggregate",
-                    "artifact_id": 12289878200,
-                    "artifact_name": "tdrp-recursive-root-aggregate-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
-                    "artifact_digest": "sha256:f72194bb22f12dffe6dd2a5acfa370858315ced4ff04125ab5fd84841f3f7dce"
+                    "artifact_id": 12290724824,
+                    "artifact_name": "tdrp-recursive-root-aggregate-fb04df3f5e3b5f3d077a1c216205001970981fa8",
+                    "artifact_digest": "sha256:9d166ddd8d2fac5ec516f00ab96e826f913249d88ea350aa8ae384652b513a4b"
                   },
                   {
                     "kind": "recursive-child-aggregate",
-                    "artifact_id": 12289758508,
-                    "artifact_name": "tdrp-recursive-child-aggregate-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
-                    "artifact_digest": "sha256:3d568818c2e87aa8798048bf1fdfa80dab8d24ce38d83fd02a4b21adb3c35561"
+                    "artifact_id": 12290859311,
+                    "artifact_name": "tdrp-recursive-child-aggregate-fb04df3f5e3b5f3d077a1c216205001970981fa8",
+                    "artifact_digest": "sha256:f5aae7bc58baa617dc4e5f067f730d80b8de35ab432728c1756a02fd8b68d8ad"
                   },
                   {
                     "kind": "recursive-next-aggregate",
-                    "artifact_id": 12291361688,
-                    "artifact_name": "tdrp-recursive-next-aggregate-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
-                    "artifact_digest": "sha256:0badd16776ce0521f7a86855363047099bff1af5d3fd5135d854a98c516b60b8"
+                    "artifact_id": 12290109350,
+                    "artifact_name": "tdrp-recursive-next-aggregate-fb04df3f5e3b5f3d077a1c216205001970981fa8",
+                    "artifact_digest": "sha256:625c66b39eb13422dd4bd5d41365ccf6328aa863f52491957d04ce90f60a0f2c"
                   },
                   {
                     "kind": "recursive-fixed-point",
-                    "artifact_id": 12290436916,
-                    "artifact_name": "tdrp-recursive-closure-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
-                    "artifact_digest": "sha256:f60ad36b3f346befac93adf2a841ec5b3e250c41ccbf7262109773a77717fc1d"
+                    "artifact_id": 12292016692,
+                    "artifact_name": "tdrp-recursive-closure-fb04df3f5e3b5f3d077a1c216205001970981fa8",
+                    "artifact_digest": "sha256:e59f04a2feab78b87f30e4b469f2a1efe9b038ac59b2624c815e9175e2429765"
                   },
                   {
                     "kind": "recursive-build-reachability",
-                    "artifact_id": 12290736992,
-                    "artifact_name": "tdrp-recursive-reachability-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
-                    "artifact_digest": "sha256:2202d4cfc58d0810f667e37be621acf6ab4038bba39bd56b57569df2be8ecb82"
+                    "artifact_id": 12292021649,
+                    "artifact_name": "tdrp-recursive-reachability-fb04df3f5e3b5f3d077a1c216205001970981fa8",
+                    "artifact_digest": "sha256:2a15d5d7e46c32ab10aa46909165bc9aa75a05b1d112a7564c1eb47df71ae362"
                   },
                   {
                     "kind": "root-source-archives",
-                    "artifact_id": 12290491250,
-                    "artifact_name": "tdrp-root-source-archives-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
-                    "artifact_digest": "sha256:37c67c45ec3b9a8645e615c4538207397c0089a2fb57f3b5fd158476f2ab9e63"
+                    "artifact_id": 12290199662,
+                    "artifact_name": "tdrp-root-source-archives-fb04df3f5e3b5f3d077a1c216205001970981fa8",
+                    "artifact_digest": "sha256:88597a323880795d7e3957e496b49d7d0b58e1ffd90947ce6cd317e3571acaf3"
                   },
                   {
                     "kind": "boost-build-reachability",
-                    "artifact_id": 12291465615,
-                    "artifact_name": "tdrp-boost-reachability-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
-                    "artifact_digest": "sha256:fe58d7bb9d118df07936ce42d9b8d5470a7d831566120ea081466b9431237285"
+                    "artifact_id": 12292030237,
+                    "artifact_name": "tdrp-boost-reachability-fb04df3f5e3b5f3d077a1c216205001970981fa8",
+                    "artifact_digest": "sha256:70ed313ddbc0155954882a82c1a48370d937bd9b4c2c22a08a7e9a302df6440a"
                   }
                 ],
                 "prior_history": {
-                  "run_id": 39467249963,
+                  "run_id": 39478280087,
                   "run_attempt": 1,
-                  "job_id": 118781736304,
-                  "validation_head_sha": "a9953cffaa81da2b672b41529bc8b598b7340334",
-                  "artifact_id": 12284788852,
-                  "artifact_name": "tdrp-revision9-authority-a9953cffaa81da2b672b41529bc8b598b7340334",
-                  "artifact_digest": "sha256:fd8e508f10482125e95a2b5a8ef6f1411e25135fd71052a7b122a793060fca0d",
+                  "job_id": 118819855616,
+                  "validation_head_sha": "a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
+                  "artifact_id": 12291075807,
+                  "artifact_name": "tdrp-revision9-authority-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
+                  "artifact_digest": "sha256:9dc2c056af519a0a3ab50995a688759297b8c3dd7a412288724e08c31c020d72",
                   "upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
                   "upstream_tree": "76b967833b38eb7aa2cb4047008c07331390e61e",
                   "recursive_non_directory_entries": 16201,
@@ -840,306 +782,399 @@
                   "supporting_artifacts": [
                     {
                       "kind": "recursive-root-aggregate",
-                      "artifact_id": 12285717165,
-                      "artifact_name": "tdrp-recursive-root-aggregate-a9953cffaa81da2b672b41529bc8b598b7340334",
-                      "artifact_digest": "sha256:b15c144259e9a577bca2217117b972aa2c643fc10ddbfcd4b9a2946195769b5c"
+                      "artifact_id": 12289878200,
+                      "artifact_name": "tdrp-recursive-root-aggregate-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
+                      "artifact_digest": "sha256:f72194bb22f12dffe6dd2a5acfa370858315ced4ff04125ab5fd84841f3f7dce"
                     },
                     {
                       "kind": "recursive-child-aggregate",
-                      "artifact_id": 12285218573,
-                      "artifact_name": "tdrp-recursive-child-aggregate-a9953cffaa81da2b672b41529bc8b598b7340334",
-                      "artifact_digest": "sha256:5818571ff194fbb54f6b9fd08f9456e25dae14bcfc6ec0a3febefe66a6329b05"
+                      "artifact_id": 12289758508,
+                      "artifact_name": "tdrp-recursive-child-aggregate-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
+                      "artifact_digest": "sha256:3d568818c2e87aa8798048bf1fdfa80dab8d24ce38d83fd02a4b21adb3c35561"
                     },
                     {
                       "kind": "recursive-next-aggregate",
-                      "artifact_id": 12285428847,
-                      "artifact_name": "tdrp-recursive-next-aggregate-a9953cffaa81da2b672b41529bc8b598b7340334",
-                      "artifact_digest": "sha256:1fa3cbabb3de79b04fdf6e32338158d360685f91c5b494ae678955830fe4081b"
+                      "artifact_id": 12291361688,
+                      "artifact_name": "tdrp-recursive-next-aggregate-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
+                      "artifact_digest": "sha256:0badd16776ce0521f7a86855363047099bff1af5d3fd5135d854a98c516b60b8"
                     },
                     {
                       "kind": "recursive-fixed-point",
-                      "artifact_id": 12286430875,
-                      "artifact_name": "tdrp-recursive-closure-a9953cffaa81da2b672b41529bc8b598b7340334",
-                      "artifact_digest": "sha256:0eed55ab4d254048bf5e9c3130d85a6bf2ab047dc121feb5168ba576d9b3d9f3"
+                      "artifact_id": 12290436916,
+                      "artifact_name": "tdrp-recursive-closure-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
+                      "artifact_digest": "sha256:f60ad36b3f346befac93adf2a841ec5b3e250c41ccbf7262109773a77717fc1d"
                     },
                     {
                       "kind": "recursive-build-reachability",
-                      "artifact_id": 12286001861,
-                      "artifact_name": "tdrp-recursive-reachability-a9953cffaa81da2b672b41529bc8b598b7340334",
-                      "artifact_digest": "sha256:538e511c39d1246f9b3dc9a4a6440b129dacdd5743a25538b5db4b4df129c1f3"
+                      "artifact_id": 12290736992,
+                      "artifact_name": "tdrp-recursive-reachability-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
+                      "artifact_digest": "sha256:2202d4cfc58d0810f667e37be621acf6ab4038bba39bd56b57569df2be8ecb82"
                     },
                     {
                       "kind": "root-source-archives",
-                      "artifact_id": 12285835956,
-                      "artifact_name": "tdrp-root-source-archives-a9953cffaa81da2b672b41529bc8b598b7340334",
-                      "artifact_digest": "sha256:854f07f67ce085b14de358600a0d3eb02c3ec523a7584a3433b98f15538fab5d"
+                      "artifact_id": 12290491250,
+                      "artifact_name": "tdrp-root-source-archives-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
+                      "artifact_digest": "sha256:37c67c45ec3b9a8645e615c4538207397c0089a2fb57f3b5fd158476f2ab9e63"
                     },
                     {
                       "kind": "boost-build-reachability",
-                      "artifact_id": 12285227708,
-                      "artifact_name": "tdrp-boost-reachability-a9953cffaa81da2b672b41529bc8b598b7340334",
-                      "artifact_digest": "sha256:10d357748d30197b58225a983ee527466997b3f9e10edf5aa94e18899bd8354a"
+                      "artifact_id": 12291465615,
+                      "artifact_name": "tdrp-boost-reachability-a93967589685ae8bbfa7e80fa0d1b8aaa2a6b2d7",
+                      "artifact_digest": "sha256:fe58d7bb9d118df07936ce42d9b8d5470a7d831566120ea081466b9431237285"
                     }
                   ],
                   "prior_history": {
-                    "run_id": 39417471110,
+                    "run_id": 39467249963,
                     "run_attempt": 1,
-                    "job_id": 118609886145,
-                    "validation_head_sha": "885665d399d6c65b78f5ea048685109f3e8bbebc",
-                    "artifact_id": 12261394728,
-                    "artifact_name": "tdrp-revision9-authority-885665d399d6c65b78f5ea048685109f3e8bbebc",
-                    "artifact_digest": "sha256:5bad99275a0524134eafe8a2116addaee89bd53b1e6453706e87d93bc94dbc8e",
-                    "upstream_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
-                    "upstream_tree": "5cc28eee8d541752295ce299b860303fcb4b687d",
+                    "job_id": 118781736304,
+                    "validation_head_sha": "a9953cffaa81da2b672b41529bc8b598b7340334",
+                    "artifact_id": 12284788852,
+                    "artifact_name": "tdrp-revision9-authority-a9953cffaa81da2b672b41529bc8b598b7340334",
+                    "artifact_digest": "sha256:fd8e508f10482125e95a2b5a8ef6f1411e25135fd71052a7b122a793060fca0d",
+                    "upstream_commit": "78ceaa548ae0e055aa56b53fde22064d13f250ef",
+                    "upstream_tree": "76b967833b38eb7aa2cb4047008c07331390e61e",
                     "recursive_non_directory_entries": 16201,
                     "source_closure_ready": false,
                     "evidence_status": "historical-only",
                     "supporting_artifacts": [
                       {
                         "kind": "recursive-root-aggregate",
-                        "artifact_id": 12262220367,
-                        "artifact_name": "tdrp-recursive-root-aggregate-885665d399d6c65b78f5ea048685109f3e8bbebc",
-                        "artifact_digest": "sha256:1b883a32221b5cdeea030e738c70be76d1744cc94d38dc4010957f938515bfd7"
+                        "artifact_id": 12285717165,
+                        "artifact_name": "tdrp-recursive-root-aggregate-a9953cffaa81da2b672b41529bc8b598b7340334",
+                        "artifact_digest": "sha256:b15c144259e9a577bca2217117b972aa2c643fc10ddbfcd4b9a2946195769b5c"
                       },
                       {
                         "kind": "recursive-child-aggregate",
-                        "artifact_id": 12261129835,
-                        "artifact_name": "tdrp-recursive-child-aggregate-885665d399d6c65b78f5ea048685109f3e8bbebc",
-                        "artifact_digest": "sha256:70fff4ad244fb65f9ead0df7beb7616c8843eed6d4bf27f6ead6f7fa89325cf6"
+                        "artifact_id": 12285218573,
+                        "artifact_name": "tdrp-recursive-child-aggregate-a9953cffaa81da2b672b41529bc8b598b7340334",
+                        "artifact_digest": "sha256:5818571ff194fbb54f6b9fd08f9456e25dae14bcfc6ec0a3febefe66a6329b05"
                       },
                       {
                         "kind": "recursive-next-aggregate",
-                        "artifact_id": 12263140384,
-                        "artifact_name": "tdrp-recursive-next-aggregate-885665d399d6c65b78f5ea048685109f3e8bbebc",
-                        "artifact_digest": "sha256:92b81c8dfd60be12915cd02f4483eda52b4fc5b87b6cd1f2b4efca3feb065683"
+                        "artifact_id": 12285428847,
+                        "artifact_name": "tdrp-recursive-next-aggregate-a9953cffaa81da2b672b41529bc8b598b7340334",
+                        "artifact_digest": "sha256:1fa3cbabb3de79b04fdf6e32338158d360685f91c5b494ae678955830fe4081b"
                       },
                       {
                         "kind": "recursive-fixed-point",
-                        "artifact_id": 12263220363,
-                        "artifact_name": "tdrp-recursive-closure-885665d399d6c65b78f5ea048685109f3e8bbebc",
-                        "artifact_digest": "sha256:bfc7493c743b7e674c2923ef4ca49b3040bf25b9af9ba2b9b6a707f1e355736b"
+                        "artifact_id": 12286430875,
+                        "artifact_name": "tdrp-recursive-closure-a9953cffaa81da2b672b41529bc8b598b7340334",
+                        "artifact_digest": "sha256:0eed55ab4d254048bf5e9c3130d85a6bf2ab047dc121feb5168ba576d9b3d9f3"
                       },
                       {
                         "kind": "recursive-build-reachability",
-                        "artifact_id": 12262039910,
-                        "artifact_name": "tdrp-recursive-reachability-885665d399d6c65b78f5ea048685109f3e8bbebc",
-                        "artifact_digest": "sha256:1f9732e1f152c496f7eba3d6e247fe52c88486346b33c79ba40a7f67b434df1a"
+                        "artifact_id": 12286001861,
+                        "artifact_name": "tdrp-recursive-reachability-a9953cffaa81da2b672b41529bc8b598b7340334",
+                        "artifact_digest": "sha256:538e511c39d1246f9b3dc9a4a6440b129dacdd5743a25538b5db4b4df129c1f3"
                       },
                       {
                         "kind": "root-source-archives",
-                        "artifact_id": 12261474061,
-                        "artifact_name": "tdrp-root-source-archives-885665d399d6c65b78f5ea048685109f3e8bbebc",
-                        "artifact_digest": "sha256:e03b6b301d7e53dc65c2be8e452211c1cabc6f9e03fccf94dac4f2fe13207fc4"
+                        "artifact_id": 12285835956,
+                        "artifact_name": "tdrp-root-source-archives-a9953cffaa81da2b672b41529bc8b598b7340334",
+                        "artifact_digest": "sha256:854f07f67ce085b14de358600a0d3eb02c3ec523a7584a3433b98f15538fab5d"
                       },
                       {
                         "kind": "boost-build-reachability",
-                        "artifact_id": 12261014898,
-                        "artifact_name": "tdrp-boost-reachability-885665d399d6c65b78f5ea048685109f3e8bbebc",
-                        "artifact_digest": "sha256:2514a9939a0ec75d786ff939d1510e1a550e10d96bb0ab8090ee096635dd4c32"
+                        "artifact_id": 12285227708,
+                        "artifact_name": "tdrp-boost-reachability-a9953cffaa81da2b672b41529bc8b598b7340334",
+                        "artifact_digest": "sha256:10d357748d30197b58225a983ee527466997b3f9e10edf5aa94e18899bd8354a"
                       }
                     ],
                     "prior_history": {
-                      "run_id": 39408064448,
+                      "run_id": 39417471110,
                       "run_attempt": 1,
-                      "job_id": 118578755584,
-                      "validation_head_sha": "abcd30172faf46684b6c46905f61264be99a5b4a",
-                      "artifact_id": 12257803423,
-                      "artifact_name": "tdrp-revision9-authority-abcd30172faf46684b6c46905f61264be99a5b4a",
-                      "artifact_digest": "sha256:90817b28fb14446175360707a31554c08af216bfa2ddb831cda9d2f90f95f36d",
-                      "upstream_commit": "6c2ee90618bf69683a1c466e3b0550260b82e129",
-                      "upstream_tree": "c0b745cdee2cf0e2ab560ebcedc49cbbaafbfeaa",
+                      "job_id": 118609886145,
+                      "validation_head_sha": "885665d399d6c65b78f5ea048685109f3e8bbebc",
+                      "artifact_id": 12261394728,
+                      "artifact_name": "tdrp-revision9-authority-885665d399d6c65b78f5ea048685109f3e8bbebc",
+                      "artifact_digest": "sha256:5bad99275a0524134eafe8a2116addaee89bd53b1e6453706e87d93bc94dbc8e",
+                      "upstream_commit": "a0cfd60923a220894611b6fcb3c92157876dc4a5",
+                      "upstream_tree": "5cc28eee8d541752295ce299b860303fcb4b687d",
                       "recursive_non_directory_entries": 16201,
                       "source_closure_ready": false,
                       "evidence_status": "historical-only",
                       "supporting_artifacts": [
                         {
                           "kind": "recursive-root-aggregate",
-                          "artifact_id": 12257489483,
-                          "artifact_name": "tdrp-recursive-root-aggregate-abcd30172faf46684b6c46905f61264be99a5b4a",
-                          "artifact_digest": "sha256:033adfc22ccb8c1e0c90981dd7a48c660683b2b094a96272b4a81aa14a52854b"
+                          "artifact_id": 12262220367,
+                          "artifact_name": "tdrp-recursive-root-aggregate-885665d399d6c65b78f5ea048685109f3e8bbebc",
+                          "artifact_digest": "sha256:1b883a32221b5cdeea030e738c70be76d1744cc94d38dc4010957f938515bfd7"
                         },
                         {
                           "kind": "recursive-child-aggregate",
-                          "artifact_id": 12257134871,
-                          "artifact_name": "tdrp-recursive-child-aggregate-abcd30172faf46684b6c46905f61264be99a5b4a",
-                          "artifact_digest": "sha256:11d009381e637c8b8c44fe2b801283fbf9a8ace759813bade820f4b31abd64d3"
+                          "artifact_id": 12261129835,
+                          "artifact_name": "tdrp-recursive-child-aggregate-885665d399d6c65b78f5ea048685109f3e8bbebc",
+                          "artifact_digest": "sha256:70fff4ad244fb65f9ead0df7beb7616c8843eed6d4bf27f6ead6f7fa89325cf6"
                         },
                         {
                           "kind": "recursive-next-aggregate",
-                          "artifact_id": 12258093509,
-                          "artifact_name": "tdrp-recursive-next-aggregate-abcd30172faf46684b6c46905f61264be99a5b4a",
-                          "artifact_digest": "sha256:72e0ca29d2aaeffe9e4f339255f2ab566388a994aae4c691c2666cde6b09ee8d"
+                          "artifact_id": 12263140384,
+                          "artifact_name": "tdrp-recursive-next-aggregate-885665d399d6c65b78f5ea048685109f3e8bbebc",
+                          "artifact_digest": "sha256:92b81c8dfd60be12915cd02f4483eda52b4fc5b87b6cd1f2b4efca3feb065683"
                         },
                         {
                           "kind": "recursive-fixed-point",
-                          "artifact_id": 12258530653,
-                          "artifact_name": "tdrp-recursive-closure-abcd30172faf46684b6c46905f61264be99a5b4a",
-                          "artifact_digest": "sha256:835e1b506c563a9a86c1217b53bed6471368faeed372248d83db9d481175f358"
+                          "artifact_id": 12263220363,
+                          "artifact_name": "tdrp-recursive-closure-885665d399d6c65b78f5ea048685109f3e8bbebc",
+                          "artifact_digest": "sha256:bfc7493c743b7e674c2923ef4ca49b3040bf25b9af9ba2b9b6a707f1e355736b"
                         },
                         {
                           "kind": "recursive-build-reachability",
-                          "artifact_id": 12258510700,
-                          "artifact_name": "tdrp-recursive-reachability-abcd30172faf46684b6c46905f61264be99a5b4a",
-                          "artifact_digest": "sha256:bd82bc4c86fd1b2f3f2267d6918581c7ba12e2d9f12323b50cc5275068925a8b"
+                          "artifact_id": 12262039910,
+                          "artifact_name": "tdrp-recursive-reachability-885665d399d6c65b78f5ea048685109f3e8bbebc",
+                          "artifact_digest": "sha256:1f9732e1f152c496f7eba3d6e247fe52c88486346b33c79ba40a7f67b434df1a"
                         },
                         {
                           "kind": "root-source-archives",
-                          "artifact_id": 12258182504,
-                          "artifact_name": "tdrp-root-source-archives-abcd30172faf46684b6c46905f61264be99a5b4a",
-                          "artifact_digest": "sha256:9326d516d04ac547a9b2085febf86fa33c24f5ba7a6e48dedf2a08e9ae8389db"
+                          "artifact_id": 12261474061,
+                          "artifact_name": "tdrp-root-source-archives-885665d399d6c65b78f5ea048685109f3e8bbebc",
+                          "artifact_digest": "sha256:e03b6b301d7e53dc65c2be8e452211c1cabc6f9e03fccf94dac4f2fe13207fc4"
                         },
                         {
                           "kind": "boost-build-reachability",
-                          "artifact_id": 12257818264,
-                          "artifact_name": "tdrp-boost-reachability-abcd30172faf46684b6c46905f61264be99a5b4a",
-                          "artifact_digest": "sha256:2f9141c9967744d985976dba932ce8855e1f00f59e382e63cd79b3d79097aea3"
+                          "artifact_id": 12261014898,
+                          "artifact_name": "tdrp-boost-reachability-885665d399d6c65b78f5ea048685109f3e8bbebc",
+                          "artifact_digest": "sha256:2514a9939a0ec75d786ff939d1510e1a550e10d96bb0ab8090ee096635dd4c32"
                         }
                       ],
                       "prior_history": {
-                        "status": "accepted-baseline-identity-only-source-closure-open",
-                        "runner": "github-actions",
-                        "run_id": 39267321482,
+                        "run_id": 39408064448,
                         "run_attempt": 1,
-                        "job_id": 118110183925,
-                        "validation_head_sha": "5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-                        "artifact_id": 12193803207,
-                        "artifact_name": "tdrp-revision9-authority-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-                        "artifact_digest": "sha256:7526811deaba969c6cf3c4a442a79ba5a2020811a993655c3dac457b146db9e0",
-                        "upstream_commit": "0a11537c220df35fe59a96aebe413b1e52bc6e47",
-                        "recursive_non_directory_entries": 16186,
+                        "job_id": 118578755584,
+                        "validation_head_sha": "abcd30172faf46684b6c46905f61264be99a5b4a",
+                        "artifact_id": 12257803423,
+                        "artifact_name": "tdrp-revision9-authority-abcd30172faf46684b6c46905f61264be99a5b4a",
+                        "artifact_digest": "sha256:90817b28fb14446175360707a31554c08af216bfa2ddb831cda9d2f90f95f36d",
+                        "upstream_commit": "6c2ee90618bf69683a1c466e3b0550260b82e129",
+                        "upstream_tree": "c0b745cdee2cf0e2ab560ebcedc49cbbaafbfeaa",
+                        "recursive_non_directory_entries": 16201,
                         "source_closure_ready": false,
+                        "evidence_status": "historical-only",
                         "supporting_artifacts": [
                           {
                             "kind": "recursive-root-aggregate",
-                            "job_id": 118110671436,
-                            "artifact_id": 12192619393,
-                            "artifact_name": "tdrp-recursive-root-aggregate-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-                            "artifact_digest": "sha256:c44a0247eb8977732373d08e06bf8cb52f4a72e2b22d10a587c451162a077b0e"
+                            "artifact_id": 12257489483,
+                            "artifact_name": "tdrp-recursive-root-aggregate-abcd30172faf46684b6c46905f61264be99a5b4a",
+                            "artifact_digest": "sha256:033adfc22ccb8c1e0c90981dd7a48c660683b2b094a96272b4a81aa14a52854b"
                           },
                           {
                             "kind": "recursive-child-aggregate",
-                            "job_id": 118111905184,
-                            "artifact_id": 12193158582,
-                            "artifact_name": "tdrp-recursive-child-aggregate-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-                            "artifact_digest": "sha256:6eaf637f330f01469dee3771e90e904f3f36d079e57217ae67d5373af1164e63"
+                            "artifact_id": 12257134871,
+                            "artifact_name": "tdrp-recursive-child-aggregate-abcd30172faf46684b6c46905f61264be99a5b4a",
+                            "artifact_digest": "sha256:11d009381e637c8b8c44fe2b801283fbf9a8ace759813bade820f4b31abd64d3"
                           },
                           {
                             "kind": "recursive-next-aggregate",
-                            "job_id": 118114082297,
-                            "artifact_id": 12193324860,
-                            "artifact_name": "tdrp-recursive-next-aggregate-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-                            "artifact_digest": "sha256:1afe55fae04e55577cc7c35254678f0b5ccfbde8b75b7821c2d47bb09471dd02"
+                            "artifact_id": 12258093509,
+                            "artifact_name": "tdrp-recursive-next-aggregate-abcd30172faf46684b6c46905f61264be99a5b4a",
+                            "artifact_digest": "sha256:72e0ca29d2aaeffe9e4f339255f2ab566388a994aae4c691c2666cde6b09ee8d"
                           },
                           {
                             "kind": "recursive-fixed-point",
-                            "job_id": 118114176711,
-                            "artifact_id": 12194136074,
-                            "artifact_name": "tdrp-recursive-closure-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-                            "artifact_digest": "sha256:87d18391079527ffce7a4d588e8dec08579e354a1ad02612a511e590e31233b2"
+                            "artifact_id": 12258530653,
+                            "artifact_name": "tdrp-recursive-closure-abcd30172faf46684b6c46905f61264be99a5b4a",
+                            "artifact_digest": "sha256:835e1b506c563a9a86c1217b53bed6471368faeed372248d83db9d481175f358"
                           },
                           {
                             "kind": "recursive-build-reachability",
-                            "job_id": 118114339699,
-                            "artifact_id": 12193419380,
-                            "artifact_name": "tdrp-recursive-reachability-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-                            "artifact_digest": "sha256:1fd0f2411814962d74f2f8b991e6fd9a01bfc7c1da67e9590b8e9c49d5bf6d89"
+                            "artifact_id": 12258510700,
+                            "artifact_name": "tdrp-recursive-reachability-abcd30172faf46684b6c46905f61264be99a5b4a",
+                            "artifact_digest": "sha256:bd82bc4c86fd1b2f3f2267d6918581c7ba12e2d9f12323b50cc5275068925a8b"
                           },
                           {
                             "kind": "root-source-archives",
-                            "job_id": 118110183972,
-                            "artifact_id": 12192789573,
-                            "artifact_name": "tdrp-root-source-archives-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-                            "artifact_digest": "sha256:d461dd8f78d7e25b5ada127aaf10e08abedb1dc7c77d80d478cd235336a2cb2d"
+                            "artifact_id": 12258182504,
+                            "artifact_name": "tdrp-root-source-archives-abcd30172faf46684b6c46905f61264be99a5b4a",
+                            "artifact_digest": "sha256:9326d516d04ac547a9b2085febf86fa33c24f5ba7a6e48dedf2a08e9ae8389db"
                           },
                           {
                             "kind": "boost-build-reachability",
-                            "job_id": 118110617587,
-                            "artifact_id": 12193702905,
-                            "artifact_name": "tdrp-boost-reachability-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-                            "artifact_digest": "sha256:a5e1383f1a6e51093a92acc383d6bfb52e4e4f9cfec1d99e3739cf92d7b1af33"
+                            "artifact_id": 12257818264,
+                            "artifact_name": "tdrp-boost-reachability-abcd30172faf46684b6c46905f61264be99a5b4a",
+                            "artifact_digest": "sha256:2f9141c9967744d985976dba932ce8855e1f00f59e382e63cd79b3d79097aea3"
                           }
                         ],
-                        "previous_historical_evidence": {
+                        "prior_history": {
                           "status": "accepted-baseline-identity-only-source-closure-open",
                           "runner": "github-actions",
-                          "run_id": 37652251698,
+                          "run_id": 39267321482,
                           "run_attempt": 1,
-                          "job_id": 112898298716,
-                          "validation_head_sha": "9e7b4e3ada9876019aac02a1562dcc4ad7d059b7",
-                          "artifact_id": 11497690488,
-                          "artifact_name": "tdrp-revision9-authority-9e7b4e3ada9876019aac02a1562dcc4ad7d059b7",
-                          "artifact_digest": "sha256:2282fdfe4cdc4835240a503092b107ae6037749e1d615978a34a36829f9affca",
-                          "upstream_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
-                          "recursive_non_directory_entries": 15788,
+                          "job_id": 118110183925,
+                          "validation_head_sha": "5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+                          "artifact_id": 12193803207,
+                          "artifact_name": "tdrp-revision9-authority-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+                          "artifact_digest": "sha256:7526811deaba969c6cf3c4a442a79ba5a2020811a993655c3dac457b146db9e0",
+                          "upstream_commit": "0a11537c220df35fe59a96aebe413b1e52bc6e47",
+                          "recursive_non_directory_entries": 16186,
                           "source_closure_ready": false,
+                          "supporting_artifacts": [
+                            {
+                              "kind": "recursive-root-aggregate",
+                              "job_id": 118110671436,
+                              "artifact_id": 12192619393,
+                              "artifact_name": "tdrp-recursive-root-aggregate-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+                              "artifact_digest": "sha256:c44a0247eb8977732373d08e06bf8cb52f4a72e2b22d10a587c451162a077b0e"
+                            },
+                            {
+                              "kind": "recursive-child-aggregate",
+                              "job_id": 118111905184,
+                              "artifact_id": 12193158582,
+                              "artifact_name": "tdrp-recursive-child-aggregate-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+                              "artifact_digest": "sha256:6eaf637f330f01469dee3771e90e904f3f36d079e57217ae67d5373af1164e63"
+                            },
+                            {
+                              "kind": "recursive-next-aggregate",
+                              "job_id": 118114082297,
+                              "artifact_id": 12193324860,
+                              "artifact_name": "tdrp-recursive-next-aggregate-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+                              "artifact_digest": "sha256:1afe55fae04e55577cc7c35254678f0b5ccfbde8b75b7821c2d47bb09471dd02"
+                            },
+                            {
+                              "kind": "recursive-fixed-point",
+                              "job_id": 118114176711,
+                              "artifact_id": 12194136074,
+                              "artifact_name": "tdrp-recursive-closure-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+                              "artifact_digest": "sha256:87d18391079527ffce7a4d588e8dec08579e354a1ad02612a511e590e31233b2"
+                            },
+                            {
+                              "kind": "recursive-build-reachability",
+                              "job_id": 118114339699,
+                              "artifact_id": 12193419380,
+                              "artifact_name": "tdrp-recursive-reachability-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+                              "artifact_digest": "sha256:1fd0f2411814962d74f2f8b991e6fd9a01bfc7c1da67e9590b8e9c49d5bf6d89"
+                            },
+                            {
+                              "kind": "root-source-archives",
+                              "job_id": 118110183972,
+                              "artifact_id": 12192789573,
+                              "artifact_name": "tdrp-root-source-archives-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+                              "artifact_digest": "sha256:d461dd8f78d7e25b5ada127aaf10e08abedb1dc7c77d80d478cd235336a2cb2d"
+                            },
+                            {
+                              "kind": "boost-build-reachability",
+                              "job_id": 118110617587,
+                              "artifact_id": 12193702905,
+                              "artifact_name": "tdrp-boost-reachability-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
+                              "artifact_digest": "sha256:a5e1383f1a6e51093a92acc383d6bfb52e4e4f9cfec1d99e3739cf92d7b1af33"
+                            }
+                          ],
+                          "previous_historical_evidence": {
+                            "status": "accepted-baseline-identity-only-source-closure-open",
+                            "runner": "github-actions",
+                            "run_id": 37652251698,
+                            "run_attempt": 1,
+                            "job_id": 112898298716,
+                            "validation_head_sha": "9e7b4e3ada9876019aac02a1562dcc4ad7d059b7",
+                            "artifact_id": 11497690488,
+                            "artifact_name": "tdrp-revision9-authority-9e7b4e3ada9876019aac02a1562dcc4ad7d059b7",
+                            "artifact_digest": "sha256:2282fdfe4cdc4835240a503092b107ae6037749e1d615978a34a36829f9affca",
+                            "upstream_commit": "72b3b71c3d6e450e5ef94a3112dd750a0168aa0b",
+                            "recursive_non_directory_entries": 15788,
+                            "source_closure_ready": false,
+                            "evidence_status": "historical-only"
+                          },
                           "evidence_status": "historical-only"
-                        },
-                        "evidence_status": "historical-only"
+                        }
                       }
                     }
                   }
                 }
               }
             }
-          }
-        },
-        "previous_incomplete_attempt": {
-          "runner": "github-actions",
-          "head_sha": "e709693ec625dc26cc027ac641f20fca348a5ed0",
-          "tdrp_run_id": 39497897314,
-          "run_attempt": 1,
-          "run_conclusion": "success",
-          "status": "workflow-success-authority-incomplete-recursive-disposition-open-historical-after-upstream-drift",
-          "source_authority_job_id": 118887598690,
-          "source_authority_artifact_id": 12297708015,
-          "source_authority_artifact_digest": "sha256:e5daa7a9b49aa9fdf9db1f7328126a25591bac7c584fb27c325b1a9a39a08081",
-          "boost_job_id": 118887858224,
-          "boost_artifact_id": 12298697939,
-          "boost_artifact_digest": "sha256:f880cd469830e6b494a1f23ac5e57fcf68cd745beb6542d0bc57d70e7f6c9b18",
-          "fixed_point_job_id": 118890649712,
-          "fixed_point_artifact_id": 12298583879,
-          "fixed_point_artifact_digest": "sha256:d37a714a601385bf38db06f397aae5cff28fdafbca50c90b451660b7d574c1c1",
-          "recursive_reachability_job_id": 118890784676,
-          "recursive_reachability_artifact_id": 12298094517,
-          "recursive_reachability_artifact_digest": "sha256:8453ba411cccd01d1a713b0800fe904d49f8da0dc02edb1ae0d3372a4eeaa2d2",
-          "remaining_open_totals": {
-            "authorities": 95,
-            "gitlinks": 133,
-            "acquisition_candidates": 3865,
-            "generated_inputs": 4674,
-            "resource_inputs": 4602,
-            "tool_inputs": 4255
           },
-          "accepted_authority": false,
-          "rust_parent_run": {
-            "run_id": 39497897342,
-            "status": "success",
-            "jobs": "6/6 success",
-            "steps": "79 success + 2 expected platform-conditional skipped",
-            "artifact_id": 12299250602,
-            "artifact_digest": "sha256:56407823b6ac8397f653dfb75305effb84731c96e63206b8b01d8f324503b1e6"
+          "previous_incomplete_attempt": {
+            "runner": "github-actions",
+            "head_sha": "e709693ec625dc26cc027ac641f20fca348a5ed0",
+            "tdrp_run_id": 39497897314,
+            "run_attempt": 1,
+            "run_conclusion": "success",
+            "status": "workflow-success-authority-incomplete-recursive-disposition-open-historical-after-upstream-drift",
+            "source_authority_job_id": 118887598690,
+            "source_authority_artifact_id": 12297708015,
+            "source_authority_artifact_digest": "sha256:e5daa7a9b49aa9fdf9db1f7328126a25591bac7c584fb27c325b1a9a39a08081",
+            "boost_job_id": 118887858224,
+            "boost_artifact_id": 12298697939,
+            "boost_artifact_digest": "sha256:f880cd469830e6b494a1f23ac5e57fcf68cd745beb6542d0bc57d70e7f6c9b18",
+            "fixed_point_job_id": 118890649712,
+            "fixed_point_artifact_id": 12298583879,
+            "fixed_point_artifact_digest": "sha256:d37a714a601385bf38db06f397aae5cff28fdafbca50c90b451660b7d574c1c1",
+            "recursive_reachability_job_id": 118890784676,
+            "recursive_reachability_artifact_id": 12298094517,
+            "recursive_reachability_artifact_digest": "sha256:8453ba411cccd01d1a713b0800fe904d49f8da0dc02edb1ae0d3372a4eeaa2d2",
+            "remaining_open_totals": {
+              "authorities": 95,
+              "gitlinks": 133,
+              "acquisition_candidates": 3865,
+              "generated_inputs": 4674,
+              "resource_inputs": 4602,
+              "tool_inputs": 4255
+            },
+            "accepted_authority": false,
+            "rust_parent_run": {
+              "run_id": 39497897342,
+              "status": "success",
+              "jobs": "6/6 success",
+              "steps": "79 success + 2 expected platform-conditional skipped",
+              "artifact_id": 12299250602,
+              "artifact_digest": "sha256:56407823b6ac8397f653dfb75305effb84731c96e63206b8b01d8f324503b1e6"
+            }
+          },
+          "current_head_validation_evidence": {
+            "head_sha": "0f5272fcb14d6f1e835c7282b001e4ee2aa572ea",
+            "tdrp_run": 39537102683,
+            "tdrp_jobs": "61/61 success",
+            "tdrp_steps": "506/506 success",
+            "source_authority_artifact": {
+              "id": 12318286826,
+              "digest": "sha256:1cd8c4c82a94600131d6103f9742d9553156190faf66483cc8f5308312ba8404"
+            },
+            "root_archive_artifact": {
+              "id": 12317737812,
+              "digest": "sha256:c0b5764046498af60ae37ca817f954fc6c8d5ccd2e08b37c391e2a4b94067a24"
+            },
+            "rust_run": 39537102580,
+            "rust_jobs": "6/6 success",
+            "rust_artifact": {
+              "id": 12318237159,
+              "digest": "sha256:a93c6575eab099ca643c5ce10782689b5d16c0c6cdbe81897966b9a0236b9eb8"
+            },
+            "recursive_total": 16305,
+            "open": {
+              "authorities": 95,
+              "gitlinks": 133,
+              "acquisition_candidates": 3865,
+              "generated_inputs": 4674,
+              "resource_inputs": 4602,
+              "tool_inputs": 4255
+            },
+            "baseline_identity_accepted": false,
+            "source_closure_ready": false
           }
         },
         "current_head_validation_evidence": {
-          "head_sha": "0f5272fcb14d6f1e835c7282b001e4ee2aa572ea",
-          "tdrp_run": 39537102683,
+          "status": "historical-only-after-upstream-drift",
+          "head_sha": "51e019e3afd13d7132d5da27bc273f0203a03eae",
+          "tdrp_run": 39743918294,
           "tdrp_jobs": "61/61 success",
-          "tdrp_steps": "506/506 success",
           "source_authority_artifact": {
-            "id": 12318286826,
-            "digest": "sha256:1cd8c4c82a94600131d6103f9742d9553156190faf66483cc8f5308312ba8404"
+            "id": 12410423121,
+            "digest": "sha256:842b833317a5a1303957fc36a8152a2aad7863e0b60dab8c90e40a59a6898db2"
           },
-          "root_archive_artifact": {
-            "id": 12317737812,
-            "digest": "sha256:c0b5764046498af60ae37ca817f954fc6c8d5ccd2e08b37c391e2a4b94067a24"
+          "recursive_closure_artifact": {
+            "id": 12411320551,
+            "digest": "sha256:2ed7335ec4abf02148d00427e8914da0212789bfdc136765f018c2043130a6a1"
           },
-          "rust_run": 39537102580,
+          "recursive_reachability_artifact": {
+            "id": 12410951384,
+            "digest": "sha256:a9337bc5ba21ff89398df9f012cbfdc3e8b31898614d3bd11354b3f905c9bd90"
+          },
+          "rust_run": 39743918410,
           "rust_jobs": "6/6 success",
           "rust_artifact": {
-            "id": 12318237159,
-            "digest": "sha256:a93c6575eab099ca643c5ce10782689b5d16c0c6cdbe81897966b9a0236b9eb8"
+            "id": 12409889590,
+            "digest": "sha256:858be7d3c3c48657053fd8a9d576e854e04dbf2d9c4db300627376e90b7ed38d"
           },
-          "recursive_total": 16305,
+          "recursive_total": 16306,
           "open": {
             "authorities": 95,
             "gitlinks": 133,
@@ -1150,30 +1185,31 @@
           },
           "baseline_identity_accepted": false,
           "source_closure_ready": false
-        }
+        },
+        "evidence_status": "historical-only"
       },
       "current_head_validation_evidence": {
         "status": "historical-only-after-upstream-drift",
-        "head_sha": "51e019e3afd13d7132d5da27bc273f0203a03eae",
-        "tdrp_run": 39743918294,
+        "head_sha": "a23bef39fecccc6bdba36fdd90805ab139cd26fa",
+        "tdrp_run": 39763526560,
         "tdrp_jobs": "61/61 success",
         "source_authority_artifact": {
-          "id": 12410423121,
-          "digest": "sha256:842b833317a5a1303957fc36a8152a2aad7863e0b60dab8c90e40a59a6898db2"
+          "id": 12418569928,
+          "digest": "sha256:e6cbfee3985f5558611e6c5000fe68d2183f16397b2f354d2c6802c4d44a209c"
         },
         "recursive_closure_artifact": {
-          "id": 12411320551,
-          "digest": "sha256:2ed7335ec4abf02148d00427e8914da0212789bfdc136765f018c2043130a6a1"
+          "id": 12420055290,
+          "digest": "sha256:2d782f137289e29c08afd81c63504e88c20d1097354d52780abd1e618d8f81dc"
         },
         "recursive_reachability_artifact": {
-          "id": 12410951384,
-          "digest": "sha256:a9337bc5ba21ff89398df9f012cbfdc3e8b31898614d3bd11354b3f905c9bd90"
+          "id": 12418194916,
+          "digest": "sha256:f01b4be27a8ee076b122a65f49d97f374fd203b2a143e7c2710ad1a7ba7913bb"
         },
-        "rust_run": 39743918410,
+        "rust_run": 39763526593,
         "rust_jobs": "6/6 success",
         "rust_artifact": {
-          "id": 12409889590,
-          "digest": "sha256:858be7d3c3c48657053fd8a9d576e854e04dbf2d9c4db300627376e90b7ed38d"
+          "id": 12418639882,
+          "digest": "sha256:1e8b6950ca174fed92bc9e2fde895c53a77b45838200df22ce16b2a0b8e0f133"
         },
         "recursive_total": 16306,
         "open": {
