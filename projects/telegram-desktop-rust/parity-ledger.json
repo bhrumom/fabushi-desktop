@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "42e2af80cdd20a99edecb4255470f0aa6bae6bcb",
-  "target_commit": "712b92e0503adb72bbbd64d996568dbe64d763c0",
+  "target_commit": "6687739f469d66b426656d1d01d3c3ea870c4093",
   "coverage": {
     "source_entries_total": 16306,
-    "unknown": 16219,
-    "unread": 16194,
+    "unknown": 16218,
+    "unread": 16193,
     "omitted": 0,
-    "responsibilities_total": 102,
+    "responsibilities_total": 103,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -27544,6 +27544,255 @@
       "license_and_provenance": "Exact upstream docker workflow is retained as build-support provenance. Telegram GHCR namespace, mutable :latest image, base/tagged dependencies, online Poetry/Rust/tool downloads and provider credentials are not promoted to Fabushi runtime or exact evidence authority.",
       "reviewer": null,
       "notes": "Strict index 84 closes only .github/workflows/docker.yml. Source semantics corrected against the locked workflow: push is path-filtered and the job is gated by github.ref_name == github.event.repository.default_branch; the workflow does not install Docker, and gen_dockerfile output is streamed to docker build stdin. Coverage, existing-owner disposition and product code are unchanged. Counters remain unknown=16,219 unread=16,194 omitted=0 responsibilities=102. Next strict root index 85 .github/workflows/issue_closer.yml@355405165590712b1826b2f92a8f867c8d568dd9. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions are required after this correction commit."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "42e2af80cdd20a99edecb4255470f0aa6bae6bcb",
+      "source_path": ".github/workflows/issue_closer.yml",
+      "source_blob_sha": "355405165590712b1826b2f92a8f867c8d568dd9",
+      "source_kind": "repository_issue_intake_routing_maintenance_workflow",
+      "module_id": "tdesktop.github.workflows.issue_closer",
+      "responsibility_id": "TDRP-R9-ISSUE-INTAKE-ROUTING-MAINTENANCE-001",
+      "source_symbols": [
+        "issues: types [opened]",
+        "runs-on: ubuntu-slim",
+        "desktop-app/action_issue_closer@master",
+        "token: secrets.GITHUB_TOKEN"
+      ],
+      "capability_ids": [
+        "CAP-ISSUE-INTAKE-ROUTING",
+        "CAP-DEFECT-CLOSURE-GOVERNANCE",
+        "CAP-PROVIDER-MAINTENANCE-PROVENANCE"
+      ],
+      "dependency_ids": [
+        "desktop-app/action_issue_closer@master -> b2fc72db6cc262c8e84e10740c44296ec4be2e02",
+        "desktop-app/action_issue_closer/action.yml@91083e19bf270c6b8fe109fd264522032a5f10a1",
+        "desktop-app/action_issue_closer/index.js@ea3b9b265e070522b56e75da86debaa80140278f",
+        "https://osx.telegram.org/updates/versions.xml (mutable provider input)",
+        "runtime npm install: compare-versions, fast-xml-parser, @actions/core, @actions/github (unlocked)",
+        "AGENTS.md@da3e37258c74963970ff5cfc5d54671a37558b97#Repository-issue-intake-routing-adapter-governance",
+        "projects/fabushi-communication-platform/quality/defect-regression-policy.md@b31ecd424cac2abf8a2322e2996bb1b53c561378#FQT-DEF-001"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/issue-closer-routing-workflow-complete-read.md",
+      "behavior_contract": "Treat the upstream issue closer as a provider-side issue-intake routing adapter only. It may detect a likely Telegram-for-macOS misroute and perform provider maintenance, but routing/label/close outcomes never establish defect invalidity, fix completeness, support completion, source disposition or release acceptance. Canonical Fabushi defect closure remains reproduce -> fix -> targeted regression -> affected regression -> current-head evidence.",
+      "state_machine": "issues.opened -> composite action@mutable master -> best-effort versions.xml download (wget failure exits step 0) -> runtime npm dependency installation -> parse issue body Version of Telegram Desktop / Installation source -> read first repository tag and first macOS XML version -> compare versions -> no-op when data/rule is inconclusive OR enqueue createComment + addLabels(TG macOS Swift) + update(state=closed); API write promises are not awaited, so action completion is not durable closure evidence",
+      "side_effects": [
+        "Downloads mutable macOS release XML from osx.telegram.org.",
+        "Installs npm packages at action runtime without a checked lock/version pin.",
+        "Reads opened issue body and repository tags through GitHub APIs.",
+        "May create a comment, add the TG macOS Swift label, and close the provider issue.",
+        "Uses GITHUB_TOKEN within the provider issue-maintenance boundary.",
+        "Creates no Fabushi product/session/message/storage state and no release verdict."
+      ],
+      "failure_cases": [
+        "action_issue_closer@master moves after audit",
+        "versions.xml download fails but the composite download step exits successfully",
+        "versions.xml is missing/malformed or its item ordering/schema changes",
+        "issue body omits or renames Version of Telegram Desktop / Installation source headings",
+        "issue version regex fails or extracts an ambiguous value",
+        "repos.listTags first entry is not the semantically latest TDesktop version",
+        "runtime npm registry resolution drifts or fails because dependencies are unpinned",
+        "compare rule misclassifies a version between TDesktop and Telegram-for-macOS lines",
+        "comment/label/close API promises fail after being started because the calls are not awaited",
+        "provider close is mistaken for canonical defect closure or release evidence"
+      ],
+      "ui_disposition": "Repository issue maintenance only; no shipping Fabushi UI capability.",
+      "non_ui_responsibilities": [
+        "opened-issue routing provenance",
+        "external macOS-version signal provenance",
+        "provider token/write boundary",
+        "fail-closed distinction between routing and canonical defect closure",
+        "runtime dependency drift accounting",
+        "comment/label/close side-effect observability"
+      ],
+      "platform_delta": "Upstream heuristically closes likely Telegram-for-macOS issues in GitHub. Fabushi reuses only source-neutral issue routing and defect-lifecycle governance; provider labels, Telegram brand/version heuristics and close behavior remain provenance.",
+      "existing_owner_candidates": [
+        "AGENTS.md Repository issue-intake routing adapter governance (selected)",
+        "FQT-DEF-001 defect/regression closure lifecycle (selected canonical closure truth)",
+        "new issue closer/triage service owner (rejected)",
+        "new support product or second defect ledger (rejected)",
+        "release/acceptance owner (rejected)"
+      ],
+      "existing_owner": "AGENTS.md Repository issue-intake routing adapter governance plus FQT-DEF-001 defect/regression policy",
+      "rejected_existing_owners": [
+        "Provider routing cannot determine whether a defect is invalid, fixed or acceptable.",
+        "The action's Telegram-for-macOS label/close semantics are source-specific maintenance, not a Fabushi product capability.",
+        "Workflow success or provider issue closure cannot satisfy current-head regression or release evidence."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/defect-regression-policy.md"
+      ],
+      "fabushi_target_symbols": [
+        "Routing never proves a defect invalid, a proposal rejected, a support outcome complete, or an applicable source responsibility unnecessary.",
+        "reproduce->fix->targeted regression->affected regression->current-head evidence 才 close。"
+      ],
+      "target_language": "Repository governance / provider issue-intake routing adapter",
+      "language_rationale": "The source is GitHub issue-maintenance orchestration and mutable JavaScript-provider behavior, not shipping runtime; applicable responsibility belongs to existing repository routing and canonical defect closure governance.",
+      "command_event_contracts": [
+        "only issues.opened invokes this upstream adapter",
+        "routing signals may classify a provider destination but never establish defect validity or fix status",
+        "missing/ambiguous version evidence must remain non-passing/no-op rather than fabricate certainty",
+        "provider write credentials remain scoped to repository issue maintenance",
+        "canonical defect close requires FQT-DEF-001 current-head evidence regardless of provider issue state",
+        "workflow success cannot promote release acceptance"
+      ],
+      "state_owner": "Canonical defect state remains the Fabushi defect/regression record and exact-head evidence; GitHub issue labels/state and mutable external version data are provider routing state only.",
+      "lifecycle_owner": "Issue intake/routing -> canonical defect reproduction/triage -> fix -> targeted + affected regression -> current-head evidence -> canonical close; this workflow occupies only the optional provider routing step.",
+      "persistence_and_restart": "GitHub issue state/comments/labels are durable provider state. External XML, npm install state and runner workspace are ephemeral; a partial/unawaited provider write must be re-read before relying on it.",
+      "concurrency_and_cancellation": "No workflow concurrency group is declared. Multiple opened issues are independent, but provider API writes within one action are launched without await; completion ordering/durability is not guaranteed by the JavaScript control flow.",
+      "security_boundary": "secrets.GITHUB_TOKEN crosses only into a mutable third-party action with repository issue write effects. External XML and npm registries are untrusted mutable inputs; no provider token or issue body may become product identity, authorization, telemetry or release authority.",
+      "network_service_dependencies": [
+        "GitHub Actions runner and GitHub Issues/Tags APIs.",
+        "desktop-app/action_issue_closer mutable master ref.",
+        "https://osx.telegram.org/updates/versions.xml.",
+        "npm registry for compare-versions, fast-xml-parser, @actions/core and @actions/github."
+      ],
+      "service_owner": "Existing repository issue provider plus canonical Fabushi defect/regression governance; no new product service owner",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "policy-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions are required after this strict85 mapping commit.",
+        "Recursive source disposition remains open.",
+        "Mutable provider action, XML and runtime npm dependencies remain provenance rather than immutable evidence."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "Strict85 .github/workflows/issue_closer.yml@355405165590712b1826b2f92a8f867c8d568dd9 fully read: 15 line slots / 251 bytes.",
+        "Repository search found action_issue_closer only in .github/workflows/issue_closer.yml, so no second direct upstream consumer was identified.",
+        "desktop-app/action_issue_closer@master resolved immediately before publication to b2fc72db6cc262c8e84e10740c44296ec4be2e02; action.yml@91083e19bf270c6b8fe109fd264522032a5f10a1 is 27 line slots / 697 bytes and index.js@ea3b9b265e070522b56e75da86debaa80140278f is 138 line slots / 3439 bytes.",
+        "Provider source confirms best-effort versions.xml download, unlocked runtime npm installs, issue-body/tag/XML version comparison, and unawaited createComment/addLabels/update calls.",
+        "AGENTS.md issue-intake routing target symbol and FQT-DEF-001 closure target symbol were both re-read at parent exact head and had no ledger target-key collision.",
+        "Parent exact-head 6687739f469d66b426656d1d01d3c3ea870c4093 completed TDRP run 39776914082 at 61/61 success (authority 12424866760 sha256:b917b4f022dbd19220e361655234df411771b4f12a1156410b7cb3992fd1e08c; closure 12424758517 sha256:0956608ba4c75dfc2a71edd705aea9cb7a31c988ecf08ae889ac25dae53ad2be; reachability 12425102856 sha256:b9320c5f9d55eb734347adf0bfeb099f2b1878f5f2d0e401f130f150a70ceb59) and Rust desktop runtime run 39776913954 at 6/6 success (artifact 12424429338 sha256:c35cfcbe332ee17673ea2a53bd467fcfaf24be813e393e1a27990b369f477dea)."
+      ],
+      "target_commit": "6687739f469d66b426656d1d01d3c3ea870c4093",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi canonical repository issue routing plus FQT defect/regression lifecycle",
+      "composition_slot": "optional provider issue-intake routing adapter before canonical defect lifecycle",
+      "capability_component": "Source-neutral issue-intake routing provenance adapter",
+      "variation_axes": [
+        "well-formed/malformed or missing issue version fields",
+        "versions.xml available/missing/malformed",
+        "TDesktop tag list stable/drifted/ambiguous",
+        "TDesktop/macOS version comparison routes/no-ops",
+        "provider API write success/partial failure",
+        "action master/npm dependencies stable/drifted",
+        "provider issue closed/open versus canonical defect open/closed"
+      ],
+      "shared_owner_contracts": [
+        "AGENTS.md Repository issue-intake routing adapter governance",
+        "FQT-DEF-001",
+        "FQT-EVID-001 current-head evidence discipline"
+      ],
+      "duplicate_root_check": "No second defect ledger, issue closer service, support product, product telemetry owner, release gate or acceptance authority is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository issue intake/routing only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Provider issue-intake routing adapter",
+      "route_contract": "opened provider issue -> optional routing heuristic -> provider comment/label/close OR no-op -> canonical Fabushi defect lifecycle remains authoritative",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Provider issue state may persist, but canonical defect state continuity is carried only by the Fabushi defect record and exact-head evidence; mutable XML/npm/action state cannot carry acceptance.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-ISSUE-INTAKE-ROUTING-MAINTENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-ISSUE-CLOSER-EXACT-SOURCE-001",
+        "ORA-TDRP-ISSUE-CLOSER-ROUTING-NOT-DEFECT-CLOSURE-001",
+        "ORA-TDRP-ISSUE-CLOSER-PROVIDER-WRITE-OBSERVABILITY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-ISSUE-CLOSER-NO-SECOND-DEFECT-OWNER-001",
+        "INV-TDRP-ISSUE-CLOSER-NO-RELEASE-AUTHORITY-001",
+        "INV-TDRP-ISSUE-CLOSER-MISSING-SIGNAL-NO-PASS-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-ISSUE-CLOSER-OPENED-ISSUE-001",
+        "CONTRACT-TDRP-ISSUE-CLOSER-FQT-DEF-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-ISSUE-CLOSER-ACTION-MASTER-DRIFT-001",
+        "TEMP-TDRP-ISSUE-CLOSER-UNAWAITED-WRITES-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-ISSUE-CLOSER-XML-DOWNLOAD-001",
+        "FAULT-TDRP-ISSUE-CLOSER-NPM-DRIFT-001",
+        "FAULT-TDRP-ISSUE-CLOSER-PARTIAL-WRITE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-ISSUE-CLOSER-GITHUB-TOKEN-001",
+        "SEC-TDRP-ISSUE-CLOSER-MUTABLE-SUPPLY-CHAIN-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-ISSUE-CLOSER-FQT-DEF-OWNER-REUSED-001",
+        "REG-TDRP-ISSUE-CLOSER-NO-RELEASE-ACCEPT-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [],
+      "test_fixture_ids": [
+        "locked issue_closer.yml + audit-time action_issue_closer master commit/action.yml/index.js + existing-owner symbols + parent exact-head artifacts"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact upstream workflow and audit-time provider commit/blob identities are retained. Telegram/macOS labels, version heuristics, external XML endpoint, provider issue copy and runtime npm resolution are provenance only unless independently adopted by current Fabushi owners.",
+      "reviewer": null,
+      "notes": "Strict index 85 closes only .github/workflows/issue_closer.yml as provider issue-intake routing maintenance provenance. The mutable action repository and external/runtime dependencies remain separate provenance inputs. Counters become unknown=16,218 unread=16,193 omitted=0 responsibilities=103. Next strict root index 86 .github/workflows/linux.yml@dbedd23593c5ea66ff9b8b880bda6a8bc5a4cc55. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions are required."
     }
   ]
 }
