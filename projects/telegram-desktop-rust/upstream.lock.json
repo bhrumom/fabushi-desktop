@@ -351,10 +351,10 @@
   "coverage": {
     "root_source_entries_total": 6885,
     "recursive_source_entries_total": 16371,
-    "unknown_minimum": 16280,
-    "unread_minimum": 16255,
+    "unknown_minimum": 16279,
+    "unread_minimum": 16254,
     "omitted_known": 0,
-    "note": "Live upstream dev authority remains 52a47639d9aa38713098974dd2ce07e631cb3381/42998681c09cdffcf75c0f38df71f663fc7b7b28. Parent exact-head a6cda99db19e161ce0fb10293ce9dfab6a774d1e completed TDRP run 39802801210 success (authority 12436243276 sha256:d8da6ce0fdc6223df6608a3f93591898c9bc4853d4ae76cd258753888d47dfc2; closure 12435669870 sha256:3039c7e0645c5a2800dda1d8a2a8f802e912cd6fb92744e4cfe429b558955478; reachability 12437790900 sha256:85e4887959f310b9f372bf0728680421d2d5cb6e7488987d9a9af05005a5e388) and Rust desktop runtime run 39802800404 at 6/6 success (artifact 12437170317 sha256:391fa1075fac02659cb1242ba046eadf885583d0a5967fc71f598131553c5526). Strict index 88 .github/workflows/mac.yml@184a94b091d2d7bab19ae67d7f3a5881b18213ba fully read and mapped to existing exact-head GitHub-Actions build/evidence governance. Counters unknown=16,280 unread=16,255 omitted=0 responsibilities=106. Next strict root index 89 .github/workflows/mac_packaged.yml@6e9f0b5bddfc3146bbed0bcd56a465bd584b89fc. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required."
+    "note": "Live upstream dev authority remains 52a47639d9aa38713098974dd2ce07e631cb3381/42998681c09cdffcf75c0f38df71f663fc7b7b28. Parent exact-head 7ec8ba94ecce7c73ce1e4e64094d48078390f6ff completed TDRP run 39806248818 success (authority 12437977489 sha256:0aca8417897124c7f5fa2a1b1a3347dffc1cee51c7fc73689b6ade19c769acb0; closure 12438127803 sha256:7bb5990fe69b00d5da3af769768e1c4a5cd08e5b347b2322e00a25c3a3e4f126; reachability 12438487569 sha256:d4e55dc63e2fa762e10d0e02de9e2b62d2206dd16fc3571a233369d79b779aab) and Rust desktop runtime run 39806249072 at 6/6 success (artifact 12438301671 sha256:02dbda3cd8159e572b1b5b4f49e45d751a09bea68a4198dd129b90abe48b28dc). Strict index 89 .github/workflows/mac_packaged.yml@6e9f0b5bddfc3146bbed0bcd56a465bd584b89fc fully read and mapped to existing exact-head build/supply-chain/release evidence governance. The RNNoise and WebRTC cache-key master SHAs are not checkout pins because later build steps clone master again; this TOCTOU remains explicit fail-closed provenance. Counters unknown=16,279 unread=16,254 omitted=0 responsibilities=107. Next strict root index 90 .github/workflows/master_updater.yml@fedc24f8e5d781a0bbdcdf80e24baf3eb2fe199f. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required."
   },
   "acceptance": {
     "baseline_ready": false,

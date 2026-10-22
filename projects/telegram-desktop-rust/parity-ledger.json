@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "52a47639d9aa38713098974dd2ce07e631cb3381",
-  "target_commit": "a6cda99db19e161ce0fb10293ce9dfab6a774d1e",
+  "target_commit": "7ec8ba94ecce7c73ce1e4e64094d48078390f6ff",
   "coverage": {
     "source_entries_total": 16371,
-    "unknown": 16280,
-    "unread": 16255,
+    "unknown": 16279,
+    "unread": 16254,
     "omitted": 0,
-    "responsibilities_total": 106,
+    "responsibilities_total": 107,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -28587,6 +28587,295 @@
       "license_and_provenance": "Exact mac.yml/direct input/provider identities retained. Mutable runner/Homebrew/Xcode/toolchain/cache/one-day unsigned binaries are CI provenance only and cannot establish Fabushi packaging, signing, release or acceptance.",
       "reviewer": null,
       "notes": "Strict index 88 closes only .github/workflows/mac.yml. Counters become unknown=16,280 unread=16,255 omitted=0 responsibilities=106. Next strict root index 89 .github/workflows/mac_packaged.yml@6e9f0b5bddfc3146bbed0bcd56a465bd584b89fc. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "52a47639d9aa38713098974dd2ce07e631cb3381",
+      "source_path": ".github/workflows/mac_packaged.yml",
+      "source_blob_sha": "6e9f0b5bddfc3146bbed0bcd56a465bd584b89fc",
+      "source_kind": "macos_packaged_ci_supply_chain_workflow",
+      "module_id": "tdesktop.github.workflows.mac_packaged",
+      "responsibility_id": "TDRP-R9-MACOS-PACKAGED-CI-SUPPLY-CHAIN-PROVENANCE-001",
+      "source_symbols": [
+        "TDE2E",
+        "TLOTTIE",
+        "WALLET_ENGINE",
+        "RUST_PATCHES",
+        "RUST_TOOLCHAIN",
+        "RNNOISE master ref lookup",
+        "WEBRTC master ref lookup",
+        "actions/cache@v6",
+        "git clone --depth=1 xiph/rnnoise master",
+        "git clone --depth=1 --recursive --shallow-submodules desktop-app/tg_owt master",
+        "TDESKTOP_API_TEST=ON",
+        "macdeployqt",
+        "codesign --remove-signature",
+        "actions/upload-artifact@v7",
+        "retention-days: 1"
+      ],
+      "capability_ids": [
+        "CAP-MACOS-PACKAGED-CI-SUPPLY-CHAIN",
+        "CAP-THIRD-PARTY-BUILD-PROVENANCE",
+        "CAP-CACHE-KEY-SOURCE-IDENTITY",
+        "CAP-UNSIGNED-PACKAGED-ARTIFACT-BOUNDARY",
+        "CAP-EXACT-HEAD-EVIDENCE-BOUNDARY"
+      ],
+      "dependency_ids": [
+        "actions/checkout@v7 -> 3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "actions/cache@v6 -> 55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "actions/upload-artifact@v7 -> cf430e030ddbb5b0abf93d22962f4752f3646cd9",
+        "desktop-app/patches@aec474953ff7ee9b6e4cd9b8658288ea86d124f3",
+        "desktop-app/patches/wallet-engine.patch@7d8af1c1197589cf46a0f9b752269b3c31bf062a",
+        "dkaraush/tlottie@92df98dc209bc39b1e567ec74a8c86a0af5239de / LICENSE@0f4cd8dc25aacf2ef7d2137b03ce1a21cd870e62 (MIT)",
+        "i582/wallet-engine@e59e0d89d7ee90c388bf36e3334c5b276f396697 / Cargo.toml@bb73d077a0b309f79a8133b68c7ea04846c19b82 (MIT OR Apache-2.0)",
+        "tdlib/td@51743dfd01dff6179e2d8f7095729caa4e2222e9 / LICENSE_1_0.txt@36b7cd93cdfbac762f5be4c6ce276df2ea6305c2 (Boost-1.0)",
+        "Rust toolchain 1.96.1 via mutable rustup installer download",
+        "xiph/rnnoise master cache-key snapshot 6cbfd53eb348a8d394e0757b4025c6ded34eb2b6 / COPYING@01ea4b1a2ac025fd9daa73a031b06c01fc57ed81, but build clone re-resolves master",
+        "desktop-app/tg_owt master cache-key snapshot 07fb35bc33b3e79125a1beab7690e830f183f5d8 / LICENSE@4c41b7b251e2f7606c70fad48eb92c8a2bc8e357, but build clone re-resolves master",
+        "Homebrew/Xcode/CMake/macdeployqt mutable runner/toolchain provenance"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/macos-packaged-ci-workflow-complete-read.md",
+      "behavior_contract": "Treat mac_packaged.yml as upstream macOS dependency-build and unsigned packaged-artifact provenance. Exact Rust/TDE2E commits are reviewable build inputs, but RNNoise and tg_owt query master only for cache keys and later clone master again, so cache identity does not bind built source. Mutable Homebrew/rustup/toolchains/caches and the final signature-stripped Telegram.app cannot become Fabushi source closure, signing, packaging, release or acceptance authority.",
+      "state_machine": "macOS-relevant push/PR -> dynamic runner -> recursive checkout -> mutable Homebrew/Xcode setup -> query RNNoise/tg_owt master SHAs for cache keys -> exact-pinned Rust/TDE2E dependency builds plus mutable rustup -> cache-dependent RNNoise/tg_owt master clones -> TDESKTOP_API_TEST packaged build -> macdeployqt -> remove signature -> one-day artifact",
+      "side_effects": [
+        "Homebrew update/upgrade/install",
+        "GitHub API master-ref reads",
+        "rustup installer/network fetch",
+        "exact git fetch/reset for Rust/TDE2E inputs",
+        "wallet-engine patch application",
+        "cache restore/write",
+        "shallow mutable-master clones for RNNoise/tg_owt",
+        "third-party compilation/install",
+        "Telegram.app build/deploy",
+        "codesign signature removal",
+        "one-day artifact upload"
+      ],
+      "failure_cases": [
+        "runner/Homebrew/Xcode drift",
+        "rustup installer drift",
+        "exact dependency fetch failure",
+        "wallet-engine patch mismatch",
+        "cache poisoning/staleness",
+        "RNNoise master moves between cache-key lookup and clone",
+        "tg_owt master moves between cache-key lookup and clone",
+        "recursive tg_owt submodule drift",
+        "build/test failure",
+        "macdeployqt failure",
+        "codesign removal failure",
+        "missing/expired artifact",
+        "unsigned upstream artifact mistaken for Fabushi release acceptance"
+      ],
+      "ui_disposition": "Repository build/supply-chain verification only; no shipping Fabushi UI capability.",
+      "non_ui_responsibilities": [
+        "macOS packaged CI trigger/runner selection",
+        "exact third-party pin provenance",
+        "mutable-master TOCTOU detection",
+        "cache/source identity boundary",
+        "third-party license provenance",
+        "unsigned packaged-build verification",
+        "artifact provenance",
+        "Fabushi signing/release acceptance separation"
+      ],
+      "platform_delta": "Upstream Telegram packaged macOS workflow contributes build/supply-chain responsibilities only. Fabushi retains source-neutral dependency provenance, packaging/signing/security and FQT release evidence owners; mutable upstream master clones and Telegram artifact identity are never adopted as canonical product/runtime truth.",
+      "existing_owner_candidates": [
+        "AGENTS release-preparation/exact-head governance (selected)",
+        "existing dependency/supply-chain provenance owners (shared)",
+        "Fabushi packaging/signing owners (shared)",
+        "FQT-REL-001/FQT-EVID-001 (shared)",
+        "new Telegram packaged runtime/release owner (rejected)"
+      ],
+      "existing_owner": "AGENTS release-preparation and exact-head evidence governance with existing Fabushi dependency provenance, packaging/signing, FQT-REL-001 and FQT-EVID-001 owners",
+      "rejected_existing_owners": [
+        "cache keys cannot own built-source identity when build clone re-resolves master",
+        "unsigned Telegram.app cannot own Fabushi packaging/signing/release truth",
+        "upstream workflow cannot become a second release authority",
+        "mutable runner/toolchain state cannot become accepted source"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md"
+      ],
+      "fabushi_target_symbols": [
+        "Actual Fabushi release remains gated by the applicable project spec, `FQT-REL-001`, exact artifact provenance, zero blocking defects, complete RTM/evidence, and independent acceptance; preparation must never turn a merely green build or artifact into release ACCEPT."
+      ],
+      "target_language": "Repository supply-chain/build/release evidence governance",
+      "language_rationale": "macOS packaged CI maps to existing source-neutral dependency, exact-head, packaging/signing and release evidence owners rather than shipping product code.",
+      "command_event_contracts": [
+        "push/PR path-scope and dynamic runner selection",
+        "exact pins for TDE2E/tlottie/wallet-engine/rust-patches",
+        "Rust toolchain version does not pin mutable rustup installer bytes",
+        "RNNoise/tg_owt master SHA lookup only keys cache; it does not bind later master clone",
+        "cache hit cannot establish source identity or correctness",
+        "TDESKTOP_API_TEST build plus macdeployqt remains upstream build provenance",
+        "codesign --remove-signature makes final artifact explicitly non-signing evidence",
+        "one-day artifact cannot establish Fabushi release acceptance"
+      ],
+      "state_owner": "Exact source/dependency/run/artifact identities plus explicit unresolved mutable-master acquisition state; cache keys and runner state are non-authoritative.",
+      "lifecycle_owner": "Exact source audit -> dependency/provenance resolution -> current-head CI -> Fabushi package/sign/notarize/device/release gates -> independent acceptance.",
+      "persistence_and_restart": "Caches and one-day artifacts are disposable CI state. Exact dependency commits, mutable acquisition observations, run IDs and artifact digests are durable evidence references; a fresh run must revalidate mutable inputs.",
+      "concurrency_and_cancellation": "No workflow concurrency group. Master branches can move between ref lookup and clone; this race is fail-closed provenance. Cancelled/failed/stale-head/cache-only evidence cannot advance acceptance.",
+      "security_boundary": "GitHub/Depot runners, github.token master-ref reads, mutable rustup/Homebrew/toolchains, recursive tg_owt submodules, caches and unsigned Telegram.app are supply-chain inputs only. They never receive Fabushi signing/release authority.",
+      "network_service_dependencies": [
+        "GitHub checkout/cache/artifact APIs",
+        "GitHub REST master-ref endpoints",
+        "GitHub source repositories for pinned and mutable acquisitions",
+        "sh.rustup.rs",
+        "Homebrew registries",
+        "Depot/GitHub macOS runners"
+      ],
+      "service_owner": "Existing repository supply-chain/build infrastructure plus Fabushi packaging/signing/FQT release evidence governance",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "policy-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required after this strict89 mapping commit.",
+        "RNNoise/tg_owt mutable-master clone TOCTOU remains non-authoritative upstream provenance and cannot satisfy exact acquisition identity.",
+        "Recursive tg_owt/subdependency and remaining source closure stay open until their own inventory rows are dispositioned.",
+        "Fabushi signed/package/device/independent release acceptance remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "mac_packaged.yml fully read: 254 line slots / 9952 bytes at blob 6e9f0b5bddfc3146bbed0bcd56a465bd584b89fc.",
+        "Exact pins resolved: desktop-app/patches@aec474953ff7ee9b6e4cd9b8658288ea86d124f3, dkaraush/tlottie@92df98dc209bc39b1e567ec74a8c86a0af5239de, i582/wallet-engine@e59e0d89d7ee90c388bf36e3334c5b276f396697, tdlib/td@51743dfd01dff6179e2d8f7095729caa4e2222e9.",
+        "License provenance read: tlottie MIT, wallet-engine Cargo manifest MIT OR Apache-2.0, td Boost-1.0, RNNoise COPYING, tg_owt LICENSE; desktop-app/patches root common-license filenames were not found and its applied wallet-engine.patch is separately SHA-anchored.",
+        "At audit time xiph/rnnoise master resolved to 6cbfd53eb348a8d394e0757b4025c6ded34eb2b6 and desktop-app/tg_owt master to 07fb35bc33b3e79125a1beab7690e830f183f5d8, but workflow later shallow-clones master without resetting to either observed SHA.",
+        "Final Telegram.app is passed through macdeployqt and codesign --remove-signature before a one-day artifact upload.",
+        "Parent exact-head 7ec8ba94ecce7c73ce1e4e64094d48078390f6ff completed TDRP run 39806248818 success (authority 12437977489 sha256:0aca8417897124c7f5fa2a1b1a3347dffc1cee51c7fc73689b6ade19c769acb0; closure 12438127803 sha256:7bb5990fe69b00d5da3af769768e1c4a5cd08e5b347b2322e00a25c3a3e4f126; reachability 12438487569 sha256:d4e55dc63e2fa762e10d0e02de9e2b62d2206dd16fc3571a233369d79b779aab) and Rust desktop runtime run 39806249072 at 6/6 success (artifact 12438301671 sha256:02dbda3cd8159e572b1b5b4f49e45d751a09bea68a4198dd129b90abe48b28dc)."
+      ],
+      "target_commit": "7ec8ba94ecce7c73ce1e4e64094d48078390f6ff",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository supply-chain/build/release evidence governance",
+      "composition_slot": "macOS packaged CI provenance adapter",
+      "capability_component": "macOS packaged dependency/build provenance mapping",
+      "variation_axes": [
+        "push/PR",
+        "Depot/GitHub runner",
+        "Homebrew/Xcode/rustup drift",
+        "exact pin fetch success/failure",
+        "cache hit/miss/stale",
+        "RNNoise master race",
+        "tg_owt master/submodule race",
+        "wallet-engine patch apply/fail",
+        "build/macdeployqt success/fail",
+        "signature present/removed",
+        "artifact present/expired",
+        "upstream build/Fabushi release boundary"
+      ],
+      "shared_owner_contracts": [
+        "AGENTS release-preparation governance",
+        "dependency/supply-chain provenance owners",
+        "Fabushi packaging/signing",
+        "FQT-REL-001",
+        "FQT-EVID-001"
+      ],
+      "duplicate_root_check": "No second dependency truth, macOS runtime, package/signing root, Telegram release authority or acceptance owner is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository supply-chain/build verification",
+      "detail_section": "Not applicable",
+      "capability_surface": "macOS packaged CI provenance adapter",
+      "route_contract": "push/PR -> setup -> cache-key source observations -> pinned/mutable dependency acquisition -> build/install -> packaged app -> signature removal -> ephemeral artifact",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Exact pins and current-head artifacts carry evidence continuity; cache keys, mutable master branches, runner/toolchain state and unsigned upstream app do not.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MACOS-PACKAGED-CI-SUPPLY-CHAIN-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MACOS-PACKAGED-EXACT-PINS-001",
+        "ORA-TDRP-MACOS-PACKAGED-MASTER-TOCTOU-001",
+        "ORA-TDRP-MACOS-PACKAGED-UNSIGNED-ARTIFACT-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MACOS-PACKAGED-CACHE-NO-SOURCE-AUTHORITY-001",
+        "INV-TDRP-MACOS-PACKAGED-MASTER-LOOKUP-NOT-CHECKOUT-PIN-001",
+        "INV-TDRP-MACOS-PACKAGED-NO-RELEASE-AUTHORITY-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MACOS-PACKAGED-SUPPLY-CHAIN-001",
+        "CONTRACT-TDRP-MACOS-PACKAGED-FABUSHI-RELEASE-BOUNDARY-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-MACOS-PACKAGED-RNNOISE-MASTER-RACE-001",
+        "TEMP-TDRP-MACOS-PACKAGED-WEBRTC-MASTER-RACE-001",
+        "TEMP-TDRP-MACOS-PACKAGED-RUNNER-TOOLCHAIN-DRIFT-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-MACOS-PACKAGED-CACHE-STALENESS-001",
+        "FAULT-TDRP-MACOS-PACKAGED-PATCH-APPLY-001",
+        "FAULT-TDRP-MACOS-PACKAGED-ARTIFACT-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MACOS-PACKAGED-SUPPLY-CHAIN-001",
+        "SEC-TDRP-MACOS-PACKAGED-UNSIGNED-BOUNDARY-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-MACOS-PACKAGED-MUTABLE-MASTER-FAIL-CLOSED-001",
+        "REG-TDRP-MACOS-PACKAGED-NO-RELEASE-ACCEPT-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [],
+      "test_fixture_ids": [
+        "locked mac_packaged.yml + exact dependency commits/licenses + mutable-master observations + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact workflow, action and pinned third-party commit identities retained with available license manifests. RNNoise/tg_owt master observations are explicitly not checkout pins; rustup/Homebrew/runner state and one-day signature-stripped Telegram.app remain mutable/non-release provenance.",
+      "reviewer": null,
+      "notes": "Strict index 89 closes only .github/workflows/mac_packaged.yml. Counters become unknown=16,279 unread=16,254 omitted=0 responsibilities=107. Next strict root index 90 .github/workflows/master_updater.yml@fedc24f8e5d781a0bbdcdf80e24baf3eb2fe199f. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required."
     }
   ]
 }
