@@ -18,6 +18,7 @@ jobs:
       UPSTREAM_REPO: openclaw/openclaw
       UPSTREAM_COMMIT: ad8d12f126d29b0db204187adf5092db80294e70
       UPSTREAM_TREE: 04ccce62f1d74dc8e0c88290ae8ded027b7b0f16
+      SUBJECT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - name: Checkout exact subject
         uses: actions/checkout@v4
@@ -64,7 +65,7 @@ jobs:
           mkdir -p ocrm-evidence
           git -C upstream ls-tree -r -z --full-tree "$UPSTREAM_COMMIT" > ocrm-evidence/ls-tree.z
           python3 - <<'PY'
-          import hashlib, json
+          import hashlib, json, os
           from pathlib import Path
           raw=Path("ocrm-evidence/ls-tree.z").read_bytes()
           entries=[]
@@ -94,7 +95,7 @@ jobs:
           out.write_text(json.dumps(payload,ensure_ascii=False,sort_keys=True,separators=(",",":"))+"\n")
           Path("ocrm-evidence/upstream-recursive-inventory.sha256").write_text(hashlib.sha256(out.read_bytes()).hexdigest()+"\n")
           Path("ocrm-evidence/authority-summary.json").write_text(json.dumps({
-            "subject_commit":"${{ github.event.pull_request.head.sha || github.sha }}",
+            "subject_commit":os.environ["SUBJECT_SHA"],
             "upstream_commit":payload["upstream"]["commit"],
             "upstream_tree":payload["upstream"]["tree"],
             **counts,
