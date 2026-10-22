@@ -1,0 +1,28 @@
+{
+  "format_version": 1,
+  "project_id": "OCRM-001",
+  "spec_revision": 1,
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "ad8d12f126d29b0db204187adf5092db80294e70",
+    "tree": "04ccce62f1d74dc8e0c88290ae8ded027b7b0f16",
+    "baseline_identity_accepted": false
+  },
+  "inventory": {
+    "tracked_entries_total": null,
+    "blob_entries_total": null,
+    "symlink_entries_total": null,
+    "gitlink_entries_total": null,
+    "lfs_pointer_entries_total": null,
+    "semantic_read_complete": false,
+    "responsibility_decomposition_complete": false,
+    "unread": "unknown",
+    "unclassified": "unknown",
+    "omitted_known": 0
+  },
+  "authority": {
+    "generator": ".github/workflows/ocrm-p0-authority.yml",
+    "latest_exact_head_evidence": null,
+    "source_closure_ready": false
+  }
+}
