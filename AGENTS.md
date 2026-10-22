@@ -361,3 +361,21 @@ TDRP-001 remains source-informed and is not clean-room. Do not claim Rust automa
 **FBCP-001 / TDRP-001 project exception:** all executable verification for this migration project runs **only in GitHub Actions**. The repository-wide `htch-runtime` allowance above does not apply to FBCP/TDRP. This includes build, lint, generator, schema, unit/property/state-machine, contract, integration, E2E, temporal, visual, accessibility, performance, soak, fault-injection, package and acceptance runs.
 
 Read-only investigation, spec/test-plan editing, evidence review and Git/API operations may occur outside Actions. Missing runner/account/service/signing configuration is blocked, never pass.
+
+## OpenClaw full-source Rust equivalence — OCRM-001
+
+For OpenClaw-derived implementation, interoperability, source accounting or acceptance work, read:
+
+- `projects/openclaw-rust/SOURCE_OF_TRUTH.md`;
+- `docs/specs/openclaw-rust-equivalence-migration.md`;
+- `projects/openclaw-rust/module-map.md`;
+- the current OCRM task, exact-source lock/inventory/ledger/dossiers, applicable domain specs and actual canonical Fabushi production owners.
+
+OCRM requires the complete pinned source responsibility scope, file-by-file understanding and Rust implementation integrated existing-owner-first into current Fabushi. Preserve all current Bot capabilities and independent Coordinator/Host/Runner/Electron/renderer boundaries. React/Electron remain presentation and thin platform bridges; migrated business state, policy, protocols, scheduling, persistence and execution control belong to Rust. No parallel OpenClaw runtime, Agent loop, session store, scheduler or marketplace may become a second production owner.
+
+Optional external-channel, Gateway/SDK and node interoperability is included by OCRM through scoped adapters under existing owners; it does not replace Fabushi native identity, messaging, network or canonical state. FBCP/TDRP requirements and evidence remain independently applicable.
+
+Directory enumeration, source reading, mapped responsibilities, implemented code, production wiring, verified behavior and packaged acceptance are separate states. Never promote one to another without its required evidence. Missing accounts, services, devices or signing remain blocked; continue independent work without weakening the final scope.
+
+**OCRM project execution rule:** every executable validation, including generators, schema checks, builds, tests, packaging and acceptance, runs only in GitHub Actions. The repository-wide `htch-runtime` allowance does not apply to OCRM. Read-only investigation, editing, Git/API operations and evidence review are allowed outside Actions.
+
