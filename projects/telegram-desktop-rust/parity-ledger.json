@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
-  "target_commit": "664f62f7cf7b24734848de0ff843b4a381165440",
+  "target_commit": "833e1b0ff6826177c5aef2baff8f99c9c8980f4e",
   "coverage": {
     "source_entries_total": 16306,
-    "unknown": 16226,
-    "unread": 16201,
+    "unknown": 16225,
+    "unread": 16200,
     "omitted": 0,
-    "responsibilities_total": 95,
+    "responsibilities_total": 96,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -25813,6 +25813,235 @@
       "reviewer": null,
       "license_and_provenance": "Exact upstream Dockerfile and direct consumer blob SHAs retained; Telegram Bot API image name, Ubuntu/runtime package choices, port, local-mode flag and GHCR path remain provenance only.",
       "notes": "Strict index 77 closes only .github/telegram-bot-api/Dockerfile. Counters become unknown=16226 unread=16201 omitted=0 responsibilities=95. Direct entrypoint/canary workflows were audited as consumers but remain independent strict entries. Next strict root index 78 .github/telegram-bot-api/entrypoint.sh@d40a7372efd8e5862e00f9b214b36a840688797e. Closure flags remain false.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
+      "source_path": ".github/telegram-bot-api/entrypoint.sh",
+      "source_blob_sha": "d40a7372efd8e5862e00f9b214b36a840688797e",
+      "source_kind": "repository_release_support_container_entrypoint",
+      "module_id": "tdesktop.github.telegram_bot_api.entrypoint",
+      "responsibility_id": "TDRP-R9-RELEASE-SUPPORT-CONTAINER-ENTRYPOINT-001",
+      "source_symbols": [
+        "set -e",
+        "exec /usr/local/bin/telegram-bot-api",
+        "--http-port=8081",
+        "--dir=/data",
+        "--temp-dir=/data/temp",
+        "${TELEGRAM_LOCAL:+--local}",
+        "\"$@\""
+      ],
+      "capability_ids": [
+        "CAP-RELEASE-SUPPORT-CONTAINER-ENTRYPOINT",
+        "CAP-CANARY-SERVICE-PROCESS-HANDOFF"
+      ],
+      "dependency_ids": [
+        "AGENTS.md@da3e37258c74963970ff5cfc5d54671a37558b97#Repository release-support container provenance governance",
+        ".github/telegram-bot-api/Dockerfile@a361602441040028a3332c3732c4902d9c880122",
+        ".github/workflows/canary-bot-api.yml@7285f29ed2a09695a02b8f7821c10df5aa50bc44",
+        ".github/workflows/canary.yml@0d460c617c2a3910a0d11ac793d07533ac966947"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/release-support-container-entrypoint-complete-read.md",
+      "behavior_contract": "Start the declared canary service as the container's owned process with fail-fast shell semantics, replace the shell via exec so signals/exit status belong to the service, project only declared fixed port/data/temp arguments and optional local mode, and preserve explicit caller argv without becoming a Fabushi product runtime.",
+      "state_machine": "container starts -> shell fails closed on setup error -> compose fixed runtime arguments + optional TELEGRAM_LOCAL projection + caller argv -> exec service as PID1 -> service owns signals/exit -> container terminates with service; no wrapper-owned background process or hidden retry state",
+      "side_effects": [
+        "Launches the already-built canary service binary as the container process.",
+        "Binds the service to declared HTTP/data/temp arguments and optional local mode.",
+        "Passes through explicit caller arguments unchanged.",
+        "Must not create persistent Fabushi product state, retry supervisors, credential stores or a second messaging runtime."
+      ],
+      "failure_cases": [
+        "shell continues after setup failure",
+        "wrapper forks/backgrounds instead of exec and therefore intercepts signal/exit semantics",
+        "fixed port/data/temp projection drifts from container/workflow contract",
+        "optional local mode becomes implicit or unconditional",
+        "caller argv is dropped, reordered or interpreted by the wrapper",
+        "entrypoint logs or persists secrets",
+        "Telegram Bot API process is mistaken for a Fabushi shipping service owner"
+      ],
+      "ui_disposition": "Repository release-support container process adapter only; no shipping Fabushi UI capability.",
+      "non_ui_responsibilities": [
+        "fail-fast entrypoint execution",
+        "exec-as-PID1 signal/exit propagation",
+        "deterministic fixed argument projection",
+        "optional environment-to-flag projection",
+        "explicit argv passthrough",
+        "no wrapper-owned retry/persistence/service authority"
+      ],
+      "platform_delta": "Upstream entrypoint launches Telegram Bot API with source-specific port/data/local-mode conventions. Fabushi retains only the source-neutral container process-handoff contract inside existing release-support governance; the Telegram binary and arguments remain canary provenance.",
+      "existing_owner_candidates": [
+        "AGENTS.md Repository release-support container provenance governance (selected)",
+        "strict77 release-support container provenance owner (selected)",
+        "new Telegram Bot API runtime/process owner (rejected)",
+        "new service supervisor owner (rejected)"
+      ],
+      "existing_owner": "AGENTS.md source-neutral Repository release-support container provenance governance established by strict77; entrypoint is a bounded adapter under that owner",
+      "rejected_existing_owners": [
+        "A 12-line exec wrapper does not own a shipping service or messaging protocol.",
+        "No independent supervisor/persistence owner is needed because exec transfers process lifecycle to the existing canary service process.",
+        "Telegram port/path/local-mode names are provenance-specific."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md"
+      ],
+      "fabushi_target_symbols": [
+        "Every image must bind its base image, fetched external source revision, recursive dependency materialization, build outputs and runtime entrypoint to reviewable exact provenance."
+      ],
+      "target_language": "Repository governance / POSIX container entrypoint adapter",
+      "language_rationale": "The source is a shell process wrapper for release-support infrastructure; applicable lifecycle and argument responsibilities map to existing container provenance governance rather than Rust/React product code.",
+      "command_event_contracts": [
+        "fail closed before service handoff",
+        "exec the owned service instead of backgrounding it",
+        "project only declared fixed port/data/temp arguments",
+        "enable optional mode only from explicit environment input",
+        "pass explicit caller argv unchanged",
+        "propagate service signal/exit semantics",
+        "never become product/service authority"
+      ],
+      "state_owner": "No independent canonical state; service process owns runtime lifecycle while repository/workflow/image digest own provenance.",
+      "lifecycle_owner": "Container start -> exec service PID1 -> downstream canary publish job health/use -> container teardown under existing release-support workflow.",
+      "persistence_and_restart": "No wrapper persistence. Restart reconstructs arguments from immutable image plus explicit environment/argv; /data remains bounded service runtime state defined by the existing container contract.",
+      "concurrency_and_cancellation": "One entrypoint invocation owns one service process; cancellation/termination signals propagate to the exec'd process without wrapper background ownership.",
+      "security_boundary": "API credentials are read by the service from environment; the wrapper neither logs nor persists them. Optional local mode and caller argv are explicit inputs; no privilege elevation or secret transformation is introduced.",
+      "network_service_dependencies": [
+        "Only the already-built canary service process; no new Fabushi product network dependency."
+      ],
+      "service_owner": "Existing release-support container/workflow infrastructure; Telegram Bot API remains upstream-specific canary support",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "policy-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required.",
+        "Recursive source disposition remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "Strict78 .github/telegram-bot-api/entrypoint.sh@d40a7372efd8e5862e00f9b214b36a840688797e fully read: 12 lines / 322 bytes.",
+        "Complete read confirms set -e, exec-only service handoff, --http-port=8081, --dir=/data, --temp-dir=/data/temp, optional TELEGRAM_LOCAL -> --local projection and quoted argv passthrough.",
+        "Direct build/consumer chain remains Dockerfile@a361602441040028a3332c3732c4902d9c880122 -> canary-bot-api.yml@7285f29ed2a09695a02b8f7821c10df5aa50bc44 -> canary.yml@0d460c617c2a3910a0d11ac793d07533ac966947.",
+        "Parent exact-head TDRP run 39754803001 completed 61/61 success: authority 12416040532 sha256:7a6b2e50e9197724290297de9b50c98c89a5e20ba193173eff1c62fc721dd708; closure 12415421804 sha256:d68b4201563c6387af7888f0061d5bdd1fdf7fb0d67c152e646b5c85a2017bd0; reachability 12415417450 sha256:3c5e5468bd4b7c2acab3d312c6630808e03ed16a64e1ee282b426d4396b1702c.",
+        "Parent exact-head Rust run 39754803009 completed 6/6 success: artifact 12415945992 sha256:ebefc34b82760388d6a5ddf056a2148e0d4a758937805d534fe37f2efa907880."
+      ],
+      "target_commit": "833e1b0ff6826177c5aef2baff8f99c9c8980f4e",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository release-support container provenance and exact-head release/evidence lifecycle",
+      "composition_slot": "Container process-entry adapter beneath the immutable canary image contract",
+      "capability_component": "Source-neutral fail-fast exec handoff and deterministic runtime argument projection",
+      "variation_axes": [
+        "local mode unset/set",
+        "no extra argv/extra argv",
+        "normal exit/signal termination",
+        "declared argument drift"
+      ],
+      "shared_owner_contracts": [
+        "AGENTS.md Repository release-support container provenance governance",
+        "strict77 immutable container/source provenance",
+        "strict79 image build/publish adapter",
+        "strict80 digest-pinned release consumer"
+      ],
+      "duplicate_root_check": "No Telegram Bot API runtime, process supervisor, second messaging service, state store or release authority is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository canary/release-support entrypoint only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Bounded container process-entry adapter",
+      "route_contract": "container start -> fail-fast argument projection -> exec service PID1 -> downstream canary consumer -> existing release/evidence gates",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "No wrapper-owned continuity; immutable image/workflow identity plus explicit env/argv reconstruct runtime handoff after restart.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-RELEASE-SUPPORT-CONTAINER-ENTRYPOINT-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CONTAINER-ENTRYPOINT-EXEC-001",
+        "ORA-TDRP-CONTAINER-ENTRYPOINT-ARGUMENTS-001",
+        "ORA-TDRP-CONTAINER-ENTRYPOINT-NO-RUNTIME-OWNER-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CONTAINER-ENTRYPOINT-PID1-001",
+        "INV-TDRP-CONTAINER-ENTRYPOINT-NO-SECRET-PERSISTENCE-001",
+        "INV-TDRP-CONTAINER-ENTRYPOINT-NO-SECOND-RUNTIME-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CONTAINER-ENTRYPOINT-EXEC-001",
+        "CONTRACT-TDRP-CONTAINER-ENTRYPOINT-LOCAL-MODE-001",
+        "CONTRACT-TDRP-CONTAINER-ENTRYPOINT-ARGV-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CONTAINER-ENTRYPOINT-ARG-DRIFT-001",
+        "FAULT-TDRP-CONTAINER-ENTRYPOINT-SIGNAL-OWNERSHIP-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CONTAINER-ENTRYPOINT-NO-SECRET-LOGGING-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-CONTAINER-ENTRYPOINT-NO-TELEGRAM-RUNTIME-001"
+      ],
+      "release_gate_ids": [],
+      "test_fixture_ids": [
+        "locked entrypoint.sh + Dockerfile/workflow consumer chain + parent exact-head PR/ref/tree/upstream lease + TDRP/Rust artifacts"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "release_gate_status": "open",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact upstream entrypoint.sh blob retained. Telegram Bot API binary path, port, data/temp paths and TELEGRAM_LOCAL flag remain source provenance only.",
+      "notes": "Strict index 78 closes only .github/telegram-bot-api/entrypoint.sh. Counters become unknown=16225 unread=16200 omitted=0 responsibilities=96. strict79/strict80 were read for consumer context but remain independent unread strict entries. Next strict root index 79 .github/workflows/canary-bot-api.yml@7285f29ed2a09695a02b8f7821c10df5aa50bc44. Closure flags remain false.",
       "test_execution_evidence": []
     }
   ]

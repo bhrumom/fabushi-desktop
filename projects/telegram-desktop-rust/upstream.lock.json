@@ -337,10 +337,10 @@
   "coverage": {
     "root_source_entries_total": 6820,
     "recursive_source_entries_total": 16306,
-    "unknown_minimum": 16226,
-    "unread_minimum": 16201,
+    "unknown_minimum": 16225,
+    "unread_minimum": 16200,
     "omitted_known": 0,
-    "note": "Live dev authority e14f1566d277d2204f4c8e553bf7cc157047e88b/241f8ab614292cc90e395ef0c966e289fdb3e985 remains unaccepted because full recursive source closure is open. Parent exact-head 664f62f7cf7b24734848de0ff843b4a381165440 completed TDRP run 39751838487 at 61/61 success and Rust run 39751838493 at 6/6 success. Strict index 77 .github/telegram-bot-api/Dockerfile@a361602441040028a3332c3732c4902d9c880122 is fully read: digest-pinned base, exact external-ref checkout with recursive submodules, build/runtime separation, minimal runtime dependencies, non-root execution, writable /data ownership and explicit entrypoint/port responsibilities map to current Fabushi build-input provenance, release packaging, security/permission and FQT evidence owners. The Telegram Bot API canary runtime itself is provenance only and cannot become a second messaging service, provider, sidecar, identity/storage owner or release authority. Counters unknown=16,226, unread=16,201, omitted=0. Next strict root index 78 .github/telegram-bot-api/entrypoint.sh@d40a7372efd8e5862e00f9b214b36a840688797e. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions are required."
+    "note": "Live dev authority e14f1566d277d2204f4c8e553bf7cc157047e88b/241f8ab614292cc90e395ef0c966e289fdb3e985 remains unaccepted because full recursive source closure is open. Parent exact-head 833e1b0ff6826177c5aef2baff8f99c9c8980f4e completed TDRP run 39754803001 at 61/61 success and Rust run 39754803009 at 6/6 success. Strict index 78 .github/telegram-bot-api/entrypoint.sh@d40a7372efd8e5862e00f9b214b36a840688797e is fully read: set -e plus exec handoff preserves exit/signal ownership, fixed service/data/temp arguments make runtime projection deterministic, TELEGRAM_LOCAL is an optional source-specific mode projection, and \"$@\" preserves explicit caller arguments. These responsibilities stay under current release-support container provenance governance; no Telegram runtime or second service owner is introduced. Counters unknown=16,225, unread=16,200, omitted=0. Next strict root index 79 .github/workflows/canary-bot-api.yml@7285f29ed2a09695a02b8f7821c10df5aa50bc44. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions are required."
   },
   "acceptance": {
     "baseline_ready": false,
