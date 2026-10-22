@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
-  "target_commit": "1be25d01d4c235ec38461db748cb600e155e58eb",
+  "target_commit": "33019a2459f3ed8dbd2b62cbe6d9dcf863a69ac5",
   "coverage": {
     "source_entries_total": 16306,
-    "unknown": 16246,
-    "unread": 16221,
+    "unknown": 16245,
+    "unread": 16220,
     "omitted": 0,
-    "responsibilities_total": 75,
+    "responsibilities_total": 76,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -20850,6 +20850,243 @@
       "reviewer": null,
       "license_and_provenance": "Exact .clang-tidy policy read from locked telegramdesktop/tdesktop live-dev blob; no upstream C++ or Qt runtime copied.",
       "notes": "Strict index 57 closes only .clang-tidy. Counters become unknown=16246 unread=16221 omitted=0 responsibilities=75. Next strict root index 58 .claude/ai-workflow-adapter.md@370ff84a1ab4c080b15b601a54162b0630c4f4df. Closure flags remain false.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_path": ".claude/ai-workflow-adapter.md",
+      "source_blob_sha": "370ff84a1ab4c080b15b601a54162b0630c4f4df",
+      "source_kind": "repository_ai_workflow_host_adapter_policy",
+      "module_id": "tdesktop.claude.ai-workflow-adapter",
+      "responsibility_id": "TDRP-R9-CLAUDE-AI-WORKFLOW-ADAPTER-001",
+      "source_symbols": [
+        "Delegation",
+        "Review and assessment provider",
+        "Model self-reporting",
+        "Text handling",
+        "Source lineage and branch routing",
+        "UI-driver capability",
+        "Concurrent routing lane"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-AI-WORKFLOW-ADAPTER",
+        "CAP-REPOSITORY-AI-WORKER-LIFECYCLE",
+        "CAP-REPOSITORY-REVIEW-EVIDENCE"
+      ],
+      "dependency_ids": [
+        ".agents/shared/phase-effort.md@dd07a4c611922a29a6892332db98afe76cd58952",
+        ".agents/shared/codex-cli-leaves.md@659da44a8083c433c4e9b59ca28f64ba525bfbf8",
+        ".agents/skills/continue/SKILL.md@aeb81dd57018abbc8f03ea3dbd34f91952128db5",
+        ".agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c",
+        ".agents/skills/process-inbox/scripts/workspace.py@5d74a11083d66f2ebe9bbf0fcf2e991fa2c6c1c5",
+        "GitHub Actions exact-head verification boundary"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/claude-ai-workflow-adapter-complete-read.md",
+      "behavior_contract": "Explicitly loaded Claude Code host adapter that keeps the shared repository workflow authoritative while translating delegation, effort/model, review-provider, source-lineage, UI-driver and routing mechanics without creating a second workflow or shipping runtime.",
+      "state_machine": "explicit adapter load -> shared phase/task authority -> host-capability translation -> single-writer/foreground completion or bounded provider fallback -> validate repository/artifact state -> exact-head Actions evidence",
+      "side_effects": [
+        "May select Claude Agent/Codex review-provider mechanics for repository-development phases.",
+        "May permit the existing routing/consolidation lanes to run as bounded background workers under the shared single-writer publication contract.",
+        "Creates no shipping Fabushi account, conversation, task, automation, message, resource or runtime state."
+      ],
+      "failure_cases": [
+        "Provider-specific mechanics are treated as a second authoritative workflow or shipping runtime.",
+        "A phase or stateful worker is duplicated while its original writer may still be active.",
+        "Detached start, progress notification, artifact appearance or missing runner is misclassified as terminal success.",
+        "Model/effort capabilities unsupported by the host are reported as if applied.",
+        "Source-lineage mismatch is bypassed by a worker integrating history or by a scheduler silently broadening scope.",
+        "Driver/provider unavailability is converted into passing evidence or skipped required verification.",
+        "Fresh child exact-head source-authority/runtime evidence is absent."
+      ],
+      "ui_disposition": "Not applicable; repository-development host adapter only.",
+      "non_ui_responsibilities": [
+        "Host delegation mapping and single-writer lifecycle",
+        "Effort/model truth and fallback recording",
+        "Review-provider selection and terminal wait semantics",
+        "Current-branch claim/source-lineage fencing",
+        "Text-normalization host exception without content-gate relaxation",
+        "UI-driver capability truth",
+        "Bounded routing/consolidation background-lane adaptation"
+      ],
+      "platform_delta": "Claude-specific Agent/model/wait/background syntax is provider mechanics. Applicable lifecycle and evidence guarantees remain source-neutral repository governance; no Claude/Codex product dependency is introduced.",
+      "existing_owner_candidates": [
+        "AGENTS.md#Worker/phase effort and model inheritance",
+        "AGENTS.md#Out-of-process AI worker lifecycle safety",
+        "AGENTS.md#Out-of-process AI worker adapter execution",
+        "Shipping Agent/Coordinator/Host/Runner (rejected)",
+        "Shipping Task/Automation/Workflow (rejected)"
+      ],
+      "existing_owner": "Fabushi source-neutral repository AI development/review/evidence lifecycle",
+      "rejected_existing_owners": [
+        "Shipping Agent/Coordinator/Host/Runner own product execution, not repository-development AI workers.",
+        "Shipping Task/Automation/Workflow own user/product work, not Git/source-lineage or review-provider orchestration.",
+        "A Claude/Codex product runtime or provider-specific evidence store would duplicate source-neutral repository lifecycle ownership.",
+        "A second repository scheduler/task queue would violate existing-owner-first and the adapter's shared-authority contract."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md"
+      ],
+      "fabushi_target_symbols": [
+        "Worker/phase effort and model inheritance",
+        "Out-of-process AI worker lifecycle safety",
+        "Out-of-process AI worker adapter execution"
+      ],
+      "target_language": "Markdown repository governance / GitHub Actions evidence",
+      "language_rationale": "Provider-specific development-workflow policy is retained as source-neutral repository governance rather than shipping Rust/TypeScript or a Claude runtime.",
+      "command_event_contracts": [
+        "explicit adapter load -> shared workflow remains authoritative",
+        "phase assignment -> truthful supported effort/model mapping -> durable fallback record",
+        "leaf start -> same-run sanctioned completion -> validate required artifacts/state",
+        "provider unavailable -> declared native fallback -> record reason",
+        "pre-Phase-1 lineage mismatch -> scheduler routing boundary, not worker history integration",
+        "routing/consolidation start -> one bounded writer per lane -> landed publication validation"
+      ],
+      "state_owner": "Existing Fabushi repository development/review/evidence lifecycle; provider workers own only development evidence scoped to their run.",
+      "lifecycle_owner": "Fabushi root AGENTS.md repository AI worker/review lifecycle plus exact-head GitHub Actions verification.",
+      "persistence_and_restart": "No product persistence. Durable repository evidence binds worker/run identity, phase artifacts, source lineage, publication state and exact-head Actions; restart resumes the same proven writer/publication instead of duplicating it.",
+      "concurrency_and_cancellation": "Ordinary phase leaves and performers are foreground/synchronous; duplicate stateful writers are forbidden. Only routing and pending-task consolidation may use bounded one-per-lane background workers. Relaunch requires proof that the old writer stopped.",
+      "security_boundary": "Provider capability/authentication and child environment changes are fail-closed and child-scoped; no automatic install/login/global configuration mutation, no worker-authored history integration, and no provider failure can become passing evidence.",
+      "network_service_dependencies": [
+        "GitHub Actions for exact-head executable verification"
+      ],
+      "service_owner": "Fabushi repository development/review/evidence lifecycle",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "toolchain-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP and Rust Actions are required.",
+        "Recursive source disposition remains open; baseline_identity_accepted=false and source_closure_ready=false."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "Full locked .claude/ai-workflow-adapter.md read: 216 lines and all seven responsibility sections accounted.",
+        "Same-upstream dependency reads: phase-effort, Codex CLI leaves, continue and perform-task shared authorities plus workspace.py source-lineage owner.",
+        "Parent exact-head TDRP run 39701315580 and Rust run 39701315674 completed success; these become historical-only after this mapping commit."
+      ],
+      "target_commit": "33019a2459f3ed8dbd2b62cbe6d9dcf863a69ac5",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository development/review/evidence lifecycle",
+      "composition_slot": "Repository AI worker and adapter governance",
+      "capability_component": "Source-neutral host-adapter lifecycle",
+      "variation_axes": [
+        "foreground leaf vs routing/consolidation background lane",
+        "Claude-native vs Codex review provider",
+        "medium/high supported model override vs xhigh inheritance",
+        "provider available vs native fallback",
+        "pre-Phase-1 vs post-Phase-1 source-lineage mismatch",
+        "UI driver available vs overlay/unverified required interaction"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi root AGENTS.md",
+        "GitHub Actions exact-head verification",
+        "Existing repository review/evidence lifecycle"
+      ],
+      "duplicate_root_check": "No Claude/Codex product runtime, second scheduler, second task queue, second review owner, provider-specific evidence store or shipping workflow root introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository-development host adaptation only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Repository development/review/evidence lifecycle",
+      "route_contract": "No shipping route",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Exact source/adapter/dependency identities plus run/worker/publication evidence reconstruct the development workflow state; no product state is owned.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-CLAUDE-AI-WORKFLOW-ADAPTER-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CLAUDE-ADAPTER-SHARED-AUTHORITY-001",
+        "ORA-TDRP-CLAUDE-ADAPTER-WORKER-LIFECYCLE-001",
+        "ORA-TDRP-CLAUDE-ADAPTER-PROVIDER-FALLBACK-001",
+        "ORA-TDRP-CLAUDE-ADAPTER-SOURCE-LINEAGE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CLAUDE-ADAPTER-NO-PRODUCT-RUNTIME-001",
+        "INV-TDRP-CLAUDE-ADAPTER-NO-DUPLICATE-WRITER-001",
+        "INV-TDRP-CLAUDE-ADAPTER-HOST-TRUTH-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CLAUDE-ADAPTER-EXPLICIT-LOAD-001",
+        "CONTRACT-TDRP-CLAUDE-ADAPTER-FOREGROUND-LEAF-001",
+        "CONTRACT-TDRP-CLAUDE-ADAPTER-CODEX-FALLBACK-001",
+        "CONTRACT-TDRP-CLAUDE-ADAPTER-SOURCE-LINEAGE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-CLAUDE-ADAPTER-NO-DUPLICATE-WORKER-001"
+      ],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "locked Claude adapter and dependency policy blobs"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact Claude adapter policy read from locked telegramdesktop/tdesktop live-dev blob and adapted source-neutrally; no provider runtime source copied.",
+      "notes": "Strict index 58 closes only .claude/ai-workflow-adapter.md. Counters become unknown=16245 unread=16220 omitted=0 responsibilities=76. Next strict root index 59 .claude/commands/code-health.md@bcabd4bd5b5a1a2ed09b40a7f1fbdd502042329a. Closure flags remain false.",
       "test_execution_evidence": []
     }
   ]
