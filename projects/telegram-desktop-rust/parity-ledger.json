@@ -28155,7 +28155,7 @@
       ],
       "fabushi_target_symbols": [
         "FQT-DEF-001",
-        "reproduce -> fix -> targeted regression -> affected regression -> current-head evidence"
+        "reproduce->fix->targeted regression->affected regression->current-head evidence"
       ],
       "target_language": "Repository quality/evidence governance",
       "language_rationale": "Scheduled GitHub administration maps to existing source-neutral defect/evidence governance, not production Rust/React.",
