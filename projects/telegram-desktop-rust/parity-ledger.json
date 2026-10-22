@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
-  "target_commit": "fe2594a0e0c65a28cb70b98c4b4763f6dba7655e",
+  "target_commit": "b221f256ed4558e933a13929ca1d1972e5ac5860",
   "coverage": {
     "source_entries_total": 16306,
-    "unknown": 16241,
-    "unread": 16216,
+    "unknown": 16240,
+    "unread": 16215,
     "omitted": 0,
-    "responsibilities_total": 80,
+    "responsibilities_total": 81,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -22111,6 +22111,313 @@
       "reviewer": null,
       "license_and_provenance": "Exact developer cross-review command and shared protocol/prompt/provider contracts read from locked telegramdesktop/tdesktop live-dev blobs; provider-specific Claude/Codex mechanics retained only as provenance and no shipping runtime source copied.",
       "notes": "Strict index 62 closes only .claude/commands/cross-review.md. Counters become unknown=16241 unread=16216 omitted=0 responsibilities=80. Shared protocol/prompts/codex-cli-leaves are dependency evidence and remain their own inventory entries where applicable. Next strict root index 63 .claude/commands/icon.md@479e23eceb019477fd7f2ffe4e2c13aadcfc556e. Closure flags remain false.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_path": ".claude/commands/icon.md",
+      "source_blob_sha": "479e23eceb019477fd7f2ffe4e2c13aadcfc556e",
+      "source_kind": "repository_icon_asset_generation_host_command",
+      "module_id": "tdesktop.claude.commands.icon",
+      "responsibility_id": "TDRP-R9-CLAUDE-ICON-COMMAND-001",
+      "source_symbols": [
+        "frontmatter description",
+        "allowed-tools",
+        "# Icon - SVG Icon Generation from Design Mockup",
+        "Step 0a: Clipboard grab",
+        ".claude/grab_clipboard.sh",
+        ".claude/grab_clipboard.ps1",
+        "Step 0b: Fail-fast — verify vectosolve MCP",
+        "Step 0c: Follow-up detection",
+        "Step 0d: New icon setup",
+        "Step 0e: Follow-up setup",
+        "Step 0f: Place source image",
+        "Step 0g: Verify renderer",
+        "Phase 1: Vectorize & Post-process",
+        "content bounding box",
+        "new viewBox",
+        "Recolor to white-on-transparent",
+        "path composition",
+        "final SVG",
+        "Phase 2: Review",
+        "Phase 3: Output",
+        "Text-only Follow-ups",
+        "Error Handling"
+      ],
+      "capability_ids": [
+        "CAP-CANONICAL-ICON-ASSET-INTAKE",
+        "CAP-CANONICAL-ICON-NORMALIZATION",
+        "CAP-CANONICAL-ICON-VISUAL-VERIFICATION"
+      ],
+      "dependency_ids": [
+        ".claude/grab_clipboard.sh@80c0c6d05c99a8f1fca6c57b325f561440e7b22e",
+        ".claude/grab_clipboard.ps1@bece778c6038820ca4d16bbf4224548de1e385a8",
+        "Telegram/Resources/icons/menu/tag_add.svg@8ad0a1cb90889fa63ab35e963188d92f18476afa",
+        "codegen_style --render-svg developer renderer",
+        "vectosolve MCP/API (source-specific developer dependency only)",
+        "GitHub Actions exact-head verification boundary"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/claude-icon-command-complete-read.md",
+      "behavior_contract": "Treat the upstream command as a developer icon-asset intake and verification workflow, not a shipping Telegram or vectosolve runtime. Preserve the applicable responsibilities: acquire an explicit source image, fence new versus follow-up work, fail closed on missing/mismatched source or unavailable required vectorization, normalize output geometry/color/composition without inventing unrelated path geometry, render/review the candidate, and publish only into the canonical product icon family with provenance and visual verification.",
+      "state_machine": "request + optional attached image -> acquire/verify clipboard source when required -> determine new versus follow-up icon context -> choose collision-free canonical name/target and iteration -> verify source image and developer renderer -> vectorize only through the declared source tool or fail closed -> normalize viewBox/padding/color/path composition -> render and visually review -> repair bounded SVG issues or reject poor source -> copy accepted SVG to canonical target -> update developer context/provenance; text-only follow-up reuses the prior source and skips vectorization",
+      "side_effects": [
+        "Creates developer-only .ai/icon_* working directories, iteration sources/renders and context metadata.",
+        "Reads the local developer clipboard through locked macOS/Windows helpers when an attached image must be materialized.",
+        "May call the source-specific vectosolve service and local codegen_style renderer during upstream developer workflow execution.",
+        "Writes the final reviewed SVG into a source-controlled icon asset location; creates no Fabushi account, conversation, message, task, Agent, Automation or service state."
+      ],
+      "failure_cases": [
+        "Required clipboard image is absent or materially differs from the pasted reference.",
+        "A new icon has no source image, or a follow-up lacks both a new image and prior source.",
+        "The required upstream vectorization tool is unavailable, rejects the input, returns malformed SVG, or produces unusable geometry.",
+        "The candidate name collides with an existing icon or working directory.",
+        "Post-processing stretches geometry, leaves background/color/stroke artifacts, breaks path composition, or ignores requested output dimensions/padding/alignment.",
+        "Render/review evidence is missing or a poor result is promoted instead of rejected/refined.",
+        "A source-specific Telegram/vectosolve/clipboard mechanism is copied into a second shipping icon runtime instead of mapping to Fabushi's canonical icon owner.",
+        "An external-source brand asset leaks into Fabushi generic UI or an icon-only control loses accessible naming/tooltip semantics.",
+        "Fresh child exact-head TDRP/Rust evidence is absent."
+      ],
+      "ui_disposition": "Applicable only as shared icon-asset/design-system responsibility. No Telegram screen, Qt widget, source brand, or standalone icon-generation product surface is retained.",
+      "non_ui_responsibilities": [
+        "Source-image acquisition and identity checking",
+        "Collision-free icon naming and target selection",
+        "Iteration/provenance bookkeeping",
+        "Fail-closed external vectorization boundary",
+        "SVG viewBox/padding/color/path normalization",
+        "Renderer-based visual verification and bounded refinement",
+        "Canonical asset publication and source-neutral brand/a11y governance"
+      ],
+      "platform_delta": "Upstream uses macOS AppleScript and Windows PowerShell clipboard helpers plus a Telegram codegen renderer and optional vectosolve service. Fabushi retains only the source-neutral icon intake/normalization/verification semantics under its existing design-system and visual-acceptance owners. Platform clipboard scripts, Telegram resource paths, vectosolve MCP syntax and provider secrets are provenance, not shipping dependencies.",
+      "existing_owner_candidates": [
+        "projects/fabushi-communication-platform/design-system.md#Iconography",
+        "projects/fabushi-communication-platform/ui-component-contract.md#IconButton",
+        "projects/fabushi-communication-platform/visual-acceptance.md#Static design-system gate / Content and brand acceptance",
+        "frontend/src/recovered/ui/sand-icon-registry.ts (compatibility/evidence implementation only)",
+        "Shipping Resource/Attachment owner (rejected)",
+        "Shipping Agent/Coordinator/Host/Runner/Task/Automation owners (rejected)",
+        "A vectosolve or Telegram icon product runtime (rejected)"
+      ],
+      "existing_owner": "Fabushi canonical design-system iconography, shared component accessibility, and visual/brand acceptance lifecycle",
+      "rejected_existing_owners": [
+        "frontend/src/recovered/ui/sand-icon-registry.ts is recovered compatibility/evidence code using legacy cursor/sand naming; it cannot become authority for new Telegram-derived UI assets.",
+        "Shipping Resource/Attachment owns user content resources, not product design-system icon assets.",
+        "Shipping Agent/Coordinator/Host/Runner/Task/Automation own end-user execution and cannot own developer icon generation.",
+        "A vectosolve/Telegram-specific icon service or second registry would duplicate the canonical Fabushi icon family and preserve source mechanics instead of product semantics."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/fabushi-communication-platform/design-system.md",
+        "projects/fabushi-communication-platform/ui-component-contract.md",
+        "projects/fabushi-communication-platform/visual-acceptance.md"
+      ],
+      "fabushi_target_symbols": [
+        "## 10. Iconography",
+        "| IconButton | icon size, tooltip, accessible name, selected/pressed, danger |",
+        "- icons 来自 canonical registry，用户可见外部品牌 asset 无非法残留。"
+      ],
+      "target_language": "Markdown design-system/component/visual-acceptance governance with source-controlled canonical icon assets",
+      "language_rationale": "The source file is a repository developer command, not shipping product logic. Its applicable output responsibilities already belong to Fabushi's canonical iconography/component/a11y/visual evidence contract, so no new Rust/TypeScript product subsystem or provider-specific runtime is justified.",
+      "command_event_contracts": [
+        "attached image -> materialize through the declared developer clipboard path -> read back and compare -> mismatch/absence fails closed",
+        "no existing icon context -> parse request -> choose canonical collision-free name/type/target -> create developer iteration context",
+        "existing icon context -> append follow-up -> advance iteration -> preserve prior source unless replaced",
+        "vectorization unavailable/fails -> stop without handcrafted substitute pretending to be source-derived output",
+        "vectorization success -> preserve path geometry while normalizing framing, color, composition and output dimensions",
+        "renderer available -> render candidate -> visual review before publication",
+        "renderer unavailable -> retain explicit reduced-evidence state; do not misstate rendered verification",
+        "accepted candidate -> copy to canonical icon target -> retain source-control provenance and exact-head visual/release evidence",
+        "text-only follow-up -> edit latest SVG directly within the same bounded icon context -> re-render/review"
+      ],
+      "state_owner": "No shipping state owner. Developer iteration context is ephemeral; canonical source-controlled icon assets and Fabushi design-system contracts are the durable product truth.",
+      "lifecycle_owner": "Fabushi design-system iconography plus shared component accessibility and visual-acceptance lifecycle.",
+      "persistence_and_restart": "Upstream .ai/icon_* context is developer-only restart metadata. Fabushi product durability is the reviewed source-controlled canonical icon asset, its semantic component usage, provenance, and exact-head GitHub Actions/visual evidence; no second asset database is introduced.",
+      "concurrency_and_cancellation": "A single icon iteration owns its mutable developer context. External vectorization/render failures stop or bound refinement rather than spawning duplicate writers. Follow-ups advance an explicit iteration; cancellation or ambiguity cannot silently publish a candidate.",
+      "security_boundary": "Clipboard pixels and external vectorization inputs are developer data only. Provider/API credentials remain outside the repository. No source-specific MCP secret, clipboard capture runtime, or external-brand asset is embedded into the shipping Fabushi product.",
+      "network_service_dependencies": [
+        "GitHub Actions for all FBCP/TDRP executable verification"
+      ],
+      "service_owner": "Existing Fabushi design-system / repository visual-evidence lifecycle; vectosolve is source-specific provenance only and not a Fabushi shipping service dependency.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "toolchain-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP and Rust Actions are required after this mapping commit.",
+        "No byte-for-byte vectosolve/Telegram icon-generation tool parity is claimed; only applicable source-neutral icon asset responsibilities are mapped.",
+        "Recursive source disposition remains open; baseline_identity_accepted=false and source_closure_ready=false."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "Full locked .claude/commands/icon.md@479e23eceb019477fd7f2ffe4e2c13aadcfc556e read: 306 lines.",
+        "Locked .claude/grab_clipboard.sh@80c0c6d05c99a8f1fca6c57b325f561440e7b22e read: 28 lines; macOS clipboard image acquisition fails closed when no PNG is present.",
+        "Locked .claude/grab_clipboard.ps1@bece778c6038820ca4d16bbf4224548de1e385a8 read: 11 lines; Windows clipboard image acquisition fails closed when no image is present.",
+        "Locked Telegram/Resources/icons/menu/tag_add.svg@8ad0a1cb90889fa63ab35e963188d92f18476afa inspected as the command's known-good render probe.",
+        "Existing Fabushi design-system.md@bab234e73227686ba978f6d0b332e2fc896488fa defines one canonical icon registry/family, standard semantic sizes, no external product brand icon as generic UI asset, and accessible-name + tooltip requirements for icon-only controls.",
+        "Existing Fabushi ui-component-contract.md@be6058337d3268004c7b3d3325d61e18704bb9fd defines canonical IconButton icon size/tooltip/accessible-name/selected/pressed/danger semantics.",
+        "Existing Fabushi visual-acceptance.md@16855454ff7897f3aa205bc33f1672077e32955d requires canonical-registry icons, no illegal external-brand asset residue, exact-head visual evidence, and fail-closed review for unintended style/brand change.",
+        "Recovered frontend/src/recovered/ui/sand-icon-registry.ts@7581aa3dc9e7bf55b0d73d21cc9f7ac1971fce04 is compatibility/evidence code over legacy cursor icon-font data and is not selected as the new canonical authority.",
+        "Parent exact-head TDRP run 39717597705 attempt 1: completed success, 61/61 jobs; authority artifact 12399463565 digest sha256:7d7a56b4fb4d182ee276b2533e5ae33e45490a945caeba8081d22f3aea63328e; recursive closure artifact 12399783628 digest sha256:81eddb084a1fcc39a5e625e7188ae2193ab709afe8055286d8cb997a6bde6eda; recursive reachability artifact 12399852246 digest sha256:850e742fcbce034368071c53a79b2cd3b3b5a9243c04a30bbbf942256803cf70.",
+        "Parent exact-head Rust run 39717597674 attempt 1: completed success, 6/6 jobs; messaging artifact 12398819671 digest sha256:dd4203ca5dc3e81ffb1c4ddc1bfd5a43f72439729fa8a3a3a92bd3bb050161bc. This run proves the wave-pipeline lost-wakeup fix at b221f256ed4558e933a13929ca1d1972e5ac5860; Host Runner step 13 and all later rust-host steps completed success."
+      ],
+      "target_commit": "b221f256ed4558e933a13929ca1d1972e5ac5860",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi canonical design system",
+      "composition_slot": "Canonical iconography, IconButton semantics, and visual/brand acceptance",
+      "capability_component": "Canonical icon asset intake/normalization/verification responsibility",
+      "variation_axes": [
+        "new icon vs follow-up",
+        "attached source image vs carried-forward source",
+        "macOS vs Windows source clipboard mechanics",
+        "default 24x24 vs explicitly requested dimensions/aspect ratio/padding/alignment",
+        "vectorization success vs explicit failure",
+        "renderer available vs explicit reduced-evidence state",
+        "first-pass accepted vs bounded SVG repair vs reject/re-source",
+        "image-based iteration vs text-only SVG refinement"
+      ],
+      "shared_owner_contracts": [
+        "projects/fabushi-communication-platform/design-system.md#Iconography",
+        "projects/fabushi-communication-platform/ui-component-contract.md#IconButton",
+        "projects/fabushi-communication-platform/visual-acceptance.md#Static design-system gate",
+        "projects/fabushi-communication-platform/visual-acceptance.md#Content and brand acceptance",
+        "GitHub Actions exact-head verification"
+      ],
+      "duplicate_root_check": "No second icon registry, Telegram/vectosolve icon runtime, product asset database, shipping clipboard capture service, or source-branded component family introduced. Legacy sand/cursor registry remains compatibility/evidence only.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Shared design-system asset; no standalone product navigation entry",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Developer asset workflow only; not a user Conversation/Resource creation flow",
+      "object_action_scope": "Design-system icon asset preparation and verification only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Canonical icon registry/family and canonical IconButton consumers",
+      "route_contract": "No standalone shipping route. Icons are consumed only through existing canonical components/patterns and their normal product routes.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Use canonical semantic icon sizes 14/16/18/20/24px and the owning component/pattern's responsive contract; no feature-local geometry system.",
+      "accessibility_contract": "Icon-only controls require an accessible name and tooltip; danger/status semantics cannot rely on icon color alone. Keyboard/focus behavior remains owned by the canonical interactive component.",
+      "keyboard_contract": "Inherited from canonical Button/IconButton/Menu/Tooltip contracts; the asset itself creates no keyboard owner.",
+      "state_continuity_contract": "Replacing or refining an icon asset cannot create a second UI state root or reset route/draft/scroll/product state; only canonical component rendering changes.",
+      "ui_acceptance_scenarios": [
+        "Canonical registry/family supplies the icon with no parallel source-branded registry.",
+        "IconButton exposes semantic size, tooltip and accessible name in default/hover/pressed/focus/selected/disabled states where applicable.",
+        "Light/dark rendering and contrast remain governed by Fabushi semantic tokens rather than raw source colors.",
+        "No Telegram/Grok/Gok/other external-source brand asset appears as generic Fabushi UI.",
+        "Intentional visual changes carry reviewed exact-head evidence rather than silently recording a failing screenshot as baseline."
+      ],
+      "design_system_version": "FDS-001 live design-system authority at bab234e73227686ba978f6d0b332e2fc896488fa",
+      "semantic_token_usage": [
+        "--fabushi-* semantic design tokens through canonical components"
+      ],
+      "legacy_token_adapter": "frontend/src/recovered/ui/sand-icon-registry.ts@7581aa3dc9e7bf55b0d73d21cc9f7ac1971fce04 is compatibility/evidence-only legacy cursor/sand implementation; new Telegram-derived UI must not expand that naming as authority.",
+      "canonical_component_ids": [
+        "IconButton",
+        "Button",
+        "Tooltip"
+      ],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [
+        "default",
+        "hover",
+        "pressed",
+        "focus-visible",
+        "selected/pressed where applicable",
+        "disabled",
+        "light",
+        "dark"
+      ],
+      "density_contract": "Standard icon sizes 14/16/18/20/24px; primary navigation defaults to 20px; IconButton follows the canonical square control-height scale.",
+      "icon_asset_contract": "Use one canonical Fabushi icon registry/family; source assets are normalized and visually verified before publication; generic UI cannot retain external product branding; icon-only controls require accessible name + tooltip.",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "No icon-specific motion owner; interactive motion inherits canonical component/pattern semantics.",
+      "reduced_motion_contract": "No icon-specific motion; reduced-motion behavior inherits the canonical component.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [
+        "ui-component-contract.md canonical IconButton requires tooltip and accessible name",
+        "design-system.md requires accessible name + tooltip for icon-only controls and forbids color-only danger semantics"
+      ],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CLAUDE-ICON-COMMAND-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-ICON-SOURCE-IDENTITY-001",
+        "ORA-TDRP-ICON-NORMALIZATION-001",
+        "ORA-TDRP-ICON-VISUAL-REVIEW-001",
+        "ORA-TDRP-ICON-CANONICAL-REGISTRY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-ICON-NO-SECOND-REGISTRY-001",
+        "INV-TDRP-ICON-NO-SOURCE-BRAND-LEAK-001",
+        "INV-TDRP-ICON-A11Y-SEMANTICS-001",
+        "INV-TDRP-ICON-FAIL-CLOSED-TOOL-BOUNDARY-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-ICON-SOURCE-INTAKE-001",
+        "CONTRACT-TDRP-ICON-NORMALIZATION-001",
+        "CONTRACT-TDRP-ICON-CANONICAL-PUBLICATION-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [
+        "VIS-TDRP-ICON-CANONICAL-STYLE-001",
+        "VIS-TDRP-ICON-NO-BRAND-LEAK-001"
+      ],
+      "accessibility_case_ids": [
+        "A11Y-TDRP-ICON-ACCESSIBLE-NAME-TOOLTIP-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-ICON-SOURCE-OR-VECTORIZATION-FAIL-CLOSED-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-ICON-NO-REPOSITORY-API-KEY-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-ICON-NO-LEGACY-REGISTRY-EXPANSION-001"
+      ],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "locked icon command + macOS/Windows clipboard helpers + known-good tag_add.svg + Fabushi design/component/visual authorities"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact developer icon-generation command, clipboard helpers and sample SVG were read from locked telegramdesktop/tdesktop live-dev blobs. Telegram naming, vectosolve/provider mechanics and local clipboard/render paths remain provenance only; no shipping runtime source or external brand asset is copied.",
+      "notes": "Strict index 63 closes only .claude/commands/icon.md. Counters become unknown=16240 unread=16215 omitted=0 responsibilities=81. Clipboard helpers and referenced renderer/resource files are dependency evidence and retain their own source-inventory disposition where applicable. Next strict root index 64 .claude/commands/perform-task.md@98ec6ed4aa51d3cac043a70a23adc6834b147f8e. Closure flags remain false.",
       "test_execution_evidence": []
     }
   ]
