@@ -14,12 +14,12 @@
     "accepted": false
   },
   "previous_historical_baseline": {
-    "commit": "0eca52223cceed229932add1cc80792763120844",
-    "tree": "1fc479a4b448aed851181bf4a4796d3015368348",
+    "commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+    "tree": "09a421891474be0da279f44a5bf8e0dcf3bc270a",
     "evidence_status": "historical-only",
-    "recursive_non_directory_entries": 16305,
-    "root_non_directory_entries": 6819,
-    "reason": "Live refs/heads/dev advanced linearly by 49 commits to 5c674f1f6a0f6ace55b67f8bc295138680fe588b (tree 09a421891474be0da279f44a5bf8e0dcf3bc270a). Root non-directory entries changed +1 (2 added, 1 removed); Telegram/lib_base and Telegram/lib_ui pins changed without changing either component's non-directory cardinality or nested-gitlink set."
+    "recursive_non_directory_entries": 16306,
+    "root_non_directory_entries": 6820,
+    "reason": "Live refs/heads/dev advanced linearly by 3 commits to e14f1566d277d2204f4c8e553bf7cc157047e88b (tree 241f8ab614292cc90e395ef0c966e289fdb3e985). The root non-directory and recursive non-directory counts remain unchanged at 6,820 and 16,306; 11 paths are modified with no additions or removals. Exact-head 51e019e3afd13d7132d5da27bc273f0203a03eae evidence for this baseline completed TDRP 61/61 and Rust 6/6 before the live dev advance and is historical-only after drift."
   },
   "observed_root_inventory": {
     "tree_truncated": false,
