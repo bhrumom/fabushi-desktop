@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "52a47639d9aa38713098974dd2ce07e631cb3381",
-  "target_commit": "74d6348d1c42d0020a2154f4c9e7ac6d71178b33",
+  "target_commit": "a6cda99db19e161ce0fb10293ce9dfab6a774d1e",
   "coverage": {
     "source_entries_total": 16371,
-    "unknown": 16281,
-    "unread": 16256,
+    "unknown": 16280,
+    "unread": 16255,
     "omitted": 0,
-    "responsibilities_total": 105,
+    "responsibilities_total": 106,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -28319,6 +28319,274 @@
       "license_and_provenance": "Exact lock.yml/provider commit/tree/runtime/package-lock/license identities retained. dessant/lock-threads is MIT; mutable v6 tag, GitHub runner/API state and provider dependency graph are provenance only, never Fabushi defect or release authority.",
       "reviewer": null,
       "notes": "Strict index 87 closes only .github/workflows/lock.yml as repository thread-maintenance provenance. Counters become unknown=16,281 unread=16,256 omitted=0 responsibilities=105. Next strict root index 88 .github/workflows/mac.yml@184a94b091d2d7bab19ae67d7f3a5881b18213ba. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "52a47639d9aa38713098974dd2ce07e631cb3381",
+      "source_path": ".github/workflows/mac.yml",
+      "source_blob_sha": "184a94b091d2d7bab19ae67d7f3a5881b18213ba",
+      "source_kind": "macos_ci_build_verification_workflow",
+      "module_id": "tdesktop.github.workflows.mac",
+      "responsibility_id": "TDRP-R9-MACOS-CI-BUILD-VERIFICATION-PROVENANCE-001",
+      "source_symbols": [
+        "branches-ignore:",
+        "dynamic Depot/GitHub macOS runner selection",
+        "actions/checkout@v7",
+        "actions/cache@v6",
+        "Telegram/build/prepare/mac.sh skip-release silent",
+        "CMAKE_CONFIGURATION_TYPES=Debug",
+        "CMAKE_COMPILE_WARNING_AS_ERROR=ON",
+        "CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO",
+        "TDESKTOP_API_TEST=ON",
+        "DESKTOP_APP_DISABLE_AUTOUPDATE=OFF",
+        "DESKTOP_APP_DISABLE_CRASH_REPORTS=OFF",
+        "actions/upload-artifact@v7",
+        "retention-days: 1"
+      ],
+      "capability_ids": [
+        "CAP-MACOS-CI-BUILD-VERIFICATION",
+        "CAP-BUILD-CACHE-PROVENANCE",
+        "CAP-EXACT-HEAD-EVIDENCE-BOUNDARY"
+      ],
+      "dependency_ids": [
+        "AGENTS.md@da3e37258c74963970ff5cfc5d54671a37558b97#exact-head-GitHub-Actions-only",
+        "actions/checkout@v7 -> 3d3c42e5aac5ba805825da76410c181273ba90b1",
+        "actions/cache@v6 -> 55cc8345863c7cc4c66a329aec7e433d2d1c52a9",
+        "actions/upload-artifact@v7 -> cf430e030ddbb5b0abf93d22962f4752f3646cd9",
+        "Telegram/build/prepare/mac.sh@82810b6cd5a13c78233232bee38602dcf1707de4",
+        "Telegram/build/prepare/prepare.py@a9f3dd2d9e4020df958ab5af942376177d66c78b",
+        "Telegram/configure.sh@c550d988cff5fe3047311cc330aeee943ee328e5",
+        "Homebrew/Xcode/CMake/runner toolchains (mutable CI environment provenance)"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/macos-ci-build-verification-workflow-complete-read.md",
+      "behavior_contract": "Treat mac.yml as upstream macOS source-build verification provenance only. Recursive checkout, mutable runner/Homebrew toolchains, dependency caches, Debug/API-test build and one-day Telegram.app/Updater artifact cannot become Fabushi source, shipping runtime, signing, packaging, release or acceptance authority; executable Fabushi validation remains exact-head GitHub-Actions-only.",
+      "state_machine": "macOS-relevant push/PR -> runner selection (Depot for PR/tag/nightly, otherwise GitHub macOS) -> recursive checkout -> mutable Homebrew/Xcode setup -> Libraries/ThirdParty cache restore -> prepare/mac.sh skip-release silent -> disk cleanup -> unsigned Debug/API-test warnings-as-errors build -> stage Telegram.app+Updater -> one-day artifact",
+      "side_effects": [
+        "Homebrew update/upgrade/install",
+        "Xcode selection",
+        "system CMake module edit",
+        "Libraries/ThirdParty cache restore/write",
+        "prepare.py dependency acquisition/build",
+        "workspace disk cleanup",
+        "unsigned Debug Telegram.app/Updater build",
+        "one-day GitHub artifact upload"
+      ],
+      "failure_cases": [
+        "runner image drift",
+        "Depot/GitHub runner divergence",
+        "Homebrew/package drift",
+        "cache corruption/staleness",
+        "prepare.py acquisition drift",
+        "disk cleanup removes required input",
+        "Xcode/CMake drift",
+        "build/test failure",
+        "missing Telegram.app or Updater",
+        "artifact upload/expiry",
+        "upstream macOS green mistaken for Fabushi release acceptance"
+      ],
+      "ui_disposition": "Repository CI/build verification only; no shipping Fabushi UI capability.",
+      "non_ui_responsibilities": [
+        "macOS trigger scope",
+        "runner-selection provenance",
+        "recursive source/dependency preparation",
+        "cache boundary",
+        "unsigned Debug/API-test build verification",
+        "ephemeral artifact provenance",
+        "Fabushi signing/packaging/release evidence separation"
+      ],
+      "platform_delta": "Upstream Telegram macOS CI remains build/provenance input only; Fabushi reuses existing source-neutral exact-head GitHub Actions, packaging/signing and FQT release-evidence owners.",
+      "existing_owner_candidates": [
+        "AGENTS exact-head GitHub-Actions governance (selected)",
+        "existing Fabushi packaging/signing/release evidence owners (shared)",
+        "FQT evidence/release owners (shared)",
+        "new macOS build/runtime owner (rejected)",
+        "new Telegram packaging/release owner (rejected)"
+      ],
+      "existing_owner": "AGENTS.md exact-head GitHub-Actions executable validation governance with existing Fabushi packaging/signing/FQT release owners",
+      "rejected_existing_owners": [
+        "upstream CI build is not Fabushi production runtime",
+        "unsigned Debug output is not signed/package release evidence",
+        "dependency cache is not correctness truth",
+        "one-day upstream artifact is not Fabushi release acceptance"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md"
+      ],
+      "fabushi_target_symbols": [
+        "For FBCP/TDRP, executable validation remains exact-head GitHub-Actions-only."
+      ],
+      "target_language": "Repository build/test/evidence governance",
+      "language_rationale": "macOS CI orchestration maps to existing exact-head build/release evidence governance, not production Rust/React.",
+      "command_event_contracts": [
+        "macOS-relevant push/PR only",
+        "canary branches excluded here",
+        "PR/tag/nightly select Depot runner; other refs use GitHub macOS",
+        "recursive checkout/prepare inputs are provenance",
+        "cache hit cannot decide correctness",
+        "Debug build disables signing and enables API test/warnings-as-errors",
+        "one-day Telegram.app/Updater artifact is non-release provenance",
+        "upstream green never substitutes for Fabushi packaging/signing/release acceptance"
+      ],
+      "state_owner": "Exact source/dependency/run/artifact identities; Homebrew/runner/cache/upstream binaries are non-authoritative.",
+      "lifecycle_owner": "Existing exact source -> GitHub Actions -> artifact evidence -> Fabushi packaging/signing/FQT independent release acceptance.",
+      "persistence_and_restart": "Libraries/ThirdParty cache and one-day artifact are disposable; canonical evidence is exact commit/run/artifact ID+digest.",
+      "concurrency_and_cancellation": "No workflow concurrency group; runner/cache races or cancelled/failed jobs are non-passing.",
+      "security_boundary": "GitHub/Depot runners, mutable Homebrew/Xcode packages, recursive submodules, prepare acquisitions, cache and unsigned build artifacts are supply-chain inputs, never Fabushi credential/signing/release authority.",
+      "network_service_dependencies": [
+        "GitHub checkout/cache/artifact",
+        "Depot/GitHub macOS runners",
+        "Homebrew registries",
+        "prepare.py external source/dependency acquisitions"
+      ],
+      "service_owner": "Existing GitHub Actions/build infrastructure and Fabushi packaging/signing/FQT evidence governance",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "policy-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required after this strict88 mapping commit.",
+        "prepare.py/macOS acquisitions remain independently tracked/open where not yet dispositioned.",
+        "signed/package/device/release acceptance remains open.",
+        "recursive source closure remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "mac.yml fully read: 138 line slots / 4273 bytes.",
+        "checkout@v7, cache@v6 and upload-artifact@v7 resolved to audited immutable provider commits.",
+        "Direct inputs SHA-anchored: mac.sh@82810b6cd5a13c78233232bee38602dcf1707de4, prepare.py@a9f3dd2d9e4020df958ab5af942376177d66c78b, configure.sh@c550d988cff5fe3047311cc330aeee943ee328e5.",
+        "Workflow builds unsigned Debug with warnings-as-errors and TDESKTOP_API_TEST, then stages Telegram.app and Updater into a one-day artifact.",
+        "Parent exact-head a6cda99db19e161ce0fb10293ce9dfab6a774d1e completed TDRP run 39802801210 success (authority 12436243276 sha256:d8da6ce0fdc6223df6608a3f93591898c9bc4853d4ae76cd258753888d47dfc2; closure 12435669870 sha256:3039c7e0645c5a2800dda1d8a2a8f802e912cd6fb92744e4cfe429b558955478; reachability 12437790900 sha256:85e4887959f310b9f372bf0728680421d2d5cb6e7488987d9a9af05005a5e388) and Rust desktop runtime run 39802800404 at 6/6 success (artifact 12437170317 sha256:391fa1075fac02659cb1242ba046eadf885583d0a5967fc71f598131553c5526)."
+      ],
+      "target_commit": "a6cda99db19e161ce0fb10293ce9dfab6a774d1e",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository build/test/evidence governance",
+      "composition_slot": "macOS CI source-build verification provenance adapter",
+      "capability_component": "macOS CI source-build verification mapping",
+      "variation_axes": [
+        "push/PR",
+        "canary/ordinary branch",
+        "Depot/GitHub macOS runner",
+        "runner/Homebrew/Xcode drift",
+        "cache hit/miss/corrupt",
+        "prepare acquisition drift",
+        "build success/missing output",
+        "unsigned/signed boundary",
+        "artifact expiry",
+        "upstream/Fabushi release evidence"
+      ],
+      "shared_owner_contracts": [
+        "AGENTS exact-head Actions",
+        "Fabushi packaging/signing governance",
+        "FQT-EVID-001/release owners"
+      ],
+      "duplicate_root_check": "No second macOS runtime/build truth, cache truth, packaging/signing/release or acceptance owner.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository CI/build verification",
+      "detail_section": "Not applicable",
+      "capability_surface": "macOS CI provenance adapter",
+      "route_contract": "push/PR -> recursive checkout -> mutable toolchain setup/cache -> prepare -> unsigned Debug/API-test build -> stage -> ephemeral artifact",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Only exact source/run/artifact identities carry evidence continuity; caches, mutable runner packages and unsigned upstream binaries do not.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MACOS-CI-BUILD-VERIFICATION-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MACOS-CI-EXACT-SOURCE-001",
+        "ORA-TDRP-MACOS-CI-BUILD-RESULT-001",
+        "ORA-TDRP-MACOS-CI-NO-RELEASE-AUTHORITY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MACOS-CI-CACHE-NO-AUTHORITY-001",
+        "INV-TDRP-MACOS-CI-UNSIGNED-NO-RELEASE-001",
+        "INV-TDRP-MACOS-CI-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MACOS-CI-BUILD-PROVENANCE-001",
+        "CONTRACT-TDRP-MACOS-CI-FABUSHI-RELEASE-BOUNDARY-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-MACOS-CI-ACTION-TAG-DRIFT-001",
+        "TEMP-TDRP-MACOS-CI-RUNNER-HOMEBREW-DRIFT-001",
+        "TEMP-TDRP-MACOS-CI-CACHE-DRIFT-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-MACOS-CI-PREPARE-ACQUISITION-001",
+        "FAULT-TDRP-MACOS-CI-DISK-CLEANUP-001",
+        "FAULT-TDRP-MACOS-CI-ARTIFACT-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MACOS-CI-SUPPLY-CHAIN-001",
+        "SEC-TDRP-MACOS-CI-UNSIGNED-BOUNDARY-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-MACOS-CI-EXACT-HEAD-OWNER-REUSED-001",
+        "REG-TDRP-MACOS-CI-NO-RELEASE-ACCEPT-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [],
+      "test_fixture_ids": [
+        "locked mac.yml + exact direct build inputs + provider action identities + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact mac.yml/direct input/provider identities retained. Mutable runner/Homebrew/Xcode/toolchain/cache/one-day unsigned binaries are CI provenance only and cannot establish Fabushi packaging, signing, release or acceptance.",
+      "reviewer": null,
+      "notes": "Strict index 88 closes only .github/workflows/mac.yml. Counters become unknown=16,280 unread=16,255 omitted=0 responsibilities=106. Next strict root index 89 .github/workflows/mac_packaged.yml@6e9f0b5bddfc3146bbed0bcd56a465bd584b89fc. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required."
     }
   ]
 }

@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16371,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16281,
-    "unread_minimum": 16256,
+    "unknown_minimum": 16280,
+    "unread_minimum": 16255,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -94,7 +94,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream dev authority remains 52a47639d9aa38713098974dd2ce07e631cb3381/42998681c09cdffcf75c0f38df71f663fc7b7b28. Parent exact-head 74d6348d1c42d0020a2154f4c9e7ac6d71178b33 completed TDRP run 39799900496 at 61/61 success (authority 12434433392 sha256:ad24881bfd0eea83cb64e9df5a7470b8023cb909f533484ed471e07e5e0b9bf3; closure 12435227835 sha256:53c1ca96926cf956b46862290d86a5652cfd929a8a3802c1fb770763831b8166; reachability 12434998390 sha256:7d183985c5b597559f2043330e848f0b4f17aeefbfd6a7421334a2f607e935ee) and Rust desktop runtime run 39799900499 at 6/6 success (artifact 12435053136 sha256:b7020766f9d25105ad59d15740b7f68925e944edaa8bcfb05c622e2f1c3bb4e2). Strict index 87 .github/workflows/lock.yml@7904e79591f79a4ea61c0dc194c189f048bf5c67 fully read and mapped to existing FQT defect/evidence governance as repository maintenance provenance only. Counters unknown=16,281 unread=16,256 omitted=0 responsibilities=105. Next strict root index 88 .github/workflows/mac.yml@184a94b091d2d7bab19ae67d7f3a5881b18213ba. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required.",
+  "note": "Live upstream dev authority remains 52a47639d9aa38713098974dd2ce07e631cb3381/42998681c09cdffcf75c0f38df71f663fc7b7b28. Parent exact-head a6cda99db19e161ce0fb10293ce9dfab6a774d1e completed TDRP run 39802801210 success (authority 12436243276 sha256:d8da6ce0fdc6223df6608a3f93591898c9bc4853d4ae76cd258753888d47dfc2; closure 12435669870 sha256:3039c7e0645c5a2800dda1d8a2a8f802e912cd6fb92744e4cfe429b558955478; reachability 12437790900 sha256:85e4887959f310b9f372bf0728680421d2d5cb6e7488987d9a9af05005a5e388) and Rust desktop runtime run 39802800404 at 6/6 success (artifact 12437170317 sha256:391fa1075fac02659cb1242ba046eadf885583d0a5967fc71f598131553c5526). Strict index 88 .github/workflows/mac.yml@184a94b091d2d7bab19ae67d7f3a5881b18213ba fully read and mapped to existing exact-head GitHub-Actions build/evidence governance. Counters unknown=16,280 unread=16,255 omitted=0 responsibilities=106. Next strict root index 89 .github/workflows/mac_packaged.yml@6e9f0b5bddfc3146bbed0bcd56a465bd584b89fc. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
