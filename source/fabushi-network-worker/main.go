@@ -9,7 +9,10 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/http"
 	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"tailscale.com/envknob"
@@ -17,9 +20,97 @@ import (
 )
 
 const (
-	maxControlFrameBytes = 64 * 1024
-	statusTimeout        = 5 * time.Second
+	maxControlFrameBytes  = 64 * 1024
+	statusTimeout         = 5 * time.Second
+	privateTransportPath  = "/v1/fdn/private-request"
+	privateSocketName     = "private.sock"
+	maxPrivateResultBytes = 1024 * 1024
 )
+
+func privateTransportError(w http.ResponseWriter, status int, message string) {
+	w.Header().Set("content-type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(map[string]any{"ok": false, "error": message})
+}
+
+func servePrivateTransport(server *tsnet.Server, stateDir string) (func(), error) {
+	socketPath := filepath.Join(stateDir, privateSocketName)
+	_ = os.Remove(socketPath)
+	listener, err := net.Listen("unix", socketPath)
+	if err != nil {
+		return nil, err
+	}
+	if err := os.Chmod(socketPath, 0o600); err != nil {
+		_ = listener.Close()
+		_ = os.Remove(socketPath)
+		return nil, err
+	}
+	httpServer := &http.Server{Handler: http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+		if request.Method != http.MethodPost || request.URL.Path != privateTransportPath {
+			privateTransportError(w, http.StatusNotFound, "not_found")
+			return
+		}
+		request.Body = http.MaxBytesReader(w, request.Body, maxControlFrameBytes)
+		var input privateTransportRequest
+		if err := json.NewDecoder(request.Body).Decode(&input); err != nil {
+			privateTransportError(w, http.StatusBadRequest, "invalid_request")
+			return
+		}
+		if !validRequestID(input.RequestID) || !validOpaqueID(input.DeviceID) ||
+			len(input.Payload) == 0 || len(input.Payload) > maxControlFrameBytes ||
+			!validOpaqueID(input.NetworkRoute.CellID) || input.NetworkRoute.ExpiresAt <= time.Now().Unix() ||
+			input.NetworkRoute.Generation <= 0 {
+			privateTransportError(w, http.StatusBadRequest, "invalid_private_request")
+			return
+		}
+		peer, peerOK := tailnetPeer(input.NetworkRoute.NodeID)
+		if !peerOK || input.TargetPort < 1 || input.TargetPort > 65535 {
+			privateTransportError(w, http.StatusBadRequest, "invalid_private_route")
+			return
+		}
+		timeout, timeoutOK := streamTimeoutMS(input.TimeoutMS)
+		if !timeoutOK {
+			privateTransportError(w, http.StatusBadRequest, "invalid_private_timeout")
+			return
+		}
+		frame := append(append([]byte(nil), input.Payload...), '\n')
+		if len(frame) > maxStreamChunkBytes {
+			privateTransportError(w, http.StatusBadRequest, "private_frame_too_large")
+			return
+		}
+		ctx, cancel := context.WithTimeout(request.Context(), time.Duration(timeout)*time.Millisecond)
+		defer cancel()
+		conn, dialErr := server.Dial(ctx, "tcp", net.JoinHostPort(peer, fmt.Sprintf("%d", input.TargetPort)))
+		if dialErr != nil {
+			privateTransportError(w, http.StatusServiceUnavailable, "private_dispatch_not_available")
+			return
+		}
+		defer conn.Close()
+		_ = conn.SetDeadline(time.Now().Add(time.Duration(timeout) * time.Millisecond))
+		if _, err := conn.Write(frame); err != nil {
+			privateTransportError(w, http.StatusServiceUnavailable, "private_dispatch_failed")
+			return
+		}
+		response, err := bufio.NewReader(io.LimitReader(conn, maxPrivateResultBytes+1)).ReadBytes('\n')
+		if err != nil || len(response) > maxPrivateResultBytes {
+			privateTransportError(w, http.StatusGatewayTimeout, "private_result_unavailable")
+			return
+		}
+		var result map[string]any
+		if json.Unmarshal([]byte(strings.TrimSpace(string(response))), &result) != nil || result == nil {
+			privateTransportError(w, http.StatusBadGateway, "invalid_private_result")
+			return
+		}
+		w.Header().Set("content-type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "result": result})
+	}),
+	}
+	go func() { _ = httpServer.Serve(listener) }()
+	return func() {
+		_ = httpServer.Close()
+		_ = os.Remove(socketPath)
+	}, nil
+}
 
 func emit(writer io.Writer, event workerEvent) error {
 	encoded, err := json.Marshal(event)
@@ -111,6 +202,12 @@ func run(stdin io.Reader, stdout, stderr io.Writer) int {
 		return 4
 	}
 	defer server.Close()
+	closePrivateTransport, err := servePrivateTransport(server, config.StateDir)
+	if err != nil {
+		_ = emit(stdout, redactError(err))
+		return 4
+	}
+	defer closePrivateTransport()
 
 	streams := map[string]net.Conn{}
 	defer func() {

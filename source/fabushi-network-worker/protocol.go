@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
@@ -48,6 +49,22 @@ type workerEvent struct {
 	EOF          bool     `json:"eof,omitempty"`
 	Code         string   `json:"code,omitempty"`
 	Message      string   `json:"message,omitempty"`
+}
+
+type privateTransportRoute struct {
+	NodeID     string `json:"nodeId"`
+	CellID     string `json:"cellId"`
+	Generation int64  `json:"generation"`
+	ExpiresAt  int64  `json:"expiresAt"`
+}
+
+type privateTransportRequest struct {
+	RequestID    string                `json:"requestId"`
+	DeviceID     string                `json:"deviceId"`
+	NetworkRoute privateTransportRoute `json:"networkRoute"`
+	TargetPort   int                   `json:"targetPort"`
+	TimeoutMS    int                   `json:"timeoutMs"`
+	Payload      json.RawMessage       `json:"payload"`
 }
 
 type initializeConfig struct {
