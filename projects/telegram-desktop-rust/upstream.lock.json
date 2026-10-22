@@ -14,12 +14,12 @@
     "accepted": false
   },
   "previous_historical_baseline": {
-    "commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
-    "tree": "09a421891474be0da279f44a5bf8e0dcf3bc270a",
+    "commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
+    "tree": "241f8ab614292cc90e395ef0c966e289fdb3e985",
     "evidence_status": "historical-only",
     "recursive_non_directory_entries": 16306,
     "root_non_directory_entries": 6820,
-    "reason": "Live refs/heads/dev advanced linearly by 3 commits to e14f1566d277d2204f4c8e553bf7cc157047e88b (tree 241f8ab614292cc90e395ef0c966e289fdb3e985). The root non-directory and recursive non-directory counts remain unchanged at 6,820 and 16,306; 11 paths are modified with no additions or removals. Exact-head 51e019e3afd13d7132d5da27bc273f0203a03eae evidence for this baseline completed TDRP 61/61 and Rust 6/6 before the live dev advance and is historical-only after drift."
+    "reason": "Live refs/heads/dev advanced linearly by 1 commit to 42e2af80cdd20a99edecb4255470f0aa6bae6bcb (tree 19740740209ea84bf3768f3f63ca92ea8d861087). Exactly two existing history-view blobs changed, with no additions/removals or direct/nested gitlink changes. Exact-head a23bef39fecccc6bdba36fdd90805ab139cd26fa evidence completed TDRP 61/61 and Rust 6/6 against this e14f1566 baseline and is historical-only after the live dev advance."
   },
   "observed_root_inventory": {
     "tree_truncated": false,
