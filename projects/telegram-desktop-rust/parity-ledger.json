@@ -25648,16 +25648,10 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "AGENTS.md",
-        ".github/workflows/release-macos-main.yml",
-        "projects/fabushi-communication-platform/quality/release-entry-exit-criteria.md",
-        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+        "AGENTS.md"
       ],
       "fabushi_target_symbols": [
-        "Repository release-support container provenance governance",
-        "Bind exact source",
-        "FQT-REL-001",
-        "FQT-EVID-001"
+        "Repository release-support container provenance governance"
       ],
       "target_language": "Repository governance / container build-and-provenance adapter",
       "language_rationale": "Release-support container infrastructure maps to source-neutral build, security, packaging and evidence governance rather than shipping Rust/React runtime code.",
