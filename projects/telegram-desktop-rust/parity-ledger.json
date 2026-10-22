@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
-  "target_commit": "44bedab87bff3e7ac1f872215c0f67312b4aa942",
+  "target_commit": "664f62f7cf7b24734848de0ff843b4a381165440",
   "coverage": {
     "source_entries_total": 16306,
-    "unknown": 16227,
-    "unread": 16202,
+    "unknown": 16226,
+    "unread": 16201,
     "omitted": 0,
-    "responsibilities_total": 94,
+    "responsibilities_total": 95,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -25571,6 +25571,254 @@
       "reviewer": null,
       "license_and_provenance": "Exact upstream generate_changelog.py blob SHA retained; Telegram branding, GitHub links, page markup/script, favicon names and changelog path are provenance only.",
       "notes": "Strict index 76 closes only .github/scripts/generate_changelog.py. Counters become unknown=16227 unread=16202 omitted=0 responsibilities=94. Next strict root index 77 .github/telegram-bot-api/Dockerfile@a361602441040028a3332c3732c4902d9c880122. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions remain required.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
+      "source_path": ".github/telegram-bot-api/Dockerfile",
+      "source_blob_sha": "a361602441040028a3332c3732c4902d9c880122",
+      "source_kind": "repository_release_support_container_build",
+      "module_id": "tdesktop.github.telegram_bot_api.dockerfile",
+      "responsibility_id": "TDRP-R9-RELEASE-SUPPORT-CONTAINER-PROVENANCE-001",
+      "source_symbols": [
+        "FROM ubuntu@sha256",
+        "ARG TELEGRAM_BOT_API_VERSION",
+        "git checkout --recurse-submodules",
+        "cmake --build",
+        "USER 999",
+        "EXPOSE 8081",
+        "ENTRYPOINT"
+      ],
+      "capability_ids": [
+        "CAP-RELEASE-SUPPORT-CONTAINER-PROVENANCE",
+        "CAP-CANARY-SERVICE-IMAGE-HARDENING"
+      ],
+      "dependency_ids": [
+        "AGENTS.md@0745dd3458507b4245dbad7613c07f8ef8ed5171#release-support container provenance governance",
+        ".github/workflows/release-macos-main.yml@b0a3a4d5503e6104c083f85e31475523a2b30643",
+        "projects/fabushi-communication-platform/quality/release-entry-exit-criteria.md@c5eb9d0897234bb2fdad4f505549b2350c44aa72",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70",
+        ".github/telegram-bot-api/entrypoint.sh@d40a7372efd8e5862e00f9b214b36a840688797e",
+        ".github/workflows/canary-bot-api.yml@7285f29ed2a09695a02b8f7821c10df5aa50bc44",
+        ".github/workflows/canary.yml@0d460c617c2a3910a0d11ac793d07533ac966947"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/release-support-container-complete-read.md",
+      "behavior_contract": "Build a canary/release-support image from immutable declared provenance, recursively materialize dependencies, separate build-only tooling from the minimal runtime, run with bounded least privilege and writable state, and hand downstream workflows the exact digest-qualified image without creating a Fabushi product runtime or release authority.",
+      "state_machine": "exact pinned base + exact external source ref -> recursive checkout -> build stage -> minimal runtime stage -> non-root runtime/data ownership -> publish immutable digest -> downstream canary consumes exact digest -> existing release/evidence gates; mutable, malformed, incomplete or mismatched provenance is non-passing",
+      "side_effects": [
+        "May fetch the declared external source revision and recursive submodules during GitHub Actions image construction.",
+        "May produce/publish a canary-only container image and bounded runtime data state.",
+        "Must not create a Fabushi shipping Telegram Bot API service, canonical product state, release approval or acceptance."
+      ],
+      "failure_cases": [
+        "mutable or malformed base/source identity is accepted",
+        "recursive dependencies are incomplete",
+        "build-only packages or privileges leak into runtime",
+        "runtime executes as root or writes undeclared state",
+        "downstream consumes tag/mutable image instead of exact digest",
+        "Telegram Bot API canary becomes a second Fabushi runtime/provider/service owner",
+        "credentials or release files escape existing workflow permission boundaries"
+      ],
+      "ui_disposition": "Repository/release-support infrastructure only; not a shipping Fabushi UI capability.",
+      "non_ui_responsibilities": [
+        "immutable base/source provenance",
+        "recursive dependency materialization",
+        "build/runtime separation",
+        "minimal runtime package surface",
+        "non-root execution and bounded writable state",
+        "immutable digest handoff",
+        "credential/permission boundary preservation"
+      ],
+      "platform_delta": "Upstream builds a Telegram Bot API canary image consumed by release canary workflows. Fabushi does not adopt that daemon as product runtime; applicable provenance, least-privilege, immutable-image and release-evidence responsibilities stay in current source/release/security/evidence owners.",
+      "existing_owner_candidates": [
+        "AGENTS.md repository source/release/security/exact-head governance (selected)",
+        ".github/workflows/release-macos-main.yml exact-source release lifecycle (selected)",
+        "FQT-REL-001 (selected)",
+        "FQT-EVID-001 (selected)",
+        "new Telegram Bot API runtime/provider (rejected)",
+        "new GHCR/container release authority (rejected)"
+      ],
+      "existing_owner": "Root AGENTS.md source-neutral build/release/security governance plus existing exact-source release workflow, FQT-REL-001 and FQT-EVID-001",
+      "rejected_existing_owners": [
+        "Telegram Bot API daemon is source-specific canary infrastructure and cannot become a second Fabushi communication runtime.",
+        "Registry/image state cannot own canonical source, package, identity, version, publication or acceptance truth.",
+        "Canary launch support cannot create release ACCEPT."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        ".github/workflows/release-macos-main.yml",
+        "projects/fabushi-communication-platform/quality/release-entry-exit-criteria.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository release-support container provenance governance",
+        "Bind exact source",
+        "FQT-REL-001",
+        "FQT-EVID-001"
+      ],
+      "target_language": "Repository governance / container build-and-provenance adapter",
+      "language_rationale": "Release-support container infrastructure maps to source-neutral build, security, packaging and evidence governance rather than shipping Rust/React runtime code.",
+      "command_event_contracts": [
+        "pin base/source to immutable identities",
+        "materialize recursive dependencies completely",
+        "separate build-only tooling from runtime",
+        "minimize runtime dependencies/privileges",
+        "bound writable paths/ownership",
+        "publish and consume digest-qualified image",
+        "fail closed on provenance drift",
+        "never create Telegram-specific runtime or release acceptance"
+      ],
+      "state_owner": "Exact repository/source refs, workflow declarations and immutable image digest; container runtime filesystem state is disposable canary-support state.",
+      "lifecycle_owner": "Existing source/release review -> exact-head GitHub Actions -> immutable image/artifact provenance -> canary/package verification -> FQT release/evidence gates.",
+      "persistence_and_restart": "Rebuild from exact declared source/workflow inputs; mutable container state is not authority and declared /data remains canary support state only.",
+      "concurrency_and_cancellation": "Concurrent builds retain separate exact commit/digest identities; cancelled or superseded images cannot be used as current release evidence.",
+      "security_boundary": "External source, registry, credentials, bot tokens and release files remain inside existing supply-chain/secret boundaries; exact refs, digest handoff, minimal runtime packages and non-root execution are mandatory.",
+      "network_service_dependencies": [
+        "GitHub/GHCR and declared source/dependency acquisition during existing CI/release-support workflows; no new Fabushi product service dependency."
+      ],
+      "service_owner": "Existing GitHub Actions/release infrastructure; Telegram Bot API is upstream-specific canary support only",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "policy-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required.",
+        "Recursive source disposition remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "Strict77 .github/telegram-bot-api/Dockerfile@a361602441040028a3332c3732c4902d9c880122 fully read: 42 lines / 1697 bytes.",
+        "Complete read confirms digest-pinned Ubuntu base, exact external-ref checkout with recursive submodules, build/runtime separation, minimal runtime packages, non-root uid 999, /data ownership, port 8081 and explicit entrypoint.",
+        "Direct consumer chain revalidated: entrypoint.sh@d40a7372efd8e5862e00f9b214b36a840688797e; canary-bot-api.yml@7285f29ed2a09695a02b8f7821c10df5aa50bc44 validates a 40-hex ref and emits a digest reference; canary.yml@0d460c617c2a3910a0d11ac793d07533ac966947 requires ghcr.io/...@sha256:<64hex> and three publish jobs consume the same digest image.",
+        "Current Fabushi owner anchors revalidated at AGENTS.md@0745dd3458507b4245dbad7613c07f8ef8ed5171, release-macos-main.yml@b0a3a4d5503e6104c083f85e31475523a2b30643, FQT-REL-001@c5eb9d0897234bb2fdad4f505549b2350c44aa72 and FQT-EVID-001@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70.",
+        "Parent exact-head TDRP run 39751838487 success 61/61: authority 12413494212 sha256:fdbbf119a97135555c16a9880d5b785917842313e9a159ec323f7a595a8c6ad7; closure 12414820657 sha256:58610af5c28b3f913c21f95ebbdb1511a14de0bd9fc206e0354ef6fefd432c75; reachability 12413694394 sha256:8fd33868e16e3050fb1d64d4c1e76e185c70320595a306e2c3cb2982aca08b0f.",
+        "Parent exact-head Rust run 39751838493 success 6/6: artifact 12413757737 sha256:02ee635cf155d74ce83339317a6f8d02d5363cbf4562a86ef9f4e881d91b6037."
+      ],
+      "target_commit": "664f62f7cf7b24734848de0ff843b4a381165440",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository build-input provenance, release packaging, security/permission and evidence lifecycle",
+      "composition_slot": "Optional canary/release-support container build before downstream digest-pinned verification",
+      "capability_component": "Source-neutral exact-source container build, least-privilege runtime and immutable digest handoff contract",
+      "variation_axes": [
+        "valid/invalid source ref",
+        "complete/incomplete recursive deps",
+        "pinned/mutable base",
+        "build/runtime separation",
+        "root/non-root runtime",
+        "digest/tag downstream consumption"
+      ],
+      "shared_owner_contracts": [
+        "AGENTS.md exact-source/release/evidence governance",
+        "release-macos-main exact-source release lifecycle",
+        "FQT-REL-001",
+        "FQT-EVID-001"
+      ],
+      "duplicate_root_check": "No Telegram Bot API runtime, provider, sidecar, second messaging service, registry authority, identity/storage root or release acceptance owner is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository canary/release-support image only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Optional release-support container adapter",
+      "route_contract": "exact pinned source/base -> CI image build -> immutable digest -> downstream canary -> existing release/evidence gates",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Canonical source/image identity survives workflow/container restarts through exact refs and digest provenance; mutable container state cannot advance release state.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-RELEASE-SUPPORT-CONTAINER-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CONTAINER-EXACT-PROVENANCE-001",
+        "ORA-TDRP-CONTAINER-LEAST-PRIVILEGE-001",
+        "ORA-TDRP-CONTAINER-DIGEST-HANDOFF-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CONTAINER-NO-MUTABLE-AS-TRUTH-001",
+        "INV-TDRP-CONTAINER-NO-SECOND-RUNTIME-001",
+        "INV-TDRP-CONTAINER-NO-RELEASE-AUTHORITY-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CONTAINER-EXACT-REF-001",
+        "CONTRACT-TDRP-CONTAINER-RUNTIME-SEPARATION-001",
+        "CONTRACT-TDRP-CONTAINER-DIGEST-CONSUMER-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CONTAINER-MUTABLE-REF-001",
+        "FAULT-TDRP-CONTAINER-SUBMODULE-INCOMPLETE-001",
+        "FAULT-TDRP-CONTAINER-DIGEST-DRIFT-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CONTAINER-SUPPLY-CHAIN-PROVENANCE-001",
+        "SEC-TDRP-CONTAINER-NONROOT-MINIMAL-RUNTIME-001",
+        "SEC-TDRP-CONTAINER-CREDENTIAL-BOUNDARY-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-CONTAINER-NO-TELEGRAM-RUNTIME-001",
+        "REG-TDRP-CONTAINER-EXACT-HEAD-GATES-001"
+      ],
+      "release_gate_ids": [],
+      "test_fixture_ids": [
+        "locked Dockerfile + direct consumers + parent exact-head PR/ref/tree/upstream lease + TDRP/Rust artifacts"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "release_gate_status": "open",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact upstream Dockerfile and direct consumer blob SHAs retained; Telegram Bot API image name, Ubuntu/runtime package choices, port, local-mode flag and GHCR path remain provenance only.",
+      "notes": "Strict index 77 closes only .github/telegram-bot-api/Dockerfile. Counters become unknown=16226 unread=16201 omitted=0 responsibilities=95. Direct entrypoint/canary workflows were audited as consumers but remain independent strict entries. Next strict root index 78 .github/telegram-bot-api/entrypoint.sh@d40a7372efd8e5862e00f9b214b36a840688797e. Closure flags remain false.",
       "test_execution_evidence": []
     }
   ]

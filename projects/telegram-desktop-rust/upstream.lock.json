@@ -337,10 +337,10 @@
   "coverage": {
     "root_source_entries_total": 6820,
     "recursive_source_entries_total": 16306,
-    "unknown_minimum": 16227,
-    "unread_minimum": 16202,
+    "unknown_minimum": 16226,
+    "unread_minimum": 16201,
     "omitted_known": 0,
-    "note": "Live dev authority e14f1566d277d2204f4c8e553bf7cc157047e88b/241f8ab614292cc90e395ef0c966e289fdb3e985 remains unaccepted because full recursive source closure is open. Parent exact-head 44bedab87bff3e7ac1f872215c0f67312b4aa942 completed TDRP run 39749565989 at 61/61 success and Rust run 39749565996 at 6/6 success. Strict index 76 .github/scripts/generate_changelog.py@6cdd12652d31b2a47ed9a8ef906308af59cca3d0 is fully read: deterministic changelog parsing/date normalization, HTML escaping/static rendering, bounded output and asset-copy responsibilities map to current Fabushi release-preparation, exact-source packaging and FQT release/evidence owners. Generated Telegram HTML/search/links/branding are provenance only and cannot own version truth, signing, publication, deployment or release acceptance. Counters unknown=16,227, unread=16,202, omitted=0. Next strict root index 77 .github/telegram-bot-api/Dockerfile@a361602441040028a3332c3732c4902d9c880122. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions are required."
+    "note": "Live dev authority e14f1566d277d2204f4c8e553bf7cc157047e88b/241f8ab614292cc90e395ef0c966e289fdb3e985 remains unaccepted because full recursive source closure is open. Parent exact-head 664f62f7cf7b24734848de0ff843b4a381165440 completed TDRP run 39751838487 at 61/61 success and Rust run 39751838493 at 6/6 success. Strict index 77 .github/telegram-bot-api/Dockerfile@a361602441040028a3332c3732c4902d9c880122 is fully read: digest-pinned base, exact external-ref checkout with recursive submodules, build/runtime separation, minimal runtime dependencies, non-root execution, writable /data ownership and explicit entrypoint/port responsibilities map to current Fabushi build-input provenance, release packaging, security/permission and FQT evidence owners. The Telegram Bot API canary runtime itself is provenance only and cannot become a second messaging service, provider, sidecar, identity/storage owner or release authority. Counters unknown=16,226, unread=16,201, omitted=0. Next strict root index 78 .github/telegram-bot-api/entrypoint.sh@d40a7372efd8e5862e00f9b214b36a840688797e. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions are required."
   },
   "acceptance": {
     "baseline_ready": false,

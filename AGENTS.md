@@ -184,6 +184,14 @@ Generation must bind the input and output to an exact repository revision, prese
 
 For FBCP/TDRP, release-note rendering cannot select or mutate the canonical version, authorize tagging or publication, sign/notarize/deploy artifacts, satisfy packaged acceptance, or create release ACCEPT. Those responsibilities remain with the existing release-preparation governance, exact-source packaging workflow, FQT-REL-001, and FQT-EVID-001; no changelog generator becomes a second release, documentation, packaging, or acceptance owner.
 
+##### Repository release-support container provenance governance
+
+Release-support containers and canary-only service images are bounded build/test/release adapters over existing source, dependency, security, packaging and evidence owners; they are not shipping Fabushi product runtimes and do not create a second service or protocol owner. Every image must bind its base image, fetched external source revision, recursive dependency materialization, build outputs and runtime entrypoint to reviewable exact provenance. Multi-stage construction should keep build-only toolchains out of the runtime image, runtime packages should be minimal, declared writable data paths should have explicit ownership, and the service should run without unnecessary root authority when the upstream contract permits it.
+
+External refs and published images are fail-closed inputs. Mutable branch/tag checkout, unverified or malformed commit identifiers, tag-only container references, missing submodule state, digest drift, or a locally substituted image cannot satisfy provenance. If a workflow publishes a canary image, downstream release jobs must consume the exact digest-qualified image that was built and reviewed; registry credentials, API credentials, bot tokens, release files and other secrets remain within the existing workflow permission boundary and must not turn the container into a canonical identity, messaging, storage or release owner.
+
+For FBCP/TDRP, executable validation remains exact-head GitHub-Actions-only. Telegram Bot API image names, ports, environment names, local-mode flags, entrypoint arguments and GHCR paths are source-specific provenance unless independently adopted by a current Fabushi owner. Fabushi keeps build-input provenance, release packaging, security/permission and FQT evidence/acceptance responsibilities in their existing owners; no Telegram Bot API runtime, sidecar, provider, second messaging service or second release authority is introduced.
+
 #### Stage 4 — Verify
 - Execute or inspect the verification required by the spec and repository workflow.
 - Verify the exact source revision being accepted.
