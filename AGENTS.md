@@ -300,6 +300,16 @@ Completion uses the adapter's sanctioned foreground wait against that same durab
 - Do not claim completion merely because code was written or pushed.
 - Completion requires the spec's Definition of Done and the applicable integration/delivery gates.
 
+##### Repository intent-preserving branch integration governance
+
+A rebase is an Integrate/Deliver operation on one current Git worktree, not an ordinary product task, repository task queue item, or shipping runtime. Resolve the requested target and replay range to exact commits, record `OLD_TIP`, `ONTO`, and exclusive `REPLAY_BASE`, show the replay list and likely conflict surface, and stop when ambiguous interpretations would replay different commits. Remote-tracking refs are local snapshots and must not be refreshed without explicit authorization.
+
+Branch and worktree ownership is fail-closed. Do not rebase a branch checked out in another worktree, mutate sibling worktrees, silently stash a dirty tree, create backup refs when reflog preserves the prior tip, or automatically push or force-push rewritten history. Resume or abort an already-active rebase rather than nesting another operation, and keep the operation non-interactive.
+
+Resolve conflicts by intent, not textual side selection. For overlapping logic, orient the merge stages, read the replayed commit and surrounding series plus the competing base-side history, state both intents, and reapply the moved change in the current code shape. Review rerere-applied resolutions; skip an empty commit only after proving its intended state already exists. Never use whole-file ours/theirs selection, delete a hard hunk merely to pass, skip a hard conflict, or guess through a genuine semantic contradiction.
+
+Verify each resolved conflict and the whole rewritten series. The completed rebase must use `git range-diff` over the original and rewritten ranges plus final branch log/status to account for every replayed or deliberately empty commit. Any executable Fabushi build/test verification runs only in exact-head GitHub Actions; upstream host-specific local compile commands are not Fabushi acceptance authority. Report the exact rebase command, `OLD_TIP` undo path, replayed/skipped commits with evidence, each conflict's competing intents and resolution, decisions, and lower-confidence results. A later force-push may be required for an already-published branch, but this workflow never performs it automatically.
+
 ### 5. Fail-closed rules
 
 The following are prohibited:
