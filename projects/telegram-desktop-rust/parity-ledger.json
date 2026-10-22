@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
-  "target_commit": "b221f256ed4558e933a13929ca1d1972e5ac5860",
+  "target_commit": "f2d36ac256b9a3b0bedceabce279876940d0b475",
   "coverage": {
     "source_entries_total": 16306,
-    "unknown": 16240,
-    "unread": 16215,
+    "unknown": 16239,
+    "unread": 16214,
     "omitted": 0,
-    "responsibilities_total": 81,
+    "responsibilities_total": 82,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -22418,6 +22418,252 @@
       "reviewer": null,
       "license_and_provenance": "Exact developer icon-generation command, clipboard helpers and sample SVG were read from locked telegramdesktop/tdesktop live-dev blobs. Telegram naming, vectosolve/provider mechanics and local clipboard/render paths remain provenance only; no shipping runtime source or external brand asset is copied.",
       "notes": "Strict index 63 closes only .claude/commands/icon.md. Counters become unknown=16240 unread=16215 omitted=0 responsibilities=81. Clipboard helpers and referenced renderer/resource files are dependency evidence and retain their own source-inventory disposition where applicable. Next strict root index 64 .claude/commands/perform-task.md@98ec6ed4aa51d3cac043a70a23adc6834b147f8e. Closure flags remain false.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_path": ".claude/commands/perform-task.md",
+      "source_blob_sha": "98ec6ed4aa51d3cac043a70a23adc6834b147f8e",
+      "source_kind": "repository_ai_single_task_host_command_wrapper",
+      "module_id": "tdesktop.claude.commands.perform-task",
+      "responsibility_id": "TDRP-R9-CLAUDE-PERFORM-TASK-COMMAND-001",
+      "source_symbols": [
+        "frontmatter description / allowed tools",
+        "single-task selection and task-file authority",
+        "source-lineage / existing task-context gate",
+        "split-required handling",
+        "shared perform-task skill invocation",
+        "phase/review/evidence lifecycle",
+        "conditional [ai] commit policy",
+        "single-task stopping boundary"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-AI-SINGLE-TASK-NATIVE-INVOCATION"
+      ],
+      "dependency_ids": [
+        ".claude/ai-workflow-adapter.md@370ff84a1ab4c080b15b601a54162b0630c4f4df",
+        ".agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c",
+        ".agents/shared/phase-effort.md@dd07a4c611922a29a6892332db98afe76cd58952",
+        ".agents/shared/codex-cli-leaves.md@659da44a8083c433c4e9b59ca28f64ba525bfbf8",
+        ".agents/shared/codex-delegation.md@ed89d2a14344f50034a9363bd9ffe75f7972e652",
+        ".agents/shared/test-loop.md@83c4732bf6139f7c6557f18dd87bb35c3d68808d",
+        ".agents/shared/build-lock-recovery.md@ec75573e7efe74e9c9a344f3e66f2fc43ac7680f",
+        ".agents/skills/perform-task/references/pipeline.md@46e158ac86ebce97f9dcd010a98b3c581ffc114c",
+        ".agents/skills/perform-task/references/phase-prompts.md@9e9eac194ffbcf9dd7125876e71dad651a7cabba",
+        ".agents/skills/perform-task/references/computer-use-testing.md@b7fc92d604a55975f75047828d476e64667aa259",
+        ".agents/skills/perform-task/references/mechanical-lane.md@e5e3cc88ba80ece6a20df7c4dd6002491d66a4ef",
+        "GitHub Actions exact-head verification boundary"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/claude-perform-task-command-complete-read.md",
+      "behavior_contract": "The Claude command is only a host-native wrapper for executing one already-selected repository task through the shared perform-task lifecycle. It must preserve exact source/task lineage, split-required boundaries, the repository's phase/review/evidence rules, conditional AI commit policy, and the one-task stopping boundary. It must not create a parallel task queue, scheduler, routing owner, review engine, product runtime, or provider-owned semantic lifecycle.",
+      "state_machine": "resolve one current task and exact authority -> refuse/redirect when task scope or lineage is invalid or split-required -> enter the shared perform-task lifecycle -> discover/spec/plan/implement/verify/review/evidence through existing repository owners -> apply the existing conditional [ai] commit rule when its prerequisites are met -> report the one task's result and stop; queue continuation/routing/consolidation remain outside this wrapper",
+      "side_effects": [
+        "May read and modify repository files only through the shared task lifecycle selected by the task.",
+        "May invoke sanctioned Claude/Codex/Agent host mechanics as developer tooling under the shared workflow.",
+        "May create a conditional [ai] repository commit only when the canonical lifecycle permits it.",
+        "Does not create shipping Agent/Coordinator/Host/Runner/Task/Automation state or a second repository task queue."
+      ],
+      "failure_cases": [
+        "Starting from stale chat memory or an unbound task instead of exact live repository/task authority.",
+        "Continuing a task that is explicitly split-required without respecting the split boundary.",
+        "Treating provider launch/invocation syntax as proof that the shared task lifecycle completed.",
+        "Bypassing shared review, test, evidence or recovery policy because the command is a thin wrapper.",
+        "Creating a second task queue, routing loop, continuation scheduler, consolidation owner or shipping runtime.",
+        "Committing despite unmet conditional [ai] commit prerequisites or claiming child exact-head evidence before it exists."
+      ],
+      "ui_disposition": "Not a shipping UI capability. Claude/Codex/Agent command spelling is developer provenance only.",
+      "non_ui_responsibilities": [
+        "One-task invocation boundary",
+        "Exact task/source lineage preservation",
+        "Split-required fencing",
+        "Reuse of the shared perform-task phase/review/evidence lifecycle",
+        "Conditional repository commit policy",
+        "Explicit stop without independently continuing queue/routing/consolidation"
+      ],
+      "platform_delta": "Upstream command syntax is Claude-host specific. Fabushi keeps only the source-neutral repository workflow contract; provider syntax such as slash commands, $skill, Claude/Codex/Agent launch details and adapter spelling do not become product/runtime owners.",
+      "existing_owner_candidates": [
+        "AGENTS.md#Mandatory development lifecycle",
+        "AGENTS.md#Repository quality-health native invocation",
+        ".agents/skills/perform-task/SKILL.md mapped source-neutral task workflow responsibilities",
+        "Shipping Agent/Coordinator/Host/Runner/Task/Automation owners (rejected)",
+        "A second repository task queue/router/scheduler (rejected)"
+      ],
+      "existing_owner": "Fabushi source-neutral repository native-invocation plus mandatory development/task/review/evidence lifecycle",
+      "rejected_existing_owners": [
+        "Shipping Agent/Coordinator/Host/Runner are product execution owners, not developer repository orchestration.",
+        "Shipping Task/Automation owns end-user task/automation semantics, not repository task execution.",
+        "A Claude/Codex provider runtime would preserve host mechanics instead of the source-neutral workflow responsibility.",
+        "A second scanner/task queue/router/consolidator would duplicate the existing repository lifecycle and violate the wrapper's single-task stopping boundary."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md"
+      ],
+      "fabushi_target_symbols": [
+        "They must resolve to an existing source-neutral repository workflow owner and preserve that owner's exact-authority, evidence, trust, and routing rules; provider syntax such as `$skill` or slash commands is an adapter detail, not a second scanner, task queue, product runtime, or semantic owner."
+      ],
+      "target_language": "Repository governance / source-neutral developer workflow",
+      "language_rationale": "This source is a 42-line provider command wrapper over already-audited shared workflow owners; no shipping Rust/TypeScript implementation or new provider-specific subsystem is warranted.",
+      "command_event_contracts": [
+        "one selected task + exact live authority -> shared perform-task lifecycle",
+        "split-required or invalid lineage -> do not silently continue as one task",
+        "shared lifecycle terminal evidence -> apply existing conditional [ai] commit policy if eligible",
+        "single task complete/blocked -> report and stop without independently selecting the next task",
+        "provider command/adapter invocation -> provenance only, never semantic completion"
+      ],
+      "state_owner": "Existing repository task/spec/evidence state; no new persistent owner.",
+      "lifecycle_owner": "AGENTS.md mandatory development lifecycle and existing shared perform-task/review/evidence governance.",
+      "persistence_and_restart": "Durable repository task/spec/evidence and commits remain source of truth. Provider command session state is not authoritative and cannot replace exact live repository/task re-discovery after restart.",
+      "concurrency_and_cancellation": "The wrapper owns only one task execution at a time. Existing task ownership, worker/reviewer isolation, cancellation, bounded recovery and stale-authority fences remain inherited from the shared lifecycle; the wrapper does not spawn an independent queue.",
+      "security_boundary": "Provider tooling runs only under repository trust/evidence rules; provider syntax and host credentials remain outside shipping product semantics. No privilege escalation or bypass of exact-authority/review gates is introduced.",
+      "network_service_dependencies": [
+        "GitHub Actions for FBCP/TDRP executable verification"
+      ],
+      "service_owner": "Existing repository workflow/evidence lifecycle",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "toolchain-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions are required after this mapping commit.",
+        "Recursive source disposition remains open; baseline_identity_accepted=false and source_closure_ready=false."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "Strict64 .claude/commands/perform-task.md@98ec6ed4aa51d3cac043a70a23adc6834b147f8e fully read previously in the uninterrupted audit path: 42 lines, 2068 chars; source SHA revalidated immediately before this write.",
+        "Direct dependencies .claude/ai-workflow-adapter.md@370ff84a1ab4c080b15b601a54162b0630c4f4df and .agents/skills/perform-task/SKILL.md@590e6660cfd8782b37dbc3c6959944f53bb4541c were fully read in that audit.",
+        "Nine transitive perform-task governance dependencies were individually reconciled to their existing ledger rows and exact live SHAs; no dependency drift was found.",
+        "AGENTS.md@4f888d465d29d962542da07bcb6f6efe2b5be897 contains the selected exact native-invocation target sentence and the mandatory development/task/review/evidence lifecycle.",
+        "Parent exact-head TDRP run 39718798793 attempt 1 completed success, 61/61 jobs; authority artifact 12400835344 digest sha256:dc6aeaa9a0adb7fad5cd0513c6529ab71816f7d9dff325460e36eadbbc6c55ea; recursive closure artifact 12399754162 digest sha256:0addb81be32bbf1e745980ff5da5378f840cd92abba568370e20f7d3b61ca7a9; recursive reachability artifact 12400271928 digest sha256:bb109499178706cc6c4d2cccec540043b6316e7cb9654594e6ff0fbc06561139.",
+        "Parent exact-head Rust run 39718798809 attempt 1 completed success, 6/6 jobs; messaging artifact 12399638673 digest sha256:63fca65f3b2f5ca5abcd7b61f7f351d295683c985f4c111f6b7d6b8b35e7a9b0.",
+        "Parent exact-head Official MCP marketplace run 39718798807 completed success."
+      ],
+      "target_commit": "f2d36ac256b9a3b0bedceabce279876940d0b475",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi source-neutral repository development lifecycle",
+      "composition_slot": "Host-native single-task invocation wrapper",
+      "capability_component": "Repository perform-task invocation adapter",
+      "variation_axes": [
+        "single selected task",
+        "split-required versus executable task",
+        "conditional [ai] commit eligibility",
+        "provider host syntax/provenance",
+        "success/blocked/failure terminal evidence"
+      ],
+      "shared_owner_contracts": [
+        "AGENTS.md mandatory development lifecycle",
+        "AGENTS.md repository native invocation",
+        "existing perform-task review/evidence governance",
+        "GitHub Actions exact-head verification"
+      ],
+      "duplicate_root_check": "No second repository task queue/router/scheduler, Claude/Codex product runtime, shipping Task/Automation owner or duplicate review/evidence lifecycle introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository developer task execution only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Host-native repository command wrapper",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Restart/re-entry must rediscover exact live repository/task authority rather than trust stale host-session state.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CLAUDE-PERFORM-TASK-COMMAND-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-PERFORM-TASK-EXACT-AUTHORITY-001",
+        "ORA-TDRP-PERFORM-TASK-SINGLE-TASK-BOUNDARY-001",
+        "ORA-TDRP-PERFORM-TASK-SHARED-LIFECYCLE-001",
+        "ORA-TDRP-PERFORM-TASK-CONDITIONAL-COMMIT-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-PERFORM-TASK-NO-SECOND-QUEUE-001",
+        "INV-TDRP-PERFORM-TASK-NO-PROVIDER-RUNTIME-001",
+        "INV-TDRP-PERFORM-TASK-NO-EVIDENCE-BYPASS-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-PERFORM-TASK-INVOKE-ONE-001",
+        "CONTRACT-TDRP-PERFORM-TASK-SPLIT-FENCE-001",
+        "CONTRACT-TDRP-PERFORM-TASK-STOP-BOUNDARY-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-PERFORM-TASK-STALE-LINEAGE-001",
+        "FAULT-TDRP-PERFORM-TASK-BLOCKED-SHARED-LIFECYCLE-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-PERFORM-TASK-NO-PROVIDER-PRIVILEGE-BYPASS-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-PERFORM-TASK-NO-AUTO-CONTINUE-QUEUE-001"
+      ],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "locked perform-task command + direct/transitive workflow dependency closure + AGENTS native-invocation owner"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact Claude host command and dependency SHAs are retained only as source provenance. Provider names, slash-command syntax, $skill spelling and adapter mechanics do not become Fabushi shipping product/runtime identifiers.",
+      "notes": "Strict index 64 closes only .claude/commands/perform-task.md. Counters become unknown=16239 unread=16214 omitted=0 responsibilities=82. Its direct/transitive dependencies remain independent inventory rows already audited at their exact SHAs. Next strict root index 65 .claude/commands/process-inbox.md@3bd1c22b06c735ff92cf2260bd893c9de2653f21. Closure flags remain false.",
       "test_execution_evidence": []
     }
   ]
