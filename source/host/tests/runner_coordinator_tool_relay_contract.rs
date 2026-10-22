@@ -1,7 +1,7 @@
 use mahayana_host_runtime::gateway_server::GatewayEventHub;
 use mahayana_host_runtime::runner::coordinator_tool_relay::{
-    CoordinatorToolRelay, CoordinatorToolRelayError, ROUTED_TOOL_EXECUTE_METHOD,
-    ROUTED_TOOL_LIST_METHOD, RUNNER_TOOL_REQUEST_EVENT_CHANNEL,
+    CoordinatorToolRelay, CoordinatorToolRelayError, LOCAL_BROWSER_ACTION_METHOD,
+    ROUTED_TOOL_EXECUTE_METHOD, ROUTED_TOOL_LIST_METHOD, RUNNER_TOOL_REQUEST_EVENT_CHANNEL,
 };
 use serde_json::json;
 use std::sync::Arc;
@@ -44,6 +44,50 @@ fn runner_tool_request_round_trips_through_gateway_event_and_resolution() {
         json!([{"name":"github_search"}])
     );
     assert_eq!(relay.pending_count(), 0);
+}
+
+#[test]
+fn local_browser_action_uses_the_same_bounded_main_control_relay_without_mcp_aliasing() {
+    let events = GatewayEventHub::default();
+    let event_rx = events.subscribe();
+    let relay = Arc::new(CoordinatorToolRelay::with_timeout(
+        events,
+        Duration::from_secs(1),
+    ));
+    let worker = {
+        let relay = Arc::clone(&relay);
+        thread::spawn(move || relay.request(
+            LOCAL_BROWSER_ACTION_METHOD,
+            json!({
+                "type":"snapshot",
+                "conversationId":"agent-a",
+                "workspaceId":"workspace-a",
+                "tabId":"tab-a",
+                "expectedGeneration":1,
+                "operationId":"tool-call-a",
+            }),
+        ))
+    };
+
+    let event = event_rx
+        .recv_timeout(Duration::from_secs(1))
+        .expect("local browser request event");
+    assert_eq!(event["channel"], RUNNER_TOOL_REQUEST_EVENT_CHANNEL);
+    assert_eq!(event["payload"]["method"], LOCAL_BROWSER_ACTION_METHOD);
+    assert_eq!(event["payload"]["args"]["type"], "snapshot");
+    let request_id = event["payload"]["requestId"]
+        .as_str()
+        .expect("request id")
+        .to_string();
+    relay.resolve(&json!({
+        "requestId": request_id,
+        "ok": true,
+        "result": {"ok":true,"tabId":"tab-a","generation":1},
+    })).expect("resolve local browser action");
+    assert_eq!(
+        worker.join().expect("worker").expect("local browser action")["tabId"],
+        "tab-a"
+    );
 }
 
 #[test]

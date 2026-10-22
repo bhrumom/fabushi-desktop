@@ -188,6 +188,30 @@ jobs:
         run: npm run check:desktop-runtime
       - name: Enforce built desktop bundle boundary
         run: node scripts/check-desktop-bundle.mjs
+      - name: Run native Browser Workspace Chromium acceptance
+        env:
+          FABUSHI_FEATURE_HOST_MODE: test
+          MAHAYANA_APP_HOST_BIN: ${{ github.workspace }}/desktop/resources/bin/mahayana-app-host
+          DEBUG: pw:browser*
+          ELECTRON_ENABLE_LOGGING: "1"
+          ELECTRON_ENABLE_STACK_DUMPING: "1"
+        run: npx playwright test e2e/mahayana-agent-workbench.spec.ts --grep "native Browser Workspace opens real Chromium pages"
+      - name: Run local Browser Agent real Chromium acceptance
+        env:
+          FABUSHI_FEATURE_HOST_MODE: test
+          MAHAYANA_APP_HOST_BIN: ${{ github.workspace }}/desktop/resources/bin/mahayana-app-host
+          DEBUG: pw:browser*
+          ELECTRON_ENABLE_LOGGING: "1"
+          ELECTRON_ENABLE_STACK_DUMPING: "1"
+        run: npx playwright test e2e/mahayana-agent-workbench.spec.ts --grep "Agent (controls the real local Chromium form through Host tools|downloads verified bytes from the real local Chromium page through Host tools)"
+      - name: Run Browser extension real Chromium acceptance
+        env:
+          FABUSHI_FEATURE_HOST_MODE: test
+          MAHAYANA_APP_HOST_BIN: ${{ github.workspace }}/desktop/resources/bin/mahayana-app-host
+          DEBUG: pw:browser*
+          ELECTRON_ENABLE_LOGGING: "1"
+          ELECTRON_ENABLE_STACK_DUMPING: "1"
+        run: npx playwright test e2e/mahayana-agent-workbench.spec.ts --grep "Browser extension installs into real Chromium"
       - name: Run Grok Agent shell and Mahayana chat regression
         env:
           FABUSHI_FEATURE_HOST_MODE: test

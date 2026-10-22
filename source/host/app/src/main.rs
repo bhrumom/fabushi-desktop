@@ -51,7 +51,9 @@ use mahayana_host_runtime::runner::sand_automation_auto_review::{
     review_sand_automation_write,
 };
 use mahayana_host_runtime::runner::sand_auto_review_summaries::CloudLifecycleAction;
-use mahayana_host_runtime::runner::sand_browser_auto_review::run_sand_browser_auto_review_preflight;
+use mahayana_host_runtime::runner::sand_browser_auto_review::{
+    is_sand_browser_auto_review_mutating_action, run_sand_browser_auto_review_preflight,
+};
 use mahayana_host_runtime::runner::sand_computer_auto_review::{
     BoxIdentity, InstructionPermissions, SAND_COMPUTER_AUTO_REVIEW_CLASSIFIER_ERROR_REASON,
     run_sand_computer_auto_review_preflight,
@@ -325,6 +327,9 @@ use mahayana_host_runtime::runner::tools::sand_browser_tools::{
     capture_browser_review_state,
     to_browser_review_action,
 };
+use mahayana_host_runtime::runner::tools::local_browser_tools::{
+    ExplicitBrowserTargetExecutor, LocalBrowserCoordinatorExecutor,
+};
 use mahayana_host_runtime::runner::host_computer_tool_dependencies::ProductionComputerToolExecutor;
 use mahayana_host_runtime::runner::host_file_transfer_dependencies::ProductionFileTransferExecutor;
 use mahayana_host_runtime::runner::host_external_machine_dependencies::ProductionExternalMachineExecutor;
@@ -480,7 +485,9 @@ use std::sync::{
     Arc, Mutex, Weak, mpsc,
     atomic::{AtomicBool, Ordering},
 };
+#[cfg(unix)]
 use signal_hook::consts::signal::{SIGINT, SIGTERM};
+#[cfg(unix)]
 use signal_hook::iterator::Signals;
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
@@ -505,6 +512,7 @@ fn ensure_managed_runtime_layout(app_data_dir: &Path) -> io::Result<()> {
     fs::create_dir_all(app_data_dir.join("feature-host/runtime/workspace"))
 }
 
+#[cfg(unix)]
 fn install_shutdown_signal_worker(
     host_tx: mpsc::Sender<HostLaneRequest>,
     shutdown_complete: Arc<AtomicBool>,
@@ -526,6 +534,17 @@ fn install_shutdown_signal_worker(
             }
         });
     }))
+}
+
+#[cfg(not(unix))]
+fn install_shutdown_signal_worker(
+    _host_tx: mpsc::Sender<HostLaneRequest>,
+    _shutdown_complete: Arc<AtomicBool>,
+) -> io::Result<thread::JoinHandle<()>> {
+    // Windows packaged Hosts are child processes whose canonical graceful
+    // shutdown signal is stdin closure. signal-hook's iterator API is Unix-only,
+    // so do not invent a second Windows control plane merely to emulate SIGTERM.
+    Ok(thread::spawn(|| {}))
 }
 
 
@@ -6217,6 +6236,7 @@ fn start_routed_provider_task(
     let worker_auth = Arc::clone(&auth);
     let worker_auto_review = Arc::clone(&auto_review);
     let worker_auto_review_controller = Arc::clone(&auto_review_controller);
+    let worker_local_browser_relay = Arc::clone(&routed_tool_relay);
     let spawn_error_auto_review = Arc::clone(&auto_review_service);
     let spawn_error_agent_id = agent_id.clone();
     let spawn = thread::Builder::new()
@@ -6974,6 +6994,31 @@ fn start_routed_provider_task(
             let browser_auto_review: BrowserAutoReviewCallback =
                 Arc::new(move |spec, args, tool_call_id| {
                     let mode = browser_review_auto_review.current_modes().computer;
+                    // Local Chromium is owned by Electron Main, not the managed Box.
+                    // Never probe the Box display for target=local: that used to make
+                    // every local action fail before its Main-owned authorization and
+                    // generation fences ran. Shadow mode is observational and remains
+                    // non-blocking; Enforce mode fails closed for local mutations until
+                    // a local-page risk classifier is wired to the Main-owned snapshot.
+                    if args.get("target").and_then(serde_json::Value::as_str) == Some("local") {
+                        let exact_action = serde_json::to_value(to_browser_review_action(
+                            spec.op,
+                            args,
+                            &browser_review_agent_id,
+                        ))
+                        .map_err(|error| ProviderSessionError::Tool(format!(
+                            "Local Browser Auto-review action projection failed: {error}"
+                        )))?;
+                        if mode == SandAutoReviewMode::Off
+                            || mode == SandAutoReviewMode::Shadow
+                            || !is_sand_browser_auto_review_mutating_action(&exact_action)
+                        {
+                            return Ok(());
+                        }
+                        return Err(ProviderSessionError::Tool(
+                            "Local Browser Workspace mutation is blocked in Auto-review enforce mode until Main-owned page-state classification is available.".into(),
+                        ));
+                    }
                     let initial_display = browser_review_box.browser_window_index()?;
                     let exact_action = serde_json::to_value(to_browser_review_action(
                         spec.op,
@@ -7783,15 +7828,28 @@ fn start_routed_provider_task(
                 Arc::clone(&box_resources),
                 agent_id.clone(),
             )
-            .with_auto_review_callback(browser_auto_review)
+            .with_auto_review_callback(Arc::clone(&browser_auto_review))
             .with_possible_navigation_callback(browser_possible_navigation)
             .with_shell_safety_callback(browser_shell_safety);
             if !is_group_member_turn {
                 browser_executor_owner =
                     browser_executor_owner.with_persist_image_callback(browser_persist_image);
             }
-            let browser_executor: Arc<dyn BrowserToolExecutor> =
+            let box_browser_executor: Arc<dyn BrowserToolExecutor> =
                 Arc::new(browser_executor_owner);
+            let local_browser_executor: Arc<dyn BrowserToolExecutor> = Arc::new(
+                LocalBrowserCoordinatorExecutor::new(
+                    Arc::clone(&worker_local_browser_relay),
+                    agent_id.clone(),
+                )
+                .with_auto_review_callback(browser_auto_review),
+            );
+            let browser_executor: Arc<dyn BrowserToolExecutor> = Arc::new(
+                ExplicitBrowserTargetExecutor::new(
+                    box_browser_executor,
+                    local_browser_executor,
+                ),
+            );
             let computer_media_agent_id = agent_id.clone();
             let computer_persist_image: ComputerPersistImageCallback = Arc::new(
                 move |bytes, mime| {

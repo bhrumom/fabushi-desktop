@@ -114,6 +114,8 @@ export interface CoordinatorControlExecutorDependencies {
   readonly getRpcTraceWindowTraceparent?: () => string | undefined;
   readonly listRoutedMcpTools?: () => Promise<unknown>;
   readonly executeRoutedMcpTool?: (request: unknown) => Promise<unknown>;
+  /** Exact local-browser bridge. It accepts only the BrowserWorkspace owner's parsed action schema. */
+  readonly executeLocalBrowserAction?: (request: unknown) => Promise<unknown>;
   readonly listHostMcpServers?: () => Promise<unknown>;
   readonly listHostMcpCatalog?: (options: { readonly forceRefresh?: boolean }) => Promise<unknown>;
   readonly listHostEffectiveMcpPlugins?: () => Promise<unknown>;
@@ -484,6 +486,10 @@ export function createCoordinatorControlExecutors(
     executeRoutedMcpTool: async (request: unknown) => {
       if (dependencies.executeRoutedMcpTool == null) throw new Error("Desktop MCP routing is unavailable.");
       return await dependencies.executeRoutedMcpTool(request);
+    },
+    executeLocalBrowserAction: async (request: unknown) => {
+      if (dependencies.executeLocalBrowserAction == null) throw new Error("Local Browser Workspace routing is unavailable.");
+      return await dependencies.executeLocalBrowserAction(request);
     },
     listHostMcpServers: async () => {
       if (dependencies.listHostMcpServers == null) throw new Error("Desktop MCP lifecycle routing is unavailable.");

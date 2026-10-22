@@ -11,6 +11,7 @@ test("desktop bridge contract exposes the frozen top-level preload surface exact
   assert.equal(new Set(DESKTOP_BRIDGE_TOP_LEVEL_KEYS).size, DESKTOP_BRIDGE_TOP_LEVEL_KEYS.length);
   for (const key of [
     "mcp",
+    "browserWorkspace",
     "cursorAccount",
     "experiments",
     "foreverBox",
@@ -33,13 +34,14 @@ test("desktop bridge guard is deliberately structural and fail-closed on missing
     openExternal() {},
     getWindowState() {},
     mcp: {},
+    browserWorkspace: {},
     cursorAccount: {},
     update: {},
   };
   assert.equal(hasDesktopBridge(minimal), true);
   assert.equal(requireDesktopBridge(minimal), minimal);
 
-  for (const key of ["openExternal", "getWindowState", "mcp", "cursorAccount", "update"] as const) {
+  for (const key of ["openExternal", "getWindowState", "mcp", "browserWorkspace", "cursorAccount", "update"] as const) {
     const broken = { ...minimal } as Record<string, unknown>;
     delete broken[key];
     assert.equal(hasDesktopBridge(broken), false, `missing ${key}`);

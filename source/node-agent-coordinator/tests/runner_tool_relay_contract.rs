@@ -1,13 +1,13 @@
 use mahayana_node_agent_coordinator::protocol::Failure;
 use mahayana_node_agent_coordinator::runner_tool_relay::{
-    ROUTED_TOOL_EXECUTE_METHOD, ROUTED_TOOL_LIST_METHOD,
+    LOCAL_BROWSER_ACTION_METHOD, ROUTED_TOOL_EXECUTE_METHOD, ROUTED_TOOL_LIST_METHOD,
     RUNNER_RESOLVE_ROUTED_TOOL_GATEWAY_METHOD, RUNNER_TOOL_REQUEST_EVENT_CHANNEL,
     execute_runner_tool_request, parse_runner_tool_request,
 };
 use serde_json::json;
 
 #[test]
-fn runner_tool_relay_accepts_only_the_frozen_electron_mcp_commands() {
+fn runner_tool_relay_accepts_only_the_frozen_electron_main_commands() {
     assert_eq!(RUNNER_TOOL_REQUEST_EVENT_CHANNEL, "runner-tool-request");
     assert_eq!(
         RUNNER_RESOLVE_ROUTED_TOOL_GATEWAY_METHOD,
@@ -30,6 +30,22 @@ fn runner_tool_relay_accepts_only_the_frozen_electron_mcp_commands() {
     }))
     .expect("execute request");
     assert_eq!(execute.method, ROUTED_TOOL_EXECUTE_METHOD);
+
+    let local_browser = parse_runner_tool_request(&json!({
+        "requestId": "runner-tool-local",
+        "method": LOCAL_BROWSER_ACTION_METHOD,
+        "args": {
+            "type":"snapshot",
+            "conversationId":"agent-a",
+            "workspaceId":"workspace-a",
+            "tabId":"tab-a",
+            "expectedGeneration":2,
+            "operationId":"tool-call-a"
+        },
+    }))
+    .expect("local browser action request");
+    assert_eq!(local_browser.method, LOCAL_BROWSER_ACTION_METHOD);
+    assert_eq!(local_browser.args["type"], "snapshot");
 
     let denied = parse_runner_tool_request(&json!({
         "requestId": "runner-tool-3",

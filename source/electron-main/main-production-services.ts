@@ -1,5 +1,13 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import {
+  createBrowserWorkspaceFilePersistence,
+  createBrowserWorkspaceService,
+  type BrowserWorkspaceHostWindowPort,
+  type BrowserWorkspaceService,
+  type BrowserWorkspaceViewPort,
+  type BrowserWorkspaceWebContentsPort,
+} from "./browser-workspace.js";
 import type { ApplicationMenuElectronPort, ApplicationMenuItem } from "./application-menu.js";
 import { createCoordinatorMainLegs } from "./coordinator/coordinator-main-legs.js";
 import { createEgressConnectionObserver } from "./box/remote-connector-egress.js";
@@ -84,6 +92,16 @@ export interface ElectronProductionNativeBindings {
     new(options: MainBrowserWindowOptions): MainBrowserWindow;
     getAllWindows(): readonly MainBrowserWindow[];
   };
+  readonly WebContentsView: new(options: {
+    readonly webPreferences: {
+      readonly partition: string;
+      readonly nodeIntegration: false;
+      readonly contextIsolation: true;
+      readonly sandbox: true;
+      readonly webSecurity: true;
+      readonly webviewTag: false;
+    };
+  }) => BrowserWorkspaceViewPort;
   readonly Menu: {
     buildFromTemplate(template: readonly ApplicationMenuItem[]): unknown;
     setApplicationMenu(menu: unknown): void;
@@ -123,6 +141,7 @@ export function createElectronProductionNativeBindings(electron: {
   readonly safeStorage: SecureStorageCodec;
   readonly ipcMain: IpcMainPort;
   readonly BrowserWindow: ElectronProductionNativeBindings["BrowserWindow"];
+  readonly WebContentsView: ElectronProductionNativeBindings["WebContentsView"];
   readonly Menu: ElectronProductionNativeBindings["Menu"];
   readonly shell: ElectronProductionNativeBindings["shell"];
   readonly screen: ElectronProductionNativeBindings["screen"];
@@ -132,7 +151,7 @@ export function createElectronProductionNativeBindings(electron: {
   readonly desktopCapturer?: ElectronProductionNativeBindings["desktopCapturer"];
   readonly systemPreferences?: ElectronProductionNativeBindings["systemPreferences"];
 }): ElectronProductionNativeBindings {
-  const required = ["app", "safeStorage", "ipcMain", "BrowserWindow", "Menu", "shell", "screen"] as const;
+  const required = ["app", "safeStorage", "ipcMain", "BrowserWindow", "WebContentsView", "Menu", "shell", "screen"] as const;
   const missing = required.filter((name) => electron[name] == null);
   if (missing.length > 0) throw new Error(`Incomplete Electron production ABI: ${missing.join(", ")}.`);
   if (typeof electron.BrowserWindow !== "function" || typeof electron.BrowserWindow.getAllWindows !== "function") throw new Error("Electron production ABI requires BrowserWindow and BrowserWindow.getAllWindows().");
@@ -140,7 +159,7 @@ export function createElectronProductionNativeBindings(electron: {
   if (typeof electron.Menu.buildFromTemplate !== "function" || typeof electron.Menu.setApplicationMenu !== "function") throw new Error("Electron production ABI requires Menu construction and installation.");
   if (typeof electron.shell.openExternal !== "function") throw new Error("Electron production ABI requires shell.openExternal().");
   if (typeof electron.safeStorage.isEncryptionAvailable !== "function" || typeof electron.safeStorage.encryptString !== "function" || typeof electron.safeStorage.decryptString !== "function") throw new Error("Electron production ABI requires safeStorage encryption methods.");
-  return { app: electron.app, safeStorage: electron.safeStorage, ipcMain: electron.ipcMain, BrowserWindow: electron.BrowserWindow, Menu: electron.Menu, shell: electron.shell, screen: electron.screen, ...(electron.dialog == null ? {} : { dialog: electron.dialog }), ...(electron.net == null ? {} : { net: electron.net }), ...(electron.session == null ? {} : { session: electron.session }), ...(electron.desktopCapturer == null ? {} : { desktopCapturer: electron.desktopCapturer }), ...(electron.systemPreferences == null ? {} : { systemPreferences: electron.systemPreferences }) };
+  return { app: electron.app, safeStorage: electron.safeStorage, ipcMain: electron.ipcMain, BrowserWindow: electron.BrowserWindow, WebContentsView: electron.WebContentsView, Menu: electron.Menu, shell: electron.shell, screen: electron.screen, ...(electron.dialog == null ? {} : { dialog: electron.dialog }), ...(electron.net == null ? {} : { net: electron.net }), ...(electron.session == null ? {} : { session: electron.session }), ...(electron.desktopCapturer == null ? {} : { desktopCapturer: electron.desktopCapturer }), ...(electron.systemPreferences == null ? {} : { systemPreferences: electron.systemPreferences }) };
 }
 
 export interface ElectronProductionResources {
@@ -415,6 +434,8 @@ export interface ProductionServiceContext {
   readonly requireExperiments: () => ProductionExperimentsService;
   readonly requireUpdate: () => ProductionUpdateService;
   readonly requireMcp: () => ProductionMcpService;
+  /** Main-owned local Chromium workspace; coordinator callers never receive its WebContents handle. */
+  readonly requireBrowserWorkspace: () => BrowserWorkspaceService;
   readonly requireTelemetry: () => ProductionTelemetryService;
   readonly readTelemetry: () => ProductionTelemetryService | undefined;
   readonly requireNotifications: () => ProductionNotificationsService;
@@ -523,7 +544,7 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
     return { induced: Reflect.get(result, "induced") as boolean };
   });
   type ProductionClientPauseControl = ReturnType<typeof createSandClientPauseControl<BoxConnectionInfo, { readonly preserveData: boolean; readonly force?: boolean }, RecreateResult, { readonly credential: string; readonly backendUrl: string; readonly expiresAtMs?: number }>>;
-  let runtime: ElectronMainRuntime | undefined, settings: ProductionSettingsService | undefined, mainEdge: (MainEdge & Partial<ProductionDisposable>) | undefined, account: ProductionAccountService | undefined, cursorAccount: unknown, ensureTranscriptionManager: (() => Promise<unknown>) | undefined, experiments: ProductionExperimentsService | undefined, update: ProductionUpdateService | undefined, mcp: ProductionMcpService | undefined, telemetry: ProductionTelemetryService | undefined, notifications: ProductionNotificationsService | undefined, coordinator: ProductionCoordinatorService | undefined, egressTunnelController: EgressTunnelController | undefined, context: ProductionServiceContext | undefined, secretsStores: ReturnType<typeof createSecretsStores> | undefined, boxRecovery: ReturnType<typeof createProductionBoxRecovery> | undefined, clientPauseControl: ProductionClientPauseControl | undefined, boxVisibilityTracker: SandBoxVisibilityTracker | undefined, desktopMetricsRuntime: DesktopMetricsRuntime | undefined, productAnalytics: SandProductAnalytics | undefined, vncTrust: ReturnType<typeof registerElectronProductionVncTrust> | undefined, appAgentSurfaceServer: ReturnType<typeof createAppAgentSurfaceServer> | undefined;
+  let runtime: ElectronMainRuntime | undefined, settings: ProductionSettingsService | undefined, mainEdge: (MainEdge & Partial<ProductionDisposable>) | undefined, account: ProductionAccountService | undefined, cursorAccount: unknown, ensureTranscriptionManager: (() => Promise<unknown>) | undefined, experiments: ProductionExperimentsService | undefined, update: ProductionUpdateService | undefined, mcp: ProductionMcpService | undefined, telemetry: ProductionTelemetryService | undefined, notifications: ProductionNotificationsService | undefined, coordinator: ProductionCoordinatorService | undefined, egressTunnelController: EgressTunnelController | undefined, context: ProductionServiceContext | undefined, secretsStores: ReturnType<typeof createSecretsStores> | undefined, boxRecovery: ReturnType<typeof createProductionBoxRecovery> | undefined, clientPauseControl: ProductionClientPauseControl | undefined, boxVisibilityTracker: SandBoxVisibilityTracker | undefined, desktopMetricsRuntime: DesktopMetricsRuntime | undefined, productAnalytics: SandProductAnalytics | undefined, vncTrust: ReturnType<typeof registerElectronProductionVncTrust> | undefined, appAgentSurfaceServer: ReturnType<typeof createAppAgentSurfaceServer> | undefined, browserWorkspace: BrowserWorkspaceService | undefined;
   let sessionDeathSettlement: ReturnType<typeof wireDesktopUncleanExitSettlement> | undefined;
   const desktopLifecycle = createDesktopLifecycleReporter();
   const disposeLocalExecLifecycleReporter = installLocalExecLifecycleReporter(desktopLifecycle.reportDesktopLocalExecLifecycle);
@@ -540,6 +561,10 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
   const deepLinks = new SandDeepLinkController({ dispatch: (parsed) => requireValue(mainEdge, "main-edge").emit("deep-link", parsed.link), focusWindow, log: (message) => console.log(`[sand] ${message}`) });
   const track = <T extends ProductionDisposable>(value: T): T => { disposables.push(value); return value; };
   const requireDisposable = <T extends ProductionDisposable>(value: T, name: string): T => { if (value == null || typeof value.dispose !== "function") throw new Error(`Electron production service ${name} did not provide dispose().`); return value; };
+  const traceQuit = (phase: string): void => {
+    if (process.env.FABUSHI_E2E_QUIT_TRACE !== "1") return;
+    try { console.error(`[sand:quit-trace] ${phase}`); } catch {}
+  };
   const disposeOnce = async (value: ProductionDisposable | undefined): Promise<void> => {
     if (value == null || disposedValues.has(value)) return;
     disposedValues.add(value);
@@ -549,18 +574,51 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
     desktopEventLoopSampler?.dispose();
     desktopEventLoopSampler = undefined;
   };
+  const desktopQuitSettlementTimeoutMs = 15_000;
+  const settleDesktopQuit = async (operation: Promise<void>): Promise<void> => {
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    try {
+      await Promise.race([
+        operation,
+        new Promise<never>((_resolve, reject) => {
+          timeout = setTimeout(() => {
+            traceQuit(`settlement:deadline-fired-after-${desktopQuitSettlementTimeoutMs}ms`);
+            reject(new Error(`Desktop quit settlement exceeded ${desktopQuitSettlementTimeoutMs}ms.`));
+          }, desktopQuitSettlementTimeoutMs);
+        }),
+      ]);
+    } finally {
+      if (timeout != null) clearTimeout(timeout);
+    }
+  };
   const disposeGraph = async (): Promise<void> => {
-    if (disposed) return;
+    if (disposed) {
+      traceQuit("disposeGraph:already-disposed");
+      return;
+    }
     disposed = true;
+    traceQuit("disposeGraph:start");
     disposeDesktopEventLoopSampler();
     accountStatusSequence += 1;
     try { accountStatusUnsubscribe?.(); } catch (error) { bindings.reportFailure("account", "status-unsubscribe", error); }
     accountStatusUnsubscribe = undefined;
+    traceQuit("disposeGraph:product-analytics:start");
     try { await disposeOnce(productAnalytics); } catch (error) { bindings.reportFailure("product-analytics", "dispose", error); }
+    traceQuit("disposeGraph:product-analytics:complete");
+    let disposalIndex = 0;
     for (const disposable of [...disposables].reverse()) {
+      const label = disposable.constructor?.name ?? "anonymous";
+      traceQuit(`disposeGraph:item-${disposalIndex}:${label}:start`);
       try { await disposeOnce(disposable); } catch (error) { bindings.reportFailure("main", "dispose", error); }
+      traceQuit(`disposeGraph:item-${disposalIndex}:${label}:complete`);
+      disposalIndex += 1;
     }
-    try { coordinatorLegs.dispose(); } finally { disposeLocalExecLifecycleReporter(); }
+    traceQuit("disposeGraph:coordinator-legs:start");
+    try { coordinatorLegs.dispose(); } finally {
+      disposeLocalExecLifecycleReporter();
+      traceQuit("disposeGraph:coordinator-legs:complete");
+    }
+    traceQuit("disposeGraph:complete");
   };
   const initializeFoundation = (): void => {
     if (foundationInitialized) return;
@@ -778,6 +836,7 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
         clearLocalToolApprovals: () => clearPersistedLocalToolApprovals(),
         requireAccount: () => requireValue(account, "account"), requireExperiments: () => requireValue(experiments, "experiments"),
         requireUpdate: () => requireValue(update, "update"), requireMcp: () => requireValue(mcp, "mcp"),
+        requireBrowserWorkspace: () => requireValue(browserWorkspace, "browser-workspace"),
         requireTelemetry: () => requireValue(telemetry, "telemetry"), readTelemetry: () => telemetry,
         requireNotifications: () => requireValue(notifications, "notifications"), requireCoordinator: () => requireValue(coordinator, "coordinator"),
         requireCoordinatorTelemetry: () => {
@@ -814,11 +873,51 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
       update = track(requireDisposable(await bindings.services.createUpdate(context), "update"));
       track(requireDisposable(bindings.services.registerMedia(context), "media"));
       account = track(requireDisposable(await bindings.services.createAccount(context), "account"));
-      accountLifecycle.deliverStatus(await account.getStatus());
+      const initialAccountStatus = await account.getStatus();
+      accountLifecycle.deliverStatus(initialAccountStatus);
+      let browserAccountSlot = desktopStructuredLogAccountSlot(initialAccountStatus) ?? "logged-out";
+      browserWorkspace = track(createBrowserWorkspaceService({
+        ipcMain: bindings.native.ipcMain,
+        createView: ({ partition }) => new bindings.native.WebContentsView({
+          webPreferences: {
+            partition,
+            nodeIntegration: false,
+            contextIsolation: true,
+            sandbox: true,
+            webSecurity: true,
+            webviewTag: false,
+          },
+        }),
+        getTrustedContents: () => getTrustedContents() as unknown as BrowserWorkspaceWebContentsPort | undefined,
+        getAccountScope: accountLifecycle.getAccountScope,
+        persistence: createBrowserWorkspaceFilePersistence(join(bindings.native.app.getPath("userData"), "browser-workspace")),
+        ...(bindings.native.dialog == null ? {} : {
+          pickUploadFile: async () => {
+            const result = await bindings.native.dialog!.showOpenDialog({ properties: ["openFile"] });
+            if (result.canceled || result.filePaths.length !== 1) return null;
+            return result.filePaths[0] ?? null;
+          },
+          pickExtensionDirectory: async () => {
+            const fixture = process.env.FABUSHI_E2E === "1"
+              ? process.env.FABUSHI_E2E_BROWSER_EXTENSION_DIR?.trim()
+              : undefined;
+            if (fixture) return fixture;
+            const result = await bindings.native.dialog!.showOpenDialog({ properties: ["openDirectory"] });
+            if (result.canceled || result.filePaths.length !== 1) return null;
+            return result.filePaths[0] ?? null;
+          },
+        }),
+        broadcast,
+        reportFailure: (leg, error) => bindings.reportFailure("browser-workspace", leg, error),
+      }));
       accountStatusUnsubscribe = account.subscribe(() => {
         const sequence = ++accountStatusSequence;
         void account!.getStatus().then((status) => {
-          if (!disposed && sequence === accountStatusSequence) accountLifecycle.deliverStatus(status);
+          if (disposed || sequence !== accountStatusSequence) return;
+          const nextAccountSlot = desktopStructuredLogAccountSlot(status) ?? "logged-out";
+          accountLifecycle.deliverStatus(status);
+          if (nextAccountSlot !== browserAccountSlot) browserWorkspace?.revokeAccount();
+          browserAccountSlot = nextAccountSlot;
         }).catch((error) => bindings.reportFailure("account", "status-refresh", error));
       });
       const startupAuthService = await account.getAuthService();
@@ -923,46 +1022,135 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
           });
           if (sessionDeathSettlement != null) settleUncleanExitOnSessionEnd(window, sessionDeathSettlement);
           installBoxVisibilityDocumentReset(window.webContents, () => boxVisibilityTracker?.abandonAll());
+          browserWorkspace?.attachWindow(window as unknown as BrowserWorkspaceHostWindowPort);
           bindings.services.onWindowCreated?.(window, context!);
           if (appAgentSurfaceServer == null) {
             appAgentSurfaceServer = createAppAgentSurfaceServer({ app: bindings.native.app, getWindow: () => runtime?.getMainWindow() ?? null, appVersion: bindings.native.app.getVersion?.(), env });
             void appAgentSurfaceServer.start().catch((error) => bindings.reportFailure("app-agent-surface", "start", error));
           }
         },
-        dispose: () => void (async () => { await appAgentSurfaceServer?.close(); appAgentSurfaceServer = undefined; await disposeGraph(); })(),
+        dispose: () => void (async () => {
+          traceQuit("services.dispose:start");
+          traceQuit("services.dispose:app-agent-surface-close:start");
+          await appAgentSurfaceServer?.close();
+          traceQuit("services.dispose:app-agent-surface-close:complete");
+          appAgentSurfaceServer = undefined;
+          await disposeGraph();
+          traceQuit("services.dispose:complete");
+        })(),
       };
     } catch (error) { await disposeGraph(); throw error; }
   })();
   const beginBeforeQuit = (): "continue" | "prevent" => {
-    if (quitState === "settled" || context == null || telemetry == null) return "continue";
-    if (quitState === "flushing") return "prevent";
+    traceQuit(`before-quit:enter state=${quitState} context=${context != null} telemetry=${telemetry != null}`);
+    if (quitState === "settled" || context == null || telemetry == null) {
+      traceQuit("before-quit:continue-no-settlement");
+      return "continue";
+    }
+    if (quitState === "flushing") {
+      traceQuit("before-quit:prevent-already-flushing");
+      return "prevent";
+    }
     quitState = "flushing";
-    void (async () => {
+    traceQuit("before-quit:prevent-and-settle");
+    const settlement = (async () => {
+      traceQuit("settlement:body-start");
       try {
+        traceQuit("phase:metrics:start");
         desktopMetricsRuntime?.disposeProcessMetricsCollector();
         const numericMetrics = desktopMetricsRuntime?.takeClientNumericMetricsManager();
         boxVisibilityTracker?.abandonAll();
+        traceQuit("phase:metrics:complete");
         const disposeQuitPhase = async (value: ProductionDisposable | undefined, area: string): Promise<void> => {
+          traceQuit(`phase:${area}:start`);
           try { await disposeOnce(value); } catch (error) { bindings.reportFailure(area, "dispose", error); }
+          traceQuit(`phase:${area}:complete`);
         };
+        // Close local Chromium WebContents and detach its Main-owned CDP sessions
+        // before coordinator/telemetry shutdown can hold the quit path open.
+        await disposeQuitPhase(browserWorkspace, "browser-workspace");
         await disposeQuitPhase(coordinator, "coordinator");
+        traceQuit("phase:coordinator-legs:start");
         try { coordinatorLegs.dispose(); } catch (error) { bindings.reportFailure("coordinator", "legs-dispose", error); }
+        traceQuit("phase:coordinator-legs:complete");
         await disposeQuitPhase(boxRecovery, "box-recovery");
+        traceQuit("phase:box-secrets-quiesce:start");
         await secretsStores?.pushBoxSecrets.quiesce();
+        traceQuit("phase:box-secrets-quiesce:complete");
+        traceQuit("phase:push-telemetry-settled:start");
         await secretsStores?.pushTelemetry.settled();
+        traceQuit("phase:push-telemetry-settled:complete");
         disposeDesktopEventLoopSampler();
+        traceQuit("phase:telemetry-flush:start");
         await Promise.all([telemetry!.flushBeforeQuit(), numericMetrics?.flush() ?? Promise.resolve()]);
+        traceQuit("phase:telemetry-flush:complete");
         numericMetrics?.dispose();
-        if (update?.willRunStagedInstallerOnQuit?.() === true) await bindings.services.killLocalExecDaemon?.();
+        if (update?.willRunStagedInstallerOnQuit?.() === true) {
+          traceQuit("phase:kill-local-exec-daemon:start");
+          await bindings.services.killLocalExecDaemon?.();
+          traceQuit("phase:kill-local-exec-daemon:complete");
+        }
+        traceQuit("phase:apply-staged-update:start");
         update?.applyStagedOnQuit?.();
+        traceQuit("phase:apply-staged-update:complete");
         await disposeQuitPhase(telemetry, "telemetry");
         await disposeQuitPhase(productAnalytics, "product-analytics");
         await disposeQuitPhase(update, "update");
         await disposeQuitPhase(mcp, "mcp");
         await disposeQuitPhase(experiments, "experiments");
-      } catch (error) { bindings.reportFailure("telemetry", "quit-flush-race", error); try { await telemetry?.spillPending?.(); } catch (spillError) { bindings.reportFailure("telemetry", "quit-preserve", spillError); } }
-      finally { await disposeGraph(); quitState = "settled"; bindings.native.app.quit(); }
+      } catch (error) {
+        traceQuit("settlement:body-error");
+        bindings.reportFailure("telemetry", "quit-flush-race", error);
+        try { await telemetry?.spillPending?.(); } catch (spillError) { bindings.reportFailure("telemetry", "quit-preserve", spillError); }
+      } finally {
+        traceQuit("settlement:disposeGraph:start");
+        await disposeGraph();
+        traceQuit("settlement:disposeGraph:complete");
+      }
     })();
+    void (async () => {
+      traceQuit("settlement:watchdog-start");
+      let settlementTimedOut = false;
+      try {
+        await settleDesktopQuit(settlement);
+        traceQuit("settlement:completed");
+      } catch (error) {
+        traceQuit("settlement:timeout-report-start");
+        bindings.reportFailure("main", "quit-settlement", error);
+        settlementTimedOut = true;
+        traceQuit("settlement:timeout-report-complete");
+      }
+
+      quitState = "settled";
+      const forceExit = (): void => {
+        traceQuit("force-exit:calling-app-exit");
+        if (typeof bindings.native.app.exit === "function") {
+          bindings.native.app.exit(0);
+          traceQuit("force-exit:app-exit-returned");
+          return;
+        }
+        bindings.reportFailure("main", "quit-force-exit-unavailable", new Error("Electron app.exit is unavailable after the bounded quit deadline."));
+        traceQuit("force-exit:app-exit-unavailable");
+      };
+
+      if (settlementTimedOut) {
+        traceQuit("settlement:deadline-force-exit");
+        forceExit();
+        return;
+      }
+
+      traceQuit("graceful-quit:calling-app-quit");
+      bindings.native.app.quit();
+      traceQuit("graceful-quit:app-quit-returned");
+      const exitWatchdog = setTimeout(() => {
+        traceQuit("exit-watchdog:fired");
+        bindings.reportFailure("main", "quit-watchdog", new Error("Electron did not exit within 5000ms after graceful quit."));
+        forceExit();
+      }, 5_000);
+      exitWatchdog.unref?.();
+      traceQuit("exit-watchdog:scheduled");
+    })();
+    traceQuit("before-quit:return-prevent");
     return "prevent";
   };
   const dependencies: ElectronMainDependencies = {

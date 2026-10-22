@@ -1,15 +1,82 @@
-import { _electron as electron, expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { _electron as electron, chromium, expect, test, type Browser, type BrowserContext, type ElectronApplication, type Locator, type Page } from '@playwright/test';
+import { spawn, type ChildProcess } from 'node:child_process';
+import { WebSocket } from 'ws';
+import { createHash, X509Certificate } from 'node:crypto';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
+import { createServer as createHttpsServer } from 'node:https';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const packagedExecutable = process.env.FABUSHI_ELECTRON_EXECUTABLE?.trim() || null;
+const firstWindowTimeoutMs = packagedExecutable ? 120_000 : 30_000;
+let e2eBrowserAgentToolFailures: string[] = [];
+
+// Production packaged startup includes the real Host/Coordinator graph and is
+// governed by the desktop's existing 120s startup-stuck watchdog. Ordinary
+// focused E2E keeps its 45s default; native workspace acceptance has an explicit
+// budget because it verifies real Chromium, clean shutdown, and profile restart.
+test.beforeEach(async ({}, testInfo) => {
+  e2eBrowserAgentToolFailures = [];
+  if (packagedExecutable) testInfo.setTimeout(150_000);
+});
+
+// Fixed, non-secret localhost-only certificate for synthetic HTTPS acceptance.
+// Chromium trusts only this certificate's SPKI in the focused test process.
+const E2E_HTTPS_KEY_PEM = `-----BEGIN PRIVATE KEY-----
+MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCysJO+Eylzs96X
+K02SIZYae7jpLJmlqMS2LuKmxSjKOhCIVWSjftNonuiIK9vGyr+Hk07x3qB+7oP5
+hQRpPf+HLrFTAnyHfa66IFK3cFBv6xHZH2vgPgK6T0Gd8ttB8/oMVGM8t52Wtqjg
+8iYxrqurrIUC0aWifJHRXdj4OcmvoGpQwKjkxJbAhi49w2UDDzypOvQxm0KPtNdB
+fBfUKc47QdxJvrhQ9rWkS7uJj2D6KjA6oLEnuaDdQIt6/L3mwEKgPighcyM3cxO6
+xA3k8oZCRQYdqftcA8fQEOo+HtVoh5tLKj6f7bRyxHykqgsmVRoA2ATV1HpZpm6y
+rNQ/N4VLAgMBAAECggEAUm4rkZT0W9gfeFv1ClLtFCV77TDyZh2/NQ3W57ju8q8r
+fkDqTpPMgahAu8SDu6Y/CZNWaTRalIOCJSKMIOKFVL6g9ZqhiL1dU6ZikhXBPYfS
+sXcRxB3HE1xJeEwWgkvCz1pEdzd6/pIfwLlkDio2LllE+MJuptDRUaR52TSLSjUv
+gMoVZXo4JUtASbin5JCb8tWccGPQFlQNpNW/VnKpvEFP2J2pdQmAlVlC9D2CsUTp
+WJSmFz8CPedtMQ8DF1KGfZIJ5bI73eK3CqLyDtkNE2S0DKQ/EC9DpgosvM2NKWsr
+TAjC2OeVKV52rqo/SLWoWO7VtgDjrEvJdkeC/Pk/hQKBgQDqO3/j3vAu14Qu72KA
+qkJRGXQc7Nwj1K4wey4FkBCI74TwzIEpqdLL+fI66ygy54VAN7xlKishf3j03fWV
+2P9wo946/K7a+peSm5On2EqzTDpf1+yb8TSdDn0Kfd+tveM83yT3fVrazajm7Pck
+jKEf+HFlW0pKfJjr68q9+M3VNwKBgQDDS7DwlZoZtwuCk7mqncyxAPBM+32DLoqQ
+3p70FMokg4kYvcOrDl7WqTHxZVs8oXSerL7fUi2GgnOtQH7O4suoAaDxEhX6ZKAW
+S2LpPcwHRVXIsemGnnsM2qbqYeJkOUCeDhinKnqUxwlr0XmiVHI2NTO0lfdCDgav
+Bjr1JBqajQKBgBQDwYnXIu7du43HJsOXyNLlOea+1pC5O6ko3WXcSY1p6hIpZ2AI
+AtsrIGeocGbpIZm7KX37fHQAUHWcAcAsKqeVWQfxT3+mqgz8/kD5Wmi3usU1ziIF
+GlnRQx4CY3qVHzW0W5RKQdkweZ5B4VxeJ+ZzdD0U7+QtgWOnYkuZVv1BAoGBAIAP
+PAEmOBwwmQ2QjKjCPJy8ftYb+ttwQ1BnileG4l47GkTs+kdKbwnXfHZL/h2tyWja
+4XZSzqNrGys6JWzH7r9GAiDRuTOtlAPKfxtueEE0R+IIN5cciJePMPB0Kx2JJUP+
+/k9vXV39fcIDY/z73sCI9lSuGapoxB00uqhQellpAoGAMWlmFD8hSI2g+vjE2acR
+L0w3zdkaN4nSOyY7KnAJKZzbtjzcAh5xy3n7Ir8O+aTeoOFjlmKdblwAoNHixHmH
+e48f+QRYQ8+9pQSDB1mBgaK/lhsif+0aw33eP5GLtCCKmwE0QBNlzopcp9dvroWn
+w3h5OEfNZ2qQwoQK8hda7wI=
+-----END PRIVATE KEY-----`;
+const E2E_HTTPS_CERT_PEM = `-----BEGIN CERTIFICATE-----
+MIIDJTCCAg2gAwIBAgIUDfSXyb07TfEsQMUuJakdy7QZIugwDQYJKoZIhvcNAQEL
+BQAwFDESMBAGA1UEAwwJMTI3LjAuMC4xMB4XDTI2MTAyMTAyNDgwN1oXDTM2MTAx
+ODAyNDgwN1owFDESMBAGA1UEAwwJMTI3LjAuMC4xMIIBIjANBgkqhkiG9w0BAQEF
+AAOCAQ8AMIIBCgKCAQEAsrCTvhMpc7PelytNkiGWGnu46SyZpajEti7ipsUoyjoQ
+iFVko37TaJ7oiCvbxsq/h5NO8d6gfu6D+YUEaT3/hy6xUwJ8h32uuiBSt3BQb+sR
+2R9r4D4Cuk9BnfLbQfP6DFRjPLedlrao4PImMa6rq6yFAtGlonyR0V3Y+DnJr6Bq
+UMCo5MSWwIYuPcNlAw88qTr0MZtCj7TXQXwX1CnOO0HcSb64UPa1pEu7iY9g+iow
+OqCxJ7mg3UCLevy95sBCoD4oIXMjN3MTusQN5PKGQkUGHan7XAPH0BDqPh7VaIeb
+Syo+n+20csR8pKoLJlUaANgE1dR6WaZusqzUPzeFSwIDAQABo28wbTAdBgNVHQ4E
+FgQU/3yr6LhhvqwZChYQQ3F2jWRLMxIwHwYDVR0jBBgwFoAU/3yr6LhhvqwZChYQ
+Q3F2jWRLMxIwDwYDVR0TAQH/BAUwAwEB/zAaBgNVHREEEzARhwR/AAABgglsb2Nh
+bGhvc3QwDQYJKoZIhvcNAQELBQADggEBADocU1XXu8c8wSi9BvQ1Kp5Acp6Z3ehR
+6CgOr58RU9mAS35WkdsFioYIs3KkP2bDPNCP7oFHdm7/lHare3z9DYqQ/uYWZ99f
+LkYhcZzW+SHh0McFImV36nl8cZL2vklW1WUtw4QaAfYx0Pj11SgRdwi8kpGLTHvk
+m3yfsWbU7Es2VfLmr37JXKsOdBsAcJrkK/XlsF7LY5m2IFtCugM4F3ml5Ksdf8S0
+8NpeSLc7pitnJWWH94zGvn3tkvF+j+fKg794M+wV0v2inIBh+LwVdG1PagG3jfaR
+xdeEQKo7fAxQ1pR0vH6bLdKCiPGGLvS2zlWIHoP5afq3/lQZRlrAEFI=
+-----END CERTIFICATE-----`;
 
 let e2eAuthServer: ReturnType<typeof createServer> | null = null;
 let e2eAuthBackendPromise: Promise<string> | null = null;
+let e2eHttpsServer: ReturnType<typeof createHttpsServer> | null = null;
+let e2eHttpsOriginPromise: Promise<string> | null = null;
 
 function e2eAuthToken(): string {
   const encode = (value: Record<string, unknown>) => Buffer.from(JSON.stringify(value), 'utf8').toString('base64url');
@@ -98,6 +165,11 @@ let e2eHumanMessages: E2eHumanMessage[] = [];
 let e2eHumanMessageSequence = 1;
 let e2eHumanResourceSequence = 1;
 let e2eHumanResources = new Map<string, E2eHumanResource>();
+let e2eBrowserAgentSubmissions: Array<{ name: string; plan: string }> = [];
+let e2eConcurrentBrowserSubmissions: Array<{ task: "alpha" | "beta"; name: string }> = [];
+let e2eConcurrentAlphaReadyForTakeover = false;
+let e2eConcurrentAlphaClickDispatched = false;
+let releaseE2eConcurrentAlphaClick: (() => void) | null = null;
 let e2eLoginDeviceSequence = 1;
 const e2eObservedSocialDeviceIds = new Set<string>();
 
@@ -130,6 +202,32 @@ function parseE2eMultipartFile(contentType: string | undefined, body: Buffer): {
     contentType: partTypeMatch?.[1]?.trim() || 'application/octet-stream',
     bytes: body.subarray(payloadStart, payloadEnd),
   };
+}
+
+function snapshotElementsFromToolOutput(output: Record<string, unknown>): unknown[] {
+  const queue: unknown[] = [output];
+  const visited = new Set<object>();
+  while (queue.length > 0 && visited.size < 64) {
+    const candidate = queue.shift();
+    if (candidate == null || typeof candidate !== 'object') continue;
+    if (Array.isArray(candidate)) {
+      queue.push(...candidate.slice(0, 32));
+      continue;
+    }
+    if (visited.has(candidate)) continue;
+    visited.add(candidate);
+    const record = candidate as Record<string, unknown>;
+    if (Array.isArray(record.elements) && record.elements.length > 0) return record.elements;
+    for (const key of ['snapshot', 'data', 'result', 'content', 'output', 'text']) {
+      const nested = record[key];
+      if (typeof nested === 'string' && nested.length <= 64_000) {
+        try { queue.push(JSON.parse(nested)); } catch {}
+      } else if (nested != null && typeof nested === 'object') {
+        queue.push(nested);
+      }
+    }
+  }
+  return [];
 }
 
 async function ensureE2eAuthBackend(): Promise<string> {
@@ -291,6 +389,19 @@ async function ensureE2eAuthBackend(): Promise<string> {
         response.end(resource.bytes);
         return;
       }
+      if (requestUrl.pathname === '/api/social/calls' && request.method === 'GET') {
+        if (request.headers.authorization !== `Bearer ${token}`
+          || !isE2eSocialDeviceId(request.headers['x-fabushi-device-id'])) {
+          response.setHeader('content-type', 'application/json');
+          response.statusCode = 401;
+          response.end(JSON.stringify({ success: false, error: 'invalid-social-credential' }));
+          return;
+        }
+        response.setHeader('content-type', 'application/json');
+        response.statusCode = 200;
+        response.end(JSON.stringify({ success: true, calls: [] }));
+        return;
+      }
       if (requestUrl.pathname === '/api/social/messages' && request.method === 'GET') {
         if (request.headers.authorization !== `Bearer ${token}`
           || !isE2eSocialDeviceId(request.headers['x-fabushi-device-id'])) {
@@ -417,14 +528,331 @@ async function ensureE2eAuthBackend(): Promise<string> {
           ? '收到：自建 Bot 请规划步骤'
           : '收到：请分析这个任务';
         const providerRequest = JSON.parse(body.toString('utf8')) as { input?: unknown };
-        const isToolContinuation = Array.isArray(providerRequest.input)
-          && providerRequest.input.some((item) => item != null
-            && typeof item === 'object'
-            && !Array.isArray(item)
-            && 'type' in item
-            && item.type === 'function_call_output');
+        const providerInput = Array.isArray(providerRequest.input) ? providerRequest.input : [];
+        const isToolContinuation = providerInput.some((item) => item != null
+          && typeof item === 'object'
+          && !Array.isArray(item)
+          && 'type' in item
+          && item.type === 'function_call_output');
+        const browserAgentConcurrencyE2e = body.includes(Buffer.from('FABUSHI_BROWSER_AGENT_CONCURRENCY_E2E', 'utf8'))
+          || body.includes(Buffer.from('fabushi-e2e-browser-concurrency-', 'utf8'));
+        const browserAgentDownloadE2e = !browserAgentConcurrencyE2e && (body.includes(Buffer.from('FABUSHI_BROWSER_AGENT_DOWNLOAD_E2E', 'utf8'))
+          || body.includes(Buffer.from('fabushi-e2e-browser-download-', 'utf8')));
+        const browserAgentE2e = !browserAgentConcurrencyE2e && !browserAgentDownloadE2e && (body.includes(Buffer.from('FABUSHI_BROWSER_AGENT_E2E', 'utf8'))
+          || body.includes(Buffer.from('fabushi-e2e-browser-', 'utf8')));
+        const functionOutputItem = (callId: string): { output?: unknown } | undefined =>
+          providerInput.find((candidate) => candidate != null
+            && typeof candidate === 'object'
+            && !Array.isArray(candidate)
+            && (candidate as { type?: unknown }).type === 'function_call_output'
+            && (candidate as { call_id?: unknown }).call_id === callId) as { output?: unknown } | undefined;
+        const hasFunctionOutput = (callId: string): boolean => functionOutputItem(callId) != null;
+        const functionOutputFailure = (callId: string): string | null => {
+          const item = functionOutputItem(callId);
+          if (item == null) return null;
+          let output = item.output;
+          if (typeof output === 'string') {
+            try { output = JSON.parse(output); } catch {
+              return /(?:error|failed|blocked|timed out|timeout|denied|not found)/iu.test(output)
+                ? output.slice(0, 1_024)
+                : null;
+            }
+          }
+          if (output == null || typeof output !== 'object' || Array.isArray(output)) return null;
+          const row = output as Record<string, unknown>;
+          if (row.isError !== true && row.ok !== false
+            && !(typeof row.error === 'string' && row.error.trim().length > 0)) return null;
+          const detail = typeof row.error === 'string' && row.error.trim().length > 0
+            ? row.error
+            : typeof row.text === 'string' ? row.text : JSON.stringify(row);
+          return detail.slice(0, 1_024);
+        };
+        const functionOutput = (callId: string): Record<string, unknown> | null => {
+          const item = functionOutputItem(callId);
+          if (item == null) return null;
+          let output = item.output;
+          if (typeof output === 'string') {
+            try { output = JSON.parse(output); } catch { return null; }
+          }
+          return output != null && typeof output === 'object' && !Array.isArray(output)
+            ? output as Record<string, unknown>
+            : null;
+        };
+        const sendFunctionCall = (name: string, callId: string, args: Record<string, unknown>): void => {
+          const call = { type: 'function_call', name, call_id: callId, arguments: JSON.stringify(args) };
+          response.end([
+            `data: ${JSON.stringify({ type: 'response.output_item.done', item: call })}\n\n`,
+            `data: ${JSON.stringify({
+              type: 'response.completed',
+              response: {
+                id: `fabushi-e2e-browser-response-${callId}`,
+                output: [call],
+                usage: { input_tokens: 8, output_tokens: 8, input_tokens_details: { cached_tokens: 0 } },
+              },
+            })}\n\n`,
+          ].join(''));
+        };
+        const finishProviderTurn = (turnId: string): void => {
+          response.end([
+            `data: ${JSON.stringify({ type: 'response.output_text.delta', delta: 'done' })}\n\n`,
+            `data: ${JSON.stringify({
+              type: 'response.completed',
+              response: {
+                id: 'fabushi-e2e-finished-' + turnId,
+                output: [],
+                usage: { input_tokens: 8, output_tokens: 1, input_tokens_details: { cached_tokens: 0 } },
+              },
+            })}\n\n`,
+          ].join(''));
+        };
+        const finishToolFailure = (callId: string): boolean => {
+          const failure = functionOutputFailure(callId);
+          if (failure == null) return false;
+          e2eBrowserAgentToolFailures.push(callId + ': ' + failure);
+          finishProviderTurn('tool-failure-' + callId);
+          return true;
+        };
         response.setHeader('content-type', 'text/event-stream');
         response.statusCode = 200;
+        if (browserAgentConcurrencyE2e) {
+          const task: "alpha" | "beta" = body.includes(Buffer.from('FABUSHI_BROWSER_AGENT_CONCURRENCY_E2E_ALPHA', 'utf8'))
+            || body.includes(Buffer.from('fabushi-e2e-browser-concurrency-alpha-', 'utf8'))
+            ? "alpha"
+            : "beta";
+          const prefix = `fabushi-e2e-browser-concurrency-${task}-`;
+          const finalCallId = prefix + 'final-message';
+          if (finishToolFailure(finalCallId)) return;
+          if (hasFunctionOutput(finalCallId)) {
+            finishProviderTurn(finalCallId);
+            return;
+          }
+          for (const callId of [prefix + 'snapshot', prefix + 'fill', prefix + 'click', prefix + 'wait']) {
+            if (finishToolFailure(callId)) return;
+          }
+          const snapshotOutput = functionOutput(prefix + 'snapshot');
+          const fillOutput = functionOutput(prefix + 'fill');
+          const clickOutput = functionOutput(prefix + 'click');
+          const waitOutput = functionOutput(prefix + 'wait');
+          if (snapshotOutput == null) {
+            sendFunctionCall('browser_snapshot', `${prefix}snapshot`, { target: 'local' });
+            return;
+          }
+          const elements = snapshotElementsFromToolOutput(snapshotOutput);
+          const refNamed = (name: string): string => {
+            const element = elements.find((candidate) => candidate != null
+              && typeof candidate === 'object'
+              && !Array.isArray(candidate)
+              && (candidate as { name?: unknown }).name === name) as { ref?: unknown } | undefined;
+            if (typeof element?.ref !== 'string' || element.ref.length === 0) {
+              throw new Error(`Concurrent Browser Agent E2E snapshot did not expose ref for ${name}.`);
+            }
+            return element.ref;
+          };
+          if (fillOutput == null) {
+            sendFunctionCall('browser_fill', `${prefix}fill`, {
+              target: 'local',
+              ref: refNamed('Name'),
+              value: task === 'alpha' ? 'Alpha Agent' : 'Beta Agent',
+            });
+            return;
+          }
+          if (clickOutput == null) {
+            if (task === 'alpha') {
+              e2eConcurrentAlphaReadyForTakeover = true;
+              await new Promise<void>((resolve) => {
+                releaseE2eConcurrentAlphaClick = resolve;
+              });
+              releaseE2eConcurrentAlphaClick = null;
+              e2eConcurrentAlphaClickDispatched = true;
+            }
+            sendFunctionCall('browser_click', `${prefix}click`, {
+              target: 'local',
+              ref: refNamed('Submit concurrent'),
+            });
+            return;
+          }
+          if (waitOutput == null) {
+            sendFunctionCall('browser_wait', `${prefix}wait`, {
+              target: 'local',
+              text: `Concurrent ${task} received`,
+              timeoutMs: 10_000,
+            });
+            return;
+          }
+          const finalCall = {
+            type: 'function_call',
+            name: 'SendMessage',
+            call_id: `${prefix}final-message`,
+            arguments: JSON.stringify({ type: 'text', content: `Concurrent ${task} complete` }),
+          };
+          response.end([
+            `data: ${JSON.stringify({ type: 'response.output_item.done', item: finalCall })}\n\n`,
+            `data: ${JSON.stringify({
+              type: 'response.completed',
+              response: {
+                id: `${prefix}response-final-message`,
+                output: [finalCall],
+                usage: { input_tokens: 8, output_tokens: 8, input_tokens_details: { cached_tokens: 0 } },
+              },
+            })}\n\n`,
+          ].join(''));
+          return;
+        }
+        if (browserAgentDownloadE2e) {
+          const finalCallId = 'fabushi-e2e-browser-download-final-message';
+          if (finishToolFailure(finalCallId)) return;
+          if (hasFunctionOutput(finalCallId)) {
+            finishProviderTurn(finalCallId);
+            return;
+          }
+          for (const callId of [
+            'fabushi-e2e-browser-download-wait',
+            'fabushi-e2e-browser-download-snapshot',
+            'fabushi-e2e-browser-download-file',
+          ]) {
+            if (finishToolFailure(callId)) return;
+          }
+          const waitOutput = functionOutput('fabushi-e2e-browser-download-wait');
+          const snapshotOutput = functionOutput('fabushi-e2e-browser-download-snapshot');
+          const downloadOutput = functionOutput('fabushi-e2e-browser-download-file');
+          if (waitOutput == null) {
+            sendFunctionCall('browser_wait', 'fabushi-e2e-browser-download-wait', {
+              target: 'local',
+              text: 'Download fixture',
+              timeoutMs: 10_000,
+            });
+            return;
+          }
+          if (snapshotOutput == null) {
+            sendFunctionCall('browser_snapshot', 'fabushi-e2e-browser-download-snapshot', { target: 'local' });
+            return;
+          }
+          const elements = snapshotElementsFromToolOutput(snapshotOutput);
+          const link = elements.find((candidate) => {
+            if (candidate == null || typeof candidate !== 'object' || Array.isArray(candidate)) return false;
+            const element = candidate as { name?: unknown; text?: unknown; href?: unknown };
+            return element.name === 'Download fixture'
+              || element.text === 'Download fixture'
+              || (typeof element.href === 'string' && element.href.endsWith('/browser-workspace-download'));
+          }) as { ref?: unknown } | undefined;
+          if (typeof link?.ref !== 'string' || link.ref.length === 0) {
+            const diagnostic = typeof snapshotOutput.text === 'string'
+              ? snapshotOutput.text.slice(0, 2_048)
+              : JSON.stringify(snapshotOutput).slice(0, 2_048);
+            throw new Error(`Focused Browser Agent download E2E snapshot did not expose the bounded download fixture ref: ${diagnostic}`);
+          }
+          if (downloadOutput == null) {
+            sendFunctionCall('browser_download', 'fabushi-e2e-browser-download-file', {
+              target: 'local',
+              ref: link.ref,
+            });
+            return;
+          }
+          const finalCall = {
+            type: 'function_call',
+            name: 'SendMessage',
+            call_id: 'fabushi-e2e-browser-download-final-message',
+            arguments: JSON.stringify({ type: 'text', content: 'Browser agent download complete' }),
+          };
+          response.end([
+            `data: ${JSON.stringify({ type: 'response.output_item.done', item: finalCall })}\n\n`,
+            `data: ${JSON.stringify({
+              type: 'response.completed',
+              response: {
+                id: 'fabushi-e2e-browser-download-response-final-message',
+                output: [finalCall],
+                usage: { input_tokens: 8, output_tokens: 8, input_tokens_details: { cached_tokens: 0 } },
+              },
+            })}\n\n`,
+          ].join(''));
+          return;
+        }
+        if (browserAgentE2e) {
+          const finalCallId = 'fabushi-e2e-browser-final-message';
+          if (finishToolFailure(finalCallId)) return;
+          if (hasFunctionOutput(finalCallId)) {
+            finishProviderTurn(finalCallId);
+            return;
+          }
+          for (const callId of [
+            'fabushi-e2e-browser-snapshot',
+            'fabushi-e2e-browser-fill',
+            'fabushi-e2e-browser-select',
+            'fabushi-e2e-browser-click',
+            'fabushi-e2e-browser-wait',
+          ]) {
+            if (finishToolFailure(callId)) return;
+          }
+          const snapshotOutput = functionOutput('fabushi-e2e-browser-snapshot');
+          const fillOutput = functionOutput('fabushi-e2e-browser-fill');
+          const selectOutput = functionOutput('fabushi-e2e-browser-select');
+          const clickOutput = functionOutput('fabushi-e2e-browser-click');
+          const waitOutput = functionOutput('fabushi-e2e-browser-wait');
+          if (snapshotOutput == null) {
+            sendFunctionCall('browser_snapshot', 'fabushi-e2e-browser-snapshot', { target: 'local' });
+            return;
+          }
+          const elements = snapshotElementsFromToolOutput(snapshotOutput);
+          const refNamed = (name: string): string => {
+            const element = elements.find((candidate) => candidate != null
+              && typeof candidate === 'object'
+              && !Array.isArray(candidate)
+              && (candidate as { name?: unknown }).name === name) as { ref?: unknown } | undefined;
+            if (typeof element?.ref !== 'string' || element.ref.length === 0) {
+              throw new Error(`Focused Browser Agent E2E snapshot did not expose ref for ${name}.`);
+            }
+            return element.ref;
+          };
+          if (fillOutput == null) {
+            sendFunctionCall('browser_fill', 'fabushi-e2e-browser-fill', {
+              target: 'local',
+              ref: refNamed('Name'),
+              value: 'Ada Agent',
+            });
+            return;
+          }
+          if (selectOutput == null) {
+            sendFunctionCall('browser_select_option', 'fabushi-e2e-browser-select', {
+              target: 'local',
+              ref: refNamed('Plan'),
+              values: ['pro'],
+            });
+            return;
+          }
+          if (clickOutput == null) {
+            sendFunctionCall('browser_click', 'fabushi-e2e-browser-click', {
+              target: 'local',
+              ref: refNamed('Submit order'),
+            });
+            return;
+          }
+          if (waitOutput == null) {
+            sendFunctionCall('browser_wait', 'fabushi-e2e-browser-wait', {
+              target: 'local',
+              text: 'Submission received',
+              timeoutMs: 10_000,
+            });
+            return;
+          }
+          const finalCall = {
+            type: 'function_call',
+            name: 'SendMessage',
+            call_id: 'fabushi-e2e-browser-final-message',
+            arguments: JSON.stringify({ type: 'text', content: 'Browser agent submission complete' }),
+          };
+          response.end([
+            `data: ${JSON.stringify({ type: 'response.output_item.done', item: finalCall })}\n\n`,
+            `data: ${JSON.stringify({
+              type: 'response.completed',
+              response: {
+                id: 'fabushi-e2e-browser-response-final-message',
+                output: [finalCall],
+                usage: { input_tokens: 8, output_tokens: 8, input_tokens_details: { cached_tokens: 0 } },
+              },
+            })}\n\n`,
+          ].join(''));
+          return;
+        }
         if (isToolContinuation) {
           // The visible assistant body was already persisted by the shipping
           // Host-owned SendMessage tool. Finish the provider turn with private
@@ -467,6 +895,68 @@ async function ensureE2eAuthBackend(): Promise<string> {
             },
           })}\n\n`,
         ].join(''));
+        return;
+      }
+      if (requestUrl.pathname === '/browser-workspace-fixture' && request.method === 'GET') {
+        const origin = `http://${request.headers.host ?? '127.0.0.1'}`;
+        response.setHeader('content-type', 'text/html; charset=utf-8');
+        response.setHeader('set-cookie', 'fabushi_browser_profile=retained; Path=/; SameSite=Lax');
+        response.statusCode = 200;
+        response.end(`<!doctype html><html><head><title>Fabushi Browser Fixture</title></head><body><main><h1>Fabushi Native Browser</h1><a id="download-link" href="${origin}/browser-workspace-download">Download fixture</a></main></body></html>`);
+        return;
+      }
+      if (requestUrl.pathname === '/browser-workspace-cookie' && request.method === 'GET') {
+        const retained = String(request.headers.cookie ?? '').split(';').map((part) => part.trim()).includes('fabushi_browser_profile=retained');
+        response.setHeader('content-type', 'text/html; charset=utf-8');
+        response.statusCode = 200;
+        response.end(`<!doctype html><html><head><title>Fabushi Browser Cookie ${retained ? 'retained' : 'missing'}</title></head><body><main><h1>Profile cookie ${retained ? 'retained' : 'missing'}</h1></main></body></html>`);
+        return;
+      }
+      if (requestUrl.pathname === '/browser-agent-concurrency-form' && request.method === 'GET') {
+        const task = requestUrl.searchParams.get('task') === 'alpha' ? 'alpha' : 'beta';
+        response.setHeader('content-type', 'text/html; charset=utf-8');
+        response.statusCode = 200;
+        response.end(`<!doctype html><html><head><title>Fabushi Concurrent ${task}</title></head><body><main><h1>Concurrent ${task} form</h1><form method="post" action="/browser-agent-concurrency-form-submit?task=${task}"><label>Name <input name="name" autocomplete="off"></label><button type="submit">Submit concurrent</button></form></main></body></html>`);
+        return;
+      }
+      if (requestUrl.pathname === '/browser-agent-concurrency-form-submit' && request.method === 'POST') {
+        const task = requestUrl.searchParams.get('task') === 'alpha' ? 'alpha' : 'beta';
+        const body = new URLSearchParams((await readRequestBody(request)).toString('utf8'));
+        e2eConcurrentBrowserSubmissions.push({ task, name: body.get('name') ?? '' });
+        response.setHeader('content-type', 'text/html; charset=utf-8');
+        response.statusCode = 200;
+        response.end(`<!doctype html><html><head><title>Fabushi Concurrent ${task} submitted</title></head><body><main><h1>Concurrent ${task} received</h1></main></body></html>`);
+        return;
+      }
+      if (requestUrl.pathname === '/browser-agent-form' && request.method === 'GET') {
+        response.setHeader('content-type', 'text/html; charset=utf-8');
+        response.statusCode = 200;
+        response.end('<!doctype html><html><head><title>Fabushi Browser Agent Form</title></head><body><main><h1>Browser Agent Form</h1><form method="post" action="/browser-agent-form-submit"><label>Name <input name="name" autocomplete="off"></label><label>Plan <select name="plan"><option value="basic">Basic</option><option value="pro">Pro</option></select></label><button type="submit">Submit order</button></form></main></body></html>');
+        return;
+      }
+      if (requestUrl.pathname === '/browser-agent-form-submit' && request.method === 'POST') {
+        const body = new URLSearchParams((await readRequestBody(request)).toString('utf8'));
+        const name = body.get('name') ?? '';
+        const plan = body.get('plan') ?? '';
+        e2eBrowserAgentSubmissions.push({ name, plan });
+        response.setHeader('content-type', 'text/html; charset=utf-8');
+        response.statusCode = 200;
+        response.end('<!doctype html><html><head><title>Fabushi Browser Agent Submitted</title></head><body><main><h1>Submission received</h1></main></body></html>');
+        return;
+      }
+      if (requestUrl.pathname === '/browser-workspace-second' && request.method === 'GET') {
+        response.setHeader('content-type', 'text/html; charset=utf-8');
+        response.statusCode = 200;
+        response.end('<!doctype html><html><head><title>Fabushi Browser Second</title></head><body><h1>Second native page</h1></body></html>');
+        return;
+      }
+      if (requestUrl.pathname === '/browser-workspace-download' && request.method === 'GET') {
+        const bytes = Buffer.from('FABUSHI_BROWSER_DOWNLOAD_V1\n', 'utf8');
+        response.setHeader('content-type', 'application/octet-stream');
+        response.setHeader('content-disposition', 'attachment; filename="fabushi-browser-fixture.txt"');
+        response.setHeader('content-length', String(bytes.length));
+        response.statusCode = 200;
+        response.end(bytes);
         return;
       }
       if (requestUrl.pathname === '/aiserver.v1.InferenceService/Stream') {
@@ -514,42 +1004,523 @@ async function ensureE2eAuthBackend(): Promise<string> {
   return await e2eAuthBackendPromise;
 }
 
+function e2eHttpsSpkiHash(): string {
+  const certificate = new X509Certificate(E2E_HTTPS_CERT_PEM);
+  const spki = certificate.publicKey.export({ type: 'spki', format: 'der' });
+  return createHash('sha256').update(spki).digest('base64');
+}
+
+async function ensureE2eHttpsBrowserOrigin(): Promise<string> {
+  if (e2eHttpsOriginPromise != null) return await e2eHttpsOriginPromise;
+  e2eHttpsOriginPromise = new Promise<string>((resolve, reject) => {
+    const server = createHttpsServer({
+      key: E2E_HTTPS_KEY_PEM,
+      cert: E2E_HTTPS_CERT_PEM,
+    }, (request, response) => {
+      const requestUrl = new URL(request.url ?? '/', 'https://127.0.0.1');
+      if (requestUrl.pathname === '/browser-workspace-secure') {
+        response.setHeader('content-type', 'text/html; charset=utf-8');
+        response.statusCode = 200;
+        response.end('<!doctype html><html><head><title>Fabushi Browser HTTPS</title></head><body><main><h1>Secure synthetic HTTPS page</h1></main></body></html>');
+        return;
+      }
+      response.statusCode = 404;
+      response.end('not-found');
+    });
+    e2eHttpsServer = server;
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', () => {
+      const address = server.address();
+      if (address == null || typeof address === 'string') {
+        reject(new Error('Focused Electron HTTPS browser backend did not bind a TCP address.'));
+        return;
+      }
+      resolve(`https://127.0.0.1:${address.port}`);
+    });
+  });
+  return await e2eHttpsOriginPromise;
+}
+
 test.afterAll(async () => {
-  const server = e2eAuthServer;
+  const authServer = e2eAuthServer;
+  const httpsServer = e2eHttpsServer;
   e2eAuthServer = null;
   e2eAuthBackendPromise = null;
-  if (server == null || !server.listening) return;
-  await new Promise<void>((resolve, reject) => {
-    server.close((error) => error == null ? resolve() : reject(error));
-  });
+  e2eHttpsServer = null;
+  e2eHttpsOriginPromise = null;
+  if (authServer != null && authServer.listening) {
+    authServer.closeAllConnections();
+    await new Promise<void>((resolve, reject) => {
+      authServer.close((error) => error == null ? resolve() : reject(error));
+    });
+  }
+  if (httpsServer != null && httpsServer.listening) {
+    httpsServer.closeAllConnections();
+    await new Promise<void>((resolve, reject) => {
+      httpsServer.close((error) => error == null ? resolve() : reject(error));
+    });
+  }
 });
 
-async function launchDesktopApp(appDataDir: string): Promise<ElectronApplication> {
-  const e2eAuthBackendUrl = await ensureE2eAuthBackend();
-  // Exercise the shipping Fabushi account -> private Host credential ->
-  // Responses transport chain. The browser-first login below owns the token;
-  // focused acceptance must not seed a parallel Cursor inference credential.
-  return electron.launch({
-    ...(packagedExecutable
-      ? { executablePath: packagedExecutable, args: [] }
-      : { args: [appRoot] }),
-    env: {
-      ...process.env,
-      // Focused Electron acceptance must opt out of production background
-      // persistence so Playwright app.close() reaches the real before-quit
-      // cleanup path instead of being converted into a hidden-window session.
-      FABUSHI_E2E: '1',
-      SAND_USER_DATA_DIR: appDataDir,
-      SAND_BACKEND_URL: e2eAuthBackendUrl,
-      CURSOR_API_BASE_URL: e2eAuthBackendUrl,
-      FABUSHI_API_BASE_URL: e2eAuthBackendUrl,
-      FABUSHI_RESPONSES_URL: `${e2eAuthBackendUrl}/v1/ai/responses`,
-      SAND_CURSOR_WEBSITE_URL: e2eAuthBackendUrl,
-      SAND_DISABLE_SENTRY: '1',
-      FABUSHI_FEATURE_HOST_MODE: process.env.FABUSHI_FEATURE_HOST_MODE || 'test',
-      MAHAYANA_APP_HOST_BIN: process.env.MAHAYANA_APP_HOST_BIN || '',
-    },
+interface PackagedDebugEndpoints {
+  readonly inspectorUrl: string;
+  readonly cdpPort: number;
+}
+
+class PackagedMainInspector {
+  private nextId = 0;
+  private readonly pending = new Map<number, { resolve: (value: unknown) => void; reject: (error: Error) => void }>();
+
+  private constructor(private readonly socket: WebSocket) {
+    this.socket.on('message', (raw) => {
+      let message: { id?: number; result?: unknown; error?: { message?: string } };
+      try { message = JSON.parse(raw.toString()) as typeof message; } catch { return; }
+      if (typeof message.id !== 'number') return;
+      const pending = this.pending.get(message.id);
+      if (pending == null) return;
+      this.pending.delete(message.id);
+      if (message.error != null) pending.reject(new Error(message.error.message ?? 'Node inspector request failed.'));
+      else pending.resolve(message.result);
+    });
+    const rejectPending = (error: Error) => {
+      for (const request of this.pending.values()) request.reject(error);
+      this.pending.clear();
+    };
+    this.socket.on('close', () => rejectPending(new Error('Packaged Electron Node inspector disconnected.')));
+    this.socket.on('error', rejectPending);
+  }
+
+  static async connect(endpoint: string, timeoutMs: number): Promise<PackagedMainInspector> {
+    const socket = new WebSocket(endpoint);
+    return await new Promise<PackagedMainInspector>((resolve, reject) => {
+      let settled = false;
+      const timer = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        socket.terminate();
+        reject(new Error(`Timed out connecting to packaged Electron Node inspector after ${timeoutMs}ms.`));
+      }, timeoutMs);
+      const cleanup = () => {
+        clearTimeout(timer);
+        socket.removeListener('open', onOpen);
+        socket.removeListener('error', onError);
+      };
+      const onOpen = () => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        resolve(new PackagedMainInspector(socket));
+      };
+      const onError = (error: Error) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        reject(error);
+      };
+      socket.once('open', onOpen);
+      socket.once('error', onError);
+    });
+  }
+
+  async evaluate<T>(fn: Function, arg?: unknown): Promise<T> {
+    const argument = arg === undefined ? 'undefined' : JSON.stringify(arg);
+    if (argument === undefined) throw new Error('Packaged Electron inspector arguments must be JSON serializable.');
+    const expression = `(async () => { const __fn = (${fn.toString()}); const __electron = await import('electron'); return await __fn(__electron, ${argument}); })()`;
+    const response = await this.request('Runtime.evaluate', {
+      expression, awaitPromise: true, returnByValue: true, userGesture: true,
+    }) as {
+      result?: { value?: T; description?: string };
+      exceptionDetails?: { text?: string; exception?: { description?: string } };
+    };
+    if (response.exceptionDetails != null) {
+      throw new Error(response.exceptionDetails.exception?.description ?? response.exceptionDetails.text ?? 'Packaged Electron main-process evaluation failed.');
+    }
+    return response.result?.value as T;
+  }
+
+  close(): void { try { this.socket.close(); } catch {} }
+
+  private async request(method: string, params: Record<string, unknown>): Promise<unknown> {
+    const id = ++this.nextId;
+    return await new Promise<unknown>((resolve, reject) => {
+      this.pending.set(id, { resolve, reject });
+      this.socket.send(JSON.stringify({ id, method, params }), (error) => {
+        if (error == null) return;
+        this.pending.delete(id);
+        reject(error);
+      });
+    });
+  }
+}
+
+function waitForPackagedDebugEndpoints(child: ChildProcess, timeoutMs: number): Promise<PackagedDebugEndpoints> {
+  return new Promise<PackagedDebugEndpoints>((resolve, reject) => {
+    let inspectorUrl: string | null = null;
+    let cdpPort: number | null = null;
+    let logTail = '';
+    let settled = false;
+    const timer = setTimeout(() => finishError(new Error(
+      `Timed out waiting for packaged Electron inspector/CDP endpoints after ${timeoutMs}ms. Last process output:\n${logTail}`,
+    )), timeoutMs);
+    const cleanup = () => {
+      clearTimeout(timer);
+      child.stdout?.removeListener('data', onData);
+      child.stderr?.removeListener('data', onData);
+      child.removeListener('error', onError);
+      child.removeListener('exit', onExit);
+    };
+    const finish = () => {
+      if (settled || inspectorUrl == null || cdpPort == null) return;
+      settled = true;
+      cleanup();
+      resolve({ inspectorUrl, cdpPort });
+    };
+    const finishError = (error: Error) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(error);
+    };
+    const onData = (chunk: Buffer | string) => {
+      const text = chunk.toString();
+      logTail = (logTail + text).slice(-8_000);
+      const inspectorMatch = /Debugger listening on (ws:\/\/127\.0\.0\.1:\d+\/[^\s]+)/u.exec(logTail);
+      if (inspectorUrl == null && inspectorMatch != null) inspectorUrl = inspectorMatch[1] ?? null;
+      const cdpMatch = /DevTools listening on ws:\/\/127\.0\.0\.1:(\d+)\/devtools\/browser\/[^\s]+/u.exec(logTail);
+      if (cdpPort == null && cdpMatch != null) cdpPort = Number(cdpMatch[1]);
+      finish();
+    };
+    const onError = (error: Error) => finishError(error);
+    const onExit = (code: number | null, signal: NodeJS.Signals | null) => finishError(new Error(
+      `Packaged Electron exited before exposing inspector/CDP endpoints (code=${code ?? 'null'}, signal=${signal ?? 'null'}). Last process output:\n${logTail}`,
+    ));
+    child.stdout?.on('data', onData);
+    child.stderr?.on('data', onData);
+    child.once('error', onError);
+    child.once('exit', onExit);
   });
+}
+
+async function waitForChildExit(child: ChildProcess, timeoutMs: number): Promise<boolean> {
+  if (child.exitCode !== null || child.signalCode !== null) return true;
+  return await new Promise<boolean>((resolve) => {
+    const onExit = () => { clearTimeout(timer); resolve(true); };
+    const timer = setTimeout(() => { child.removeListener('exit', onExit); resolve(false); }, timeoutMs);
+    child.once('exit', onExit);
+  });
+}
+
+async function allocateFreeLoopbackPort(): Promise<number> {
+  return await new Promise<number>((resolve, reject) => {
+    const server = createServer();
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', () => {
+      const address = server.address();
+      if (address == null || typeof address === 'string') {
+        server.close(() => reject(new Error('Could not allocate a loopback port for the focused Electron Host.')));
+        return;
+      }
+      const port = address.port;
+      server.close((error) => error == null ? resolve(port) : reject(error));
+    });
+  });
+}
+
+function desktopE2eEnvironment(appDataDir: string, e2eAuthBackendUrl: string, extraEnv: Record<string, string>, boxExecDaemonPort: number): NodeJS.ProcessEnv {
+  return {
+    ...process.env,
+    FABUSHI_E2E: '1',
+    FABUSHI_E2E_QUIT_TRACE: '1',
+    SAND_USER_DATA_DIR: appDataDir,
+    SAND_BACKEND_URL: e2eAuthBackendUrl,
+    CURSOR_API_BASE_URL: e2eAuthBackendUrl,
+    FABUSHI_API_BASE_URL: e2eAuthBackendUrl,
+    FABUSHI_RESPONSES_URL: `${e2eAuthBackendUrl}/v1/ai/responses`,
+    SAND_CURSOR_WEBSITE_URL: e2eAuthBackendUrl,
+    SAND_DISABLE_SENTRY: '1',
+    FABUSHI_FEATURE_HOST_MODE: process.env.FABUSHI_FEATURE_HOST_MODE || 'test',
+    MAHAYANA_APP_HOST_BIN: process.env.MAHAYANA_APP_HOST_BIN || '',
+    SAND_BOX_EXEC_DAEMON_PORT: String(boxExecDaemonPort),
+    SAND_BOX_WORKSPACE_ROOT: path.join(appDataDir, 'feature-host', 'runtime', `workspace-${boxExecDaemonPort}`),
+    SAND_BOX_TERMINALS_DIRECTORY: path.join(appDataDir, 'feature-host', 'runtime', `terminals-${boxExecDaemonPort}`),
+    ...extraEnv,
+  };
+}
+
+async function launchPackagedDesktopApp(env: NodeJS.ProcessEnv, extraArgs: string[]): Promise<ElectronApplication> {
+  if (packagedExecutable == null) throw new Error('Packaged Electron executable path is required.');
+  const args = [
+    '--inspect=0',
+    '--remote-debugging-port=0',
+    '--remote-debugging-address=127.0.0.1',
+    ...(process.platform === 'linux' ? ['--no-sandbox'] : []),
+    ...extraArgs,
+  ];
+  const childEnv = { ...env };
+  delete childEnv.NODE_OPTIONS;
+  const child = spawn(packagedExecutable, args, {
+    cwd: appRoot,
+    env: childEnv,
+    windowsHide: true,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  // Keep draining both pipes for the entire packaged-app lifetime. The endpoint
+  // waiter below removes its temporary listeners as soon as inspector/CDP
+  // starts; leaving the child pipes unread can fill the OS pipe buffer and
+  // stall production startup before the first BrowserWindow is created.
+  let processOutputTail = '';
+  const captureProcessOutput = (stream: 'stdout' | 'stderr') => (chunk: Buffer | string): void => {
+    processOutputTail = `${processOutputTail}${stream}: ${chunk.toString()}`.slice(-12_000);
+  };
+  child.stdout?.on('data', captureProcessOutput('stdout'));
+  child.stderr?.on('data', captureProcessOutput('stderr'));
+  let inspector: PackagedMainInspector | null = null;
+  let browser: Browser | null = null;
+  try {
+    const endpoints = await waitForPackagedDebugEndpoints(child, firstWindowTimeoutMs);
+    inspector = await PackagedMainInspector.connect(endpoints.inspectorUrl, firstWindowTimeoutMs);
+    browser = await chromium.connectOverCDP(`http://127.0.0.1:${endpoints.cdpPort}`, { timeout: firstWindowTimeoutMs });
+    const context: BrowserContext | undefined = browser.contexts()[0];
+    if (context == null) throw new Error('Packaged Electron did not expose a default Chromium browser context.');
+    const application = {
+      firstWindow: async (options: { readonly timeout?: number } = {}): Promise<Page> => {
+        const timeoutMs = options.timeout ?? firstWindowTimeoutMs;
+        const deadline = Date.now() + timeoutMs;
+        while (Date.now() < deadline) {
+          for (const page of context.pages()) {
+            const isFabushiShell = await page.evaluate(() => {
+              const candidate = window as unknown as { desktop?: { cursorAccount?: { getStatus?: unknown } } };
+              return typeof candidate.desktop?.cursorAccount?.getStatus === 'function';
+            }).catch(() => false);
+            if (isFabushiShell) return page;
+          }
+          if (child.exitCode !== null || child.signalCode !== null) break;
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+        const observed = await Promise.all(context.pages().map(async (page) => ({
+          url: page.url(), title: await page.title().catch(() => ''),
+        })));
+        throw new Error(`Packaged Fabushi executable did not expose a trusted main window within ${timeoutMs}ms. Observed Chromium pages: ${JSON.stringify(observed)}. Recent packaged process output:\\n${processOutputTail.trim() || '(no process output captured)'}`);
+      },
+      evaluate: (fn: Function, arg?: unknown) => inspector!.evaluate(fn, arg),
+      close: async () => {
+        try { await inspector!.evaluate(({ app }) => app.quit()); } catch {}
+        if (child.exitCode === null && child.signalCode === null) {
+          await new Promise<void>((resolve) => child.once('exit', () => resolve()));
+        }
+        inspector?.close();
+        try { await browser?.close(); } catch {}
+      },
+      process: () => child,
+      context: () => context,
+    };
+    return application as unknown as ElectronApplication;
+  } catch (error) {
+    inspector?.close();
+    try { await browser?.close(); } catch {}
+    try { child.kill('SIGTERM'); } catch {}
+    if (!await waitForChildExit(child, 3_000)) {
+      try { child.kill('SIGKILL'); } catch {}
+      await waitForChildExit(child, 2_000);
+    }
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Unable to attach Playwright to the real packaged Fabushi executable: ${message}`);
+  }
+}
+
+async function launchDesktopApp(
+  appDataDir: string,
+  extraEnv: Record<string, string> = {},
+  extraArgs: string[] = [],
+): Promise<ElectronApplication> {
+  const e2eAuthBackendUrl = await ensureE2eAuthBackend();
+  const boxExecDaemonPort = await allocateFreeLoopbackPort();
+  const env = desktopE2eEnvironment(appDataDir, e2eAuthBackendUrl, extraEnv, boxExecDaemonPort);
+  // Packaged executables own their main entrypoint; Playwright's npm-Electron
+  // loader is not injected by electron.launch when executablePath is custom.
+  // Attach to the real installed process through loopback-only Node inspector
+  // and Chromium DevTools Protocol endpoints instead of passing a fake -r arg.
+  if (packagedExecutable != null) return await launchPackagedDesktopApp(env, extraArgs);
+  return electron.launch({ args: [...extraArgs, appRoot], env });
+}
+
+
+async function removeE2eAppDataDir(directory: string): Promise<void> {
+  try {
+    await rm(directory, { recursive: true, force: true, maxRetries: 24, retryDelay: 250 });
+  } catch (error) {
+    const code = error != null && typeof error === 'object' && 'code' in error
+      ? String((error as { code?: unknown }).code ?? 'unknown')
+      : 'unknown';
+    throw new Error('Could not remove isolated Electron user data after retrying transient file locks (' + code + '): ' + directory + ': ' + String(error));
+  }
+}
+
+async function closeDesktopApp(
+  app: ElectronApplication | null,
+  options: { readonly timeoutMs?: number; readonly failOnTimeout?: boolean } = {},
+): Promise<void> {
+  if (app == null) return;
+
+  // On macOS, closing the last BrowserWindow does not imply app.quit().
+  // Ask Electron to traverse the production before-quit settlement path
+  // explicitly before waiting for Playwright's process teardown. The quit
+  // request itself must also be bounded: Electron can begin exiting before
+  // Playwright receives the evaluation result, otherwise the test can hang
+  // before reaching the close/kill watchdog below.
+  const timeoutMs = options.timeoutMs ?? 30_000;
+  const childProcess = app.process();
+  const quitRequest = app.evaluate(({ app: electronApp }) => electronApp.quit()).catch(() => undefined);
+  let quitDispatchTimer: ReturnType<typeof setTimeout> | undefined;
+  await Promise.race([
+    quitRequest,
+    new Promise<void>((resolve) => { quitDispatchTimer = setTimeout(resolve, 2_000); }),
+  ]);
+  if (quitDispatchTimer != null) clearTimeout(quitDispatchTimer);
+
+  let closeFinished = false;
+  let closeTimedOut = false;
+  const closePromise = app.close().catch(() => undefined).finally(() => { closeFinished = true; });
+  let closeTimer: ReturnType<typeof setTimeout> | undefined;
+  await Promise.race([
+    closePromise,
+    new Promise<void>((resolve) => { closeTimer = setTimeout(() => { closeTimedOut = true; resolve(); }, timeoutMs); }),
+  ]);
+  if (closeTimer != null) clearTimeout(closeTimer);
+
+  const timeoutError = () => new Error(`Electron app did not exit within ${timeoutMs}ms after explicit app.quit; forced child-process cleanup was attempted (pid=${childProcess.pid ?? 'unknown'}, exitCode=${childProcess.exitCode ?? 'null'}, signalCode=${childProcess.signalCode ?? 'null'}).`);
+  if (closeFinished) {
+    if (closeTimedOut && options.failOnTimeout) throw timeoutError();
+    return;
+  }
+
+  // Never let a stuck Electron child consume Playwright's entire worker
+  // teardown budget. Strict restart/restore checkpoints still fail visibly.
+  try { childProcess.kill('SIGKILL'); } catch {}
+  let killTimer: ReturnType<typeof setTimeout> | undefined;
+  await Promise.race([
+    closePromise,
+    new Promise<void>((resolve) => { killTimer = setTimeout(resolve, 2_000); }),
+  ]);
+  if (killTimer != null) clearTimeout(killTimer);
+  if (closeFinished) {
+    if (options.failOnTimeout) throw timeoutError();
+    return;
+  }
+  if (options.failOnTimeout) throw timeoutError();
+}
+
+function sameBrowserWorkspaceUrl(actualValue: string, expectedValue: string): boolean {
+  try {
+    const actual = new URL(actualValue);
+    const expected = new URL(expectedValue);
+    const normalizePath = (value: string) => value.replace(/\/+$/u, '') || '/';
+    return actual.origin === expected.origin
+      && normalizePath(actual.pathname) === normalizePath(expected.pathname)
+      && actual.search === expected.search;
+  } catch {
+    return false;
+  }
+}
+
+async function findBrowserWorkspacePage(app: ElectronApplication, expectedUrl: string): Promise<Page | null> {
+  for (const page of app.context().pages()) {
+    if (sameBrowserWorkspaceUrl(page.url(), expectedUrl)) return page;
+  }
+  return null;
+}
+
+async function browserWorkspacePageDetails(app: ElectronApplication, expectedUrl: string): Promise<{ url: string; title: string } | null> {
+  const page = await findBrowserWorkspacePage(app, expectedUrl);
+  if (page != null) return { url: page.url(), title: await page.title().catch(() => '') };
+  return await app.evaluate(({ webContents }, url) => {
+    const expected = new URL(url);
+    const normalizePath = (value: string) => value.replace(/\/+$/u, '') || '/';
+    const contents = webContents.getAllWebContents().find((candidate) => {
+      try {
+        const actual = new URL(candidate.getURL());
+        return actual.origin === expected.origin
+          && normalizePath(actual.pathname) === normalizePath(expected.pathname)
+          && actual.search === expected.search;
+      } catch { return false; }
+    });
+    return contents == null ? null : { url: contents.getURL(), title: contents.getTitle() };
+  }, expectedUrl).catch(() => null);
+}
+
+async function browserWorkspacePageMatches(app: ElectronApplication, expectedUrl: string, expectedTitle: string): Promise<boolean> {
+  const details = await browserWorkspacePageDetails(app, expectedUrl);
+  return details != null && sameBrowserWorkspaceUrl(details.url, expectedUrl) && details.title === expectedTitle;
+}
+
+async function browserWorkspacePageEntries(app: ElectronApplication): Promise<Array<{ url: string; title: string }>> {
+  const cdpEntries = await Promise.all(app.context().pages().map(async (page) => ({
+    url: page.url(), title: await page.title().catch(() => ''),
+  })));
+  const mainEntries = await app.evaluate(({ webContents }) => webContents.getAllWebContents()
+    .map((contents) => ({ url: contents.getURL(), title: contents.getTitle() })), undefined).catch(() => []);
+  const entries = new Map<string, { url: string; title: string }>();
+  for (const entry of [...cdpEntries, ...mainEntries]) entries.set(`${entry.url}\n${entry.title}`, entry);
+  return [...entries.values()];
+}
+
+async function browserWorkspacePageDiagnostic(
+  app: ElectronApplication,
+  expectedUrl: string,
+  expectedTitle: string,
+): Promise<{
+  matches: boolean;
+  details: { url: string; title: string } | null;
+  entries: Array<{ url: string; title: string }>;
+}> {
+  const details = await browserWorkspacePageDetails(app, expectedUrl);
+  return {
+    matches: details != null
+      && sameBrowserWorkspaceUrl(details.url, expectedUrl)
+      && details.title === expectedTitle,
+    details,
+    entries: await browserWorkspacePageEntries(app),
+  };
+}
+
+async function readBrowserWorkspaceDownloadLink(app: ElectronApplication, expectedUrl: string): Promise<{ text: string; href: string } | null> {
+  const page = await findBrowserWorkspacePage(app, expectedUrl);
+  if (page != null) {
+    return await page.evaluate(() => {
+      const link = document.querySelector('#download-link');
+      return link instanceof HTMLAnchorElement ? { text: link.textContent?.trim() ?? '', href: link.href } : null;
+    }).catch(() => null);
+  }
+  return await app.evaluate(async ({ webContents }, url) => {
+    const expected = new URL(url);
+    const contents = webContents.getAllWebContents().find((candidate) => {
+      try {
+        const actual = new URL(candidate.getURL());
+        return actual.origin === expected.origin && actual.pathname.replace(/\/+$/u, '') === expected.pathname.replace(/\/+$/u, '');
+      } catch { return false; }
+    });
+    if (contents == null) return null;
+    return await contents.executeJavaScript(`(() => {
+      const link = document.querySelector('#download-link');
+      return link instanceof HTMLAnchorElement ? { text: link.textContent?.trim() ?? '', href: link.href } : null;
+    })()`, true);
+  }, expectedUrl).catch(() => null);
+}
+
+async function observeBrowserExtensionMarker(app: ElectronApplication, expectedUrl: string): Promise<string | null> {
+  const page = await findBrowserWorkspacePage(app, expectedUrl);
+  if (page != null) return await page.evaluate(() => document.documentElement.dataset.fabushiExtension || null).catch(() => null);
+  return await app.evaluate(async ({ webContents }, url) => {
+    const expected = new URL(url);
+    const contents = webContents.getAllWebContents().find((candidate) => {
+      try {
+        const actual = new URL(candidate.getURL());
+        return actual.origin === expected.origin && actual.pathname.replace(/\/+$/u, '') === expected.pathname.replace(/\/+$/u, '');
+      } catch { return false; }
+    });
+    if (contents == null) return null;
+    return await contents.executeJavaScript('document.documentElement.dataset.fabushiExtension || null', true);
+  }, expectedUrl).catch(() => null);
 }
 
 async function completeBrowserLogin(page: Page): Promise<void> {
@@ -638,6 +1609,7 @@ async function completeBrowserLogin(page: Page): Promise<void> {
   const emptyRoster = roster.getByText('No saved agents yet.', { exact: true });
   await expect.poll(async () => {
     if (await loadedAgentRows.count() > 0) return 'loaded';
+    if (await primary.isVisible().catch(() => false)) return 'loaded';
     return await emptyRoster.isVisible().catch(() => false) ? 'empty' : 'pending';
   }, { timeout: 15_000 }).not.toBe('pending');
   if (await primary.count() === 0) {
@@ -730,7 +1702,26 @@ async function emitBotInvocationRequested(
 async function expectHermesAssistantTurn(page: Page, expectedText: string): Promise<Locator> {
   const transcript = page.getByRole('log', { name: 'Conversation transcript' });
   const matchingMessages = transcript.getByRole('group', { name: 'Agent message' }).filter({ hasText: expectedText });
-  await expect(matchingMessages).toHaveCount(1, { timeout: 15_000 });
+  const deadline = Date.now() + 15_000;
+  let matchingCount = 0;
+  while (Date.now() < deadline) {
+    if (e2eBrowserAgentToolFailures.length > 0) {
+      throw new Error('Browser Agent E2E tool failure(s): ' + e2eBrowserAgentToolFailures.join('; '));
+    }
+    matchingCount = await matchingMessages.count();
+    if (matchingCount === 1) break;
+    if (matchingCount > 1) {
+      throw new Error('Expected exactly one assistant turn containing "' + expectedText + '", found ' + matchingCount + '.');
+    }
+    await new Promise<void>((resolve) => setTimeout(resolve, 100));
+  }
+  if (e2eBrowserAgentToolFailures.length > 0) {
+    throw new Error('Browser Agent E2E tool failure(s): ' + e2eBrowserAgentToolFailures.join('; '));
+  }
+  if (matchingCount !== 1) {
+    throw new Error('Expected exactly one assistant turn containing "' + expectedText + '" within 15000ms, found ' + matchingCount + '.');
+  }
+  await expect(matchingMessages).toHaveCount(1, { timeout: 1_000 });
 
   const message = matchingMessages.first();
   await expect(message).toBeVisible();
@@ -760,13 +1751,427 @@ async function expectHermesAssistantTurn(page: Page, expectedText: string): Prom
   return turn;
 }
 
+test('E2E auth fixture requires Bearer and device credentials for social call discovery', async () => {
+  const origin = await ensureE2eAuthBackend();
+  const endpoint = `${origin}/api/social/calls`;
+  const deviceId = 'fabushi-e2e-device-4242';
+  const validHeaders = {
+    authorization: `Bearer ${e2eAuthToken()}`,
+    'x-fabushi-device-id': deviceId,
+  };
+
+  const accepted = await fetch(endpoint, { headers: validHeaders });
+  expect(accepted.status).toBe(200);
+  expect(await accepted.json()).toEqual({ success: true, calls: [] });
+
+  const unauthorizedCases = [
+    { name: 'invalid Bearer token', headers: { authorization: 'Bearer invalid', 'x-fabushi-device-id': deviceId } },
+    { name: 'missing Bearer token', headers: { 'x-fabushi-device-id': deviceId } },
+    { name: 'missing device id', headers: { authorization: `Bearer ${e2eAuthToken()}` } },
+    { name: 'invalid device id', headers: { authorization: `Bearer ${e2eAuthToken()}`, 'x-fabushi-device-id': 'untrusted-device' } },
+  ];
+  for (const { name, headers } of unauthorizedCases) {
+    const rejected = await fetch(endpoint, { headers });
+    expect(rejected.status, name).toBe(401);
+    expect(await rejected.json(), name).toEqual({ success: false, error: 'invalid-social-credential' });
+  }
+});
+
+test('native Browser Workspace opens real Chromium pages, isolates tabs, and downloads verified bytes', async () => {
+  test.setTimeout(packagedExecutable ? 180_000 : 120_000);
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-browser-workspace-'));
+  let app: ElectronApplication | null = null;
+
+  try {
+    const origin = await ensureE2eAuthBackend();
+    const httpsOrigin = await ensureE2eHttpsBrowserOrigin();
+    const httpsArgs = [`--ignore-certificate-errors-spki-list=${e2eHttpsSpkiHash()}`];
+    app = await launchDesktopApp(appDataDir, {}, httpsArgs);
+    const page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
+    await completeBrowserLogin(page);
+    await openMahayanaConversation(page);
+
+    await page.getByRole('button', { name: 'Open browser workspace', exact: true }).click();
+    const workspace = page.getByTestId('browser-workspace');
+    await expect(workspace).toBeVisible({ timeout: 10_000 });
+    const address = workspace.getByRole('textbox', { name: 'Address and search' });
+
+    await address.fill(`${origin}/browser-workspace-fixture`);
+    await address.press('Enter');
+    await expect(workspace.getByRole('tab').filter({ hasText: 'Fabushi Browser Fixture' })).toHaveCount(1, { timeout: 15_000 });
+
+    await expect.poll(
+      async () => browserWorkspacePageMatches(app!, `${origin}/browser-workspace-fixture`, 'Fabushi Browser Fixture'),
+      { timeout: 10_000 },
+    ).toBe(true);
+
+    await workspace.getByRole('button', { name: 'New browser tab', exact: true }).click();
+    await expect(workspace.getByRole('tab')).toHaveCount(2);
+    await address.fill(`${httpsOrigin}/browser-workspace-secure`);
+    await address.press('Enter');
+    await expect(workspace.getByRole('tab').filter({ hasText: 'Fabushi Browser HTTPS' })).toHaveCount(1, { timeout: 15_000 });
+    await expect(workspace.getByRole('tab').filter({ hasText: 'Fabushi Browser Fixture' })).toHaveCount(1);
+    await expect.poll(
+      async () => browserWorkspacePageMatches(app!, `${httpsOrigin}/browser-workspace-secure`, 'Fabushi Browser HTTPS'),
+      { timeout: 10_000 },
+    ).toBe(true);
+
+    await address.fill(`${origin}/browser-workspace-download`);
+    await address.press('Enter');
+    await workspace.getByRole('button', { name: 'Downloads', exact: true }).click();
+    await expect(workspace.getByText('fabushi-browser-fixture.txt', { exact: true })).toBeVisible({ timeout: 15_000 });
+    await expect(workspace.getByText(/completed/)).toBeVisible({ timeout: 15_000 });
+
+    const browserUserData = await app.evaluate(({ app: electronApp }) => electronApp.getPath('userData'));
+    const downloadRoot = path.join(browserUserData, 'browser-workspace', 'downloads');
+    const expectedBytes = Buffer.from('FABUSHI_BROWSER_DOWNLOAD_V1\n', 'utf8');
+    await expect.poll(async () => {
+      const { readdir, readFile } = await import('node:fs/promises');
+      const accounts = await readdir(downloadRoot, { withFileTypes: true }).catch(() => []);
+      for (const account of accounts) {
+        if (!account.isDirectory()) continue;
+        const files = await readdir(path.join(downloadRoot, account.name)).catch(() => []);
+        for (const file of files) {
+          if (!file.endsWith('-fabushi-browser-fixture.txt')) continue;
+          const actual = await readFile(path.join(downloadRoot, account.name, file));
+          if (actual.equals(expectedBytes)) return true;
+        }
+      }
+      return false;
+    }, { timeout: 10_000 }).toBe(true);
+
+    const nativeEntries = await browserWorkspacePageEntries(app);
+    expect(nativeEntries.some((entry) => sameBrowserWorkspaceUrl(entry.url, `${origin}/browser-workspace-fixture`))).toBe(true);
+    expect(nativeEntries.some((entry) => sameBrowserWorkspaceUrl(entry.url, `${httpsOrigin}/browser-workspace-secure`))).toBe(true);
+
+    const closingApp = app;
+    app = null;
+    await closeDesktopApp(closingApp, { failOnTimeout: true });
+    app = await launchDesktopApp(appDataDir, {}, httpsArgs);
+    const restartedPage = await app.firstWindow({ timeout: firstWindowTimeoutMs });
+    await completeBrowserLogin(restartedPage);
+    const existingAgent = restartedPage.getByRole('region', { name: 'Agent list' }).locator('button.sand-agent-item').first();
+    await expect(existingAgent).toBeVisible({ timeout: 15_000 });
+    await existingAgent.click();
+    const restartedPrompt = restartedPage.getByRole('textbox', { name: 'Prompt' });
+    await expect(restartedPrompt).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
+
+    await restartedPage.getByRole('button', { name: 'Open browser workspace', exact: true }).click();
+    const restoredWorkspace = restartedPage.getByTestId('browser-workspace');
+    await expect(restoredWorkspace).toBeVisible({ timeout: 10_000 });
+    const restoredTabs = restoredWorkspace.getByRole('tab');
+    await expect(restoredTabs).toHaveCount(2, { timeout: 15_000 });
+
+    // Select each restored native WebContentsView and prove its actual committed
+    // URL and document title, not just the renderer's persisted tab label.
+    await restoredTabs.nth(0).click();
+    await expect.poll(
+      async () => {
+        const diagnostic = await browserWorkspacePageDiagnostic(app!, `${origin}/browser-workspace-fixture`, 'Fabushi Browser Fixture');
+        return diagnostic.matches ? "matched" : JSON.stringify(diagnostic);
+      },
+      { timeout: 15_000 },
+    ).toBe("matched");
+    await expect(restoredWorkspace.getByRole('tab').filter({ hasText: 'Fabushi Browser Fixture' })).toHaveCount(1, { timeout: 15_000 });
+
+    await restoredTabs.nth(1).click();
+    await expect.poll(
+      async () => {
+        const diagnostic = await browserWorkspacePageDiagnostic(app!, `${httpsOrigin}/browser-workspace-secure`, 'Fabushi Browser HTTPS');
+        return diagnostic.matches ? "matched" : JSON.stringify(diagnostic);
+      },
+      { timeout: 15_000 },
+    ).toBe("matched");
+    await expect(restoredWorkspace.getByRole('tab').filter({ hasText: 'Fabushi Browser HTTPS' })).toHaveCount(1, { timeout: 15_000 });
+
+    const restoredAddress = restoredWorkspace.getByRole('textbox', { name: 'Address and search' });
+    await restoredAddress.fill(`${origin}/browser-workspace-cookie`);
+    await restoredAddress.press('Enter');
+    await expect(restoredWorkspace.getByRole('tab').filter({ hasText: 'Fabushi Browser Cookie retained' })).toHaveCount(1, { timeout: 15_000 });
+  } finally {
+    await closeDesktopApp(app);
+    await removeE2eAppDataDir(appDataDir);
+  }
+});
+
+
+test('Browser extension installs into real Chromium, survives restart, disables, updates, and uninstalls', async () => {
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-browser-extension-data-'));
+  const extensionDir = await mkdtemp(path.join(tmpdir(), 'fabushi-browser-extension-src-'));
+  let app: ElectronApplication | null = null;
+  const writeExtension = async (version: string, marker: string) => {
+    await writeFile(path.join(extensionDir, 'manifest.json'), JSON.stringify({
+      manifest_version: 3,
+      name: 'Fabushi E2E Extension',
+      version,
+      permissions: ['storage'],
+      host_permissions: ['http://127.0.0.1/*'],
+      content_scripts: [{
+        matches: ['http://127.0.0.1/*'],
+        js: ['content.js'],
+        run_at: 'document_idle',
+      }],
+    }));
+    await writeFile(path.join(extensionDir, 'content.js'), `document.documentElement.dataset.fabushiExtension = ${JSON.stringify(marker)};`);
+  };
+  const observedMarker = async (expectedUrl: string) => await observeBrowserExtensionMarker(app!, expectedUrl);
+
+  try {
+    await writeExtension('1.0.0', 'v1');
+    const origin = await ensureE2eAuthBackend();
+    const fixtureUrl = `${origin}/browser-workspace-fixture`;
+    app = await launchDesktopApp(appDataDir, { FABUSHI_E2E_BROWSER_EXTENSION_DIR: extensionDir });
+    let page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
+    await completeBrowserLogin(page);
+    await openMahayanaConversation(page);
+
+    await page.getByRole('button', { name: 'Open browser workspace', exact: true }).click();
+    let workspace = page.getByTestId('browser-workspace');
+    await expect(workspace).toBeVisible({ timeout: 10_000 });
+    await workspace.getByRole('button', { name: 'Extensions', exact: true }).click();
+    await workspace.getByRole('button', { name: 'Choose unpacked extension…', exact: true }).click();
+    const confirmation = workspace.getByRole('group', { name: 'Extension install confirmation' });
+    await expect(confirmation.getByText(/Fabushi E2E Extension 1\.0\.0/)).toBeVisible();
+    await expect(confirmation.getByText(/storage/)).toBeVisible();
+    await expect(confirmation.getByText(/http:\/\/127\.0\.0\.1\/\*/)).toBeVisible();
+    await confirmation.getByRole('button', { name: 'Install', exact: true }).click();
+    await expect(workspace.getByText(/Fabushi E2E Extension 1\.0\.0/)).toBeVisible();
+
+    let address = workspace.getByRole('textbox', { name: 'Address and search' });
+    await address.fill(fixtureUrl);
+    await address.press('Enter');
+    await expect.poll(() => observedMarker(fixtureUrl), { timeout: 15_000 }).toBe('v1');
+
+    await closeDesktopApp(app, { failOnTimeout: true });
+    app = null;
+    app = await launchDesktopApp(appDataDir, { FABUSHI_E2E_BROWSER_EXTENSION_DIR: extensionDir });
+    page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
+    await completeBrowserLogin(page);
+    const existingAgent = page.getByRole('region', { name: 'Agent list' }).locator('button.sand-agent-item').first();
+    await expect(existingAgent).toBeVisible({ timeout: 15_000 });
+    await existingAgent.click();
+    await page.getByRole('button', { name: 'Open browser workspace', exact: true }).click();
+    workspace = page.getByTestId('browser-workspace');
+    await workspace.getByRole('button', { name: 'Extensions', exact: true }).click();
+    await expect(workspace.getByText(/Fabushi E2E Extension 1\.0\.0/)).toBeVisible({ timeout: 15_000 });
+
+    await workspace.getByRole('button', { name: 'New browser tab', exact: true }).click();
+    address = workspace.getByRole('textbox', { name: 'Address and search' });
+    await address.fill(fixtureUrl);
+    await address.press('Enter');
+    await expect.poll(() => observedMarker(fixtureUrl), { timeout: 15_000 }).toBe('v1');
+
+    await workspace.getByRole('button', { name: 'Disable', exact: true }).click();
+    await workspace.getByRole('button', { name: 'New browser tab', exact: true }).click();
+    await address.fill(fixtureUrl);
+    await address.press('Enter');
+    await expect.poll(() => observedMarker(fixtureUrl), { timeout: 15_000 }).toBe(null);
+
+    await writeExtension('1.1.0', 'v2');
+    await workspace.getByRole('button', { name: 'Update', exact: true }).click();
+    await expect(workspace.getByText(/Fabushi E2E Extension 1\.1\.0/)).toBeVisible({ timeout: 10_000 });
+    await workspace.getByRole('button', { name: 'Enable', exact: true }).click();
+    await workspace.getByRole('button', { name: 'New browser tab', exact: true }).click();
+    await address.fill(fixtureUrl);
+    await address.press('Enter');
+    await expect.poll(() => observedMarker(fixtureUrl), { timeout: 15_000 }).toBe('v2');
+
+    await workspace.getByRole('button', { name: 'Uninstall', exact: true }).click();
+    await expect(workspace.getByText('No browser extensions installed.', { exact: true })).toBeVisible();
+    await workspace.getByRole('button', { name: 'New browser tab', exact: true }).click();
+    await address.fill(fixtureUrl);
+    await address.press('Enter');
+    await expect.poll(() => observedMarker(fixtureUrl), { timeout: 15_000 }).toBe(null);
+  } finally {
+    await closeDesktopApp(app);
+    await removeE2eAppDataDir(appDataDir);
+    await rm(extensionDir, { recursive: true, force: true });
+  }
+});
+
+
+test('Agent downloads verified bytes from the real local Chromium page through Host tools', async () => {
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-browser-agent-download-e2e-'));
+  let app: ElectronApplication | null = null;
+
+  try {
+    const origin = await ensureE2eAuthBackend();
+    app = await launchDesktopApp(appDataDir);
+    const page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
+    await completeBrowserLogin(page);
+    await openMahayanaConversation(page);
+
+    await page.getByRole('button', { name: 'Open browser workspace', exact: true }).click();
+    const workspace = page.getByTestId('browser-workspace');
+    await expect(workspace).toBeVisible({ timeout: 10_000 });
+    const address = workspace.getByRole('textbox', { name: 'Address and search' });
+    await address.fill(`${origin}/browser-workspace-fixture`);
+    await address.press('Enter');
+    await expect(workspace.getByRole('tab').filter({ hasText: 'Fabushi Browser Fixture' })).toHaveCount(1, { timeout: 15_000 });
+    const fixtureUrl = `${origin}/browser-workspace-fixture`;
+    await expect.poll(
+      async () => readBrowserWorkspaceDownloadLink(app!, fixtureUrl),
+      { timeout: 15_000 },
+    ).toEqual({
+      text: 'Download fixture',
+      href: `${origin}/browser-workspace-download`,
+    });
+
+    const prompt = page.getByRole('textbox', { name: 'Prompt' });
+    await prompt.pressSequentially('FABUSHI_BROWSER_AGENT_DOWNLOAD_E2E download the visible fixture');
+    await page.getByRole('button', { name: 'Send message' }).click();
+
+    const browserUserData = await app.evaluate(({ app: electronApp }) => electronApp.getPath('userData'));
+    const downloadRoot = path.join(browserUserData, 'browser-workspace', 'downloads');
+    const expectedBytes = Buffer.from('FABUSHI_BROWSER_DOWNLOAD_V1\n', 'utf8');
+    await expect.poll(async () => {
+      if (e2eBrowserAgentToolFailures.length > 0) {
+        return 'tool-failure: ' + e2eBrowserAgentToolFailures.join('; ');
+      }
+      const { readdir, readFile } = await import('node:fs/promises');
+      const accounts = await readdir(downloadRoot, { withFileTypes: true }).catch(() => []);
+      for (const account of accounts) {
+        if (!account.isDirectory()) continue;
+        const files = await readdir(path.join(downloadRoot, account.name)).catch(() => []);
+        for (const file of files) {
+          if (!file.endsWith('-fabushi-browser-fixture.txt')) continue;
+          if ((await readFile(path.join(downloadRoot, account.name, file))).equals(expectedBytes)) return 'downloaded';
+        }
+      }
+      return 'pending';
+    }, { timeout: 20_000 }).not.toBe('pending');
+    expect(e2eBrowserAgentToolFailures, e2eBrowserAgentToolFailures.join('; ')).toEqual([]);
+
+    await expectHermesAssistantTurn(page, 'Browser agent download complete');
+  } finally {
+    await closeDesktopApp(app);
+    await removeE2eAppDataDir(appDataDir);
+  }
+});
+
+
+test('Agent controls the real local Chromium form through Host tools, isolates two concurrent Bots, and fences takeover', async () => {
+  e2eConcurrentBrowserSubmissions = [];
+  e2eConcurrentAlphaReadyForTakeover = false;
+  e2eConcurrentAlphaClickDispatched = false;
+  releaseE2eConcurrentAlphaClick = null;
+  const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-browser-agent-concurrency-e2e-'));
+  let app: ElectronApplication | null = null;
+
+  try {
+    const origin = await ensureE2eAuthBackend();
+    app = await launchDesktopApp(appDataDir);
+    const page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
+    await completeBrowserLogin(page);
+    await openMahayanaConversation(page);
+
+    const roster = page.getByRole('region', { name: 'Agent list' });
+    await page.getByRole('button', { name: 'New', exact: true }).click();
+    const createAlpha = page.getByRole('dialog', { name: 'Create agent' });
+    await expect(createAlpha).toBeVisible();
+    await createAlpha.getByPlaceholder('Agent name').fill('Browser Agent Alpha');
+    await createAlpha.getByRole('button', { name: 'Create', exact: true }).click();
+    await expect(createAlpha).toBeHidden();
+    const alphaPeer = roster.getByRole('button', { name: 'Browser Agent Alpha', exact: true });
+    await expect(alphaPeer).toBeVisible({ timeout: 15_000 });
+    await alphaPeer.click();
+    await expect(page.getByRole('group', { name: 'Browser Agent Alpha', exact: true })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('textbox', { name: 'Prompt' })).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
+
+    await page.getByRole('button', { name: 'Open browser workspace', exact: true }).click();
+    let workspace = page.getByTestId('browser-workspace');
+    await expect(workspace).toBeVisible({ timeout: 10_000 });
+    let address = workspace.getByRole('textbox', { name: 'Address and search' });
+    await address.fill(`${origin}/browser-agent-concurrency-form?task=alpha`);
+    await address.press('Enter');
+    await expect(workspace.getByRole('tab').filter({ hasText: 'Fabushi Concurrent alpha' })).toHaveCount(1, { timeout: 15_000 });
+
+    await page.getByRole('button', { name: 'New', exact: true }).click();
+    const createAgent = page.getByRole('dialog', { name: 'Create agent' });
+    await expect(createAgent).toBeVisible();
+    await createAgent.getByPlaceholder('Agent name').fill('Browser Agent Beta');
+    await createAgent.getByRole('button', { name: 'Create', exact: true }).click();
+    await expect(createAgent).toBeHidden();
+    const betaPeer = roster.getByRole('button', { name: 'Browser Agent Beta', exact: true });
+    await expect(betaPeer).toBeVisible({ timeout: 15_000 });
+    await betaPeer.click();
+    await expect(page.getByRole('group', { name: 'Browser Agent Beta', exact: true })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('textbox', { name: 'Prompt' })).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
+
+    await page.getByRole('button', { name: 'Open browser workspace', exact: true }).click();
+    workspace = page.getByTestId('browser-workspace');
+    await expect(workspace).toBeVisible({ timeout: 10_000 });
+    address = workspace.getByRole('textbox', { name: 'Address and search' });
+    await address.fill(`${origin}/browser-agent-concurrency-form?task=beta`);
+    await address.press('Enter');
+    await expect(workspace.getByRole('tab').filter({ hasText: 'Fabushi Concurrent beta' })).toHaveCount(1, { timeout: 15_000 });
+
+    await alphaPeer.click();
+    await expect(page.getByRole('group', { name: 'Browser Agent Alpha', exact: true })).toBeVisible({ timeout: 15_000 });
+    let prompt = page.getByRole('textbox', { name: 'Prompt' });
+    await expect(prompt).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
+    workspace = page.getByTestId('browser-workspace');
+    await expect(workspace.getByRole('tab').filter({ hasText: 'Fabushi Concurrent alpha' })).toHaveCount(1, { timeout: 15_000 });
+    await prompt.pressSequentially('FABUSHI_BROWSER_AGENT_CONCURRENCY_E2E_ALPHA fill alpha but wait before submit');
+    await page.getByRole('button', { name: 'Send message' }).click();
+
+    await expect.poll(() => e2eConcurrentAlphaReadyForTakeover, { timeout: 20_000 }).toBe(true);
+    await expect(workspace.locator('.sand-browser-workspace__agent-state')).toContainText('task running', { timeout: 10_000 });
+
+    await betaPeer.click();
+    await expect(page.getByRole('group', { name: 'Browser Agent Beta', exact: true })).toBeVisible({ timeout: 15_000 });
+    prompt = page.getByRole('textbox', { name: 'Prompt' });
+    await expect(prompt).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
+    workspace = page.getByTestId('browser-workspace');
+    await expect(workspace.getByRole('tab').filter({ hasText: 'Fabushi Concurrent beta' })).toHaveCount(1, { timeout: 15_000 });
+    await prompt.pressSequentially('FABUSHI_BROWSER_AGENT_CONCURRENCY_E2E_BETA submit beta while alpha is still running');
+    await page.getByRole('button', { name: 'Send message' }).click();
+
+    await expect.poll(() => e2eConcurrentBrowserSubmissions, { timeout: 20_000 }).toEqual([
+      { task: 'beta', name: 'Beta Agent' },
+    ]);
+    await expect.poll(
+      async () => browserWorkspacePageMatches(app!, `${origin}/browser-agent-concurrency-form-submit?task=beta`, 'Fabushi Concurrent beta submitted'),
+      { timeout: 10_000 },
+    ).toBe(true);
+    await expectHermesAssistantTurn(page, 'Concurrent beta complete');
+
+    await alphaPeer.click();
+    await expect(page.getByRole('group', { name: 'Browser Agent Alpha', exact: true })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('textbox', { name: 'Prompt' })).toHaveAttribute('contenteditable', 'true', { timeout: 15_000 });
+    workspace = page.getByTestId('browser-workspace');
+    await expect(workspace.getByRole('tab').filter({ hasText: 'Fabushi Concurrent alpha' })).toHaveCount(1, { timeout: 15_000 });
+    await workspace.getByRole('button', { name: 'Take over', exact: true }).click();
+    await expect(workspace.locator('.sand-browser-workspace__agent-state')).toContainText('Agent: taken-over · task taken-over', { timeout: 10_000 });
+
+    const releaseAlpha = releaseE2eConcurrentAlphaClick;
+    expect(releaseAlpha).not.toBeNull();
+    releaseAlpha?.();
+    await expect.poll(() => e2eConcurrentAlphaClickDispatched, { timeout: 10_000 }).toBe(true);
+    await page.waitForTimeout(1_500);
+    expect(e2eConcurrentBrowserSubmissions).toEqual([{ task: 'beta', name: 'Beta Agent' }]);
+
+    await betaPeer.click();
+    await expect(page.getByRole('group', { name: 'Browser Agent Beta', exact: true })).toBeVisible({ timeout: 15_000 });
+    workspace = page.getByTestId('browser-workspace');
+    await expect(workspace.getByRole('tab').filter({ hasText: 'Fabushi Concurrent beta submitted' })).toHaveCount(1, { timeout: 10_000 });
+    expect(e2eConcurrentBrowserSubmissions).toEqual([{ task: 'beta', name: 'Beta Agent' }]);
+  } finally {
+    releaseE2eConcurrentAlphaClick?.();
+    releaseE2eConcurrentAlphaClick = null;
+    await closeDesktopApp(app);
+    await removeE2eAppDataDir(appDataDir);
+  }
+});
+
+
 test('Mahayana renders one Hermes-style assistant turn instead of a completion Workbench card', async () => {
   const appDataDir = await mkdtemp(path.join(tmpdir(), 'fabushi-mahayana-assistant-turn-'));
   let app: ElectronApplication | null = null;
 
   try {
     app = await launchDesktopApp(appDataDir);
-    const page = await app.firstWindow();
+    const page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(page);
     await openMahayanaConversation(page);
 
@@ -800,8 +2205,8 @@ test('Mahayana renders one Hermes-style assistant turn instead of a completion W
     await expect(page.getByRole('button', { name: 'New Human chat', exact: true })).toHaveCount(0);
     await expect(promptInput).toBeVisible();
   } finally {
-    await app?.close().catch(() => undefined);
-    await rm(appDataDir, { recursive: true, force: true });
+    await closeDesktopApp(app);
+    await removeE2eAppDataDir(appDataDir);
   }
 });
 
@@ -818,7 +2223,7 @@ test('Human reply, attachment, reaction, and search stay on the shipping convers
 
   try {
     app = await launchDesktopApp(appDataDir);
-    let page = await app.firstWindow();
+    let page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(page);
     await openMahayanaConversation(page);
     await page.getByRole('button', { name: 'New Human chat', exact: true }).click();
@@ -876,10 +2281,10 @@ test('Human reply, attachment, reaction, and search stay on the shipping convers
     await expect(page.locator('.sand-chat-find').getByRole('status')).toHaveText('1/1');
     await page.getByRole('button', { name: 'Close find' }).click();
 
-    await app.close();
+    await closeDesktopApp(app, { failOnTimeout: true });
     app = null;
     app = await launchDesktopApp(appDataDir);
-    page = await app.firstWindow();
+    page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(page);
     await page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: 'Human Parity Peer', exact: true }).click();
     const restoredReply = page.getByRole('article').filter({ hasText: replyText }).last();
@@ -888,8 +2293,8 @@ test('Human reply, attachment, reaction, and search stay on the shipping convers
     await expect(restoredReply.getByRole('button', { name: 'Jump to replied message' })).toBeVisible();
     await expect(restoredReply.getByRole('button', { name: /You reacted with 👍/u })).toBeVisible();
   } finally {
-    await app?.close().catch(() => undefined);
-    await rm(appDataDir, { recursive: true, force: true });
+    await closeDesktopApp(app);
+    await removeE2eAppDataDir(appDataDir);
   }
 });
 
@@ -914,7 +2319,7 @@ test('shipping Human Forward uses the canonical picker and survives restart', as
 
   try {
     app = await launchDesktopApp(appDataDir);
-    let page = await app.firstWindow();
+    let page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(page);
     await openMahayanaConversation(page);
 
@@ -953,18 +2358,18 @@ test('shipping Human Forward uses the canonical picker and survives restart', as
     await expect(forwarded).toBeVisible({ timeout: 15_000 });
     await expect(forwarded).not.toHaveAttribute('data-pending');
 
-    await app.close();
+    await closeDesktopApp(app, { failOnTimeout: true });
     app = null;
     app = await launchDesktopApp(appDataDir);
-    page = await app.firstWindow();
+    page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(page);
     await page.getByRole('region', { name: 'Agent list' })
       .getByRole('button', { name: 'Forward Destination', exact: true })
       .click();
     await expect(page.getByRole('article').filter({ hasText: sourceText }).last()).toBeVisible({ timeout: 15_000 });
   } finally {
-    await app?.close().catch(() => undefined);
-    await rm(appDataDir, { recursive: true, force: true });
+    await closeDesktopApp(app);
+    await removeE2eAppDataDir(appDataDir);
   }
 });
 
@@ -1007,12 +2412,12 @@ test('two shipping Electron device sessions converge one Human conversation thro
 
   try {
     appA = await launchDesktopApp(appDataDirA);
-    const pageA = await appA.firstWindow();
+    const pageA = await appA.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(pageA);
     await openMahayanaConversation(pageA);
 
     appB = await launchDesktopApp(appDataDirB);
-    const pageB = await appB.firstWindow();
+    const pageB = await appB.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(pageB);
     await openMahayanaConversation(pageB);
 
@@ -1038,10 +2443,10 @@ test('two shipping Electron device sessions converge one Human conversation thro
 
     expect(e2eObservedSocialDeviceIds.size).toBeGreaterThanOrEqual(2);
   } finally {
-    await appB?.close().catch(() => undefined);
-    await appA?.close().catch(() => undefined);
-    await rm(appDataDirB, { recursive: true, force: true });
-    await rm(appDataDirA, { recursive: true, force: true });
+    await closeDesktopApp(appB);
+    await closeDesktopApp(appA);
+    await removeE2eAppDataDir(appDataDirB);
+    await removeE2eAppDataDir(appDataDirA);
   }
 });
 
@@ -1051,7 +2456,7 @@ test('Settings localization, accessibility, bidirectional text, and IME stay on 
 
   try {
     app = await launchDesktopApp(appDataDir);
-    let page = await app.firstWindow();
+    let page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(page);
     await openMahayanaConversation(page);
 
@@ -1247,10 +2652,10 @@ test('Settings localization, accessibility, bidirectional text, and IME stay on 
       textScale: '1.25',
     });
 
-    await app.close();
+    await closeDesktopApp(app, { failOnTimeout: true });
     app = null;
     app = await launchDesktopApp(appDataDir);
-    page = await app.firstWindow();
+    page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(page);
     await expect.poll(() => page.evaluate(() => ({
       lang: document.documentElement.lang,
@@ -1310,8 +2715,8 @@ test('Settings localization, accessibility, bidirectional text, and IME stay on 
     await page.keyboard.press('Escape');
     await expect(restoredSettings).toBeHidden();
   } finally {
-    await app?.close().catch(() => undefined);
-    await rm(appDataDir, { recursive: true, force: true });
+    await closeDesktopApp(app);
+    await removeE2eAppDataDir(appDataDir);
   }
 });
 
@@ -1322,7 +2727,7 @@ test('Human call surface exposes the shipping WebRTC and Electron media bridge',
   let app: ElectronApplication | null = null;
   try {
     app = await launchDesktopApp(appDataDir);
-    const page = await app.firstWindow();
+    const page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(page);
     await openMahayanaConversation(page);
     await page.getByRole('button', { name: 'New Human chat', exact: true }).click();
@@ -1361,8 +2766,8 @@ test('Human call surface exposes the shipping WebRTC and Electron media bridge',
     expect(capability.permissionProbe).toEqual({ microphone: 'not-requested', camera: 'not-requested' });
     expect(capability.preferencesRoundTrip).toEqual({ microphoneId: 'call-mic-e2e', cameraId: 'call-camera-e2e' });
   } finally {
-    await app?.close().catch(() => undefined);
-    await rm(appDataDir, { recursive: true, force: true });
+    await closeDesktopApp(app);
+    await removeE2eAppDataDir(appDataDir);
   }
 });
 
@@ -1375,7 +2780,7 @@ test('Human conversation survives restart and explicitly hands off into one Herm
 
   try {
     app = await launchDesktopApp(appDataDir);
-    let page = await app.firstWindow();
+    let page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(page);
 
     // Create one real Agent through the shipping sidebar so the Human handoff
@@ -1409,10 +2814,10 @@ test('Human conversation survives restart and explicitly hands off into one Herm
 
     // Restart the packaged/runtime app data scope and prove the authenticated
     // Human identity resolves to the same durable Session/Transcript owner.
-    await app.close();
+    await closeDesktopApp(app, { failOnTimeout: true });
     app = null;
     app = await launchDesktopApp(appDataDir);
-    page = await app.firstWindow();
+    page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(page);
     await page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: 'Human Alice', exact: true }).click();
     await expect(page.getByRole('article').filter({ hasText: humanMessage }).last()).toBeVisible({ timeout: 10_000 });
@@ -1439,18 +2844,18 @@ test('Human conversation survives restart and explicitly hands off into one Herm
 
     // A second restart proves the Agent-authored result is not renderer-only
     // state: it must be replayed from the durable Human Session transcript.
-    await app.close();
+    await closeDesktopApp(app, { failOnTimeout: true });
     app = null;
     app = await launchDesktopApp(appDataDir);
-    page = await app.firstWindow();
+    page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(page);
     await page.getByRole('region', { name: 'Agent list' }).getByRole('button', { name: 'Human Alice', exact: true }).click();
     await expect(page.getByRole('article').filter({ hasText: humanMessage }).last()).toBeVisible({ timeout: 10_000 });
     await expectHermesAssistantTurn(page, assistantReply);
     await expect(page.getByText('Human', { exact: true })).toBeVisible();
   } finally {
-    await app?.close().catch(() => undefined);
-    await rm(appDataDir, { recursive: true, force: true });
+    await closeDesktopApp(app);
+    await removeE2eAppDataDir(appDataDir);
   }
 });
 
@@ -1461,7 +2866,7 @@ test('self-hosted Bot invocation projects into the same Hermes-style turn withou
 
   try {
     app = await launchDesktopApp(appDataDir);
-    let page = await app.firstWindow();
+    let page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(page);
     const { conversationId, peerTestId } = await createSelfHostedBotAcceptanceChannel(page);
 
@@ -1488,21 +2893,21 @@ test('self-hosted Bot invocation projects into the same Hermes-style turn withou
         Boolean(claim && typeof claim === 'object' && (claim as { state?: string }).state === 'accepted'));
     })).toBe(true);
 
-    await app.close();
+    await closeDesktopApp(app, { failOnTimeout: true });
     app = null;
 
     // Restart coverage is intentionally limited to the canonical messaging
     // history here. Ordered AssistantTurn replay must come from the production
     // Rust gateway/session store and is a separate MSR-204 acceptance blocker.
     app = await launchDesktopApp(appDataDir);
-    page = await app.firstWindow();
+    page = await app.firstWindow({ timeout: firstWindowTimeoutMs });
     await completeBrowserLogin(page);
     const restoredPeer = page.getByTestId(peerTestId);
     await expect(restoredPeer).toBeVisible({ timeout: 15_000 });
     await restoredPeer.click();
     await expect(page.getByRole('article').filter({ hasText: prompt }).last()).toBeVisible({ timeout: 10_000 });
   } finally {
-    await app?.close().catch(() => undefined);
-    await rm(appDataDir, { recursive: true, force: true });
+    await closeDesktopApp(app);
+    await removeE2eAppDataDir(appDataDir);
   }
 });

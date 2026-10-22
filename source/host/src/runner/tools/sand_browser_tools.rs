@@ -307,6 +307,11 @@ pub struct BrowserReviewAction {
     pub button: Option<String>,
     pub modifiers: Option<Vec<String>>,
     pub file_path: Option<String>,
+    pub decision: Option<String>,
+    pub prompt_text: Option<String>,
+    pub event: Option<String>,
+    pub after_sequence: Option<u64>,
+    pub limit: Option<u64>,
 }
 
 pub fn to_browser_review_action(
@@ -351,6 +356,11 @@ pub fn to_browser_review_action(
         button: string_field(args, "button"),
         modifiers: string_array(args, "modifiers"),
         file_path: string_field(args, "filePath"),
+        decision: string_field(args, "decision"),
+        prompt_text: string_field(args, "promptText"),
+        event: string_field(args, "event"),
+        after_sequence: args.get("afterSequence").and_then(Value::as_u64),
+        limit: args.get("limit").and_then(Value::as_u64),
     }
 }
 
@@ -358,6 +368,10 @@ pub fn to_browser_review_action(
 pub struct BrowserToolSchema {
     pub required: Vec<&'static str>,
     pub enum_values: BTreeMap<&'static str, Vec<&'static str>>,
+    pub max_text_len: Option<usize>,
+    pub max_timeout_ms: Option<u64>,
+    pub max_prompt_text_len: Option<usize>,
+    pub max_event_limit: Option<u64>,
 }
 
 impl Default for BrowserToolSchema {
@@ -365,6 +379,10 @@ impl Default for BrowserToolSchema {
         Self {
             required: Vec::new(),
             enum_values: BTreeMap::new(),
+            max_text_len: None,
+            max_timeout_ms: None,
+            max_prompt_text_len: None,
+            max_event_limit: None,
         }
     }
 }
@@ -387,10 +405,14 @@ pub fn browser_tool_specs() -> Vec<BrowserToolSpec> {
         spec("BROWSER_BACK", "browser_back", "back", "Navigate the exact claimed browser tab backward in history. Requires the current expectedGeneration and returns a new generation.", &[], &[], true, false),
         spec("BROWSER_FORWARD", "browser_forward", "forward", "Navigate the exact claimed browser tab forward in history. Requires the current expectedGeneration and returns a new generation.", &[], &[], true, false),
         spec("BROWSER_SNAPSHOT", "browser_snapshot", "snapshot", "Capture a structured snapshot of the current page with ref handles for interactive elements.", &[], &[], false, false),
+        wait_spec(),
+        dialog_spec(),
+        wait_event_spec(),
+        events_spec(),
         spec("BROWSER_CLICK", "browser_click", "click", "Click an element by ref from browser_snapshot.", &["ref"], &[], true, false),
         spec("BROWSER_MOUSE_CLICK_XY", "browser_mouse_click_xy", "mouse_click_xy", "Click at viewport coordinates.", &["x","y"], &[], true, false),
         spec("BROWSER_DOWNLOAD", "browser_download", "download", "Click an element and track the resulting download into the authorized workspace download area with bounded size and SHA-256 evidence.", &["ref"], &[], true, false),
-        spec("BROWSER_UPLOAD_FILE", "browser_upload_file", "upload_file", "Upload one explicitly authorized regular file from the box /workspace root into a file input.", &["ref","filePath"], &[], false, false),
+        spec("BROWSER_UPLOAD_FILE", "browser_upload_file", "upload_file", "Upload one authorized file into a file input. For target=box, filePath is an authorized regular file under /workspace. For target=local, filePath must be the literal user-authorized and Fabushi Main opens a trusted OS file picker; the Agent never chooses a local path.", &["ref","filePath"], &[], false, false),
         spec("BROWSER_TYPE", "browser_type", "type", "Type text into an editable element by ref.", &["ref","text"], &[], true, false),
         spec("BROWSER_FILL", "browser_fill", "fill", "Set the value of an editable element by ref.", &["ref","value"], &[], false, false),
         spec("BROWSER_SELECT_OPTION", "browser_select_option", "select_option", "Select one or more options in a select element by ref.", &["ref","values"], &[], false, false),
@@ -409,9 +431,64 @@ pub fn validate_browser_arguments(
     schema: &BrowserToolSchema,
     args: &Map<String, Value>,
 ) -> Result<(), BrowserDriverError> {
+    if let Some(value) = args.get("target") {
+        let target = value.as_str().ok_or_else(|| {
+            BrowserDriverError::new("target must be box or local")
+        })?;
+        if !matches!(target, "box" | "local") {
+            return Err(BrowserDriverError::new("target must be box or local"));
+        }
+    }
     for key in &schema.required {
         if args.get(*key).is_none_or(|value| value.is_null() || value.as_str() == Some("")) {
             return Err(BrowserDriverError::new(format!("{key} is required")));
+        }
+    }
+    if let Some(max) = schema.max_text_len {
+        let text = args.get("text").and_then(Value::as_str).ok_or_else(|| {
+            BrowserDriverError::new("text must be a non-empty string")
+        })?;
+        if text.is_empty() || text.len() > max {
+            return Err(BrowserDriverError::new(format!(
+                "text must be a non-empty string of at most {max} bytes"
+            )));
+        }
+    }
+    if let Some(max) = schema.max_prompt_text_len {
+        if let Some(value) = args.get("promptText") {
+            let prompt = value.as_str().ok_or_else(|| BrowserDriverError::new("promptText must be a string"))?;
+            if prompt.chars().count() > max {
+                return Err(BrowserDriverError::new(format!("promptText exceeds the {max}-character limit")));
+            }
+            if args.get("decision").and_then(Value::as_str) == Some("dismiss") {
+                return Err(BrowserDriverError::new("promptText is only valid when accepting a prompt dialog"));
+            }
+        }
+    }
+    if let Some(value) = args.get("afterSequence") {
+        let sequence = value.as_u64().ok_or_else(|| BrowserDriverError::new("afterSequence must be a non-negative safe integer"))?;
+        if sequence > 9_007_199_254_740_991 {
+            return Err(BrowserDriverError::new("afterSequence exceeds the safe integer limit"));
+        }
+    }
+    if let Some(max) = schema.max_event_limit {
+        if let Some(value) = args.get("limit") {
+            let limit = value.as_u64().ok_or_else(|| BrowserDriverError::new("limit must be a positive integer"))?;
+            if limit == 0 || limit > max {
+                return Err(BrowserDriverError::new(format!("limit must be between 1 and {max}")));
+            }
+        }
+    }
+    if let Some(max) = schema.max_timeout_ms {
+        if let Some(value) = args.get("timeoutMs") {
+            let timeout = value.as_u64().ok_or_else(|| {
+                BrowserDriverError::new("timeoutMs must be a positive integer")
+            })?;
+            if timeout == 0 || timeout > max {
+                return Err(BrowserDriverError::new(format!(
+                    "timeoutMs must be between 1 and {max}"
+                )));
+            }
         }
     }
     if let Some(value) = args.get("filePath") {
@@ -934,13 +1011,29 @@ fn browser_tool_definition(spec: &BrowserToolSpec) -> RoutedToolDefinition {
     for (key, values) in &spec.schema.enum_values {
         properties.insert((*key).to_string(), json!({"type":"string","enum":values}));
     }
+    properties.insert("target".into(), json!({
+        "type":"string",
+        "enum":["box","local"],
+        "description":"Execution target. Omit or use box for the managed isolated browser; use local only for an already-open Fabushi Browser Workspace. Targets never silently fall back."
+    }));
     properties.entry("viewId").or_insert_with(|| json!({"type":"string"}));
     properties
         .entry("expectedGeneration")
         .or_insert_with(|| json!({"type":"string","minLength":1,"maxLength":240}));
     properties.entry("frameName").or_insert_with(|| json!({"type":"string","minLength":1,"maxLength":240}));
     properties.entry("frameUrl").or_insert_with(|| json!({"type":"string","minLength":1,"maxLength":2048}));
-    properties.insert("filePath".into(), json!({"type":"string","minLength":1,"maxLength":4096}));
+    properties.insert("filePath".into(), json!({
+        "type":"string",
+        "minLength":1,
+        "maxLength":4096,
+        "description":"For target=box: authorized regular file under /workspace. For target=local: pass literal user-authorized; Fabushi Main opens a trusted OS picker and never accepts an Agent-chosen local path."
+    }));
+    if let Some(max) = spec.schema.max_text_len {
+        properties.insert("text".into(), json!({"type":"string","minLength":1,"maxLength":max}));
+    }
+    if let Some(max) = spec.schema.max_timeout_ms {
+        properties.insert("timeoutMs".into(), json!({"type":"integer","minimum":1,"maximum":max}));
+    }
     RoutedToolDefinition {
         name: spec.name.into(),
         provider_identifier: "fabushi-runner".into(),
@@ -976,10 +1069,75 @@ fn spec(
                 .iter()
                 .map(|(key, values)| (*key, values.to_vec()))
                 .collect(),
+            max_text_len: None,
+            max_timeout_ms: None,
+            max_prompt_text_len: None,
+            max_event_limit: None,
         },
         can_navigate,
         skip_screenshot,
     }
+}
+
+fn wait_spec() -> BrowserToolSpec {
+    let mut spec = spec(
+        "BROWSER_WAIT",
+        "browser_wait",
+        "wait",
+        "Wait for visible page text in the exact claimed browser document for at most 15 seconds.",
+        &["text"],
+        &[],
+        false,
+        true,
+    );
+    spec.schema.max_text_len = Some(1_024);
+    spec.schema.max_timeout_ms = Some(15_000);
+    spec
+}
+
+fn dialog_spec() -> BrowserToolSpec {
+    let mut spec = spec(
+        "BROWSER_DIALOG",
+        "browser_dialog",
+        "dialog",
+        "For target=local only, accept or dismiss the active JavaScript dialog through Main's fixed CDP handler. promptText is permitted only for accepting prompt dialogs.",
+        &["decision"],
+        &[("decision", &["accept", "dismiss"])],
+        false,
+        true,
+    );
+    spec.schema.max_prompt_text_len = Some(4_096);
+    spec
+}
+
+fn wait_event_spec() -> BrowserToolSpec {
+    let mut spec = spec(
+        "BROWSER_WAIT_EVENT",
+        "browser_wait_event",
+        "wait_event",
+        "For target=local only, wait for a committed main-frame page event, load completion, or a 500ms network-idle window. The wait is bounded to 15 seconds.",
+        &["event"],
+        &[("event", &["page", "load", "network-idle"])],
+        false,
+        true,
+    );
+    spec.schema.max_timeout_ms = Some(15_000);
+    spec
+}
+
+fn events_spec() -> BrowserToolSpec {
+    let mut spec = spec(
+        "BROWSER_EVENTS",
+        "browser_events",
+        "events",
+        "For target=local only, read a bounded page/load/network event buffer. Results contain only event type, sequence, timestamp, and page origin; request URLs, headers, and bodies are not exposed.",
+        &[],
+        &[],
+        false,
+        true,
+    );
+    spec.schema.max_event_limit = Some(32);
+    spec
 }
 
 fn string_field(object: &Map<String, Value>, key: &str) -> Option<String> {

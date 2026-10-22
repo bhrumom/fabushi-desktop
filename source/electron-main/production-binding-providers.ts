@@ -1,5 +1,7 @@
 import { join } from "node:path";
 
+import { startupApplicationFolderMethodsForPlatform } from "./startup-platform-capabilities.js";
+
 import { createGetOrCreateMachineId } from "./account/cursor-machine-id.js";
 import {
   getLocalExecDaemonDiscoveryPath,
@@ -464,18 +466,20 @@ export function createElectronProductionNotificationsBinding(): NotificationsBin
 export function createProductionStartupBinding(
   ports: ElectronStartupProviderPorts,
 ): ElectronProductionStartupBindings {
+  const platform = ports.platform ?? process.platform;
   for (const [value, label] of [
     [ports?.app?.setPath, "electron.app.setPath()."],
     [ports?.app?.getPath, "electron.app.getPath()."],
-    [ports?.app?.isInApplicationsFolder, "electron.app.isInApplicationsFolder()."],
-    [ports?.app?.moveToApplicationsFolder, "electron.app.moveToApplicationsFolder()."],
     [ports?.app?.relaunch, "electron.app.relaunch()."],
     [ports?.app?.exit, "electron.app.exit()."],
     [ports?.dialog?.showMessageBox, "electron.dialog.showMessageBox()."],
   ] as const) requireFunction(value, label);
+  // Electron exposes Applications-folder helpers only on macOS.
+  for (const method of startupApplicationFolderMethodsForPlatform(platform)) {
+    requireFunction(ports?.app?.[method], `electron.app.${method}().`);
+  }
   const argv = ports.argv ?? process.argv;
   const env = ports.env ?? process.env;
-  const platform = ports.platform ?? process.platform;
   const buffered: Array<{ readonly level: Parameters<ProductionTelemetrySink["reportDesktopStartup"]>[0]; readonly metadata: Parameters<ProductionTelemetrySink["reportDesktopStartup"]>[1] }> = [];
   let telemetry: ProductionTelemetrySink | undefined;
   const report: ElectronProductionStartupBindings["report"] = (level, metadata) => {

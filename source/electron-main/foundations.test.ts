@@ -10,6 +10,7 @@ import { SAND_DEV_PRELOAD_FILENAME, SAND_PRIMARY_PRELOAD_FILENAME, resolveSandMa
 import { createDevGatewayOfflineControl } from "./dev/dev-gateway-offline.js";
 import { registerExperimentsIpc } from "./experiments/experiments-ipc.js";
 import { computeDockBadgeTotal } from "./notifications/dock-badge.js";
+import { SandCursorAuthService } from "./account/cursor-auth.js";
 import { resolveScanRoots } from "./process-metrics/wiring.js";
 import { computeUpdateDisabledReason } from "./update/update-gate.js";
 import { isSafeToRelaunchForUpdate } from "./update/safe-relaunch-gate.js";
@@ -33,6 +34,7 @@ import { createReleaseMetadata } from "./update/release-metadata.js";
 import { SandSettingsStore } from "../shared/node/settings/sand-settings-store.js";
 import { normalizeSandCallMediaPreferences, normalizeSandUiPreferences, resolveSandUiDirection } from "../shared/desktop.js";
 import { createDesktopCallMediaPort } from "./call-media.js";
+import { startupApplicationFolderMethodsForPlatform } from "./startup-platform-capabilities.js";
 
 test("UI accessibility preferences normalize, persist, and resolve RTL", () => {
   const dir=mkdtempSync(join(tmpdir(),"fabushi-ui-prefs-"));
@@ -471,6 +473,15 @@ test("call media binding preserves native permission and desktopCapturer authori
 });
 
 
+test("production startup platform requirements only include Applications-folder APIs on macOS", () => {
+  assert.deepEqual(startupApplicationFolderMethodsForPlatform("linux"), []);
+  assert.deepEqual(startupApplicationFolderMethodsForPlatform("win32"), []);
+  assert.deepEqual(startupApplicationFolderMethodsForPlatform("darwin"), [
+    "isInApplicationsFolder",
+    "moveToApplicationsFolder",
+  ]);
+});
+
 test("MAS packaging declares camera and microphone authority for Human calls", () => {
   const desktopRoot = basename(process.cwd()) === "desktop" ? process.cwd() : join(process.cwd(), "desktop");
   const entitlements = readFileSync(join(desktopRoot, "resources/mas/entitlements.mas.plist"), "utf8");
@@ -482,4 +493,33 @@ test("MAS packaging declares camera and microphone authority for Human calls", (
   const extendInfo = desktopPackage.build?.mas?.extendInfo ?? {};
   assert.equal(typeof extendInfo.NSMicrophoneUsageDescription, "string");
   assert.equal(typeof extendInfo.NSCameraUsageDescription, "string");
+});
+
+
+test("Cursor login polling is not blocked by a pending external browser launch", async () => {
+  const stored = new Map<string, string>();
+  const accessToken = "header." + Buffer.from(JSON.stringify({ sub: "auth-race-test", exp: 4_102_444_800 })).toString("base64url") + ".signature";
+  let pollStarted = false;
+  const service = new SandCursorAuthService({
+    openExternal: () => new Promise<void>(() => {}),
+    secrets: {
+      readSecret: async (key) => stored.get(key) ?? null,
+      writeSecret: async (key, value) => { stored.set(key, value); },
+      deleteSecret: async (key) => { stored.delete(key); },
+      isEncryptedStorageAvailable: () => true,
+    },
+    createLoginManager: () => ({
+      startLogin: () => ({ metadata: { uuid: "auth-race-test", verifier: "test-verifier" }, loginUrl: "https://example.invalid/login" }),
+      waitForResult: async () => {
+        pollStarted = true;
+        return { accessToken, refreshToken: "test-refresh-token" };
+      },
+    }),
+  });
+  const status = await Promise.race([
+    service.login(),
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error("external browser launch blocked authentication polling")), 1_000)),
+  ]);
+  assert.equal(pollStarted, true);
+  assert.equal(status.kind, "logged-in");
 });

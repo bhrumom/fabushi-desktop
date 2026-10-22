@@ -6,6 +6,7 @@ pub const RUNNER_RESOLVE_ROUTED_TOOL_GATEWAY_METHOD: &str =
     "runner.resolveRoutedToolRequest";
 pub const ROUTED_TOOL_LIST_METHOD: &str = "listRoutedMcpTools";
 pub const ROUTED_TOOL_EXECUTE_METHOD: &str = "executeRoutedMcpTool";
+pub const LOCAL_BROWSER_ACTION_METHOD: &str = "executeLocalBrowserAction";
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct RunnerToolRequest {
@@ -44,7 +45,7 @@ pub fn parse_runner_tool_request(payload: &Value) -> Result<RunnerToolRequest, F
                 "runner tool request requires method",
             )
         })?;
-    if !matches!(method, ROUTED_TOOL_LIST_METHOD | ROUTED_TOOL_EXECUTE_METHOD) {
+    if !matches!(method, ROUTED_TOOL_LIST_METHOD | ROUTED_TOOL_EXECUTE_METHOD | LOCAL_BROWSER_ACTION_METHOD) {
         return Err(Failure::new(
             "RUNNER_TOOL_RELAY_METHOD_DENIED",
             format!("runner tool relay may not invoke {method}"),

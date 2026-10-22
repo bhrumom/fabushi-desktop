@@ -1,4 +1,5 @@
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderSessionError, RoutedToolDefinition,
@@ -9,6 +10,11 @@ use mahayana_host_runtime::runner::box_tool_access::{
 };
 use mahayana_host_runtime::runner::routed_provider_runtime::RoutedToolBridge;
 use mahayana_host_runtime::runner::tools::sand_browser_driver_source::SAND_BROWSER_DRIVER_SOURCE;
+use mahayana_host_runtime::gateway_server::GatewayEventHub;
+use mahayana_host_runtime::runner::coordinator_tool_relay::CoordinatorToolRelay;
+use mahayana_host_runtime::runner::tools::local_browser_tools::{
+    ExplicitBrowserTargetExecutor, LocalBrowserCoordinatorExecutor,
+};
 use mahayana_host_runtime::runner::tools::sand_browser_tools::{
     BOX_CDP_PORT_BASE, BrowserDriverOutput, BrowserEnvelope, BrowserToolExecutor,
     BrowserShellSafetyCallback, BrowserToolSpec, ProductionBrowserToolExecutor,
@@ -21,6 +27,7 @@ use mahayana_host_runtime::runner::tools::sand_browser_tools::{
 use serde_json::{Map, Value, json};
 
 const BROWSER_AUTO_REVIEW_SOURCE: &str = include_str!("../src/runner/sand_browser_auto_review.rs");
+const LOCAL_BROWSER_TOOLS_SOURCE: &str = include_str!("../src/runner/tools/local_browser_tools.rs");
 const AUTO_REVIEW_SUMMARIES_SOURCE: &str = include_str!("../src/runner/sand_auto_review_summaries.rs");
 
 struct BaseBridge;
@@ -114,6 +121,32 @@ impl RunnerBoxResourcePort for ProductionBoxPort {
 
     fn browser_window_index(&self) -> Result<u32, ProviderSessionError> {
         Ok(4)
+    }
+}
+
+#[derive(Clone)]
+struct TrackingBrowserExecutor {
+    label: &'static str,
+    calls: Arc<Mutex<Vec<String>>>,
+}
+
+impl BrowserToolExecutor for TrackingBrowserExecutor {
+    fn execute(
+        &self,
+        spec: &BrowserToolSpec,
+        _args: &Map<String, Value>,
+        _tool_call_id: &str,
+    ) -> Result<BrowserDriverOutput, ProviderSessionError> {
+        self.calls.lock().expect("calls").push(self.label.to_string());
+        Ok(BrowserDriverOutput {
+            text: format!("{}:{}", self.label, spec.op),
+            image_b64: None,
+            is_error: false,
+            view_id: None,
+            generation: None,
+            frame_name: None,
+            frame_url: None,
+        })
     }
 }
 
@@ -270,11 +303,320 @@ fn browser_toolset_registers_frozen_inventory_validates_and_delegates() {
     );
     assert_eq!(navigate.input_schema["properties"]["frameName"]["type"], "string");
     assert_eq!(navigate.input_schema["properties"]["frameUrl"]["type"], "string");
+    assert_eq!(
+        navigate.input_schema["properties"]["target"]["enum"],
+        json!(["box","local"])
+    );
+
+    let mut invalid_target = Map::new();
+    invalid_target.insert("url".into(), json!("https://example.com"));
+    invalid_target.insert("target".into(), json!("auto"));
+    let target_error = validate_browser_arguments(
+        &browser_tool_specs().into_iter().find(|spec| spec.name == "browser_navigate").expect("navigate spec").schema,
+        &invalid_target,
+    ).expect_err("unknown browser target must fail closed");
+    assert!(target_error.to_string().contains("box or local"));
 
     let base = tools.iter().find(|tool| tool.name == "base_tool").expect("base");
     assert_eq!(
         bridge.call_tool(base, json!({}), "tool-base").expect("delegate"),
         Value::String("delegated".into())
+    );
+}
+
+#[test]
+fn explicit_browser_target_defaults_to_box_and_never_falls_back() {
+    let calls = Arc::new(Mutex::new(Vec::<String>::new()));
+    let box_executor: Arc<dyn BrowserToolExecutor> = Arc::new(TrackingBrowserExecutor {
+        label: "box",
+        calls: Arc::clone(&calls),
+    });
+    let local_executor: Arc<dyn BrowserToolExecutor> = Arc::new(TrackingBrowserExecutor {
+        label: "local",
+        calls: Arc::clone(&calls),
+    });
+    let executor = ExplicitBrowserTargetExecutor::new(box_executor, local_executor);
+    let spec = browser_tool_specs().into_iter()
+        .find(|spec| spec.name == "browser_snapshot")
+        .expect("snapshot");
+
+    let default_args = Map::new();
+    let output = executor.execute(&spec, &default_args, "default").expect("default box");
+    assert_eq!(output.text, "box:snapshot");
+
+    let local_args = json!({"target":"local"});
+    let output = executor.execute(
+        &spec,
+        local_args.as_object().expect("local args"),
+        "local",
+    ).expect("explicit local");
+    assert_eq!(output.text, "local:snapshot");
+
+    let invalid_args = json!({"target":"auto"});
+    let error = executor.execute(
+        &spec,
+        invalid_args.as_object().expect("invalid args"),
+        "invalid",
+    ).expect_err("unknown target");
+    assert!(error.to_string().contains("box or local"));
+    assert_eq!(
+        calls.lock().expect("calls").as_slice(),
+        &["box".to_string(), "local".to_string()]
+    );
+}
+
+#[test]
+fn browser_wait_is_bounded_generation_fenced_and_shared_by_explicit_targets() {
+    let spec = browser_tool_specs().into_iter()
+        .find(|spec| spec.name == "browser_wait")
+        .expect("wait spec");
+    assert_eq!(spec.op, "wait");
+    assert_eq!(spec.schema.required, vec!["text"]);
+    assert_eq!(spec.schema.max_text_len, Some(1_024));
+    assert_eq!(spec.schema.max_timeout_ms, Some(15_000));
+    assert!(!spec.can_navigate);
+    assert!(spec.skip_screenshot);
+
+    let valid = json!({"text":"Ready","timeoutMs":15000,"target":"local"});
+    validate_browser_arguments(&spec.schema, valid.as_object().expect("valid wait"))
+        .expect("bounded local wait");
+
+    for invalid in [
+        json!({"text":"","target":"local"}),
+        json!({"text":"Ready","timeoutMs":0,"target":"local"}),
+        json!({"text":"Ready","timeoutMs":15001,"target":"local"}),
+    ] {
+        assert!(
+            validate_browser_arguments(&spec.schema, invalid.as_object().expect("invalid wait")).is_err(),
+            "invalid wait must fail closed: {invalid}"
+        );
+    }
+
+    for required in [
+        "  \"wait\",",
+        "wait: async ({ request, context, state }) => {",
+        "Buffer.byteLength(text, \"utf8\") > 1024",
+        "Math.max(1, Math.min(15000, request.timeoutMs))",
+        "scope.getByText(text, { exact: false }).first().waitFor({",
+    ] {
+        assert!(
+            SAND_BROWSER_DRIVER_SOURCE.contains(required),
+            "managed Box wait lost invariant: {required}"
+        );
+    }
+    for required in [
+        "\"tabs\" | \"snapshot\" | \"wait\" | \"wait_event\"",
+        "\"wait\" => {",
+        "self.action_request(&target, tool_call_id, \"wait\")?",
+        "request.insert(\"timeoutMs\".into(), timeout_ms.clone());",
+    ] {
+        assert!(
+            LOCAL_BROWSER_TOOLS_SOURCE.contains(required),
+            "local Browser Workspace wait lost relay invariant: {required}"
+        );
+    }
+}
+
+#[test]
+fn browser_dialog_and_event_tools_have_fixed_bounded_schemas_and_main_relay() {
+    let specs = browser_tool_specs();
+    let dialog = specs.iter().find(|spec| spec.name == "browser_dialog").expect("dialog");
+    assert_eq!(dialog.op, "dialog");
+    assert_eq!(dialog.schema.required, vec!["decision"]);
+    assert_eq!(dialog.schema.enum_values.get("decision").unwrap(), &vec!["accept", "dismiss"]);
+    assert_eq!(dialog.schema.max_prompt_text_len, Some(4_096));
+
+    let valid_dialog = json!({"decision":"accept","promptText":"confirmed","target":"local"});
+    validate_browser_arguments(&dialog.schema, valid_dialog.as_object().expect("valid dialog"))
+        .expect("bounded dialog acceptance");
+    for invalid in [
+        json!({"decision":"approve","target":"local"}),
+        json!({"decision":"dismiss","promptText":"ignored","target":"local"}),
+        json!({"decision":"accept","promptText":"x".repeat(4_097),"target":"local"}),
+    ] {
+        assert!(validate_browser_arguments(&dialog.schema, invalid.as_object().expect("invalid dialog")).is_err());
+    }
+
+    let wait_event = specs.iter().find(|spec| spec.name == "browser_wait_event").expect("wait event");
+    assert_eq!(wait_event.op, "wait_event");
+    assert_eq!(wait_event.schema.required, vec!["event"]);
+    assert_eq!(wait_event.schema.max_timeout_ms, Some(15_000));
+    assert_eq!(wait_event.schema.enum_values.get("event").unwrap(), &vec!["page", "load", "network-idle"]);
+    validate_browser_arguments(
+        &wait_event.schema,
+        json!({"event":"network-idle","timeoutMs":15_000,"afterSequence":12,"target":"local"}).as_object().unwrap(),
+    ).expect("bounded network idle wait");
+    for invalid in [
+        json!({"event":"response-body","target":"local"}),
+        json!({"event":"load","timeoutMs":15_001,"target":"local"}),
+        json!({"event":"load","afterSequence":-1,"target":"local"}),
+    ] {
+        assert!(validate_browser_arguments(&wait_event.schema, invalid.as_object().expect("invalid event wait")).is_err());
+    }
+
+    let events = specs.iter().find(|spec| spec.name == "browser_events").expect("events");
+    assert_eq!(events.op, "events");
+    assert_eq!(events.schema.max_event_limit, Some(32));
+    for invalid in [json!({"limit":0}), json!({"limit":33}), json!({"limit":"32"})] {
+        assert!(validate_browser_arguments(&events.schema, invalid.as_object().expect("invalid event limit")).is_err());
+    }
+
+    let review = to_browser_review_action(
+        "dialog",
+        json!({"decision":"accept","promptText":"approved"}).as_object().expect("review args"),
+        "default",
+    );
+    assert_eq!(review.decision.as_deref(), Some("accept"));
+    assert_eq!(review.prompt_text.as_deref(), Some("approved"));
+
+    for required in [
+        "\"wait_event\" | \"events\" | \"dialog\"",
+        "\"dialog\" => {",
+        "self.action_request(&target, tool_call_id, \"dialog\")?",
+        "\"events\" => {",
+        "self.action_request(&target, tool_call_id, \"events\")?",
+        "\"wait_event\" => {",
+        "self.action_request(&target, tool_call_id, \"wait-event\")?",
+        "target.get(\"eventSequence\")",
+    ] {
+        assert!(LOCAL_BROWSER_TOOLS_SOURCE.contains(required), "missing fixed local browser relay: {required}");
+    }
+}
+
+#[test]
+fn local_select_option_uses_the_generation_fenced_workspace_ref_path() {
+    let spec = browser_tool_specs().into_iter()
+        .find(|spec| spec.name == "browser_select_option")
+        .expect("select option spec");
+    assert_eq!(spec.op, "select_option");
+    for required in [
+        "\"select_option\" | \"type\"",
+        "\"select_option\" => {",
+        "self.action_request(&target, tool_call_id, \"select-option\")?",
+        "request.insert(\"values\".into(), args.get(\"values\").cloned().unwrap_or(Value::Null));",
+    ] {
+        assert!(
+            LOCAL_BROWSER_TOOLS_SOURCE.contains(required),
+            "local select-option lost invariant: {required}"
+        );
+    }
+}
+
+#[test]
+fn local_drag_uses_only_bounded_workspace_action_fields_and_never_local_cdp() {
+    for required in [
+        "\"scroll\" | \"drag\" | \"screenshot\"",
+        "\"drag\" => {",
+        "self.action_request(&target, tool_call_id, \"drag\")?",
+        "request.insert(\"sourceRef\".into()",
+        "request.insert(\"targetRef\".into()",
+        "request.insert(\"targetX\".into()",
+        "request.insert(\"targetY\".into()",
+    ] {
+        assert!(
+            LOCAL_BROWSER_TOOLS_SOURCE.contains(required),
+            "local drag lost invariant: {required}"
+        );
+    }
+}
+
+#[test]
+fn local_browser_actions_carry_main_owned_control_epoch_and_tab_mutations_resolve_it() {
+    for required in [
+        "target.get(\"controlEpoch\")",
+        "\"expectedControlEpoch\".into(), Value::from(control_epoch)",
+        "if action != \"list\" {",
+        "request[\"expectedControlEpoch\"] = target.get(\"controlEpoch\")",
+    ] {
+        assert!(
+            LOCAL_BROWSER_TOOLS_SOURCE.contains(required),
+            "local control lease lost invariant: {required}"
+        );
+    }
+}
+
+#[test]
+fn local_browser_actions_carry_main_owned_task_identity() {
+    for required in [
+        "target.get(\"taskId\")",
+        "\"expectedTaskId\".into(), Value::String(task_id.to_string())",
+        "request[\"expectedTaskId\"] = target.get(\"taskId\")",
+    ] {
+        assert!(
+            LOCAL_BROWSER_TOOLS_SOURCE.contains(required),
+            "local task-space fence lost invariant: {required}"
+        );
+    }
+}
+
+#[test]
+fn unsupported_local_browser_action_fails_before_auto_review_or_relay() {
+    let reviewed = Arc::new(Mutex::new(Vec::<String>::new()));
+    let reviewed_sink = Arc::clone(&reviewed);
+    let relay = Arc::new(CoordinatorToolRelay::with_timeout(
+        GatewayEventHub::default(),
+        Duration::from_millis(20),
+    ));
+    let executor = LocalBrowserCoordinatorExecutor::new(relay, "agent-a")
+        .with_auto_review_callback(Arc::new(move |spec, _args, _tool_call_id| {
+            reviewed_sink.lock().expect("reviewed").push(spec.name.to_string());
+            Ok(())
+        }));
+    let spec = browser_tool_specs().into_iter()
+        .find(|spec| spec.name == "browser_cdp")
+        .expect("cdp spec");
+    let args = json!({"method":"Runtime.evaluate","target":"local"});
+    let error = executor.execute(
+        &spec,
+        args.as_object().expect("args"),
+        "local-cdp",
+    ).expect_err("local cdp must fail closed");
+    assert!(error.to_string().contains("not yet supported for target=local"));
+    assert!(
+        reviewed.lock().expect("reviewed").is_empty(),
+        "unsupported local actions must fail before asking for approval"
+    );
+}
+
+#[test]
+fn local_download_uses_the_generation_and_control_fenced_main_path_without_local_cdp_or_paths() {
+    for required in [
+        "\"click\" | \"download\" | \"upload_file\"",
+        "\"download\" => {",
+        "self.action_request(&target, tool_call_id, \"download\")?",
+        "request.insert(\"ref\".into(), args.get(\"ref\").cloned().unwrap_or(Value::Null));",
+        "result.get(\"downloadedFile\")",
+    ] {
+        assert!(LOCAL_BROWSER_TOOLS_SOURCE.contains(required), "local download lost bounded Main relay invariant: {required}");
+    }
+    assert!(!LOCAL_BROWSER_TOOLS_SOURCE.contains("request.insert(\"downloadPath\""), "local download must never accept or return an Agent-controlled local path");
+}
+
+#[test]
+fn local_upload_requires_user_authorized_sentinel_before_review_and_never_forwards_a_path() {
+    let sentinel = LOCAL_BROWSER_TOOLS_SOURCE
+        .find("Some(\"user-authorized\")")
+        .expect("local upload sentinel");
+    let review = LOCAL_BROWSER_TOOLS_SOURCE
+        .find("if let Some(auto_review)")
+        .expect("local auto review");
+    assert!(sentinel < review, "local upload path sentinel must be checked before approval");
+
+    for required in [
+        "\"click\" | \"download\" | \"upload_file\" | \"fill\"",
+        "\"upload_file\" => {",
+        "self.action_request(&target, tool_call_id, \"upload-file\")?",
+        "request.insert(\"ref\".into(), args.get(\"ref\").cloned().unwrap_or(Value::Null));",
+        "never accepts an Agent-provided local path",
+    ] {
+        assert!(
+            LOCAL_BROWSER_TOOLS_SOURCE.contains(required),
+            "local upload lost fail-closed invariant: {required}"
+        );
+    }
+    assert!(
+        !LOCAL_BROWSER_TOOLS_SOURCE.contains("request.insert(\"filePath\".into()"),
+        "local upload must never forward an Agent-controlled local filePath to Main"
     );
 }
 

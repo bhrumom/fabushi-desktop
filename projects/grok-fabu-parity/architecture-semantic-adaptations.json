@@ -5,7 +5,7 @@
       "referencePath": "frontend/src/production/ProductionRenderer.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "af8a83a8dd7cf1444474889ce3e64fe796a7d458",
+      "targetBlobSha": "d835ead72ff08c4752f169152f5252df322c319e",
       "behavioralEvidence": [
         "frontend/src/production/ProductionRenderer.tsx",
         "frontend/src/recovered/features/account/session/sign-in-status.tsx",
@@ -23,7 +23,7 @@
         ".github/workflows/release-macos-main.yml",
         "native/mahayana-messaging/tests/service_contract.rs"
       ],
-      "rationale": "Preserves the frozen Grok 0.18 React renderer structure while adapting shipping Fabushi contracts only: browser-login status application is monotonic so a late logging-in acknowledgement cannot overwrite a newer logged-in observation; the root exposes stable Agent-shell markers used by product parity acceptance; empty sidebar-section records fall back to Grok visible-Agent ordering; and complete-roster reconciliation settles an unselected account on the first visible Agent. These adaptations also publish the live sidebar width to the shell so the recovered WindowChrome drag carrier does not overlap Fabushi Agent header controls; the sidebar header remains the local drag surface and its controls are explicit no-drag regions. They keep authentication real through cursorAccount.login/getStatus and keep roster/selection state on the production Coordinator path rather than introducing a parallel renderer. It also preserves optimistic user-message text and committed attachment metadata while correlated authoritative message/attachment echoes settle, so the live transcript does not drop attachment chips between send acceptance and durable echo. Authoritative transcript baselines, updates, and appends are reconciled by message id and client nonce while unioning committed attachment metadata, so transport ordering or a late durable snapshot cannot erase a user's attachment chip after send acceptance. Initial openAgentTail completion is also reconciled with entries that arrived while the initial page request was in flight, preventing a stale first-page response from erasing an optimistic or newly echoed attachment-bearing turn. Transcript feed snapshots also retain only unresolved pending-* user turns that have not yet been correlated by id/clientNonce, so a late empty or stale authoritative baseline cannot erase the optimistic turn between submit acceptance and its durable echo; ordinary non-pending rows remain fully baseline-authoritative. The shipping renderer now also owns the recovered Grok sidebar multi-selection composition: modifier/range selection, clear, and bulk move-to-existing/new-section callbacks are wired to renderer state and the account-scoped sidebarSectionsStore, so the byte-identical sidebar selection UI is reachable without a legacy shell. Phase 1 additionally absorbs Human conversations into this same renderer owner: the existing sidebar/workspace/composer/transcript are reused, Human sends keep the recovered optimistic/reconnect queue, canonical attachment commit path and reply controller, and explicit Human-to-Agent handoff still crosses the established Coordinator-to-Host-to-Runner boundary. No parallel Human shell or message runtime is introduced. Phase 1 reconnect convergence now refreshes an already-open Human transcript from the same Host-owned canonical Session/Transcript immediately after native history sync, while baseline reconciliation preserves unresolved optimistic rows; the Host shipping-client contract separately proves bounded multi-page multi-device gap recovery without a renderer-side message truth. Human older-history loading now reuses the existing transcript pagination controller against a Host gateway that pages the same canonical Human Session SQLite owner; initial Human open syncs native transport then projects only the latest bounded tail, while scroll pagination retains the existing cursor, viewport-anchor, request-fencing, and deduplication ownership. Phase 1 roster recovery further separates local Agent roster readiness from shipping Human convergence: listAgents publishes the canonical loaded/empty Agent state before a potentially slow remote Human sync, while Human sync remains account/transport/attempt fenced, keeps its durable local fallback, and refreshes the active Human transcript after convergence. This prevents Human network latency from holding the canonical Agent shell in an indefinite loading state without weakening either synchronization path. Phase 1 Human reactions now reuse the recovered reaction pills/action surface while mutation and settlement remain Host-owned: the renderer calls the existing Coordinator client, receives the canonical updated Human transcript row, and never creates a reaction store. Human Find-in-chat likewise reuses the recovered find controller and canonical transcript pagination owner: full durable Human search is provided by the Host search gateway, while navigation to an older hit reveals bounded history through the existing pagination controller and virtual transcript handle instead of replacing the timeline with a parallel search result model. Phase 1 additionally routes canonical UI language/accessibility preferences through this existing boundary and applies them to the shipping renderer without creating a parallel settings owner. Restored Human selections are also retried through the same canonical openAgent path once the asynchronous Human roster establishes the conversation type; same-selection reopen remains allowed only while no transcript page is loaded, closing the restart race where a Human id could be briefly addressed through the Agent tail method without introducing alternate state. A successful Host-settled Human send now upserts the authoritative row by canonical id/client nonce, so a concurrent initial-page or roster reconciliation cannot silently erase the accepted backend result from the visible transcript. Human remote-search settlement now promotes the first authoritative match through the existing find controller step path only when no current match exists, so the recovered ordinal/navigation contract and bounded older-page reveal converge without a renderer-side search truth. THEME-I18N-A11Y further keeps this canonical owner while making locale changes immediately visible in the mounted Settings shell, providing locale-sensitive formatting/announcement evidence, and fencing real composition input so CJK/RTL mixed-direction editing cannot submit or be externally overwritten mid-composition. Stop response also settles the renderer running projection only after the canonical Host interrupt call confirms `interrupted: true`, so CHAT-011's packaged acceptance can hide the stop control and accept a subsequent turn without moving operation ownership into the renderer. The shipping renderer removes the obsolete iOS menu entry and keeps account labels consistent with Fabushi branding. The same canonical renderer now exposes Human-message Forward through the recovered ConversationTranscript and a source-neutral ForwardMessageDialog, while execution remains on the existing Coordinator/Host Human Conversation owner; the renderer keeps only dialog, query and settlement projection state and does not become a second Message or Search truth."
+      "rationale": "Preserves the frozen Grok 0.18 React renderer structure while adapting shipping Fabushi contracts only: browser-login status application is monotonic so a late logging-in acknowledgement cannot overwrite a newer logged-in observation; the root exposes stable Agent-shell markers used by product parity acceptance; empty sidebar-section records fall back to Grok visible-Agent ordering; and complete-roster reconciliation settles an unselected account on the first visible Agent. These adaptations also publish the live sidebar width to the shell so the recovered WindowChrome drag carrier does not overlap Fabushi Agent header controls; the sidebar header remains the local drag surface and its controls are explicit no-drag regions. They keep authentication real through cursorAccount.login/getStatus and keep roster/selection state on the production Coordinator path rather than introducing a parallel renderer. It also preserves optimistic user-message text and committed attachment metadata while correlated authoritative message/attachment echoes settle, so the live transcript does not drop attachment chips between send acceptance and durable echo. Authoritative transcript baselines, updates, and appends are reconciled by message id and client nonce while unioning committed attachment metadata, so transport ordering or a late durable snapshot cannot erase a user's attachment chip after send acceptance. Initial openAgentTail completion is also reconciled with entries that arrived while the initial page request was in flight, preventing a stale first-page response from erasing an optimistic or newly echoed attachment-bearing turn. Transcript feed snapshots also retain only unresolved pending-* user turns that have not yet been correlated by id/clientNonce, so a late empty or stale authoritative baseline cannot erase the optimistic turn between submit acceptance and its durable echo; ordinary non-pending rows remain fully baseline-authoritative. The shipping renderer now also owns the recovered Grok sidebar multi-selection composition: modifier/range selection, clear, and bulk move-to-existing/new-section callbacks are wired to renderer state and the account-scoped sidebarSectionsStore, so the byte-identical sidebar selection UI is reachable without a legacy shell. Phase 1 additionally absorbs Human conversations into this same renderer owner: the existing sidebar/workspace/composer/transcript are reused, Human sends keep the recovered optimistic/reconnect queue, canonical attachment commit path and reply controller, and explicit Human-to-Agent handoff still crosses the established Coordinator-to-Host-to-Runner boundary. No parallel Human shell or message runtime is introduced. Phase 1 reconnect convergence now refreshes an already-open Human transcript from the same Host-owned canonical Session/Transcript immediately after native history sync, while baseline reconciliation preserves unresolved optimistic rows; the Host shipping-client contract separately proves bounded multi-page multi-device gap recovery without a renderer-side message truth. Human older-history loading now reuses the existing transcript pagination controller against a Host gateway that pages the same canonical Human Session SQLite owner; initial Human open syncs native transport then projects only the latest bounded tail, while scroll pagination retains the existing cursor, viewport-anchor, request-fencing, and deduplication ownership. Phase 1 roster recovery further separates local Agent roster readiness from shipping Human convergence: listAgents publishes the canonical loaded/empty Agent state before a potentially slow remote Human sync, while Human sync remains account/transport/attempt fenced, keeps its durable local fallback, and refreshes the active Human transcript after convergence. This prevents Human network latency from holding the canonical Agent shell in an indefinite loading state without weakening either synchronization path. Phase 1 Human reactions now reuse the recovered reaction pills/action surface while mutation and settlement remain Host-owned: the renderer calls the existing Coordinator client, receives the canonical updated Human transcript row, and never creates a reaction store. Human Find-in-chat likewise reuses the recovered find controller and canonical transcript pagination owner: full durable Human search is provided by the Host search gateway, while navigation to an older hit reveals bounded history through the existing pagination controller and virtual transcript handle instead of replacing the timeline with a parallel search result model. Phase 1 additionally routes canonical UI language/accessibility preferences through this existing boundary and applies them to the shipping renderer without creating a parallel settings owner. Restored Human selections are also retried through the same canonical openAgent path once the asynchronous Human roster establishes the conversation type; same-selection reopen remains allowed only while no transcript page is loaded, closing the restart race where a Human id could be briefly addressed through the Agent tail method without introducing alternate state. A successful Host-settled Human send now upserts the authoritative row by canonical id/client nonce, so a concurrent initial-page or roster reconciliation cannot silently erase the accepted backend result from the visible transcript. Human remote-search settlement now promotes the first authoritative match through the existing find controller step path only when no current match exists, so the recovered ordinal/navigation contract and bounded older-page reveal converge without a renderer-side search truth. THEME-I18N-A11Y further keeps this canonical owner while making locale changes immediately visible in the mounted Settings shell, providing locale-sensitive formatting/announcement evidence, and fencing real composition input so CJK/RTL mixed-direction editing cannot submit or be externally overwritten mid-composition. Stop response also settles the renderer running projection only after the canonical Host interrupt call confirms `interrupted: true`, so CHAT-011's packaged acceptance can hide the stop control and accept a subsequent turn without moving operation ownership into the renderer. The shipping renderer removes the obsolete iOS menu entry and keeps account labels consistent with Fabushi branding. The same canonical renderer now exposes Human-message Forward through the recovered ConversationTranscript and a source-neutral ForwardMessageDialog, while execution remains on the existing Coordinator/Host Human Conversation owner; the renderer keeps only dialog, query and settlement projection state and does not become a second Message or Search truth. Phase 1 Browser Workspace UI is a reviewed composition adaptation: the canonical ProductionRenderer keeps conversation-scoped open IDs and mounts BrowserWorkspacePane in the right split from the existing + action, while tab/session/navigation authority stays behind the trusted Main bridge; it introduces no parallel conversation or browser owner."
     },
     {
       "referencePath": "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
@@ -79,7 +79,7 @@
       "referencePath": "source/electron-preload/preload.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "4d4aadb62aacb85cae559c4cb6aa01885a9990b8",
+      "targetBlobSha": "dfe5a12764ce522cc232f60988eacf7fab887214",
       "behavioralEvidence": [
         "source/electron-preload/preload.ts",
         "source/electron-preload/runtime/primary.ts",
@@ -99,9 +99,11 @@
         "frontend/src/production/human-call-media.tsx",
         "desktop/e2e/mahayana-agent-workbench.spec.ts",
         "source/electron-main/mcp/miniapp-production.contract.test.ts",
-        ".github/workflows/miniapp-management-ci.yml"
+        ".github/workflows/miniapp-management-ci.yml",
+        "source/electron-main/browser-workspace.contract.test.ts",
+        ".github/workflows/browser-workspace-ci.yml"
       ],
-      "rationale": "Preserves the frozen Grok 0.18 thin preload boundary while adapting Fabushi's native attachment IPC contract: renderer Uint8Array payloads are encoded to the native bytesBase64 field, rich native staging results are normalized to the recovered {ok,path} contract, and rich committed attachment records are normalized to string paths. Commit requests carry path/name pairs as native items so file names survive the staging-to-committed transition. The shipping preload is bundled from source/electron-preload/runtime/primary.ts by desktop/scripts/build-electron-runtime.mjs; no deleted desktop/electron compatibility root is retained as behavioral or test evidence. Phase 1 additionally routes canonical UI language/accessibility preferences through this existing boundary and applies them to the shipping renderer without creating a parallel settings owner. Phase 1 media/device settings remain on this same canonical Settings/MainEdge/preload owner: selected microphone/camera IDs are normalized and persisted locally, exposed through the existing callMedia bridge, projected by recovered Settings, and consumed by the shipping Human call capture path with stale-device fallback. MP-01..05 additionally routes an optional first-party publisher facet through this same native composition: exact trusted-main sender, current account auth kept internal, bounded OS-selected signed package, account-departure fence and no uncertain-write retry. Backend retains namespace/artifact/review authority; the bridge exposes no reviewer credential, approval or installation runtime. Existing MCP, Coordinator and Host responsibilities are preserved. MU production wiring uses only appId intents and public metadata at the existing MCP owner; Account supplies confirmed authId scope and departure fences, Host retains verification on MainData, and main alone decodes resources into isolated windows. First-party Account and publisher requests use Electron net with no cookies or weakened origin checks."
+      "rationale": "The preload Browser Workspace bridge remains a thin allowlisted command surface; extension candidate/install/enable/update/remove intents carry only bounded IDs and booleans, never source paths, extension bytes, cookies, or privileged Electron/session objects. Preserves the frozen Grok 0.18 thin preload boundary while adapting Fabushi's native attachment IPC contract: renderer Uint8Array payloads are encoded to the native bytesBase64 field, rich native staging results are normalized to the recovered {ok,path} contract, and rich committed attachment records are normalized to string paths. Commit requests carry path/name pairs as native items so file names survive the staging-to-committed transition. The shipping preload is bundled from source/electron-preload/runtime/primary.ts by desktop/scripts/build-electron-runtime.mjs; no deleted desktop/electron compatibility root is retained as behavioral or test evidence. Phase 1 additionally routes canonical UI language/accessibility preferences through this existing boundary and applies them to the shipping renderer without creating a parallel settings owner. Phase 1 media/device settings remain on this same canonical Settings/MainEdge/preload owner: selected microphone/camera IDs are normalized and persisted locally, exposed through the existing callMedia bridge, projected by recovered Settings, and consumed by the shipping Human call capture path with stale-device fallback. MP-01..05 additionally routes an optional first-party publisher facet through this same native composition: exact trusted-main sender, current account auth kept internal, bounded OS-selected signed package, account-departure fence and no uncertain-write retry. Backend retains namespace/artifact/review authority; the bridge exposes no reviewer credential, approval or installation runtime. Existing MCP, Coordinator and Host responsibilities are preserved. MU production wiring uses only appId intents and public metadata at the existing MCP owner; Account supplies confirmed authId scope and departure fences, Host retains verification on MainData, and main alone decodes resources into isolated windows. First-party Account and publisher requests use Electron net with no cookies or weakened origin checks. Browser Workspace control adds only a bounded setAgentControl intent on the existing trusted preload/IPC boundary. Electron Main owns the control epoch and remains the final authority for pause, stop, takeover, resume, stale-lease rejection, and mutation revocation; remote web contents and Agent pages never receive this privileged renderer capability."
     },
     {
       "referencePath": "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
@@ -263,13 +265,14 @@
       "referencePath": "source/electron-main/production-binding-providers.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "e65c2b1e9160d30dad1b549558e3d01826069dce",
+      "targetBlobSha": "1650adcd0b07625044def55ec9df2f5252f9c448",
       "behavioralEvidence": [
         "source/electron-main/production-binding-providers.ts",
         "source/electron-main/local-exec/local-exec-daemon-protocol.ts",
         "source/shared/node/sand-data-root.ts",
         "docs/specs/desktop-miniapp-window.md",
-        "source/electron-main/mcp/miniapp-window.ts"
+        "source/electron-main/mcp/miniapp-window.ts",
+        "source/electron-main/startup-platform-capabilities.ts"
       ],
       "testEvidence": [
         "source/electron-main/local-exec/local-exec-daemon-protocol.test.ts",
@@ -278,7 +281,7 @@
         "source/electron-main/mcp/miniapp-window.contract.test.ts",
         ".github/workflows/miniapp-window-ci.yml"
       ],
-      "rationale": "Preserves the frozen Grok production binding graph while cutting two legacy Host-TypeScript imports: local-exec daemon protocol ownership is now in Electron Main and the data-root resolver is shared. The actual local-exec supervision still belongs to Mahayana Coordinator, so this adaptation strengthens rather than collapses the Grok process boundary. DMW-01 additionally injects the mini-app scheme through the existing MediaProtocol registration owner, with an empty default for existing callers. No second protocol bootstrap, Host or account owner is introduced."
+      "rationale": "Preserves the frozen Grok production binding graph while cutting two legacy Host-TypeScript imports: local-exec daemon protocol ownership is now in Electron Main and the data-root resolver is shared. The actual local-exec supervision still belongs to Mahayana Coordinator, so this adaptation strengthens rather than collapses the Grok process boundary. DMW-01 additionally injects the mini-app scheme through the existing MediaProtocol registration owner, with an empty default for existing callers. No second protocol bootstrap, Host or account owner is introduced. The platform-specific Applications-folder requirement is isolated in startup-platform-capabilities.ts, so Windows and Linux production startup do not require the macOS-only API while preserving the existing production binding boundary."
     },
     {
       "referencePath": "source/electron-main/startup/desktop-user-data-bootstrap.ts",
@@ -385,7 +388,7 @@
       "referencePath": "source/electron-main/coordinator/coordinator-executors.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "0e12efd790bdfb60bb54d07048c80547c3581080",
+      "targetBlobSha": "8932e691c8d90f721269bf0498f94a8414423f4f",
       "behavioralEvidence": [
         "source/electron-main/coordinator/coordinator-executors.ts",
         "source/electron-main/coordinator/production-provider.ts",
@@ -402,7 +405,7 @@
       "referencePath": "source/electron-main/coordinator/production-provider.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "3b7591fbaf07cd7a5b13bfda27bca717c8603e01",
+      "targetBlobSha": "1eca53d85e101247cc491c3b592debf4e4cd1268",
       "behavioralEvidence": [
         "source/electron-main/coordinator/production-provider.ts",
         "source/electron-main/coordinator/coordinator-executors.ts",
@@ -419,7 +422,7 @@
       "referencePath": "source/electron-main/main-production-services.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "8ca982cf2401d31a4782870b37688703e7f96895",
+      "targetBlobSha": "7eb23327ab2bbb2d414bc13a419caa3cfb8dc02a",
       "behavioralEvidence": [
         "source/electron-main/main-production-services.ts",
         "docs/specs/desktop-miniapp-publisher.md",
@@ -429,7 +432,10 @@
         "docs/specs/desktop-miniapp-management-ui.md",
         "source/electron-main/mcp/miniapp-production.ts",
         "source/product/fabushi/fabushi-official-device-registry.ts",
-        "source/product/fabushi/fabushi-account-adapters.ts"
+        "source/product/fabushi/fabushi-account-adapters.ts",
+        "source/electron-main/browser-workspace.ts",
+        "source/electron-main/main.ts",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts"
       ],
       "testEvidence": [
         "source/electron-main/foundations.test.ts",
@@ -440,9 +446,14 @@
         "source/electron-main/mcp/miniapp-production.contract.test.ts",
         ".github/workflows/miniapp-management-ci.yml",
         "source/product/fabushi/fabushi-official-device-registry.contract.test.ts",
-        ".github/workflows/fdn-official-device-registration.yml"
+        ".github/workflows/fdn-official-device-registration.yml",
+        "source/electron-main/browser-workspace.contract.test.ts",
+        ".github/workflows/browser-workspace-ci.yml",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/browser-workspace-packaged-ci.yml"
       ],
-      "rationale": "Preserves the frozen Grok production composition while applying two explicit Fabushi product adaptations without moving ownership: the existing Host lifecycle/Plugin Skills SDK-edge surface remains in the single Electron MCP owner, and renderer-scoped BrowserWindow delivery is narrowed at the shipping composition boundary to the trusted main WebContents. The frozen source/electron-main/window-broadcast.ts helper remains byte-identical to Grok for truly global fanout; MCP OAuth completion and dev-control renderer events no longer use that all-window helper in production. Coordinator, Host, Runner, MCP manager, and MainEdge ownership remain unchanged. MP-01..05 additionally routes an optional first-party publisher facet through this same native composition: exact trusted-main sender, current account auth kept internal, bounded OS-selected signed package, account-departure fence and no uncertain-write retry. Backend retains namespace/artifact/review authority; the bridge exposes no reviewer credential, approval or installation runtime. Existing MCP, Coordinator and Host responsibilities are preserved. MU production wiring uses only appId intents and public metadata at the existing MCP owner; Account supplies confirmed authId scope and departure fences, Host retains verification on MainData, and main alone decodes resources into isolated windows. First-party Account and publisher requests use Electron net with no cookies or weakened origin checks. FDN-001 composes the existing Fabushi Account owner with the existing official device registry at this same production composition boundary: packaged Desktop authenticates only its current Fabushi account session on the outbound /agent WebSocket, account epoch/revoke closes stale registration, and the only newly advertised remote tool delegates read-only status to the existing private App Agent Surface. This creates neither a second device database nor a native executor; exact-head Actions enforce account-switch fencing, bearer non-disclosure, read-only preflight and no retry of stale/write-shaped calls."
+      "rationale": "Preserves the frozen Grok production composition while applying two explicit Fabushi product adaptations without moving ownership: the existing Host lifecycle/Plugin Skills SDK-edge surface remains in the single Electron MCP owner, and renderer-scoped BrowserWindow delivery is narrowed at the shipping composition boundary to the trusted main WebContents. The frozen source/electron-main/window-broadcast.ts helper remains byte-identical to Grok for truly global fanout; MCP OAuth completion and dev-control renderer events no longer use that all-window helper in production. Coordinator, Host, Runner, MCP manager, and MainEdge ownership remain unchanged. MP-01..05 additionally routes an optional first-party publisher facet through this same native composition: exact trusted-main sender, current account auth kept internal, bounded OS-selected signed package, account-departure fence and no uncertain-write retry. Backend retains namespace/artifact/review authority; the bridge exposes no reviewer credential, approval or installation runtime. Existing MCP, Coordinator and Host responsibilities are preserved. MU production wiring uses only appId intents and public metadata at the existing MCP owner; Account supplies confirmed authId scope and departure fences, Host retains verification on MainData, and main alone decodes resources into isolated windows. First-party Account and publisher requests use Electron net with no cookies or weakened origin checks. Browser Workspace additionally composes its trusted OS file picker only at this existing Electron Main boundary: Agent requests carry no local filesystem path, Main requires an explicit user-selected regular file, bounds bytes before isolated page delivery, and account/control-generation fences remain authoritative. This is not a renderer or Host filesystem capability. Chromium extension installation remains in the same Browser Workspace Main owner and is separate from Plugins/MCP: only a user-picked unpacked Manifest V3 directory is inspected, permissions are surfaced before explicit confirmation, recursive content integrity is pinned, and Electron's persistent-session extension loader is invoked only after confirmation; renderer receives no source filesystem path. The sole non-dialog extension source path is gated by FABUSHI_E2E=1 for synthetic GitHub Actions Chromium acceptance and is never selected by Agent/renderer input. FDN-001 composes the existing Fabushi Account owner with the existing official device registry at this same production composition boundary: packaged Desktop authenticates only its current Fabushi account session on the outbound /agent WebSocket, account epoch/revoke closes stale registration, and the only newly advertised remote tool delegates read-only status to the existing private App Agent Surface. This creates neither a second device database nor a native executor; exact-head Actions enforce account-switch fencing, bearer non-disclosure, read-only preflight and no retry of stale/write-shaped calls. The current bounded shutdown path disposes the Browser Workspace before the Coordinator/telemetry graph, fences Electron before-quit with the existing settlement deadline, then calls graceful app.quit; if settlement times out or Electron still has not exited after 5000ms, Main records the failure and uses app.exit(0) as a final bounded fallback so a stuck worker teardown cannot hold the desktop quit indefinitely. The production quit path exposes opt-in static phase diagnostics only when FABUSHI_E2E_QUIT_TRACE=1, covering before-quit entry, BrowserWorkspace/coordinator/service disposal boundaries, settlement deadline, graceful quit and force-exit without logging account, page or credential data."
     },
     {
       "referencePath": "source/electron-main/mcp/desktop-mcp-manager.ts",
@@ -933,7 +944,7 @@
       "referencePath": "source/electron-main/account/cursor-auth.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "2e70b891f524daf8a4ef04d443d6158a83b4ca08",
+      "targetBlobSha": "b29e4332f4a63244625edeec9aad2a01636855ea",
       "behavioralEvidence": [
         "source/electron-main/account/cursor-auth.ts",
         "source/shared/product-name.ts",
@@ -944,9 +955,10 @@
         "desktop/e2e/grok-parity.spec.ts",
         ".github/workflows/desktop-chat-parity-ci.yml",
         "source/product/fabushi/fabushi-account-service.contract.test.ts",
-        ".github/workflows/miniapp-management-ci.yml"
+        ".github/workflows/miniapp-management-ci.yml",
+        "source/electron-main/foundations.test.ts"
       ],
-      "rationale": "Preserves frozen Cursor authentication behavior and Fabushi product copy. MFA-TS-01..03 extracts only the unchanged SandAuthStatus type to the existing account owner's neutral auth-service-contract and type-re-exports it from this compatibility module. The single type definition has no implementation imports, runtime state or authentication owner. No credential, login, logout or provider behavior changes here. Strict product-policy tsc and existing account/Electron regression gates verify the extraction rather than suppressing dependencies or weakening types."
+      "rationale": "Preserves frozen Cursor authentication behavior and Fabushi product copy. MFA-TS-01..03 extracts only the unchanged SandAuthStatus type to the existing account owner's neutral auth-service-contract and type-re-exports it from this compatibility module. The single type definition has no implementation imports, runtime state or authentication owner. A separately reviewed login-liveness adaptation starts local PKCE polling immediately after dispatching the external-browser launch, races the local poll against launcher rejection, and allows successful polling to settle even if the launcher promise never resolves. This intentionally changes launch/poll ordering without moving credential ownership or durable account state. The focused test 'Cursor login polling is not blocked by a pending external browser launch' in source/electron-main/foundations.test.ts verifies the pending-launch case. Strict product-policy tsc and existing account/Electron regression gates verify the extraction rather than suppressing dependencies or weakening types."
     },
     {
       "referencePath": "source/electron-main/dev/dev-controls-window.ts",
@@ -1299,20 +1311,24 @@
       "referencePath": "source/electron-main/main.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "b8eeed322ec07e5c8f67fa367cd2f58ac212b4f0",
+      "targetBlobSha": "97cfefb7bbb227865147e2cbc7a33c547e5a44af",
       "behavioralEvidence": [
         "source/electron-main/main.ts",
         "source/electron-main/mcp/miniapp-window.ts",
         "docs/specs/desktop-miniapp-window.md",
-        "docs/specs/desktop-catalog-package-installation.md"
+        "docs/specs/desktop-catalog-package-installation.md",
+        "source/electron-main/main-production-services.ts",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts"
       ],
       "testEvidence": [
         "source/electron-main/mcp/miniapp-window.contract.test.ts",
         ".github/workflows/miniapp-window-ci.yml",
         ".github/workflows/rust-desktop-runtime.yml",
-        ".github/workflows/release-macos-main.yml"
+        ".github/workflows/release-macos-main.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/browser-workspace-packaged-ci.yml"
       ],
-      "rationale": "DCI-07 and DMW-03 remove the process-wide no-sandbox switch, which would defeat the requested untrusted Mini App isolation even when a new window requests sandbox=true. All existing main startup, singleton, window/preload, GPU and lifecycle behavior remains intact; this does not globally force trusted first-party windows into a different preload mode or change Human calls/browser networking. Each downloaded app uses its own sandboxed no-preload window and partition. Actual Electron and same-source signed package gates must prove this security adaptation; no frozen inventory or reference blob is rewritten."
+      "rationale": "DCI-07 and DMW-03 remove the process-wide no-sandbox switch, which would defeat the requested untrusted Mini App isolation even when a new window requests sandbox=true. All existing main startup, singleton, window/preload, GPU and lifecycle behavior remains intact; this does not globally force trusted first-party windows into a different preload mode or change Human calls/browser networking. Each downloaded app uses its own sandboxed no-preload window and partition. Actual Electron and same-source signed package gates must prove this security adaptation; no frozen inventory or reference blob is rewritten. The Main app contract now also exposes optional app.exit for the production composition's bounded quit watchdog; graceful quit remains first choice, and force exit is used only after settlement timeout or the 5000ms post-quit deadline."
     },
     {
       "referencePath": "source/host/local-exec/local-exec-machine.ts",
@@ -1403,6 +1419,22 @@
       ],
       "rationale": " Official provider Add bypasses optional manual credentials and uses the existing install/native-auth/external-opener lifecycle; installed entries expose Connect for retry. Required custom/team setup and native permission, token, account and broker boundaries remain intact. Actions verifies ordering, failure propagation and manual/legacy preservation.",
       "targetBlobSha": "c7d49ff93d1d0f3df044ae1b67457ed65f7e441c"
+    },
+    {
+      "referencePath": "source/packages/cursor-config/auth/proxy-fetch.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "fda6d23944a79532079a8aa62308efc2a01449e0",
+      "behavioralEvidence": [
+        "source/packages/cursor-config/auth/proxy-fetch.ts",
+        "source/packages/cursor-config/auth/proxy-routing.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/coordinator/coordinator-launcher.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "The shipping proxy fetch wrapper intentionally ports the frozen helper boundary instead of byte-copying it: the loopback bypass predicate lives in the pure proxy-routing module so the coordinator contract test can exercise the same behavior without importing the undici runtime dependency. Production proxy fetch continues through the existing fetch/proxy owner; the change is narrowly scoped to routing-policy reuse and does not relax proxy, origin, or credential boundaries."
     }
   ]
 }

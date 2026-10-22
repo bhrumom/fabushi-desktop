@@ -484,6 +484,30 @@ jobs:
           echo "Candidate executable: $executable" >> "$GITHUB_STEP_SUMMARY"
           echo "Candidate executable SHA-256: \`$installed_sha256\`" >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Run signed packaged Browser Workspace acceptance
+        id: browser_workspace_acceptance
+        working-directory: desktop
+        shell: bash
+        timeout-minutes: 40
+        env:
+          FABUSHI_ELECTRON_EXECUTABLE: ${{ steps.candidate.outputs.executable }}
+          FABUSHI_FEATURE_HOST_MODE: production
+          FABUSHI_E2E: '0'
+        run: |
+          set -euo pipefail
+          npx playwright test e2e/mahayana-agent-workbench.spec.ts --workers=1 --grep "native Browser Workspace opens real Chromium pages|Browser extension installs into real Chromium|Agent (controls the real local Chromium form through Host tools|downloads verified bytes from the real local Chromium page through Host tools)"
+
+      - name: Upload signed packaged Browser Workspace evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: fabushi-browser-workspace-macos-${{ steps.source.outputs.short }}
+          path: |
+            desktop/playwright-report
+            desktop/test-results
+          if-no-files-found: warn
+          retention-days: 90
+          compression-level: 0
       - name: Provision bounded production CI account session
         shell: bash
         env:

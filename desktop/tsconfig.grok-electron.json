@@ -12,7 +12,12 @@
       "node"
     ],
     "declaration": false,
-    "sourceMap": false
+    "sourceMap": false,
+    "paths": {
+      "undici": [
+        "./node_modules/undici"
+      ]
+    }
   },
   "include": [
     "../source/shared/update-track.ts",

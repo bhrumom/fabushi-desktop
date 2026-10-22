@@ -8,6 +8,7 @@ import {
   type CoordinatorMessageChannel,
   type CoordinatorMessagePort,
 } from "./coordinator-launcher.js";
+import { shouldBypassProxy } from "../../packages/cursor-config/auth/proxy-routing.js";
 
 class FakePort implements CoordinatorMessagePort {
   readonly posted: unknown[] = [];
@@ -35,6 +36,7 @@ class FakeChild implements CoordinatorChildProcess {
   readonly posts: Array<{ value: unknown; ports: CoordinatorMessagePort[] }> = [];
   private readonly exitListeners: Array<(code: number | null) => void> = [];
   killCount = 0;
+  readonly killSignals: Array<"SIGTERM" | "SIGKILL" | undefined> = [];
 
   postMessage(value: unknown, ports: CoordinatorMessagePort[]): void {
     this.posts.push({ value, ports });
@@ -43,7 +45,10 @@ class FakeChild implements CoordinatorChildProcess {
     assert.equal(event, "exit");
     this.exitListeners.push(listener);
   }
-  kill(): void { this.killCount += 1; }
+  kill(signal?: "SIGTERM" | "SIGKILL"): void {
+    this.killCount += 1;
+    this.killSignals.push(signal);
+  }
   exit(code: number | null): void {
     for (const listener of this.exitListeners) listener(code);
   }
@@ -147,6 +152,47 @@ test("launcher fails closed on repeated hello and dispose kills the child", asyn
 
   handle.dispose();
   await handle.controlSettled;
+  child.exit(0);
+  await handle.processExited;
   await new Promise<void>((resolve) => setImmediate(resolve));
   assert.equal(child.killCount, 1);
+});
+
+test("launcher escalates a stalled graceful shutdown to forced child exit", async () => {
+  const child = new FakeChild();
+  const channels: CoordinatorMessageChannel[] = [];
+  const problems: string[] = [];
+  const handle = launchCoordinator({
+    fork: () => child,
+    artifactPath: "/runtime/coordinator",
+    createChannel() {
+      const value = fakeChannel();
+      channels.push(value);
+      return value;
+    },
+    executors: {},
+    onEvent: {
+      "transport-connected": () => {},
+      "transport-down": () => {},
+      "agents-event": () => {},
+      "agents-roster-seed": () => {},
+    },
+    onProblem: (problem) => problems.push(problem),
+    processConfig: {},
+    shutdownGraceMs: 1,
+  });
+
+  handle.dispose();
+  await new Promise<void>((resolve) => setTimeout(resolve, 15));
+  assert.deepEqual(child.killSignals, ["SIGTERM", "SIGKILL"]);
+  assert.match(problems.join("\n"), /forcing child exit/);
+  child.exit(0);
+  assert.deepEqual(await handle.processExited, { code: 0 });
+});
+
+test("proxy routing bypasses loopback authentication endpoints but keeps remote hosts proxied", () => {
+  assert.equal(shouldBypassProxy("http://127.0.0.1:4311/auth/poll"), true);
+  assert.equal(shouldBypassProxy("http://localhost:4311/auth/poll"), true);
+  assert.equal(shouldBypassProxy("http://[::1]:4311/auth/poll"), true);
+  assert.equal(shouldBypassProxy("https://api2.cursor.sh/auth/poll"), false);
 });

@@ -85,6 +85,7 @@ export interface ElectronMainApp {
   readonly commandLine: { readonly appendSwitch: (name: string) => void; readonly hasSwitch?: (name: string) => boolean };
   requestSingleInstanceLock(): boolean;
   quit(): void;
+  exit?(exitCode?: number): void;
   isReady(): boolean;
   whenReady(): Promise<unknown>;
   on(event: "second-instance", listener: (event: unknown, argv: readonly string[]) => void): void;

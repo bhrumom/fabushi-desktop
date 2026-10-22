@@ -424,6 +424,7 @@ export function createProductionCoordinatorAdapter<
         getRpcTraceWindowTraceparent: ports.telemetry.getRpcTraceWindowTraceparent,
         listRoutedMcpTools: () => context.requireMcp().listRoutedTools(),
         executeRoutedMcpTool: (request) => context.requireMcp().executeRoutedTool(request),
+        executeLocalBrowserAction: (request) => context.requireBrowserWorkspace().executeAgentAction(request),
         listHostMcpServers: () => context.requireMcp().listHostMcpServers(),
         listHostMcpCatalog: (options) => context.requireMcp().listHostMcpCatalog(options),
         listHostEffectiveMcpPlugins: () => context.requireMcp().listHostEffectiveMcpPlugins(),

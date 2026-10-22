@@ -316,10 +316,17 @@ export class SandCursorAuthService {
   }
   private async runLogin(signal: AbortSignal, operationEpoch: number): Promise<SandAuthStatus> {
     const settling = this.settleSecureStorage().catch((error) => this.reportFailure("secure-storage-settle", error)); this.emitStatus({ kind: "logging-in" }); const manager = (this.options.createLoginManager ?? createDefaultLoginManager)(); const { metadata, loginUrl } = manager.startLogin(); reportSigninLogin({ phase: "login_started" });
-    try { await this.options.openExternal(loginUrl); } catch (error) { if (!signal.aborted && this.isCurrentAuthOperation(operationEpoch)) reportSigninLogin({ phase: "login_failed", cause: "error" }); throw error; }
+    // Start the local PKCE polling loop immediately. Some platform external-browser
+    // launchers do not settle promptly; authentication must not depend on that
+    // UI handoff returning before the local attempt can be observed.
+    const opening = Promise.resolve().then(() => this.options.openExternal(loginUrl));
+    const openingFailure = opening.then(
+      () => new Promise<never>(() => {}),
+      (error) => Promise.reject(error),
+    );
     if (signal.aborted || !this.isCurrentAuthOperation(operationEpoch)) return await this.getStatus();
     let result: CursorTokens | null;
-    try { result = await manager.waitForResult(metadata, signal); } catch (error) { if (signal.aborted || !this.isCurrentAuthOperation(operationEpoch)) return await this.getStatus(); if (error instanceof SignInPolicyViolationError) { const status = await this.getStatus(); this.emitStatus(status.kind === "logged-out" && status.errorMessage === undefined ? SIGN_IN_POLICY_VIOLATION_STATUS : status); reportSigninLogin({ phase: "login_failed", cause: "policy_refused" }); } else reportSigninLogin({ phase: "login_failed", cause: "error" }); throw error; }
+    try { result = await Promise.race([manager.waitForResult(metadata, signal), openingFailure]); } catch (error) { if (signal.aborted || !this.isCurrentAuthOperation(operationEpoch)) return await this.getStatus(); if (error instanceof SignInPolicyViolationError) { const status = await this.getStatus(); this.emitStatus(status.kind === "logged-out" && status.errorMessage === undefined ? SIGN_IN_POLICY_VIOLATION_STATUS : status); reportSigninLogin({ phase: "login_failed", cause: "policy_refused" }); } else reportSigninLogin({ phase: "login_failed", cause: "error" }); throw error; }
     if (signal.aborted || !this.isCurrentAuthOperation(operationEpoch)) return await this.getStatus();
     if (result == null) { const status = await this.getStatus(); if (status.kind === "logged-out" && status.errorMessage === undefined) { this.credentialState = "revoked"; this.reportedLoggedOutStatus = LOGIN_DID_NOT_FINISH_STATUS; this.emitStatus(LOGIN_DID_NOT_FINISH_STATUS); } else this.emitStatus(status); reportSigninLogin({ phase: "login_failed", cause: "timeout" }); throw new SandAuthLoginTimedOutError(); }
     await settling; try { if (!await this.storeAuthentication(result, operationEpoch)) return await this.getStatus(); } catch (error) { if (!signal.aborted && this.isCurrentAuthOperation(operationEpoch)) reportSigninLogin({ phase: "login_failed", cause: "error" }); throw error; }

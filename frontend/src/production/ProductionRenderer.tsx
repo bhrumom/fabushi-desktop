@@ -66,6 +66,7 @@ import type { SharedRoomHeaderTriggerProps } from "../recovered/features/agent-i
 import { createAgentInfoChannelsController } from "../recovered/features/agent-info/channels/model";
 import { mountAgentInfoChannels } from "../recovered/features/agent-info/channels/view";
 import { useComputerExperience } from "../recovered/features/computer/shell/controller";
+import { BrowserWorkspacePane } from "../recovered/features/browser/workspace";
 import { readComputerStatusSnapshot } from "../recovered/features/computer/shell/status-store";
 import { ComputerFullscreen, ComputerHeaderControl, ComputerInfoPane, renderComputerHandoffEntry } from "../recovered/features/computer/shell/view";
 import { createTeachRecordingStore, IDLE_TEACH_RECORDING_STATUS, type TeachRecordingStatus, type TeachRecordingStore } from "../recovered/features/computer/teach-recording/store";
@@ -967,6 +968,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const [composerClearGeneration, setComposerClearGeneration] = useState(0);
   const [overlay, setOverlay] = useState<AuxiliaryOverlay>(null);
   const [workspaceRoute, setWorkspaceRoute] = useState<WorkspaceRoute>(null);
+  const [browserWorkspaceOpenIds, setBrowserWorkspaceOpenIds] = useState<ReadonlySet<string>>(() => new Set());
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [findInChatOpen, setFindInChatOpen] = useState(false);
   const [findInChatFocusNonce, setFindInChatFocusNonce] = useState(0);
@@ -1491,6 +1493,23 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
 
   const allConversations = useMemo(() => [...humanConversations, ...agents], [agents, humanConversations]);
   const activeAgent = allConversations.find((agent) => agent.id === activeAgentId);
+  const browserWorkspaceOpen = activeAgent != null && browserWorkspaceOpenIds.has(activeAgent.id);
+  const openBrowserWorkspace = useCallback((conversationId: string) => {
+    setBrowserWorkspaceOpenIds((current) => {
+      if (current.has(conversationId)) return current;
+      const next = new Set(current);
+      next.add(conversationId);
+      return next;
+    });
+  }, []);
+  const closeBrowserWorkspace = useCallback((conversationId: string) => {
+    setBrowserWorkspaceOpenIds((current) => {
+      if (!current.has(conversationId)) return current;
+      const next = new Set(current);
+      next.delete(conversationId);
+      return next;
+    });
+  }, []);
   const conversationOutlineAgent = conversationOutlineAgentId == null
     ? null
     : agents.find((agent) => agent.id === conversationOutlineAgentId) ?? null;
@@ -2963,7 +2982,13 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         if (clientLifecycleGenerationRef.current === lifecycleGeneration) client.dispose();
       });
     };
-  }, [account?.kind, client, clientLifecycleGenerationRef, connectionController, pinnedAccountKey, reactionRoot, reconcileCompleteRosterSelection, refreshAgentNetworkAvailability, refreshRoster, selectionStore, transcriptAccountSlot]);
+  }, [client, clientLifecycleGenerationRef, connectionController, pinnedAccountKey, reactionRoot, reconcileCompleteRosterSelection, refreshAgentNetworkAvailability, refreshRoster, selectionStore, transcriptAccountSlot]);
+
+  useEffect(() => {
+    if (client == null || account?.kind !== "logged-in" || transport !== "connected") return;
+    void refreshRoster().catch((error: unknown) => setNotice(error instanceof Error ? error.message : String(error)));
+    void refreshAgentNetworkAvailability();
+  }, [account?.kind, client, refreshAgentNetworkAvailability, refreshRoster, transport]);
 
   useEffect(() => {
     if (bridge == null || account?.kind !== "logged-in") {
@@ -4098,7 +4123,8 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           onClose={() => setWorkspaceRoute(null)}
           onOpenAgent={(agentId) => void openAgent(agentId)}
           params={{}}
-        /></Suspense></main> : showRootEmptyWorkspace ? <RootShellEmptyWorkspace isVisible /> : activeAgent == null ? null : <div style={{ display: "flex", flexDirection: "column", minHeight: 0, minWidth: 0, width: "100%" }}>
+        /></Suspense></main> : showRootEmptyWorkspace ? <RootShellEmptyWorkspace isVisible /> : activeAgent == null ? null : <div className="sand-conversation-browser-split" data-browser-open={browserWorkspaceOpen ? "true" : "false"}>
+          <div className="sand-conversation-browser-split__chat">
           <main className="sand-chat-stage">
           {activeIsHuman ? <div aria-labelledby="sand-conversation-heading" className="sand-chat-header" role="group">
             <div className="sand-chat-header__identity">
@@ -4106,6 +4132,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
               <small>Human</small>
             </div>
             <div style={{ alignItems: "center", display: "flex", gap: 8, marginLeft: "auto" }}>
+              <SandButton aria-label="Open browser workspace" onClick={() => openBrowserWorkspace(activeAgent.id)} size="sm" variant="secondary">+</SandButton>
               {client == null ? null : <HumanCallControls bridge={bridge} client={client} conversation={activeAgent} />}
               <select aria-label="Agent for Human handoff" disabled={busy || availableHandoffAgents.length === 0} onChange={(event) => setHumanHandoffAgentId(event.currentTarget.value)} value={humanHandoffAgentId}>
                 {availableHandoffAgents.length === 0 ? <option value="">No Agent available</option> : availableHandoffAgents.map((agent) => <option key={agent.id} value={agent.id}>{agent.name}</option>)}
@@ -4122,6 +4149,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
               ? groupInfoPaneRoute == null ? undefined : () => { setAgentSettingsOpen(false); setRoutinesInfoPaneOpen(false); setChannelsInfoPaneOpen(false); setComputerInfoOpen(false); setManageSharedRoomId(null); setGroupInfoPaneOpen((open) => !open); }
               : bridge == null ? undefined : () => { setGroupInfoPaneOpen(false); setRoutinesInfoPaneOpen(false); setChannelsInfoPaneOpen(false); setComputerInfoOpen(false); setManageSharedRoomId(null); setAgentSettingsOpen(true); }}
             trailing={<>
+              <SandButton aria-label="Open browser workspace" onClick={() => openBrowserWorkspace(activeAgent.id)} size="sm" variant="secondary">+</SandButton>
               {activeAgent.isRunning && client != null ? <SandButton aria-label="Stop response" onClick={() => {
                 void client.call("interruptAgent", { id: activeAgent.id }).then((result) => {
                   const interrupted = typeof result === "object"
@@ -4177,6 +4205,12 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
             {activeIsHuman ? null : localToolPermissionDock}
             <ConversationComposer acceptedSendGeneration={composerClearGeneration} disabled={busy || client == null} draft={draft} editorProviders={activeIsHuman ? undefined : editorProviders} notice={notice} onChange={(value) => composerDraftStore.setDraft(activeAgent.id, value)} onClearReplyTarget={clearReplyTarget} onRemoveAttachment={removeAttachment} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} replyTarget={replyTarget} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeAgent.id}`} transcribeAudio={transcribeAudio} />
           </div>
+          </div>
+          {browserWorkspaceOpen ? <BrowserWorkspacePane
+            bridge={bridge.browserWorkspace}
+            conversationId={activeAgent.id}
+            onClose={() => closeBrowserWorkspace(activeAgent.id)}
+          /> : null}
         </div>}
       </div>
 

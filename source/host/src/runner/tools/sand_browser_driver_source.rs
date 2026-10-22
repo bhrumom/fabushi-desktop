@@ -415,6 +415,7 @@ const GENERATION_FENCED_OPS = new Set([
   "refresh",
   "back",
   "forward",
+  "wait",
   "click",
   "mouse_click_xy",
   "type",
@@ -750,6 +751,28 @@ const OPS = {
       data,
       frameName,
       frameUrl,
+    };
+  },
+  wait: async ({ request, context, state }) => {
+    const { page, viewId } = await resolvePage(request, context, state);
+    const { scope, frameName, frameUrl } = resolveFrameScope(page, request);
+    const text = typeof request.text === "string" ? request.text : "";
+    if (text.length === 0 || Buffer.byteLength(text, "utf8") > 1024) {
+      throw new Error("browser_wait text must be 1..1024 UTF-8 bytes.");
+    }
+    const timeoutMs = Number.isSafeInteger(request.timeoutMs)
+      ? Math.max(1, Math.min(15000, request.timeoutMs))
+      : 5000;
+    await scope.getByText(text, { exact: false }).first().waitFor({
+      state: "visible",
+      timeout: timeoutMs,
+    });
+    return {
+      page,
+      viewId,
+      frameName,
+      frameUrl,
+      summary: "Observed visible page text " + JSON.stringify(text),
     };
   },
   click: async ({ request, context, state }) => {

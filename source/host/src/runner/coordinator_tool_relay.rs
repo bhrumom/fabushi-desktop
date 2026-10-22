@@ -14,6 +14,9 @@ pub const RUNNER_RESOLVE_ROUTED_TOOL_GATEWAY_METHOD: &str =
     "runner.resolveRoutedToolRequest";
 pub const ROUTED_TOOL_LIST_METHOD: &str = "listRoutedMcpTools";
 pub const ROUTED_TOOL_EXECUTE_METHOD: &str = "executeRoutedMcpTool";
+/// Dedicated Main-control method for the visible local Chromium workspace.
+/// This is intentionally not an MCP method and remains on the same fixed relay allowlist.
+pub const LOCAL_BROWSER_ACTION_METHOD: &str = "executeLocalBrowserAction";
 
 const DEFAULT_ROUTED_TOOL_REQUEST_TIMEOUT: Duration = Duration::from_secs(120);
 
@@ -64,7 +67,7 @@ impl CoordinatorToolRelay {
         method: &str,
         args: Value,
     ) -> Result<Value, CoordinatorToolRelayError> {
-        if !matches!(method, ROUTED_TOOL_LIST_METHOD | ROUTED_TOOL_EXECUTE_METHOD) {
+        if !matches!(method, ROUTED_TOOL_LIST_METHOD | ROUTED_TOOL_EXECUTE_METHOD | LOCAL_BROWSER_ACTION_METHOD) {
             return Err(CoordinatorToolRelayError::UnsupportedMethod(
                 method.to_string(),
             ));

@@ -1,3 +1,4 @@
+import type { BrowserWorkspaceDesktopBridge } from "../../../../source/shared/browser-workspace";
 export type Unsubscribe = () => void;
 export type BridgeListener<Value = unknown> = (value: Value) => void;
 
@@ -256,6 +257,7 @@ export const DESKTOP_BRIDGE_TOP_LEVEL_KEYS = [
   "commitStagedAttachments",
   "discardStagedAttachment",
   "mcp",
+  "browserWorkspace",
   "forceGatewayReconnect",
   "pickAvatarSource",
   "pickAvatarFile",
@@ -490,6 +492,7 @@ export interface DesktopBridge {
   ): Promise<string[] | null>;
   discardStagedAttachment(path: string): Promise<void>;
   readonly mcp: McpDesktopBridge;
+  readonly browserWorkspace: BrowserWorkspaceDesktopBridge;
   readonly marketplacePublisher?: {
     ownedNamespaces(): Promise<{ namespaces: string[] }>;
     claimDandelionNamespace(): Promise<{ namespace: string }>;
@@ -604,6 +607,8 @@ export function hasDesktopBridge(value: unknown): value is DesktopBridge {
     typeof candidate.getWindowState === "function" &&
     typeof candidate.mcp === "object" &&
     candidate.mcp !== null &&
+    typeof candidate.browserWorkspace === "object" &&
+    candidate.browserWorkspace !== null &&
     typeof candidate.cursorAccount === "object" &&
     candidate.cursorAccount !== null &&
     typeof candidate.update === "object" &&
