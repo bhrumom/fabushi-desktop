@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16306,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16243,
-    "unread_minimum": 16218,
+    "unknown_minimum": 16242,
+    "unread_minimum": 16217,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -39,7 +39,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream remains telegramdesktop/tdesktop@5c674f1f6a0f6ace55b67f8bc295138680fe588b/tree 09a421891474be0da279f44a5bf8e0dcf3bc270a. Strict index 60 .claude/commands/continue.md@e81c86031f2e501f30d2b6ed908fb03d648324c8 is fully read and mapped to the existing source-neutral repository AI development/review/evidence lifecycle. Counters unknown=16,243, unread=16,218, omitted=0; closure flags remain false pending fresh exact-head Actions. Next strict root index 61 .claude/commands/crash-reports-process.md@5ac555406670721694e78c4e1e6b2a96b3e98fb5.",
+  "note": "Live upstream remains telegramdesktop/tdesktop@5c674f1f6a0f6ace55b67f8bc295138680fe588b/tree 09a421891474be0da279f44a5bf8e0dcf3bc270a. Strict index 61 .claude/commands/crash-reports-process.md@5ac555406670721694e78c4e1e6b2a96b3e98fb5 is fully read and mapped to the existing source-neutral defect/regression and verification-evidence lifecycle; the helper .claude/scripts/crash_triage.py@2db6cc14d8e529c4e61c5dcf169aade31fd35c58 is dependency evidence only and remains a separate future source entry. Counters unknown=16,242, unread=16,217, omitted=0; closure flags remain false pending fresh exact-head Actions. Next strict root index 62 .claude/commands/cross-review.md@7769d03de798cde66987cd41303d2ea529321361.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,

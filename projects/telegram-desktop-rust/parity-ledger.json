@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
-  "target_commit": "227e16a89b602bee9874eff993f767f9cb471f84",
+  "target_commit": "5d5b7ad28d9ce001578a547fb0b6ccf14fb4bd2a",
   "coverage": {
     "source_entries_total": 16306,
-    "unknown": 16243,
-    "unread": 16218,
+    "unknown": 16242,
+    "unread": 16217,
     "omitted": 0,
-    "responsibilities_total": 78,
+    "responsibilities_total": 79,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -21574,6 +21574,268 @@
       "reviewer": null,
       "license_and_provenance": "Exact host command policy read from locked telegramdesktop/tdesktop live-dev blob; provider syntax retained only as provenance and no runtime source copied.",
       "notes": "Strict index 60 closes only .claude/commands/continue.md. Counters become unknown=16243 unread=16218 omitted=0 responsibilities=78. Next strict root index 61 .claude/commands/crash-reports-process.md@5ac555406670721694e78c4e1e6b2a96b3e98fb5. Closure flags remain false.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_path": ".claude/commands/crash-reports-process.md",
+      "source_blob_sha": "5ac555406670721694e78c4e1e6b2a96b3e98fb5",
+      "source_kind": "repository_crash_report_triage_and_fix_host_command",
+      "module_id": "tdesktop.claude.commands.crash-reports-process",
+      "responsibility_id": "TDRP-R9-CLAUDE-CRASH-REPORTS-PROCESS-001",
+      "source_symbols": [
+        "frontmatter description",
+        "allowed-tools",
+        "# Process Crash Reports",
+        "Phase 0 — open the run",
+        "Phase 1 — plan the waves",
+        "Phase 2 — investigate each wave",
+        "stage 1 — investigate",
+        "stage 2 — verify",
+        "Phase 3 — apply and commit, serially",
+        "record",
+        "reconcile",
+        "--dry-run",
+        "Phase 4 — build and report",
+        "Known noise, worth checking before investigating"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-CRASH-DEFECT-TRIAGE-AND-REGRESSION-WORKFLOW"
+      ],
+      "dependency_ids": [
+        ".claude/scripts/crash_triage.py@2db6cc14d8e529c4e61c5dcf169aade31fd35c58",
+        "projects/fabushi-communication-platform/quality/defect-regression-policy.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "AGENTS.md",
+        "GitHub Actions exact-head verification boundary"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/claude-crash-reports-process-command-complete-read.md",
+      "behavior_contract": "Treat crash intake, grouping, diagnosis, independent refutation, serial minimal repair, regression recording, reconciliation and final verification as a developer defect/evidence workflow. Preserve immutable source/version provenance, one-group investigation isolation, fail-closed verdicts, resumable recording and current-head verification without creating a second shipping crash runtime or parallel defect store.",
+      "state_machine": "select target branch/version -> atomically claim complete crash triples or resume prior run -> classify/drop non-actionable corpus without deletion -> cluster usable reports by stable signature -> skip already-ledgered groups -> process bounded waves -> independent diagnose -> adversarially verify proposed small fixes -> serially apply only confirmed fixes -> record every selected group -> reconcile no dropped verdicts -> one final build/evidence pass -> report fixed/needs-discussion/limited remainder",
+      "side_effects": [
+        "Developer tooling may move complete crash-report triples into a run folder and preserve dropped reports unless deletion is explicitly requested.",
+        "Confirmed small fixes may change product source only after diagnosis and independent refutation checks, one crash fix per commit in the upstream workflow.",
+        "Every selected crash group is durably recorded for resumability; Fabushi maps that lifecycle to its existing defect/regression evidence owner rather than a new ledger.",
+        "Creates no second shipping crash telemetry, crash store, scheduler, Task, Agent, Host, Runner or release owner."
+      ],
+      "failure_cases": [
+        "Mutable working-tree lines are used as authority for a crash from an older tagged build.",
+        "One investigator receives multiple crash groups and cross-contaminates diagnosis.",
+        "A plausible but untraced cause is promoted to fixed instead of needs-discussion.",
+        "A proposed fix adds measurable common-path cost but is landed as a trivial crash fix.",
+        "A refuted fix remains classified fixed.",
+        "A selected group is applied or investigated but not durably recorded/reconciled.",
+        "Noise or old-version reports are deleted without explicit authorization.",
+        "A build/test failure is rerun until green instead of entering the existing defect/evidence lifecycle.",
+        "The source command is copied into a second Fabushi shipping crash runtime or defect database.",
+        "Fresh child exact-head TDRP/Rust evidence is absent."
+      ],
+      "ui_disposition": "Not applicable; repository-development crash triage command only.",
+      "non_ui_responsibilities": [
+        "Crash corpus intake and complete-triple claiming",
+        "Version-scoped classification and stable grouping",
+        "Bounded wave scheduling",
+        "Independent one-group diagnosis",
+        "Adversarial fix verification",
+        "Serial minimal repair discipline",
+        "Durable defect verdict recording and reconciliation",
+        "Final current-source verification and concise defect report"
+      ],
+      "platform_delta": "Upstream paths, Breakpad text format, Telegram version tags, Python helper mechanics and local CMake command are source-specific developer tooling. Fabushi preserves the applicable defect triage, provenance, independent verification, bounded repair, regression and evidence semantics in the existing source-neutral defect/regression and exact-head GitHub Actions lifecycle. FBCP/TDRP executable verification remains GitHub-Actions-only.",
+      "existing_owner_candidates": [
+        "projects/fabushi-communication-platform/quality/defect-regression-policy.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md adaptive evidence loop and bounded recovery",
+        "AGENTS.md Adaptive verification and evidence recovery",
+        "Existing shipping crash telemetry / Host crash marker / panic and unclean-exit owners (reused only as product evidence subjects, not duplicated)",
+        "A new crash-triage runtime or defect ledger (rejected)"
+      ],
+      "existing_owner": "Fabushi source-neutral defect/regression and verification-evidence lifecycle",
+      "rejected_existing_owners": [
+        "Shipping crash telemetry and Host/runtime crash markers own product observation/recovery, not developer crash-corpus triage orchestration.",
+        "Shipping Task/Automation/Agent/Coordinator/Host/Runner do not own repository defect investigation waves or publication.",
+        "A Telegram-specific crash runtime would duplicate existing product crash owners and preserve source architecture instead of responsibilities.",
+        "A second defect ledger would compete with the normative Defect & Regression Policy and exact-head evidence lifecycle."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/fabushi-communication-platform/quality/defect-regression-policy.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "AGENTS.md"
+      ],
+      "fabushi_target_symbols": [
+        "Defect & Regression Policy / Record",
+        "Defect & Regression Policy / Escaped defect",
+        "Defect & Regression Policy / Closure/flaky",
+        "TEST_STRATEGY / Adaptive evidence loop and bounded recovery",
+        "AGENTS.md / Adaptive verification and evidence recovery",
+        "AGENTS.md / Build and test execution environment"
+      ],
+      "target_language": "Markdown repository governance and existing language-native test/evidence tooling",
+      "language_rationale": "The applicable responsibility is developer defect triage/evidence governance. The upstream Python/Claude workflow is not a product runtime to retain; shipping crash behavior continues through existing Rust/TypeScript/platform owners.",
+      "command_event_contracts": [
+        "open run -> bind exact target branch/version before investigation",
+        "claim -> rotate only complete crash triples; incomplete triples remain pending",
+        "sweep -> move old/no-frame/unsymbolized reports by default; delete only by explicit request",
+        "group -> stable signature clusters equivalent crashes; prior ledger decisions skip reinvestigation",
+        "wave -> at most ten fresh groups and one independent investigator per group",
+        "fixed candidate -> mandatory adversarial verify; refutation demotes to needs-discussion",
+        "apply -> main writer serially edits current target branch after rechecking common-path cost",
+        "record -> every selected group gets one durable verdict and optional fix SHA",
+        "reconcile -> no selected group may fall through between investigation/apply/record",
+        "dry-run -> investigation only; no record or source commit",
+        "final verification -> one build/evidence pass after last wave; failures enter ordinary repair/regression lifecycle"
+      ],
+      "state_owner": "Existing Fabushi defect/regression records plus exact-head verification evidence; shipping crash telemetry remains with existing runtime/platform owners.",
+      "lifecycle_owner": "Fabushi quality Defect & Regression Policy and TEST_STRATEGY/AGENTS verification lifecycle.",
+      "persistence_and_restart": "The upstream command's local crash ledger/run folders are developer-tool mechanics. Fabushi durable product defects, regression IDs, fix SHAs and evidence remain in the existing normative defect/evidence records; no parallel crash database is introduced.",
+      "concurrency_and_cancellation": "Independent read-only investigations may fan out by crash group, but product edits and defect publication remain single-writer/serial. Interrupted evidence is preserved; missing/ambiguous evidence does not authorize duplicate writers or a pass.",
+      "security_boundary": "Crash dumps may contain sensitive runtime data, so investigation is bounded to the one selected group and only required report detail. Deletion requires explicit authorization. Exact source/version provenance and existing repository ownership boundaries are fail-closed.",
+      "network_service_dependencies": [
+        "GitHub Actions for all FBCP/TDRP executable verification"
+      ],
+      "service_owner": "Fabushi repository quality/test-evidence lifecycle",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "toolchain-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP and Rust Actions are required after this mapping commit.",
+        "Recursive source disposition remains open; baseline_identity_accepted=false and source_closure_ready=false."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "Full locked .claude/commands/crash-reports-process.md read: 269 lines.",
+        "Dependency .claude/scripts/crash_triage.py@2db6cc14d8e529c4e61c5dcf169aade31fd35c58 read: 1031 lines; dependency evidence only, not closed by this row.",
+        "Existing Fabushi defect-regression-policy.md@b31ecd424cac2abf8a2322e2996bb1b53c561378 confirms defect record fields, escaped-defect gap analysis and reproduce->fix->targeted regression->affected regression->current-head evidence closure.",
+        "Existing TEST_STRATEGY.md@4d2c88e118ab489d3d0339d2a61371a7ea74e72e confirms adaptive evidence assessment, no rerun-until-green, flake non-passing and causality-based timeout/cancellation classification.",
+        "Parent exact-head TDRP run 39706276648 attempt 1: completed success, 61/61 jobs success; authority artifact 12395232437 digest sha256:64c55ca07b34561a8218161dbc8606b76a6d459a803087eefa3344f5c8dcd3a4.",
+        "Parent exact-head Rust run 39706276680: completed success, 6/6 jobs; messaging artifact 12395237458 digest sha256:0da9c6e3436bd76170bcffde068378bccd9e4d0574989090d80a7754b351fa48."
+      ],
+      "target_commit": "5d5b7ad28d9ce001578a547fb0b6ccf14fb4bd2a",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository quality/test-evidence lifecycle",
+      "composition_slot": "Developer crash defect triage and regression evidence",
+      "capability_component": "Repository crash report triage command responsibility",
+      "variation_axes": [
+        "new claim vs --no-claim resume",
+        "explicit version vs newest published version",
+        "fresh vs already-ledgered group",
+        "noise vs actionable crash",
+        "fixed vs needs-discussion vs not-actionable",
+        "verified vs refuted fix",
+        "normal vs --limit bounded run",
+        "normal vs --dry-run"
+      ],
+      "shared_owner_contracts": [
+        "Defect & Regression Policy",
+        "TEST_STRATEGY adaptive evidence loop",
+        "AGENTS.md verification/evidence rules",
+        "GitHub Actions exact-head verification"
+      ],
+      "duplicate_root_check": "No second shipping crash runtime, telemetry pipeline, defect ledger, task queue, Agent/Host/Runner owner, build owner or release verdict introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository-development crash triage only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Repository defect/crash triage workflow",
+      "route_contract": "No shipping route; developer defects enter the existing Defect & Regression Policy and exact-head evidence lifecycle.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "A selected crash group's diagnosis/verdict/fix evidence must either be durably recorded or remain explicitly unresolved; interruption never converts missing evidence into completion.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CLAUDE-CRASH-REPORTS-PROCESS-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CRASH-TRIAGE-IMMUTABLE-SOURCE-001",
+        "ORA-TDRP-CRASH-TRIAGE-INDEPENDENT-VERIFY-001",
+        "ORA-TDRP-CRASH-TRIAGE-RESUMABLE-LEDGER-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CRASH-TRIAGE-NO-SECOND-RUNTIME-001",
+        "INV-TDRP-CRASH-TRIAGE-ONE-GROUP-PER-AGENT-001",
+        "INV-TDRP-CRASH-TRIAGE-NO-RERUN-UNTIL-GREEN-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CRASH-TRIAGE-FUNNEL-001",
+        "CONTRACT-TDRP-CRASH-TRIAGE-WAVE-001",
+        "CONTRACT-TDRP-CRASH-TRIAGE-VERIFY-001",
+        "CONTRACT-TDRP-CRASH-TRIAGE-RECONCILE-001",
+        "CONTRACT-TDRP-CRASH-TRIAGE-BUILD-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-CRASH-TRIAGE-NO-DROPPED-VERDICT-001"
+      ],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "locked crash-reports-process command and crash_triage dependency blobs"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact developer crash-triage command read from locked telegramdesktop/tdesktop live-dev blob; source-specific Claude/Python/CMake/Breakpad mechanics retained only as provenance and no shipping runtime source copied.",
+      "notes": "Strict index 61 closes only .claude/commands/crash-reports-process.md. Counters become unknown=16242 unread=16217 omitted=0 responsibilities=79. The crash_triage.py helper remains a separate future inventory entry. Next strict root index 62 .claude/commands/cross-review.md@7769d03de798cde66987cd41303d2ea529321361. Closure flags remain false.",
       "test_execution_evidence": []
     }
   ]
