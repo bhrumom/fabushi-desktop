@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
-  "target_commit": "eb648bb5281fd25acae990f43e1ebb2d06718c4a",
+  "target_commit": "766545243a9cfab9429a08f2491ab7bbe70cff06",
   "coverage": {
     "source_entries_total": 16306,
-    "unknown": 16231,
-    "unread": 16206,
+    "unknown": 16230,
+    "unread": 16205,
     "omitted": 0,
-    "responsibilities_total": 90,
+    "responsibilities_total": 91,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -24586,6 +24586,241 @@
       "reviewer": null,
       "license_and_provenance": "Exact upstream BUG_REPORT.yml SHA is retained as provenance. Telegram branding, labels, version/source choices, distro exclusions, beta Crash ID and viewlogs instructions are not copied as Fabushi product/support policy.",
       "notes": "Strict index 72 closes only .github/ISSUE_TEMPLATE/BUG_REPORT.yml. Counters become unknown=16231 unread=16206 omitted=0 responsibilities=90. Actual product crash/log collection and later issue workflows remain independent inventory entries. Next strict root index 73 .github/ISSUE_TEMPLATE/FEATURE_REQUEST.yml@e2a8becdb9afcbd028b62378321458a2028fe348. Closure flags remain false.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_path": ".github/ISSUE_TEMPLATE/FEATURE_REQUEST.yml",
+      "source_blob_sha": "e2a8becdb9afcbd028b62378321458a2028fe348",
+      "source_kind": "repository_feature_request_intake_schema",
+      "module_id": "tdesktop.github.issue_template.feature_request",
+      "responsibility_id": "TDRP-R9-FEATURE-REQUEST-INTAKE-001",
+      "source_symbols": [
+        "Is your feature request related to a problem?",
+        "Describe the solution you'd like",
+        "Describe alternatives you've considered",
+        "Additional context"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-PROPOSAL-INTAKE",
+        "CAP-SPEC-OWNER-FIRST-TRIAGE"
+      ],
+      "dependency_ids": [
+        "AGENTS.md@f0bd31c07c8d8361c08da87bd2f5f8a8e269c2e4#Stage 0/1/2",
+        "projects/fabushi-communication-platform/SOURCE_OF_TRUTH.md@283858bb70bab14e240da781a20e749ed1f1359e",
+        "projects/fabushi-communication-platform/architecture-map.md@77a314c1c982da3aa85bb65165d80468b2663db3",
+        "projects/fabushi-communication-platform/management/tasks/P0-product-domain-and-telegram-absorption.md@9a3ee64f90df72ab3d0029f4866ff312a6b8971a",
+        "docs/specs/fabushi-bot-communication-platform.md@bcee7a0b16cfa98eb0a6f67da8c3ee08eef77d3e"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/feature-request-intake-complete-read.md",
+      "behavior_contract": "Capture a concrete problem or unmet outcome, desired behavior or solution, alternatives considered and optional context; triage it against the live product, durable specs and existing owners; and create/update a traceable spec/task only when accepted, without treating submission as priority, commitment, release or acceptance.",
+      "state_machine": "submit problem/outcome + desired behavior + alternatives + optional context -> validate completeness and redact sensitive material -> discover current product/spec/existing owners -> correlate duplicate/conflicting capability and constraints -> accept/defer/reject with rationale -> accepted proposal becomes durable spec/task with stable requirements, ownership, risks and Definition of Done -> normal implement/verify/review/deliver lifecycle",
+      "side_effects": [
+        "May create a repository proposal intake record and link it to existing capabilities or owners.",
+        "May create or update a durable spec/task only after explicit triage and acceptance.",
+        "May reject, defer or merge a duplicate request with recorded rationale.",
+        "Must not mutate shipping product state or establish roadmap priority, release target, implementation or acceptance."
+      ],
+      "failure_cases": [
+        "request proposes a solution without a concrete problem or user outcome",
+        "alternatives and constraints are omitted so owner-first evaluation cannot be reproduced",
+        "request duplicates or conflicts with a live capability but bypasses current-owner discovery",
+        "optional screenshots/context expose secrets, account data or personal information",
+        "provider label or submitted form is treated as roadmap priority, commitment, release target or accepted requirement",
+        "Telegram product language or contribution policy is imported as Fabushi roadmap governance",
+        "missing/disabled form is interpreted as no product need or an applicable source responsibility is marked N/A"
+      ],
+      "ui_disposition": "Repository proposal-intake UI adapter only; not a shipping Fabushi product surface.",
+      "non_ui_responsibilities": [
+        "problem and unmet-outcome definition",
+        "desired behavior or proposed solution capture",
+        "considered alternatives and constraints",
+        "optional contextual evidence with redaction",
+        "existing-owner-first triage into durable spec/task lifecycle"
+      ],
+      "platform_delta": "Telegram supplies provider-specific labels, emoji and generic product-request copy. Fabushi preserves the source-neutral problem/solution/alternatives/context intake and routes it through its current Source of Truth, owner map and spec/task lifecycle. Provider schema and Telegram roadmap language remain replaceable provenance.",
+      "existing_owner_candidates": [
+        "AGENTS.md Stage 0 Discover / Stage 1 Spec / Stage 2 Architecture-Plan (selected)",
+        "Fabushi communication-platform Source of Truth and active product spec/task owners (selected)",
+        "Current architecture map and existing-owner-first rule (selected)",
+        "GitHub enhancement issue as product roadmap/spec truth (rejected)",
+        "shipping ProductShell/Settings/Conversation owners as proposal backlog root (rejected)"
+      ],
+      "existing_owner": "Root AGENTS.md Discover/Spec/Architecture-Plan lifecycle plus active Fabushi Source of Truth, canonical product spec/task and current existing-owner governance; any GitHub feature form is an optional adapter only",
+      "rejected_existing_owners": [
+        "A GitHub issue form or enhancement label cannot own roadmap priority, product requirements or acceptance.",
+        "Shipping UI/domain owners implement accepted capabilities but do not own a parallel proposal backlog/spec root.",
+        "Telegram labels, emoji, product language and roadmap assumptions are source-specific provenance."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/SOURCE_OF_TRUTH.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository feature-request intake adapter governance",
+        "#### Stage 0 — Discover",
+        "#### Stage 1 — Spec",
+        "#### Stage 2 — Architecture / Plan",
+        "current existing owner first"
+      ],
+      "target_language": "Repository governance / product proposal and spec-intake policy",
+      "language_rationale": "The source is declarative repository issue-form metadata, not shipping C++ product behavior. Applicable responsibilities map to durable product/spec/task governance; provider YAML and labels remain adapter details.",
+      "command_event_contracts": [
+        "required intake states a concrete problem or unmet user outcome",
+        "required intake states desired behavior/solution and alternatives considered",
+        "context/screenshots are optional, minimized and redacted",
+        "triage rereads live product/spec and existing owners before proposing a new owner or capability",
+        "accepted work becomes a durable spec/task with stable requirements, scope, risks, owner and Definition of Done",
+        "submission/label alone cannot establish priority, commitment, release, implementation, verification or acceptance"
+      ],
+      "state_owner": "The active product Source of Truth, durable specs/tasks, architecture/owner map and explicit decisions own proposal state; the provider form and enhancement label are non-authoritative intake metadata.",
+      "lifecycle_owner": "Existing Discover -> Spec -> Architecture/Plan -> Implement -> Verify -> Spec Compliance Review -> Integrate/Deliver lifecycle.",
+      "persistence_and_restart": "A resumed proposal triage reloads the durable spec/task, live product/source authority and current owner map; browser form draft, provider label and chat memory cannot advance scope or acceptance.",
+      "concurrency_and_cancellation": "Concurrent or duplicate requests are correlated against canonical capabilities and owners. Cancellation or deferral creates no implementation commitment; accepted spec/task edits reconcile live authority before publication.",
+      "security_boundary": "Optional context/screenshots may contain secrets, account identifiers or personal data and must be minimized and redacted. Proposal intake grants no product mutation, repository write, priority, release or acceptance authority.",
+      "network_service_dependencies": [
+        "GitHub Issues or an equivalent repository proposal-intake service when enabled"
+      ],
+      "service_owner": "Existing product/spec/task governance; provider issue forms are replaceable adapters",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "policy-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required.",
+        "Recursive source disposition remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "Strict73 .github/ISSUE_TEMPLATE/FEATURE_REQUEST.yml@e2a8becdb9afcbd028b62378321458a2028fe348 fully read: 29 lines / 925 bytes.",
+        "The source requires problem, desired solution and alternatives, with optional context; exact current Fabushi has no parallel ISSUE_TEMPLATE owner.",
+        "AGENTS.md@f0bd31c07c8d8361c08da87bd2f5f8a8e269c2e4 already defines Discover -> Spec -> Architecture/Plan with explicit scope, constraints, edge cases, ownership, risks and Definition of Done; Source of Truth@283858bb70bab14e240da781a20e749ed1f1359e mandates current-existing-owner-first.",
+        "Parent strict72 exact-head TDRP run 39737991829 success 61/61: authority 12407897393 sha256:04e3281f6ef6739cdb1233ac20169bbf9c23b780ea62ea85507639f1ef91c00d; closure 12408646920 sha256:17045223623a471d7a643927a0c45528b8ab98ae624856fea24c37b2fa114914; reachability 12407944182 sha256:15f86f0a7f671213d04ff6f81bc15affaad7dc8b30597cfcadb1cc671bf3c10c.",
+        "Parent strict72 exact-head Rust run 39737991769 success 6/6: artifact 12408515461 sha256:8d26c64fd8c9c10268c62b47d91bd85a8d90f7018ce5bfa59a80a293ea20222b."
+      ],
+      "target_commit": "766545243a9cfab9429a08f2491ab7bbe70cff06",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository product, spec and task lifecycle",
+      "composition_slot": "Structured proposal intake before canonical Discover/Spec triage",
+      "capability_component": "Provider-neutral problem, outcome, alternatives and context intake contract",
+      "variation_axes": [
+        "new/duplicate/conflicting proposal",
+        "problem-defined/solution-only intake",
+        "accepted/deferred/rejected/merged disposition",
+        "context absent/present/redacted",
+        "existing owner found/minimal owner ADR required"
+      ],
+      "shared_owner_contracts": [
+        "AGENTS.md Stage 0 Discover",
+        "AGENTS.md Stage 1 Spec",
+        "AGENTS.md Stage 2 Architecture/Plan",
+        "Fabushi communication-platform Source of Truth",
+        "current architecture map, task and existing-owner-first governance"
+      ],
+      "duplicate_root_check": "No Telegram feature-request product, second roadmap/backlog/spec store, enhancement-label authority, shipping proposal app or acceptance gate is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository product-proposal intake only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Optional repository feature-request form adapter",
+      "route_contract": "proposal adapter -> Discover/Spec/Architecture-Plan -> canonical task/owner lifecycle",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Provider issue-form behavior; not a shipping Fabushi responsive contract.",
+      "accessibility_contract": "When enabled, provider form controls and required-field errors must remain keyboard/screen-reader operable.",
+      "keyboard_contract": "Provider default issue-form keyboard behavior only; no product keyboard owner.",
+      "state_continuity_contract": "Canonical continuity lives in durable specs/tasks, explicit decisions and current owner/source authority; an incomplete browser form, provider label or issue state cannot advance product scope or acceptance.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Provider emoji/labels are provenance only.",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-FEATURE-REQUEST-INTAKE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-FEATURE-REQUEST-PROBLEM-OUTCOME-001",
+        "ORA-TDRP-FEATURE-REQUEST-ALTERNATIVES-001",
+        "ORA-TDRP-FEATURE-REQUEST-OWNER-SPEC-ROUTING-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-FEATURE-REQUEST-NO-FORM-AS-ROADMAP-001",
+        "INV-TDRP-FEATURE-REQUEST-NO-SUBMISSION-AS-COMMITMENT-001",
+        "INV-TDRP-FEATURE-REQUEST-EXISTING-OWNER-FIRST-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-FEATURE-REQUEST-REQUIRED-FIELDS-001",
+        "CONTRACT-TDRP-FEATURE-REQUEST-OPTIONAL-CONTEXT-001",
+        "CONTRACT-TDRP-FEATURE-REQUEST-CANONICAL-ROUTING-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-FEATURE-REQUEST-SOLUTION-WITHOUT-PROBLEM-001",
+        "FAULT-TDRP-FEATURE-REQUEST-DUPLICATE-OWNER-BYPASS-001",
+        "FAULT-TDRP-FEATURE-REQUEST-SENSITIVE-CONTEXT-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-FEATURE-REQUEST-CONTEXT-REDACTION-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-FEATURE-REQUEST-NO-SECOND-ROADMAP-001",
+        "REG-TDRP-FEATURE-REQUEST-NO-TELEGRAM-BRAND-POLICY-001"
+      ],
+      "release_gate_ids": [],
+      "test_fixture_ids": [
+        "locked FEATURE_REQUEST.yml + parent exact-head product/spec/PR/ref/tree/blob/upstream lease + TDRP/Rust artifacts"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "release_gate_status": "open",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact upstream FEATURE_REQUEST.yml SHA is retained as provenance. Telegram branding, labels, emoji and generic product/roadmap wording are not copied as Fabushi roadmap, priority, commitment or acceptance policy.",
+      "notes": "Strict index 73 closes only .github/ISSUE_TEMPLATE/FEATURE_REQUEST.yml. Counters become unknown=16230 unread=16205 omitted=0 responsibilities=91. Actual feature implementation, product surfaces and issue routing remain independent inventory entries. Next strict root index 74 .github/ISSUE_TEMPLATE/config.yml@1b864704be6a3e3aafdb1e02519bec84886942ce. Closure flags remain false.",
       "test_execution_evidence": []
     }
   ]

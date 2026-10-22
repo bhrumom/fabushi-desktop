@@ -154,6 +154,13 @@ Repository issue forms are optional intake adapters into the canonical defect an
 
 Provider field syntax, labels, emoji, Telegram version/install-source choices, beta-channel Crash ID flow, `viewlogs` cheat code, distro-support exclusions and branded help links are source-specific provenance, not Fabushi policy. Submitting a form does not prove reproduction, severity, cause, fix or acceptance, and absence or disablement of a form cannot be interpreted as absence of a defect. The canonical defect record and exact-head evidence remain authoritative; an issue form must not become a second findings store, support service, product telemetry owner or release gate.
 
+
+##### Repository feature-request intake adapter governance
+
+Repository feature-request forms are optional proposal adapters into the canonical Discover → Spec → Architecture/Plan lifecycle. An intake must state the concrete problem or unmet user outcome, the desired behavior or proposed solution, alternatives considered, and any useful context or screenshots. Triage must reread the current product/spec and live existing owners, identify duplicate or conflicting capabilities and constraints, and record accepted work in a durable spec/task with stable requirements, scope, edge cases, risks, ownership and Definition of Done before implementation begins.
+
+Provider field syntax, labels, emoji and Telegram product/roadmap language are source-specific provenance, not Fabushi policy. Submission does not establish priority, scope, owner, commitment, release target, implementation completeness or acceptance; rejection or deferral does not make an applicable source responsibility N/A. Context and screenshots must be minimized and redacted. An issue form must not become a second roadmap, backlog, spec, product owner or acceptance authority, and a missing or disabled form cannot be interpreted as absence of a product need.
+
 #### Stage 4 — Verify
 - Execute or inspect the verification required by the spec and repository workflow.
 - Verify the exact source revision being accepted.
