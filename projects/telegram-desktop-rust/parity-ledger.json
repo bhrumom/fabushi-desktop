@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
-  "target_commit": "434d9caa53b1aa03fa3eb0cc4eafaa8ad542990f",
+  "target_commit": "148ee0503d1c6b11d7ce62e15706230b186c926a",
   "coverage": {
     "source_entries_total": 16306,
-    "unknown": 16235,
-    "unread": 16210,
+    "unknown": 16234,
+    "unread": 16209,
     "omitted": 0,
-    "responsibilities_total": 86,
+    "responsibilities_total": 87,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -23662,6 +23662,238 @@
       "reviewer": null,
       "license_and_provenance": "Exact Claude settings, Telegram hook.py and .clang-tidy SHAs retained as source provenance only; provider syntax and Telegram C++ policy do not become Fabushi shipping identifiers.",
       "notes": "Strict index 68 closes only .claude/settings.json. Counters become unknown=16235 unread=16210 omitted=0 responsibilities=86. hook.py and .clang-tidy remain independent inventory entries at their own source dispositions. Next strict root index 69 .devcontainer.json@16a1bcc1192bed87c5211da3dc63b0b0ed99a93e. Closure flags remain false.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_path": ".devcontainer.json",
+      "source_blob_sha": "16a1bcc1192bed87c5211da3dc63b0b0ed99a93e",
+      "source_kind": "repository_development_environment_adapter_configuration",
+      "module_id": "tdesktop.devcontainer",
+      "responsibility_id": "TDRP-R9-DEVCONTAINER-DEVELOPMENT-ENVIRONMENT-001",
+      "source_symbols": [
+        "image: tdesktop:centos_env",
+        "runArgs SYS_PTRACE / seccomp=unconfined",
+        "workspaceMount / workspaceFolder / mounts",
+        "customizations.vscode extensions and settings"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-DEVELOPMENT-ENVIRONMENT"
+      ],
+      "dependency_ids": [
+        "Telegram/build/docker/centos_env/Dockerfile@3135794864044f21d2a0092b32cff787c86704bf",
+        ".github/workflows/docker.yml@cba00688d935d50454bfb891fc37e001626cf9a0",
+        ".github/workflows/linux.yml@dbedd23593c5ea66ff9b8b880bda6a8bc5a4cc55",
+        "AGENTS.md@1272ef8369453b1f9c71e1e33166d536c59d534c#Build and test execution environment"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/devcontainer-development-environment-complete-read.md",
+      "behavior_contract": "Describe a reproducible repository development/editor environment with declared toolchain image, workspace/dependency mounts, compile-command/editor integration and explicitly scoped debugging conveniences while keeping mutable host state and local-container execution non-authoritative; FBCP/TDRP executable acceptance remains exact-head GitHub Actions.",
+      "state_machine": "open repository -> resolve declared development image/tooling -> mount current workspace and declared dependency directories -> configure editor/compile-command integration -> optionally enable explicitly scoped debugging privileges -> develop/inspect -> exact-head GitHub Actions independently verifies executable behavior and acceptance",
+      "side_effects": [
+        "May start a developer container and mount the repository plus external development directories.",
+        "May grant ptrace and relaxed seccomp inside that development container for debugging.",
+        "May configure editor extensions and build/compile-command paths.",
+        "Must not mutate migration acceptance, shipping runtime security policy, release state, or canonical source authority."
+      ],
+      "failure_cases": [
+        "development image is unavailable or stale",
+        "mutable host dependency mount disagrees with durable source provenance",
+        "compile_commands.json is missing or stale",
+        "debugging privilege exception leaks into production assumptions",
+        "local devcontainer build/test is treated as FBCP/TDRP acceptance",
+        "Telegram centos_env runtime is copied into Fabushi as a product owner"
+      ],
+      "ui_disposition": "Not a shipping UI capability.",
+      "non_ui_responsibilities": [
+        "development toolchain/environment declaration",
+        "workspace and dependency mount provenance",
+        "editor and compile-command integration",
+        "explicit debugging privilege scoping",
+        "separation of developer environment from exact-head acceptance authority"
+      ],
+      "platform_delta": "The tdesktop centos_env image, /usr/src/tdesktop filesystem layout, adjacent Libraries/ThirdParty host mounts, VS Code extension IDs, CMake settings, SYS_PTRACE and seccomp=unconfined are upstream development-tooling provenance. Fabushi keeps only source-neutral environment/reproducibility and privilege-boundary responsibilities; no tdesktop container or security exception becomes shipping architecture.",
+      "existing_owner_candidates": [
+        "AGENTS.md repository development lifecycle / Build and test execution environment",
+        "AGENTS.md Stage 3 Implement / Stage 4 Verify",
+        "GitHub Actions exact-head FBCP/TDRP verification",
+        "shipping platform/runtime sandbox (rejected)",
+        "Telegram centos_env development image (rejected)"
+      ],
+      "existing_owner": "AGENTS.md source-neutral repository development/build-test execution governance plus GitHub Actions exact-head verification",
+      "rejected_existing_owners": [
+        "Shipping platform/runtime sandbox owns production security boundaries and must not inherit development debugging privileges.",
+        "Telegram centos_env is an upstream development implementation, not a Fabushi canonical owner.",
+        "Editor/VS Code configuration is an adapter surface, not durable semantic authority."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository development-environment adapter governance"
+      ],
+      "target_language": "Repository governance / provider-neutral development-environment adapter",
+      "language_rationale": "The source is repository developer tooling and editor configuration, not shipping C++ product logic. Its applicable responsibilities belong to source-neutral repository governance and exact-head CI boundaries rather than Rust or React runtime code.",
+      "command_event_contracts": [
+        "development environment inputs remain explicit and reconstructible",
+        "workspace/dependency mounts are development-only and non-authoritative",
+        "debugger privileges are explicit scoped exceptions, never production defaults",
+        "editor integration cannot establish passing build/test evidence",
+        "FBCP/TDRP executable verification remains exact-head GitHub Actions"
+      ],
+      "state_owner": "Durable repository instructions/source provenance plus the selected exact repository revision; mutable container/editor state is non-authoritative.",
+      "lifecycle_owner": "Existing repository development lifecycle and GitHub Actions verification lifecycle.",
+      "persistence_and_restart": "No canonical product state is stored in the devcontainer. Re-entry reconstructs the development adapter from durable repository configuration and separately reconciles any mutable mounted dependency state.",
+      "concurrency_and_cancellation": "Multiple developer environments may exist independently; their mutable state cannot serialize or advance canonical repository acceptance. Cancellation/teardown must not change product truth.",
+      "security_boundary": "Debugging privileges such as SYS_PTRACE and seccomp=unconfined are constrained to the development container and cannot weaken Fabushi shipping sandbox, credential, service or release-security policy.",
+      "network_service_dependencies": [
+        "Container/toolchain acquisition may require repository/package registries; exact-head GitHub Actions remains the acceptance service boundary."
+      ],
+      "service_owner": "Existing repository development/verification governance",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "toolchain-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required.",
+        "Recursive source disposition remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "Strict69 .devcontainer.json@16a1bcc1192bed87c5211da3dc63b0b0ed99a93e fully read: 31 lines / 989 bytes.",
+        "Telegram/build/docker/centos_env/Dockerfile@3135794864044f21d2a0092b32cff787c86704bf inspected as the declared tdesktop development image/toolchain input.",
+        ".github/workflows/docker.yml@cba00688d935d50454bfb891fc37e001626cf9a0 and .github/workflows/linux.yml@dbedd23593c5ea66ff9b8b880bda6a8bc5a4cc55 inspected for image/build usage and CI separation.",
+        "Parent strict68 exact-head TDRP run 39728538213 success 61/61: authority 12404416227 sha256:cae0b4eb18dc7e18ec064dd3e0f6e7762650a3478123b326303cc0a563148055; closure 12403379677 sha256:89624f8ff9506c67284d036c5b3248769d32d22b1b332d7f4d658e5b7fa64498; reachability 12404124140 sha256:f5c15bc7990c9c9f1c17cc379ff926a6e9cfed3ba620c49779ca73cc6246e761.",
+        "Parent strict68 exact-head Rust run 39728538205 success 6/6: artifact 12403209453 sha256:440031524d8b49787a55201bd66adc1f8231cad0d82e569335c22848e37df532."
+      ],
+      "target_commit": "148ee0503d1c6b11d7ce62e15706230b186c926a",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi source-neutral repository development lifecycle",
+      "composition_slot": "Repository development-environment adapter",
+      "capability_component": "Provider-neutral reproducible development environment declaration",
+      "variation_axes": [
+        "container available/unavailable",
+        "durable/mutable dependency input",
+        "editor integration available/unavailable",
+        "debug privilege enabled/disabled",
+        "local developer execution versus exact-head CI acceptance"
+      ],
+      "shared_owner_contracts": [
+        "AGENTS.md repository development lifecycle",
+        "AGENTS.md Build and test execution environment",
+        "AGENTS.md Stage 3 Implement",
+        "AGENTS.md Stage 4 Verify",
+        "GitHub Actions exact-head FBCP/TDRP validators"
+      ],
+      "duplicate_root_check": "No Telegram development image owner, product container runtime, alternate build authority, editor-state authority, or production debug-privilege policy is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository development environment only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Provider-neutral development-environment adapter",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Restart reconstructs the development environment from durable config; mutable editor/container state never advances repository acceptance.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-DEVCONTAINER-DEVELOPMENT-ENVIRONMENT-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-DEVCONTAINER-SOURCE-NEUTRAL-TOOLCHAIN-001",
+        "ORA-TDRP-DEVCONTAINER-PRIVILEGE-BOUNDARY-001",
+        "ORA-TDRP-DEVCONTAINER-CI-SEPARATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-DEVCONTAINER-NO-SHIPPING-RUNTIME-001",
+        "INV-TDRP-DEVCONTAINER-NO-PRODUCTION-PRIVILEGE-001",
+        "INV-TDRP-DEVCONTAINER-NO-LOCAL-ACCEPTANCE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-DEVCONTAINER-WORKSPACE-MOUNTS-001",
+        "CONTRACT-TDRP-DEVCONTAINER-EDITOR-INTEGRATION-001",
+        "CONTRACT-TDRP-DEVCONTAINER-CI-AUTHORITY-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-DEVCONTAINER-UNAVAILABLE-001",
+        "FAULT-TDRP-DEVCONTAINER-MUTABLE-HOST-STATE-001",
+        "FAULT-TDRP-DEVCONTAINER-PRIVILEGE-ESCAPE-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-DEVCONTAINER-DEBUG-PRIVILEGE-SCOPING-001",
+        "SEC-TDRP-DEVCONTAINER-NO-PRODUCTION-SECCOMP-DOWNGRADE-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-DEVCONTAINER-NO-TDESKTOP-RUNTIME-001",
+        "REG-TDRP-DEVCONTAINER-NO-LOCAL-TEST-AUTHORITY-001"
+      ],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "locked .devcontainer.json + centos_env image definition/workflows + AGENTS exact-head GitHub Actions boundary"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners for executable acceptance; read-only source inspection through GitHub"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact .devcontainer.json and centos_env/workflow SHAs retained as source provenance only; tdesktop image names, editor extension IDs, paths and debugging privilege flags do not become Fabushi shipping identifiers or security defaults.",
+      "notes": "Strict index 69 closes only .devcontainer.json. Counters become unknown=16234 unread=16209 omitted=0 responsibilities=87. Dockerfile/workflow dependencies remain independent inventory entries at their own source dispositions. Next strict root index 70 .gitattributes@d7f1c6218bd3bd6b595385b1308c86ba9923fa14. Closure flags remain false.",
       "test_execution_evidence": []
     }
   ]

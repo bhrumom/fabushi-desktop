@@ -119,6 +119,15 @@ A feedback adapter must not invent source-specific rules that Fabushi has not ad
 
 For FBCP/TDRP, executable validation remains exact-head GitHub-Actions-only. A local/editor feedback hook may catch a violation earlier, but it cannot replace the repository validator, current-head evidence, artifact provenance, or independent acceptance. If adapter feedback and durable repository policy disagree, stop and reconcile the durable authority instead of teaching the adapter to bypass the gate.
 
+
+##### Repository development-environment adapter governance
+
+Repository-local devcontainer and editor environment definitions are optional authoring adapters, not shipping runtime, build authority, or acceptance evidence. They may declare reproducible toolchain inputs, workspace and dependency mounts, compile-command paths, and debugger/editor conveniences, but every such choice must stay scoped to developer tooling and be reconstructible from durable repository sources.
+
+Privileged debugging settings such as ptrace capability or relaxed seccomp are explicit local/container exceptions only; they must not become Fabushi production sandbox or security defaults, service requirements, or release assumptions. A missing or unavailable devcontainer is not a passing build, and mutable host directories or editor state cannot become source authority.
+
+For FBCP/TDRP, executable validation remains exact-head GitHub-Actions-only. Upstream tdesktop container image names, VS Code extension identifiers, filesystem paths, and container capability flags are provenance only; Fabushi reuses only the source-neutral development-environment responsibilities when they are actually needed.
+
 #### Stage 4 — Verify
 - Execute or inspect the verification required by the spec and repository workflow.
 - Verify the exact source revision being accepted.
