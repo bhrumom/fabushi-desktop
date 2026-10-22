@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
-  "target_commit": "148ee0503d1c6b11d7ce62e15706230b186c926a",
+  "target_commit": "0f9742ad0a23d513d3f6b83691fe01fae79156a6",
   "coverage": {
     "source_entries_total": 16306,
-    "unknown": 16234,
-    "unread": 16209,
+    "unknown": 16233,
+    "unread": 16208,
     "omitted": 0,
-    "responsibilities_total": 87,
+    "responsibilities_total": 88,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -23894,6 +23894,227 @@
       "reviewer": null,
       "license_and_provenance": "Exact .devcontainer.json and centos_env/workflow SHAs retained as source provenance only; tdesktop image names, editor extension IDs, paths and debugging privilege flags do not become Fabushi shipping identifiers or security defaults.",
       "notes": "Strict index 69 closes only .devcontainer.json. Counters become unknown=16234 unread=16209 omitted=0 responsibilities=87. Dockerfile/workflow dependencies remain independent inventory entries at their own source dispositions. Next strict root index 70 .gitattributes@d7f1c6218bd3bd6b595385b1308c86ba9923fa14. Closure flags remain false.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_path": ".gitattributes",
+      "source_blob_sha": "d7f1c6218bd3bd6b595385b1308c86ba9923fa14",
+      "source_kind": "repository_file_attribute_worktree_policy",
+      "module_id": "tdesktop.gitattributes",
+      "responsibility_id": "TDRP-R9-GITATTRIBUTES-WORKTREE-BYTE-POLICY-001",
+      "source_symbols": [
+        "* text=auto",
+        "*.diff text eol=lf",
+        "*.bat text eol=crlf",
+        "Telegram/Resources/zxcvbn/*.txt text eol=lf",
+        "*.lottie binary",
+        "*.bin binary"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-FILE-ATTRIBUTE-POLICY",
+        "CAP-SOURCE-BYTE-INTEGRITY"
+      ],
+      "dependency_ids": [
+        "AGENTS.md@22af4afa8687cc76ce0dc40489941368938cd4b7#Build and test execution environment",
+        "GitHub Actions exact-head source / byte-integrity validators"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/gitattributes-worktree-byte-policy-complete-read.md",
+      "behavior_contract": "Classify repository content as text or binary, normalize only declared text line-ending semantics, preserve binary payload bytes, and fail closed when durable source/LFS objects are unavailable or disagree with accepted provenance; repository attributes must not become a second product runtime or acceptance authority.",
+      "state_machine": "checkout/materialize source -> resolve durable repository attribute policy -> classify text versus binary -> apply only declared text EOL normalization -> preserve binary/object bytes -> validate source/LFS integrity -> exact-head GitHub Actions independently verifies migration evidence",
+      "side_effects": [
+        "May affect Git worktree line-ending normalization for text files.",
+        "May prevent text conversion for binary payloads.",
+        "May cause source-integrity validation to fail when expected durable/LFS bytes are unavailable or mismatched.",
+        "Must not alter shipping runtime behavior, product state, service contracts, or migration acceptance by itself."
+      ],
+      "failure_cases": [
+        "text/binary misclassification changes checked-out bytes",
+        "platform line-ending conversion violates a declared textual contract",
+        "binary asset receives text normalization",
+        "LFS/object content is missing, pointer-only, stale, or hash-mismatched",
+        "Telegram-specific path/glob rules are copied as Fabushi product policy without an owned Fabushi need",
+        "local worktree appearance is treated as exact-head acceptance evidence"
+      ],
+      "ui_disposition": "Not a shipping UI capability.",
+      "non_ui_responsibilities": [
+        "text-versus-binary repository classification",
+        "declared line-ending normalization",
+        "binary byte preservation",
+        "durable object/LFS integrity and fail-closed handling",
+        "separation of worktree policy from exact-head acceptance authority"
+      ],
+      "platform_delta": "The upstream *.diff LF, *.bat CRLF, Telegram/Resources/zxcvbn path, *.lottie and *.bin patterns describe tdesktop repository materialization. Fabushi does not copy those Telegram path/glob choices wholesale; it keeps the source-neutral responsibility that textual normalization is explicit, binary assets remain byte-exact, missing/mismatched durable objects fail closed, and GitHub Actions remains acceptance authority.",
+      "existing_owner_candidates": [
+        "AGENTS.md repository development/build-test and source-integrity governance",
+        "GitHub Actions exact-head source / LFS / byte-integrity validators",
+        "shipping Resource owner (rejected)",
+        "Telegram .gitattributes file-pattern policy (rejected)"
+      ],
+      "existing_owner": "AGENTS.md source-neutral repository source-integrity/build-test governance plus existing exact-head Git/LFS byte-integrity validators",
+      "rejected_existing_owners": [
+        "Shipping Resource owns product resources after canonical materialization, not Git worktree conversion semantics.",
+        "Telegram .gitattributes is upstream provenance and cannot become a Fabushi source authority or second repository policy owner.",
+        "Local Git configuration/worktree state is mutable and cannot establish acceptance evidence."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository file-attribute and byte-integrity governance"
+      ],
+      "target_language": "Repository governance / source-neutral Git attribute and byte-integrity policy",
+      "language_rationale": "The source is repository materialization metadata, not shipping C++ product logic. Applicable responsibilities belong to durable repository governance and exact-head source-integrity validation rather than Rust or React runtime code.",
+      "command_event_contracts": [
+        "text normalization applies only to content classified as text and only according to durable repository policy",
+        "binary payloads remain byte-preserving and are never normalized as text",
+        "missing/pointer-only/hash-mismatched durable LFS or source objects fail closed",
+        "Telegram-specific path and extension globs remain provenance unless an exact Fabushi owner requires an equivalent rule",
+        "local checkout behavior cannot substitute for exact-head GitHub Actions evidence"
+      ],
+      "state_owner": "Durable repository instructions, accepted source/object hashes and exact selected revision; mutable Git/worktree configuration is non-authoritative.",
+      "lifecycle_owner": "Existing repository source-integrity/build-test lifecycle and GitHub Actions verification lifecycle.",
+      "persistence_and_restart": "Fresh checkout/restart reconstructs worktree classification from durable repository policy and object content; no canonical product state is stored in Git attribute processing.",
+      "concurrency_and_cancellation": "Parallel checkouts may materialize independently, but none can serialize or advance canonical acceptance. Interrupted checkout/LFS materialization leaves evidence incomplete and must fail closed rather than invent bytes.",
+      "security_boundary": "Byte-preservation and fail-closed object validation protect source/resource provenance. Attribute rules cannot weaken executable sandbox, credential, service, or release-security policy.",
+      "network_service_dependencies": [
+        "Durable Git/LFS object acquisition may require repository object services; exact-head GitHub Actions remains the executable acceptance boundary."
+      ],
+      "service_owner": "Existing repository source-integrity/verification governance",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "policy-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required.",
+        "Recursive source disposition remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "Strict70 .gitattributes@d7f1c6218bd3bd6b595385b1308c86ba9923fa14 fully read: 13 lines / 361 bytes.",
+        "Rules revalidated: default text=auto; *.diff LF; *.bat CRLF; Telegram/Resources/zxcvbn/*.txt LF; *.lottie and *.bin binary.",
+        "Existing-owner-first audit found source-neutral repository byte-integrity / exact-head validation ownership; no Telegram-specific runtime or duplicate repository owner is required.",
+        "Parent strict69 exact-head TDRP run 39730515859 success 61/61: authority 12405192392 sha256:8d8fb55c3023a2bc6fc5db548d651890a7d9791eb2f4a1fb67673fa8a37057f6; closure 12404858819 sha256:6a245d9f0071f81306dadfc982050eb3607de5c40ea2dc6ba6092a2771d1aebc; reachability 12405123334 sha256:13d89bc98b5e28737af066562493113285a2c3ee4679fcc27ba2b1ad553b9ece.",
+        "Parent strict69 exact-head Rust run 39730515816 success 6/6: artifact 12404333749 sha256:3c2a8f39b9890677c54dab816edcc80de97450889f5eb490a6278d73daa33579."
+      ],
+      "target_commit": "0f9742ad0a23d513d3f6b83691fe01fae79156a6",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi source-neutral repository development/source-integrity lifecycle",
+      "composition_slot": "Repository file-attribute and worktree byte-integrity policy",
+      "capability_component": "Provider-neutral text/binary materialization and durable byte-integrity governance",
+      "variation_axes": [
+        "text/binary classification",
+        "LF/CRLF/platform materialization",
+        "durable object present/missing/mismatched",
+        "local checkout versus exact-head CI acceptance"
+      ],
+      "shared_owner_contracts": [
+        "AGENTS.md repository development lifecycle",
+        "AGENTS.md Build and test execution environment",
+        "GitHub Actions exact-head source / byte-integrity validators"
+      ],
+      "duplicate_root_check": "No Telegram attribute-policy owner, alternate source store, product runtime, or local-worktree acceptance authority is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository file-attribute/worktree policy only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Provider-neutral repository file-attribute and byte-integrity governance",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Repository checkout/re-entry re-applies durable source-neutral attribute policy; mutable worktree conversions never advance migration acceptance.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-GITATTRIBUTES-WORKTREE-BYTE-POLICY-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GITATTRIBUTES-TEXT-EOL-SEMANTICS-001",
+        "ORA-TDRP-GITATTRIBUTES-BINARY-BYTE-PRESERVATION-001",
+        "ORA-TDRP-GITATTRIBUTES-LFS-FAIL-CLOSED-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GITATTRIBUTES-NO-BINARY-TEXT-NORMALIZATION-001",
+        "INV-TDRP-GITATTRIBUTES-NO-LOCAL-ACCEPTANCE-001",
+        "INV-TDRP-GITATTRIBUTES-NO-TELEGRAM-PATTERN-OWNER-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GITATTRIBUTES-TEXT-BINARY-CLASSIFICATION-001",
+        "CONTRACT-TDRP-GITATTRIBUTES-WORKTREE-EOL-001",
+        "CONTRACT-TDRP-GITATTRIBUTES-DURABLE-OBJECT-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GITATTRIBUTES-MISSING-LFS-OBJECT-001",
+        "FAULT-TDRP-GITATTRIBUTES-HASH-MISMATCH-001",
+        "FAULT-TDRP-GITATTRIBUTES-WORKTREE-CONVERSION-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-GITATTRIBUTES-SOURCE-BYTE-PROVENANCE-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-GITATTRIBUTES-NO-TDESKTOP-RUNTIME-001",
+        "REG-TDRP-GITATTRIBUTES-NO-LOCAL-TEST-AUTHORITY-001"
+      ],
+      "release_gate_ids": [],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "release_gate_status": "open",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact upstream .gitattributes SHA is retained as source provenance. Telegram-specific zxcvbn path, extension globs and EOL choices are not copied as Fabushi product identifiers or runtime policy.",
+      "notes": "Strict index 70 closes only .gitattributes. Counters become unknown=16233 unread=16208 omitted=0 responsibilities=88. Attribute pattern targets remain independent inventory entries at their own source dispositions. Next strict root index 71 .github/CONTRIBUTING.md@4265e974d0b87622af223d5b8096b67edcbd4aab. Closure flags remain false.",
       "test_execution_evidence": []
     }
   ]
