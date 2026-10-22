@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16306,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16236,
-    "unread_minimum": 16211,
+    "unknown_minimum": 16235,
+    "unread_minimum": 16210,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -39,7 +39,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream remains telegramdesktop/tdesktop@5c674f1f6a0f6ace55b67f8bc295138680fe588b/tree 09a421891474be0da279f44a5bf8e0dcf3bc270a. Strict index 67 .claude/commands/release.md@baaa7c261db67dced2ce052c8cde016147031a7d is fully read and mapped existing-owner-first to the source-neutral Stage 6 release-preparation/version/package/release-evidence lifecycle. Counters unknown=16,236, unread=16,211, omitted=0; baseline_identity_accepted=false and source_closure_ready=false pending fresh exact-head Actions. Next strict root index 68 .claude/settings.json@d47520dc0e3b7e8d6067456e33062140c75f7c79.",
+  "note": "Live upstream remains telegramdesktop/tdesktop@5c674f1f6a0f6ace55b67f8bc295138680fe588b/tree 09a421891474be0da279f44a5bf8e0dcf3bc270a. Strict index 68 .claude/settings.json@d47520dc0e3b7e8d6067456e33062140c75f7c79 is fully read with tools/rules/hook.py@287b36c948566659970651226c92f7b8b056b434 and .clang-tidy@5610bd13664ca77549993def241eb3edaffeff7a dependencies, then mapped existing-owner-first to source-neutral Stage 3/4 repository edit-policy feedback and exact-head GitHub Actions verification governance. Counters unknown=16,235, unread=16,210, omitted=0; baseline_identity_accepted=false and source_closure_ready=false pending fresh exact-head Actions. Next strict root index 69 .devcontainer.json@16a1bcc1192bed87c5211da3dc63b0b0ed99a93e.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,

@@ -111,6 +111,14 @@ Durable shared-context changes are narrow, optional, and fail-closed. Propose on
 - Preserve architectural boundaries.
 - Do not weaken requirements or acceptance criteria merely to make checks pass.
 
+##### Repository edit-policy feedback adapter governance
+
+Repository editor/AI post-write hooks are optional fast-feedback adapters, not canonical rule owners and never release or migration acceptance authority. Any such adapter must derive its checks from durable repository policy, target only the file/diff actually changed, produce actionable diagnostics, and fail closed for a rule it can decide. Provider configuration, hook event names, command syntax, and editor integration are replaceable adapter details; durable rules must remain understandable and enforceable without the provider session.
+
+A feedback adapter must not invent source-specific rules that Fabushi has not adopted, silently rewrite user code, widen its scope to unrelated files, weaken the durable spec, or turn a missing/disabled local hook into a passing result. Telegram C++-specific banned-function mappings, comment budgets, `.clang-tidy` parsing, source suffixes, test-harness exemptions, and Claude `PostToolUse` payload shapes are provenance only unless an independent Fabushi rule explicitly adopts the same behavior.
+
+For FBCP/TDRP, executable validation remains exact-head GitHub-Actions-only. A local/editor feedback hook may catch a violation earlier, but it cannot replace the repository validator, current-head evidence, artifact provenance, or independent acceptance. If adapter feedback and durable repository policy disagree, stop and reconcile the durable authority instead of teaching the adapter to bypass the gate.
+
 #### Stage 4 — Verify
 - Execute or inspect the verification required by the spec and repository workflow.
 - Verify the exact source revision being accepted.

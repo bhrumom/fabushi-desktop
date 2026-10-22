@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
-  "target_commit": "17cbe4d71ce710895466949adad9e52eafed039a",
+  "target_commit": "434d9caa53b1aa03fa3eb0cc4eafaa8ad542990f",
   "coverage": {
     "source_entries_total": 16306,
-    "unknown": 16236,
-    "unread": 16211,
+    "unknown": 16235,
+    "unread": 16210,
     "omitted": 0,
-    "responsibilities_total": 85,
+    "responsibilities_total": 86,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -23432,6 +23432,236 @@
       "reviewer": null,
       "license_and_provenance": "Exact Claude command and Telegram changelog/version-script SHAs retained only as provenance; source-specific names, scripts and numbering do not become Fabushi runtime identifiers.",
       "notes": "Strict index 67 closes only .claude/commands/release.md. Counters become unknown=16236 unread=16211 omitted=0 responsibilities=85. Next strict root index 68 .claude/settings.json@d47520dc0e3b7e8d6067456e33062140c75f7c79. Closure flags remain false.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_path": ".claude/settings.json",
+      "source_blob_sha": "d47520dc0e3b7e8d6067456e33062140c75f7c79",
+      "source_kind": "repository_editor_policy_feedback_adapter_configuration",
+      "module_id": "tdesktop.claude.settings",
+      "responsibility_id": "TDRP-R9-CLAUDE-SETTINGS-POSTTOOL-HOOK-001",
+      "source_symbols": [
+        "hooks.PostToolUse matcher Edit|Write|MultiEdit",
+        "tools/rules/hook.py invocation",
+        "Checking house rules status message"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-EDIT-POLICY-FAST-FEEDBACK"
+      ],
+      "dependency_ids": [
+        "tools/rules/hook.py@287b36c948566659970651226c92f7b8b056b434",
+        ".clang-tidy@5610bd13664ca77549993def241eb3edaffeff7a",
+        "AGENTS.md@9d1d8d2c29974bf45a68e866169fd1488c0b9a8b#Stage 3/Stage 4",
+        "GitHub Actions exact-head TDRP validators"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/claude-settings-posttool-hook-complete-read.md",
+      "behavior_contract": "Provide immediate changed-file policy feedback after supported editor/AI write operations while deriving authority from durable repository rules; feedback is scoped, actionable, fail-closed for decidable violations, provider-neutral in semantics, and never substitutes for exact-head GitHub Actions acceptance.",
+      "state_machine": "write/edit event -> identify actual changed path -> ignore unsupported/non-applicable file classes -> evaluate only durable adopted rules -> emit actionable violations and nonzero feedback status when decidable -> allow continuation when clean -> exact-head GitHub Actions remains acceptance authority",
+      "side_effects": [
+        "May emit diagnostics to the editing host.",
+        "May return nonzero feedback status for a detected violation.",
+        "Must not silently rewrite source or mutate unrelated files.",
+        "Must not mark migration/release acceptance."
+      ],
+      "failure_cases": [
+        "provider hook unavailable or disabled",
+        "payload/path ambiguity",
+        "adapter rule diverges from durable repository policy",
+        "source-specific Telegram C++ rule copied into Fabushi without adoption",
+        "adapter mutates code or unrelated files",
+        "local feedback treated as exact-head acceptance"
+      ],
+      "ui_disposition": "Not a shipping UI capability.",
+      "non_ui_responsibilities": [
+        "changed-file scoped fast feedback",
+        "durable-rule-derived policy checks",
+        "actionable fail-closed diagnostics",
+        "separation of editor feedback from canonical CI acceptance"
+      ],
+      "platform_delta": "Claude PostToolUse payloads, Edit/Write/MultiEdit matcher syntax, Python hook invocation, Telegram C++ suffixes, banned-function rules, comment budgets, .clang-tidy parsing and harness exemptions are source/provider-specific provenance. Fabushi retains only source-neutral repository edit-policy feedback semantics and GitHub Actions acceptance authority.",
+      "existing_owner_candidates": [
+        "AGENTS.md Stage 3 Implement / Stage 4 Verify",
+        "AGENTS.md Build and test execution environment",
+        "GitHub Actions TDRP validators",
+        "Claude-specific settings/hook runtime (rejected)",
+        "shipping Agent/Host/Runner (rejected)"
+      ],
+      "existing_owner": "AGENTS.md source-neutral Stage 3/4 repository edit-policy feedback plus GitHub Actions verification governance",
+      "rejected_existing_owners": [
+        "Build/test environment owns allowed execution authority but not post-edit feedback semantics.",
+        "GitHub Actions validators own acceptance, not editor/provider feedback configuration.",
+        "Claude-specific settings/hook would preserve provider-specific toolchain ownership.",
+        "shipping Agent/Host/Runner is product runtime, not repository authoring policy feedback."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository edit-policy feedback adapter governance"
+      ],
+      "target_language": "Repository governance / provider-neutral edit-policy feedback",
+      "language_rationale": "The source is a 17-line Claude provider configuration over a 216-line Telegram C++ policy hook. Applicable behavior is repository-development governance, not shipping Rust/TypeScript runtime.",
+      "command_event_contracts": [
+        "supported edit event binds to actual changed file",
+        "only adopted durable rules may be evaluated",
+        "decidable violations emit actionable feedback and nonzero status",
+        "missing/disabled local hook never counts as pass",
+        "GitHub Actions remains exact-head acceptance authority"
+      ],
+      "state_owner": "Durable repository policy and exact changed-file/diff identity; provider hook session state is non-authoritative.",
+      "lifecycle_owner": "Existing AGENTS.md Stage 3 Implement / Stage 4 Verify and GitHub Actions verification lifecycle.",
+      "persistence_and_restart": "No durable state belongs to the provider hook; restart/re-entry rereads current repository rules and current changed content.",
+      "concurrency_and_cancellation": "Feedback is per changed file/diff and must not serialize unrelated repository work; cancellation leaves no repository mutation.",
+      "security_boundary": "Editor hooks do not gain acceptance authority, broad mutation authority, privileged runtime access, or permission to weaken durable policy.",
+      "network_service_dependencies": [
+        "GitHub Actions exact-head verification for acceptance; no network dependency required for local feedback semantics"
+      ],
+      "service_owner": "Existing repository development/verification governance",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "toolchain-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required.",
+        "Recursive source disposition remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "Strict68 .claude/settings.json@d47520dc0e3b7e8d6067456e33062140c75f7c79 fully read: 17 lines / 321 bytes.",
+        "Dependency tools/rules/hook.py@287b36c948566659970651226c92f7b8b056b434 fully read: 216 lines; edit and --staged paths inspected.",
+        "Dependency .clang-tidy@5610bd13664ca77549993def241eb3edaffeff7a inspected for CustomFunctions authority consumed by hook.py.",
+        "Parent strict67 exact-head TDRP run 39727345205 success 61/61: authority 12403617551 sha256:56b2bd766d3225c081949b3b970b37213450a92456b20d6e369032137b00df42; closure 12403712779 sha256:c39396e9b2d7610e083c86c71b79038037749af6046be5216fe77e494be07bf2; reachability 12403797704 sha256:dd3aa566c0221ed5c53965bd29565eae9cea98b745d68f32040dc0fecd7088cb.",
+        "Parent strict67 exact-head Rust run 39727345305 success 6/6: artifact 12403896786 sha256:3420655c044486fdc961358b2e8cbf0b07df7585c5ce308713c9e356e746b467."
+      ],
+      "target_commit": "434d9caa53b1aa03fa3eb0cc4eafaa8ad542990f",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi source-neutral repository development lifecycle",
+      "composition_slot": "Repository edit-policy fast-feedback adapter",
+      "capability_component": "Provider-neutral changed-file policy feedback",
+      "variation_axes": [
+        "supported/unsupported edit event",
+        "applicable/non-applicable changed path",
+        "clean/violating edit",
+        "hook available/unavailable",
+        "durable rule match/divergence"
+      ],
+      "shared_owner_contracts": [
+        "AGENTS.md Stage 3 Implement",
+        "AGENTS.md Stage 4 Verify",
+        "AGENTS.md Build and test execution environment",
+        "GitHub Actions exact-head TDRP validators"
+      ],
+      "duplicate_root_check": "No Claude settings owner, Telegram C++ house-rule runtime, local acceptance authority, or shipping product owner is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository authoring feedback only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Provider-neutral edit-policy feedback adapter",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Each invocation rereads durable repository policy and actual changed content; provider session memory cannot advance repository quality state.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CLAUDE-SETTINGS-POSTTOOL-HOOK-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CLAUDE-SETTINGS-CHANGED-FILE-SCOPE-001",
+        "ORA-TDRP-CLAUDE-SETTINGS-DURABLE-RULE-AUTHORITY-001",
+        "ORA-TDRP-CLAUDE-SETTINGS-FAIL-CLOSED-FEEDBACK-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CLAUDE-SETTINGS-NO-PROVIDER-AUTHORITY-001",
+        "INV-TDRP-CLAUDE-SETTINGS-NO-AUTO-MUTATION-001",
+        "INV-TDRP-CLAUDE-SETTINGS-NO-LOCAL-ACCEPTANCE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CLAUDE-SETTINGS-EDIT-EVENT-001",
+        "CONTRACT-TDRP-CLAUDE-SETTINGS-POLICY-SOURCE-001",
+        "CONTRACT-TDRP-CLAUDE-SETTINGS-CI-SEPARATION-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CLAUDE-SETTINGS-HOOK-UNAVAILABLE-001",
+        "FAULT-TDRP-CLAUDE-SETTINGS-PAYLOAD-AMBIGUITY-001",
+        "FAULT-TDRP-CLAUDE-SETTINGS-POLICY-DIVERGENCE-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CLAUDE-SETTINGS-NO-BROAD-MUTATION-001",
+        "SEC-TDRP-CLAUDE-SETTINGS-NO-ACCEPTANCE-BYPASS-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-CLAUDE-SETTINGS-NO-CLAUDE-RUNTIME-001",
+        "REG-TDRP-CLAUDE-SETTINGS-NO-TELEGRAM-CPP-RULE-IMPORT-001"
+      ],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "locked settings.json + hook.py + .clang-tidy provenance + AGENTS Stage 3/4 + GitHub Actions exact-head boundary"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners for executable acceptance; read-only source inspection through GitHub"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact Claude settings, Telegram hook.py and .clang-tidy SHAs retained as source provenance only; provider syntax and Telegram C++ policy do not become Fabushi shipping identifiers.",
+      "notes": "Strict index 68 closes only .claude/settings.json. Counters become unknown=16235 unread=16210 omitted=0 responsibilities=86. hook.py and .clang-tidy remain independent inventory entries at their own source dispositions. Next strict root index 69 .devcontainer.json@16a1bcc1192bed87c5211da3dc63b0b0ed99a93e. Closure flags remain false.",
       "test_execution_evidence": []
     }
   ]
