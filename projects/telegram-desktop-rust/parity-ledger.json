@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
-  "target_commit": "e454838702f688c78540e7b3f53b8b427b2f5682",
+  "target_commit": "eb648bb5281fd25acae990f43e1ebb2d06718c4a",
   "coverage": {
     "source_entries_total": 16306,
-    "unknown": 16232,
-    "unread": 16207,
+    "unknown": 16231,
+    "unread": 16206,
     "omitted": 0,
-    "responsibilities_total": 89,
+    "responsibilities_total": 90,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -24350,6 +24350,241 @@
       "reviewer": null,
       "license_and_provenance": "Exact upstream CONTRIBUTING.md SHA is retained as source provenance. Telegram branding, project links, feature/UI/translation policy and master/rebase/squash/force-push instructions are not copied as Fabushi product identity, roadmap or publication authority.",
       "notes": "Strict index 71 closes only .github/CONTRIBUTING.md. Counters become unknown=16232 unread=16207 omitted=0 responsibilities=89. Linked README/help/translation destinations and issue-template files remain independent inventory entries at their own source dispositions. Next strict root index 72 .github/ISSUE_TEMPLATE/BUG_REPORT.yml@847b56e543fc28586ad281640218dfe8954d8bee. Closure flags remain false.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_path": ".github/ISSUE_TEMPLATE/BUG_REPORT.yml",
+      "source_blob_sha": "847b56e543fc28586ad281640218dfe8954d8bee",
+      "source_kind": "repository_defect_intake_schema",
+      "module_id": "tdesktop.github.issue_template.bug_report",
+      "responsibility_id": "TDRP-R9-BUG-REPORT-INTAKE-001",
+      "source_symbols": [
+        "Steps to reproduce",
+        "Expected behaviour",
+        "Actual behaviour",
+        "Operating system",
+        "Version of Telegram Desktop",
+        "Installation source",
+        "Crash ID",
+        "Logs"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-DEFECT-INTAKE",
+        "CAP-DEFECT-EVIDENCE-TRACEABILITY"
+      ],
+      "dependency_ids": [
+        "AGENTS.md@bac124386de7b84cdb0d9092673b1c8652a5d17b#Stage 0/1/2/4",
+        "projects/fabushi-communication-platform/quality/README.md@d24f59cb4fec3cf8bb8b0acf2eb9fa0483ac8cb0",
+        "projects/fabushi-communication-platform/quality/defect-regression-policy.md@b31ecd424cac2abf8a2322e2996bb1b53c561378",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70",
+        "docs/specs/fabushi-bot-communication-platform.md@bcee7a0b16cfa98eb0a6f67da8c3ee08eef77d3e#FBCP-QA-11/16/17"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/bug-report-intake-complete-read.md",
+      "behavior_contract": "Collect a structured, reproducible defect intake with exact affected revision/build/version, environment and distribution provenance, steps, expected versus actual behavior, frequency and available diagnostic evidence; then route it into the canonical defect/regression lifecycle without treating form submission as reproduction, severity, root cause, fix or release acceptance.",
+      "state_machine": "report unexpected behavior -> require steps + expected + actual + exact environment/build/distribution identity -> accept optional crash/log/screenshot/video evidence with redaction -> validate field completeness -> create or update canonical defect record -> severity/root-cause/regression/current-head evidence lifecycle -> close only under FQT-DEF-001",
+      "side_effects": [
+        "May create a repository issue/intake record with structured defect evidence.",
+        "May reject or return an incomplete/vague report for missing reproducibility or exact environment identity.",
+        "May attach redacted diagnostic evidence to the canonical defect lifecycle.",
+        "Must not mutate shipping product state, infer severity/cause/fix, collect secrets, or create release acceptance."
+      ],
+      "failure_cases": [
+        "required steps, expected behavior, actual behavior or exact environment/build identity are missing",
+        "report says latest without a reproducible exact version or commit identity",
+        "distribution/install provenance is omitted when behavior may be packaging-specific",
+        "logs, screenshots or crash evidence expose secrets, account data or personal information",
+        "Telegram-only Crash ID, beta-channel or viewlogs workflow is treated as a Fabushi contract",
+        "form submission is mistaken for reproduced defect, assigned severity, verified fix or release verdict",
+        "issue-form schema drifts from FQT-DEF-001 while becoming a second defect truth"
+      ],
+      "ui_disposition": "Repository issue-intake UI adapter only; not a shipping Fabushi product surface.",
+      "non_ui_responsibilities": [
+        "reproducible defect steps",
+        "expected-versus-actual oracle capture",
+        "exact revision/build/environment/distribution provenance",
+        "optional crash/log/screenshot/video evidence with redaction",
+        "routing into canonical severity/root-cause/regression/current-head closure lifecycle"
+      ],
+      "platform_delta": "Telegram hard-codes Telegram Desktop version language, supported installation sources, distro exclusions, a beta-enabled Crash ID workflow and viewlogs cheat code. Fabushi preserves only source-neutral defect evidence and provenance requirements; product diagnostics/log collection remain owned by their actual platform/runtime owners and repository issue forms remain replaceable intake adapters.",
+      "existing_owner_candidates": [
+        "projects/fabushi-communication-platform/quality/defect-regression-policy.md (selected)",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md (selected evidence contract)",
+        "AGENTS.md Stage 0/1/2/4 repository lifecycle (selected adapter governance)",
+        "GitHub issue form schema as canonical defect store (rejected)",
+        "shipping Settings/crash/log UI as repository defect owner (rejected)"
+      ],
+      "existing_owner": "FQT-DEF-001 canonical defect/regression policy plus existing quality evidence contract and root AGENTS repository lifecycle; any GitHub issue form is an optional adapter only",
+      "rejected_existing_owners": [
+        "A GitHub issue form cannot own severity, root cause, regression, current-head closure or release verdict.",
+        "Shipping Settings, logging and crash-diagnostic surfaces own product behavior, not repository defect truth.",
+        "Telegram beta Crash ID, viewlogs, distro support and installation-source policy are source-specific provenance."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/defect-regression-policy.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository defect-intake adapter governance",
+        "FQT-DEF-001 Record / Closure"
+      ],
+      "target_language": "Repository governance / structured defect evidence intake",
+      "language_rationale": "The source is declarative repository issue-form metadata, not shipping C++ product behavior. Applicable fields map to existing defect/evidence governance; provider YAML and Telegram diagnostic routes remain adapter provenance.",
+      "command_event_contracts": [
+        "required intake includes steps, expected behavior, actual behavior and exact affected environment/build identity",
+        "distribution/install source is recorded when packaging can affect reproduction",
+        "crash/log/screenshot/video evidence is optional, explicitly sourced and redacted",
+        "intake routes to FQT-DEF-001 severity/root-cause/regression/current-head closure",
+        "submission alone cannot mark reproduced, fixed, verified, accepted or released",
+        "missing/disabled issue form cannot be interpreted as no defect"
+      ],
+      "state_owner": "FQT-DEF-001 durable defect record and referenced exact-head evidence; the form submission is only an intake payload and GitHub labels/fields are non-authoritative adapter state.",
+      "lifecycle_owner": "Existing reproduce -> severity/root cause -> fix -> targeted/affected regression -> current-head evidence -> review/closure lifecycle in defect-regression-policy.md.",
+      "persistence_and_restart": "A resumed investigation reloads the durable defect record, exact source/build/environment identity and linked evidence; browser form state, labels and Telegram-specific diagnostic navigation are not canonical.",
+      "concurrency_and_cancellation": "Duplicate reports may be correlated by exact defect/evidence identity, but each intake remains immutable provenance. Cancelling an incomplete form creates no passing/closed defect state.",
+      "security_boundary": "Logs, screenshots, crash data and environment details may contain secrets, tokens, account identifiers or personal data and must be minimized/redacted before repository attachment. Intake grants no product telemetry, support-account, repository mutation, severity, fix or release authority.",
+      "network_service_dependencies": [
+        "GitHub Issues or an equivalent repository intake service when enabled"
+      ],
+      "service_owner": "Existing repository quality/defect governance; provider issue forms are replaceable adapters",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "policy-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required.",
+        "Recursive source disposition remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "Strict72 .github/ISSUE_TEMPLATE/BUG_REPORT.yml@847b56e543fc28586ad281640218dfe8954d8bee fully read: 74 lines / 2112 bytes.",
+        "Exact current Fabushi .github tree has scripts/ and workflows/ only; no parallel ISSUE_TEMPLATE owner exists.",
+        "FQT-DEF-001@b31ecd424cac2abf8a2322e2996bb1b53c561378 already requires SHA/environment, steps, expected/actual, frequency, screens/video/logs, requirement/oracle, severity, root cause, fix SHA, regressions, evidence and reviewer.",
+        "Parent strict71 exact-head TDRP run 39735542881 success 61/61: authority 12406837458 sha256:5deb940f4e394ae9d4b613ec414a07353b6759bb10830d3fc65e757471a44239; closure 12406714964 sha256:980682d1136c7e3c2888ef6ad54d9f323250133d93dccf4196f3d796eeae2e70; reachability 12406962101 sha256:92608d577c8a1f1dc48ed0841d18d82e499b50fc62282c177ca1638d37cff35d.",
+        "Parent strict71 exact-head Rust run 39735542846 success 6/6: artifact 12406738950 sha256:15292be0c02d8e450eb83efb741c72351b1d08d19375cf9324d3171dfeb2663d."
+      ],
+      "target_commit": "eb648bb5281fd25acae990f43e1ebb2d06718c4a",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository quality and defect lifecycle",
+      "composition_slot": "Structured repository defect-intake adapter before canonical defect triage",
+      "capability_component": "Provider-neutral reproducibility, environment and diagnostic-evidence intake contract",
+      "variation_axes": [
+        "crash/non-crash defect",
+        "complete/incomplete reproducibility",
+        "packaged/store/direct-build distribution",
+        "diagnostic evidence present/absent/redacted",
+        "single/duplicate report"
+      ],
+      "shared_owner_contracts": [
+        "FQT-DEF-001 defect record and closure policy",
+        "FQT-EVID-001 exact-head evidence contract",
+        "AGENTS.md Discover/Spec/Plan/Verify lifecycle",
+        "Fabushi account/privacy/log-redaction boundaries"
+      ],
+      "duplicate_root_check": "No Telegram bug-report product, second defect store, support service, telemetry owner, crash-ID authority or release gate is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository defect intake only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Optional repository issue-form adapter",
+      "route_contract": "intake adapter -> FQT-DEF-001 canonical defect record",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Provider issue-form behavior; not a shipping Fabushi responsive contract.",
+      "accessibility_contract": "When enabled, provider form controls and required-field errors must remain keyboard/screen-reader operable.",
+      "keyboard_contract": "Provider default issue-form keyboard behavior only; no product keyboard owner.",
+      "state_continuity_contract": "Canonical continuity lives in the durable defect record and exact evidence links; incomplete browser form state or provider labels cannot advance defect closure.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Provider emoji/labels are provenance only.",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-BUG-REPORT-INTAKE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-BUG-REPORT-REPRODUCIBILITY-001",
+        "ORA-TDRP-BUG-REPORT-EXACT-ENVIRONMENT-001",
+        "ORA-TDRP-BUG-REPORT-DIAGNOSTIC-PROVENANCE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-BUG-REPORT-NO-FORM-AS-DEFECT-TRUTH-001",
+        "INV-TDRP-BUG-REPORT-NO-TELEGRAM-DIAGNOSTIC-CONTRACT-001",
+        "INV-TDRP-BUG-REPORT-NO-SUBMISSION-AS-PASS-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-BUG-REPORT-REQUIRED-FIELDS-001",
+        "CONTRACT-TDRP-BUG-REPORT-OPTIONAL-EVIDENCE-001",
+        "CONTRACT-TDRP-BUG-REPORT-CANONICAL-ROUTING-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-BUG-REPORT-MISSING-EXACT-VERSION-001",
+        "FAULT-TDRP-BUG-REPORT-INCOMPLETE-REPRODUCTION-001",
+        "FAULT-TDRP-BUG-REPORT-SENSITIVE-LOG-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-BUG-REPORT-DIAGNOSTIC-REDACTION-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-BUG-REPORT-NO-SECOND-DEFECT-STORE-001",
+        "REG-TDRP-BUG-REPORT-NO-TELEGRAM-BRAND-POLICY-001"
+      ],
+      "release_gate_ids": [],
+      "test_fixture_ids": [
+        "locked BUG_REPORT.yml + parent exact-head quality policy/PR/ref/tree/blob/upstream lease + TDRP/Rust artifacts"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "release_gate_status": "open",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact upstream BUG_REPORT.yml SHA is retained as provenance. Telegram branding, labels, version/source choices, distro exclusions, beta Crash ID and viewlogs instructions are not copied as Fabushi product/support policy.",
+      "notes": "Strict index 72 closes only .github/ISSUE_TEMPLATE/BUG_REPORT.yml. Counters become unknown=16231 unread=16206 omitted=0 responsibilities=90. Actual product crash/log collection and later issue workflows remain independent inventory entries. Next strict root index 73 .github/ISSUE_TEMPLATE/FEATURE_REQUEST.yml@e2a8becdb9afcbd028b62378321458a2028fe348. Closure flags remain false.",
       "test_execution_evidence": []
     }
   ]

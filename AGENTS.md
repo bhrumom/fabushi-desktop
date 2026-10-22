@@ -147,6 +147,13 @@ Synchronization and publication must preserve live authority. Re-read the curren
 
 For FBCP/TDRP, executable acceptance remains exact-head GitHub-Actions-only. Telegram-specific contribution exclusions for features, translations, user interface, product roadmap, and branded links do not constrain Fabushi product evolution and are not copied into a second contribution owner. A clean local diff or locally tested change cannot replace current-head artifacts and post-publication head/ref/tree verification.
 
+
+##### Repository defect-intake adapter governance
+
+Repository issue forms are optional intake adapters into the canonical defect and regression lifecycle. A defect intake must preserve exact affected SHA/build/version, environment and distribution source; reproducible steps; expected versus actual behavior; frequency; and available screenshot, video, log, crash or diagnostic evidence. Required versus optional fields must be explicit, sensitive or personal data must be redacted, and the resulting record remains governed by `projects/fabushi-communication-platform/quality/defect-regression-policy.md` for severity, root cause, regression coverage and current-head closure evidence.
+
+Provider field syntax, labels, emoji, Telegram version/install-source choices, beta-channel Crash ID flow, `viewlogs` cheat code, distro-support exclusions and branded help links are source-specific provenance, not Fabushi policy. Submitting a form does not prove reproduction, severity, cause, fix or acceptance, and absence or disablement of a form cannot be interpreted as absence of a defect. The canonical defect record and exact-head evidence remain authoritative; an issue form must not become a second findings store, support service, product telemetry owner or release gate.
+
 #### Stage 4 — Verify
 - Execute or inspect the verification required by the spec and repository workflow.
 - Verify the exact source revision being accepted.
