@@ -78,11 +78,12 @@ jobs:
           rustup toolchain install 1.97.1 --profile minimal
           sudo apt-get update
           sudo apt-get install -y libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
-          test ! -e source/host/Cargo.lock
+          host_lock_present=false
+          if test -e source/host/Cargo.lock; then host_lock_present=true; fi
           test ! -e source/host/target
           export CARGO_TARGET_DIR="$RUNNER_TEMP/fdn-g15-host-cargo-target"
           cargo +1.97.1 test --manifest-path source/host/Cargo.toml --test network_worker_process_contract
-          rm -f source/host/Cargo.lock
+          if test "$host_lock_present" = false; then rm -f source/host/Cargo.lock; fi
           test ! -e source/host/target
           test "$(git status --porcelain)" = ""
 
