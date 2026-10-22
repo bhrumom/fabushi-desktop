@@ -931,10 +931,10 @@
   "coverage": {
     "root_source_entries_total": 6820,
     "recursive_source_entries_total": 16306,
-    "unknown_minimum": 16229,
-    "unread_minimum": 16204,
+    "unknown_minimum": 16228,
+    "unread_minimum": 16203,
     "omitted_known": 0,
-    "note": "Live dev authority 5c674f1f6a0f6ace55b67f8bc295138680fe588b/09a421891474be0da279f44a5bf8e0dcf3bc270a remains unaccepted. Strict index 74 .github/ISSUE_TEMPLATE/config.yml@1b864704be6a3e3aafdb1e02519bec84886942ce is fully read and mapped to existing typed defect/proposal intake and canonical Identity/Account, Settings/Permission and domain-support owners. Blank-form disablement and typed routing are adapter responsibilities; Telegram product URLs, brand, emoji, refusal copy and external support topology remain provenance only. Routing cannot prove closure, rejection or acceptance and cannot suppress security/privacy/accessibility/data-loss reports. Counters unknown=16,229, unread=16,204, omitted=0. Next strict root index 75 .github/dependabot.yml@5ace4600a1f26e6892982f3e2f069ebfab108d87. baseline_identity_accepted=false and source_closure_ready=false pending fresh exact-head Actions."
+    "note": "Live dev authority 5c674f1f6a0f6ace55b67f8bc295138680fe588b/09a421891474be0da279f44a5bf8e0dcf3bc270a remains unaccepted. Strict index 75 .github/dependabot.yml@5ace4600a1f26e6892982f3e2f069ebfab108d87 is fully read and mapped to existing source-neutral repository dependency/workflow ownership, review lifecycle and exact-head GitHub Actions verification. Dependabot provider syntax, github-actions ecosystem selection, root-directory scope and weekly cadence remain provenance only; missing/stale bot output is not a clean dependency signal and proposals do not own merge, release or migration acceptance. Counters unknown=16,228, unread=16,203, omitted=0. Next strict root index 76 .github/scripts/generate_changelog.py@6cdd12652d31b2a47ed9a8ef906308af59cca3d0. baseline_identity_accepted=false and source_closure_ready=false pending fresh exact-head Actions."
   },
   "acceptance": {
     "baseline_ready": false,

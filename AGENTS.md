@@ -168,6 +168,14 @@ Repository issue configuration is an optional routing adapter over the canonical
 
 Provider YAML, labels, emoji, Telegram brands, mobile/UI/translation/account/group-chat URLs, and source-specific refusal copy are provenance only. Fabushi routes account/login concerns through canonical Identity/Account support, privacy/settings concerns through existing Settings/Permission owners, defects through FQT-DEF-001, and product proposals through the durable Discover → Spec → Architecture/Plan lifecycle. An external link must not become a second support product, identity owner, issue store, roadmap or acceptance authority; a disabled blank form cannot suppress security, accessibility, privacy, data-loss or release-critical reports.
 
+##### Repository dependency-update proposal adapter governance
+
+Automated dependency-update services are optional proposal adapters over the repository's existing dependency declarations, workflow definitions, review process, and exact-head verification. An adapter may scan an explicitly named ecosystem and directory on a bounded cadence, compare declared versions against available updates, and open a reviewable change; the manifest/workflow and its canonical owner remain authoritative, not the bot configuration or provider queue.
+
+Every proposed update must preserve exact dependency provenance, scope only the declared dependency surface, expose the resulting diff for ordinary review, and run the same applicable compatibility, security, licensing, packaging and exact-head checks as a human-authored dependency change. Provider outages, disabled schedules, stale queues, rate limits, or an empty proposal list are incomplete maintenance signals rather than proof that dependencies are current. Automatic proposal creation must not imply automatic merge, release approval, source closure, or migration acceptance.
+
+For FBCP/TDRP, executable validation remains exact-head GitHub-Actions-only. Upstream Dependabot provider syntax, the `github-actions` ecosystem selector, root-directory choice, and weekly cadence are provenance only unless current Fabushi dependency owners independently adopt the same adapter settings; no dependency bot becomes a second package, workflow, release, security, or acceptance owner.
+
 #### Stage 4 — Verify
 - Execute or inspect the verification required by the spec and repository workflow.
 - Verify the exact source revision being accepted.

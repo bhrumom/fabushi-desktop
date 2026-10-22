@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
-  "target_commit": "1c21f76f69373b938b819ac379eeddfac7bb6868",
+  "target_commit": "69c8375ba01f5699096d085a45a37c4a5d13b441",
   "coverage": {
     "source_entries_total": 16306,
-    "unknown": 16229,
-    "unread": 16204,
+    "unknown": 16228,
+    "unread": 16203,
     "omitted": 0,
-    "responsibilities_total": 92,
+    "responsibilities_total": 93,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -25062,6 +25062,230 @@
       "reviewer": null,
       "license_and_provenance": "Exact upstream config.yml SHA is retained as provenance. Telegram URLs, product categories, support topology, branding, emoji and refusal copy are not copied as Fabushi domain ownership or product policy.",
       "notes": "Strict index 74 closes only .github/ISSUE_TEMPLATE/config.yml. Counters become unknown=16229 unread=16204 omitted=0 responsibilities=92. Actual domain services, support surfaces and issue-form files remain independent inventory entries. Next strict root index 75 .github/dependabot.yml@5ace4600a1f26e6892982f3e2f069ebfab108d87. Closure flags remain false.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "5c674f1f6a0f6ace55b67f8bc295138680fe588b",
+      "source_path": ".github/dependabot.yml",
+      "source_blob_sha": "5ace4600a1f26e6892982f3e2f069ebfab108d87",
+      "source_kind": "repository_dependency_update_proposal_config",
+      "module_id": "tdesktop.github.dependabot",
+      "responsibility_id": "TDRP-R9-DEPENDENCY-UPDATE-PROPOSAL-001",
+      "source_symbols": [
+        "version: 2",
+        "package-ecosystem: github-actions",
+        "directory: /",
+        "schedule.interval: weekly"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-DEPENDENCY-UPDATE-PROPOSAL",
+        "CAP-GITHUB-ACTIONS-DEPENDENCY-MAINTENANCE"
+      ],
+      "dependency_ids": [
+        "AGENTS.md@e94952bdf075bf87fa4e9f9a003b2d97a3e34066#repository contribution and exact-head verification governance",
+        ".github/workflows@621e4f4a157858d784908ef397fab1eaeafb621a#current GitHub Actions dependency consumers"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/dependency-update-proposal-complete-read.md",
+      "behavior_contract": "Treat dependency-update automation as a bounded proposal adapter over existing dependency declarations and workflow owners: scan only declared ecosystems/directories, produce reviewable exact-version changes, preserve provenance, and require ordinary review plus applicable exact-head checks before merge or release; provider state must never become dependency truth or acceptance authority.",
+      "state_machine": "scheduled or manually triggered provider scan -> resolve declared ecosystem/directory -> compare current declared dependency refs -> produce zero or more reviewable update proposals -> canonical dependency/workflow owner reviews scope, provenance, compatibility/security/license impact -> exact-head Actions verifies accepted change -> ordinary atomic merge/release lifecycle; provider outage/staleness leaves maintenance status incomplete",
+      "side_effects": [
+        "May create reviewable dependency/workflow update proposals.",
+        "May cause normal CI/security/license/package checks to run for a proposed dependency change.",
+        "Must not directly mutate canonical dependency state without ordinary repository publication.",
+        "Must not auto-advance release, migration closure or acceptance."
+      ],
+      "failure_cases": [
+        "provider is unavailable, disabled, rate-limited or stale and the absence of proposals is treated as proof dependencies are current",
+        "ecosystem or directory scope is broader than the canonical dependency owner",
+        "an update proposal changes unrelated files or loses the prior exact version/provenance",
+        "automated proposal creation is treated as permission to auto-merge or release",
+        "Telegram weekly cadence/provider syntax is copied as mandatory Fabushi policy without an owned need",
+        "dependency update bypasses compatibility, security, license, packaging or exact-head regression checks"
+      ],
+      "ui_disposition": "Repository dependency-maintenance adapter only; not a shipping Fabushi UI capability.",
+      "non_ui_responsibilities": [
+        "bounded dependency update discovery",
+        "reviewable exact-version proposal creation",
+        "dependency provenance preservation",
+        "ordinary owner review and exact-head verification",
+        "provider failure/staleness fail-closed semantics"
+      ],
+      "platform_delta": "Upstream config requests weekly Dependabot proposals for GitHub Actions at repository root. Fabushi currently has no .github/dependabot.yml; it retains provider-neutral dependency/workflow ownership and review/verification semantics without creating a second package/release/security owner or copying Telegram cadence as product policy.",
+      "existing_owner_candidates": [
+        "AGENTS.md repository contribution/atomic-change and exact-head verification governance (selected)",
+        "current dependency manifests/lockfiles and .github/workflows owners (selected)",
+        "new Dependabot-specific dependency authority (rejected)",
+        "release workflow as dependency truth (rejected)"
+      ],
+      "existing_owner": "Root AGENTS.md repository change/verification governance plus the existing manifest, lockfile and GitHub Actions workflow owners that already own declared dependencies and accepted updates",
+      "rejected_existing_owners": [
+        "Dependabot configuration is a replaceable provider adapter and cannot own canonical dependency state.",
+        "Release workflows consume already-reviewed dependencies and cannot become the package/update source of truth.",
+        "A source-specific Telegram maintenance bot must not create a second dependency, security, release or acceptance owner."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository dependency-update proposal adapter governance"
+      ],
+      "target_language": "Repository governance / provider-neutral dependency-update proposal policy",
+      "language_rationale": "The source is repository automation metadata rather than shipping C++ product logic. Applicable responsibilities belong to source-neutral dependency/workflow governance and exact-head verification, not a Rust/React runtime.",
+      "command_event_contracts": [
+        "dependency scans are bounded to explicitly declared ecosystems/directories",
+        "proposals preserve prior/new exact refs and remain reviewable before publication",
+        "provider outage, stale queue or zero proposals cannot prove dependencies are current",
+        "accepted dependency changes run applicable compatibility/security/license/package/exact-head checks",
+        "proposal creation cannot itself merge, release or advance source closure/acceptance",
+        "Telegram provider syntax and weekly cadence remain provenance unless independently adopted"
+      ],
+      "state_owner": "Canonical manifest/lockfile/workflow contents and their existing owners; provider queue/configuration is non-authoritative proposal state.",
+      "lifecycle_owner": "Existing repository dependency/workflow review and atomic publication lifecycle followed by exact-head CI and release gates.",
+      "persistence_and_restart": "Restarting or changing the provider reconstructs proposals from durable dependency declarations; provider queue state is disposable and cannot replace repository history or exact refs.",
+      "concurrency_and_cancellation": "Concurrent proposals for the same dependency must reconcile against the latest canonical ref before publication. Closed/cancelled/stale proposals leave canonical dependency state unchanged and must not be treated as accepted.",
+      "security_boundary": "Dependency updates cross supply-chain and executable-workflow trust boundaries; preserve exact provenance, permissions and license/security review, and never grant a bot broader merge/release authority merely because it can propose a version bump.",
+      "network_service_dependencies": [
+        "Optional dependency update provider/API for proposal discovery; repository GitHub Actions and package registries remain subject to their existing owners and exact-head checks."
+      ],
+      "service_owner": "Existing repository dependency/workflow governance; update provider is a replaceable proposal adapter",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "policy-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required.",
+        "Recursive source disposition remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "Strict75 .github/dependabot.yml@5ace4600a1f26e6892982f3e2f069ebfab108d87 fully read: 6 lines / 118 bytes.",
+        "Source contract is bounded to Dependabot version 2, github-actions ecosystem, repository root and weekly cadence.",
+        "Exact current Fabushi .github tree has no parallel dependabot.yml; .github/workflows tree 621e4f4a157858d784908ef397fab1eaeafb621a remains the existing workflow dependency consumer surface and AGENTS.md@e94952bdf075bf87fa4e9f9a003b2d97a3e34066 owns ordinary atomic changes and exact-head verification.",
+        "Parent strict74 exact-head TDRP run 39742062788 success 61/61: authority 12409297677 sha256:6f545db7b868e955b66834f2f3557868ff20bb174d4c9ff5ec925668a7fba35f; closure 12409578417 sha256:9f7eb73d3fb61d04fefc4388e7a7c2c2098dd90821e0bbca6bdc2b8a27910ba2; reachability 12409124345 sha256:db8d7ce0dbf202bd394bf36f2b71aff2ac98f6f15d4002d943afacff902d8791.",
+        "Parent strict74 exact-head Rust run 39742062809 success 6/6: artifact 12410031793 sha256:4dddbb8bd245d450a2b1b9e79f9481a2b628a1626714d9b080e31388a85f9e1b."
+      ],
+      "target_commit": "69c8375ba01f5699096d085a45a37c4a5d13b441",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository dependency/workflow ownership and exact-head verification lifecycle",
+      "composition_slot": "Optional dependency-update proposal adapter before ordinary review/publication",
+      "capability_component": "Provider-neutral dependency update discovery, proposal and fail-closed maintenance semantics",
+      "variation_axes": [
+        "provider enabled/disabled/unavailable/stale",
+        "dependency update available/no update",
+        "single/conflicting concurrent proposals",
+        "workflow/package ecosystem and directory scope",
+        "review accepted/rejected/superseded"
+      ],
+      "shared_owner_contracts": [
+        "AGENTS.md repository contribution and atomic change governance",
+        "AGENTS.md exact-head verification lifecycle",
+        "canonical manifest/lockfile/workflow dependency owners"
+      ],
+      "duplicate_root_check": "No Dependabot-specific package owner, dependency store, release root, security authority, workflow runtime or acceptance gate is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository dependency-maintenance proposals only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Optional repository dependency-update proposal adapter",
+      "route_contract": "provider scan -> bounded reviewable proposal -> canonical owner review -> exact-head verification -> ordinary publication",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Canonical dependency state survives provider restarts because manifests/workflows and repository history remain authoritative; stale provider proposals must rebase/reconcile before publication.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-DEPENDENCY-UPDATE-PROPOSAL-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-DEPENDENCY-UPDATE-BOUNDED-SCOPE-001",
+        "ORA-TDRP-DEPENDENCY-UPDATE-REVIEWABLE-PROPOSAL-001",
+        "ORA-TDRP-DEPENDENCY-UPDATE-PROVIDER-FAIL-CLOSED-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-DEPENDENCY-UPDATE-NO-AUTO-ACCEPT-001",
+        "INV-TDRP-DEPENDENCY-UPDATE-NO-SECOND-OWNER-001",
+        "INV-TDRP-DEPENDENCY-UPDATE-NO-PROVIDER-AS-CLEAN-STATE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-DEPENDENCY-UPDATE-ECOSYSTEM-SCOPE-001",
+        "CONTRACT-TDRP-DEPENDENCY-UPDATE-PROVENANCE-001",
+        "CONTRACT-TDRP-DEPENDENCY-UPDATE-OWNER-REVIEW-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-DEPENDENCY-UPDATE-PROVIDER-UNAVAILABLE-001",
+        "FAULT-TDRP-DEPENDENCY-UPDATE-STALE-PROPOSAL-001",
+        "FAULT-TDRP-DEPENDENCY-UPDATE-CONFLICTING-PROPOSALS-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-DEPENDENCY-UPDATE-SUPPLY-CHAIN-PROVENANCE-001",
+        "SEC-TDRP-DEPENDENCY-UPDATE-NO-BOT-RELEASE-AUTHORITY-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-DEPENDENCY-UPDATE-NO-DEPENDABOT-RUNTIME-001",
+        "REG-TDRP-DEPENDENCY-UPDATE-EXACT-HEAD-GATES-001"
+      ],
+      "release_gate_ids": [],
+      "test_fixture_ids": [
+        "locked dependabot.yml + parent exact-head dependency/workflow/PR/ref/tree/blob/upstream lease + TDRP/Rust artifacts"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "release_gate_status": "open",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact upstream dependabot.yml SHA is retained as source provenance. Dependabot provider syntax, GitHub Actions ecosystem selector, root-directory setting and weekly cadence are not copied as Fabushi product/runtime identifiers or canonical dependency ownership.",
+      "notes": "Strict index 75 closes only .github/dependabot.yml. Counters become unknown=16228 unread=16203 omitted=0 responsibilities=93. Individual workflows, dependency manifests/locks and later maintenance scripts remain independent inventory entries. Next strict root index 76 .github/scripts/generate_changelog.py@6cdd12652d31b2a47ed9a8ef906308af59cca3d0. Closure flags remain false.",
       "test_execution_evidence": []
     }
   ]
