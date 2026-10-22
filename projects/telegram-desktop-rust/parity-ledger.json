@@ -28415,7 +28415,7 @@
         "AGENTS.md"
       ],
       "fabushi_target_symbols": [
-        "For FBCP/TDRP, executable validation remains exact-head GitHub-Actions-only."
+        "FBCP/TDRP executable validation remains GitHub-Actions-only and must bind to the exact resulting head."
       ],
       "target_language": "Repository build/test/evidence governance",
       "language_rationale": "macOS CI orchestration maps to existing exact-head build/release evidence governance, not production Rust/React.",
