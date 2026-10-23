@@ -29222,7 +29222,7 @@
         "projects/fabushi-communication-platform/quality/defect-regression-policy.md"
       ],
       "fabushi_target_symbols": [
-        "## Closure/flaky"
+        "reproduce->fix->targeted regression->affected regression->current-head evidence 才 close。Flaky 是 defect；critical gate flaky 即 block，禁止 rerun-until-green。"
       ],
       "target_language": "Repository governance / issue-maintenance provenance",
       "language_rationale": "The source is GitHub issue automation rather than shipping product logic; applicable behavior is bounded by the existing source-neutral defect policy and provider-adapter governance.",
