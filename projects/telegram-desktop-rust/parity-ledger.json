@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "e4c9f80158f6bcd5d3dc4772f6bd4fec1a73eea5",
+  "target_commit": "3d7acfed8ffbf17b344c2d1594dc6bb7f369175b",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16276,
-    "unread": 16251,
+    "unknown": 16275,
+    "unread": 16250,
     "omitted": 0,
-    "responsibilities_total": 118,
+    "responsibilities_total": 119,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -31771,6 +31771,251 @@
       "reviewer": null,
       "license_and_provenance": "Exact upstream .gitmodules blob 2a71e861fab57dfd74d66e787867f2ede203a099 is retained as source provenance. Its 36 repository URLs are location metadata only; immutable child identity is the exact gitlink commit recorded in the parent tree/upstream.lock, and each child repository retains independent license/provenance obligations. No child code or source-branded runtime owner is adopted by this mapping.",
       "notes": "Strict index 100 closes only .gitmodules. Counters become unknown=16,276 unread=16,251 omitted=0 responsibilities=118. Next strict root index 101 AGENTS.md@b3ce86744f7d889a5dee63dbaefa3353801c4c32. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "AGENTS.md",
+      "source_blob_sha": "b3ce86744f7d889a5dee63dbaefa3353801c4c32",
+      "source_kind": "repository_agent_development_guidance",
+      "module_id": "tdesktop.agents",
+      "responsibility_id": "TDRP-R9-REPOSITORY-AGENT-GUIDANCE-PROVENANCE-001",
+      "source_symbols": [
+        "repository-wide AI task and checkout ownership guidance",
+        "build/configuration/platform and dependency-backport rules",
+        "local storage serialization append-only compatibility guidance",
+        "API callback lifetime/cancellation ownership guidance",
+        "UI style/input-method/localization/RPL state guidance",
+        "source atlas, code-health, comment/style and commit-policy guidance"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-DEVELOPMENT-GOVERNANCE",
+        "CAP-EXISTING-OWNER-FIRST-MIGRATION-GOVERNANCE",
+        "CAP-EXACT-HEAD-VERIFICATION-GOVERNANCE",
+        "CAP-PRODUCT-RESPONSIBILITY-ORACLE-PROVENANCE"
+      ],
+      "dependency_ids": [
+        "AGENTS.md",
+        "projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md",
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md",
+        ".github/workflows/tdrp-revision9-authority.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/agents-repository-guidance-complete-read.md",
+      "behavior_contract": "Treat upstream AGENTS.md as repository/development guidance and product-oracle provenance, not as a shipping Telegram runtime or proof that documented product responsibilities are implemented. Absorb source-neutral governance into existing Fabushi repository/TDRP owners; leave each described product responsibility open until its actual source files and symbols independently complete the mandatory source->responsibility->owner->production->test->evidence chain.",
+      "state_machine": "read exact upstream AGENTS.md -> classify repository-only guidance versus product-behavior guidance -> resolve each source-neutral governance responsibility to current Fabushi owners -> retain product-behavior statements as provenance/oracle pointers only -> prohibit parallel Telegram task/build/UI/network/persistence owners -> require parent exact-head Actions -> publish mapped-open accounting -> continue with next strict source entry",
+      "side_effects": [
+        "Adds durable provenance for the upstream repository guidance source entry.",
+        "Reuses existing Fabushi/TDRP governance instead of copying Telegram-specific task/build/network/UI systems.",
+        "Records product-behavior guidance without promoting it to implemented or verified status.",
+        "Preserves baseline_identity_accepted=false and source_closure_ready=false."
+      ],
+      "failure_cases": [
+        "documented Telegram product behavior is counted as implemented without reading its real source owner",
+        "Telegram-specific AI task queue or build graph is copied into Fabushi as a second owner",
+        "Telegram MTProto/API syntax is treated as Fabushi shipping network architecture",
+        "Qt/style/input-method/localization guidance is used to bypass Fabushi canonical UI/platform owners",
+        "repository guidance is treated as source closure or release acceptance",
+        "stale guidance overrides live Fabushi source-of-truth, specs or exact-head production owners"
+      ],
+      "ui_disposition": "No standalone shipping UI surface. UI-related guidance is provenance for later source responsibilities and must map into Fabushi canonical UI/platform owners when those source files are reached.",
+      "non_ui_responsibilities": [
+        "repository development and build/test governance",
+        "existing-owner-first and single-target migration governance",
+        "serialization and async-lifetime requirement provenance",
+        "platform/input-method/localization/reactive-state requirement provenance",
+        "fail-closed separation between documentation and production evidence"
+      ],
+      "platform_delta": "Telegram-specific WSL/Qt/CMake/platform commands and UI style mechanics remain upstream provenance. Fabushi keeps its existing platform/build/UI architecture and only absorbs applicable behavioral constraints through the responsible current owners.",
+      "existing_owner_candidates": [
+        "root AGENTS.md single-target/existing-owner-first migration governance (selected)",
+        "projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md source-authority/existing-owner-first chain (selected)",
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md evidence/status boundary (selected)",
+        "TDRP exact-head GitHub Actions workflows (selected executable evidence lifecycle)",
+        "new Telegram AI task/agent runtime (rejected)",
+        "new Telegram build/platform runtime owner (rejected)",
+        "new Telegram persistence/network/UI owner (rejected)"
+      ],
+      "existing_owner": "Existing Fabushi repository governance plus TDRP source-of-truth/spec and exact-head GitHub Actions evidence lifecycle",
+      "rejected_existing_owners": [
+        "Shipping product owners cannot be declared implemented solely from guidance text; their actual source responsibilities remain open.",
+        "A Telegram-specific task/agent owner would duplicate repository workflow governance.",
+        "A Telegram-specific build/platform/network/UI/persistence owner would violate current canonical Fabushi ownership."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "AGENTS.md",
+        "projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md",
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md"
+      ],
+      "fabushi_target_symbols": [
+        "**PR #20 / canonical Fabushi is the only target product architecture.**",
+        "**FBCP-001 / TDRP-001 project exception:** all executable verification for this migration project runs **only in GitHub Actions**.",
+        "上游是完整产品行为、状态机、边界条件与工程责任的 source authority，不是最终 runtime/network/product。",
+        "只有无产品运行责任的文档/法律/纯来源记录能以有依据的 non-runtime accounted 闭合；任何承载产品行为的文件/子责任都必须有真实实现/替代证据。"
+      ],
+      "target_language": "Repository governance Markdown + TDRP JSON evidence + GitHub Actions",
+      "language_rationale": "The strict101 source entry is repository/development guidance. Its applicable source-neutral responsibility is governance/evidence policy, while product responsibilities it mentions remain mapped only through their actual source owners later; no Rust/React shipping implementation is justified by this document alone.",
+      "command_event_contracts": [
+        "classify upstream guidance as repository governance versus product-behavior provenance",
+        "reuse current Fabushi single-target/existing-owner-first rules",
+        "require all TDRP executable validation in GitHub Actions",
+        "do not promote documented product responsibilities without actual source/production evidence",
+        "preserve current source-closure and acceptance false/open states",
+        "continue strict root accounting in source order"
+      ],
+      "state_owner": "Current Fabushi repository governance and TDRP source-of-truth/spec own durable migration policy; the upstream AGENTS blob remains immutable provenance only.",
+      "lifecycle_owner": "Existing TDRP strict read-through, exact-head evidence and atomic ledger/index/lock publication lifecycle.",
+      "persistence_and_restart": "Durable policy is the committed Fabushi AGENTS/source-of-truth/spec plus ledger/dossier provenance. Any runner/worktree/task-tool state described upstream is non-authoritative for Fabushi and may be reconstructed only from committed exact-head sources.",
+      "concurrency_and_cancellation": "Independent read-only audits may proceed while parent Actions run, but publication is serialized behind the exact-head parent gate and CAS branch lease. Cancellation or lease drift leaves the row unpublished rather than partially advancing counters.",
+      "security_boundary": "Repository guidance is not authentication, authorization, secret storage or trust proof. Security-sensitive product behavior mentioned in the guide remains subject to its actual source owner, service boundary and independent security evidence.",
+      "network_service_dependencies": [],
+      "service_owner": "No shipping service; existing repository/TDRP governance only.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "policy-equivalent",
+      "blockers": [
+        "Fresh strict101 child exact-head TDRP/Rust Actions are required.",
+        "Product responsibilities described by AGENTS.md remain open until their actual source owners are migrated.",
+        "Recursive source disposition remains open with unknown/unread entries."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "AGENTS.md@b3ce86744f7d889a5dee63dbaefa3353801c4c32 fully read: 1006 lines / 46865 bytes.",
+        "Existing-owner uniqueness: source path, source blob and responsibility ID have zero prior ledger rows; each of four selected target statements occurs exactly once in its exact-head owner and has zero prior target-path+symbol ownership rows.",
+        "Live main 7394f6dc7687f9b986ee5589d40aa680ce23b90a changed root AGENTS only with OCRM/OpenClaw-specific additions; both selected TDRP AGENTS target statements remain unique there.",
+        "Parent 3d7acfed8ffbf17b344c2d1594dc6bb7f369175b/tree 97a9bb40961e54a8859dcfd1e6656ba97e8f2b2e: TDRP run 39904761894 is 61/61 success; authority 12480098862 sha256:1bff2a18d5e051fcae134be7c3c1fd12e6c9ae730c884344221af6311648cf1d; closure 12481140109 sha256:c263a0690a4ba1386a27c53af4e5fa73b1f75b0f2105f238824bb13f4e27fa9c; reachability 12480093227 sha256:0e94c5900188b162c9101a413f2e2b24133fbc35b0a89441fe77b59359aac4b8.",
+        "Parent Rust desktop runtime run 39904761917 is 6/6 success; artifact 12480029114 sha256:1d04cfdbbadd6651b7aa5ddc53dd81546806712c318c377dba6ab60d1b5fadee.",
+        "Live upstream dev remained a7f453612f4896ac04d0007a36ab0d377e5bcbcf/tree c539eabfb05e7dcaa84821ac44c35cdfb6551ae5 immediately before publication."
+      ],
+      "target_commit": "3d7acfed8ffbf17b344c2d1594dc6bb7f369175b",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi TDRP source-authority and migration-governance lifecycle",
+      "composition_slot": "Repository guidance provenance and documentation-versus-production boundary",
+      "capability_component": "Source-neutral repository/TDRP migration governance",
+      "variation_axes": [
+        "repository-only guidance versus product-behavior provenance",
+        "source-neutral rule versus Telegram-specific mechanic",
+        "documented requirement versus production implementation",
+        "live exact-head owner versus stale guidance"
+      ],
+      "shared_owner_contracts": [
+        "single canonical Fabushi target architecture",
+        "existing-owner-first responsibility mapping",
+        "GitHub-Actions-only TDRP executable evidence",
+        "documentation cannot fabricate production/source closure"
+      ],
+      "duplicate_root_check": "No Telegram agent/task runtime, second build graph, second persistence/network/UI owner or second acceptance root is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository migration governance only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Source-neutral migration governance and provenance",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Guidance changes require a new exact upstream blob and fresh reconciliation; product implementation status never advances from documentation alone.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-REPOSITORY-AGENT-GUIDANCE-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-AGENTS-GOVERNANCE-VS-PRODUCT-SEPARATION-001",
+        "ORA-TDRP-AGENTS-EXISTING-OWNER-FIRST-001",
+        "ORA-TDRP-AGENTS-GITHUB-ACTIONS-ONLY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-AGENTS-NO-SECOND-RUNTIME-001",
+        "INV-TDRP-AGENTS-NO-DOCUMENT-AS-PRODUCTION-EVIDENCE-001",
+        "INV-TDRP-AGENTS-NO-SOURCE-CLOSURE-FABRICATION-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-AGENTS-GOVERNANCE-MAPPING-001",
+        "CONTRACT-TDRP-AGENTS-PRODUCT-RESPONSIBILITY-REMAINS-OPEN-001",
+        "CONTRACT-TDRP-AGENTS-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-AGENTS-STALE-GUIDANCE-001",
+        "FAULT-TDRP-AGENTS-PRODUCT-DOC-PROMOTION-001",
+        "FAULT-TDRP-AGENTS-DUPLICATE-OWNER-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-AGENTS-GUIDANCE-NOT-AUTHORIZATION-BOUNDARY-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-AGENTS-NO-SOURCE-OMISSION-001",
+        "REG-TDRP-AGENTS-NO-BOT-OWNER-REGRESSION-001"
+      ],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-MODULE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "locked upstream AGENTS.md + current Fabushi governance/spec + parent exact-head Actions"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "release_gate_status": "open",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact upstream AGENTS.md blob b3ce86744f7d889a5dee63dbaefa3353801c4c32 is retained as repository-guidance provenance under the pinned upstream source. Telegram-specific task/build/API/UI mechanics are not copied as Fabushi product/runtime ownership; product responsibilities mentioned by the guide remain independently accountable through their actual source files.",
+      "notes": "Strict index 101 closes only AGENTS.md as repository-guidance/product-oracle provenance. Counters become unknown=16,275 unread=16,250 omitted=0 responsibilities=119. Next strict root index 102 CLAUDE.md@f8564d18cef4b9c545767025995d31deb3fa7155. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required.",
       "test_execution_evidence": []
     }
   ]
