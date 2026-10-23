@@ -14,3 +14,9 @@
 Preflight found zero prior LEGAL path/blob/responsibility rows, zero LICENSE rows, and exactly one occurrence of each selected target symbol. LICENSE remains strict106; no transitive closure is claimed. Legal documentation cannot prove runtime, packaging, signed artifact identity or independent release ACCEPT.
 
 Closing strict105 yields unknown=16,271, unread=16,246, omitted=0, responsibilities=123. Fresh child exact-head TDRP/Rust evidence is required.
+
+## Traceability
+- Requirement: `TDRP-R9-UPSTREAM-LEGAL-LICENSE-PROVENANCE-001`.
+- Oracles: `ORA-TDRP-LEGAL-EXACT-SOURCE-001`, `ORA-TDRP-LEGAL-LICENSE-DEPENDENCY-001`, `ORA-TDRP-LEGAL-NO-PRODUCT-AUTHORITY-001`.
+- Invariants: `INV-TDRP-LEGAL-NO-OMISSION-001`, `INV-TDRP-LEGAL-NO-TRANSITIVE-LICENSE-CLOSURE-001`, `INV-TDRP-LEGAL-NO-RELEASE-ACCEPT-001`.
+
