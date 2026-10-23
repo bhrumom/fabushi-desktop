@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "078d466c07ffcd90b4bd94fed59e1fa27086191d",
+  "target_commit": "82d88e3b8f16f162f2ea25b2f0ed8c86d5953d12",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16234,
-    "unread": 16209,
+    "unknown": 16233,
+    "unread": 16208,
     "omitted": 0,
-    "responsibilities_total": 160,
+    "responsibilities_total": 161,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -43275,6 +43275,238 @@
       "license_and_provenance": "Exact developer-debugger visualization provenance read from locked Microsoft/GSL child blob through the accepted tdesktop gitlink. No conclusion about the still-separate LICENSE entry is inferred, and no GSL C++ private layout or Visual Studio runtime is copied as Fabushi authority.",
       "notes": "Strict142 closes only Microsoft/GSL GSL.natvis semantic read/decomposition. The file projects final_action/span/not_null into Visual Studio debugging and is also a build-interface/install asset per the already-closed CMake composition. Existing developer-environment/build-package/FQT evidence owners are reused; private C++ layout remains provenance, not product/runtime/ABI/safety truth. Counters unknown=16,234 unread=16,209 omitted=0 responsibilities=160. Next strict143 Microsoft/GSL LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02.",
       "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/GSL",
+      "source_blob_sha": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+      "source_kind": "recursive_child_repository_documentation_or_license",
+      "module_id": "tdesktop.thirdparty.gsl.license",
+      "responsibility_id": "TDRP-R9-GSL-MIT-LICENSE-PROVENANCE-001",
+      "source_symbols": [
+        "LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02",
+        "Copyright (c) 2015 Microsoft Corporation",
+        "MIT permission grant",
+        "copyright and permission notice inclusion condition",
+        "AS IS warranty disclaimer",
+        "liability disclaimer"
+      ],
+      "capability_ids": [
+        "CAP-LEGAL-LICENSE-PROVENANCE",
+        "CAP-DEPENDENCY-LICENSE-PROVENANCE",
+        "CAP-EXACT-SOURCE-ATTRIBUTION"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "Microsoft/GSL:LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02",
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md#TDRP-SRC-03",
+        "projects/telegram-desktop-rust/module-map.md#build/generator/resources/dependencies"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-license-mit-legal-provenance-complete-read.md",
+      "behavior_contract": "Retain the exact Microsoft/GSL LICENSE as immutable MIT legal/source provenance for the locked recursive dependency. Preserve permission grant, notice-inclusion condition, warranty disclaimer and liability disclaimer without treating the license as shipping runtime behavior or proof that Fabushi distributes GSL.",
+      "state_machine": "accepted tdesktop gitlink -> exact GSL child commit/tree -> read exact LICENSE -> classify MIT legal terms -> map to existing legal/dependency owners -> keep shipping composition and remaining child authorities independent -> CAS publish -> exact-head revalidation",
+      "side_effects": [
+        "Preserves exact MIT legal/source provenance for the locked Microsoft/GSL dependency.",
+        "Records the notice-inclusion condition.",
+        "Creates no product/runtime/service/package/signing/release authority."
+      ],
+      "failure_cases": [
+        "LICENSE omitted as non-runtime text.",
+        "Exact text replaced by paraphrase/SPDX only.",
+        "License treated as proof Fabushi ships GSL.",
+        "README/ThirdPartyNotices treated as transitively closed.",
+        "Gitlink/tree/blob drift ignored."
+      ],
+      "ui_disposition": "No shipping UI surface; retained recursive-dependency legal/source provenance only.",
+      "non_ui_responsibilities": [
+        "exact Microsoft/GSL MIT license-text provenance",
+        "copyright/permission grant",
+        "notice-inclusion condition",
+        "warranty/liability disclaimer",
+        "separation from actual Fabushi shipping composition",
+        "independent remaining child-authority accounting"
+      ],
+      "platform_delta": "No platform runtime delta; retained under existing documentation_or_license and dependency provenance governance.",
+      "existing_owner_candidates": [
+        "TDRP-SRC-03 documentation_or_license retained legal-record disposition (selected)",
+        "module-map build/generator/resources/dependencies license/provenance mapping (selected support)",
+        "ordinary repository PR/review lifecycle (selected review boundary)",
+        "new Microsoft/GSL legal/runtime owner (rejected)"
+      ],
+      "existing_owner": "TDRP-SRC-03 documentation_or_license provenance disposition plus module-map dependency license/provenance mapping and existing Fabushi repository PR/review lifecycle",
+      "rejected_existing_owners": [
+        "License text is not shipping product behavior.",
+        "A GSL-specific legal/runtime owner would duplicate source-neutral governance.",
+        "License text cannot prove actual Fabushi distribution.",
+        "ThirdPartyNotices remains independent."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md",
+        "projects/telegram-desktop-rust/module-map.md"
+      ],
+      "fabushi_target_symbols": [
+        "documentation_or_license retained legal/source record",
+        "build/generator/resources/dependencies license provenance"
+      ],
+      "target_language": "Repository governance / retained recursive-dependency legal-record provenance",
+      "language_rationale": "Legal text, not executable C++ behavior.",
+      "command_event_contracts": [
+        "locked GSL gitlink -> exact child/tree -> exact LICENSE",
+        "actual shipping composition -> independently prove before distribution obligations",
+        "remaining README/ThirdPartyNotices independent",
+        "publication -> CAS + exact-head GitHub Actions"
+      ],
+      "state_owner": "Exact upstream GSL gitlink/child tree/LICENSE blob are immutable provenance; reviewed TDRP state is canonical disposition.",
+      "lifecycle_owner": "Existing TDRP strict-read, dependency/legal provenance, repository-review and exact-head evidence lifecycle.",
+      "persistence_and_restart": "Committed dossier/ledger/index/lock plus exact LICENSE identity; no runtime state.",
+      "concurrency_and_cancellation": "CAS branch/upstream lease serializes publication; drift/cancellation is non-passing.",
+      "security_boundary": "MIT legal text is not runtime authorization, sandboxing, artifact-integrity, signing or release-acceptance evidence.",
+      "network_service_dependencies": [
+        "GitHub Actions for authoritative exact-head revalidation"
+      ],
+      "service_owner": "No shipping service; repository/TDRP governance only.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "retained-legal-record",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required after publication.",
+        "Remaining Microsoft/GSL entries remain open.",
+        "Recursive source closure and independent release acceptance remain open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "strict143 LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02 fully read: 21 line slots / 1157 bytes",
+        "GSL gitlink 87f9d768866548b5b86e72be66c60c5abd4d9b37; child tree 6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41",
+        "Parent TDRP 40020821458 61/61 success; authority 12530651984 sha256:4feeadb171c79815dca8d81c5aa1ea68eba1aef922aa1f084eca2018a3602568; closure 12531245370 sha256:b017b64e72a39f7772f909c8acb414df878db3c0694b070afe15fa9fe3467281; reachability 12530373044 sha256:cd062a43a3bfb1d02efaaa0c28de0ee4d9e2512169361040c77513617f183a50; Rust 40020821690 6/6 success; artifact 12529643885 sha256:9ad4389c7e2eab0e661da6a392384acc30268c8359524bebb7f458feb8e9d9ba"
+      ],
+      "target_commit": "82d88e3b8f16f162f2ea25b2f0ed8c86d5953d12",
+      "workflow_run": 40020821458,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12530651984,
+      "artifact_digest": "sha256:4feeadb171c79815dca8d81c5aa1ea68eba1aef922aa1f084eca2018a3602568",
+      "composition_root": "Fabushi repository source/legal provenance and dependency review lifecycle",
+      "composition_slot": "retained recursive-dependency MIT license-text provenance",
+      "capability_component": "Source-neutral documentation_or_license and dependency-license disposition",
+      "variation_axes": [
+        "MIT grant/source provenance",
+        "notice condition/shipping composition",
+        "legal text/runtime",
+        "legal record/release acceptance"
+      ],
+      "shared_owner_contracts": [
+        "TDRP-SRC-03 documentation_or_license",
+        "module-map build/generator/resources/dependencies",
+        "repository PR/review lifecycle",
+        "exact-head TDRP evidence"
+      ],
+      "duplicate_root_check": "No Microsoft/GSL legal runtime, second dependency/package/release owner or shipping service introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository/legal provenance only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Retained recursive-dependency MIT license provenance",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Changed GSL gitlink/tree/LICENSE requires fresh reconciliation; shipping composition remains independently evidenced.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-GSL-MIT-LICENSE-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GSL-LICENSE-EXACT-SOURCE-001",
+        "ORA-TDRP-GSL-LICENSE-MIT-TEXT-001",
+        "ORA-TDRP-GSL-LICENSE-NONRUNTIME-DISPOSITION-001",
+        "ORA-TDRP-GSL-LICENSE-SHIPPING-SEPARATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GSL-LICENSE-NO-OMISSION-001",
+        "INV-TDRP-GSL-LICENSE-NO-RUNTIME-OWNER-001",
+        "INV-TDRP-GSL-LICENSE-NO-SHIPPING-INFERENCE-001",
+        "INV-TDRP-GSL-LICENSE-NO-RELEASE-ACCEPT-001",
+        "INV-TDRP-GSL-LICENSE-EXACT-PROVENANCE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GSL-LICENSE-RETAINED-RECORD-001",
+        "CONTRACT-TDRP-GSL-LICENSE-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GSL-LICENSE-SOURCE-DRIFT-001",
+        "FAULT-TDRP-GSL-LICENSE-TRANSITIVE-CLOSURE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-GSL-LICENSE-NOT-AUTHORIZATION-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-GSL-LICENSE-NO-SOURCE-OMISSION-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "locked Microsoft/GSL LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02 + legal/dependency provenance owners + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact Microsoft/GSL LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02 retained as MIT legal/source provenance for the locked recursive dependency; no shipping composition, runtime or release authority is inferred.",
+      "reviewer": "primary-session",
+      "notes": "Strict143 closes only Microsoft/GSL LICENSE. Counters unknown=16,233 unread=16,208 omitted=0 responsibilities=161. Next strict144 Microsoft/GSL README.md@dd61e3fdc4d30614c0ca35f58cce5f58e66dd4df."
     }
   ]
 }
