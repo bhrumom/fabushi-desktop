@@ -34,7 +34,7 @@ The parent exact-head Actions prove current Fabushi validators and Bot/network r
 
 - Requirement: `TDRP-R9-UPSTREAM-WEB-PROXY-EXECUTION-TEST-PROVENANCE-001`.
 - Oracles: `ORA-TDRP-WEB-PROXY-TEST-EXACT-SOURCE-001`, `ORA-TDRP-WEB-PROXY-TEST-EXISTING-VALIDATORS-001`, `ORA-TDRP-WEB-PROXY-TEST-SECRET-SAFE-EVIDENCE-001`, `ORA-TDRP-WEB-PROXY-TEST-REAL-SERVICE-FAIL-CLOSED-001`, `ORA-TDRP-WEB-PROXY-TEST-PLATFORM-FIELD-EVIDENCE-001`.
-- Invariants: no fake relay, no secret logging, policy before connect, bounded state, unexecuted is not pass, exact-head Actions only.
+- Invariants: `INV-TDRP-WEB-PROXY-TEST-NO-FAKE-RELAY-001`, `INV-TDRP-WEB-PROXY-TEST-NO-SECRET-LOGGING-001`, `INV-TDRP-WEB-PROXY-TEST-POLICY-BEFORE-CONNECT-001`, `INV-TDRP-WEB-PROXY-TEST-BOUNDED-STATE-001`, `INV-TDRP-WEB-PROXY-TEST-UNEXECUTED-NOT-PASS-001`, `INV-TDRP-WEB-PROXY-TEST-ACTIONS-ONLY-001` (no fake relay, no secret logging, policy before connect, bounded state, unexecuted is not pass, exact-head Actions only).
 - Fault/temporal: account switch, timeout/overflow, malformed transport, retry/recovery, idle/restart, cancellation/destruction.
 - Security: TLS trust, secret-safe evidence, non-public-target policy, loopback protocol retained only as upstream provenance unless independently applicable.
 - Regression: no second network root; current Fabushi Bot/network capability must not regress.
