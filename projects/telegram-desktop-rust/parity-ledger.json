@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "0a6844f1674fd3334a85436af2f748df8e7b2f25",
+  "target_commit": "07972a8c3ffa56e63903215587b1cb196e88c5db",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16269,
-    "unread": 16244,
+    "unknown": 16268,
+    "unread": 16243,
     "omitted": 0,
-    "responsibilities_total": 125,
+    "responsibilities_total": 126,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -33409,6 +33409,270 @@
       "license_and_provenance": "Exact upstream README.md@15a6194f73ae6084a2ab25d14005dc10262cdfb3 retained as source/project/support/dependency/build documentation provenance; linked licenses/dependencies remain independently accountable.",
       "reviewer": null,
       "notes": "Strict index 107 closes only README.md as non-runtime documentation provenance. Counters become unknown=16,269 unread=16,244 omitted=0 responsibilities=125. Next strict root index 108 REVIEW.md@e65be8231a8e0f50ee86b20ef16120d58ea40376."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "REVIEW.md",
+      "source_blob_sha": "e65be8231a8e0f50ee86b20ef16120d58ea40376",
+      "source_kind": "repository_code_review_style_guide",
+      "module_id": "tdesktop.root.review_style",
+      "responsibility_id": "TDRP-R9-UPSTREAM-ROOT-REVIEW-STYLE-PROVENANCE-001",
+      "source_symbols": [
+        "Empty line before closing brace",
+        "No consecutive empty lines",
+        "Multi-line expressions — operators at the start of continuation lines",
+        "Minimize type checks — prefer direct cast over is + as",
+        "Always initialize variables of basic types",
+        "Use tr:: projections for TextWithEntities",
+        "Multi-line calls — one argument per line",
+        "std::optional access — avoid value()",
+        "Sort includes alphabetically, nested folders first",
+        "Use C++17 nested namespace syntax",
+        "Merge consecutive branches with identical bodies",
+        "Use base::take for read-and-reset",
+        "Don't wrap tr:: lang keys in rpl::single",
+        "Extract method definitions from local classes",
+        "Do not repeat [[nodiscard]] on method definitions",
+        "Use RAII for resource cleanup",
+        "Extract substantial logic from lambdas",
+        "Data-driven matching over chained conditions",
+        "Use !isHidden() for logic checks, not isVisible()",
+        "Consolidate make_state calls into a single State struct",
+        "Don't keep rpl per-subscription state in a mutable capture",
+        "Use trailing return type only when the normal form is too long",
+        "Mind data structure sizes and alignment",
+        "Static member functions use PascalCase",
+        "No Q_OS_LINUX platform checks in new code"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-CODE-REVIEW-STYLE-PROVENANCE",
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-REVIEWABLE-SOURCE-MUTATION"
+      ],
+      "dependency_ids": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-root-review-style-guide-complete-read.md",
+      "behavior_contract": "Retain the exact upstream REVIEW.md as code-review/style provenance and account for all 25 mechanical review rules. Apply only independently adopted source-neutral Fabushi policies; do not import Telegram C++/Qt/rpl/tr-specific style rules, platform macros, naming conventions, or review-subagent authority into Rust/TypeScript production or create a second validator.",
+      "state_machine": "read exact REVIEW.md -> enumerate 25 mechanical rules -> classify source-specific versus source-neutral quality intent -> reconcile current Fabushi edit-policy/quality owners -> retain provenance under the existing owner -> leave rule adoption and executable validation with current Fabushi authority",
+      "side_effects": [
+        "Preserves all 25 upstream review/style rules as exact-source provenance.",
+        "Prevents Telegram-specific C++/Qt/rpl/tr mechanics from silently becoming Fabushi Rust/TypeScript policy.",
+        "Reuses current Fabushi repository edit-policy/quality owners instead of adding a Telegram review validator.",
+        "Keeps exact-head Actions and independent acceptance as the only executable/release evidence authority."
+      ],
+      "failure_cases": [
+        "REVIEW.md is omitted because it is documentation.",
+        "A Telegram C++/Qt/rpl/tr rule is copied into Fabushi as canonical Rust/TypeScript policy without independent adoption.",
+        "A second review/style validator or Telegram review runtime is introduced.",
+        "A style-guide pass is treated as product-behavior equivalence, source closure, security proof, or release acceptance.",
+        "The upstream Q_OS_LINUX rule is misread as a Fabushi platform-support contract."
+      ],
+      "ui_disposition": "No shipping UI. Formatting/examples are repository-review provenance only.",
+      "non_ui_responsibilities": [
+        "Empty line before closing brace",
+        "No consecutive empty lines",
+        "Multi-line expressions — operators at the start of continuation lines",
+        "Minimize type checks — prefer direct cast over is + as",
+        "Always initialize variables of basic types",
+        "Use tr:: projections for TextWithEntities",
+        "Multi-line calls — one argument per line",
+        "std::optional access — avoid value()",
+        "Sort includes alphabetically, nested folders first",
+        "Use C++17 nested namespace syntax",
+        "Merge consecutive branches with identical bodies",
+        "Use base::take for read-and-reset",
+        "Don't wrap tr:: lang keys in rpl::single",
+        "Extract method definitions from local classes",
+        "Do not repeat [[nodiscard]] on method definitions",
+        "Use RAII for resource cleanup",
+        "Extract substantial logic from lambdas",
+        "Data-driven matching over chained conditions",
+        "Use !isHidden() for logic checks, not isVisible()",
+        "Consolidate make_state calls into a single State struct",
+        "Don't keep rpl per-subscription state in a mutable capture",
+        "Use trailing return type only when the normal form is too long",
+        "Mind data structure sizes and alignment",
+        "Static member functions use PascalCase",
+        "No Q_OS_LINUX platform checks in new code"
+      ],
+      "platform_delta": "The upstream `No Q_OS_LINUX platform checks in new code` rule is a Telegram C++ source-review constraint, not a Fabushi OS-support or platform-adapter contract.",
+      "existing_owner_candidates": [
+        "AGENTS.md source-neutral repository edit-policy feedback governance (selected)",
+        "Fabushi repository quality-health change-ratchet/review policy governance (supporting)",
+        "Fabushi quality TEST_STRATEGY/evidence contract (supporting exact-head qualification)",
+        "new Telegram review/style validator (rejected)"
+      ],
+      "existing_owner": "AGENTS.md source-neutral repository edit-policy feedback governance with existing quality-health ratchet and exact-head GitHub Actions verification",
+      "rejected_existing_owners": [
+        "REVIEW.md does not own a shipping product runtime or user-facing behavior.",
+        "Telegram-specific mechanical C++/Qt/rpl/tr conventions are not automatically Fabushi rules.",
+        "A new source-specific validator would duplicate the existing source-neutral edit-policy/quality owner.",
+        "Review-subagent wording cannot replace exact-head GitHub Actions or independent acceptance."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md"
+      ],
+      "fabushi_target_symbols": [
+        "A feedback adapter must not invent source-specific rules that Fabushi has not adopted, silently rewrite user code, widen its scope to unrelated files, weaken the durable spec, or turn a missing/disabled local hook into a passing result. Telegram C++-specific banned-function mappings, comment budgets, `.clang-tidy` parsing, source suffixes, test-harness exemptions, and Claude `PostToolUse` payload shapes are provenance only unless an independent Fabushi rule explicitly adopts the same behavior."
+      ],
+      "target_language": "Repository governance / retained review-style provenance",
+      "language_rationale": "REVIEW.md is repository review guidance rather than executable product logic. Its 25 rules are retained as provenance while source-neutral Fabushi policy remains canonical.",
+      "command_event_contracts": [
+        "retain exact REVIEW.md identity and all 25 rule headings",
+        "classify source-specific review mechanics without silently adopting them",
+        "reuse current Fabushi edit-policy/quality authority",
+        "require exact-head GitHub Actions for executable validation"
+      ],
+      "state_owner": "Exact upstream REVIEW.md blob is immutable source provenance; reviewed TDRP disposition is canonical accounting state.",
+      "lifecycle_owner": "Existing TDRP strict-read/repository-review lifecycle plus Fabushi edit-policy/quality governance.",
+      "persistence_and_restart": "Committed dossier/ledger/index/lock plus exact upstream REVIEW.md identity; no shipping runtime state.",
+      "concurrency_and_cancellation": "CAS branch lease and pinned upstream lease serialize publication; any source/owner/evidence drift requires fresh reconciliation.",
+      "security_boundary": "RAII, initialization, optional access and related review rules may express useful upstream safety intent, but this document grants no authorization and is not a Fabushi memory-safety, sandbox, supply-chain, or release-security proof.",
+      "network_service_dependencies": [],
+      "service_owner": "No shipping service; repository/TDRP governance only.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "policy-equivalent",
+      "blockers": [
+        "Fresh strict108 child exact-head TDRP/Rust Actions are required after publication.",
+        "Recursive source disposition remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "REVIEW.md@e65be8231a8e0f50ee86b20ef16120d58ea40376 fully read: 608 lines / 20794 parsed characters; 25 mechanical review/style rules accounted.",
+        "Fresh parent-head preflight at 07972a8c3ffa56e63903215587b1cb196e88c5db: zero prior REVIEW.md path/blob/responsibility rows; selected AGENTS.md source-specific-rule boundary occurs exactly once and exact path+symbol has zero ledger owners.",
+        "Parent exact-head TDRP run 39918824228 completed 61/61 success; authority 12485614037 sha256:fcbc03dd5505b6369559b6e99fc8fa8836372dc106aef63ba1a3d576e7fc4c32; closure 12486885949 sha256:3b41e4c0d547c20e2c2abd75dc860b17b99877892056bf92f277d772ecf0f4d9; reachability 12485724417 sha256:5a7ef563152ad0b5eed32ba5318f8e3bb570cbc1540c6390226f67bc72f2eb7f.",
+        "Parent Rust run 39918824363 completed 6/6 success; artifact 12485338498 sha256:d7ad1e21d7072a98b491ede996b33121219f9cd822b802e2ddf7fe79a86f8ad8.",
+        "Live upstream remained a7f453612f4896ac04d0007a36ab0d377e5bcbcf/tree c539eabfb05e7dcaa84821ac44c35cdfb6551ae5."
+      ],
+      "target_commit": "07972a8c3ffa56e63903215587b1cb196e88c5db",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository edit-policy and quality governance",
+      "composition_slot": "retained upstream REVIEW.md mechanical rule provenance",
+      "capability_component": "Source-neutral review-style provenance disposition",
+      "variation_axes": [
+        "Telegram C++/Qt/rpl/tr mechanics versus Fabushi Rust/TypeScript policy",
+        "mechanical style provenance versus product behavior",
+        "upstream review-subagent rules versus Fabushi durable authority"
+      ],
+      "shared_owner_contracts": [
+        "AGENTS.md repository edit-policy feedback governance",
+        "Fabushi repository quality-health ratchet",
+        "FBCP/TDRP exact-head GitHub Actions evidence"
+      ],
+      "duplicate_root_check": "No Telegram review runtime, second style owner, second validator, product root, or release gate introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository/review provenance only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Retained upstream REVIEW.md rule provenance",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Changed REVIEW.md identity, rule set, selected existing-owner paragraph, target-owner key, or upstream lease requires fresh reconciliation.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-UPSTREAM-ROOT-REVIEW-STYLE-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-REVIEW-EXACT-SOURCE-001",
+        "ORA-TDRP-REVIEW-RULE-CLASSIFICATION-001",
+        "ORA-TDRP-REVIEW-NO-AUTOMATIC-ADOPTION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-REVIEW-NO-SECOND-VALIDATOR-001",
+        "INV-TDRP-REVIEW-NO-SOURCE-SPECIFIC-POLICY-IMPORT-001",
+        "INV-TDRP-REVIEW-NO-RELEASE-ACCEPT-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-REVIEW-RETAINED-PROVENANCE-001",
+        "CONTRACT-TDRP-REVIEW-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-REVIEW-SOURCE-DRIFT-001",
+        "FAULT-TDRP-REVIEW-RULE-IMPORT-001",
+        "FAULT-TDRP-REVIEW-DUPLICATE-VALIDATOR-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-REVIEW-NOT-AUTHORIZATION-001",
+        "SEC-TDRP-REVIEW-STYLE-NOT-SECURITY-PROOF-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-REVIEW-NO-SOURCE-OMISSION-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "locked REVIEW.md + canonical Fabushi edit-policy/quality authority + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact upstream REVIEW.md@e65be8231a8e0f50ee86b20ef16120d58ea40376 retained as repository code-review/style provenance; no Telegram-specific rule is automatically adopted.",
+      "reviewer": null,
+      "notes": "Strict index 108 closes only REVIEW.md as non-runtime review/style provenance. Counters become unknown=16,268 unread=16,243 omitted=0 responsibilities=126. Next strict root index 109 changelog.txt@41b7466f8a11a1866a66ff583809dfe74ad9a3c3."
     }
   ]
 }

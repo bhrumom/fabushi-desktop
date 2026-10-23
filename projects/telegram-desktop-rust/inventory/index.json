@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16269,
-    "unread_minimum": 16244,
+    "unknown_minimum": 16268,
+    "unread_minimum": 16243,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -122,7 +122,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 0a6844f1674fd3334a85436af2f748df8e7b2f25/tree 41f60f808dbe44613f881c2a50841a3c1e47e47f passed TDRP 39916363240 at 61/61 and Rust 39916363102 at 6/6. Strict107 README.md@15a6194f73ae6084a2ab25d14005dc10262cdfb3 is retained as non-runtime root project/support/dependency/build documentation under existing TDRP-SRC-02 and Fabushi build/package/dependency evidence owners; README references do not transitively close LICENSE/build docs/dependencies or create Fabushi support promises. Counters unknown=16,269 unread=16,244 omitted=0 responsibilities=125. Next strict root index 108 REVIEW.md@e65be8231a8e0f50ee86b20ef16120d58ea40376. Fresh child exact-head Actions required.",
+  "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 07972a8c3ffa56e63903215587b1cb196e88c5db/tree 70051fe9558afef00692415b9802cc849d628af8 passed TDRP 39918824228 at 61/61 and Rust 39918824363 at 6/6. Strict108 REVIEW.md@e65be8231a8e0f50ee86b20ef16120d58ea40376 is retained as non-runtime repository review/style provenance under the existing source-neutral AGENTS.md edit-policy/quality owners; all 25 rules are accounted, but Telegram C++/Qt/rpl/tr-specific mechanics are not automatically adopted as Fabushi Rust/TypeScript policy and do not create a second validator. Counters unknown=16,268 unread=16,243 omitted=0 responsibilities=126. Next strict root index 109 changelog.txt@41b7466f8a11a1866a66ff583809dfe74ad9a3c3. Fresh child exact-head Actions required.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
