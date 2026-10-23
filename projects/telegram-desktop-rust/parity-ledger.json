@@ -34269,9 +34269,15 @@
         "source/electron-main/account/auth-service-contract.ts"
       ],
       "fabushi_target_symbols": [
-        "FABUSHI_ACCOUNT_SESSION_SECRET / FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV / Remote Computer device-secret lifecycle",
-        "readSecret / writeSecret / deleteSecret and account-scoped encrypted secret parsing",
-        "normalizeFabushiApiBaseUrl / isProductionFabushiIssuer / nativeRemoteComputerDeviceScope",
+        "FABUSHI_ACCOUNT_SESSION_SECRET",
+        "FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV",
+        "remoteComputerDeviceSecretKey",
+        "readSecret",
+        "writeSecret",
+        "deleteSecret",
+        "normalizeFabushiApiBaseUrl",
+        "isProductionFabushiIssuer",
+        "nativeRemoteComputerDeviceScope",
         "AuthServicePort"
       ],
       "target_language": "Existing TypeScript account/auth/secret owners plus existing Rust Host consumers",
