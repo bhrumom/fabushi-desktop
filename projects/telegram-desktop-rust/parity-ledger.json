@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "94de4915c1828a5abc651b4ba282af421d6e23e1",
+  "target_commit": "510e15bfd0e0d7191b147cbf6ed65317c9f277a5",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16279,
-    "unread": 16254,
+    "unknown": 16278,
+    "unread": 16253,
     "omitted": 0,
-    "responsibilities_total": 115,
+    "responsibilities_total": 116,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -31014,6 +31014,278 @@
       "license_and_provenance": "Exact workflow/direct-input and resolved action/provider identities retained. checkout/cache/upload and Eden provider license blobs are MIT. Mutable action tags/master, aka.ms installer, NuGet/runner/toolchain/cache state and one-day upstream executables remain non-release provenance.",
       "reviewer": null,
       "notes": "Strict index 97 closes only .github/workflows/win.yml. Counters become unknown=16,277 unread=16,252 omitted=0 responsibilities=115. Next strict root index 98 .github/workflows/winget.yml@0ff2d50d8b12b67408d3ad1e06dc8e462b5a9390. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": ".github/workflows/winget.yml",
+      "source_blob_sha": "0ff2d50d8b12b67408d3ad1e06dc8e462b5a9390",
+      "source_kind": "windows_package_manager_catalog_publication_workflow",
+      "module_id": "tdesktop.github.workflows.winget",
+      "responsibility_id": "TDRP-R9-WINGET-PUBLICATION-PROVENANCE-001",
+      "source_symbols": [
+        "release event types released/prereleased",
+        "released -> Telegram.TelegramDesktop",
+        "prereleased -> Telegram.TelegramDesktop.Beta",
+        "telegramdesktop/winget-releaser@main",
+        "installers-regex t(setup|portable).*(exe|zip)$",
+        "WINGET_TOKEN provider credential",
+        "provider package-exists precondition in microsoft/winget-pkgs",
+        "provider release tag/version and asset URL derivation",
+        "komac update --submit",
+        "komac cleanup --only-merged",
+        "max-versions-to-keep default 0 disables optional removal for this caller",
+        "mutable cargo-binstall@main bootstrap",
+        "unversioned cargo binstall komac -y"
+      ],
+      "capability_ids": [
+        "CAP-WINGET-CATALOG-PUBLICATION-PROVENANCE",
+        "CAP-RELEASE-ASSET-SELECTION-PROVENANCE",
+        "CAP-EXTERNAL-CATALOG-MUTATION-BOUNDARY",
+        "CAP-RELEASE-CREDENTIAL-BOUNDARY"
+      ],
+      "dependency_ids": [
+        "FQT-EVID-001@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70",
+        "FQT-REL-001@c5eb9d0897234bb2fdad4f505549b2350c44aa72",
+        "telegramdesktop/winget-releaser@main -> 4ffc7888bffd451b357355dc214d43bb9f23917e/tree 0b09c320f951cb196fa758241df02baa6f893f72; action.yml@a6de3aab26491d01a7a459c3fcaca8b6d5bce393; LICENSE.md@74c892aed62da338fe12600bfba912596f044ced AGPL-3.0",
+        "cargo-bins/cargo-binstall@main -> 8a2045612414e945291083f820cd50b4d8fc2218/tree f25f032637b6d602a60199c7893f4441f1bdc210; action.yml@bfe4fcd6726e2a272313ea120c3492fa1d979e0e; repository license metadata GPL-3.0",
+        "cargo binstall komac -y unversioned; audit-time Komac main e9882dcfd22d9bb2defbb0e25044c331d5e4390d/tree 35a45b7bef8d48fd5ba0723ba7d26cec385dd832; Cargo.toml@ac8123ca854d673dee45e716d225f0150bf0a2aa version 2.17.1 GPL-3.0-or-later; LICENSE.md@2fb2e74d8d7fa1c9286b18af0afa5c00402f56e3",
+        "GitHub Releases API",
+        "microsoft/winget-pkgs external catalog/fork/PR state"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/winget-publication-workflow-complete-read.md",
+      "behavior_contract": "Treat winget.yml as external Windows package-catalog publication provenance only. Release-event branching, asset selection, token handoff and catalog PR mutation cannot become Fabushi package/signing/install/promotion/release authority; canonical evidence and release acceptance remain with FQT-EVID-001 and FQT-REL-001.",
+      "state_machine": "release released/prereleased -> choose stable/beta package identifier -> mutable winget-releaser provider -> require existing catalog package -> validate retention default 0 -> install mutable cargo-binstall and unpinned Komac -> read release/tag -> derive version and installer URLs -> komac update --submit -> cleanup merged fork branches -> optional removals only when retention > 0 (disabled by this caller)",
+      "side_effects": [
+        "queries GitHub release metadata and release assets",
+        "queries microsoft/winget-pkgs package path",
+        "installs cargo-binstall and Komac on disposable runner",
+        "uses WINGET_TOKEN to submit external catalog updates",
+        "mutates fork/PR state through Komac",
+        "cleans merged fork branches",
+        "does not mutate shipping Fabushi product state"
+      ],
+      "failure_cases": [
+        "mutable winget-releaser@main drift",
+        "nested mutable cargo-binstall@main drift",
+        "unversioned Komac installation drift",
+        "package absent from winget-pkgs precondition",
+        "release metadata/tag lookup failure",
+        "installer regex yields no usable release assets",
+        "WINGET_TOKEN missing, invalid or under-scoped",
+        "Komac submission failure or outcome-unknown settlement",
+        "fork/catalog race with overlapping release events",
+        "cleanup failure",
+        "external catalog success mistaken for Fabushi signed/package/device/release acceptance"
+      ],
+      "ui_disposition": "Repository release publication automation only; no shipping Fabushi UI capability.",
+      "non_ui_responsibilities": [
+        "stable/beta release-event branching",
+        "release asset selection provenance",
+        "external package-catalog mutation provenance",
+        "mutable publication-provider supply-chain provenance",
+        "release credential boundary",
+        "catalog publication versus canonical Fabushi release acceptance separation"
+      ],
+      "platform_delta": "TDesktop WinGet automation is retained only as mature release-publication provenance. Fabushi reuses source-neutral FQT evidence/release, existing packaging/signing and acceptance owners rather than creating a source-specific catalog runtime, package truth or release root.",
+      "existing_owner_candidates": [
+        "FQT-EVID-001 exact evidence contract (selected)",
+        "FQT-REL-001 release entry/exit criteria (selected)",
+        "existing Fabushi packaging/signing owners (shared boundary)",
+        "new WinGet/catalog release owner (rejected)",
+        "new source-specific package ledger/credential owner (rejected)"
+      ],
+      "existing_owner": "FQT-EVID-001 exact evidence contract with FQT-REL-001 canonical release entry/exit criteria and existing packaging/signing owners",
+      "rejected_existing_owners": [
+        "external catalog PR state is not Fabushi package identity or signing truth",
+        "provider token/fork/branch state is not product credential or release lifecycle state",
+        "stable/beta package identifiers are upstream source-specific metadata, not a new canonical product owner",
+        "a second WinGet/catalog release root would duplicate FQT release/evidence ownership"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "projects/fabushi-communication-platform/quality/release-entry-exit-criteria.md"
+      ],
+      "fabushi_target_symbols": [
+        "相关 source/spec/oracle/baseline 改变后旧证据降 historical。截图/视频存在但未关联 case/verdict 不算 pass。独立验收记录 reviewer、reviewed evidence IDs、异常与 verdict。",
+        "frozen exact SHA；applicable specs/oracles/RTM ready；required services/accounts/signing/config available or blocked；fixtures/baselines versioned；known P0=0；workflows target exact source。"
+      ],
+      "target_language": "Repository release/evidence governance and external catalog publication provenance",
+      "language_rationale": "The source is GitHub release automation and external catalog mutation. Applicable responsibilities map to current source-neutral evidence/release governance, not production Rust/React.",
+      "command_event_contracts": [
+        "GitHub release action=released selects Telegram.TelegramDesktop",
+        "GitHub release action=prereleased selects Telegram.TelegramDesktop.Beta",
+        "installer selection regex is t(setup|portable).*(exe|zip)$",
+        "provider requires an existing winget-pkgs package before update",
+        "provider derives version from release tag unless explicitly supplied",
+        "provider submits Komac update using WINGET_TOKEN",
+        "provider always runs merged-branch cleanup",
+        "max-versions-to-keep is not supplied and defaults to 0, so old-version removal is disabled",
+        "catalog mutation never constitutes Fabushi release ACCEPT"
+      ],
+      "state_owner": "GitHub/WinGet provider owns external release/catalog/fork/PR state only; FQT-REL-001 owns canonical Fabushi release readiness and verdict.",
+      "lifecycle_owner": "Release automation may select assets, submit catalog updates and clean provider branches; Fabushi packaging/signing/install/device/promotion/acceptance lifecycles remain under existing canonical owners.",
+      "persistence_and_restart": "GitHub Releases and external winget-pkgs/fork/PR state persist independently. A rerun can observe already-submitted or merged provider state; idempotency/outcome must be reconciled externally and cannot be inferred from a green workflow alone.",
+      "concurrency_and_cancellation": "The workflow declares no concurrency group. Released/prereleased events, reruns and external catalog/fork updates can overlap. Cancellation or provider/API failure after submission is outcome-unknown and cannot advance canonical release acceptance.",
+      "security_boundary": "The workflow token is provider/bootstrap and release-read authority inside the composite action. WINGET_TOKEN is external catalog mutation authority only. Mutable provider code and unpinned Komac are fail-closed supply-chain provenance and neither token becomes Fabushi product/session credential authority.",
+      "network_service_dependencies": [
+        "GitHub Actions and Releases APIs",
+        "microsoft/winget-pkgs GitHub repository/catalog",
+        "telegramdesktop/winget-releaser composite action",
+        "cargo-bins/cargo-binstall installer action",
+        "Komac package/catalog client"
+      ],
+      "service_owner": "External GitHub/WinGet publication providers only; canonical Fabushi release truth remains FQT-REL-001 with FQT-EVID-001 evidence.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "policy-equivalent",
+      "blockers": [
+        "Fresh strict98 child exact-head TDRP/Rust Actions are required.",
+        "Recursive source disposition remains open.",
+        "winget-releaser@main and cargo-binstall@main are mutable provider references.",
+        "Komac is installed without a version pin.",
+        "External catalog mutation does not establish Fabushi signing, package identity, installation, device acceptance, promotion or independent release ACCEPT."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "winget.yml fully read: 700 bytes at 0ff2d50d8b12b67408d3ad1e06dc8e462b5a9390.",
+        "Parent 510e15bfd0e0d7191b147cbf6ed65317c9f277a5/tree c2a99596b1552608f27f070e85c15473f114cfc0: TDRP run 39899622743 is 61/61 success; authority 12478173024 sha256:6710f1de2ac6a1e904f242309a1d799e511041ac50cdc03bb6f13028e28c8702; closure 12478442455 sha256:cbd0ab8a0a361d5ce1f1c04ddd3dc554a5b5a7aeef489d0153962c854cb51edb; reachability 12478746234 sha256:56e2648b175c73de8c27ece8f778e01eee6f086257c84382ea4d9c23e69d46bd.",
+        "Parent Rust desktop runtime run 39899622803 is 6/6 success; artifact 12478496730 sha256:3f2fb828aa73481b4c4287f2c67c0cc3fa2030d542b67f59ba626b9c2e0c0d89.",
+        "winget-releaser main 4ffc7888bffd451b357355dc214d43bb9f23917e/tree 0b09c320f951cb196fa758241df02baa6f893f72; action.yml@a6de3aab26491d01a7a459c3fcaca8b6d5bce393; AGPL-3.0 LICENSE.md@74c892aed62da338fe12600bfba912596f044ced.",
+        "cargo-binstall main 8a2045612414e945291083f820cd50b4d8fc2218/tree f25f032637b6d602a60199c7893f4441f1bdc210; action.yml@bfe4fcd6726e2a272313ea120c3492fa1d979e0e; repository license metadata GPL-3.0.",
+        "Unversioned Komac install audited against main e9882dcfd22d9bb2defbb0e25044c331d5e4390d/tree 35a45b7bef8d48fd5ba0723ba7d26cec385dd832; Cargo.toml@ac8123ca854d673dee45e716d225f0150bf0a2aa version 2.17.1 GPL-3.0-or-later; LICENSE.md@2fb2e74d8d7fa1c9286b18af0afa5c00402f56e3; observation is not an install pin.",
+        "Ledger preflight: zero exact source-path, responsibility-ID and source-blob matches before insertion; selected canonical target symbols are present and unowned under the same target-path key."
+      ],
+      "target_commit": "510e15bfd0e0d7191b147cbf6ed65317c9f277a5",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi canonical FQT release/evidence lifecycle with external package-catalog publication as a non-authoritative provider adapter",
+      "composition_slot": "release asset provenance -> external catalog publication evidence -> canonical release acceptance",
+      "capability_component": "Source-neutral external package-catalog publication provenance adapter",
+      "variation_axes": [
+        "released/prereleased",
+        "stable/beta package identifier",
+        "matching/no matching installer assets",
+        "provider head stable/drifted",
+        "token valid/invalid",
+        "submit settled/outcome-unknown",
+        "overlapping release/rerun",
+        "catalog PR open/merged/failed",
+        "canonical Fabushi release blocked/accepted"
+      ],
+      "shared_owner_contracts": [
+        "FQT-EVID-001",
+        "FQT-REL-001",
+        "existing Fabushi packaging/signing/device acceptance owners"
+      ],
+      "duplicate_root_check": "No second release verdict, package ledger, external catalog truth, credential owner, WinGet runtime or source-specific package owner is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository release publication only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Bounded external package-catalog publication provenance adapter",
+      "route_contract": "release event -> provider publication attempt; canonical release verdict remains independently governed by FQT-REL-001",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "External catalog/fork/PR state can outlive, race or partially settle independently; canonical Fabushi release state advances only through current exact evidence and FQT release criteria.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-WINGET-PUBLICATION-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-WINGET-RELEASE-EVENT-BRANCH-001",
+        "ORA-TDRP-WINGET-ASSET-SELECTION-001",
+        "ORA-TDRP-WINGET-NO-RELEASE-AUTHORITY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-WINGET-EXTERNAL-CATALOG-NOT-RELEASE-ACCEPT-001",
+        "INV-TDRP-WINGET-MUTABLE-SUPPLY-CHAIN-FAIL-CLOSED-001",
+        "INV-TDRP-WINGET-CREDENTIAL-BOUNDARY-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-WINGET-PUBLICATION-PROVENANCE-001",
+        "CONTRACT-TDRP-WINGET-FQT-RELEASE-BOUNDARY-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-WINGET-PROVIDER-HEAD-DRIFT-001",
+        "TEMP-TDRP-WINGET-OVERLAPPING-RELEASES-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-WINGET-NO-ASSETS-001",
+        "FAULT-TDRP-WINGET-TOKEN-001",
+        "FAULT-TDRP-WINGET-SUBMIT-OUTCOME-UNKNOWN-001",
+        "FAULT-TDRP-WINGET-CLEANUP-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-WINGET-WINGET-TOKEN-BOUNDARY-001",
+        "SEC-TDRP-WINGET-MUTABLE-SUPPLY-CHAIN-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-WINGET-FQT-OWNERS-REUSED-001",
+        "REG-TDRP-WINGET-NO-CATALOG-RELEASE-ACCEPT-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [],
+      "test_fixture_ids": [
+        "locked winget.yml + immutable audit-time winget-releaser/cargo-binstall/Komac provenance + FQT-EVID-001/FQT-REL-001 + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact winget.yml retained. winget-releaser audit-time source is 4ffc7888bffd451b357355dc214d43bb9f23917e with AGPL-3.0 LICENSE.md@74c892aed62da338fe12600bfba912596f044ced; nested cargo-binstall main resolved to 8a2045612414e945291083f820cd50b4d8fc2218 with repository license metadata GPL-3.0; unversioned Komac install is observed against e9882dcfd22d9bb2defbb0e25044c331d5e4390d, Cargo.toml version 2.17.1 GPL-3.0-or-later and LICENSE.md@2fb2e74d8d7fa1c9286b18af0afa5c00402f56e3. Mutable main/unversioned edges remain fail-closed and are not adopted as Fabushi runtime or release authority.",
+      "reviewer": null,
+      "notes": "Strict index 98 closes only .github/workflows/winget.yml. FQT-EVID-001 and FQT-REL-001 remain canonical evidence/release owners; external WinGet catalog/fork/PR state and WINGET_TOKEN remain non-authoritative provider provenance. Counters become unknown=16,278 unread=16,253 omitted=0 responsibilities=116. Next strict root index 99 .gitignore@320c160d093a0a36ceb3f6437500d01a63d5ed00. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required."
     }
   ]
 }
