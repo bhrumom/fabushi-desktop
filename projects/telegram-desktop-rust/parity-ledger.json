@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "06910d91bc127dc2ee1b1353139d1d77e19d26fc",
+  "target_commit": "e64e82d0def8b9337f7516e1f1fac61c6ec5a63a",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16249,
-    "unread": 16224,
+    "unknown": 16248,
+    "unread": 16223,
     "omitted": 0,
-    "responsibilities_total": 145,
+    "responsibilities_total": 146,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -39174,6 +39174,342 @@
       "license_and_provenance": "WalletKit/TON package/version details are retained only as upstream task-generation provenance. No package, generated secret, vector, or upstream wallet runtime is imported by this mapping.",
       "reviewer": null,
       "notes": "Strict127 closes only tasks/2026/07/24/generate-walletkit-golden-vectors.md semantic read/decomposition. The referenced work/ generator/vector objects are absent from the accepted exact tree, so golden bytes/hashes remain unverified and wallet/gram implementation responsibilities remain independently open. Counters unknown=16,249 unread=16,224 omitted=0 responsibilities=145. Next strict128 tasks/2026/08/07/fix-wallet-details-box-dark-backdrop.md@945be99d457a72240772216cd0b1926dca04eb72."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "tasks/2026/08/07/fix-wallet-details-box-dark-backdrop.md",
+      "source_blob_sha": "945be99d457a72240772216cd0b1926dca04eb72",
+      "source_kind": "wallet_details_dark_theme_backdrop_visual_verification_task_provenance",
+      "module_id": "tdesktop.root.tasks.wallet-details-dark-backdrop",
+      "responsibility_id": "TDRP-R9-WALLET-DETAILS-DARK-BACKDROP-THEME-VISUAL-001",
+      "source_symbols": [
+        "No client code changes",
+        "walletDetailsBox",
+        "bg: windowBgOver",
+        "WalletTransactionBox",
+        "box->setStyle(st::walletDetailsBox)",
+        "box->setNoContentMargin(true)",
+        "Ui::BoxLayerWidget",
+        "Ui::BoxContent",
+        "QPalette::Window",
+        "live night-mode toggle",
+        "AddDetailsAmountHeader",
+        "setTextColorOverride",
+        "work/",
+        "evidence/"
+      ],
+      "capability_ids": [
+        "CAP-WALLET-PAYMENT-TRANSACTION-DETAIL-SURFACE",
+        "CAP-THEME-LIGHT-DARK-SEMANTIC-SURFACE",
+        "CAP-DIALOG-VISUAL-EVIDENCE-CAPTURE",
+        "CAP-THEME-STATE-CONTINUITY"
+      ],
+      "dependency_ids": [
+        "Telegram/SourceFiles/wallet/wallet.style@5ce256ce3a9b42493dede59b07b4ee289446bb54",
+        "Telegram/SourceFiles/wallet/wallet_content.cpp@5e98c556fd293134a0b4cdabcff486cccba525ed",
+        "native/mahayana-messaging/src/wallet.rs@876799078c868017a3f27dae414b364fa21de425",
+        "source/mahayana/mahayana-rs/mahayana-platform-core/src/payment.rs@89c6ccc0822af9bc9498a7e5833e9f75cf1d0f6b",
+        "source/mahayana/mahayana-rs/mahayana-platform-core/src/payment_infra.rs@50c7089aa51881c5d16ed1bfa0e3f04ed728a021",
+        "source/mahayana/mahayana-rs/mahayana-platform-worker/src/payment_api.rs@7008042d0058dbc82d42cef85140cea57581c367",
+        "frontend/src/recovered/ui/overlay-primitives.tsx@84881097e54a3b6daa9e32942ec66988718e7676",
+        "frontend/src/production/production.css@6a3738d98a07a7b2a81194c6666a2fe868ace80a"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-task-fix-wallet-details-box-dark-backdrop-complete-read.md",
+      "behavior_contract": "Preserve a correctly themed transaction-details owning surface across light/dark and live theme changes using the single ProductShell capability surface, shared Dialog/DetailPanel/Overlay lifecycle and Fabushi semantic Theme owner. Do not import Qt/palette/pixel values.",
+      "state_machine": "open typed detail -> resolve semantic owning-panel surface -> live theme change updates panel without losing domain/route/focus state -> close restores origin; visual capture targets owning panel; missing immutable capture fails closed",
+      "side_effects": [
+        "records UI applicability without source-branded app",
+        "records owning-panel capture oracle",
+        "preserves live-theme continuity",
+        "keeps domain truth in existing Rust owners",
+        "keeps adjacent amount-color issue separate"
+      ],
+      "failure_cases": [
+        "transparent child captured as owner surface",
+        "Telegram color copied into Fabushi token",
+        "task prose used as Fabushi visual acceptance",
+        "live toggle leaves stale panel",
+        "second Wallet/Payment root created",
+        "adjacent amount-color issue incorrectly closed",
+        "missing work/evidence treated as verified"
+      ],
+      "ui_disposition": "Applicable capability-surface replacement using ProductShell/router + canonical Dialog/DetailPanel/Overlay + Fabushi semantic theme. Dedicated payment-details renderer and packaged visual evidence remain open.",
+      "non_ui_responsibilities": [
+        "capture-layer correctness",
+        "live-theme continuity oracle",
+        "exact-head visual-evidence provenance",
+        "separate-defect routing",
+        "existing wallet/payment owner preservation"
+      ],
+      "platform_delta": "Qt BoxLayerWidget/windowBgOver maps to Fabushi React/TypeScript canonical dialog/panel composition on one semantic token graph.",
+      "existing_owner_candidates": [
+        "WalletLedger",
+        "PayEngine/payment infrastructure/payment API",
+        "ProductShell payment capability surface",
+        "Dialog/DetailPanel/OverlayDialog",
+        "FDS Theme",
+        "FVA/FQT evidence"
+      ],
+      "existing_owner": "WalletLedger for wallet-transfer state; PayEngine/payment infrastructure/payment API for settlement/value flow; ProductShell + shared Dialog/DetailPanel/Overlay for presentation lifecycle; FDS Theme + FVA/FQT for theme/visual evidence",
+      "rejected_existing_owners": [
+        "Telegram WalletTransactionBox runtime owner",
+        "TelegramWalletDetailsBox root",
+        "second PaymentSettlement/wallet store",
+        "feature-local wallet theme owner",
+        "task prose as current-head evidence"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/wallet.rs",
+        "source/mahayana/mahayana-rs/mahayana-platform-core/src/payment.rs",
+        "source/mahayana/mahayana-rs/mahayana-platform-core/src/payment_infra.rs",
+        "source/mahayana/mahayana-rs/mahayana-platform-worker/src/payment_api.rs",
+        "frontend/src/recovered/ui/overlay-primitives.tsx",
+        "frontend/src/production/production.css",
+        "projects/fabushi-communication-platform/design-system.md",
+        "projects/fabushi-communication-platform/visual-acceptance.md"
+      ],
+      "fabushi_target_symbols": [
+        "WalletLedger",
+        "PayEngine",
+        "pub fn release_settlement(",
+        "pub fn resolve_trusted_payment_intent<C: PaymentCatalog>(",
+        "export function OverlayDialog(",
+        "--fabushi-surface-raised semantic surface pattern"
+      ],
+      "target_language": "existing Rust wallet/payment domain + React/TypeScript shared UI + Fabushi semantic CSS",
+      "language_rationale": "Domain truth already has Rust owners; presentation uses existing React/TypeScript shared UI and semantic tokens.",
+      "command_event_contracts": [
+        "open detail -> canonical capability surface",
+        "theme change -> semantic panel updates without recreating domain state",
+        "Escape/close -> restore context/focus",
+        "capture -> owning panel",
+        "missing immutable capture -> no verified claim"
+      ],
+      "state_owner": "WalletLedger wallet state; PayEngine payment state; FDS Theme theme state; shared Overlay/Dialog transient presentation state",
+      "lifecycle_owner": "ProductShell/router + shared Dialog/Overlay + FDS Theme",
+      "persistence_and_restart": "No new persistence; durable wallet/payment state stays with existing owners; visual evidence is exact-head artifact state.",
+      "concurrency_and_cancellation": "No new concurrency owner; live theme change while mounted and shared dialog disposal are the temporal cases.",
+      "security_boundary": "UI receives authorized typed projection only and owns no provider credential, signing key, or settlement authority.",
+      "network_service_dependencies": [
+        "existing Fabushi payment/provider service boundary",
+        "GitHub exact-head visual-evidence authority"
+      ],
+      "service_owner": "existing Fabushi payment/provider service owners",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "wallet-details-dark-backdrop-fabushi-ui-replacement-mapped-open",
+      "blockers": [
+        "referenced work/evidence objects absent",
+        "no dedicated exact-head Fabushi payment-details renderer proven",
+        "no packaged Fabushi light/dark/live-toggle visual evidence",
+        "full wallet implementation independently open",
+        "recursive source closure open",
+        "independent release acceptance open"
+      ],
+      "production_entrypoints": [
+        "native::mahayana_messaging::WalletLedger",
+        "mahayana-platform-core::PayEngine::release_settlement",
+        "mahayana-platform-worker payment API routes",
+        "frontend::recovered::ui::OverlayDialog shared lifecycle basis"
+      ],
+      "production_evidence": [
+        "path:native/mahayana-messaging/src/wallet.rs",
+        "path:source/mahayana/mahayana-rs/mahayana-platform-core/src/payment.rs",
+        "path:source/mahayana/mahayana-rs/mahayana-platform-core/src/payment_infra.rs",
+        "path:source/mahayana/mahayana-rs/mahayana-platform-worker/src/payment_api.rs",
+        "path:frontend/src/recovered/ui/overlay-primitives.tsx",
+        "path:frontend/src/production/production.css",
+        "path:projects/fabushi-communication-platform/design-system.md",
+        "path:projects/fabushi-communication-platform/visual-acceptance.md"
+      ],
+      "test_evidence": [
+        "strict128 tasks/2026/08/07/fix-wallet-details-box-dark-backdrop.md@945be99d457a72240772216cd0b1926dca04eb72 fully read",
+        "task directory contains no tracked work/evidence captures",
+        "wallet.style/wallet_content.cpp exact anchors read",
+        "parent Fabushi tree non-truncated; no dedicated wallet/payment-named frontend renderer found",
+        "TDRP 39973427522 61/61; authority 12509399891 sha256:223bdc2898bcfd95db6786bb084e3915a964e4e8689fc1a68ec8c349be392ec3; closure 12510531578 sha256:b7455d2b1a3bb99519c32e2ae80040db8b2ad28ca21e1809fadb43e48671cdbc; reachability 12511045633 sha256:3c2254a8432019196fbb3ad80b1ac9c61db9ae9da7d5adf2f882e542e6e1cc71",
+        "Rust 39973427541 6/6; artifact 12509708226 sha256:a12ba53876e7eb830f12d62f3a7c9cb67edc7fbf8e2773cadcab8bc2cf09ead3"
+      ],
+      "target_commit": "e64e82d0def8b9337f7516e1f1fac61c6ec5a63a",
+      "workflow_run": 39973427522,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12509399891,
+      "artifact_digest": "sha256:223bdc2898bcfd95db6786bb084e3915a964e4e8689fc1a68ec8c349be392ec3",
+      "composition_root": "Fabushi ProductShell + canonical wallet/payment domain + shared UI/design system",
+      "composition_slot": "transaction-detail capability surface / semantic panel background",
+      "capability_component": "Dialog/DetailPanel/Overlay + FDS semantic surface + typed wallet/payment content",
+      "variation_axes": [
+        "wallet transfer vs settlement",
+        "light vs dark",
+        "fresh vs live toggle",
+        "owning panel vs transparent child"
+      ],
+      "shared_owner_contracts": [
+        "WalletLedger",
+        "PayEngine",
+        "payment infra/API",
+        "ProductShell/router",
+        "Dialog/DetailPanel/OverlayDialog",
+        "FDS Theme",
+        "FVA/FQT"
+      ],
+      "duplicate_root_check": "No new Wallet/Payment app, second settlement store, second wallet-ledger truth, second dialog lifecycle, or second theme owner.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "capability-surface",
+      "primary_navigation_target": "Existing ProductShell",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Open typed transaction detail from canonical context",
+      "detail_section": "Canonical transaction details in shared Dialog/DetailPanel",
+      "capability_surface": "Canonical transaction-detail surface; implementation/evidence open",
+      "route_contract": "Unified router/shell owns entry/return/focus",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Canonical dialog/detail responsive behavior",
+      "accessibility_contract": "Dialog semantics/focus/contrast",
+      "keyboard_contract": "Shared Escape/Tab/focus trap/restore",
+      "state_continuity_contract": "Live theme switching while open updates owning panel without losing route/domain/focus state.",
+      "ui_acceptance_scenarios": [
+        "light fresh-open",
+        "dark fresh-open",
+        "light->dark live-open",
+        "dark->light live-open",
+        "owning-panel capture",
+        "close/focus restore",
+        "adjacent amount-color not inferred"
+      ],
+      "design_system_version": "current Fabushi Design System",
+      "semantic_token_usage": [
+        "--fabushi-surface-raised",
+        "--fabushi-text-primary",
+        "--fabushi-text-secondary",
+        "--fabushi-border-default",
+        "--fabushi-focus-ring"
+      ],
+      "legacy_token_adapter": "cursor/sand compatibility only; windowBgOver/task pixels provenance only",
+      "canonical_component_ids": [
+        "Dialog",
+        "DetailPanel",
+        "OverlayDialog basis"
+      ],
+      "screen_pattern_id": "canonical capability-surface/dialog",
+      "screen_slots": [
+        "origin action",
+        "typed detail",
+        "shared dialog/detail panel",
+        "return lifecycle"
+      ],
+      "visual_state_matrix": [
+        "light/fresh",
+        "dark/fresh",
+        "light->dark/live",
+        "dark->light/live",
+        "owning-panel capture",
+        "focus/keyboard"
+      ],
+      "density_contract": "Canonical Fabushi density",
+      "icon_asset_contract": "Canonical Fabushi icons only",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Canonical dialog/theme motion",
+      "reduced_motion_contract": "Shared reduced-motion contract",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-WALLET-DETAILS-DARK-BACKDROP-THEME-VISUAL-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-WALLET-DETAILS-EXACT-TASK-SOURCE-001",
+        "ORA-TDRP-WALLET-DETAILS-UPSTREAM-PANEL-BG-001",
+        "ORA-TDRP-WALLET-DETAILS-CAPTURE-LAYER-001",
+        "ORA-TDRP-WALLET-DETAILS-OWNER-UNIQUENESS-001",
+        "ORA-TDRP-WALLET-DETAILS-MISSING-VISUAL-EVIDENCE-001",
+        "ORA-TDRP-WALLET-DETAILS-LIVE-THEME-CONTINUITY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-WALLET-DETAILS-NO-SECOND-PAYMENT-WALLET-OWNER-001",
+        "INV-TDRP-WALLET-DETAILS-NO-FEATURE-LOCAL-THEME-ROOT-001",
+        "INV-TDRP-WALLET-DETAILS-NO-UPSTREAM-COLOR-AS-FABUSHI-TOKEN-001",
+        "INV-TDRP-WALLET-DETAILS-NO-UNTRACKED-SCREENSHOT-AS-EVIDENCE-001",
+        "INV-TDRP-WALLET-DETAILS-EXACT-HEAD-ACTIONS-ONLY-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-WALLET-DETAILS-PAYMENT-OWNER-001",
+        "CONTRACT-TDRP-WALLET-DETAILS-DIALOG-THEME-OWNER-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-WALLET-DETAILS-LIVE-THEME-TOGGLE-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-WALLET-DETAILS-MISSING-VISUAL-EVIDENCE-001"
+      ],
+      "ui_functional_case_ids": [
+        "UI-TDRP-WALLET-DETAILS-CANONICAL-CAPABILITY-SURFACE-001"
+      ],
+      "visual_case_ids": [
+        "VIS-TDRP-WALLET-DETAILS-LIGHT-FRESH-001",
+        "VIS-TDRP-WALLET-DETAILS-DARK-FRESH-001",
+        "VIS-TDRP-WALLET-DETAILS-LIVE-TOGGLE-001",
+        "VIS-TDRP-WALLET-DETAILS-OWNING-PANEL-CAPTURE-001"
+      ],
+      "accessibility_case_ids": [
+        "A11Y-TDRP-WALLET-DETAILS-DIALOG-FOCUS-CONTRAST-001"
+      ],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-WALLET-DETAILS-NO-PAYMENT-SECRET-UI-OWNER-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-WALLET-DETAILS-CAPTURE-OWNER-LAYER-001",
+        "REG-TDRP-WALLET-DETAILS-NO-SECOND-OWNER-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-MODULE",
+        "G-TRACEABILITY",
+        "G-DESIGN-SYSTEM",
+        "G-COMPONENTS",
+        "G-VISUAL",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "strict128 + exact source anchors + exact current owner blobs"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [
+        "TDRP 39973427522 61/61 success",
+        "Rust 39973427541 6/6 success"
+      ],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Telegram wallet Qt names/colors retained as provenance only; no Qt UI/runtime/source palette/task screenshot imported.",
+      "reviewer": null,
+      "notes": "Strict128 only. Counters unknown=16,248 unread=16,223 omitted=0 responsibilities=146. Next strict129 tasks/2026/08/19/align-replies-thread-shared-media-attribution.md@ced812fb2b3a26d44a5e972fdc57d7a1dff4414c."
     }
   ]
 }

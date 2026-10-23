@@ -361,10 +361,10 @@
   "coverage": {
     "root_source_entries_total": 6893,
     "recursive_source_entries_total": 16379,
-    "unknown_minimum": 16249,
-    "unread_minimum": 16224,
+    "unknown_minimum": 16248,
+    "unread_minimum": 16223,
     "omitted_known": 0,
-    "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 06910d91bc127dc2ee1b1353139d1d77e19d26fc passed TDRP 39970676902 61/61 (authority 12509136820 sha256:034ae36cc2f6e5960b23f925bcf99480f3e1ccd4a109ff7c12028304b748e8e2; closure 12509261874 sha256:c2931062078cc4d07cb3a7566e9d7d0e5730a8e43d8558b2b5c3db40c12f6dff; reachability 12508878626 sha256:1c8c983651f0cec9953b5ea7749ead2a4b6091452519453d52bfb68347ad9483) and Rust 39970676904 6/6 (artifact 12508772088 sha256:86120551a373ec21fbf03d20a394a2cc0a6f550109bc5f0a093e68d99da6d9ea). Strict127 fully read tasks/2026/07/24/generate-walletkit-golden-vectors.md@863a1733649dcb8371091d750f6173bb8550a839 and mapped WalletKit/TON golden-vector fixture provenance plus PaymentSettlement applicability to existing owners. Referenced work/ generator/vector objects are absent from the accepted tree, so no golden bytes/hash or production wallet signing/key-custody implementation is claimed. Counters unknown=16,249 unread=16,224 omitted=0 responsibilities=145. Next strict128 tasks/2026/08/07/fix-wallet-details-box-dark-backdrop.md@945be99d457a72240772216cd0b1926dca04eb72."
+    "note": "Live upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent e64e82d0def8b9337f7516e1f1fac61c6ec5a63a passed TDRP 39973427522 61/61 and Rust 39973427541 6/6. Strict128 tasks/2026/08/07/fix-wallet-details-box-dark-backdrop.md@945be99d457a72240772216cd0b1926dca04eb72 was fully read; exact source anchors confirm themed owning-panel semantics while task-local work/evidence captures are absent. Existing-owner-first maps WalletLedger, PayEngine/payment infra/API, ProductShell + shared Dialog/DetailPanel/Overlay and FDS/FVA/FQT owners; no dedicated payment-details renderer/visual acceptance is proven. Counters unknown=16,248 unread=16,223 omitted=0 responsibilities=146. Next strict129 tasks/2026/08/19/align-replies-thread-shared-media-attribution.md@ced812fb2b3a26d44a5e972fdc57d7a1dff4414c."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -378,7 +378,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Strict127 is mapped-open only. The upstream task's referenced work/ generator/vector files are absent from the accepted exact tree; no golden bytes/hash, WalletKit/TON runtime, wallet signing/key custody, source closure, or independent acceptance is claimed."
+    "note": "Strict128 mapped-open only; no source closure, UI verification or independent acceptance claimed."
   },
   "baseline_identity_evidence": {
     "status": "pending-current-head-revalidation",
@@ -1827,5 +1827,5 @@
     "baseline_identity_accepted": false,
     "source_closure_ready": false
   },
-  "target_commit": "06910d91bc127dc2ee1b1353139d1d77e19d26fc"
+  "target_commit": "e64e82d0def8b9337f7516e1f1fac61c6ec5a63a"
 }
