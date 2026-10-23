@@ -54,3 +54,12 @@ Invariants: INV-TDRP-GSL-GITIGNORE-NO-SOURCE-OMISSION-001, INV-TDRP-GSL-GITIGNOR
 Closing only strict138 changes counters to unknown=16,238, unread=16,213, omitted=0, responsibilities=156. baseline_identity_accepted=false, source_closure_ready=false and independent release acceptance remain mandatory.
 
 Next strict139: Microsoft/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37 CMakeLists.txt@b1d24e5facfe56b1ae28468a5959797e9f6bacda.
+
+## Current exact-head revalidation
+- Revalidated Fabushi head: f3c367e3be93e432806ad47d8efa0ca8c97bd13a.
+- TDRP Revision 9 source authority run 40009202091 completed success with all 30 jobs successful.
+- Authority artifact 12525666806 digest sha256:2cf23f9f6f0563b99db9468b1c38a518a3a3a30dacac00ab706178225a2440e5.
+- Recursive closure artifact 12525537974 digest sha256:ae748f8007453733bd2253c0e28c82d998ecc261463081411265cc6d25e0f38a.
+- Recursive reachability artifact 12525673116 digest sha256:8aebb6db8661f59bf455868129781b9c07db5e9ae644533a598a06debb199ba7.
+- Rust desktop runtime run 40009201979 completed success with all 6 jobs successful; rust messaging artifact 12525965803 digest sha256:69a2025effc64e9d76137e6223935093b104878c34203526e8e3e297734bf31b.
+- This revalidation confirms the strict138 owner-anchor repair at f3c367e3be93e432806ad47d8efa0ca8c97bd13a. It does not change source-completeness counters or acceptance state: unknown=16,238, unread=16,213, omitted=0, baseline_identity_accepted=false, source_closure_ready=false, independent release acceptance still open.
