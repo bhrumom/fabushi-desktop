@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "76b6a190af7a9f2771596cc03cf9b5d5d1130489",
+  "target_commit": "ac152432d84855f74346b5cc9246f76276dbeb47",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16241,
-    "unread": 16216,
+    "unknown": 16240,
+    "unread": 16215,
     "omitted": 0,
-    "responsibilities_total": 153,
+    "responsibilities_total": 154,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -41552,6 +41552,254 @@
       "reviewer": null,
       "license_and_provenance": "Exact repository feedback-hook qualification provenance read from locked telegramdesktop/tdesktop live-dev blob; no Telegram Python/C++/provider-specific test runtime copied.",
       "notes": "Strict135 closes only tools/rules/test_hook.py semantic read/decomposition. Its 34 tests provide source evidence for paired edit/staged controls and expose intentional fail-open/ignored boundaries, while Python unittest/temp-Git/literal Telegram fixtures remain test mechanics. Existing TEST_STRATEGY/AGENTS quality owners are reused; no executable Fabushi feedback adapter currently exists, so qualification remains mapped-open. Counters unknown=16,241 unread=16,216 omitted=0 responsibilities=153. Next strict136 transitions from the exhausted root rules/tool qualification sequence into recursive child authority: Microsoft/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37, first non-directory entry .clang-format@c12d3bf2994fd5a083c04025d355a5ab4b3f6802.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/GSL",
+      "source_blob_sha": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+      "source_kind": "recursive_child_repository_formatting_policy_provenance",
+      "module_id": "tdesktop.thirdparty.gsl.clang-format",
+      "responsibility_id": "TDRP-R9-GSL-CLANG-FORMAT-POLICY-001",
+      "source_symbols": [
+        ".clang-format@c12d3bf2994fd5a083c04025d355a5ab4b3f6802",
+        "ColumnLimit",
+        "UseTab",
+        "IndentWidth",
+        "AccessModifierOffset",
+        "NamespaceIndentation",
+        "BreakBeforeBraces",
+        "BraceWrapping",
+        "AlwaysBreakTemplateDeclarations",
+        "BreakConstructorInitializersBeforeComma",
+        "ConstructorInitializerAllOnOneLineOrOnePerLine",
+        "AllowShortBlocksOnASingleLine",
+        "AllowShortFunctionsOnASingleLine",
+        "AllowShortIfStatementsOnASingleLine",
+        "AllowShortLoopsOnASingleLine",
+        "PointerAlignment",
+        "AlignConsecutiveAssignments",
+        "AlignTrailingComments",
+        "SpaceAfterCStyleCast",
+        "CommentPragmas"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-FORMATTING-POLICY-PROVENANCE",
+        "CAP-LANGUAGE-TOOLCHAIN-QUALITY",
+        "CAP-EXACT-HEAD-QUALITY-EVIDENCE"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "Microsoft/GSL:.clang-format@c12d3bf2994fd5a083c04025d355a5ab4b3f6802",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md@4d2c88e118ab489d3d0339d2a61371a7ea74e72e"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-clang-format-formatting-policy-complete-read.md",
+      "behavior_contract": "Treat the locked Microsoft/GSL .clang-format as C++ authoring-format policy provenance only: preserve deterministic style intent and the boundary between local formatting feedback and stronger build/test/release evidence, while mapping any applicable language-toolchain quality responsibility into Fabushi's existing source-neutral quality owner rather than creating a C++/Telegram formatter runtime.",
+      "state_machine": "accepted tdesktop gitlink -> exact GSL child commit -> read exact .clang-format blob -> compatible formatter/editor may apply declared C++ style -> formatting result remains supporting developer evidence only -> exact-head GitHub Actions and stronger build/runtime/release owners remain authoritative -> head/gitlink/blob drift or absent applicable target-language gate remains non-passing",
+      "side_effects": [
+        "The source file itself is declarative and creates no product state.",
+        "A compatible local formatter/editor may rewrite C++ authoring layout when explicitly invoked.",
+        "The policy does not build, execute, package, deploy, authorize, persist user data, or establish release acceptance."
+      ],
+      "failure_cases": [
+        "The GSL gitlink or .clang-format blob drifts and old formatting evidence is reused.",
+        "A formatter/version does not support the declared keys but the result is treated as equivalent.",
+        "CommentPragmas / NO-FORMAT suppression is misread as semantic or security exclusion.",
+        "A clean formatting result is promoted to compilation, test, source-closure, security, packaging, or release evidence.",
+        "Telegram/GSL C++ formatting policy is copied into a second Fabushi formatter/product owner despite existing source-neutral language-toolchain quality governance.",
+        "Absence of a retained C++ runtime is used to erase the source responsibility instead of recording provenance and applicability."
+      ],
+      "ui_disposition": "Not applicable; repository formatting/toolchain policy provenance only.",
+      "non_ui_responsibilities": [
+        "exact recursive-child source provenance",
+        "deterministic C++ authoring-format policy capture",
+        "declared indentation/brace/template/pointer/alignment/comment-pragma semantics",
+        "language-toolchain quality owner reuse",
+        "separation of formatting feedback from build/runtime/release acceptance",
+        "fail-closed drift and applicability boundary"
+      ],
+      "platform_delta": "Fabushi does not retain Microsoft/GSL C++ formatting configuration as shipping architecture. The applicable source-neutral lesson is that source-language formatting policy belongs to the existing language/toolchain quality owner and remains weaker than exact-head build/test/release evidence; C++-specific style keys stay provenance.",
+      "existing_owner_candidates": [
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Repository source static-analysis migration qualification",
+        "Fabushi existing language/toolchain quality owner",
+        "GitHub Actions exact-head quality/evidence lifecycle"
+      ],
+      "existing_owner": "Fabushi repository quality/test-evidence governance + existing language/toolchain quality owner",
+      "rejected_existing_owners": [
+        "A Microsoft/GSL or Telegram-specific formatter owner would duplicate source-neutral quality/toolchain ownership.",
+        "A shipping product owner does not own developer C++ formatting metadata.",
+        "A second C++ runtime is not justified solely to execute upstream formatting policy.",
+        "A clean local formatter cannot become release or migration acceptance authority."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md"
+      ],
+      "fabushi_target_symbols": [
+        "existing language/toolchain quality owner",
+        "Fabushi executable static-analysis/build verification remains exact-head GitHub Actions evidence"
+      ],
+      "target_language": "Markdown quality governance / existing native Rust-TypeScript-platform toolchain owners",
+      "language_rationale": "The source entry is C++ formatter policy, not shipping product code. Fabushi preserves its source-neutral toolchain-quality and evidence-strength responsibility in existing governance rather than retaining a C++ formatter runtime.",
+      "command_event_contracts": [
+        "locked child gitlink -> resolve exact child commit before reading policy",
+        "exact child blob -> record declared formatter semantics without inventing unspecified defaults or tool versions",
+        "local formatting invocation -> style feedback only, never build/runtime/release acceptance",
+        "non-retained source language -> preserve applicable quality intent in existing native toolchain owners",
+        "head/gitlink/blob drift or unsupported policy -> invalidate dependent claim and remain non-passing",
+        "publication -> exact-head GitHub Actions revalidation"
+      ],
+      "state_owner": "Existing repository quality/toolchain evidence lifecycle; no product state owner.",
+      "lifecycle_owner": "Fabushi Test Strategy and exact-head GitHub Actions evidence lifecycle.",
+      "persistence_and_restart": "No product persistence. Durable evidence is the immutable tdesktop gitlink, GSL commit/tree, .clang-format blob, dossier/ledger mapping and exact-head workflow artifacts; local formatter output is disposable developer state.",
+      "concurrency_and_cancellation": "Formatting may run locally over a working file, but any durable claim stays bound to one immutable source/blob identity. Partial formatting, concurrent file mutation, cancellation or stale source cannot be promoted to acceptance.",
+      "security_boundary": "Formatting configuration has no authorization, secret, network, identity, message, package-signing or release authority. NO-FORMAT is a formatting pragma only.",
+      "network_service_dependencies": [
+        "GitHub Actions for authoritative exact-head executable revalidation"
+      ],
+      "service_owner": "Fabushi repository quality/evidence lifecycle",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "formatting-policy-provenance-mapped-open",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions must validate strict136 after publication.",
+        "Recursive source closure remains open.",
+        "Independent release acceptance remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md"
+      ],
+      "test_evidence": [
+        "strict136 Microsoft/GSL .clang-format fully read at exact blob c12d3bf2994fd5a083c04025d355a5ab4b3f6802",
+        "tdesktop Telegram/ThirdParty/GSL gitlink independently resolved to 87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "GSL commit tree independently resolved to 6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41",
+        "exact-head TEST_STRATEGY preserves source-specific policy under the existing language/toolchain quality owner and exact-head evidence boundary",
+        "TDRP 39998164484 61/61; authority 12520278378 sha256:a97c604982bdba074fa1b59e6b6316a7613d060a5ecd4ac00e296101e86aa18e; closure 12520953207 sha256:fe369c5f8ba9e5c14a1ef5f559af958daa69d35c2ca6fab47af08b778c51d1ea; reachability 12520633420 sha256:e4ba64901933aba0ea3a95cfd5c4694843e67ee1dec07e877db59ed6c6d1c9aa",
+        "Rust 39998164311 6/6; artifact 12520862526 sha256:c924010d92cb6c328a85717a8163eddeb3e7ed4d21b8b2f2d7506aab746b4cb8"
+      ],
+      "target_commit": "ac152432d84855f74346b5cc9246f76276dbeb47",
+      "workflow_run": 39998164484,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12520278378,
+      "artifact_digest": "sha256:a97c604982bdba074fa1b59e6b6316a7613d060a5ecd4ac00e296101e86aa18e",
+      "composition_root": "Fabushi repository quality/test-evidence lifecycle",
+      "composition_slot": "recursive-child formatting-policy provenance + language-toolchain quality boundary",
+      "capability_component": "Language-toolchain formatting policy provenance",
+      "variation_axes": [
+        "locked child gitlink vs drifted child authority",
+        "declared style key vs unspecified formatter default",
+        "local formatting feedback vs exact-head acceptance",
+        "retained C++ mechanics vs source-neutral target-language quality intent",
+        "complete exact blob read vs partial/stale policy"
+      ],
+      "shared_owner_contracts": [
+        "Repository source static-analysis migration qualification",
+        "Existing language/toolchain quality owner",
+        "GitHub Actions exact-head evidence governance"
+      ],
+      "duplicate_root_check": "No Microsoft/GSL/Telegram formatter runtime, second C++ toolchain owner, second quality owner, product runtime or release authority introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository quality/tooling only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Repository quality/tooling",
+      "route_contract": "No shipping route",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Formatting-policy evidence remains bound to the exact tdesktop gitlink, GSL child commit/tree and .clang-format blob; drift, unsupported interpretation, local-only formatting or partial execution cannot become passing migration/release evidence.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "low",
+      "requirement_ids": [
+        "TDRP-R9-GSL-CLANG-FORMAT-POLICY-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GSL-CLANG-FORMAT-SOURCE-001",
+        "ORA-TDRP-GSL-CLANG-FORMAT-GITLINK-001",
+        "ORA-TDRP-GSL-CLANG-FORMAT-OWNER-001",
+        "ORA-TDRP-GSL-CLANG-FORMAT-EVIDENCE-BOUNDARY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GSL-CLANG-FORMAT-NO-CXX-RUNTIME-001",
+        "INV-TDRP-GSL-CLANG-FORMAT-STYLE-NOT-ACCEPTANCE-001",
+        "INV-TDRP-GSL-CLANG-FORMAT-EXACT-PROVENANCE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GSL-CLANG-FORMAT-PROVENANCE-001",
+        "CONTRACT-TDRP-GSL-CLANG-FORMAT-EVIDENCE-BOUNDARY-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GSL-CLANG-FORMAT-DRIFT-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-GSL-CLANG-FORMAT-PROVENANCE-001"
+      ],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "locked tdesktop Telegram/ThirdParty/GSL gitlink",
+        "locked Microsoft/GSL .clang-format blob"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact formatting-policy provenance read from Microsoft/GSL child commit pinned by the accepted tdesktop gitlink; no upstream C++ code or formatter runtime copied.",
+      "notes": "Strict136 closes only Microsoft/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37 .clang-format@c12d3bf2994fd5a083c04025d355a5ab4b3f6802 semantic read/decomposition. The ledger source identity remains the accepted tdesktop gitlink Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37 while the child file identity is locked in dependency/source-symbol/dossier provenance. Formatting policy is developer/toolchain quality provenance, not shipping runtime or release authority. Counters unknown=16,240 unread=16,215 omitted=0 responsibilities=154. Next strict137 Microsoft/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37 .gitattributes@3455dc9da5064e1a54deba6e2a5869aae2442d42.",
       "test_execution_evidence": []
     }
   ]
