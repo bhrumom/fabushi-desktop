@@ -26,7 +26,7 @@ Exact-head inspection of `.github/workflows/rust-desktop-runtime.yml@905fc0e...`
 Stale/synthetic configured-build input, unsupported analyzer capability, missing/disabled local hooks, and local analyzer success are never acceptance. Missing target-language dedicated static-analysis gates remain open. Recursive source closure and independent release acceptance remain open.
 
 ## Traceability
-Requirement `TDRP-R9-CLANG-TIDY-WORKFLOW-001`; oracles `ORA-TDRP-CLANG-TIDY-README-SOURCE-001`, `ORA-TDRP-CLANG-TIDY-CONFIGURED-COMPDB-001`, `ORA-TDRP-CLANG-TIDY-MIN-VERSION-001`, `ORA-TDRP-CLANG-TIDY-LOCAL-HOOK-ADAPTER-001`, `ORA-TDRP-CLANG-TIDY-FABUSHI-GATE-GAP-001`.
+Requirement `TDRP-R9-CLANG-TIDY-WORKFLOW-001`; oracles `ORA-TDRP-CLANG-TIDY-README-SOURCE-001`, `ORA-TDRP-CLANG-TIDY-CONFIGURED-COMPDB-001`, `ORA-TDRP-CLANG-TIDY-MIN-VERSION-001`, `ORA-TDRP-CLANG-TIDY-LOCAL-HOOK-ADAPTER-001`, `ORA-TDRP-CLANG-TIDY-FABUSHI-GATE-GAP-001`; invariants `INV-TDRP-CLANG-TIDY-NO-STALE-CONFIGURED-BUILD-001`, `INV-TDRP-CLANG-TIDY-NO-LOCAL-HOOK-ACCEPTANCE-001`, `INV-TDRP-CLANG-TIDY-NO-CXX-RUNTIME-001`, `INV-TDRP-CLANG-TIDY-EXACT-HEAD-ACTIONS-ONLY-001`.
 
 Closing only strict132 changes counters to unknown=16,244, unread=16,219, omitted=0, responsibilities=150. `baseline_identity_accepted=false`, `source_closure_ready=false` and independent release acceptance remain mandatory.
 
