@@ -361,10 +361,10 @@
   "coverage": {
     "root_source_entries_total": 6893,
     "recursive_source_entries_total": 16379,
-    "unknown_minimum": 16235,
-    "unread_minimum": 16210,
+    "unknown_minimum": 16234,
+    "unread_minimum": 16209,
     "omitted_known": 0,
-    "note": "Live upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 896ac363c9f3a869f5a5ae0b0a2527935d441a1f passed TDRP 40016655169 61/61 success; authority 12528463287 sha256:2cb9d4e74b0f4d9b5a0e3ad4332a9ade958399ae796fc34802f4e85d8ae1bfd3; closure 12529775142 sha256:3c0a34abd495778949e914f2be86b6aa9d933a35e9fc2d512e740d9523168903; reachability 12529620302 sha256:648d30230b5cd03ecbf51a9582989e041d731654ae044489873c0ce548d37151; Rust 40016655197 6/6 success; artifact 12529415203 sha256:e878b2060fd406ead0e2b2ba586bd7049dd78a67d79e910b3513631556f694c7. Strict141 CONTRIBUTING.md fully read and mapped-open under existing repository/test/evidence owners. Provider-specific CLA/Core-Guidelines approval, history recipe, universal 100%-coverage statement and mutable user Git settings remain provenance. Counters unknown=16,235 unread=16,210 omitted=0 responsibilities=159. Next strict142 GSL.natvis@965888cd9c70d7a19401aca4252c8a4a01c456c2."
+    "note": "Live upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 078d466c07ffcd90b4bd94fed59e1fa27086191d passed TDRP 40019138159 61/61 success; authority 12530131399 sha256:d27801a4cb0543097628906622a9c717b5a14f31bf4eb6dc04eb506331061508; closure 12530067154 sha256:fcc8f1d0d4fea641db080e780fa57c7061fa78a9117cf38d080d22bfbcf30260; reachability 12530376354 sha256:708ae333dafc8037a2ea256925f2389d0728d958d46fe0788e0e29e4387d3a4d; Rust 40019138234 6/6 success; artifact 12529752451 sha256:654c404c4b1757cb5ed7054c7e0d9f31874a4f6de36377a5d481fd6a5a6a3e39. Strict142 Microsoft/GSL GSL.natvis@965888cd9c70d7a19401aca4252c8a4a01c456c2 was fully read: 32 line slots / 1159 bytes. It projects final_action/span/not_null into Visual Studio debugging and is a build-interface/install asset per the already-closed CMake composition. Existing developer-environment/build-package/FQT evidence owners are reused; private C++ layout remains provenance rather than Fabushi runtime/ABI/safety truth. Counters unknown=16,234 unread=16,209 omitted=0 responsibilities=160. Next strict143 Microsoft/GSL LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -378,7 +378,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Strict141 mapped-open repository contribution/quality governance provenance only. Existing AGENTS repository change/materialization governance plus FQT-001/FQT-EVID-001 owners are reused; Microsoft-specific CLA/Core-Guidelines approval, history recipes, universal 100%-coverage contribution rule and mutable user Git settings are not a second Fabushi policy owner. Remaining GSL entries, recursive source closure and independent release acceptance remain open."
+    "note": "Strict142 mapped-open developer-debugger visualization/build-package asset provenance only. Existing AGENTS development-environment governance, desktop/package.json build/package composition and FQT-EVID-001 owners are reused; Microsoft/GSL private C++ field layout and Visual Studio NatVis mechanics are not a second Fabushi runtime, ABI, debugger, package or safety owner. Remaining GSL entries, recursive source closure and independent release acceptance remain open."
   },
   "baseline_identity_evidence": {
     "status": "pending-current-head-revalidation",
@@ -1827,5 +1827,5 @@
     "baseline_identity_accepted": false,
     "source_closure_ready": false
   },
-  "target_commit": "896ac363c9f3a869f5a5ae0b0a2527935d441a1f"
+  "target_commit": "078d466c07ffcd90b4bd94fed59e1fa27086191d"
 }
