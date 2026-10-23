@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16262,
-    "unread_minimum": 16237,
+    "unknown_minimum": 16261,
+    "unread_minimum": 16236,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -122,7 +122,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 8ab1deff05209e37ca1a5bfb77a512b71a856b82/tree eff1e410c41fea750988c17b0012a8e7d9423b2c passed TDRP 39938129941 at 61/61 and Rust 39938130025 at 6/6. Strict114 docs/assets/slide.02.jpg@2a19cfdeb4a831d8bbe553dede2b1cdae7aec40f is retained as AppStream/distribution visual-resource and autonomy/no-phone marketing-caption provenance under the existing FVA visual-acceptance, FDS brand-asset and FQT-EVID visual evidence owners; the rendered Telegram UI and autonomy caption are not Fabushi visual baseline, runtime account/session/sync proof, shipping asset, package/store proof or release authority, and the binary is not copied. Counters unknown=16,262 unread=16,237 omitted=0 responsibilities=132. Next strict root index 115 docs/assets/slide.03.jpg@588f2950d5f6fdd2625f2bd250db82761ce0e6f1. Fresh child exact-head Actions required.",
+  "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 347848c0207487c6acca95fab69bb0b685fed1de/tree 97b13bbb65a2b6ebce6e9ae6e47891f2f150a6c8 passed TDRP 39939734488 at 61/61 and Rust 39939734546 at 6/6. Strict115 docs/assets/slide.03.jpg@588f2950d5f6fdd2625f2bd250db82761ce0e6f1 is retained as AppStream/distribution media-viewer visual-resource and marketing-caption provenance under the existing Fabushi visual/design/evidence owners; the rendered Telegram media viewer is not Fabushi Resource/Media implementation, visual baseline, package/store proof or release authority, and the binary is not copied. Counters unknown=16,261 unread=16,236 omitted=0 responsibilities=133. Next strict root index 116 docs/assets/slide.04.jpg@d0598198b67a87638865f775f69a34fda792d493. Fresh child exact-head Actions required.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,

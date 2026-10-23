@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "8ab1deff05209e37ca1a5bfb77a512b71a856b82",
+  "target_commit": "347848c0207487c6acca95fab69bb0b685fed1de",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16262,
-    "unread": 16237,
+    "unknown": 16261,
+    "unread": 16236,
     "omitted": 0,
-    "responsibilities_total": 132,
+    "responsibilities_total": 133,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -35246,6 +35246,270 @@
       "reviewer": null,
       "license_and_provenance": "Exact upstream binary blob, accepted tree size, AppStream reference/caption and single-addition path history retained as provenance. Root LICENSE@d70f4d6a87eece19c4ec184de36a8aba72b4a639 is GPLv3 text; metainfo declares metadata_license CC0-1.0 and project_license GPL-3.0, but the accepted docs/assets directory has no asset-local LICENSE/NOTICE sidecar. No standalone screenshot reuse right is inferred and the Telegram slide bytes are not copied into Fabushi.",
       "notes": "Strict index 114 closes only docs/assets/slide.02.jpg as AppStream/distribution visual-resource provenance. Counters become unknown=16,262 unread=16,237 omitted=0 responsibilities=132. Next strict root index 115 docs/assets/slide.03.jpg@588f2950d5f6fdd2625f2bd250db82761ce0e6f1 (466,747 bytes; JPEG 2880x1800). Fresh child exact-head Actions required.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "docs/assets/slide.03.jpg",
+      "source_blob_sha": "588f2950d5f6fdd2625f2bd250db82761ce0e6f1",
+      "source_kind": "binary_visual_appstream_distribution_screenshot_asset",
+      "module_id": "tdesktop.root.docs.assets.slide03",
+      "responsibility_id": "TDRP-R9-UPSTREAM-SLIDE03-VISUAL-ASSET-PROVENANCE-001",
+      "source_symbols": [
+        "AppStream supplemental screenshot resource docs/assets/slide.03.jpg",
+        "AppStream caption: A quick way to view photos, videos and files",
+        "rendered Telegram Desktop media-viewer scene with overlay navigation and photo metadata",
+        "single-addition visual asset provenance at 3661442acde378b36d9c5f8029d98e3334a9a657"
+      ],
+      "capability_ids": [
+        "CAP-VISUAL-RESOURCE-PROVENANCE",
+        "CAP-BRAND-ASSET-BOUNDARY",
+        "CAP-VISUAL-EVIDENCE-IDENTITY",
+        "CAP-DISTRIBUTION-PRESENTATION-PROVENANCE"
+      ],
+      "dependency_ids": [
+        "lib/xdg/org.telegram.desktop.metainfo.xml@c8b26f262bfdfa93f97b22f9aba4131073504223",
+        "LICENSE@d70f4d6a87eece19c4ec184de36a8aba72b4a639",
+        "projects/fabushi-communication-platform/visual-acceptance.md",
+        "projects/fabushi-communication-platform/design-system.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-root-docs-assets-slide-03-visual-provenance-complete-read.md",
+      "behavior_contract": "Retain slide.03.jpg exact binary identity, its AppStream supplemental-screenshot role, rendered media-viewer scene and exact viewing caption as upstream presentation provenance only. Fabushi must implement and prove media/resource viewing, navigation, metadata, permissions and lifecycle through canonical Resource/Media owners and exact-head executable evidence; this marketing screenshot is not a Fabushi visual baseline, viewer implementation, package proof or release acceptance.",
+      "state_machine": "resolve exact upstream tree/blob -> visually inspect immutable binary -> read AppStream consumer/caption and complete path history -> separate media-viewer marketing presentation from executable Resource/Media behavior -> audit current Fabushi visual/design/evidence owners -> verify parent exact-head gates and leases -> CAS accounting publication -> require fresh child exact-head gates",
+      "side_effects": [
+        "Retains exact upstream supplemental screenshot identity, rendered media-viewer provenance and AppStream caption relationship.",
+        "Maps visual/store presentation governance to existing Fabushi visual-design/evidence owners without importing Telegram media.",
+        "Keeps actual Resource/Media viewer behavior with canonical executable owners rather than the screenshot.",
+        "Introduces no copied Telegram screenshot, media viewer runtime, visual baseline store, brand owner or packaging owner."
+      ],
+      "failure_cases": [
+        "Telegram slide bytes are copied into Fabushi product/store assets without independent authorization",
+        "the rendered media viewer or viewing caption is treated as Fabushi approved UI/runtime behavior evidence",
+        "external Telegram branding becomes canonical Fabushi brand/design authority",
+        "AppStream screenshot presence is treated as Fabushi package/store publication or release evidence",
+        "repository/metainfo licensing fields are misread as asset-local standalone authorization",
+        "stale PR/ref/tree/upstream or visual-owner lease is published"
+      ],
+      "ui_disposition": "No shipping Telegram media viewer is ported from this binary. Its depicted full-screen photo viewer, previous/next navigation, close/download/menu controls and metadata are presentation provenance only; Fabushi must express applicable behavior through canonical Resource/Media components, design system and exact-head tests.",
+      "non_ui_responsibilities": [
+        "binary asset identity and path provenance",
+        "AppStream supplemental screenshot-reference/caption provenance",
+        "rendered media-viewer marketing-scene provenance",
+        "presentation claim versus executable Resource/Media behavior separation",
+        "external brand-asset exclusion",
+        "visual baseline/evidence separation",
+        "license/provenance fail-closed handling"
+      ],
+      "platform_delta": "Telegram publishes this slide as a Linux/AppStream marketing screenshot for media viewing. Fabushi keeps source-neutral Resource/Media and visual evidence contracts; any equivalent photo/video/file viewer semantics must be implemented and accepted in Fabushi current-head production rather than inferred from source artwork.",
+      "existing_owner_candidates": [
+        "visual-acceptance.md current-head screenshot matrix/content-brand/artifact evidence (selected)",
+        "design-system.md Fabushi semantic visual system and brand-asset boundary (selected)",
+        "quality/evidence-contract.md exact-head visual evidence identity and independent acceptance (selected)",
+        "canonical Resource/Media owners (actual media-viewing behavior remains there; not derived from this binary)",
+        "release-entry-exit-criteria.md packaged visual release gate (supporting, not visual truth owner)",
+        "new Telegram media-viewer/store/baseline owner (rejected)"
+      ],
+      "existing_owner": "FVA visual-acceptance + FDS design-system + FQT-EVID exact-head visual evidence; canonical Resource/Media remains executable behavior owner",
+      "rejected_existing_owners": [
+        "Release packaging can consume approved Fabushi screenshots but cannot own canonical visual/resource truth.",
+        "The AppStream metainfo consumer is upstream presentation metadata, not a Fabushi Resource/Media runtime owner.",
+        "A marketing caption cannot replace canonical media-viewer implementation or E2E evidence.",
+        "A Telegram media-viewer/store/baseline owner would duplicate canonical Fabushi visual/resource authority."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/fabushi-communication-platform/visual-acceptance.md",
+        "projects/fabushi-communication-platform/design-system.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "每次 visual acceptance 绑定 target SHA、workflow/run/attempt/job、platform/runtime、viewport、theme、locale、fixture、artifact ID/digest。HEAD 或 relevant token/component/screen baseline 改变后旧截图只作历史证据。",
+        "故意视觉变更需要 design rationale、affected screenshots、before/after artifact、reviewer、baseline update commit。不能自动 accept all snapshots。",
+        "截图之外断言：唯一 primary nav、唯一 ConversationWorkspace、唯一 Composer、唯一 Search/CommandPalette root、正确 route/slot、没有重复 hidden app tree。Visual green 不能掩盖 architecture duplication。",
+        "关键 packaged journey 必须录制完整 session video。Artifact 存在不等于审阅完成：独立 reviewer 必须从开始到结束实际检查，并记录 reviewer、charter、time range、observations、defects/none、verdict。只看 final screenshot 不能替代 temporal review。",
+        "本 Design System accepted 需要：Fabushi semantic layer 已进入 shipping product；新 migrated UI 只使用该公共合同；核心 legacy surfaces 通过 adapter 收口；visual acceptance 全绿。本文当前是规范，不宣称实现完成。"
+      ],
+      "target_language": "Existing Markdown visual/design/quality contracts; shipping UI remains React/TypeScript under canonical Fabushi owners",
+      "language_rationale": "The source entry is a binary AppStream marketing screenshot rather than reusable runtime logic. Its applicable responsibilities are immutable visual provenance, marketing-claim boundaries and exact-head visual evidence discipline; actual media/resource viewer behavior remains with canonical Fabushi Resource/Media owners and is not inherited from the image.",
+      "command_event_contracts": [
+        "visual state -> current-head screenshot matrix",
+        "media/resource behavior -> canonical Resource/Media owner + executable tests",
+        "visual artifact -> manifest + screenshots + baseline/actual/diff + a11y/keyboard evidence",
+        "external source brand asset -> provenance only unless independently authorized",
+        "marketing caption -> requires separate canonical executable behavior evidence",
+        "packaged/store presentation -> existing release/visual evidence gates"
+      ],
+      "state_owner": "Fabushi visual acceptance/evidence contracts own baseline identity and verdict; actual media/resource viewer state remains with canonical Resource/Media owners, not this screenshot.",
+      "lifecycle_owner": "Existing Resource/Media lifecycle plus design review, visual baseline update, exact-head evidence and release acceptance; TDRP ledger owns only upstream source disposition.",
+      "persistence_and_restart": "Only immutable source identity, visual inspection provenance, AppStream consumer/caption and dossier/ledger disposition are persisted here. Resource/Media state and visual baselines remain in their canonical lifecycles.",
+      "concurrency_and_cancellation": "Visual evidence is target-SHA bound and becomes historical after relevant head/token/component/screen drift; media lifecycle/cancellation must be proven separately in canonical executable owners; branch publication remains expected-SHA/force-with-lease fenced.",
+      "security_boundary": "Do not import external branded media or infer screenshot reuse rights from metadata/project-license fields. Marketing imagery cannot authorize resource access, permissions, storage, network, package or release behavior.",
+      "network_service_dependencies": [
+        "GitHub Actions for exact-head evidence"
+      ],
+      "service_owner": "No runtime service is owned by this asset. Existing Fabushi visual/design/quality/release owners remain authoritative; actual Resource/Media services are outside this binary's provenance responsibility.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "visual-provenance-equivalent",
+      "blockers": [
+        "Fresh strict115 child exact-head TDRP/Rust Actions are required after publication.",
+        "Fabushi full visual acceptance remains open and must use Fabushi-generated current-head screenshots.",
+        "Actual Resource/Media viewer behavior remains subject to canonical production and acceptance evidence.",
+        "Recursive source disposition remains open.",
+        "Independent release acceptance remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [
+        "path:projects/fabushi-communication-platform/visual-acceptance.md",
+        "path:projects/fabushi-communication-platform/design-system.md",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "test_evidence": [
+        "Accepted upstream tree binds docs/assets/slide.03.jpg to blob 588f2950d5f6fdd2625f2bd250db82761ce0e6f1 at 466,747 bytes; the JPEG is 2880x1800.",
+        "Visual inspection of the exact JPEG shows a Telegram Desktop full-screen photo viewer over a dimmed conversation, with previous/next navigation, close, download/menu controls and photo metadata, plus the embedded copy 'A quick way to view photos, videos and files'.",
+        "lib/xdg/org.telegram.desktop.metainfo.xml@c8b26f262bfdfa93f97b22f9aba4131073504223 references slide.03.jpg as a supplemental AppStream screenshot and repeats the same viewing caption.",
+        "Path history is a single introduction commit 3661442acde378b36d9c5f8029d98e3334a9a657 ('Add more screenshots to metainfo'), shared with the four-slide AppStream screenshot set.",
+        "Existing-owner audit re-read exact blobs: visual-acceptance.md@16855454ff7897f3aa205bc33f1672077e32955d, design-system.md@bab234e73227686ba978f6d0b332e2fc896488fa, evidence-contract.md@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70, release-entry-exit-criteria.md@c5eb9d0897234bb2fdad4f505549b2350c44aa72.",
+        "Parent exact-head TDRP run 39939734488 completed 61/61 success; authority 12495123323 sha256:8959056af87ae58357a98d828d9015962a5494e47e19ec792aa012616c79986f; closure 12496121227 sha256:fdd7cc82665d634c1a1de5b06dea2c17fb2cb5f950afd0345c70c5517becd28b; reachability 12494844973 sha256:7ca50f261834398b0f9465ff554597b2099b58afca91c4aebcdcf7b2b37835d0.",
+        "Parent exact-head Rust run 39939734546 completed 6/6 success; artifact 12495646699 sha256:a70928b858522fe3ee9a3d4ca81c8551723076599ed5d7ac5a074cdcba320afe.",
+        "Publication preflight: PR/ref remained 347848c0207487c6acca95fab69bb0b685fed1de/tree 97b13bbb65a2b6ebce6e9ae6e47891f2f150a6c8; live upstream dev remained a7f453612f4896ac04d0007a36ab0d377e5bcbcf/tree c539eabfb05e7dcaa84821ac44c35cdfb6551ae5; live main remained 7394f6dc7687f9b986ee5589d40aa680ce23b90a."
+      ],
+      "target_commit": "347848c0207487c6acca95fab69bb0b685fed1de",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi canonical visual/design/quality evidence architecture",
+      "composition_slot": "Upstream distribution/AppStream supplemental screenshot provenance",
+      "capability_component": "Source-neutral visual provenance, media-viewer marketing boundary and exact-head evidence disposition",
+      "variation_axes": [
+        "upstream supplemental AppStream screenshot versus Fabushi shipping visual evidence",
+        "rendered media viewer versus canonical Resource/Media implementation authority",
+        "viewing caption versus executable media/resource behavior proof",
+        "historical screenshot versus current-head approved baseline",
+        "repository/metainfo licensing fields versus asset-local reuse authorization"
+      ],
+      "shared_owner_contracts": [
+        "FVA visual-acceptance.md",
+        "FDS design-system.md",
+        "FQT-EVID evidence-contract.md",
+        "FQT release entry/exit criteria",
+        "Rust desktop runtime exact-head workflow"
+      ],
+      "duplicate_root_check": "No Telegram media-viewer/store asset owner, second visual-baseline store, second brand authority, second Resource/Media runtime, second packaging metadata owner or copied external asset introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Visual-resource provenance and evidence governance only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing Fabushi visual/design/release evidence surfaces only; actual media viewer remains canonical Resource/Media surface",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "The upstream screenshot depicts one historical desktop media-viewer geometry and is not a responsive contract. Fabushi responsive acceptance remains governed by canonical screen patterns and current-head visual evidence.",
+      "accessibility_contract": "The source binary supplies no Fabushi accessibility proof; Fabushi media-viewer controls require canonical semantics, keyboard/focus and exact-head a11y evidence.",
+      "keyboard_contract": "Not applicable to the source binary asset.",
+      "state_continuity_contract": "Any changed source blob/reference/caption/history, Fabushi visual/resource owner, PR/ref/tree or live upstream lease requires fresh reconciliation; an older marketing screenshot never upgrades to current-head Fabushi Resource/Media evidence.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "FDS-001",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "External source branding/assets remain provenance only; Fabushi controls use canonical icon/asset authority.",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-UPSTREAM-SLIDE03-VISUAL-ASSET-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-SLIDE03-EXACT-BLOB-001",
+        "ORA-TDRP-SLIDE03-REFERENCE-CAPTION-ROLE-001",
+        "ORA-TDRP-SLIDE03-EXISTING-VISUAL-OWNER-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-SLIDE03-NO-TELEGRAM-BRAND-ASSET-001",
+        "INV-TDRP-SLIDE03-NO-IMPORTED-BASELINE-001",
+        "INV-TDRP-SLIDE03-NO-MARKETING-AS-RUNTIME-PROOF-001",
+        "INV-TDRP-SLIDE03-NO-RELEASE-ACCEPT-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-SLIDE03-EXACT-SOURCE-001",
+        "CONTRACT-TDRP-SLIDE03-CANONICAL-VISUAL-OWNER-001",
+        "CONTRACT-TDRP-SLIDE03-EXACT-HEAD-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-SLIDE03-UPSTREAM-DRIFT-001",
+        "TEMP-TDRP-SLIDE03-VISUAL-OWNER-DRIFT-001",
+        "TEMP-TDRP-SLIDE03-BASELINE-STALE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-SLIDE03-STALE-ASSET-001",
+        "FAULT-TDRP-SLIDE03-IMPORTED-BASELINE-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-SLIDE03-EXTERNAL-BRAND-NOT-AUTHORITY-001",
+        "SEC-TDRP-SLIDE03-NO-INFERRED-ASSET-LICENSE-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-SLIDE03-NO-SECOND-VISUAL-ROOT-001",
+        "REG-TDRP-SLIDE03-NO-BRAND-REGRESSION-001",
+        "REG-TDRP-SLIDE03-MARKETING-NOT-RUNTIME-PROOF-001"
+      ],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-MODULE",
+        "G-TRACEABILITY",
+        "G-DESIGN-SYSTEM",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "locked docs/assets/slide.03.jpg identity + exact AppStream consumer/caption + visual inspection + canonical Fabushi visual/design/evidence owners + parent exact-head Actions"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "release_gate_status": "open",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact upstream binary blob, accepted tree size, AppStream reference/caption and single-addition path history retained as provenance. Root LICENSE@d70f4d6a87eece19c4ec184de36a8aba72b4a639 is GPLv3 text; metainfo declares metadata_license CC0-1.0 and project_license GPL-3.0, but the accepted docs/assets directory has no asset-local LICENSE/NOTICE sidecar. No standalone screenshot reuse right is inferred and the Telegram slide bytes are not copied into Fabushi.",
+      "notes": "Strict index 115 closes only docs/assets/slide.03.jpg as AppStream/distribution visual-resource provenance. Counters become unknown=16,261 unread=16,236 omitted=0 responsibilities=133. Next strict root index 116 docs/assets/slide.04.jpg@d0598198b67a87638865f775f69a34fda792d493 (602,137 bytes; JPEG 2880x1800). Fresh child exact-head Actions required.",
       "test_execution_evidence": []
     }
   ]
