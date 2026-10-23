@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "417a226a88897ddc3dd88f21d7dcbf854f40eaa2",
+  "target_commit": "dd73463705dd875b2bc127396fb0b5af528dfe31",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16254,
-    "unread": 16229,
+    "unknown": 16253,
+    "unread": 16228,
     "omitted": 0,
-    "responsibilities_total": 140,
+    "responsibilities_total": 141,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -37783,6 +37783,304 @@
       "license_and_provenance": "Exact upstream WEB proxy server-ready execution test plan retained as test/security/release provenance. Existing Fabushi validators cover source-neutral bounded-network/security responsibility; Telegram relay/WebView/browser/field-specific execution is not imported or fabricated.",
       "reviewer": null,
       "notes": "Strict122 closes docs/web-proxy-test-plan.md (25,526 bytes) as execution-test provenance mapped to existing Fabushi network validators, with Telegram relay/WebView/browser/field cases explicitly open. Parent exact head 417a226a88897ddc3dd88f21d7dcbf854f40eaa2 passed TDRP 61/61 and Rust 6/6. Counters become unknown=16,254 unread=16,229 omitted=0 responsibilities=140. Next strict123 lib/xdg/org.telegram.desktop.desktop@573648491b97f9b1eb460a4c8add4ddf17ce171a. Fresh child exact-head Actions required."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "lib/xdg/org.telegram.desktop.desktop",
+      "source_blob_sha": "573648491b97f9b1eb460a4c8add4ddf17ce171a",
+      "source_kind": "xdg_desktop_entry_packaging_metadata",
+      "module_id": "tdesktop.root.lib.xdg.desktop_entry",
+      "responsibility_id": "TDRP-R9-UPSTREAM-XDG-DESKTOP-ENTRY-PROVENANCE-001",
+      "source_symbols": [
+        "[Desktop Entry]",
+        "Exec=Telegram -- %U",
+        "MimeType=x-scheme-handler/tg;x-scheme-handler/tonsite;x-scheme-handler/ton;",
+        "Actions=quit;",
+        "DBusActivatable=true",
+        "SingleMainWindow=true",
+        "X-GNOME-UsesNotifications=true",
+        "X-GNOME-SingleWindow=true",
+        "[Desktop Action quit]",
+        "Exec=Telegram -quit"
+      ],
+      "capability_ids": [
+        "CAP-DESKTOP-APPLICATION-DISCOVERY",
+        "CAP-DESKTOP-URI-HANDLER",
+        "CAP-DESKTOP-SINGLE-INSTANCE-ACTIVATION",
+        "CAP-DESKTOP-NOTIFICATION-INTEGRATION",
+        "CAP-DESKTOP-QUIT-LIFECYCLE",
+        "CAP-LINUX-PACKAGING-METADATA"
+      ],
+      "dependency_ids": [
+        "desktop/package.json@3d500622ce9b26e3452d98d0c4a7e7dcc019ac84",
+        "source/electron-main/main.ts@b8eeed322ec07e5c8f67fa367cd2f58ac212b4f0",
+        "source/electron-main/deep-link/deep-link-controller.ts@999373ffed03d3af124188442df814cae57725c2",
+        "source/shared/deep-link.ts@0fc20bc37ee986130b3337b4f954c406222d4b99",
+        "source/electron-main/auth/auth-callback-registration.ts@587fcc53c9436423e2bd212177b3e746d2a3ab95",
+        "source/electron-main/notifications/os-notification-manager.ts@009be9c231a976553f884dcb99d96e7a5aad98df"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-lib-xdg-org-telegram-desktop-desktop-complete-read.md",
+      "behavior_contract": "Preserve source-neutral XDG responsibilities through current Fabushi owners: application discovery/identity, URI activation, single canonical instance/window, notification integration and quit lifecycle. Telegram branding, tg/ton/tonsite schemes, Qt category, WM class and Telegram -quit spelling remain provenance. Incoming links require canonical validation before dispatch; package declarations are not installed Linux E2E evidence.",
+      "state_machine": "OS launcher/URI -> package/protocol association -> single-instance arbitration -> initial argv / second-instance / open-url -> canonical parser -> bounded dedupe/pending queue -> renderer-ready dispatch/focus; desktop quit -> existing before-quit lifecycle; installed Linux XDG/DBus/custom-scheme acceptance remains open",
+      "side_effects": [
+        "electron-builder metadata influences generated Linux launcher/protocol metadata",
+        "packaged non-lab auth callback may call setAsDefaultProtocolClient",
+        "accepted links focus/restore the canonical main window and may queue until renderer readiness",
+        "OS notification clicks focus the canonical window",
+        "publication changes only migration evidence/accounting"
+      ],
+      "failure_cases": [
+        "Telegram tg/ton/tonsite schemes are copied",
+        "fabushi package declaration is assumed to prove sand runtime association",
+        "incoming URI bypasses canonical parsing or bounded handling",
+        "a second XDG/package/URI/notification/window owner is introduced",
+        "duplicate activation forks a second canonical workspace",
+        "manifest metadata is treated as installed Linux E2E proof",
+        "stale lease/evidence is published"
+      ],
+      "ui_disposition": "System desktop-shell integration only; no Telegram-branded UI. Activation enters the existing Fabushi ProductShell.",
+      "non_ui_responsibilities": [
+        "desktop application discovery metadata",
+        "URI handler registration and activation",
+        "single process/main-window focus",
+        "bounded deep-link validation/dedupe/queue",
+        "OS notification integration",
+        "desktop quit lifecycle",
+        "packaged Linux evidence boundary"
+      ],
+      "platform_delta": "Telegram uses static XDG metadata with tg/ton schemes, DBus activation and GNOME hints. Fabushi uses electron-builder metadata plus Electron runtime registration/dispatch. Packaging declares fabushi while runtime auth/deep-link defaults to sand; direct installed Linux association is not claimed.",
+      "existing_owner_candidates": [
+        "desktop/package.json packaging metadata (selected)",
+        "source/electron-main/main.ts process/window lifecycle (selected)",
+        "DeepLink parser/controller (selected)",
+        "auth callback registration (selected)",
+        "OS notification manager (selected)",
+        "new Telegram/XDG runtime or package owner (rejected)"
+      ],
+      "existing_owner": "desktop/package.json packaging metadata + Electron main single-instance/open-url lifecycle + canonical DeepLink/AuthRedirect/OS-notification owners",
+      "rejected_existing_owners": [
+        "Telegram URI schemes are source-specific",
+        "new DBus/XDG runtime lacks owner-absence evidence",
+        "second package manifest duplicates desktop/package.json",
+        "second notification/window roots violate canonical composition",
+        "package metadata cannot own packaged Linux acceptance"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "desktop/package.json",
+        "source/electron-main/main.ts",
+        "source/electron-main/deep-link/deep-link-controller.ts",
+        "source/shared/deep-link.ts",
+        "source/electron-main/auth/auth-callback-registration.ts",
+        "source/electron-main/notifications/os-notification-manager.ts"
+      ],
+      "fabushi_target_symbols": [
+        "\"syncDesktopName\": true",
+        "deps.app.on(\"second-instance\"",
+        "deps.app.on(\"open-url\"",
+        "extractDeepLinkCandidatesFromArgv",
+        "export const SAND_DEEP_LINK_SCHEME = \"sand\"",
+        "setAsDefaultProtocolClient(protocolScheme)",
+        "export class SandOsNotificationManager"
+      ],
+      "target_language": "Existing Electron/TypeScript runtime owners + electron-builder JSON packaging metadata",
+      "language_rationale": "Platform metadata maps to existing package/platform/deep-link owners; no copied C++/Telegram runtime is needed.",
+      "command_event_contracts": [
+        "launcher/URI -> existing executable/package association",
+        "packaged callback -> setAsDefaultProtocolClient(current runtime scheme)",
+        "argv/second-instance/open-url -> strict parser -> bounded dedupe/queue -> renderer dispatch",
+        "duplicate launch without URI -> restore/focus canonical main window",
+        "desktop quit -> before-quit cleanup -> quit",
+        "installed Linux claim -> direct package/OS evidence required"
+      ],
+      "state_owner": "desktop/package.json owns package metadata; Electron main owns process/window lifecycle; DeepLink parser/controller owns URI state; auth registration owns dynamic OS protocol registration; notification manager owns notification activation.",
+      "lifecycle_owner": "Existing Electron production composition and before-quit/window lifecycle; no XDG-specific second lifecycle.",
+      "persistence_and_restart": "Desktop-entry/protocol association is installation/OS metadata. Pending links are bounded process state. Durable acceptance requires exact package artifact plus installed launch evidence.",
+      "concurrency_and_cancellation": "Single-instance lock fences duplicate packaged processes. Deep-link pending state is bounded/deduped. In-progress/cancelled Actions never pass.",
+      "security_boundary": "Do not register Telegram schemes. Candidates must pass canonical parser/allowlists before dispatch; package metadata does not authorize arbitrary navigation/auth.",
+      "network_service_dependencies": [
+        "GitHub source/Actions evidence for this audit slice; runtime first-party HTTPS deep-links remain under existing URL policy"
+      ],
+      "service_owner": "Existing desktop packaging/runtime owners; no new service owner",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "xdg-desktop-entry-responsibilities-mapped-open",
+      "blockers": [
+        "No exact-head installed Linux package evidence inspects generated .desktop content or launches through OS custom URI association.",
+        "Package manifest declares fabushi while runtime defaults to sand; installed association is not proven.",
+        "DBus/GNOME metadata lacks direct packaged Linux acceptance.",
+        "Recursive source closure remains open.",
+        "Independent release acceptance remains open."
+      ],
+      "production_entrypoints": [
+        "desktop/package.json::build.linux/build.protocols",
+        "source/electron-main/main.ts::startElectronMain",
+        "source/electron-main/deep-link/deep-link-controller.ts::SandDeepLinkController",
+        "source/shared/deep-link.ts::parseSandDeepLink",
+        "source/electron-main/auth/auth-callback-registration.ts::registerAuthCallbackProtocol",
+        "source/electron-main/notifications/os-notification-manager.ts::SandOsNotificationManager"
+      ],
+      "production_evidence": [
+        "path:desktop/package.json",
+        "path:source/electron-main/main.ts",
+        "path:source/electron-main/deep-link/deep-link-controller.ts",
+        "path:source/shared/deep-link.ts",
+        "path:source/electron-main/auth/auth-callback-registration.ts",
+        "path:source/electron-main/notifications/os-notification-manager.ts"
+      ],
+      "test_evidence": [
+        "Exact upstream XDG blob fully read at accepted commit/tree.",
+        "Exact current packaging/lifecycle/deep-link/auth/notification owner blobs reread at parent dd73463705dd875b2bc127396fb0b5af528dfe31.",
+        "Package metadata declares fabushi while runtime parser/auth defaults to sand; these remain distinct evidence layers.",
+        "Electron main uses requestSingleInstanceLock and routes second-instance/open-url/initial argv to canonical deep-link handling.",
+        "DeepLink controller bounds pending at 16 and dedupes; shared parser strictly validates candidates.",
+        "Current packaged acceptance proves renderer file launch but not installed Linux XDG/custom-protocol launch.",
+        "Parent TDRP 39959619794 attempt 2 completed 61/61 success; authority 12504735878 sha256:707b6acc460579689a6e3f3ca45348ef0c664c71dd6b3716ded2e65bac41e02a; closure 12505385361 sha256:f5d001d14669defc347e73b59b9ee422cdbbcdfad2e64d52ae2b7039d10b32b5; reachability 12504876174 sha256:e0d16f4e0686396ad651e7aa6cf33d7511527adca7f0f0a0285ce0de0e1dcdb1.",
+        "First-attempt child shard 20 failed only from GitHub HTTP 408 promisor fetch; focused rerun succeeded without code change.",
+        "Parent Rust 39959619814 completed 6/6 success; artifact 12503359946 sha256:d4e13cae79fb4697ac22673771c6a028cf057107e74ef4e00a6a2a2f7ab69fcf.",
+        "Preflight PR/ref/tree, live main 7394f6dc7687f9b986ee5589d40aa680ce23b90a/fbeb0bb32d944d0c1053880c471fe5c52279f052 and upstream a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5 remained stable."
+      ],
+      "target_commit": "dd73463705dd875b2bc127396fb0b5af528dfe31",
+      "workflow_run": 39959619794,
+      "run_attempt": 2,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12504735878,
+      "artifact_digest": "sha256:707b6acc460579689a6e3f3ca45348ef0c664c71dd6b3716ded2e65bac41e02a",
+      "composition_root": "Fabushi canonical desktop packaging and Electron process/window composition",
+      "composition_slot": "Linux desktop-entry / URI activation / single-instance integration",
+      "capability_component": "desktop discovery + URI activation + single-window/notification/quit lifecycle",
+      "variation_axes": [
+        "fabushi package scheme versus sand runtime scheme",
+        "initial argv vs second-instance vs open-url",
+        "renderer-ready vs pending queue",
+        "generated Linux package metadata vs installed acceptance",
+        "DBus/GNOME metadata vs Electron runtime"
+      ],
+      "shared_owner_contracts": [
+        "desktop/package.json",
+        "Electron main lifecycle",
+        "DeepLink parser/controller",
+        "Auth callback registration",
+        "OS notification manager",
+        "exact-head evidence governance"
+      ],
+      "duplicate_root_check": "No Telegram/XDG runtime, second package manifest, URI router, notification root, window root or acceptance authority is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "System desktop-shell integration",
+      "primary_navigation_target": "Existing canonical Fabushi ProductShell",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "OS launcher/protocol/quit only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing canonical desktop process/window surface",
+      "route_contract": "OS activation -> canonical process -> canonical parser/controller -> ProductShell",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Existing ProductShell accessibility remains authoritative.",
+      "keyboard_contract": "Existing application/window shortcuts remain canonical.",
+      "state_continuity_contract": "Duplicate launch converges on canonical process/window; accepted URI never bypasses parser/readiness; drift requires fresh evidence.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi canonical design system",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Package icon remains Fabushi-owned; Telegram icon id is provenance.",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-UPSTREAM-XDG-DESKTOP-ENTRY-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-XDG-DESKTOP-ENTRY-EXACT-SOURCE-001",
+        "ORA-TDRP-XDG-DESKTOP-ENTRY-PACKAGING-OWNER-001",
+        "ORA-TDRP-XDG-DESKTOP-ENTRY-URI-ACTIVATION-001",
+        "ORA-TDRP-XDG-DESKTOP-ENTRY-SINGLE-INSTANCE-001",
+        "ORA-TDRP-XDG-DESKTOP-ENTRY-EVIDENCE-BOUNDARY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-XDG-DESKTOP-ENTRY-NO-TELEGRAM-SCHEMES-001",
+        "INV-TDRP-XDG-DESKTOP-ENTRY-URI-VALIDATE-BEFORE-DISPATCH-001",
+        "INV-TDRP-XDG-DESKTOP-ENTRY-SINGLE-CANONICAL-WINDOW-001",
+        "INV-TDRP-XDG-DESKTOP-ENTRY-NO-PACKAGE-DECLARATION-AS-E2E-001",
+        "INV-TDRP-XDG-DESKTOP-ENTRY-NO-SECOND-PACKAGING-OWNER-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-XDG-DESKTOP-ENTRY-EXACT-SOURCE-001",
+        "CONTRACT-TDRP-XDG-DESKTOP-ENTRY-CANONICAL-OWNERS-001"
+      ],
+      "integration_case_ids": [
+        "INTEGRATION-TDRP-XDG-DESKTOP-ENTRY-SINGLE-INSTANCE-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-XDG-DESKTOP-ENTRY-PACKAGE-DRIFT-001",
+        "TEMP-TDRP-XDG-DESKTOP-ENTRY-UPSTREAM-DRIFT-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-XDG-DESKTOP-ENTRY-DUPLICATE-INSTANCE-001",
+        "FAULT-TDRP-XDG-DESKTOP-ENTRY-INVALID-URI-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-XDG-DESKTOP-ENTRY-NO-TELEGRAM-SCHEMES-001",
+        "SEC-TDRP-XDG-DESKTOP-ENTRY-CANONICAL-URI-VALIDATION-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-XDG-DESKTOP-ENTRY-NO-SECOND-OWNER-001",
+        "REG-TDRP-XDG-DESKTOP-ENTRY-PACKAGE-DECLARATION-NOT-E2E-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-MODULE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "locked XDG blob + exact current owners + parent exact-head Actions"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [
+        "TDRP 39959619794 attempt 2 61/61 success",
+        "Rust 39959619814 6/6 success"
+      ],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact XDG blob retained as platform/product provenance. Telegram branding, icon id, tg/ton schemes, Qt category, WM class and Telegram quit CLI are not promoted to Fabushi runtime authority.",
+      "reviewer": null,
+      "notes": "Strict123 closes only lib/xdg/org.telegram.desktop.desktop semantic read/decomposition. Counters unknown=16,253 unread=16,228 omitted=0 responsibilities=141. Linux installed XDG/custom-URI/DBus acceptance remains open. Next strict124 lib/xdg/org.telegram.desktop.metainfo.xml@c8b26f262bfdfa93f97b22f9aba4131073504223 (8,227 bytes). Fresh child exact-head TDRP/Rust Actions required."
     }
   ]
 }
