@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "83b1bbd97a28b92db31e7e42ec0f766bf772d3ca",
+  "target_commit": "a8cc41d290561b36368e06c83d913c5ac0ada4f8",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16260,
-    "unread": 16235,
+    "unknown": 16259,
+    "unread": 16234,
     "omitted": 0,
-    "responsibilities_total": 134,
+    "responsibilities_total": 135,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -35827,6 +35827,303 @@
       "license_and_provenance": "Exact upstream binary blob, accepted tree size, AppStream reference/caption and single-addition path history retained as provenance. Root LICENSE@d70f4d6a87eece19c4ec184de36a8aba72b4a639 is GPLv3 text; metainfo declares metadata_license CC0-1.0 and project_license GPL-3.0, but docs/assets has no asset-local LICENSE/NOTICE sidecar. No standalone screenshot reuse right is inferred and the Telegram slide bytes are not copied into Fabushi.",
       "notes": "Strict index 116 closes the read/decomposition of docs/assets/slide.04.jpg as AppStream/distribution visual-resource provenance and explicitly records that its unlimited-media/files claim is not yet an equivalent verified Fabushi storage/quota contract. Current executable owners remain bounded at 25 MiB ordinary attachments, 200 MiB videos and configured cache budgets. Counters become unknown=16,260 unread=16,235 omitted=0 responsibilities=134. Next strict root index 117 docs/building-linux.md@fbdf25355734f35617849224da106f1b9fafb3c9 (2,463 bytes). Fresh child exact-head Actions required.",
       "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "docs/building-linux.md",
+      "source_blob_sha": "fbdf25355734f35617849224da106f1b9fafb3c9",
+      "source_kind": "linux_build_instructions_documentation",
+      "module_id": "tdesktop.root.docs.building_linux",
+      "responsibility_id": "TDRP-R9-UPSTREAM-BUILDING-LINUX-BUILD-INSTRUCTIONS-PROVENANCE-001",
+      "source_symbols": [
+        "Build instructions for Linux using Docker",
+        "git clone --recursive https://github.com/telegramdesktop/tdesktop.git",
+        "./tdesktop/Telegram/build/prepare/linux.sh",
+        "docker run --rm -it -u $(id -u) -v \"$PWD:/usr/src/tdesktop\" tdesktop:centos_env",
+        "TDESKTOP_API_ID / TDESKTOP_API_HASH",
+        "CONFIG=Debug",
+        "Visual Studio Code integration / Dev Containers"
+      ],
+      "capability_ids": [
+        "CAP-LINUX-DEVELOPER-BUILD-PROVENANCE",
+        "CAP-RECURSIVE-SOURCE-BUILD-INPUT-BOUNDARY",
+        "CAP-LINUX-PACKAGE-CONFIGURATION",
+        "CAP-BUILD-CREDENTIAL-BOUNDARY",
+        "CAP-EXACT-HEAD-EVIDENCE-BOUNDARY"
+      ],
+      "dependency_ids": [
+        "Telegram/build/prepare/linux.sh@e4d2f920e4becdff6292d296efe6f21455a19fcb",
+        "Telegram/build/docker/centos_env/build.sh@00b5c9a2faf5e25fb981325f654d3458ce074a7d",
+        "Telegram/configure.sh@c550d988cff5fe3047311cc330aeee943ee328e5",
+        "Telegram/build/docker/centos_env/Dockerfile@3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2",
+        "Telegram/build/docker/centos_env/gen_dockerfile.py@86d27c96e1f732a1faf3e85397ea3ba38e493a0d",
+        "Telegram/build/docker/centos_env/pyproject.toml@8f43692fb217f075ccc588c3b677177e42b5688f",
+        "Telegram/build/docker/centos_env/poetry.lock@9d857912774d68b1f8adda1dbbccb87adefda788",
+        "projects/telegram-desktop-rust/dossiers/linux-build-environment-image-publish-workflow-complete-read.md@ef5e166a65dd8db92f82bbab89a32637164302c2",
+        "projects/telegram-desktop-rust/dossiers/linux-ci-build-verification-workflow-complete-read.md@85225833e49c8a657c013f28ec5af6e5f6c6131b",
+        "projects/telegram-desktop-rust/dossiers/upstream-root-docs-api-credentials-security-provisioning-complete-read.md@d306ded635eaf1f075f45c10fa6ed3139f757956",
+        "desktop/package.json@3d500622ce9b26e3452d98d0c4a7e7dcc019ac84",
+        ".github/workflows/rust-desktop-runtime.yml@905fc0e17e5b4e54cb18708c55d1eb8725d18f83"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-root-docs-building-linux-build-instructions-complete-read.md",
+      "behavior_contract": "Retain the upstream Linux developer-build procedure as exact build-environment/source-acquisition provenance: recursive source checkout, generated Docker build environment, normal/debug configuration, credential injection, output location and optional editor container. Fabushi does not import Telegram's Docker image, build scripts, API credentials or VS Code environment as shipping authority. Current Fabushi Linux package metadata is owned by desktop/package.json and current executable verification remains exact-head GitHub Actions. The repository currently declares AppImage/deb targets but has no Actions workflow that actually builds Linux AppImage/deb, so packaged Linux acceptance remains open.",
+      "state_machine": "choose external BuildPath -> recursively clone accepted upstream source -> install Poetry -> prepare/linux.sh renders locked centos_env inputs and builds local tdesktop:centos_env -> docker run as caller uid with exact source bind mount -> configure release or CONFIG=Debug with upstream-only API credentials -> cmake build into out -> optional VS Code Dev Container authoring adapter; Fabushi maps build/package responsibilities to existing package/workflow owners -> exact-head Actions -> Linux packaged acceptance remains open until a real Actions package/install journey exists",
+      "side_effects": [
+        "Upstream procedure installs Poetry and resolves locked Python tooling.",
+        "Upstream procedure builds a local Docker image and writes build output under out.",
+        "Upstream procedure injects Telegram API application credentials into CMake configuration.",
+        "Optional upstream VS Code instructions create developer-only editor/container state.",
+        "Fabushi publication changes only TDRP evidence/accounting; no local build, Docker image, credential, package or production runtime is created."
+      ],
+      "failure_cases": [
+        "recursive checkout or submodule materialization is incomplete",
+        "Poetry installer/environment or Dockerfile acquisition drifts",
+        "generated centos_env dependencies differ from reviewed lock/source",
+        "Telegram API credentials are copied or treated as Fabushi production credentials",
+        "host paths, uid mapping or Debug configuration are treated as portable product guarantees",
+        "VS Code Dev Container becomes shipping/build authority",
+        "desktop/package.json AppImage/deb configuration is mistaken for Linux packaged Actions evidence",
+        "macOS release workflow is incorrectly extrapolated into Linux release acceptance",
+        "a local build or output directory is treated as FBCP/TDRP executable evidence",
+        "stale PR/main/upstream or owner lease is published"
+      ],
+      "ui_disposition": "Build/developer documentation only. No Telegram UI or developer-tool UI is ported. Optional VS Code Dev Containers remain authoring provenance and do not become a Fabushi product surface.",
+      "non_ui_responsibilities": [
+        "recursive source acquisition provenance",
+        "Linux developer build-environment preparation",
+        "generated container-input provenance",
+        "release/debug configuration selection",
+        "build credential injection boundary",
+        "host uid/mount/output-path behavior",
+        "optional editor/devcontainer authoring boundary",
+        "Fabushi Linux AppImage/deb package metadata ownership",
+        "exact-head Actions executable validation",
+        "packaged Linux evidence gap"
+      ],
+      "platform_delta": "Telegram documents a Docker/Poetry-based local Linux C++ build and optional VS Code Dev Container. Fabushi already has Electron/Rust build composition and Linux AppImage/deb metadata, and all FBCP/TDRP executable verification is GitHub-Actions-only. Upstream developer ergonomics are preserved as provenance; they do not replace Fabushi's package/runtime/evidence owners.",
+      "existing_owner_candidates": [
+        "desktop/package.json Linux AppImage/deb configuration (selected package metadata owner)",
+        ".github/workflows/rust-desktop-runtime.yml exact-head Electron/renderer/co-staged runtime build (selected executable verification owner)",
+        "existing AGENTS exact-head Actions and release-support-container governance (supporting shared boundary)",
+        "existing FQT evidence/release owners (supporting acceptance boundary)",
+        "strict111 Account/Auth/Secrets credential boundary (upstream API credential exclusion)",
+        "new Telegram Docker/Linux build runtime or credential owner (rejected)"
+      ],
+      "existing_owner": "desktop/package.json Linux package metadata + rust-desktop-runtime.yml exact-head build verification + existing repository/FQT build/evidence governance",
+      "rejected_existing_owners": [
+        "Telegram centos_env is upstream build support, not a Fabushi shipping runtime.",
+        "Telegram api_id/api_hash are upstream application credentials and do not become Fabushi Account/Auth secrets.",
+        "VS Code Dev Containers are optional authoring adapters, not build/release authority.",
+        "macOS exact-source packaging workflow cannot be used as evidence for Linux AppImage/deb packaging.",
+        "A second Linux build system would duplicate current Electron/Rust build/package owners."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "desktop/package.json",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "fabushi_target_symbols": [
+        "\"syncDesktopName\": true",
+        "\"AppImage\"",
+        "\"packageName\": \"fabushi\"",
+        "Build Grok-shaped Electron runtime",
+        "Typecheck and build renderer",
+        "Verify co-staged desktop runtime"
+      ],
+      "target_language": "Existing JSON package/packaging configuration + GitHub Actions YAML build/evidence orchestration",
+      "language_rationale": "The upstream entry is build/developer documentation, not reusable product runtime code. Applicable responsibilities map to existing Fabushi package metadata and exact-head Actions orchestration; source-specific Docker/CMake/API-credential/editor details remain provenance.",
+      "command_event_contracts": [
+        "recursive source clone -> reviewed build inputs",
+        "prepare/linux.sh -> Poetry lock + generated Dockerfile -> local upstream build image",
+        "docker run -> caller uid + exact source bind mount -> release/debug configure/build",
+        "Telegram API credential parameters -> upstream-only configuration; never Fabushi identity/auth authority",
+        "Fabushi source change -> exact-head rust-desktop-runtime Actions build/test",
+        "Fabushi Linux package config -> AppImage/deb metadata only until an exact-head packaging workflow executes it",
+        "package/install/release claim -> requires separate immutable artifact and packaged acceptance evidence"
+      ],
+      "state_owner": "Fabushi package metadata remains desktop/package.json; build verification state is exact commit/run/job/artifact identity in GitHub Actions. Upstream Docker/editor state and local out directories are non-authoritative.",
+      "lifecycle_owner": "Existing source/dependency build governance -> exact-head GitHub Actions -> package/release evidence lifecycle. TDRP owns only upstream-source disposition.",
+      "persistence_and_restart": "Upstream local Docker images, Poetry environments, editor settings and out directories are disposable developer state. Durable Fabushi evidence is exact repository source plus current-head Actions/artifact identity; Linux packaged artifacts require their own immutable evidence when implemented.",
+      "concurrency_and_cancellation": "Local upstream instructions define no canonical concurrency contract. Fabushi Actions own cancellation/concurrency semantics; cancelled/in-progress runs never pass. Package metadata alone does not create package lifecycle state.",
+      "security_boundary": "Do not copy Telegram api_id/api_hash, build-container credentials or editor settings into Fabushi production. External installers/images/registries remain supply-chain inputs. No local workstation build is FBCP/TDRP evidence. Linux package configuration cannot authorize signing, publication, installation or release acceptance.",
+      "network_service_dependencies": [
+        "GitHub source/submodule transport for upstream provenance",
+        "Python package registry used by Poetry in upstream developer procedure",
+        "container/base/source acquisition endpoints referenced by centos_env inputs",
+        "GitHub Actions for Fabushi exact-head executable evidence"
+      ],
+      "service_owner": "Existing repository build/package/evidence infrastructure; no new Fabushi product service owner",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "build-documentation-provenance-equivalent",
+      "blockers": [
+        "Fresh strict117 child exact-head TDRP/Rust Actions are required after publication.",
+        "Current Fabushi declares Linux AppImage/deb package targets but no current workflow executes Linux electron-builder/AppImage/deb packaging; packaged Linux acceptance remains open.",
+        "Individual centos_env/build-time acquisitions remain independent inventory responsibilities.",
+        "Recursive source disposition remains open.",
+        "Independent release acceptance remains open."
+      ],
+      "production_entrypoints": [
+        "desktop/package.json::build.linux",
+        ".github/workflows/rust-desktop-runtime.yml::renderer"
+      ],
+      "production_evidence": [
+        "path:desktop/package.json",
+        "path:.github/workflows/rust-desktop-runtime.yml"
+      ],
+      "test_evidence": [
+        "docs/building-linux.md@fbdf25355734f35617849224da106f1b9fafb3c9 was fully read at the accepted upstream commit; it defines recursive clone, prepare/linux.sh, uid-preserving Docker build, Release/Debug configuration, upstream API credential injection, out-directory result and optional VS Code Dev Containers.",
+        "Telegram/build/prepare/linux.sh@e4d2f920e4becdff6292d296efe6f21455a19fcb runs poetry install and streams gen_dockerfile into a local tdesktop:centos_env Docker build.",
+        "Telegram/build/docker/centos_env/build.sh@00b5c9a2faf5e25fb981325f654d3458ce074a7d invokes configure.sh and cmake --build; configure.sh@c550d988cff5fe3047311cc330aeee943ee328e5 dispatches to configure.py.",
+        "centos_env source inputs were SHA-anchored: Dockerfile@3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2, gen_dockerfile.py@86d27c96e1f732a1faf3e85397ea3ba38e493a0d, pyproject.toml@8f43692fb217f075ccc588c3b677177e42b5688f and poetry.lock@9d857912774d68b1f8adda1dbbccb87adefda788.",
+        "History review included the prepare/linux.sh handoff (38941eb3c8efc556f9dbf27f881464f6945cc34f), quoted bind mount fix (923e3ee8080b3d91a0aa643408127c95aa2375e9), caller uid mapping (709ce3adb8403570ef4af300cc7e0ca18eddcc2e), Dev Containers integration (678527254b07736015d6e21fbb66bd9ab6a87a51) and current CONFIG=Debug correction (bf4442ecf5f4a21636d39df3b88ca4e1c0d75ec8).",
+        "strict111 credential dossier confirms Telegram api_id/api_hash are upstream credential provenance only and must not become Fabushi production credentials.",
+        "Current desktop/package.json@3d500622ce9b26e3452d98d0c4a7e7dcc019ac84 declares Linux targets AppImage and deb, syncDesktopName=true and deb packageName=fabushi.",
+        "Current rust-desktop-runtime.yml@905fc0e17e5b4e54cb18708c55d1eb8725d18f83 exact-head binds checkout and builds Electron, typechecks/builds renderer and verifies the co-staged desktop runtime.",
+        "All 25 current .github/workflows files were enumerated and inspected for AppImage, deb and electron-builder Linux packaging; only release-macos-main.yml invokes electron-builder, specifically --mac --arm64. No current workflow establishes Linux AppImage/deb packaged evidence.",
+        "Parent exact-head TDRP run 39943268249 completed 61/61 success; authority 12496339838 sha256:4418187b47d33c504631439efe7bd38903734c39bb2810f37065f6ae54233bf2; closure 12497212855 sha256:931a0e500781faecb2f5e4e76320b386961d220d40256a7eff41edab5a6603ab; reachability 12496923446 sha256:6971847bd29a02c5dfc223f61dfd9c1462c3ab624dbdedb0b365ded18f550fea.",
+        "Parent exact-head Rust run 39943268259 completed 6/6 success; artifact 12496832678 sha256:acd65428eaff6fba277803a8a75a38b19b5350d91cd55bb888f39256f3ac2190.",
+        "Publication preflight: PR/ref remained a8cc41d290561b36368e06c83d913c5ac0ada4f8/tree 1c274243afd9866f7e5caf71b85c8a05be7eab6f; live upstream dev remained a7f453612f4896ac04d0007a36ab0d377e5bcbcf/tree c539eabfb05e7dcaa84821ac44c35cdfb6551ae5; live main remained 7394f6dc7687f9b986ee5589d40aa680ce23b90a/tree fbeb0bb32d944d0c1053880c471fe5c52279f052."
+      ],
+      "target_commit": "a8cc41d290561b36368e06c83d913c5ac0ada4f8",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi canonical build/package/evidence architecture",
+      "composition_slot": "Linux developer-build provenance and package-metadata boundary",
+      "capability_component": "Source-neutral Linux build-input provenance + existing AppImage/deb package metadata + exact-head build evidence",
+      "variation_axes": [
+        "Release versus Debug upstream developer build",
+        "recursive source/materialization drift",
+        "Poetry/Docker/generated-input drift",
+        "uid/path/editor-environment variation",
+        "upstream Telegram credential provisioning versus Fabushi Account/Auth",
+        "Linux package configuration versus actual packaged Actions evidence"
+      ],
+      "shared_owner_contracts": [
+        "desktop/package.json Linux package metadata",
+        "rust-desktop-runtime exact-head build verification",
+        "AGENTS build/test and release-support-container governance",
+        "FQT evidence/release acceptance",
+        "strict111 credential boundary"
+      ],
+      "duplicate_root_check": "No Telegram Docker/Linux product runtime, second build system, second package metadata store, second credential owner, second release authority or local-build acceptance path is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository build/package provenance only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing package configuration and exact-head Actions build/evidence surfaces only",
+      "route_contract": "upstream recursive source -> developer build inputs -> documented build output; Fabushi source -> exact-head Actions build -> separate package/acceptance evidence",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Changed source blob/history, centos_env inputs, Fabushi package/workflow owner, PR/ref/tree, main or upstream lease requires fresh reconciliation. A local upstream build or stale package config never upgrades into current-head packaged evidence.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-UPSTREAM-BUILDING-LINUX-BUILD-INSTRUCTIONS-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-BUILDING-LINUX-EXACT-SOURCE-001",
+        "ORA-TDRP-BUILDING-LINUX-EXISTING-BUILD-PACKAGE-OWNER-001",
+        "ORA-TDRP-BUILDING-LINUX-NO-LOCAL-EVIDENCE-001",
+        "ORA-TDRP-BUILDING-LINUX-LINUX-PACKAGE-EVIDENCE-GAP-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-BUILDING-LINUX-NO-TELEGRAM-CREDENTIAL-001",
+        "INV-TDRP-BUILDING-LINUX-NO-SECOND-BUILD-RUNTIME-001",
+        "INV-TDRP-BUILDING-LINUX-CONFIG-NOT-PACKAGED-EVIDENCE-001",
+        "INV-TDRP-BUILDING-LINUX-EXACT-HEAD-ACTIONS-ONLY-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-BUILDING-LINUX-EXACT-SOURCE-001",
+        "CONTRACT-TDRP-BUILDING-LINUX-CANONICAL-OWNER-001",
+        "CONTRACT-TDRP-BUILDING-LINUX-EXACT-HEAD-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-BUILDING-LINUX-UPSTREAM-DRIFT-001",
+        "TEMP-TDRP-BUILDING-LINUX-BUILD-INPUT-DRIFT-001",
+        "TEMP-TDRP-BUILDING-LINUX-PACKAGE-WORKFLOW-DRIFT-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-BUILDING-LINUX-RECURSIVE-CHECKOUT-001",
+        "FAULT-TDRP-BUILDING-LINUX-POETRY-DOCKER-001",
+        "FAULT-TDRP-BUILDING-LINUX-MISSING-PACKAGED-EVIDENCE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-BUILDING-LINUX-CREDENTIAL-SEPARATION-001",
+        "SEC-TDRP-BUILDING-LINUX-SUPPLY-CHAIN-001",
+        "SEC-TDRP-BUILDING-LINUX-LOCAL-BUILD-NO-AUTHORITY-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-BUILDING-LINUX-NO-TELEGRAM-BUILD-RUNTIME-001",
+        "REG-TDRP-BUILDING-LINUX-NO-LOCAL-EVIDENCE-001",
+        "REG-TDRP-BUILDING-LINUX-LINUX-PACKAGE-GAP-STAYS-OPEN-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-MODULE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "locked docs/building-linux.md + exact build-script/container inputs + exact current package/workflow owners + 25-workflow Linux package scan + parent exact-head Actions"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact upstream build-document and dependent build scripts/configuration are retained as source/build provenance. Telegram image names, Docker/Poetry/editor instructions, host paths and API credentials are source-specific and are not promoted to Fabushi runtime/package/release authority.",
+      "reviewer": null,
+      "notes": "Strict index 117 closes only docs/building-linux.md as Linux developer-build/documentation provenance. Counters become unknown=16,259 unread=16,234 omitted=0 responsibilities=135. Current Fabushi AppImage/deb configuration exists but no current Actions workflow packages Linux artifacts, so Linux packaged acceptance remains open. Next strict root index 118 docs/building-mac.md@b8c6b6bae95b87f94d090fc73acd774d6307ef12 (1,500 bytes). Fresh child exact-head TDRP/Rust Actions required."
     }
   ]
 }

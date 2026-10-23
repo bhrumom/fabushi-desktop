@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16260,
-    "unread_minimum": 16235,
+    "unknown_minimum": 16259,
+    "unread_minimum": 16234,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -122,7 +122,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 83b1bbd97a28b92db31e7e42ec0f766bf772d3ca/tree 97e76b3567717c7b020cc701ea6dec9fe9bfa70c passed TDRP 39941133413 at 61/61 and Rust 39941133415 at 6/6. Strict116 docs/assets/slide.04.jpg@d0598198b67a87638865f775f69a34fda792d493 is retained as AppStream/distribution visual-resource plus unlimited-media/files marketing-claim provenance. Existing attachment/storage owners remain authoritative: current Fabushi explicitly enforces 25 MiB ordinary attachments and 200 MiB videos, Host bounded ingest/chunk semantics and configured MediaCache budgets. The source word 'unlimited' is therefore recorded as an open product/server quota-equivalence gap, not silently adopted by removing current limits. Telegram slide bytes are not copied. Counters unknown=16,260 unread=16,235 omitted=0 responsibilities=134. Next strict root index 117 docs/building-linux.md@fbdf25355734f35617849224da106f1b9fafb3c9 (2,463 bytes). Fresh child exact-head Actions required.",
+  "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent a8cc41d290561b36368e06c83d913c5ac0ada4f8/tree 1c274243afd9866f7e5caf71b85c8a05be7eab6f passed TDRP 39943268249 at 61/61 and Rust 39943268259 at 6/6. Strict117 docs/building-linux.md@fbdf25355734f35617849224da106f1b9fafb3c9 is retained as Linux developer-build/source-acquisition/credential/editor-environment provenance under existing Fabushi package and exact-head Actions owners. desktop/package.json declares AppImage/deb, but all 25 current workflows were scanned and none performs Linux electron-builder/AppImage/deb packaging; packaged Linux acceptance remains open. Telegram Docker/Poetry/VS Code/API-credential details are not Fabushi runtime or release authority. Counters unknown=16,259 unread=16,234 omitted=0 responsibilities=135. Next strict root index 118 docs/building-mac.md@b8c6b6bae95b87f94d090fc73acd774d6307ef12. Fresh child exact-head Actions required.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
