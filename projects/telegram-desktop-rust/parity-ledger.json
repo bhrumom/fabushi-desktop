@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "4c5586e55c2f04e8de976786f1e1edf36abea517",
+  "target_commit": "e4c9f80158f6bcd5d3dc4772f6bd4fec1a73eea5",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16277,
-    "unread": 16252,
+    "unknown": 16276,
+    "unread": 16251,
     "omitted": 0,
-    "responsibilities_total": 117,
+    "responsibilities_total": 118,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -31526,6 +31526,251 @@
       "reviewer": null,
       "license_and_provenance": "Exact upstream .gitignore blob 320c160d093a0a36ceb3f6437500d01a63d5ed00 is retained as repository provenance. Exact Telegram directory, build, IDE, session, snap, Python, Cursor and generated-doc patterns are not copied as Fabushi product/runtime semantics; only source-neutral worktree hygiene and non-authority responsibilities are absorbed.",
       "notes": "Strict index 99 closes only .gitignore. Counters become unknown=16,277 unread=16,252 omitted=0 responsibilities=117. Next strict root index 100 .gitmodules@2a71e861fab57dfd74d66e787867f2ede203a099 (4321 bytes). baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": ".gitmodules",
+      "source_blob_sha": "2a71e861fab57dfd74d66e787867f2ede203a099",
+      "source_kind": "repository_direct_gitlink_manifest",
+      "module_id": "tdesktop.gitmodules",
+      "responsibility_id": "TDRP-R9-DIRECT-SUBMODULE-MANIFEST-PROVENANCE-001",
+      "source_symbols": [
+        "36 [submodule \"...\"] declarations",
+        "36 unique path = ... direct gitlink locations",
+        "36 unique url = https://github.com/... repository locators",
+        "no branch = override declarations",
+        "path-to-URL manifest joined to mode 160000 Git tree entries; immutable commit identity remains the gitlink object SHA"
+      ],
+      "capability_ids": [
+        "CAP-RECURSIVE-SOURCE-AUTHORITY",
+        "CAP-DIRECT-GITLINK-REPOSITORY-RESOLUTION",
+        "CAP-EXTERNAL-SOURCE-PROVENANCE"
+      ],
+      "dependency_ids": [
+        "projects/telegram-desktop-rust/upstream.lock.json#direct_gitlinks",
+        "scripts/discover-tdrp-recursive-root-authority.mjs",
+        "scripts/discover-tdrp-recursive-fixed-point.mjs",
+        ".github/workflows/tdrp-revision9-authority.yml"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/gitmodules-direct-submodule-manifest-complete-read.md",
+      "behavior_contract": "Treat .gitmodules as the direct gitlink repository-location manifest for the exact upstream tree. Each declared path must join to the corresponding mode-160000 Git tree entry and its repository URL; the immutable child revision is the gitlink object SHA, not the URL, branch name, redirect, default branch, or remote HEAD. Missing, duplicated, or lock-mismatched locator data is incomplete source authority and must fail closed.",
+      "state_machine": "read exact upstream tree and .gitmodules -> parse 36 path/URL declarations -> enumerate mode-160000 direct gitlinks -> join each gitlink by path to one manifest URL -> normalize repository identity for lock comparison -> bind each child authority to the immutable gitlink object SHA -> recurse through child .gitmodules/gitlinks to fixed point -> require unresolved gitlink authorities=0 while keeping recursive source disposition/source closure independently open",
+      "side_effects": [
+        "Provides repository location metadata used by recursive exact-source discovery for direct gitlinks.",
+        "Allows validators to resolve each immutable gitlink object SHA to the declared repository without inventing a mutable dependency pin.",
+        "Does not itself clone, execute, ship, license, trust, update, or accept any child repository.",
+        "Does not establish product/runtime dependency ownership or turn gitlink fixed-point closure into full source closure."
+      ],
+      "failure_cases": [
+        "a mode-160000 gitlink has no matching .gitmodules path or URL",
+        "duplicate manifest paths or names make the path-to-repository mapping ambiguous",
+        "manifest path set differs from upstream.lock direct_gitlinks",
+        "normalized manifest repository differs from the locked direct_gitlink repository for the same path",
+        "a URL, redirect, default branch or remote HEAD is treated as the immutable child revision instead of the gitlink object SHA",
+        "repository location drift is silently followed without a new exact upstream tree/lock reconciliation",
+        "gitlink fixed-point success is misreported as unknown=0, unread=0 or full source closure"
+      ],
+      "ui_disposition": "Not a shipping UI capability.",
+      "non_ui_responsibilities": [
+        "direct submodule path-to-repository manifest provenance",
+        "separation of repository locator URL from immutable gitlink commit identity",
+        "manifest-to-lock direct gitlink bijection",
+        "fail-closed recursive gitlink authority resolution",
+        "recursive fixed-point source authority without source-closure fabrication"
+      ],
+      "platform_delta": "The exact Telegram .gitmodules paths and repositories remain upstream source provenance. Fabushi reuses the source-neutral recursive authority/lock/validator responsibility only; it does not adopt a Telegram submodule runtime, dependency manager, updater, network owner, or second package/source truth.",
+      "existing_owner_candidates": [
+        "projects/telegram-desktop-rust/upstream.lock.json direct_gitlinks (selected durable direct-gitlink lock owner)",
+        "scripts/discover-tdrp-recursive-root-authority.mjs (selected direct manifest/gitlink join validator)",
+        "scripts/discover-tdrp-recursive-fixed-point.mjs (selected recursive immutable gitlink authority validator)",
+        ".github/workflows/tdrp-revision9-authority.yml (selected exact-head executable fixed-point gate)",
+        "product package/dependency runtime owner (rejected)",
+        "networking/update owner (rejected)",
+        "new Telegram submodule manager/source owner (rejected)"
+      ],
+      "existing_owner": "TDRP upstream.lock direct_gitlinks plus existing recursive source-authority validators",
+      "rejected_existing_owners": [
+        "Shipping package/dependency owners govern product runtime dependencies, not upstream source gitlink location metadata.",
+        "Networking/updater owners govern runtime transport/update behavior, not recursive source-authority acquisition.",
+        "A Telegram-specific submodule manager would duplicate the existing source-neutral lock and recursive validators and create a second source truth."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/upstream.lock.json",
+        "scripts/discover-tdrp-recursive-root-authority.mjs",
+        "scripts/discover-tdrp-recursive-fixed-point.mjs",
+        ".github/workflows/tdrp-revision9-authority.yml"
+      ],
+      "fabushi_target_symbols": [
+        "\"direct_gitlinks\"",
+        "for(const link of linked) fail(link.url,authority.id+' gitlink lacks .gitmodules URL: '+link.path);",
+        "for (const gitlink of gitlinks) fail(gitlink.url, authority.repository + ' gitlink lacks .gitmodules URL ' + gitlink.path);",
+        "if (report.unresolved_gitlink_authorities !== 0) throw new Error('unresolved gitlink authorities remain');"
+      ],
+      "target_language": "Repository source-authority JSON + Node/GitHub Actions validators",
+      "language_rationale": "The source is Git repository metadata. Its applicable responsibility is already implemented by the source-neutral exact-source lock and Node/GitHub Actions recursive validators; no Rust/React shipping runtime owner is required.",
+      "command_event_contracts": [
+        "parse the exact .gitmodules blob and require one path and URL per direct submodule declaration",
+        "join manifest entries to exact-tree mode-160000 gitlinks by path",
+        "fail closed when a gitlink lacks a manifest URL",
+        "normalize repository identity only for location comparison; immutable child identity remains the gitlink object SHA",
+        "require manifest path/repository agreement with upstream.lock direct_gitlinks",
+        "recurse child gitlinks by immutable commit until the fixed-point validator proves unresolved_gitlink_authorities=0",
+        "preserve baseline_identity_accepted=false and source_closure_ready=false until the independent full-source gates close"
+      ],
+      "state_owner": "The exact upstream commit/tree owns gitlink object SHAs; upstream.lock direct_gitlinks durably records path/repository/commit authority. .gitmodules owns only exact-tree repository locator metadata.",
+      "lifecycle_owner": "Existing TDRP exact-head recursive source-authority discovery, lock reconciliation and GitHub Actions validation lifecycle.",
+      "persistence_and_restart": "The durable lock and repository commit/tree are reconstructable source authority. Runner clones/worktrees/remotes are ephemeral; restart must reacquire from the exact repository+commit rather than inherit mutable remote state.",
+      "concurrency_and_cancellation": "Recursive authority shards may resolve independent immutable child repositories concurrently. Cancellation, provider failure, missing URL or incomplete child scan leaves evidence incomplete; no partial shard may advance source closure or acceptance.",
+      "security_boundary": "A .gitmodules URL is a locator, not a trust, integrity, license or authorization proof. Exact child commit identity comes from the gitlink object SHA and remains subject to repository/content/provenance validation; redirects or mutable remote heads cannot silently replace it.",
+      "network_service_dependencies": [],
+      "service_owner": "Existing TDRP source-authority acquisition/validation lifecycle; no shipping runtime service.",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "workflow-equivalent",
+      "blockers": [
+        "Fresh strict100 child exact-head TDRP/Rust Actions are required.",
+        "Recursive source disposition remains open with unknown/unread entries."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        ".gitmodules@2a71e861fab57dfd74d66e787867f2ede203a099 fully read: 108 lines / 4321 bytes.",
+        "Manifest preflight: 36 stanzas, 36 unique paths, 36 unique normalized repository URLs, no branch overrides, duplicate paths/names, missing paths or missing URLs.",
+        "Lock reconciliation: manifest path set equals upstream.lock direct_gitlinks 36/36 and normalized repository mapping matches 36/36 with zero mismatches.",
+        "Existing-owner uniqueness: source path, source blob and responsibility ID have zero prior ledger rows; each selected target symbol occurs exactly once in its exact-head owner/validator and has zero prior target-path+symbol ownership rows.",
+        "Parent e4c9f80158f6bcd5d3dc4772f6bd4fec1a73eea5/tree d48373972863f474561af24bdf0cf7792822e188: TDRP run 39903360678 is 61/61 success; authority 12479289689 sha256:4e17e5bd8c15656d7b4d1c1b9b5d89085cedbded68da3de62719e965ab55c5ee; closure 12479679023 sha256:2d6802579c4011b5fcf1d50ac5704a64cd368cece67db6e08a4f4dc12a6addd2; reachability 12480355228 sha256:7156152fc061a27c2da6218aa848f07cca88a2066dcbe43b91cb6efa1e56a417.",
+        "Parent Rust desktop runtime run 39903360611 is 6/6 success; artifact 12480066202 sha256:e3769ec5d3735fdb46ff1b51722159cfb987015775aa59271e7b4f944691f06d.",
+        "Live upstream dev remained a7f453612f4896ac04d0007a36ab0d377e5bcbcf/tree c539eabfb05e7dcaa84821ac44c35cdfb6551ae5 immediately before publication."
+      ],
+      "target_commit": "e4c9f80158f6bcd5d3dc4772f6bd4fec1a73eea5",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi TDRP exact-source authority and recursive inventory lifecycle",
+      "composition_slot": "Direct gitlink repository manifest and immutable child-authority resolution",
+      "capability_component": "Provider-neutral recursive exact-source authority",
+      "variation_axes": [
+        "manifest path present/missing/duplicated",
+        "repository URL match/mismatch/redirect",
+        "immutable gitlink SHA versus mutable remote ref",
+        "direct versus nested gitlink",
+        "fixed-point closed versus full recursive disposition open"
+      ],
+      "shared_owner_contracts": [
+        "upstream.lock direct_gitlinks immutable source-authority lock",
+        "recursive root manifest/gitlink join validator",
+        "recursive fixed-point gitlink authority validator",
+        "exact-head GitHub Actions recursive authority gate"
+      ],
+      "duplicate_root_check": "No second dependency manager, source lock, Telegram submodule runtime, networking owner, updater owner or acceptance root is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository source-authority metadata only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Provider-neutral direct gitlink manifest provenance",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Repository locator URLs may change only through a new exact upstream tree and lock reconciliation; immutable source continuity is bound to the exact gitlink object SHA and current-head evidence.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-DIRECT-SUBMODULE-MANIFEST-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GITMODULES-PATH-URL-BIJECTION-001",
+        "ORA-TDRP-GITMODULES-GITLINK-PIN-SEPARATION-001",
+        "ORA-TDRP-GITMODULES-FIXED-POINT-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GITMODULES-URL-NOT-COMMIT-PIN-001",
+        "INV-TDRP-GITMODULES-NO-SECOND-DEPENDENCY-OWNER-001",
+        "INV-TDRP-GITMODULES-NO-SOURCE-CLOSURE-FABRICATION-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GITMODULES-DIRECT-GITLINK-JOIN-001",
+        "CONTRACT-TDRP-GITMODULES-MISSING-URL-FAIL-CLOSED-001",
+        "CONTRACT-TDRP-GITMODULES-LOCK-MANIFEST-AGREEMENT-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GITMODULES-MISSING-URL-001",
+        "FAULT-TDRP-GITMODULES-DUPLICATE-PATH-001",
+        "FAULT-TDRP-GITMODULES-LOCK-REPOSITORY-MISMATCH-001",
+        "FAULT-TDRP-GITMODULES-REMOTE-LOCATION-DRIFT-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-GITMODULES-EXTERNAL-URL-NOT-TRUST-PROOF-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-GITMODULES-DIRECT-GITLINK-SET-001",
+        "REG-TDRP-GITMODULES-NO-SOURCE-OMISSION-001"
+      ],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "locked .gitmodules + upstream.lock direct_gitlinks + recursive source-authority validators + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "release_gate_status": "open",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact upstream .gitmodules blob 2a71e861fab57dfd74d66e787867f2ede203a099 is retained as source provenance. Its 36 repository URLs are location metadata only; immutable child identity is the exact gitlink commit recorded in the parent tree/upstream.lock, and each child repository retains independent license/provenance obligations. No child code or source-branded runtime owner is adopted by this mapping.",
+      "notes": "Strict index 100 closes only .gitmodules. Counters become unknown=16,276 unread=16,251 omitted=0 responsibilities=118. Next strict root index 101 AGENTS.md@b3ce86744f7d889a5dee63dbaefa3353801c4c32. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required.",
       "test_execution_evidence": []
     }
   ]

@@ -361,10 +361,10 @@
   "coverage": {
     "root_source_entries_total": 6893,
     "recursive_source_entries_total": 16379,
-    "unknown_minimum": 16277,
-    "unread_minimum": 16252,
+    "unknown_minimum": 16276,
+    "unread_minimum": 16251,
     "omitted_known": 0,
-    "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent exact-head 4c5586e55c2f04e8de976786f1e1edf36abea517/tree c1be8ddabd4a165ad1fda4cf2c7815bcd1026394 completed TDRP run 39901550267 at 61/61 success (authority 12479400427 sha256:b38f52e425ec45dc338bc7cc20abdde98ebdd81e783a926247733d46c57ef770; closure 12478689844 sha256:3831ca464a236aac5e45a57e50b956fe67139ce7bb32c0fea7692e45fa79db13; reachability 12478739861 sha256:84ef4a942845f6b50ee447fc7e299311e9a49700e563ac23dbadf972051f1194) and Rust desktop runtime run 39901550319 at 6/6 success (artifact 12479047737 sha256:fa3ce1ef9b4d08a48ee763e5a28983d1d67b44d8923883366cf5fbb18deb58e5). Strict index 99 .gitignore@320c160d093a0a36ceb3f6437500d01a63d5ed00 was fully read (76 lines / 1013 bytes) and mapped to existing AGENTS.md source-neutral repository development/source-integrity governance plus exact-head source-authority validators. Ignore rules govern ordinary untracked local/generated/build/IDE/cache/session/config discovery only; they do not untrack source, authorize inventory omission, establish product persistence, guarantee secret safety, or replace exact-head acceptance. Existing-owner/validator preflight found zero prior source-path/blob/responsibility rows and zero selected target-path+symbol ownership conflicts. Counters unknown=16,277 unread=16,252 omitted=0 responsibilities=117. Next strict root index 100 .gitmodules@2a71e861fab57dfd74d66e787867f2ede203a099 (4321 bytes). baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required."
+    "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent exact-head e4c9f80158f6bcd5d3dc4772f6bd4fec1a73eea5/tree d48373972863f474561af24bdf0cf7792822e188 completed TDRP run 39903360678 at 61/61 success (authority 12479289689 sha256:4e17e5bd8c15656d7b4d1c1b9b5d89085cedbded68da3de62719e965ab55c5ee; closure 12479679023 sha256:2d6802579c4011b5fcf1d50ac5704a64cd368cece67db6e08a4f4dc12a6addd2; reachability 12480355228 sha256:7156152fc061a27c2da6218aa848f07cca88a2066dcbe43b91cb6efa1e56a417) and Rust run 39903360611 at 6/6 success (artifact 12480066202 sha256:e3769ec5d3735fdb46ff1b51722159cfb987015775aa59271e7b4f944691f06d). Strict100 .gitmodules@2a71e861fab57dfd74d66e787867f2ede203a099 is fully read and reconciled to all 36 direct_gitlinks path/repository entries with zero mismatch. Exact URLs remain repository locators; immutable authority remains each parent-tree gitlink SHA. Existing recursive root/fixed-point validators and exact-head workflow remain the sole source-neutral owners. Counters unknown=16,276 unread=16,251 omitted=0 responsibilities=118. Next strict root index 101 AGENTS.md@b3ce86744f7d889a5dee63dbaefa3353801c4c32; baseline_identity_accepted=false/source_closure_ready=false and fresh child exact-head Actions required."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -378,7 +378,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Live strict99 mapping requires fresh child exact-head GitHub Actions. Source closure remains open with unknown=16,277 unread=16,252 omitted=0; ignored/local state is non-authoritative worktree hygiene."
+    "note": "Live strict100 mapping requires fresh child exact-head GitHub Actions. Source closure remains open with unknown=16,276 unread=16,251 omitted=0; .gitmodules repository URLs are source locators only and immutable authority remains exact gitlink commits."
   },
   "baseline_identity_evidence": {
     "status": "pending-current-head-revalidation",
