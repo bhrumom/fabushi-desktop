@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "83f9f56347cc3421c1e3ef537c7bb6dd06ce7cd0",
-  "target_commit": "14cdc784c167e8fb5a35c742145abb1a57b77dc2",
+  "target_commit": "63c3e018e4299dc2bd2d7aecabd3417956fffbb6",
   "coverage": {
     "source_entries_total": 16377,
-    "unknown": 16280,
-    "unread": 16255,
+    "unknown": 16279,
+    "unread": 16254,
     "omitted": 0,
-    "responsibilities_total": 112,
+    "responsibilities_total": 113,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -30180,6 +30180,292 @@
       "license_and_provenance": "Exact workflow/provider identities retained. Mutable provider master and unversioned npm remain fail-closed; absence of committed LICENSE/package lock is recorded as incomplete provenance, not a legal conclusion.",
       "reviewer": null,
       "notes": "Strict index 94 closes only .github/workflows/unused_styles_updater.yml. Counters become unknown=16,280 unread=16,255 omitted=0 responsibilities=112. Next strict root index 95 .github/workflows/user_agent_updater.yml@1e3dae8182aefc4e4c76df065f547a43a1e50437. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "83f9f56347cc3421c1e3ef537c7bb6dd06ce7cd0",
+      "source_path": ".github/workflows/user_agent_updater.yml",
+      "source_blob_sha": "1e3dae8182aefc4e4c76df065f547a43a1e50437",
+      "source_kind": "repository_user_agent_maintenance_workflow",
+      "module_id": "tdesktop.github.workflows.user_agent_updater",
+      "responsibility_id": "TDRP-R9-USER-AGENT-MAINTENANCE-PROVENANCE-001",
+      "source_symbols": [
+        "repository_dispatch Restart user_agent_updater workflow.",
+        "schedule cron 0 0 1 * *",
+        "desktop-app/action_code_updater@master",
+        "type user-agent",
+        "google-chrome --version observation",
+        "four-number regex with unescaped dot separators",
+        "major -> major.0.0.0 reduction",
+        "recursive non-binary Chrome/version replacement",
+        "No modified files successful no-op",
+        "chrome_<version> branch fence",
+        "commit/push then PR list/create",
+        "PR API errors caught/logged",
+        "DnsUserAgent current exact consumer trace"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-COMPATIBILITY-METADATA-MAINTENANCE",
+        "CAP-HTTP-USER-AGENT-COMPATIBILITY-PROVENANCE",
+        "CAP-REVIEWABLE-SOURCE-MUTATION",
+        "CAP-MUTABLE-ACTION-SUPPLY-CHAIN"
+      ],
+      "dependency_ids": [
+        "desktop-app/action_code_updater@master -> 0a8d3ebb437e5c77cf5d066d4a54cc93d34b534a/tree 5f51a9339cccc975911e3dcff02027395f2dee61",
+        "action.yml@5a9c7dff415a31f18a614119809f2d396b0e47c7",
+        "index.mjs@322bfa9e3e874299a09c35650611c2cd753cca3f",
+        "provider tree has no committed package manifest/package lock/LICENSE",
+        "runtime npm packages unversioned",
+        "runner google-chrome --version",
+        "mtproto_domain_resolver.cpp@eeac8f6a8e2df67967ea7b536fb165e2f8d983e9 DnsUserAgent()",
+        "special_config_request.cpp@fdb65506b0a886bc2daeccb61090bc44be7e2d88 outbound User-Agent consumer",
+        "AGENTS.md@da3e37258c74963970ff5cfc5d54671a37558b97",
+        "TEST_STRATEGY.md@4d2c88e118ab489d3d0339d2a61371a7ea74e72e",
+        "evidence-contract.md@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/user-agent-updater-workflow-complete-read.md",
+      "behavior_contract": "Repository compatibility-metadata maintenance/proposal provenance only. Mutable runner/provider/npm state, no-op, branch/push state, or green execution cannot prove the shipping HTTP User-Agent contract, source closure, release acceptance, or migration completion.",
+      "state_machine": "monthly/dispatch -> mutable provider/npm bootstrap -> clone -> observe runner Chrome -> reduce to major.0.0.0 -> scan non-binary text -> no change => success; else existing chrome_<version> branch => fail, otherwise rewrite -> commit/push -> list/create PR; PR API failure may be logged without failing",
+      "side_effects": [
+        "runner/npm bootstrap",
+        "authenticated repository clone",
+        "broad non-binary text rewrite proposal",
+        "maintenance branch commit/push",
+        "PR list/create",
+        "no direct shipping product-state mutation"
+      ],
+      "failure_cases": [
+        "provider master drift",
+        "unversioned npm drift/outage",
+        "runner Chrome drift or absence",
+        "unescaped-dot regex over-match",
+        "zero modification mistaken for compatibility proof",
+        "existing branch blocks proposal",
+        "overlapping run/branch race",
+        "commit/push failure",
+        "PR failure after push swallowed",
+        "cancellation leaves partial publication",
+        "BrowserUa name similarity mistaken for HTTP header equivalence",
+        "green workflow mistaken for acceptance"
+      ],
+      "ui_disposition": "Repository maintenance only; no shipping Fabushi UI capability.",
+      "non_ui_responsibilities": [
+        "exact-source compatibility metadata observation",
+        "external Chrome-major derivation",
+        "bounded reviewable source proposal",
+        "consumer traceability",
+        "branch/PR publication lifecycle",
+        "mutable provider boundary",
+        "publication settlement separation"
+      ],
+      "platform_delta": "Retain source-neutral proposal/evidence lessons in existing Fabushi repository governance. Do not copy Telegram DoH endpoints, hard-coded Chrome literals, broad regex replacement, or a second BrowserUa/networking runtime. Direct HTTP User-Agent behavior remains separately auditable.",
+      "existing_owner_candidates": [
+        "Fabushi repository contribution/atomic-change governance (selected workflow owner)",
+        "Fabushi repository quality/review/evidence lifecycle (selected evidence owner)",
+        "current Host BrowserUa extension (inspected; rejected for DnsUserAgent HTTP-header semantics)",
+        "current networking/HTTP request owners (deferred to direct consumer audit)",
+        "new Telegram/user-agent updater runtime (rejected)"
+      ],
+      "existing_owner": "Fabushi repository contribution/quality/review/evidence governance; direct HTTP User-Agent consumer remains separately mapped-open",
+      "rejected_existing_owners": [
+        "BrowserUa extension owns auth/experiment marker lifecycle, not outbound HTTP User-Agent headers",
+        "a maintenance workflow cannot become a shipping networking owner",
+        "Telegram special-config/DoH source shape does not justify a parallel runtime",
+        "green/no-op proposal automation cannot replace exact-head product evidence"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository contribution and atomic change governance",
+        "Repository maintenance-history measurement qualification",
+        "Repository maintenance-history measurement evidence"
+      ],
+      "target_language": "Repository contribution/maintenance-history/review/evidence governance",
+      "language_rationale": "The strict95 source entry is administrative proposal automation. Its product consumer is traced but not falsely claimed as implemented by governance text.",
+      "command_event_contracts": [
+        "monthly 00:00 UTC first-day schedule plus named dispatch",
+        "derive candidate Chrome major from runner google-chrome --version",
+        "replace matching non-binary Chrome version text only as a review proposal",
+        "no modifications is a successful maintenance no-op",
+        "existing chrome_<version> branch fails the mutation path",
+        "mutations remain branch/PR proposals",
+        "PR errors may be swallowed after push",
+        "consumer trace remains bound to exact upstream blobs",
+        "only reviewed exact source plus exact-head evidence may advance authority"
+      ],
+      "state_owner": "Exact reviewed repository commit owns canonical source; provider/runner owns only ephemeral version observation and proposal state.",
+      "lifecycle_owner": "Exact observation -> bounded proposal -> ordinary review -> reviewed commit -> fresh exact-head evidence.",
+      "persistence_and_restart": "Reviewed Git/PR history is durable; runner Chrome/npm/provider checkout is disposable and must be re-resolved.",
+      "concurrency_and_cancellation": "No concurrency group. Branch fencing is not a lifecycle lock; cancellation or PR failure after push cannot advance acceptance.",
+      "security_boundary": "github.token and mutable provider/npm/runner inputs are repository-administration boundaries only, never product credentials or evidence authority.",
+      "network_service_dependencies": [
+        "GitHub Actions",
+        "desktop-app/action_code_updater",
+        "npm registry",
+        "runner Google Chrome installation",
+        "GitHub repository/PR APIs"
+      ],
+      "service_owner": "Existing repository administration and Fabushi quality/review/evidence governance",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "policy-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required after strict95",
+        "Recursive source closure remains open",
+        "Mutable provider/runtime npm/runner Chrome provenance",
+        "No committed provider package lock/LICENSE in audited tree",
+        "Current Host BrowserUa is not an equivalent outbound HTTP User-Agent owner",
+        "Direct DnsUserAgent/SpecialConfigRequest product responsibility remains to be closed under its consumer audit",
+        "Green/no-op provider run cannot prove PR settlement or HTTP compatibility"
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "user_agent_updater.yml fully read: 17 line slots / 331 ASCII bytes at 1e3dae8182aefc4e4c76df065f547a43a1e50437.",
+        "Provider master revalidated before publication to 0a8d3ebb437e5c77cf5d066d4a54cc93d34b534a/tree 5f51a9339cccc975911e3dcff02027395f2dee61; root contains exactly action.yml, index.mjs and check_unused_styles.py.",
+        "Provider runtime npm bootstrap is unversioned and audited tree has no committed package manifest/package lock/LICENSE.",
+        "index.mjs verifies runner Chrome observation, major-only reduction, broad non-binary replacement, no-modification no-op, branch fencing, push/PR lifecycle, and caught PR errors.",
+        "Frozen upstream exact search has one Chrome/151.0.0.0 hit at DnsUserAgent(); SpecialConfigRequest line 338 is its outbound header consumer for all five request types.",
+        "Host BrowserUa production extension was inspected and rejected as equivalent HTTP-header owner because it manages owner-stamp/token-kill-switch markers.",
+        "Parent exact-head 63c3e018e4299dc2bd2d7aecabd3417956fffbb6/tree 522c7aa20a9343329e8f6d4e9486db80d72bc1a6 completed TDRP run 39893740985 with all 30 returned jobs successful (authority 12476225945 sha256:3a53a48a775f8f6ba926e6a212ba4599830a8c0aa380f76a2dda2891854729de; closure 12475679271 sha256:6ddaab2d6b8944246f1a691931045b7410cc1890e31c374de29ca6e8ca42e0a2; reachability 12476490692 sha256:6b9ed74b703c1891f5c322dd8f0b72bf44fa395cdacd51c545cbfddca9f4381e) and Rust desktop runtime run 39893740983 at 6/6 success (artifact 12476097221 sha256:3ffab22ed376341be1bed979aad8131ef7097e9b230dc27dadb4d14ed441165c).",
+        "Validator preflight confirmed selected target symbols are literal and unclaimed under the identical target-path tuple."
+      ],
+      "target_commit": "63c3e018e4299dc2bd2d7aecabd3417956fffbb6",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository contribution/quality/review/evidence lifecycle",
+      "composition_slot": "compatibility metadata observation -> reviewable source mutation proposal",
+      "capability_component": "Source-neutral repository compatibility-maintenance provenance adapter",
+      "variation_axes": [
+        "schedule/dispatch",
+        "runner Chrome present/missing/drifted",
+        "regex intended/over-match",
+        "zero/modification",
+        "branch absent/existing/racing",
+        "push settled/failed",
+        "PR settled/failing",
+        "provider/npm stable/drifted",
+        "complete/cancelled"
+      ],
+      "shared_owner_contracts": [
+        "Repository contribution and atomic change governance",
+        "Repository maintenance-history measurement qualification",
+        "Repository maintenance-history measurement evidence",
+        "ordinary PR/review lifecycle",
+        "exact-head Actions evidence"
+      ],
+      "duplicate_root_check": "No second HTTP stack, BrowserUa runtime, Telegram networking root, source store, updater runtime, release/evidence authority or acceptance owner.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository compatibility metadata maintenance only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Reviewable repository compatibility-maintenance provenance adapter",
+      "route_contract": "trigger -> external version observation -> bounded source proposal -> branch/PR review; no product route",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Only reviewed exact commits and bound exact-head evidence carry continuity.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-USER-AGENT-MAINTENANCE-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-USER-AGENT-EXACT-SOURCE-001",
+        "ORA-TDRP-USER-AGENT-CONSUMER-TRACE-001",
+        "ORA-TDRP-USER-AGENT-NO-PUBLICATION-AUTHORITY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-USER-AGENT-NO-PARALLEL-RUNTIME-001",
+        "INV-TDRP-USER-AGENT-NOOP-NOT-SETTLEMENT-001",
+        "INV-TDRP-USER-AGENT-PR-GREEN-NOT-SETTLEMENT-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-USER-AGENT-VERSION-OBSERVATION-001",
+        "CONTRACT-TDRP-USER-AGENT-CONSUMER-TRACE-001",
+        "CONTRACT-TDRP-USER-AGENT-REVIEWABLE-PROPOSAL-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-USER-AGENT-MONTHLY-BRANCH-FENCE-001",
+        "TEMP-TDRP-USER-AGENT-NOOP-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-USER-AGENT-RUNNER-CHROME-001",
+        "FAULT-TDRP-USER-AGENT-PROVIDER-NPM-DRIFT-001",
+        "FAULT-TDRP-USER-AGENT-REGEX-OVERMATCH-001",
+        "FAULT-TDRP-USER-AGENT-PR-ERROR-SWALLOWED-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-USER-AGENT-GITHUB-TOKEN-001",
+        "SEC-TDRP-USER-AGENT-MUTABLE-SUPPLY-CHAIN-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-USER-AGENT-NO-RUNTIME-001",
+        "REG-TDRP-USER-AGENT-OWNER-REUSED-001",
+        "REG-TDRP-USER-AGENT-CONSUMER-NOT-FALSELY-CLOSED-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [],
+      "test_fixture_ids": [
+        "locked strict95 workflow + provider exact commit/tree/blobs + frozen DnsUserAgent/SpecialConfigRequest blobs + canonical governance owners + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact workflow/provider/consumer identities retained. Mutable provider master, unversioned npm and runner Chrome remain fail-closed; absence of committed provider LICENSE/package lock is recorded as incomplete provenance, not a legal conclusion.",
+      "reviewer": null,
+      "notes": "Strict index 95 closes only .github/workflows/user_agent_updater.yml. Counters become unknown=16,279 unread=16,254 omitted=0 responsibilities=113. Direct DnsUserAgent/SpecialConfigRequest product behavior remains traced but not falsely marked implemented by this workflow row. Next strict root index 96 .github/workflows/waiting-for-answer.yml@0cccca6b2d434303da915b12a13e7620cf1b8bc4. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required."
     }
   ]
 }
