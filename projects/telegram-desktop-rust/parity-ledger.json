@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "215707ebf06ba9cbc5314ff3e5f597deca92375a",
+  "target_commit": "5ad8f77a764c4e1abf25b1549e8acb87533aad90",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16228,
-    "unread": 16203,
+    "unknown": 16227,
+    "unread": 16202,
     "omitted": 0,
-    "responsibilities_total": 166,
+    "responsibilities_total": 167,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -44711,6 +44711,239 @@
       "license_and_provenance": "Exact Microsoft/GSL include/CMakeLists.txt@fe4eed9190a40c3fc0b182112956a4957653a5f2 retained as dependency/build-interface provenance for the locked recursive dependency; no GSL CMake runtime/build root or release authority is inferred.",
       "reviewer": "primary-session",
       "notes": "Strict148 closes only GSL include/CMakeLists.txt. Existing Fabushi build/dependency owners preserve the engineering responsibility; include/gsl implementation files remain open. Counters unknown=16,228 unread=16,203 omitted=0 responsibilities=166. Next strict149 Microsoft/GSL include/gsl/algorithm@584f5cd12beb15e863b1c32bc887638314261399."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/GSL",
+      "source_blob_sha": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+      "source_kind": "recursive_child_repository_dependency_implementation",
+      "module_id": "tdesktop.thirdparty.gsl.algorithm",
+      "responsibility_id": "TDRP-R9-GSL-ALGORITHM-SAFE-SPAN-COPY-DEPENDENCY-001",
+      "source_symbols": [
+        "include/gsl/algorithm@584f5cd12beb15e863b1c32bc887638314261399",
+        "gsl::copy(span<SrcElementType, SrcExtent>, span<DestElementType, DestExtent>)",
+        "std::is_assignable compile-time element compatibility",
+        "static extent source <= destination assertion",
+        "Expects(dest.size() >= src.size())",
+        "GSL_SUPPRESS(stl.1)",
+        "std::copy_n(src.data(), src.size(), dest.data())"
+      ],
+      "capability_ids": [
+        "CAP-LOWLEVEL-SAFE-COPY",
+        "CAP-DEPENDENCY-REPLACEMENT",
+        "CAP-BOUNDS-PRECONDITION"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "Microsoft/GSL:include/gsl/algorithm@584f5cd12beb15e863b1c32bc887638314261399",
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md#TDRP-LANG-03"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-algorithm-safe-copy-complete-read.md",
+      "behavior_contract": "Account for the locked GSL generic copy utility: source/destination elements must be assignable, static extents must be compatible, destination runtime length must cover source length, and exactly the source element count is copied. Preserve this low-level safety responsibility with native Rust type/slice mechanisms where applicable rather than retaining GSL/C++.",
+      "state_machine": "typed source/destination views -> compile-time compatibility/extent constraints -> runtime destination length precondition -> exact-count copy -> return; contract violation is non-passing",
+      "side_effects": [
+        "Copies exactly src.size() elements into destination.",
+        "Rejects incompatible element assignment at compile time.",
+        "Rejects statically impossible extent ordering at compile time.",
+        "Fails the GSL contract when destination runtime size is smaller.",
+        "Creates no product state, persistence, network or UI side effect."
+      ],
+      "failure_cases": [
+        "Destination shorter than source.",
+        "Element types not assignable.",
+        "Static source extent greater than static destination extent.",
+        "Source generic dependency utility mistaken for a product owner.",
+        "C++ GSL retained instead of native-language equivalent.",
+        "Source drift ignored."
+      ],
+      "ui_disposition": "No UI; generic low-level dependency utility.",
+      "non_ui_responsibilities": [
+        "element assignability",
+        "static extent compatibility",
+        "runtime destination capacity guard",
+        "exact-count copy",
+        "compiler-analysis suppression provenance",
+        "native dependency replacement"
+      ],
+      "platform_delta": "Rust/native owners should use type-safe slice/collection operations and explicit length/error contracts appropriate to the actual caller; no C++/GSL runtime is retained.",
+      "existing_owner_candidates": [
+        "TDRP-LANG-03 mature low-level dependency replacement (selected)",
+        "Rust core/std slice and collection safety mechanisms where actual callers require copy behavior (selected semantic replacement)",
+        "new GSL algorithm runtime (rejected)"
+      ],
+      "existing_owner": "TDRP-LANG-03 low-level dependency replacement plus native Rust type/slice safety at actual Fabushi callsites; no direct accepted tdesktop gsl::copy product callsite was found",
+      "rejected_existing_owners": [
+        "No product-specific gsl::copy callsite justifies a dedicated product owner.",
+        "Copying C++ template/pragma mechanics would preserve source architecture instead of responsibility.",
+        "Generic bounds/type safety belongs to native language/library mechanisms."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md"
+      ],
+      "fabushi_target_symbols": [
+        "`coverage_disposition` 区分 rewritten、fabushi-ui-replacement、platform-equivalent、toolchain-equivalent、dependency-replaced、retained-legal-record 等。只有无产品运行责任的文档/法律/纯来源记录能以有依据的 non-runtime accounted 闭合；任何承载产品行为的文件/子责任都必须有真实实现/替代证据。",
+        "**TDRP-LANG-03:** 通用成熟安全/媒体依赖须登记、锁定和审查，可以替代低层标准能力；这不豁免其 source/dependency inventory，也不允许隐藏原 Telegram C++ 业务模块。不要自行发明密码学来满足表面语言指标。"
+      ],
+      "target_language": "Rust native type/slice/collection safety through existing owners",
+      "language_rationale": "The source is a generic C++ dependency utility, not product architecture. Rust native type and slice semantics are the source-neutral replacement; actual product callers remain owned by their domain modules.",
+      "command_event_contracts": [
+        "copy request -> type compatibility",
+        "static extent -> compile-time compatibility",
+        "runtime destination capacity -> guard",
+        "copy -> exact source count",
+        "dependency closure -> native replacement, not GSL runtime"
+      ],
+      "state_owner": "Caller-owned source/destination buffers; no independent state.",
+      "lifecycle_owner": "Caller scope/native Rust borrow and collection lifecycle.",
+      "persistence_and_restart": "None.",
+      "concurrency_and_cancellation": "Pure synchronous copy utility; concurrency/cancellation belong to callers.",
+      "security_boundary": "Bounds/type checks are memory-safety source responsibilities; dependency replacement does not prove higher-level security acceptance.",
+      "network_service_dependencies": [
+        "GitHub Actions for exact-head revalidation"
+      ],
+      "service_owner": "No service.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-replaced-mapped-open",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required after publication.",
+        "Actual domain callers and later GSL headers remain independently open.",
+        "Recursive source closure and independent release acceptance remain open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "strict149 include/gsl/algorithm@584f5cd12beb15e863b1c32bc887638314261399 fully read: 64 line slots / 2339 bytes",
+        "Accepted tdesktop exact-head code search: no direct gsl::copy result",
+        "GSL gitlink 87f9d768866548b5b86e72be66c60c5abd4d9b37; child tree 6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41",
+        "Parent TDRP 40032422818 61/61 success; authority 12535009130 sha256:52f5f920d522ea61db5ecd3dd6a37ef915374b5a187ada4f8c4b86d823fcd42f; closure 12535502594 sha256:9efd7ef2c935a1525b39f8327993191cf6211d1f33f2dd6984f94cef2f2b8050; reachability 12535588315 sha256:77d55bddd4361677d0d5cd096378d1f26ff23d8684aa28699e996a2dc8ef3465; Rust 40032422966 6/6 success; artifact 12534964298 sha256:7ee3bfd1cac74e6864184cbf4af4d70abb27c9bd292d4c292cb0b38869599cdc"
+      ],
+      "target_commit": "5ad8f77a764c4e1abf25b1549e8acb87533aad90",
+      "workflow_run": 40032422818,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12535009130,
+      "artifact_digest": "sha256:52f5f920d522ea61db5ecd3dd6a37ef915374b5a187ada4f8c4b86d823fcd42f",
+      "composition_root": "Fabushi native low-level dependency replacement lifecycle",
+      "composition_slot": "safe exact-count copy semantics",
+      "capability_component": "Native safe-copy dependency replacement",
+      "variation_axes": [
+        "type compatibility",
+        "static extent",
+        "runtime length",
+        "exact copy count"
+      ],
+      "shared_owner_contracts": [
+        "TDRP-LANG-03",
+        "native Rust type/slice safety",
+        "caller-owned product modules",
+        "exact-head TDRP evidence"
+      ],
+      "duplicate_root_check": "No GSL/C++ runtime, copy subsystem or product-level second owner.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Low-level dependency utility only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Native safe-copy semantics",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Changed GSL algorithm blob requires fresh reconciliation; domain callsites remain independently owned.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-GSL-ALGORITHM-SAFE-SPAN-COPY-DEPENDENCY-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GSL-ALGORITHM-EXACT-SOURCE-001",
+        "ORA-TDRP-GSL-ALGORITHM-TYPE-EXTENT-001",
+        "ORA-TDRP-GSL-ALGORITHM-RUNTIME-CAPACITY-001",
+        "ORA-TDRP-GSL-ALGORITHM-NATIVE-REPLACEMENT-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GSL-ALGORITHM-NO-OMISSION-001",
+        "INV-TDRP-GSL-ALGORITHM-NO-GSL-RUNTIME-001",
+        "INV-TDRP-GSL-ALGORITHM-EXACT-COUNT-001",
+        "INV-TDRP-GSL-ALGORITHM-EXACT-PROVENANCE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GSL-ALGORITHM-DEPENDENCY-REPLACEMENT-001",
+        "CONTRACT-TDRP-GSL-ALGORITHM-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GSL-ALGORITHM-SOURCE-DRIFT-001",
+        "FAULT-TDRP-GSL-ALGORITHM-SHORT-DESTINATION-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-GSL-ALGORITHM-BOUNDS-SAFETY-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-GSL-ALGORITHM-NO-SOURCE-OMISSION-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "locked GSL algorithm header + native dependency replacement policy + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact Microsoft/GSL include/gsl/algorithm@584f5cd12beb15e863b1c32bc887638314261399 MIT-licensed dependency implementation provenance retained through the locked GSL child; no C++ runtime/release authority inferred.",
+      "reviewer": "primary-session",
+      "notes": "Strict149 closes only GSL include/gsl/algorithm as a generic low-level dependency-replacement responsibility. No direct accepted tdesktop gsl::copy callsite was found. Counters unknown=16,227 unread=16,202 omitted=0 responsibilities=167. Next strict150 Microsoft/GSL include/gsl/assert@d3e6ccdd53d5a254ed3827cf07711a6e86bb4226."
     }
   ]
 }

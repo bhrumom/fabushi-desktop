@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16228,
-    "unread_minimum": 16203,
+    "unknown_minimum": 16227,
+    "unread_minimum": 16202,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -122,7 +122,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live main 7394f6dc7687f9b986ee5589d40aa680ce23b90a/fbeb0bb32d944d0c1053880c471fe5c52279f052; upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5; GSL 87f9d768866548b5b86e72be66c60c5abd4d9b37/6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41. Parent TDRP 40030895593 61/61 success; authority 12535136603 sha256:dbe2c3f6d216dc94011571058041b87768d60035feab3d5cc824865113127c7b; closure 12535610595 sha256:2104931dd254e649f35d993372e01659a150f27a1133699cb376238dcf2e5edf; reachability 12535182047 sha256:9b71cc604aa6e0c39ed086ed08b92fdb7ad68b172f264de1862e218c47cc62fc; Rust 40030895592 6/6 success; artifact 12535266019 sha256:99a035190c55154fa7cec5595b532c0102f1b30407d23818877049f702a53f14. Strict148 Microsoft/GSL include/CMakeLists.txt@fe4eed9190a40c3fc0b182112956a4957653a5f2 fully read: 14 line slots / 484 bytes. It configures GSL's header-only include interface: top-level consumers receive a normal INTERFACE BUILD_INTERFACE include directory, nested consumers receive SYSTEM INTERFACE to suppress dependency warnings, and directory layout enables <gsl/gsl>-style namespacing. Existing Fabushi build/dependency/packaging owners are reused; no GSL CMake graph or second build owner is introduced. Counters unknown=16,228 unread=16,203 omitted=0 responsibilities=166. Next strict149 Microsoft/GSL include/gsl/algorithm@584f5cd12beb15e863b1c32bc887638314261399.",
+  "note": "Live upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5; GSL 87f9d768866548b5b86e72be66c60c5abd4d9b37/6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41. Parent TDRP 40032422818 61/61 success; authority 12535009130 sha256:52f5f920d522ea61db5ecd3dd6a37ef915374b5a187ada4f8c4b86d823fcd42f; closure 12535502594 sha256:9efd7ef2c935a1525b39f8327993191cf6211d1f33f2dd6984f94cef2f2b8050; reachability 12535588315 sha256:77d55bddd4361677d0d5cd096378d1f26ff23d8684aa28699e996a2dc8ef3465; Rust 40032422966 6/6 success; artifact 12534964298 sha256:7ee3bfd1cac74e6864184cbf4af4d70abb27c9bd292d4c292cb0b38869599cdc. Strict149 Microsoft/GSL include/gsl/algorithm@584f5cd12beb15e863b1c32bc887638314261399 fully read: 64 line slots / 2339 bytes. It implements generic span copy with compile-time assignability/extent checks, runtime destination-size Expects, compiler-analysis suppression and std::copy_n. Accepted tdesktop code search found no direct gsl::copy callsite, so this is a recursive generic dependency utility, not a product-specific owner. Preserve the low-level responsibility through native Rust type/slice safety when needed; do not add a GSL/C++ runtime. Counters unknown=16,227 unread=16,202 omitted=0 responsibilities=167. Next strict150 Microsoft/GSL include/gsl/assert@d3e6ccdd53d5a254ed3827cf07711a6e86bb4226.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
