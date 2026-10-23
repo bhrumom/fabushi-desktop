@@ -361,10 +361,10 @@
   "coverage": {
     "root_source_entries_total": 6893,
     "recursive_source_entries_total": 16379,
-    "unknown_minimum": 16274,
-    "unread_minimum": 16249,
+    "unknown_minimum": 16273,
+    "unread_minimum": 16248,
     "omitted_known": 0,
-    "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent exact-head a66bf8b7578538642989756feb4a5c0571f8b655/tree ad5977bb3b237484b4a04c76456759b217a7ffcd completed TDRP run 39906002549 attempt 2 at 61/61 success after one transient breakpad clone transport failure in attempt 1; authority 12480139173 sha256:b4adbde7994599cced461808f4ce0a5ca9ea8293df161d91ceb801fc4dedc90a, closure 12480364389 sha256:949008ba2f7192c847ddf79d6fa05560b6abea85c6bee09b4f8af431782deaf3, reachability 12481560876 sha256:1c10037ba6c46fc097de5b70fa5b67dee16a25637ed35f8a2733feb277d5292c; Rust run 39906002548 completed 6/6 with artifact 12480568943 sha256:4b3835c9ceb2d0ff8e9e229c617c676c0bf798305f19c1ac8cbb7fae633362e7. Strict102 CLAUDE.md@f8564d18cef4b9c545767025995d31deb3fa7155 is a four-line host instruction pointer to AGENTS.md and maps to the existing root instruction-precedence owner. Counters unknown=16,274 unread=16,249 omitted=0 responsibilities=120. Next strict root index 103 CMakeLists.txt@59477e251bbfea8d5efaf0bcda53798f92695449; baseline_identity_accepted=false/source_closure_ready=false and fresh child exact-head Actions required."
+    "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 20e1eca26a610ee9fdcc7af38317a856a59340ff/tree 8a31ee1af96f430a093c81ad31529b9a6185f93d passed TDRP 39907325317 at 61/61 (authority 12481591530 sha256:b498b25adc98e012698dbc3590318376dc4082e89f1670696e93125d51fda6b5; closure 12481567383 sha256:d519fab676cb70d1bba675b16bf999827072f164627c5dfad21d75f979f30b14; reachability 12481741705 sha256:5d6ab1354c5b55333b500f14bf111ba0f26a3d8ba8bb2cd98b8a791913396062) and Rust 39907325306 at 6/6 (artifact 12481044536 sha256:d560e16bda0dc22a343409b767de42026be0c1a62dfb35f0a9c29bd7f9322c23). Strict103 CMakeLists.txt@59477e251bbfea8d5efaf0bcda53798f92695449 fully read and mapped existing-owner-first to canonical desktop build/package composition plus FQT configured-build validators. Counters unknown=16,273 unread=16,248 omitted=0 responsibilities=121. Next strict root index 104 GROK.md@b1ae452d94cf48971c6d7ea17cac6b45cabee08d. Fresh child exact-head Actions required."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -378,7 +378,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Live strict102 mapping requires fresh child exact-head GitHub Actions. Source closure remains open with unknown=16,274 unread=16,249 omitted=0; CLAUDE.md is a host pointer to canonical AGENTS.md and cannot establish product implementation or acceptance."
+    "note": "Live strict103 mapping requires fresh child exact-head GitHub Actions. Source closure remains open with unknown=16,273 unread=16,248 omitted=0; root CMakeLists.txt is build-composition provenance and cannot establish configured-build, package or release acceptance."
   },
   "baseline_identity_evidence": {
     "status": "pending-current-head-revalidation",

@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "a66bf8b7578538642989756feb4a5c0571f8b655",
+  "target_commit": "20e1eca26a610ee9fdcc7af38317a856a59340ff",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16274,
-    "unread": 16249,
+    "unknown": 16273,
+    "unread": 16248,
     "omitted": 0,
-    "responsibilities_total": 120,
+    "responsibilities_total": 121,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -32230,6 +32230,282 @@
       "reviewer": null,
       "license_and_provenance": "Exact upstream CLAUDE.md blob f8564d18cef4b9c545767025995d31deb3fa7155 is retained as host-instruction-pointer provenance under the pinned upstream source. The pointer delegates to AGENTS.md and is not copied as a new Fabushi runtime or instruction root.",
       "notes": "Strict index 102 closes only CLAUDE.md as a host instruction pointer to canonical AGENTS.md. Counters become unknown=16,274 unread=16,249 omitted=0 responsibilities=120. Next strict root index 103 CMakeLists.txt@59477e251bbfea8d5efaf0bcda53798f92695449. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "CMakeLists.txt",
+      "source_blob_sha": "59477e251bbfea8d5efaf0bcda53798f92695449",
+      "source_kind": "root_build_definition",
+      "module_id": "tdesktop.root_cmake",
+      "responsibility_id": "TDRP-R9-ROOT-CMAKE-BUILD-COMPOSITION-PROVENANCE-001",
+      "source_symbols": [
+        "cmake_minimum_required",
+        "desktop_app_parse_version",
+        "project Telegram C/C++",
+        "Apple OBJC/OBJCXX",
+        "MinSizeRel multi-config",
+        "VS_STARTUP_PROJECT",
+        "third_party/submodules/cmake helper roots",
+        "WIN32 bundled Python",
+        "root helper/options/Qt includes",
+        "desktop_app_skip_libs",
+        "add_subdirectory(cmake)",
+        "add_subdirectory(Telegram)"
+      ],
+      "capability_ids": [
+        "CAP-ROOT-BUILD-COMPOSITION",
+        "CAP-BUILD-TOOLCHAIN-BOUNDARY",
+        "CAP-PLATFORM-BUILD-VARIATION",
+        "CAP-DEPENDENCY-ROOT-PROVENANCE"
+      ],
+      "dependency_ids": [
+        "cmake/validate_special_target.cmake",
+        "cmake/version.cmake",
+        "Telegram/build/version",
+        "cmake/variables.cmake",
+        "cmake/nice_target_sources.cmake",
+        "cmake/target_compile_options_if_exists.cmake",
+        "cmake/target_link_frameworks.cmake",
+        "cmake/target_link_options_if_exists.cmake",
+        "cmake/init_target.cmake",
+        "cmake/generate_target.cmake",
+        "cmake/nuget.cmake",
+        "cmake/validate_d3d_compiler.cmake",
+        "cmake/target_prepare_qrc.cmake",
+        "cmake/options.cmake",
+        "cmake/external/qt/package.cmake",
+        "cmake/",
+        "Telegram/"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/root-cmake-build-composition-complete-read.md",
+      "behavior_contract": "Treat upstream root CMakeLists.txt as top-level build-composition provenance. Reuse Fabushi canonical desktop/package.json plus Rust Cargo composition and existing FQT evidence validators; do not create a Telegram/CMake/Qt build root. Source CMake text alone cannot prove configured build, execution, artifact identity, runtime reachability, package identity, signing, or release acceptance.",
+      "state_machine": "exact source read -> decompose top-level build responsibilities -> audit existing Fabushi build/evidence owners -> map source-neutral responsibilities -> parent exact-head gates -> atomic accounting publication -> child exact-head gates",
+      "side_effects": [
+        "Adds durable root-build provenance.",
+        "Reuses existing canonical Fabushi build/package and evidence owners.",
+        "Introduces no second build/runtime/package root.",
+        "Leaves referenced helpers/acquisitions/subgraphs independently open."
+      ],
+      "failure_cases": [
+        "source text promoted to configured-build truth",
+        "parallel Telegram/CMake/Qt build root",
+        "platform/configuration variation silently dropped",
+        "child helpers marked read transitively",
+        "stale branch/upstream lease",
+        "local workstation accepted as executable evidence"
+      ],
+      "ui_disposition": "Not a shipping UI capability.",
+      "non_ui_responsibilities": [
+        "top-level project/version/language composition",
+        "platform build variation",
+        "dependency/helper-root selection",
+        "top-level subgraph composition",
+        "source-vs-configured-build evidence separation"
+      ],
+      "platform_delta": "Telegram CMake/C/C++/ObjC/ObjC++/Qt/NuGet/bundled-Python choices are provenance. Fabushi keeps Electron/TypeScript plus Rust target-native build architecture.",
+      "existing_owner_candidates": [
+        "desktop/package.json canonical build/package composition",
+        "component Cargo/package manifests",
+        "FQT-EVID-001 source-derived/configured-build evidence",
+        ".github/workflows/rust-desktop-runtime.yml exact-head validation"
+      ],
+      "existing_owner": "desktop/package.json canonical shipping build/package composition, with FQT-EVID-001 source-derived/configured-build evidence and rust-desktop-runtime exact-head validation",
+      "rejected_existing_owners": [
+        "new Telegram/CMake/Qt build root",
+        "Host/Coordinator/Runner as repository build authority",
+        "source-derived CMake as configured-build authority"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "desktop/package.json",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "fabushi_target_symbols": [
+        "scripts.build",
+        "scripts.package",
+        "Repository source-derived build-model evidence",
+        "Configured-build graph provenance evidence",
+        "Rust desktop runtime"
+      ],
+      "target_language": "JSON/Cargo manifests + Markdown evidence + GitHub Actions YAML",
+      "language_rationale": "Source-neutral build composition/validation is already owned by Fabushi target-native build manifests and exact-head evidence contracts.",
+      "command_event_contracts": [
+        "build -> canonical desktop build composition",
+        "package -> canonical build then electron-builder",
+        "source CMake -> source-derived evidence only",
+        "configured claim -> Configured-build graph provenance",
+        "executable verification -> exact-head GitHub Actions only"
+      ],
+      "state_owner": "desktop/package.json top-level build/package composition; component manifests own native subgraphs; FQT-EVID-001 owns evidence qualification.",
+      "lifecycle_owner": "Existing repository development, CI, packaging and release lifecycle.",
+      "persistence_and_restart": "Committed manifests/evidence are durable; stale or incomplete source observations do not advance acceptance.",
+      "concurrency_and_cancellation": "Publication is fenced by parent exact-head evidence plus CAS branch lease; Actions execute on isolated hosted runners.",
+      "security_boundary": "Source build text/helper paths/tool selections do not authorize dependency acquisition/execution or release.",
+      "network_service_dependencies": [
+        "GitHub repository authority",
+        "GitHub Actions hosted runners",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi repository build/quality/release workflows.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "toolchain-equivalent",
+      "blockers": [
+        "Fresh strict103 child exact-head TDRP/Rust Actions required.",
+        "Direct CMake helpers/acquisitions/subgraphs remain open.",
+        "Recursive source disposition remains open."
+      ],
+      "production_entrypoints": [
+        "desktop/package.json -> scripts.build",
+        "desktop/package.json -> scripts.package",
+        ".github/workflows/rust-desktop-runtime.yml -> Rust desktop runtime"
+      ],
+      "production_evidence": [
+        "path:desktop/package.json#scripts.build",
+        "path:desktop/package.json#scripts.package",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Repository source-derived build-model evidence",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Configured-build graph provenance evidence"
+      ],
+      "test_evidence": [
+        "CMakeLists.txt@59477e251bbfea8d5efaf0bcda53798f92695449 fully read: 68 line slots / 2015 bytes.",
+        "Parent uniqueness preflight: source-path/blob/responsibility/desktop-package target rows all zero; selected owner/validator statements unique.",
+        "TDRP 39907325317 attempt 1: 61/61 success; authority 12481591530 sha256:b498b25adc98e012698dbc3590318376dc4082e89f1670696e93125d51fda6b5; closure 12481567383 sha256:d519fab676cb70d1bba675b16bf999827072f164627c5dfad21d75f979f30b14; reachability 12481741705 sha256:5d6ab1354c5b55333b500f14bf111ba0f26a3d8ba8bb2cd98b8a791913396062.",
+        "Rust 39907325306 attempt 1: 6/6 success; artifact 12481044536 sha256:d560e16bda0dc22a343409b767de42026be0c1a62dfb35f0a9c29bd7f9322c23.",
+        "Live upstream dev still a7f453612f4896ac04d0007a36ab0d377e5bcbcf/tree c539eabfb05e7dcaa84821ac44c35cdfb6551ae5 before publication."
+      ],
+      "target_commit": "20e1eca26a610ee9fdcc7af38317a856a59340ff",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi canonical desktop build/package composition",
+      "composition_slot": "Top-level build composition and evidence qualification",
+      "capability_component": "Source-neutral desktop build composition",
+      "variation_axes": [
+        "Electron/TypeScript",
+        "Rust native subgraphs",
+        "platform packaging",
+        "source-derived vs configured truth"
+      ],
+      "shared_owner_contracts": [
+        "desktop/package.json build/package",
+        "FQT-EVID-001",
+        "Rust desktop runtime exact-head workflow",
+        "FQT-REL-001"
+      ],
+      "duplicate_root_check": "No Telegram/CMake/Qt build root, second dependency graph, second package owner or local acceptance path.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository build composition only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Build/toolchain provenance and validation",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Changed upstream source or target build owner requires fresh reconciliation; source text never advances configured-build/artifact/release acceptance alone.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-ROOT-CMAKE-BUILD-COMPOSITION-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-ROOT-CMAKE-EXACT-SOURCE-001",
+        "ORA-TDRP-ROOT-CMAKE-TOPLEVEL-COMPOSITION-001",
+        "ORA-TDRP-ROOT-CMAKE-NO-SECOND-BUILD-ROOT-001",
+        "ORA-TDRP-ROOT-CMAKE-CONFIGURED-TRUTH-SEPARATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-ROOT-CMAKE-NO-SECOND-BUILD-ROOT-001",
+        "INV-TDRP-ROOT-CMAKE-SOURCE-TEXT-NO-BUILD-PASS-001",
+        "INV-TDRP-ROOT-CMAKE-CHILD-INPUTS-STAY-OPEN-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-ROOT-CMAKE-CANONICAL-BUILD-OWNER-001",
+        "CONTRACT-TDRP-ROOT-CMAKE-CONFIGURED-EVIDENCE-001",
+        "CONTRACT-TDRP-ROOT-CMAKE-EXACT-HEAD-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-ROOT-CMAKE-UPSTREAM-DRIFT-001",
+        "TEMP-TDRP-ROOT-CMAKE-TARGET-OWNER-DRIFT-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-ROOT-CMAKE-STALE-SOURCE-001",
+        "FAULT-TDRP-ROOT-CMAKE-UNSUPPORTED-SYNTAX-001",
+        "FAULT-TDRP-ROOT-CMAKE-MUTABLE-TOOLCHAIN-INPUT-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-ROOT-CMAKE-SOURCE-TEXT-NOT-AUTHORIZATION-001",
+        "SEC-TDRP-ROOT-CMAKE-BUILD-INPUT-INTEGRITY-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-ROOT-CMAKE-NO-SECOND-BUILD-ROOT-001",
+        "REG-TDRP-ROOT-CMAKE-NO-BOT-BUILD-REGRESSION-001"
+      ],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-MODULE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "locked upstream root CMakeLists.txt + current Fabushi build/evidence owners + parent exact-head Actions"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "release_gate_status": "open",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact upstream CMakeLists.txt blob 59477e251bbfea8d5efaf0bcda53798f92695449 retained as Telegram Desktop GPL-3.0-or-later root-build provenance; no source-specific build runtime is copied.",
+      "notes": "Strict index 103 closes only root CMakeLists.txt build-composition responsibility. Counters unknown=16,273 unread=16,248 omitted=0 responsibilities=121. Next strict root index 104 GROK.md@b1ae452d94cf48971c6d7ea17cac6b45cabee08d. baseline_identity_accepted=false/source_closure_ready=false; fresh child exact-head Actions required.",
       "test_execution_evidence": []
     }
   ]
