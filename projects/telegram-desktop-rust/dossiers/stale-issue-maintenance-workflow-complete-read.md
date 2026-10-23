@@ -3,7 +3,7 @@
 ## Authority
 - Upstream: `telegramdesktop/tdesktop@83f9f56347cc3421c1e3ef537c7bb6dd06ce7cd0`, tree `bb0159bfedb38dd96e579af4ffe6360b6beb7332`.
 - Source: `.github/workflows/stale.yml@0d57eb7dbd9a9f758e1e33d45afbd1aefd212614`, 25 line slots / 813 bytes; complete read and SHA revalidated.
-- Provider tag: `actions/stale@v11`, audit-time immutable resolution `4391f3da665fdf50b6810c1a66712fb9ba21aa93`, tree `fd7f2bf9b9331afae0f3e4ad41604fcf2c0d631a`.
+- Provider tag: `actions/stale@v11`, audit-time immutable resolution `4391f3da665fdf50b6810c1a66712fb9ba21aa93`, tree `fd7ac6d5fc9b8173e8218f51d9647b2055c6f0c9`.
 - Provider production/source identities: `action.yml@b3354e9d52f319ff836a35b299bc1f266ed0f480`; `dist/index.js@3171f8fb5b6a9388ff5524197c02723fcf801875`; `src/main.ts@228dbc9169c7e94eb38717a912af828395e57ec8`; `src/classes/issues-processor.ts@62189bf16f29e6c6dd55800bc9258cb8a9a9fbf9`; `src/services/state.service.ts@710891cbc5ff0872d5e3b003314b0a6a175195de`; `src/classes/state/state.ts@362f245d30d0765583361828ff7f5f636323a415`; `src/classes/state/state-cache-storage.ts@ee3e9b11b7be0a209ed33f520706d5966253dff6`.
 - Provider package provenance: `package.json@90c287625590b9b083f05a4cbf9dcb51c9c88de6` version 11.0.0; `package-lock.json@22d1317b390f40adb3212ed7baf6c442ad227185`; `LICENSE@5dad4d23768e80045d5067599d233a3f7cfe138d` MIT.
 - Canonical defect owner: `FQT-DEF-001@b31ecd424cac2abf8a2322e2996bb1b53c561378`.
@@ -27,7 +27,7 @@ A provider issue may be marked stale, unstaled, skipped or closed while the cano
 ## Fail-closed, concurrency and security conclusions
 - `actions/stale@v11` is a mutable major tag in source; audit-time resolution is recorded, but future provider resolution drift remains supply-chain provenance.
 - `github.token` is an administrative provider credential only; workflow-token permission defaults must not be promoted to product/runtime authority.
-- Enhancement-labeled issues are exempt from this provider maintenance policy; PR stale processing is disabled.
+- Enhancement-labeled issues are exempt from this provider maintenance policy; Automatic PR stale marking is disabled; an already-stale PR can still enter provider stale/close processing.
 - Operation-budget exhaustion and cache continuation mean a green run can represent partial repository coverage.
 - Comment/label/close API errors can be logged and swallowed; green execution is not per-item mutation-settlement evidence.
 - No concurrency group exists, so overlapping provider runs/cache transitions are not canonical lifecycle ordering.
