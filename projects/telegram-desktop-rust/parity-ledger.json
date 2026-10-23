@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "95730ffbd2bc4d66b348f187c80625ac2fa64c85",
+  "target_commit": "0a6844f1674fd3334a85436af2f748df8e7b2f25",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16270,
-    "unread": 16245,
+    "unknown": 16269,
+    "unread": 16244,
     "omitted": 0,
-    "responsibilities_total": 124,
+    "responsibilities_total": 125,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -33175,6 +33175,240 @@
       "license_and_provenance": "Exact upstream LICENSE@d70f4d6a87eece19c4ec184de36a8aba72b4a639 retained as full GPL-3.0 legal/source provenance; no runtime or release authority is inferred.",
       "reviewer": null,
       "notes": "Strict index 106 closes only LICENSE. Counters become unknown=16,270 unread=16,245 omitted=0 responsibilities=124. Next strict107 README.md."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "README.md",
+      "source_blob_sha": "15a6194f73ae6084a2ab25d14005dc10262cdfb3",
+      "source_kind": "repository_project_support_documentation",
+      "module_id": "tdesktop.root.readme",
+      "responsibility_id": "TDRP-R9-UPSTREAM-ROOT-README-PROJECT-SUPPORT-PROVENANCE-001",
+      "source_symbols": [
+        "Official Messenger project/source identity and Telegram API/MTProto description",
+        "6 current supported-system/distribution entries",
+        "3 historical last-supported version markers with 7 legacy-system entries",
+        "25 third-party dependency/license references",
+        "3 platform build-instruction entrypoints",
+        "CI badges, preview link, root LICENSE link and Depot sponsorship provenance"
+      ],
+      "capability_ids": [
+        "CAP-UPSTREAM-PROJECT-DOCUMENTATION-PROVENANCE",
+        "CAP-PLATFORM-SUPPORT-MATRIX-PROVENANCE",
+        "CAP-THIRD-PARTY-DEPENDENCY-PROVENANCE",
+        "CAP-BUILD-INSTRUCTION-PROVENANCE",
+        "CAP-CI-PROVENANCE"
+      ],
+      "dependency_ids": [
+        "LICENSE@d70f4d6a87eece19c4ec184de36a8aba72b4a639",
+        "docs/building-win.md",
+        "docs/building-mac.md",
+        "docs/building-linux.md",
+        "projects/telegram-desktop-rust/upstream.lock.json"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-root-readme-project-support-provenance-complete-read.md",
+      "behavior_contract": "Treat the exact upstream root README as project/build/support/dependency documentation provenance for the pinned source tree. Preserve its project identity, source/protocol description, support matrix and historical support boundaries, third-party/license references, build-entry links, and CI/sponsor references as source-oracle material. Do not infer Fabushi runtime/network architecture, dependency selection, supported-platform commitments, packaged artifact identity, or release acceptance from README text or badges; every referenced source/dependency/build/release responsibility remains independently accountable.",
+      "state_machine": "read exact README -> classify project/support/dependency/build/CI sections -> reconcile referenced LICENSE/build docs/dependency authority -> map to existing source/build/package/dependency owners -> publish non-runtime README accounting -> keep referenced production responsibilities independently open until their own exact source and evidence close",
+      "side_effects": [
+        "Preserves exact root README project/source provenance.",
+        "Records upstream supported-system and historical support statements without adopting them as Fabushi support commitments.",
+        "Records third-party/license and build-entry references without treating the README as a dependency lock or configured-build proof.",
+        "Keeps CI badges, preview links and sponsorship attribution separate from exact-head GitHub Actions evidence and product branding."
+      ],
+      "failure_cases": [
+        "README omitted because it is documentation.",
+        "Telegram support-matrix text is copied into Fabushi as an unsupported release promise.",
+        "README third-party versions or licenses are treated as authoritative dependency closure without reconciling actual source/build locks.",
+        "Build links or CI badges are treated as configured-build, artifact, signing, deployment, or release-acceptance evidence.",
+        "Preview/Telegram branding is copied as Fabushi product UI or asset authority.",
+        "Referenced LICENSE/build docs/dependencies are transitively marked complete from the README."
+      ],
+      "ui_disposition": "README preview and Telegram branding are source references only; Fabushi uses its canonical product UI/design system and independently licensed assets.",
+      "non_ui_responsibilities": [
+        "project/source identity and source-protocol description provenance",
+        "supported-system matrix and legacy support-history provenance",
+        "third-party dependency/license reference inventory",
+        "build-instruction entrypoint provenance",
+        "CI badge and infrastructure-sponsorship provenance",
+        "non-transitive reference boundary for linked source entries"
+      ],
+      "platform_delta": "Upstream Windows/macOS/Linux support statements are historical source documentation, not a Fabushi support guarantee. Fabushi platform/package support remains owned by its exact-head build, package, signing and release evidence.",
+      "existing_owner_candidates": [
+        "TDRP-SRC-02 full repository/dependency/build/package/docs inventory governance (selected)",
+        "current upstream.lock recursive authority and dependency/build provenance (selected support)",
+        "existing Fabushi desktop build/package/release evidence owners (selected for Fabushi support truth)",
+        "TDRP-SRC-03 documentation_or_license disposition (supporting classification)",
+        "new README runtime or Telegram support owner (rejected)"
+      ],
+      "existing_owner": "TDRP-SRC-02 recursive source/dependency/build documentation governance plus existing Fabushi build/package/release evidence owners",
+      "rejected_existing_owners": [
+        "README text is not a shipping runtime or protocol implementation owner.",
+        "The upstream support matrix cannot own Fabushi platform-support commitments.",
+        "The third-party list cannot replace exact dependency locks, recursive source authority, security/license review, or real integration evidence.",
+        "Badges and build links cannot replace exact-head GitHub Actions evidence."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md"
+      ],
+      "fabushi_target_symbols": [
+        "TDRP-SRC-02 — 全仓库、递归依赖、资源和工具链"
+      ],
+      "target_language": "Repository governance / retained source documentation provenance",
+      "language_rationale": "README.md is source documentation and provenance rather than executable product behavior; product/build/dependency responsibilities it references remain owned and proven elsewhere.",
+      "command_event_contracts": [
+        "retain exact README identity and section responsibilities",
+        "reconcile README references against independently tracked source/build/dependency owners",
+        "do not infer Fabushi support/release/runtime acceptance from README statements or badges",
+        "do not transitively close referenced source entries"
+      ],
+      "state_owner": "Exact upstream README blob is immutable source provenance; reviewed TDRP disposition is canonical accounting state.",
+      "lifecycle_owner": "Existing TDRP strict-read, repository-review and exact-head evidence lifecycle.",
+      "persistence_and_restart": "Committed dossier/ledger/index/lock plus exact upstream README identity; no shipping runtime state.",
+      "concurrency_and_cancellation": "CAS branch lease and pinned upstream lease serialize publication; any drift leaves strict107 unpublished and requires reconciliation.",
+      "security_boundary": "README protocol/dependency/license descriptions grant no runtime authorization and do not prove cryptographic, supply-chain, signing, deployment, or release security.",
+      "network_service_dependencies": [],
+      "service_owner": "No shipping service; repository/TDRP governance only.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "policy-equivalent",
+      "blockers": [
+        "Fresh strict107 child exact-head TDRP/Rust Actions are required after publication.",
+        "Recursive source disposition remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "README.md@15a6194f73ae6084a2ab25d14005dc10262cdfb3 fully read: 102 lines / 5973 characters; 6 current support entries; 3 historical last-supported version markers / 7 legacy entries; 25 third-party/license references; 3 build entrypoints.",
+        "Fresh parent-head preflight at 0a6844f1674fd3334a85436af2f748df8e7b2f25: zero prior README.md path/blob/responsibility rows; selected TDRP-SRC-02 target symbol occurs exactly once and exact path+symbol has zero ledger owners.",
+        "Parent exact-head TDRP run 39916363240 completed 61/61 success; authority 12484837580 sha256:f4778e09443acb490784301acfb4c127f5e778a17c2d4126d1f62b5d9db47eb0; closure 12484983265 sha256:62615dd5d4b0fe2f3b377968f0de81ba9d3760ae77af72c38513600d6030d353; reachability 12485123848 sha256:732f0931aaab4599b4040ab372f6d252be9d8473b28e7d6b0d801eb0f35e4bf7.",
+        "Parent Rust run 39916363102 completed 6/6 success; artifact 12484702924 sha256:14b48fe8e716582c8679d854cf2ff61591cf970b388ac433509a01ae37bfd4a1.",
+        "Live upstream remained a7f453612f4896ac04d0007a36ab0d377e5bcbcf/tree c539eabfb05e7dcaa84821ac44c35cdfb6551ae5."
+      ],
+      "target_commit": "0a6844f1674fd3334a85436af2f748df8e7b2f25",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository source/build/package/dependency governance",
+      "composition_slot": "retained upstream root README project/support/dependency/build provenance",
+      "capability_component": "Source-neutral project/support/dependency documentation disposition",
+      "variation_axes": [
+        "upstream support statements/Fabushi support truth",
+        "README dependency references/exact dependency locks",
+        "badges/build links/exact-head evidence",
+        "Telegram preview branding/Fabushi design system"
+      ],
+      "shared_owner_contracts": [
+        "TDRP-SRC-02 recursive inventory",
+        "upstream.lock recursive authority",
+        "Fabushi build/package/release evidence",
+        "exact-head TDRP evidence"
+      ],
+      "duplicate_root_check": "No README runtime, Telegram support stack, dependency owner, package root, CI truth, or branded UI root introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository/source provenance only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Retained upstream root README provenance",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Changed README identity, support/dependency/build references, target-owner key, or upstream lease requires fresh reconciliation.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-UPSTREAM-ROOT-README-PROJECT-SUPPORT-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-README-EXACT-SOURCE-001",
+        "ORA-TDRP-README-REFERENCE-BOUNDARY-001",
+        "ORA-TDRP-README-NONRUNTIME-DISPOSITION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-README-NO-TRANSITIVE-CLOSURE-001",
+        "INV-TDRP-README-NO-FABUSHI-SUPPORT-INFERENCE-001",
+        "INV-TDRP-README-NO-RELEASE-ACCEPT-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-README-RETAINED-PROVENANCE-001",
+        "CONTRACT-TDRP-README-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-README-SOURCE-DRIFT-001",
+        "FAULT-TDRP-README-TRANSITIVE-CLOSURE-001",
+        "FAULT-TDRP-README-SUPPORT-INFERENCE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-README-NOT-AUTHORIZATION-001",
+        "SEC-TDRP-README-BADGE-NOT-SUPPLY-CHAIN-EVIDENCE-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-README-NO-SOURCE-OMISSION-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "locked README.md + canonical TDRP source/build/dependency policy + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact upstream README.md@15a6194f73ae6084a2ab25d14005dc10262cdfb3 retained as source/project/support/dependency/build documentation provenance; linked licenses/dependencies remain independently accountable.",
+      "reviewer": null,
+      "notes": "Strict index 107 closes only README.md as non-runtime documentation provenance. Counters become unknown=16,269 unread=16,244 omitted=0 responsibilities=125. Next strict root index 108 REVIEW.md@e65be8231a8e0f50ee86b20ef16120d58ea40376."
     }
   ]
 }
