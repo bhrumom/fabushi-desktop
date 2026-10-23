@@ -361,10 +361,10 @@
   "coverage": {
     "root_source_entries_total": 6893,
     "recursive_source_entries_total": 16379,
-    "unknown_minimum": 16232,
-    "unread_minimum": 16207,
+    "unknown_minimum": 16231,
+    "unread_minimum": 16206,
     "omitted_known": 0,
-    "note": "Live upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 1038a9f4297dd44d5ec98941217280d1e706b245 passed TDRP 40023294574 61/61 success; authority 12532011015 sha256:7379340d3c6f0bf894311f6a33eac0fc27a3f0558df02093082b1adc48fb60c4; closure 12531912187 sha256:d76901bbfd441b272193f5e3260e615a534409ab8490964c032eac644fd6d9e3; reachability 12532216538 sha256:f4b1ef74186adf7671cf81c7565c7ff2aebaeb8df70f5b0d53d75df61a7bc870; Rust 40023294443 6/6 success; artifact 12531881804 sha256:f6ec57fb9ee686dc3803dfdc1f9e176fba04e264c4336e9920251e061837f55d. Strict144 Microsoft/GSL README.md@dd61e3fdc4d30614c0ca35f58cce5f58e66dd4df was fully read: 216 line slots / 14388 bytes. It is retained as dependency/build-interface provenance: header-only/include model, feature cross-references, compiler/toolset/platform claims, build/test and CMake/vcpkg/FetchContent guidance, Google Test notice linkage and natvis linkage. README does not transitively close include/gsl, SECURITY.md or ThirdPartyNotices.txt and does not prove Fabushi ships GSL. Counters unknown=16,232 unread=16,207 omitted=0 responsibilities=162. Next strict145 Microsoft/GSL SECURITY.md@869fdfe2b246991a053fab9cfec1bed3ab532ab1."
+    "note": "Live upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent TDRP 40025466979 61/61 success; authority 12531799937 sha256:1c11b059432c32599ceaa1922b77d9e8cde05759dacda1508918c945eabf51fd; closure 12533385344 sha256:d25a2486772f89a872f26854ea4fa834aa35536065f11f5968778e51f38dbc7e; reachability 12533141247 sha256:dd4f2492e3289f03bca9793c334349e4ea66bdf33e93fc3b3ba87d07c4a056f1; Rust 40025466980 6/6 success; artifact 12531773785 sha256:2f9bd1ce43c388ab2d4959216f988f550ede93cc7ad428553b777b444889f7d2. Strict145 Microsoft/GSL SECURITY.md@869fdfe2b246991a053fab9cfec1bed3ab532ab1 fully read: 42 line slots / 2757 bytes; retained as security-disclosure provenance only. Microsoft's channels/response target do not define Fabushi service behavior; no transitive closure of ThirdPartyNotices.txt or include/gsl. Counters unknown=16,231 unread=16,206 omitted=0 responsibilities=163. Next strict146 ThirdPartyNotices.txt@552b254c63a2f9909aa46ef21c256ef9a79a0035."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -1827,5 +1827,5 @@
     "baseline_identity_accepted": false,
     "source_closure_ready": false
   },
-  "target_commit": "1038a9f4297dd44d5ec98941217280d1e706b245"
+  "target_commit": "9c2548d1d28d272a6a990bad2595381a819d779b"
 }

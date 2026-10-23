@@ -6,10 +6,10 @@
   "target_commit": "1038a9f4297dd44d5ec98941217280d1e706b245",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16232,
-    "unread": 16207,
+    "unknown": 16231,
+    "unread": 16206,
     "omitted": 0,
-    "responsibilities_total": 162,
+    "responsibilities_total": 163,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -43747,6 +43747,240 @@
       "license_and_provenance": "Exact Microsoft/GSL README.md@dd61e3fdc4d30614c0ca35f58cce5f58e66dd4df retained as dependency/build-interface/source provenance; no shipping runtime or release authority is inferred.",
       "reviewer": "primary-session",
       "notes": "Strict144 closes only Microsoft/GSL README.md. Its feature matrix does not transitively close include/gsl implementation, and its support/build claims do not prove Fabushi shipping composition. Counters unknown=16,232 unread=16,207 omitted=0 responsibilities=162. Next strict145 Microsoft/GSL SECURITY.md@869fdfe2b246991a053fab9cfec1bed3ab532ab1."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/GSL",
+      "source_blob_sha": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+      "source_kind": "recursive_child_repository_documentation_or_license",
+      "module_id": "tdesktop.thirdparty.gsl.security",
+      "responsibility_id": "TDRP-R9-GSL-SECURITY-DISCLOSURE-POLICY-PROVENANCE-001",
+      "source_symbols": [
+        "SECURITY.md@869fdfe2b246991a053fab9cfec1bed3ab532ab1",
+        "Please do not report security vulnerabilities through public GitHub issues.",
+        "Microsoft Security Response Center (MSRC)",
+        "secure@microsoft.com",
+        "response within 24 hours",
+        "Coordinated Vulnerability Disclosure"
+      ],
+      "capability_ids": [
+        "CAP-DEPENDENCY-SECURITY-DISCLOSURE-PROVENANCE",
+        "CAP-SECURITY-REPORT-ROUTING-PROVENANCE"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "Microsoft/GSL:SECURITY.md@869fdfe2b246991a053fab9cfec1bed3ab532ab1",
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md#TDRP-SRC-03",
+        "AGENTS.md#repository issue-intake routing adapter governance"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-security-disclosure-policy-complete-read.md",
+      "behavior_contract": "Retain locked Microsoft/GSL SECURITY.md as recursive-dependency security-disclosure provenance and map it to existing Fabushi documentation/security-report routing governance without adopting Microsoft's channels or response target as Fabushi services or evidence.",
+      "state_machine": "accepted gitlink -> exact child/tree -> exact SECURITY.md -> classify disclosure/report routing -> existing owners -> CAS publish -> exact-head revalidation",
+      "side_effects": [
+        "Preserves exact upstream dependency security-disclosure provenance.",
+        "Keeps ThirdPartyNotices.txt, include/gsl and runtime security acceptance open.",
+        "Creates no GSL runtime or MSRC/support/security service."
+      ],
+      "failure_cases": [
+        "SECURITY.md omitted.",
+        "Microsoft channels treated as Fabushi endpoints.",
+        "24-hour response treated as Fabushi SLA.",
+        "Upstream policy treated as Fabushi security acceptance.",
+        "Transitive closure inferred.",
+        "Source drift ignored."
+      ],
+      "ui_disposition": "No shipping UI surface; retained recursive-dependency security-disclosure provenance only.",
+      "non_ui_responsibilities": [
+        "private vulnerability reporting provenance",
+        "MSRC/email/PGP provenance",
+        "triage/reproduction/impact content",
+        "response-target provenance",
+        "coordinated disclosure provenance",
+        "separation from Fabushi security service/evidence"
+      ],
+      "platform_delta": "No product runtime delta; Microsoft disclosure channels remain upstream provenance only.",
+      "existing_owner_candidates": [
+        "TDRP-SRC-03 documentation_or_license (selected)",
+        "AGENTS defect/issue-routing security-critical-report boundary (selected)",
+        "G-SECURITY-PRIVACY (selected evidence boundary)",
+        "new MSRC/vulnerability-report service (rejected)"
+      ],
+      "existing_owner": "TDRP-SRC-03 documentation_or_license plus AGENTS defect/issue-routing security-critical-report boundary and G-SECURITY-PRIVACY",
+      "rejected_existing_owners": [
+        "MSRC/secure@microsoft.com are upstream channels, not Fabushi services.",
+        "Upstream response target is not Fabushi SLA.",
+        "Upstream docs do not own Fabushi runtime security or release acceptance."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md",
+        "AGENTS.md"
+      ],
+      "fabushi_target_symbols": [
+        "documentation_or_license",
+        "G-SECURITY-PRIVACY",
+        "a disabled blank form cannot suppress security, accessibility, privacy, data-loss or release-critical reports."
+      ],
+      "target_language": "Repository governance / dependency security-disclosure provenance",
+      "language_rationale": "SECURITY.md is repository governance documentation, not executable product logic.",
+      "command_event_contracts": [
+        "locked GSL -> exact SECURITY.md",
+        "upstream reporting -> retained provenance only",
+        "security-critical report preservation -> existing Fabushi owner",
+        "security/privacy acceptance -> independently prove",
+        "publication -> CAS + exact-head Actions"
+      ],
+      "state_owner": "Exact GSL gitlink/tree/SECURITY.md blob plus reviewed TDRP disposition.",
+      "lifecycle_owner": "Existing TDRP strict-read, repository issue-routing/security-governance and exact-head evidence lifecycle.",
+      "persistence_and_restart": "Committed dossier/ledger/index/lock; no runtime state.",
+      "concurrency_and_cancellation": "CAS lease serializes publication; drift/cancellation non-passing.",
+      "security_boundary": "Microsoft MSRC/email/PGP and response target remain upstream provenance, not Fabushi authorization/support/incident-response/security-acceptance authority.",
+      "network_service_dependencies": [
+        "GitHub Actions for exact-head revalidation"
+      ],
+      "service_owner": "No shipping service; repository/TDRP governance only.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "security-disclosure-documentation-equivalent-mapped-open",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required after publication.",
+        "ThirdPartyNotices.txt, include/gsl and remaining GSL entries remain open.",
+        "Recursive source closure and independent release acceptance remain open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "strict145 SECURITY.md@869fdfe2b246991a053fab9cfec1bed3ab532ab1 fully read: 42 line slots / 2757 bytes",
+        "GSL gitlink 87f9d768866548b5b86e72be66c60c5abd4d9b37; child tree 6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41",
+        "Parent TDRP 40025466979 61/61 success; authority 12531799937 sha256:1c11b059432c32599ceaa1922b77d9e8cde05759dacda1508918c945eabf51fd; closure 12533385344 sha256:d25a2486772f89a872f26854ea4fa834aa35536065f11f5968778e51f38dbc7e; reachability 12533141247 sha256:dd4f2492e3289f03bca9793c334349e4ea66bdf33e93fc3b3ba87d07c4a056f1; Rust 40025466980 6/6 success; artifact 12531773785 sha256:2f9bd1ce43c388ab2d4959216f988f550ede93cc7ad428553b777b444889f7d2"
+      ],
+      "target_commit": "9c2548d1d28d272a6a990bad2595381a819d779b",
+      "workflow_run": 40025466979,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12531799937,
+      "artifact_digest": "sha256:1c11b059432c32599ceaa1922b77d9e8cde05759dacda1508918c945eabf51fd",
+      "composition_root": "Fabushi repository source/security/issue-routing provenance lifecycle",
+      "composition_slot": "retained Microsoft/GSL vulnerability-disclosure policy provenance",
+      "capability_component": "Source-neutral security-disclosure provenance disposition",
+      "variation_axes": [
+        "report routing",
+        "MSRC/email/PGP",
+        "response target",
+        "coordinated disclosure",
+        "upstream/Fabushi separation"
+      ],
+      "shared_owner_contracts": [
+        "TDRP-SRC-03 documentation_or_license",
+        "AGENTS defect/issue routing",
+        "G-SECURITY-PRIVACY",
+        "exact-head TDRP evidence"
+      ],
+      "duplicate_root_check": "No GSL runtime, MSRC integration, second support/security owner or report product.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository/security-disclosure provenance only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Retained SECURITY.md disclosure provenance",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Changed GSL gitlink/tree/SECURITY.md requires fresh reconciliation; Fabushi reporting/security acceptance stays independent.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-GSL-SECURITY-DISCLOSURE-POLICY-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GSL-SECURITY-EXACT-SOURCE-001",
+        "ORA-TDRP-GSL-SECURITY-PRIVATE-REPORTING-PROVENANCE-001",
+        "ORA-TDRP-GSL-SECURITY-OWNER-SEPARATION-001",
+        "ORA-TDRP-GSL-SECURITY-NO-FABUSHI-CHANNEL-INFERENCE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GSL-SECURITY-NO-OMISSION-001",
+        "INV-TDRP-GSL-SECURITY-NO-MSRC-ADOPTION-001",
+        "INV-TDRP-GSL-SECURITY-NO-SLA-INFERENCE-001",
+        "INV-TDRP-GSL-SECURITY-EXACT-PROVENANCE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GSL-SECURITY-RETAINED-POLICY-001",
+        "CONTRACT-TDRP-GSL-SECURITY-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GSL-SECURITY-SOURCE-DRIFT-001",
+        "FAULT-TDRP-GSL-SECURITY-TRANSITIVE-CLOSURE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-GSL-SECURITY-UPSTREAM-POLICY-NOT-FABUSHI-SERVICE-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-GSL-SECURITY-NO-SOURCE-OMISSION-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-SECURITY-PRIVACY"
+      ],
+      "test_fixture_ids": [
+        "locked GSL SECURITY.md + existing repository/security owners + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact GSL SECURITY.md retained as security-disclosure/source provenance; no Fabushi support endpoint/runtime security service/release authority inferred.",
+      "reviewer": "primary-session",
+      "notes": "Strict145 closes only GSL SECURITY.md. Microsoft channels/response target remain upstream provenance. Counters unknown=16,231 unread=16,206 omitted=0 responsibilities=163. Next strict146 ThirdPartyNotices.txt@552b254c63a2f9909aa46ef21c256ef9a79a0035."
     }
   ]
 }
