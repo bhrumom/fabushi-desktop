@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "a6343d125980a6b98b8149bb368e2a1897262ed0",
+  "target_commit": "21aa2a6c633245efef91442416a258d722b72b4d",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16230,
-    "unread": 16205,
+    "unknown": 16229,
+    "unread": 16204,
     "omitted": 0,
-    "responsibilities_total": 164,
+    "responsibilities_total": 165,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -44222,6 +44222,261 @@
       "license_and_provenance": "Exact Microsoft/GSL ThirdPartyNotices.txt@552b254c63a2f9909aa46ef21c256ef9a79a0035 retained as Google Test BSD 3-Clause third-party legal/source provenance for the locked recursive dependency; no Fabushi shipping/linkage/package or release authority is inferred.",
       "reviewer": "primary-session",
       "notes": "Strict146 closes only GSL ThirdPartyNotices.txt. Google Test/BSD notice obligations remain retained provenance; actual Fabushi shipping/package applicability is independently evidenced. Counters unknown=16,230 unread=16,205 omitted=0 responsibilities=164. Next strict147 Microsoft/GSL docs/headers.md@11dd0cdfd5840cbcb7d8538e49efa2ccd5ac6a68."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/GSL",
+      "source_blob_sha": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+      "source_kind": "recursive_child_repository_documentation_or_license",
+      "module_id": "tdesktop.thirdparty.gsl.docs.headers",
+      "responsibility_id": "TDRP-R9-GSL-HEADERS-API-BEHAVIOR-DOCUMENTATION-PROVENANCE-001",
+      "source_symbols": [
+        "docs/headers.md@11dd0cdfd5840cbcb7d8538e49efa2ccd5ac6a68",
+        "gsl::copy destination span size precondition",
+        "Expects/Ensures -> std::terminate on contract violation",
+        "gsl::byte representation and GSL_USE_STD_BYTE configuration",
+        "gsl::narrow -> narrowing_error on unrepresentable conversion",
+        "gsl::owner raw ownership annotation",
+        "gsl::not_null / strict_not_null non-null and deleted pointer-arithmetic contracts",
+        "gsl::span non-owning view, extent rules, runtime bounds checks and terminating violations",
+        "gsl::span_ext dynamic_extent/comparison/make_span/at/ssize/iterators",
+        "zstring zero-terminated string annotations",
+        "gsl::final_action/finally scope cleanup lifecycle",
+        "gsl::at bounds-checked access"
+      ],
+      "capability_ids": [
+        "CAP-DEPENDENCY-API-BEHAVIOR-DOCUMENTATION-PROVENANCE",
+        "CAP-MEMORY-SAFETY-CONTRACT-PROVENANCE",
+        "CAP-BOUNDS-AND-CONVERSION-FAILURE-SEMANTICS-PROVENANCE"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "Microsoft/GSL:docs/headers.md@11dd0cdfd5840cbcb7d8538e49efa2ccd5ac6a68",
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md#TDRP-MOD-01",
+        "projects/telegram-desktop-rust/module-map.md"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-docs-headers-api-behavior-complete-read.md",
+      "behavior_contract": "Retain the locked GSL public-header documentation as an exact source contract for API, ownership, bounds, conversion, cleanup, configuration and failure semantics; require later include/gsl implementation rows to prove the applicable Fabushi/Rust equivalents rather than treating this documentation row as runtime implementation.",
+      "state_machine": "accepted gitlink -> exact child/tree -> exact docs/headers.md -> enumerate all documented header contracts and failure semantics -> existing TDRP documentation/responsibility owners -> CAS publish -> exact-head revalidation -> later include/gsl implementation closure",
+      "side_effects": [
+        "Preserves the complete documented public-header behavior and failure-semantics authority.",
+        "Makes termination-vs-throwing-vs-annotation-only distinctions explicit for later equivalence work.",
+        "Keeps include/CMakeLists.txt, include/gsl/* and tests/* open.",
+        "Creates no GSL runtime, C++ compatibility layer, second memory-safety owner or parallel dependency runtime."
+      ],
+      "failure_cases": [
+        "docs/headers.md omitted or only partially sampled.",
+        "Contract termination semantics collapsed into generic error handling.",
+        "narrow throwing semantics conflated with narrow_cast.",
+        "not_null/span bounds and ownership contracts treated as cosmetic types.",
+        "final_action cleanup lifecycle omitted.",
+        "Documentation treated as proof that Fabushi runtime implements the behavior.",
+        "Remaining include/gsl implementation files transitively closed.",
+        "Source drift ignored."
+      ],
+      "ui_disposition": "No shipping UI surface; retained recursive-dependency API/behavior documentation provenance only.",
+      "non_ui_responsibilities": [
+        "copy precondition semantics",
+        "pre/postcondition termination semantics",
+        "byte representation/configuration semantics",
+        "narrowing conversion failure semantics",
+        "pointer ownership and non-null contracts",
+        "span ownership/extent/bounds/iterator semantics",
+        "safe indexed access semantics",
+        "zero-terminated string annotation semantics",
+        "scope-exit cleanup lifecycle",
+        "exception-enabled/disabled header composition provenance",
+        "separation of documented contracts from implementation evidence"
+      ],
+      "platform_delta": "No direct product-runtime delta from the documentation file. Applicable semantics must later map to existing Rust/TypeScript/platform owners using native safety/lifecycle mechanisms rather than retaining a GSL/C++ runtime.",
+      "existing_owner_candidates": [
+        "TDRP-SRC-03 documentation/dependency provenance (selected)",
+        "TDRP-MOD-01 complete responsibility decomposition (selected)",
+        "module-map source-file responsibility/evidence mapping (selected)",
+        "existing Fabushi Rust ownership/bounds/result/RAII-style lifecycle owners for later implementation rows (selected future equivalence boundary)",
+        "new GSL/C++ runtime or memory-safety subsystem (rejected)"
+      ],
+      "existing_owner": "TDRP-SRC-03 documentation/dependency provenance plus TDRP-MOD-01 complete responsibility decomposition and module-map source-file traceability; later executable semantics remain owned by existing Fabushi Rust/TypeScript/platform owners on the individual include/gsl rows",
+      "rejected_existing_owners": [
+        "A GSL-specific runtime would violate source-neutral existing-owner-first architecture.",
+        "The documentation file cannot itself own shipping memory safety, bounds checking or cleanup behavior.",
+        "C++ terminate/exception mechanics are source semantics to translate, not architecture to preserve."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md",
+        "projects/telegram-desktop-rust/module-map.md"
+      ],
+      "fabushi_target_symbols": [
+        "**TDRP-MOD-01:** 每个 module dossier 至少说明：准确源文件/symbol、用户效果、输入/输出、命令/事件、状态机、状态/生命周期 owner、依赖图、调用关系、持久化/迁移、线程/任务与资源所有权、顺序/去重/幂等、重试/backoff、取消/dispose、重启/reconnect、错误/权限/安全/隐私、平台差异、性能与资源预算、许可证、观察到的设计优点/债务。",
+        "每个源文件记录 exact repository/commit/path/blob、分类、module/responsibility IDs、完整理解记录、UI 与非 UI 责任划分、capabilities/dependencies、existing owner 候选与选择、Fabushi target paths/symbols、语言与理由、状态/lifecycle/persistence/security/concurrency、服务端依赖、生产入口、测试/证据、target SHA、blockers 与 licenses/provenance。"
+      ],
+      "target_language": "Repository dependency/API behavior documentation provenance; later executable equivalents in native Fabushi Rust/TypeScript/platform owners",
+      "language_rationale": "docs/headers.md is documentation. Its executable semantics must be translated from individual implementation headers, not copied into a GSL/C++ runtime.",
+      "command_event_contracts": [
+        "locked GSL -> exact docs/headers.md",
+        "documented behavior/failure contract -> retained source authority",
+        "individual include/gsl implementation -> separately read and mapped",
+        "runtime equivalence -> existing Fabushi owners + tests",
+        "publication -> CAS + exact-head Actions"
+      ],
+      "state_owner": "Exact GSL gitlink/tree/docs/headers.md blob plus reviewed TDRP documentation disposition.",
+      "lifecycle_owner": "Existing TDRP strict-read, source-responsibility decomposition and exact-head evidence lifecycle; individual runtime owners remain open.",
+      "persistence_and_restart": "Committed dossier/ledger/index/lock; no runtime state.",
+      "concurrency_and_cancellation": "CAS lease serializes publication; drift/cancellation non-passing.",
+      "security_boundary": "Memory-safety, bounds, ownership and contract semantics in this document are source authority only; Fabushi security/runtime acceptance requires concrete implementation and tests on later rows.",
+      "network_service_dependencies": [
+        "GitHub Actions for exact-head revalidation"
+      ],
+      "service_owner": "No shipping service; repository/TDRP dependency behavior documentation only.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-behavior-documentation-equivalent-mapped-open",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required after publication.",
+        "include/CMakeLists.txt, include/gsl/* and tests/* remain open.",
+        "Documented runtime semantics require individual implementation/equivalence evidence.",
+        "Recursive source closure and independent release acceptance remain open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "strict147 docs/headers.md@11dd0cdfd5840cbcb7d8538e49efa2ccd5ac6a68 fully read: 861 line slots / 35147 bytes",
+        "GSL gitlink 87f9d768866548b5b86e72be66c60c5abd4d9b37; child tree 6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41",
+        "Parent TDRP 40029290433 61/61 success; authority 12533987923 sha256:f0c3941c88f811557891ceba97d52171de15eceeeac45cab636c61dad9621372; closure 12534656490 sha256:364939e0f0ed335223e671177680eed84abdfc3b1906d33949e44033571057d0; reachability 12534401635 sha256:a46e5272413e3a55b6cc4da2be3ae320b78bba64c31efa52154c995445777755; Rust 40029290426 6/6 success; artifact 12534755123 sha256:b3c3bb865feae2d24a65cc8c23bb5d525270c465f89146ad76906f93f65892ad"
+      ],
+      "target_commit": "21aa2a6c633245efef91442416a258d722b72b4d",
+      "workflow_run": 40029290433,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12533987923,
+      "artifact_digest": "sha256:f0c3941c88f811557891ceba97d52171de15eceeeac45cab636c61dad9621372",
+      "composition_root": "Fabushi repository source-responsibility/dependency documentation lifecycle",
+      "composition_slot": "retained Microsoft/GSL public-header behavior documentation provenance",
+      "capability_component": "Source-neutral API/behavior/failure-semantics documentation disposition",
+      "variation_axes": [
+        "contract terminate semantics",
+        "throwing conversion semantics",
+        "ownership/nullability",
+        "bounds checking",
+        "scope cleanup",
+        "byte/configuration",
+        "annotation-only contracts",
+        "implementation-evidence separation"
+      ],
+      "shared_owner_contracts": [
+        "TDRP-SRC-03 documentation/dependency disposition",
+        "TDRP-MOD-01 responsibility decomposition",
+        "module-map file-level traceability",
+        "existing Fabushi native runtime owners on later executable rows",
+        "exact-head TDRP evidence"
+      ],
+      "duplicate_root_check": "No GSL runtime, C++ compatibility layer, parallel memory-safety subsystem or second dependency runtime.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository/dependency behavior documentation only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Retained docs/headers.md API and failure-semantics provenance",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Changed GSL gitlink/tree/docs/headers.md requires fresh reconciliation; later include/gsl implementation rows remain independently open.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-GSL-HEADERS-API-BEHAVIOR-DOCUMENTATION-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GSL-HEADERS-EXACT-SOURCE-001",
+        "ORA-TDRP-GSL-HEADERS-FAILURE-SEMANTICS-001",
+        "ORA-TDRP-GSL-HEADERS-OWNERSHIP-BOUNDS-001",
+        "ORA-TDRP-GSL-HEADERS-DOCUMENTATION-NOT-IMPLEMENTATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GSL-HEADERS-NO-OMISSION-001",
+        "INV-TDRP-GSL-HEADERS-NO-RUNTIME-INFERENCE-001",
+        "INV-TDRP-GSL-HEADERS-NO-TRANSITIVE-CLOSURE-001",
+        "INV-TDRP-GSL-HEADERS-EXACT-PROVENANCE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GSL-HEADERS-BEHAVIOR-DOC-PROVENANCE-001",
+        "CONTRACT-TDRP-GSL-HEADERS-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GSL-HEADERS-SOURCE-DRIFT-001",
+        "FAULT-TDRP-GSL-HEADERS-DOCUMENTATION-AS-RUNTIME-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-GSL-HEADERS-SAFETY-CONTRACTS-REQUIRE-IMPLEMENTATION-EVIDENCE-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-GSL-HEADERS-NO-SOURCE-OMISSION-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-SECURITY-PRIVACY",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "locked GSL docs/headers.md + existing source/dependency owners + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact Microsoft/GSL docs/headers.md@11dd0cdfd5840cbcb7d8538e49efa2ccd5ac6a68 retained as public API/behavior/failure-semantics source provenance for the locked recursive dependency; no GSL runtime, shipping composition or release authority is inferred.",
+      "reviewer": "primary-session",
+      "notes": "Strict147 closes only GSL docs/headers.md. It captures all documented public-header behavior/failure contracts as source authority while leaving include/gsl implementations and Fabushi native equivalence open. Counters unknown=16,229 unread=16,204 omitted=0 responsibilities=165. Next strict148 Microsoft/GSL include/CMakeLists.txt@fe4eed9190a40c3fc0b182112956a4957653a5f2."
     }
   ]
 }

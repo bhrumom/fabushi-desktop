@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16230,
-    "unread_minimum": 16205,
+    "unknown_minimum": 16229,
+    "unread_minimum": 16204,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -122,7 +122,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent TDRP 40027474728 61/61 success; authority 12533327369 sha256:61a152569fbf509dd0802cfb67d0dd1fe2a23cd324afce7726c596797ce85dd5; closure 12533826417 sha256:9c55fd1a56b7e47ff18e8e29c5de516bcb1d2fbad59d8815615c412b240629af; reachability 12532699819 sha256:2622a369d496bc270de02259e8bb2cbd611c0e4bd1e8b80f6fbda2c9483956e0; Rust 40027474784 6/6 success; artifact 12533346672 sha256:2bf97e87b48eb520cf069d28f743dda111780af80ab07839f086eaa73be820aa. Strict146 Microsoft/GSL ThirdPartyNotices.txt@552b254c63a2f9909aa46ef21c256ef9a79a0035 fully read: 42 line slots / 2022 bytes; retained as third-party legal/source provenance for Google Test BSD 3-Clause material. The notice records source/binary redistribution notice conditions and non-endorsement/disclaimer provenance but does not prove Fabushi ships, links, packages, or executes Google Test. Counters unknown=16,230 unread=16,205 omitted=0 responsibilities=164. Next strict147 Microsoft/GSL docs/headers.md@11dd0cdfd5840cbcb7d8538e49efa2ccd5ac6a68.",
+  "note": "Live upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent TDRP 40029290433 61/61 success; authority 12533987923 sha256:f0c3941c88f811557891ceba97d52171de15eceeeac45cab636c61dad9621372; closure 12534656490 sha256:364939e0f0ed335223e671177680eed84abdfc3b1906d33949e44033571057d0; reachability 12534401635 sha256:a46e5272413e3a55b6cc4da2be3ae320b78bba64c31efa52154c995445777755; Rust 40029290426 6/6 success; artifact 12534755123 sha256:b3c3bb865feae2d24a65cc8c23bb5d525270c465f89146ad76906f93f65892ad. Strict147 Microsoft/GSL docs/headers.md@11dd0cdfd5840cbcb7d8538e49efa2ccd5ac6a68 fully read: 861 line slots / 35147 bytes. It documents the public GSL header contracts: copy destination-size precondition; Expects/Ensures termination semantics; byte representation/configuration; throwing narrow vs non-throwing narrow_cast; owner/not_null/strict_not_null constraints; span ownership/extent/bounds/iterator behavior; span_ext make_span/at/ssize; zero-terminated string annotations; final_action/finally scope cleanup; and bounds-checked at overloads. This row retains complete behavior-documentation provenance only; include/gsl implementations and Fabushi/Rust product equivalence remain open and must be proven separately. Counters unknown=16,229 unread=16,204 omitted=0 responsibilities=165. Next strict148 Microsoft/GSL include/CMakeLists.txt@fe4eed9190a40c3fc0b182112956a4957653a5f2.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
