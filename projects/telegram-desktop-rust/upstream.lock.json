@@ -361,10 +361,10 @@
   "coverage": {
     "root_source_entries_total": 6893,
     "recursive_source_entries_total": 16379,
-    "unknown_minimum": 16275,
-    "unread_minimum": 16250,
+    "unknown_minimum": 16274,
+    "unread_minimum": 16249,
     "omitted_known": 0,
-    "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent exact-head 3d7acfed8ffbf17b344c2d1594dc6bb7f369175b/tree 97a9bb40961e54a8859dcfd1e6656ba97e8f2b2e completed TDRP run 39904761894 at 61/61 success (authority 12480098862 sha256:1bff2a18d5e051fcae134be7c3c1fd12e6c9ae730c884344221af6311648cf1d; closure 12481140109 sha256:c263a0690a4ba1386a27c53af4e5fa73b1f75b0f2105f238824bb13f4e27fa9c; reachability 12480093227 sha256:0e94c5900188b162c9101a413f2e2b24133fbc35b0a89441fe77b59359aac4b8) and Rust desktop runtime run 39904761917 at 6/6 success (artifact 12480029114 sha256:1d04cfdbbadd6651b7aa5ddc53dd81546806712c318c377dba6ab60d1b5fadee). Strict101 AGENTS.md@b3ce86744f7d889a5dee63dbaefa3353801c4c32 was fully read (1006 lines / 46865 bytes) and mapped to existing Fabushi repository/TDRP governance while explicitly keeping all product responsibilities mentioned by the guide open until their actual source owners are migrated. Existing-owner/validator preflight found zero prior source-path/blob/responsibility rows and zero selected target-path+symbol conflicts; all four selected owner statements are unique at the exact branch head, and the two root AGENTS TDRP statements remain unique on live main despite unrelated OCRM additions. Counters unknown=16,275 unread=16,250 omitted=0 responsibilities=119. Next strict root index 102 CLAUDE.md@f8564d18cef4b9c545767025995d31deb3fa7155. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required."
+    "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent exact-head a66bf8b7578538642989756feb4a5c0571f8b655/tree ad5977bb3b237484b4a04c76456759b217a7ffcd completed TDRP run 39906002549 attempt 2 at 61/61 success after one transient breakpad clone transport failure in attempt 1; authority 12480139173 sha256:b4adbde7994599cced461808f4ce0a5ca9ea8293df161d91ceb801fc4dedc90a, closure 12480364389 sha256:949008ba2f7192c847ddf79d6fa05560b6abea85c6bee09b4f8af431782deaf3, reachability 12481560876 sha256:1c10037ba6c46fc097de5b70fa5b67dee16a25637ed35f8a2733feb277d5292c; Rust run 39906002548 completed 6/6 with artifact 12480568943 sha256:4b3835c9ceb2d0ff8e9e229c617c676c0bf798305f19c1ac8cbb7fae633362e7. Strict102 CLAUDE.md@f8564d18cef4b9c545767025995d31deb3fa7155 is a four-line host instruction pointer to AGENTS.md and maps to the existing root instruction-precedence owner. Counters unknown=16,274 unread=16,249 omitted=0 responsibilities=120. Next strict root index 103 CMakeLists.txt@59477e251bbfea8d5efaf0bcda53798f92695449; baseline_identity_accepted=false/source_closure_ready=false and fresh child exact-head Actions required."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -378,7 +378,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Live strict101 mapping requires fresh child exact-head GitHub Actions. Source closure remains open with unknown=16,275 unread=16,250 omitted=0; AGENTS.md is governance/oracle provenance and cannot promote its documented product responsibilities to implemented or verified."
+    "note": "Live strict102 mapping requires fresh child exact-head GitHub Actions. Source closure remains open with unknown=16,274 unread=16,249 omitted=0; CLAUDE.md is a host pointer to canonical AGENTS.md and cannot establish product implementation or acceptance."
   },
   "baseline_identity_evidence": {
     "status": "pending-current-head-revalidation",

@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "3d7acfed8ffbf17b344c2d1594dc6bb7f369175b",
+  "target_commit": "a66bf8b7578538642989756feb4a5c0571f8b655",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16275,
-    "unread": 16250,
+    "unknown": 16274,
+    "unread": 16249,
     "omitted": 0,
-    "responsibilities_total": 119,
+    "responsibilities_total": 120,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -32016,6 +32016,220 @@
       "reviewer": null,
       "license_and_provenance": "Exact upstream AGENTS.md blob b3ce86744f7d889a5dee63dbaefa3353801c4c32 is retained as repository-guidance provenance under the pinned upstream source. Telegram-specific task/build/API/UI mechanics are not copied as Fabushi product/runtime ownership; product responsibilities mentioned by the guide remain independently accountable through their actual source files.",
       "notes": "Strict index 101 closes only AGENTS.md as repository-guidance/product-oracle provenance. Counters become unknown=16,275 unread=16,250 omitted=0 responsibilities=119. Next strict root index 102 CLAUDE.md@f8564d18cef4b9c545767025995d31deb3fa7155. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "CLAUDE.md",
+      "source_blob_sha": "f8564d18cef4b9c545767025995d31deb3fa7155",
+      "source_kind": "repository_host_instruction_pointer",
+      "module_id": "tdesktop.claude_pointer",
+      "responsibility_id": "TDRP-R9-REPOSITORY-HOST-INSTRUCTION-POINTER-PROVENANCE-001",
+      "source_symbols": [
+        "Claude Code Pointer",
+        "Read AGENTS.md and treat it as the canonical repository-wide instructions"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-INSTRUCTION-PRECEDENCE",
+        "CAP-HOST-POINTER-ADAPTER-GOVERNANCE"
+      ],
+      "dependency_ids": [
+        "AGENTS.md"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/claude-code-pointer-complete-read.md",
+      "behavior_contract": "Treat upstream CLAUDE.md as a host-specific instruction pointer that delegates to AGENTS.md. Fabushi already owns the source-neutral precedence rule in root AGENTS.md: host pointer files may add adapter mechanics but cannot override canonical repository or nested instructions unless canonical policy delegates that choice. This pointer is provenance only and does not establish a shipping runtime, product behavior, source closure or acceptance.",
+      "state_machine": "read exact upstream CLAUDE.md -> resolve its AGENTS.md delegation -> map to current Fabushi root instruction-precedence owner -> preserve nested instruction precedence and current task/spec/source authority -> require exact-head GitHub Actions parent evidence -> publish mapped-open accounting -> continue strict source order",
+      "side_effects": [
+        "Adds durable provenance for the upstream Claude host instruction pointer.",
+        "Reuses the existing root AGENTS.md instruction-precedence owner.",
+        "Introduces no Claude-specific runtime, task queue, product owner, network owner, build authority or UI root.",
+        "Preserves baseline_identity_accepted=false and source_closure_ready=false."
+      ],
+      "failure_cases": [
+        "CLAUDE.md is treated as a second canonical repository-instruction owner",
+        "a host pointer overrides a more specific nested AGENTS.md without explicit canonical delegation",
+        "the pointer is treated as product implementation or acceptance evidence",
+        "host-specific adapter mechanics are promoted into Fabushi product architecture",
+        "stale pointer text overrides current task/spec/source authority"
+      ],
+      "ui_disposition": "No standalone shipping UI surface. This source entry is only a repository host-instruction pointer.",
+      "non_ui_responsibilities": [
+        "host instruction delegation to canonical AGENTS.md",
+        "repository instruction precedence",
+        "fail-closed separation between pointer documentation and production evidence"
+      ],
+      "platform_delta": "Claude-specific pointer syntax is an upstream host adapter detail. Fabushi keeps the source-neutral root AGENTS.md precedence rule and does not add a Claude product/platform runtime.",
+      "existing_owner_candidates": [
+        "root AGENTS.md repository instruction precedence and host-pointer policy (selected)",
+        "new Claude-specific instruction/runtime owner (rejected)"
+      ],
+      "existing_owner": "Root AGENTS.md repository instruction precedence and host-pointer adapter policy",
+      "rejected_existing_owners": [
+        "A new Claude-specific owner would duplicate the root repository instruction-precedence owner.",
+        "Shipping product owners cannot be declared implemented from a host instruction pointer."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository instruction precedence remains source-neutral: the root `AGENTS.md` is repository-wide unless a more specific nested `AGENTS.md` governs the edited subtree. Host pointer files such as `CLAUDE.md` or `GROK.md` may add host-adapter mechanics but do not override canonical repository or nested instructions unless that canonical policy explicitly delegates the choice. Task/spec requirements and current source establish the behavior being implemented; project overviews, docs, READMEs, older plans, receipts, snapshots, and proposals are supporting context and must be revalidated before use when they conflict or may be stale."
+      ],
+      "target_language": "Repository governance Markdown + TDRP JSON evidence + GitHub Actions",
+      "language_rationale": "The strict102 source is a four-line host pointer with no shipping product implementation. Its applicable responsibility is source-neutral repository instruction delegation, already owned by root AGENTS.md.",
+      "command_event_contracts": [
+        "resolve host pointer to canonical AGENTS.md",
+        "preserve root versus nested AGENTS.md precedence",
+        "do not allow host pointer adapters to override canonical policy without explicit delegation",
+        "do not promote pointer documentation to product/source-closure evidence",
+        "continue strict root accounting in source order"
+      ],
+      "state_owner": "Root AGENTS.md owns repository instruction precedence; the pinned upstream CLAUDE.md blob remains immutable provenance only.",
+      "lifecycle_owner": "Existing TDRP strict read-through, exact-head evidence and atomic ledger/index/lock publication lifecycle.",
+      "persistence_and_restart": "Durable policy is the committed Fabushi AGENTS.md plus ledger/dossier provenance. Host-session pointer state is non-authoritative and reconstructable from committed exact-head sources.",
+      "concurrency_and_cancellation": "Publication is serialized behind exact-head parent gates and a CAS branch lease. Lease drift or incomplete evidence leaves strict102 unpublished rather than partially advancing counters.",
+      "security_boundary": "CLAUDE.md is not authentication, authorization, secret storage or a trust boundary. Host pointer text cannot grant product or repository permissions.",
+      "network_service_dependencies": [],
+      "service_owner": "No shipping service; existing repository/TDRP governance only.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "policy-equivalent",
+      "blockers": [
+        "Fresh strict102 child exact-head TDRP/Rust Actions are required after publication.",
+        "Recursive source disposition remains open with unknown/unread entries."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "CLAUDE.md@f8564d18cef4b9c545767025995d31deb3fa7155 fully read: 4 lines / 100 bytes.",
+        "Current a66bf8b7578538642989756feb4a5c0571f8b655 preflight: zero prior CLAUDE.md source-path rows, zero source_blob_sha rows, zero responsibility rows, and zero prior AGENTS.md target-path+symbol ownership rows; selected AGENTS.md precedence statement occurs exactly once.",
+        "Parent exact-head TDRP run 39906002549 attempt 2 completed 61/61 success after attempt 1 shard 3 suffered a breakpad clone HTTP/2 INTERNAL_ERROR/early-EOF transient; no source change was required.",
+        "Parent TDRP authority 12480139173 sha256:b4adbde7994599cced461808f4ce0a5ca9ea8293df161d91ceb801fc4dedc90a; closure 12480364389 sha256:949008ba2f7192c847ddf79d6fa05560b6abea85c6bee09b4f8af431782deaf3; reachability 12481560876 sha256:1c10037ba6c46fc097de5b70fa5b67dee16a25637ed35f8a2733feb277d5292c.",
+        "Parent Rust desktop runtime run 39906002548 completed 6/6 success; artifact 12480568943 sha256:4b3835c9ceb2d0ff8e9e229c617c676c0bf798305f19c1ac8cbb7fae633362e7.",
+        "Live upstream dev remained a7f453612f4896ac04d0007a36ab0d377e5bcbcf/tree c539eabfb05e7dcaa84821ac44c35cdfb6551ae5 immediately before publication."
+      ],
+      "target_commit": "a66bf8b7578538642989756feb4a5c0571f8b655",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository instruction-governance and TDRP source-authority lifecycle",
+      "composition_slot": "Host instruction pointer delegation and precedence provenance",
+      "capability_component": "Source-neutral repository host-pointer governance",
+      "variation_axes": [
+        "canonical AGENTS instruction versus host pointer adapter",
+        "root versus nested repository instruction precedence",
+        "pointer documentation versus shipping production evidence"
+      ],
+      "shared_owner_contracts": [
+        "root AGENTS.md remains canonical repository-wide instruction owner unless a nested AGENTS.md applies",
+        "host pointers cannot override canonical/nested instructions without explicit delegation",
+        "documentation cannot fabricate production/source closure"
+      ],
+      "duplicate_root_check": "No Claude-specific runtime, instruction root, task queue, product owner, build authority, network owner or UI root is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository instruction delegation only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Repository instruction pointer provenance",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "A changed upstream pointer requires a new exact blob and fresh reconciliation; pointer text never advances product implementation or acceptance status by itself.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-REPOSITORY-HOST-INSTRUCTION-POINTER-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CLAUDE-POINTER-DELEGATES-TO-AGENTS-001",
+        "ORA-TDRP-CLAUDE-POINTER-NO-OVERRIDE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CLAUDE-NO-SECOND-INSTRUCTION-ROOT-001",
+        "INV-TDRP-CLAUDE-NO-DOCUMENT-AS-PRODUCTION-EVIDENCE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CLAUDE-AGENTS-DELEGATION-001",
+        "CONTRACT-TDRP-CLAUDE-PRECEDENCE-001",
+        "CONTRACT-TDRP-CLAUDE-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CLAUDE-STALE-POINTER-001",
+        "FAULT-TDRP-CLAUDE-OVERRIDE-ATTEMPT-001",
+        "FAULT-TDRP-CLAUDE-DOCUMENT-PROMOTION-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CLAUDE-POINTER-NOT-AUTHORIZATION-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-CLAUDE-NO-SOURCE-OMISSION-001",
+        "REG-TDRP-CLAUDE-NO-BOT-OWNER-REGRESSION-001"
+      ],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-MODULE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "locked upstream CLAUDE.md + current Fabushi AGENTS.md + parent exact-head Actions"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "release_gate_status": "open",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact upstream CLAUDE.md blob f8564d18cef4b9c545767025995d31deb3fa7155 is retained as host-instruction-pointer provenance under the pinned upstream source. The pointer delegates to AGENTS.md and is not copied as a new Fabushi runtime or instruction root.",
+      "notes": "Strict index 102 closes only CLAUDE.md as a host instruction pointer to canonical AGENTS.md. Counters become unknown=16,274 unread=16,249 omitted=0 responsibilities=120. Next strict root index 103 CMakeLists.txt@59477e251bbfea8d5efaf0bcda53798f92695449. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required.",
       "test_execution_evidence": []
     }
   ]
