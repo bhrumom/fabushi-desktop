@@ -32797,12 +32797,10 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "docs/specs/telegram-desktop-rust-equivalence-migration.md",
-        "projects/telegram-desktop-rust/module-map.md"
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md"
       ],
       "fabushi_target_symbols": [
-        "documentation_or_license",
-        "build/generator/resources/dependencies"
+        "保留法律要求的 LICENSE/NOTICE/版权与 source provenance"
       ],
       "target_language": "Repository governance / retained legal-record provenance",
       "language_rationale": "LEGAL carries legal/source provenance rather than executable behavior.",
@@ -32836,7 +32834,8 @@
         "Fresh preflight: zero prior LEGAL path/blob/responsibility rows; zero LICENSE rows; selected target symbols each occur exactly once.",
         "Parent exact-head TDRP run 39911345876 completed 61/61 success; authority 12483295894 sha256:555bdb69676dc4ba88e3f280933d9dd1ab2bf5ab7d99def590ff95e71751d0e6; closure 12483600563 sha256:95bbd738b68d4f667b63165cc7fa245d390314f77c0b22d87f7730a67d0153ac; reachability 12483496588 sha256:ce44d6fb51838e382c7b4491263693f551c89dc11cdf00ecde319bad1d2d1280.",
         "Parent Rust run 39911345660 completed 6/6 success; artifact 12482329092 sha256:38070a97858be5721d1738e02df407ed57f2a923935b4a423137b8362fd7102d.",
-        "Live upstream remained a7f453612f4896ac04d0007a36ab0d377e5bcbcf/tree c539eabfb05e7dcaa84821ac44c35cdfb6551ae5."
+        "Live upstream remained a7f453612f4896ac04d0007a36ab0d377e5bcbcf/tree c539eabfb05e7dcaa84821ac44c35cdfb6551ae5.",
+        "Failure evidence from exact-head TDRP job 120283994986: validator rejected reuse of the strict83 target path/symbol owner key; minimal repair anchors strict105 to the existing unique legal-provenance policy sentence instead of adding a validator exception."
       ],
       "target_commit": "68e36e8baafc9d0c7fa18ae70a72ff79d5bca96b",
       "workflow_run": null,
