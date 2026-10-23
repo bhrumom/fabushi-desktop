@@ -361,10 +361,10 @@
   "coverage": {
     "root_source_entries_total": 6893,
     "recursive_source_entries_total": 16379,
-    "unknown_minimum": 16238,
-    "unread_minimum": 16213,
+    "unknown_minimum": 16237,
+    "unread_minimum": 16212,
     "omitted_known": 0,
-    "note": "Live upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent d4a4ed2b9015996faf0da7160e762c7d49cf8aa0 passed TDRP 40007031379 61/61; authority 12525400642 sha256:9e70fff0a3745ca742eda4a20f4bd66ff1aa3cb4f6c57dfdd7d4abe7a3ba64af; closure 12524942439 sha256:8803e478e54a2f7b6d47ea8cb485faa0742770df2f79794ec47d939ae6d84141; reachability 12524133934 sha256:4de9b391641df25df9cdff3f7443636c8308927de560f7d2dfb5b8cdd5cb20e5; Rust 40007031384 6/6; artifact 12524826812 sha256:72fdc8945dbcb7ae91c0a235aadbc78f4162d3850258336dfef9a9c633f30755. Strict138 Microsoft/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37 .gitignore@326971f0331d1f8c3226fb3b341687f3198cd8a2 was fully read: 16 repository-local/generated CMake/build, Visual Studio/VS Code and test-temporary exclusion patterns. Existing AGENTS.md repository development/source-integrity governance and exact-head source-authority validators are reused; ignore matching cannot omit tracked source, prove build/test execution, establish product persistence, or release acceptance. Counters unknown=16,238 unread=16,213 omitted=0 responsibilities=156. Next strict139 Microsoft/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37 CMakeLists.txt@b1d24e5facfe56b1ae28468a5959797e9f6bacda."
+    "note": "Live upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 61a87fd19adcf62aa9ca9ca11587e430cd9d1e61 passed TDRP 40011193081 61/61; authority 12525698776 sha256:eec8e94f1ab42a2f74c5c2ea19906b6cf639ed2fe61e8508ca6ea3b2b25a1449; closure 12526831881 sha256:8ab394d8e7c8cc30041901ed306b7c4aa64cdcb36043ae6ce73db30fc5716430; reachability 12526916734 sha256:8f26c3ee654a063fe90496cc1cfb602afe99d2b7c2a0850f22ca57ab08361b5c; Rust 40011193189 6/6; artifact 12526048848 sha256:1e3a92abd847175d1efccb76a3e1893b2e5e867e6e02a9b7e462d9857dc15b42. Strict139 Microsoft/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37 CMakeLists.txt@b1d24e5facfe56b1ae28468a5959797e9f6bacda was fully read: 49 line slots / 1779 bytes. Existing Fabushi canonical build/package plus source-derived/configured-build/exact-head evidence owners are reused; source CMake cannot establish configured membership, successful build/package, runtime reachability, signing or release acceptance. Counters unknown=16,237 unread=16,212 omitted=0 responsibilities=157. Next strict140 Microsoft/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37 CMakeSettings.json@2e1ad24c582b1db241a9cee2553935095e77e80c."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -378,7 +378,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Strict138 mapped-open repository-local/generated/build/IDE/test-temporary exclusion provenance only. Existing AGENTS.md repository development/source-integrity governance and exact-head TDRP validators are reused; ignore matching is not source omission, build/test proof, product persistence, security, packaging or release acceptance. Recursive source closure and independent release acceptance remain open."
+    "note": "Strict139 mapped-open dependency build/package-composition provenance only. Existing desktop/package.json, FQT-EVID-001 source-derived/configured-build evidence and exact-head Rust/TDRP owners are reused; Microsoft/GSL CMake/C++14/test/install/export metadata is not a second Fabushi build root and cannot establish configured membership, successful build/package, security, signing or release acceptance. Referenced child subgraphs, recursive source closure and independent release acceptance remain open."
   },
   "baseline_identity_evidence": {
     "status": "pending-current-head-revalidation",
@@ -1827,5 +1827,5 @@
     "baseline_identity_accepted": false,
     "source_closure_ready": false
   },
-  "target_commit": "d4a4ed2b9015996faf0da7160e762c7d49cf8aa0"
+  "target_commit": "61a87fd19adcf62aa9ca9ca11587e430cd9d1e61"
 }
