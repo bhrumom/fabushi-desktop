@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16261,
-    "unread_minimum": 16236,
+    "unknown_minimum": 16260,
+    "unread_minimum": 16235,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -122,7 +122,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 347848c0207487c6acca95fab69bb0b685fed1de/tree 97b13bbb65a2b6ebce6e9ae6e47891f2f150a6c8 passed TDRP 39939734488 at 61/61 and Rust 39939734546 at 6/6. Strict115 docs/assets/slide.03.jpg@588f2950d5f6fdd2625f2bd250db82761ce0e6f1 is retained as AppStream/distribution media-viewer visual-resource and marketing-caption provenance under the existing Fabushi visual/design/evidence owners; the rendered Telegram media viewer is not Fabushi Resource/Media implementation, visual baseline, package/store proof or release authority, and the binary is not copied. Counters unknown=16,261 unread=16,236 omitted=0 responsibilities=133. Next strict root index 116 docs/assets/slide.04.jpg@d0598198b67a87638865f775f69a34fda792d493. Fresh child exact-head Actions required.",
+  "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 83b1bbd97a28b92db31e7e42ec0f766bf772d3ca/tree 97e76b3567717c7b020cc701ea6dec9fe9bfa70c passed TDRP 39941133413 at 61/61 and Rust 39941133415 at 6/6. Strict116 docs/assets/slide.04.jpg@d0598198b67a87638865f775f69a34fda792d493 is retained as AppStream/distribution visual-resource plus unlimited-media/files marketing-claim provenance. Existing attachment/storage owners remain authoritative: current Fabushi explicitly enforces 25 MiB ordinary attachments and 200 MiB videos, Host bounded ingest/chunk semantics and configured MediaCache budgets. The source word 'unlimited' is therefore recorded as an open product/server quota-equivalence gap, not silently adopted by removing current limits. Telegram slide bytes are not copied. Counters unknown=16,260 unread=16,235 omitted=0 responsibilities=134. Next strict root index 117 docs/building-linux.md@fbdf25355734f35617849224da106f1b9fafb3c9 (2,463 bytes). Fresh child exact-head Actions required.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,

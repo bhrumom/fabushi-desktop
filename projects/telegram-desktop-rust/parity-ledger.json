@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "347848c0207487c6acca95fab69bb0b685fed1de",
+  "target_commit": "83b1bbd97a28b92db31e7e42ec0f766bf772d3ca",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16261,
-    "unread": 16236,
+    "unknown": 16260,
+    "unread": 16235,
     "omitted": 0,
-    "responsibilities_total": 133,
+    "responsibilities_total": 134,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -35510,6 +35510,322 @@
       "reviewer": null,
       "license_and_provenance": "Exact upstream binary blob, accepted tree size, AppStream reference/caption and single-addition path history retained as provenance. Root LICENSE@d70f4d6a87eece19c4ec184de36a8aba72b4a639 is GPLv3 text; metainfo declares metadata_license CC0-1.0 and project_license GPL-3.0, but the accepted docs/assets directory has no asset-local LICENSE/NOTICE sidecar. No standalone screenshot reuse right is inferred and the Telegram slide bytes are not copied into Fabushi.",
       "notes": "Strict index 115 closes only docs/assets/slide.03.jpg as AppStream/distribution visual-resource provenance. Counters become unknown=16,261 unread=16,236 omitted=0 responsibilities=133. Next strict root index 116 docs/assets/slide.04.jpg@d0598198b67a87638865f775f69a34fda792d493 (602,137 bytes; JPEG 2880x1800). Fresh child exact-head Actions required.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "docs/assets/slide.04.jpg",
+      "source_blob_sha": "d0598198b67a87638865f775f69a34fda792d493",
+      "source_kind": "binary_visual_appstream_distribution_screenshot_asset",
+      "module_id": "tdesktop.root.docs.assets.slide04",
+      "responsibility_id": "TDRP-R9-UPSTREAM-SLIDE04-VISUAL-ASSET-PROVENANCE-001",
+      "source_symbols": [
+        "AppStream supplemental screenshot resource docs/assets/slide.04.jpg",
+        "AppStream caption: Send and store unlimited media and files of any type",
+        "rendered Telegram Desktop conversation-list plus photo-grid media collection scene",
+        "single-addition visual asset provenance at 3661442acde378b36d9c5f8029d98e3334a9a657"
+      ],
+      "capability_ids": [
+        "CAP-VISUAL-RESOURCE-PROVENANCE",
+        "CAP-GENERAL-FILE-ATTACHMENT-SEND",
+        "CAP-MEDIA-STORAGE-BOUNDARY",
+        "CAP-RESOURCE-QUOTA-CONTRACT"
+      ],
+      "dependency_ids": [
+        "lib/xdg/org.telegram.desktop.metainfo.xml@c8b26f262bfdfa93f97b22f9aba4131073504223",
+        "LICENSE@d70f4d6a87eece19c4ec184de36a8aba72b4a639",
+        "source/shared/media/attachment-limits.ts@b4e6c2036503804d6d8605e203ff95deb898f347",
+        "frontend/src/recovered/features/conversation/workspace/desktop.ts@489b066d8cb3727dec1539c63409ef33aa4f90b8",
+        "source/electron-main/attachments/attachments.ts@764654b8f97b94215a015168c6ba82ae5e80aa45",
+        "source/host/src/media_mime.rs@20f47798376971d53ecab97f888669f46f1b87df",
+        "source/host/src/extensions/attachments/attachments_service.rs@783a78e21ad4c87db1930cadf3ba46dd6bbb806e",
+        "native/mahayana-messaging/src/media.rs@b0d184c369ad55c1742a44026da00cdae379a8e7",
+        "native/mahayana-messaging/src/media_cache.rs@e578cb7dd5e9b5c7105f68e741f4cb1a71cd0ce2",
+        "projects/fabushi-communication-platform/visual-acceptance.md",
+        "projects/fabushi-communication-platform/design-system.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-root-docs-assets-slide-04-visual-provenance-complete-read.md",
+      "behavior_contract": "Retain slide.04.jpg exact binary identity, its AppStream supplemental-screenshot role, rendered media-collection scene and exact unlimited-media/files caption as upstream product-presentation provenance. The applicable Fabushi responsibility is general attachment/media send, durable storage/transfer lifecycle and an explicit quota contract under existing source-neutral owners. The source marketing word 'unlimited' is not silently adopted as executable Fabushi behavior: current canonical Fabushi enforces 25 MiB ordinary-attachment and 200 MiB video per-file limits plus bounded media cache. Any equivalent no-user-visible aggregate storage limit or materially higher/unbounded service contract remains an explicit open product/server requirement until separately specified, implemented and proven by exact-head E2E/service evidence.",
+      "state_machine": "resolve exact upstream tree/blob -> visually inspect immutable binary -> read AppStream consumer/caption and path history -> split presentation claim from executable send/storage/quota semantics -> audit exact-head attachment limits, staging/upload, Host store, transfer and bounded-cache owners -> bind current parent exact-head tests -> record the unlimited-claim parity gap fail-closed -> CAS accounting publication -> require fresh child exact-head gates",
+      "side_effects": [
+        "Retains exact upstream supplemental screenshot identity and AppStream unlimited-media/files marketing-caption provenance.",
+        "Maps general file send/store responsibilities to existing Fabushi attachment staging/upload, Host attachment store and native transfer/cache owners.",
+        "Preserves current explicit 25 MiB ordinary-file and 200 MiB video per-file limits instead of converting marketing copy into an unsafe unbounded contract.",
+        "Keeps any future aggregate/cloud quota semantics as an explicit server/product contract gap requiring independent implementation and evidence.",
+        "Introduces no copied Telegram screenshot, second attachment store, second media cache, Telegram storage owner, visual baseline store, brand owner or packaging owner."
+      ],
+      "failure_cases": [
+        "Telegram slide bytes are copied into Fabushi product/store assets without independent authorization",
+        "the phrase 'unlimited media and files' is treated as current Fabushi runtime/service behavior despite explicit 25 MiB/200 MiB limits",
+        "current attachment limits are removed or bypassed merely to mirror marketing copy without server/storage/security evidence",
+        "a second Telegram-derived attachment/media store, transfer queue or cache is introduced despite existing canonical owners",
+        "bounded cache is confused with durable server storage or an aggregate quota promise",
+        "AppStream screenshot presence is treated as Fabushi package/store publication or release evidence",
+        "repository/metainfo licensing fields are misread as asset-local standalone authorization",
+        "stale PR/ref/tree/upstream, owner or test-evidence lease is published"
+      ],
+      "ui_disposition": "No Telegram photo-grid UI or branded presentation is ported. The screenshot's conversation list, photo collection grid and 'unlimited' copy are presentation provenance only. Fabushi continues to use its canonical Conversation/Resource surfaces; attachment staging failures surface the existing explicit size-limit notices rather than a copied unlimited-storage promise.",
+      "non_ui_responsibilities": [
+        "binary asset identity and path provenance",
+        "AppStream supplemental screenshot-reference/caption provenance",
+        "general arbitrary-file attachment send/store responsibility",
+        "per-file size-limit enforcement and user-visible failure semantics",
+        "staged attachment commit/upload boundary",
+        "single canonical Host attachment store and chunked read boundary",
+        "media transfer offset/verification/cancel lifecycle",
+        "bounded media-cache bookkeeping",
+        "aggregate/server quota semantics kept explicit rather than inferred",
+        "license/provenance fail-closed handling"
+      ],
+      "platform_delta": "Telegram presents unlimited media/file send and storage as a Linux/AppStream product claim. Fabushi already has source-neutral attachment/media owners but currently exposes finite per-file limits and bounded client cache. Therefore source reading is complete, while full product equivalence for any no-user-visible aggregate storage quota remains open and must be solved in Fabushi service/storage architecture rather than by copying Telegram UI or removing safety limits.",
+      "existing_owner_candidates": [
+        "source/shared/media attachment-limits (selected per-file limit truth)",
+        "Conversation workspace desktop.ts staging/commit flow (selected composer attachment owner)",
+        "Electron attachment edge createAttachmentEdgePort (selected staging/read/download boundary)",
+        "Host media_mime + AttachmentsService (selected server/host ingest and single agent media-store owner)",
+        "native mahayana-messaging MediaTransferQueue + MediaCache (selected transfer/cache state owners)",
+        "FVA/FDS/FQT visual/design/evidence owners (selected screenshot/evidence boundary)",
+        "new Telegram media/storage runtime or unlimited-storage owner (rejected)"
+      ],
+      "existing_owner": "shared attachment-limits + Conversation staging/commit + Electron attachment edge + Host AttachmentsService/media_mime + native MediaTransferQueue/MediaCache + FVA/FDS/FQT evidence",
+      "rejected_existing_owners": [
+        "A new Telegram media/storage owner would duplicate the existing attachment/Host/native media owners.",
+        "A marketing screenshot cannot own quotas, storage economics, persistence guarantees or server authorization.",
+        "Client MediaCache is bounded local cache and cannot be promoted to durable unlimited storage.",
+        "Release packaging can consume approved Fabushi evidence but cannot own attachment limits/storage semantics."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "source/shared/media/attachment-limits.ts",
+        "frontend/src/recovered/features/conversation/workspace/desktop.ts",
+        "source/electron-main/attachments/attachments.ts",
+        "source/host/src/media_mime.rs",
+        "source/host/src/extensions/attachments/attachments_service.rs",
+        "native/mahayana-messaging/src/media.rs",
+        "native/mahayana-messaging/src/media_cache.rs",
+        "projects/fabushi-communication-platform/visual-acceptance.md",
+        "projects/fabushi-communication-platform/design-system.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "ATTACHMENT_BYTE_LIMIT",
+        "VIDEO_BYTE_LIMIT",
+        "stageComposerFiles",
+        "createAttachmentEdgePort",
+        "ingest_attachment",
+        "MediaCache"
+      ],
+      "target_language": "Existing React/TypeScript Conversation attachment flow + TypeScript Electron attachment edge + Rust Host/native media owners + existing visual/design/quality contracts",
+      "language_rationale": "The upstream entry is a binary marketing screenshot, not executable storage code. Its applicable operational responsibility is already split source-neutrally: React/TypeScript owns composer staging and UI failure notices, Electron/TypeScript owns attachment edge I/O, Rust Host owns ingest/store/chunk contracts, Rust native messaging owns transfer/cache state, and exact-head visual/evidence governance stays in existing Fabushi contracts.",
+      "command_event_contracts": [
+        "composer files -> stageComposerFiles -> stageAttachmentBytes -> explicit too-large/empty/failed result",
+        "staged paths -> commitComposerAttachments -> commitStaged -> Host uploadAttachment",
+        "Host ingest -> attachment_byte_limit_for_name -> reject TooLarge before durable ingest",
+        "media transfer -> MediaTransferQueue enqueue/start/chunk/verify/pause/fail/cancel",
+        "client cache -> MediaCache configured byte budget + LRU/pinned rules",
+        "upstream unlimited caption -> provenance + explicit parity gap, never implicit limit removal",
+        "visual evidence -> exact-head screenshot/evidence contracts"
+      ],
+      "state_owner": "Per-file limit truth is shared media/Host media_mime; composer staging owns transient client attachment state; Electron attachment edge owns staging/read/download orchestration; Host AttachmentsService owns canonical agent attachment-store operations; MediaTransferQueue/MediaCache own transfer and bounded local-cache state; FVA/FDS/FQT own visual/evidence truth.",
+      "lifecycle_owner": "Existing Conversation attachment staging/commit/discard, Host ingest/read, native transfer/cache and exact-head visual/evidence lifecycles. Any future aggregate/cloud storage-quota lifecycle must extend an existing storage/service owner or pass novel-owner ADR; this source asset creates none.",
+      "persistence_and_restart": "Committed attachments use the existing Host/Box attachment path and content-addressed ingest behavior; native cache is explicitly budgeted and evictable. The source screenshot persists only as immutable provenance. No durable 'unlimited' storage guarantee is synthesized from client cache or marketing art.",
+      "concurrency_and_cancellation": "Composer stages files independently and reports individual failures; Host chunk reads are bounded; MediaTransferQueue validates offsets and terminal transitions including cancellation; MediaCache evicts under budget. Publication is expected-SHA fenced and evidence is exact-head bound.",
+      "security_boundary": "Attachment filenames/paths and sizes remain validated; oversized input fails before ingest; Host reads are scoped to owned attachment/assets roots; downloads remove partial files on failed transfer; external branded media is not imported. Unlimited capacity is not promised without explicit authorization, quota, abuse, retention and storage-service contracts.",
+      "network_service_dependencies": [
+        "Existing Host AttachmentsService / Box upload path for current bounded attachments",
+        "Any equivalent aggregate/no-user-visible-limit storage semantics require explicit Fabushi server/storage quota, retention, authorization and deployment evidence",
+        "GitHub Actions for exact-head verification"
+      ],
+      "service_owner": "Existing Fabushi Host attachment/Box storage path for current bounded behavior. Aggregate cloud quota or effectively-unlimited retention semantics are not established by this source asset and remain an open service-contract responsibility.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "visual-provenance-and-media-storage-contract-mapped-open",
+      "blockers": [
+        "Fresh strict116 child exact-head TDRP/Rust Actions are required after publication.",
+        "The upstream unlimited-media/files claim exceeds current Fabushi explicit per-file limits and has no verified equivalent aggregate storage/quota service contract; product/service equivalence remains open.",
+        "Fabushi full visual acceptance remains open and must use Fabushi-generated current-head screenshots.",
+        "Recursive source disposition remains open.",
+        "Independent release acceptance remains open."
+      ],
+      "production_entrypoints": [
+        "frontend/src/recovered/features/conversation/workspace/desktop.ts::stageComposerFiles",
+        "source/electron-main/attachments/attachments.ts::createAttachmentEdgePort",
+        "source/host/src/extensions/attachments/attachments_service.rs::ingest_attachment",
+        "native/mahayana-messaging/src/media.rs::MediaTransferQueue",
+        "native/mahayana-messaging/src/media_cache.rs::MediaCache"
+      ],
+      "production_evidence": [
+        "path:source/shared/media/attachment-limits.ts",
+        "path:frontend/src/recovered/features/conversation/workspace/desktop.ts",
+        "path:source/electron-main/attachments/attachments.ts",
+        "path:source/host/src/media_mime.rs",
+        "path:source/host/src/extensions/attachments/attachments_service.rs",
+        "path:native/mahayana-messaging/src/media.rs",
+        "path:native/mahayana-messaging/src/media_cache.rs",
+        "path:source/host/tests/media_mime_contract.rs",
+        "path:source/host/tests/attachments_service_contract.rs",
+        "path:native/mahayana-messaging/tests/m4_media_contract.rs"
+      ],
+      "test_evidence": [
+        "Accepted upstream docs/assets tree 25c03ca28afb00315d8f85f908e1266abf9ef443 binds slide.04.jpg to blob d0598198b67a87638865f775f69a34fda792d493 at 602,137 bytes; visual inspection confirms a 2880x1800 blue Telegram marketing slide with conversation list, photo grid and embedded unlimited-media/files copy.",
+        "lib/xdg/org.telegram.desktop.metainfo.xml@c8b26f262bfdfa93f97b22f9aba4131073504223 lines 54-55 reference slide.04.jpg as a supplemental AppStream screenshot and state exactly 'Send and store unlimited media and files of any type'.",
+        "Exact-path history is the single introduction commit 3661442acde378b36d9c5f8029d98e3334a9a657 ('Add more screenshots to metainfo'), shared with the four-slide screenshot set.",
+        "Current source/shared/media/attachment-limits.ts@b4e6c2036503804d6d8605e203ff95deb898f347 defines ATTACHMENT_BYTE_LIMIT=25 MiB and VIDEO_BYTE_LIMIT=200 MiB; frontend desktop.ts@489b066d8cb3727dec1539c63409ef33aa4f90b8 projects the same user-visible limits during staging.",
+        "Current source/host/src/media_mime.rs@20f47798376971d53ecab97f888669f46f1b87df enforces the same 25 MiB/200 MiB limits; AttachmentsService@783a78e21ad4c87db1930cadf3ba46dd6bbb806e checks attachment_byte_limit_for_name before ingest and exposes bounded chunk/text-preview reads.",
+        "Current Electron attachments.ts@764654b8f97b94215a015168c6ba82ae5e80aa45 rejects stageBytes over byteLimitForName, commits staged uploads through the existing leg, and removes partial download output on failed transfer.",
+        "Current media.rs@b0d184c369ad55c1742a44026da00cdae379a8e7 validates transfer chunk offsets, verification size and pause/fail/cancel transitions; media_cache.rs@e578cb7dd5e9b5c7105f68e741f4cb1a71cd0ce2 requires a nonzero max_bytes budget and rejects entries larger than the configured cache budget.",
+        "source/host/tests/media_mime_contract.rs@8f2ec26b01b38bc2f16ef563a8b6c9da39855e16 directly asserts 200 MB video and 25 MB ordinary attachment contracts; attachments_service_contract.rs@1cfcf453ef562cf13f05efca66b59d3ded981a51 verifies upload/read/chunk behavior against one agent media store; native m4_media_contract.rs@37811c22b7a1a318f216167f57711a3f6f8e57b4 verifies bounded LRU cache and transfer/blob verification behavior.",
+        "Validator uniqueness precheck at parent responsibility count 133 found ATTACHMENT_BYTE_LIMIT, VIDEO_BYTE_LIMIT, stageComposerFiles, createAttachmentEdgePort, ingest_attachment and MediaCache unused by earlier fabushi_target_symbols.",
+        "Parent exact-head TDRP run 39941133413 completed 61/61 success; authority 12496043098 sha256:ba7f0cab8215381c0e73759c70062fcf70932d83c3e21b75158ad2a4352002fc; closure 12496417489 sha256:7b8e9b89dc2e2ca82226b2bffde6f3296e69a67ed1361b2a5bb1e727ed37365e; reachability 12496222074 sha256:02195b9661c55025bbd927a43a65e1f024e06507ca0d27cfde2d3375bf1df536.",
+        "Parent exact-head Rust desktop runtime run 39941133415 completed 6/6 success; artifact 12495064306 sha256:b6a62ce097692efdf26e5a080a98e9492687a051ccde0881a095f265bf769425.",
+        "Publication preflight: PR/ref remained 83b1bbd97a28b92db31e7e42ec0f766bf772d3ca/tree 97e76b3567717c7b020cc701ea6dec9fe9bfa70c; live upstream dev remained a7f453612f4896ac04d0007a36ab0d377e5bcbcf/tree c539eabfb05e7dcaa84821ac44c35cdfb6551ae5; live main remained 7394f6dc7687f9b986ee5589d40aa680ce23b90a/tree fbeb0bb32d944d0c1053880c471fe5c52279f052."
+      ],
+      "target_commit": "83b1bbd97a28b92db31e7e42ec0f766bf772d3ca",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi canonical Conversation/Resource attachment + Host storage + native media transfer/cache + visual/evidence architecture",
+      "composition_slot": "Conversation attachment send/store boundary and upstream AppStream screenshot provenance",
+      "capability_component": "Source-neutral bounded attachment/media send-store lifecycle plus explicit quota-gap and visual provenance",
+      "variation_axes": [
+        "upstream unlimited marketing claim versus current explicit Fabushi per-file limits",
+        "ordinary file versus video byte limit",
+        "client staging versus committed Host attachment store",
+        "durable attachment storage versus bounded evictable client cache",
+        "upload/download transfer lifecycle versus storage quota semantics",
+        "arbitrary file attachment versus previewable media type",
+        "upstream AppStream screenshot versus Fabushi current-head visual evidence"
+      ],
+      "shared_owner_contracts": [
+        "shared attachment-limits.ts / Host media_mime.rs",
+        "Conversation workspace desktop staging/commit",
+        "Electron createAttachmentEdgePort",
+        "Host AttachmentsService",
+        "native MediaTransferQueue / MediaCache",
+        "FVA/FDS/FQT evidence contracts",
+        "Rust desktop runtime exact-head workflow"
+      ],
+      "duplicate_root_check": "No Telegram media/storage runtime, second attachment store, second quota owner, second transfer queue/cache, second visual-baseline store, second brand authority or copied external asset introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Existing Conversation composer/transcript resource surfaces; no new primary navigation",
+      "primary_navigation_target": "Messages via canonical ConversationWorkspace",
+      "collection_surface": "Conversation attachments/resources",
+      "creation_flow": "Existing composer attachment staging/commit",
+      "object_action_scope": "Stage, commit, send, read/download and cache existing attachment/media resources under canonical limits",
+      "detail_section": "Existing resource/media surfaces only",
+      "capability_surface": "Existing Conversation/Resource/Media attachment flow; no Telegram-specific media gallery or storage app",
+      "route_contract": "Existing Conversation route; no Telegram route",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Attachment/resource permissions remain with existing canonical owners; this screenshot grants none.",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "The upstream slide is historical marketing geometry only. Fabushi responsive layout remains governed by canonical Conversation/resource patterns and current-head visual evidence.",
+      "accessibility_contract": "The source binary provides no accessibility proof. Existing attachment/composer/viewer surfaces retain canonical keyboard/focus/a11y responsibilities and must be evidenced independently.",
+      "keyboard_contract": "No keyboard behavior is inferred from the screenshot.",
+      "state_continuity_contract": "Any changed source blob/reference/caption/history, attachment-limit/storage owner, service quota contract, PR/ref/tree or upstream lease requires fresh reconciliation. Marketing copy never overrides the exact executable limit/store contract.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "FDS-001",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Existing compatibility styling remains bounded; this source asset authorizes no Telegram-derived visual tokens.",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Existing ConversationWorkspace attachment/resource surface",
+      "screen_slots": [
+        "Conversation composer attachment staging",
+        "Conversation transcript/resource presentation"
+      ],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable to upstream marketing art.",
+      "icon_asset_contract": "External Telegram branding/assets remain provenance only; Fabushi controls use canonical asset/icon authority.",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable to the source binary.",
+      "reduced_motion_contract": "Not applicable to the source binary.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-UPSTREAM-SLIDE04-VISUAL-ASSET-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-SLIDE04-EXACT-BLOB-001",
+        "ORA-TDRP-SLIDE04-REFERENCE-CAPTION-ROLE-001",
+        "ORA-TDRP-SLIDE04-EXISTING-ATTACHMENT-LIMIT-OWNER-001",
+        "ORA-TDRP-SLIDE04-UNLIMITED-CLAIM-GAP-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-SLIDE04-NO-TELEGRAM-BRAND-ASSET-001",
+        "INV-TDRP-SLIDE04-NO-UNLIMITED-CLAIM-AS-CONTRACT-001",
+        "INV-TDRP-SLIDE04-NO-SECOND-MEDIA-STORE-001",
+        "INV-TDRP-SLIDE04-NO-RELEASE-ACCEPT-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-SLIDE04-EXACT-SOURCE-001",
+        "CONTRACT-TDRP-SLIDE04-CANONICAL-ATTACHMENT-LIMIT-OWNER-001",
+        "CONTRACT-TDRP-SLIDE04-EXACT-HEAD-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-SLIDE04-UPSTREAM-DRIFT-001",
+        "TEMP-TDRP-SLIDE04-ATTACHMENT-LIMIT-DRIFT-001",
+        "TEMP-TDRP-SLIDE04-STORAGE-QUOTA-CONTRACT-DRIFT-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-SLIDE04-OVERSIZE-ATTACHMENT-001",
+        "FAULT-TDRP-SLIDE04-PARTIAL-DOWNLOAD-001",
+        "FAULT-TDRP-SLIDE04-CACHE-BUDGET-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-SLIDE04-EXTERNAL-BRAND-NOT-AUTHORITY-001",
+        "SEC-TDRP-SLIDE04-NO-INFERRED-ASSET-LICENSE-001",
+        "SEC-TDRP-SLIDE04-NO-UNBOUNDED-STORAGE-PROMISE-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-SLIDE04-NO-SECOND-MEDIA-STORE-001",
+        "REG-TDRP-SLIDE04-CURRENT-LIMITS-PRESERVED-001",
+        "REG-TDRP-SLIDE04-MARKETING-NOT-SERVICE-PROOF-001"
+      ],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-MODULE",
+        "G-TRACEABILITY",
+        "G-DESIGN-SYSTEM",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "locked docs/assets/slide.04.jpg identity + AppStream caption + visual inspection + exact-head attachment-limit/store/cache owners + parent exact-head Actions"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "release_gate_status": "open",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact upstream binary blob, accepted tree size, AppStream reference/caption and single-addition path history retained as provenance. Root LICENSE@d70f4d6a87eece19c4ec184de36a8aba72b4a639 is GPLv3 text; metainfo declares metadata_license CC0-1.0 and project_license GPL-3.0, but docs/assets has no asset-local LICENSE/NOTICE sidecar. No standalone screenshot reuse right is inferred and the Telegram slide bytes are not copied into Fabushi.",
+      "notes": "Strict index 116 closes the read/decomposition of docs/assets/slide.04.jpg as AppStream/distribution visual-resource provenance and explicitly records that its unlimited-media/files claim is not yet an equivalent verified Fabushi storage/quota contract. Current executable owners remain bounded at 25 MiB ordinary attachments, 200 MiB videos and configured cache budgets. Counters become unknown=16,260 unread=16,235 omitted=0 responsibilities=134. Next strict root index 117 docs/building-linux.md@fbdf25355734f35617849224da106f1b9fafb3c9 (2,463 bytes). Fresh child exact-head Actions required.",
       "test_execution_evidence": []
     }
   ]

@@ -361,10 +361,10 @@
   "coverage": {
     "root_source_entries_total": 6893,
     "recursive_source_entries_total": 16379,
-    "unknown_minimum": 16261,
-    "unread_minimum": 16236,
+    "unknown_minimum": 16260,
+    "unread_minimum": 16235,
     "omitted_known": 0,
-    "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 347848c0207487c6acca95fab69bb0b685fed1de/tree 97b13bbb65a2b6ebce6e9ae6e47891f2f150a6c8 passed TDRP 39939734488 at 61/61 and Rust 39939734546 at 6/6. Strict115 docs/assets/slide.03.jpg@588f2950d5f6fdd2625f2bd250db82761ce0e6f1 is retained as AppStream/distribution media-viewer visual-resource and marketing-caption provenance under the existing Fabushi visual/design/evidence owners; the rendered Telegram media viewer is not Fabushi Resource/Media implementation, visual baseline, package/store proof or release authority, and the binary is not copied. Counters unknown=16,261 unread=16,236 omitted=0 responsibilities=133. Next strict root index 116 docs/assets/slide.04.jpg@d0598198b67a87638865f775f69a34fda792d493. Fresh child exact-head Actions required."
+    "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 83b1bbd97a28b92db31e7e42ec0f766bf772d3ca/tree 97e76b3567717c7b020cc701ea6dec9fe9bfa70c passed TDRP 39941133413 at 61/61 and Rust 39941133415 at 6/6. Strict116 docs/assets/slide.04.jpg@d0598198b67a87638865f775f69a34fda792d493 is retained as AppStream/distribution visual-resource and unlimited-media/files marketing-caption provenance under existing Conversation/Resource/Host/native media plus visual/evidence owners. Current Fabushi limits remain 25 MiB ordinary attachments, 200 MiB videos and bounded cache; no aggregate/unlimited server-storage contract is inferred. Counters unknown=16,260 unread=16,235 omitted=0 responsibilities=134. Next strict root index 117 docs/building-linux.md@fbdf25355734f35617849224da106f1b9fafb3c9. Fresh child exact-head Actions required."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -378,7 +378,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Strict115 is binary AppStream/distribution media-viewer visual-resource provenance only. Source closure remains open with unknown=16,261 unread=16,236 omitted=0; the historical Telegram screenshot/caption do not establish Fabushi Resource/Media viewer implementation, visual-baseline approval, package/store metadata, signing/deployment behavior or release acceptance."
+    "note": "Strict116 closes source reading/mapping for the binary AppStream slide only. Source closure remains open with unknown=16,260 unread=16,235 omitted=0. The historical Telegram unlimited-media/files marketing claim does not establish a Fabushi aggregate storage/quota service contract, does not override current 25 MiB/200 MiB attachment limits or bounded cache, and does not establish visual-baseline, package/store, signing/deployment or release acceptance."
   },
   "baseline_identity_evidence": {
     "status": "pending-current-head-revalidation",
@@ -1826,5 +1826,6 @@
     },
     "baseline_identity_accepted": false,
     "source_closure_ready": false
-  }
+  },
+  "target_commit": "83b1bbd97a28b92db31e7e42ec0f766bf772d3ca"
 }
