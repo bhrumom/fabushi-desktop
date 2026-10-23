@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16272,
-    "unread_minimum": 16247,
+    "unknown_minimum": 16271,
+    "unread_minimum": 16246,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -122,7 +122,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent d2a24f4c3e5486fda8bbea77d8155368be62fd19/tree f088da27a6f8cb702b3e7577d4c2f11346dc7ade passed TDRP 39909817389 at 61/61 (authority 12481833441 sha256:45e9f7d97c7993cb93eb0cf7c163fd16df97c0a252c7667c5b8ab1e7ef9e2d86; closure 12482826298 sha256:7afa85ae6b4b2adb83857d6e65cd2d3edfeeb7805f18a692c0be4d964cfa6637; reachability 12481649603 sha256:66bb3ae62bad85e246198267720cd88047866e5d8ab131a1f7a9137a21e1eda4) and Rust 39909817456 at 6/6 (artifact 12482292020 sha256:3d791f6c4050273f878b1f292306cdddb9746fee44203f1e875e6da20b8e51cc). Strict104 GROK.md@b1ae452d94cf48971c6d7ea17cac6b45cabee08d fully read and mapped existing-owner-first to root AGENTS.md host-pointer precedence; direct dependency .grok/ai-workflow-adapter.md@db447f204316d3991f6d20db3d8f097fcc021154 was fully read but remains independently open. Counters unknown=16,272 unread=16,247 omitted=0 responsibilities=122. Next strict root index 105 LEGAL@09c9e383db122fe0694e73c48d6224676afe60f6. Fresh child exact-head Actions required.",
+  "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 68e36e8baafc9d0c7fa18ae70a72ff79d5bca96b/tree 6330a69c8430ba02f992c09465fd56f2027b5b26 passed TDRP 39911345876 at 61/61 and Rust 39911345660 at 6/6. Strict105 LEGAL@09c9e383db122fe0694e73c48d6224676afe60f6 is retained under existing documentation_or_license/provenance owners; LICENSE@d70f4d6a87eece19c4ec184de36a8aba72b4a639 remains independently open as strict106. Counters unknown=16,271 unread=16,246 omitted=0 responsibilities=123. Fresh child exact-head Actions required.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,

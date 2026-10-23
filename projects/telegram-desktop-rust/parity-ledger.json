@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "d2a24f4c3e5486fda8bbea77d8155368be62fd19",
+  "target_commit": "68e36e8baafc9d0c7fa18ae70a72ff79d5bca96b",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16272,
-    "unread": 16247,
+    "unknown": 16271,
+    "unread": 16246,
     "omitted": 0,
-    "responsibilities_total": 122,
+    "responsibilities_total": 123,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -32735,6 +32735,231 @@
       "license_and_provenance": "Exact upstream GROK.md blob b1ae452d94cf48971c6d7ea17cac6b45cabee08d and direct dependency .grok/ai-workflow-adapter.md blob db447f204316d3991f6d20db3d8f097fcc021154 are retained as host-instruction provenance under the pinned upstream source. The pointer delegates to AGENTS.md; the adapter remains independently accountable and neither is copied as a new Fabushi runtime or instruction root.",
       "notes": "Strict index 104 closes only GROK.md as a host instruction pointer to canonical AGENTS.md while recording .grok/ai-workflow-adapter.md as a fully-read but independently open direct dependency. Counters become unknown=16,272 unread=16,247 omitted=0 responsibilities=122. Next strict root index 105 LEGAL@09c9e383db122fe0694e73c48d6224676afe60f6. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required.",
       "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "LEGAL",
+      "source_blob_sha": "09c9e383db122fe0694e73c48d6224676afe60f6",
+      "source_kind": "documentation_or_license",
+      "module_id": "tdesktop.root.legal",
+      "responsibility_id": "TDRP-R9-UPSTREAM-LEGAL-LICENSE-PROVENANCE-001",
+      "source_symbols": [
+        "Telegram Desktop GPL-3.0-or-later legal notice",
+        "OpenSSL linking exception",
+        "Full license -> LICENSE"
+      ],
+      "capability_ids": [
+        "CAP-LEGAL-LICENSE-PROVENANCE",
+        "CAP-THIRD-PARTY-LINKING-EXCEPTION-PROVENANCE"
+      ],
+      "dependency_ids": [
+        "LICENSE@d70f4d6a87eece19c4ec184de36a8aba72b4a639",
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md#TDRP-SRC-03",
+        "projects/telegram-desktop-rust/module-map.md#build/generator/resources/dependencies"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-legal-license-provenance-complete-read.md",
+      "behavior_contract": "Retain the exact upstream root legal notice as immutable source/license provenance: GPL-3.0-or-later terms, the OpenSSL linking exception, and the direct full-license dependency. This is legal/provenance only, not shipping product behavior; LICENSE remains independently accountable at strict106.",
+      "state_machine": "read exact LEGAL -> identify license terms and OpenSSL exception -> verify LICENSE dependency -> map to existing documentation_or_license owner -> keep LICENSE open -> publish retained-legal-record accounting behind exact-head gates",
+      "side_effects": [
+        "Preserves exact upstream legal/license provenance.",
+        "Records the OpenSSL linking exception.",
+        "Records LICENSE as a dependency while leaving strict106 open.",
+        "Creates no product runtime/UI/service/release authority."
+      ],
+      "failure_cases": [
+        "LEGAL omitted as non-runtime documentation.",
+        "GPL/OpenSSL exception provenance lost.",
+        "LICENSE closed transitively.",
+        "Legal record mistaken for product/release acceptance."
+      ],
+      "ui_disposition": "No shipping UI surface; retained legal/source provenance only.",
+      "non_ui_responsibilities": [
+        "exact legal notice provenance",
+        "GPL-3.0-or-later provenance",
+        "OpenSSL linking-exception provenance",
+        "full-license dependency identity without transitive closure",
+        "separation from runtime/release acceptance"
+      ],
+      "platform_delta": "No platform runtime delta; retained under existing TDRP legal/source provenance governance.",
+      "existing_owner_candidates": [
+        "TDRP-SRC-03 documentation_or_license retained legal-record disposition (selected)",
+        "module-map build/generator/resources/dependencies legal/provenance mapping (selected support)",
+        "ordinary Fabushi repository PR/review lifecycle (selected review boundary)",
+        "new product legal/license runtime owner (rejected)"
+      ],
+      "existing_owner": "TDRP-SRC-03 documentation_or_license provenance disposition plus the existing Fabushi repository PR/review lifecycle",
+      "rejected_existing_owners": [
+        "Root legal text is not shipping product behavior.",
+        "Packaging/release owners cannot replace source-provenance accounting.",
+        "LICENSE remains its own strict source entry."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md",
+        "projects/telegram-desktop-rust/module-map.md"
+      ],
+      "fabushi_target_symbols": [
+        "documentation_or_license",
+        "build/generator/resources/dependencies"
+      ],
+      "target_language": "Repository governance / retained legal-record provenance",
+      "language_rationale": "LEGAL carries legal/source provenance rather than executable behavior.",
+      "command_event_contracts": [
+        "retain exact LEGAL identity",
+        "retain GPL/OpenSSL-exception provenance",
+        "record LICENSE dependency",
+        "do not close LICENSE transitively",
+        "do not promote legal docs to release acceptance"
+      ],
+      "state_owner": "Exact upstream LEGAL blob is immutable provenance; reviewed TDRP state is canonical disposition.",
+      "lifecycle_owner": "Existing TDRP strict-read, repository-review and exact-head evidence lifecycle.",
+      "persistence_and_restart": "Committed dossier/ledger/index/lock plus exact upstream identities; no runtime state.",
+      "concurrency_and_cancellation": "CAS branch lease and upstream lease serialize publication; drift leaves strict105 unpublished.",
+      "security_boundary": "LEGAL grants no runtime authorization and cannot substitute for artifact integrity or release acceptance.",
+      "network_service_dependencies": [],
+      "service_owner": "No shipping service; repository/TDRP governance only.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "retained-legal-record",
+      "blockers": [
+        "Fresh strict105 child exact-head TDRP/Rust Actions are required after publication.",
+        "LICENSE@d70f4d6a87eece19c4ec184de36a8aba72b4a639 remains independently open at strict106.",
+        "Recursive source disposition remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "LEGAL@09c9e383db122fe0694e73c48d6224676afe60f6 fully read: 21 lines / 925 characters.",
+        "LICENSE@d70f4d6a87eece19c4ec184de36a8aba72b4a639 fully read for dependency interpretation: 688 lines / 35850 characters; strict106 remains open.",
+        "Fresh preflight: zero prior LEGAL path/blob/responsibility rows; zero LICENSE rows; selected target symbols each occur exactly once.",
+        "Parent exact-head TDRP run 39911345876 completed 61/61 success; authority 12483295894 sha256:555bdb69676dc4ba88e3f280933d9dd1ab2bf5ab7d99def590ff95e71751d0e6; closure 12483600563 sha256:95bbd738b68d4f667b63165cc7fa245d390314f77c0b22d87f7730a67d0153ac; reachability 12483496588 sha256:ce44d6fb51838e382c7b4491263693f551c89dc11cdf00ecde319bad1d2d1280.",
+        "Parent Rust run 39911345660 completed 6/6 success; artifact 12482329092 sha256:38070a97858be5721d1738e02df407ed57f2a923935b4a423137b8362fd7102d.",
+        "Live upstream remained a7f453612f4896ac04d0007a36ab0d377e5bcbcf/tree c539eabfb05e7dcaa84821ac44c35cdfb6551ae5."
+      ],
+      "target_commit": "68e36e8baafc9d0c7fa18ae70a72ff79d5bca96b",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository source/legal provenance and ordinary review lifecycle",
+      "composition_slot": "retained upstream root legal/license provenance",
+      "capability_component": "Source-neutral documentation_or_license disposition",
+      "variation_axes": [
+        "GPL notice/full LICENSE text",
+        "legal provenance/product runtime",
+        "legal record/release acceptance",
+        "OpenSSL exception/dependency identity"
+      ],
+      "shared_owner_contracts": [
+        "TDRP-SRC-03 documentation_or_license",
+        "module-map build/generator/resources/dependencies",
+        "repository PR/review lifecycle",
+        "exact-head TDRP evidence"
+      ],
+      "duplicate_root_check": "No product legal runtime or second release/packaging owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository/legal provenance only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Retained upstream legal/license provenance",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Changed LEGAL or LICENSE identity requires fresh reconciliation.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-UPSTREAM-LEGAL-LICENSE-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-LEGAL-EXACT-SOURCE-001",
+        "ORA-TDRP-LEGAL-LICENSE-DEPENDENCY-001",
+        "ORA-TDRP-LEGAL-NO-PRODUCT-AUTHORITY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-LEGAL-NO-OMISSION-001",
+        "INV-TDRP-LEGAL-NO-TRANSITIVE-LICENSE-CLOSURE-001",
+        "INV-TDRP-LEGAL-NO-RELEASE-ACCEPT-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-LEGAL-RETAINED-RECORD-001",
+        "CONTRACT-TDRP-LEGAL-LICENSE-EDGE-001",
+        "CONTRACT-TDRP-LEGAL-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-LEGAL-SOURCE-DRIFT-001",
+        "FAULT-TDRP-LEGAL-LICENSE-TRANSITIVE-CLOSURE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-LEGAL-NOT-AUTHORIZATION-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-LEGAL-NO-SOURCE-OMISSION-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "locked LEGAL + LICENSE dependency + canonical TDRP policy + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact upstream LEGAL@09c9e383db122fe0694e73c48d6224676afe60f6 retained as GPL-3.0-or-later/OpenSSL-exception provenance; LICENSE@d70f4d6a87eece19c4ec184de36a8aba72b4a639 remains strict106.",
+      "reviewer": null,
+      "notes": "Strict index 105 closes only LEGAL. Counters become unknown=16,271 unread=16,246 omitted=0 responsibilities=123. Next strict106 LICENSE."
     }
   ]
 }
