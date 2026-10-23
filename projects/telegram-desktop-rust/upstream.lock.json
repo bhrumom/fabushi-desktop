@@ -361,10 +361,10 @@
   "coverage": {
     "root_source_entries_total": 6893,
     "recursive_source_entries_total": 16379,
-    "unknown_minimum": 16251,
-    "unread_minimum": 16226,
+    "unknown_minimum": 16250,
+    "unread_minimum": 16225,
     "omitted_known": 0,
-    "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent b7341fa21a3c7af154facf407b36cb146ff312cb/tree d8b7417c38c2871d5395de135bf50d93f74e6a15 passed TDRP 39964710155 61/61 (authority 12506153281 sha256:fb810e6105495b911ede4bffae73c7e63a66b2a0ec7993517960e371f2981084; closure 12506866809 sha256:bf82ea14eec82770e85921668f0b01bf1c2f399636a103c01773e7734b869dcc; reachability 12505474662 sha256:98c933ef15d271c2705bb2cfd90b33dc8f3aacbe22f89d7e96a4a5fc783e9c0c) and Rust 39964710133 6/6 (artifact 12506092327 sha256:d95cd53f9db05b42362b845cf1a83a5ebd90bb8d6fdeb63bd4f247114adfc88f). Strict125 lib/xdg/org.telegram.desktop.service@8935a4fa834df4e12cbf4f5f466758a14d2c2357 maps session D-Bus activation/executable binding to existing package/process lifecycle owners while keeping Telegram identity and CMake spelling provenance-only. Current exact tree has no production D-Bus service definition or Linux installed activation acceptance. Counters unknown=16,251 unread=16,226 omitted=0 responsibilities=143. Next strict126 snap/snapcraft.yaml@a181d828f25d901303f7221824ac30b0ff5e773a; LICENSE was already closed at strict106 and is not counted again. Fresh child exact-head Actions required."
+    "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent a4844465a441db4f9f53335a556b3b5b87805111/2ad87576dc94abdb6f80bd776c8e22dd760453ab passed TDRP 39966961007 61/61 (authority 12507945583 sha256:ea43c4eb496ecb4701b496e02bdfb99cf92066a9d0d66d71c0c5faa552227d7c; closure 12508450146 sha256:e5ef3aab8e7ee240d5a51e8db7a67f50f4f20f307f7dcd2a61f34d419c53f266; reachability 12506918599 sha256:508587848be66d2aa705dad2d1f8e94e9763927051f11869960b1f34fe7325d2) and Rust 39966961005 6/6 (artifact 12507257039 sha256:a178252b198db13577513f832ade38a0cb34f7c52028dd087621d46b8258dab0). Strict126 snap/snapcraft.yaml complete-read mapped package/confinement/install/artifact/acquisition responsibilities to existing owners. Current Fabushi has AppImage/deb declarations but no canonical Snap target/workflow or installed Snap acceptance. Counters unknown=16,250 unread=16,225 omitted=0 responsibilities=144. Next strict127 tasks/2026/07/24/generate-walletkit-golden-vectors.md@863a1733649dcb8371091d750f6173bb8550a839."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -378,7 +378,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Strict125 maps Linux D-Bus session activation/executable-binding responsibility to existing Fabushi package/process owners only. Source closure remains open with unknown=16,251 unread=16,226 omitted=0. No current production D-Bus service definition or exact-head Linux installed activation evidence exists; Telegram service identity/executable remain provenance-only. Fresh child exact-head Actions and independent release acceptance remain required."
+    "note": "Strict126 mapped-open only; no Fabushi Snap implementation, signed .snap, installed confinement/interface evidence, source closure, or independent acceptance is claimed."
   },
   "baseline_identity_evidence": {
     "status": "pending-current-head-revalidation",
@@ -1827,5 +1827,5 @@
     "baseline_identity_accepted": false,
     "source_closure_ready": false
   },
-  "target_commit": "b7341fa21a3c7af154facf407b36cb146ff312cb"
+  "target_commit": "a4844465a441db4f9f53335a556b3b5b87805111"
 }

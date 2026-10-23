@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "b7341fa21a3c7af154facf407b36cb146ff312cb",
+  "target_commit": "a4844465a441db4f9f53335a556b3b5b87805111",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16251,
-    "unread": 16226,
+    "unknown": 16250,
+    "unread": 16225,
     "omitted": 0,
-    "responsibilities_total": 143,
+    "responsibilities_total": 144,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -38624,6 +38624,283 @@
       "license_and_provenance": "Exact upstream D-Bus service file retained as Linux packaging/platform provenance. Telegram service identity, executable and CMake install spelling are not promoted to Fabushi shipping authority.",
       "reviewer": null,
       "notes": "Strict125 closes only lib/xdg/org.telegram.desktop.service semantic read/decomposition. Counters unknown=16,251 unread=16,226 omitted=0 responsibilities=143. Linux installed D-Bus activation acceptance remains open. Next strict126 snap/snapcraft.yaml@a181d828f25d901303f7221824ac30b0ff5e773a (16,501 bytes); LICENSE was already closed at strict106 and is not counted again. Fresh child exact-head TDRP/Rust Actions required."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "snap/snapcraft.yaml",
+      "source_blob_sha": "a181d828f25d901303f7221824ac30b0ff5e773a",
+      "source_kind": "linux_snapcraft_packaging_build_supply_chain",
+      "module_id": "tdesktop.root.snap.snapcraft",
+      "responsibility_id": "TDRP-R9-UPSTREAM-SNAPCRAFT-PACKAGING-SUPPLY-CHAIN-PROVENANCE-001",
+      "source_symbols": [
+        "name: telegram-desktop",
+        "base: core24",
+        "confinement: strict",
+        "command: usr/bin/telegram-desktop",
+        "common-id: org.telegram.desktop",
+        "desktop: usr/share/applications/org.telegram.desktop.desktop",
+        "autostart: telegram-desktop_telegram-desktop.desktop",
+        "plugs:",
+        "slots:",
+        "layout:",
+        "parts:"
+      ],
+      "capability_ids": [
+        "CAP-LINUX-SNAP-PACKAGING",
+        "CAP-LINUX-PACKAGE-CONFINEMENT",
+        "CAP-DESKTOP-PACKAGE-IDENTITY",
+        "CAP-PACKAGE-PERMISSION-DECLARATIONS",
+        "CAP-BUILD-TIME-ACQUISITION-PROVENANCE",
+        "CAP-PACKAGED-ARTIFACT-IDENTITY",
+        "CAP-RELEASE-PROVENANCE"
+      ],
+      "dependency_ids": [
+        "desktop/package.json@3d500622ce9b26e3452d98d0c4a7e7dcc019ac84",
+        "source/electron-main/main.ts@b8eeed322ec07e5c8f67fa367cd2f58ac212b4f0",
+        "projects/fabushi-communication-platform/quality/release-entry-exit-criteria.md@c5eb9d0897234bb2fdad4f505549b2350c44aa72",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70",
+        "projects/telegram-desktop-rust/inventory/build-time-acquisitions.json@cfa989ef17a7bf60164b43417f54cd0b45a2f30e"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-snap-snapcraft-yaml-complete-read.md",
+      "behavior_contract": "Map source-neutral Snap package identity, install layout, confinement/interface declarations, artifact provenance and dependency-acquisition responsibility to existing Fabushi package/process/release/evidence/acquisition owners. Telegram-specific runtime and dependency stack remain provenance only.",
+      "state_machine": "exact source + classified build inputs -> package build -> confinement/interface declaration -> immutable artifact identity -> installed evidence -> promotion; missing evidence keeps open",
+      "side_effects": [
+        "package metadata can expose the canonical Fabushi executable",
+        "OS package permissions can expose device/media/network interfaces",
+        "publication changes only migration evidence/accounting"
+      ],
+      "failure_cases": [
+        "Telegram identity copied",
+        "package permission treated as product authorization",
+        "cross-platform evidence reused incorrectly",
+        "mutable dependency treated as immutable",
+        "second acquisition/runtime owner introduced",
+        "unsigned/unidentified package promoted"
+      ],
+      "ui_disposition": "No Telegram UI or Snap-branded product surface is imported.",
+      "non_ui_responsibilities": [
+        "Linux package identity",
+        "strict confinement interfaces",
+        "desktop/autostart/layout metadata",
+        "artifact identity",
+        "build-time acquisitions",
+        "single-process activation"
+      ],
+      "platform_delta": "Current Fabushi declares Linux AppImage/deb only. No canonical Snap target/workflow, signed .snap, installed Snap E2E, or Snap-specific platform adapter exists.",
+      "existing_owner_candidates": [
+        "desktop/package.json",
+        "source/electron-main/main.ts",
+        "FQT-REL-001",
+        "FQT-EVID-001",
+        "build-time-acquisitions.json"
+      ],
+      "existing_owner": "desktop/package.json + Electron main + FQT-REL-001/FQT-EVID-001 + build-time acquisition inventory",
+      "rejected_existing_owners": [
+        "Telegram/Snap runtime",
+        "second package root",
+        "second permission store",
+        "second acquisition ledger",
+        "macOS entitlements as Linux proof"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "desktop/package.json",
+        "projects/fabushi-communication-platform/quality/release-entry-exit-criteria.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "projects/telegram-desktop-rust/inventory/build-time-acquisitions.json",
+        "source/electron-main/main.ts"
+      ],
+      "fabushi_target_symbols": [
+        "\"syncDesktopName\": true",
+        "Every executable that moves from built/signed candidate bytes into staging, installation, acceptance, promotion, or release must retain an explicit provenance edge.",
+        "Any release, packaging, archive, staging, installation, or acceptance step that creates a second executable artifact must state whether the relationship is a byte-exact copy or an intentional transformation.",
+        "\"source_path\": \"snap/snapcraft.yaml\"",
+        "deps.app.requestSingleInstanceLock()"
+      ],
+      "target_language": "existing JSON/TypeScript + release/evidence/acquisition governance",
+      "language_rationale": "Declarative packaging metadata belongs to existing package/platform/release owners, not a copied Telegram runtime.",
+      "command_event_contracts": [
+        "package build -> exact accepted source + acquisition authority",
+        "installed activation -> canonical Fabushi executable -> single-instance arbitration",
+        "OS grant -> package capability only",
+        "artifact transformation -> provenance evidence before promotion"
+      ],
+      "state_owner": "package identity + acquisition inventory + Electron process lifecycle + FQT evidence owners",
+      "lifecycle_owner": "existing desktop packaging/process/release lifecycle",
+      "persistence_and_restart": "No Fabushi product state is owned by this recipe; installed package state remains platform metadata.",
+      "concurrency_and_cancellation": "Partial/cancelled builds or Actions never advance release truth; duplicate activation converges through single-instance arbitration.",
+      "security_boundary": "Snap plugs/slots do not bypass Fabushi authorization. Telegram IDs, crypto/wallet/runtime ownership and provider trust are not imported.",
+      "network_service_dependencies": [
+        "GitHub Actions/source evidence",
+        "build-time acquisitions already inventoried",
+        "Snap Store/provider behavior remains upstream provenance only"
+      ],
+      "service_owner": "existing desktop packaging/release/evidence owners",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "snapcraft-package-build-responsibilities-mapped-open",
+      "blockers": [
+        "No canonical Fabushi Snap target/workflow",
+        "No signed .snap raw identity evidence",
+        "No installed Snap confinement/interface E2E",
+        "Recursive source closure remains open",
+        "Independent release acceptance remains open"
+      ],
+      "production_entrypoints": [
+        "desktop/package.json::build.linux",
+        "source/electron-main/main.ts::startElectronMain"
+      ],
+      "production_evidence": [
+        "path:desktop/package.json",
+        "path:projects/fabushi-communication-platform/quality/release-entry-exit-criteria.md",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "path:projects/telegram-desktop-rust/inventory/build-time-acquisitions.json",
+        "path:source/electron-main/main.ts"
+      ],
+      "test_evidence": [
+        "Exact upstream snapcraft.yaml complete read",
+        "strict92 Snap workflow dossier reused",
+        "build-time acquisition inventory reused",
+        "TDRP 39966961007 61/61 success",
+        "Rust 39966961005 6/6 success"
+      ],
+      "target_commit": "a4844465a441db4f9f53335a556b3b5b87805111",
+      "workflow_run": 39966961007,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12507945583,
+      "artifact_digest": "sha256:ea43c4eb496ecb4701b496e02bdfb99cf92066a9d0d66d71c0c5faa552227d7c",
+      "composition_root": "Fabushi canonical desktop packaging/process/release composition",
+      "composition_slot": "Linux packaging/confinement boundary",
+      "capability_component": "package identity + confinement + acquisition provenance + artifact identity",
+      "variation_axes": [
+        "Snap vs AppImage/deb",
+        "OS package permission vs product authorization",
+        "build provenance vs installed evidence"
+      ],
+      "shared_owner_contracts": [
+        "desktop/package.json",
+        "FQT-REL-001",
+        "FQT-EVID-001",
+        "build-time acquisition inventory",
+        "Electron single-instance lifecycle"
+      ],
+      "duplicate_root_check": "No Telegram runtime, second package manifest, permission store, acquisition ledger, process root or release authority introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "system package/platform integration",
+      "primary_navigation_target": "Existing canonical Fabushi ProductShell",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "OS package build/install/confinement only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing canonical desktop process/product surfaces",
+      "route_contract": "installed package activation -> canonical Fabushi executable -> existing single process -> ProductShell",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Existing ProductShell accessibility remains authoritative.",
+      "keyboard_contract": "Existing ProductShell/application keyboard contracts remain canonical.",
+      "state_continuity_contract": "Package/source/dependency drift invalidates old evidence; repeated activation converges on canonical process.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi canonical design system",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Existing Fabushi product/package branding authority; Telegram icon path is provenance only.",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-UPSTREAM-SNAPCRAFT-PACKAGING-SUPPLY-CHAIN-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-SNAPCRAFT-EXACT-SOURCE-001",
+        "ORA-TDRP-SNAPCRAFT-PACKAGE-OWNER-001",
+        "ORA-TDRP-SNAPCRAFT-ACQUISITION-OWNER-001",
+        "ORA-TDRP-SNAPCRAFT-CONFINEMENT-EVIDENCE-BOUNDARY-001",
+        "ORA-TDRP-SNAPCRAFT-ARTIFACT-IDENTITY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-SNAPCRAFT-NO-TELEGRAM-RUNTIME-001",
+        "INV-TDRP-SNAPCRAFT-NO-SECOND-ACQUISITION-LEDGER-001",
+        "INV-TDRP-SNAPCRAFT-NO-CROSS-PLATFORM-ENTITLEMENT-PROOF-001",
+        "INV-TDRP-SNAPCRAFT-INSTALLED-EVIDENCE-REQUIRED-001",
+        "INV-TDRP-SNAPCRAFT-EXACT-HEAD-ACTIONS-ONLY-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-SNAPCRAFT-CANONICAL-PACKAGE-OWNER-001",
+        "CONTRACT-TDRP-SNAPCRAFT-ACQUISITION-PROVENANCE-001"
+      ],
+      "integration_case_ids": [
+        "INTEGRATION-TDRP-SNAPCRAFT-INSTALLED-LINUX-PACKAGE-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-SNAPCRAFT-SOURCE-DRIFT-001",
+        "TEMP-TDRP-SNAPCRAFT-DEPENDENCY-REF-DRIFT-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-SNAPCRAFT-BUILD-INSTALL-FAILURE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-SNAPCRAFT-CONFINEMENT-NOT-AUTHORIZATION-001",
+        "SEC-TDRP-SNAPCRAFT-SUPPLY-CHAIN-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-SNAPCRAFT-NO-SECOND-OWNER-001",
+        "REG-TDRP-SNAPCRAFT-FABUSHI-BOT-NO-REGRESSION-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-MODULE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "locked snapcraft.yaml + exact current owners + parent Actions"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [
+        "TDRP 39966961007 61/61 success",
+        "Rust 39966961005 6/6 success"
+      ],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact upstream Snapcraft recipe retained as package/build provenance; third-party acquisitions remain under build-time-acquisitions.json and their own licenses.",
+      "reviewer": null,
+      "notes": "Strict126 closes only snap/snapcraft.yaml semantic read/decomposition. Counters unknown=16,250 unread=16,225 omitted=0 responsibilities=144. Next strict127 tasks/2026/07/24/generate-walletkit-golden-vectors.md@863a1733649dcb8371091d750f6173bb8550a839."
     }
   ]
 }
