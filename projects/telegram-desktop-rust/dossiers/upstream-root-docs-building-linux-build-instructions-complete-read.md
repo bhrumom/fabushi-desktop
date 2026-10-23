@@ -24,6 +24,14 @@ History review preserved the behavior-changing provenance for the prepare-script
 
 The selected package/workflow target anchors were rechecked against the parent ledger and are unique.
 
+## Traceability anchors
+
+- Requirement: `TDRP-R9-UPSTREAM-BUILDING-LINUX-BUILD-INSTRUCTIONS-PROVENANCE-001`.
+- Oracles: `ORA-TDRP-BUILDING-LINUX-EXACT-SOURCE-001`, `ORA-TDRP-BUILDING-LINUX-EXISTING-BUILD-PACKAGE-OWNER-001`, `ORA-TDRP-BUILDING-LINUX-NO-LOCAL-EVIDENCE-001`, `ORA-TDRP-BUILDING-LINUX-LINUX-PACKAGE-EVIDENCE-GAP-001`.
+- Invariants: `INV-TDRP-BUILDING-LINUX-NO-TELEGRAM-CREDENTIAL-001`, `INV-TDRP-BUILDING-LINUX-NO-SECOND-BUILD-RUNTIME-001`, `INV-TDRP-BUILDING-LINUX-CONFIG-NOT-PACKAGED-EVIDENCE-001`, `INV-TDRP-BUILDING-LINUX-EXACT-HEAD-ACTIONS-ONLY-001`.
+
+These anchors name the already-recorded ledger responsibility and make the source dossier independently searchable by the authority validator; they do not upgrade Linux packaged acceptance or add a new implementation owner.
+
 ## Linux packaged-evidence gap
 
 All 25 current workflow files were enumerated and inspected for AppImage, deb and Linux electron-builder packaging. Only `release-macos-main.yml` invokes electron-builder, with `--mac --arm64`. Thus Linux AppImage/deb metadata exists and exact-head source/runtime build verification exists, but no current Actions workflow produces or installs Linux AppImage/deb artifacts. Linux packaged acceptance remains open.
