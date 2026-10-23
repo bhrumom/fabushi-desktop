@@ -3,7 +3,7 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_repository": "telegramdesktop/tdesktop",
-  "upstream_commit": "52a47639d9aa38713098974dd2ce07e631cb3381",
+  "upstream_commit": "83f9f56347cc3421c1e3ef537c7bb6dd06ce7cd0",
   "discovery": {
     "evidence_run_id": 39486129504,
     "evidence_head_sha": "f605a520cb7d3dc21da795a35cb89b8479afdb8f",
@@ -13,7 +13,7 @@
     "candidate_lines_total": 331,
     "immutable_commit_pin_occurrences_classified": 19,
     "candidate_lines_pending_classification": 0,
-    "note": "Live dev advanced 5380230173ea60a5222aa9d977f074dd41e76139 -> 52a47639d9aa38713098974dd2ce07e631cb3381. Six SourceFiles paths and three build-authority inputs changed; prepare.py, centos_env Dockerfile and snapcraft repin desktop-app/patches 1f43f0f1d5ba8643ea45bbd8404782d4d840e421 -> 845a383f7abe8e44f92dfdcd566d603066ec2696. Candidate locations/patterns and 331/331/0 classification remain unchanged; root/recursive counts and direct/nested gitlinks are unchanged.",
+    "note": "Live dev advanced 52a47639d9aa38713098974dd2ce07e631cb3381 -> 83f9f56347cc3421c1e3ef537c7bb6dd06ce7cd0. None of the 42 changed root paths are build-time acquisition scanner inputs; immutable build pins, candidate locations/patterns and 331/331/0 classification remain unchanged. Telegram/lib_ui repinned 2f29133506e174a9d4a7b78740c3f1b04c2b993c -> 1002e017b586020a6e23b65b92a8c78ac2983737 but remains a direct source gitlink, not a build-time acquisition candidate.",
     "candidate_lines_classified": 331,
     "disposition_closure_status": "complete",
     "recursive_authority_closure_status": "gitlink-fixed-point-closed-disposition-pending",
@@ -1229,7 +1229,7 @@
   ],
   "recursive_build_reachability": {
     "status": "partial-audited-disposition-open",
-    "accepted_upstream_commit": "52a47639d9aa38713098974dd2ce07e631cb3381",
+    "accepted_upstream_commit": "83f9f56347cc3421c1e3ef537c7bb6dd06ce7cd0",
     "rule": "A recursively discovered repository is source/build authority only when an accepted TDesktop build path actually initializes, downloads, generates, patches, or consumes it. Presence as an unselected superproject gitlink is not sufficient.",
     "qt_superproject": {
       "repository": "https://github.com/qt/qt5",
