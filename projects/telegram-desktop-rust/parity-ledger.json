@@ -41871,8 +41871,8 @@
       ],
       "fabushi_target_symbols": [
         "exact-head GitHub Actions evidence",
-        "recursive source authority",
-        "repository quality/test-evidence governance"
+        "requires_recursive_gitlinks",
+        "require_same_head_evidence"
       ],
       "target_language": "Markdown/JSON evidence governance; no retained C++ runtime",
       "language_rationale": "The source entry is repository metadata, not shipping product code. Its applicable responsibility is exact provenance and evidence-boundary preservation under existing source-neutral repository authority/quality owners.",
