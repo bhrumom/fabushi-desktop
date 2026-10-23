@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16246,
-    "unread_minimum": 16221,
+    "unknown_minimum": 16245,
+    "unread_minimum": 16220,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -122,7 +122,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 46ca9cb537310f5be0c9e131360b8c5ee00497de passed TDRP 39980505627 61/61 (authority 12514140088 sha256:188355fe7ceb02ed5aa046da4b2be44dd1ac3df4ef13a0c753bf1b2df7ef6b79; closure 12512474733 sha256:c9aabe9893b50132e6700cf9c93b7deab4c92938f89ff74e78b25a71cd09128b; reachability 12512983501 sha256:65422f858cb3fb172b8db04826bad58db39dcc8b7165ccf1589d54a9b151345d) and Rust 39980505846 6/6 (artifact 12513905803 sha256:5f641229b759119053ce7528ef6030310c4bd8f91b2ee5cb2cfb127a6d1cabd7). Strict130 tasks/2026/08/20/stop-orphaning-general-id-shared-media-lists.md@c30808ee6b4ffb02561d243c24ec32eef5d5e909 was fully read. Upstream exact anchors prove SharedMediaAddExisting/Slice create optional keyed collections while AddNew/RemoveOne only find them; topicRootId falls back to GeneralId=1, so only an authoritative forum/thread discriminator may permit that optional scope. Current Fabushi has canonical Message/MediaRef and Resource/Attachment owners but no shipping thread-scoped pinned/shared-media collection; the responsibility remains mapped-open and fail-closed. Counters unknown=16,246 unread=16,221 omitted=0 responsibilities=148. Next strict131 tasks/2026/08/21/preserve-info-thread-identity-and-lifetime.md@2ae8fa2751b7a1572d72b5a416b6c3cca3ba0e6b.",
+  "note": "Live upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent e3f4cd02b3af42993555c338e292d32cbfcff0e1 passed TDRP 39982702461 61/61 (authority 12513549223 sha256:b5fbd7884fd2abd35f57347be4e6467a01b3a16e9e582ae964843236cd37dfe8; closure 12514572235 sha256:f68804d349eb8de8603d64f82fbe2b676dd8b1aaa3ee14da692ab69682a17eb7; reachability 12514323191 sha256:a063daddd5128d4ebe3adfbfc23cbfa58b372ea0592ade0e6bea6f78384d8bc3) and Rust 39982702463 6/6 (artifact 12514426199 sha256:dddd8ef35adb63266eb0fdf267a1660588c23942cd5a988a451419f5cd03dbe1). Strict131 tasks/2026/08/21/preserve-info-thread-identity-and-lifetime.md@2ae8fa2751b7a1572d72b5a416b6c3cca3ba0e6b was fully read. Upstream exact anchors prove Info subject identity includes peer/topic/sublist and subject destruction must invalidate the page. Current Fabushi ProductShell/detail owners and account-generation fencing are reusable, but shipping route identity remains agent/conversation scoped without explicit thread/sublist subject lifetime. Counters unknown=16,245 unread=16,220 omitted=0 responsibilities=149. Next strict132 tools/clangtidy/README.md@2e64a408cb2d76aed0425706e321a24bb58f350f.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,

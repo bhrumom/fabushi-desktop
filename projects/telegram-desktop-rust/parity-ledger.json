@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "46ca9cb537310f5be0c9e131360b8c5ee00497de",
+  "target_commit": "e3f4cd02b3af42993555c338e292d32cbfcff0e1",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16246,
-    "unread": 16221,
+    "unknown": 16245,
+    "unread": 16220,
     "omitted": 0,
-    "responsibilities_total": 148,
+    "responsibilities_total": 149,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -40198,6 +40198,321 @@
       "license_and_provenance": "Telegram C++ SharedMedia key/list implementation and GeneralId constant are retained as behavior provenance only. No Telegram storage runtime, list implementation, protocol key or Qt UI is imported.",
       "reviewer": null,
       "notes": "Strict130 closes only tasks/2026/08/20/stop-orphaning-general-id-shared-media-lists.md semantic read/decomposition. Canonical pin/resource owners exist, but thread-scoped pinned/shared-media collection production composition remains open. Counters unknown=16,246 unread=16,221 omitted=0 responsibilities=148. Next strict131 tasks/2026/08/21/preserve-info-thread-identity-and-lifetime.md@2ae8fa2751b7a1572d72b5a416b6c3cca3ba0e6b."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "tasks/2026/08/21/preserve-info-thread-identity-and-lifetime.md",
+      "source_blob_sha": "2ae8fa2751b7a1572d72b5a416b6c3cca3ba0e6b",
+      "source_kind": "info_subject_identity_navigation_lifetime_task_provenance",
+      "module_id": "tdesktop.root.tasks.info-thread-identity-lifetime",
+      "responsibility_id": "TDRP-R9-INFO-THREAD-IDENTITY-LIFETIME-001",
+      "source_symbols": [
+        "Info::Key",
+        "Controller::validateMementoPeer",
+        "WrapWidget::returnToFirstStackFrame",
+        "WrapWidget::subscribeToThreadDestroyed",
+        "Polls::ListWidget::doCreateMemento",
+        "Data::ForumTopic::destroyed()",
+        "Data::SavedSublist::destroyed()",
+        "ForumTopic::kGeneralId"
+      ],
+      "capability_ids": [
+        "CAP-CANONICAL-DETAIL-SUBJECT-IDENTITY",
+        "CAP-CONVERSATION-THREAD-DETAIL-ROUTING",
+        "CAP-NAVIGATION-BACK-FORWARD-RESTORE",
+        "CAP-DETAIL-SUBJECT-LIFETIME",
+        "CAP-ACCOUNT-GENERATION-FENCING"
+      ],
+      "dependency_ids": [
+        "Telegram/SourceFiles/info/info_controller.cpp@b48fab7eefcad77e32d5e620c1af07a23f8d6d60",
+        "Telegram/SourceFiles/info/info_wrap_widget.cpp@953e4b4fee46910d9e50b04926cc5639728c47b4",
+        "Telegram/SourceFiles/info/polls/info_polls_list_widget.cpp@fc875783b315bd09fc47b6715765c93598610ee4",
+        "Telegram/SourceFiles/data/data_saved_sublist.cpp@68290f41b6edf80bcb04657cabc33e4393cd75f3",
+        "Telegram/SourceFiles/data/data_saved_sublist.h@c62b6186445814e75d7a021affe38908bf47b4c8",
+        "frontend/src/recovered/features/window-chrome/root-shell-state.tsx@88f3304cc487479cd6ac33a03fd6a99168e8d262",
+        "frontend/src/recovered/features/conversation/workspace/sidebar-profile-action.ts@695dcc5051cdaded0b74476fa3c455971fcbb9d1",
+        "frontend/src/recovered/features/conversation/workspace/conversation-workspace-controller.ts@1a918aaa73499fd440e8a5c6a6c48ca1e3443e2d",
+        "frontend/src/recovered/features/agent-info/group-members/route.ts@da39e969a1c3c98cf0c94a7b6a7c203e70dfeb86",
+        "frontend/src/production/ProductionRenderer.tsx@af8a83a8dd7cf1444474889ce3e64fe796a7d458"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-task-preserve-info-thread-identity-and-lifetime-complete-read.md",
+      "behavior_contract": "Preserve exact canonical detail subject identity across open, internal navigation, memento/back-forward restoration and subject destruction. Whole conversation, explicit thread and sublist subjects may not alias; disappearing subjects close or back out rather than falling through to whole-conversation detail.",
+      "state_machine": "open canonical detail subject -> bind account generation + conversation + optional thread/sublist identity -> navigate within same subject -> save/restore exact subject in back stack -> subject/account scope invalidation fences stale state -> destroyed subject closes or navigates back safely",
+      "side_effects": [
+        "prevents detail state from crossing thread/sublist boundaries",
+        "preserves exact subject through back/forward restoration",
+        "reuses existing account-generation fencing",
+        "closes detail when its subject is destroyed",
+        "keeps all detail surfaces under ProductShell"
+      ],
+      "failure_cases": [
+        "topic/sublist detail restored as whole conversation",
+        "General thread aliases whole conversation",
+        "back stack compares only conversation/agent",
+        "deleted sublist detail remains mounted",
+        "stale account generation commits detail state",
+        "second Telegram-specific Info root introduced"
+      ],
+      "ui_disposition": "Applicable through existing ProductShell ConversationWorkspace detail panels. Extend canonical route identity/lifecycle; do not copy Telegram Info/Qt roots.",
+      "non_ui_responsibilities": [
+        "typed detail subject identity",
+        "back-stack identity preservation",
+        "subject destruction invalidation",
+        "account-generation and subject-generation fencing",
+        "General-thread versus whole-conversation distinction"
+      ],
+      "platform_delta": "Telegram peer/topic/sublist mementos map to source-neutral Fabushi conversation/detail subject keys and existing detail panels.",
+      "existing_owner_candidates": [
+        "RootShell navigation state",
+        "ConversationWorkspace controller",
+        "sidebar profile action",
+        "GroupInfoPaneRoute/account generation",
+        "ProductionRenderer canonical info/detail panes"
+      ],
+      "existing_owner": "ProductShell/RootShell owns global navigation; ConversationWorkspace owns conversation context; existing info/detail route owners and panels own detail presentation; GroupInfoPaneRoute supplies the existing account-generation fencing pattern.",
+      "rejected_existing_owners": [
+        "Telegram Info root",
+        "second navigation stack",
+        "topic-specific Profile root",
+        "SavedSublist-specific Profile root",
+        "peer/agent-only route silently reused for explicit thread subject"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "frontend/src/recovered/features/window-chrome/root-shell-state.tsx",
+        "frontend/src/recovered/features/conversation/workspace/sidebar-profile-action.ts",
+        "frontend/src/recovered/features/conversation/workspace/conversation-workspace-controller.ts",
+        "frontend/src/recovered/features/agent-info/group-members/route.ts"
+      ],
+      "fabushi_target_symbols": [
+        "export interface RootShellNavigationState {",
+        "export function createRootShellNavigationState(): RootShellNavigationState {",
+        "export interface SidebarProfileActionActions {",
+        "export function createSidebarProfileAction(",
+        "export interface ConversationWorkspaceControllerOptions {",
+        "export interface GroupInfoPaneRoute {",
+        "export function projectGroupInfoPaneRoute("
+      ],
+      "target_language": "existing React/TypeScript ProductShell, navigation and detail-route owners",
+      "language_rationale": "This is navigation/detail identity and UI lifecycle responsibility; existing source-neutral TypeScript owners already compose the shipping desktop surface.",
+      "command_event_contracts": [
+        "open detail -> bind exact canonical subject",
+        "back/forward -> restore same subject identity",
+        "subject deleted -> close/back safely",
+        "account generation changes -> invalidate stale route",
+        "missing thread/sublist -> do not reinterpret as whole conversation"
+      ],
+      "state_owner": "RootShell navigation + canonical detail route subject state under ConversationWorkspace.",
+      "lifecycle_owner": "ProductShell/ConversationWorkspace/detail-panel lifecycle with account-generation fencing.",
+      "persistence_and_restart": "Any persisted navigation/detail restoration must serialize exact canonical subject identity; current exact head does not yet prove thread/sublist-aware persistence.",
+      "concurrency_and_cancellation": "Account/subject generations fence stale async detail data and route restoration.",
+      "security_boundary": "Detail projection remains constrained to the authorized conversation and exact subject; fallback must not expose data from a broader scope.",
+      "network_service_dependencies": [
+        "existing Fabushi conversation/profile/detail services",
+        "GitHub exact-head evidence authority"
+      ],
+      "service_owner": "existing Fabushi Conversation/Profile service owners",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "info-thread-identity-lifetime-mapped-open",
+      "blockers": [
+        "root-shell navigation state is agent-id-only",
+        "profile action is agent-id-only",
+        "shipping detail panes do not prove thread/sublist subject keys",
+        "subject-destroyed lifecycle for thread/sublist detail is not shipping-proven",
+        "packaged E2E for back/forward and deletion is absent",
+        "recursive source closure remains open",
+        "independent release acceptance remains open"
+      ],
+      "production_entrypoints": [
+        "frontend::RootShellNavigationState",
+        "frontend::createSidebarProfileAction",
+        "frontend::ConversationWorkspaceControllerOptions",
+        "frontend::GroupInfoPaneRoute",
+        "ProductionRenderer canonical info/detail panes"
+      ],
+      "production_evidence": [
+        "path:frontend/src/recovered/features/window-chrome/root-shell-state.tsx",
+        "path:frontend/src/recovered/features/conversation/workspace/sidebar-profile-action.ts",
+        "path:frontend/src/recovered/features/conversation/workspace/conversation-workspace-controller.ts",
+        "path:frontend/src/recovered/features/agent-info/group-members/route.ts",
+        "path:frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "test_evidence": [
+        "strict131 tasks/2026/08/21/preserve-info-thread-identity-and-lifetime.md@2ae8fa2751b7a1572d72b5a416b6c3cca3ba0e6b fully read",
+        "accepted task directory contains only the task file",
+        "accepted info controller/wrap/polls/saved-sublist lifecycle anchors read",
+        "current Fabushi RootShell/profile/workspace/group-info/ProductionRenderer owners read at exact parent head",
+        "current GroupInfoPaneRoute has accountGeneration fencing but no thread/sublist subject identity",
+        "TDRP 39982702461 61/61; authority 12513549223 sha256:b5fbd7884fd2abd35f57347be4e6467a01b3a16e9e582ae964843236cd37dfe8; closure 12514572235 sha256:f68804d349eb8de8603d64f82fbe2b676dd8b1aaa3ee14da692ab69682a17eb7; reachability 12514323191 sha256:a063daddd5128d4ebe3adfbfc23cbfa58b372ea0592ade0e6bea6f78384d8bc3",
+        "Rust 39982702463 6/6; artifact 12514426199 sha256:dddd8ef35adb63266eb0fdf267a1660588c23942cd5a988a451419f5cd03dbe1"
+      ],
+      "target_commit": "e3f4cd02b3af42993555c338e292d32cbfcff0e1",
+      "workflow_run": 39982702461,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12513549223,
+      "artifact_digest": "sha256:b5fbd7884fd2abd35f57347be4e6467a01b3a16e9e582ae964843236cd37dfe8",
+      "composition_root": "Fabushi ProductShell + canonical ConversationWorkspace + shared detail panels",
+      "composition_slot": "conversation/detail subject route and back-stack lifecycle",
+      "capability_component": "typed detail subject identity + shared DetailPanel/info pane",
+      "variation_axes": [
+        "whole conversation vs explicit thread",
+        "whole conversation vs sublist",
+        "General thread vs whole conversation",
+        "live vs destroyed subject",
+        "current vs stale account generation"
+      ],
+      "shared_owner_contracts": [
+        "RootShell navigation",
+        "ConversationWorkspace",
+        "GroupInfoPaneRoute",
+        "ProductShell detail panels"
+      ],
+      "duplicate_root_check": "No Telegram Info root, second navigation history, topic Profile root or sublist Profile root introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "detail-panel",
+      "primary_navigation_target": "Messages / existing ProductShell conversation",
+      "collection_surface": "Existing ConversationWorkspace",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Open profile/info/detail for the exact canonical conversation subject.",
+      "detail_section": "Canonical shared detail/info panel",
+      "capability_surface": "Existing ProductShell detail panel; thread/sublist subject identity remains open.",
+      "route_contract": "Route key must include exact conversation plus optional explicit thread/sublist subject and account generation.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Existing canonical detail-panel responsive behavior.",
+      "accessibility_contract": "Existing detail panel heading/close/focus contracts; destroyed subject must move focus to surviving context.",
+      "keyboard_contract": "Back/Escape/close must preserve or restore exact canonical subject and focus.",
+      "state_continuity_contract": "Back/forward restores exact subject; account or subject destruction invalidates stale detail state; General thread never aliases whole conversation.",
+      "ui_acceptance_scenarios": [
+        "open whole-conversation detail",
+        "open explicit thread detail",
+        "open sublist detail",
+        "back/forward restores exact subject",
+        "General thread remains distinct from whole conversation",
+        "subject deletion closes/backs safely",
+        "account generation change invalidates stale detail"
+      ],
+      "design_system_version": "current Fabushi Design System",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "No new Telegram-derived UI/token root.",
+      "canonical_component_ids": [
+        "DetailPanel",
+        "ConversationWorkspace",
+        "RootInfoPaneHeader"
+      ],
+      "screen_pattern_id": "canonical conversation detail panel",
+      "screen_slots": [
+        "conversation workspace",
+        "optional detail panel",
+        "back/close lifecycle"
+      ],
+      "visual_state_matrix": [],
+      "density_contract": "Existing Fabushi detail-panel density.",
+      "icon_asset_contract": "Existing Fabushi icons only.",
+      "avatar_contract": "Existing canonical participant/agent avatar.",
+      "content_copy_keys": [],
+      "motion_contract": "Existing detail-panel/navigation motion.",
+      "reduced_motion_contract": "Existing reduced-motion contract.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-INFO-THREAD-IDENTITY-LIFETIME-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-INFO-THREAD-EXACT-TASK-SOURCE-001",
+        "ORA-TDRP-INFO-THREAD-MEMENTO-SUBJECT-IDENTITY-001",
+        "ORA-TDRP-INFO-THREAD-BACK-STACK-SUBJECT-IDENTITY-001",
+        "ORA-TDRP-INFO-THREAD-POLLS-MEMENTO-PRESERVATION-001",
+        "ORA-TDRP-INFO-THREAD-SUBLIST-DESTROYED-LIFETIME-001",
+        "ORA-TDRP-INFO-THREAD-FABUSHI-ROUTE-GAP-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-INFO-THREAD-NO-WHOLE-CONVERSATION-FALLBACK-001",
+        "INV-TDRP-INFO-THREAD-GENERAL-THREAD-DISTINCT-001",
+        "INV-TDRP-INFO-THREAD-NO-SECOND-INFO-ROOT-001",
+        "INV-TDRP-INFO-THREAD-ACCOUNT-GENERATION-FENCED-001",
+        "INV-TDRP-INFO-THREAD-SUBJECT-DESTRUCTION-CLOSES-001",
+        "INV-TDRP-INFO-THREAD-EXACT-HEAD-ACTIONS-ONLY-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [
+        "STATE-TDRP-INFO-THREAD-SUBJECT-IDENTITY-001"
+      ],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-INFO-THREAD-ROUTE-KEY-001",
+        "CONTRACT-TDRP-INFO-THREAD-SUBJECT-LIFETIME-001"
+      ],
+      "integration_case_ids": [
+        "INTEGRATION-TDRP-INFO-THREAD-PRODUCTSHELL-001"
+      ],
+      "functional_e2e_case_ids": [
+        "E2E-TDRP-INFO-THREAD-BACK-RESTORE-001",
+        "E2E-TDRP-INFO-THREAD-SUBJECT-DELETE-001"
+      ],
+      "temporal_case_ids": [
+        "TEMP-TDRP-INFO-THREAD-ACCOUNT-GENERATION-001",
+        "TEMP-TDRP-INFO-THREAD-SUBJECT-DESTROYED-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-INFO-THREAD-MISSING-SUBJECT-FAIL-CLOSED-001"
+      ],
+      "ui_functional_case_ids": [
+        "UI-TDRP-INFO-THREAD-CANONICAL-DETAIL-001"
+      ],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [
+        "A11Y-TDRP-INFO-THREAD-FOCUS-RESTORE-001"
+      ],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-INFO-THREAD-NO-SCOPE-WIDENING-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-INFO-THREAD-GENERAL-DISTINCT-001",
+        "REG-TDRP-INFO-THREAD-NO-SECOND-ROOT-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-MODULE",
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-COMPONENTS",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "strict131 exact task + accepted Info lifecycle anchors + exact parent Fabushi route owners"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [
+        "TDRP 39982702461 61/61 success",
+        "Rust 39982702463 6/6 success"
+      ],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Telegram Info/Qt/memento class names retained only as behavior provenance; no Telegram UI/runtime imported.",
+      "reviewer": null,
+      "notes": "Strict131 closes only tasks/2026/08/21/preserve-info-thread-identity-and-lifetime.md semantic read/decomposition. Existing ProductShell/detail owners and account-generation fencing are reusable, but thread/sublist subject route identity and destruction lifecycle remain shipping-open. Counters unknown=16,245 unread=16,220 omitted=0 responsibilities=149. Next strict132 tools/clangtidy/README.md@2e64a408cb2d76aed0425706e321a24bb58f350f."
     }
   ]
 }
