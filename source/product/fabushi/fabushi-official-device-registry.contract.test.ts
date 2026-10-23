@@ -237,3 +237,72 @@ test("device_call delegates only the advertised read-only status tool and never 
   await staleService.stop();
   await service.stop();
 });
+
+test("private transport rejects missing routes, fences revoked sessions before dispatch, and redacts bearer results", async () => {
+  const first = session("private");
+  let current: FabushiDeviceAgentSession | null = first;
+  let dispatches = 0;
+  const sockets: FakeSocket[] = [];
+  const route = { nodeId: "100.64.0.12", cellId: "cell-123456", generation: 2, expiresAt: Math.floor(Date.now() / 1_000) + 300 };
+  const service = new FabushiOfficialDeviceRegistryService({
+    isPackaged: true, env: {}, userDataPath: "/private/fabushi",
+    getDeviceAgentSession: async () => current,
+    connect: () => { const socket = new FakeSocket(); sockets.push(socket); return socket; },
+    privateTransportRequest: async ({ networkRoute }) => {
+      dispatches += 1;
+      assert.deepEqual(networkRoute, route);
+      return { safe: true, accidentalBearer: first.accessToken };
+    },
+  });
+  await service.syncNow();
+  const socket = sockets[0]!;
+  socket.open();
+  await settle();
+  socket.message({ type: "fdnPrivate", requestId: "missing-route", payload: { requestId: "request-valid-1", deviceId: "device-a" } });
+  await settle();
+  assert.equal(dispatches, 0, "a missing route must not execute even with a supplied dispatch adapter");
+  assert.equal(socket.sent.find((item) => item.requestId === "missing-route")?.ok, false);
+  socket.message({ type: "fdnPrivate", requestId: "private-success", networkRoute: route, payload: { requestId: "request-valid-2", deviceId: "device-a" } });
+  await settle();
+  assert.equal(dispatches, 1);
+  const successful = socket.sent.find((item) => item.requestId === "private-success");
+  assert.equal(successful?.ok, true);
+  assert.equal(JSON.stringify(successful).includes(first.accessToken), false, "first-party bearer must never cross private result WSS");
+  assert.equal((successful?.result as Record<string, unknown>)?.accidentalBearer, "[redacted]");
+  current = null;
+  socket.message({ type: "fdnPrivate", requestId: "revoked", networkRoute: route, payload: { requestId: "request-valid-3", deviceId: "device-a" } });
+  await settle();
+  assert.equal(dispatches, 1, "revoked account must not dispatch a private operation");
+  assert.equal(socket.closed, true);
+  await service.stop();
+});
+
+test("private dispatch never sends an in-flight result on a replaced account socket", async () => {
+  let current: FabushiDeviceAgentSession | null = session("private-before");
+  const sockets: FakeSocket[] = [];
+  let dispatches = 0;
+  let finish!: (value: unknown) => void;
+  const pending = new Promise<unknown>((resolve) => { finish = resolve; });
+  const service = new FabushiOfficialDeviceRegistryService({
+    isPackaged: true, env: {}, userDataPath: "/private/fabushi",
+    getDeviceAgentSession: async () => current,
+    connect: () => { const socket = new FakeSocket(); sockets.push(socket); return socket; },
+    privateTransportRequest: async () => { dispatches += 1; return await pending; },
+  });
+  await service.syncNow();
+  const oldSocket = sockets[0]!;
+  oldSocket.open();
+  await settle();
+  oldSocket.message({ type: "fdnPrivate", requestId: "late-private", networkRoute: {
+    nodeId: "100.64.0.13", cellId: "cell-987654", generation: 4, expiresAt: Math.floor(Date.now() / 1_000) + 300,
+  }, payload: { requestId: "request-valid-4", deviceId: "device-b" } });
+  await settle();
+  assert.equal(dispatches, 1);
+  current = session("private-after");
+  await service.syncNow();
+  finish({ executed: true });
+  await settle();
+  assert.equal(oldSocket.closed, true);
+  assert.equal(oldSocket.sent.some((item) => item.type === "fdnPrivateResult" && item.requestId === "late-private"), false);
+  await service.stop();
+});

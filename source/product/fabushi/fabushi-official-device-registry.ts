@@ -1,6 +1,7 @@
 /// <reference path="./ws-shim.d.ts" />
 
 import { join } from "node:path";
+import { request as httpRequest } from "node:http";
 
 import WebSocket from "ws";
 
@@ -13,6 +14,7 @@ export const FABUSHI_APP_AGENT_TOOLS = [
   "fabushi.app.status", "fabushi.app.snapshot", "fabushi.app.find",
   "fabushi.app.action", "fabushi.app.wait", "fabushi.app.assert",
 ] as const;
+export const FABUSHI_FDN_PRIVATE_TRANSPORT_CAPABILITY = "fabushi-fdn-private-transport";
 const READ_ONLY_APP_AGENT_TOOLS = new Set<string>([
   "fabushi.app.status", "fabushi.app.snapshot", "fabushi.app.find",
   "fabushi.app.wait", "fabushi.app.assert",
@@ -22,6 +24,7 @@ const DEFAULT_POLL_MS = 30_000;
 const DEFAULT_HEARTBEAT_MS = 25_000;
 const SESSION_EXPIRY_LEEWAY_MS = 30_000;
 const MAX_RESULT_BYTES = 64 * 1024;
+const MAX_PRIVATE_RESULT_BYTES = 1024 * 1024;
 
 export interface OfficialDeviceRegistrySocket {
   readonly readyState: number;
@@ -40,6 +43,12 @@ export interface FabushiOfficialDeviceRegistryOptions {
   readonly connect?: (url: string, accessToken: string) => OfficialDeviceRegistrySocket;
   readonly surfaceStatus?: () => Promise<unknown>;
   readonly surfaceCall?: (toolName: string, input: Record<string, unknown>) => Promise<unknown>;
+  readonly privateTransportSocketPath?: string;
+  readonly privateTransportRequest?: (input: {
+    readonly payload: Record<string, unknown>;
+    readonly networkRoute?: Record<string, unknown>;
+    readonly timeoutMs?: number;
+  }) => Promise<unknown>;
   readonly now?: () => number;
   readonly pollMs?: number;
   readonly heartbeatMs?: number;
@@ -124,6 +133,15 @@ function safeJsonResult(value: unknown, accessToken: string): { readonly structu
   return { structuredContent: JSON.parse(text), text };
 }
 
+function safePrivateResult(value: unknown, accessToken: string): unknown {
+  let text = JSON.stringify(value ?? null);
+  if (Buffer.byteLength(text, "utf8") > MAX_PRIVATE_RESULT_BYTES) {
+    throw new Error("FDN private transport response exceeded the bounded result size.");
+  }
+  if (text.includes(accessToken)) text = text.split(accessToken).join("[redacted]");
+  return JSON.parse(text) as unknown;
+}
+
 function isReadOnlyPreflight(value: unknown): boolean {
   if (value == null || typeof value !== "object" || Array.isArray(value)) return false;
   const source = value as Record<string, unknown>;
@@ -146,11 +164,67 @@ function decodeMessage(raw: unknown): Record<string, unknown> | null {
   }
 }
 
+function boundedPrivateRoute(value: unknown): Record<string, unknown> | undefined {
+  if (value == null || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const route = value as Record<string, unknown>;
+  const nodeId = typeof route.nodeId === "string" ? route.nodeId.trim() : "";
+  const cellId = typeof route.cellId === "string" ? route.cellId.trim() : "";
+  const generation = Number(route.generation);
+  const expiresAt = Number(route.expiresAt);
+  if (!/^[A-Za-z0-9._:-]{3,160}$/u.test(nodeId)
+      || !/^[A-Za-z0-9._:-]{8,160}$/u.test(cellId)
+      || !Number.isSafeInteger(generation) || generation <= 0
+      || !Number.isSafeInteger(expiresAt) || expiresAt <= Math.floor(Date.now() / 1000)) {
+    throw new Error("FDN private transport route is invalid or expired.");
+  }
+  return { nodeId, cellId, generation, expiresAt };
+}
+
+function localPrivateTransport(socketPath: string) {
+  return async (input: { payload: Record<string, unknown>; networkRoute?: Record<string, unknown>; timeoutMs?: number }): Promise<unknown> => {
+    const route = boundedPrivateRoute(input.networkRoute);
+    const payload = input.payload;
+    const body = JSON.stringify({
+      requestId: typeof payload.requestId === "string" ? payload.requestId : undefined,
+      deviceId: typeof payload.deviceId === "string" ? payload.deviceId : undefined,
+      networkRoute: route,
+      targetPort: 8792,
+      timeoutMs: Math.max(1_000, Math.min(Number(input.timeoutMs) || 30_000, 600_000)),
+      payload,
+    });
+    return await new Promise((resolve, reject) => {
+      const request = httpRequest({
+        socketPath,
+        path: "/v1/fdn/private-request",
+        method: "POST",
+        headers: { "content-type": "application/json", "content-length": Buffer.byteLength(body) },
+        timeout: Math.max(1_000, Math.min(Number(input.timeoutMs) || 30_000, 600_000)) + 2_000,
+      }, (response) => {
+        const chunks: Buffer[] = [];
+        let size = 0;
+        response.on("data", (chunk: Buffer) => { size += chunk.length; if (size <= 1024 * 1024) chunks.push(chunk); });
+        response.on("end", () => {
+          if (size > 1024 * 1024) return reject(new Error("FDN private transport response exceeded the bounded result size."));
+          try {
+            const parsed = JSON.parse(Buffer.concat(chunks).toString("utf8")) as Record<string, unknown>;
+            if (response.statusCode !== 200 || parsed.ok !== true) return reject(new Error("FDN local private transport rejected the request."));
+            resolve(parsed.result);
+          } catch { reject(new Error("FDN local private transport returned invalid JSON.")); }
+        });
+      });
+      request.on("timeout", () => request.destroy(new Error("FDN local private transport timed out.")));
+      request.on("error", reject);
+      request.end(body);
+    });
+  };
+}
+
 export class FabushiOfficialDeviceRegistryService {
   private readonly now: () => number;
   private readonly connect: (url: string, accessToken: string) => OfficialDeviceRegistrySocket;
   private readonly surfaceStatus: () => Promise<unknown>;
   private readonly surfaceCall: (toolName: string, input: Record<string, unknown>) => Promise<unknown>;
+  private readonly privateTransportRequest?: FabushiOfficialDeviceRegistryOptions["privateTransportRequest"];
   private readonly pollMs: number;
   private readonly heartbeatMs: number;
   private started = false;
@@ -165,6 +239,8 @@ export class FabushiOfficialDeviceRegistryService {
     const discoveryPath = join(options.userDataPath, "agent-surface", "bridge.json");
     this.surfaceStatus = options.surfaceStatus ?? (async () => await defaultSurfaceStatus(discoveryPath));
     this.surfaceCall = options.surfaceCall ?? (async (toolName, input) => { const module = await import("../../../chatgpt-vps-control/lib/app-agent-surface-client.js"); return await module.createAppAgentSurfaceClient({ discoveryPath }).call(toolName.slice("fabushi.app.".length) as "status" | "snapshot" | "find" | "action" | "wait" | "assert", input); });
+    this.privateTransportRequest = options.privateTransportRequest
+      ?? (options.privateTransportSocketPath == null ? undefined : localPrivateTransport(options.privateTransportSocketPath));
     this.pollMs = Math.max(1_000, options.pollMs ?? DEFAULT_POLL_MS);
     this.heartbeatMs = Math.max(1_000, options.heartbeatMs ?? DEFAULT_HEARTBEAT_MS);
   }
@@ -229,7 +305,10 @@ export class FabushiOfficialDeviceRegistryService {
       deviceId: current.deviceId,
       name: this.options.deviceName ?? "Fabushi Desktop",
       platform: process.platform,
-      capabilities: [...FABUSHI_APP_AGENT_TOOLS],
+      capabilities: [
+        ...FABUSHI_APP_AGENT_TOOLS,
+        ...(this.privateTransportRequest == null ? [] : [FABUSHI_FDN_PRIVATE_TRANSPORT_CAPABILITY]),
+      ],
       tools: FABUSHI_APP_AGENT_TOOLS.map((name) => name === FABUSHI_APP_AGENT_STATUS_TOOL ? statusToolDescriptor() : appToolDescriptor(name)),
       toolSchemaVersion: "fabushi-app-agent-surface-v1",
       generation: current.sessionId,
@@ -248,6 +327,11 @@ export class FabushiOfficialDeviceRegistryService {
     if (this.active?.socket !== socket || this.active.key !== key) return;
     const message = decodeMessage(raw);
     if (message == null || message.type === "registered") return;
+    if (message.type === "fdnPrivateCancel") return;
+    if (message.type === "fdnPrivate") {
+      await this.onPrivateMessage(socket, key, message);
+      return;
+    }
     if (message.type !== "call") return;
     const requestId = typeof message.requestId === "string" ? message.requestId.slice(0, 128) : "";
     if (!requestId) return;
@@ -297,6 +381,40 @@ export class FabushiOfficialDeviceRegistryService {
         ok: false,
         error: error instanceof Error ? error.message.slice(0, 1_000) : "Fabushi device call failed.",
       });
+    }
+  }
+
+  private async onPrivateMessage(socket: OfficialDeviceRegistrySocket, key: string, message: Record<string, unknown>): Promise<void> {
+    const requestId = typeof message.requestId === "string" ? message.requestId.slice(0, 128) : "";
+    const payload = message.payload;
+    if (!requestId || payload == null || typeof payload !== "object" || Array.isArray(payload)) return;
+    try {
+      const before = await this.options.getDeviceAgentSession().catch(() => null);
+      if (!isUsableSession(before, this.now()) || sessionKey(before) !== key) {
+        this.disconnect("account revoked before private dispatch");
+        return;
+      }
+      if (this.active?.socket !== socket || this.active.key !== key) return;
+      if (this.privateTransportRequest == null) throw new Error("FDN private transport is not enabled on this device.");
+      const route = boundedPrivateRoute(message.networkRoute);
+      if (route == null) throw new Error("FDN private transport requires a current network route.");
+      const result = await this.privateTransportRequest({
+        payload: payload as Record<string, unknown>,
+        networkRoute: route,
+        timeoutMs: Number(message.timeoutMs),
+      });
+      const current = await this.options.getDeviceAgentSession().catch(() => null);
+      if (!isUsableSession(current, this.now()) || sessionKey(current) !== key) {
+        this.disconnect("account changed during private dispatch");
+        return;
+      }
+      if (this.active?.socket !== socket || this.active.key !== key) return;
+      this.send(socket, { type: "fdnPrivateResult", requestId, ok: true, result: safePrivateResult(result, current.accessToken) });
+    } catch (error) {
+      if (this.active?.socket !== socket || this.active.key !== key) return;
+      const rawError = error instanceof Error ? error.message : "FDN private transport failed.";
+      const safeError = rawError.split(this.active.session.accessToken).join("[redacted]").slice(0, 1_000);
+      this.send(socket, { type: "fdnPrivateResult", requestId, ok: false, error: safeError });
     }
   }
 

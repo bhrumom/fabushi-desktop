@@ -139,6 +139,7 @@ export function createFabushiProductionAccountOAuthBinding(): ElectronProduction
         isPackaged: context.native.app.isPackaged,
         env: context.env,
         userDataPath: context.native.app.getPath("userData"),
+        privateTransportSocketPath: join(context.native.app.getPath("userData"), "fdn-network", "private.sock"),
         deviceName: "Fabushi Desktop",
         getDeviceAgentSession: async () => {
           const auth = await account.getAuthService();
