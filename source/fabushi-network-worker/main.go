@@ -33,9 +33,32 @@ func privateTransportError(w http.ResponseWriter, status int, message string) {
 	_ = json.NewEncoder(w).Encode(map[string]any{"ok": false, "error": message})
 }
 
+// The Rust Host isolates tsnet state under fdn-network/<identity>/tsnet, but
+// Electron connects to the one active worker through fdn-network/private.sock.
+// Reject arbitrary state paths rather than publishing a socket outside that owner.
+func privateTransportSocketPath(stateDir string) (string, error) {
+	clean := filepath.Clean(stateDir)
+	identityDir := filepath.Dir(clean)
+	root := filepath.Dir(identityDir)
+	identity := filepath.Base(identityDir)
+	if !filepath.IsAbs(clean) || filepath.Base(clean) != "tsnet" || filepath.Base(root) != "fdn-network" || len(identity) != 40 || strings.Trim(identity, "0123456789abcdef") != "" {
+		return "", errors.New("invalid_private_transport_state_layout")
+	}
+	return filepath.Join(root, privateSocketName), nil
+}
+
+func removeStalePrivateSocket(path string) error {
+	info, err := os.Lstat(path)
+	if errors.Is(err, os.ErrNotExist) { return nil }
+	if err != nil { return err }
+	if info.Mode()&os.ModeSocket == 0 { return errors.New("private_transport_socket_path_occupied") }
+	return os.Remove(path)
+}
+
 func servePrivateTransport(server *tsnet.Server, stateDir string) (func(), error) {
-	socketPath := filepath.Join(stateDir, privateSocketName)
-	_ = os.Remove(socketPath)
+	socketPath, err := privateTransportSocketPath(stateDir)
+	if err != nil { return nil, err }
+	if err := removeStalePrivateSocket(socketPath); err != nil { return nil, err }
 	listener, err := net.Listen("unix", socketPath)
 	if err != nil {
 		return nil, err

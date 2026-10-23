@@ -24,6 +24,7 @@ const DEFAULT_POLL_MS = 30_000;
 const DEFAULT_HEARTBEAT_MS = 25_000;
 const SESSION_EXPIRY_LEEWAY_MS = 30_000;
 const MAX_RESULT_BYTES = 64 * 1024;
+const MAX_PRIVATE_RESULT_BYTES = 1024 * 1024;
 
 export interface OfficialDeviceRegistrySocket {
   readonly readyState: number;
@@ -130,6 +131,15 @@ function safeJsonResult(value: unknown, accessToken: string): { readonly structu
     throw new Error("Fabushi App Agent status response exceeded the bounded result size.");
   }
   return { structuredContent: JSON.parse(text), text };
+}
+
+function safePrivateResult(value: unknown, accessToken: string): unknown {
+  let text = JSON.stringify(value ?? null);
+  if (Buffer.byteLength(text, "utf8") > MAX_PRIVATE_RESULT_BYTES) {
+    throw new Error("FDN private transport response exceeded the bounded result size.");
+  }
+  if (text.includes(accessToken)) text = text.split(accessToken).join("[redacted]");
+  return JSON.parse(text) as unknown;
 }
 
 function isReadOnlyPreflight(value: unknown): boolean {
@@ -379,18 +389,32 @@ export class FabushiOfficialDeviceRegistryService {
     const payload = message.payload;
     if (!requestId || payload == null || typeof payload !== "object" || Array.isArray(payload)) return;
     try {
+      const before = await this.options.getDeviceAgentSession().catch(() => null);
+      if (!isUsableSession(before, this.now()) || sessionKey(before) !== key) {
+        this.disconnect("account revoked before private dispatch");
+        return;
+      }
+      if (this.active?.socket !== socket || this.active.key !== key) return;
       if (this.privateTransportRequest == null) throw new Error("FDN private transport is not enabled on this device.");
+      const route = boundedPrivateRoute(message.networkRoute);
+      if (route == null) throw new Error("FDN private transport requires a current network route.");
       const result = await this.privateTransportRequest({
         payload: payload as Record<string, unknown>,
-        networkRoute: boundedPrivateRoute(message.networkRoute),
+        networkRoute: route,
         timeoutMs: Number(message.timeoutMs),
       });
       const current = await this.options.getDeviceAgentSession().catch(() => null);
-      if (!isUsableSession(current, this.now()) || sessionKey(current) !== key) return;
-      this.send(socket, { type: "fdnPrivateResult", requestId, ok: true, result });
+      if (!isUsableSession(current, this.now()) || sessionKey(current) !== key) {
+        this.disconnect("account changed during private dispatch");
+        return;
+      }
+      if (this.active?.socket !== socket || this.active.key !== key) return;
+      this.send(socket, { type: "fdnPrivateResult", requestId, ok: true, result: safePrivateResult(result, current.accessToken) });
     } catch (error) {
       if (this.active?.socket !== socket || this.active.key !== key) return;
-      this.send(socket, { type: "fdnPrivateResult", requestId, ok: false, error: error instanceof Error ? error.message.slice(0, 1_000) : "FDN private transport failed." });
+      const rawError = error instanceof Error ? error.message : "FDN private transport failed.";
+      const safeError = rawError.split(this.active.session.accessToken).join("[redacted]").slice(0, 1_000);
+      this.send(socket, { type: "fdnPrivateResult", requestId, ok: false, error: safeError });
     }
   }
 

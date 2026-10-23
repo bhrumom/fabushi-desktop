@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/base64"
 	"errors"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -164,5 +165,35 @@ func TestPeerBoundListenValidation(t *testing.T) {
 	}
 	if remotePeerMatches(protocolTestAddr("10.0.0.5:51234"), "100.64.0.30") {
 		t.Fatal("non-Tailnet remote peer unexpectedly matched")
+	}
+}
+
+func TestPrivateTransportSocketUsesCanonicalHostRoot(t *testing.T) {
+	root := filepath.Join(t.TempDir(), "fdn-network")
+	identity := strings.Repeat("a", 40)
+	stateDir := filepath.Join(root, identity, "tsnet")
+	got, err := privateTransportSocketPath(stateDir)
+	if err != nil || got != filepath.Join(root, privateSocketName) {
+		t.Fatalf("private socket path mismatch: %q %v", got, err)
+	}
+	for _, path := range []string{
+		"relative/fdn-network/" + identity + "/tsnet",
+		filepath.Join(root, "not-an-identity", "tsnet"),
+		filepath.Join(root, identity, "other"),
+		filepath.Join(t.TempDir(), "unrelated", identity, "tsnet"),
+	} {
+		if _, err := privateTransportSocketPath(path); err == nil {
+			t.Fatalf("unsafe state dir unexpectedly exposed a private socket: %q", path)
+		}
+	}
+}
+
+func TestPrivateTransportNeverRemovesNonSocketFiles(t *testing.T) {
+	path := filepath.Join(t.TempDir(), privateSocketName)
+	if err := os.WriteFile(path, []byte("leave-me-alone"), 0o600); err != nil { t.Fatal(err) }
+	if err := removeStalePrivateSocket(path); err == nil { t.Fatal("regular file was treated as an owned stale socket") }
+	bytes, err := os.ReadFile(path)
+	if err != nil || string(bytes) != "leave-me-alone" {
+		t.Fatalf("foreign file changed during stale-socket cleanup: %q %v", bytes, err)
 	}
 }
