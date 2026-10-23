@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "c7fa56b4f39289fc96af421fe5c083d29d6be3d4",
+  "target_commit": "017def57c0bf13e02bb14a609edeeb3b313d9bab",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16223,
-    "unread": 16198,
+    "unknown": 16222,
+    "unread": 16197,
     "omitted": 0,
-    "responsibilities_total": 171,
+    "responsibilities_total": 172,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -45940,6 +45940,261 @@
       "license_and_provenance": "Exact Microsoft/GSL include/gsl/narrow@7b1a7912163185e2b2cbecc34ad64a539d566173 MIT-licensed dependency implementation plus focused tests and accepted tdesktop exact-head code-search provenance retained; no GSL exception runtime or product release authority inferred.",
       "reviewer": "primary-session",
       "notes": "Strict153 closes only GSL include/gsl/narrow as a checked-conversion dependency responsibility. No accepted exact-head direct tdesktop caller was found; concrete caller/domain behavior and later GSL headers remain independently open. Counters unknown=16,223 unread=16,198 omitted=0 responsibilities=171. Next strict154 Microsoft/GSL include/gsl/pointers@63e193e92478632520eca7e872ac83c643ffd2c0."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/GSL",
+      "source_blob_sha": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+      "source_kind": "recursive_child_repository_dependency_implementation",
+      "module_id": "tdesktop.thirdparty.gsl.pointers",
+      "responsibility_id": "TDRP-R9-GSL-NONNULL-POINTER-CONTRACT-DEPENDENCY-001",
+      "source_symbols": [
+        "include/gsl/pointers@63e193e92478632520eca7e872ac83c643ffd2c0",
+        "gsl::owner<T*> raw ownership annotation",
+        "gsl::not_null<T>",
+        "gsl::strict_not_null<T>",
+        "make_not_null",
+        "make_strict_not_null",
+        "not_null construction Expects(ptr_ != nullptr)",
+        "deleted nullptr construction/assignment",
+        "deleted pointer arithmetic and indexing",
+        "comparison/hash/stream adapters",
+        "shared_ptr/unique_ptr re-exports"
+      ],
+      "capability_ids": [
+        "CAP-NONNULL-REFERENCE-CONTRACT",
+        "CAP-RAW-OWNERSHIP-ANNOTATION",
+        "CAP-NATIVE-POINTER-SAFETY-REPLACEMENT"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "Microsoft/GSL:include/gsl/pointers@63e193e92478632520eca7e872ac83c643ffd2c0",
+        "Microsoft/GSL:include/gsl/assert@d3e6ccdd53d5a254ed3827cf07711a6e86bb4226",
+        "Microsoft/GSL:tests/notnull_tests.cpp@df8e5a9acf529a9da9e578da413e955900e91e7d",
+        "Microsoft/GSL:tests/strict_notnull_tests.cpp@c1b1f54c97abe1c2cf825e81e713bee2fb8a888f",
+        "Microsoft/GSL:tests/owner_tests.cpp@87c7cec89a5fab4e1ad9ddda56a938766967316d",
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md#TDRP-LANG-03"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-pointer-contracts-complete-read.md",
+      "behavior_contract": "Account for the locked GSL pointer contracts without transplanting source architecture. owner<T*> is an annotation over a raw owning pointer rather than a lifetime manager. not_null accepts pointer/smart-pointer values only when non-null, rejects nullptr construction/assignment, supports dereference/get/conversion/comparison/hash, and deletes pointer arithmetic/indexing to retain single-object semantics. strict_not_null makes construction explicit while preserving the same non-null invariant. In Fabushi, preserve these guarantees through Rust references, Box/Arc/Rc/owned values, NonNull only where raw interop is unavoidable, and Option only where nullability is semantically real, all inside the existing domain owner.",
+      "state_machine": "pointer/value acquisition -> classify ownership/nullability -> if nullable by domain use Option; if required non-null validate/construct -> expose reference/owned handle without arithmetic -> lifecycle remains with actual domain owner -> release/drop by native owner semantics",
+      "side_effects": [
+        "The GSL wrappers own no application state, network, persistence or UI.",
+        "not_null construction fails its contract when the underlying value is null.",
+        "owner<T*> does not allocate/free by itself; it labels ownership intent.",
+        "strict_not_null changes construction explicitness, not domain lifetime.",
+        "Comparison/hash adapters forward to the underlying handle without creating another identity truth."
+      ],
+      "failure_cases": [
+        "Nullable state is silently represented as a required non-null handle or vice versa.",
+        "A null/raw pointer crosses a boundary that source semantics required to be non-null.",
+        "Pointer arithmetic/indexing is introduced where the source contract represented a single object.",
+        "owner<T*> is mistaken for automatic lifetime management.",
+        "A generic PointerRuntime/NotNull service duplicates domain ownership/lifetime truth.",
+        "Widespread tdesktop not_null callsites are incorrectly marked complete by this low-level dependency row.",
+        "Source, gitlink or focused-test drift is ignored."
+      ],
+      "ui_disposition": "No independent UI surface. Many accepted tdesktop UI/controller signatures use not_null, but their interaction/product behavior remains owned and migrated by their respective canonical Fabushi owners.",
+      "non_ui_responsibilities": [
+        "non-null boundary contract",
+        "raw ownership annotation provenance",
+        "explicit strict non-null construction",
+        "single-object no-pointer-arithmetic invariant",
+        "native ownership/nullability replacement"
+      ],
+      "platform_delta": "Rust references and owned smart/value types encode most non-null/ownership constraints statically. Use std::ptr::NonNull or raw pointers only at unavoidable FFI/platform boundaries with explicit safety proof; do not recreate C++ pointer wrapper ergonomics as a product subsystem.",
+      "existing_owner_candidates": [
+        "TDRP-LANG-03 mature low-level dependency replacement (selected)",
+        "existing Rust type/lifetime ownership plus actual domain owners (selected)",
+        "platform/FFI adapter only where raw pointer interop is unavoidable (conditional)",
+        "new PointerRuntime/NotNull service or cross-domain lifetime owner (rejected)"
+      ],
+      "existing_owner": "Rust type/lifetime system and each existing domain owner; platform adapters own only unavoidable raw interop, never product lifetime",
+      "rejected_existing_owners": [
+        "A GSL-specific pointer runtime would preserve source architecture and duplicate Rust safety guarantees.",
+        "A cross-domain lifetime service would steal ownership from Conversation/Window/Settings/Calls/API/UI/media and other real owners.",
+        "not_null is a boundary invariant, not evidence that all its consumers share one product responsibility."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md"
+      ],
+      "fabushi_target_symbols": [
+        "**TDRP-MOD-04 — Test oracle before verified.** 每个 product responsibility 必须绑定 requirement IDs 与一个明确 oracle；涉及排序、状态机、并发、异步、recovery 的责任必须列 invariant 和 event-sequence cases。`eventually visible`、单一 marker、单 screenshot 或单 mock response 不能单独证明等价。",
+        "**G-TRACEABILITY:** 每个 applicable requirement/responsibility 绑定 risk、oracle/invariants、test IDs、current-head evidence 与 acceptance verdict；0 orphan requirement、0 无依据 test、0 verified-without-evidence。"
+      ],
+      "target_language": "Rust native ownership/reference/nullability types inside existing owners",
+      "language_rationale": "The source is a generic C++ pointer contract. Rust references, owned values and smart pointers encode non-null and ownership invariants directly; raw/NonNull is reserved for narrow interop seams.",
+      "command_event_contracts": [
+        "required reference input -> reject/avoid null representation before domain action",
+        "owned value -> transfer/store with native owner semantics",
+        "nullable domain input -> explicit Option rather than sentinel raw pointer",
+        "raw interop -> validate non-null and fence lifetime at adapter boundary"
+      ],
+      "state_owner": "Actual product/domain owner; no independent pointer-contract state.",
+      "lifecycle_owner": "Rust owner/borrower and the existing domain lifecycle; platform adapter only for raw interop lifetime fencing.",
+      "persistence_and_restart": "No pointer-wrapper persistence. Persist stable domain identity/data, reconstruct native owners/references after restart.",
+      "concurrency_and_cancellation": "Pointer wrappers provide no concurrency model. Arc/ownership/thread-safety choices remain with each domain owner and must not be inferred from source pointer spelling.",
+      "security_boundary": "Fail closed on required non-null/raw interop boundaries; never manufacture lifetimes, retain dangling handles, or equate owner<T*> annotation with memory safety. Avoid unsafe raw pointers unless the platform seam requires them and their lifetime is separately proven.",
+      "network_service_dependencies": [
+        "GitHub Actions for exact-head revalidation"
+      ],
+      "service_owner": "No shipping service.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-replaced-mapped-open",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required after publication.",
+        "Widespread tdesktop consumers remain separate product/domain responsibilities.",
+        "Raw-platform/FFI lifetime proof remains per actual adapter, not this generic row.",
+        "Source closure and independent release acceptance remain open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "strict154 include/gsl/pointers@63e193e92478632520eca7e872ac83c643ffd2c0 fully read: 348 line slots / 11854 bytes",
+        "tests/notnull_tests.cpp@df8e5a9acf529a9da9e578da413e955900e91e7d fully read: 649 line slots / 18407 bytes",
+        "tests/strict_notnull_tests.cpp@c1b1f54c97abe1c2cf825e81e713bee2fb8a888f fully read: 305 line slots / 7437 bytes",
+        "tests/owner_tests.cpp@87c7cec89a5fab4e1ad9ddda56a938766967316d fully read: 44 line slots / 1285 bytes",
+        "accepted tdesktop exact-head code search shows widespread not_null use across Window, Settings, Calls, API, media, UI and other product domains; those consumers remain independently open",
+        "GSL gitlink 87f9d768866548b5b86e72be66c60c5abd4d9b37; child tree 6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41",
+        "Parent TDRP 40040846965 61/61 success; authority 12538848834 sha256:d2cabc8af56a49db5a2ab4831fd49dd46adb140e98dec476280d630b59ffe17a; closure 12538949061 sha256:7312bc2ea22a4960f7c61c31561493cbad01d921cab06592e1f4698f594ac0cf; reachability 12539790509 sha256:7679cfaf262f793bf0aa1234a1076abec3eae8a10f4fde60a9fc7ad993486128; Rust 40040846998 6/6 success; artifact 12539735416 sha256:b05f4beb2bcb70f8b6c30f121f2ad9052de4e4a4f5437353d4de68a78d64b578."
+      ],
+      "target_commit": "017def57c0bf13e02bb14a609edeeb3b313d9bab",
+      "workflow_run": 40040846965,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12538848834,
+      "artifact_digest": "sha256:d2cabc8af56a49db5a2ab4831fd49dd46adb140e98dec476280d630b59ffe17a",
+      "composition_root": "Fabushi native Rust ownership/lifetime model through each existing product/domain owner",
+      "composition_slot": "non-null/ownership boundary contract",
+      "capability_component": "Native ownership and required-reference invariant",
+      "variation_axes": [
+        "owned vs borrowed",
+        "required non-null vs semantically nullable",
+        "raw pointer vs smart pointer/value",
+        "implicit not_null vs explicit strict_not_null",
+        "native Rust vs unavoidable platform raw interop"
+      ],
+      "shared_owner_contracts": [
+        "TDRP-LANG-03",
+        "Rust ownership/borrowing",
+        "actual domain lifecycle owners",
+        "platform adapters only for unavoidable raw interop",
+        "exact-head TDRP evidence"
+      ],
+      "duplicate_root_check": "No GSL PointerRuntime, NotNull service, cross-domain lifetime owner, second identity/state root or pointer-based product subsystem.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Ownership/nullability/reference boundary only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Native Rust type/lifetime contracts inside existing owners",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Persist domain state/identity, not process pointer values. Restart reconstructs native owners/borrows; any source/test/caller drift requires fresh reconciliation.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-GSL-NONNULL-POINTER-CONTRACT-DEPENDENCY-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GSL-POINTERS-EXACT-SOURCE-001",
+        "ORA-TDRP-GSL-POINTERS-NONNULL-001",
+        "ORA-TDRP-GSL-POINTERS-OWNERSHIP-ANNOTATION-001",
+        "ORA-TDRP-GSL-POINTERS-NATIVE-OWNERSHIP-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GSL-POINTERS-NO-NULL-REQUIRED-001",
+        "INV-TDRP-GSL-POINTERS-NO-ARITHMETIC-001",
+        "INV-TDRP-GSL-POINTERS-NO-PARALLEL-LIFETIME-OWNER-001",
+        "INV-TDRP-GSL-POINTERS-NO-CONSUMER-ABSORPTION-001",
+        "INV-TDRP-GSL-POINTERS-EXACT-PROVENANCE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GSL-POINTERS-DEPENDENCY-REPLACEMENT-001",
+        "CONTRACT-TDRP-GSL-POINTERS-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GSL-POINTERS-SOURCE-DRIFT-001",
+        "FAULT-TDRP-GSL-POINTERS-NULL-BOUNDARY-001",
+        "FAULT-TDRP-GSL-POINTERS-DANGLING-LIFETIME-001",
+        "FAULT-TDRP-GSL-POINTERS-DUPLICATE-OWNER-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-GSL-POINTERS-RAW-INTEROP-LIFETIME-001",
+        "SEC-TDRP-GSL-POINTERS-NONNULL-FAIL-CLOSED-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-GSL-POINTERS-NO-NULL-REQUIRED-001",
+        "REG-TDRP-GSL-POINTERS-NO-PARALLEL-RUNTIME-001",
+        "REG-TDRP-GSL-POINTERS-NO-CONSUMER-CLOSURE-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-BEHAVIOR",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-SECURITY-PRIVACY"
+      ],
+      "test_fixture_ids": [
+        "locked GSL pointers header + notnull/strict_notnull/owner tests + accepted exact-head consumer search + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact Microsoft/GSL include/gsl/pointers@63e193e92478632520eca7e872ac83c643ffd2c0 MIT-licensed dependency implementation, focused tests and accepted tdesktop exact-head usage provenance retained; no GSL pointer runtime or consumer/domain release authority inferred.",
+      "reviewer": "primary-session",
+      "notes": "Strict154 closes only GSL include/gsl/pointers as a low-level ownership/non-null contract dependency. Widespread tdesktop consumers remain independently open. Counters unknown=16,222 unread=16,197 omitted=0 responsibilities=172. Next strict155 Microsoft/GSL include/gsl/span@d2ef9f7d85ca6e25bf69b001e9308b3d069c5d16."
     }
   ]
 }
