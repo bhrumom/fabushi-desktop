@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "3d136f7703caaa6c9943c292767262f7a90a386d",
+  "target_commit": "b7341fa21a3c7af154facf407b36cb146ff312cb",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16252,
-    "unread": 16227,
+    "unknown": 16251,
+    "unread": 16226,
     "omitted": 0,
-    "responsibilities_total": 142,
+    "responsibilities_total": 143,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -38373,6 +38373,257 @@
       "license_and_provenance": "Exact upstream AppStream file retained as packaging/storefront provenance. Telegram identity, marketing/security/privacy claims, colors, screenshots, OARS values, GPL declaration, D-Bus and tg/ton handlers are not promoted to Fabushi product authority.",
       "reviewer": null,
       "notes": "Strict124 closes only lib/xdg/org.telegram.desktop.metainfo.xml semantic read/decomposition. Counters unknown=16,252 unread=16,227 omitted=0 responsibilities=142. AppStream/Linux installed acceptance remains open. Next strict125 lib/xdg/org.telegram.desktop.service@8935a4fa834df4e12cbf4f5f466758a14d2c2357 (84 bytes). Fresh child exact-head TDRP/Rust Actions required."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "lib/xdg/org.telegram.desktop.service",
+      "source_blob_sha": "8935a4fa834df4e12cbf4f5f466758a14d2c2357",
+      "source_kind": "xdg_dbus_service_packaging_metadata",
+      "module_id": "tdesktop.root.lib.xdg.dbus_service",
+      "responsibility_id": "TDRP-R9-UPSTREAM-XDG-DBUS-SERVICE-PROVENANCE-001",
+      "source_symbols": [
+        "[D-BUS Service]",
+        "Name=org.telegram.desktop",
+        "Exec=@CMAKE_INSTALL_FULL_BINDIR@/Telegram"
+      ],
+      "capability_ids": [
+        "CAP-LINUX-DBUS-ACTIVATION",
+        "CAP-DESKTOP-PACKAGE-IDENTITY",
+        "CAP-DESKTOP-SINGLE-INSTANCE-ACTIVATION",
+        "CAP-RELEASE-PROVENANCE"
+      ],
+      "dependency_ids": [
+        "desktop/package.json@3d500622ce9b26e3452d98d0c4a7e7dcc019ac84",
+        "source/electron-main/main.ts@b8eeed322ec07e5c8f67fa367cd2f58ac212b4f0",
+        ".github/workflows/release-macos-main.yml@b0a3a4d5503e6104c083f85e31475523a2b30643"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-lib-xdg-org-telegram-desktop-service-complete-read.md",
+      "behavior_contract": "Preserve the source-neutral Linux session-bus activation responsibility through existing Fabushi package/process owners: an installed platform service identity may activate the canonical Fabushi executable/process, but Telegram service names/executable names and CMake install spelling are provenance only. Manifest/process code is not installed D-Bus E2E evidence.",
+      "state_machine": "Linux session-bus activation request -> installed service registration -> canonical Fabushi executable -> single-instance arbitration -> canonical ProductShell focus/start; absent generated service/install proof remains mapped-open",
+      "side_effects": [
+        "future Linux package metadata could register a session D-Bus activation service",
+        "activated executable must converge on the canonical single Fabushi process/window",
+        "publication changes only migration evidence/accounting"
+      ],
+      "failure_cases": [
+        "org.telegram.desktop is copied",
+        "Telegram executable/path spelling is copied",
+        "a second D-Bus runtime or process/window root is introduced",
+        "package identity is treated as installed D-Bus evidence",
+        "activation can fork a second canonical process",
+        "stale lease/evidence is published"
+      ],
+      "ui_disposition": "System activation only; no Telegram UI or new Fabushi surface.",
+      "non_ui_responsibilities": [
+        "session D-Bus service identity",
+        "install-time executable binding",
+        "canonical process activation",
+        "single-instance convergence",
+        "Linux package evidence boundary"
+      ],
+      "platform_delta": "Telegram installs a static D-Bus service definition wired through CMake. Current Fabushi exact head has electron-builder Linux package declarations and Electron single-instance lifecycle but no production D-Bus service file/implementation or Linux installed activation evidence.",
+      "existing_owner_candidates": [
+        "desktop/package.json Linux/package identity (selected)",
+        "source/electron-main/main.ts process/single-instance lifecycle (selected)",
+        ".github/workflows/release-macos-main.yml exact-source release evidence boundary (selected evidence owner)",
+        "new Telegram/D-Bus runtime (rejected)",
+        "second package/process owner (rejected)"
+      ],
+      "existing_owner": "desktop/package.json package identity + Electron main canonical process lifecycle; existing release evidence governs proof boundary",
+      "rejected_existing_owners": [
+        "Telegram D-Bus identity is source-specific",
+        "new D-Bus runtime lacks owner-absence justification because this file is declarative activation metadata",
+        "second package root duplicates desktop/package.json",
+        "second process/window owner violates canonical composition",
+        "macOS release evidence cannot be relabeled as Linux D-Bus acceptance"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "desktop/package.json",
+        "source/electron-main/main.ts"
+      ],
+      "fabushi_target_symbols": [
+        "\"syncDesktopName\": true",
+        "const isPrimaryInstance = !deps.app.isPackaged || deps.app.requestSingleInstanceLock();",
+        "deps.app.on(\"second-instance\"",
+        "deps.app.on(\"before-quit\""
+      ],
+      "target_language": "Existing electron-builder JSON packaging metadata + Electron/TypeScript process lifecycle",
+      "language_rationale": "The upstream entry is declarative platform service metadata; applicable behavior belongs to the existing package/process owners rather than a copied service runtime.",
+      "command_event_contracts": [
+        "session bus activation -> installed Fabushi service definition -> canonical executable",
+        "executable start -> requestSingleInstanceLock -> canonical process/window",
+        "duplicate activation -> existing second-instance/focus lifecycle",
+        "installed Linux claim -> exact package/service-location/activation evidence required"
+      ],
+      "state_owner": "desktop/package.json owns package identity; Electron main owns process/single-instance state. No D-Bus-specific application state owner exists.",
+      "lifecycle_owner": "Existing Electron process/window lifecycle; no second D-Bus lifecycle.",
+      "persistence_and_restart": "Service registration is package/install metadata. Runtime restart converges through the existing single-instance lifecycle. Durable acceptance requires exact installed Linux service metadata and activation evidence.",
+      "concurrency_and_cancellation": "Single-instance arbitration must prevent D-Bus activation from forking another canonical app process. In-progress/cancelled Actions never pass.",
+      "security_boundary": "Do not register Telegram service identity or executable. Installed activation metadata must launch only the intended Fabushi executable and cannot substitute for application authorization.",
+      "network_service_dependencies": [
+        "GitHub source/Actions evidence only; D-Bus session activation is local platform integration"
+      ],
+      "service_owner": "Existing desktop packaging/platform lifecycle owners; no new network/service owner",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "xdg-dbus-service-responsibilities-mapped-open",
+      "blockers": [
+        "No current-head production D-Bus service definition exists in Fabushi.",
+        "No exact-head Linux package workflow proves installed D-Bus service path/name/executable binding.",
+        "No real Linux D-Bus activation E2E proves canonical process launch/focus.",
+        "Recursive source closure remains open.",
+        "Independent release acceptance remains open."
+      ],
+      "production_entrypoints": [
+        "desktop/package.json::build.linux",
+        "source/electron-main/main.ts::startElectronMain"
+      ],
+      "production_evidence": [
+        "path:desktop/package.json",
+        "path:source/electron-main/main.ts"
+      ],
+      "test_evidence": [
+        "Exact upstream 84-byte D-Bus service blob fully read at accepted upstream commit/tree.",
+        "Exact current package and Electron process owner blobs reread at parent b7341fa21a3c7af154facf407b36cb146ff312cb.",
+        "Full current tree contains no production D-Bus service file/implementation path or Linux release acceptance workflow.",
+        "Electron main uses requestSingleInstanceLock and second-instance/before-quit lifecycle; this is canonical process convergence but not installed D-Bus evidence.",
+        "Parent TDRP 39964710155 completed 61/61 success; authority 12506153281 sha256:fb810e6105495b911ede4bffae73c7e63a66b2a0ec7993517960e371f2981084; closure 12506866809 sha256:bf82ea14eec82770e85921668f0b01bf1c2f399636a103c01773e7734b869dcc; reachability 12505474662 sha256:98c933ef15d271c2705bb2cfd90b33dc8f3aacbe22f89d7e96a4a5fc783e9c0c.",
+        "Parent Rust 39964710133 completed 6/6 success; artifact 12506092327 sha256:d95cd53f9db05b42362b845cf1a83a5ebd90bb8d6fdeb63bd4f247114adfc88f.",
+        "Pre-publication PR/ref/tree, live main 7394f6dc7687f9b986ee5589d40aa680ce23b90a/fbeb0bb32d944d0c1053880c471fe5c52279f052 and upstream a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5 remained stable."
+      ],
+      "target_commit": "b7341fa21a3c7af154facf407b36cb146ff312cb",
+      "workflow_run": 39964710155,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12506153281,
+      "artifact_digest": "sha256:fb810e6105495b911ede4bffae73c7e63a66b2a0ec7993517960e371f2981084",
+      "composition_root": "Fabushi canonical desktop packaging and Electron process/window composition",
+      "composition_slot": "Linux D-Bus session activation packaging integration",
+      "capability_component": "session service registration + executable activation + single-process convergence",
+      "variation_axes": [
+        "Telegram service identity versus Fabushi identity",
+        "generated/install metadata versus runtime process lifecycle",
+        "declarative package configuration versus installed activation evidence"
+      ],
+      "shared_owner_contracts": [
+        "desktop/package.json",
+        "Electron main single-instance lifecycle",
+        "exact-head release/evidence governance"
+      ],
+      "duplicate_root_check": "No Telegram D-Bus runtime, second package manifest, process root, window root or release authority is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "System desktop-shell integration",
+      "primary_navigation_target": "Existing canonical Fabushi ProductShell",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "OS session-bus activation only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing canonical desktop process/window surface",
+      "route_contract": "OS D-Bus activation -> installed Fabushi executable -> canonical single process -> ProductShell",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Existing ProductShell accessibility remains authoritative.",
+      "keyboard_contract": "Existing application/window keyboard contracts remain canonical.",
+      "state_continuity_contract": "Repeated activation must converge on the canonical process/window; package/upstream drift requires fresh evidence.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi canonical design system",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-UPSTREAM-XDG-DBUS-SERVICE-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-XDG-DBUS-SERVICE-EXACT-SOURCE-001",
+        "ORA-TDRP-XDG-DBUS-SERVICE-PACKAGING-OWNER-001",
+        "ORA-TDRP-XDG-DBUS-SERVICE-PROCESS-OWNER-001",
+        "ORA-TDRP-XDG-DBUS-SERVICE-EVIDENCE-BOUNDARY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-XDG-DBUS-SERVICE-NO-TELEGRAM-NAME-001",
+        "INV-TDRP-XDG-DBUS-SERVICE-NO-TELEGRAM-EXEC-001",
+        "INV-TDRP-XDG-DBUS-SERVICE-NO-SECOND-RUNTIME-001",
+        "INV-TDRP-XDG-DBUS-SERVICE-NO-PACKAGE-DECLARATION-AS-E2E-001",
+        "INV-TDRP-XDG-DBUS-SERVICE-NO-SECOND-PACKAGING-OWNER-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-XDG-DBUS-SERVICE-EXACT-SOURCE-001",
+        "CONTRACT-TDRP-XDG-DBUS-SERVICE-CANONICAL-OWNERS-001"
+      ],
+      "integration_case_ids": [
+        "INTEGRATION-TDRP-XDG-DBUS-SERVICE-INSTALLED-ACTIVATION-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-XDG-DBUS-SERVICE-PACKAGE-DRIFT-001",
+        "TEMP-TDRP-XDG-DBUS-SERVICE-UPSTREAM-DRIFT-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-XDG-DBUS-SERVICE-ACTIVATION-FAILURE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-XDG-DBUS-SERVICE-NO-TELEGRAM-IDENTITY-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-XDG-DBUS-SERVICE-NO-SECOND-OWNER-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-MODULE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "locked D-Bus service blob + exact current package/process owners + parent exact-head Actions"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [
+        "TDRP 39964710155 61/61 success",
+        "Rust 39964710133 6/6 success"
+      ],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact upstream D-Bus service file retained as Linux packaging/platform provenance. Telegram service identity, executable and CMake install spelling are not promoted to Fabushi shipping authority.",
+      "reviewer": null,
+      "notes": "Strict125 closes only lib/xdg/org.telegram.desktop.service semantic read/decomposition. Counters unknown=16,251 unread=16,226 omitted=0 responsibilities=143. Linux installed D-Bus activation acceptance remains open. Next strict126 LICENSE@d70f4d6a87eece19c4ec184de36a8aba72b4a639 (35,850 bytes). Fresh child exact-head TDRP/Rust Actions required."
     }
   ]
 }

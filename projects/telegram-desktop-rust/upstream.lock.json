@@ -361,10 +361,10 @@
   "coverage": {
     "root_source_entries_total": 6893,
     "recursive_source_entries_total": 16379,
-    "unknown_minimum": 16252,
-    "unread_minimum": 16227,
+    "unknown_minimum": 16251,
+    "unread_minimum": 16226,
     "omitted_known": 0,
-    "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 3d136f7703caaa6c9943c292767262f7a90a386d/tree 5eef1e22e01fb4bbae4951081de759aa469aea84 passed TDRP 39961896876 61/61 (authority 12504409984 sha256:f6d3682a6922b59c8277b76a9605532ec3984900aca7306ac37d81a78efd4368; closure 12504769659 sha256:2f3f4af69d1a20f8ae3a6f5a1a27ac97b05444b5dc6430fd0febb4baac12d30f; reachability 12505835838 sha256:f5dd5c8959cc2a042a53a8c94430f2167033664166c7b1dbd08dca0a41f5a42e) and Rust 39961896845 6/6 (artifact 12505247386 sha256:8deadb2c32d85289e8b2c0f0ee49bfc9c05cb6b8388810c4b3633f9ccffe5489). Strict124 lib/xdg/org.telegram.desktop.metainfo.xml@c8b26f262bfdfa93f97b22f9aba4131073504223 maps package/catalog identity, release truth, storefront/brand, requirement/rating/provides responsibilities to existing Fabushi package/release/design/acceptance authorities. Current exact tree has no shipping AppStream/metainfo file or Linux release acceptance; Telegram brand/claims/OARS/DBus/tg/ton metadata remain provenance only. Counters unknown=16,252 unread=16,227 omitted=0 responsibilities=142. Next strict125 lib/xdg/org.telegram.desktop.service@8935a4fa834df4e12cbf4f5f466758a14d2c2357. Fresh child exact-head Actions required."
+    "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent b7341fa21a3c7af154facf407b36cb146ff312cb/tree d8b7417c38c2871d5395de135bf50d93f74e6a15 passed TDRP 39964710155 61/61 (authority 12506153281 sha256:fb810e6105495b911ede4bffae73c7e63a66b2a0ec7993517960e371f2981084; closure 12506866809 sha256:bf82ea14eec82770e85921668f0b01bf1c2f399636a103c01773e7734b869dcc; reachability 12505474662 sha256:98c933ef15d271c2705bb2cfd90b33dc8f3aacbe22f89d7e96a4a5fc783e9c0c) and Rust 39964710133 6/6 (artifact 12506092327 sha256:d95cd53f9db05b42362b845cf1a83a5ebd90bb8d6fdeb63bd4f247114adfc88f). Strict125 lib/xdg/org.telegram.desktop.service@8935a4fa834df4e12cbf4f5f466758a14d2c2357 maps session D-Bus activation/executable binding to existing package/process lifecycle owners while keeping Telegram identity and CMake spelling provenance-only. Current exact tree has no production D-Bus service definition or Linux installed activation acceptance. Counters unknown=16,251 unread=16,226 omitted=0 responsibilities=143. Next strict126 LICENSE@d70f4d6a87eece19c4ec184de36a8aba72b4a639. Fresh child exact-head Actions required."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -378,7 +378,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Strict124 maps AppStream/storefront metadata responsibilities to existing Fabushi package/release/brand/acceptance owners only. Source closure remains open with unknown=16,252 unread=16,227 omitted=0. No shipping AppStream metadata, Linux installed acceptance, Fabushi OARS authority, or evidence supporting Telegram marketing/security/privacy claims exists; those remain fail-closed. Fresh child exact-head Actions and independent release acceptance remain required."
+    "note": "Strict125 maps Linux D-Bus session activation/executable-binding responsibility to existing Fabushi package/process owners only. Source closure remains open with unknown=16,251 unread=16,226 omitted=0. No current production D-Bus service definition or exact-head Linux installed activation evidence exists; Telegram service identity/executable remain provenance-only. Fresh child exact-head Actions and independent release acceptance remain required."
   },
   "baseline_identity_evidence": {
     "status": "pending-current-head-revalidation",
@@ -1827,5 +1827,5 @@
     "baseline_identity_accepted": false,
     "source_closure_ready": false
   },
-  "target_commit": "3d136f7703caaa6c9943c292767262f7a90a386d"
+  "target_commit": "b7341fa21a3c7af154facf407b36cb146ff312cb"
 }
