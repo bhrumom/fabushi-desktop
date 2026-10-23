@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16271,
-    "unread_minimum": 16246,
+    "unknown_minimum": 16270,
+    "unread_minimum": 16245,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -122,7 +122,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 68e36e8baafc9d0c7fa18ae70a72ff79d5bca96b/tree 6330a69c8430ba02f992c09465fd56f2027b5b26 passed TDRP 39911345876 at 61/61 and Rust 39911345660 at 6/6. Strict105 LEGAL@09c9e383db122fe0694e73c48d6224676afe60f6 is retained under existing documentation_or_license/provenance owners; LICENSE@d70f4d6a87eece19c4ec184de36a8aba72b4a639 remains independently open as strict106. Counters unknown=16,271 unread=16,246 omitted=0 responsibilities=123. Fresh child exact-head Actions required.",
+  "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 95730ffbd2bc4d66b348f187c80625ac2fa64c85/tree 0634ccee3a7bed4e4be265f81abb9eb750e5b450 passed TDRP 39914687531 at 61/61 and Rust 39914687676 at 6/6. Strict106 LICENSE@d70f4d6a87eece19c4ec184de36a8aba72b4a639 is retained under the existing documentation_or_license/legal provenance owner with an unused unique target key. Counters unknown=16,270 unread=16,245 omitted=0 responsibilities=124. Next strict root index 107 README.md@15a6194f73ae6084a2ab25d14005dc10262cdfb3. Fresh child exact-head Actions required.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
