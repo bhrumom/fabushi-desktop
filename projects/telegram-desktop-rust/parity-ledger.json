@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "6b5c69f923277607ce56831ecdbfeb9c65b2ff00",
+  "target_commit": "76b6a190af7a9f2771596cc03cf9b5d5d1130489",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16242,
-    "unread": 16217,
+    "unknown": 16241,
+    "unread": 16216,
     "omitted": 0,
-    "responsibilities_total": 152,
+    "responsibilities_total": 153,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -41290,6 +41290,268 @@
       "reviewer": null,
       "license_and_provenance": "Exact repository feedback-hook provenance read from locked telegramdesktop/tdesktop live-dev blobs; no Telegram C++/Claude/Git-hook runtime or policy copied.",
       "notes": "Strict134 closes only tools/rules/hook.py semantic read/decomposition. Durable-rule-derived changed-scope feedback maps to existing AGENTS repository edit-policy governance; Telegram C++ helper mappings, comment budgets, harness exemptions and Claude/Git hook mechanics remain provenance. Malformed payload and unchecked staged-diff acquisition are explicit local fail-open limits and cannot be acceptance. Counters unknown=16,242 unread=16,217 omitted=0 responsibilities=152. Next strict135 tools/rules/test_hook.py@dce99f3507e4ec9f71c8bbd5360e9dde9b62d45f.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "tools/rules/test_hook.py",
+      "source_blob_sha": "dce99f3507e4ec9f71c8bbd5360e9dde9b62d45f",
+      "source_kind": "repository_feedback_adapter_qualification_test_provenance",
+      "module_id": "tdesktop.tools.rules.test_hook",
+      "responsibility_id": "TDRP-R9-RULE-HOOK-QUALIFICATION-001",
+      "source_symbols": [
+        "edit",
+        "write",
+        "run",
+        "EditHook",
+        "Repository",
+        "StagedHook",
+        "test_malformed_payload_passes",
+        "test_banned_function_fails_with_replacement",
+        "test_moved_block_is_not_new",
+        "test_multi_edit_shape_is_read",
+        "test_third_plain_line_fails",
+        "test_moved_comment_is_free",
+        "test_banned_call_is_named_by_line",
+        "unittest.main"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-EDIT-POLICY-FEEDBACK",
+        "CAP-QUALITY-POSITIVE-NEGATIVE-CONTROLS",
+        "CAP-TEST-RECOGNITION-LIMITS",
+        "CAP-EXACT-HEAD-QUALITY-EVIDENCE"
+      ],
+      "dependency_ids": [
+        "tools/rules/hook.py@287b36c948566659970651226c92f7b8b056b434",
+        ".clang-tidy@5610bd13664ca77549993def241eb3edaffeff7a",
+        "AGENTS.md@da3e37258c74963970ff5cfc5d54671a37558b97",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md@4d2c88e118ab489d3d0339d2a61371a7ea74e72e"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-tools-rules-test-hook-complete-read.md",
+      "behavior_contract": "Qualify the repository feedback hook with paired positive/negative edit and staged-diff controls, while preserving recognition limits and separating test mechanics from durable repository-quality ownership. Fabushi maps the source-neutral oracle/negative-control boundary to its existing quality/test-evidence lifecycle; Telegram Python/temp-Git/C++ samples are provenance only and cannot become acceptance.",
+      "state_machine": "test case -> construct edit/write payload or temporary staged Git state -> invoke actual upstream hook subprocess -> assert exact local return/diagnostic semantics for the encoded case -> record ignored/fail-open behaviors as recognition limits -> any Fabushi adoption must re-express applicable oracles in native exact-head automation -> release/migration acceptance remains separate",
+      "side_effects": [
+        "Creates temporary local Git repositories and files only inside the upstream test harness.",
+        "Stages/commits temporary fixture content and invokes hook.py as a subprocess.",
+        "Captures return code and stderr for assertions.",
+        "Creates no shipping product state and supplies no release authority."
+      ],
+      "failure_cases": [
+        "Upstream test mechanics are copied as a second Fabushi Python/Git-fixture test owner.",
+        "A passing malformed-payload fixture is misread as policy compliance instead of a fail-open recognition limit.",
+        "Ignored non-source or harness-exempt cases are generalized beyond the adopted rule scope.",
+        "Missing negative controls for failed staged-diff/prior-file acquisition or stale index state are mislabeled as covered.",
+        "Telegram C++ helper/comment literals become Fabushi policy without independent adoption.",
+        "A clean upstream unit suite replaces exact-head Fabushi GitHub Actions evidence.",
+        "Absence of a current Fabushi feedback adapter is mislabeled as passing qualification."
+      ],
+      "ui_disposition": "Not applicable; repository quality/test qualification provenance only.",
+      "non_ui_responsibilities": [
+        "paired positive and negative controls for adopted repository feedback rules",
+        "fixture isolation and deterministic invocation",
+        "diagnostic/line-attribution assertions",
+        "recognition-limit and fail-open classification",
+        "test-mechanics versus durable-owner separation",
+        "exact-head automated evidence boundary"
+      ],
+      "platform_delta": "Fabushi does not retain Telegram's Python unittest/temp-Git harness as product architecture. Applicable qualification intent maps to existing source-neutral Test Strategy and AGENTS governance; any future adapter uses the native Fabushi test stack and exact-head GitHub Actions.",
+      "existing_owner_candidates": [
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md repository-quality qualification",
+        "AGENTS.md#Repository edit-policy feedback adapter governance",
+        "GitHub Actions exact-head repository/source-authority validators"
+      ],
+      "existing_owner": "Fabushi repository quality/test-evidence lifecycle + AGENTS feedback-adapter governance",
+      "rejected_existing_owners": [
+        "A Telegram hook-test owner would duplicate existing quality/test-evidence governance.",
+        "A Python unittest owner is test mechanics, not a product or repository-quality responsibility.",
+        "A temporary Git fixture owner is unnecessary; fixtures remain local to the chosen native test technology.",
+        "A provider-specific payload-test owner would make Claude/editor integration canonical."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "AGENTS.md"
+      ],
+      "fabushi_target_symbols": [
+        "repository-quality qualification positive/negative controls",
+        "Repository edit-policy feedback adapter governance"
+      ],
+      "target_language": "Markdown quality/test governance + native Fabushi test technology if a feedback adapter is adopted",
+      "language_rationale": "The source is a Python qualification harness for a C++/editor feedback adapter. Fabushi preserves source-neutral oracles, negative controls and recognition limits in existing quality governance rather than retaining Python/C++ test mechanics.",
+      "command_event_contracts": [
+        "adopted feedback rule -> paired passing and failing control",
+        "changed-scope/parser logic -> false-positive and true-positive controls",
+        "staged acquisition -> explicit success/error/staleness controls before clean verdict",
+        "ignored/exempt class -> bounded scope assertion, never repository-wide pass",
+        "malformed/undecidable input -> recognition-limit evidence, not acceptance",
+        "mapping commit -> exact-head GitHub Actions revalidation"
+      ],
+      "state_owner": "Existing repository quality/test-evidence governance; no product state owner.",
+      "lifecycle_owner": "Fabushi Test Strategy, AGENTS durable policy and exact-head GitHub Actions.",
+      "persistence_and_restart": "No product persistence. Test fixtures are disposable; durable evidence is the locked source blob, dossier/ledger mapping and exact-head workflow artifacts.",
+      "concurrency_and_cancellation": "Temporary fixtures isolate individual cases, but upstream coverage does not establish index/head race or stale-acquisition behavior. Any Fabushi adapter test must fence the exact subject and treat cancellation/partial acquisition as non-passing.",
+      "security_boundary": "Provider payloads, local Git state and test fixture content are untrusted/non-authoritative. Tests may characterize behavior but cannot weaken durable policy, mutate unrelated source, authorize release, or convert parser/acquisition failure into a pass.",
+      "network_service_dependencies": [
+        "GitHub Actions for authoritative exact-head executable verification"
+      ],
+      "service_owner": "Fabushi repository quality/evidence lifecycle",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "repository-feedback-qualification-mapped-open",
+      "blockers": [
+        "Current Fabushi exact head has no executable local feedback adapter to qualify.",
+        "Upstream suite intentionally asserts malformed payload success and does not cover failed staged-diff/prior-file acquisition or stale-index races.",
+        "Fresh child exact-head TDRP/Rust Actions must validate strict135 after publication.",
+        "Recursive source closure remains open.",
+        "Independent release acceptance remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "path:AGENTS.md"
+      ],
+      "test_evidence": [
+        "strict135 tools/rules/test_hook.py@dce99f3507e4ec9f71c8bbd5360e9dde9b62d45f fully read",
+        "34 upstream unittest methods identified: 21 EditHook + 13 StagedHook controls",
+        "actual sibling hook.py subprocess invocation and temporary Git staged-fixture construction verified from source",
+        "paired comment/banned-call/moved-text/license/multi-edit/staged-budget/line-attribution controls verified from source",
+        "malformed-payload success, non-source ignore and harness-comment exemption recorded as bounded recognition limits rather than acceptance",
+        "TEST_STRATEGY.md@4d2c88e118ab489d3d0339d2a61371a7ea74e72e states upstream Python unittest/temp-Git/literal source samples are test mechanics and requires source-neutral oracles/negative controls in exact-head automation",
+        "AGENTS.md@da3e37258c74963970ff5cfc5d54671a37558b97 lines 114-120 own durable-rule/scoped/actionable/provider-neutral/exact-head acceptance boundaries",
+        "TDRP 39994356198 61/61; authority 12519795615 sha256:e39deebbd665332cd536e2b649746982a9a462463bb088f229b2e37f1941b200; closure 12519716477 sha256:2bb650acd5f910e4e50465d627680ae475637f45eb2b9c626739b1d657d18c1b; reachability 12520070082 sha256:7dfad8dc37006383b22bd8e32470ee5cb216b3594febd7764ba4b88841b79550",
+        "Rust 39994356236 6/6; artifact 12519232433 sha256:ef409c07f3756b57f7d8a4e61b0994be2612c96b87455acc699baa7f0a10d8c5"
+      ],
+      "target_commit": "76b6a190af7a9f2771596cc03cf9b5d5d1130489",
+      "workflow_run": 39994356198,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12519795615,
+      "artifact_digest": "sha256:e39deebbd665332cd536e2b649746982a9a462463bb088f229b2e37f1941b200",
+      "composition_root": "Fabushi repository quality/test-evidence lifecycle",
+      "composition_slot": "repository feedback-adapter qualification",
+      "capability_component": "Source-neutral feedback-rule oracles and negative controls",
+      "variation_axes": [
+        "edit/write vs staged diff",
+        "positive vs negative rule controls",
+        "new vs moved/replaced text",
+        "applicable source vs ignored/exempt class",
+        "diagnosed violation vs malformed/failed/undecidable acquisition",
+        "upstream test characterization vs Fabushi exact-head acceptance"
+      ],
+      "shared_owner_contracts": [
+        "Repository edit-policy feedback adapter governance",
+        "Repository quality qualification positive/negative controls",
+        "GitHub Actions exact-head evidence governance"
+      ],
+      "duplicate_root_check": "No Telegram hook-test runtime, Python test owner, temporary-Git owner, C++ comment-policy owner, provider-specific quality owner or second repository-quality root introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository quality/tooling only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Repository quality/tooling",
+      "route_contract": "No shipping route",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Qualification remains bound to the locked source/test subject and exact repository head; malformed/ignored/failed/stale acquisition and missing adapter coverage cannot become passing evidence.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-RULE-HOOK-QUALIFICATION-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-RULE-HOOK-TEST-SOURCE-001",
+        "ORA-TDRP-RULE-HOOK-EDIT-CONTROLS-001",
+        "ORA-TDRP-RULE-HOOK-STAGED-CONTROLS-001",
+        "ORA-TDRP-RULE-HOOK-NEGATIVE-CONTROLS-001",
+        "ORA-TDRP-RULE-HOOK-TEST-OWNER-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-RULE-HOOK-TEST-MECHANICS-NOT-OWNER-001",
+        "INV-TDRP-RULE-HOOK-POSITIVE-NEGATIVE-PAIRING-001",
+        "INV-TDRP-RULE-HOOK-FAIL-OPEN-NOT-ACCEPTANCE-001",
+        "INV-TDRP-RULE-HOOK-NO-UPSTREAM-TEST-RUNTIME-COPY-001",
+        "INV-TDRP-RULE-HOOK-EXACT-HEAD-AUTOMATION-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-RULE-HOOK-EDIT-CONTROLS-001",
+        "UNIT-TDRP-RULE-HOOK-STAGED-CONTROLS-001"
+      ],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-RULE-HOOK-QUALIFICATION-SCOPE-001",
+        "CONTRACT-TDRP-RULE-HOOK-RECOGNITION-LIMITS-001",
+        "CONTRACT-TDRP-RULE-HOOK-EXACT-HEAD-BOUNDARY-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-RULE-HOOK-FAILED-ACQUISITION-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-RULE-HOOK-QUALIFICATION-001"
+      ],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "locked tools/rules/test_hook.py and hook.py source blobs",
+        "upstream Edit/Write/MultiEdit literal fixtures",
+        "upstream temporary Git staged-diff fixtures"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact repository feedback-hook qualification provenance read from locked telegramdesktop/tdesktop live-dev blob; no Telegram Python/C++/provider-specific test runtime copied.",
+      "notes": "Strict135 closes only tools/rules/test_hook.py semantic read/decomposition. Its 34 tests provide source evidence for paired edit/staged controls and expose intentional fail-open/ignored boundaries, while Python unittest/temp-Git/literal Telegram fixtures remain test mechanics. Existing TEST_STRATEGY/AGENTS quality owners are reused; no executable Fabushi feedback adapter currently exists, so qualification remains mapped-open. Counters unknown=16,241 unread=16,216 omitted=0 responsibilities=153. Next strict136 transitions from the exhausted root rules/tool qualification sequence into recursive child authority: Microsoft/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37, first non-directory entry .clang-format@c12d3bf2994fd5a083c04025d355a5ab4b3f6802.",
       "test_execution_evidence": []
     }
   ]
