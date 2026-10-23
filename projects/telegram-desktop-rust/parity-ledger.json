@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "7b745f229627c7a8557fa85dad9d34bbf8466422",
+  "target_commit": "b407927178603f43898336356cd0efd5aa0fbca6",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16237,
-    "unread": 16212,
+    "unknown": 16236,
+    "unread": 16211,
     "omitted": 0,
-    "responsibilities_total": 157,
+    "responsibilities_total": 158,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -42513,6 +42513,252 @@
       "reviewer": "primary-session",
       "license_and_provenance": "Exact dependency build/package metadata provenance read from locked Microsoft/GSL child blob through the accepted tdesktop gitlink. No upstream C++ runtime, generated CMake output or package artifact is copied.",
       "notes": "Strict139 closes only Microsoft/GSL CMakeLists.txt semantic read/decomposition. It declares GSL 4.1.0 as a header-only INTERFACE target/alias, C++14, include composition, natvis build-interface source, top-level-default test/install toggles, conditional tests, and conditional install/export/version-config metadata. Source CMake text does not prove configured membership, successful build/package, runtime reachability or release acceptance. Existing canonical Fabushi build/package and exact-head evidence owners are reused. Counters unknown=16,237 unread=16,212 omitted=0 responsibilities=157. Next strict140 Microsoft/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37 CMakeSettings.json@2e1ad24c582b1db241a9cee2553935095e77e80c.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/GSL",
+      "source_blob_sha": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+      "source_kind": "recursive_child_windows_cmake_development_profile_provenance",
+      "module_id": "tdesktop.thirdparty.gsl.cmake-settings",
+      "responsibility_id": "TDRP-R9-GSL-CMAKESETTINGS-WINDOWS-DEVELOPMENT-PROFILE-PROVENANCE-001",
+      "source_symbols": [
+        "CMakeSettings.json@2e1ad24c582b1db241a9cee2553935095e77e80c",
+        "x64-Debug",
+        "Ninja",
+        "Debug",
+        "msvc_x64_x64",
+        "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\build\\${name}",
+        "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\install\\${name}",
+        "-DGSL_CXX_STANDARD=17",
+        "-v",
+        "ctestCommandArgs=\"\"",
+        "CppCoreCheckRules.ruleset"
+      ],
+      "capability_ids": [
+        "CAP-DEVELOPER-BUILD-PROFILE-PROVENANCE",
+        "CAP-CONFIGURED-BUILD-EVIDENCE-BOUNDARY",
+        "CAP-TOOLCHAIN-STATIC-ANALYSIS-PROVENANCE",
+        "CAP-EXACT-HEAD-QUALITY-EVIDENCE"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "Microsoft/GSL:CMakeSettings.json@2e1ad24c582b1db241a9cee2553935095e77e80c",
+        "TDRP-R9-GSL-CMAKE-BUILD-PACKAGE-COMPOSITION-PROVENANCE-001",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md@4d2c88e118ab489d3d0339d2a61371a7ea74e72e"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-cmake-settings-development-profile-complete-read.md",
+      "behavior_contract": "Treat the locked Microsoft/GSL CMakeSettings.json as Windows/MSVC developer build-profile provenance: one x64-Debug Ninja/Debug profile inherits msvc_x64_x64, declares out-of-source build/install roots, passes GSL_CXX_STANDARD=17 at configure time, enables verbose build output, supplies no extra CTest arguments, and names CppCoreCheckRules.ruleset. Preserve these source facts under existing configured-build and language/toolchain quality evidence owners; do not retain a second GSL/Visual Studio/CMake build root.",
+      "state_machine": "accepted tdesktop gitlink -> exact GSL child commit -> read exact CMakeSettings.json -> developer tool may select x64-Debug -> environment/path/configure/build/test-analysis fields are projected into a CMake configuration only if the supporting IDE/toolchain resolves them -> source profile remains provenance until configured/executable evidence proves evaluation -> missing ruleset/toolchain/path expansion, drift, partial execution or stale head stays non-passing",
+      "side_effects": [
+        "May request Ninja Debug with inherited MSVC x64 environment and out-of-source build/install directories when a compatible Visual Studio CMake workflow consumes it.",
+        "May pass -DGSL_CXX_STANDARD=17 to configure and -v to build, with no extra CTest arguments.",
+        "Names CppCoreCheckRules.ruleset, but the locked GSL tree contains no file by that name.",
+        "Creates no Fabushi product state and proves no configure/build/test/analyzer execution."
+      ],
+      "failure_cases": [
+        "gitlink/tree/blob drift",
+        "x64-Debug generalized to undeclared configurations",
+        "path templates treated as resolved without proof",
+        "GSL_CXX_STANDARD=17 treated as configured/compiler proof",
+        "empty ctestCommandArgs treated as test pass",
+        "CppCoreCheckRules.ruleset treated as resolved/applied without exact evidence",
+        "second source-specific build/toolchain owner introduced",
+        "source profile promoted to runtime/signing/release acceptance"
+      ],
+      "ui_disposition": "Not applicable; recursive-child developer build/toolchain profile provenance only.",
+      "non_ui_responsibilities": [
+        "exact CMakeSettings source provenance",
+        "Windows x64 Debug/Ninja/MSVC development-profile capture",
+        "out-of-source path-template provenance",
+        "configure/build/test argument provenance",
+        "unresolved code-analysis ruleset reference provenance",
+        "configured-build versus source-profile evidence separation",
+        "reuse of existing Fabushi build/toolchain quality owners"
+      ],
+      "platform_delta": "Windows/Visual Studio CMake developer adapter provenance only; Fabushi retains native Rust/TypeScript/Electron owners and GitHub Actions evidence.",
+      "existing_owner_candidates": [
+        "FQT-EVID-001 Configured-build graph provenance evidence",
+        "TEST_STRATEGY Repository source static-analysis migration qualification",
+        "GitHub Actions exact-head executable validation",
+        "new Microsoft/GSL/Visual Studio/CMake development-profile owner (rejected)"
+      ],
+      "existing_owner": "FQT-EVID-001 configured-build graph provenance + existing repository language/toolchain quality owner with exact-head GitHub Actions validation",
+      "rejected_existing_owners": [
+        "Source-specific development-profile owner duplicates source-neutral build/toolchain quality ownership.",
+        "Upstream x64-Debug profile cannot replace Fabushi shipping build/package owners.",
+        "Unresolved ruleset name cannot become analyzer/security acceptance owner.",
+        "Source-profile declarations cannot replace configured-build or exact-head executable evidence."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md"
+      ],
+      "fabushi_target_symbols": [
+        "Any evidence claim that a configured build target consumes a particular object, source, PCH, archive path, shared-library path, or command-line definition must be bound to one exact configured build graph rather than inferred from basenames, directory scans, generic compilation databases, or source-name coincidence.",
+        "Fabushi executable static-analysis/build verification remains exact-head GitHub Actions evidence."
+      ],
+      "target_language": "Source-neutral build/toolchain evidence governance with native Rust/TypeScript/Electron build owners",
+      "language_rationale": "Third-party Windows developer configuration, not shipping product logic; retain provenance/evidence intent without a C++/Visual Studio runtime.",
+      "command_event_contracts": [
+        "resolve exact GSL child before reading profile",
+        "x64-Debug selects Ninja/Debug with msvc_x64_x64 only when compatible tooling resolves it",
+        "path templates remain templates until independently expanded",
+        "-DGSL_CXX_STANDARD=17 is source declaration only",
+        "empty ctestCommandArgs means no extra args only",
+        "ruleset name remains unresolved without exact tool/file evidence",
+        "publication requires exact-head Actions"
+      ],
+      "state_owner": "Existing configured-build/toolchain evidence lifecycle; no product runtime state.",
+      "lifecycle_owner": "FQT-EVID-001 configured-build evidence + repository language/toolchain quality + exact-head GitHub Actions lifecycle.",
+      "persistence_and_restart": "No product persistence; durable evidence is immutable source identity, dossier/ledger mapping, quality contracts and Actions artifacts.",
+      "concurrency_and_cancellation": "Partial/cancelled configure/build/analyzer execution, stale head or unresolved environment/ruleset remains non-passing.",
+      "security_boundary": "Not an authorization, sandbox, secret, package-signing or release boundary.",
+      "network_service_dependencies": [
+        "GitHub Actions for authoritative exact-head revalidation"
+      ],
+      "service_owner": "Existing Fabushi build/toolchain quality evidence lifecycle; no runtime service.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "toolchain-equivalent-mapped-open",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions must validate strict140 after publication.",
+        "CppCoreCheckRules.ruleset resolution/application remains unproven.",
+        "Remaining GSL child entries remain unread/unknown.",
+        "Recursive source closure remains open.",
+        "Independent release acceptance remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "path:.github/workflows/rust-desktop-runtime.yml"
+      ],
+      "test_evidence": [
+        "strict140 CMakeSettings exact blob fully read: 18 line slots / 545 bytes",
+        "tdesktop GSL gitlink resolved to 87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "GSL child tree 6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41",
+        "Exact recursive GSL tree contains no CppCoreCheckRules.ruleset entry",
+        "Existing configured-build and source static-analysis owners re-read",
+        "Parent TDRP 40013908183 61/61 success with authority/closure/reachability artifacts",
+        "Parent Rust 40013908184 6/6 success with artifact 12527158542 sha256:0c8f7b2952d68e77bc3e887aefd591bc31389978d8ec7a11da3a7cff2c69d3d5"
+      ],
+      "target_commit": "b407927178603f43898336356cd0efd5aa0fbca6",
+      "workflow_run": 40013908183,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12528325394,
+      "artifact_digest": "sha256:05d6a65f6c05981b20c2185177d170b5f593a5f20da3771c5929d9e9207d8f2d",
+      "composition_root": "FQT-EVID-001 configured-build graph provenance + repository language/toolchain quality",
+      "composition_slot": "recursive-child Windows/MSVC CMake developer-profile provenance",
+      "capability_component": "Source-neutral configured build-profile and static-analysis provenance",
+      "variation_axes": [
+        "x64-Debug versus undeclared configurations",
+        "source declaration versus configured truth",
+        "environment name versus resolved environment",
+        "path template versus expanded path",
+        "C++17 configure argument versus consumed compiler feature",
+        "ruleset name versus resolved/applied ruleset",
+        "source profile versus exact-head executable evidence"
+      ],
+      "shared_owner_contracts": [
+        "FQT-EVID-001 Configured-build graph provenance evidence",
+        "Repository source static-analysis migration qualification",
+        "Existing language/toolchain quality owner",
+        "GitHub Actions exact-head evidence governance"
+      ],
+      "duplicate_root_check": "No Microsoft/GSL/Telegram/Visual Studio CMake runtime, second build graph/package/toolchain owner or release authority introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository build/toolchain evidence only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Repository build/toolchain evidence",
+      "route_contract": "No shipping route",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Provenance remains bound to exact gitlink/child tree/CMakeSettings blob; configured graph, command execution, artifacts and release verdict remain fail-closed without stronger evidence.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "low",
+      "requirement_ids": [
+        "TDRP-R9-GSL-CMAKESETTINGS-WINDOWS-DEVELOPMENT-PROFILE-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GSL-CMAKESETTINGS-SOURCE-001",
+        "ORA-TDRP-GSL-CMAKESETTINGS-PROFILE-001",
+        "ORA-TDRP-GSL-CMAKESETTINGS-OWNER-001",
+        "ORA-TDRP-GSL-CMAKESETTINGS-CONFIGURED-TRUTH-SEPARATION-001",
+        "ORA-TDRP-GSL-CMAKESETTINGS-RULESET-RESOLUTION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GSL-CMAKESETTINGS-NO-SECOND-BUILD-ROOT-001",
+        "INV-TDRP-GSL-CMAKESETTINGS-IDE-PROFILE-NOT-BUILD-PASS-001",
+        "INV-TDRP-GSL-CMAKESETTINGS-RULESET-UNRESOLVED-STAYS-OPEN-001",
+        "INV-TDRP-GSL-CMAKESETTINGS-X64-DEBUG-NOT-RELEASE-ACCEPTANCE-001",
+        "INV-TDRP-GSL-CMAKESETTINGS-EXACT-PROVENANCE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [],
+      "release_gate_ids": [],
+      "test_fixture_ids": [
+        "locked Microsoft/GSL CMakeSettings.json + existing configured-build/toolchain quality owners + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable-source-provenance",
+      "release_gate_status": "not-accepted",
+      "acceptance_reviewer": null,
+      "reviewer": "primary-session",
+      "license_and_provenance": "Exact Windows developer-profile metadata provenance read from locked Microsoft/GSL child blob; no upstream C++ runtime, Visual Studio state, generated build output or analyzer ruleset copied.",
+      "notes": "Strict140 closes only CMakeSettings semantic read/decomposition. Counters unknown=16,236 unread=16,211 omitted=0 responsibilities=158. Next strict141 Microsoft/GSL CONTRIBUTING.md@e28f534e31b73b6ce1ac658944887015907c37d1.",
       "test_execution_evidence": []
     }
   ]

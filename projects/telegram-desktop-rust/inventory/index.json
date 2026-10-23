@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16237,
-    "unread_minimum": 16212,
+    "unknown_minimum": 16236,
+    "unread_minimum": 16211,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -122,7 +122,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 61a87fd19adcf62aa9ca9ca11587e430cd9d1e61 passed TDRP 40011193081 61/61; authority 12525698776 sha256:eec8e94f1ab42a2f74c5c2ea19906b6cf639ed2fe61e8508ca6ea3b2b25a1449; closure 12526831881 sha256:8ab394d8e7c8cc30041901ed306b7c4aa64cdcb36043ae6ce73db30fc5716430; reachability 12526916734 sha256:8f26c3ee654a063fe90496cc1cfb602afe99d2b7c2a0850f22ca57ab08361b5c; Rust 40011193189 6/6; artifact 12526048848 sha256:1e3a92abd847175d1efccb76a3e1893b2e5e867e6e02a9b7e462d9857dc15b42. Strict139 Microsoft/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37 CMakeLists.txt@b1d24e5facfe56b1ae28468a5959797e9f6bacda was fully read: 49 line slots / 1779 bytes. It declares GSL 4.1.0 as a header-only INTERFACE target/alias, C++14, top-level-sensitive test/install defaults, include/tests child-subgraph boundaries, natvis build-interface source, and conditional install/export/version-config metadata. Existing Fabushi build/package plus source-derived/configured-build/exact-head evidence owners are reused; source text cannot establish configured membership, successful build/package, runtime reachability, signing or release acceptance. Counters unknown=16,237 unread=16,212 omitted=0 responsibilities=157. Next strict140 Microsoft/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37 CMakeSettings.json@2e1ad24c582b1db241a9cee2553935095e77e80c.",
+  "note": "Live upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent b407927178603f43898336356cd0efd5aa0fbca6 passed TDRP 40013908183 61/61 and Rust 40013908184 6/6. Strict140 Microsoft/GSL CMakeSettings.json@2e1ad24c582b1db241a9cee2553935095e77e80c fully read: 18 line slots / 545 bytes; one x64-Debug Ninja/Debug/MSVC developer profile, path templates, -DGSL_CXX_STANDARD=17, verbose build, empty extra CTest args, unresolved CppCoreCheckRules.ruleset reference. Existing configured-build/language-toolchain quality owners reused. Counters unknown=16,236 unread=16,211 omitted=0 responsibilities=158. Next strict141 CONTRIBUTING.md@e28f534e31b73b6ce1ac658944887015907c37d1.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
