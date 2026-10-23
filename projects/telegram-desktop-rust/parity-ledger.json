@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "83f9f56347cc3421c1e3ef537c7bb6dd06ce7cd0",
-  "target_commit": "324c3de2868595e1e2af335aaec517725bdecd22",
+  "target_commit": "14c2deef2bcd7b0f7d9b589a29bc17d570b59b00",
   "coverage": {
     "source_entries_total": 16377,
-    "unknown": 16278,
-    "unread": 16253,
+    "unknown": 16277,
+    "unread": 16252,
     "omitted": 0,
-    "responsibilities_total": 114,
+    "responsibilities_total": 115,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -30724,6 +30724,296 @@
       "license_and_provenance": "Exact upstream workflow and audit-resolved no-response commit/action/bundle identities retained. The mutable v0.5.0 tag and provider tree's absence of LICENSE/package manifest/package lock remain fail-closed third-party provenance; this dependency is not adopted as a Fabushi product/runtime owner.",
       "reviewer": null,
       "notes": "Strict index 96 closes only .github/workflows/waiting-for-answer.yml. FQT-DEF-001 remains sole canonical defect closure owner; GitHub waiting-for-answer label/auto-close/unmark/reopen state is provider maintenance only. Counters become unknown=16,278 unread=16,253 omitted=0 responsibilities=114. Next strict root index 97 .github/workflows/win.yml@219c42ebf679ca5d93add5cdbd51b0bb6e516b57. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "83f9f56347cc3421c1e3ef537c7bb6dd06ce7cd0",
+      "source_path": ".github/workflows/win.yml",
+      "source_blob_sha": "219c42ebf679ca5d93add5cdbd51b0bb6e516b57",
+      "source_kind": "windows_ci_build_verification_workflow",
+      "module_id": "tdesktop.github.workflows.win",
+      "responsibility_id": "TDRP-R9-WINDOWS-CI-BUILD-VERIFICATION-PROVENANCE-001",
+      "source_symbols": [
+        "push/pull_request Windows-relevant path filters",
+        "matrix arch x64_x86/x64/arm64",
+        "matrix qt default/qt6",
+        "matrix generator default/Ninja Multi-Config",
+        "dynamic windows-11-arm / depot-windows-latest-16 / windows-latest runner",
+        "actions/checkout@v7 recursive submodules",
+        "SDK parsed from docs/building-win.md",
+        "arm64 VS 2026 Build Tools download from aka.ms",
+        "Eden-CI/msvc-dev-cmd@master",
+        "NuGet source api.nuget.org",
+        "actions/cache@v6 ThirdParty/Libraries/Qt caches with restore prefixes",
+        "Telegram/build/prepare/win.bat skip-release silent",
+        "TDESKTOP_API_TEST / nightly open Telegram API credentials",
+        "Debug warnings-as-errors build",
+        "Telegram.exe + Updater.exe staging",
+        "actions/upload-artifact@v7 retention-days=1"
+      ],
+      "capability_ids": [
+        "CAP-WINDOWS-CI-BUILD-VERIFICATION",
+        "CAP-WINDOWS-BUILD-MATRIX-PROVENANCE",
+        "CAP-BUILD-CACHE-PROVENANCE",
+        "CAP-EXACT-HEAD-EVIDENCE-BOUNDARY"
+      ],
+      "dependency_ids": [
+        "FQT-EVID-001 branch@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70 / live-main@b1c3b67fef2ddb0d0a017700600c2395aeeac7a7",
+        "FQT-REL-001@c5eb9d0897234bb2fdad4f505549b2350c44aa72",
+        "AGENTS branch@da3e37258c74963970ff5cfc5d54671a37558b97 / live-main@e6a1f21ba5206cdc807b6f9738dad2cec2942100 GitHub-Actions-only project governance",
+        "actions/checkout@v7 -> 3d3c42e5aac5ba805825da76410c181273ba90b1; action.yml@5b0524f730db83f9513c18ab31a6c086c7239076; LICENSE@a67dca8b4f65d6bd351f6b1e333ce2cd84d843a5 MIT",
+        "actions/cache@v6 -> 55cc8345863c7cc4c66a329aec7e433d2d1c52a9; action.yml@2606455d4cedc2a06e05c1bf7feb8cc41aaf28f9; LICENSE@a426ef259d6c5d705e9c1405075c3b318093c65e MIT",
+        "actions/upload-artifact@v7 -> cf430e030ddbb5b0abf93d22962f4752f3646cd9; action.yml@7cb4d1e81db55320b41217e1a78a1a46e3d2baef; LICENSE@a67dca8b4f65d6bd351f6b1e333ce2cd84d843a5 MIT",
+        "Eden-CI/msvc-dev-cmd@master audit resolution -> 1bd71f95d6f3d1b2b3395b335cc63bcdc90cf223/tree e7c89b22b26307c38516ac07942068d0be0b7e88; action.yml@6b247098f64d28499a4f468680a823e34c52e43d; LICENSE@ddd5435732c99642e64d7745d1e78849f0e9d753 MIT; package.json@ba199623309e19aa3884462789a5374b7d024ef7",
+        "docs/building-win.md@d333539fc0709be6f98a8ef719f22fac0346b49a",
+        "Telegram/build/prepare/prepare.py@a9f3dd2d9e4020df958ab5af942376177d66c78b",
+        "Telegram/build/prepare/win.bat@c73fe2a3e5b0d32f8ec34db2c2bdb148ecb50e59",
+        "Telegram/configure.bat@85b9ddebafd5bc95b3590240fb3a11eae590afb4",
+        "Telegram/configure.py@592b2f02fd0030dffe6a79d94f1d18c529c53645",
+        "https://aka.ms/vs/18/stable/vs_buildtools.exe mutable unchecksummed installer alias",
+        "https://api.nuget.org/v3/index.json mutable package registry endpoint"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/windows-ci-build-verification-workflow-complete-read.md",
+      "behavior_contract": "Treat win.yml as upstream Windows source-build verification provenance only. Matrix build/cache/toolchain/artifact success cannot become Fabushi source, shipping runtime, package/signing, release or acceptance authority; exact-head evidence and executable artifact identity remain with existing FQT evidence/release owners.",
+      "state_machine": "Windows-relevant push/PR -> 8 admitted matrix combinations -> runner selection -> recursive checkout -> SDK/toolchain setup -> NuGet/cache restore -> prepare Windows dependencies -> derive arch/Qt/generator/API flags -> bounded library cleanup -> Debug warnings-as-errors build -> stage Telegram.exe+Updater.exe -> one-day artifact",
+      "side_effects": [
+        "creates TBuild directory/symlink on disposable runner",
+        "may download/install VS 2026 Build Tools for arm64",
+        "mutates NuGet source configuration",
+        "restores/writes ThirdParty/Libraries/Qt caches",
+        "prepare.py dependency acquisition/build through win.bat",
+        "deletes nonessential cached library files on runner",
+        "builds Debug Telegram.exe and Updater.exe",
+        "uploads one-day GitHub artifact"
+      ],
+      "failure_cases": [
+        "mutable action tag drift",
+        "Eden-CI master drift",
+        "VS Build Tools aka.ms installer drift or download failure",
+        "runner/Visual Studio/SDK/toolset drift",
+        "NuGet registry/package drift",
+        "stale prefix cache restore or cache corruption",
+        "prepare.py acquisition/build failure",
+        "disk cleanup removes required input",
+        "matrix-specific configure/build failure",
+        "missing Telegram.exe or Updater.exe",
+        "artifact upload/expiry",
+        "upstream Windows green mistaken for Fabushi release acceptance"
+      ],
+      "ui_disposition": "Repository CI/build verification only; no shipping Fabushi UI capability.",
+      "non_ui_responsibilities": [
+        "Windows trigger and matrix scope",
+        "runner/toolchain provenance",
+        "recursive source/dependency preparation",
+        "cache boundary",
+        "Debug/API-test source-build verification",
+        "ephemeral executable artifact provenance",
+        "Fabushi artifact-identity/signing/release evidence separation"
+      ],
+      "platform_delta": "Upstream Telegram Windows CI remains source/build provenance only; Fabushi reuses current source-neutral FQT evidence/artifact identity, packaging/signing and exact-head GitHub Actions governance rather than retaining a Telegram Windows runtime or second build/release owner.",
+      "existing_owner_candidates": [
+        "FQT-EVID-001 exact-head evidence contract (selected)",
+        "FQT-REL-001 executable artifact identity gate (selected shared boundary)",
+        "AGENTS FBCP/TDRP GitHub-Actions-only executable verification governance (shared; wording differs branch/live main)",
+        "existing Fabushi packaging/signing owners (shared)",
+        "new Windows build/runtime owner (rejected)",
+        "new Telegram package/release owner (rejected)"
+      ],
+      "existing_owner": "FQT-EVID-001 exact evidence contract with FQT-REL-001 executable artifact identity gate and existing FBCP/TDRP GitHub-Actions-only verification governance",
+      "rejected_existing_owners": [
+        "upstream CI build is not Fabushi production runtime",
+        "cache/toolchain/provider state is not correctness truth",
+        "Telegram.exe/Updater.exe one-day artifact is not Fabushi signed/package identity or release acceptance",
+        "new Windows build/release root would duplicate canonical evidence/release owners"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "projects/fabushi-communication-platform/quality/release-entry-exit-criteria.md"
+      ],
+      "fabushi_target_symbols": [
+        "每份 passing evidence 至少包含 target SHA、upstream/baseline SHA（若相关）、workflow/run/attempt/job/event、actual checkout SHA、suite/case IDs、fixture/environment IDs、start/end、result、artifact name/ID/digest。",
+        "Every executable that moves from built/signed candidate bytes into staging, installation, acceptance, promotion, or release must retain an explicit provenance edge. Byte-exact copies require source-before/source-after stability plus equal raw SHA-256 and size for the copied executable. Intentional transformations require an applicable format-specific equivalence oracle in addition to both raw identities. Missing provenance, historical-copy reuse, mutable-source evidence, or a normalized digest presented as exact identity is BLOCKED."
+      ],
+      "target_language": "Repository build/test/artifact-evidence governance",
+      "language_rationale": "Windows CI orchestration maps to current source-neutral evidence/artifact identity and packaging/release governance, not production Rust/React.",
+      "command_event_contracts": [
+        "Windows-relevant push/PR only; canary pushes excluded here",
+        "matrix admits 8 arch/Qt/generator combinations after exclusions",
+        "recursive checkout and prepare inputs remain independently traceable source provenance",
+        "cache hit/restore prefix cannot decide correctness",
+        "nightly Telegram open API credentials are upstream source-specific provenance and not Fabushi credentials",
+        "Debug build requires warnings-as-errors and stages both Telegram.exe and Updater.exe",
+        "one-day artifact is non-release provenance",
+        "upstream green never substitutes for Fabushi package/signing/device/release acceptance"
+      ],
+      "state_owner": "Exact source/provider/run/artifact identities; runner/toolchain/cache/upstream executables are non-authoritative.",
+      "lifecycle_owner": "Exact source -> GitHub Actions source build -> artifact evidence -> canonical Fabushi packaging/signing/device/FQT independent release acceptance.",
+      "persistence_and_restart": "Caches and one-day artifacts are disposable; durable evidence is exact commit/run/job/artifact ID+digest plus required raw executable identity at release boundaries.",
+      "concurrency_and_cancellation": "No workflow concurrency group; overlapping runs, cancellation, cache races or partial provider state are non-passing.",
+      "security_boundary": "GitHub Actions, Depot/GitHub Windows runners, mutable actions/master refs, aka.ms installer, NuGet, prepare-time acquisitions, caches and upstream Telegram API test credentials are supply-chain/CI inputs, never Fabushi product credentials or release authority.",
+      "network_service_dependencies": [
+        "GitHub checkout/cache/artifact",
+        "Depot/GitHub Windows runners",
+        "Microsoft aka.ms / Visual Studio installer service",
+        "NuGet registry",
+        "prepare.py external acquisitions"
+      ],
+      "service_owner": "Existing CI/build infrastructure under FQT evidence/release governance",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "policy-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required.",
+        "Direct build inputs prepare.py/win.bat/configure.py/configure.bat/docs remain independent inventory responsibilities and are not dispositioned by this workflow row.",
+        "Mutable toolchain/provider/registry/cache inputs remain supply-chain provenance.",
+        "Recursive source closure and Fabushi Windows packaged/device/independent release acceptance remain open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "win.yml complete-read @219c42ebf679ca5d93add5cdbd51b0bb6e516b57: 254 line slots / 9167 bytes.",
+        "Matrix behavior re-read: x64_x86/x64/arm64 x default/qt6 x default/Ninja Multi-Config with arm64+default-Qt and x64_x86+qt6 exclusions = 8 admitted combinations.",
+        "actions/checkout@v7, actions/cache@v6 and actions/upload-artifact@v7 refs re-resolved to immutable commits with MIT license blobs.",
+        "Eden-CI/msvc-dev-cmd@master re-resolved to 1bd71f95d6f3d1b2b3395b335cc63bcdc90cf223 with action/package/license blobs; mutable master remains fail-closed provenance.",
+        "docs/building-win.md, prepare.py, win.bat, configure.bat and configure.py exact blobs verified; no existing parity-ledger rows disposition those direct inputs.",
+        "Branch and live main both retain stable FQT-EVID-001 passing-evidence text and FQT-REL-001 artifact-identity gate; source/responsibility/blob collision preflight returned zero.",
+        "Parent exact-head 14c2deef2bcd7b0f7d9b589a29bc17d570b59b00/tree 149892529be4be2c439455436fe71c03096f72a4 completed TDRP run 39896888856 at 61/61 success (authority 12476159790 sha256:a30706f41f6ec3f85d40590533bcfd326cc455d9adbfd82c1085c0e0c5f94401; closure 12477142047 sha256:35321430d8d859ee277246abf655d8ba059cadf8903f1b38389c9b93b14f140b; reachability 12476768596 sha256:cf7db38792778f6333f5ff52ee8a118f712dcf228488310f56f8e9d04f294bbf) and Rust desktop runtime run 39896888741 at 6/6 success (artifact 12477426522 sha256:02f87806bd32ec0d7fd1e32ee478ead2de0c96655559c4e40261bd9a02ab7233)."
+      ],
+      "target_commit": "14c2deef2bcd7b0f7d9b589a29bc17d570b59b00",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi canonical build/test/artifact-evidence and release lifecycle",
+      "composition_slot": "Windows CI build-verification provenance adapter",
+      "capability_component": "Windows source-build matrix/toolchain/cache/artifact provenance mapping",
+      "variation_axes": [
+        "push/PR",
+        "x64_x86/x64/arm64",
+        "default Qt/qt6",
+        "default generator/Ninja Multi-Config",
+        "GitHub/Depot/Windows ARM runner",
+        "mutable action/master/toolchain/registry drift",
+        "cache hit/miss/stale",
+        "prepare/configure/build success/failure",
+        "artifact present/missing/expired",
+        "upstream build/Fabushi release boundary"
+      ],
+      "shared_owner_contracts": [
+        "FQT-EVID-001",
+        "FQT-REL-001",
+        "AGENTS FBCP/TDRP GitHub-Actions-only verification",
+        "existing packaging/signing/device acceptance owners"
+      ],
+      "duplicate_root_check": "No second Windows build system, product runtime, cache truth, package identity ledger, release authority or acceptance owner is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository CI/build verification",
+      "detail_section": "Not applicable",
+      "capability_surface": "Windows CI provenance adapter",
+      "route_contract": "push/PR -> matrix -> exact checkout -> toolchain/cache/prepare -> Debug build -> stage executables -> ephemeral artifact -> canonical FQT release gates",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Only exact source/run/artifact identities and canonical executable identity evidence carry continuity; cache/provider/runner/upstream executable state does not.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-WINDOWS-CI-BUILD-VERIFICATION-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-WINDOWS-CI-EXACT-SOURCE-001",
+        "ORA-TDRP-WINDOWS-CI-MATRIX-001",
+        "ORA-TDRP-WINDOWS-CI-NO-RELEASE-AUTHORITY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-WINDOWS-CI-CACHE-NO-AUTHORITY-001",
+        "INV-TDRP-WINDOWS-CI-MUTABLE-TOOLCHAIN-FAIL-CLOSED-001",
+        "INV-TDRP-WINDOWS-CI-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-WINDOWS-CI-BUILD-PROVENANCE-001",
+        "CONTRACT-TDRP-WINDOWS-CI-FABUSHI-RELEASE-BOUNDARY-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-WINDOWS-CI-ACTION-TAG-DRIFT-001",
+        "TEMP-TDRP-WINDOWS-CI-EDEN-MASTER-DRIFT-001",
+        "TEMP-TDRP-WINDOWS-CI-RUNNER-TOOLCHAIN-DRIFT-001",
+        "TEMP-TDRP-WINDOWS-CI-CACHE-DRIFT-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-WINDOWS-CI-VS-BUILD-TOOLS-DOWNLOAD-001",
+        "FAULT-TDRP-WINDOWS-CI-NUGET-001",
+        "FAULT-TDRP-WINDOWS-CI-CACHE-RESTORE-001",
+        "FAULT-TDRP-WINDOWS-CI-DISK-CLEANUP-001",
+        "FAULT-TDRP-WINDOWS-CI-ARTIFACT-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-WINDOWS-CI-SUPPLY-CHAIN-001",
+        "SEC-TDRP-WINDOWS-CI-UPSTREAM-API-CREDENTIAL-BOUNDARY-001",
+        "SEC-TDRP-WINDOWS-CI-RUNNER-BOUNDARY-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-WINDOWS-CI-FQT-EVIDENCE-OWNER-REUSED-001",
+        "REG-TDRP-WINDOWS-CI-NO-RELEASE-ACCEPT-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [],
+      "test_fixture_ids": [
+        "locked win.yml + provider/action/toolchain/direct-input identities + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact workflow/direct-input and resolved action/provider identities retained. checkout/cache/upload and Eden provider license blobs are MIT. Mutable action tags/master, aka.ms installer, NuGet/runner/toolchain/cache state and one-day upstream executables remain non-release provenance.",
+      "reviewer": null,
+      "notes": "Strict index 97 closes only .github/workflows/win.yml. Counters become unknown=16,277 unread=16,252 omitted=0 responsibilities=115. Next strict root index 98 .github/workflows/winget.yml@0ff2d50d8b12b67408d3ad1e06dc8e462b5a9390. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required."
     }
   ]
 }
