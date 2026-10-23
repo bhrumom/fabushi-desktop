@@ -32325,8 +32325,8 @@
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "fabushi_target_symbols": [
-        "scripts.build",
-        "scripts.package",
+        "\"build\": \"npm run build:host && npm run build:electron && npm run build:renderer && npm run check:desktop-runtime\"",
+        "\"package\": \"npm run build:host && npm run build:electron && npm run build:renderer && npm run check:desktop-runtime && electron-builder\"",
         "Repository source-derived build-model evidence",
         "Configured-build graph provenance evidence",
         "Rust desktop runtime"
