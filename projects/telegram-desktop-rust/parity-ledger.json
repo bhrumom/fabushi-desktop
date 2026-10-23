@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "83f9f56347cc3421c1e3ef537c7bb6dd06ce7cd0",
-  "target_commit": "b762e52394aa93b2cb593af0738b504aaf6624fc",
+  "target_commit": "14cdc784c167e8fb5a35c742145abb1a57b77dc2",
   "coverage": {
     "source_entries_total": 16377,
-    "unknown": 16281,
-    "unread": 16256,
+    "unknown": 16280,
+    "unread": 16255,
     "omitted": 0,
-    "responsibilities_total": 111,
+    "responsibilities_total": 112,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -29905,6 +29905,279 @@
       "license_and_provenance": "Exact upstream workflow and audit-time actions/stale v11 commit/tree/source/bundle/package-lock/MIT license identities retained. The source uses mutable major tag v11, so future provider resolution remains fail-closed provenance and cannot become Fabushi product/defect authority.",
       "reviewer": null,
       "notes": "Strict index 93 closes only .github/workflows/stale.yml. Counters become unknown=16,281 unread=16,256 omitted=0 responsibilities=111. Next strict root index 94 .github/workflows/unused_styles_updater.yml@2c021d1cd09f7ac59b0e0d5ef6be2bf546167274. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "83f9f56347cc3421c1e3ef537c7bb6dd06ce7cd0",
+      "source_path": ".github/workflows/unused_styles_updater.yml",
+      "source_blob_sha": "2c021d1cd09f7ac59b0e0d5ef6be2bf546167274",
+      "source_kind": "repository_unused_style_maintenance_workflow",
+      "module_id": "tdesktop.github.workflows.unused_styles_updater",
+      "responsibility_id": "TDRP-R9-UNUSED-STYLES-MAINTENANCE-PROVENANCE-001",
+      "source_symbols": [
+        "repository_dispatch Restart unused_styles_updater workflow",
+        "schedule cron 0 3 1 * *",
+        "workflow_dispatch",
+        "desktop-app/action_code_updater@master",
+        "type unused-styles",
+        "recursive submodule clone and non-empty tdesktop submodule guard",
+        "top-level .style definition scan",
+        "[[maybe_unused]] protection",
+        "C++ st::name and style cross-reference scan",
+        "fixed-point removal/rescan",
+        "monthly unused_styles_YYYY_MM branch fence",
+        "zero removals successful no-op",
+        "PR creation errors caught/logged"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-STYLE-HYGIENE",
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-REVIEWABLE-SOURCE-MUTATION",
+        "CAP-MUTABLE-ACTION-SUPPLY-CHAIN"
+      ],
+      "dependency_ids": [
+        "desktop-app/action_code_updater@master -> 0a8d3ebb437e5c77cf5d066d4a54cc93d34b534a/tree 5f51a9339cccc975911e3dcff02027395f2dee61",
+        "action.yml@5a9c7dff415a31f18a614119809f2d396b0e47c7",
+        "index.mjs@322bfa9e3e874299a09c35650611c2cd753cca3f",
+        "check_unused_styles.py@6a061912121f49ffa386ff9692b989378b6bdd2b",
+        "provider tree has no committed package manifest/package lock/LICENSE",
+        "runtime npm install simple-git, isbinaryfile, @actions/core, @actions/github unversioned",
+        "AGENTS.md@da3e37258c74963970ff5cfc5d54671a37558b97",
+        "TEST_STRATEGY.md@4d2c88e118ab489d3d0339d2a61371a7ea74e72e",
+        "evidence-contract.md@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/unused-styles-updater-workflow-complete-read.md",
+      "behavior_contract": "Repository quality-hygiene/reviewable source-mutation provenance only. Exact-source scanning may propose deletion of unreferenced style definitions; mutable provider/npm state, branch/PR state, no-op success, or green execution cannot advance Fabushi product, release, source-closure, or migration acceptance.",
+      "state_machine": "monthly/manual/dispatch -> mutable provider/npm bootstrap -> recursive-submodule clone -> require tdesktop submodule ownership boundary -> scan definitions/references/protection -> zero unused => clean no-op; else remove/rescan to fixed point -> monthly branch fence -> commit/push -> create/reuse PR; PR API failure may be logged without failing workflow",
+      "side_effects": [
+        "runner/npm bootstrap",
+        "authenticated recursive repository clone",
+        "bounded .style rewrites",
+        "maintenance branch commit/push",
+        "PR list/create",
+        "no shipping product-state mutation"
+      ],
+      "failure_cases": [
+        "provider master drift",
+        "unversioned npm drift/outage",
+        "incomplete provider license/dependency provenance",
+        "missing tdesktop submodule discovery",
+        "bounded reference model false-negative",
+        "monthly branch race",
+        "commit/push failure",
+        "PR failure after push swallowed",
+        "cancellation leaves partial publication",
+        "green/no-op mistaken for acceptance"
+      ],
+      "ui_disposition": "Repository maintenance only; no shipping Fabushi UI capability.",
+      "non_ui_responsibilities": [
+        "exact-source style hygiene",
+        "intentional-unused protection",
+        "submodule write ownership exclusion",
+        "fixed-point deletion proposal",
+        "branch/PR review lifecycle",
+        "mutable provider boundary",
+        "publication settlement separation"
+      ],
+      "platform_delta": "Retain mature repository-quality provenance through Fabushi source-neutral quality-health/task/review/evidence owners; do not copy Telegram .style/provider mechanics into product runtime.",
+      "existing_owner_candidates": [
+        "Fabushi repository quality-health qualification/evidence lifecycle (selected)",
+        "AGENTS contribution/task/review governance (selected shared boundary)",
+        "ordinary PR/review lifecycle (selected mutation boundary)",
+        "new style-cleanup product owner (rejected)",
+        "new design-system/release owner (rejected)"
+      ],
+      "existing_owner": "Fabushi repository responsibility/quality/task-evidence governance plus ordinary repository PR/review lifecycle",
+      "rejected_existing_owners": [
+        "repository hygiene is not shipping behavior",
+        "Telegram .style syntax does not justify a second design-system truth",
+        "provider branch/PR is proposal not canonical source",
+        "green maintenance cannot replace exact-head acceptance"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "repository contribution/task/review governance",
+        "Repository quality-health qualification",
+        "Repository quality-health evidence"
+      ],
+      "target_language": "Repository quality-health/review/evidence governance",
+      "language_rationale": "Administrative source hygiene maps to existing governance, not production Rust/React.",
+      "command_event_contracts": [
+        "monthly 03:00 UTC first-day schedule plus dispatch/manual",
+        "tdesktop requires recursive submodule discovery before deletion proposal",
+        "only bounded unprotected unreferenced definitions are candidates",
+        "removal rescans to fixed point",
+        "zero removals is no-op not acceptance",
+        "mutations remain branch/PR proposals",
+        "PR errors may be swallowed",
+        "reviewed exact source plus exact-head evidence alone may advance authority"
+      ],
+      "state_owner": "Exact reviewed repository commit owns canonical source; provider owns only ephemeral scan and proposal state.",
+      "lifecycle_owner": "Exact observation -> bounded proposal -> PR review -> reviewed commit -> fresh exact-head evidence.",
+      "persistence_and_restart": "Reviewed Git/PR history is durable; checkout/npm/scan is disposable and must be re-resolved.",
+      "concurrency_and_cancellation": "No concurrency group; runs can overlap. Branch fence is not a lifecycle lock; cancellation/API failure after push cannot advance acceptance.",
+      "security_boundary": "github.token and mutable/unversioned provider dependencies are repository-administration boundaries only, never product credentials or evidence authority.",
+      "network_service_dependencies": [
+        "GitHub Actions",
+        "desktop-app/action_code_updater",
+        "npm registry",
+        "GitHub repository/PR APIs"
+      ],
+      "service_owner": "Existing repository administration and Fabushi quality/review/evidence governance",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "policy-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required after strict94",
+        "Recursive source closure remains open",
+        "Mutable provider/runtime npm provenance",
+        "No committed provider package lock/LICENSE in audited tree",
+        "Green provider run cannot prove PR settlement"
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "unused_styles_updater.yml fully read: 17 line slots / 330 bytes at 2c021d1cd09f7ac59b0e0d5ef6be2bf546167274.",
+        "Provider master revalidated to 0a8d3ebb437e5c77cf5d066d4a54cc93d34b534a/tree 5f51a9339cccc975911e3dcff02027395f2dee61; root contains exactly action.yml, index.mjs and check_unused_styles.py.",
+        "action.yml performs npm init plus unversioned runtime installs; audited provider tree has no committed package manifest/package lock/LICENSE.",
+        "index.mjs verifies recursive-submodule clone/guard, monthly branch fencing, push/PR lifecycle, no-op and caught PR errors.",
+        "check_unused_styles.py verifies top-level definitions, [[maybe_unused]], C++/style references, definition-side submodule exclusion, fixed-point removal.",
+        "Parent exact-head 14cdc784c167e8fb5a35c742145abb1a57b77dc2/tree 313ad81c1e1a3eae5960d29e5a155814eeeac4cc completed TDRP run 39891473256 with all 30 returned jobs successful (authority 12475286085 sha256:8187a40afb67a5c44476b3cd5764f1cc231fb36352b4e1078514d25403c2886a; closure 12475485949 sha256:1bb2e602f49574894e262e4f3364156f7b18348c74592464e1eea39e4fd1e197; reachability 12474953222 sha256:cb12c63e196894675c5539676a32978e6ed90e62be7a7ceddb1282895ec95a3f) and Rust desktop runtime run 39891473262 attempt 2 at 6/6 success (artifact 12475172253 sha256:0b3b352315c0191a5811c52ae92896b350dc704d69bdfdebdf4dd630c9c38e50)."
+      ],
+      "target_commit": "14cdc784c167e8fb5a35c742145abb1a57b77dc2",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository quality-health/task/review/evidence lifecycle",
+      "composition_slot": "style hygiene observation -> reviewable source mutation",
+      "capability_component": "Source-neutral repository style-hygiene provenance adapter",
+      "variation_axes": [
+        "schedule/dispatch/manual",
+        "submodules present/missing",
+        "used/unused/protected",
+        "single/multi-pass",
+        "zero/removal",
+        "branch absent/existing/racing",
+        "PR settled/failing",
+        "provider stable/drifted",
+        "complete/cancelled"
+      ],
+      "shared_owner_contracts": [
+        "AGENTS contribution/task/review governance",
+        "Repository quality-health qualification",
+        "FQT-EVID-001 Repository quality-health evidence",
+        "ordinary PR/review lifecycle",
+        "exact-head Actions evidence"
+      ],
+      "duplicate_root_check": "No second style/design truth, source store, task ledger, updater runtime, release/evidence authority or Telegram product root.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository style hygiene only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Reviewable repository quality-hygiene provenance adapter",
+      "route_contract": "trigger -> exact-source observation -> fixed-point proposal -> branch/PR review; no product route",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Only reviewed exact commits and bound exact-head evidence carry continuity.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-UNUSED-STYLES-MAINTENANCE-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-UNUSED-STYLES-EXACT-SOURCE-001",
+        "ORA-TDRP-UNUSED-STYLES-FIXED-POINT-001",
+        "ORA-TDRP-UNUSED-STYLES-NO-PUBLICATION-AUTHORITY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-UNUSED-STYLES-NO-PRODUCT-RUNTIME-001",
+        "INV-TDRP-UNUSED-STYLES-SUBMODULE-WRITE-EXCLUSION-001",
+        "INV-TDRP-UNUSED-STYLES-GREEN-NOT-SETTLEMENT-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-UNUSED-STYLES-DETECTION-001",
+        "CONTRACT-TDRP-UNUSED-STYLES-REVIEWABLE-PROPOSAL-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-UNUSED-STYLES-MONTHLY-BRANCH-FENCE-001",
+        "TEMP-TDRP-UNUSED-STYLES-FIXED-POINT-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-UNUSED-STYLES-MISSING-SUBMODULES-001",
+        "FAULT-TDRP-UNUSED-STYLES-PROVIDER-NPM-DRIFT-001",
+        "FAULT-TDRP-UNUSED-STYLES-PR-ERROR-SWALLOWED-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-UNUSED-STYLES-GITHUB-TOKEN-001",
+        "SEC-TDRP-UNUSED-STYLES-MUTABLE-SUPPLY-CHAIN-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-UNUSED-STYLES-NO-RUNTIME-001",
+        "REG-TDRP-UNUSED-STYLES-OWNER-REUSED-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [],
+      "test_fixture_ids": [
+        "locked strict94 workflow + provider exact commit/tree/blobs + canonical quality owners + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact workflow/provider identities retained. Mutable provider master and unversioned npm remain fail-closed; absence of committed LICENSE/package lock is recorded as incomplete provenance, not a legal conclusion.",
+      "reviewer": null,
+      "notes": "Strict index 94 closes only .github/workflows/unused_styles_updater.yml. Counters become unknown=16,280 unread=16,255 omitted=0 responsibilities=112. Next strict root index 95 .github/workflows/user_agent_updater.yml@1e3dae8182aefc4e4c76df065f547a43a1e50437. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required."
     }
   ]
 }
