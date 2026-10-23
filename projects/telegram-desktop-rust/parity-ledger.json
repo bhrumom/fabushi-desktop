@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "dd73463705dd875b2bc127396fb0b5af528dfe31",
+  "target_commit": "3d136f7703caaa6c9943c292767262f7a90a386d",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16253,
-    "unread": 16228,
+    "unknown": 16252,
+    "unread": 16227,
     "omitted": 0,
-    "responsibilities_total": 141,
+    "responsibilities_total": 142,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -38081,6 +38081,298 @@
       "license_and_provenance": "Exact XDG blob retained as platform/product provenance. Telegram branding, icon id, tg/ton schemes, Qt category, WM class and Telegram quit CLI are not promoted to Fabushi runtime authority.",
       "reviewer": null,
       "notes": "Strict123 closes only lib/xdg/org.telegram.desktop.desktop semantic read/decomposition. Counters unknown=16,253 unread=16,228 omitted=0 responsibilities=141. Linux installed XDG/custom-URI/DBus acceptance remains open. Next strict124 lib/xdg/org.telegram.desktop.metainfo.xml@c8b26f262bfdfa93f97b22f9aba4131073504223 (8,227 bytes). Fresh child exact-head TDRP/Rust Actions required."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "lib/xdg/org.telegram.desktop.metainfo.xml",
+      "source_blob_sha": "c8b26f262bfdfa93f97b22f9aba4131073504223",
+      "source_kind": "xdg_appstream_metainfo_packaging_metadata",
+      "module_id": "tdesktop.root.lib.xdg.appstream_metainfo",
+      "responsibility_id": "TDRP-R9-UPSTREAM-XDG-APPSTREAM-METAINFO-PROVENANCE-001",
+      "source_symbols": [
+        "<component type=\"desktop\">",
+        "<id>org.telegram.desktop</id>",
+        "<description>",
+        "<branding>",
+        "<screenshots>",
+        "<requires>",
+        "<supports>",
+        "<content_rating type=\"oars-1.1\">",
+        "<launchable type=\"desktop-id\">",
+        "<provides>"
+      ],
+      "capability_ids": [
+        "CAP-DESKTOP-PACKAGE-IDENTITY",
+        "CAP-RELEASE-METADATA",
+        "CAP-BRAND-ASSET-GOVERNANCE",
+        "CAP-STOREFRONT-COPY",
+        "CAP-PLATFORM-REQUIREMENTS",
+        "CAP-CONTENT-RATING-METADATA",
+        "CAP-DESKTOP-PROTOCOL-METADATA",
+        "CAP-RELEASE-PROVENANCE"
+      ],
+      "dependency_ids": [
+        "desktop/package.json@3d500622ce9b26e3452d98d0c4a7e7dcc019ac84",
+        ".github/workflows/release-macos-main.yml@b0a3a4d5503e6104c083f85e31475523a2b30643",
+        "desktop/e2e/openbot-packaged-acceptance.spec.ts@4075f76ec7e4b74e2e219cb3f49e984bd96132a6",
+        "desktop/e2e/miniapp-packaged-acceptance.spec.ts@2663a61e3c1f5284d2a30403b6c633b3df6dc807",
+        "projects/fabushi-communication-platform/design-system.md@bab234e73227686ba978f6d0b332e2fc896488fa",
+        "projects/fabushi-communication-platform/visual-acceptance.md@16855454ff7897f3aa205bc33f1672077e32955d"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-lib-xdg-org-telegram-desktop-metainfo-xml-complete-read.md",
+      "behavior_contract": "Preserve source-neutral catalog/package responsibilities through existing Fabushi package, release, brand and acceptance owners. External Telegram identity, claims, URLs, screenshots, colors, OARS ratings, D-Bus name and URI handlers remain provenance. Any Fabushi storefront/platform claim requires direct current-head product/release evidence; a package manifest declaration is not installed Linux/AppStream E2E evidence.",
+      "state_machine": "source metadata -> classify identity/copy/brand/screenshots/requirements/rating/provides -> map to canonical package/release/brand authorities -> require current-head installed/release evidence before any shipping declaration -> otherwise mapped-open/fail-closed",
+      "side_effects": [
+        "publication updates migration accounting only",
+        "future AppStream metadata could affect Linux software-center discovery and declared capabilities but no such shipping artifact exists at current head"
+      ],
+      "failure_cases": [
+        "Telegram brand/copy/assets are copied",
+        "Telegram security/privacy/performance claims are presented as Fabushi facts",
+        "Telegram OARS ratings are reused without product review",
+        "Telegram D-Bus/tg/ton handlers are registered",
+        "desktop/package.json is treated as proof of installed AppStream metadata",
+        "a second packaging/brand/release owner is introduced",
+        "stale lease/evidence is published"
+      ],
+      "ui_disposition": "No Telegram UI is imported. Any future storefront screenshots/copy remain governed by Fabushi brand/design and current-head visual acceptance.",
+      "non_ui_responsibilities": [
+        "package/catalog identity",
+        "release/store metadata",
+        "support/project URLs",
+        "brand asset provenance",
+        "storefront screenshot provenance",
+        "platform requirements",
+        "content rating declarations",
+        "binary/DBus/protocol provides",
+        "license/provenance boundaries"
+      ],
+      "platform_delta": "Telegram ships a static AppStream metainfo contract. Fabushi currently has electron-builder package metadata and macOS exact-source release acceptance but no tracked AppStream/metainfo artifact or Linux installed acceptance.",
+      "existing_owner_candidates": [
+        "desktop/package.json packaging identity (selected)",
+        ".github/workflows/release-macos-main.yml release provenance (selected)",
+        "Fabushi design-system/visual-acceptance brand authority (selected)",
+        "packaged acceptance specs (selected for evidence boundary)",
+        "new Telegram/AppStream packaging root (rejected)",
+        "new content-rating/brand runtime owner (rejected)"
+      ],
+      "existing_owner": "desktop/package.json + existing exact-source release/packaged-acceptance workflows + Fabushi design-system/visual-acceptance governance",
+      "rejected_existing_owners": [
+        "Telegram AppStream identity is source-specific",
+        "no current AppStream shipping file exists to own Linux store metadata",
+        "new D-Bus/URI metadata owner duplicates platform/package responsibility",
+        "brand and marketing claims cannot be inferred from upstream provenance"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "desktop/package.json",
+        ".github/workflows/release-macos-main.yml",
+        "desktop/e2e/openbot-packaged-acceptance.spec.ts",
+        "desktop/e2e/miniapp-packaged-acceptance.spec.ts",
+        "projects/fabushi-communication-platform/design-system.md",
+        "projects/fabushi-communication-platform/visual-acceptance.md"
+      ],
+      "fabushi_target_symbols": [
+        "\"appId\": \"com.ombhrum.fabushi\"",
+        "\"productName\": \"Fabushi\"",
+        "\"homepage\": \"https://fabushi.ombhrum.com/\"",
+        "\"linux\": {",
+        "\"protocols\": [",
+        "Package macOS installer from exact source",
+        "candidate executable must be built from the requested exact HEAD",
+        "the signed app must match the exact CI source revision",
+        "Content and brand acceptance"
+      ],
+      "target_language": "Existing JSON/YAML/TypeScript/Markdown package-release-brand authorities",
+      "language_rationale": "The source entry is packaging/store metadata, so responsibility belongs to existing package/release/brand governance rather than a new runtime implementation.",
+      "command_event_contracts": [
+        "package metadata -> generated platform package metadata",
+        "release candidate -> exact-source signed package -> immutable artifact -> packaged acceptance -> independent promotion",
+        "storefront/brand claim -> Fabushi brand authority + current-head evidence",
+        "Linux/AppStream claim -> direct generated/installed Linux evidence required"
+      ],
+      "state_owner": "desktop/package.json owns current package identity; release workflows own binary provenance; design/visual authorities own user-visible brand/copy evidence.",
+      "lifecycle_owner": "Existing package/release lifecycle; no AppStream-specific runtime lifecycle exists.",
+      "persistence_and_restart": "Store metadata is installation/repository metadata, not application runtime state. Durable acceptance requires exact artifact and installation/store evidence.",
+      "concurrency_and_cancellation": "Actions evidence must be terminal success and exact-head; queued/in-progress/cancelled runs cannot satisfy the gate.",
+      "security_boundary": "Never publish upstream crypto/privacy/security guarantees as Fabushi claims without Fabushi-specific evidence; never register Telegram D-Bus or URI identifiers.",
+      "network_service_dependencies": [
+        "GitHub Actions/source evidence; future storefront/homepage/support endpoints require their own production ownership and availability evidence"
+      ],
+      "service_owner": "Existing release/project authorities; no new service owner",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "xdg-appstream-metainfo-responsibilities-mapped-open",
+      "blockers": [
+        "No current-head shipping AppStream/metainfo file.",
+        "No exact-head Linux installed AppImage/deb/AppStream acceptance.",
+        "No Fabushi OARS/content-rating authority/evidence for the upstream rating values.",
+        "Telegram marketing/security/privacy/performance claims are not Fabushi evidence.",
+        "Recursive source closure remains open.",
+        "Independent release acceptance remains open."
+      ],
+      "production_entrypoints": [
+        "desktop/package.json::build",
+        "release-macos-main.yml::exact-source candidate pipeline",
+        "openbot-packaged-acceptance.spec.ts::signed packaged acceptance",
+        "miniapp-packaged-acceptance.spec.ts::signed installed acceptance",
+        "design-system.md::brand asset authority",
+        "visual-acceptance.md::content and brand acceptance"
+      ],
+      "production_evidence": [
+        "path:desktop/package.json",
+        "path:.github/workflows/release-macos-main.yml",
+        "path:desktop/e2e/openbot-packaged-acceptance.spec.ts",
+        "path:desktop/e2e/miniapp-packaged-acceptance.spec.ts",
+        "path:projects/fabushi-communication-platform/design-system.md",
+        "path:projects/fabushi-communication-platform/visual-acceptance.md"
+      ],
+      "test_evidence": [
+        "Exact upstream AppStream blob fully read at accepted upstream commit/tree.",
+        "Current exact Fabushi tree contains no metainfo/appdata/AppStream/.desktop shipping source file and no Linux release workflow.",
+        "desktop/package.json owns Fabushi package identity/Linux targets/icon/protocol declaration but does not prove installed AppStream metadata.",
+        "Exact-source release and packaged acceptance owners bind source SHA and signed installed candidates, but present workflows are macOS-focused.",
+        "Fabushi visual acceptance explicitly scans user-visible external brand copy/assets and requires current-head evidence.",
+        "Parent TDRP 39961896876 completed 61/61 success; authority 12504409984 sha256:f6d3682a6922b59c8277b76a9605532ec3984900aca7306ac37d81a78efd4368; closure 12504769659 sha256:2f3f4af69d1a20f8ae3a6f5a1a27ac97b05444b5dc6430fd0febb4baac12d30f; reachability 12505835838 sha256:f5dd5c8959cc2a042a53a8c94430f2167033664166c7b1dbd08dca0a41f5a42e.",
+        "Parent Rust 39961896845 completed 6/6 success; artifact 12505247386 sha256:8deadb2c32d85289e8b2c0f0ee49bfc9c05cb6b8388810c4b3633f9ccffe5489.",
+        "Pre-publication PR/ref/tree, live main 7394f6dc7687f9b986ee5589d40aa680ce23b90a/fbeb0bb32d944d0c1053880c471fe5c52279f052 and upstream a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5 remained stable."
+      ],
+      "target_commit": "3d136f7703caaa6c9943c292767262f7a90a386d",
+      "workflow_run": 39961896876,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12504409984,
+      "artifact_digest": "sha256:f6d3682a6922b59c8277b76a9605532ec3984900aca7306ac37d81a78efd4368",
+      "composition_root": "Fabushi canonical desktop packaging/release/brand governance",
+      "composition_slot": "Linux software-catalog / store metadata and release declaration",
+      "capability_component": "package identity + store metadata + requirements/rating/provides evidence boundary",
+      "variation_axes": [
+        "Fabushi identity versus Telegram identity",
+        "manifest declaration versus installed evidence",
+        "marketing claim versus measured evidence",
+        "brand provenance versus shipping asset",
+        "macOS accepted package versus Linux AppStream acceptance"
+      ],
+      "shared_owner_contracts": [
+        "desktop/package.json",
+        "exact-source release workflow",
+        "packaged acceptance specs",
+        "Fabushi design-system",
+        "Fabushi visual acceptance",
+        "exact-head evidence governance"
+      ],
+      "duplicate_root_check": "No Telegram/AppStream runtime, second package manifest, second brand root, content-rating root, release authority, D-Bus owner or URI handler owner is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "External OS/store catalog metadata",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Package/store discovery only",
+      "detail_section": "Not applicable",
+      "capability_surface": "OS/package storefront",
+      "route_contract": "Store/OS package metadata -> installed Fabushi package -> existing ProductShell",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Storefront screenshot/layout claims require separate approved evidence; not inherited.",
+      "accessibility_contract": "Store metadata cannot substitute for application accessibility acceptance.",
+      "keyboard_contract": "Input-capability declarations require product/platform evidence; not inherited from Telegram metadata.",
+      "state_continuity_contract": "Metadata claims remain fail-closed until exact artifact/installation evidence exists; upstream or package drift requires fresh evidence.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi canonical design system",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Fabushi package icon is desktop/resources/icon.png@8245ffe5e42e360fbcdb5e2f67c3dad6a13c39bf; Telegram screenshots/colors/icon identity remain provenance.",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-UPSTREAM-XDG-APPSTREAM-METAINFO-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-XDG-APPSTREAM-EXACT-SOURCE-001",
+        "ORA-TDRP-XDG-APPSTREAM-PACKAGE-OWNER-001",
+        "ORA-TDRP-XDG-APPSTREAM-BRAND-AUTHORITY-001",
+        "ORA-TDRP-XDG-APPSTREAM-RELEASE-EVIDENCE-001",
+        "ORA-TDRP-XDG-APPSTREAM-CLAIM-BOUNDARY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-XDG-APPSTREAM-NO-TELEGRAM-BRAND-001",
+        "INV-TDRP-XDG-APPSTREAM-NO-UNPROVEN-MARKETING-CLAIMS-001",
+        "INV-TDRP-XDG-APPSTREAM-NO-UNPROVEN-OARS-001",
+        "INV-TDRP-XDG-APPSTREAM-NO-TELEGRAM-DBUS-OR-SCHEMES-001",
+        "INV-TDRP-XDG-APPSTREAM-NO-MANIFEST-AS-LINUX-E2E-001",
+        "INV-TDRP-XDG-APPSTREAM-NO-SECOND-PACKAGING-OWNER-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-XDG-APPSTREAM-EXACT-SOURCE-001",
+        "CONTRACT-TDRP-XDG-APPSTREAM-CANONICAL-OWNERS-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-XDG-APPSTREAM-PACKAGE-DRIFT-001",
+        "TEMP-TDRP-XDG-APPSTREAM-UPSTREAM-DRIFT-001"
+      ],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-XDG-APPSTREAM-NO-FALSE-SECURITY-CLAIM-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-XDG-APPSTREAM-NO-EXTERNAL-BRAND-001",
+        "REG-TDRP-XDG-APPSTREAM-NO-DECLARATION-AS-E2E-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-MODULE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "locked AppStream blob + exact current package/release/brand owners + parent exact-head Actions"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [
+        "TDRP 39961896876 61/61 success",
+        "Rust 39961896845 6/6 success"
+      ],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact upstream AppStream file retained as packaging/storefront provenance. Telegram identity, marketing/security/privacy claims, colors, screenshots, OARS values, GPL declaration, D-Bus and tg/ton handlers are not promoted to Fabushi product authority.",
+      "reviewer": null,
+      "notes": "Strict124 closes only lib/xdg/org.telegram.desktop.metainfo.xml semantic read/decomposition. Counters unknown=16,252 unread=16,227 omitted=0 responsibilities=142. AppStream/Linux installed acceptance remains open. Next strict125 lib/xdg/org.telegram.desktop.service@8935a4fa834df4e12cbf4f5f466758a14d2c2357 (84 bytes). Fresh child exact-head TDRP/Rust Actions required."
     }
   ]
 }
