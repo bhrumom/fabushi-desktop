@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "5ad8f77a764c4e1abf25b1549e8acb87533aad90",
+  "target_commit": "a8d5c1f797cac10749db1608743d2eba13d5a139",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16227,
-    "unread": 16202,
+    "unknown": 16226,
+    "unread": 16201,
     "omitted": 0,
-    "responsibilities_total": 167,
+    "responsibilities_total": 168,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -44944,6 +44944,260 @@
       "license_and_provenance": "Exact Microsoft/GSL include/gsl/algorithm@584f5cd12beb15e863b1c32bc887638314261399 MIT-licensed dependency implementation provenance retained through the locked GSL child; no C++ runtime/release authority inferred.",
       "reviewer": "primary-session",
       "notes": "Strict149 closes only GSL include/gsl/algorithm as a generic low-level dependency-replacement responsibility. No direct accepted tdesktop gsl::copy callsite was found. Counters unknown=16,227 unread=16,202 omitted=0 responsibilities=167. Next strict150 Microsoft/GSL include/gsl/assert@d3e6ccdd53d5a254ed3827cf07711a6e86bb4226."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/GSL",
+      "source_blob_sha": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+      "source_kind": "recursive_child_repository_dependency_implementation",
+      "module_id": "tdesktop.thirdparty.gsl.assert",
+      "responsibility_id": "TDRP-R9-GSL-ASSERT-CONTRACT-FAILURE-DEPENDENCY-001",
+      "source_symbols": [
+        "include/gsl/assert@d3e6ccdd53d5a254ed3827cf07711a6e86bb4226",
+        "GSL_MSVC_USE_STL_NOEXCEPTION_WORKAROUND",
+        "GSL_SUPPRESS / GSL_LIKELY / GSL_UNLIKELY / GSL_ASSUME",
+        "gsl::details::terminate()",
+        "GSL_CONTRACT_CHECK(type, cond)",
+        "Expects(cond) / Ensures(cond)",
+        "Telegram/SourceFiles/stdafx.h@252ab2c2aa698e3337894ab6d50acef697789036 assertion override ordering",
+        "Telegram/lib_base@95a543e426e35938dd632139d0bb828b268c3b4c base/assertion.h@05194235168d883f34ce7da9972856d824bf1f1f diagnostic crash override"
+      ],
+      "capability_ids": [
+        "CAP-CONTRACT-PREPOSTCONDITION-FAIL-CLOSED",
+        "CAP-INVARIANT-DIAGNOSTIC-FAILURE",
+        "CAP-DEPENDENCY-REPLACEMENT"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "Microsoft/GSL:include/gsl/assert@d3e6ccdd53d5a254ed3827cf07711a6e86bb4226",
+        "Microsoft/GSL:tests/assertion_tests.cpp@231befc7e415ec53daa09ced61d76505e6be5437",
+        "Microsoft/GSL:tests/no_exception_ensure_tests.cpp@5fde41cf2f307830c07d592819c7baed5d59d40d",
+        "Telegram/SourceFiles/stdafx.h@252ab2c2aa698e3337894ab6d50acef697789036",
+        "Telegram/lib_base@95a543e426e35938dd632139d0bb828b268c3b4c:base/assertion.h@05194235168d883f34ce7da9972856d824bf1f1f",
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md#TDRP-LANG-03"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-assert-contract-failure-complete-read.md",
+      "behavior_contract": "Account for the locked GSL contract-failure implementation and tdesktop's real override: pre/postcondition failure is non-continuing; tdesktop adds file/line logging and crash-report-oriented failure. Preserve fail-closed invariants and diagnostics through existing native Rust/domain error and recovery owners without retaining GSL/C++ macros or deliberate-null-write mechanics.",
+      "state_machine": "condition evaluated -> true: continue with no contract side effect; false: fail closed -> stock GSL terminate/no-exception fast-fail OR tdesktop override diagnostic log + crash-report failure + abort fallback -> no continued execution",
+      "side_effects": [
+        "Failed stock GSL contract terminates rather than returning to the caller.",
+        "tdesktop override records diagnostic file/line before non-continuing failure.",
+        "MSVC no-exceptions/kernel mode restores a non-returning termination path.",
+        "Compiler suppression/likely/assume helpers affect analysis/optimization provenance but do not own product state.",
+        "Creates no independent product persistence, network or UI state."
+      ],
+      "failure_cases": [
+        "A failed invariant is allowed to continue execution.",
+        "Optimizer GSL_ASSUME is treated as a runtime validation check.",
+        "tdesktop diagnostic/crash-report override is omitted from source responsibility.",
+        "Recoverable external input is converted directly into an internal fatal assertion rather than validated at its domain boundary.",
+        "The deliberate C++ null-write crash technique is copied as target architecture.",
+        "A GSL/C++ assertion runtime or parallel crash subsystem is introduced.",
+        "No-exceptions termination behavior is lost.",
+        "Source drift is ignored."
+      ],
+      "ui_disposition": "No direct UI surface; generic contract/invariant failure dependency implementation with cross-domain diagnostic semantics.",
+      "non_ui_responsibilities": [
+        "contract precondition/postcondition non-continuation",
+        "no-exception termination fallback",
+        "compiler suppression and branch-hint provenance",
+        "optimizer assume provenance",
+        "tdesktop file/line diagnostic integration",
+        "crash-report-oriented invariant failure provenance",
+        "native dependency replacement"
+      ],
+      "platform_delta": "Use native Rust/domain validation, Result/error contracts and invariant failure/diagnostic mechanisms appropriate to each existing owner. Do not preserve C++ macro syntax, std::terminate wiring, compiler pragmas or deliberate null dereference as Fabushi architecture.",
+      "existing_owner_candidates": [
+        "TDRP-LANG-03 mature low-level dependency replacement (selected)",
+        "G-BEHAVIOR and G-FAULT-RECOVERY fail-closed behavior contracts (selected)",
+        "actual Fabushi Rust domain validation/invariant/error/diagnostic lifecycle at each caller (selected application boundary)",
+        "new GSL/assert runtime or parallel crash subsystem (rejected)"
+      ],
+      "existing_owner": "TDRP-LANG-03 dependency replacement plus canonical G-BEHAVIOR/G-FAULT-RECOVERY and actual existing Rust domain validation/invariant/error/diagnostic owners; Telegram/lib_base assertion integration remains a separately traceable recursive source responsibility",
+      "rejected_existing_owners": [
+        "A GSL-specific assertion runtime would violate source-neutral existing-owner-first architecture.",
+        "The C++ deliberate-null-write crash mechanism is an implementation technique, not product architecture.",
+        "Generic dependency macros cannot become a second error/recovery owner alongside the actual domain owner."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md"
+      ],
+      "fabushi_target_symbols": [
+        "`coverage_disposition` 区分 rewritten、fabushi-ui-replacement、platform-equivalent、toolchain-equivalent、dependency-replaced、retained-legal-record 等。只有无产品运行责任的文档/法律/纯来源记录能以有依据的 non-runtime accounted 闭合；任何承载产品行为的文件/子责任都必须有真实实现/替代证据。",
+        "**TDRP-LANG-03:** 通用成熟安全/媒体依赖须登记、锁定和审查，可以替代低层标准能力；这不豁免其 source/dependency inventory，也不允许隐藏原 Telegram C++ 业务模块。不要自行发明密码学来满足表面语言指标。",
+        "- **G-FAULT-RECOVERY:** timeout/disconnect/reconnect/restart/cancel/stale/duplicate/out-of-order/permission/service failure 中适用场景 fail-closed。"
+      ],
+      "target_language": "Rust native validation/invariant/error and diagnostic mechanisms through existing domain owners",
+      "language_rationale": "The source is a generic C++ contract-support dependency. Preserve non-continuation and diagnostic behavior at native Rust/domain boundaries without retaining macro/runtime architecture.",
+      "command_event_contracts": [
+        "contract condition -> true: continue",
+        "contract condition -> false: non-continuing fail-closed path",
+        "tdesktop invariant failure -> diagnostic file/line -> crash-report-oriented termination",
+        "external recoverable input -> domain validation before internal invariant boundary",
+        "dependency closure -> native replacement, not GSL runtime"
+      ],
+      "state_owner": "Actual caller/domain state; GSL assert owns no independent product state.",
+      "lifecycle_owner": "Actual caller/domain lifecycle plus canonical error/recovery/diagnostic lifecycle.",
+      "persistence_and_restart": "No dependency-owned runtime persistence. Crash/restart/recovery state remains owned by existing product recovery owners and must be evidenced separately.",
+      "concurrency_and_cancellation": "Synchronous contract evaluation; concurrency/cancellation semantics remain with callers. A failed invariant is non-continuing.",
+      "security_boundary": "Contract checks are safety boundaries. They cannot be weakened into optimizer assumptions or UI-only validation, and this mapped dependency row does not itself prove product security/recovery acceptance.",
+      "network_service_dependencies": [
+        "GitHub Actions for exact-head revalidation"
+      ],
+      "service_owner": "No shipping service.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-replaced-mapped-open",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required after publication.",
+        "Telegram/lib_base/base/assertion.h remains a separate recursive source responsibility.",
+        "Actual domain callers and later GSL headers remain independently open.",
+        "Crash/recovery and independent release acceptance remain open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "strict150 include/gsl/assert@d3e6ccdd53d5a254ed3827cf07711a6e86bb4226 fully read: 134 line slots / 3988 bytes",
+        "tests/assertion_tests.cpp@231befc7e415ec53daa09ced61d76505e6be5437 fully read: 61 line slots / 1593 bytes; Expects/Ensures positive and death cases",
+        "tests/no_exception_ensure_tests.cpp@5fde41cf2f307830c07d592819c7baed5d59d40d fully read: 56 line slots / 1644 bytes; no-exception termination path",
+        "Telegram/SourceFiles/stdafx.h@252ab2c2aa698e3337894ab6d50acef697789036 lines 105-108 loads base/assertion.h before <gsl/gsl>",
+        "Telegram/lib_base@95a543e426e35938dd632139d0bb828b268c3b4c base/assertion.h@05194235168d883f34ce7da9972856d824bf1f1f fully read: 100 line slots / 2365 bytes; Expects/Ensures log + crash-report-oriented failure + abort fallback",
+        "GSL gitlink 87f9d768866548b5b86e72be66c60c5abd4d9b37; child tree 6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41",
+        "Parent TDRP 40034178153 61/61 success; authority 12535384410 sha256:c96eef6b8937dd374dc901728030841e78a309e57a23c56c73296063c62e20e6; closure 12537015768 sha256:f8ac01dba730448bfbea88979d1b5f9f91616cc2564fcfd2ae36a0a7c2e8bd94; reachability 12536726927 sha256:48efbf7c3b63a8ce8ad2d43e786238ac02a47fd05d0c745cad2e642e07ddec20; Rust 40034178058 6/6 success; artifact 12536755908 sha256:ccdf141f91d920d6a993a4982b58b41a23627340870e21dc93419e225c5c58aa"
+      ],
+      "target_commit": "a8d5c1f797cac10749db1608743d2eba13d5a139",
+      "workflow_run": 40034178153,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12535384410,
+      "artifact_digest": "sha256:c96eef6b8937dd374dc901728030841e78a309e57a23c56c73296063c62e20e6",
+      "composition_root": "Fabushi native low-level dependency replacement and domain failure/recovery lifecycle",
+      "composition_slot": "contract pre/postcondition fail-closed semantics and diagnostics",
+      "capability_component": "Native contract/invariant failure dependency replacement",
+      "variation_axes": [
+        "condition pass/fail",
+        "stock terminate vs no-exception fallback",
+        "tdesktop diagnostic override",
+        "recoverable validation vs impossible invariant",
+        "compiler suppression/hints vs runtime checks"
+      ],
+      "shared_owner_contracts": [
+        "TDRP-LANG-03",
+        "G-BEHAVIOR",
+        "G-FAULT-RECOVERY",
+        "actual domain validation/error/recovery owners",
+        "exact-head TDRP evidence"
+      ],
+      "duplicate_root_check": "No GSL/C++ assertion runtime, second crash subsystem, parallel error owner or source-branded safety layer.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Low-level dependency contract/invariant semantics only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Native fail-closed contract/invariant semantics",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Changed GSL assert or tdesktop/lib_base assertion integration requires fresh reconciliation; domain failure/recovery owners remain independently open.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-GSL-ASSERT-CONTRACT-FAILURE-DEPENDENCY-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GSL-ASSERT-EXACT-SOURCE-001",
+        "ORA-TDRP-GSL-ASSERT-FAIL-CLOSED-001",
+        "ORA-TDRP-GSL-ASSERT-TDESKTOP-OVERRIDE-001",
+        "ORA-TDRP-GSL-ASSERT-NATIVE-REPLACEMENT-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GSL-ASSERT-NO-OMISSION-001",
+        "INV-TDRP-GSL-ASSERT-NO-GSL-RUNTIME-001",
+        "INV-TDRP-GSL-ASSERT-DIAGNOSTIC-NONCONTINUATION-001",
+        "INV-TDRP-GSL-ASSERT-EXACT-PROVENANCE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GSL-ASSERT-DEPENDENCY-REPLACEMENT-001",
+        "CONTRACT-TDRP-GSL-ASSERT-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GSL-ASSERT-SOURCE-DRIFT-001",
+        "FAULT-TDRP-GSL-ASSERT-CONTINUE-AFTER-INVARIANT-001",
+        "FAULT-TDRP-GSL-ASSERT-DIAGNOSTIC-LOSS-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-GSL-ASSERT-FAIL-CLOSED-INVARIANT-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-GSL-ASSERT-NO-SOURCE-OMISSION-001",
+        "REG-TDRP-GSL-ASSERT-NO-PARALLEL-CRASH-RUNTIME-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-BEHAVIOR",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-FAULT-RECOVERY",
+        "G-SECURITY-PRIVACY"
+      ],
+      "test_fixture_ids": [
+        "locked GSL assert header + GSL focused death/no-exception tests + tdesktop/lib_base assertion override + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact Microsoft/GSL include/gsl/assert@d3e6ccdd53d5a254ed3827cf07711a6e86bb4226 MIT-licensed dependency implementation plus accepted tdesktop/lib_base override provenance retained; no C++ assertion/crash runtime or release authority inferred.",
+      "reviewer": "primary-session",
+      "notes": "Strict150 closes only GSL include/gsl/assert as a fail-closed contract dependency responsibility, while retaining tdesktop's real diagnostic crash override as provenance. Telegram/lib_base assertion and all domain callers remain independently open. Counters unknown=16,226 unread=16,201 omitted=0 responsibilities=168. Next strict151 Microsoft/GSL include/gsl/byte@87d007ef94d197632872e96d91525a013c665da8."
     }
   ]
 }

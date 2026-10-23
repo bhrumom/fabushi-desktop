@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16227,
-    "unread_minimum": 16202,
+    "unknown_minimum": 16226,
+    "unread_minimum": 16201,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -122,7 +122,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5; GSL 87f9d768866548b5b86e72be66c60c5abd4d9b37/6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41. Parent TDRP 40032422818 61/61 success; authority 12535009130 sha256:52f5f920d522ea61db5ecd3dd6a37ef915374b5a187ada4f8c4b86d823fcd42f; closure 12535502594 sha256:9efd7ef2c935a1525b39f8327993191cf6211d1f33f2dd6984f94cef2f2b8050; reachability 12535588315 sha256:77d55bddd4361677d0d5cd096378d1f26ff23d8684aa28699e996a2dc8ef3465; Rust 40032422966 6/6 success; artifact 12534964298 sha256:7ee3bfd1cac74e6864184cbf4af4d70abb27c9bd292d4c292cb0b38869599cdc. Strict149 Microsoft/GSL include/gsl/algorithm@584f5cd12beb15e863b1c32bc887638314261399 fully read: 64 line slots / 2339 bytes. It implements generic span copy with compile-time assignability/extent checks, runtime destination-size Expects, compiler-analysis suppression and std::copy_n. Accepted tdesktop code search found no direct gsl::copy callsite, so this is a recursive generic dependency utility, not a product-specific owner. Preserve the low-level responsibility through native Rust type/slice safety when needed; do not add a GSL/C++ runtime. Counters unknown=16,227 unread=16,202 omitted=0 responsibilities=167. Next strict150 Microsoft/GSL include/gsl/assert@d3e6ccdd53d5a254ed3827cf07711a6e86bb4226.",
+  "note": "Live main 7394f6dc7687f9b986ee5589d40aa680ce23b90a/fbeb0bb32d944d0c1053880c471fe5c52279f052; upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5; GSL 87f9d768866548b5b86e72be66c60c5abd4d9b37/6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41. Parent TDRP 40034178153 61/61 success; authority 12535384410 sha256:c96eef6b8937dd374dc901728030841e78a309e57a23c56c73296063c62e20e6; closure 12537015768 sha256:f8ac01dba730448bfbea88979d1b5f9f91616cc2564fcfd2ae36a0a7c2e8bd94; reachability 12536726927 sha256:48efbf7c3b63a8ce8ad2d43e786238ac02a47fd05d0c745cad2e642e07ddec20; Rust 40034178058 6/6 success; artifact 12536755908 sha256:ccdf141f91d920d6a993a4982b58b41a23627340870e21dc93419e225c5c58aa. Strict150 Microsoft/GSL include/gsl/assert@d3e6ccdd53d5a254ed3827cf07711a6e86bb4226 fully read: 134 line slots / 3988 bytes. The header supplies compiler suppression/hints/assume, stock terminate/no-exception fast-fail and Expects/Ensures non-continuation. tdesktop stdafx@252ab2c2aa698e3337894ab6d50acef697789036 loads lib_base assertion before <gsl/gsl>; lib_base/base/assertion.h@05194235168d883f34ce7da9972856d824bf1f1f redefines Expects/Ensures to log file/line, crash for reporting and abort fallback. Preserve fail-closed/diagnostic semantics through native Rust/domain owners; do not add a GSL/C++ assertion or parallel crash runtime. Counters unknown=16,226 unread=16,201 omitted=0 responsibilities=168. Next strict151 Microsoft/GSL include/gsl/byte@87d007ef94d197632872e96d91525a013c665da8.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
