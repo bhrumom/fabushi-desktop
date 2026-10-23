@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "a4844465a441db4f9f53335a556b3b5b87805111",
+  "target_commit": "06910d91bc127dc2ee1b1353139d1d77e19d26fc",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16250,
-    "unread": 16225,
+    "unknown": 16249,
+    "unread": 16224,
     "omitted": 0,
-    "responsibilities_total": 144,
+    "responsibilities_total": 145,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -38901,6 +38901,279 @@
       "license_and_provenance": "Exact upstream Snapcraft recipe retained as package/build provenance; third-party acquisitions remain under build-time-acquisitions.json and their own licenses.",
       "reviewer": null,
       "notes": "Strict126 closes only snap/snapcraft.yaml semantic read/decomposition. Counters unknown=16,250 unread=16,225 omitted=0 responsibilities=144. Next strict127 tasks/2026/07/24/generate-walletkit-golden-vectors.md@863a1733649dcb8371091d750f6173bb8550a839."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "tasks/2026/07/24/generate-walletkit-golden-vectors.md",
+      "source_blob_sha": "863a1733649dcb8371091d750f6173bb8550a839",
+      "source_kind": "walletkit_golden_vector_fixture_generation_task_provenance",
+      "module_id": "tdesktop.root.tasks.walletkit-golden-vectors",
+      "responsibility_id": "TDRP-R9-WALLETKIT-GOLDEN-VECTOR-CRYPTO-FIXTURE-PROVENANCE-001",
+      "source_symbols": [
+        "No client code changes",
+        "@ton/walletkit 1.1.0-beta.0",
+        "@ton/core 0.63.1",
+        "@ton/crypto 3.3.0",
+        "W5R1 fixture wallet",
+        "walletId 2147483409",
+        "seqno 5",
+        "fixed validUntil 1753300000",
+        "10000000 nano",
+        "send mode 3",
+        "StateInit attached",
+        "signed external-transfer BOC",
+        "FakeSign twin",
+        "TEP-467 normalized external-message hashes",
+        "W5R1 code cell representation hash",
+        "mnemonic-derived 64-byte secret and 32-byte public key",
+        "work/generate-vectors.mts",
+        "work/vectors/",
+        "work/notes.md",
+        "Future td_gram tests (gram/tests/)"
+      ],
+      "capability_ids": [
+        "CAP-PAYMENT-SETTLEMENT-PROVENANCE",
+        "CAP-CRYPTO-GOLDEN-VECTOR-FIXTURE-PROVENANCE",
+        "CAP-WALLET-TRANSFER-SERIALIZATION-ORACLE",
+        "CAP-WALLET-HASH-NORMALIZATION-ORACLE",
+        "CAP-CRYPTO-FIXTURE-KEY-PROVENANCE"
+      ],
+      "dependency_ids": [
+        "source/mahayana/mahayana-rs/mahayana-platform-core/src/payment.rs@89c6ccc0822af9bc9498a7e5833e9f75cf1d0f6b",
+        "source/mahayana/mahayana-rs/mahayana-platform-core/src/payment_infra.rs@50c7089aa51881c5d16ed1bfa0e3f04ed728a021",
+        "source/mahayana/mahayana-rs/mahayana-platform-worker/src/payment_api.rs@7008042d0058dbc82d42cef85140cea57581c367",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md@4d2c88e118ab489d3d0339d2a61371a7ea74e72e",
+        "Telegram/SourceFiles/AGENTS.md@67b5242923a914cc876fa71b7dc05f6cd0807730"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-task-generate-walletkit-golden-vectors-complete-read.md",
+      "behavior_contract": "Preserve the source-neutral golden-vector test oracle/provenance and PaymentSettlement applicability without importing WalletKit/TON runtime or test secrets. Actual vector bytes/hash values remain unverified because the referenced work/ generator/vector objects are absent from the accepted exact tree; actual wallet transfer/signing/key-custody responsibilities remain independently open.",
+      "state_machine": "exact task source -> fixture contract/provenance -> committed immutable reproducible fixture identity -> canonical implementation owner -> exact-head test evidence; absent generator/vector bytes => fail closed at mapped-open",
+      "side_effects": [
+        "records future wallet transfer serialization/hash oracle provenance",
+        "records applicability to canonical payment settlement without mutating production behavior",
+        "prevents untracked fixture artifacts from being promoted as verified crypto evidence"
+      ],
+      "failure_cases": [
+        "untracked work/ vector bytes treated as immutable evidence",
+        "fixture secret material treated as production key material",
+        "WalletKit/TON dependency imported as a parallel runtime from task prose",
+        "second PaymentSettlement or wallet truth created",
+        "upstream wallet/gram implementation responsibilities incorrectly closed by this task",
+        "source-specific Telegram crypto provider promoted to canonical wallet owner"
+      ],
+      "ui_disposition": "No UI is implemented from this fixture-generation task. Any wallet UI remains an independent source responsibility.",
+      "non_ui_responsibilities": [
+        "golden-vector fixture provenance",
+        "deterministic transfer/hash oracle contract",
+        "test fixture key-material boundary",
+        "PaymentSettlement applicability",
+        "fail-closed reproducibility evidence"
+      ],
+      "platform_delta": "Current Fabushi has canonical source-neutral payment/settlement owners but no exact-head source-neutral WalletKit/TON wallet signing/key-custody owner established by this task. The referenced generated vectors are not committed in the accepted upstream tree.",
+      "existing_owner_candidates": [
+        "PayEngine / payment infrastructure / payment API",
+        "FQT test/evidence provenance owners",
+        "Fabushi secret/credential owners",
+        "source-specific Telegram protocol crypto provider"
+      ],
+      "existing_owner": "Fabushi PayEngine/payment infrastructure/payment API + FQT test/evidence provenance owners",
+      "rejected_existing_owners": [
+        "Telegram Wallet::Session / td_gram runtime",
+        "source-specific Telegram protocol crypto provider",
+        "second PaymentSettlement/wallet store",
+        "production secret stores as golden-fixture oracle"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "source/mahayana/mahayana-rs/mahayana-platform-core/src/payment.rs",
+        "source/mahayana/mahayana-rs/mahayana-platform-core/src/payment_infra.rs",
+        "source/mahayana/mahayana-rs/mahayana-platform-worker/src/payment_api.rs",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md"
+      ],
+      "fabushi_target_symbols": [
+        "pub fn release_settlement(",
+        "pub fn resolve_trusted_payment_intent<C: PaymentCatalog>(",
+        "pub async fn admin_release_settlement(",
+        "Discover test basis -> risk -> oracle/invariants -> RTM/test design -> fixture/environment -> implement tests -> GitHub Actions -> evidence review -> defect/regression -> independent acceptance -> release summary。"
+      ],
+      "target_language": "existing Rust payment domain/service + source-neutral test/evidence governance",
+      "language_rationale": "The task is provenance/test-oracle input. Applicable product settlement stays in current Rust payment owners; fixture evidence stays in existing quality governance. No source-specific WalletKit/TON runtime is justified.",
+      "command_event_contracts": [
+        "trusted payment intent -> canonical payment state machine",
+        "settlement release -> idempotent balanced-ledger mutation",
+        "fixture input identity -> immutable reproducible expected bytes/hashes before verification",
+        "missing generator/vector identity -> no verified crypto-oracle claim"
+      ],
+      "state_owner": "PayEngine/payment persistence for value-flow state; FQT evidence owners for fixture/evidence identity",
+      "lifecycle_owner": "existing payment/service lifecycle + exact-head quality evidence lifecycle",
+      "persistence_and_restart": "Payment mutations retain existing atomic/idempotent persistence semantics. This task adds no persistent wallet key or vector store; fixture evidence must be immutable before it can be verification authority.",
+      "concurrency_and_cancellation": "Payment settlement retains existing idempotency/replay semantics. Fixture generation is not a production concurrent state owner; interrupted/untracked generation cannot advance evidence truth.",
+      "security_boundary": "Fixture mnemonic-derived secret/public-key material is test-only provenance and is not production secret material. WalletKit/TON dependencies are provenance only; no production signing/key-custody implementation is claimed.",
+      "network_service_dependencies": [
+        "existing Fabushi trusted payment/provider service boundary",
+        "GitHub exact-source/evidence authority"
+      ],
+      "service_owner": "existing Fabushi payment/provider service owners; no TON/WalletKit service owner introduced",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "walletkit-golden-vector-fixture-provenance-mapped-open",
+      "blockers": [
+        "Referenced work/generate-vectors.mts, work/vectors/, and work/notes.md are absent from the accepted exact upstream tree.",
+        "Golden BOC/hash/code/key fixture values are not independently reproducible from the tracked task document alone.",
+        "Upstream wallet/gram implementation and test responsibilities remain independently unread/unmapped.",
+        "No exact-head Fabushi source-neutral wallet signing/key-custody owner is proven by this task.",
+        "Recursive source closure remains open.",
+        "Independent release acceptance remains open."
+      ],
+      "production_entrypoints": [
+        "mahayana-platform-core::PayEngine::release_settlement",
+        "mahayana-platform-worker::admin_release_settlement"
+      ],
+      "production_evidence": [
+        "path:source/mahayana/mahayana-rs/mahayana-platform-core/src/payment.rs",
+        "path:source/mahayana/mahayana-rs/mahayana-platform-core/src/payment_infra.rs",
+        "path:source/mahayana/mahayana-rs/mahayana-platform-worker/src/payment_api.rs",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md"
+      ],
+      "test_evidence": [
+        "Exact upstream strict127 task document fully read at accepted commit/blob.",
+        "Accepted upstream root recursive tree was non-truncated; tasks/2026/07/24 contains only the task document and not its referenced work/ generator/vector outputs.",
+        "Parent exact source tree audit found no source-neutral WalletKit/td_gram/wallet-named canonical Fabushi production owner; applicable payment owners were read at exact blobs.",
+        "Pre-insertion ledger audit found zero strict127 source/blob/responsibility rows and zero prior ownership of the selected combined target-path/symbol anchors.",
+        "Parent TDRP 39970676902 completed 61/61 success; authority 12509136820 sha256:034ae36cc2f6e5960b23f925bcf99480f3e1ccd4a109ff7c12028304b748e8e2; closure 12509261874 sha256:c2931062078cc4d07cb3a7566e9d7d0e5730a8e43d8558b2b5c3db40c12f6dff; reachability 12508878626 sha256:1c8c983651f0cec9953b5ea7749ead2a4b6091452519453d52bfb68347ad9483.",
+        "Parent Rust desktop runtime 39970676904 completed 6/6 success; artifact 12508772088 sha256:86120551a373ec21fbf03d20a394a2cc0a6f550109bc5f0a093e68d99da6d9ea."
+      ],
+      "target_commit": "06910d91bc127dc2ee1b1353139d1d77e19d26fc",
+      "workflow_run": 39970676902,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12509136820,
+      "artifact_digest": "sha256:034ae36cc2f6e5960b23f925bcf99480f3e1ccd4a109ff7c12028304b748e8e2",
+      "composition_root": "Fabushi canonical payment/commerce + quality evidence composition",
+      "composition_slot": "Payment settlement test-oracle / crypto-fixture provenance boundary",
+      "capability_component": "canonical payment settlement + source-neutral reproducible golden-vector evidence",
+      "variation_axes": [
+        "payment settlement vs wallet transfer serialization",
+        "fixture provenance vs production key custody",
+        "task prose vs immutable committed golden bytes"
+      ],
+      "shared_owner_contracts": [
+        "PayEngine",
+        "payment infrastructure trusted catalog/repository contract",
+        "payment API authenticated provider/admin boundary",
+        "FQT exact-head fixture/evidence lifecycle"
+      ],
+      "duplicate_root_check": "No WalletKit/TON runtime, Telegram wallet owner, second PaymentSettlement store, second secret store, or second evidence owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable — test/provenance task",
+      "primary_navigation_target": "Existing canonical Fabushi ProductShell",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "No direct UI action from this task",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing payment surfaces only; wallet UI remains independently open",
+      "route_contract": "No new route",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "No UI introduced",
+      "keyboard_contract": "No UI introduced",
+      "state_continuity_contract": "Missing or drifting fixture/generator identity invalidates any prior golden-vector verification; payment state continuity remains with canonical payment owners.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Existing Fabushi canonical design system",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-WALLETKIT-GOLDEN-VECTOR-CRYPTO-FIXTURE-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-WALLETKIT-EXACT-TASK-SOURCE-001",
+        "ORA-TDRP-WALLETKIT-FIXTURE-PROVENANCE-001",
+        "ORA-TDRP-WALLETKIT-PAYMENT-OWNER-UNIQUENESS-001",
+        "ORA-TDRP-WALLETKIT-MISSING-VECTORS-FAIL-CLOSED-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-WALLETKIT-NO-SECOND-PAYMENT-WALLET-OWNER-001",
+        "INV-TDRP-WALLETKIT-NO-UNVERIFIED-GOLDEN-BYTES-001",
+        "INV-TDRP-WALLETKIT-NO-PRODUCTION-FIXTURE-SECRET-001",
+        "INV-TDRP-WALLETKIT-NO-WALLETKIT-TON-RUNTIME-IMPORT-001",
+        "INV-TDRP-WALLETKIT-EXACT-HEAD-ACTIONS-ONLY-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-WALLETKIT-PAYMENT-OWNER-001",
+        "CONTRACT-TDRP-WALLETKIT-FIXTURE-PROVENANCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-WALLETKIT-FIXTURE-IDENTITY-DRIFT-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-WALLETKIT-MISSING-GENERATOR-OR-VECTOR-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-WALLETKIT-FIXTURE-SECRET-BOUNDARY-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-WALLETKIT-NO-SECOND-OWNER-001",
+        "REG-TDRP-WALLETKIT-NO-FABRICATED-GOLDEN-EVIDENCE-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-MODULE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "strict127 exact task doc + absent referenced work/ objects + exact current payment-owner blobs"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [
+        "TDRP 39970676902 61/61 success",
+        "Rust 39970676904 6/6 success"
+      ],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "WalletKit/TON package/version details are retained only as upstream task-generation provenance. No package, generated secret, vector, or upstream wallet runtime is imported by this mapping.",
+      "reviewer": null,
+      "notes": "Strict127 closes only tasks/2026/07/24/generate-walletkit-golden-vectors.md semantic read/decomposition. The referenced work/ generator/vector objects are absent from the accepted exact tree, so golden bytes/hashes remain unverified and wallet/gram implementation responsibilities remain independently open. Counters unknown=16,249 unread=16,224 omitted=0 responsibilities=145. Next strict128 tasks/2026/08/07/fix-wallet-details-box-dark-backdrop.md@945be99d457a72240772216cd0b1926dca04eb72."
     }
   ]
 }

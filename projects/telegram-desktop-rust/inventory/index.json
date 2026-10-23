@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16250,
-    "unread_minimum": 16225,
+    "unknown_minimum": 16249,
+    "unread_minimum": 16224,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -122,7 +122,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent a4844465a441db4f9f53335a556b3b5b87805111/2ad87576dc94abdb6f80bd776c8e22dd760453ab passed TDRP 39966961007 61/61 (authority 12507945583 sha256:ea43c4eb496ecb4701b496e02bdfb99cf92066a9d0d66d71c0c5faa552227d7c; closure 12508450146 sha256:e5ef3aab8e7ee240d5a51e8db7a67f50f4f20f307f7dcd2a61f34d419c53f266; reachability 12506918599 sha256:508587848be66d2aa705dad2d1f8e94e9763927051f11869960b1f34fe7325d2) and Rust 39966961005 6/6 (artifact 12507257039 sha256:a178252b198db13577513f832ade38a0cb34f7c52028dd087621d46b8258dab0). Strict126 snap/snapcraft.yaml complete-read mapped package/confinement/install/artifact/acquisition responsibilities to existing owners. Current Fabushi has AppImage/deb declarations but no canonical Snap target/workflow or installed Snap acceptance. Counters unknown=16,250 unread=16,225 omitted=0 responsibilities=144. Next strict127 tasks/2026/07/24/generate-walletkit-golden-vectors.md@863a1733649dcb8371091d750f6173bb8550a839.",
+  "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 06910d91bc127dc2ee1b1353139d1d77e19d26fc passed TDRP 39970676902 61/61 (authority 12509136820 sha256:034ae36cc2f6e5960b23f925bcf99480f3e1ccd4a109ff7c12028304b748e8e2; closure 12509261874 sha256:c2931062078cc4d07cb3a7566e9d7d0e5730a8e43d8558b2b5c3db40c12f6dff; reachability 12508878626 sha256:1c8c983651f0cec9953b5ea7749ead2a4b6091452519453d52bfb68347ad9483) and Rust 39970676904 6/6 (artifact 12508772088 sha256:86120551a373ec21fbf03d20a394a2cc0a6f550109bc5f0a093e68d99da6d9ea). Strict127 fully read tasks/2026/07/24/generate-walletkit-golden-vectors.md@863a1733649dcb8371091d750f6173bb8550a839 and mapped WalletKit/TON golden-vector fixture provenance plus PaymentSettlement applicability to existing owners. Referenced work/ generator/vector objects are absent from the accepted tree, so no golden bytes/hash or production wallet signing/key-custody implementation is claimed. Counters unknown=16,249 unread=16,224 omitted=0 responsibilities=145. Next strict128 tasks/2026/08/07/fix-wallet-details-box-dark-backdrop.md@945be99d457a72240772216cd0b1926dca04eb72.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
