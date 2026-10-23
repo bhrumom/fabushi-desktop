@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "ce7e372b3bd12e53dcf23b4f7d901e8c371b1703",
+  "target_commit": "c7fa56b4f39289fc96af421fe5c083d29d6be3d4",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16224,
-    "unread": 16199,
+    "unknown": 16223,
+    "unread": 16198,
     "omitted": 0,
-    "responsibilities_total": 170,
+    "responsibilities_total": 171,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -45695,6 +45695,251 @@
       "license_and_provenance": "Exact Microsoft/GSL include/gsl/gsl@53030b31747ca25e3d740bd078c0ffd5b71ebf88 MIT-licensed aggregation header plus accepted tdesktop exact-head include provenance retained; no GSL runtime or constituent/domain release authority inferred.",
       "reviewer": "primary-session",
       "notes": "Strict152 closes only GSL include/gsl/gsl as an umbrella/export dependency responsibility. Constituent headers and all direct/transitive consumers remain independently open. Counters unknown=16,224 unread=16,199 omitted=0 responsibilities=170. Next strict153 Microsoft/GSL include/gsl/narrow@7b1a7912163185e2b2cbecc34ad64a539d566173."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/GSL",
+      "source_blob_sha": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+      "source_kind": "recursive_child_repository_dependency_implementation",
+      "module_id": "tdesktop.thirdparty.gsl.narrow",
+      "responsibility_id": "TDRP-R9-GSL-CHECKED-NARROWING-DEPENDENCY-001",
+      "source_symbols": [
+        "include/gsl/narrow@7b1a7912163185e2b2cbecc34ad64a539d566173",
+        "gsl::narrowing_error",
+        "gsl::narrow<T>(U) arithmetic overload",
+        "gsl::narrow<T>(U) non-arithmetic overload",
+        "narrow_cast<T>(u)",
+        "cast-back equality check",
+        "different-signedness sign preservation check",
+        "NaN always fails equality and throws",
+        "tests/utils_tests.cpp narrow/narrow_cast cases"
+      ],
+      "capability_ids": [
+        "CAP-CHECKED-NUMERIC-CONVERSION",
+        "CAP-FALLIBLE-NARROWING",
+        "CAP-NATIVE-CONVERSION-DEPENDENCY-REPLACEMENT"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "Microsoft/GSL:include/gsl/narrow@7b1a7912163185e2b2cbecc34ad64a539d566173",
+        "Microsoft/GSL:include/gsl/assert@d3e6ccdd53d5a254ed3827cf07711a6e86bb4226",
+        "Microsoft/GSL:include/gsl/util@26b2f5fb9d0d8c28c3096f50d575eb42a4b89bad",
+        "Microsoft/GSL:tests/utils_tests.cpp@5b64e207eda9ef0e8935701647d6d4bed567960e",
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md#TDRP-LANG-03"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-checked-narrowing-complete-read.md",
+      "behavior_contract": "Account for the locked checked narrowing dependency: narrow casts to the target type, casts back and rejects value loss; for arithmetic types it additionally rejects signedness/sign changes, and NaN fails the equality check. Source failure is narrowing_error. Preserve equivalent checked/fallible conversion at actual Rust/domain boundaries with TryFrom/TryInto or explicit range/sign validation; do not introduce a GSL exception runtime or claim unrelated product behavior complete.",
+      "state_machine": "input value -> target conversion attempt -> round-trip value comparison -> if arithmetic and signedness differs, sign-equivalence check -> success returns target value; any value/sign mismatch (including NaN) -> fail with narrowing error equivalent",
+      "side_effects": [
+        "Successful conversion returns only the converted value and owns no persistent state.",
+        "Failure is non-continuing for that conversion path and is represented by narrowing_error in source.",
+        "NaN is rejected because round-trip equality is false.",
+        "The dependency owns no network, storage, UI, account or product lifecycle."
+      ],
+      "failure_cases": [
+        "A lossy conversion silently truncates/wraps instead of failing.",
+        "Signed-to-unsigned or unsigned-to-signed conversion changes sign domain without failure.",
+        "NaN is accepted as a valid checked conversion.",
+        "C++ exception/narrowing_error mechanics are copied as a target runtime instead of native Result/error handling.",
+        "A generic conversion subsystem duplicates existing domain validation owners.",
+        "Absence of direct tdesktop calls is misread as permission to omit the recursive source responsibility.",
+        "Source/gitlink/blob drift is ignored."
+      ],
+      "ui_disposition": "No independent UI surface and no accepted exact-head direct tdesktop caller was found by code search; any future concrete UI/domain conversion remains owned and evidenced by that caller.",
+      "non_ui_responsibilities": [
+        "checked narrowing conversion",
+        "round-trip value preservation",
+        "signedness/sign preservation",
+        "NaN rejection",
+        "fallible conversion error semantics",
+        "native dependency replacement"
+      ],
+      "platform_delta": "Use Rust TryFrom/TryInto, checked range conversion or existing domain validators. C++ SFINAE, warning suppression, compiler pragmas, static_cast behavior and exception class are source implementation techniques, not Fabushi architecture.",
+      "existing_owner_candidates": [
+        "TDRP-LANG-03 mature low-level dependency replacement (selected)",
+        "actual existing Rust/domain input validation and numeric conversion boundaries (selected application owner)",
+        "new GSL/narrow exception runtime or generic conversion service (rejected)"
+      ],
+      "existing_owner": "TDRP-LANG-03 dependency replacement plus actual existing Rust/domain validation owners; checked conversions use native Result/TryFrom/TryInto or explicit bounds/sign checks",
+      "rejected_existing_owners": [
+        "A GSL-specific exception runtime would preserve source architecture instead of native Rust error handling.",
+        "A generic conversion service would duplicate local/domain validation without owning product state.",
+        "No direct tdesktop use justifies no new product owner, not omission of the dependency source entry."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md"
+      ],
+      "fabushi_target_symbols": [
+        "**TDRP-MOD-02:** 定义行为 oracle：相同输入及对应服务事件，在 Fabushi 应产生什么输出、可见状态、持久化结果和副作用。说明因自有协议、平台、UI 或品牌改变的差异；允许实现不同，但不得把功能缩水包装成架构优化。",
+        "**G-BEHAVIOR:** 功能/错误/顺序/重复/取消/销毁/重启/网络恢复等与合同等价；mock 仅作局部测试，不代替真实 E2E。"
+      ],
+      "target_language": "Rust native checked/fallible conversion at actual owner boundaries",
+      "language_rationale": "The source provides generic checked conversion semantics. Rust has native fallible conversion and Result patterns, so preserve value/sign failure behavior without reimplementing GSL exceptions.",
+      "command_event_contracts": [
+        "checked conversion request -> validated target value or explicit error",
+        "lossy round-trip -> error",
+        "signedness sign change -> error",
+        "NaN checked conversion -> error",
+        "no direct source caller -> dependency remains accounted without inventing a runtime consumer"
+      ],
+      "state_owner": "Actual caller/domain input state; the narrowing dependency owns no independent product state.",
+      "lifecycle_owner": "Actual caller/domain lifecycle for the value being converted.",
+      "persistence_and_restart": "No dependency-owned persistence or restart state.",
+      "concurrency_and_cancellation": "Pure/local conversion has no independent concurrency or cancellation model.",
+      "security_boundary": "Fail closed on lossy/sign-changing conversions at security-sensitive boundaries. Do not rely on silent Rust `as` truncation where source semantics required checked narrowing, and do not claim cryptographic or protocol correctness from this generic row.",
+      "network_service_dependencies": [
+        "GitHub Actions for exact-head revalidation"
+      ],
+      "service_owner": "No shipping service.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-replaced-mapped-open",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required after publication.",
+        "No accepted exact-head direct tdesktop caller found; future/indirect concrete callsites remain separate responsibilities.",
+        "include/gsl/util and other later GSL headers remain independently open unless closed by their own rows.",
+        "Source closure and independent release acceptance remain open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "strict153 include/gsl/narrow@7b1a7912163185e2b2cbecc34ad64a539d566173 fully read: 83 line slots / 3408 bytes",
+        "tests/utils_tests.cpp@5b64e207eda9ef0e8935701647d6d4bed567960e fully read: 166 line slots / 4211 bytes; narrow_cast permits truncation while narrow rejects value/sign loss and lossy complex conversion",
+        "accepted tdesktop exact commit code search found no direct gsl::narrow, narrow_cast or narrow<...> use",
+        "GSL gitlink 87f9d768866548b5b86e72be66c60c5abd4d9b37; child tree 6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41",
+        "Parent TDRP 40039556310 61/61 success; authority 12539230287 sha256:1a8ac6428c98b6588082c37ca2121bf731c318f942fb8557ba981b519761b708; closure 12538956659 sha256:1a74b1df6d9bc8d379d834577e34a79d1c2c9e35609329f735b11c5bc3d6ceb5; reachability 12538732607 sha256:131bc8a8ef338cea7827b09a68bd68ad15e3f9e174a597297fb78ac7252fd88c; Rust 40039556304 6/6 success; artifact 12538885653 sha256:7a606bb1d4e9ecb5015670296e88914873c5d0b109bb34533310b4aa9f30d9a2."
+      ],
+      "target_commit": "c7fa56b4f39289fc96af421fe5c083d29d6be3d4",
+      "workflow_run": 40039556310,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12539230287,
+      "artifact_digest": "sha256:1a8ac6428c98b6588082c37ca2121bf731c318f942fb8557ba981b519761b708",
+      "composition_root": "Fabushi native validation/conversion boundaries through actual domain owners",
+      "composition_slot": "checked numeric/value conversion dependency",
+      "capability_component": "Native fallible conversion semantics",
+      "variation_axes": [
+        "arithmetic vs non-arithmetic target",
+        "same vs different signedness",
+        "in-range vs lossy value",
+        "finite vs NaN floating value",
+        "direct caller absent vs future concrete caller"
+      ],
+      "shared_owner_contracts": [
+        "TDRP-LANG-03",
+        "actual domain validation owners",
+        "native Result/TryFrom/TryInto",
+        "exact-head TDRP evidence"
+      ],
+      "duplicate_root_check": "No GSL narrowing runtime, exception subsystem, generic conversion service or second validation truth.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Checked conversion only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Native fallible conversion inside existing owners",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Any GSL narrow/util/assert blob or accepted tdesktop caller drift requires fresh reconciliation; concrete caller semantics remain independently open.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-GSL-CHECKED-NARROWING-DEPENDENCY-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GSL-NARROW-EXACT-SOURCE-001",
+        "ORA-TDRP-GSL-NARROW-ROUNDTRIP-001",
+        "ORA-TDRP-GSL-NARROW-SIGNEDNESS-001",
+        "ORA-TDRP-GSL-NARROW-NATIVE-ERROR-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GSL-NARROW-NO-LOSSY-SUCCESS-001",
+        "INV-TDRP-GSL-NARROW-NO-GSL-EXCEPTION-RUNTIME-001",
+        "INV-TDRP-GSL-NARROW-NO-DUPLICATE-VALIDATION-OWNER-001",
+        "INV-TDRP-GSL-NARROW-EXACT-PROVENANCE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GSL-NARROW-DEPENDENCY-REPLACEMENT-001",
+        "CONTRACT-TDRP-GSL-NARROW-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GSL-NARROW-SOURCE-DRIFT-001",
+        "FAULT-TDRP-GSL-NARROW-LOSSY-SUCCESS-001",
+        "FAULT-TDRP-GSL-NARROW-DUPLICATE-OWNER-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-GSL-NARROW-FAIL-CLOSED-CONVERSION-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-GSL-NARROW-NO-SILENT-LOSS-001",
+        "REG-TDRP-GSL-NARROW-NO-PARALLEL-RUNTIME-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-BEHAVIOR",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-SECURITY-PRIVACY"
+      ],
+      "test_fixture_ids": [
+        "locked GSL narrow header + utils narrowing tests + accepted exact-head no-direct-caller search + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact Microsoft/GSL include/gsl/narrow@7b1a7912163185e2b2cbecc34ad64a539d566173 MIT-licensed dependency implementation plus focused tests and accepted tdesktop exact-head code-search provenance retained; no GSL exception runtime or product release authority inferred.",
+      "reviewer": "primary-session",
+      "notes": "Strict153 closes only GSL include/gsl/narrow as a checked-conversion dependency responsibility. No accepted exact-head direct tdesktop caller was found; concrete caller/domain behavior and later GSL headers remain independently open. Counters unknown=16,223 unread=16,198 omitted=0 responsibilities=171. Next strict154 Microsoft/GSL include/gsl/pointers@63e193e92478632520eca7e872ac83c643ffd2c0."
     }
   ]
 }

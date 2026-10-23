@@ -361,10 +361,10 @@
   "coverage": {
     "root_source_entries_total": 6893,
     "recursive_source_entries_total": 16379,
-    "unknown_minimum": 16224,
-    "unread_minimum": 16199,
+    "unknown_minimum": 16223,
+    "unread_minimum": 16198,
     "omitted_known": 0,
-    "note": "Live main 7394f6dc7687f9b986ee5589d40aa680ce23b90a/fbeb0bb32d944d0c1053880c471fe5c52279f052; upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5; GSL 87f9d768866548b5b86e72be66c60c5abd4d9b37/6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41. Parent TDRP 40037884109 61/61 success; authority 12538530472 sha256:aab487be9d0492a8c92ae4ee5f6039dcb22ab21e54e135f3e86d7df360dc9eb7; closure 12538371757 sha256:ea1d81a43aaec065300a9e37c1098de95eaf13039ab7d5ab1048a184e331aad5; reachability 12538327095 sha256:bcc886f931b61eadf35337ca01d8c1e16113c5b4cc6c259db817fbafb83f7e23; Rust 40037884162 6/6 success; artifact 12538311273 sha256:78712bec6ca706d669f7ea1e654f00704779dd29de8d529a17a862126bc6c16b. Strict152 Microsoft/GSL include/gsl/gsl@53030b31747ca25e3d740bd078c0ffd5b71ebf88 fully read: 35 line slots / 1217 bytes. This umbrella exports algorithm/assert/byte/pointers/span/zstring/util and conditionally narrow when __cpp_exceptions is present; accepted tdesktop exact-head direct includes are stdafx.h, mtproto/core_types.h and ui/passcode_strength.cpp. Preserve the compile-time dependency/export effect through native Rust/existing module imports at actual owners; do not introduce a GSL umbrella runtime or mark constituent headers/downstream callers complete. Counters unknown=16,224 unread=16,199 omitted=0 responsibilities=170. Next strict153 Microsoft/GSL include/gsl/narrow@7b1a7912163185e2b2cbecc34ad64a539d566173."
+    "note": "Live main 7394f6dc7687f9b986ee5589d40aa680ce23b90a/fbeb0bb32d944d0c1053880c471fe5c52279f052; upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5; GSL 87f9d768866548b5b86e72be66c60c5abd4d9b37/6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41. Parent TDRP 40039556310 61/61 success; authority 12539230287 sha256:1a8ac6428c98b6588082c37ca2121bf731c318f942fb8557ba981b519761b708; closure 12538956659 sha256:1a74b1df6d9bc8d379d834577e34a79d1c2c9e35609329f735b11c5bc3d6ceb5; reachability 12538732607 sha256:131bc8a8ef338cea7827b09a68bd68ad15e3f9e174a597297fb78ac7252fd88c; Rust 40039556304 6/6 success; artifact 12538885653 sha256:7a606bb1d4e9ecb5015670296e88914873c5d0b109bb34533310b4aa9f30d9a2. Strict153 Microsoft/GSL include/gsl/narrow@7b1a7912163185e2b2cbecc34ad64a539d566173 fully read: 83 line slots / 3408 bytes; tests/utils_tests.cpp@5b64e207eda9ef0e8935701647d6d4bed567960e fully read: 166 line slots / 4211 bytes. narrow performs checked conversion by cast-back equality plus signedness preservation, throws narrowing_error on value/sign loss and rejects NaN by inequality; accepted tdesktop exact-head code search found no direct gsl::narrow, narrow_cast or narrow<...> use. Preserve equivalent checked/fallible conversions through Rust TryFrom/TryInto or existing domain validation; do not add a GSL exception runtime or infer downstream product closure. Counters unknown=16,223 unread=16,198 omitted=0 responsibilities=171. Next strict154 Microsoft/GSL include/gsl/pointers@63e193e92478632520eca7e872ac83c643ffd2c0."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -1827,5 +1827,5 @@
     "baseline_identity_accepted": false,
     "source_closure_ready": false
   },
-  "target_commit": "ce7e372b3bd12e53dcf23b4f7d901e8c371b1703"
+  "target_commit": "c7fa56b4f39289fc96af421fe5c083d29d6be3d4"
 }
