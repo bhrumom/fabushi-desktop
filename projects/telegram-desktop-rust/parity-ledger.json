@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "83f9f56347cc3421c1e3ef537c7bb6dd06ce7cd0",
-  "target_commit": "acd975db4f2db36c6a5b1d633453a1a3ba3398c2",
+  "target_commit": "16fea2446f9fa18fb7a50872e1f070726511f2f6",
   "coverage": {
     "source_entries_total": 16377,
-    "unknown": 16283,
-    "unread": 16258,
+    "unknown": 16282,
+    "unread": 16257,
     "omitted": 0,
-    "responsibilities_total": 109,
+    "responsibilities_total": 110,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -29390,6 +29390,260 @@
       "license_and_provenance": "Exact upstream workflow and audit-resolved no-response commit/action/bundle identities retained. The mutable v0.5.0 tag and provider tree's absence of LICENSE/package manifest/package lock remain fail-closed third-party provenance; this dependency is not adopted as a Fabushi product/runtime owner.",
       "reviewer": null,
       "notes": "Strict index 91 closes only .github/workflows/needs-user-action.yml. FQT-DEF-001 remains sole canonical defect closure owner; GitHub label/auto-close/unmark/reopen state is provider maintenance only. Counters become unknown=16,283 unread=16,258 omitted=0 responsibilities=109. Next strict root index 92 .github/workflows/snap.yml@82f85ae9066a2773512afecb0bcf80875116a8c8. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "83f9f56347cc3421c1e3ef537c7bb6dd06ce7cd0",
+      "source_path": ".github/workflows/snap.yml",
+      "source_blob_sha": "82f85ae9066a2773512afecb0bcf80875116a8c8",
+      "source_kind": "linux_snap_packaged_ci_supply_chain_provenance",
+      "module_id": "tdesktop.github.workflows.snap",
+      "responsibility_id": "TDRP-R9-SNAP-PACKAGED-CI-SUPPLY-CHAIN-PROVENANCE-001",
+      "source_symbols": [
+        "push/pull_request path filters",
+        "depot-ubuntu-latest-16 / ubuntu-latest runner selection",
+        "actions/checkout@v7 full history recursive submodules",
+        "classic Snapcraft + LXD setup",
+        "samueldr/more-space-action@97048bd0df83fb05b5257887bdbaffc848887673",
+        "default apt-pattern removal disabled only",
+        "LVM span enabled at LXD storage pool",
+        "snap run snapcraft --verbosity=debug",
+        "telegram-desktop_*.snap glob",
+        "actions/upload-artifact@v7 retention-days=1"
+      ],
+      "capability_ids": [
+        "CAP-LINUX-SNAP-PACKAGED-CI-SUPPLY-CHAIN",
+        "CAP-SNAPCRAFT-DIRECT-BUILD-INPUT-PROVENANCE",
+        "CAP-RUNNER-STORAGE-MUTATION-BOUNDARY",
+        "CAP-PACKAGED-ARTIFACT-IDENTITY",
+        "CAP-EXACT-HEAD-EVIDENCE-BOUNDARY"
+      ],
+      "dependency_ids": [
+        "snap/snapcraft.yaml@a181d828f25d901303f7221824ac30b0ff5e773a",
+        "samueldr/more-space-action@97048bd0df83fb05b5257887bdbaffc848887673/tree f1d999f8b4029093775fd5633a4fb58bb4a7129f",
+        "action.yml@da03cfe57dd8f666f4b51c4397f076eb7354866c",
+        "get-more-space.sh@6a1ab22d291581113140a970d026c444a265389e",
+        "COPYING@9c6a6cc381bf5682b57f63ec86f3b0532d56b01a LGPL-2.1",
+        "FQT-REL-001@c5eb9d0897234bb2fdad4f505549b2350c44aa72",
+        "FQT-EVID-001@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/snap-packaged-ci-supply-chain-workflow-complete-read.md",
+      "behavior_contract": "Linux Snap CI is packaging/supply-chain provenance only. Green build and filename-only upload cannot establish Fabushi release acceptance; canonical artifact identity, signing/package/device evidence and exact-head evidence remain with existing FQT and packaging owners.",
+      "state_machine": "source event -> exact recursive checkout -> privileged disposable runner setup -> Snapcraft build -> filename glob -> transient upload; Fabushi release remains blocked until canonical artifact identity/evidence/acceptance gates pass",
+      "side_effects": [
+        "recursive checkout",
+        "iptables/Snapcraft/LXD runner mutation",
+        "destructive more-space filesystem/storage/swap/Docker/LVM mutation",
+        "external acquisition/build",
+        "artifact move/upload"
+      ],
+      "failure_cases": [
+        "runner/provider drift",
+        "LXD/LVM partial failure",
+        "mutable Snapcraft/tag/branch drift",
+        "build/acquisition outage",
+        "empty/ambiguous artifact glob",
+        "upload without raw package identity",
+        "green upstream build mistaken for Fabushi release ACCEPT"
+      ],
+      "ui_disposition": "Packaging CI provenance only; no shipping Fabushi UI capability.",
+      "non_ui_responsibilities": [
+        "Linux Snap packaged-CI provenance",
+        "direct Snapcraft build-input provenance",
+        "disposable runner mutation boundary",
+        "artifact upload semantics",
+        "artifact identity gap",
+        "release authority separation"
+      ],
+      "platform_delta": "TDesktop Snap remains Linux packaging provenance. Fabushi reuses source-neutral packaging, acquisition, release and evidence owners rather than retaining a Telegram/Snap runtime or release architecture.",
+      "existing_owner_candidates": [
+        "FQT-REL-001 artifact identity gate (selected)",
+        "FQT-EVID-001 exact-head evidence (selected)",
+        "existing exact-source packaging/release-preparation owners (shared)",
+        "new Snap release root (rejected)",
+        "new runner-storage product owner (rejected)"
+      ],
+      "existing_owner": "FQT-REL-001 + FQT-EVID-001 with existing exact-source packaging/release-preparation governance",
+      "rejected_existing_owners": [
+        "upstream Snap success is not Fabushi byte identity/signing/acceptance",
+        "runner mutation is disposable CI state",
+        "new Snap release root duplicates canonical owners"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/fabushi-communication-platform/quality/release-entry-exit-criteria.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Byte-exact copies require source-before/source-after stability plus equal raw SHA-256 and size for the copied executable.",
+        "每份 passing evidence 至少包含 target SHA、upstream/baseline SHA（若相关）、workflow/run/attempt/job/event、actual checkout SHA、suite/case IDs、fixture/environment IDs、start/end、result、artifact name/ID/digest。"
+      ],
+      "target_language": "Repository packaging / artifact-evidence governance",
+      "language_rationale": "This is build/release infrastructure and maps to current source-neutral release/evidence owners.",
+      "command_event_contracts": [
+        "full-history recursive checkout",
+        "mutable Snapcraft acquisition",
+        "pinned destructive runner action",
+        "direct snapcraft.yaml build input",
+        "filename-based one-day artifact upload",
+        "raw package identity absent => fail closed",
+        "Fabushi executable validation remains exact-head GitHub-Actions-only"
+      ],
+      "state_owner": "GitHub Actions/Snapcraft own disposable workflow/build state; canonical Fabushi release truth remains FQT-REL-001/FQT-EVID-001.",
+      "lifecycle_owner": "Exact source -> build provenance -> package identity -> packaged acceptance -> independent release verdict.",
+      "persistence_and_restart": "Runner/LXD/LVM state is disposable and artifact retention is one day; durable Fabushi evidence requires exact source/run/artifact plus raw package provenance.",
+      "concurrency_and_cancellation": "No workflow concurrency group; overlap/cancel/partial provider state cannot advance release truth.",
+      "security_boundary": "Privileged sudo/LXD/LVM/filesystem/swap/Docker operations are CI-only; mutable provider inputs are supply-chain boundaries, not production identity.",
+      "network_service_dependencies": [
+        "GitHub Actions",
+        "Snap Store/Snapcraft",
+        "LXD",
+        "source repositories/package registries",
+        "GitHub artifact service"
+      ],
+      "service_owner": "Existing CI/build/release infrastructure under FQT governance",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "policy-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required.",
+        "Raw .snap SHA-256+size/signature/attestation provenance absent.",
+        "Mutable provider/source refs remain supply-chain inputs.",
+        "Recursive source closure remains open.",
+        "Fabushi Linux packaged/device/independent acceptance remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "snap.yml complete-read @82f85ae9066a2773512afecb0bcf80875116a8c8",
+        "snap/snapcraft.yaml complete-read @a181d828f25d901303f7221824ac30b0ff5e773a",
+        "more-space-action immutable source/action/script/license verified",
+        "Parent 16fea2446f9fa18fb7a50872e1f070726511f2f6: TDRP 39887592363 61/61 success; Rust 39887592349 6/6 success."
+      ],
+      "target_commit": "16fea2446f9fa18fb7a50872e1f070726511f2f6",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi canonical release/artifact-identity/evidence lifecycle",
+      "composition_slot": "Linux Snap packaged-CI provenance adapter",
+      "capability_component": "Linux package build / runner mutation / artifact identity provenance",
+      "variation_axes": [
+        "runner selection",
+        "source/tool drift",
+        "LXD/LVM pass/fail",
+        "artifact glob one/zero/multiple",
+        "upload pass/fail",
+        "provider green/release blocked"
+      ],
+      "shared_owner_contracts": [
+        "FQT-REL-001",
+        "FQT-EVID-001",
+        "existing packaging/signing owners",
+        "AGENTS release-preparation governance"
+      ],
+      "duplicate_root_check": "No second release root, package identity ledger, runner-storage product owner or Snap runtime is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "CI packaging/release provenance only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Bounded Snap packaged-CI provenance adapter",
+      "route_contract": "source -> exact checkout -> disposable runner -> package candidate -> transient upload -> canonical FQT release gates",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Only exact source and durable artifact identity/evidence carry release continuity.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-SNAP-PACKAGED-CI-SUPPLY-CHAIN-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-SNAP-WORKFLOW-EXACT-SOURCE-001",
+        "ORA-TDRP-SNAP-ARTIFACT-IDENTITY-GAP-001",
+        "ORA-TDRP-SNAP-RUNNER-MUTATION-BOUNDARY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-SNAP-GREEN-NOT-RELEASE-001",
+        "INV-TDRP-SNAP-RUNNER-MUTATION-NOT-PRODUCT-STATE-001",
+        "INV-TDRP-SNAP-ARTIFACT-IDENTITY-FAIL-CLOSED-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-SNAP-PACKAGING-ADAPTER-001",
+        "CONTRACT-TDRP-SNAP-ARTIFACT-PROVENANCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-SNAP-BUILD-INPUT-DRIFT-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-SNAP-LXD-SETUP-001",
+        "FAULT-TDRP-SNAP-MORE-SPACE-MUTATION-001",
+        "FAULT-TDRP-SNAP-ARTIFACT-NAME-GLOB-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-SNAP-RUNNER-SUDO-001",
+        "SEC-TDRP-SNAP-SUPPLY-CHAIN-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-FQT-REL-001-REMAINS-RELEASE-OWNER-001",
+        "REG-TDRP-SNAP-NO-PRODUCT-RUNTIME-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [],
+      "test_fixture_ids": [
+        "locked snap.yml + snapcraft.yaml + immutable more-space source/license + FQT owners + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact snap workflow/manifest and immutable more-space provider identities retained; provider is LGPL-2.1. Mutable action/Snapcraft/source refs do not establish Fabushi release authority.",
+      "reviewer": null,
+      "notes": "Strict index 92 closes only .github/workflows/snap.yml. Counters become unknown=16,282 unread=16,257 omitted=0 responsibilities=110. Next strict root index 93 .github/workflows/stale.yml@0d57eb7dbd9a9f758e1e33d45afbd1aefd212614. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required."
     }
   ]
 }

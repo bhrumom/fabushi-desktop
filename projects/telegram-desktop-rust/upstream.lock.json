@@ -519,10 +519,10 @@
   "coverage": {
     "root_source_entries_total": 6891,
     "recursive_source_entries_total": 16377,
-    "unknown_minimum": 16283,
-    "unread_minimum": 16258,
+    "unknown_minimum": 16282,
+    "unread_minimum": 16257,
     "omitted_known": 0,
-    "note": "Live upstream dev authority remains 83f9f56347cc3421c1e3ef537c7bb6dd06ce7cd0/bb0159bfedb38dd96e579af4ffe6360b6beb7332. Parent exact-head acd975db4f2db36c6a5b1d633453a1a3ba3398c2 completed TDRP run 39886008535 at 61/61 success (authority 12472536855 sha256:3c8b0ba0ab91341142ea2e25594e4aa9b2f2c460faafe7149feaff00cf0c14cf; closure 12472802476 sha256:ec3a9d6ff5f7d6174b5c6b60e7f62b38ad505509b5ed3e0471a8c85c66fe6f44; reachability 12472727917 sha256:e73aff0b73ca60843e488f01c80e976b06aea807482c2010a421d3b5a9381834) and Rust desktop runtime run 39886008486 at 6/6 success (artifact 12471609701 sha256:5da1450c1745f7a951aae94c33889e02c48060403b52e67a8a6dd77fef71a771). Strict index 91 .github/workflows/needs-user-action.yml@55ad7891ce36682accae01d739203aa487876053 was fully read and mapped to the existing FQT-DEF-001 canonical defect lifecycle with GitHub waiting-for-author-response state retained only as a non-authoritative provider adapter. lee-dohm/no-response@v0.5.0 resolves to 9bb0a4b5e6a45046f00353d5de7d90fb8bd773bb; schedule sweeps use the default 14-day threshold and a 30-result search page, issue_comment.created removes the label only for the original author and may reopen a provider-closed issue, while sweep close calls are not awaited by the provider loop. Green provider automation therefore proves neither all issue mutations settled nor canonical defect closure. Counters unknown=16,283 unread=16,258 omitted=0 responsibilities=109. Next strict root index 92 .github/workflows/snap.yml@82f85ae9066a2773512afecb0bcf80875116a8c8. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required."
+    "note": "Live upstream dev authority remains 83f9f56347cc3421c1e3ef537c7bb6dd06ce7cd0/bb0159bfedb38dd96e579af4ffe6360b6beb7332. Parent exact-head 16fea2446f9fa18fb7a50872e1f070726511f2f6 completed TDRP run 39887592363 at 61/61 success (authority 12473552243 sha256:a8eb257aaccd02523b6c9eae32f185bf1973fb551d50357950d4cae27e4f8f44; closure 12472944907 sha256:984f6d9c5209dbfd0c89b9a5ec41dd27430d7e55e866f5d5f0d559c8c258ac48; reachability 12473985264 sha256:b20ee7cfdcaf51148be6276ed13087ddfc84e40e739e7617c8f8b29a600958e0) and Rust desktop runtime run 39887592349 at 6/6 success (artifact 12473606144 sha256:74df451c6ba5f9ac07d27caeadea2660836ea0f8c72d611dd99200ac20d28042). Strict index 92 .github/workflows/snap.yml@82f85ae9066a2773512afecb0bcf80875116a8c8 was fully read with direct packaging input snap/snapcraft.yaml@a181d828f25d901303f7221824ac30b0ff5e773a and pinned runner-space dependency samueldr/more-space-action@97048bd0df83fb05b5257887bdbaffc848887673 (action.yml@da03cfe57dd8f666f4b51c4397f076eb7354866c; get-more-space.sh@6a1ab22d291581113140a970d026c444a265389e). Destructive runner cleanup/LVM/filesystem behavior is disposable CI infrastructure only. The workflow uploads a filename-derived Snap for one day without raw SHA-256+size package identity, so green Snap CI cannot satisfy FQT-REL-001 release identity or acceptance. Counters unknown=16,282 unread=16,257 omitted=0 responsibilities=110. Next strict root index 93 .github/workflows/stale.yml@0d57eb7dbd9a9f758e1e33d45afbd1aefd212614. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -536,7 +536,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Live strict91 mapping on 83f9f56347cc3421c1e3ef537c7bb6dd06ce7cd0/bb0159bfedb38dd96e579af4ffe6360b6beb7332 requires fresh child exact-head GitHub Actions. Source closure remains open with unknown=16,283 unread=16,258 omitted=0."
+    "note": "Live strict92 mapping on 83f9f56347cc3421c1e3ef537c7bb6dd06ce7cd0/bb0159bfedb38dd96e579af4ffe6360b6beb7332 requires fresh child exact-head GitHub Actions. Source closure remains open with unknown=16,282 unread=16,257 omitted=0."
   },
   "baseline_identity_evidence": {
     "status": "pending-current-head-revalidation",
