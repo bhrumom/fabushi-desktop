@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16225,
-    "unread_minimum": 16200,
+    "unknown_minimum": 16224,
+    "unread_minimum": 16199,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -122,7 +122,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live main 7394f6dc7687f9b986ee5589d40aa680ce23b90a/fbeb0bb32d944d0c1053880c471fe5c52279f052; upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5; GSL 87f9d768866548b5b86e72be66c60c5abd4d9b37/6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41. Parent TDRP 40036273453 61/61 success; authority 12537048053 sha256:fcede2a6f45aaf136156ee2c657cd2768d9b3706147894f18b1b4738e1c774f5; closure 12536939388 sha256:7a99c0159e1c41986c35b6efebde533a74bd7444352c75f88d954c86c36f1a84; reachability 12537093706 sha256:7fecba0f4319e4c40c4bbd72d8756d7fd46e64a48634307e5aa022cdb107f65f; Rust 40036273460 6/6 success; artifact 12537182837 sha256:2f2f97752df71c2c2bf07900cf6be9d7f26a9a47a3024c494581469a8382d354. Strict151 Microsoft/GSL include/gsl/byte@87d007ef94d197632872e96d91525a013c665da8 fully read: 184 line slots / 5962 bytes; tests/byte_tests.cpp@634dcc90773e7144a127e29a2d49ce94b816e596 fully read: 135 line slots / 3518 bytes. The header selects std::byte where available or supplies an unsigned-char byte with aliasing, shifts/bitwise operators, integral conversion and range/type constrained to_byte; accepted tdesktop exact-head callsites span auth/RSA, Passport, Calls, Storage, Crash and UI effects. Preserve this primitive through native Rust u8/fixed arrays/vectors or existing domain binary types at the actual owner; do not create a Byte runtime or absorb cryptographic/storage/call/UI behavior into this dependency row. Counters unknown=16,225 unread=16,200 omitted=0 responsibilities=169. Next strict152 Microsoft/GSL include/gsl/gsl@53030b31747ca25e3d740bd078c0ffd5b71ebf88.",
+  "note": "Live main 7394f6dc7687f9b986ee5589d40aa680ce23b90a/fbeb0bb32d944d0c1053880c471fe5c52279f052; upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5; GSL 87f9d768866548b5b86e72be66c60c5abd4d9b37/6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41. Parent TDRP 40037884109 61/61 success; authority 12538530472 sha256:aab487be9d0492a8c92ae4ee5f6039dcb22ab21e54e135f3e86d7df360dc9eb7; closure 12538371757 sha256:ea1d81a43aaec065300a9e37c1098de95eaf13039ab7d5ab1048a184e331aad5; reachability 12538327095 sha256:bcc886f931b61eadf35337ca01d8c1e16113c5b4cc6c259db817fbafb83f7e23; Rust 40037884162 6/6 success; artifact 12538311273 sha256:78712bec6ca706d669f7ea1e654f00704779dd29de8d529a17a862126bc6c16b. Strict152 Microsoft/GSL include/gsl/gsl@53030b31747ca25e3d740bd078c0ffd5b71ebf88 fully read: 35 line slots / 1217 bytes. This umbrella exports algorithm/assert/byte/pointers/span/zstring/util and conditionally narrow when __cpp_exceptions is present; accepted tdesktop exact-head direct includes are stdafx.h, mtproto/core_types.h and ui/passcode_strength.cpp. Preserve the compile-time dependency/export effect through native Rust/existing module imports at actual owners; do not introduce a GSL umbrella runtime or mark constituent headers/downstream callers complete. Counters unknown=16,224 unread=16,199 omitted=0 responsibilities=170. Next strict153 Microsoft/GSL include/gsl/narrow@7b1a7912163185e2b2cbecc34ad64a539d566173.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,

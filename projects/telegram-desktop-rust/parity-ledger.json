@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "cf7ce14c5d7fe627768eac8bd19087cd2377050f",
+  "target_commit": "ce7e372b3bd12e53dcf23b4f7d901e8c371b1703",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16225,
-    "unread": 16200,
+    "unknown": 16224,
+    "unread": 16199,
     "omitted": 0,
-    "responsibilities_total": 169,
+    "responsibilities_total": 170,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -45448,6 +45448,253 @@
       "license_and_provenance": "Exact Microsoft/GSL include/gsl/byte@87d007ef94d197632872e96d91525a013c665da8 MIT-licensed dependency implementation plus accepted tdesktop exact-head callsite provenance retained; no GSL/C++ byte runtime or caller-domain release authority inferred.",
       "reviewer": "primary-session",
       "notes": "Strict151 closes only GSL include/gsl/byte as a generic typed-byte dependency responsibility. Auth/RSA/Passport/Calls/Storage/Crash/UI caller behavior remains independently open. Counters unknown=16,225 unread=16,200 omitted=0 responsibilities=169. Next strict152 Microsoft/GSL include/gsl/gsl@53030b31747ca25e3d740bd078c0ffd5b71ebf88."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/GSL",
+      "source_blob_sha": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+      "source_kind": "recursive_child_repository_dependency_implementation",
+      "module_id": "tdesktop.thirdparty.gsl.umbrella",
+      "responsibility_id": "TDRP-R9-GSL-UMBRELLA-EXPORT-DEPENDENCY-001",
+      "source_symbols": [
+        "include/gsl/gsl@53030b31747ca25e3d740bd078c0ffd5b71ebf88",
+        "include \"algorithm\" // copy",
+        "include \"assert\" // Ensures/Expects",
+        "include \"byte\" // byte",
+        "include \"pointers\" // owner, not_null",
+        "include \"span\" // span",
+        "include \"zstring\" // zstring",
+        "include \"util\" // finally()/narrow_cast()",
+        "#ifdef __cpp_exceptions -> include \"narrow\" // narrow()",
+        "Telegram/SourceFiles/stdafx.h <gsl/gsl>",
+        "Telegram/SourceFiles/mtproto/core_types.h <gsl/gsl>",
+        "Telegram/SourceFiles/ui/passcode_strength.cpp <gsl/gsl>"
+      ],
+      "capability_ids": [
+        "CAP-DEPENDENCY-UMBRELLA-EXPORT-SURFACE",
+        "CAP-EXCEPTION-CONDITIONAL-NARROW-EXPORT",
+        "CAP-NATIVE-DEPENDENCY-REPLACEMENT"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "Microsoft/GSL:include/gsl/gsl@53030b31747ca25e3d740bd078c0ffd5b71ebf88",
+        "Microsoft/GSL:include/gsl/algorithm@584f5cd12beb15e863b1c32bc887638314261399",
+        "Microsoft/GSL:include/gsl/assert@d3e6ccdd53d5a254ed3827cf07711a6e86bb4226",
+        "Microsoft/GSL:include/gsl/byte@87d007ef94d197632872e96d91525a013c665da8",
+        "Microsoft/GSL:include/gsl/narrow@7b1a7912163185e2b2cbecc34ad64a539d566173",
+        "Microsoft/GSL:include/gsl/pointers@63e193e92478632520eca7e872ac83c643ffd2c0",
+        "Microsoft/GSL:include/gsl/span@d2ef9f7d85ca6e25bf69b001e9308b3d069c5d16",
+        "Microsoft/GSL:include/gsl/zstring@2cc13d83840afec61e5bd709c77900026ed225f4",
+        "Microsoft/GSL:include/gsl/util@26b2f5fb9d0d8c28c3096f50d575eb42a4b89bad",
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md#TDRP-LANG-03"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-umbrella-export-complete-read.md",
+      "behavior_contract": "Account for the locked GSL umbrella export surface: include/gsl/gsl re-exports algorithm, assert, byte, pointers, span, zstring and util, and additionally re-exports narrow only when C++ exceptions are available. Preserve the dependency/integration effect through native Rust/existing Fabushi module imports at each actual owner; do not introduce a GSL umbrella runtime or use this aggregator to mark any constituent header or downstream tdesktop responsibility complete.",
+      "state_machine": "compile/import boundary -> export constituent interfaces -> if source exceptions are available also export narrow -> caller uses constituent API -> actual constituent/domain owner retains runtime state and lifecycle",
+      "side_effects": [
+        "No runtime state or persistence is owned by the umbrella header.",
+        "The header changes compile-time/API visibility by aggregating constituent GSL interfaces.",
+        "narrow is conditionally available under __cpp_exceptions; other exports are unconditional.",
+        "tdesktop stdafx makes the umbrella broadly visible, but that does not transfer ownership of the constituent behaviors."
+      ],
+      "failure_cases": [
+        "A constituent dependency is omitted because the umbrella itself is treated as sufficient source coverage.",
+        "Exception-sensitive narrow availability is silently changed without an explicit target error-model decision.",
+        "A source-branded GSL umbrella/runtime or second dependency root is introduced.",
+        "The umbrella row falsely closes algorithm/assert/byte/narrow/pointers/span/zstring/util responsibilities.",
+        "Direct tdesktop consumers or transitive stdafx consumers are incorrectly marked complete by this dependency row.",
+        "Source, gitlink or child blob drift is ignored."
+      ],
+      "ui_disposition": "No independent UI surface. ui/passcode_strength.cpp is only a direct include consumer; its password-strength behavior remains an independent product responsibility.",
+      "non_ui_responsibilities": [
+        "dependency umbrella/export surface",
+        "constituent interface aggregation",
+        "exception-conditional narrow export",
+        "source integration/include boundary",
+        "native dependency replacement"
+      ],
+      "platform_delta": "Replace C++ umbrella/PCH include mechanics with explicit native Rust/existing-module imports at actual owners. Do not mirror GSL_GSL_H, IWYU pragmas, precompiled-header architecture or exception macros as Fabushi product architecture.",
+      "existing_owner_candidates": [
+        "TDRP-LANG-03 mature low-level dependency replacement (selected)",
+        "existing Fabushi build/module dependency boundaries and actual constituent owners (selected)",
+        "new GSL umbrella runtime or generic dependency root (rejected)"
+      ],
+      "existing_owner": "TDRP-LANG-03 dependency replacement plus existing build/module dependency boundaries and each constituent/domain owner; no new product state owner",
+      "rejected_existing_owners": [
+        "A GSL-specific umbrella runtime would preserve source architecture instead of source-neutral native ownership.",
+        "A generic second dependency root would duplicate existing Fabushi module/build ownership.",
+        "The umbrella cannot absorb constituent or downstream product responsibilities."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md"
+      ],
+      "fabushi_target_symbols": [
+        "通用成熟安全/媒体依赖须登记、锁定和审查，可以替代低层标准能力；这不豁免其 source/dependency inventory，也不允许隐藏原 Telegram C++ 业务模块。不要自行发明密码学来满足表面语言指标。",
+        "必须枚举精确 commit 的全部 tracked entries，而非选定几个源码目录：源码、头文件、inline/template、platform branches、schemas、生成器/生成产物、资源/语言/素材、build/package/update/test/tooling/docs/license，以及 `.gitmodules` 中全部 gitlink。"
+      ],
+      "target_language": "Rust/native module imports inside existing owners; no new runtime",
+      "language_rationale": "The source is a C++ aggregation header, not a runtime subsystem. Rust/Fabushi should import the needed native/existing abstractions explicitly while retaining exact source/dependency provenance and constituent responsibility boundaries.",
+      "command_event_contracts": [
+        "dependency import -> expose only the needed native/existing constituent capability",
+        "exception-sensitive checked narrowing -> preserve equivalent checked/fallible semantics at the actual target owner",
+        "umbrella inclusion -> never transfers constituent/domain ownership"
+      ],
+      "state_owner": "No independent runtime state; actual constituent/domain owners retain state.",
+      "lifecycle_owner": "Existing build/module dependency lifecycle plus actual constituent/domain lifecycles.",
+      "persistence_and_restart": "No umbrella-owned persistence or restart state.",
+      "concurrency_and_cancellation": "No umbrella-owned concurrency/cancellation; actual constituent/domain operations define those semantics.",
+      "security_boundary": "Do not use aggregation to hide contract, pointer, span, narrowing or byte safety responsibilities. Preserve checked/fallible boundaries in actual owners; do not invent cryptography.",
+      "network_service_dependencies": [
+        "GitHub Actions for exact-head revalidation"
+      ],
+      "service_owner": "No shipping service.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-replaced-mapped-open",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required after publication.",
+        "Constituent GSL headers remain independently open unless already closed by their own strict rows.",
+        "Direct/transitive tdesktop consumers remain independent source responsibilities.",
+        "Source closure and independent release acceptance remain open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "strict152 include/gsl/gsl@53030b31747ca25e3d740bd078c0ffd5b71ebf88 fully read: 35 line slots / 1217 bytes",
+        "locked include/gsl directory confirms exact constituent blobs for algorithm/assert/byte/narrow/pointers/span/zstring/util; the umbrella conditionally includes narrow under __cpp_exceptions",
+        "accepted tdesktop exact commit code search found direct <gsl/gsl> includes in Telegram/SourceFiles/stdafx.h, mtproto/core_types.h and ui/passcode_strength.cpp",
+        "GSL gitlink 87f9d768866548b5b86e72be66c60c5abd4d9b37; child tree 6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41",
+        "Parent TDRP 40037884109 61/61 success; authority 12538530472 sha256:aab487be9d0492a8c92ae4ee5f6039dcb22ab21e54e135f3e86d7df360dc9eb7; closure 12538371757 sha256:ea1d81a43aaec065300a9e37c1098de95eaf13039ab7d5ab1048a184e331aad5; reachability 12538327095 sha256:bcc886f931b61eadf35337ca01d8c1e16113c5b4cc6c259db817fbafb83f7e23; Rust 40037884162 6/6 success; artifact 12538311273 sha256:78712bec6ca706d669f7ea1e654f00704779dd29de8d529a17a862126bc6c16b."
+      ],
+      "target_commit": "ce7e372b3bd12e53dcf23b4f7d901e8c371b1703",
+      "workflow_run": 40037884109,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12538530472,
+      "artifact_digest": "sha256:aab487be9d0492a8c92ae4ee5f6039dcb22ab21e54e135f3e86d7df360dc9eb7",
+      "composition_root": "Fabushi native dependency/build graph through actual constituent and domain owners",
+      "composition_slot": "GSL umbrella export/import aggregation boundary",
+      "capability_component": "Native dependency import aggregation",
+      "variation_axes": [
+        "unconditional constituent export list",
+        "exception-enabled narrow export",
+        "direct include vs stdafx-transitive visibility"
+      ],
+      "shared_owner_contracts": [
+        "TDRP-LANG-03",
+        "recursive dependency/source inventory",
+        "actual constituent/domain owners",
+        "exact-head TDRP evidence"
+      ],
+      "duplicate_root_check": "No GSL umbrella runtime, second dependency root, second build graph or constituent/domain owner.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Compile-time dependency aggregation only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Native/existing module imports at actual owners",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Any GSL umbrella/constituent blob or accepted tdesktop include-boundary drift requires fresh reconciliation; constituent and caller semantics remain independently open.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-GSL-UMBRELLA-EXPORT-DEPENDENCY-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GSL-UMBRELLA-EXACT-SOURCE-001",
+        "ORA-TDRP-GSL-UMBRELLA-EXPORT-BOUNDARY-001",
+        "ORA-TDRP-GSL-UMBRELLA-EXCEPTION-NARROW-001",
+        "ORA-TDRP-GSL-UMBRELLA-NATIVE-REPLACEMENT-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GSL-UMBRELLA-NO-OMISSION-001",
+        "INV-TDRP-GSL-UMBRELLA-NO-GSL-RUNTIME-001",
+        "INV-TDRP-GSL-UMBRELLA-NO-CONSTITUENT-CLOSURE-001",
+        "INV-TDRP-GSL-UMBRELLA-EXACT-PROVENANCE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GSL-UMBRELLA-DEPENDENCY-REPLACEMENT-001",
+        "CONTRACT-TDRP-GSL-UMBRELLA-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GSL-UMBRELLA-SOURCE-DRIFT-001",
+        "FAULT-TDRP-GSL-UMBRELLA-EXCEPTION-MODE-DRIFT-001",
+        "FAULT-TDRP-GSL-UMBRELLA-DUPLICATE-OWNER-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-GSL-UMBRELLA-NO-HIDDEN-SAFETY-OMISSION-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-GSL-UMBRELLA-NO-SOURCE-OMISSION-001",
+        "REG-TDRP-GSL-UMBRELLA-NO-PARALLEL-RUNTIME-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-BEHAVIOR",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-SECURITY-PRIVACY"
+      ],
+      "test_fixture_ids": [
+        "locked GSL umbrella header + exact include/gsl child blobs + accepted exact-head direct include consumers + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact Microsoft/GSL include/gsl/gsl@53030b31747ca25e3d740bd078c0ffd5b71ebf88 MIT-licensed aggregation header plus accepted tdesktop exact-head include provenance retained; no GSL runtime or constituent/domain release authority inferred.",
+      "reviewer": "primary-session",
+      "notes": "Strict152 closes only GSL include/gsl/gsl as an umbrella/export dependency responsibility. Constituent headers and all direct/transitive consumers remain independently open. Counters unknown=16,224 unread=16,199 omitted=0 responsibilities=170. Next strict153 Microsoft/GSL include/gsl/narrow@7b1a7912163185e2b2cbecc34ad64a539d566173."
     }
   ]
 }
