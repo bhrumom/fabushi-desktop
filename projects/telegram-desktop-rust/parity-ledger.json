@@ -41375,7 +41375,7 @@
         "AGENTS.md"
       ],
       "fabushi_target_symbols": [
-        "repository-quality qualification positive/negative controls",
+        "same source-neutral oracles and negative controls",
         "Repository edit-policy feedback adapter governance"
       ],
       "target_language": "Markdown quality/test governance + native Fabushi test technology if a feedback adapter is adopted",
