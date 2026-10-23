@@ -61,4 +61,4 @@ Strict125 closes semantic read/responsibility decomposition for this source entr
 
 Counters become unknown=16,251, unread=16,226, omitted=0, responsibilities=143.
 
-Next deterministic root entry, confirmed by the accepted upstream root ordering: `LICENSE@d70f4d6a87eece19c4ec184de36a8aba72b4a639` (35,850 bytes).
+Next deterministic root entry, confirmed from the accepted root tree after the fully closed `lib` subtree: `snap/snapcraft.yaml@a181d828f25d901303f7221824ac30b0ff5e773a` (16,501 bytes). `LICENSE@d70f4d6a87eece19c4ec184de36a8aba72b4a639` was already independently closed at strict106 and is not counted again.

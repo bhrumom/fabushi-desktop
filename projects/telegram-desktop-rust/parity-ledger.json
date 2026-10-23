@@ -38623,7 +38623,7 @@
       "release_gate_status": "open",
       "license_and_provenance": "Exact upstream D-Bus service file retained as Linux packaging/platform provenance. Telegram service identity, executable and CMake install spelling are not promoted to Fabushi shipping authority.",
       "reviewer": null,
-      "notes": "Strict125 closes only lib/xdg/org.telegram.desktop.service semantic read/decomposition. Counters unknown=16,251 unread=16,226 omitted=0 responsibilities=143. Linux installed D-Bus activation acceptance remains open. Next strict126 LICENSE@d70f4d6a87eece19c4ec184de36a8aba72b4a639 (35,850 bytes). Fresh child exact-head TDRP/Rust Actions required."
+      "notes": "Strict125 closes only lib/xdg/org.telegram.desktop.service semantic read/decomposition. Counters unknown=16,251 unread=16,226 omitted=0 responsibilities=143. Linux installed D-Bus activation acceptance remains open. Next strict126 snap/snapcraft.yaml@a181d828f25d901303f7221824ac30b0ff5e773a (16,501 bytes); LICENSE was already closed at strict106 and is not counted again. Fresh child exact-head TDRP/Rust Actions required."
     }
   ]
 }
