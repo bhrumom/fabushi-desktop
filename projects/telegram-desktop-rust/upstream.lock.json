@@ -361,10 +361,10 @@
   "coverage": {
     "root_source_entries_total": 6893,
     "recursive_source_entries_total": 16379,
-    "unknown_minimum": 16266,
-    "unread_minimum": 16241,
+    "unknown_minimum": 16265,
+    "unread_minimum": 16240,
     "omitted_known": 0,
-    "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 79ba8d1e17a8f3736d37a38561e1acec8c82281d/tree ee9ad82afa6084eb8f4cd80f698ec0203b81899b passed TDRP 39923903565 at 61/61 and Rust 39923903724 at 6/6. Strict110 cmake@7ceca3019b4750d7a5acb2de0faffd523ee14095 is retained as recursive build/toolchain/dependency-integration provenance under the existing root-CMake build-composition owner and configured-build evidence/qualification owners; cmake_helpers is fully read through nested cppgir and expected-lite fixed point, while upstream CMake/Qt/version/generator/binary build inputs do not become Fabushi shipping build/runtime/package/release truth and no second build/dependency/configured-validator owner is created. Counters unknown=16,266 unread=16,241 omitted=0 responsibilities=128. Next strict root index 111 docs/api_credentials.md@0d2819bd3cd6b6407ced257edbbd6623b438f262. Fresh child exact-head Actions required."
+    "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent ffc7bbc8c8d1084e54e4871fc477158bd712e09b/tree 9ffc602e0efefd9fdd371fc5f2f7811252f894bb passed TDRP 39926642224 at 61/61 and Rust 39926642214 at 6/6. Strict111 docs/api_credentials.md@0d2819bd3cd6b6407ced257edbbd6623b438f262 is retained as credential/security provisioning provenance under the existing FabushiAccountService/AuthServicePort/fabushi-account-policy/secret-store owners; its Telegram api_id/api_hash and TEST ONLY credential never become Fabushi production credential or network authority, and live-main Host enrollment/Remote Computer device-secret work remains a scoped consumer of the same account/secret boundary rather than a second owner. Counters unknown=16,265 unread=16,240 omitted=0 responsibilities=129. Next strict root index 112 docs/assets/preview.png@808d016f34fe2d4156a2bd26e8cdbe384f888b65. Fresh child exact-head Actions required."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -378,7 +378,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Strict110 is recursive build/toolchain/dependency-integration provenance only. Source closure remains open with unknown=16,266 unread=16,241 omitted=0; upstream CMake/Qt/version/generator/binary inputs do not establish Fabushi configured-build, runtime, package/signing/deployment behavior or release acceptance."
+    "note": "Strict111 is credential/security provisioning provenance only. Source closure remains open with unknown=16,265 unread=16,240 omitted=0; Telegram api_id/api_hash and TEST ONLY credentials do not establish Fabushi authentication authority, runtime login, service deployment, package/signing behavior or release acceptance."
   },
   "baseline_identity_evidence": {
     "status": "pending-current-head-revalidation",

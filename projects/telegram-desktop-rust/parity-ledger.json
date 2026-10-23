@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "79ba8d1e17a8f3736d37a38561e1acec8c82281d",
+  "target_commit": "ffc7bbc8c8d1084e54e4871fc477158bd712e09b",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16266,
-    "unread": 16241,
+    "unknown": 16265,
+    "unread": 16240,
     "omitted": 0,
-    "responsibilities_total": 128,
+    "responsibilities_total": 129,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -34190,6 +34190,274 @@
       "reviewer": null,
       "license_and_provenance": "Root gitlink exact identity retained from telegramdesktop/tdesktop. cmake_helpers files reference Desktop App Toolkit legal authority; nested cppgir exact GitLab commit is read through an object-identical GitHub mirror; expected-lite carries Boost Software License 1.0. No upstream build/runtime code is copied into Fabushi by this disposition.",
       "notes": "Strict index 110 closes only the root cmake gitlink's recursive build/toolchain-integration provenance. Counters become unknown=16,266 unread=16,241 omitted=0 responsibilities=128. Next strict root index 111 docs/api_credentials.md@0d2819bd3cd6b6407ced257edbbd6623b438f262. Fresh child exact-head Actions required.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "docs/api_credentials.md",
+      "source_blob_sha": "0d2819bd3cd6b6407ced257edbbd6623b438f262",
+      "source_kind": "documentation_security_credential_provisioning_provenance",
+      "module_id": "tdesktop.root.docs.api_credentials",
+      "responsibility_id": "TDRP-R9-UPSTREAM-API-CREDENTIALS-SECURITY-PROVISIONING-PROVENANCE-001",
+      "source_symbols": [
+        "application api_id/api_hash provisioning contract",
+        "TEST ONLY credential boundary",
+        "deployment-specific production credential requirement",
+        "invalid/default credential login-failure warning"
+      ],
+      "capability_ids": [
+        "CAP-AUTH-CREDENTIAL-PROVISIONING",
+        "CAP-SECRET-BOUNDARY",
+        "CAP-TEST-PRODUCTION-CREDENTIAL-SEPARATION",
+        "CAP-AUTH-PROVISIONING-FAIL-CLOSED"
+      ],
+      "dependency_ids": [
+        "source/product/fabushi/fabushi-account-service.ts",
+        "source/electron-main/secrets/secret-store.ts",
+        "source/product/fabushi/fabushi-account-policy.ts",
+        "source/electron-main/account/auth-service-contract.ts"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-root-docs-api-credentials-security-provisioning-complete-read.md",
+      "behavior_contract": "Retain the exact upstream credential document as authentication-provisioning/security-boundary provenance only. Carry its source-neutral test/production separation and fail-closed provisioning responsibilities into Fabushi's existing account, auth-policy and secret-storage owners; never promote Telegram test credentials, api_id/api_hash or Telegram network authority into Fabushi production.",
+      "state_machine": "read exact source blob -> separate credential-provisioning responsibilities from literal upstream values -> audit existing Account/Auth/Secrets owners and live-main drift -> verify parent exact-head gates -> CAS accounting publication -> require fresh child exact-head gates",
+      "side_effects": [
+        "Retains exact upstream credential/security provenance without copying credential authority into Fabushi.",
+        "Maps test/production separation and invalid-provisioning failure semantics to existing Fabushi authentication owners.",
+        "Introduces no new runtime, network provider, identity root or secret store."
+      ],
+      "failure_cases": [
+        "upstream test credentials are treated as Fabushi production credentials",
+        "api_id/api_hash become a Telegram network dependency in Fabushi",
+        "authentication material bypasses the canonical secret store",
+        "unapproved issuer/origin or insecure transport is accepted",
+        "account switch/revocation leaves stale device or Host credentials authoritative",
+        "documentation is treated as runtime/package/release acceptance",
+        "stale PR/ref/tree/upstream lease is published"
+      ],
+      "ui_disposition": "No shipping UI. Credential provisioning and secret persistence stay behind existing account/auth/settings surfaces and do not create a Telegram credential screen.",
+      "non_ui_responsibilities": [
+        "authentication credential provisioning provenance",
+        "test-versus-production credential separation",
+        "secret-storage ownership",
+        "issuer/origin validation",
+        "invalid-provisioning failure semantics",
+        "account-generation/revocation fencing"
+      ],
+      "platform_delta": "Telegram's application credential pair is upstream protocol/login provenance. Fabushi authenticates against its own approved issuer and existing access-token/session model, persisting secrets through the canonical Electron secure-storage boundary and projecting only narrowly scoped Host/device credentials.",
+      "existing_owner_candidates": [
+        "FabushiAccountService in source/product/fabushi/fabushi-account-service.ts (selected account/session and Host/device credential lifecycle owner)",
+        "secret-store.ts (selected secret persistence/encryption/account-scope owner)",
+        "fabushi-account-policy.ts (selected issuer/origin/HTTPS validator)",
+        "AuthServicePort (selected desktop auth contract)",
+        "new Telegram credential store/provider (rejected)",
+        "new second Auth/Identity owner (rejected)"
+      ],
+      "existing_owner": "FabushiAccountService + AuthServicePort + fabushi-account-policy issuer validation + canonical secret-store.ts",
+      "rejected_existing_owners": [
+        "Upstream literal api_id/api_hash values are provenance, not a Fabushi owner.",
+        "Remote Computer device secret is a scoped consumer of the existing account/secret boundary, not a second product credential root.",
+        "A Telegram credential provider would duplicate the canonical auth and secret-store architecture.",
+        "UI/settings surfaces cannot own secret or issuer truth."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "source/product/fabushi/fabushi-account-service.ts",
+        "source/electron-main/secrets/secret-store.ts",
+        "source/product/fabushi/fabushi-account-policy.ts",
+        "source/electron-main/account/auth-service-contract.ts"
+      ],
+      "fabushi_target_symbols": [
+        "FABUSHI_ACCOUNT_SESSION_SECRET / FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV / Remote Computer device-secret lifecycle",
+        "readSecret / writeSecret / deleteSecret and account-scoped encrypted secret parsing",
+        "normalizeFabushiApiBaseUrl / isProductionFabushiIssuer / nativeRemoteComputerDeviceScope",
+        "AuthServicePort"
+      ],
+      "target_language": "Existing TypeScript account/auth/secret owners plus existing Rust Host consumers",
+      "language_rationale": "The source is credential/security documentation rather than reusable runtime code. Its applicable responsibilities already belong to Fabushi's source-neutral TypeScript account, issuer-policy and secure-secret owners; retaining Telegram credential machinery would create a forbidden parallel auth architecture.",
+      "command_event_contracts": [
+        "login/refresh/logout -> canonical FabushiAccountService",
+        "secret read/write/delete -> canonical secret-store",
+        "API base/issuer input -> normalizeFabushiApiBaseUrl and approved-issuer validation",
+        "Host/device credential projection -> account-scoped derivative only",
+        "source credential document -> provenance only",
+        "executable verification -> exact-head GitHub Actions only"
+      ],
+      "state_owner": "FabushiAccountService owns account/session credential state; secret-store.ts owns secret persistence; fabushi-account-policy.ts owns issuer/origin validation.",
+      "lifecycle_owner": "Existing account login/refresh/logout/revocation and device/Host credential lifecycle; TDRP ledger owns only upstream disposition.",
+      "persistence_and_restart": "Account and derivative secrets remain under the canonical secret-store/account files with account-scope validation; committed TDRP evidence retains only provenance and no literal credential authority.",
+      "concurrency_and_cancellation": "Existing account generation, login cancellation, refresh/revocation and account-scoped device credential lifecycle fence stale work; branch publication is force-with-lease fenced.",
+      "security_boundary": "Telegram api_id/api_hash and its TEST ONLY pair grant no Fabushi authority. Fabushi accepts only its approved issuer/origin policy and canonical session/secret storage; documentation or source defaults never authorize production.",
+      "network_service_dependencies": [
+        "Fabushi approved account API issuer",
+        "local platform secure-storage backend",
+        "GitHub Actions for exact-head evidence"
+      ],
+      "service_owner": "Existing Fabushi account/auth service and desktop secret-storage owners; no Telegram service dependency added.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "security-equivalent",
+      "blockers": [
+        "Fresh strict111 child exact-head TDRP/Rust Actions are required after publication.",
+        "Recursive source disposition remains open.",
+        "Independent release acceptance remains open."
+      ],
+      "production_entrypoints": [
+        "FabushiAccountService.login/refresh/logout and deviceAgentSession",
+        "normalizeFabushiApiBaseUrl",
+        "readSecret/writeSecret/deleteSecret",
+        "AuthServicePort"
+      ],
+      "production_evidence": [
+        "path:source/product/fabushi/fabushi-account-service.ts",
+        "path:source/electron-main/secrets/secret-store.ts",
+        "path:source/product/fabushi/fabushi-account-policy.ts#normalizeFabushiApiBaseUrl",
+        "path:source/electron-main/account/auth-service-contract.ts#AuthServicePort"
+      ],
+      "test_evidence": [
+        "docs/api_credentials.md@0d2819bd3cd6b6407ced257edbbd6623b438f262 fully read (695 bytes); Telegram application credentials, TEST ONLY boundary and invalid-provisioning warning classified as upstream auth/security provenance only.",
+        "Parent branch owner audit re-read exact blobs: fabushi-account-service.ts@6913ae84043204ca74d89f671a128f2984f7f9da, secret-store.ts@c71c39527858771835f59745905ce6f72b078ace, fabushi-account-policy.ts@291fd47ae89aca36a24ca6f1866f2099af2b4a5f, auth-service-contract.ts@c23df86b7b11d38b3eea4f317da6f039586cb7f2.",
+        "Parent-ledger uniqueness preflight: docs/api_credentials.md path=0, source blob=0, strict111 responsibility=0.",
+        "Live main 7394f6dc7687f9b986ee5589d40aa680ce23b90a/tree fbeb0bb32d944d0c1053880c471fe5c52279f052 reviewed for credential-owner drift; Host enrollment and Remote Computer device-secret work remain consumers of the existing account/secret boundary rather than a second credential owner.",
+        "Parent exact-head TDRP run 39926642224 completed 61/61 success; authority 12490081181 sha256:e42c8592526cf55397a4bb4355235c8fc661498a865a02be795e2bef9a20e4fd; closure 12490470364 sha256:a017c729e01ddf1c19f463c8ee6adaf00457336ea7da4092cc927d8b52dba1bd; reachability 12490086254 sha256:783551208917b4bf7619de8353f3105a7885c6401fcc78dfb9f3f685607584bc.",
+        "Parent exact-head Rust run 39926642214 completed 6/6 success; artifact 12489164014 sha256:acb5d18e1a39ec59bb8d3dc079f7bf2fe536e090d1d2c664d03c1d98fb7a5775.",
+        "Publication preflight: PR/ref remained ffc7bbc8c8d1084e54e4871fc477158bd712e09b/tree 9ffc602e0efefd9fdd371fc5f2f7811252f894bb; live upstream dev remained a7f453612f4896ac04d0007a36ab0d377e5bcbcf/tree c539eabfb05e7dcaa84821ac44c35cdfb6551ae5."
+      ],
+      "target_commit": "ffc7bbc8c8d1084e54e4871fc477158bd712e09b",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi canonical account/auth/secret architecture",
+      "composition_slot": "Upstream credential/security provisioning provenance",
+      "capability_component": "Source-neutral auth provisioning and secret-boundary disposition",
+      "variation_axes": [
+        "test-only versus production credentials",
+        "source credential provenance versus product authorization",
+        "approved Fabushi issuer versus foreign/Telegram network authority",
+        "account session secret versus Host/device derivative secrets",
+        "encrypted secure storage versus fail-closed/nonpersistent fallback"
+      ],
+      "shared_owner_contracts": [
+        "FabushiAccountService",
+        "AuthServicePort",
+        "fabushi-account-policy.ts",
+        "secret-store.ts",
+        "existing account-generation and Remote Computer device-secret fencing",
+        "Rust desktop runtime exact-head workflow"
+      ],
+      "duplicate_root_check": "No Telegram credential provider/store, second AuthService, second Identity root, second secret store, Telegram network dependency or local release-acceptance path introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Authentication provisioning/security provenance only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing account/auth/settings surfaces only; no new credential surface",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Any changed source blob, auth/secret owner, issuer policy, account-generation fencing, PR/ref/tree or live upstream lease requires fresh reconciliation; upstream credential values never become Fabushi authority.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-UPSTREAM-API-CREDENTIALS-SECURITY-PROVISIONING-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-API-CREDENTIALS-EXACT-SOURCE-001",
+        "ORA-TDRP-API-CREDENTIALS-EXISTING-AUTH-OWNER-001",
+        "ORA-TDRP-API-CREDENTIALS-TEST-PROD-SEPARATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-API-CREDENTIALS-NO-TELEGRAM-PRODUCTION-CREDENTIAL-001",
+        "INV-TDRP-API-CREDENTIALS-NO-SECOND-AUTH-ROOT-001",
+        "INV-TDRP-API-CREDENTIALS-NO-RELEASE-ACCEPT-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-API-CREDENTIALS-EXACT-SOURCE-001",
+        "CONTRACT-TDRP-API-CREDENTIALS-CANONICAL-AUTH-OWNER-001",
+        "CONTRACT-TDRP-API-CREDENTIALS-EXACT-HEAD-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-API-CREDENTIALS-UPSTREAM-DRIFT-001",
+        "TEMP-TDRP-API-CREDENTIALS-AUTH-OWNER-DRIFT-001",
+        "TEMP-TDRP-API-CREDENTIALS-ACCOUNT-GENERATION-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-API-CREDENTIALS-STALE-ACCOUNT-001",
+        "FAULT-TDRP-API-CREDENTIALS-INVALID-PROVISIONING-001",
+        "FAULT-TDRP-API-CREDENTIALS-UNAPPROVED-ISSUER-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-API-CREDENTIALS-TEST-NOT-PRODUCTION-001",
+        "SEC-TDRP-API-CREDENTIALS-SOURCE-NOT-AUTHORIZATION-001",
+        "SEC-TDRP-API-CREDENTIALS-CANONICAL-SECRET-STORE-001",
+        "SEC-TDRP-API-CREDENTIALS-APPROVED-ISSUER-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-API-CREDENTIALS-NO-SECOND-AUTH-ROOT-001",
+        "REG-TDRP-API-CREDENTIALS-NO-BOT-AUTH-REGRESSION-001"
+      ],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-MODULE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "locked docs/api_credentials.md + canonical Fabushi account/auth/secret owners + parent exact-head Actions"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "release_gate_status": "open",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact upstream documentation blob retained as Telegram Desktop credential/security provenance. No literal upstream credential value, Telegram auth runtime or network dependency is copied into Fabushi by this disposition.",
+      "notes": "Strict index 111 closes only docs/api_credentials.md as credential/security provisioning provenance. Counters become unknown=16,265 unread=16,240 omitted=0 responsibilities=129. Next strict root index 112 docs/assets/preview.png@808d016f34fe2d4156a2bd26e8cdbe384f888b65 (1,241,708-byte binary asset). Fresh child exact-head Actions required.",
       "test_execution_evidence": []
     }
   ]
