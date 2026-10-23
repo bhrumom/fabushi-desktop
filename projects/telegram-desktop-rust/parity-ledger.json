@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "fdf9715e8a08c808b66523a9f68a70b0a4485a4a",
+  "target_commit": "6b5c69f923277607ce56831ecdbfeb9c65b2ff00",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16243,
-    "unread": 16218,
+    "unknown": 16242,
+    "unread": 16217,
     "omitted": 0,
-    "responsibilities_total": 151,
+    "responsibilities_total": 152,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -41026,6 +41026,270 @@
       "reviewer": null,
       "license_and_provenance": "Exact compile-database adapter provenance read from locked telegramdesktop/tdesktop live-dev blob; no upstream C++/Ninja/clang-tidy runtime copied.",
       "notes": "Strict133 closes only tools/clangtidy/compile_db.py semantic read/decomposition. Configured-build-derived compilation database provenance, bounded command adaptation and evidence-strength boundaries map to existing Fabushi quality/configured-build owners. Upstream skip/fallback behavior remains analyzer coverage limitation. Current Fabushi has Rust build/tests and TypeScript typecheck/build but no dedicated cargo clippy/fmt, ESLint or lint script, so static-analysis execution remains mapped-open. Counters unknown=16,243 unread=16,218 omitted=0 responsibilities=151. Next strict134 tools/rules/hook.py@287b36c948566659970651226c92f7b8b056b434.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "tools/rules/hook.py",
+      "source_blob_sha": "287b36c948566659970651226c92f7b8b056b434",
+      "source_kind": "repository_edit_policy_feedback_hook_and_staged_diff_provenance",
+      "module_id": "tdesktop.tools.rules.hook",
+      "responsibility_id": "TDRP-R9-RULE-HOOK-FEEDBACK-001",
+      "source_symbols": [
+        "banned",
+        "hollow",
+        "blanked",
+        "without_comments",
+        "comment_start",
+        "comment_text",
+        "classify",
+        "blocks",
+        "fault",
+        "written",
+        "replaced",
+        "check_edit",
+        "staged",
+        "main",
+        "git diff --cached -U0 -M"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-EDIT-POLICY-FEEDBACK",
+        "CAP-CHANGED-DIFF-SCOPE",
+        "CAP-STATIC-ANALYSIS-GUIDANCE",
+        "CAP-EXACT-HEAD-QUALITY-EVIDENCE"
+      ],
+      "dependency_ids": [
+        ".clang-tidy@5610bd13664ca77549993def241eb3edaffeff7a",
+        "tools/rules/test_hook.py@dce99f3507e4ec9f71c8bbd5360e9dde9b62d45f",
+        "tools/clangtidy/README.md@2e64a408cb2d76aed0425706e321a24bb58f350f",
+        ".claude/settings.json@d47520dc0e3b7e8d6067456e33062140c75f7c79",
+        ".claude/commands/cross-review.md@7769d03de798cde66987cd41303d2ea529321361",
+        "AGENTS.md@da3e37258c74963970ff5cfc5d54671a37558b97",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md@4d2c88e118ab489d3d0339d2a61371a7ea74e72e"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-tools-rules-hook-complete-read.md",
+      "behavior_contract": "Provide immediate edit-time or staged-diff feedback from durable repository rules, scoped to changed C++ source text and producing actionable diagnostics, while preserving all local/parser/diff limitations and never elevating a provider hook or local clean result to migration/release acceptance. Fabushi maps only the source-neutral changed-scope/durable-rule/diagnostic boundary to its existing AGENTS quality governance; Telegram C++ comment budgets, helper replacements and Claude/Git hook mechanics remain provenance.",
+      "state_machine": "edit/write payload or --staged invocation -> determine applicable changed C++ path/diff -> derive banned mappings from durable .clang-tidy -> strip literal/comment false positives -> evaluate banned calls and source-specific comment policy -> emit actionable nonzero diagnostics for detected violations -> clean/local unsupported or malformed cases remain only local feedback -> exact-head GitHub Actions remains authoritative",
+      "side_effects": [
+        "Reads .clang-tidy to derive upstream banned-function replacement guidance.",
+        "Edit mode may read the prior HEAD copy of a file to distinguish moved text.",
+        "Staged mode reads the Git index diff and emits diagnostics; it does not mutate source or the index.",
+        "Does not create shipping product state, network state, or release acceptance."
+      ],
+      "failure_cases": [
+        "Malformed JSON returns zero and is mislabeled as policy compliance.",
+        "git diff --cached failure is not checked and empty stdout is mislabeled as a clean staged diff.",
+        "Prior git show failure loses old-text context and is treated as authoritative.",
+        "Unsupported/non-source paths are ignored and the result is generalized to repository-wide compliance.",
+        "Textual moved-comment matching hides genuinely new duplicated comment text.",
+        "Telegram C++ helper replacements/comment budgets/harness exemptions are copied into Fabushi without independent durable adoption.",
+        "A provider-specific PostToolUse or Git hook becomes a second quality owner or acceptance gate.",
+        "A clean local hook result replaces exact-head GitHub Actions evidence."
+      ],
+      "ui_disposition": "Not applicable; repository edit-policy/static-analysis feedback tooling provenance only.",
+      "non_ui_responsibilities": [
+        "durable-rule-derived local feedback",
+        "changed-file and staged-diff scoping",
+        "literal/comment-aware banned-call detection",
+        "actionable diagnostics and nonzero local feedback outcomes",
+        "explicit fail-open/provider/diff limitations",
+        "separation of local feedback from exact-head acceptance"
+      ],
+      "platform_delta": "Fabushi does not retain Telegram's C++/Python/Claude/Git hook as product architecture. Applicable feedback-adapter semantics already live in source-neutral AGENTS governance; C++ suffixes, Qt replacements, comment budgets, harness exemptions, payload shapes and hook commands remain source provenance.",
+      "existing_owner_candidates": [
+        "AGENTS.md#Repository edit-policy feedback adapter governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Repository source static-analysis migration qualification",
+        "GitHub Actions exact-head repository/source-authority validators"
+      ],
+      "existing_owner": "AGENTS.md repository edit-policy feedback adapter governance + exact-head GitHub Actions verification",
+      "rejected_existing_owners": [
+        "A Telegram rules-hook owner would duplicate existing repository edit-policy governance.",
+        "A Claude PostToolUse owner would make provider configuration canonical.",
+        "A Git pre-commit owner would confuse optional local feedback with repository acceptance.",
+        "A C++ comment-budget/static-helper owner is not applicable unless Fabushi independently adopts those rules."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository edit-policy feedback adapter governance",
+        "Repository source static-analysis migration qualification"
+      ],
+      "target_language": "Markdown repository governance + optional native target-language/editor feedback adapters",
+      "language_rationale": "The source is a Python/C++ repository feedback adapter. Fabushi preserves only its source-neutral durable-rule/scoped-feedback semantics in existing governance; any executable adapter must use Fabushi's target-language rules and remains optional.",
+      "command_event_contracts": [
+        "edit/write event -> inspect only the changed applicable path and newly written text",
+        "staged feedback -> inspect only the staged diff subject, with explicit diff acquisition status",
+        "durable rule mapping -> emit actionable guidance without silently rewriting source",
+        "malformed/missing/unsupported local input -> never promote to passing acceptance evidence",
+        "source-specific Telegram rule -> provenance only unless independently adopted",
+        "mapping commit -> exact-head GitHub Actions revalidation"
+      ],
+      "state_owner": "Existing repository edit-policy/quality governance; no product state owner.",
+      "lifecycle_owner": "AGENTS durable edit-policy governance and exact-head GitHub Actions verification.",
+      "persistence_and_restart": "No product persistence. Durable state is repository policy plus dossier/ledger provenance; local editor/pre-commit invocations and their diagnostics are disposable feedback.",
+      "concurrency_and_cancellation": "Local feedback is scoped to one payload or staged snapshot and may race repository/index changes; stale or failed acquisition cannot become acceptance. Exact-head GitHub Actions fences authoritative evidence.",
+      "security_boundary": "Provider payloads, Git index state and local commands are untrusted/non-authoritative evidence inputs. The adapter must not silently mutate source or weaken durable policy; security/release authority remains with dedicated exact-head gates.",
+      "network_service_dependencies": [
+        "GitHub Actions for authoritative exact-head executable verification"
+      ],
+      "service_owner": "Fabushi repository quality/evidence lifecycle",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "repository-feedback-adapter-mapped-open",
+      "blockers": [
+        "Current Fabushi exact head has no local PostToolUse/hook.py/pre-commit/--staged adapter; this optional fast-feedback absence cannot be counted as a pass.",
+        "Telegram hook has explicit fail-open paths for malformed payload and unchecked staged-diff acquisition, so its clean result is not acceptance evidence.",
+        "Fresh child exact-head TDRP/Rust Actions must validate strict134 after publication.",
+        "Recursive source closure remains open.",
+        "Independent release acceptance remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [
+        "path:AGENTS.md",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md"
+      ],
+      "test_evidence": [
+        "strict134 tools/rules/hook.py@287b36c948566659970651226c92f7b8b056b434 fully read",
+        "tools/rules/test_hook.py@dce99f3507e4ec9f71c8bbd5360e9dde9b62d45f fully read as supporting behavioral fixtures",
+        ".claude/settings.json@d47520dc0e3b7e8d6067456e33062140c75f7c79 confirms PostToolUse Edit|Write|MultiEdit registration",
+        "tools/clangtidy/README.md@2e64a408cb2d76aed0425706e321a24bb58f350f confirms optional --staged pre-commit installation",
+        ".claude/commands/cross-review.md@7769d03de798cde66987cd41303d2ea529321361 confirms staged hook use against an alternate index",
+        "Fabushi exact-head code search returned zero PostToolUse, hook.py, pre-commit and --staged implementations",
+        "AGENTS.md@da3e37258c74963970ff5cfc5d54671a37558b97 lines 114-120 already own durable-rule/scoped/actionable/provider-neutral/exact-head acceptance boundaries",
+        "TDRP 39991260296 61/61; authority 12518660328 sha256:3c332b1d5852e07cfacc1173e2ac0d5fc9dbb423236a2ccc4f7afd5314d7e7f0; closure 12517688846 sha256:c02e879f42ce4680839b619324ce90e3e7f310e95c3ca4e4ffe537e78642f20e; reachability 12518415977 sha256:f48b624620ad018ec1b6a2abaaf84b21e505a5b3f8e77e4c8676bc4cb9b422cc",
+        "Rust 39991260326 6/6; artifact 12517458444 sha256:821a30357d7a674acaa73351e2a827518f1b3f228026c30d2ef8052a93c00579"
+      ],
+      "target_commit": "6b5c69f923277607ce56831ecdbfeb9c65b2ff00",
+      "workflow_run": 39991260296,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12518660328,
+      "artifact_digest": "sha256:3c332b1d5852e07cfacc1173e2ac0d5fc9dbb423236a2ccc4f7afd5314d7e7f0",
+      "composition_root": "Fabushi repository quality/test-evidence lifecycle",
+      "composition_slot": "repository edit-policy local feedback adapter",
+      "capability_component": "Durable-rule-derived changed-scope feedback",
+      "variation_axes": [
+        "editor payload vs staged diff",
+        "applicable C++ source vs ignored file class",
+        "new text vs moved/replaced text",
+        "plain comment vs // WHY block vs license/harness exemption",
+        "detected violation vs malformed/failed local acquisition",
+        "local feedback vs authoritative exact-head CI"
+      ],
+      "shared_owner_contracts": [
+        "Repository edit-policy feedback adapter governance",
+        "Repository source static-analysis migration qualification",
+        "GitHub Actions exact-head evidence governance"
+      ],
+      "duplicate_root_check": "No Telegram rules-hook runtime, Claude-specific owner, Git pre-commit acceptance owner, C++ comment-policy owner, or second repository-quality root introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository quality/tooling only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Repository quality/tooling",
+      "route_contract": "No shipping route",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Local feedback remains bound to the exact changed payload or staged snapshot and durable rule version; malformed/failed/stale acquisition, missing adapter, or head drift cannot be promoted to passing evidence.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-RULE-HOOK-FEEDBACK-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-RULE-HOOK-SOURCE-001",
+        "ORA-TDRP-RULE-HOOK-BANNED-FUNCTION-001",
+        "ORA-TDRP-RULE-HOOK-EDIT-SCOPE-001",
+        "ORA-TDRP-RULE-HOOK-STAGED-DIFF-001",
+        "ORA-TDRP-RULE-HOOK-COMMENT-POLICY-001",
+        "ORA-TDRP-RULE-HOOK-FAIL-OPEN-LIMIT-001",
+        "ORA-TDRP-RULE-HOOK-OWNER-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-RULE-HOOK-DURABLE-POLICY-AUTHORITY-001",
+        "INV-TDRP-RULE-HOOK-CHANGED-SCOPE-ONLY-001",
+        "INV-TDRP-RULE-HOOK-NO-SOURCE-SPECIFIC-POLICY-COPY-001",
+        "INV-TDRP-RULE-HOOK-MALFORMED-INPUT-NOT-PASSING-EVIDENCE-001",
+        "INV-TDRP-RULE-HOOK-NO-LOCAL-ACCEPTANCE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-RULE-HOOK-DURABLE-RULE-001",
+        "CONTRACT-TDRP-RULE-HOOK-STAGED-SCOPE-001",
+        "CONTRACT-TDRP-RULE-HOOK-LOCAL-ACCEPTANCE-BOUNDARY-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-RULE-HOOK-FEEDBACK-001"
+      ],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "locked tools/rules/hook.py and tools/rules/test_hook.py blobs",
+        "locked .clang-tidy CustomFunctions",
+        "upstream PostToolUse and staged-hook wiring"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact repository feedback-hook provenance read from locked telegramdesktop/tdesktop live-dev blobs; no Telegram C++/Claude/Git-hook runtime or policy copied.",
+      "notes": "Strict134 closes only tools/rules/hook.py semantic read/decomposition. Durable-rule-derived changed-scope feedback maps to existing AGENTS repository edit-policy governance; Telegram C++ helper mappings, comment budgets, harness exemptions and Claude/Git hook mechanics remain provenance. Malformed payload and unchecked staged-diff acquisition are explicit local fail-open limits and cannot be acceptance. Counters unknown=16,242 unread=16,217 omitted=0 responsibilities=152. Next strict135 tools/rules/test_hook.py@dce99f3507e4ec9f71c8bbd5360e9dde9b62d45f.",
       "test_execution_evidence": []
     }
   ]

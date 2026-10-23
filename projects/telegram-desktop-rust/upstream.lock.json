@@ -361,10 +361,10 @@
   "coverage": {
     "root_source_entries_total": 6893,
     "recursive_source_entries_total": 16379,
-    "unknown_minimum": 16243,
-    "unread_minimum": 16218,
+    "unknown_minimum": 16242,
+    "unread_minimum": 16217,
     "omitted_known": 0,
-    "note": "Live upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent fdf9715e8a08c808b66523a9f68a70b0a4485a4a passed TDRP 39988917272 61/61 (authority 12517051705 sha256:f9ade467c5a1226702daab6d9616f0bf23ba5be17408c01054ff9084b7969c17; closure 12516254999 sha256:12d62689fd596f24365acfc3c151572667586b79d336d43bcfd51aed65483bd1; reachability 12516364938 sha256:fb02f4c3696bd4befc29218328b763da2a9322f322262f1a8632ea5deb20790a) and Rust 39988917401 6/6 (artifact 12516288454 sha256:c68b9e6aef92233641fba5a5f49574478c2d9d74c9e05036553c622edc1c1a47). Strict133 tools/clangtidy/compile_db.py@16a99ac4ad860cc37ee7c84bfb82cf899fb1cced was fully read. It derives clang-tidy analyzer input from the real configured Ninja compdb, performs bounded platform/compiler/PCH/cache/output command adaptation, and writes analyzer-only compile_commands.json. Empty/missing entries and platform fallback paths are explicit coverage limitations; a transformed/generic compilation database is not configured-build or release authority. Existing TEST_STRATEGY/evidence-contract configured-build owners are reused. Current Fabushi Rust/TypeScript CI still lacks dedicated cargo clippy/fmt and ESLint/lint gates, so target-language static-analysis remains mapped-open. Counters unknown=16,243 unread=16,218 omitted=0 responsibilities=151. Next strict134 tools/rules/hook.py@287b36c948566659970651226c92f7b8b056b434."
+    "note": "Live upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 6b5c69f923277607ce56831ecdbfeb9c65b2ff00 passed TDRP 39991260296 61/61 (authority 12518660328 sha256:3c332b1d5852e07cfacc1173e2ac0d5fc9dbb423236a2ccc4f7afd5314d7e7f0; closure 12517688846 sha256:c02e879f42ce4680839b619324ce90e3e7f310e95c3ca4e4ffe537e78642f20e; reachability 12518415977 sha256:f48b624620ad018ec1b6a2abaaf84b21e505a5b3f8e77e4c8676bc4cb9b422cc) and Rust 39991260326 6/6 (artifact 12517458444 sha256:821a30357d7a674acaa73351e2a827518f1b3f228026c30d2ef8052a93c00579). Strict134 tools/rules/hook.py@287b36c948566659970651226c92f7b8b056b434 was fully read. Its edit/staged paths provide changed-scope local feedback derived from .clang-tidy plus Telegram-specific comment rules, with actual Claude PostToolUse and optional Git pre-commit wiring. Malformed payload and unchecked staged git-diff acquisition are explicit fail-open limits, so clean local results are never acceptance. Existing AGENTS repository edit-policy feedback governance is reused; no Telegram/Claude/Git-hook quality owner is introduced. Counters unknown=16,242 unread=16,217 omitted=0 responsibilities=152. Next strict135 tools/rules/test_hook.py@dce99f3507e4ec9f71c8bbd5360e9dde9b62d45f."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -378,7 +378,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Strict133 mapped-open/toolchain-equivalent only. Existing configured-build graph provenance and repository quality/evidence owners are reused; transformed compilation-database output cannot become build/release truth. Dedicated target-language static-analysis gates, recursive source closure and independent release acceptance remain open."
+    "note": "Strict134 mapped-open/local-feedback-adapter only. Existing AGENTS repository edit-policy governance is reused; Telegram C++ helper/comment rules and Claude/Git hook wiring remain provenance, and local fail-open/clean outcomes cannot become acceptance. Recursive source closure and independent release acceptance remain open."
   },
   "baseline_identity_evidence": {
     "status": "pending-current-head-revalidation",
@@ -1827,5 +1827,5 @@
     "baseline_identity_accepted": false,
     "source_closure_ready": false
   },
-  "target_commit": "fdf9715e8a08c808b66523a9f68a70b0a4485a4a"
+  "target_commit": "6b5c69f923277607ce56831ecdbfeb9c65b2ff00"
 }
