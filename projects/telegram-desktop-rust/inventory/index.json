@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16229,
-    "unread_minimum": 16204,
+    "unknown_minimum": 16228,
+    "unread_minimum": 16203,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -122,7 +122,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent TDRP 40029290433 61/61 success; authority 12533987923 sha256:f0c3941c88f811557891ceba97d52171de15eceeeac45cab636c61dad9621372; closure 12534656490 sha256:364939e0f0ed335223e671177680eed84abdfc3b1906d33949e44033571057d0; reachability 12534401635 sha256:a46e5272413e3a55b6cc4da2be3ae320b78bba64c31efa52154c995445777755; Rust 40029290426 6/6 success; artifact 12534755123 sha256:b3c3bb865feae2d24a65cc8c23bb5d525270c465f89146ad76906f93f65892ad. Strict147 Microsoft/GSL docs/headers.md@11dd0cdfd5840cbcb7d8538e49efa2ccd5ac6a68 fully read: 861 line slots / 35147 bytes. It documents the public GSL header contracts: copy destination-size precondition; Expects/Ensures termination semantics; byte representation/configuration; throwing narrow vs non-throwing narrow_cast; owner/not_null/strict_not_null constraints; span ownership/extent/bounds/iterator behavior; span_ext make_span/at/ssize; zero-terminated string annotations; final_action/finally scope cleanup; and bounds-checked at overloads. This row retains complete behavior-documentation provenance only; include/gsl implementations and Fabushi/Rust product equivalence remain open and must be proven separately. Counters unknown=16,229 unread=16,204 omitted=0 responsibilities=165. Next strict148 Microsoft/GSL include/CMakeLists.txt@fe4eed9190a40c3fc0b182112956a4957653a5f2.",
+  "note": "Live main 7394f6dc7687f9b986ee5589d40aa680ce23b90a/fbeb0bb32d944d0c1053880c471fe5c52279f052; upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5; GSL 87f9d768866548b5b86e72be66c60c5abd4d9b37/6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41. Parent TDRP 40030895593 61/61 success; authority 12535136603 sha256:dbe2c3f6d216dc94011571058041b87768d60035feab3d5cc824865113127c7b; closure 12535610595 sha256:2104931dd254e649f35d993372e01659a150f27a1133699cb376238dcf2e5edf; reachability 12535182047 sha256:9b71cc604aa6e0c39ed086ed08b92fdb7ad68b172f264de1862e218c47cc62fc; Rust 40030895592 6/6 success; artifact 12535266019 sha256:99a035190c55154fa7cec5595b532c0102f1b30407d23818877049f702a53f14. Strict148 Microsoft/GSL include/CMakeLists.txt@fe4eed9190a40c3fc0b182112956a4957653a5f2 fully read: 14 line slots / 484 bytes. It configures GSL's header-only include interface: top-level consumers receive a normal INTERFACE BUILD_INTERFACE include directory, nested consumers receive SYSTEM INTERFACE to suppress dependency warnings, and directory layout enables <gsl/gsl>-style namespacing. Existing Fabushi build/dependency/packaging owners are reused; no GSL CMake graph or second build owner is introduced. Counters unknown=16,228 unread=16,203 omitted=0 responsibilities=166. Next strict149 Microsoft/GSL include/gsl/algorithm@584f5cd12beb15e863b1c32bc887638314261399.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,

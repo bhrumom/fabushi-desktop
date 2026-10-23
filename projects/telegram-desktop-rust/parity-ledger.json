@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "21aa2a6c633245efef91442416a258d722b72b4d",
+  "target_commit": "215707ebf06ba9cbc5314ff3e5f597deca92375a",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16229,
-    "unread": 16204,
+    "unknown": 16228,
+    "unread": 16203,
     "omitted": 0,
-    "responsibilities_total": 165,
+    "responsibilities_total": 166,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -44477,6 +44477,240 @@
       "license_and_provenance": "Exact Microsoft/GSL docs/headers.md@11dd0cdfd5840cbcb7d8538e49efa2ccd5ac6a68 retained as public API/behavior/failure-semantics source provenance for the locked recursive dependency; no GSL runtime, shipping composition or release authority is inferred.",
       "reviewer": "primary-session",
       "notes": "Strict147 closes only GSL docs/headers.md. It captures all documented public-header behavior/failure contracts as source authority while leaving include/gsl implementations and Fabushi native equivalence open. Counters unknown=16,229 unread=16,204 omitted=0 responsibilities=165. Next strict148 Microsoft/GSL include/CMakeLists.txt@fe4eed9190a40c3fc0b182112956a4957653a5f2."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/GSL",
+      "source_blob_sha": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+      "source_kind": "recursive_child_repository_build_definition",
+      "module_id": "tdesktop.thirdparty.gsl.include-cmake",
+      "responsibility_id": "TDRP-R9-GSL-INCLUDE-CMAKE-INTERFACE-PROVENANCE-001",
+      "source_symbols": [
+        "include/CMakeLists.txt@fe4eed9190a40c3fc0b182112956a4957653a5f2",
+        "if(PROJECT_IS_TOP_LEVEL)",
+        "target_include_directories(GSL INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)",
+        "target_include_directories(GSL SYSTEM INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)",
+        "#include <gsl/gsl>"
+      ],
+      "capability_ids": [
+        "CAP-DEPENDENCY-HEADER-INTERFACE-PROVENANCE",
+        "CAP-BUILD-INCLUDE-PATH-PROVENANCE",
+        "CAP-DEPENDENCY-WARNING-ISOLATION-PROVENANCE"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "Microsoft/GSL:include/CMakeLists.txt@fe4eed9190a40c3fc0b182112956a4957653a5f2",
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md#TDRP-SRC-02",
+        "projects/telegram-desktop-rust/module-map.md#build/generator/resources/dependencies"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-include-cmake-interface-complete-read.md",
+      "behavior_contract": "Retain the locked GSL include-interface build definition as dependency/build provenance: distinguish top-level normal INTERFACE include exposure from nested SYSTEM INTERFACE exposure and preserve the header namespace/layout responsibility through Fabushi's existing build/dependency composition without creating a GSL CMake graph.",
+      "state_machine": "accepted gitlink -> exact child/tree -> exact include/CMakeLists -> classify include-interface/warning-isolation semantics -> existing build/dependency owners -> CAS publish -> exact-head revalidation",
+      "side_effects": [
+        "Preserves top-level versus nested dependency include-interface semantics as source provenance.",
+        "Preserves SYSTEM warning-isolation rationale for nested consumption.",
+        "Preserves header namespace/layout intent without retaining CMake as Fabushi architecture.",
+        "Keeps include/gsl implementation headers open.",
+        "Creates no second build/package/dependency owner."
+      ],
+      "failure_cases": [
+        "include/CMakeLists.txt omitted.",
+        "SYSTEM nested-consumer warning-isolation behavior ignored.",
+        "Top-level and nested consumption semantics conflated.",
+        "Header namespace/layout provenance lost.",
+        "CMake interface treated as Fabushi shipping runtime.",
+        "Remaining include/gsl entries transitively closed.",
+        "Source drift ignored."
+      ],
+      "ui_disposition": "No shipping UI surface; dependency/build-interface provenance only.",
+      "non_ui_responsibilities": [
+        "header-only include path exposure",
+        "top-level INTERFACE include semantics",
+        "nested SYSTEM INTERFACE warning isolation",
+        "BUILD_INTERFACE scoping",
+        "include namespace/layout provenance",
+        "separation from Fabushi canonical build/package graph"
+      ],
+      "platform_delta": "No product runtime delta; map build-interface guarantees to Fabushi's existing CI/packaging/dependency tooling and native language package/module boundaries.",
+      "existing_owner_candidates": [
+        "TDRP-SRC-02 build/dependency authority accounting (selected)",
+        "build_test_tooling -> Fabushi own build/test/package/update chain (selected)",
+        "module-map build/generator/resources/dependencies -> existing Fabushi CI/packaging + reviewed dependencies (selected)",
+        "new GSL CMake build graph (rejected)"
+      ],
+      "existing_owner": "TDRP-SRC-02 build/dependency authority accounting plus existing Fabushi build/test/package/update chain and module-map dependency/CI/packaging owner",
+      "rejected_existing_owners": [
+        "GSL CMake is upstream dependency build-interface provenance, not a second Fabushi build root.",
+        "SYSTEM warning suppression cannot justify copying upstream compiler configuration wholesale.",
+        "Header namespace layout cannot establish runtime ownership."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md",
+        "projects/telegram-desktop-rust/module-map.md"
+      ],
+      "fabushi_target_symbols": [
+        "| build_test_tooling | 改为 Fabushi 自有构建/测试/打包/更新链，保留对应工程保证 |",
+        "| build/generator/resources/dependencies | 工具链、schema、资源、许可证、可重现发布 | Fabushi 自有 CI/packaging、最薄平台适配、审查过的通用依赖 |"
+      ],
+      "target_language": "Repository dependency/build-interface provenance mapped to existing Fabushi CI/packaging/dependency tooling",
+      "language_rationale": "The source is a CMake build definition; Fabushi retains its engineering guarantees through the canonical build/package toolchain rather than copying a GSL CMake graph.",
+      "command_event_contracts": [
+        "locked GSL -> exact include/CMakeLists.txt",
+        "top-level consume -> ordinary include-interface provenance",
+        "nested consume -> SYSTEM include-interface provenance",
+        "header layout -> namespace/import responsibility",
+        "publication -> CAS + exact-head Actions"
+      ],
+      "state_owner": "Exact GSL gitlink/tree/include-CMake blob plus reviewed TDRP disposition.",
+      "lifecycle_owner": "Existing TDRP build/dependency inventory and Fabushi CI/packaging/dependency review lifecycle.",
+      "persistence_and_restart": "Committed dossier/ledger/index/lock; no runtime state.",
+      "concurrency_and_cancellation": "CAS lease serializes publication; drift/cancellation non-passing.",
+      "security_boundary": "SYSTEM include handling only affects compiler diagnostics provenance; it is not runtime security, dependency approval, SBOM completion or release acceptance.",
+      "network_service_dependencies": [
+        "GitHub Actions for exact-head revalidation"
+      ],
+      "service_owner": "No shipping service; repository/build/dependency provenance only.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "toolchain-equivalent-mapped-open",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required after publication.",
+        "include/gsl implementation headers remain open.",
+        "Recursive source closure and independent release acceptance remain open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "strict148 include/CMakeLists.txt@fe4eed9190a40c3fc0b182112956a4957653a5f2 fully read: 14 line slots / 484 bytes",
+        "GSL gitlink 87f9d768866548b5b86e72be66c60c5abd4d9b37; child tree 6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41",
+        "Parent TDRP 40030895593 61/61 success; authority 12535136603 sha256:dbe2c3f6d216dc94011571058041b87768d60035feab3d5cc824865113127c7b; closure 12535610595 sha256:2104931dd254e649f35d993372e01659a150f27a1133699cb376238dcf2e5edf; reachability 12535182047 sha256:9b71cc604aa6e0c39ed086ed08b92fdb7ad68b172f264de1862e218c47cc62fc; Rust 40030895592 6/6 success; artifact 12535266019 sha256:99a035190c55154fa7cec5595b532c0102f1b30407d23818877049f702a53f14"
+      ],
+      "target_commit": "215707ebf06ba9cbc5314ff3e5f597deca92375a",
+      "workflow_run": 40030895593,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12535136603,
+      "artifact_digest": "sha256:dbe2c3f6d216dc94011571058041b87768d60035feab3d5cc824865113127c7b",
+      "composition_root": "Fabushi repository build/dependency/packaging lifecycle",
+      "composition_slot": "retained Microsoft/GSL header include-interface build provenance",
+      "capability_component": "Source-neutral dependency include-interface/warning-isolation disposition",
+      "variation_axes": [
+        "top-level consumption",
+        "nested consumption",
+        "SYSTEM warning isolation",
+        "BUILD_INTERFACE",
+        "header namespace layout"
+      ],
+      "shared_owner_contracts": [
+        "TDRP-SRC-02",
+        "Fabushi build/test/package/update chain",
+        "module-map dependency/CI/packaging mapping",
+        "exact-head TDRP evidence"
+      ],
+      "duplicate_root_check": "No GSL CMake build root, second package graph, source-specific dependency runtime or parallel toolchain owner.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository/build-interface provenance only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Retained include/CMakeLists build-interface provenance",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Changed GSL gitlink/tree/include-CMake blob requires fresh reconciliation; individual include/gsl implementation rows remain independently open.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-GSL-INCLUDE-CMAKE-INTERFACE-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GSL-INCLUDE-CMAKE-EXACT-SOURCE-001",
+        "ORA-TDRP-GSL-INCLUDE-CMAKE-TOPLEVEL-NESTED-001",
+        "ORA-TDRP-GSL-INCLUDE-CMAKE-SYSTEM-ISOLATION-001",
+        "ORA-TDRP-GSL-INCLUDE-CMAKE-NO-PARALLEL-BUILD-ROOT-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GSL-INCLUDE-CMAKE-NO-OMISSION-001",
+        "INV-TDRP-GSL-INCLUDE-CMAKE-EXISTING-OWNER-FIRST-001",
+        "INV-TDRP-GSL-INCLUDE-CMAKE-NO-TRANSITIVE-CLOSURE-001",
+        "INV-TDRP-GSL-INCLUDE-CMAKE-EXACT-PROVENANCE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GSL-INCLUDE-CMAKE-RETAINED-BUILD-INTERFACE-001",
+        "CONTRACT-TDRP-GSL-INCLUDE-CMAKE-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GSL-INCLUDE-CMAKE-SOURCE-DRIFT-001",
+        "FAULT-TDRP-GSL-INCLUDE-CMAKE-PARALLEL-BUILD-ROOT-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [
+        "REG-TDRP-GSL-INCLUDE-CMAKE-NO-SOURCE-OMISSION-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "locked GSL include/CMakeLists.txt + existing build/dependency owners + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact Microsoft/GSL include/CMakeLists.txt@fe4eed9190a40c3fc0b182112956a4957653a5f2 retained as dependency/build-interface provenance for the locked recursive dependency; no GSL CMake runtime/build root or release authority is inferred.",
+      "reviewer": "primary-session",
+      "notes": "Strict148 closes only GSL include/CMakeLists.txt. Existing Fabushi build/dependency owners preserve the engineering responsibility; include/gsl implementation files remain open. Counters unknown=16,228 unread=16,203 omitted=0 responsibilities=166. Next strict149 Microsoft/GSL include/gsl/algorithm@584f5cd12beb15e863b1c32bc887638314261399."
     }
   ]
 }
