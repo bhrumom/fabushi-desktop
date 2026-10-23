@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "9c00291985cb3d1216fc26984e769c7dc0dd3b73",
+  "target_commit": "333a3d3cda2561ce9f78a15a89d35c0db62870ea",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16258,
-    "unread": 16233,
+    "unknown": 16257,
+    "unread": 16232,
     "omitted": 0,
-    "responsibilities_total": 136,
+    "responsibilities_total": 137,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -36437,6 +36437,313 @@
       "license_and_provenance": "Exact upstream macOS build-document and dependent build-script/toolchain behavior are retained as source/build provenance. Telegram Homebrew/Xcode paths, local disk estimates, Telegram API credentials and local Xcode output are source-specific and are not promoted into Fabushi runtime/package/release authority.",
       "reviewer": null,
       "notes": "Strict index 118 closes only docs/building-mac.md as macOS developer-build/toolchain/credential provenance mapped to existing signed/notarized Fabushi package/evidence owners. Counters become unknown=16,258 unread=16,233 omitted=0 responsibilities=136. The canonical shipping pipeline remains fail-closed; no local build or release acceptance is claimed. Next strict root index 119 docs/building-mas.md@da7be145bb0a9cbd3c322fa7efe0c1f5729ae1bf (921 bytes). Fresh child exact-head TDRP/Rust Actions required."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "docs/building-mas.md",
+      "source_blob_sha": "da7be145bb0a9cbd3c322fa7efe0c1f5729ae1bf",
+      "source_kind": "mac_app_store_build_instructions_documentation",
+      "module_id": "tdesktop.root.docs.building_mas",
+      "responsibility_id": "TDRP-R9-UPSTREAM-BUILDING-MAS-BUILD-INSTRUCTIONS-PROVENANCE-001",
+      "source_symbols": [
+        "Build instructions for Mac App Store",
+        "MACOSX_DEPLOYMENT_TARGET=10.12",
+        "git checkout bc8fb886",
+        "git checkout a91633d1",
+        "git apply ../patches/breakpad.diff",
+        "Breakpad.xcodeproj Debug / Release",
+        "dump_syms.xcodeproj Release"
+      ],
+      "capability_ids": [
+        "CAP-MAC-APP-STORE-BUILD-PROVENANCE",
+        "CAP-BREAKPAD-SYMBOL-TOOLCHAIN-PROVENANCE",
+        "CAP-MAS-PACKAGING-CONFIGURATION",
+        "CAP-APP-STORE-PROVISIONING-BOUNDARY",
+        "CAP-EXACT-HEAD-EVIDENCE-BOUNDARY"
+      ],
+      "dependency_ids": [
+        "docs/building-mac.md@b8c6b6bae95b87f94d090fc73acd774d6307ef12",
+        "Telegram/build/prepare/prepare.py@a9f3dd2d9e4020df958ab5af942376177d66c78b",
+        "Telegram/build/prepare/breakpad/CMakeLists.txt@ab727514f749a53a761810a434e091c2ce850698",
+        "breakpad historical pin bc8fb886486bb1c47cda103d75d86f21d6857920",
+        "linux-syscall-support historical pin a91633d172407f6c83dd69af11510b37afebb7f9",
+        "breakpad current prepare pin dfcb7b6799b7c1e2c8d65e857d8afede185471d8",
+        "linux-syscall-support current prepare pin e1e7b0ad8ee99a875b272c8e33e308472e897660",
+        "desktop/package.json@3d500622ce9b26e3452d98d0c4a7e7dcc019ac84",
+        "desktop/resources/mas/entitlements.mas.plist@b27cc6cf93c6a746b717f98bb609d201ccd134d2",
+        "desktop/resources/mas/entitlements.mas.inherit.plist@96fce341a4b2fef8de4e28168d07e1423ad1e573",
+        ".github/workflows/release-macos-main.yml@b0a3a4d5503e6104c083f85e31475523a2b30643"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-root-docs-building-mas-build-instructions-complete-read.md",
+      "behavior_contract": "Retain Telegram's Mac App Store build document as historical crash-symbol/build-input provenance while mapping applicable App Store packaging responsibilities to Fabushi's existing MAS electron-builder configuration and sandbox entitlement owners. The document's Breakpad/LSS pins are historical and have drifted from current upstream prepare.py, so they cannot be promoted into current build authority. Fabushi MAS shipping remains fail-closed because the configured provisioning profile is absent from the exact-head tree and no exact-head GitHub Actions workflow builds/signs/uploads a MAS target.",
+      "state_machine": "complete normal macOS developer build provenance -> historical MAS step clones Breakpad and LSS -> checkout historical pins -> apply breakpad patch -> Xcode build Breakpad Debug/Release and dump_syms Release; current upstream prepare.py instead uses newer Breakpad/LSS pins for stackwalk preparation -> Fabushi maps applicable MAS state to package.json mas target + sandbox entitlements -> require real provisioning profile and MAS signing/distribution workflow -> signed MAS candidate -> store/upload acceptance -> independent release acceptance; absent profile/workflow keeps state blocked-open",
+      "side_effects": [
+        "Historical upstream instructions clone Breakpad and linux-syscall-support into developer Libraries state.",
+        "Historical instructions apply breakpad.diff and build Breakpad/dump_syms through Xcode.",
+        "Current upstream prepare.py uses different Breakpad/LSS commits, proving the document pins are historical provenance rather than live dependency authority.",
+        "Fabushi package.json declares MAS packaging metadata and references sandbox entitlement/provisioning assets.",
+        "Fabushi publication changes only TDRP evidence/accounting; it does not create the missing provisioning profile, run MAS packaging, sign with an App Store identity, upload to App Store Connect or claim release acceptance."
+      ],
+      "failure_cases": [
+        "historical bc8fb886/a91633d1 pins are treated as current prepare.py dependency authority after upstream drift",
+        "Breakpad/LSS or breakpad patch provenance is assumed current without exact source reconciliation",
+        "desktop/resources/mas/Fabushi_AppStore.provisionprofile is absent but MAS packaging is treated as shippable",
+        "Developer ID dmg/zip packaging is mistaken for Mac App Store packaging",
+        "a workflow without electron-builder MAS target or App Store provisioning/upload semantics is treated as MAS shipping evidence",
+        "sandbox entitlement or provisioning identity mismatch is ignored",
+        "local Xcode or developer machine output is treated as FBCP/TDRP production evidence",
+        "stale PR/main/upstream or owner lease is published"
+      ],
+      "ui_disposition": "Build/distribution documentation only. No Telegram developer UI, Breakpad UI or App Store UI is ported into Fabushi.",
+      "non_ui_responsibilities": [
+        "Mac App Store build-provenance sequencing after normal macOS build",
+        "Breakpad and linux-syscall-support pin provenance",
+        "Breakpad patch and symbol-tool build provenance",
+        "current-versus-historical dependency pin drift fencing",
+        "Fabushi MAS target configuration ownership",
+        "Mac App Store sandbox entitlement ownership",
+        "provisioning profile availability boundary",
+        "MAS signing/build/upload workflow boundary",
+        "exact-head Actions evidence boundary",
+        "independent release acceptance boundary"
+      ],
+      "platform_delta": "Telegram documents a historical local Mac App Store preparation step centered on Breakpad/LSS and Xcode. Current Telegram prepare.py has already moved those pins and build logic. Fabushi has source-neutral MAS electron-builder metadata and sandbox entitlements, but its configured Fabushi_AppStore.provisionprofile is absent and the sole macOS shipping workflow builds Developer ID dmg/zip with `electron-builder --mac --arm64`, not MAS. Therefore only provenance/configuration ownership is mapped; MAS shipment remains blocked.",
+      "existing_owner_candidates": [
+        "desktop/package.json build.mas configuration (selected MAS metadata owner)",
+        "desktop/resources/mas/entitlements.mas.plist sandbox entitlement owner",
+        "desktop/resources/mas/entitlements.mas.inherit.plist child-process inherited sandbox owner",
+        ".github/workflows/release-macos-main.yml current non-MAS Developer ID dmg/zip shipping workflow (reference owner only; rejected as MAS shipping evidence)",
+        "existing repository/FQT exact-head evidence and release acceptance governance",
+        "new Telegram/MAS runtime or second package system (rejected)"
+      ],
+      "existing_owner": "desktop/package.json build.mas + desktop/resources/mas entitlement files + existing repository/FQT evidence governance; MAS shipping workflow/provisioning evidence remains missing and blocked",
+      "rejected_existing_owners": [
+        "Historical Telegram Breakpad/LSS/Xcode commands are source provenance, not a Fabushi package runtime or current dependency lock.",
+        "release-macos-main.yml packages Developer ID dmg/zip using `electron-builder --mac --arm64`; it does not build a MAS target or supply App Store provisioning/upload evidence.",
+        "The package.json provisioningProfile reference is configuration only; the referenced Fabushi_AppStore.provisionprofile is absent from the exact-head tree.",
+        "A second Telegram-branded build/package owner would duplicate the current source-neutral packaging architecture."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "desktop/package.json",
+        "desktop/resources/mas/entitlements.mas.plist",
+        "desktop/resources/mas/entitlements.mas.inherit.plist",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "fabushi_target_symbols": [
+        "\"mas\": {",
+        "\"target\": [\n        \"mas\"\n      ]",
+        "\"hardenedRuntime\": false",
+        "\"entitlements\": \"resources/mas/entitlements.mas.plist\"",
+        "\"entitlementsInherit\": \"resources/mas/entitlements.mas.inherit.plist\"",
+        "\"provisioningProfile\": \"resources/mas/Fabushi_AppStore.provisionprofile\"",
+        "\"forceCodeSigning\": true",
+        "<key>com.apple.security.app-sandbox</key>",
+        "<key>com.apple.security.device.microphone</key>",
+        "<key>com.apple.security.device.camera</key>",
+        "<key>com.apple.security.inherit</key>",
+        "Package signed and notarized macOS installer",
+        "npx electron-builder --mac --arm64 --publish never",
+        "Notarize and staple DMG"
+      ],
+      "target_language": "Existing JSON electron-builder MAS configuration + plist sandbox entitlements + GitHub Actions evidence/release orchestration",
+      "language_rationale": "The upstream entry is build/distribution documentation, not reusable product runtime code. Applicable responsibilities map to existing Fabushi packaging metadata and entitlement owners; current MAS shipping evidence is absent and remains fail-closed.",
+      "command_event_contracts": [
+        "historical docs/building-mas -> Breakpad/LSS checkout -> breakpad patch -> Xcode Breakpad/dump_syms build",
+        "current prepare.py build-stackwalk -> newer Breakpad/LSS pins; historical pins never override current exact source",
+        "Fabushi package.json build.mas -> MAS target metadata + sandbox entitlement references + provisioningProfile reference",
+        "MAS packaging attempt -> require real provisioning profile and App Store signing identity",
+        "MAS shipping -> exact-source Actions build/sign/verify/upload -> immutable candidate evidence -> independent release acceptance",
+        "Developer ID dmg/zip workflow -> remains non-MAS and cannot satisfy MAS acceptance"
+      ],
+      "state_owner": "Historical Telegram Libraries/Breakpad/Xcode outputs are non-authoritative developer state. Fabushi MAS metadata belongs to desktop/package.json and sandbox entitlement state belongs to desktop/resources/mas; a valid provisioning profile and exact-source MAS shipping candidate do not currently exist in repository evidence.",
+      "lifecycle_owner": "Existing source/dependency governance -> MAS package configuration -> required provisioning/signing inputs -> missing exact-source MAS Actions workflow -> future signed MAS candidate verification/upload -> independent release acceptance. TDRP owns only upstream-source disposition.",
+      "persistence_and_restart": "Historical Breakpad/LSS checkout and Xcode outputs are disposable local developer state. Fabushi durable MAS configuration is repository source; credentials/profiles must be supplied through controlled shipping boundaries and exact candidate evidence must be Actions-bound. Missing profile/workflow never survives as a synthetic pass.",
+      "concurrency_and_cancellation": "The upstream document defines no canonical concurrent release contract. Any future MAS workflow must own bounded concurrency/cancellation and fail closed on cancelled/in-progress signing, packaging, validation or upload. Existing non-MAS workflow semantics are not reused as proof of MAS success.",
+      "security_boundary": "Mac App Store sandbox entitlements, App Store signing identity and provisioning profile must match the shipping app and remain under controlled release boundaries. The missing provisioning profile is blocking. Historical Telegram pins/local developer state and Developer ID notarization credentials do not establish App Store authority.",
+      "network_service_dependencies": [
+        "chromium.googlesource.com historical Breakpad/LSS source transport",
+        "GitHub source mirrors used only to resolve immutable historical/current pin identities",
+        "Apple App Store signing/provisioning/App Store Connect services for a future MAS shipping workflow",
+        "GitHub Actions for exact-head executable/package evidence"
+      ],
+      "service_owner": "Existing repository package/evidence infrastructure plus Apple platform distribution boundary; no current exact-head MAS shipping workflow owner is evidenced",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "build-documentation-provenance-equivalent-mas-shipping-open",
+      "blockers": [
+        "desktop/resources/mas/Fabushi_AppStore.provisionprofile is referenced by package.json but absent from the exact-head tree.",
+        "All 25 exact-head workflows were scanned; no workflow builds/signs/uploads a MAS target. release-macos-main.yml is Developer ID dmg/zip only.",
+        "Fresh strict119 child exact-head TDRP/Rust Actions are required after publication.",
+        "Recursive source disposition remains open.",
+        "Independent release acceptance remains open."
+      ],
+      "production_entrypoints": [
+        "desktop/package.json::build.mas",
+        "desktop/resources/mas/entitlements.mas.plist",
+        "desktop/resources/mas/entitlements.mas.inherit.plist",
+        ".github/workflows/release-macos-main.yml::publish (non-MAS reference boundary)"
+      ],
+      "production_evidence": [
+        "path:desktop/package.json",
+        "path:desktop/resources/mas/entitlements.mas.plist",
+        "path:desktop/resources/mas/entitlements.mas.inherit.plist",
+        "path:.github/workflows/release-macos-main.yml"
+      ],
+      "test_evidence": [
+        "docs/building-mas.md@da7be145bb0a9cbd3c322fa7efe0c1f5729ae1bf was fully read (921 bytes); it sequences MAS preparation after normal macOS build, pins Breakpad bc8fb886 and LSS a91633d1, applies breakpad.diff, and builds Breakpad Debug/Release plus dump_syms Release with Xcode.",
+        "Historical pins resolve to Breakpad bc8fb886486bb1c47cda103d75d86f21d6857920 and linux-syscall-support a91633d172407f6c83dd69af11510b37afebb7f9. Current prepare.py@a9f3dd2d9e4020df958ab5af942376177d66c78b instead checks out Breakpad dfcb7b6799b7c1e2c8d65e857d8afede185471d8 and LSS e1e7b0ad8ee99a875b272c8e33e308472e897660 for build-stackwalk, so the document pins are historical-only provenance.",
+        "desktop/package.json@3d500622ce9b26e3452d98d0c4a7e7dcc019ac84 declares a `mas` target, sandbox entitlements, `provisioningProfile` resources/mas/Fabushi_AppStore.provisionprofile and forceCodeSigning.",
+        "desktop/resources/mas/entitlements.mas.plist@b27cc6cf93c6a746b717f98bb609d201ccd134d2 and entitlements.mas.inherit.plist@96fce341a4b2fef8de4e28168d07e1423ad1e573 exist and carry the expected app-sandbox/inherit capability boundary.",
+        "desktop/resources/mas/Fabushi_AppStore.provisionprofile returned 404 at parent exact head 333a3d3cda2561ce9f78a15a89d35c0db62870ea; no repository profile bytes were available.",
+        "All 25 exact-head workflow files were enumerated and content-scanned for Mac App Store/provisioning/MAS target/signing markers. Only release-macos-main.yml@b0a3a4d5503e6104c083f85e31475523a2b30643 matched macOS package/notary credentials, and it runs `npx electron-builder --mac --arm64 --publish never`; no workflow contained a MAS target/provisioning-profile/App Store shipping path.",
+        "Parent exact-head TDRP run 39948699331 completed 61/61 success; authority 12499786044 sha256:43043ad5fffae6aef3acfeea531c25e6459095ecdf659100ac7c9c1761e0c1e3; closure 12500360143 sha256:7a68345b695ebbe8d6c31746139c2f4cb9d1a1d75bd7ce32177bbaf1d047f284; reachability 12499308601 sha256:5e3b774072f76f6582e318e48011c4ab0bc463c8dbb5075aeeea3646ccb60d8c.",
+        "Parent exact-head Rust run 39948699324 completed 6/6 success; artifact 12499730947 sha256:71190f62168ffe12a74b84c35cdbe6334a5d1cfe0f849a3c5a8ecc77060ee167.",
+        "Publication preflight: PR/ref remained 333a3d3cda2561ce9f78a15a89d35c0db62870ea/tree c12c99e9095591f553329ff8e0b223155646eaeb; live main remained 7394f6dc7687f9b986ee5589d40aa680ce23b90a/tree fbeb0bb32d944d0c1053880c471fe5c52279f052; live upstream dev remained a7f453612f4896ac04d0007a36ab0d377e5bcbcf/tree c539eabfb05e7dcaa84821ac44c35cdfb6551ae5."
+      ],
+      "target_commit": "333a3d3cda2561ce9f78a15a89d35c0db62870ea",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi canonical build/package/evidence architecture",
+      "composition_slot": "Mac App Store build provenance and MAS distribution boundary",
+      "capability_component": "Historical MAS/Breakpad provenance + existing source-neutral MAS metadata/entitlements + fail-closed missing provisioning/shipping evidence",
+      "variation_axes": [
+        "historical Breakpad/LSS pins versus current prepare.py pins",
+        "local Xcode crash-symbol build versus source-neutral package configuration",
+        "Developer ID dmg/zip versus Mac App Store MAS target",
+        "sandbox entitlement configuration versus valid provisioning identity",
+        "configuration presence versus exact-source shipping workflow",
+        "package build versus App Store upload versus independent release acceptance"
+      ],
+      "shared_owner_contracts": [
+        "desktop/package.json MAS metadata",
+        "resources/mas sandbox entitlement files",
+        "release-macos-main non-MAS package owner boundary",
+        "AGENTS exact-head Actions governance",
+        "FQT evidence/release acceptance",
+        "strict118 macOS package/sign/notary provenance"
+      ],
+      "duplicate_root_check": "No Telegram/MAS product runtime, second package system, second entitlement store, synthetic provisioning profile, fake App Store response or local-build acceptance path is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository build/package provenance only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing MAS electron-builder configuration and sandbox entitlement files; MAS shipping workflow remains absent/open",
+      "route_contract": "historical upstream MAS source provenance -> Fabushi canonical MAS configuration -> required real provisioning/signing inputs -> exact-source MAS Actions workflow (currently absent) -> immutable candidate/upload evidence -> independent release acceptance",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Changed source blob/history, current prepare.py pin identity, MAS package/entitlement configuration, provisioning-profile presence, workflow set, PR/ref/tree, main or upstream lease requires fresh reconciliation. Developer ID dmg/zip evidence never upgrades into MAS release acceptance.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-UPSTREAM-BUILDING-MAS-BUILD-INSTRUCTIONS-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-BUILDING-MAS-EXACT-SOURCE-001",
+        "ORA-TDRP-BUILDING-MAS-HISTORICAL-PIN-DRIFT-001",
+        "ORA-TDRP-BUILDING-MAS-EXISTING-CONFIG-OWNER-001",
+        "ORA-TDRP-BUILDING-MAS-PROVISION-PROFILE-FAIL-CLOSED-001",
+        "ORA-TDRP-BUILDING-MAS-SHIPPING-WORKFLOW-FAIL-CLOSED-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-BUILDING-MAS-NO-LEGACY-PIN-PROMOTION-001",
+        "INV-TDRP-BUILDING-MAS-NO-SECOND-BUILD-RUNTIME-001",
+        "INV-TDRP-BUILDING-MAS-NO-SYNTHETIC-PROVISIONING-001",
+        "INV-TDRP-BUILDING-MAS-NONMAS-EVIDENCE-NOT-MAS-001",
+        "INV-TDRP-BUILDING-MAS-EXACT-HEAD-ACTIONS-ONLY-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-BUILDING-MAS-EXACT-SOURCE-001",
+        "CONTRACT-TDRP-BUILDING-MAS-CANONICAL-CONFIG-OWNER-001",
+        "CONTRACT-TDRP-BUILDING-MAS-PROVISIONING-BOUNDARY-001",
+        "CONTRACT-TDRP-BUILDING-MAS-SHIPPING-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-BUILDING-MAS-UPSTREAM-DRIFT-001",
+        "TEMP-TDRP-BUILDING-MAS-BREAKPAD-PIN-DRIFT-001",
+        "TEMP-TDRP-BUILDING-MAS-PACKAGE-WORKFLOW-DRIFT-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-BUILDING-MAS-BREAKPAD-ACQUISITION-001",
+        "FAULT-TDRP-BUILDING-MAS-MISSING-PROVISIONING-001",
+        "FAULT-TDRP-BUILDING-MAS-SIGNING-UPLOAD-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-BUILDING-MAS-PROVISIONING-IDENTITY-001",
+        "SEC-TDRP-BUILDING-MAS-SANDBOX-ENTITLEMENTS-001",
+        "SEC-TDRP-BUILDING-MAS-LOCAL-BUILD-NO-AUTHORITY-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-BUILDING-MAS-NO-TELEGRAM-BUILD-RUNTIME-001",
+        "REG-TDRP-BUILDING-MAS-NO-SECOND-MAS-OWNER-001",
+        "REG-TDRP-BUILDING-MAS-FAIL-CLOSED-UNTIL-SHIPPING-EVIDENCE-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-MODULE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "locked docs/building-mas.md + current prepare.py pin drift + exact MAS package/entitlement files + missing provision profile + 25-workflow scan + parent exact-head Actions"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact upstream MAS build document and historical Breakpad/LSS pins are retained as build/source provenance only. Current prepare.py pin drift is explicit. Fabushi's source-neutral MAS configuration and sandbox entitlements remain canonical; missing provisioning/profile shipping evidence prevents promotion to release authority.",
+      "reviewer": null,
+      "notes": "Strict index 119 closes only docs/building-mas.md as historical Mac App Store/Breakpad build provenance mapped to existing Fabushi MAS configuration/entitlement owners. Historical Breakpad/LSS pins have drifted, Fabushi_AppStore.provisionprofile is absent, and no exact-head workflow builds/signs/uploads MAS, so MAS shipping remains fail-closed. Counters become unknown=16,257 unread=16,232 omitted=0 responsibilities=137. Next strict root index 120 docs/building-win.md@d333539fc0709be6f98a8ef719f22fac0346b49a. Fresh child exact-head TDRP/Rust Actions required."
     }
   ]
 }

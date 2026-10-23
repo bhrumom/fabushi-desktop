@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16258,
-    "unread_minimum": 16233,
+    "unknown_minimum": 16257,
+    "unread_minimum": 16232,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -122,7 +122,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 9c00291985cb3d1216fc26984e769c7dc0dd3b73/tree b24b3dfbd1a1d64af847bd3a002034123c560319 passed TDRP 39945908779 at 61/61 (authority 12497274631 sha256:68fed234157ce70ae51c0b7feca763a7b06c4d55d134052882ac13eccc5e8536; closure 12498596674 sha256:8f85766c29986e73d1fe86a807a0f9abd723716858285e3524c2f1ebbece7d79; reachability 12498507220 sha256:25229e1e889b03c2f38c3a87aabe1c5f92f2bf459268f1cd383b9911363c6ad7) and Rust 39945908761 at 6/6 (artifact 12498097968 sha256:84c9ee43d0af2bbcdcdc8e762bb36461bd489ac8c32440c82c78fd363ca38ec2). Strict118 docs/building-mac.md@b8c6b6bae95b87f94d090fc73acd774d6307ef12 is retained as macOS developer-build/toolchain/credential provenance under existing Fabushi package/sign/notary and exact-source packaged-acceptance owners. An exact-head scan of all 25 workflows found release-macos-main.yml as the sole certificate/electron-builder/notary shipping pipeline; apple-ticket-validation-ci.yml is validator-test-only and miniapp-packaged-iteration.yml is an existing-signed-candidate consumer only. Telegram Homebrew/Xcode/API-credential/local Xcode details are not Fabushi runtime or release authority. Counters unknown=16,258 unread=16,233 omitted=0 responsibilities=136. Next strict root index 119 docs/building-mas.md@da7be145bb0a9cbd3c322fa7efe0c1f5729ae1bf. Fresh child exact-head Actions required.",
+  "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 333a3d3cda2561ce9f78a15a89d35c0db62870ea/tree c12c99e9095591f553329ff8e0b223155646eaeb passed TDRP 39948699331 at 61/61 (authority 12499786044 sha256:43043ad5fffae6aef3acfeea531c25e6459095ecdf659100ac7c9c1761e0c1e3; closure 12500360143 sha256:7a68345b695ebbe8d6c31746139c2f4cb9d1a1d75bd7ce32177bbaf1d047f284; reachability 12499308601 sha256:5e3b774072f76f6582e318e48011c4ab0bc463c8dbb5075aeeea3646ccb60d8c) and Rust 39948699324 at 6/6 (artifact 12499730947 sha256:71190f62168ffe12a74b84c35cdbe6334a5d1cfe0f849a3c5a8ecc77060ee167). Strict119 docs/building-mas.md@da7be145bb0a9cbd3c322fa7efe0c1f5729ae1bf is retained as historical Mac App Store/Breakpad provenance. Its Breakpad/LSS pins bc8fb886/a91633d1 have drifted to current prepare.py pins dfcb7b6799/e1e7b0ad8e. Exact-head Fabushi owns MAS metadata and sandbox entitlements, but the referenced resources/mas/Fabushi_AppStore.provisionprofile is absent and all 25 workflow files contain no MAS build/sign/upload pipeline; release-macos-main.yml is Developer ID dmg/zip only. Counters unknown=16,257 unread=16,232 omitted=0 responsibilities=137. Next strict root index 120 docs/building-win.md@d333539fc0709be6f98a8ef719f22fac0346b49a. Fresh child exact-head Actions required.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
