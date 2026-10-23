@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "1038a9f4297dd44d5ec98941217280d1e706b245",
+  "target_commit": "a6343d125980a6b98b8149bb368e2a1897262ed0",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16231,
-    "unread": 16206,
+    "unknown": 16230,
+    "unread": 16205,
     "omitted": 0,
-    "responsibilities_total": 163,
+    "responsibilities_total": 164,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -43981,6 +43981,247 @@
       "license_and_provenance": "Exact GSL SECURITY.md retained as security-disclosure/source provenance; no Fabushi support endpoint/runtime security service/release authority inferred.",
       "reviewer": "primary-session",
       "notes": "Strict145 closes only GSL SECURITY.md. Microsoft channels/response target remain upstream provenance. Counters unknown=16,231 unread=16,206 omitted=0 responsibilities=163. Next strict146 ThirdPartyNotices.txt@552b254c63a2f9909aa46ef21c256ef9a79a0035."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/GSL",
+      "source_blob_sha": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+      "source_kind": "recursive_child_repository_documentation_or_license",
+      "module_id": "tdesktop.thirdparty.gsl.third-party-notices",
+      "responsibility_id": "TDRP-R9-GSL-THIRD-PARTY-NOTICES-GOOGLETEST-BSD-PROVENANCE-001",
+      "source_symbols": [
+        "ThirdPartyNotices.txt@552b254c63a2f9909aa46ef21c256ef9a79a0035",
+        "THIRD-PARTY SOFTWARE NOTICES AND INFORMATION",
+        "GSL: Guidelines Support Library incorporates third party material from the projects listed below.",
+        "Software: Google Test",
+        "Owner: Google Inc.",
+        "License: BSD 3 - Clause",
+        "source redistribution notice condition",
+        "binary redistribution notice condition",
+        "non-endorsement condition",
+        "AS IS warranty/liability disclaimer"
+      ],
+      "capability_ids": [
+        "CAP-DEPENDENCY-THIRD-PARTY-NOTICE-PROVENANCE",
+        "CAP-LICENSE-BSD-3-CLAUSE-PROVENANCE"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "Microsoft/GSL:ThirdPartyNotices.txt@552b254c63a2f9909aa46ef21c256ef9a79a0035",
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md#TDRP-SRC-03",
+        "projects/telegram-desktop-rust/module-map.md#build/generator/resources/dependencies"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-third-party-notices-google-test-bsd-provenance-complete-read.md",
+      "behavior_contract": "Retain the locked Microsoft/GSL ThirdPartyNotices.txt as recursive-dependency legal/source provenance, preserving the Google Test BSD 3-Clause attribution and redistribution-condition record without inferring that Fabushi shipping composition includes Google Test.",
+      "state_machine": "accepted gitlink -> exact child/tree -> exact ThirdPartyNotices blob -> classify third-party notice obligations -> existing legal/dependency owners -> CAS publish -> exact-head revalidation",
+      "side_effects": [
+        "Preserves exact Google Test third-party notice and BSD 3-Clause provenance carried by locked GSL.",
+        "Keeps actual Fabushi shipping/package/license applicability independently evidence-driven.",
+        "Keeps docs/headers.md, include/, tests/ and remaining GSL entries open.",
+        "Creates no Google Test runtime, second package graph or second license owner."
+      ],
+      "failure_cases": [
+        "ThirdPartyNotices.txt omitted.",
+        "Google Test notice treated as proof that Fabushi ships Google Test.",
+        "Source/binary redistribution notice conditions dropped from provenance.",
+        "Google or contributor names treated as product endorsement.",
+        "Third-party notice treated as runtime/release acceptance.",
+        "Transitive closure of remaining GSL files inferred.",
+        "Source drift ignored."
+      ],
+      "ui_disposition": "No shipping UI surface; retained recursive-dependency third-party legal/source provenance only.",
+      "non_ui_responsibilities": [
+        "Google Test attribution provenance",
+        "BSD 3-Clause license provenance",
+        "source redistribution notice-condition provenance",
+        "binary redistribution notice-condition provenance",
+        "non-endorsement provenance",
+        "warranty/liability disclaimer provenance",
+        "separation of notice provenance from Fabushi shipping composition"
+      ],
+      "platform_delta": "No product runtime delta; third-party notice obligations are retained through existing Fabushi legal/dependency/release provenance governance.",
+      "existing_owner_candidates": [
+        "TDRP-SRC-03 documentation_or_license (selected)",
+        "module-map dependency license/provenance mapping (selected)",
+        "existing Fabushi CI/packaging/SBOM/release license governance (selected evidence boundary)",
+        "new Google Test runtime/package/license product owner (rejected)"
+      ],
+      "existing_owner": "TDRP-SRC-03 documentation_or_license provenance disposition plus module-map dependency license/provenance mapping and existing Fabushi CI/packaging/SBOM/release license governance",
+      "rejected_existing_owners": [
+        "Google Test is named by the upstream notice but is not thereby a Fabushi runtime owner.",
+        "The notice does not establish Fabushi package/linkage composition.",
+        "Legal provenance cannot substitute for independent packaged/release license evidence."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md",
+        "projects/telegram-desktop-rust/module-map.md"
+      ],
+      "fabushi_target_symbols": [
+        "产品标识统一为 Fabushi，清理 Telegram/Grok Bot/Gok Bot 品牌、Logo、默认素材和独立入口；保留法律要求的 LICENSE/NOTICE/版权与 source provenance。历史研究中的上游名字不能被抹去，否则账本失去可验证性。新 owner 名称使用业务职责，不使用来源品牌。",
+        "0 omitted/unmapped files or responsibilities；所有 non-UI 产品责任 rewritten + wired + verified；所有 UI/platform/toolchain 替代有证明；法律来源记录保留；0 open in-scope blocker。数量相等、目录级 mapping、编译绿或旧 dossier 都不是完成证据。"
+      ],
+      "target_language": "Repository governance / dependency third-party notice provenance",
+      "language_rationale": "ThirdPartyNotices.txt is legal/source provenance, not executable product logic.",
+      "command_event_contracts": [
+        "locked GSL -> exact ThirdPartyNotices.txt",
+        "Google Test BSD notice -> retained provenance",
+        "shipping/package applicability -> independently prove",
+        "remaining GSL files -> stay open",
+        "publication -> CAS + exact-head Actions"
+      ],
+      "state_owner": "Exact GSL gitlink/tree/ThirdPartyNotices blob plus reviewed TDRP disposition.",
+      "lifecycle_owner": "Existing TDRP strict-read, dependency/license provenance, packaging/release evidence and exact-head evidence lifecycle.",
+      "persistence_and_restart": "Committed dossier/ledger/index/lock; no runtime state.",
+      "concurrency_and_cancellation": "CAS lease serializes publication; drift/cancellation non-passing.",
+      "security_boundary": "The third-party notice records legal/source provenance only; it is not Fabushi runtime security, authorization, package composition, SBOM completion or release acceptance authority.",
+      "network_service_dependencies": [
+        "GitHub Actions for exact-head revalidation"
+      ],
+      "service_owner": "No shipping service; repository/TDRP legal/dependency provenance only.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "retained-legal-record",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required after publication.",
+        "docs/headers.md, include/, tests/ and remaining GSL entries remain open.",
+        "Recursive source closure and independent release acceptance remain open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "strict146 ThirdPartyNotices.txt@552b254c63a2f9909aa46ef21c256ef9a79a0035 fully read: 42 line slots / 2022 bytes",
+        "GSL gitlink 87f9d768866548b5b86e72be66c60c5abd4d9b37; child tree 6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41",
+        "Parent TDRP 40027474728 61/61 success; authority 12533327369 sha256:61a152569fbf509dd0802cfb67d0dd1fe2a23cd324afce7726c596797ce85dd5; closure 12533826417 sha256:9c55fd1a56b7e47ff18e8e29c5de516bcb1d2fbad59d8815615c412b240629af; reachability 12532699819 sha256:2622a369d496bc270de02259e8bb2cbd611c0e4bd1e8b80f6fbda2c9483956e0; Rust 40027474784 6/6 success; artifact 12533346672 sha256:2bf97e87b48eb520cf069d28f743dda111780af80ab07839f086eaa73be820aa"
+      ],
+      "target_commit": "a6343d125980a6b98b8149bb368e2a1897262ed0",
+      "workflow_run": 40027474728,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12533327369,
+      "artifact_digest": "sha256:61a152569fbf509dd0802cfb67d0dd1fe2a23cd324afce7726c596797ce85dd5",
+      "composition_root": "Fabushi repository dependency/legal/release provenance lifecycle",
+      "composition_slot": "retained Microsoft/GSL Google Test third-party notice provenance",
+      "capability_component": "Source-neutral third-party notice and license provenance disposition",
+      "variation_axes": [
+        "Google Test attribution",
+        "BSD 3-Clause",
+        "source redistribution",
+        "binary redistribution",
+        "non-endorsement",
+        "shipping applicability separation"
+      ],
+      "shared_owner_contracts": [
+        "TDRP-SRC-03 documentation_or_license",
+        "module-map dependency license/provenance mapping",
+        "Fabushi packaging/SBOM/release license governance",
+        "exact-head TDRP evidence"
+      ],
+      "duplicate_root_check": "No Google Test runtime, second dependency/package graph, second legal store or source-branded owner.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository/dependency third-party notice provenance only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Retained ThirdPartyNotices legal/source provenance",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Changed GSL gitlink/tree/ThirdPartyNotices blob requires fresh reconciliation; Fabushi shipping/package/license applicability remains independently evidenced.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-GSL-THIRD-PARTY-NOTICES-GOOGLETEST-BSD-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GSL-NOTICE-EXACT-SOURCE-001",
+        "ORA-TDRP-GSL-NOTICE-GOOGLETEST-BSD-PROVENANCE-001",
+        "ORA-TDRP-GSL-NOTICE-SHIPPING-SEPARATION-001",
+        "ORA-TDRP-GSL-NOTICE-NO-TRANSITIVE-CLOSURE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GSL-NOTICE-NO-OMISSION-001",
+        "INV-TDRP-GSL-NOTICE-NO-SHIPPING-INFERENCE-001",
+        "INV-TDRP-GSL-NOTICE-LEGAL-PROVENANCE-001",
+        "INV-TDRP-GSL-NOTICE-EXACT-PROVENANCE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GSL-NOTICE-RETAINED-LEGAL-RECORD-001",
+        "CONTRACT-TDRP-GSL-NOTICE-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GSL-NOTICE-SOURCE-DRIFT-001",
+        "FAULT-TDRP-GSL-NOTICE-SHIPPING-INFERENCE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-GSL-NOTICE-PROVENANCE-NOT-RUNTIME-AUTHORITY-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-GSL-NOTICE-NO-SOURCE-OMISSION-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "locked GSL ThirdPartyNotices.txt + existing dependency/legal/release provenance owners + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact Microsoft/GSL ThirdPartyNotices.txt@552b254c63a2f9909aa46ef21c256ef9a79a0035 retained as Google Test BSD 3-Clause third-party legal/source provenance for the locked recursive dependency; no Fabushi shipping/linkage/package or release authority is inferred.",
+      "reviewer": "primary-session",
+      "notes": "Strict146 closes only GSL ThirdPartyNotices.txt. Google Test/BSD notice obligations remain retained provenance; actual Fabushi shipping/package applicability is independently evidenced. Counters unknown=16,230 unread=16,205 omitted=0 responsibilities=164. Next strict147 Microsoft/GSL docs/headers.md@11dd0cdfd5840cbcb7d8538e49efa2ccd5ac6a68."
     }
   ]
 }
