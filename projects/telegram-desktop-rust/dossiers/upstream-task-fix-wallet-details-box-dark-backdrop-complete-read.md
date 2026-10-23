@@ -43,6 +43,22 @@ The eventual UI must use `--fabushi-*` semantic surfaces and the single theme gr
 
 Because no dedicated renderer and no packaged visual matrix are currently proven, this responsibility remains **mapped-open**, not implemented or verified.
 
+## Traceability anchors
+
+Requirement / oracle / invariant IDs for this mapped-open responsibility:
+- `TDRP-R9-WALLET-DETAILS-DARK-BACKDROP-THEME-VISUAL-001`
+- `ORA-TDRP-WALLET-DETAILS-EXACT-TASK-SOURCE-001`
+- `ORA-TDRP-WALLET-DETAILS-UPSTREAM-PANEL-BG-001`
+- `ORA-TDRP-WALLET-DETAILS-CAPTURE-LAYER-001`
+- `ORA-TDRP-WALLET-DETAILS-OWNER-UNIQUENESS-001`
+- `ORA-TDRP-WALLET-DETAILS-MISSING-VISUAL-EVIDENCE-001`
+- `ORA-TDRP-WALLET-DETAILS-LIVE-THEME-CONTINUITY-001`
+- `INV-TDRP-WALLET-DETAILS-NO-SECOND-PAYMENT-WALLET-OWNER-001`
+- `INV-TDRP-WALLET-DETAILS-NO-FEATURE-LOCAL-THEME-ROOT-001`
+- `INV-TDRP-WALLET-DETAILS-NO-UPSTREAM-COLOR-AS-FABUSHI-TOKEN-001`
+- `INV-TDRP-WALLET-DETAILS-NO-UNTRACKED-SCREENSHOT-AS-EVIDENCE-001`
+- `INV-TDRP-WALLET-DETAILS-EXACT-HEAD-ACTIONS-ONLY-001`
+
 ## Parent exact-head evidence
 
 Parent `e64e82d0def8b9337f7516e1f1fac61c6ec5a63a` completed:
