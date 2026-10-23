@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "22a4c56f2dd4ae8f5e3884cd5bb220275abe41a8",
+  "target_commit": "fdf9715e8a08c808b66523a9f68a70b0a4485a4a",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16244,
-    "unread": 16219,
+    "unknown": 16243,
+    "unread": 16218,
     "omitted": 0,
-    "responsibilities_total": 150,
+    "responsibilities_total": 151,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -40766,6 +40766,266 @@
       "reviewer": null,
       "license_and_provenance": "Exact workflow/tooling provenance read from locked telegramdesktop/tdesktop live-dev blobs; no upstream C++/Qt runtime copied.",
       "notes": "Strict132 closes only tools/clangtidy/README.md semantic read/decomposition. Configured-build-derived analyzer input, minimum analyzer capability and local-feedback boundary map to existing Fabushi repository quality owners. Current exact-head Fabushi has cargo metadata/tests and TypeScript typecheck/build but no dedicated cargo clippy/fmt, ESLint or lint script, so static-analysis coverage remains mapped-open. Counters unknown=16,244 unread=16,219 omitted=0 responsibilities=150. Next strict133 tools/clangtidy/compile_db.py@16a99ac4ad860cc37ee7c84bfb82cf899fb1cced.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "tools/clangtidy/compile_db.py",
+      "source_blob_sha": "16a99ac4ad860cc37ee7c84bfb82cf899fb1cced",
+      "source_kind": "repository_configured_build_compilation_database_adaptation_provenance",
+      "module_id": "tdesktop.tools.clangtidy.compile_db",
+      "responsibility_id": "TDRP-R9-CLANG-TIDY-COMPDB-001",
+      "source_symbols": [
+        "tools_directory",
+        "compiler_for",
+        "split_command",
+        "dropped",
+        "platform_arguments",
+        "rewrite",
+        "main",
+        "ninja -t compdb",
+        "compile_commands.json"
+      ],
+      "capability_ids": [
+        "CAP-CONFIGURED-BUILD-PROVENANCE",
+        "CAP-REPOSITORY-STATIC-ANALYSIS",
+        "CAP-COMPILER-COMMAND-ADAPTATION",
+        "CAP-EXACT-HEAD-QUALITY-EVIDENCE"
+      ],
+      "dependency_ids": [
+        "tools/clangtidy/README.md@2e64a408cb2d76aed0425706e321a24bb58f350f",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md@4d2c88e118ab489d3d0339d2a61371a7ea74e72e",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md@2d1d709a6ac3204bd05bedf5b3e98f37856e8c70",
+        ".github/workflows/rust-desktop-runtime.yml@905fc0e17e5b4e54cb18708c55d1eb8725d18f83",
+        ".github/workflows/desktop-chat-parity-ci.yml@2689fd2ed01c6818586f251fb8a879a8b162c61b",
+        "desktop/package.json@3d500622ce9b26e3452d98d0c4a7e7dcc019ac84"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-tools-clangtidy-compile-db-complete-read.md",
+      "behavior_contract": "Static-analysis input is derived from the real configured Ninja compilation database, then adapted only for analyzer/compiler/platform compatibility. Parser, skipped-entry and platform-fallback limitations remain explicit; the transformed compilation database is analyzer evidence and never configured-build, artifact, runtime or release authority. Fabushi preserves the source-neutral configured-input and command-semantics boundary in existing quality/evidence owners and target-language CI rather than retaining a C++/clang-tidy runtime.",
+      "state_machine": "require configured build.ninja -> query ninja compdb -> parse platform command syntax -> retain existing C++ translation units with non-empty commands -> remove only declared analyzer-incompatible wrappers/output/PCH/noise -> substitute analyzer compiler and platform arguments -> write analyzer compile_commands.json -> exact-head GitHub Actions remains authoritative -> missing/stale/unsupported coverage stays non-passing",
+      "side_effects": [
+        "Runs the read-only Ninja compdb tool query against an existing configured build.",
+        "Creates or replaces analyzer-only <build>/clang-tidy/compile_commands.json.",
+        "May warn when a GCC toolchain prefix cannot be established.",
+        "Does not create shipping product state, execute build graph commands, or establish release acceptance."
+      ],
+      "failure_cases": [
+        "build.ninja is absent and the adapter exits.",
+        "clang-tidy cannot be resolved and the adapter exits.",
+        "ninja -t compdb fails and subprocess check propagates failure.",
+        "Empty compiler commands or missing translation-unit files are skipped and then mislabeled as complete analyzer coverage.",
+        "Platform adaptation falls back without SDK/toolchain extras and the result is mislabeled as configured-build truth.",
+        "A generic/transformed compilation database is used to prove target membership, PCH consumption, artifact identity or release readiness.",
+        "C++/Ninja/clang-tidy mechanics are copied into a second Fabushi runtime or quality owner.",
+        "Current Rust/TypeScript build/typecheck evidence is mislabeled as dedicated clippy/fmt/ESLint coverage."
+      ],
+      "ui_disposition": "Not applicable; repository configured-build/static-analysis tooling provenance only.",
+      "non_ui_responsibilities": [
+        "configured-build-derived compilation database provenance",
+        "platform-correct command parsing",
+        "bounded compiler/PCH/cache/output command adaptation",
+        "analyzer compiler and platform toolchain projection",
+        "explicit skipped/fallback coverage limitations",
+        "separation of analyzer database from configured-build/release authority"
+      ],
+      "platform_delta": "Fabushi does not retain Telegram's C++/Ninja/clang-tidy adapter as product architecture. Its applicable configured-input, parser/command-semantics and evidence-strength boundaries map to existing source-neutral configured-build quality/evidence owners and native Rust/TypeScript analyzers.",
+      "existing_owner_candidates": [
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Configured-build graph qualification",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Repository source static-analysis migration qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md#Configured-build graph provenance evidence",
+        "GitHub Actions exact-head Rust/TypeScript build-test owners"
+      ],
+      "existing_owner": "Fabushi configured-build graph provenance + repository quality/test-evidence governance",
+      "rejected_existing_owners": [
+        "A Telegram/clang-tidy-specific runtime would duplicate source-neutral configured-build and quality owners.",
+        "A generic compilation-database owner cannot replace configured-build graph provenance.",
+        "A C++/Ninja build runtime is not required by Fabushi target architecture.",
+        "Local analyzer command adaptation cannot become release acceptance authority."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "query/compilation-database parsing",
+        "command-line definition ordering",
+        "PCH producer/consumer coherence",
+        "Configured-graph acquisition is read-only and fail-closed.",
+        "generic compilation databases"
+      ],
+      "target_language": "Markdown quality/evidence governance + native Rust/TypeScript analyzer/toolchain",
+      "language_rationale": "The source is a C++ analyzer database adapter. Fabushi preserves its configured-input and command-semantics responsibility in existing language-neutral quality/evidence contracts, while native Rust/TypeScript tooling supplies executable analysis.",
+      "command_event_contracts": [
+        "configured build -> read evaluated compilation database through a bounded tool query",
+        "compiler command -> parse with platform-correct quoting and preserve non-incompatible semantics",
+        "analyzer-incompatible PCH/cache/output/noise -> remove only the declared adapter details",
+        "platform compiler -> project only required analyzer compiler/sysroot/toolchain compatibility",
+        "skipped or fallback adaptation -> explicit coverage limitation, never clean configured-build proof",
+        "mapping commit -> exact-head GitHub Actions revalidation",
+        "missing dedicated target-language analyzer gate -> remain mapped-open"
+      ],
+      "state_owner": "Existing repository quality/configured-build evidence lifecycle; no product state owner.",
+      "lifecycle_owner": "Fabushi Test Strategy, evidence contract and exact-head GitHub Actions.",
+      "persistence_and_restart": "No product persistence. Durable evidence is the locked source blob, dossier/ledger mapping, configured-build evidence contracts and exact-head workflow artifacts; generated compile_commands.json is disposable analyzer input.",
+      "concurrency_and_cancellation": "The adapter is a disposable tooling process over one configured build subject. Head/build-manifest drift invalidates evidence; cancellation or partial output cannot be promoted to acceptance.",
+      "security_boundary": "Compiler/analyzer command adaptation has no product authorization authority. Only bounded configured tool metadata may support build claims; release/security acceptance remains with dedicated owners.",
+      "network_service_dependencies": [
+        "GitHub Actions for authoritative exact-head executable verification"
+      ],
+      "service_owner": "Fabushi repository quality/evidence lifecycle",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "toolchain-equivalent-command-adaptation-mapped-open",
+      "blockers": [
+        "Current exact-head workflows/package scripts have no dedicated cargo clippy or cargo fmt gate.",
+        "Current exact-head workflows/package scripts have no ESLint or dedicated lint script.",
+        "The upstream transformed compilation database is provenance only and cannot count as configured-build/release acceptance.",
+        "Fresh child exact-head TDRP/Rust Actions must validate strict133 after publication.",
+        "Recursive source closure remains open.",
+        "Independent release acceptance remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "path:.github/workflows/rust-desktop-runtime.yml",
+        "path:.github/workflows/desktop-chat-parity-ci.yml",
+        "path:desktop/package.json"
+      ],
+      "test_evidence": [
+        "strict133 tools/clangtidy/compile_db.py@16a99ac4ad860cc37ee7c84bfb82cf899fb1cced fully read",
+        "upstream README usage confirms compile_db.py runs after configure and feeds clang-tidy-diff/run-clang-tidy",
+        "exact-head TEST_STRATEGY/evidence-contract inspection confirms configured-build/compilation-database/command/PCH owner coverage and generic-compdb evidence boundary",
+        "exact-head workflow/package scan confirms no cargo clippy/fmt, ESLint or dedicated lint script",
+        "TDRP 39988917272 61/61; authority 12517051705 sha256:f9ade467c5a1226702daab6d9616f0bf23ba5be17408c01054ff9084b7969c17; closure 12516254999 sha256:12d62689fd596f24365acfc3c151572667586b79d336d43bcfd51aed65483bd1; reachability 12516364938 sha256:fb02f4c3696bd4befc29218328b763da2a9322f322262f1a8632ea5deb20790a",
+        "Rust 39988917401 6/6; artifact 12516288454 sha256:c68b9e6aef92233641fba5a5f49574478c2d9d74c9e05036553c622edc1c1a47"
+      ],
+      "target_commit": "fdf9715e8a08c808b66523a9f68a70b0a4485a4a",
+      "workflow_run": 39988917272,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12517051705,
+      "artifact_digest": "sha256:f9ade467c5a1226702daab6d9616f0bf23ba5be17408c01054ff9084b7969c17",
+      "composition_root": "Fabushi repository quality/test-evidence lifecycle",
+      "composition_slot": "configured-build compilation-database adaptation + target-language analyzer boundary",
+      "capability_component": "Configured-build-provenance-aware static-analysis input",
+      "variation_axes": [
+        "configured vs stale/synthetic command input",
+        "POSIX vs Windows command parsing",
+        "MSVC vs GCC/Clang driver projection",
+        "PCH/cache/output/noise removal vs preserved forced includes",
+        "complete adapter input vs skipped/fallback coverage",
+        "analyzer evidence vs configured-build/release authority"
+      ],
+      "shared_owner_contracts": [
+        "Configured-build graph qualification",
+        "Configured-build graph provenance evidence",
+        "Repository source static-analysis migration qualification",
+        "GitHub Actions exact-head evidence governance"
+      ],
+      "duplicate_root_check": "No Telegram/clang-tidy-specific runtime, generic-compdb build authority, second build graph or second quality owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository quality/tooling only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Repository quality/tooling",
+      "route_contract": "No shipping route",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Analyzer input remains bound to one configured build/source identity; skipped/fallback command adaptation and head/manifest drift cannot be promoted to complete or passing evidence.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CLANG-TIDY-COMPDB-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CLANG-TIDY-COMPDB-SOURCE-001",
+        "ORA-TDRP-CLANG-TIDY-NINJA-COMPDB-001",
+        "ORA-TDRP-CLANG-TIDY-COMMAND-REWRITE-001",
+        "ORA-TDRP-CLANG-TIDY-PLATFORM-ADAPTATION-001",
+        "ORA-TDRP-CLANG-TIDY-COMPDB-OWNER-001",
+        "ORA-TDRP-CLANG-TIDY-COMPDB-GATE-GAP-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CLANG-TIDY-COMPDB-CONFIGURED-SOURCE-001",
+        "INV-TDRP-CLANG-TIDY-COMPDB-NO-BUILD-AUTHORITY-001",
+        "INV-TDRP-CLANG-TIDY-COMPDB-COMMAND-SEMANTICS-001",
+        "INV-TDRP-CLANG-TIDY-COMPDB-PLATFORM-LIMITS-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CLANG-TIDY-COMPDB-CONFIGURED-INPUT-001",
+        "CONTRACT-TDRP-CLANG-TIDY-COMPDB-EVIDENCE-BOUNDARY-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-CLANG-TIDY-COMPDB-001"
+      ],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "locked tools/clangtidy/compile_db.py source blob",
+        "existing configured-build graph quality/evidence contracts"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact compile-database adapter provenance read from locked telegramdesktop/tdesktop live-dev blob; no upstream C++/Ninja/clang-tidy runtime copied.",
+      "notes": "Strict133 closes only tools/clangtidy/compile_db.py semantic read/decomposition. Configured-build-derived compilation database provenance, bounded command adaptation and evidence-strength boundaries map to existing Fabushi quality/configured-build owners. Upstream skip/fallback behavior remains analyzer coverage limitation. Current Fabushi has Rust build/tests and TypeScript typecheck/build but no dedicated cargo clippy/fmt, ESLint or lint script, so static-analysis execution remains mapped-open. Counters unknown=16,243 unread=16,218 omitted=0 responsibilities=151. Next strict134 tools/rules/hook.py@287b36c948566659970651226c92f7b8b056b434.",
       "test_execution_evidence": []
     }
   ]

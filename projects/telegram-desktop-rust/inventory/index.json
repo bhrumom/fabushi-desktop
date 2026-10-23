@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16244,
-    "unread_minimum": 16219,
+    "unknown_minimum": 16243,
+    "unread_minimum": 16218,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -122,7 +122,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 22a4c56f2dd4ae8f5e3884cd5bb220275abe41a8 passed TDRP 39984901447 61/61 (authority 12514373943 sha256:4a5b71d5e6c8965797eef2bf63a0766da69aebc72f25238a872d2943fb32636c; closure 12514514383 sha256:d26f54c0f5656cba152906a9be28b280ee1887eacca98337da4e03f92ddc3a16; reachability 12516030885 sha256:f4017ca396bd83a4c9b6cdf6553f865ef11f54c418b87d5740a1c27db243df02) and Rust 39984901437 6/6 (artifact 12515950645 sha256:1715b509fbad46f9bb3d96634ad3898b6f3a13d8caa9f5953922a6d0cc56fc53). Strict132 tools/clangtidy/README.md@2e64a408cb2d76aed0425706e321a24bb58f350f was fully read with compile_db.py, .clang-tidy, hook.py and test_hook.py anchors. The applicable responsibility is configured-build-derived static-analysis input plus non-authoritative local feedback and exact-head CI authority; C++/Qt/clang-tidy runner mechanics remain provenance. Current Fabushi CI has Cargo metadata/tests and TypeScript typecheck/build but no dedicated cargo clippy/fmt, ESLint or lint script, so target-language static-analysis coverage remains mapped-open. Counters unknown=16,244 unread=16,219 omitted=0 responsibilities=150. Next strict133 tools/clangtidy/compile_db.py@16a99ac4ad860cc37ee7c84bfb82cf899fb1cced.",
+  "note": "Live upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent fdf9715e8a08c808b66523a9f68a70b0a4485a4a passed TDRP 39988917272 61/61 (authority 12517051705 sha256:f9ade467c5a1226702daab6d9616f0bf23ba5be17408c01054ff9084b7969c17; closure 12516254999 sha256:12d62689fd596f24365acfc3c151572667586b79d336d43bcfd51aed65483bd1; reachability 12516364938 sha256:fb02f4c3696bd4befc29218328b763da2a9322f322262f1a8632ea5deb20790a) and Rust 39988917401 6/6 (artifact 12516288454 sha256:c68b9e6aef92233641fba5a5f49574478c2d9d74c9e05036553c622edc1c1a47). Strict133 tools/clangtidy/compile_db.py@16a99ac4ad860cc37ee7c84bfb82cf899fb1cced was fully read. It derives clang-tidy analyzer input from the real configured Ninja compdb, performs bounded platform/compiler/PCH/cache/output command adaptation, and writes analyzer-only compile_commands.json. Empty/missing entries and platform fallback paths are explicit coverage limitations; a transformed/generic compilation database is not configured-build or release authority. Existing TEST_STRATEGY/evidence-contract configured-build owners are reused. Current Fabushi Rust/TypeScript CI still lacks dedicated cargo clippy/fmt and ESLint/lint gates, so target-language static-analysis remains mapped-open. Counters unknown=16,243 unread=16,218 omitted=0 responsibilities=151. Next strict134 tools/rules/hook.py@287b36c948566659970651226c92f7b8b056b434.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
