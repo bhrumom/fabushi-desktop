@@ -39277,7 +39277,7 @@
         "pub fn release_settlement(",
         "pub fn resolve_trusted_payment_intent<C: PaymentCatalog>(",
         "export function OverlayDialog(",
-        "--fabushi-surface-raised semantic surface pattern"
+        "--fabushi-surface-raised"
       ],
       "target_language": "existing Rust wallet/payment domain + React/TypeScript shared UI + Fabushi semantic CSS",
       "language_rationale": "Domain truth already has Rust owners; presentation uses existing React/TypeScript shared UI and semantic tokens.",
