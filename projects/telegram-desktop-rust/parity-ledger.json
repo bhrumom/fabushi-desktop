@@ -36861,15 +36861,15 @@
         "source/electron-main/account/auth-service-contract.ts"
       ],
       "fabushi_target_symbols": [
-        "desktop package scripts.package",
-        "desktop build.win target=nsis",
-        "stage-host.mjs win32 executable selection",
-        "check-electron-runtime-bundle.mjs runtime artifact graph",
-        "pressure-profiler-platform windows-2025 exact-head test",
-        "FABUSHI_ELECTRON_EXECUTABLE packaged acceptance contract",
+        "electron-builder",
+        ""nsis"",
+        "process.platform === 'win32'",
+        "Desktop runtime artifact graph is incomplete:",
+        "windows-2025",
+        "FABUSHI_ELECTRON_EXECUTABLE",
         "FabushiAuthService",
-        "secret-store account-scoped secret owner",
-        "Fabushi account issuer policy",
+        "DesktopSecretStore",
+        "readonly issuer: string",
         "AuthServicePort"
       ],
       "target_language": "Existing TypeScript/JavaScript/JSON/YAML/Rust owners; documentation provenance only",
