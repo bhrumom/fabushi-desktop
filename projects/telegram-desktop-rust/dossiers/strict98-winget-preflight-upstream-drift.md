@@ -5,7 +5,7 @@
 - TDRP run `39898075641` completed success on that exact HEAD. Required artifacts:
   - authority `12477538096`, `sha256:957966daab1d7907d0cabb9e3410b3d1f8f38f0eb38f4b30f8151f82480626eb`
   - closure `12477394597`, `sha256:0a08735564b448a06dd49f6dfcbbd3829ddc28ddb987731362d7c08398bab167`
-  - reachability `12477249740`, `sha256:a2864abe1e253b5083325de4d8ac3a58c6c4f54e26a071830e92aac8b6ac3df3`
+  - reachability `12477353200`, `sha256:6d969c50cd781fdf4fd6655415cd2a5a72aae14685775348c4ade2e2db12f228`
 - Rust desktop runtime run `39898075663` completed 6/6 success on the same exact HEAD; artifact `12477162917`, `sha256:2bd9915e9f3fdf6480f88ef7f5b8df95609c0d9c9897e845616bcba56a15399a`.
 
 ## Strict98 source audit completed but not admitted

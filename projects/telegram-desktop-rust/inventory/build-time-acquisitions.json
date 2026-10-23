@@ -3,7 +3,7 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_repository": "telegramdesktop/tdesktop",
-  "upstream_commit": "83f9f56347cc3421c1e3ef537c7bb6dd06ce7cd0",
+  "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
   "discovery": {
     "evidence_run_id": 39486129504,
     "evidence_head_sha": "f605a520cb7d3dc21da795a35cb89b8479afdb8f",
@@ -13,7 +13,7 @@
     "candidate_lines_total": 331,
     "immutable_commit_pin_occurrences_classified": 19,
     "candidate_lines_pending_classification": 0,
-    "note": "Live dev advanced 52a47639d9aa38713098974dd2ce07e631cb3381 -> 83f9f56347cc3421c1e3ef537c7bb6dd06ce7cd0. None of the 42 changed root paths are build-time acquisition scanner inputs; immutable build pins, candidate locations/patterns and 331/331/0 classification remain unchanged. Telegram/lib_ui repinned 2f29133506e174a9d4a7b78740c3f1b04c2b993c -> 1002e017b586020a6e23b65b92a8c78ac2983737 but remains a direct source gitlink, not a build-time acquisition candidate.",
+    "note": "Live dev advanced 83f9f56347cc3421c1e3ef537c7bb6dd06ce7cd0 -> a7f453612f4896ac04d0007a36ab0d377e5bcbcf across 2 commits / 8 root paths. None of the changed root paths are build-time acquisition scanner inputs; Telegram/CMakeLists.txt only wires the two new history_view_touch_scroll source files. Immutable build pins, candidate locations/patterns and 331/331/0 classification remain unchanged. Telegram/lib_ui repinned 1002e017b586020a6e23b65b92a8c78ac2983737 -> 79c846fdf0327ff99d3efdc1cc4e11ef50bedc6d but remains a direct source gitlink, not a build-time acquisition candidate.",
     "candidate_lines_classified": 331,
     "disposition_closure_status": "complete",
     "recursive_authority_closure_status": "gitlink-fixed-point-closed-disposition-pending",
@@ -1229,7 +1229,7 @@
   ],
   "recursive_build_reachability": {
     "status": "partial-audited-disposition-open",
-    "accepted_upstream_commit": "83f9f56347cc3421c1e3ef537c7bb6dd06ce7cd0",
+    "accepted_upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
     "rule": "A recursively discovered repository is source/build authority only when an accepted TDesktop build path actually initializes, downloads, generates, patches, or consumes it. Presence as an unselected superproject gitlink is not sufficient.",
     "qt_superproject": {
       "repository": "https://github.com/qt/qt5",
