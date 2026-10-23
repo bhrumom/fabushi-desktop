@@ -31629,7 +31629,7 @@
       "network_service_dependencies": [],
       "service_owner": "Existing TDRP source-authority acquisition/validation lifecycle; no shipping runtime service.",
       "deployment_evidence": [],
-      "implementation_status": "implemented",
+      "implementation_status": "mapped",
       "coverage_disposition": "workflow-equivalent",
       "blockers": [
         "Fresh strict100 child exact-head TDRP/Rust Actions are required.",
