@@ -36227,7 +36227,7 @@
         ".github/scripts/validate-apple-ticket.mjs"
       ],
       "fabushi_target_symbols": [
-        "\"target\": [\\n        \"dmg\",\\n        \"zip\"\\n      ]",
+        "\"target\": [\n        \"dmg\",\n        \"zip\"\n      ]",
         "\"hardenedRuntime\": true",
         "\"forceCodeSigning\": true",
         "\"afterSign\": \"scripts/notarize-after-sign.cjs\"",
