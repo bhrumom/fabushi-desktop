@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "83f9f56347cc3421c1e3ef537c7bb6dd06ce7cd0",
-  "target_commit": "16fea2446f9fa18fb7a50872e1f070726511f2f6",
+  "target_commit": "b762e52394aa93b2cb593af0738b504aaf6624fc",
   "coverage": {
     "source_entries_total": 16377,
-    "unknown": 16282,
-    "unread": 16257,
+    "unknown": 16281,
+    "unread": 16256,
     "omitted": 0,
-    "responsibilities_total": 110,
+    "responsibilities_total": 111,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -29644,6 +29644,267 @@
       "license_and_provenance": "Exact snap workflow/manifest and immutable more-space provider identities retained; provider is LGPL-2.1. Mutable action/Snapcraft/source refs do not establish Fabushi release authority.",
       "reviewer": null,
       "notes": "Strict index 92 closes only .github/workflows/snap.yml. Counters become unknown=16,282 unread=16,257 omitted=0 responsibilities=110. Next strict root index 93 .github/workflows/stale.yml@0d57eb7dbd9a9f758e1e33d45afbd1aefd212614. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "83f9f56347cc3421c1e3ef537c7bb6dd06ce7cd0",
+      "source_path": ".github/workflows/stale.yml",
+      "source_blob_sha": "0d57eb7dbd9a9f758e1e33d45afbd1aefd212614",
+      "source_kind": "repository_stale_issue_maintenance_workflow",
+      "module_id": "tdesktop.github.workflows.stale",
+      "responsibility_id": "TDRP-R9-ISSUE-STALE-MAINTENANCE-PROVENANCE-001",
+      "source_symbols": [
+        "schedule cron 30 1 * * *",
+        "actions/stale@v11",
+        "stale-issue-label: stale",
+        "exempt-issue-labels: enhancement",
+        "days-before-issue-stale: 180",
+        "days-before-close: 30",
+        "days-before-pr-stale: -1",
+        "operations-per-run: 1000",
+        "provider default remove-stale-when-updated=true",
+        "provider default close-issue-reason=not_planned",
+        "provider operation-budget/cache continuation",
+        "provider mutation errors can be logged without failing run"
+      ],
+      "capability_ids": [
+        "CAP-ISSUE-STALE-MAINTENANCE",
+        "CAP-ISSUE-ACTIVITY-RECOVERY",
+        "CAP-ISSUE-PROVIDER-CACHE-CONTINUATION",
+        "CAP-DEFECT-CLOSURE-AUTHORITY-BOUNDARY"
+      ],
+      "dependency_ids": [
+        "actions/stale@v11 -> 4391f3da665fdf50b6810c1a66712fb9ba21aa93/tree fd7f2bf9b9331afae0f3e4ad41604fcf2c0d631a",
+        "actions/stale/action.yml@b3354e9d52f319ff836a35b299bc1f266ed0f480",
+        "actions/stale/dist/index.js@3171f8fb5b6a9388ff5524197c02723fcf801875",
+        "actions/stale/package.json@90c287625590b9b083f05a4cbf9dcb51c9c88de6 version 11.0.0",
+        "actions/stale/package-lock.json@22d1317b390f40adb3212ed7baf6c442ad227185",
+        "actions/stale/LICENSE@5dad4d23768e80045d5067599d233a3f7cfe138d MIT",
+        "FQT-DEF-001@b31ecd424cac2abf8a2322e2996bb1b53c561378"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/stale-issue-maintenance-workflow-complete-read.md",
+      "behavior_contract": "Treat stale.yml as repository issue-maintenance provider provenance only. It may mark non-enhancement issues stale after 180 days and close them 30 days later, while PR staling is disabled. Provider cache, operation budget, labels, comments and close state cannot advance canonical Fabushi defect closure; FQT-DEF-001 remains sole closure authority.",
+      "state_machine": "daily schedule -> provider pages open issues -> skip closed/locked/exempt -> process under 1000-operation budget -> stale eligible issue after 180 days -> updated/commented issue may become unstale -> close stale issue after 30 days with provider default not_planned reason -> cache continuation if processing incomplete; canonical defect independently remains open until FQT closure evidence",
+      "side_effects": [
+        "GitHub issue listing/comments/labels/state API calls",
+        "provider stale/unstale label mutation",
+        "provider close comment/state mutation",
+        "provider cache restore/save/delete across runs",
+        "provider statistics/logging",
+        "no shipping Fabushi product state mutation"
+      ],
+      "failure_cases": [
+        "mutable actions/stale@v11 tag drift",
+        "workflow token permission mismatch",
+        "operation budget ends run before all issues are processed",
+        "cache restore/save/delete failure or stale continuation",
+        "comment/label/close API error is logged and swallowed",
+        "overlapping runs race provider cache or issue state",
+        "provider not_planned close is mistaken for canonical defect resolution",
+        "enhancement exemption is mistaken for defect acceptance"
+      ],
+      "ui_disposition": "Repository issue-maintenance automation only; no shipping Fabushi UI capability.",
+      "non_ui_responsibilities": [
+        "stale issue maintenance provenance",
+        "180-day stale and 30-day close policy",
+        "enhancement exemption",
+        "PR stale disabled",
+        "operation-budget/cache continuation",
+        "activity-driven unstale behavior",
+        "provider mutation-settlement limitation",
+        "strict separation from canonical defect closure"
+      ],
+      "platform_delta": "TDesktop GitHub stale automation is retained only as mature repository-maintenance provenance. Fabushi keeps FQT-DEF-001 as the sole defect lifecycle/closure owner and introduces no GitHub-specific support or product runtime.",
+      "existing_owner_candidates": [
+        "FQT-DEF-001 canonical defect/regression policy (selected)",
+        "AGENTS repository defect-intake/routing adapter governance (shared boundary)",
+        "new stale/support defect owner (rejected)"
+      ],
+      "existing_owner": "FQT-DEF-001 canonical defect/regression policy; actions/stale state is a non-authoritative repository provider adapter only",
+      "rejected_existing_owners": [
+        "provider age/labels/comments do not establish root cause, fix or regression",
+        "provider close reason not_planned cannot overwrite canonical defect truth",
+        "provider cache/operation-budget state is administrative, not product lifecycle",
+        "a second stale/support ledger would duplicate FQT ownership"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/fabushi-communication-platform/quality/defect-regression-policy.md"
+      ],
+      "fabushi_target_symbols": [
+        "ID、SHA/environment、steps、expected/actual、frequency、screens/video/logs、affected requirement/oracle、severity、root cause、fix SHA、regression IDs、evidence、reviewer。"
+      ],
+      "target_language": "Repository governance / issue-maintenance provenance",
+      "language_rationale": "The source is GitHub administrative automation. Applicable responsibility maps to the source-neutral canonical defect policy rather than shipping Rust/React.",
+      "command_event_contracts": [
+        "daily 01:30 UTC schedule",
+        "non-enhancement issue becomes stale after 180 inactive days",
+        "stale issue may close after 30 additional days",
+        "pull requests never become stale from this workflow",
+        "provider operation budget is 1000",
+        "provider state cache may continue work across runs",
+        "updated/commented stale item may be unstaled by provider default",
+        "some provider mutation failures are logged rather than rethrown",
+        "canonical closure always remains FQT-DEF-001"
+      ],
+      "state_owner": "GitHub/actions-stale owns provider issue/cache state only; FQT-DEF-001 owns canonical Fabushi defect lifecycle and closure.",
+      "lifecycle_owner": "Provider issue maintenance may stale, unstale, skip or close GitHub issues; FQT-DEF-001 independently owns reproduction/root cause/fix/regression/current-head closure.",
+      "persistence_and_restart": "GitHub persists issue state and the provider uses Actions cache-backed state to continue processed issue IDs across runs. Cache state can disappear or fail; canonical defect evidence remains in FQT records and exact-head evidence.",
+      "concurrency_and_cancellation": "No workflow concurrency group. Overlapping schedules/reruns, cache continuation and issue updates can race. Cancellation or mutation/cache failure cannot advance canonical defect closure.",
+      "security_boundary": "Provider defaults to github.token and the workflow declares no explicit permissions. Token/provider/cache authority is repository administration only and cannot become product credential or release authority. v11 is mutable source provenance despite audit-time immutable resolution.",
+      "network_service_dependencies": [
+        "GitHub Issues/Actions APIs",
+        "actions/stale v11 provider bundle",
+        "GitHub Actions cache service"
+      ],
+      "service_owner": "GitHub repository maintenance provider only; canonical defect truth remains FQT-DEF-001",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "policy-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions are required after strict93.",
+        "Recursive source disposition remains open.",
+        "actions/stale@v11 is a mutable source tag despite audit-time resolution.",
+        "Provider per-item mutation errors may be swallowed and operation-budget/cache state may represent partial coverage."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "stale.yml fully read: 25 line slots / 813 bytes at 0d57eb7dbd9a9f758e1e33d45afbd1aefd212614.",
+        "actions/stale@v11 audit-time resolution 4391f3da665fdf50b6810c1a66712fb9ba21aa93/tree fd7f2bf9b9331afae0f3e4ad41604fcf2c0d631a; production dist/index.js@3171f8fb5b6a9388ff5524197c02723fcf801875; package-lock@22d1317b390f40adb3212ed7baf6c442ad227185; MIT LICENSE@5dad4d23768e80045d5067599d233a3f7cfe138d.",
+        "Provider source confirms batches of 100, operation-budget consumption, exemption handling, default remove-stale-when-updated=true, default close reason not_planned, and cache-backed continuation.",
+        "Provider _markStale/_closeIssue catch and log selected GitHub mutation errors, so a green run is not proof of every per-item mutation.",
+        "FQT-DEF-001@b31ecd424cac2abf8a2322e2996bb1b53c561378 remains canonical defect record/closure authority.",
+        "Parent exact-head b762e52394aa93b2cb593af0738b504aaf6624fc completed TDRP run 39889852905 at 61/61 success (authority 12474003752 sha256:a77578b59b1767023a6a8bcb5ae843f2f5eaef255cc9dac7984ba69d3a6be684; closure 12474795600 sha256:26475ac3006a066da3c2f84a82e93dac2348c6641abf22457175d386cee0465e; reachability 12474577509 sha256:12cd41f4d0bac17a4e27026c4defe4d52e3c5efb7294ba2d03be6066460c428a) and Rust desktop runtime run 39889852847 at 6/6 success (artifact 12473519648 sha256:521d53d832e1b2741187f23bb6d88991fc4a930b699563b30a63b8da2f931ad2)."
+      ],
+      "target_commit": "b762e52394aa93b2cb593af0738b504aaf6624fc",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi canonical FQT defect/regression lifecycle with GitHub stale automation as non-authoritative provider state",
+      "composition_slot": "provider stale maintenance -> canonical FQT-DEF-001 closure",
+      "capability_component": "Source-neutral stale issue-maintenance provenance adapter",
+      "variation_axes": [
+        "issue/PR",
+        "enhancement exempt/non-exempt",
+        "inactive under/over 180d",
+        "stale under/over 30d",
+        "updated/commented/no activity",
+        "operation budget sufficient/exhausted",
+        "cache available/missing/failing",
+        "mutation settled/logged error",
+        "overlapping runs",
+        "canonical defect open/closed"
+      ],
+      "shared_owner_contracts": [
+        "FQT-DEF-001",
+        "AGENTS repository defect-intake/routing governance",
+        "FQT-EVID-001 exact-head evidence"
+      ],
+      "duplicate_root_check": "No second defect ledger, support truth, stale product-state owner, provider-owned closure root, release gate or shipping issue runtime is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository issue maintenance only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Bounded provider issue-maintenance provenance adapter",
+      "route_contract": "scheduled stale provider maintenance; all canonical defect closure remains independently governed by FQT-DEF-001",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "GitHub issue/cache state may stale, close, reopen, disappear or race independently; canonical defect state advances only through FQT evidence.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-ISSUE-STALE-MAINTENANCE-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-STALE-180-30-POLICY-001",
+        "ORA-TDRP-STALE-EXEMPTION-001",
+        "ORA-TDRP-STALE-NOT-DEFECT-CLOSURE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-FQT-DEF-SOLE-CLOSURE-OWNER-003",
+        "INV-TDRP-STALE-GREEN-NOT-SETTLEMENT-001",
+        "INV-TDRP-STALE-CACHE-NOT-CANONICAL-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-STALE-PROVIDER-ADAPTER-001",
+        "CONTRACT-TDRP-STALE-OPERATION-BUDGET-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-STALE-CACHE-CONTINUATION-001",
+        "TEMP-TDRP-STALE-CONCURRENT-RUN-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-STALE-MUTATION-ERROR-SWALLOWED-001",
+        "FAULT-TDRP-STALE-CACHE-SAVE-001",
+        "FAULT-TDRP-STALE-BUDGET-EXHAUSTION-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-STALE-GITHUB-TOKEN-BOUNDARY-001",
+        "SEC-TDRP-STALE-MUTABLE-TAG-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-FQT-DEF-REMAINS-SOLE-CLOSURE-OWNER-003",
+        "REG-TDRP-STALE-NO-PRODUCT-OWNER-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [],
+      "test_fixture_ids": [
+        "locked stale.yml + actions/stale v11 immutable resolution/source/bundle/lock/license + FQT-DEF-001 + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact upstream workflow and audit-time actions/stale v11 commit/tree/source/bundle/package-lock/MIT license identities retained. The source uses mutable major tag v11, so future provider resolution remains fail-closed provenance and cannot become Fabushi product/defect authority.",
+      "reviewer": null,
+      "notes": "Strict index 93 closes only .github/workflows/stale.yml. Counters become unknown=16,281 unread=16,256 omitted=0 responsibilities=111. Next strict root index 94 .github/workflows/unused_styles_updater.yml@2c021d1cd09f7ac59b0e0d5ef6be2bf546167274. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required."
     }
   ]
 }
