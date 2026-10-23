@@ -361,10 +361,10 @@
   "coverage": {
     "root_source_entries_total": 6893,
     "recursive_source_entries_total": 16379,
-    "unknown_minimum": 16256,
-    "unread_minimum": 16231,
+    "unknown_minimum": 16255,
+    "unread_minimum": 16230,
     "omitted_known": 0,
-    "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 56ffe86edf90a9e246b0be2881a7597dd004de48/tree 362b621ef2ef2a15a35d4206b384827fd8b13813 passed TDRP 39951083002 at 61/61 (authority 12500995492 sha256:8bedd5210a0b86192aadf26a97184f55d81ac941348d5f17e45976e8a39b0c30; closure 12501160409 sha256:a0ec1abdad6cb8bac5d0a3d957c26a03845d4f320d4bf42e2bcde15a426ee06d; reachability 12500971253 sha256:bf5f93e89fd47608776851a54fd24f4ccaab1adf33c60e7bdbbd224a057aab8a) and Rust 39951082971 at 6/6 (artifact 12500940550 sha256:bd017823ef92c06374a24a7a24ff6da34971e1b6f48fab11696d96d688dadee6). Strict120 docs/building-win.md@d333539fc0709be6f98a8ef719f22fac0346b49a is retained as Windows developer-build/toolchain/API-credential provenance. Exact dependencies are win.bat@c73fe2a3e5b0d32f8ec34db2c2bdb148ecb50e59, configure.bat@85b9ddebafd5bc95b3590240fb3a11eae590afb4, configure.py@592b2f02fd0030dffe6a79d94f1d18c529c53645 and prepare.py@a9f3dd2d9e4020df958ab5af942376177d66c78b. Fabushi keeps desktop/package.json@3d500622ce9b26e3452d98d0c4a7e7dcc019ac84 as the canonical package/NSIS owner and existing Account/Auth/Secrets owners for credentials; all 25 workflows were content-scanned and no Windows electron-builder/NSIS/signing/install pipeline exists. Counters unknown=16,256 unread=16,231 omitted=0 responsibilities=138. Next strict root index 121 docs/web-proxy-plan.md@9c805e32d33e8e1ac6b0417b26242b4a09198bd9. Fresh child exact-head Actions required."
+    "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent ea8cf7b5abfac5ec5ec59bb06495975a9b4aa3d3/tree 5dca627d64a3b8d7285e0cdfe2905dd18f74b15c passed TDRP 39953873302 61/61 (authority 12500974554 sha256:25e993d6aa1ffb61e076963e558a34abecee61b0985dac2585808a1fd784ecb0; closure 12502420573 sha256:48c67de85f3e8068f1b1a07ba2f09c5f1eaeb52dfd79d2588e1ac469149fde28; reachability 12501563758 sha256:9d113c76cbe8cd220e5e740a63d6069a7f470cf37579c898982ecf3b0ee77b69) and Rust 39953873050 6/6 (artifact 12502220382 sha256:6c06bfd0be89d9b000774e47724719923887873e811f9194a09375a9f78d3e44). Strict121 docs/web-proxy-plan.md@9c805e32d33e8e1ac6b0417b26242b4a09198bd9 maps existing-owner-first to Host/network-worker, NetworkProxy/NetworkPolicy, Coordinator HTTPS/TLS and egress WebSocket; no Telegram MTProxy/WebView runtime or relay is introduced. Counters unknown=16,255 unread=16,230 omitted=0 responsibilities=139. Next strict122 docs/web-proxy-test-plan.md@aa5752bf7a9cf57bafd0489961f8fa49265d238b. Fresh child exact-head Actions required."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -378,7 +378,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Strict120 is Windows developer-build/toolchain/API-credential provenance mapped to existing Fabushi Rust/Electron/NSIS and Account/Auth/Secrets owners only. Source closure remains open with unknown=16,256 unread=16,231 omitted=0. Exact-head workflows validate Windows runtime behavior but no workflow packages/signs/installs the NSIS target; current packaged acceptance is macOS-only. Fresh child exact-head Actions and independent release acceptance remain required."
+    "note": "Strict121 maps WEB proxy network/transport/security responsibility to existing Fabushi network owners only; Telegram MTProxy/lib_webview/relay is not adopted. Source closure remains open with unknown=16,255 unread=16,230 omitted=0. Fresh child exact-head Actions and independent release acceptance remain required."
   },
   "baseline_identity_evidence": {
     "status": "pending-current-head-revalidation",
@@ -1827,5 +1827,5 @@
     "baseline_identity_accepted": false,
     "source_closure_ready": false
   },
-  "target_commit": "56ffe86edf90a9e246b0be2881a7597dd004de48"
+  "target_commit": "ea8cf7b5abfac5ec5ec59bb06495975a9b4aa3d3"
 }

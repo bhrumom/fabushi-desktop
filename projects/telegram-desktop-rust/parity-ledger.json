@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "56ffe86edf90a9e246b0be2881a7597dd004de48",
+  "target_commit": "ea8cf7b5abfac5ec5ec59bb06495975a9b4aa3d3",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16256,
-    "unread": 16231,
+    "unknown": 16255,
+    "unread": 16230,
     "omitted": 0,
-    "responsibilities_total": 138,
+    "responsibilities_total": 139,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -37090,6 +37090,358 @@
       "license_and_provenance": "Exact upstream Windows build document, toolchain history and dependent preparation/configuration scripts are retained as build/source provenance only. Telegram api_id/api_hash and Visual Studio/CMake details are not promoted into Fabushi identity or shipping authority. Fabushi's existing Rust/Electron/NSIS configuration and Account/Auth/Secrets owners remain canonical; missing exact-head Windows package/sign/install evidence prevents release promotion.",
       "reviewer": null,
       "notes": "Strict index 120 closes only docs/building-win.md as Windows developer-build/toolchain/API-credential provenance mapped to existing Fabushi build/package/auth owners. Windows runtime tests are green at the parent exact head, but no exact-head workflow packages/signs/installs NSIS and existing packaged acceptance is currently wired to macOS only. Counters become unknown=16,256 unread=16,231 omitted=0 responsibilities=138. Next strict root index 121 docs/web-proxy-plan.md@9c805e32d33e8e1ac6b0417b26242b4a09198bd9 (34,990 bytes). Fresh child exact-head TDRP/Rust Actions required."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "docs/web-proxy-plan.md",
+      "source_blob_sha": "9c805e32d33e8e1ac6b0417b26242b4a09198bd9",
+      "source_kind": "web_proxy_network_security_design_documentation",
+      "module_id": "tdesktop.root.docs.web_proxy_plan",
+      "responsibility_id": "TDRP-R9-UPSTREAM-WEB-PROXY-NETWORK-SECURITY-PROVENANCE-001",
+      "source_symbols": [
+        "MTP::ProxyData::Type::Web",
+        "WebProxySocket",
+        "WebProxy::Transport",
+        "HELLO / WELCOME",
+        "OPEN / DATA / CLOSE / WINDOW / PING / PONG",
+        "4 MiB per-stream window",
+        "WindowMode::Hidden",
+        "restrictedOrigin",
+        "http://127.0.0.1:<port>",
+        "HMAC-SHA256",
+        "tg://webproxy"
+      ],
+      "capability_ids": [
+        "CAP-NETWORK-PROXY-TRANSPORT-LIFECYCLE",
+        "CAP-BOUNDED-BYTE-STREAM-BACKPRESSURE",
+        "CAP-HTTPS-WEBSOCKET-TRANSPORT",
+        "CAP-NETWORK-POLICY-FAIL-CLOSED",
+        "CAP-PROXY-CAPABILITY-SECRET-SEPARATION",
+        "CAP-EXPLICIT-FALLBACK-LIFECYCLE",
+        "CAP-RETRY-HEALTH-RECOVERY",
+        "CAP-NETWORK-SERVICE-DEPENDENCY-EVIDENCE"
+      ],
+      "dependency_ids": [
+        "docs/web-proxy-test-plan.md@aa5752bf7a9cf57bafd0489961f8fa49265d238b",
+        "docs/specs/fdn-001-host-network-enrollment-owner.md@d11fa87ad937a5decf7d4dd5089243a617f207bd",
+        "docs/specs/fdn-001-tsnet-network-worker.md@9790cde251b2276fc682cac875c8f8b78aace1bb",
+        "source/host/src/network_worker_process.rs@2fe8c798c25df0e281d6319b48db45bf7bf544fe",
+        "source/fabushi-network-worker/protocol.go@b7e41b1847b039cbb01f4390b41c905a72dd8cf2",
+        "source/node-agent-coordinator/src/gateway/http_transport.rs@512ac2ad1105ae74d04df635dd466e99d9756",
+        "source/shared/node/egress-tunnel/websocket-client.ts@1422157cbebe6231d7aa58db56b7e50c02f2c6ea",
+        "source/mahayana/codex-rs/core/src/network_proxy_loader.rs@049f55c40da4d0ea0a789a83436cddc86167f6ea",
+        "source/mahayana/codex-rs/network-proxy/src/lib.rs@753a0b0f4e3907417539a4d88c6c09790a033829",
+        "source/mahayana/codex-rs/network-proxy/src/config.rs@3461c696acb52f84fe224ed2faf6064e258b3a53",
+        "source/mahayana/codex-rs/network-proxy/src/network_policy.rs@05d9f06944fec58a110e1522e93323afa66c23d1",
+        "source/mahayana/codex-rs/network-proxy/src/upstream.rs@5d36706ffb651edc477e7c4d04f256007b51f508",
+        "source/mahayana/codex-rs/network-proxy/src/connect_policy.rs@ed0e56f733a845d444293b624ad2b77538cd8f62",
+        "projects/fabushi-communication-platform/quality/plans/security-privacy-test-plan.md@f6d6672988d46c06152f4e2f5ff585fecc424141"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-root-docs-web-proxy-plan-network-security-complete-read.md",
+      "behavior_contract": "Retain WEB proxy as transport/security provenance: canonical endpoint validation, bounded multiplexed streams, lifecycle/reconnect, retries/health deadlines, backpressure, strict loopback/origin authentication, capability/secret separation, TLS/WebSocket boundaries and fail-closed service dependency. Map source-neutral responsibility to Fabushi Host/network-worker, canonical NetworkProxy/NetworkPolicy, Coordinator HTTPS/TLS and production egress WebSocket; never create a Telegram WEB/MTProto/WebView runtime.",
+      "state_machine": "Upstream WEB: Idle -> Connecting -> Connected or WaitingForBrowser -> explicit Open browser -> Connecting -> Connected, with bounded retry/backoff and reconnect. Fabushi mapping: account/device enrollment -> Host-supervised worker/private stream -> policy/TLS/WebSocket transport -> bounded failure/recovery -> account switch/logout fencing; Telegram-only relay/WebView states remain provenance.",
+      "side_effects": [
+        "Upstream may activate one hidden WebView carrier and multiplex streams.",
+        "Fallback may bind IPv4 loopback only after explicit request.",
+        "Raw secret stays out of hosted JavaScript; only a derived HMAC capability crosses the bridge.",
+        "Fabushi existing owners already provide bounded private streams, network policy, TLS and WebSocket transport.",
+        "This publication changes only TDRP evidence/accounting."
+      ],
+      "failure_cases": [
+        "parallel Telegram WEB/MTProxy/WebView runtime",
+        "raw credentials exposed to renderer/URLs/logs",
+        "automatic fallback browser/listener",
+        "unbounded queues/windows/deadlines",
+        "local target bypasses canonical policy",
+        "reachability treated as authorization",
+        "hosted relay marked implemented without a real Fabushi owner/E2E",
+        "PR/main/upstream/source drift"
+      ],
+      "ui_disposition": "Telegram WEB proxy radio/editor/tg:// links and Telegram fallback confirmation are not copied. Any future Fabushi proxy controls must extend canonical Settings/Permissions and components.",
+      "non_ui_responsibilities": [
+        "transport lifecycle/reconnect",
+        "endpoint/host validation",
+        "HTTPS/TLS/WebSocket boundaries",
+        "multiplexing/stream identity",
+        "flow control/queue limits",
+        "timeouts/health/backoff",
+        "explicit fallback/loopback authentication",
+        "capability derivation/secret non-disclosure",
+        "origin/request restrictions",
+        "account/device generation fencing",
+        "policy-before-reachability",
+        "service deployment/real-E2E evidence"
+      ],
+      "platform_delta": "Telegram tunnels MTProxy through Qt/lib_webview and a hosted HTTPS relay. Fabushi already has source-neutral network responsibilities across Rust Host + Go network worker, Rust NetworkProxy/NetworkPolicy, Coordinator rustls HTTPS and Electron ws@8 egress. No Telegram-style web_proxy transport owner exists in current Fabushi; unrelated Computer/WebAuthn WebViews are not generic network owners.",
+      "existing_owner_candidates": [
+        "Desktop Rust Host + fabushi-network-worker (selected)",
+        "Rust NetworkProxy/NetworkPolicy (selected)",
+        "Coordinator HTTPS/rustls transport (selected)",
+        "Electron egress ws@8 client (selected)",
+        "canonical Settings/Permissions if future UI required",
+        "Computer/WebAuthn WebViews (rejected unrelated)",
+        "new Telegram WEB/MTProxy/WebView runtime (rejected)"
+      ],
+      "existing_owner": "Desktop Host/network-worker lifecycle + canonical Rust NetworkProxy/NetworkPolicy + Coordinator HTTPS/TLS + Electron egress WebSocket",
+      "rejected_existing_owners": [
+        "Computer VNC webview",
+        "Host WebAuthn proxy",
+        "Telegram MTProto/WebProxySocket/lib_webview retained runtime",
+        "second account/session/network permission authority",
+        "fabricated hosted relay/mock WebView"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "source/host/src/network_worker_process.rs",
+        "source/fabushi-network-worker/protocol.go",
+        "source/node-agent-coordinator/src/gateway/http_transport.rs",
+        "source/shared/node/egress-tunnel/websocket-client.ts",
+        "source/mahayana/codex-rs/core/src/network_proxy_loader.rs",
+        "source/mahayana/codex-rs/network-proxy/src/lib.rs",
+        "source/mahayana/codex-rs/network-proxy/src/config.rs",
+        "source/mahayana/codex-rs/network-proxy/src/network_policy.rs",
+        "source/mahayana/codex-rs/network-proxy/src/upstream.rs",
+        "source/mahayana/codex-rs/network-proxy/src/connect_policy.rs"
+      ],
+      "fabushi_target_symbols": [
+        "NETWORK_WORKER_START_TIMEOUT_MS",
+        "stream_dial",
+        "maxStreamChunkBytes",
+        "maxStreamSessions",
+        "controlUrl must be an absolute HTTPS URL",
+        "GatewayHttpEndpoint",
+        "RootCertStore",
+        "createWebSocket",
+        "build_network_proxy_state",
+        "NetworkProxyBuilder",
+        "NetworkProxyConfig",
+        "NetworkProtocol",
+        "HTTPS_PROXY",
+        "TargetCheckedTcpConnector",
+        "network target rejected by policy"
+      ],
+      "target_language": "Existing Rust/Go/TypeScript owners; Telegram C++/Qt/WebView remains provenance",
+      "language_rationale": "Applicable behavior already has source-neutral Fabushi owners; no C++/Qt sidecar, FFI wrapper, Telegram provider or second network runtime is warranted.",
+      "command_event_contracts": [
+        "account/device enrollment -> Host NetworkWorkerProcess -> private stdio -> bounded stream operations",
+        "network request -> build_network_proxy_state -> NetworkProxy/NetworkPolicy -> TargetCheckedTcpConnector -> approved route",
+        "Coordinator HTTPS -> timeout -> rustls roots -> bounded response",
+        "Electron egress -> createWebSocket -> ws@8",
+        "account switch/logout -> stop old generation",
+        "missing service/evidence -> mapped-open"
+      ],
+      "state_owner": "Host owns account/device network generation; network worker owns private node state; NetworkProxyState owns sandbox proxy policy/config; Coordinator owns gateway endpoint/TLS. No WEB-proxy store is added.",
+      "lifecycle_owner": "Host supervises worker generation; NetworkProxy owns policy/config lifetime; Coordinator/electron egress own transports. Telegram hidden-WebView/browser fallback remains provenance unless independently required.",
+      "persistence_and_restart": "Worker state remains encrypted/account-fenced; proxy config follows trusted layers; no MTProxy secret/bridge capability/Telegram relay session is persisted.",
+      "concurrency_and_cancellation": "Bounded worker requests/timeouts/session caps remain canonical; Telegram worker/WebView thread ordering is retained only as lifecycle-safety provenance.",
+      "security_boundary": "Authorization precedes exposure/reachability; secrets stay out of renderer/URLs/logs; TLS and endpoint validation are mandatory; local targets require policy; transport never substitutes for account/device/tool authorization.",
+      "network_service_dependencies": [
+        "Fabushi account/device network enrollment",
+        "packaged network worker/tsnet",
+        "canonical NetworkProxy policy",
+        "Coordinator HTTPS/TLS where applicable",
+        "Electron egress WebSocket where applicable",
+        "GitHub Actions exact-head evidence",
+        "no Telegram hosted WEB relay dependency"
+      ],
+      "service_owner": "Existing Host/network enrollment, network-worker, NetworkProxy/NetworkPolicy, Coordinator gateway and egress owners; no Telegram relay owner claimed",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "network-security-mapped-telegram-web-relay-not-adopted-service-e2e-open",
+      "blockers": [
+        "recursive source disposition open",
+        "independent release acceptance open",
+        "strict121 child exact-head TDRP/Rust required",
+        "no Fabushi requirement justifies Telegram hidden WebView relay itself",
+        "future server-backed proxy needs a real owner and real E2E"
+      ],
+      "production_entrypoints": [
+        "source/host/src/network_worker_process.rs",
+        "source/fabushi-network-worker/protocol.go",
+        "source/mahayana/codex-rs/core/src/network_proxy_loader.rs::build_network_proxy_state",
+        "source/mahayana/codex-rs/network-proxy/src/lib.rs::NetworkProxyBuilder",
+        "source/mahayana/codex-rs/network-proxy/src/network_policy.rs::NetworkProtocol",
+        "source/mahayana/codex-rs/network-proxy/src/upstream.rs",
+        "source/node-agent-coordinator/src/gateway/http_transport.rs::GatewayHttpEndpoint",
+        "source/shared/node/egress-tunnel/websocket-client.ts::createWebSocket"
+      ],
+      "production_evidence": [
+        "path:source/host/src/network_worker_process.rs",
+        "path:source/fabushi-network-worker/protocol.go",
+        "path:source/node-agent-coordinator/src/gateway/http_transport.rs",
+        "path:source/shared/node/egress-tunnel/websocket-client.ts",
+        "path:source/mahayana/codex-rs/core/src/network_proxy_loader.rs",
+        "path:source/mahayana/codex-rs/network-proxy/src/lib.rs",
+        "path:source/mahayana/codex-rs/network-proxy/src/config.rs",
+        "path:source/mahayana/codex-rs/network-proxy/src/network_policy.rs",
+        "path:source/mahayana/codex-rs/network-proxy/src/upstream.rs",
+        "path:source/mahayana/codex-rs/network-proxy/src/connect_policy.rs"
+      ],
+      "test_evidence": [
+        "source/fabushi-network-worker/protocol_test.go@1b6115771bd8922c828d474a47c161680eded3fd",
+        "source/host/tests/network_worker_process_contract.rs@9d9a1101949092f49e7774a2bdb718b6676abbec",
+        "source/host/tests/network_enrollment_owner_contract.rs@087f3831f946f8bad4360b7cb63f29dee787de75",
+        "source/mahayana/codex-rs/core/src/network_proxy_loader_tests.rs@f2758e8946132c6899996d190ea3e482883896bc",
+        "source/mahayana/codex-rs/network-proxy/src/upstream_tests.rs@85f5da9017b708dda5728ab6daa8975d78061409",
+        "source/node-agent-coordinator/tests/gateway_https.rs@6fc868c108d5600df239f4572d5cf438e24e5120",
+        "parent TDRP 39953873302 61/61; authority 12500974554 sha256:25e993d6aa1ffb61e076963e558a34abecee61b0985dac2585808a1fd784ecb0; closure 12502420573 sha256:48c67de85f3e8068f1b1a07ba2f09c5f1eaeb52dfd79d2588e1ac469149fde28; reachability 12501563758 sha256:9d113c76cbe8cd220e5e740a63d6069a7f470cf37579c898982ecf3b0ee77b69",
+        "parent Rust 39953873050 6/6; artifact 12502220382 sha256:6c06bfd0be89d9b000774e47724719923887873e811f9194a09375a9f78d3e44"
+      ],
+      "target_commit": "ea8cf7b5abfac5ec5ec59bb06495975a9b4aa3d3",
+      "workflow_run": 39953873302,
+      "run_attempt": 1,
+      "job": "61/61 success",
+      "artifact_id": 12500974554,
+      "artifact_digest": "sha256:25e993d6aa1ffb61e076963e558a34abecee61b0985dac2585808a1fd784ecb0",
+      "composition_root": "Fabushi canonical account/network/transport/security architecture",
+      "composition_slot": "network transport/proxy policy/bounded streams/security evidence",
+      "capability_component": "Host/network-worker + NetworkProxy/NetworkPolicy + Coordinator HTTPS/TLS + egress WebSocket",
+      "variation_axes": [
+        "private network vs sandbox proxy",
+        "direct vs approved upstream proxy",
+        "HTTPS/TLS vs WebSocket",
+        "public vs policy-gated local target",
+        "normal vs explicit fallback/recovery",
+        "bounded success vs timeout/overflow",
+        "provenance vs real service evidence"
+      ],
+      "shared_owner_contracts": [
+        "Host generation fencing",
+        "network-worker bounded streams",
+        "NetworkProxy trusted constraints",
+        "Coordinator rustls HTTPS",
+        "Electron ws@8",
+        "FQT security/privacy",
+        "exact-head Actions"
+      ],
+      "duplicate_root_check": "No TelegramWebProxy, TelegramRuntime, MTProto sidecar, second NetworkProxy, second permission/account/session authority, fabricated relay or synthetic pass.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Settings projection only if independently required",
+      "primary_navigation_target": "Settings/account if future product-required",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "network/security configuration and explicit fallback only",
+      "detail_section": "Not applicable",
+      "capability_surface": "canonical network/permission/settings; no Telegram WEB UI",
+      "route_contract": "Fabushi auth -> policy -> existing transport owner -> bounded service -> recovery",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Future Settings projection must use canonical responsive patterns.",
+      "accessibility_contract": "Future explicit fallback/control must use canonical accessible controls.",
+      "keyboard_contract": "No current UI port.",
+      "state_continuity_contract": "Account switch/logout fences old network generation; transport loss is bounded; source/owner/workflow/service drift requires reconciliation.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Current Fabushi canonical design system; no new visual surface",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-UPSTREAM-WEB-PROXY-NETWORK-SECURITY-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-WEB-PROXY-EXACT-SOURCE-001",
+        "ORA-TDRP-WEB-PROXY-EXISTING-NETWORK-OWNER-001",
+        "ORA-TDRP-WEB-PROXY-BOUNDS-001",
+        "ORA-TDRP-WEB-PROXY-SECURITY-BOUNDARY-001",
+        "ORA-TDRP-WEB-PROXY-SERVICE-FAIL-CLOSED-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-WEB-PROXY-NO-TELEGRAM-RUNTIME-001",
+        "INV-TDRP-WEB-PROXY-NO-SECRET-TO-WEB-001",
+        "INV-TDRP-WEB-PROXY-EXPLICIT-FALLBACK-001",
+        "INV-TDRP-WEB-PROXY-BOUNDED-QUEUES-001",
+        "INV-TDRP-WEB-PROXY-POLICY-BEFORE-REACHABILITY-001",
+        "INV-TDRP-WEB-PROXY-ACTIONS-ONLY-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-WEB-PROXY-ENDPOINT-BOUNDS-001",
+        "UNIT-TDRP-WEB-PROXY-POLICY-001"
+      ],
+      "property_state_case_ids": [
+        "PROP-TDRP-WEB-PROXY-BOUNDED-STATE-001"
+      ],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-WEB-PROXY-EXACT-SOURCE-001",
+        "CONTRACT-TDRP-WEB-PROXY-EXISTING-OWNER-001",
+        "CONTRACT-TDRP-WEB-PROXY-SERVICE-EVIDENCE-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-WEB-PROXY-CANONICAL-NETWORK-COMPOSITION-001"
+      ],
+      "functional_e2e_case_ids": [
+        "E2E-TDRP-WEB-PROXY-REAL-SERVICE-OPEN-001"
+      ],
+      "temporal_case_ids": [
+        "TEMP-TDRP-WEB-PROXY-ACCOUNT-SWITCH-001",
+        "TEMP-TDRP-WEB-PROXY-RETRY-HEALTH-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-WEB-PROXY-TIMEOUT-OVERFLOW-001",
+        "FAULT-TDRP-WEB-PROXY-SERVICE-ABSENT-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [
+        "PERF-TDRP-WEB-PROXY-BOUNDED-BUFFERS-001"
+      ],
+      "soak_case_ids": [
+        "SOAK-TDRP-WEB-PROXY-RECONNECT-OPEN-001"
+      ],
+      "security_case_ids": [
+        "SEC-TDRP-WEB-PROXY-NO-SECRET-EXPOSURE-001",
+        "SEC-TDRP-WEB-PROXY-POLICY-BEFORE-REACHABILITY-001",
+        "SEC-TDRP-WEB-PROXY-LOOPBACK-BOUNDARY-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-WEB-PROXY-NO-SECOND-NETWORK-ROOT-001",
+        "REG-TDRP-WEB-PROXY-BOT-NETWORK-NO-REGRESSION-001"
+      ],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-WEB-PROXY-SERVICE-OWNER-BOUNDARY-001"
+      ],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-SECURITY",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "GitHub Actions exact-head"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact upstream WEB proxy document retained as network/security design provenance. Applicable source-neutral behavior maps existing owners. Telegram MTProxy/hosted relay/lib_webview are not imported runtime dependencies.",
+      "reviewer": null,
+      "notes": "Strict121 closes docs/web-proxy-plan.md (34,990 bytes). Parent exact head passed TDRP 61/61 and Rust 6/6. Counters: unknown=16,255 unread=16,230 omitted=0 responsibilities=139. Next strict122 docs/web-proxy-test-plan.md@aa5752bf7a9cf57bafd0489961f8fa49265d238b. Fresh child exact-head Actions required."
     }
   ]
 }
