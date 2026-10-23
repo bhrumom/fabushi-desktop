@@ -361,10 +361,10 @@
   "coverage": {
     "root_source_entries_total": 6893,
     "recursive_source_entries_total": 16379,
-    "unknown_minimum": 16259,
-    "unread_minimum": 16234,
+    "unknown_minimum": 16258,
+    "unread_minimum": 16233,
     "omitted_known": 0,
-    "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent a8cc41d290561b36368e06c83d913c5ac0ada4f8/tree 1c274243afd9866f7e5caf71b85c8a05be7eab6f passed TDRP 39943268249 at 61/61 and Rust 39943268259 at 6/6. Strict117 docs/building-linux.md@fbdf25355734f35617849224da106f1b9fafb3c9 is retained as Linux developer-build/source-acquisition/credential/editor-environment provenance under existing Fabushi package and exact-head Actions owners. desktop/package.json declares AppImage/deb, but all 25 current workflows were scanned and none performs Linux electron-builder/AppImage/deb packaging; packaged Linux acceptance remains open. Telegram Docker/Poetry/VS Code/API-credential details are not Fabushi runtime or release authority. Counters unknown=16,259 unread=16,234 omitted=0 responsibilities=135. Next strict root index 118 docs/building-mac.md@b8c6b6bae95b87f94d090fc73acd774d6307ef12. Fresh child exact-head Actions required."
+    "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 9c00291985cb3d1216fc26984e769c7dc0dd3b73/tree b24b3dfbd1a1d64af847bd3a002034123c560319 passed TDRP 39945908779 at 61/61 (authority 12497274631 sha256:68fed234157ce70ae51c0b7feca763a7b06c4d55d134052882ac13eccc5e8536; closure 12498596674 sha256:8f85766c29986e73d1fe86a807a0f9abd723716858285e3524c2f1ebbece7d79; reachability 12498507220 sha256:25229e1e889b03c2f38c3a87aabe1c5f92f2bf459268f1cd383b9911363c6ad7) and Rust 39945908761 at 6/6 (artifact 12498097968 sha256:84c9ee43d0af2bbcdcdc8e762bb36461bd489ac8c32440c82c78fd363ca38ec2). Strict118 docs/building-mac.md@b8c6b6bae95b87f94d090fc73acd774d6307ef12 is retained as macOS developer-build/toolchain/credential provenance under existing Fabushi package/sign/notary and exact-source packaged-acceptance owners. An exact-head scan of all 25 workflows found release-macos-main.yml as the sole certificate/electron-builder/notary shipping pipeline; apple-ticket-validation-ci.yml is validator-test-only and miniapp-packaged-iteration.yml is an existing-signed-candidate consumer only. Telegram Homebrew/Xcode/API-credential/local Xcode details are not Fabushi runtime or release authority. Counters unknown=16,258 unread=16,233 omitted=0 responsibilities=136. Next strict root index 119 docs/building-mas.md@da7be145bb0a9cbd3c322fa7efe0c1f5729ae1bf. Fresh child exact-head Actions required."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -378,7 +378,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Strict117 is Linux developer-build/documentation provenance only. Source closure remains open with unknown=16,259 unread=16,234 omitted=0. Current AppImage/deb configuration does not establish Linux packaged artifact, install, signing, publication or release acceptance; all executable FBCP/TDRP evidence remains exact-head GitHub Actions only."
+    "note": "Strict118 is macOS developer-build/toolchain/credential provenance only. Source closure remains open with unknown=16,258 unread=16,233 omitted=0. Existing signed/notarized package Actions ownership does not by itself establish strict118 child exact-head evidence or independent release ACCEPT; local Xcode/Homebrew/API-credential instructions never become Fabushi release authority."
   },
   "baseline_identity_evidence": {
     "status": "pending-current-head-revalidation",
@@ -1827,5 +1827,5 @@
     "baseline_identity_accepted": false,
     "source_closure_ready": false
   },
-  "target_commit": "a8cc41d290561b36368e06c83d913c5ac0ada4f8"
+  "target_commit": "9c00291985cb3d1216fc26984e769c7dc0dd3b73"
 }

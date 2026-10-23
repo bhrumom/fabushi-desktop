@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "a8cc41d290561b36368e06c83d913c5ac0ada4f8",
+  "target_commit": "9c00291985cb3d1216fc26984e769c7dc0dd3b73",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16259,
-    "unread": 16234,
+    "unknown": 16258,
+    "unread": 16233,
     "omitted": 0,
-    "responsibilities_total": 135,
+    "responsibilities_total": 136,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -36124,6 +36124,319 @@
       "license_and_provenance": "Exact upstream build-document and dependent build scripts/configuration are retained as source/build provenance. Telegram image names, Docker/Poetry/editor instructions, host paths and API credentials are source-specific and are not promoted to Fabushi runtime/package/release authority.",
       "reviewer": null,
       "notes": "Strict index 117 closes only docs/building-linux.md as Linux developer-build/documentation provenance. Counters become unknown=16,259 unread=16,234 omitted=0 responsibilities=135. Current Fabushi AppImage/deb configuration exists but no current Actions workflow packages Linux artifacts, so Linux packaged acceptance remains open. Next strict root index 118 docs/building-mac.md@b8c6b6bae95b87f94d090fc73acd774d6307ef12 (1,500 bytes). Fresh child exact-head TDRP/Rust Actions required."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "docs/building-mac.md",
+      "source_blob_sha": "b8c6b6bae95b87f94d090fc73acd774d6307ef12",
+      "source_kind": "macos_build_instructions_documentation",
+      "module_id": "tdesktop.root.docs.building_mac",
+      "responsibility_id": "TDRP-R9-UPSTREAM-BUILDING-MAC-BUILD-INSTRUCTIONS-PROVENANCE-001",
+      "source_symbols": [
+        "Build instructions for macOS",
+        "approximately 55 GB free space",
+        "Homebrew install and build-tool package set",
+        "sudo xcode-select -s /Applications/Xcode.app/Contents/Developer",
+        "git clone --recursive https://github.com/telegramdesktop/tdesktop.git",
+        "./tdesktop/Telegram/build/prepare/mac.sh",
+        "./configure.sh -D TDESKTOP_API_ID=... -D TDESKTOP_API_HASH=...",
+        "out/Telegram.xcodeproj Debug / Release"
+      ],
+      "capability_ids": [
+        "CAP-MACOS-DEVELOPER-BUILD-PROVENANCE",
+        "CAP-RECURSIVE-SOURCE-BUILD-INPUT-BOUNDARY",
+        "CAP-MACOS-PACKAGE-SIGNING-NOTARIZATION",
+        "CAP-BUILD-CREDENTIAL-BOUNDARY",
+        "CAP-EXACT-HEAD-EVIDENCE-BOUNDARY"
+      ],
+      "dependency_ids": [
+        "Telegram/build/prepare/mac.sh@82810b6cd5a13c78233232bee38602dcf1707de4",
+        "Telegram/build/prepare/prepare.py@a9f3dd2d9e4020df958ab5af942376177d66c78b",
+        "Telegram/configure.sh@c550d988cff5fe3047311cc330aeee943ee328e5",
+        "projects/telegram-desktop-rust/dossiers/macos-ci-build-verification-workflow-complete-read.md@c24697fbef75f298b4712f8b80a7fc45413a2701",
+        "projects/telegram-desktop-rust/dossiers/macos-packaged-ci-workflow-complete-read.md@54b2aef983b47e8eedd1491981b1f1f138e9acc7",
+        "projects/telegram-desktop-rust/dossiers/upstream-root-docs-api-credentials-security-provisioning-complete-read.md@d306ded635eaf1f075f45c10fa6ed3139f757956",
+        "desktop/package.json@3d500622ce9b26e3452d98d0c4a7e7dcc019ac84",
+        ".github/workflows/release-macos-main.yml@b0a3a4d5503e6104c083f85e31475523a2b30643",
+        "desktop/scripts/notarize-after-sign.cjs@5f140c6ff8587b4969e1611ec9030a8c5dc5a6f1",
+        ".github/scripts/validate-apple-ticket.mjs@8e0279b3cf9e6447f54d2db59d51f7c538f2f593",
+        ".github/workflows/apple-ticket-validation-ci.yml@87f428cce0785d69ed64bc60dae170e02ebe84fc",
+        ".github/workflows/miniapp-packaged-iteration.yml@1cfcf7aa9250c4f2b3b9405c6cc42ff4d23b8b37"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-root-docs-building-mac-build-instructions-complete-read.md",
+      "behavior_contract": "Retain Telegram's macOS developer-build instructions as exact build-environment, toolchain, recursive-source, credential-injection and local Xcode-output provenance. Fabushi does not import Telegram's Homebrew/Xcode/local build procedure, API credentials or C++ build tree as shipping authority. Existing Fabushi macOS packaging remains owned by desktop/package.json plus the exact-source release-macos-main Actions pipeline and its notarization/ticket validators. The signed/notarized shipping workflow remains fail-closed and does not by itself create release ACCEPT.",
+      "state_machine": "choose external BuildPath -> provision upstream-only Telegram API credentials -> install Homebrew/build tools -> select Xcode developer directory -> recursively clone accepted upstream -> prepare/mac.sh -> prepare.py resolves mac toolchain/SDK/deployment target and universal dependencies -> configure API parameters -> generate/open out/Telegram.xcodeproj -> local Debug/Release build; Fabushi maps applicable package responsibilities to existing package/sign/notary owners -> exact-source Actions package -> signed/notarized artifact validation -> installed packaged acceptance -> separate independent release acceptance",
+      "side_effects": [
+        "Upstream procedure installs Homebrew and build tools on a developer Mac.",
+        "Upstream prepare.py builds and persists large Libraries state, including universal x86_64/arm64 dependencies and macos_toolchain.json fencing.",
+        "Upstream procedure selects Xcode/SDK/deployment target and creates out/Telegram.xcodeproj/local output.",
+        "Upstream procedure injects Telegram API application credentials into configure-time state.",
+        "Fabushi publication changes only TDRP evidence/accounting; it does not run a local Mac build, install Homebrew/Xcode tooling, consume Telegram credentials, sign a new artifact, notarize a new artifact or create a release."
+      ],
+      "failure_cases": [
+        "recursive checkout or submodule materialization is incomplete",
+        "Homebrew installer/packages, Xcode, SDK or selected toolchain drift from reviewed provenance",
+        "prepared Libraries state was built for an incompatible toolchain purpose or architecture set",
+        "Telegram api_id/api_hash are copied into Fabushi production identity/auth",
+        "local Xcode Debug/Release output is treated as Fabushi exact-head evidence",
+        "a second macOS build, signing, notarization or release owner is introduced despite existing canonical owners",
+        "certificate/notary credentials are absent or invalid but packaging is treated as passing",
+        "Apple notarization/ticket/codesign/spctl validation fails or is skipped",
+        "an already-signed iteration consumer is mistaken for the canonical packager",
+        "stale PR/main/upstream or owner lease is published"
+      ],
+      "ui_disposition": "Build/developer documentation only. No Telegram developer UI or Xcode project UI is ported into Fabushi.",
+      "non_ui_responsibilities": [
+        "recursive source acquisition provenance",
+        "macOS developer toolchain and SDK selection provenance",
+        "large dependency-library preparation and architecture provenance",
+        "configure-time upstream credential boundary",
+        "local Debug/Release output boundary",
+        "Fabushi macOS package metadata ownership",
+        "Developer ID signing and notarization ownership",
+        "Apple ticket/codesign/Gatekeeper validation",
+        "installed signed packaged acceptance boundary",
+        "exact-head Actions evidence boundary"
+      ],
+      "platform_delta": "Telegram documents a local C++/Xcode development build that can consume roughly 55 GB and uses Homebrew/Xcode plus Telegram API credentials. Fabushi already owns a source-neutral Electron/Rust macOS package with Developer ID signing, notarization, ticket validation, byte-bound installed candidate checks and packaged acceptance in GitHub Actions. Upstream local developer ergonomics remain provenance; they do not replace Fabushi's shipping package/release architecture.",
+      "existing_owner_candidates": [
+        "desktop/package.json mac dmg/zip, hardenedRuntime, entitlements, forceCodeSigning and afterSign configuration (selected package metadata owner)",
+        ".github/workflows/release-macos-main.yml exact-source Developer ID signing, notarization, installed-candidate and packaged acceptance pipeline (selected shipping workflow owner)",
+        "desktop/scripts/notarize-after-sign.cjs canonical nested signature restoration and app notarization (selected signing/notary adapter)",
+        ".github/scripts/validate-apple-ticket.mjs bounded ticket staple/validation (selected ticket validator)",
+        ".github/workflows/apple-ticket-validation-ci.yml helper-unit-test adapter only",
+        ".github/workflows/miniapp-packaged-iteration.yml existing-signed-candidate consumer only",
+        "existing AGENTS/FQT exact-head evidence and release acceptance governance",
+        "new Telegram/macOS build runtime, signer, notary or release owner (rejected)"
+      ],
+      "existing_owner": "desktop/package.json mac package metadata + release-macos-main.yml exact-source signed/notarized package pipeline + notarize-after-sign.cjs / validate-apple-ticket.mjs validation adapters + existing repository/FQT exact-head and release governance",
+      "rejected_existing_owners": [
+        "Telegram Homebrew/Xcode/prepare/mac local build is upstream developer provenance, not a Fabushi shipping runtime.",
+        "Telegram api_id/api_hash are upstream application credentials and do not become Fabushi Account/Auth or signing secrets.",
+        "apple-ticket-validation-ci.yml tests the validator but does not package or notarize a shipping candidate.",
+        "miniapp-packaged-iteration.yml consumes a previously accepted signed binary and does not create a second package/sign/notary owner.",
+        "A second macOS package/signing/notarization pipeline would duplicate the current exact-source release-macos-main owner."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "desktop/package.json",
+        ".github/workflows/release-macos-main.yml",
+        "desktop/scripts/notarize-after-sign.cjs",
+        ".github/scripts/validate-apple-ticket.mjs"
+      ],
+      "fabushi_target_symbols": [
+        "build.mac.target=[dmg,zip]",
+        "build.mac.hardenedRuntime=true",
+        "build.mac.forceCodeSigning=true",
+        "build.afterSign=scripts/notarize-after-sign.cjs",
+        "Build, notarize, and publish macOS arm64",
+        "Package signed and notarized macOS installer",
+        "Notarize and staple DMG",
+        "Bind packaged candidate executable",
+        "Run real signed packaged acceptance",
+        "restoreCanonicalNestedSignatures",
+        "notarizeAfterSign",
+        "stapleAppleTicket",
+        "validateAppleTicket"
+      ],
+      "target_language": "Existing JSON package configuration + JavaScript signing/notary validators + GitHub Actions YAML package/evidence orchestration",
+      "language_rationale": "The upstream entry is developer build documentation, not reusable product runtime code. Applicable responsibilities map to existing Fabushi package/sign/notary/evidence owners; Telegram-specific Homebrew/Xcode/CMake/API-credential details remain provenance.",
+      "command_event_contracts": [
+        "recursive upstream clone -> reviewed source/build inputs",
+        "prepare/mac.sh -> prepare.py -> toolchain/SDK/deployment-target fenced dependency libraries",
+        "Telegram API credential parameters -> upstream-only configure state; never Fabushi identity/auth/signing authority",
+        "Fabushi exact source -> release-macos-main -> signed dmg/zip candidate",
+        "afterSign -> canonical nested signatures + app notarization/ticket validation",
+        "DMG notary submit -> Accepted -> staple/validate + codesign + spctl",
+        "signed candidate -> byte-exact installed /Applications copy -> codesign/ticket/Gatekeeper -> real packaged acceptance",
+        "package artifact -> separate immutable promotion / independent release acceptance"
+      ],
+      "state_owner": "Upstream local Libraries/Xcode/out state is non-authoritative developer state. Fabushi package metadata remains desktop/package.json; signed/notarized package state belongs to the exact source/run/artifact identity produced by release-macos-main and its existing validators.",
+      "lifecycle_owner": "Existing source/dependency governance -> exact-source GitHub Actions packaging -> Developer ID signing -> Apple notarization/ticket validation -> installed packaged acceptance -> immutable promotion -> independent release acceptance. TDRP owns only upstream-source disposition.",
+      "persistence_and_restart": "Upstream Homebrew/Xcode/Libraries/out are disposable local developer state. Fabushi durable package evidence is exact repository source plus Actions run/job/artifact/checksum identity. Signing/notary credentials remain ephemeral workflow secrets, not repository state.",
+      "concurrency_and_cancellation": "Upstream local documentation defines no canonical concurrency contract. Fabushi package workflow owns concurrency and cancellation; cancelled/in-progress signing, notary, package or acceptance runs never pass. Apple ticket operations use bounded retries and fail closed after exhaustion.",
+      "security_boundary": "Do not copy Telegram api_id/api_hash into Fabushi production. Developer ID certificates, Apple ID/app-specific passwords and App Store Connect keys stay in GitHub Actions secret/keychain boundaries. Notary/ticket/codesign/spctl failures remain blocking. Local workstation builds and Telegram toolchain state are never FBCP/TDRP evidence.",
+      "network_service_dependencies": [
+        "GitHub source/submodule transport for upstream provenance",
+        "Homebrew/package endpoints used by the upstream local developer procedure",
+        "Apple notarization/ticket services used only by the existing Fabushi shipping package workflow",
+        "GitHub Actions for exact-head executable/package evidence"
+      ],
+      "service_owner": "Existing repository build/package/evidence infrastructure and Apple platform validation boundary; no new Fabushi product service owner",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "build-documentation-provenance-equivalent",
+      "blockers": [
+        "Fresh strict118 child exact-head TDRP/Rust Actions are required after publication.",
+        "Recursive source disposition remains open.",
+        "Independent release acceptance remains open."
+      ],
+      "production_entrypoints": [
+        "desktop/package.json::build.mac / build.afterSign",
+        ".github/workflows/release-macos-main.yml::publish",
+        "desktop/scripts/notarize-after-sign.cjs::notarizeAfterSign",
+        ".github/scripts/validate-apple-ticket.mjs::stapleAppleTicket / validateAppleTicket"
+      ],
+      "production_evidence": [
+        "path:desktop/package.json",
+        "path:.github/workflows/release-macos-main.yml",
+        "path:desktop/scripts/notarize-after-sign.cjs",
+        "path:.github/scripts/validate-apple-ticket.mjs"
+      ],
+      "test_evidence": [
+        "docs/building-mac.md@b8c6b6bae95b87f94d090fc73acd774d6307ef12 was fully read at the accepted upstream commit; it documents approximately 55 GB free space, Homebrew/build-tool setup, Xcode selection, recursive clone, prepare/mac.sh, Telegram API credential configuration and Xcode Debug/Release output.",
+        "Telegram/build/prepare/mac.sh@82810b6cd5a13c78233232bee38602dcf1707de4 delegates to prepare.py@a9f3dd2d9e4020df958ab5af942376177d66c78b; the latter fences mac toolchain purpose/SDK/deployment target and prepares universal x86_64/arm64 dependencies, while configure.sh@c550d988cff5fe3047311cc330aeee943ee328e5 delegates to configure.py.",
+        "History review includes mac dependency scripting, Apple Silicon dependency repair, current Homebrew link/storage requirements and the 2026 minizip prepare.py move; these are build-environment provenance, not Fabushi shipping authority.",
+        "Current desktop/package.json@3d500622ce9b26e3452d98d0c4a7e7dcc019ac84 owns dmg/zip, hardened runtime, entitlements, forceCodeSigning and afterSign.",
+        "Current release-macos-main.yml@b0a3a4d5503e6104c083f85e31475523a2b30643 binds exact source, imports Developer ID credentials into an ephemeral keychain, packages with electron-builder --mac --arm64, requires Apple notarization Accepted, staples/validates tickets, verifies codesign/Gatekeeper, byte-binds an installed /Applications candidate and runs real signed packaged acceptance.",
+        "Current notarize-after-sign.cjs@5f140c6ff8587b4969e1611ec9030a8c5dc5a6f1 restores canonical nested signatures, reseals the app, submits app bytes to notarytool and fail-closes non-Accepted/ticket/codesign outcomes.",
+        "Current validate-apple-ticket.mjs@8e0279b3cf9e6447f54d2db59d51f7c538f2f593 bounds staple/validate retries and blocks after exhaustion.",
+        "All 25 exact-head workflow files were enumerated and scanned for certificate/electron-builder/notary/ticket/codesign/Gatekeeper ownership. release-macos-main.yml is the sole workflow that imports the macOS signing certificate, builds the package and submits notarization. apple-ticket-validation-ci.yml@87f428cce0785d69ed64bc60dae170e02ebe84fc only unit-tests the validator; miniapp-packaged-iteration.yml@1cfcf7aa9250c4f2b3b9405c6cc42ff4d23b8b37 only validates/iterates an existing signed candidate.",
+        "Parent exact-head TDRP run 39945908779 completed 61/61 success; authority 12497274631 sha256:68fed234157ce70ae51c0b7feca763a7b06c4d55d134052882ac13eccc5e8536; closure 12498596674 sha256:8f85766c29986e73d1fe86a807a0f9abd723716858285e3524c2f1ebbece7d79; reachability 12498507220 sha256:25229e1e889b03c2f38c3a87aabe1c5f92f2bf459268f1cd383b9911363c6ad7.",
+        "Parent exact-head Rust run 39945908761 completed 6/6 success; artifact 12498097968 sha256:84c9ee43d0af2bbcdcdc8e762bb36461bd489ac8c32440c82c78fd363ca38ec2.",
+        "Publication preflight: PR/ref remained 9c00291985cb3d1216fc26984e769c7dc0dd3b73/tree b24b3dfbd1a1d64af847bd3a002034123c560319; live main remained 7394f6dc7687f9b986ee5589d40aa680ce23b90a/tree fbeb0bb32d944d0c1053880c471fe5c52279f052; live upstream dev remained a7f453612f4896ac04d0007a36ab0d377e5bcbcf/tree c539eabfb05e7dcaa84821ac44c35cdfb6551ae5."
+      ],
+      "target_commit": "9c00291985cb3d1216fc26984e769c7dc0dd3b73",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi canonical build/package/evidence architecture",
+      "composition_slot": "macOS developer-build provenance and signed/notarized package boundary",
+      "capability_component": "Source-neutral macOS build-environment provenance + existing signed/notarized dmg/zip package pipeline + exact-head evidence",
+      "variation_axes": [
+        "upstream local Debug versus Release Xcode build",
+        "Homebrew/Xcode/SDK/toolchain/deployment-target drift",
+        "x86_64/arm64 dependency preparation",
+        "upstream Telegram credential provisioning versus Fabushi Account/Auth/signing secrets",
+        "local upstream output versus exact-source signed/notarized Fabushi package",
+        "package build versus installed acceptance versus independent release acceptance"
+      ],
+      "shared_owner_contracts": [
+        "desktop/package.json mac package metadata",
+        "release-macos-main exact-source package/sign/notary/installed acceptance",
+        "notarize-after-sign canonical signing/notary adapter",
+        "validate-apple-ticket fail-closed ticket validator",
+        "AGENTS exact-head Actions governance",
+        "FQT evidence/release acceptance",
+        "strict111 credential boundary"
+      ],
+      "duplicate_root_check": "No Telegram/macOS product runtime, second build system, second package metadata store, second signing/notarization owner, second credential owner, second release authority or local-build acceptance path is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository build/package provenance only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Existing macOS package configuration, signing/notarization validators and exact-source Actions package/evidence surfaces only",
+      "route_contract": "upstream recursive source -> local mac developer build inputs/output; Fabushi exact source -> canonical signed/notarized package Actions -> installed acceptance -> separate immutable promotion/release acceptance",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Changed source blob/history, prepare.py/toolchain behavior, Fabushi package/sign/notary owner, PR/ref/tree, main or upstream lease requires fresh reconciliation. Local upstream output, package config or stale signed bytes never upgrade into current-head release acceptance.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-UPSTREAM-BUILDING-MAC-BUILD-INSTRUCTIONS-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-BUILDING-MAC-EXACT-SOURCE-001",
+        "ORA-TDRP-BUILDING-MAC-EXISTING-PACKAGE-OWNER-001",
+        "ORA-TDRP-BUILDING-MAC-SIGNED-NOTARIZED-ACTIONS-001",
+        "ORA-TDRP-BUILDING-MAC-NO-LOCAL-EVIDENCE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-BUILDING-MAC-NO-TELEGRAM-CREDENTIAL-001",
+        "INV-TDRP-BUILDING-MAC-NO-SECOND-BUILD-RUNTIME-001",
+        "INV-TDRP-BUILDING-MAC-SIGNED-NOTARIZED-PACKAGE-OWNER-001",
+        "INV-TDRP-BUILDING-MAC-EXACT-HEAD-ACTIONS-ONLY-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-BUILDING-MAC-EXACT-SOURCE-001",
+        "CONTRACT-TDRP-BUILDING-MAC-CANONICAL-PACKAGE-OWNER-001",
+        "CONTRACT-TDRP-BUILDING-MAC-SIGNED-NOTARIZED-ACTIONS-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-BUILDING-MAC-UPSTREAM-DRIFT-001",
+        "TEMP-TDRP-BUILDING-MAC-TOOLCHAIN-DRIFT-001",
+        "TEMP-TDRP-BUILDING-MAC-PACKAGE-WORKFLOW-DRIFT-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-BUILDING-MAC-RECURSIVE-CHECKOUT-001",
+        "FAULT-TDRP-BUILDING-MAC-PREPARE-TOOLCHAIN-001",
+        "FAULT-TDRP-BUILDING-MAC-SIGNING-NOTARY-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-BUILDING-MAC-CREDENTIAL-SEPARATION-001",
+        "SEC-TDRP-BUILDING-MAC-SIGNING-SECRETS-001",
+        "SEC-TDRP-BUILDING-MAC-LOCAL-BUILD-NO-AUTHORITY-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-BUILDING-MAC-NO-TELEGRAM-BUILD-RUNTIME-001",
+        "REG-TDRP-BUILDING-MAC-NO-SECOND-MACOS-OWNER-001",
+        "REG-TDRP-BUILDING-MAC-PACKAGE-GATE-STAYS-FAIL-CLOSED-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-MODULE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "locked docs/building-mac.md + exact prepare/configure inputs + exact current package/sign/notary owners + 25-workflow ownership scan + parent exact-head Actions"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact upstream macOS build-document and dependent build-script/toolchain behavior are retained as source/build provenance. Telegram Homebrew/Xcode paths, local disk estimates, Telegram API credentials and local Xcode output are source-specific and are not promoted into Fabushi runtime/package/release authority.",
+      "reviewer": null,
+      "notes": "Strict index 118 closes only docs/building-mac.md as macOS developer-build/toolchain/credential provenance mapped to existing signed/notarized Fabushi package/evidence owners. Counters become unknown=16,258 unread=16,233 omitted=0 responsibilities=136. The canonical shipping pipeline remains fail-closed; no local build or release acceptance is claimed. Next strict root index 119 docs/building-mas.md@da7be145bb0a9cbd3c322fa7efe0c1f5729ae1bf (921 bytes). Fresh child exact-head TDRP/Rust Actions required."
     }
   ]
 }
