@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "e64e82d0def8b9337f7516e1f1fac61c6ec5a63a",
+  "target_commit": "cd71c1709bd5a7f8830c553611a0b15f2d7a6b27",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16248,
-    "unread": 16223,
+    "unknown": 16247,
+    "unread": 16222,
     "omitted": 0,
-    "responsibilities_total": 146,
+    "responsibilities_total": 147,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -39510,6 +39510,362 @@
       "license_and_provenance": "Telegram wallet Qt names/colors retained as provenance only; no Qt UI/runtime/source palette/task screenshot imported.",
       "reviewer": null,
       "notes": "Strict128 only. Counters unknown=16,248 unread=16,223 omitted=0 responsibilities=146. Next strict129 tasks/2026/08/19/align-replies-thread-shared-media-attribution.md@ced812fb2b3a26d44a5e972fdc57d7a1dff4414c."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "tasks/2026/08/19/align-replies-thread-shared-media-attribution.md",
+      "source_blob_sha": "ced812fb2b3a26d44a5e972fdc57d7a1dff4414c",
+      "source_kind": "reply_thread_shared_media_attribution_task_and_state_scope_provenance",
+      "module_id": "tdesktop.root.tasks.reply-thread-shared-media-attribution",
+      "responsibility_id": "TDRP-R9-REPLY-THREAD-SHARED-MEDIA-ATTRIBUTION-001",
+      "source_symbols": [
+        "HistoryView::Controls::TopControls",
+        "Storage::SharedMediaType::Pinned",
+        "_repliesRootId",
+        "activeThread()->topicRootId()",
+        "HistoryView::PinnedTracker",
+        "HistoryView::PinnedWidget",
+        "Data::Thread::topicRootId()",
+        "Data::Thread::monoforumPeerId()",
+        "SharedMediaAddExisting",
+        "SharedMediaAddSlice",
+        "SharedMediaAddNew",
+        "SharedMediaRemoveOne",
+        "ApiWrap::sharedMediaDone",
+        "HistoryItem::topicRootId()",
+        "HistoryItem::replyToTop()",
+        "FullReplyTo",
+        "Data::DraftKey",
+        "top_msg_id",
+        "f_forum_topic"
+      ],
+      "capability_ids": [
+        "CAP-CANONICAL-MESSAGE-REPLY-RELATION",
+        "CAP-CANONICAL-CONVERSATION-THREAD-ROOT",
+        "CAP-THREAD-SCOPED-TRANSCRIPT",
+        "CAP-SHARED-MEDIA-SCOPE-ATTRIBUTION",
+        "CAP-PINNED-MESSAGE-SCOPE-ATTRIBUTION",
+        "CAP-REPLY-NAVIGATION",
+        "CAP-THREAD-STATE-FAIL-CLOSED"
+      ],
+      "dependency_ids": [
+        "Telegram/SourceFiles/history/view/controls/history_view_top_controls.cpp@ddd3324c45574586daf56dc8bf0462c4c9e79107",
+        "Telegram/SourceFiles/history/view/history_view_pinned_tracker.cpp@be2420005132800cb019860c072beb5fd67a00b2",
+        "Telegram/SourceFiles/data/data_thread.cpp@c1367fdcdb86c22e2b484e648f08edf8854a9478",
+        "Telegram/SourceFiles/data/data_shared_media.cpp@990c48363dc32791f02ec492d9292d45ad97fe99",
+        "Telegram/SourceFiles/apiwrap.cpp@342e501177996be3c083ba7985d3720a53100b51",
+        "Telegram/SourceFiles/history/history_item.cpp@b753d3ea7bd5fde15cdad206d17ab3eee6d68cab",
+        "native/mahayana-messaging/src/message.rs@43befb0734a6d1d6d17aeb11f6aa5608a16a6f5a",
+        "source/shared/transcript.ts@37d025c238b84828546920d046ba9883fa181c5a",
+        "source/shared/transcript-threads.ts@156e959d2cb26fdd8ea29ddbab3d5c168a9c7499",
+        "source/host/src/extensions/transcript/send_thread_stamping.rs@e0c37baf3c70eda870515e55edd980bf4eb82aa1",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/thread-summary-controller.ts@233fe27c5b9f9765a96975da902d0a860c05171d",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/thread-loader.ts@458f57d1df313f0dd478ba162ef8646e4c293c89",
+        "frontend/src/production/ProductionRenderer.tsx@af8a83a8dd7cf1444474889ce3e64fe796a7d458"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-task-align-replies-thread-shared-media-attribution-complete-read.md",
+      "behavior_contract": "Keep reply target, canonical thread root and shared-media/pinned collection scope as distinct typed attributions. A reply UI context must not create or select a thread-scoped media key unless a real canonical thread scope exists; missing/invalid scope fails closed.",
+      "state_machine": "canonical message arrives -> preserve independent reply/thread identities -> derive transcript/thread projection from explicit root -> derive future shared-media/pinned scope from canonical conversation/thread identity -> invalid or absent thread scope yields no fabricated per-thread collection -> account/agent generation changes fence stale UI loads",
+      "side_effects": [
+        "reply selection projects only reply identity into draft/submission",
+        "thread projection is derived from explicit canonical root identity",
+        "future pinned/shared-media indexing is constrained to canonical conversation/thread scope",
+        "invalid thread attribution produces no synthetic thread count or media list",
+        "no Telegram storage/runtime owner is introduced"
+      ],
+      "failure_cases": [
+        "reply target reused as canonical thread root",
+        "per-reply-root shared-media list fabricated for a non-thread scope",
+        "thread summary exposed from malformed or stale count data",
+        "stale account/agent generation commits thread data",
+        "second Message, Transcript or shared-media truth introduced",
+        "recovered thread helpers mistaken for shipping production composition",
+        "Telegram pinned-bar UI copied instead of source-neutral behavior"
+      ],
+      "ui_disposition": "Partially applicable through the existing ConversationTranscript/Composer reply UI and typed thread affordance slots. Telegram pinned-bar/Qt presentation is not imported. Full thread summary/loader and thread-scoped shared-media/pinned projection remain shipping-open.",
+      "non_ui_responsibilities": [
+        "reply identity versus thread-root identity separation",
+        "shared-media/pinned scope attribution",
+        "invalid thread scope fail-closed behavior",
+        "persistence/protocol identity stability",
+        "account/agent generation fencing",
+        "canonical Message/Transcript owner uniqueness"
+      ],
+      "platform_delta": "Telegram peer/topic/monoforum storage keys map to source-neutral Fabushi conversation/thread/resource scope. Telegram protocol fields and Qt lifecycles are provenance only.",
+      "existing_owner_candidates": [
+        "native mahayana-messaging canonical Message",
+        "source/shared transcript + transcript-threads",
+        "Host TranscriptManager / TranscriptStore / send-thread stamping",
+        "ConversationWorkspace reply-thread controller",
+        "transcript thread-summary controller",
+        "transcript thread loader",
+        "ProductionRenderer canonical conversation composition",
+        "canonical Resource/attachment owners for future media collection projection"
+      ],
+      "existing_owner": "Canonical Message owns reply/thread identities; shared transcript/Host TranscriptManager+Store own transcript truth; reply-thread controller owns reply UI/projection; existing thread-summary/thread-loader helpers own thread projection/loading contracts; ProductShell/ProductionRenderer owns shipping composition; canonical Resource/Transcript owners must absorb future thread-scoped media projection.",
+      "rejected_existing_owners": [
+        "TelegramMessage / TelegramThread",
+        "TelegramSharedMediaStore",
+        "second TranscriptStore",
+        "replyToId as an implicit thread-root store",
+        "Qt pinned-bar lifecycle as a target owner",
+        "recovered helper existence as proof of shipping composition"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/message.rs",
+        "source/shared/transcript.ts",
+        "source/shared/transcript-threads.ts",
+        "source/host/src/extensions/transcript/send_thread_stamping.rs",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/thread-summary-controller.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/thread-loader.ts",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "pub reply_to_message_id: Option<MessageId>,",
+        "pub thread_root_message_id: Option<MessageId>,",
+        "pub pinned: bool,",
+        "export function getThreadTranscriptEntries",
+        "export function getMainTranscriptEntries",
+        "export function branchReplyCounts(",
+        "export function threadDescendants",
+        "pub struct SendReplyThreading {",
+        "pub reply_to_id: Option<String>,",
+        "pub is_fork: bool,",
+        "export function projectThreadCounts(",
+        "if (!rootId || !Number.isInteger(count) || count <= 0) continue;",
+        "export function createThreadLoader(",
+        "const [replyThreadController] = useState(() => createReplyThreadController({",
+        "threadRootId: null,",
+        "getThreadSummary: () => null,"
+      ],
+      "target_language": "existing Rust canonical message/Host owners + shared TypeScript transcript model + React/TypeScript ProductShell composition",
+      "language_rationale": "Source-neutral message and transcript state already have Rust/TypeScript owners. Telegram C++ storage/UI behavior is decomposed into those owners rather than retained as a runtime.",
+      "command_event_contracts": [
+        "select reply -> validate live target -> stamp replyToId only",
+        "open thread -> require explicit canonical root/scope before loading",
+        "thread page/count -> generation-fenced projection",
+        "shared-media/pinned query -> canonical conversation/thread scope, never arbitrary reply target",
+        "invalid/missing scope -> no fabricated per-thread state",
+        "account/agent switch -> clear/fence stale thread projection"
+      ],
+      "state_owner": "Canonical Message for durable reply/thread identities; TranscriptManager/Store for transcript entries; reply-thread/thread-summary/thread-loader controllers for UI projection state; canonical Resource/Transcript owners for future media collection scope.",
+      "lifecycle_owner": "Existing Conversation/ProductShell + Host transcript lifecycle; no source-specific lifecycle.",
+      "persistence_and_restart": "Durable reply/thread identity remains with canonical message/transcript persistence. Future shared-media/pinned index keys must persist canonical conversation/thread identity independently of transient reply UI selection.",
+      "concurrency_and_cancellation": "Thread summary/loader generations and account/agent scope fence stale completion. Invalid or superseded loads cannot commit cross-scope data.",
+      "security_boundary": "Thread/media projection must remain inside the authorized conversation/resource scope; a reply target cannot widen access or expose another thread's media.",
+      "network_service_dependencies": [
+        "existing Fabushi transcript/coordinator transport",
+        "future canonical thread/shared-media service projection if/when shipping",
+        "GitHub exact-head evidence authority"
+      ],
+      "service_owner": "Existing Fabushi Conversation/Transcript/Resource service boundaries; no Telegram service owner.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "reply-thread-shared-media-attribution-mapped-open",
+      "blockers": [
+        "shipping ProductionRenderer hard-codes threadRootId null",
+        "shipping ProductionRenderer hard-codes getThreadSummary to null",
+        "no createThreadSummaryController/createThreadLoader/getAgentThread production composition proven",
+        "no exact-head thread-scoped shared-media/pinned collection production owner proven",
+        "no packaged E2E proving reply/thread/media attribution under account switch and stale-load recovery",
+        "recursive source closure remains open",
+        "independent release acceptance remains open"
+      ],
+      "production_entrypoints": [
+        "native::mahayana_messaging::Message",
+        "source::shared::transcript projections",
+        "host::extensions::transcript::SendReplyThreading",
+        "ProductionRenderer::createReplyThreadController shipping composition",
+        "ConversationTranscript reply preview/action composition"
+      ],
+      "production_evidence": [
+        "path:native/mahayana-messaging/src/message.rs",
+        "path:source/shared/transcript.ts",
+        "path:source/shared/transcript-threads.ts",
+        "path:source/host/src/extensions/transcript/send_thread_stamping.rs",
+        "path:frontend/src/recovered/features/conversation/cards/transcript-card/thread-summary-controller.ts",
+        "path:frontend/src/recovered/features/conversation/cards/transcript-card/thread-loader.ts",
+        "path:frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "test_evidence": [
+        "strict129 tasks/2026/08/19/align-replies-thread-shared-media-attribution.md@ced812fb2b3a26d44a5e972fdc57d7a1dff4414c fully read",
+        "accepted upstream top_controls/pinned_tracker/thread/shared-media/apiwrap/history_item anchors read",
+        "current Fabushi canonical Message and transcript/reply/thread owners read at exact parent head",
+        "shipping ProductionRenderer reply path confirmed; threadRootId/getThreadSummary fail-closed null gap confirmed",
+        "TDRP 39977768466 61/61; authority 12512480894 sha256:8f7e9ae81f58f70d42a1cc700910176a9299c115119c08f7a0f6288a05e326a5; closure 12512497271 sha256:8e9382df91474202a084342003c078fd1c7fb91277564e0da4f5173fef5fcf46; reachability 12513071225 sha256:2d427d12219ad9a53eae723226878ea379e54889bc82eed06591fd35f9f3264a",
+        "Rust 39977768469 6/6; artifact 12512815138 sha256:05c2ebb951a4c1e7e7b17b2d6f1c5aa25737a5e359ee4c2c1b9198c3ac45455f"
+      ],
+      "target_commit": "cd71c1709bd5a7f8830c553611a0b15f2d7a6b27",
+      "workflow_run": 39977768466,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12512480894,
+      "artifact_digest": "sha256:8f7e9ae81f58f70d42a1cc700910176a9299c115119c08f7a0f6288a05e326a5",
+      "composition_root": "Fabushi ProductShell + canonical Message/Conversation/Transcript/Resource composition",
+      "composition_slot": "conversation transcript reply/thread attribution and future shared-media/pinned scope",
+      "capability_component": "canonical reply relation + canonical thread root + thread projection/loading + resource collection scope",
+      "variation_axes": [
+        "reply target vs thread root",
+        "whole conversation vs explicit thread",
+        "pinned/shared media vs ordinary transcript",
+        "in-scope vs missing/stale root",
+        "agent vs human conversation projection"
+      ],
+      "shared_owner_contracts": [
+        "canonical Message",
+        "TranscriptManager/TranscriptStore",
+        "source/shared transcript/thread projections",
+        "reply-thread controller",
+        "thread-summary controller",
+        "thread loader",
+        "ProductShell/ProductionRenderer",
+        "canonical Resource owners"
+      ],
+      "duplicate_root_check": "No Telegram Message/Thread/SharedMedia runtime, second Message store, second Transcript store, second Conversation root or source-specific media index owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "canonical conversation capability",
+      "primary_navigation_target": "Messages / existing ProductShell conversation route",
+      "collection_surface": "Existing canonical ConversationTranscript",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Reply, open-thread and future pinned/shared-media actions remain scoped to the current canonical conversation/thread.",
+      "detail_section": "Reply preview / thread affordance within the canonical transcript; no Telegram pinned-bar root.",
+      "capability_surface": "Existing ConversationWorkspace/Transcript/Composer; full thread-summary/media projection shipping-open.",
+      "route_contract": "Single ProductShell conversation route; reply jump stays within canonical transcript, explicit thread navigation must preserve canonical root identity.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Existing canonical conversation layout; no new source-specific surface.",
+      "accessibility_contract": "Existing transcript log/reply preview/thread action semantics; future thread affordance must preserve keyboard/focus semantics.",
+      "keyboard_contract": "Existing transcript/composer keyboard contracts; opening/closing thread projection must restore focus through the canonical workspace.",
+      "state_continuity_contract": "Account/agent/conversation changes fence reply/thread projection; reply selection never mutates durable thread root; invalid thread scope remains absent rather than synthesized.",
+      "ui_acceptance_scenarios": [
+        "reply preview resolves an in-scope target",
+        "missing reply target stays fail-closed",
+        "reply action stamps replyToId without thread-root mutation",
+        "thread affordance absent when no authoritative summary exists",
+        "account/agent scope change clears stale thread projection",
+        "future pinned/shared-media query uses canonical thread root instead of reply target"
+      ],
+      "design_system_version": "current Fabushi Design System",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Existing sand/cursor compatibility only; no new Telegram-derived visual token.",
+      "canonical_component_ids": [
+        "ConversationTranscript",
+        "Composer",
+        "ReferencedMessagePreview",
+        "ThreadAffordance"
+      ],
+      "screen_pattern_id": "canonical conversation workspace",
+      "screen_slots": [
+        "transcript entry",
+        "reply preview",
+        "message actions",
+        "composer reply target",
+        "typed thread affordance"
+      ],
+      "visual_state_matrix": [],
+      "density_contract": "Existing canonical transcript density.",
+      "icon_asset_contract": "Existing Fabushi icons only.",
+      "avatar_contract": "Existing canonical participant/agent avatar contract.",
+      "content_copy_keys": [],
+      "motion_contract": "Existing transcript/navigation motion contract.",
+      "reduced_motion_contract": "Existing shared reduced-motion contract.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-REPLY-THREAD-SHARED-MEDIA-ATTRIBUTION-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-REPLY-THREAD-ATTRIBUTION-EXACT-TASK-SOURCE-001",
+        "ORA-TDRP-REPLY-THREAD-ATTRIBUTION-UPSTREAM-ROOT-SEPARATION-001",
+        "ORA-TDRP-REPLY-THREAD-ATTRIBUTION-CANONICAL-MESSAGE-SEPARATION-001",
+        "ORA-TDRP-REPLY-THREAD-ATTRIBUTION-SHIPPING-REPLY-WIRED-001",
+        "ORA-TDRP-REPLY-THREAD-ATTRIBUTION-THREAD-SUMMARY-FAIL-CLOSED-001",
+        "ORA-TDRP-REPLY-THREAD-ATTRIBUTION-SHIPPING-THREAD-GAP-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-REPLY-THREAD-ATTRIBUTION-NO-REPLY-ROOT-AS-THREAD-ROOT-001",
+        "INV-TDRP-REPLY-THREAD-ATTRIBUTION-NO-INVALID-SHARED-MEDIA-KEY-001",
+        "INV-TDRP-REPLY-THREAD-ATTRIBUTION-NO-SECOND-MESSAGE-TRANSCRIPT-OWNER-001",
+        "INV-TDRP-REPLY-THREAD-ATTRIBUTION-NO-FAKE-THREAD-SUMMARY-001",
+        "INV-TDRP-REPLY-THREAD-ATTRIBUTION-EXACT-HEAD-ACTIONS-ONLY-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [
+        "STATE-TDRP-REPLY-THREAD-ATTRIBUTION-ROOT-SEPARATION-001"
+      ],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-REPLY-THREAD-ATTRIBUTION-CANONICAL-MESSAGE-001",
+        "CONTRACT-TDRP-REPLY-THREAD-ATTRIBUTION-INVALID-SCOPE-FAIL-CLOSED-001"
+      ],
+      "integration_case_ids": [
+        "INTEGRATION-TDRP-REPLY-THREAD-ATTRIBUTION-PRODUCTION-COMPOSITION-001"
+      ],
+      "functional_e2e_case_ids": [
+        "E2E-TDRP-REPLY-THREAD-ATTRIBUTION-THREAD-MEDIA-SCOPE-001"
+      ],
+      "temporal_case_ids": [
+        "TEMP-TDRP-REPLY-THREAD-ATTRIBUTION-ACCOUNT-GENERATION-FENCE-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-REPLY-THREAD-ATTRIBUTION-STALE-THREAD-LOAD-001"
+      ],
+      "ui_functional_case_ids": [
+        "UI-TDRP-REPLY-THREAD-ATTRIBUTION-REPLY-PREVIEW-001",
+        "UI-TDRP-REPLY-THREAD-ATTRIBUTION-THREAD-AFFORDANCE-001"
+      ],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [
+        "A11Y-TDRP-REPLY-THREAD-ATTRIBUTION-FOCUS-RESTORE-001"
+      ],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-REPLY-THREAD-ATTRIBUTION-NO-CROSS-THREAD-MEDIA-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-REPLY-THREAD-ATTRIBUTION-NO-SECOND-OWNER-001",
+        "REG-TDRP-REPLY-THREAD-ATTRIBUTION-NO-FABUSHI-BOT-REGRESSION-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-MODULE",
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-COMPONENTS",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "strict129 exact task + accepted upstream source anchors + exact parent Fabushi owner blobs"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [
+        "TDRP 39977768466 61/61 success",
+        "Rust 39977768469 6/6 success"
+      ],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Telegram C++/Qt/storage/protocol names retained as source provenance only. No Telegram runtime, storage key, protocol implementation or UI asset is imported by this mapping.",
+      "reviewer": null,
+      "notes": "Strict129 closes only tasks/2026/08/19/align-replies-thread-shared-media-attribution.md semantic read/decomposition. Reply identity is shipping-wired through the canonical Message/Transcript/ProductionRenderer path; thread summary/loader and thread-scoped shared-media/pinned production composition remain open. Counters unknown=16,247 unread=16,222 omitted=0 responsibilities=147. Next strict130 tasks/2026/08/20/stop-orphaning-general-id-shared-media-lists.md@c30808ee6b4ffb02561d243c24ec32eef5d5e909."
     }
   ]
 }
