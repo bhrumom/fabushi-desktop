@@ -44,6 +44,8 @@ Source CMake text cannot prove evaluated configured membership, compiler definit
 
 ## Traceability
 Requirement: TDRP-R9-ROOT-CMAKE-BUILD-COMPOSITION-PROVENANCE-001.
+Oracles: ORA-TDRP-ROOT-CMAKE-EXACT-SOURCE-001; ORA-TDRP-ROOT-CMAKE-TOPLEVEL-COMPOSITION-001; ORA-TDRP-ROOT-CMAKE-NO-SECOND-BUILD-ROOT-001; ORA-TDRP-ROOT-CMAKE-CONFIGURED-TRUTH-SEPARATION-001.
+Invariants: INV-TDRP-ROOT-CMAKE-NO-SECOND-BUILD-ROOT-001; INV-TDRP-ROOT-CMAKE-SOURCE-TEXT-NO-BUILD-PASS-001; INV-TDRP-ROOT-CMAKE-CHILD-INPUTS-STAY-OPEN-001.
 Selected existing owner: desktop/package.json canonical shipping build/package composition, with FQT-EVID-001 source-derived/configured-build evidence and rust-desktop-runtime exact-head validation.
 Coverage disposition: toolchain-equivalent / mapped-open.
 Closing strict103 yields unknown=16,273, unread=16,248, omitted=0, responsibilities=121.
