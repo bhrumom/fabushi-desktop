@@ -36227,10 +36227,10 @@
         ".github/scripts/validate-apple-ticket.mjs"
       ],
       "fabushi_target_symbols": [
-        "build.mac.target=[dmg,zip]",
-        "build.mac.hardenedRuntime=true",
-        "build.mac.forceCodeSigning=true",
-        "build.afterSign=scripts/notarize-after-sign.cjs",
+        "\"target\": [\\n        \"dmg\",\\n        \"zip\"\\n      ]",
+        "\"hardenedRuntime\": true",
+        "\"forceCodeSigning\": true",
+        "\"afterSign\": \"scripts/notarize-after-sign.cjs\"",
         "Build, notarize, and publish macOS arm64",
         "Package signed and notarized macOS installer",
         "Notarize and staple DMG",
