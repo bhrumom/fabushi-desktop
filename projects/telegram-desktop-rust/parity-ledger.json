@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "82d88e3b8f16f162f2ea25b2f0ed8c86d5953d12",
+  "target_commit": "1038a9f4297dd44d5ec98941217280d1e706b245",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16233,
-    "unread": 16208,
+    "unknown": 16232,
+    "unread": 16207,
     "omitted": 0,
-    "responsibilities_total": 161,
+    "responsibilities_total": 162,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -43507,6 +43507,246 @@
       "license_and_provenance": "Exact Microsoft/GSL LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02 retained as MIT legal/source provenance for the locked recursive dependency; no shipping composition, runtime or release authority is inferred.",
       "reviewer": "primary-session",
       "notes": "Strict143 closes only Microsoft/GSL LICENSE. Counters unknown=16,233 unread=16,208 omitted=0 responsibilities=161. Next strict144 Microsoft/GSL README.md@dd61e3fdc4d30614c0ca35f58cce5f58e66dd4df."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/GSL",
+      "source_blob_sha": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+      "source_kind": "recursive_child_repository_documentation_or_license",
+      "module_id": "tdesktop.thirdparty.gsl.readme",
+      "responsibility_id": "TDRP-R9-GSL-README-DEPENDENCY-BUILD-CONTRACT-PROVENANCE-001",
+      "source_symbols": [
+        "README.md@dd61e3fdc4d30614c0ca35f58cce5f58e66dd4df",
+        "GSL: Guidelines Support Library",
+        "header-only inline implementation under include/gsl",
+        "supported and removed C++ Core Guidelines feature matrix",
+        "compiler/toolset and platform CI support matrix",
+        "CMake, vcpkg and FetchContent integration guidance",
+        "Google Test -> ThirdPartyNotices.txt reference",
+        "GSL.natvis debugger visualization reference"
+      ],
+      "capability_ids": [
+        "CAP-DEPENDENCY-INTEGRATION-PROVENANCE",
+        "CAP-BUILD-TOOLCHAIN-PROVENANCE",
+        "CAP-PLATFORM-SUPPORT-PROVENANCE",
+        "CAP-THIRD-PARTY-NOTICE-PROVENANCE"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "Microsoft/GSL:README.md@dd61e3fdc4d30614c0ca35f58cce5f58e66dd4df",
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md#TDRP-SRC-03",
+        "projects/telegram-desktop-rust/module-map.md#build/generator/resources/dependencies"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-readme-dependency-build-contract-complete-read.md",
+      "behavior_contract": "Retain the locked Microsoft/GSL README as dependency/build-interface provenance: GSL is documented as a header-only inline C++ library, with an explicit feature matrix, tested compiler/toolset guidance, build/test instructions, vcpkg/CMake/FetchContent integration, Google Test notice pointer and natvis reference. Reconcile those responsibilities against Fabushi's existing dependency/build/package owners without creating a GSL runtime, transitively closing the referenced headers/notices, or inferring actual shipping composition.",
+      "state_machine": "accepted tdesktop gitlink -> exact GSL child/tree -> read exact README -> classify dependency/build/platform/notice responsibilities -> map to existing Fabushi owners -> keep actual shipping composition, referenced headers and remaining child authorities independent -> CAS publish -> exact-head revalidation",
+      "side_effects": [
+        "Preserves exact GSL dependency/build-interface documentation provenance.",
+        "Keeps include/gsl implementation entries, SECURITY.md and ThirdPartyNotices.txt independently open.",
+        "Creates no GSL C++ runtime, vcpkg/CMake parallel build owner, service, package or release authority."
+      ],
+      "failure_cases": [
+        "README omitted as non-runtime documentation.",
+        "README feature matrix treated as semantic closure of include/gsl implementation.",
+        "Upstream compiler/platform support treated as proof of Fabushi support.",
+        "README CMake/vcpkg/FetchContent examples treated as current Fabushi shipping composition.",
+        "Google Test notice pointer treated as closing ThirdPartyNotices.txt.",
+        "Gitlink/tree/blob drift ignored."
+      ],
+      "ui_disposition": "No shipping UI surface; retained dependency/build-interface documentation provenance only.",
+      "non_ui_responsibilities": [
+        "header-only dependency interface and include model provenance",
+        "supported/removed feature matrix cross-reference provenance",
+        "compiler/toolset/platform support provenance",
+        "build/test and CMake/vcpkg/FetchContent integration provenance",
+        "Google Test third-party notice linkage",
+        "natvis debugger-support linkage",
+        "separation from actual Fabushi shipping composition and header implementation closure"
+      ],
+      "platform_delta": "No product runtime delta; README platform/toolchain claims remain upstream provenance until independently proven by Fabushi CI/packaging evidence.",
+      "existing_owner_candidates": [
+        "TDRP-SRC-03 dependency/documentation disposition (selected)",
+        "module-map build/generator/resources/dependencies owner mapping (selected)",
+        "existing Fabushi CI/packaging/dependency review lifecycle (selected support)",
+        "new Microsoft/GSL runtime or parallel CMake/vcpkg owner (rejected)"
+      ],
+      "existing_owner": "TDRP-SRC-03 dependency/documentation disposition plus module-map build/generator/resources/dependencies mapping and existing Fabushi CI/packaging/dependency review lifecycle",
+      "rejected_existing_owners": [
+        "README is not a shipping runtime owner.",
+        "Upstream CMake/vcpkg/FetchContent examples do not justify a parallel Fabushi build graph.",
+        "Upstream support matrices do not prove Fabushi release support.",
+        "README references do not close include/gsl, ThirdPartyNotices or SECURITY source entries."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md",
+        "projects/telegram-desktop-rust/module-map.md"
+      ],
+      "fabushi_target_symbols": [
+        "递归审查、职责替代、版本/许可证与真实集成证据",
+        "Fabushi 自有 CI/packaging、最薄平台适配、审查过的通用依赖"
+      ],
+      "target_language": "Repository governance / dependency and build-interface provenance",
+      "language_rationale": "README documentation and dependency/build contracts are not executable C++ product logic.",
+      "command_event_contracts": [
+        "locked GSL gitlink -> exact child/tree -> exact README",
+        "README dependency/build claims -> existing Fabushi dependency/build/package owners",
+        "actual shipping composition and platform support -> independently prove before acceptance",
+        "include/gsl, SECURITY.md and ThirdPartyNotices.txt -> independent strict entries",
+        "publication -> CAS + exact-head GitHub Actions"
+      ],
+      "state_owner": "Exact upstream GSL gitlink/child tree/README blob are immutable provenance; reviewed TDRP disposition is canonical.",
+      "lifecycle_owner": "Existing TDRP strict-read, dependency/build provenance, repository-review and exact-head evidence lifecycle.",
+      "persistence_and_restart": "Committed dossier/ledger/index/lock plus exact README identity; no runtime state.",
+      "concurrency_and_cancellation": "CAS branch/upstream lease serializes publication; drift/cancellation is non-passing.",
+      "security_boundary": "README support/build claims are not runtime authorization, sandboxing, artifact-integrity, signing or release-acceptance evidence.",
+      "network_service_dependencies": [
+        "GitHub Actions for authoritative exact-head revalidation"
+      ],
+      "service_owner": "No shipping service; repository/TDRP governance only.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-documentation-equivalent-mapped-open",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required after publication.",
+        "Referenced include/gsl implementation and remaining Microsoft/GSL entries remain open.",
+        "Recursive source closure and independent release acceptance remain open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "strict144 README.md@dd61e3fdc4d30614c0ca35f58cce5f58e66dd4df fully read: 216 line slots / 14388 bytes",
+        "GSL gitlink 87f9d768866548b5b86e72be66c60c5abd4d9b37; child tree 6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41",
+        "Parent TDRP 40023294574 61/61 success; authority 12532011015 sha256:7379340d3c6f0bf894311f6a33eac0fc27a3f0558df02093082b1adc48fb60c4; closure 12531912187 sha256:d76901bbfd441b272193f5e3260e615a534409ab8490964c032eac644fd6d9e3; reachability 12532216538 sha256:f4b1ef74186adf7671cf81c7565c7ff2aebaeb8df70f5b0d53d75df61a7bc870; Rust 40023294443 6/6 success; artifact 12531881804 sha256:f6ec57fb9ee686dc3803dfdc1f9e176fba04e264c4336e9920251e061837f55d"
+      ],
+      "target_commit": "1038a9f4297dd44d5ec98941217280d1e706b245",
+      "workflow_run": 40023294574,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12532011015,
+      "artifact_digest": "sha256:7379340d3c6f0bf894311f6a33eac0fc27a3f0558df02093082b1adc48fb60c4",
+      "composition_root": "Fabushi repository dependency/build/package provenance lifecycle",
+      "composition_slot": "retained Microsoft/GSL README dependency/build-interface provenance",
+      "capability_component": "Source-neutral dependency/build/package documentation disposition",
+      "variation_axes": [
+        "header-only/include model",
+        "feature matrix cross-reference",
+        "toolchain/platform support",
+        "CMake/vcpkg/FetchContent",
+        "third-party notice linkage",
+        "documentation/runtime"
+      ],
+      "shared_owner_contracts": [
+        "TDRP-SRC-03 dependency/documentation",
+        "module-map build/generator/resources/dependencies",
+        "existing Fabushi CI/packaging dependency review",
+        "exact-head TDRP evidence"
+      ],
+      "duplicate_root_check": "No Microsoft/GSL runtime, second build/package/dependency owner or parallel CMake/vcpkg graph introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository/dependency provenance only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Retained recursive-dependency README/build-interface provenance",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Changed GSL gitlink/tree/README requires fresh reconciliation; Fabushi shipping composition, referenced header semantics and platform support remain independently evidenced.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-GSL-README-DEPENDENCY-BUILD-CONTRACT-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GSL-README-EXACT-SOURCE-001",
+        "ORA-TDRP-GSL-README-DEPENDENCY-CONTRACT-001",
+        "ORA-TDRP-GSL-README-BUILD-OWNER-001",
+        "ORA-TDRP-GSL-README-SHIPPING-SEPARATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GSL-README-NO-OMISSION-001",
+        "INV-TDRP-GSL-README-NO-RUNTIME-OWNER-001",
+        "INV-TDRP-GSL-README-NO-PARALLEL-BUILD-GRAPH-001",
+        "INV-TDRP-GSL-README-NO-SHIPPING-INFERENCE-001",
+        "INV-TDRP-GSL-README-EXACT-PROVENANCE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GSL-README-RETAINED-CONTRACT-001",
+        "CONTRACT-TDRP-GSL-README-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GSL-README-SOURCE-DRIFT-001",
+        "FAULT-TDRP-GSL-README-TRANSITIVE-CLOSURE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-GSL-README-NOT-AUTHORIZATION-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-GSL-README-NO-SOURCE-OMISSION-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "locked Microsoft/GSL README.md@dd61e3fdc4d30614c0ca35f58cce5f58e66dd4df + dependency/build owners + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact Microsoft/GSL README.md@dd61e3fdc4d30614c0ca35f58cce5f58e66dd4df retained as dependency/build-interface/source provenance; no shipping runtime or release authority is inferred.",
+      "reviewer": "primary-session",
+      "notes": "Strict144 closes only Microsoft/GSL README.md. Its feature matrix does not transitively close include/gsl implementation, and its support/build claims do not prove Fabushi shipping composition. Counters unknown=16,232 unread=16,207 omitted=0 responsibilities=162. Next strict145 Microsoft/GSL SECURITY.md@869fdfe2b246991a053fab9cfec1bed3ab532ab1."
     }
   ]
 }

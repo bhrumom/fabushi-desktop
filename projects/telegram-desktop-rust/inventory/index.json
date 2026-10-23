@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16233,
-    "unread_minimum": 16208,
+    "unknown_minimum": 16232,
+    "unread_minimum": 16207,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -122,7 +122,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 82d88e3b8f16f162f2ea25b2f0ed8c86d5953d12 passed TDRP 40020821458 61/61 success; authority 12530651984 sha256:4feeadb171c79815dca8d81c5aa1ea68eba1aef922aa1f084eca2018a3602568; closure 12531245370 sha256:b017b64e72a39f7772f909c8acb414df878db3c0694b070afe15fa9fe3467281; reachability 12530373044 sha256:cd062a43a3bfb1d02efaaa0c28de0ee4d9e2512169361040c77513617f183a50; Rust 40020821690 6/6 success; artifact 12529643885 sha256:9ad4389c7e2eab0e661da6a392384acc30268c8359524bebb7f458feb8e9d9ba. Strict143 Microsoft/GSL LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02 was fully read: 21 line slots / 1157 bytes. Exact MIT legal text is retained as recursive-dependency legal/source provenance; it does not prove Fabushi ships GSL and does not transitively close README/ThirdPartyNotices. Counters unknown=16,233 unread=16,208 omitted=0 responsibilities=161. Next strict144 Microsoft/GSL README.md@dd61e3fdc4d30614c0ca35f58cce5f58e66dd4df.",
+  "note": "Live upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 1038a9f4297dd44d5ec98941217280d1e706b245 passed TDRP 40023294574 61/61 success; authority 12532011015 sha256:7379340d3c6f0bf894311f6a33eac0fc27a3f0558df02093082b1adc48fb60c4; closure 12531912187 sha256:d76901bbfd441b272193f5e3260e615a534409ab8490964c032eac644fd6d9e3; reachability 12532216538 sha256:f4b1ef74186adf7671cf81c7565c7ff2aebaeb8df70f5b0d53d75df61a7bc870; Rust 40023294443 6/6 success; artifact 12531881804 sha256:f6ec57fb9ee686dc3803dfdc1f9e176fba04e264c4336e9920251e061837f55d. Strict144 Microsoft/GSL README.md@dd61e3fdc4d30614c0ca35f58cce5f58e66dd4df was fully read: 216 line slots / 14388 bytes. It is retained as dependency/build-interface provenance: header-only/include model, feature cross-references, compiler/toolset/platform claims, build/test and CMake/vcpkg/FetchContent guidance, Google Test notice linkage and natvis linkage. README does not transitively close include/gsl, SECURITY.md or ThirdPartyNotices.txt and does not prove Fabushi ships GSL. Counters unknown=16,232 unread=16,207 omitted=0 responsibilities=162. Next strict145 Microsoft/GSL SECURITY.md@869fdfe2b246991a053fab9cfec1bed3ab532ab1.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
