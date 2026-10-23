@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "ea8cf7b5abfac5ec5ec59bb06495975a9b4aa3d3",
+  "target_commit": "417a226a88897ddc3dd88f21d7dcbf854f40eaa2",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16255,
-    "unread": 16230,
+    "unknown": 16254,
+    "unread": 16229,
     "omitted": 0,
-    "responsibilities_total": 139,
+    "responsibilities_total": 140,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -37442,6 +37442,347 @@
       "license_and_provenance": "Exact upstream WEB proxy document retained as network/security design provenance. Applicable source-neutral behavior maps existing owners. Telegram MTProxy/hosted relay/lib_webview are not imported runtime dependencies.",
       "reviewer": null,
       "notes": "Strict121 closes docs/web-proxy-plan.md (34,990 bytes). Parent exact head passed TDRP 61/61 and Rust 6/6. Counters: unknown=16,255 unread=16,230 omitted=0 responsibilities=139. Next strict122 docs/web-proxy-test-plan.md@aa5752bf7a9cf57bafd0489961f8fa49265d238b. Fresh child exact-head Actions required."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "docs/web-proxy-test-plan.md",
+      "source_blob_sha": "aa5752bf7a9cf57bafd0489961f8fa49265d238b",
+      "source_kind": "web_proxy_server_ready_execution_test_plan_documentation",
+      "module_id": "tdesktop.root.docs.web_proxy_test_plan",
+      "responsibility_id": "TDRP-R9-UPSTREAM-WEB-PROXY-EXECUTION-TEST-PROVENANCE-001",
+      "source_symbols": [
+        "Release gate",
+        "Inputs to obtain from the server operator",
+        "Hosted endpoint preflight",
+        "Configuration and first connection (P0)",
+        "Network-origin invariant (P0)",
+        "Functional traffic (P0/P1)",
+        "Multiplexing and concurrency (P1)",
+        "WebView, browser, and transport lifecycle (P0/P1)",
+        "Carrier reliability and server faults (P1)",
+        "Explicit browser-fallback loopback validation tests (P0)",
+        "Persistence and compatibility (P1)",
+        "WebView and fallback-browser matrix",
+        "Unreliable-MTProto network field test (P0)",
+        "Deployment-boundary checks (P1)",
+        "Exit criteria and run report"
+      ],
+      "capability_ids": [
+        "CAP-NETWORK-TRANSPORT-SECURITY-VALIDATION",
+        "CAP-REAL-SERVICE-E2E-EVIDENCE",
+        "CAP-FAULT-RECOVERY-VALIDATION",
+        "CAP-PERFORMANCE-MEMORY-BOUNDS",
+        "CAP-CROSS-PLATFORM-CARRIER-ACCEPTANCE",
+        "CAP-SECRET-REDACTION-VALIDATION"
+      ],
+      "dependency_ids": [
+        "docs/web-proxy-plan.md@9c805e32d33e8e1ac6b0417b26242b4a09198bd9",
+        "source/fabushi-network-worker/protocol_test.go@1b6115771bd8922c828d474a47c161680eded3fd",
+        "source/host/tests/network_worker_process_contract.rs@9d9a1101949092f49e7774a2bdb718b6676abbec",
+        "source/host/tests/network_enrollment_owner_contract.rs@087f3831f946f8bad4360b7cb63f29dee787de75",
+        "source/mahayana/codex-rs/core/src/network_proxy_loader_tests.rs@f2758e8946132c6899996d190ea3e482883896bc",
+        "source/mahayana/codex-rs/network-proxy/src/upstream_tests.rs@85f5da9017b708dda5728ab6daa8975d78061409",
+        "source/node-agent-coordinator/tests/gateway_https.rs@6fc868c108d5600df239f4572d5cf438e24e5120"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-root-docs-web-proxy-test-plan-complete-read.md",
+      "behavior_contract": "Retain the upstream server-ready WEB proxy test plan as quality/security provenance: exact candidate identity, incompatible-service fail-fast preflight, secret-safe evidence, bounded transport behavior, policy-before-reachability, deterministic lifecycle/fault recovery, concurrency/destruction safety, TLS/WebSocket validation, performance/memory bounds, persistence compatibility, cross-platform carrier coverage and real-field-network proof. Map these responsibilities to existing Fabushi network/security owners and validators. Do not import Telegram WEB/MTProxy/WebView runtime, fabricate a hosted relay, or treat unexecuted P0/P1 cases as passing evidence.",
+      "state_machine": "locked source -> compatible real service/operator inputs -> exact candidate -> security-safe preflight -> canonical network owner validation -> functional/concurrency/lifecycle/fault/security/performance checks -> platform/field/deployment evidence -> release decision; if real service, supported platform, secret-safe evidence, or required oracle is absent -> remain mapped-open/fail-closed",
+      "side_effects": [
+        "The upstream plan would exercise a hosted relay, stock MTProxy, hidden native WebView and explicit browser fallback; those Telegram-specific systems are not created by this migration.",
+        "Applicable Fabushi validation reuses existing network-worker, NetworkProxy/NetworkPolicy, Coordinator TLS and egress transport owners.",
+        "This publication changes only evidence/accounting; no local build, relay deployment, proxy configuration, browser launch or production network behavior is changed."
+      ],
+      "failure_cases": [
+        "A mock or localhost fixture is reported as real hosted-service E2E",
+        "Telegram WEB/MTProxy/WebView-specific P0/P1 cases are marked passed without the required relay/browser/platform environment",
+        "network reachability is used as authorization evidence",
+        "secrets, payloads or capability material enter logs/screenshots",
+        "unbounded stream/session/buffer behavior or stale account generation is accepted",
+        "a second proxy/network permission owner or Telegram sidecar is introduced to satisfy the test plan"
+      ],
+      "ui_disposition": "No Telegram proxy Settings/WebView/browser UI is ported from this test document. Future Fabushi network controls, if independently required, must project through canonical Settings/Permissions and explicit accessible confirmation surfaces.",
+      "non_ui_responsibilities": [
+        "real-service compatibility preflight",
+        "exact candidate/evidence binding",
+        "bounded stream/session validation",
+        "secret redaction",
+        "TLS/HTTPS/WebSocket validation",
+        "network policy before connect",
+        "account-generation fencing",
+        "fault/retry/recovery validation",
+        "concurrency/destruction safety",
+        "performance/memory bounds",
+        "cross-platform release evidence"
+      ],
+      "platform_delta": "Telegram WebView2/WKWebView/WebKitGTK and fallback-browser matrices remain source-specific test provenance. Fabushi current applicable platform evidence is exact-head Actions plus existing source-neutral network owners; no Telegram carrier is adopted.",
+      "existing_owner_candidates": [
+        "fabushi-network-worker protocol validators (selected)",
+        "Host network-worker/enrollment contract validators (selected)",
+        "Rust NetworkProxy loader/upstream/policy validators (selected)",
+        "Coordinator HTTPS/rustls validator (selected)",
+        "existing product/package acceptance infrastructure for future real-service E2E (selected when applicable)",
+        "new Telegram WEB/MTProxy/WebView test harness (rejected)",
+        "fabricated relay/mock browser matrix (rejected)"
+      ],
+      "existing_owner": "Existing network-worker + Host enrollment + NetworkProxy/NetworkPolicy + Coordinator HTTPS validators; real-service/browser/platform acceptance remains an external evidence requirement, not a new product owner",
+      "rejected_existing_owners": [
+        "Telegram WEB relay/stock MTProxy retained runtime",
+        "Telegram native WebView carrier and browser fallback harness",
+        "second NetworkProxy or permission authority",
+        "mock/fake hosted service counted as production evidence"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "source/fabushi-network-worker/protocol_test.go",
+        "source/host/tests/network_worker_process_contract.rs",
+        "source/host/tests/network_enrollment_owner_contract.rs",
+        "source/mahayana/codex-rs/core/src/network_proxy_loader_tests.rs",
+        "source/mahayana/codex-rs/network-proxy/src/upstream_tests.rs",
+        "source/node-agent-coordinator/tests/gateway_https.rs"
+      ],
+      "fabushi_target_symbols": [
+        "TestValidateInitializeRejectsUnsafeControlURLAndKey",
+        "TestProtocolErrorsNeverEchoSecretMaterial",
+        "TestStreamTargetIsTailnetOnlyAndBounded",
+        "supervisor_passes_secrets_only_over_private_stdin_and_closes_child",
+        "fdn_network_owner_fences_account_switch_and_supervises_shipping_worker",
+        "higher_precedence_profile_network_overrides_named_mitm_actions",
+        "mitm_upstream_client_trusts_startup_custom_ca",
+        "command_health_and_sse_share_real_https_transport"
+      ],
+      "target_language": "Existing Go/Rust test owners and exact-head GitHub Actions; Telegram C++/Qt/WebView test procedure remains provenance",
+      "language_rationale": "Applicable test responsibility already belongs to existing source-neutral validators. Telegram-specific relay/browser/WebView execution cannot be truthfully recreated as a unit mock and is kept fail-closed until a real product requirement and real service/environment exist.",
+      "command_event_contracts": [
+        "network-worker initialize/stream request -> validate bounded IDs/targets/timeouts/chunks -> sanitized response",
+        "Host account generation -> private worker secrets -> switch/logout fencing -> child close",
+        "NetworkProxy config/profile -> constraint/policy decision -> approved upstream/TLS route or deny",
+        "Coordinator HTTPS -> rustls trust -> bounded command/health/SSE transport",
+        "required real-service/platform evidence absent -> release gate remains open"
+      ],
+      "state_owner": "Same canonical production owners as strict121; this document adds validation responsibility, not transport state.",
+      "lifecycle_owner": "Host supervises network-worker generation; NetworkProxy and Coordinator own transport lifecycles. Telegram WebView/browser lifecycle is not adopted.",
+      "persistence_and_restart": "Existing account-fenced/encrypted worker state and canonical proxy configuration remain authoritative. No Telegram relay capability or MTProxy secret is persisted.",
+      "concurrency_and_cancellation": "Existing bounded session/timeouts and account-generation fencing are canonical; upstream 16-stream, cancellation, destruction-race and soak scenarios are retained as validation requirements where applicable, not claimed as executed.",
+      "security_boundary": "Secrets and payloads must not be logged or exposed; policy/authorization precedes connect; TLS trust is explicit; non-public targets remain gated; transport reachability is never authorization.",
+      "network_service_dependencies": [
+        "existing Fabushi account/device network enrollment",
+        "packaged fabushi-network-worker",
+        "canonical NetworkProxy/NetworkPolicy",
+        "Coordinator HTTPS/rustls",
+        "GitHub Actions exact-head evidence",
+        "real product service/environment for any future service-backed E2E; no Telegram relay dependency"
+      ],
+      "service_owner": "Existing Fabushi network/account/Coordinator owners. No Telegram hosted relay owner is claimed; real service-backed acceptance remains open until an actual Fabushi service owner exists.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "test-plan-provenance-existing-validator-coverage-real-relay-browser-field-matrix-open",
+      "blockers": [
+        "Telegram hosted WEB relay/stock MTProxy/browser carrier environment is not a Fabushi production dependency and is not available as acceptance evidence.",
+        "No exact-head evidence executes the upstream WEB P0/P1 relay/WebView/browser matrix; those cases remain open rather than mocked.",
+        "Unreliable-MTProto field-test hypothesis is Telegram-specific and not evidence for Fabushi service behavior.",
+        "Recursive source disposition and independent release acceptance remain open.",
+        "Fresh strict122 child exact-head TDRP/Rust Actions are required after publication."
+      ],
+      "production_entrypoints": [
+        "source/host/src/network_worker_process.rs",
+        "source/fabushi-network-worker/protocol.go",
+        "source/mahayana/codex-rs/core/src/network_proxy_loader.rs::build_network_proxy_state",
+        "source/mahayana/codex-rs/network-proxy/src/network_policy.rs",
+        "source/mahayana/codex-rs/network-proxy/src/connect_policy.rs",
+        "source/mahayana/codex-rs/network-proxy/src/upstream.rs",
+        "source/node-agent-coordinator/src/gateway/http_transport.rs::GatewayHttpEndpoint",
+        "source/shared/node/egress-tunnel/websocket-client.ts::createWebSocket"
+      ],
+      "production_evidence": [
+        "path:source/host/src/network_worker_process.rs",
+        "path:source/fabushi-network-worker/protocol.go",
+        "path:source/mahayana/codex-rs/core/src/network_proxy_loader.rs",
+        "path:source/mahayana/codex-rs/network-proxy/src/network_policy.rs",
+        "path:source/mahayana/codex-rs/network-proxy/src/connect_policy.rs",
+        "path:source/mahayana/codex-rs/network-proxy/src/upstream.rs",
+        "path:source/node-agent-coordinator/src/gateway/http_transport.rs",
+        "path:source/shared/node/egress-tunnel/websocket-client.ts"
+      ],
+      "test_evidence": [
+        "source/fabushi-network-worker/protocol_test.go@1b6115771bd8922c828d474a47c161680eded3fd validates control URL/key safety, redaction, bounded IDs/targets/chunks/timeouts.",
+        "source/host/tests/network_worker_process_contract.rs@9d9a1101949092f49e7774a2bdb718b6676abbec validates private secret handoff and worker lifecycle.",
+        "source/host/tests/network_enrollment_owner_contract.rs@087f3831f946f8bad4360b7cb63f29dee787de75 validates existing authority boundaries and account-switch/logout fencing.",
+        "source/mahayana/codex-rs/core/src/network_proxy_loader_tests.rs@f2758e8946132c6899996d190ea3e482883896bc validates policy/profile precedence and network proxy configuration.",
+        "source/mahayana/codex-rs/network-proxy/src/upstream_tests.rs@85f5da9017b708dda5728ab6daa8975d78061409 validates rustls/custom-CA upstream behavior.",
+        "source/node-agent-coordinator/tests/gateway_https.rs@6fc868c108d5600df239f4572d5cf438e24e5120 validates real HTTPS command/health/SSE transport.",
+        "Parent exact-head TDRP run 39955991807 completed 61/61 success; authority 12502486893 sha256:c25dbc800732765a6b1a4f7e17a578168ecae00fda6785b9d2c3fbf5930859f8; closure 12502289686 sha256:ec43cd8420f34a5b63abd308e190d0077e4499a8f8864c9d3ddfbd110477c298; reachability 12502792223 sha256:43f80bc02036c519e87e136b52f675f2fafceb4734f3c7b657a6faff819ceb76.",
+        "Parent exact-head Rust run 39955991731 completed 6/6 success; artifact 12501879825 sha256:e305cbf47b8cd93a513edba421e4e2e8c13711147cad4ea98664d6f1b52dfe0d.",
+        "No evidence above executes Telegram WEB relay/WebView/browser P0/P1 cases; those remain explicitly open."
+      ],
+      "target_commit": "417a226a88897ddc3dd88f21d7dcbf854f40eaa2",
+      "workflow_run": 39955991807,
+      "run_attempt": 1,
+      "job": "61/61 success",
+      "artifact_id": 12502486893,
+      "artifact_digest": "sha256:c25dbc800732765a6b1a4f7e17a578168ecae00fda6785b9d2c3fbf5930859f8",
+      "composition_root": "Fabushi canonical network/security/test-evidence architecture",
+      "composition_slot": "network transport validation, fault recovery, security and release evidence",
+      "capability_component": "existing network-worker/Host/NetworkProxy/Coordinator validators + fail-closed real-service/platform evidence",
+      "variation_axes": [
+        "unit/contract validation vs real-service E2E",
+        "public/approved target vs denied/local target",
+        "normal transport vs timeout/retry/recovery",
+        "single stream vs concurrency/cancellation",
+        "TLS/HTTPS vs WebSocket",
+        "exact-head Actions vs external platform/field evidence",
+        "executed evidence vs source-only test provenance"
+      ],
+      "shared_owner_contracts": [
+        "Host generation fencing",
+        "network-worker bounds/redaction",
+        "NetworkProxy policy/constraints",
+        "Coordinator rustls HTTPS",
+        "egress WebSocket",
+        "FQT security/release acceptance",
+        "exact-head GitHub Actions"
+      ],
+      "duplicate_root_check": "No Telegram WEB/MTProxy/WebView runtime, relay test harness, second NetworkProxy, second permission authority, mock service, fake browser matrix or synthetic release pass is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Settings projection only if independently required",
+      "primary_navigation_target": "Settings/account if future product-required",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "network/security configuration and explicit fallback only",
+      "detail_section": "Not applicable",
+      "capability_surface": "canonical network/permission/settings; no Telegram WEB UI",
+      "route_contract": "Fabushi auth -> policy -> existing transport owner -> bounded service -> recovery",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Future Settings projection must use canonical responsive patterns.",
+      "accessibility_contract": "Future explicit fallback/control must use canonical accessible controls.",
+      "keyboard_contract": "No current UI port.",
+      "state_continuity_contract": "Account switch/logout fences old network generation; transport loss is bounded; source/owner/workflow/service drift requires reconciliation.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Current Fabushi canonical design system; no new visual surface",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-UPSTREAM-WEB-PROXY-EXECUTION-TEST-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-WEB-PROXY-TEST-EXACT-SOURCE-001",
+        "ORA-TDRP-WEB-PROXY-TEST-EXISTING-VALIDATORS-001",
+        "ORA-TDRP-WEB-PROXY-TEST-SECRET-SAFE-EVIDENCE-001",
+        "ORA-TDRP-WEB-PROXY-TEST-REAL-SERVICE-FAIL-CLOSED-001",
+        "ORA-TDRP-WEB-PROXY-TEST-PLATFORM-FIELD-EVIDENCE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-WEB-PROXY-TEST-NO-FAKE-RELAY-001",
+        "INV-TDRP-WEB-PROXY-TEST-NO-SECRET-LOGGING-001",
+        "INV-TDRP-WEB-PROXY-TEST-POLICY-BEFORE-CONNECT-001",
+        "INV-TDRP-WEB-PROXY-TEST-BOUNDED-STATE-001",
+        "INV-TDRP-WEB-PROXY-TEST-UNEXECUTED-NOT-PASS-001",
+        "INV-TDRP-WEB-PROXY-TEST-ACTIONS-ONLY-001"
+      ],
+      "unit_case_ids": [
+        "UNIT-TDRP-WEB-PROXY-TEST-PROTOCOL-BOUNDS-001",
+        "UNIT-TDRP-WEB-PROXY-TEST-SECRET-REDACTION-001",
+        "UNIT-TDRP-WEB-PROXY-TEST-POLICY-001"
+      ],
+      "property_state_case_ids": [
+        "PROP-TDRP-WEB-PROXY-TEST-BOUNDED-STATE-001"
+      ],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-WEB-PROXY-TEST-EXACT-SOURCE-001",
+        "CONTRACT-TDRP-WEB-PROXY-TEST-EXISTING-VALIDATOR-001",
+        "CONTRACT-TDRP-WEB-PROXY-TEST-REAL-E2E-FAIL-CLOSED-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-WEB-PROXY-TEST-NETWORK-WORKER-001",
+        "INT-TDRP-WEB-PROXY-TEST-HTTPS-TLS-001"
+      ],
+      "functional_e2e_case_ids": [
+        "E2E-TDRP-WEB-PROXY-REAL-RELAY-CARRIER-OPEN-001"
+      ],
+      "temporal_case_ids": [
+        "TEMP-TDRP-WEB-PROXY-TEST-ACCOUNT-SWITCH-001",
+        "TEMP-TDRP-WEB-PROXY-TEST-RETRY-RECOVERY-001",
+        "TEMP-TDRP-WEB-PROXY-TEST-IDLE-RESTART-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-WEB-PROXY-TEST-TIMEOUT-OVERFLOW-001",
+        "FAULT-TDRP-WEB-PROXY-TEST-MALFORMED-TRANSPORT-001",
+        "FAULT-TDRP-WEB-PROXY-TEST-SERVICE-ABSENT-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [
+        "PERF-TDRP-WEB-PROXY-TEST-BOUNDED-MEMORY-001",
+        "PERF-TDRP-WEB-PROXY-TEST-THROUGHPUT-OPEN-001"
+      ],
+      "soak_case_ids": [
+        "SOAK-TDRP-WEB-PROXY-TEST-CONCURRENCY-OPEN-001",
+        "SOAK-TDRP-WEB-PROXY-TEST-HIDDEN-CARRIER-OPEN-001"
+      ],
+      "security_case_ids": [
+        "SEC-TDRP-WEB-PROXY-TEST-NO-SECRET-LOGGING-001",
+        "SEC-TDRP-WEB-PROXY-TEST-POLICY-BEFORE-REACHABILITY-001",
+        "SEC-TDRP-WEB-PROXY-TEST-TLS-TRUST-001",
+        "SEC-TDRP-WEB-PROXY-TEST-LOOPBACK-PROVENANCE-OPEN-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-WEB-PROXY-TEST-NO-SECOND-NETWORK-ROOT-001",
+        "REG-TDRP-WEB-PROXY-TEST-BOT-NETWORK-NO-REGRESSION-001",
+        "REG-TDRP-WEB-PROXY-TEST-UNEXECUTED-NOT-PASS-001"
+      ],
+      "exploratory_charter_ids": [
+        "EXP-TDRP-WEB-PROXY-TEST-REAL-SERVICE-OWNER-BOUNDARY-001"
+      ],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-SECURITY",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "locked docs/web-proxy-test-plan.md + exact existing network validators + parent exact-head Actions"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001",
+        "ENV-REAL-SERVICE-PLATFORM-MATRIX-OPEN-001",
+        "ENV-REAL-FIELD-NETWORK-OPEN-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [
+        "Exact-head 417a226a88897ddc3dd88f21d7dcbf854f40eaa2 TDRP/Rust regressions are green; upstream WEB relay/browser/field cases are not executed and remain open."
+      ],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact upstream WEB proxy server-ready execution test plan retained as test/security/release provenance. Existing Fabushi validators cover source-neutral bounded-network/security responsibility; Telegram relay/WebView/browser/field-specific execution is not imported or fabricated.",
+      "reviewer": null,
+      "notes": "Strict122 closes docs/web-proxy-test-plan.md (25,526 bytes) as execution-test provenance mapped to existing Fabushi network validators, with Telegram relay/WebView/browser/field cases explicitly open. Parent exact head 417a226a88897ddc3dd88f21d7dcbf854f40eaa2 passed TDRP 61/61 and Rust 6/6. Counters become unknown=16,254 unread=16,229 omitted=0 responsibilities=140. Next strict123 lib/xdg/org.telegram.desktop.desktop@573648491b97f9b1eb460a4c8add4ddf17ce171a. Fresh child exact-head Actions required."
     }
   ]
 }

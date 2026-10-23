@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16255,
-    "unread_minimum": 16230,
+    "unknown_minimum": 16254,
+    "unread_minimum": 16229,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -122,7 +122,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent ea8cf7b5abfac5ec5ec59bb06495975a9b4aa3d3/tree 5dca627d64a3b8d7285e0cdfe2905dd18f74b15c passed TDRP 39953873302 61/61 (authority 12500974554 sha256:25e993d6aa1ffb61e076963e558a34abecee61b0985dac2585808a1fd784ecb0; closure 12502420573 sha256:48c67de85f3e8068f1b1a07ba2f09c5f1eaeb52dfd79d2588e1ac469149fde28; reachability 12501563758 sha256:9d113c76cbe8cd220e5e740a63d6069a7f470cf37579c898982ecf3b0ee77b69) and Rust 39953873050 6/6 (artifact 12502220382 sha256:6c06bfd0be89d9b000774e47724719923887873e811f9194a09375a9f78d3e44). Strict121 docs/web-proxy-plan.md@9c805e32d33e8e1ac6b0417b26242b4a09198bd9 maps existing-owner-first to Host/network-worker, NetworkProxy/NetworkPolicy, Coordinator HTTPS/TLS and egress WebSocket; no Telegram MTProxy/WebView runtime or relay is introduced. Counters unknown=16,255 unread=16,230 omitted=0 responsibilities=139. Next strict122 docs/web-proxy-test-plan.md@aa5752bf7a9cf57bafd0489961f8fa49265d238b. Fresh child exact-head Actions required.",
+  "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 417a226a88897ddc3dd88f21d7dcbf854f40eaa2/tree 58c4e60b0ca66cefb5b007c6c1c0e001290a8e8d passed TDRP 39955991807 61/61 (authority 12502486893 sha256:c25dbc800732765a6b1a4f7e17a578168ecae00fda6785b9d2c3fbf5930859f8; closure 12502289686 sha256:ec43cd8420f34a5b63abd308e190d0077e4499a8f8864c9d3ddfbd110477c298; reachability 12502792223 sha256:43f80bc02036c519e87e136b52f675f2fafceb4734f3c7b657a6faff819ceb76) and Rust 39955991731 6/6 (artifact 12501879825 sha256:e305cbf47b8cd93a513edba421e4e2e8c13711147cad4ea98664d6f1b52dfe0d). Strict122 docs/web-proxy-test-plan.md@aa5752bf7a9cf57bafd0489961f8fa49265d238b maps source-neutral validation to existing network-worker/Host/NetworkProxy/Coordinator validators; Telegram relay/WebView/browser/field cases remain explicitly unexecuted/open. Counters unknown=16,254 unread=16,229 omitted=0 responsibilities=140. Next strict123 lib/xdg/org.telegram.desktop.desktop@573648491b97f9b1eb460a4c8add4ddf17ce171a. Fresh child exact-head Actions required.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
