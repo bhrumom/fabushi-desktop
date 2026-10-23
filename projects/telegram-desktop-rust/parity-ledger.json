@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "07972a8c3ffa56e63903215587b1cb196e88c5db",
+  "target_commit": "51b5bb86ed636a451b541519a219b0aee5898df7",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16268,
-    "unread": 16243,
+    "unknown": 16267,
+    "unread": 16242,
     "omitted": 0,
-    "responsibilities_total": 126,
+    "responsibilities_total": 127,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -33673,6 +33673,239 @@
       "license_and_provenance": "Exact upstream REVIEW.md@e65be8231a8e0f50ee86b20ef16120d58ea40376 retained as repository code-review/style provenance; no Telegram-specific rule is automatically adopted.",
       "reviewer": null,
       "notes": "Strict index 108 closes only REVIEW.md as non-runtime review/style provenance. Counters become unknown=16,268 unread=16,243 omitted=0 responsibilities=126. Next strict root index 109 changelog.txt@41b7466f8a11a1866a66ff583809dfe74ad9a3c3."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "changelog.txt",
+      "source_blob_sha": "41b7466f8a11a1866a66ff583809dfe74ad9a3c3",
+      "source_kind": "repository_release_note_history",
+      "module_id": "tdesktop.root.changelog_release_history",
+      "responsibility_id": "TDRP-R9-UPSTREAM-ROOT-CHANGELOG-RELEASE-HISTORY-PROVENANCE-001",
+      "source_symbols": [
+        "945 version/date release-history headers from 7.3.3 (21.10.26) through 0.1.16 (29.11.13)",
+        "2544 hyphen-prefixed release-note records",
+        "7 legacy em-dash release-note records",
+        "13 wrapped continuation / section-label / preserved legacy-fragment lines",
+        "Newest-to-oldest release history across unlabeled, beta, alpha, stable and dev channels"
+      ],
+      "capability_ids": [
+        "CAP-RELEASE-NOTE-HISTORY-PROVENANCE",
+        "CAP-RELEASE-NOTE-PRESENTATION-GOVERNANCE",
+        "CAP-RELEASE-PREPARATION-AUTHORITY-BOUNDARY"
+      ],
+      "dependency_ids": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/release-entry-exit-criteria.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "TDRP-R9-RELEASE-CHANGELOG-RENDERING-001",
+        "TDRP-R9-RELEASE-CHANGELOG-PAGES-PUBLICATION-001"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-root-changelog-release-history-complete-read.md",
+      "behavior_contract": "Retain exact upstream changelog.txt as immutable historical release-note provenance, preserving version/date/channel ordering and note text including historical irregularities. Historical Telegram notes may inform responsibility discovery but are not current Fabushi shipping truth, compatibility promises, version authority, publication authority, or release acceptance; canonical Fabushi release notes and release gates remain owned by AGENTS.md, FQT-REL-001 and FQT-EVID-001.",
+      "state_machine": "read exact changelog.txt -> structurally account every line and release record -> classify historical release-note provenance versus current product truth -> reconcile existing release-note rendering/publication and release-gate owners -> retain immutable history provenance -> require current Fabushi release preparation to derive from canonical current repository policy and exact-head evidence",
+      "side_effects": [
+        "Preserves complete upstream release-history provenance without rewriting historical text.",
+        "Prevents historical Telegram feature bullets or versions from becoming current Fabushi capability/version promises.",
+        "Reuses existing release-note rendering/publication adapters and canonical release/evidence gates.",
+        "Creates no Telegram changelog runtime, second version owner, second release owner, or release-acceptance path."
+      ],
+      "failure_cases": [
+        "changelog.txt is omitted because it is historical documentation.",
+        "Historical malformed/wrapped text is silently normalized so exact provenance is lost.",
+        "A historical Telegram release-note bullet is treated as proof that current Fabushi implements the capability.",
+        "Telegram version/channel syntax is adopted as Fabushi version truth without canonical release policy.",
+        "A changelog generator or publisher is promoted into a second version/release/acceptance owner.",
+        "A changelog record is treated as signing, artifact identity, deployment, security, or release ACCEPT evidence."
+      ],
+      "ui_disposition": "No shipping UI. User-facing historical copy is retained as source provenance only; current Fabushi release-note presentation remains under existing release governance.",
+      "non_ui_responsibilities": [
+        "exact historical release-note text provenance",
+        "version/date/channel ordering provenance",
+        "preservation of wrapped/section/legacy irregular lines",
+        "separation of historical feature claims from current product truth",
+        "separation of release-note rendering/publication from version, package, signing, deployment and acceptance authority"
+      ],
+      "platform_delta": "Platform-specific historical notes, including the single explicitly platform-scoped version header, remain provenance only and do not establish current Fabushi platform support or packaging behavior.",
+      "existing_owner_candidates": [
+        "AGENTS.md canonical release-note/release-history and Stage 6 release-preparation governance (selected)",
+        "TDRP-R9-RELEASE-CHANGELOG-RENDERING-001 existing derived changelog generator adapter (supporting)",
+        "TDRP-R9-RELEASE-CHANGELOG-PAGES-PUBLICATION-001 existing derived publication adapter (supporting)",
+        "FQT-REL-001 release entry/exit criteria and FQT-EVID-001 evidence contract (selected gates)",
+        "new Telegram changelog/version/release owner (rejected)"
+      ],
+      "existing_owner": "AGENTS.md canonical release-note/release-history and Stage 6 release-preparation governance with existing derived changelog rendering/publication adapters plus FQT-REL-001/FQT-EVID-001",
+      "rejected_existing_owners": [
+        "Historical changelog text is not current shipping product state.",
+        "Derived changelog generator/publication adapters do not own version selection, tagging, signing, deployment or release acceptance.",
+        "Historical release bullets cannot replace source implementation, runtime, packaged or exact-head evidence.",
+        "A new Telegram-specific changelog/version owner would duplicate existing source-neutral release governance."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md",
+        "projects/fabushi-communication-platform/quality/release-entry-exit-criteria.md",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md"
+      ],
+      "fabushi_target_symbols": [
+        "Release notes come from the exact commit interval selected by repository release policy and are user-facing summaries, not a commit dump. Exclude CI/build-only/refactor/WIP noise unless user-visible, collapse related changes, preserve historical entries, and keep the repository's established release-note voice and format. When a stable release must subsume prior prereleases, summarize from the last stable baseline rather than only the newest prerelease. Telegram `changelog.txt` paths, fixed bullet rules, and provider syntax are provenance only; use Fabushi's canonical release-note authority when it exists."
+      ],
+      "target_language": "Repository release-history governance / retained historical provenance",
+      "language_rationale": "changelog.txt is historical release documentation rather than executable product logic. Its exact contents are retained as provenance while current Fabushi release policy, product implementation and evidence owners remain canonical.",
+      "command_event_contracts": [
+        "retain exact changelog.txt identity and complete line/record accounting",
+        "preserve version/date/channel ordering and historical note text without silent correction",
+        "reuse current Fabushi release-note rendering/publication and release-gate authority",
+        "require exact-head GitHub Actions and independent acceptance for executable/release claims"
+      ],
+      "state_owner": "Exact upstream changelog.txt blob is immutable source provenance; reviewed TDRP disposition is canonical accounting state.",
+      "lifecycle_owner": "Existing TDRP strict-read lifecycle plus AGENTS.md Stage 6 release-preparation and FQT release/evidence governance.",
+      "persistence_and_restart": "Committed dossier/ledger/index/lock plus exact upstream changelog.txt identity; no shipping runtime state.",
+      "concurrency_and_cancellation": "CAS branch lease and pinned upstream lease serialize publication; any changelog/owner/evidence/ref drift requires fresh reconciliation.",
+      "security_boundary": "Historical release notes grant no authorization and do not prove signing identity, artifact integrity, dependency provenance, sandbox/security posture, deployment, or release acceptance.",
+      "network_service_dependencies": [],
+      "service_owner": "No shipping service; repository/TDRP release-history governance only.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "policy-equivalent",
+      "blockers": [
+        "Fresh strict109 child exact-head TDRP/Rust Actions are required after publication.",
+        "Recursive source disposition remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "changelog.txt@41b7466f8a11a1866a66ff583809dfe74ad9a3c3 fully read: 5400 parsed lines / 157860 parsed characters; structural accounting 945 version/date headers + 2544 hyphen notes + 7 legacy em-dash notes + 1891 blank lines + 13 wrapped/section/legacy lines = 5400.",
+        "Fresh parent-head preflight at 51b5bb86ed636a451b541519a219b0aee5898df7: zero prior changelog.txt path/blob/responsibility rows; selected AGENTS.md release-note authority occurs exactly once and exact path+symbol has zero ledger owners; existing derived renderer/publication responsibilities remain unique supporting adapters.",
+        "Parent exact-head TDRP run 39920230784 completed 61/61 success; authority 12487610158 sha256:9f2162ea7d87a2aa2e7ad4909f97ba48e90b6f17186d84b6e912a770892e788f; closure 12487655772 sha256:1c362e040d124f650d745d1a4f5a92c187541c52eafd7a6957d798fa3bf69b84; reachability 12487401431 sha256:9fab76e0c8bea69ebe2dece88c5655fc3be15ff99c4763c48f6cd0316affc7cf.",
+        "Parent Rust run 39920230822 completed 6/6 success; artifact 12485894801 sha256:d22eea53c70a02768a1e23d84e8fac687dbf7df902fc41bccdd22fc00d667ddd.",
+        "Live upstream remained a7f453612f4896ac04d0007a36ab0d377e5bcbcf/tree c539eabfb05e7dcaa84821ac44c35cdfb6551ae5."
+      ],
+      "target_commit": "51b5bb86ed636a451b541519a219b0aee5898df7",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository release-note / release-preparation governance",
+      "composition_slot": "retained upstream changelog.txt historical release-note provenance",
+      "capability_component": "Source-neutral release-history provenance disposition",
+      "variation_axes": [
+        "unlabeled/beta/alpha/stable/dev historical channels",
+        "historical Telegram feature/platform notes versus current Fabushi product truth",
+        "release-note rendering/publication adapters versus version/signing/deployment/acceptance authority"
+      ],
+      "shared_owner_contracts": [
+        "AGENTS.md release-note and Stage 6 release-preparation governance",
+        "TDRP-R9-RELEASE-CHANGELOG-RENDERING-001",
+        "TDRP-R9-RELEASE-CHANGELOG-PAGES-PUBLICATION-001",
+        "FQT-REL-001",
+        "FQT-EVID-001",
+        ".github/workflows/release-macos-main.yml exact-source package/sign/notarize/acceptance"
+      ],
+      "duplicate_root_check": "No Telegram changelog runtime, second release-note truth, second version owner, second release owner, publication authority, product root, or release gate introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository/release-history provenance only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Retained upstream changelog.txt release-history provenance",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Changed changelog.txt identity/content, selected release-governance owner paragraph, release/evidence policy identity, PR/ref, or upstream lease requires fresh reconciliation.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-UPSTREAM-ROOT-CHANGELOG-RELEASE-HISTORY-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CHANGELOG-EXACT-SOURCE-001",
+        "ORA-TDRP-CHANGELOG-STRUCTURAL-ACCOUNTING-001",
+        "ORA-TDRP-CHANGELOG-CANONICAL-RELEASE-AUTHORITY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CHANGELOG-NO-SECOND-RELEASE-OWNER-001",
+        "INV-TDRP-CHANGELOG-HISTORY-NOT-CURRENT-PRODUCT-PROOF-001",
+        "INV-TDRP-CHANGELOG-NO-RELEASE-ACCEPT-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CHANGELOG-RETAINED-HISTORY-001",
+        "CONTRACT-TDRP-CHANGELOG-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CHANGELOG-SOURCE-DRIFT-001",
+        "FAULT-TDRP-CHANGELOG-HISTORY-REWRITE-001",
+        "FAULT-TDRP-CHANGELOG-DUPLICATE-RELEASE-OWNER-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CHANGELOG-NOT-AUTHORIZATION-001",
+        "SEC-TDRP-CHANGELOG-HISTORY-NOT-ARTIFACT-PROOF-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-CHANGELOG-NO-SOURCE-OMISSION-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "locked changelog.txt + canonical Fabushi release-note/release-gate authority + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact upstream changelog.txt@41b7466f8a11a1866a66ff583809dfe74ad9a3c3 retained as historical release-note provenance; historical text is not current Fabushi product or release truth.",
+      "reviewer": null,
+      "notes": "Strict index 109 closes only changelog.txt as retained release-note/history provenance. Counters become unknown=16,267 unread=16,242 omitted=0 responsibilities=127. Next strict root index 110 cmake@7ceca3019b4750d7a5acb2de0faffd523ee14095 (gitlink)."
     }
   ]
 }

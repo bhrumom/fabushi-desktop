@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16268,
-    "unread_minimum": 16243,
+    "unknown_minimum": 16267,
+    "unread_minimum": 16242,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -122,7 +122,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 07972a8c3ffa56e63903215587b1cb196e88c5db/tree 70051fe9558afef00692415b9802cc849d628af8 passed TDRP 39918824228 at 61/61 and Rust 39918824363 at 6/6. Strict108 REVIEW.md@e65be8231a8e0f50ee86b20ef16120d58ea40376 is retained as non-runtime repository review/style provenance under the existing source-neutral AGENTS.md edit-policy/quality owners; all 25 rules are accounted, but Telegram C++/Qt/rpl/tr-specific mechanics are not automatically adopted as Fabushi Rust/TypeScript policy and do not create a second validator. Counters unknown=16,268 unread=16,243 omitted=0 responsibilities=126. Next strict root index 109 changelog.txt@41b7466f8a11a1866a66ff583809dfe74ad9a3c3. Fresh child exact-head Actions required.",
+  "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 51b5bb86ed636a451b541519a219b0aee5898df7/tree 943ebdd12b35c8528cd8cd6194c4b9b3000f72fe passed TDRP 39920230784 at 61/61 and Rust 39920230822 at 6/6. Strict109 changelog.txt@41b7466f8a11a1866a66ff583809dfe74ad9a3c3 is retained as historical release-note/history provenance under existing AGENTS.md release-note/release-preparation governance, the already-mapped derived changelog rendering/publication adapters, FQT-REL-001 and FQT-EVID-001; all 5400 lines are structurally accounted, while historical Telegram bullets/version syntax do not become current Fabushi product or release truth and no second release/version/acceptance owner is created. Counters unknown=16,267 unread=16,242 omitted=0 responsibilities=127. Next strict root index 110 cmake@7ceca3019b4750d7a5acb2de0faffd523ee14095 gitlink to desktop-app/cmake_helpers tree f5c386cb34208309aae521187611fac4a2045577. Fresh child exact-head Actions required.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
