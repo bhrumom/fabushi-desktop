@@ -43348,8 +43348,8 @@
         "projects/telegram-desktop-rust/module-map.md"
       ],
       "fabushi_target_symbols": [
-        "documentation_or_license retained legal/source record",
-        "build/generator/resources/dependencies license provenance"
+        "研究/更新/保留必要来源与法律记录，不伪装成运行时迁移",
+        "工具链、schema、资源、许可证、可重现发布"
       ],
       "target_language": "Repository governance / retained recursive-dependency legal-record provenance",
       "language_rationale": "Legal text, not executable C++ behavior.",
