@@ -30002,7 +30002,7 @@
         "projects/fabushi-communication-platform/quality/evidence-contract.md"
       ],
       "fabushi_target_symbols": [
-        "repository contribution/task/review governance",
+        "Mandatory development lifecycle",
         "Repository quality-health qualification",
         "Repository quality-health evidence"
       ],
@@ -30048,7 +30048,8 @@
         "action.yml performs npm init plus unversioned runtime installs; audited provider tree has no committed package manifest/package lock/LICENSE.",
         "index.mjs verifies recursive-submodule clone/guard, monthly branch fencing, push/PR lifecycle, no-op and caught PR errors.",
         "check_unused_styles.py verifies top-level definitions, [[maybe_unused]], C++/style references, definition-side submodule exclusion, fixed-point removal.",
-        "Parent exact-head 14cdc784c167e8fb5a35c742145abb1a57b77dc2/tree 313ad81c1e1a3eae5960d29e5a155814eeeac4cc completed TDRP run 39891473256 with all 30 returned jobs successful (authority 12475286085 sha256:8187a40afb67a5c44476b3cd5764f1cc231fb36352b4e1078514d25403c2886a; closure 12475485949 sha256:1bb2e602f49574894e262e4f3364156f7b18348c74592464e1eea39e4fd1e197; reachability 12474953222 sha256:cb12c63e196894675c5539676a32978e6ed90e62be7a7ceddb1282895ec95a3f) and Rust desktop runtime run 39891473262 attempt 2 at 6/6 success (artifact 12475172253 sha256:0b3b352315c0191a5811c52ae92896b350dc704d69bdfdebdf4dd630c9c38e50)."
+        "Parent exact-head 14cdc784c167e8fb5a35c742145abb1a57b77dc2/tree 313ad81c1e1a3eae5960d29e5a155814eeeac4cc completed TDRP run 39891473256 with all 30 returned jobs successful (authority 12475286085 sha256:8187a40afb67a5c44476b3cd5764f1cc231fb36352b4e1078514d25403c2886a; closure 12475485949 sha256:1bb2e602f49574894e262e4f3364156f7b18348c74592464e1eea39e4fd1e197; reachability 12474953222 sha256:cb12c63e196894675c5539676a32978e6ed90e62be7a7ceddb1282895ec95a3f) and Rust desktop runtime run 39891473262 attempt 2 at 6/6 success (artifact 12475172253 sha256:0b3b352315c0191a5811c52ae92896b350dc704d69bdfdebdf4dd630c9c38e50).",
+        "Child exact-head 8dc4aec6e267e93c265e9c16415551bebd551b65 TDRP run 39893367896 failed Source authority / recursive inventory because the prior target symbol text was not a literal target-file symbol; validate-tdrp-revision9-authority.mjs:603 fail-closed. Repair changes only that target symbol to the exact AGENTS.md heading Mandatory development lifecycle."
       ],
       "target_commit": "14cdc784c167e8fb5a35c742145abb1a57b77dc2",
       "workflow_run": null,
