@@ -361,10 +361,10 @@
   "coverage": {
     "root_source_entries_total": 6893,
     "recursive_source_entries_total": 16379,
-    "unknown_minimum": 16263,
-    "unread_minimum": 16238,
+    "unknown_minimum": 16262,
+    "unread_minimum": 16237,
     "omitted_known": 0,
-    "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent bf535567d7d75d53bac960951ab82f9c70601b96/tree f180263f70c08e9d2ce69950ec83c5a0ab5be711 passed TDRP 39935933661 at 61/61 and Rust 39935933679 at 6/6. Strict113 docs/assets/slide.01.jpg@07ed727d48e286f9a04d933ac7203bdb7205ff4a is retained as AppStream/distribution visual-resource and marketing-caption provenance under the existing FVA visual-acceptance, FDS brand-asset and FQT-EVID visual evidence owners; rendered Telegram UI and the sync marketing caption do not become Fabushi visual baseline, runtime sync proof, shipping asset, package/store proof or release authority, and the binary is not copied. Counters unknown=16,263 unread=16,238 omitted=0 responsibilities=131. Next strict root index 114 docs/assets/slide.02.jpg@2a19cfdeb4a831d8bbe553dede2b1cdae7aec40f. Fresh child exact-head Actions required."
+    "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 8ab1deff05209e37ca1a5bfb77a512b71a856b82/tree eff1e410c41fea750988c17b0012a8e7d9423b2c passed TDRP 39938129941 at 61/61 and Rust 39938130025 at 6/6. Strict114 docs/assets/slide.02.jpg@2a19cfdeb4a831d8bbe553dede2b1cdae7aec40f is retained as AppStream/distribution visual-resource and autonomy/no-phone marketing-caption provenance under the existing FVA visual-acceptance, FDS brand-asset and FQT-EVID visual evidence owners; the rendered Telegram UI and autonomy caption are not Fabushi visual baseline, runtime account/session/sync proof, shipping asset, package/store proof or release authority, and the binary is not copied. Counters unknown=16,262 unread=16,237 omitted=0 responsibilities=132. Next strict root index 115 docs/assets/slide.03.jpg@588f2950d5f6fdd2625f2bd250db82761ce0e6f1. Fresh child exact-head Actions required."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -378,7 +378,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Strict113 is binary AppStream/distribution visual-resource and marketing-caption provenance only. Source closure remains open with unknown=16,263 unread=16,238 omitted=0; the historical Telegram screenshot and sync caption do not establish Fabushi visual-baseline approval, runtime multi-device sync, brand authority, package/store metadata, signing/deployment behavior or release acceptance."
+    "note": "Strict114 is binary AppStream/distribution visual-resource and autonomy/no-phone marketing-caption provenance only. Source closure remains open with unknown=16,262 unread=16,237 omitted=0; the historical Telegram screenshot and caption do not establish Fabushi visual-baseline approval, account/session/sync independence, brand authority, package/store metadata, signing/deployment behavior or release acceptance."
   },
   "baseline_identity_evidence": {
     "status": "pending-current-head-revalidation",
