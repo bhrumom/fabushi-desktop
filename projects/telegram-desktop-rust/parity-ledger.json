@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "29c96fa1b6545c036cf9a64aa029c225c47b2993",
+  "target_commit": "d4a4ed2b9015996faf0da7160e762c7d49cf8aa0",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16239,
-    "unread": 16214,
+    "unknown": 16238,
+    "unread": 16213,
     "omitted": 0,
-    "responsibilities_total": 155,
+    "responsibilities_total": 156,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -42018,6 +42018,235 @@
       "reviewer": "primary-session",
       "license_and_provenance": "Exact repository metadata provenance read from locked Microsoft/GSL child blob through the accepted tdesktop gitlink. GitHub Linguist documentation is cited only to bound linguist-language semantics; no upstream C++ runtime or GitHub implementation is copied.",
       "notes": "Strict137 closes only Microsoft/GSL .gitattributes semantic read/decomposition. The exact file contains one declaration: include/gsl/* linguist-language=C++. It is bounded to GitHub Linguist language statistics/syntax highlighting and does not declare EOL, LFS, filter, diff, merge, worktree-byte, build, runtime, security, packaging or release semantics. Existing TDRP source-authority and repository quality/evidence owners are reused. Counters unknown=16,239 unread=16,214 omitted=0 responsibilities=155. Next strict138 Microsoft/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37 .gitignore@326971f0331d1f8c3226fb3b341687f3198cd8a2.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/GSL",
+      "source_blob_sha": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+      "source_kind": "recursive_child_repository_local_generated_state_exclusion_provenance",
+      "module_id": "tdesktop.thirdparty.gsl.gitignore",
+      "responsibility_id": "TDRP-R9-GSL-GITIGNORE-LOCAL-STATE-EXCLUSION-PROVENANCE-001",
+      "source_symbols": [
+        ".gitignore@326971f0331d1f8c3226fb3b341687f3198cd8a2",
+        "CMakeFiles, build, CMakeCache.txt",
+        "tests/CMakeFiles, tests/Debug, tests/*tests.dir, Testing/Temporary/*.*",
+        "*.opensdf, *.sdf, *.vcxproj, *.vcxproj.filters, *.sln, *.tlog, *.suo, .vs/",
+        ".vscode/"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-LOCAL-STATE-EXCLUSION",
+        "CAP-GENERATED-OUTPUT-NON-AUTHORITY",
+        "CAP-LOCAL-CONFIG-HYGIENE"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "Microsoft/GSL:.gitignore@326971f0331d1f8c3226fb3b341687f3198cd8a2",
+        "TDRP-R9-REPOSITORY-LOCAL-STATE-EXCLUSION-PROVENANCE-001",
+        "AGENTS.md@da3e37258c74963970ff5cfc5d54671a37558b97#Repository development-environment adapter governance",
+        "AGENTS.md@da3e37258c74963970ff5cfc5d54671a37558b97#Repository file-attribute and byte-integrity governance",
+        "TDRP-R9-DEVCONTAINER-DEVELOPMENT-ENVIRONMENT-001",
+        "TDRP-R9-GITATTRIBUTES-WORKTREE-BYTE-POLICY-001"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-gitignore-local-state-exclusion-complete-read.md",
+      "behavior_contract": "Treat the locked Microsoft/GSL .gitignore as repository worktree hygiene only. Its 16 lines exclude local/generated CMake/build outputs, Visual Studio/VS Code project/cache state, and test-temporary artifacts from ordinary untracked discovery/addition. Ignore matching does not delete bytes, untrack tracked source, authorize recursive-inventory omission, prove a build/test passed, establish product persistence, or become release acceptance.",
+      "state_machine": "accepted tdesktop gitlink -> exact GSL child commit -> read exact .gitignore blob -> Git evaluates ordered ignore patterns for untracked local/generated/build/IDE/test-temporary paths -> tracked source remains tracked independently -> TDRP recursive inventory and exact-head GitHub Actions independently decide source/acceptance truth -> child/blob drift, partial read, or ignore-as-omission inference remains non-passing",
+      "side_effects": [
+        "Suppresses ordinary Git status/add discovery for matching untracked GSL-local build, IDE and test-temporary paths.",
+        "Does not delete ignored files or untrack already tracked files.",
+        "Does not mutate Fabushi product state, package state, service state or runtime persistence.",
+        "Does not authorize any tracked source, test, resource, build definition, license or evidence input to be omitted from TDRP inventory."
+      ],
+      "failure_cases": [
+        "The GSL gitlink or .gitignore blob drifts and stale ignore-policy evidence is reused.",
+        "An ignore pattern is misread as permission to omit tracked or recursively required source from migration accounting.",
+        "CMake/build/IDE/test-temporary exclusions are promoted to proof that compilation or tests succeeded.",
+        "Mutable ignored files are mistaken for canonical product persistence, recovery or release state.",
+        "A Microsoft/GSL- or Telegram-specific local-state owner is introduced despite the existing source-neutral repository governance owner.",
+        "A partial read or cancelled exact-head publication is treated as passing evidence."
+      ],
+      "ui_disposition": "Not applicable; repository-local generated/build/IDE/test-temporary exclusion provenance only.",
+      "non_ui_responsibilities": [
+        "exact recursive-child source provenance",
+        "repository-local generated/build output exclusion semantics",
+        "Visual Studio and VS Code local project/cache exclusion semantics",
+        "test-temporary exclusion semantics",
+        "tracked-source versus ignored-untracked separation",
+        "reuse of source-neutral repository development/source-integrity governance",
+        "fail-closed separation of ignore hygiene from source completeness, build/test proof and release acceptance"
+      ],
+      "platform_delta": "The exact Microsoft/GSL ignore patterns are upstream repository-worktree provenance. Fabushi retains only source-neutral local/generated-state hygiene and non-authority semantics under existing repository governance; GSL CMake, Visual Studio and test-temporary path names do not become Fabushi runtime, build-system, persistence or packaging owners.",
+      "existing_owner_candidates": [
+        "AGENTS.md Repository development-environment adapter governance (selected)",
+        "AGENTS.md Repository file-attribute and byte-integrity governance (selected shared boundary)",
+        "GitHub Actions exact-head source authority/inventory validators (selected verification boundary)",
+        "product persistence/recovery owner (rejected)",
+        "new Telegram/local-state ignore owner (rejected)"
+      ],
+      "existing_owner": "AGENTS.md source-neutral repository development-environment and source-integrity governance with existing exact-head source-authority validators",
+      "rejected_existing_owners": [
+        "Product persistence/recovery owns canonical application state, not Git worktree ignore semantics.",
+        "Build/test owners consume executable evidence; ignored build/test-temporary paths cannot prove execution.",
+        "A Microsoft/GSL or Telegram-specific ignore owner would duplicate source-neutral repository governance.",
+        "Recursive source inventory cannot use ignore matching as permission to omit tracked or required source."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository-local devcontainer and editor environment definitions are optional authoring adapters, not shipping runtime, build authority, or acceptance evidence.",
+        "Privileged debugging settings such as ptrace capability or relaxed seccomp are explicit local/container exceptions only; they must not become Fabushi production sandbox or security defaults, service requirements, or release assumptions. A missing or unavailable devcontainer is not a passing build, and mutable host directories or editor state cannot become source authority.",
+        "Durable Git/LFS content is fail-closed: a missing object, pointer-only materialization where bytes are required, or content/hash mismatch is incomplete evidence, never permission to substitute generated bytes, a local cache, or a visually similar resource. Mutable user Git configuration and worktree state cannot become source authority."
+      ],
+      "target_language": "Repository governance / source-neutral Git ignore and local-state hygiene policy",
+      "language_rationale": "The source is repository worktree metadata, not shipping C++ product logic. Its applicable responsibility is exact provenance plus reuse of existing repository development/source-integrity governance; no Rust/React runtime owner is required.",
+      "command_event_contracts": [
+        "locked child gitlink -> resolve exact GSL commit before reading ignore metadata",
+        "exact .gitignore blob -> preserve only declared local/generated/build/IDE/test-temporary exclusions",
+        "ignore match -> affects ordinary untracked discovery/addition only; already tracked source remains tracked",
+        "tracked source/test/resource/build/license inputs -> remain in recursive TDRP inventory regardless of ignore match",
+        "ignored build/test-temporary bytes -> never count as build/test execution or acceptance evidence",
+        "head/gitlink/blob drift or partial publication -> invalidate dependent claim and remain non-passing",
+        "publication -> exact-head GitHub Actions revalidation"
+      ],
+      "state_owner": "Durable repository ignore policy plus the selected exact source revision; ignored mutable worktree/build/IDE/test-temporary bytes are non-authoritative.",
+      "lifecycle_owner": "Existing repository development/source-integrity lifecycle and exact-head TDRP/GitHub Actions source-authority lifecycle.",
+      "persistence_and_restart": "Ignored files may persist locally across worktree or editor restarts, but that persistence is mutable local state only. Canonical source/product state must remain reconstructible from durable repository or product persistence owners.",
+      "concurrency_and_cancellation": "Different worktrees may contain different ignored bytes while sharing the same durable patterns. Their mutable state cannot serialize, fence or advance canonical source, product, build, release or acceptance state. Partial reads or cancelled evidence publication remain non-passing.",
+      "security_boundary": ".gitignore is repository hygiene, not authorization, sandboxing, secret storage or a release-security boundary. Matching does not make bytes trustworthy or safe.",
+      "network_service_dependencies": [
+        "GitHub Actions for authoritative exact-head executable revalidation"
+      ],
+      "service_owner": "Existing repository development/source-integrity governance; no runtime service.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "policy-equivalent-mapped-open",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions must validate strict138 after publication.",
+        "Recursive source closure remains open.",
+        "Independent release acceptance remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [
+        "path:AGENTS.md"
+      ],
+      "test_evidence": [
+        "strict138 Microsoft/GSL .gitignore fully read at exact blob 326971f0331d1f8c3226fb3b341687f3198cd8a2: 16 lines covering CMake/build, Visual Studio/VS Code, and test-temporary exclusions",
+        "tdesktop Telegram/ThirdParty/GSL gitlink independently resolved to 87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "GSL commit tree independently resolved to 6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41",
+        "Existing TDRP-R9-REPOSITORY-LOCAL-STATE-EXCLUSION-PROVENANCE-001 owner re-read and reused; .gitignore remains worktree hygiene, not source omission or acceptance",
+        "Parent TDRP 40007031379 succeeded; authority 12525400642 sha256:9e70fff0a3745ca742eda4a20f4bd66ff1aa3cb4f6c57dfdd7d4abe7a3ba64af; closure 12524942439 sha256:8803e478e54a2f7b6d47ea8cb485faa0742770df2f79794ec47d939ae6d84141; reachability 12524133934 sha256:4de9b391641df25df9cdff3f7443636c8308927de560f7d2dfb5b8cdd5cb20e5",
+        "Parent Rust 40007031384 passed 6/6; artifact 12524826812 sha256:72fdc8945dbcb7ae91c0a235aadbc78f4162d3850258336dfef9a9c633f30755."
+      ],
+      "target_commit": "d4a4ed2b9015996faf0da7160e762c7d49cf8aa0",
+      "workflow_run": 40007031379,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12525400642,
+      "artifact_digest": "sha256:9e70fff0a3745ca742eda4a20f4bd66ff1aa3cb4f6c57dfdd7d4abe7a3ba64af",
+      "composition_root": "Fabushi repository development/source-integrity + TDRP source-authority lifecycle",
+      "composition_slot": "recursive-child repository local/generated-state exclusion provenance",
+      "capability_component": "Repository local/generated-state exclusion provenance",
+      "variation_axes": [
+        "locked child gitlink vs drifted child authority",
+        "tracked source vs ignored untracked local/generated state",
+        "build/test-temporary exclusion vs executable build/test evidence",
+        "complete exact blob read vs partial/stale ignore metadata"
+      ],
+      "shared_owner_contracts": [
+        "AGENTS.md repository development-environment adapter governance",
+        "AGENTS.md repository file-attribute and byte-integrity governance",
+        "TDRP exact-head source authority"
+      ],
+      "duplicate_root_check": "No Microsoft/GSL/Telegram ignore runtime, second repository owner, C++ runtime, build runtime, product persistence owner or release authority introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository quality/source-authority only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Repository quality/source authority",
+      "route_contract": "No shipping route",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Ignore-policy evidence remains bound to the exact tdesktop gitlink, GSL child commit/tree and .gitignore blob; ignored local/generated bytes, partial reads, source drift or ignore-as-omission/build-proof inference cannot become passing migration/release evidence.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "low",
+      "requirement_ids": [
+        "TDRP-R9-GSL-GITIGNORE-LOCAL-STATE-EXCLUSION-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GSL-GITIGNORE-SOURCE-001",
+        "ORA-TDRP-GSL-GITIGNORE-OWNER-001",
+        "ORA-TDRP-GSL-GITIGNORE-TRACKED-SOURCE-001",
+        "ORA-TDRP-GSL-GITIGNORE-NON-ACCEPTANCE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GSL-GITIGNORE-NO-SOURCE-OMISSION-001",
+        "INV-TDRP-GSL-GITIGNORE-NO-BUILD-TEST-PROOF-001",
+        "INV-TDRP-GSL-GITIGNORE-NO-PRODUCT-PERSISTENCE-001",
+        "INV-TDRP-GSL-GITIGNORE-EXACT-PROVENANCE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [],
+      "release_gate_ids": [],
+      "test_fixture_ids": [
+        "locked Microsoft/GSL .gitignore@326971f0331d1f8c3226fb3b341687f3198cd8a2 + existing repository-local-state owner + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable-source-provenance",
+      "release_gate_status": "not-accepted",
+      "acceptance_reviewer": null,
+      "reviewer": "primary-session",
+      "license_and_provenance": "Exact repository metadata provenance read from locked Microsoft/GSL child blob through the accepted tdesktop gitlink. No upstream C++ runtime, generated build output, IDE state or test-temporary artifact is copied.",
+      "notes": "Strict138 closes only Microsoft/GSL .gitignore semantic read/decomposition. The exact 16-line file excludes local/generated CMake/build outputs, Visual Studio/VS Code project/cache state and test-temporary artifacts from ordinary untracked discovery/addition. It does not delete/untrack source, authorize recursive-inventory omission, prove build/test execution, establish product persistence, or become release acceptance. Existing repository development/source-integrity and exact-head TDRP owners are reused. Counters unknown=16,238 unread=16,213 omitted=0 responsibilities=156. Next strict139 Microsoft/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37 CMakeLists.txt@b1d24e5facfe56b1ae28468a5959797e9f6bacda.",
       "test_execution_evidence": []
     }
   ]

@@ -361,10 +361,10 @@
   "coverage": {
     "root_source_entries_total": 6893,
     "recursive_source_entries_total": 16379,
-    "unknown_minimum": 16239,
-    "unread_minimum": 16214,
+    "unknown_minimum": 16238,
+    "unread_minimum": 16213,
     "omitted_known": 0,
-    "note": "Live upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 29c96fa1b6545c036cf9a64aa029c225c47b2993 passed TDRP 40000624296 61/61; authority 12521827806 sha256:9d78369e74e503a0d230fc299b32d5ddcc94e79dd784960d0bdc2f761b09d409; closure 12521678388 sha256:95215a88e5c9273432c2f417921e08f46fb63bda7728b8de2faf4982aec0fcdd; reachability 12523150003 sha256:55b5e261780d4f6706250d8d6ae066ad4024d174fbb470d5eb888cafe2b480c7 and Rust 40000624188 6/6; artifact 12521827593 sha256:03b66a7480de76a8f5e10bfc948e9a71316a454cd1f3863f7d728c88cc6a1ea0. Strict137 Microsoft/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37 .gitattributes@3455dc9da5064e1a54deba6e2a5869aae2442d42 was fully read. It contains only include/gsl/* linguist-language=C++; GitHub Linguist documents this attribute as language statistics/syntax-highlighting metadata. No EOL/LFS/filter/diff/merge/worktree-byte/build/runtime behavior is inferred. Existing TDRP source-authority and repository quality/evidence owners are reused; repository metadata cannot establish build, source closure, security, packaging or release acceptance. Counters unknown=16,239 unread=16,214 omitted=0 responsibilities=155. Next strict138 Microsoft/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37 .gitignore@326971f0331d1f8c3226fb3b341687f3198cd8a2."
+    "note": "Live upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent d4a4ed2b9015996faf0da7160e762c7d49cf8aa0 passed TDRP 40007031379 61/61; authority 12525400642 sha256:9e70fff0a3745ca742eda4a20f4bd66ff1aa3cb4f6c57dfdd7d4abe7a3ba64af; closure 12524942439 sha256:8803e478e54a2f7b6d47ea8cb485faa0742770df2f79794ec47d939ae6d84141; reachability 12524133934 sha256:4de9b391641df25df9cdff3f7443636c8308927de560f7d2dfb5b8cdd5cb20e5; Rust 40007031384 6/6; artifact 12524826812 sha256:72fdc8945dbcb7ae91c0a235aadbc78f4162d3850258336dfef9a9c633f30755. Strict138 Microsoft/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37 .gitignore@326971f0331d1f8c3226fb3b341687f3198cd8a2 was fully read: 16 repository-local/generated CMake/build, Visual Studio/VS Code and test-temporary exclusion patterns. Existing AGENTS.md repository development/source-integrity governance and exact-head source-authority validators are reused; ignore matching cannot omit tracked source, prove build/test execution, establish product persistence, or release acceptance. Counters unknown=16,238 unread=16,213 omitted=0 responsibilities=156. Next strict139 Microsoft/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37 CMakeLists.txt@b1d24e5facfe56b1ae28468a5959797e9f6bacda."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -378,7 +378,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Strict136 mapped-open/formatting-policy-provenance only. Existing TEST_STRATEGY language/toolchain quality and exact-head evidence owners are reused; Microsoft/GSL C++ style keys and NO-FORMAT pragma remain provenance, and no local formatter result can become build/source-closure/security/packaging/release acceptance. Recursive source closure and independent release acceptance remain open."
+    "note": "Strict138 mapped-open repository-local/generated/build/IDE/test-temporary exclusion provenance only. Existing AGENTS.md repository development/source-integrity governance and exact-head TDRP validators are reused; ignore matching is not source omission, build/test proof, product persistence, security, packaging or release acceptance. Recursive source closure and independent release acceptance remain open."
   },
   "baseline_identity_evidence": {
     "status": "pending-current-head-revalidation",
@@ -1827,5 +1827,5 @@
     "baseline_identity_accepted": false,
     "source_closure_ready": false
   },
-  "target_commit": "29c96fa1b6545c036cf9a64aa029c225c47b2993"
+  "target_commit": "d4a4ed2b9015996faf0da7160e762c7d49cf8aa0"
 }
