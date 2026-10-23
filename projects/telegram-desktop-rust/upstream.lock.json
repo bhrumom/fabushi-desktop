@@ -361,10 +361,10 @@
   "coverage": {
     "root_source_entries_total": 6893,
     "recursive_source_entries_total": 16379,
-    "unknown_minimum": 16273,
-    "unread_minimum": 16248,
+    "unknown_minimum": 16272,
+    "unread_minimum": 16247,
     "omitted_known": 0,
-    "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 20e1eca26a610ee9fdcc7af38317a856a59340ff/tree 8a31ee1af96f430a093c81ad31529b9a6185f93d passed TDRP 39907325317 at 61/61 (authority 12481591530 sha256:b498b25adc98e012698dbc3590318376dc4082e89f1670696e93125d51fda6b5; closure 12481567383 sha256:d519fab676cb70d1bba675b16bf999827072f164627c5dfad21d75f979f30b14; reachability 12481741705 sha256:5d6ab1354c5b55333b500f14bf111ba0f26a3d8ba8bb2cd98b8a791913396062) and Rust 39907325306 at 6/6 (artifact 12481044536 sha256:d560e16bda0dc22a343409b767de42026be0c1a62dfb35f0a9c29bd7f9322c23). Strict103 CMakeLists.txt@59477e251bbfea8d5efaf0bcda53798f92695449 fully read and mapped existing-owner-first to canonical desktop build/package composition plus FQT configured-build validators. Counters unknown=16,273 unread=16,248 omitted=0 responsibilities=121. Next strict root index 104 GROK.md@b1ae452d94cf48971c6d7ea17cac6b45cabee08d. Fresh child exact-head Actions required."
+    "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent d2a24f4c3e5486fda8bbea77d8155368be62fd19/tree f088da27a6f8cb702b3e7577d4c2f11346dc7ade passed TDRP 39909817389 at 61/61 (authority 12481833441 sha256:45e9f7d97c7993cb93eb0cf7c163fd16df97c0a252c7667c5b8ab1e7ef9e2d86; closure 12482826298 sha256:7afa85ae6b4b2adb83857d6e65cd2d3edfeeb7805f18a692c0be4d964cfa6637; reachability 12481649603 sha256:66bb3ae62bad85e246198267720cd88047866e5d8ab131a1f7a9137a21e1eda4) and Rust 39909817456 at 6/6 (artifact 12482292020 sha256:3d791f6c4050273f878b1f292306cdddb9746fee44203f1e875e6da20b8e51cc). Strict104 GROK.md@b1ae452d94cf48971c6d7ea17cac6b45cabee08d fully read and mapped existing-owner-first to root AGENTS.md host-pointer precedence. Its direct .grok/ai-workflow-adapter.md@db447f204316d3991f6d20db3d8f097fcc021154 dependency is fully read for context but remains independently open. Counters unknown=16,272 unread=16,247 omitted=0 responsibilities=122. Next strict root index 105 LEGAL@09c9e383db122fe0694e73c48d6224676afe60f6. Fresh child exact-head Actions required."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -378,7 +378,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Live strict103 mapping requires fresh child exact-head GitHub Actions. Source closure remains open with unknown=16,273 unread=16,248 omitted=0; root CMakeLists.txt is build-composition provenance and cannot establish configured-build, package or release acceptance."
+    "note": "Live strict104 mapping requires fresh child exact-head GitHub Actions. Source closure remains open with unknown=16,272 unread=16,247 omitted=0; GROK.md is host-pointer provenance and its direct .grok/ai-workflow-adapter.md dependency remains independently accountable, so neither can establish production or release acceptance."
   },
   "baseline_identity_evidence": {
     "status": "pending-current-head-revalidation",

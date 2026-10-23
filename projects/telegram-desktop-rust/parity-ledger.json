@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "20e1eca26a610ee9fdcc7af38317a856a59340ff",
+  "target_commit": "d2a24f4c3e5486fda8bbea77d8155368be62fd19",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16273,
-    "unread": 16248,
+    "unknown": 16272,
+    "unread": 16247,
     "omitted": 0,
-    "responsibilities_total": 121,
+    "responsibilities_total": 122,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -32506,6 +32506,234 @@
       "reviewer": null,
       "license_and_provenance": "Exact upstream CMakeLists.txt blob 59477e251bbfea8d5efaf0bcda53798f92695449 retained as Telegram Desktop GPL-3.0-or-later root-build provenance; no source-specific build runtime is copied.",
       "notes": "Strict index 103 closes only root CMakeLists.txt build-composition responsibility. Counters unknown=16,273 unread=16,248 omitted=0 responsibilities=121. Next strict root index 104 GROK.md@b1ae452d94cf48971c6d7ea17cac6b45cabee08d. baseline_identity_accepted=false/source_closure_ready=false; fresh child exact-head Actions required.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "GROK.md",
+      "source_blob_sha": "b1ae452d94cf48971c6d7ea17cac6b45cabee08d",
+      "source_kind": "repository_host_instruction_pointer",
+      "module_id": "tdesktop.grok_pointer",
+      "responsibility_id": "TDRP-R9-REPOSITORY-GROK-HOST-INSTRUCTION-POINTER-PROVENANCE-001",
+      "source_symbols": [
+        "Grok Build Pointer",
+        "Read AGENTS.md and treat it as the canonical repository-wide instructions",
+        "/continue /perform-task /process-inbox -> .grok/ai-workflow-adapter.md"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-INSTRUCTION-PRECEDENCE",
+        "CAP-HOST-POINTER-ADAPTER-GOVERNANCE"
+      ],
+      "dependency_ids": [
+        "AGENTS.md",
+        ".grok/ai-workflow-adapter.md"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/grok-build-pointer-complete-read.md",
+      "behavior_contract": "Treat upstream GROK.md as a host-specific instruction pointer that delegates repository-wide authority to AGENTS.md and, only for the named Grok workflow commands, points to .grok/ai-workflow-adapter.md for host mechanics. Fabushi already owns the source-neutral host-pointer precedence rule in root AGENTS.md. The adapter dependency is fully read for context here but remains an independent source entry/responsibility and is not transitively closed by strict104. Neither pointer nor adapter establishes a shipping runtime, product behavior, source closure or acceptance.",
+      "state_machine": "read exact upstream GROK.md -> resolve canonical AGENTS.md delegation -> inspect direct .grok/ai-workflow-adapter.md dependency without transitive closure -> map the pointer responsibility to current Fabushi root host-pointer policy -> preserve current task/spec/source authority -> require exact-head parent GitHub Actions -> publish mapped-open accounting atomically -> continue strict source order",
+      "side_effects": [
+        "Adds durable provenance for the upstream Grok host instruction pointer.",
+        "Reuses the existing root AGENTS.md instruction-precedence/host-pointer owner.",
+        "Records .grok/ai-workflow-adapter.md as a direct fully-read dependency while leaving its own source responsibility open for independent accounting.",
+        "Introduces no Grok-specific product runtime, task queue, build authority, network owner or UI root.",
+        "Preserves baseline_identity_accepted=false and source_closure_ready=false."
+      ],
+      "failure_cases": [
+        "GROK.md is treated as a second canonical repository-instruction owner",
+        "Grok adapter mechanics override canonical or nested AGENTS.md without explicit delegation",
+        ".grok/ai-workflow-adapter.md is transitively marked closed merely because GROK.md points to it",
+        "pointer or adapter documentation is treated as product implementation or acceptance evidence",
+        "stale host mechanics override current task/spec/source authority"
+      ],
+      "ui_disposition": "No standalone shipping UI surface. This source entry is only a repository host-instruction pointer.",
+      "non_ui_responsibilities": [
+        "host instruction delegation to canonical AGENTS.md",
+        "explicit routing of named Grok workflow commands to a host-mechanics adapter",
+        "repository instruction precedence",
+        "fail-closed separation between pointer/adapter documentation and production evidence"
+      ],
+      "platform_delta": "Grok-specific pointer and adapter mechanics are upstream host-adapter details. Fabushi keeps the source-neutral root AGENTS.md precedence rule; the adapter remains separate source provenance and does not create a Grok product/platform runtime.",
+      "existing_owner_candidates": [
+        "root AGENTS.md repository instruction precedence and host-pointer policy (selected)",
+        "new Grok-specific instruction/runtime owner (rejected)"
+      ],
+      "existing_owner": "Root AGENTS.md repository instruction precedence and host-pointer adapter policy",
+      "rejected_existing_owners": [
+        "A new Grok-specific owner would duplicate the root repository instruction-precedence owner.",
+        "The direct .grok/ai-workflow-adapter.md dependency cannot be folded into the pointer row because it carries its own host-mechanics source responsibility.",
+        "Shipping product owners cannot be declared implemented from host instruction documentation."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md"
+      ],
+      "fabushi_target_symbols": [
+        "Host pointer files such as `CLAUDE.md` or `GROK.md` may add host-adapter mechanics but do not override canonical repository or nested instructions unless that canonical policy explicitly delegates the choice."
+      ],
+      "target_language": "Repository governance Markdown + TDRP JSON evidence + GitHub Actions",
+      "language_rationale": "The strict104 source is a five-line host pointer. Its applicable pointer responsibility is source-neutral repository instruction delegation, already owned by root AGENTS.md. Its direct Grok workflow adapter remains independent provenance for subsequent strict accounting rather than a new product runtime.",
+      "command_event_contracts": [
+        "resolve Grok pointer to canonical AGENTS.md",
+        "for /continue, /perform-task and /process-inbox, recognize the direct .grok/ai-workflow-adapter.md dependency without transitively closing it",
+        "preserve root versus nested AGENTS.md precedence",
+        "do not allow host pointer/adapter mechanics to override canonical policy without explicit delegation",
+        "do not promote pointer/adapter documentation to product/source-closure evidence",
+        "continue strict root accounting in source order"
+      ],
+      "state_owner": "Root AGENTS.md owns repository instruction precedence; the pinned upstream GROK.md and .grok/ai-workflow-adapter.md blobs remain immutable provenance only.",
+      "lifecycle_owner": "Existing TDRP strict read-through, exact-head evidence and atomic ledger/index/lock publication lifecycle.",
+      "persistence_and_restart": "Durable policy is the committed Fabushi AGENTS.md plus ledger/dossier provenance. Grok host-session mechanics are non-authoritative and reconstructable from pinned source; the adapter dependency remains separately accountable.",
+      "concurrency_and_cancellation": "Publication is serialized behind exact-head parent gates and a CAS branch lease. Lease drift or incomplete evidence leaves strict104 unpublished rather than partially advancing counters.",
+      "security_boundary": "GROK.md and its adapter are not authentication, authorization, secret storage or trust boundaries. Host documentation cannot grant product or repository permissions.",
+      "network_service_dependencies": [],
+      "service_owner": "No shipping service; existing repository/TDRP governance only.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "policy-equivalent",
+      "blockers": [
+        "Fresh strict104 child exact-head TDRP/Rust Actions are required after publication.",
+        ".grok/ai-workflow-adapter.md remains an independently accountable source entry/responsibility despite being fully read as a direct dependency.",
+        "Recursive source disposition remains open with unknown/unread entries."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "GROK.md@b1ae452d94cf48971c6d7ea17cac6b45cabee08d fully read: 5 line slots / 197 ASCII bytes.",
+        ".grok/ai-workflow-adapter.md@db447f204316d3991f6d20db3d8f097fcc021154 fully read as a direct dependency: 141 line slots; dependency remains independently open and is not transitively closed.",
+        "Current d2a24f4c3e5486fda8bbea77d8155368be62fd19 preflight: zero prior GROK.md source-path rows, zero source_blob rows, zero proposed responsibility rows, zero selected short target-symbol ownership rows; selected AGENTS.md host-pointer sentence occurs exactly once.",
+        "Parent exact-head TDRP run 39909817389 attempt 1 completed 61/61 success.",
+        "Parent TDRP authority 12481833441 sha256:45e9f7d97c7993cb93eb0cf7c163fd16df97c0a252c7667c5b8ab1e7ef9e2d86; closure 12482826298 sha256:7afa85ae6b4b2adb83857d6e65cd2d3edfeeb7805f18a692c0be4d964cfa6637; reachability 12481649603 sha256:66bb3ae62bad85e246198267720cd88047866e5d8ab131a1f7a9137a21e1eda4.",
+        "Parent exact-head Rust desktop runtime run 39909817456 completed 6/6 success; artifact 12482292020 sha256:3d791f6c4050273f878b1f292306cdddb9746fee44203f1e875e6da20b8e51cc.",
+        "Live upstream dev remained a7f453612f4896ac04d0007a36ab0d377e5bcbcf/tree c539eabfb05e7dcaa84821ac44c35cdfb6551ae5 immediately before publication."
+      ],
+      "target_commit": "d2a24f4c3e5486fda8bbea77d8155368be62fd19",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi repository instruction-governance and TDRP source-authority lifecycle",
+      "composition_slot": "Grok host instruction pointer delegation and direct adapter-dependency provenance",
+      "capability_component": "Source-neutral repository host-pointer governance",
+      "variation_axes": [
+        "canonical AGENTS instruction versus Grok host pointer adapter",
+        "root versus nested repository instruction precedence",
+        "pointer source versus independently accountable adapter dependency",
+        "host documentation versus shipping production evidence"
+      ],
+      "shared_owner_contracts": [
+        "root AGENTS.md remains canonical repository-wide instruction owner unless a nested AGENTS.md applies",
+        "host pointers/adapters cannot override canonical/nested instructions without explicit delegation",
+        "direct source dependencies are independently accounted rather than transitively closed",
+        "documentation cannot fabricate production/source closure"
+      ],
+      "duplicate_root_check": "No Grok-specific runtime, instruction root, task queue, product owner, build authority, network owner or UI root is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository instruction delegation and direct adapter-dependency provenance only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Repository Grok instruction pointer provenance",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "A changed upstream pointer or adapter dependency requires new exact blobs and fresh reconciliation; pointer/adapter text never advances product implementation or acceptance status by itself.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-REPOSITORY-GROK-HOST-INSTRUCTION-POINTER-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GROK-POINTER-DELEGATES-TO-AGENTS-001",
+        "ORA-TDRP-GROK-POINTER-ADAPTER-DEPENDENCY-001",
+        "ORA-TDRP-GROK-POINTER-NO-OVERRIDE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GROK-NO-SECOND-INSTRUCTION-ROOT-001",
+        "INV-TDRP-GROK-ADAPTER-REMAINS-INDEPENDENT-SOURCE-001",
+        "INV-TDRP-GROK-NO-DOCUMENT-AS-PRODUCTION-EVIDENCE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GROK-AGENTS-DELEGATION-001",
+        "CONTRACT-TDRP-GROK-DIRECT-ADAPTER-DEPENDENCY-001",
+        "CONTRACT-TDRP-GROK-PRECEDENCE-001",
+        "CONTRACT-TDRP-GROK-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GROK-STALE-POINTER-001",
+        "FAULT-TDRP-GROK-OVERRIDE-ATTEMPT-001",
+        "FAULT-TDRP-GROK-TRANSITIVE-CLOSURE-001",
+        "FAULT-TDRP-GROK-DOCUMENT-PROMOTION-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-GROK-POINTER-NOT-AUTHORIZATION-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-GROK-NO-SOURCE-OMISSION-001",
+        "REG-TDRP-GROK-NO-BOT-OWNER-REGRESSION-001"
+      ],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-MODULE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "locked upstream GROK.md + .grok/ai-workflow-adapter.md + current Fabushi AGENTS.md + parent exact-head Actions"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "release_gate_status": "open",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact upstream GROK.md blob b1ae452d94cf48971c6d7ea17cac6b45cabee08d and direct dependency .grok/ai-workflow-adapter.md blob db447f204316d3991f6d20db3d8f097fcc021154 are retained as host-instruction provenance under the pinned upstream source. The pointer delegates to AGENTS.md; the adapter remains independently accountable and neither is copied as a new Fabushi runtime or instruction root.",
+      "notes": "Strict index 104 closes only GROK.md as a host instruction pointer to canonical AGENTS.md while recording .grok/ai-workflow-adapter.md as a fully-read but independently open direct dependency. Counters become unknown=16,272 unread=16,247 omitted=0 responsibilities=122. Next strict root index 105 LEGAL@09c9e383db122fe0694e73c48d6224676afe60f6. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required.",
       "test_execution_evidence": []
     }
   ]
