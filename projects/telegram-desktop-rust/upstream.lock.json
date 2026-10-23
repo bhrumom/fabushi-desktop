@@ -361,10 +361,10 @@
   "coverage": {
     "root_source_entries_total": 6893,
     "recursive_source_entries_total": 16379,
-    "unknown_minimum": 16240,
-    "unread_minimum": 16215,
+    "unknown_minimum": 16239,
+    "unread_minimum": 16214,
     "omitted_known": 0,
-    "note": "Live upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent ac152432d84855f74346b5cc9246f76276dbeb47 passed TDRP 39998164484 61/61; authority 12520278378 sha256:a97c604982bdba074fa1b59e6b6316a7613d060a5ecd4ac00e296101e86aa18e; closure 12520953207 sha256:fe369c5f8ba9e5c14a1ef5f559af958daa69d35c2ca6fab47af08b778c51d1ea; reachability 12520633420 sha256:e4ba64901933aba0ea3a95cfd5c4694843e67ee1dec07e877db59ed6c6d1c9aa and Rust 39998164311 6/6; artifact 12520862526 sha256:c924010d92cb6c328a85717a8163eddeb3e7ed4d21b8b2f2d7506aab746b4cb8. Strict136 Microsoft/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37 .clang-format@c12d3bf2994fd5a083c04025d355a5ab4b3f6802 was fully read. It is C++ authoring formatting-policy provenance: ColumnLimit=100, tabs disabled, IndentWidth=4, custom brace/template/constructor/pointer/alignment rules, and NO-FORMAT comment pragma. Existing TEST_STRATEGY language/toolchain quality and exact-head evidence owners are reused; no Microsoft/GSL/Telegram formatter owner or C++ runtime is introduced, and formatting cleanliness cannot establish build, source closure, security, packaging or release acceptance. Counters unknown=16,240 unread=16,215 omitted=0 responsibilities=154. Next strict137 Microsoft/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37 .gitattributes@3455dc9da5064e1a54deba6e2a5869aae2442d42."
+    "note": "Live upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 29c96fa1b6545c036cf9a64aa029c225c47b2993 passed TDRP 40000624296 61/61; authority 12521827806 sha256:9d78369e74e503a0d230fc299b32d5ddcc94e79dd784960d0bdc2f761b09d409; closure 12521678388 sha256:95215a88e5c9273432c2f417921e08f46fb63bda7728b8de2faf4982aec0fcdd; reachability 12523150003 sha256:55b5e261780d4f6706250d8d6ae066ad4024d174fbb470d5eb888cafe2b480c7 and Rust 40000624188 6/6; artifact 12521827593 sha256:03b66a7480de76a8f5e10bfc948e9a71316a454cd1f3863f7d728c88cc6a1ea0. Strict137 Microsoft/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37 .gitattributes@3455dc9da5064e1a54deba6e2a5869aae2442d42 was fully read. It contains only include/gsl/* linguist-language=C++; GitHub Linguist documents this attribute as language statistics/syntax-highlighting metadata. No EOL/LFS/filter/diff/merge/worktree-byte/build/runtime behavior is inferred. Existing TDRP source-authority and repository quality/evidence owners are reused; repository metadata cannot establish build, source closure, security, packaging or release acceptance. Counters unknown=16,239 unread=16,214 omitted=0 responsibilities=155. Next strict138 Microsoft/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37 .gitignore@326971f0331d1f8c3226fb3b341687f3198cd8a2."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -1827,5 +1827,5 @@
     "baseline_identity_accepted": false,
     "source_closure_ready": false
   },
-  "target_commit": "ac152432d84855f74346b5cc9246f76276dbeb47"
+  "target_commit": "29c96fa1b6545c036cf9a64aa029c225c47b2993"
 }

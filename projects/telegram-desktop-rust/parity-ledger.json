@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "ac152432d84855f74346b5cc9246f76276dbeb47",
+  "target_commit": "29c96fa1b6545c036cf9a64aa029c225c47b2993",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16240,
-    "unread": 16215,
+    "unknown": 16239,
+    "unread": 16214,
     "omitted": 0,
-    "responsibilities_total": 154,
+    "responsibilities_total": 155,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -41800,6 +41800,224 @@
       "reviewer": null,
       "license_and_provenance": "Exact formatting-policy provenance read from Microsoft/GSL child commit pinned by the accepted tdesktop gitlink; no upstream C++ code or formatter runtime copied.",
       "notes": "Strict136 closes only Microsoft/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37 .clang-format@c12d3bf2994fd5a083c04025d355a5ab4b3f6802 semantic read/decomposition. The ledger source identity remains the accepted tdesktop gitlink Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37 while the child file identity is locked in dependency/source-symbol/dossier provenance. Formatting policy is developer/toolchain quality provenance, not shipping runtime or release authority. Counters unknown=16,240 unread=16,215 omitted=0 responsibilities=154. Next strict137 Microsoft/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37 .gitattributes@3455dc9da5064e1a54deba6e2a5869aae2442d42.",
+      "test_execution_evidence": []
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/GSL",
+      "source_blob_sha": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+      "source_kind": "recursive_child_repository_language_metadata_provenance",
+      "module_id": "tdesktop.thirdparty.gsl.gitattributes",
+      "responsibility_id": "TDRP-R9-GSL-GITATTRIBUTES-LANGUAGE-METADATA-001",
+      "source_symbols": [
+        ".gitattributes@3455dc9da5064e1a54deba6e2a5869aae2442d42",
+        "include/gsl/*",
+        "linguist-language=C++"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-SOURCE-METADATA-PROVENANCE",
+        "CAP-REPOSITORY-QUALITY-GOVERNANCE",
+        "CAP-EXACT-HEAD-QUALITY-EVIDENCE"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "Microsoft/GSL:.gitattributes@3455dc9da5064e1a54deba6e2a5869aae2442d42",
+        "github-linguist/linguist@73ee9a3b277f398c37ca4ab0dea0193849de6460:docs/overrides.md@9d56af54d3e01675fc269fa97b01cbb971adf464",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md@4d2c88e118ab489d3d0339d2a61371a7ea74e72e"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-gitattributes-language-metadata-complete-read.md",
+      "behavior_contract": "Treat the locked Microsoft/GSL .gitattributes entry as repository language-classification metadata only: include/gsl/* is declared linguist-language=C++ for GitHub Linguist language statistics/syntax highlighting. Preserve exact provenance and evidence strength without inventing EOL, LFS, filter, merge, diff, worktree-byte or shipping-runtime behavior that the file does not declare.",
+      "state_machine": "accepted tdesktop gitlink -> exact GSL child commit -> read exact one-line .gitattributes blob -> GitHub Linguist may classify matching include/gsl/* files as C++ for statistics/highlighting -> repository display metadata remains supporting provenance only -> exact-head GitHub Actions and stronger build/runtime/release owners remain authoritative -> gitlink/blob drift or unsupported inference remains non-passing",
+      "side_effects": [
+        "The source file is declarative repository metadata and creates no Fabushi product state.",
+        "GitHub Linguist may use the attribute for language statistics and syntax highlighting of matching files.",
+        "No EOL normalization, LFS pointering, clean/smudge filter, diff/merge driver, build, package, deploy, authorization or runtime side effect is declared by this one-line file."
+      ],
+      "failure_cases": [
+        "The GSL gitlink or .gitattributes blob drifts and stale metadata evidence is reused.",
+        "linguist-language=C++ is misread as a Git worktree byte-conversion, EOL, LFS, filter, merge, diff or build rule.",
+        "Language statistics/highlighting metadata is promoted to source closure, compilation, test, security, packaging or release acceptance.",
+        "A second Telegram/GSL-specific repository metadata owner is introduced despite existing source-neutral repository quality/evidence governance.",
+        "The absence of a retained C++ runtime is used to erase exact source provenance instead of recording applicability."
+      ],
+      "ui_disposition": "Not applicable; repository language-classification metadata provenance only.",
+      "non_ui_responsibilities": [
+        "exact recursive-child source provenance",
+        "path-scoped linguist-language=C++ metadata capture",
+        "separation of GitHub language statistics/highlighting from Git materialization/build/runtime semantics",
+        "reuse of source-neutral repository quality/evidence ownership",
+        "fail-closed drift and unsupported-inference boundary"
+      ],
+      "platform_delta": "Fabushi does not retain Microsoft/GSL repository metadata as shipping architecture. The applicable responsibility is source-neutral provenance/evidence governance: preserve what the attribute actually states, reject unstated worktree/build/runtime semantics, and keep exact-head executable evidence stronger than repository classification metadata.",
+      "existing_owner_candidates": [
+        "Fabushi repository quality/test-evidence governance",
+        "TDRP exact-head source-authority / recursive inventory lifecycle",
+        "GitHub Actions exact-head quality/evidence lifecycle"
+      ],
+      "existing_owner": "Fabushi TDRP exact-head source-authority + repository quality/test-evidence governance",
+      "rejected_existing_owners": [
+        "A Microsoft/GSL or Telegram-specific metadata owner would duplicate source-neutral repository authority/governance.",
+        "A shipping product owner does not own GitHub Linguist classification metadata.",
+        "A Git worktree-byte/EOL/LFS owner cannot be inferred because this file declares none of those attributes.",
+        "A language-classification result cannot become build, runtime, source-closure or release authority."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "projects/telegram-desktop-rust/upstream.lock.json",
+        "projects/telegram-desktop-rust/inventory/index.json"
+      ],
+      "fabushi_target_symbols": [
+        "exact-head GitHub Actions evidence",
+        "recursive source authority",
+        "repository quality/test-evidence governance"
+      ],
+      "target_language": "Markdown/JSON evidence governance; no retained C++ runtime",
+      "language_rationale": "The source entry is repository metadata, not shipping product code. Its applicable responsibility is exact provenance and evidence-boundary preservation under existing source-neutral repository authority/quality owners.",
+      "command_event_contracts": [
+        "locked child gitlink -> resolve exact child commit before reading metadata",
+        "exact .gitattributes blob -> record only declared path matcher and linguist-language value",
+        "Linguist classification -> repository statistics/highlighting metadata only",
+        "unstated EOL/LFS/filter/diff/merge/worktree-byte/build semantics -> reject as unsupported inference",
+        "head/gitlink/blob drift -> invalidate dependent claim and remain non-passing",
+        "publication -> exact-head GitHub Actions revalidation"
+      ],
+      "state_owner": "Existing TDRP source-authority / repository evidence lifecycle; no product state owner.",
+      "lifecycle_owner": "Fabushi TDRP exact-head source-authority and GitHub Actions evidence lifecycle.",
+      "persistence_and_restart": "No product persistence. Durable evidence is the immutable tdesktop gitlink, GSL child commit/tree, .gitattributes blob, dossier/ledger mapping and exact-head workflow artifacts.",
+      "concurrency_and_cancellation": "Any durable claim stays bound to one immutable source/blob identity. Partial reads, concurrent source mutation, stale gitlink resolution or cancelled evidence publication cannot become passing acceptance.",
+      "security_boundary": "Language-classification metadata has no authorization, secret, network, identity, message, package-signing, worktree-byte-conversion or release authority.",
+      "network_service_dependencies": [
+        "GitHub Linguist for hosted language statistics/highlighting semantics",
+        "GitHub Actions for authoritative exact-head executable revalidation"
+      ],
+      "service_owner": "Fabushi repository quality/evidence lifecycle; GitHub-hosted Linguist semantics are external supporting provenance only.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "repository-language-metadata-provenance-mapped-open",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions must validate strict137 after publication.",
+        "Recursive source closure remains open.",
+        "Independent release acceptance remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "path:projects/telegram-desktop-rust/upstream.lock.json",
+        "path:projects/telegram-desktop-rust/inventory/index.json"
+      ],
+      "test_evidence": [
+        "strict137 Microsoft/GSL .gitattributes fully read at exact blob 3455dc9da5064e1a54deba6e2a5869aae2442d42 with one line: include/gsl/* linguist-language=C++",
+        "tdesktop Telegram/ThirdParty/GSL gitlink independently resolved to 87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "GSL commit tree independently resolved to 6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41",
+        "GitHub Linguist docs/overrides.md@9d56af54d3e01675fc269fa97b01cbb971adf464 states .gitattributes linguist-language overrides are used for language statistics and syntax highlighting",
+        "Parent TDRP 40000624296 61/61; authority 12521827806 sha256:9d78369e74e503a0d230fc299b32d5ddcc94e79dd784960d0bdc2f761b09d409; closure 12521678388 sha256:95215a88e5c9273432c2f417921e08f46fb63bda7728b8de2faf4982aec0fcdd; reachability 12523150003 sha256:55b5e261780d4f6706250d8d6ae066ad4024d174fbb470d5eb888cafe2b480c7",
+        "Parent Rust 40000624188 6/6; artifact 12521827593 sha256:03b66a7480de76a8f5e10bfc948e9a71316a454cd1f3863f7d728c88cc6a1ea0"
+      ],
+      "target_commit": "29c96fa1b6545c036cf9a64aa029c225c47b2993",
+      "workflow_run": 40000624296,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12521827806,
+      "artifact_digest": "sha256:9d78369e74e503a0d230fc299b32d5ddcc94e79dd784960d0bdc2f761b09d409",
+      "composition_root": "Fabushi TDRP source-authority / repository quality-evidence lifecycle",
+      "composition_slot": "recursive-child repository language metadata provenance",
+      "capability_component": "Repository language metadata provenance",
+      "variation_axes": [
+        "locked child gitlink vs drifted child authority",
+        "declared linguist-language metadata vs unsupported Git attribute inference",
+        "repository statistics/highlighting vs exact-head acceptance",
+        "complete exact blob read vs partial/stale metadata"
+      ],
+      "shared_owner_contracts": [
+        "TDRP exact-head source authority",
+        "Repository quality/test-evidence governance",
+        "GitHub Actions exact-head evidence governance"
+      ],
+      "duplicate_root_check": "No Microsoft/GSL/Telegram metadata runtime, second repository owner, C++ runtime, Git worktree-byte owner or release authority introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository quality/source-authority only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Repository quality/source authority",
+      "route_contract": "No shipping route",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Language-metadata evidence remains bound to the exact tdesktop gitlink, GSL child commit/tree and .gitattributes blob; drift, partial reads, unsupported EOL/LFS/filter/worktree inference or hosted classification output cannot become passing migration/release evidence.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "low",
+      "requirement_ids": [
+        "TDRP-R9-GSL-GITATTRIBUTES-LANGUAGE-METADATA-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GSL-GITATTRIBUTES-SOURCE-001",
+        "ORA-TDRP-GSL-GITATTRIBUTES-LINGUIST-SEMANTICS-001",
+        "ORA-TDRP-GSL-GITATTRIBUTES-OWNER-001",
+        "ORA-TDRP-GSL-GITATTRIBUTES-UNSUPPORTED-INFERENCE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GSL-GITATTRIBUTES-NO-WORKTREE-BYTE-INFERENCE-001",
+        "INV-TDRP-GSL-GITATTRIBUTES-NO-CXX-RUNTIME-001",
+        "INV-TDRP-GSL-GITATTRIBUTES-METADATA-NOT-ACCEPTANCE-001",
+        "INV-TDRP-GSL-GITATTRIBUTES-EXACT-PROVENANCE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [],
+      "release_gate_ids": [],
+      "test_fixture_ids": [],
+      "test_environment_ids": [],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable-source-provenance",
+      "release_gate_status": "not-accepted",
+      "acceptance_reviewer": null,
+      "reviewer": "primary-session",
+      "license_and_provenance": "Exact repository metadata provenance read from locked Microsoft/GSL child blob through the accepted tdesktop gitlink. GitHub Linguist documentation is cited only to bound linguist-language semantics; no upstream C++ runtime or GitHub implementation is copied.",
+      "notes": "Strict137 closes only Microsoft/GSL .gitattributes semantic read/decomposition. The exact file contains one declaration: include/gsl/* linguist-language=C++. It is bounded to GitHub Linguist language statistics/syntax highlighting and does not declare EOL, LFS, filter, diff, merge, worktree-byte, build, runtime, security, packaging or release semantics. Existing TDRP source-authority and repository quality/evidence owners are reused. Counters unknown=16,239 unread=16,214 omitted=0 responsibilities=155. Next strict138 Microsoft/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37 .gitignore@326971f0331d1f8c3226fb3b341687f3198cd8a2.",
       "test_execution_evidence": []
     }
   ]
