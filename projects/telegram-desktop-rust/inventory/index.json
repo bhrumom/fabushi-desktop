@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16236,
-    "unread_minimum": 16211,
+    "unknown_minimum": 16235,
+    "unread_minimum": 16210,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -122,7 +122,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent b407927178603f43898336356cd0efd5aa0fbca6 passed TDRP 40013908183 61/61 and Rust 40013908184 6/6. Strict140 Microsoft/GSL CMakeSettings.json@2e1ad24c582b1db241a9cee2553935095e77e80c fully read: 18 line slots / 545 bytes; one x64-Debug Ninja/Debug/MSVC developer profile, path templates, -DGSL_CXX_STANDARD=17, verbose build, empty extra CTest args, unresolved CppCoreCheckRules.ruleset reference. Existing configured-build/language-toolchain quality owners reused. Counters unknown=16,236 unread=16,211 omitted=0 responsibilities=158. Next strict141 CONTRIBUTING.md@e28f534e31b73b6ce1ac658944887015907c37d1.",
+  "note": "Live upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 896ac363c9f3a869f5a5ae0b0a2527935d441a1f passed TDRP 40016655169 61/61 success; authority 12528463287 sha256:2cb9d4e74b0f4d9b5a0e3ad4332a9ade958399ae796fc34802f4e85d8ae1bfd3; closure 12529775142 sha256:3c0a34abd495778949e914f2be86b6aa9d933a35e9fc2d512e740d9523168903; reachability 12529620302 sha256:648d30230b5cd03ecbf51a9582989e041d731654ae044489873c0ce548d37151; Rust 40016655197 6/6 success; artifact 12529415203 sha256:e878b2060fd406ead0e2b2ba586bd7049dd78a67d79e910b3513631556f694c7. Strict141 Microsoft/GSL CONTRIBUTING.md@e28f534e31b73b6ce1ac658944887015907c37d1 was fully read: 30 line slots / 2002 bytes. Applicable source-neutral contribution/test/materialization intent reuses AGENTS/FQT owners; Microsoft CLA/Core-Guidelines approval, provider history recipes, universal 100%-coverage statement and mutable user Git settings remain provenance. Counters unknown=16,235 unread=16,210 omitted=0 responsibilities=159. Next strict142 Microsoft/GSL GSL.natvis@965888cd9c70d7a19401aca4252c8a4a01c456c2.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
