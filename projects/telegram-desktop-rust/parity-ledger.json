@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "510e15bfd0e0d7191b147cbf6ed65317c9f277a5",
+  "target_commit": "4c5586e55c2f04e8de976786f1e1edf36abea517",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16278,
-    "unread": 16253,
+    "unknown": 16277,
+    "unread": 16252,
     "omitted": 0,
-    "responsibilities_total": 116,
+    "responsibilities_total": 117,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -31286,6 +31286,247 @@
       "license_and_provenance": "Exact winget.yml retained. winget-releaser audit-time source is 4ffc7888bffd451b357355dc214d43bb9f23917e with AGPL-3.0 LICENSE.md@74c892aed62da338fe12600bfba912596f044ced; nested cargo-binstall main resolved to 8a2045612414e945291083f820cd50b4d8fc2218 with repository license metadata GPL-3.0; unversioned Komac install is observed against e9882dcfd22d9bb2defbb0e25044c331d5e4390d, Cargo.toml version 2.17.1 GPL-3.0-or-later and LICENSE.md@2fb2e74d8d7fa1c9286b18af0afa5c00402f56e3. Mutable main/unversioned edges remain fail-closed and are not adopted as Fabushi runtime or release authority.",
       "reviewer": null,
       "notes": "Strict index 98 closes only .github/workflows/winget.yml. FQT-EVID-001 and FQT-REL-001 remain canonical evidence/release owners; external WinGet catalog/fork/PR state and WINGET_TOKEN remain non-authoritative provider provenance. Counters become unknown=16,278 unread=16,253 omitted=0 responsibilities=116. Next strict root index 99 .gitignore@320c160d093a0a36ceb3f6437500d01a63d5ed00. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": ".gitignore",
+      "source_blob_sha": "320c160d093a0a36ceb3f6437500d01a63d5ed00",
+      "source_kind": "repository_local_generated_state_exclusion_policy",
+      "module_id": "tdesktop.gitignore",
+      "responsibility_id": "TDRP-R9-REPOSITORY-LOCAL-STATE-EXCLUSION-PROVENANCE-001",
+      "source_symbols": [
+        "/out/, Debug/, Release/, /ThirdParty/",
+        "/Telegram/build/target, /Telegram/build/ai-machine-tag, /Telegram/tests/, /Telegram/out/",
+        "IDE/project/cache exclusions (*.vcxproj*, *.sln, *.xcodeproj, .vs/, .vscode/, .cache/, compile_commands.json)",
+        "Telegram local runtime/session exclusions (log.txt, data, data_config, DebugLogs/, tdata/, tdumps/)",
+        "platform/build scratch exclusions (.DS_Store, /Mac/, /Linux/, cmake-build-debug/, *.qsb)",
+        "snap/python generated exclusions (parts, prime, stage, *.snap, .snapcraft, __pycache__/, *.pyc)",
+        "local configuration exclusions (settings.local.json, *.local.json, .env, .env.local, .env.*.local)",
+        ".cursor/* with !.cursor/rules/ durable-rule exception",
+        ".ai session work folder",
+        "/docs/changelog/ generated CI page"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-LOCAL-STATE-EXCLUSION",
+        "CAP-GENERATED-OUTPUT-NON-AUTHORITY",
+        "CAP-LOCAL-CONFIG-HYGIENE"
+      ],
+      "dependency_ids": [
+        "AGENTS.md@da3e37258c74963970ff5cfc5d54671a37558b97#Repository development-environment adapter governance",
+        "AGENTS.md@da3e37258c74963970ff5cfc5d54671a37558b97#Repository file-attribute and byte-integrity governance",
+        "TDRP-R9-DEVCONTAINER-DEVELOPMENT-ENVIRONMENT-001",
+        "TDRP-R9-GITATTRIBUTES-WORKTREE-BYTE-POLICY-001"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/gitignore-local-state-exclusion-complete-read.md",
+      "behavior_contract": "Treat .gitignore as repository worktree hygiene for local, generated, build, IDE, cache, session and local-configuration material. Ignore matching only affects ordinary untracked discovery/addition; it does not delete bytes, untrack already tracked source, authorize source-inventory omission, prove secrets are safe, establish product persistence, or replace exact-head GitHub Actions acceptance.",
+      "state_machine": "materialize exact repository -> Git evaluates ordered ignore patterns for untracked paths -> matching local/generated state is suppressed from ordinary status/add -> explicit negation keeps .cursor/rules/ discoverable -> already tracked paths remain tracked regardless of ignore match -> recursive source inventory and exact-head validators independently decide source/acceptance truth",
+      "side_effects": [
+        "Suppresses ordinary Git status/add discovery for matching untracked local/generated paths.",
+        "Preserves .cursor/rules/ through an explicit negation under an otherwise ignored .cursor directory.",
+        "Does not delete ignored files, untrack tracked files, or mutate shipping Fabushi product state.",
+        "Does not authorize tracked tests/resources/build definitions to be omitted from TDRP inventory."
+      ],
+      "failure_cases": [
+        "over-broad pattern hides a new required untracked source or evidence file from ordinary developer discovery",
+        "ordered pattern/negation semantics are misread and a durable exception is unintentionally hidden",
+        "tracked content is falsely treated as omitted merely because a later ignore pattern matches its path",
+        "ignored .env/local configuration is mistaken for secret protection even though tracked or force-added bytes can still leak",
+        "local session/cache/output files are mistaken for canonical product persistence or recovery state",
+        "platform-specific ignore names are copied as Fabushi runtime or packaging requirements",
+        "an ignored/generated path is used to bypass recursive source completeness or exact-head evidence"
+      ],
+      "ui_disposition": "Not a shipping UI capability.",
+      "non_ui_responsibilities": [
+        "repository-local/generated/build/IDE/cache/session output exclusion",
+        "ordered ignore/negation semantics for developer worktrees",
+        "tracked-source versus ignored-untracked separation",
+        "local configuration hygiene without treating ignore as a security boundary",
+        "separation of mutable local state from source, product persistence and acceptance authority"
+      ],
+      "platform_delta": "The exact tdesktop path patterns are upstream repository-worktree provenance. Fabushi retains only source-neutral local/generated-state hygiene and non-authority semantics under existing repository governance; Telegram directories, session names, build folders and IDE artifacts do not become Fabushi product owners or inventory omissions.",
+      "existing_owner_candidates": [
+        "AGENTS.md Repository development-environment adapter governance (selected)",
+        "AGENTS.md Repository file-attribute and byte-integrity governance (selected shared boundary)",
+        "GitHub Actions exact-head source authority/inventory validators (selected verification boundary)",
+        "product persistence/recovery owner (rejected)",
+        "new Telegram/local-state ignore owner (rejected)"
+      ],
+      "existing_owner": "AGENTS.md source-neutral repository development-environment and source-integrity governance with existing exact-head source-authority validators",
+      "rejected_existing_owners": [
+        "Product persistence/recovery owns canonical application state, not Git worktree ignore semantics.",
+        "Credential/secret owners govern actual secret handling; .gitignore is only accidental-add hygiene and cannot guarantee secrecy.",
+        "A source-specific Telegram ignore/local-state owner would duplicate repository governance and could incorrectly turn ignored paths into source omissions."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "AGENTS.md"
+      ],
+      "fabushi_target_symbols": [
+        "Repository-local devcontainer and editor environment definitions are optional authoring adapters, not shipping runtime, build authority, or acceptance evidence.",
+        "Privileged debugging settings such as ptrace capability or relaxed seccomp are explicit local/container exceptions only; they must not become Fabushi production sandbox or security defaults, service requirements, or release assumptions. A missing or unavailable devcontainer is not a passing build, and mutable host directories or editor state cannot become source authority.",
+        "Durable Git/LFS content is fail-closed: a missing object, pointer-only materialization where bytes are required, or content/hash mismatch is incomplete evidence, never permission to substitute generated bytes, a local cache, or a visually similar resource. Mutable user Git configuration and worktree state cannot become source authority."
+      ],
+      "target_language": "Repository governance / source-neutral Git ignore and local-state hygiene policy",
+      "language_rationale": "The source is repository worktree metadata, not shipping C++ product logic. Applicable responsibility is developer-tooling/source-authority governance; no Rust/React runtime owner is required.",
+      "command_event_contracts": [
+        "ignore rules affect ordinary untracked discovery/addition only; already tracked source remains tracked",
+        "the .cursor/rules/ negation remains durable/discoverable under the ignored .cursor directory",
+        "tracked tests, resources, build inputs and documentation remain in TDRP inventory even when a pattern could match local/generated siblings",
+        "ignored local configuration/session/cache bytes are non-authoritative and do not establish product persistence or recovery",
+        "ignoring .env/local files reduces accidental addition but is not a secret-management or credential-security guarantee",
+        "FBCP/TDRP executable acceptance remains exact-head GitHub Actions"
+      ],
+      "state_owner": "Durable repository ignore policy plus the selected exact repository revision; ignored mutable worktree bytes and host/editor/session state are non-authoritative.",
+      "lifecycle_owner": "Existing repository development/source-integrity lifecycle and exact-head GitHub Actions source-authority lifecycle.",
+      "persistence_and_restart": "Ignored files may persist across local restarts or worktrees, but that persistence is local cache/session/config state only. Canonical source/product state must be reconstructible from durable repository or product persistence owners.",
+      "concurrency_and_cancellation": "Different worktrees/hosts may contain different ignored bytes and independently evaluate the same durable patterns. Their local state cannot serialize, fence or advance canonical source, product, release or acceptance state.",
+      "security_boundary": ".gitignore is hygiene, not access control or secret storage. Ignored credentials/config can still leak if tracked, force-added, logged, copied or uploaded; canonical credential/secret boundaries remain with existing security owners.",
+      "network_service_dependencies": [],
+      "service_owner": "Existing repository development/source-integrity governance; no runtime service.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "policy-equivalent",
+      "blockers": [
+        "Fresh strict99 child exact-head TDRP/Rust Actions are required.",
+        "Recursive source disposition remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        ".gitignore@320c160d093a0a36ceb3f6437500d01a63d5ed00 fully read: 76 lines / 1013 bytes.",
+        "AGENTS.md@da3e37258c74963970ff5cfc5d54671a37558b97 source-neutral development-environment and source-integrity governance re-read at parent exact head.",
+        "Preflight: source path, source blob and responsibility ID have zero prior ledger rows; each selected AGENTS target symbol occurs exactly once in AGENTS and has zero prior target-path+symbol owner rows.",
+        "Parent 4c5586e55c2f04e8de976786f1e1edf36abea517/tree c1be8ddabd4a165ad1fda4cf2c7815bcd1026394: TDRP run 39901550267 is 61/61 success; authority 12479400427 sha256:b38f52e425ec45dc338bc7cc20abdde98ebdd81e783a926247733d46c57ef770; closure 12478689844 sha256:3831ca464a236aac5e45a57e50b956fe67139ce7bb32c0fea7692e45fa79db13; reachability 12478739861 sha256:84ef4a942845f6b50ee447fc7e299311e9a49700e563ac23dbadf972051f1194.",
+        "Parent Rust desktop runtime run 39901550319 is 6/6 success; artifact 12479047737 sha256:fa3ce1ef9b4d08a48ee763e5a28983d1d67b44d8923883366cf5fbb18deb58e5.",
+        "Live upstream dev remained a7f453612f4896ac04d0007a36ab0d377e5bcbcf/tree c539eabfb05e7dcaa84821ac44c35cdfb6551ae5 immediately before publication."
+      ],
+      "target_commit": "4c5586e55c2f04e8de976786f1e1edf36abea517",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi source-neutral repository development/source-integrity lifecycle",
+      "composition_slot": "Repository local/generated-state exclusion and non-authority policy",
+      "capability_component": "Provider-neutral Git ignore/local-state hygiene adapter",
+      "variation_axes": [
+        "tracked/untracked",
+        "ignored/not ignored/negated",
+        "generated/local/durable source",
+        "developer cache/session/config versus canonical product persistence",
+        "ordinary add versus force-add",
+        "local worktree versus exact-head CI acceptance"
+      ],
+      "shared_owner_contracts": [
+        "AGENTS.md Repository development-environment adapter governance",
+        "AGENTS.md Repository file-attribute and byte-integrity governance",
+        "GitHub Actions exact-head source authority/inventory validators"
+      ],
+      "duplicate_root_check": "No Telegram ignore owner, second source inventory, local-state product store, credential owner, build authority or acceptance root is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository worktree hygiene only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Provider-neutral local/generated-state exclusion provenance",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Local ignored bytes may vary or persist independently; canonical source and product continuity are never inferred from them.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-REPOSITORY-LOCAL-STATE-EXCLUSION-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GITIGNORE-TRACKED-SOURCE-PRESERVATION-001",
+        "ORA-TDRP-GITIGNORE-NEGATION-ORDER-001",
+        "ORA-TDRP-GITIGNORE-NO-ACCEPTANCE-AUTHORITY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GITIGNORE-NO-INVENTORY-OMISSION-001",
+        "INV-TDRP-GITIGNORE-NO-PRODUCT-PERSISTENCE-OWNER-001",
+        "INV-TDRP-GITIGNORE-NO-SECRET-GUARANTEE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GITIGNORE-UNTRACKED-HYGIENE-001",
+        "CONTRACT-TDRP-GITIGNORE-CURSOR-RULES-EXCEPTION-001",
+        "CONTRACT-TDRP-GITIGNORE-EXACT-HEAD-BOUNDARY-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GITIGNORE-OVERBROAD-PATTERN-001",
+        "FAULT-TDRP-GITIGNORE-TRACKED-PATH-MISCLASSIFICATION-001",
+        "FAULT-TDRP-GITIGNORE-SECRET-FORCE-ADD-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-GITIGNORE-LOCAL-CONFIG-NOT-SECRET-BOUNDARY-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-GITIGNORE-NO-SOURCE-OMISSION-001",
+        "REG-TDRP-GITIGNORE-NO-LOCAL-ACCEPTANCE-001"
+      ],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "locked .gitignore + exact AGENTS repository-governance symbols + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "release_gate_status": "open",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact upstream .gitignore blob 320c160d093a0a36ceb3f6437500d01a63d5ed00 is retained as repository provenance. Exact Telegram directory, build, IDE, session, snap, Python, Cursor and generated-doc patterns are not copied as Fabushi product/runtime semantics; only source-neutral worktree hygiene and non-authority responsibilities are absorbed.",
+      "notes": "Strict index 99 closes only .gitignore. Counters become unknown=16,277 unread=16,252 omitted=0 responsibilities=117. Next strict root index 100 .gitmodules@2a71e861fab57dfd74d66e787867f2ede203a099 (4321 bytes). baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required.",
+      "test_execution_evidence": []
     }
   ]
 }

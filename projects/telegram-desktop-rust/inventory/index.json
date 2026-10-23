@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16278,
-    "unread_minimum": 16253,
+    "unknown_minimum": 16277,
+    "unread_minimum": 16252,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -122,7 +122,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent exact-head 510e15bfd0e0d7191b147cbf6ed65317c9f277a5/tree c2a99596b1552608f27f070e85c15473f114cfc0 completed TDRP run 39899622743 at 61/61 success (authority 12478173024 sha256:6710f1de2ac6a1e904f242309a1d799e511041ac50cdc03bb6f13028e28c8702; closure 12478442455 sha256:cbd0ab8a0a361d5ce1f1c04ddd3dc554a5b5a7aeef489d0153962c854cb51edb; reachability 12478746234 sha256:56e2648b175c73de8c27ece8f778e01eee6f086257c84382ea4d9c23e69d46bd) and Rust desktop runtime run 39899622803 at 6/6 success (artifact 12478496730 sha256:3f2fb828aa73481b4c4287f2c67c0cc3fa2030d542b67f59ba626b9c2e0c0d89). Strict index 98 .github/workflows/winget.yml@0ff2d50d8b12b67408d3ad1e06dc8e462b5a9390 was fully read and mapped to existing FQT-EVID-001 exact evidence and FQT-REL-001 release entry/exit governance. released/prereleased events select stable/beta package identifiers and installer assets before mutable winget-releaser@main publication; audit-time provider heads remain winget-releaser 4ffc7888bffd451b357355dc214d43bb9f23917e, cargo-binstall 8a2045612414e945291083f820cd50b4d8fc2218, and Komac e9882dcfd22d9bb2defbb0e25044c331d5e4390d, while main/unversioned installation remains fail-closed provenance. WINGET_TOKEN and external catalog/fork/PR state cannot establish Fabushi signed/package/install/device/promotion/release acceptance. Counters unknown=16,278 unread=16,253 omitted=0 responsibilities=116. Next strict root index 99 .gitignore@320c160d093a0a36ceb3f6437500d01a63d5ed00. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required.",
+  "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent exact-head 4c5586e55c2f04e8de976786f1e1edf36abea517/tree c1be8ddabd4a165ad1fda4cf2c7815bcd1026394 completed TDRP run 39901550267 at 61/61 success (authority 12479400427 sha256:b38f52e425ec45dc338bc7cc20abdde98ebdd81e783a926247733d46c57ef770; closure 12478689844 sha256:3831ca464a236aac5e45a57e50b956fe67139ce7bb32c0fea7692e45fa79db13; reachability 12478739861 sha256:84ef4a942845f6b50ee447fc7e299311e9a49700e563ac23dbadf972051f1194) and Rust desktop runtime run 39901550319 at 6/6 success (artifact 12479047737 sha256:fa3ce1ef9b4d08a48ee763e5a28983d1d67b44d8923883366cf5fbb18deb58e5). Strict index 99 .gitignore@320c160d093a0a36ceb3f6437500d01a63d5ed00 was fully read (76 lines / 1013 bytes) and mapped to existing AGENTS.md source-neutral repository development/source-integrity governance plus exact-head source-authority validators. Ignore rules govern ordinary untracked local/generated/build/IDE/cache/session/config discovery only; they do not untrack source, authorize inventory omission, establish product persistence, guarantee secret safety, or replace exact-head acceptance. Existing-owner/validator preflight found zero prior source-path/blob/responsibility rows and zero selected target-path+symbol ownership conflicts. Counters unknown=16,277 unread=16,252 omitted=0 responsibilities=117. Next strict root index 100 .gitmodules@2a71e861fab57dfd74d66e787867f2ede203a099 (4321 bytes). baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
