@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "a8d5c1f797cac10749db1608743d2eba13d5a139",
+  "target_commit": "cf7ce14c5d7fe627768eac8bd19087cd2377050f",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16226,
-    "unread": 16201,
+    "unknown": 16225,
+    "unread": 16200,
     "omitted": 0,
-    "responsibilities_total": 168,
+    "responsibilities_total": 169,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -45197,6 +45197,257 @@
       "license_and_provenance": "Exact Microsoft/GSL include/gsl/assert@d3e6ccdd53d5a254ed3827cf07711a6e86bb4226 MIT-licensed dependency implementation plus accepted tdesktop/lib_base override provenance retained; no C++ assertion/crash runtime or release authority inferred.",
       "reviewer": "primary-session",
       "notes": "Strict150 closes only GSL include/gsl/assert as a fail-closed contract dependency responsibility, while retaining tdesktop's real diagnostic crash override as provenance. Telegram/lib_base assertion and all domain callers remain independently open. Counters unknown=16,226 unread=16,201 omitted=0 responsibilities=168. Next strict151 Microsoft/GSL include/gsl/byte@87d007ef94d197632872e96d91525a013c665da8."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/GSL",
+      "source_blob_sha": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+      "source_kind": "recursive_child_repository_dependency_implementation",
+      "module_id": "tdesktop.thirdparty.gsl.byte",
+      "responsibility_id": "TDRP-R9-GSL-BYTE-REPRESENTATION-DEPENDENCY-001",
+      "source_symbols": [
+        "include/gsl/byte@87d007ef94d197632872e96d91525a013c665da8",
+        "GSL_USE_STD_BYTE",
+        "byte_may_alias",
+        "gsl::byte : unsigned char fallback",
+        "operator<< / >> / | / & / ^ / ~",
+        "gsl::to_integer<IntegerType>(byte)",
+        "gsl::to_byte(unsigned char)",
+        "gsl::to_byte<I>() range 0..255",
+        "Telegram/SourceFiles/mtproto/mtproto_auth_key.h gsl::byte auth-key storage",
+        "Telegram/SourceFiles/mtproto/details/mtproto_rsa_public_key.cpp gsl::byte RSA buffer",
+        "Telegram/SourceFiles/passport/passport_encryption.cpp gsl::byte arithmetic",
+        "Telegram/SourceFiles/calls/calls_call.cpp gsl::byte encrypted-call buffer",
+        "Telegram/SourceFiles/storage/details/storage_file_utilities.cpp gsl::byte key storage",
+        "Telegram/SourceFiles/core/crash_reports.cpp gsl::byte reserved memory",
+        "Telegram/SourceFiles/ui/effects/{snowflakes,premium_stars}.h gsl::byte random inputs"
+      ],
+      "capability_ids": [
+        "CAP-TYPED-BYTE-REPRESENTATION",
+        "CAP-EXPLICIT-BYTE-CONVERSION",
+        "CAP-BINARY-BUFFER-DEPENDENCY-REPLACEMENT"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "Microsoft/GSL:include/gsl/byte@87d007ef94d197632872e96d91525a013c665da8",
+        "Microsoft/GSL:tests/byte_tests.cpp@634dcc90773e7144a127e29a2d49ce94b816e596",
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md#TDRP-LANG-03"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-byte-representation-complete-read.md",
+      "behavior_contract": "Account for the locked GSL byte representation primitive: an 8-bit byte is either std::byte or an unsigned-char-backed alias-capable type with explicit bitwise/shift operations, integral conversion, and constrained conversion from unsigned char or compile-time constants 0..255. Preserve equivalent representation and explicit-conversion safety through native Rust u8/[u8; N]/Vec<u8> or existing domain binary types at each actual owner; do not introduce a GSL/Byte runtime or claim the callers' auth, crypto, storage, call, crash or UI responsibilities closed.",
+      "state_machine": "typed byte value created -> optional bitwise/shift mutation -> explicit integral conversion or buffer participation -> caller/domain retains lifecycle; invalid non-unsigned runtime to_byte or out-of-range constant is rejected at compile time in the source model",
+      "side_effects": [
+        "Byte bitwise/shift operations mutate only the byte value when using assignment forms.",
+        "to_integer exposes the stored 8-bit value through an explicit integral conversion.",
+        "to_byte(unsigned char) prevents accidental wider/signed runtime conversion in the fallback API.",
+        "to_byte<I>() rejects constants outside 0..255 at compile time.",
+        "The primitive owns no persistence, network, cryptographic protocol, call, crash, UI or product state."
+      ],
+      "failure_cases": [
+        "A wider or signed runtime integer is silently truncated into a byte.",
+        "A constant outside 0..255 is accepted without an explicit checked conversion.",
+        "C++ aliasing/reinterpret-cast mechanics are copied as target architecture instead of native Rust binary types.",
+        "A source-branded Byte abstraction or second binary-buffer owner is introduced.",
+        "Cross-domain gsl::byte callsites are incorrectly marked closed by this dependency row.",
+        "Cryptographic/auth/storage/call/crash/UI semantics are attributed to the byte primitive instead of their existing domain owner.",
+        "Source or locked child drift is ignored."
+      ],
+      "ui_disposition": "No independent UI surface. Two observed UI-effects headers consume gsl::byte random inputs, but visual/effect behavior remains owned and evidenced by those UI owners separately.",
+      "non_ui_responsibilities": [
+        "8-bit byte representation",
+        "std::byte compatibility selection",
+        "alias-capable fallback provenance",
+        "bitwise and shift operations",
+        "explicit integral conversion",
+        "type/range constrained byte construction",
+        "native dependency replacement across existing domain owners"
+      ],
+      "platform_delta": "Use native Rust byte/buffer types and existing domain-specific binary wrappers. Compiler feature detection, __may_alias__, C++ enum/operator syntax and reinterpret-cast alias tests are source implementation techniques, not Fabushi architecture.",
+      "existing_owner_candidates": [
+        "TDRP-LANG-03 mature low-level dependency replacement (selected)",
+        "actual Rust auth/crypto/storage/call/crash/media/UI binary-data owners at each caller (selected application boundaries)",
+        "new GSL/Byte runtime or generic Byte owner (rejected)"
+      ],
+      "existing_owner": "TDRP-LANG-03 dependency replacement plus the actual existing Rust/domain owners of each binary value or buffer; the primitive is represented with native byte types and does not become a product owner",
+      "rejected_existing_owners": [
+        "A GSL-specific Byte runtime would preserve source architecture instead of source-neutral native ownership.",
+        "A single generic Byte owner would wrongly absorb unrelated auth, crypto, storage, call, crash and UI responsibilities.",
+        "C++ aliasing compatibility code is not a target product capability."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md"
+      ],
+      "fabushi_target_symbols": [
+        "每个 upstream 文件必须有映射；禁止只写“history → transcript”就宣布几百个文件完成。允许多源文件归并为一个高内聚 Fabushi owner，也允许一个混合文件拆到多个目标；不要求保留上游文件名、目录、类层级、线程模型或 UI 实现。",
+        "每个文件中的独立责任有 `responsibility_id`，每个模块有稳定 `module_id`。文件→责任→capability→Fabushi owner/path/symbol→production entrypoint→tests/evidence 必须双向可查。共享实现不能把多个源文件的独特边界行为淹没。"
+      ],
+      "target_language": "Rust native u8, fixed byte arrays, byte vectors, or existing domain binary types",
+      "language_rationale": "The source is a generic C++ 8-bit representation dependency. Rust already has native byte primitives and typed arrays/vectors, so preserve explicit conversion/range semantics at actual domain boundaries rather than reimplementing GSL byte.",
+      "command_event_contracts": [
+        "byte creation -> only checked/explicit source-equivalent 8-bit representation",
+        "bitwise/shift operation -> native 8-bit result with caller-owned semantics",
+        "byte -> integer -> explicit conversion",
+        "binary buffer use -> actual domain owner controls meaning/lifetime/security",
+        "dependency closure -> native replacement, not GSL runtime"
+      ],
+      "state_owner": "Actual caller/domain state; the GSL byte primitive owns no independent product state.",
+      "lifecycle_owner": "Actual caller/domain lifecycle for the binary value or buffer.",
+      "persistence_and_restart": "No dependency-owned persistence. Secret/material persistence, storage format and restart semantics remain with the corresponding domain owners and stay independently open.",
+      "concurrency_and_cancellation": "Pure/local byte operations have no independent concurrency or cancellation model; caller tasks and buffer ownership define those semantics.",
+      "security_boundary": "Do not permit accidental implicit truncation or use this generic row to claim cryptographic/security behavior complete. Secret lifetime, zeroization, authentication, encryption and storage guarantees belong to their concrete existing owners.",
+      "network_service_dependencies": [
+        "GitHub Actions for exact-head revalidation"
+      ],
+      "service_owner": "No shipping service.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-replaced-mapped-open",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required after publication.",
+        "Observed auth/RSA/Passport/Calls/Storage/Crash/UI callsites remain separate source responsibilities.",
+        "Later GSL headers remain independently open.",
+        "Source closure and independent release acceptance remain open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "strict151 include/gsl/byte@87d007ef94d197632872e96d91525a013c665da8 fully read: 184 line slots / 5962 bytes",
+        "tests/byte_tests.cpp@634dcc90773e7144a127e29a2d49ce94b816e596 fully read: 135 line slots / 3518 bytes; construction, bitwise, shifts, to_integer, aliasing and compile-error cases",
+        "accepted tdesktop exact commit code search observed gsl::byte in mtproto_auth_key.h, mtproto_rsa_public_key.cpp, passport_encryption.cpp, mtproto_dc_key_creator.h, mtproto_auth_key.cpp, crash_reports.cpp, calls_call.cpp, storage_file_utilities.cpp, snowflakes.h and premium_stars.h",
+        "GSL gitlink 87f9d768866548b5b86e72be66c60c5abd4d9b37; child tree 6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41",
+        "Parent TDRP 40036273453 61/61 success; authority 12537048053 sha256:fcede2a6f45aaf136156ee2c657cd2768d9b3706147894f18b1b4738e1c774f5; closure 12536939388 sha256:7a99c0159e1c41986c35b6efebde533a74bd7444352c75f88d954c86c36f1a84; reachability 12537093706 sha256:7fecba0f4319e4c40c4bbd72d8756d7fd46e64a48634307e5aa022cdb107f65f; Rust 40036273460 6/6 success; artifact 12537182837 sha256:2f2f97752df71c2c2bf07900cf6be9d7f26a9a47a3024c494581469a8382d354"
+      ],
+      "target_commit": "cf7ce14c5d7fe627768eac8bd19087cd2377050f",
+      "workflow_run": 40036273453,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12537048053,
+      "artifact_digest": "sha256:fcede2a6f45aaf136156ee2c657cd2768d9b3706147894f18b1b4738e1c774f5",
+      "composition_root": "Fabushi native low-level dependency replacement through actual binary-data domain owners",
+      "composition_slot": "typed 8-bit representation and explicit conversion semantics",
+      "capability_component": "Native byte representation dependency replacement",
+      "variation_axes": [
+        "std::byte vs fallback byte provenance",
+        "construction/conversion",
+        "bitwise/shift operations",
+        "fixed array vs vector/buffer caller",
+        "secret/auth/storage/call/crash/UI caller meaning"
+      ],
+      "shared_owner_contracts": [
+        "TDRP-LANG-03",
+        "per-file responsibility traceability",
+        "actual domain binary-data owners",
+        "exact-head TDRP evidence"
+      ],
+      "duplicate_root_check": "No GSL/Byte runtime, generic binary-data root, second auth/crypto/storage/call/crash/UI owner or source-branded buffer subsystem.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Low-level typed byte representation only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Native byte/buffer representation inside existing owners",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Changed GSL byte header or any concrete binary-data caller requires fresh reconciliation; caller domain semantics remain independently open.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-GSL-BYTE-REPRESENTATION-DEPENDENCY-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GSL-BYTE-EXACT-SOURCE-001",
+        "ORA-TDRP-GSL-BYTE-EXPLICIT-CONVERSION-001",
+        "ORA-TDRP-GSL-BYTE-CALLER-BOUNDARY-001",
+        "ORA-TDRP-GSL-BYTE-NATIVE-REPLACEMENT-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GSL-BYTE-NO-OMISSION-001",
+        "INV-TDRP-GSL-BYTE-NO-GSL-RUNTIME-001",
+        "INV-TDRP-GSL-BYTE-NO-DOMAIN-ABSORPTION-001",
+        "INV-TDRP-GSL-BYTE-EXACT-PROVENANCE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GSL-BYTE-DEPENDENCY-REPLACEMENT-001",
+        "CONTRACT-TDRP-GSL-BYTE-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GSL-BYTE-SOURCE-DRIFT-001",
+        "FAULT-TDRP-GSL-BYTE-IMPLICIT-TRUNCATION-001",
+        "FAULT-TDRP-GSL-BYTE-DUPLICATE-OWNER-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-GSL-BYTE-NO-IMPLICIT-TRUNCATION-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-GSL-BYTE-NO-SOURCE-OMISSION-001",
+        "REG-TDRP-GSL-BYTE-NO-PARALLEL-BINARY-RUNTIME-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-BEHAVIOR",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-SECURITY-PRIVACY"
+      ],
+      "test_fixture_ids": [
+        "locked GSL byte header + focused byte tests + accepted exact-head cross-domain callsites + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact Microsoft/GSL include/gsl/byte@87d007ef94d197632872e96d91525a013c665da8 MIT-licensed dependency implementation plus accepted tdesktop exact-head callsite provenance retained; no GSL/C++ byte runtime or caller-domain release authority inferred.",
+      "reviewer": "primary-session",
+      "notes": "Strict151 closes only GSL include/gsl/byte as a generic typed-byte dependency responsibility. Auth/RSA/Passport/Calls/Storage/Crash/UI caller behavior remains independently open. Counters unknown=16,225 unread=16,200 omitted=0 responsibilities=169. Next strict152 Microsoft/GSL include/gsl/gsl@53030b31747ca25e3d740bd078c0ffd5b71ebf88."
     }
   ]
 }

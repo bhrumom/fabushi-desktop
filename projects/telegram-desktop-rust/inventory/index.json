@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16226,
-    "unread_minimum": 16201,
+    "unknown_minimum": 16225,
+    "unread_minimum": 16200,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -122,7 +122,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live main 7394f6dc7687f9b986ee5589d40aa680ce23b90a/fbeb0bb32d944d0c1053880c471fe5c52279f052; upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5; GSL 87f9d768866548b5b86e72be66c60c5abd4d9b37/6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41. Parent TDRP 40034178153 61/61 success; authority 12535384410 sha256:c96eef6b8937dd374dc901728030841e78a309e57a23c56c73296063c62e20e6; closure 12537015768 sha256:f8ac01dba730448bfbea88979d1b5f9f91616cc2564fcfd2ae36a0a7c2e8bd94; reachability 12536726927 sha256:48efbf7c3b63a8ce8ad2d43e786238ac02a47fd05d0c745cad2e642e07ddec20; Rust 40034178058 6/6 success; artifact 12536755908 sha256:ccdf141f91d920d6a993a4982b58b41a23627340870e21dc93419e225c5c58aa. Strict150 Microsoft/GSL include/gsl/assert@d3e6ccdd53d5a254ed3827cf07711a6e86bb4226 fully read: 134 line slots / 3988 bytes. The header supplies compiler suppression/hints/assume, stock terminate/no-exception fast-fail and Expects/Ensures non-continuation. tdesktop stdafx@252ab2c2aa698e3337894ab6d50acef697789036 loads lib_base assertion before <gsl/gsl>; lib_base/base/assertion.h@05194235168d883f34ce7da9972856d824bf1f1f redefines Expects/Ensures to log file/line, crash for reporting and abort fallback. Preserve fail-closed/diagnostic semantics through native Rust/domain owners; do not add a GSL/C++ assertion or parallel crash runtime. Counters unknown=16,226 unread=16,201 omitted=0 responsibilities=168. Next strict151 Microsoft/GSL include/gsl/byte@87d007ef94d197632872e96d91525a013c665da8.",
+  "note": "Live main 7394f6dc7687f9b986ee5589d40aa680ce23b90a/fbeb0bb32d944d0c1053880c471fe5c52279f052; upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5; GSL 87f9d768866548b5b86e72be66c60c5abd4d9b37/6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41. Parent TDRP 40036273453 61/61 success; authority 12537048053 sha256:fcede2a6f45aaf136156ee2c657cd2768d9b3706147894f18b1b4738e1c774f5; closure 12536939388 sha256:7a99c0159e1c41986c35b6efebde533a74bd7444352c75f88d954c86c36f1a84; reachability 12537093706 sha256:7fecba0f4319e4c40c4bbd72d8756d7fd46e64a48634307e5aa022cdb107f65f; Rust 40036273460 6/6 success; artifact 12537182837 sha256:2f2f97752df71c2c2bf07900cf6be9d7f26a9a47a3024c494581469a8382d354. Strict151 Microsoft/GSL include/gsl/byte@87d007ef94d197632872e96d91525a013c665da8 fully read: 184 line slots / 5962 bytes; tests/byte_tests.cpp@634dcc90773e7144a127e29a2d49ce94b816e596 fully read: 135 line slots / 3518 bytes. The header selects std::byte where available or supplies an unsigned-char byte with aliasing, shifts/bitwise operators, integral conversion and range/type constrained to_byte; accepted tdesktop exact-head callsites span auth/RSA, Passport, Calls, Storage, Crash and UI effects. Preserve this primitive through native Rust u8/fixed arrays/vectors or existing domain binary types at the actual owner; do not create a Byte runtime or absorb cryptographic/storage/call/UI behavior into this dependency row. Counters unknown=16,225 unread=16,200 omitted=0 responsibilities=169. Next strict152 Microsoft/GSL include/gsl/gsl@53030b31747ca25e3d740bd078c0ffd5b71ebf88.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
