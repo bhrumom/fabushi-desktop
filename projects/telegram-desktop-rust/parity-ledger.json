@@ -36862,7 +36862,7 @@
       ],
       "fabushi_target_symbols": [
         "electron-builder",
-        ""nsis"",
+        "nsis",
         "process.platform === 'win32'",
         "Desktop runtime artifact graph is incomplete:",
         "windows-2025",
