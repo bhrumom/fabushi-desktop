@@ -361,10 +361,10 @@
   "coverage": {
     "root_source_entries_total": 6893,
     "recursive_source_entries_total": 16379,
-    "unknown_minimum": 16265,
-    "unread_minimum": 16240,
+    "unknown_minimum": 16264,
+    "unread_minimum": 16239,
     "omitted_known": 0,
-    "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent ffc7bbc8c8d1084e54e4871fc477158bd712e09b/tree 9ffc602e0efefd9fdd371fc5f2f7811252f894bb passed TDRP 39926642224 at 61/61 and Rust 39926642214 at 6/6. Strict111 docs/api_credentials.md@0d2819bd3cd6b6407ced257edbbd6623b438f262 is retained as credential/security provisioning provenance under the existing FabushiAccountService/AuthServicePort/fabushi-account-policy/secret-store owners; its Telegram api_id/api_hash and TEST ONLY credential never become Fabushi production credential or network authority, and live-main Host enrollment/Remote Computer device-secret work remains a scoped consumer of the same account/secret boundary rather than a second owner. Counters unknown=16,265 unread=16,240 omitted=0 responsibilities=129. Next strict root index 112 docs/assets/preview.png@808d016f34fe2d4156a2bd26e8cdbe384f888b65. Fresh child exact-head Actions required."
+    "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 27214da001dcb49abd0eb9e377254743439cd189/tree 86e76f8979ecbc2d6b0c248d31dc80952e9bcf81 passed TDRP 39933340394 at 61/61 and Rust 39933340523 at 6/6. Strict112 docs/assets/preview.png@808d016f34fe2d4156a2bd26e8cdbe384f888b65 is retained as repository/distribution visual-resource provenance under the existing FVA visual-acceptance, FDS brand-asset and FQT-EVID visual evidence owners; README/AppStream references do not make the Telegram screenshot a Fabushi baseline, shipping asset, package proof or release authority, and the binary is not copied. Counters unknown=16,264 unread=16,239 omitted=0 responsibilities=130. Next strict root index 113 docs/assets/slide.01.jpg@07ed727d48e286f9a04d933ac7203bdb7205ff4a. Fresh child exact-head Actions required."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -378,7 +378,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Strict111 is credential/security provisioning provenance only. Source closure remains open with unknown=16,265 unread=16,240 omitted=0; Telegram api_id/api_hash and TEST ONLY credentials do not establish Fabushi authentication authority, runtime login, service deployment, package/signing behavior or release acceptance."
+    "note": "Strict112 is binary visual-resource provenance only. Source closure remains open with unknown=16,264 unread=16,239 omitted=0; Telegram repository/AppStream preview media do not establish Fabushi visual-baseline approval, brand authority, package/store metadata, signing/deployment behavior or release acceptance."
   },
   "baseline_identity_evidence": {
     "status": "pending-current-head-revalidation",
