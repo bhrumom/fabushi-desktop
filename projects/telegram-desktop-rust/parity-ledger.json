@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "83f9f56347cc3421c1e3ef537c7bb6dd06ce7cd0",
-  "target_commit": "fa74eb579788dd4213c58af93b6759304ac1aea7",
+  "target_commit": "acd975db4f2db36c6a5b1d633453a1a3ba3398c2",
   "coverage": {
     "source_entries_total": 16377,
-    "unknown": 16284,
-    "unread": 16259,
+    "unknown": 16283,
+    "unread": 16258,
     "omitted": 0,
-    "responsibilities_total": 108,
+    "responsibilities_total": 109,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -29136,6 +29136,260 @@
       "license_and_provenance": "Exact workflow and audit-time provider commit/action/index identities retained. The workflow references mutable action_code_updater@master; provider runtime packages are unversioned and there is no repository license/package lock in the audited root, so provider/runtime provenance remains fail-closed and cannot establish Fabushi publication or release authority.",
       "reviewer": null,
       "notes": "Strict index 90 closes only .github/workflows/master_updater.yml. Counters become unknown=16,278 unread=16,253 omitted=0 responsibilities=108. Next strict root index 91 .github/workflows/needs-user-action.yml@55ad7891ce36682accae01d739203aa487876053. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "83f9f56347cc3421c1e3ef537c7bb6dd06ce7cd0",
+      "source_path": ".github/workflows/needs-user-action.yml",
+      "source_blob_sha": "55ad7891ce36682accae01d739203aa487876053",
+      "source_kind": "repository_issue_needs_user_action_maintenance_workflow",
+      "module_id": "tdesktop.github.workflows.needs_user_action",
+      "responsibility_id": "TDRP-R9-ISSUE-NEEDS-USER-ACTION-MAINTENANCE-001",
+      "source_symbols": [
+        "issue_comment.types: created",
+        "schedule cron 0 2 * * *",
+        "lee-dohm/no-response@v0.5.0",
+        "responseRequiredLabel: needs user action",
+        "github.token",
+        "default daysUntilClose: 14",
+        "schedule -> sweep()",
+        "issue_comment -> unmark()",
+        "search issuesAndPullRequests per_page: 30",
+        "sweep loop calls close() without await",
+        "original-author comment -> removeLabel",
+        "provider-closed issue -> reopen when closed_by != issue author"
+      ],
+      "capability_ids": [
+        "CAP-ISSUE-WAITING-FOR-USER-ACTION-MAINTENANCE",
+        "CAP-ISSUE-ORIGINAL-AUTHOR-RESPONSE-RECOVERY",
+        "CAP-ISSUE-NO-RESPONSE-PROVENANCE"
+      ],
+      "dependency_ids": [
+        "lee-dohm/no-response@v0.5.0/9bb0a4b5e6a45046f00353d5de7d90fb8bd773bb",
+        "lee-dohm/no-response/action.yml@1eb04cb05934c6b5d299918356d4042115026b2a",
+        "lee-dohm/no-response/dist/index.js@7dada7580c55196f93eb911f8a4646152b7d039e",
+        "provider tree 8600ce78cc9ed1dad710f332ac434cdf1d49fc0d contains only action.yml and dist/index.js; no LICENSE/package manifest/package lock",
+        "projects/fabushi-communication-platform/quality/defect-regression-policy.md@b31ecd424cac2abf8a2322e2996bb1b53c561378"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/needs-user-action-issue-maintenance-workflow-complete-read.md",
+      "behavior_contract": "Treat needs-user-action automation as repository provider maintenance only. A daily sweep may close old open issues carrying the waiting-for-author label, and an original-author issue_comment may remove that provider label and conditionally reopen the issue. Neither provider label state, auto-close, reopen, nor green workflow execution can advance canonical Fabushi defect closure, root cause, regression, release, or acceptance truth; FQT-DEF-001 remains sole closure authority.",
+      "state_machine": "open provider issue -> needs user action label -> schedule sweep: latest matching label event younger than 14 days stays open / older than 14 days enters provider comment+close attempt; issue_comment.created -> only if commenter is original author and label is present -> remove label -> if issue is closed by a different actor, request reopen; canonical Fabushi defect independently remains open until FQT-DEF-001 reproduce -> fix -> targeted regression -> affected regression -> current-head evidence.",
+      "side_effects": [
+        "Queries GitHub issue, label and event state through github.token.",
+        "Schedule path may create the configured label when absent.",
+        "Schedule path searches at most the returned 30 open labeled issues per invocation.",
+        "Schedule path may create the dependency default close comment and close qualifying provider issues.",
+        "Original-author issue_comment path removes the configured label and may request provider issue reopen.",
+        "Provider sweep close calls and reopen update are not awaited at their call sites, so run success is not settlement evidence for every mutation.",
+        "Does not mutate canonical Fabushi defect root-cause, fix, regression, release, or acceptance state."
+      ],
+      "failure_cases": [
+        "provider issue/label/event/search API failure",
+        "mutable v0.5.0 tag drift is mistaken for immutable workflow provenance",
+        "provider bundle has no repository license/package manifest/lock provenance",
+        "more than 30 matching issues leave later search results untouched in one sweep",
+        "unawaited close/reopen mutation settles late or fails after control flow advances",
+        "non-author comment is mistaken for required-author response",
+        "provider auto-close or reopen is treated as canonical defect closure/recovery",
+        "closed issue suppresses required FQT regression/current-head evidence",
+        "provider state becomes a second defect/support ledger or release gate"
+      ],
+      "ui_disposition": "Repository issue-maintenance automation only; no shipping Fabushi UI capability.",
+      "non_ui_responsibilities": [
+        "waiting-for-author-action issue-maintenance provenance",
+        "label-age based provider auto-close attempt",
+        "original-author response unmark/reopen semantics",
+        "bounded 30-result sweep behavior",
+        "provider async-settlement limitation",
+        "strict separation from canonical defect closure"
+      ],
+      "platform_delta": "TDesktop uses GitHub provider state to track `needs user action`, close labeled issues after the dependency default 14-day period, and recover the label/issue when the original author comments. Fabushi retains these only as repository-maintenance provenance; FQT-DEF-001 remains the sole canonical defect lifecycle/closure owner and no Telegram/GitHub-specific support runtime is introduced.",
+      "existing_owner_candidates": [
+        "FQT-DEF-001 canonical defect/regression policy (selected sole defect closure owner)",
+        "AGENTS repository defect-intake/routing adapter governance (related provider boundary)",
+        "new waiting-for-user-action defect/support owner (rejected)"
+      ],
+      "existing_owner": "FQT-DEF-001 canonical defect/regression policy; GitHub needs-user-action/no-response behavior is a non-authoritative repository issue-maintenance adapter only",
+      "rejected_existing_owners": [
+        "provider label age and comments do not establish reproduction, cause, fix, regression or acceptance",
+        "GitHub issue reopen/close state cannot replace FQT canonical defect truth",
+        "provider mutation settlement is not fully awaited and cannot become acceptance evidence",
+        "a new support/defect state root would duplicate canonical lifecycle ownership"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/fabushi-communication-platform/quality/defect-regression-policy.md"
+      ],
+      "fabushi_target_symbols": [
+        "## Closure/flaky"
+      ],
+      "target_language": "Repository governance / issue-maintenance provenance",
+      "language_rationale": "The source is GitHub issue automation rather than shipping product logic; applicable behavior is bounded by the existing source-neutral defect policy and provider-adapter governance.",
+      "command_event_contracts": [
+        "daily 02:00 provider sweep may inspect open issues carrying the configured response-required label",
+        "dependency default close threshold is 14 days from the latest matching label event",
+        "one sweep search requests at most 30 matching issues",
+        "issue_comment.created only unmarks when the commenter is the original issue author",
+        "unmark may request reopen when the issue is closed and closed_by differs from the issue author",
+        "provider close/reopen calls are not fully awaited at call sites; green execution is not mutation-settlement evidence",
+        "canonical closure always requires FQT-DEF-001 evidence",
+        "dependency tag provenance is resolved to immutable reviewed source for audit, not adopted as stronger Fabushi policy"
+      ],
+      "state_owner": "GitHub owns provider issue/label/comment state only; FQT-DEF-001 owns canonical Fabushi defect lifecycle and closure.",
+      "lifecycle_owner": "Provider wait-for-author maintenance may label, auto-close, unmark or reopen a GitHub issue; FQT-DEF-001 independently owns reproduction, fix, regression and current-head closure.",
+      "persistence_and_restart": "GitHub persists issue labels/events/comments/state. Scheduled reruns recompute labeled age and comment events may recover provider state, but canonical defect evidence is reconstructed only from FQT records and exact-head evidence.",
+      "concurrency_and_cancellation": "Schedule sweeps can race original-author comments and human/provider close/reopen activity. The provider does not await every close/reopen mutation, so cancellation, late settlement, stale label/event reads or API failure must remain fail-closed and cannot advance canonical defect state.",
+      "security_boundary": "Uses repository github.token for GitHub issue/label/comment operations. Mutable third-party action source and provider APIs are administrative boundaries only; no product credential, runtime identity or production support authority is introduced.",
+      "network_service_dependencies": [
+        "GitHub Issues/Actions provider API",
+        "lee-dohm/no-response source bundle at audit-resolved v0.5.0 commit"
+      ],
+      "service_owner": "GitHub repository maintenance provider only; canonical defect truth remains FQT-DEF-001",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "policy-equivalent",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions are required after this strict91 mapping commit.",
+        "Recursive source disposition remains open.",
+        "Provider v0.5.0 tag is mutable and its audited tree contains no license/package manifest/lock.",
+        "Provider sweep close/reopen mutation settlement is not fully awaited."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "needs-user-action.yml fully read: 17 line slots / 312 bytes at blob 55ad7891ce36682accae01d739203aa487876053.",
+        "lee-dohm/no-response@v0.5.0 resolves to 9bb0a4b5e6a45046f00353d5de7d90fb8bd773bb; action.yml@1eb04cb05934c6b5d299918356d4042115026b2a defaults daysUntilClose=14 and runs dist/index.js@7dada7580c55196f93eb911f8a4646152b7d039e.",
+        "Provider dist dispatches schedule to sweep() and issue_comment to unmark(); unmark removes the label only when commenter==issue author and may request reopen when closed_by differs from the author.",
+        "Provider sweep searches open labeled issues with per_page=30, filters by latest matching labeled event, and invokes close() without awaiting each returned Promise; reopen update is likewise not awaited.",
+        "Provider tree 8600ce78cc9ed1dad710f332ac434cdf1d49fc0d contains only action.yml and dist/index.js, with no LICENSE/package manifest/package lock.",
+        "FQT-DEF-001@b31ecd424cac2abf8a2322e2996bb1b53c561378 requires reproduce -> fix -> targeted regression -> affected regression -> current-head evidence before close.",
+        "Parent exact-head acd975db4f2db36c6a5b1d633453a1a3ba3398c2 completed TDRP run 39886008535 at 61/61 success (authority 12472536855 sha256:3c8b0ba0ab91341142ea2e25594e4aa9b2f2c460faafe7149feaff00cf0c14cf; closure 12472802476 sha256:ec3a9d6ff5f7d6174b5c6b60e7f62b38ad505509b5ed3e0471a8c85c66fe6f44; reachability 12472727917 sha256:e73aff0b73ca60843e488f01c80e976b06aea807482c2010a421d3b5a9381834) and Rust desktop runtime run 39886008486 at 6/6 success (artifact 12471609701 sha256:5da1450c1745f7a951aae94c33889e02c48060403b52e67a8a6dd77fef71a771)."
+      ],
+      "target_commit": "acd975db4f2db36c6a5b1d633453a1a3ba3398c2",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi canonical FQT defect/regression lifecycle with GitHub waiting-for-author maintenance as non-authoritative provider state",
+      "composition_slot": "provider needs-user-action maintenance -> canonical FQT-DEF-001 remains sole closure authority",
+      "capability_component": "Source-neutral waiting-for-author issue-maintenance provenance adapter",
+      "variation_axes": [
+        "label absent/present",
+        "label age below/above 14 days",
+        "original-author/non-author comment",
+        "provider issue open/closed",
+        "closed_by author/other actor",
+        "matching issues within/beyond first 30 search results",
+        "provider close/reopen settled/late/failed",
+        "canonical defect unresolved/resolved"
+      ],
+      "shared_owner_contracts": [
+        "FQT-DEF-001",
+        "AGENTS repository defect-intake/routing adapter governance",
+        "FQT-EVID-001 exact-head evidence"
+      ],
+      "duplicate_root_check": "No second defect ledger, support truth, waiting-for-user-action product state owner, provider-owned defect closure root, release gate or shipping issue runtime is introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository issue maintenance only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Bounded provider issue-maintenance provenance adapter",
+      "route_contract": "needs user action label -> scheduled provider sweep and original-author comment recovery; all canonical closure remains independently governed by FQT-DEF-001",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "GitHub provider issue/label state may close, reopen or drift independently; canonical defect state advances only through FQT-DEF-001 evidence and exact-head validation.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-ISSUE-NEEDS-USER-ACTION-MAINTENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-NEEDS-USER-ACTION-LABEL-AGE-001",
+        "ORA-TDRP-NEEDS-USER-ACTION-ORIGINAL-AUTHOR-RECOVERY-001",
+        "ORA-TDRP-NEEDS-USER-ACTION-NOT-DEFECT-CLOSURE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-FQT-DEF-001-ONLY-CLOSURE-OWNER-002",
+        "INV-TDRP-NEEDS-USER-ACTION-NO-AUTO-ACCEPT-001",
+        "INV-TDRP-NEEDS-USER-ACTION-GREEN-NOT-MUTATION-SETTLEMENT-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-NEEDS-USER-ACTION-PROVIDER-ADAPTER-001",
+        "CONTRACT-TDRP-NEEDS-USER-ACTION-ORIGINAL-AUTHOR-RECOVERY-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-NEEDS-USER-ACTION-LABEL-AGE-001",
+        "TEMP-TDRP-NEEDS-USER-ACTION-COMMENT-RACE-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-NEEDS-USER-ACTION-UNAWAITED-MUTATION-001",
+        "FAULT-TDRP-NEEDS-USER-ACTION-PROVIDER-CLOSE-WITHOUT-FIX-001",
+        "FAULT-TDRP-NEEDS-USER-ACTION-SEARCH-BOUND-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-NEEDS-USER-ACTION-GITHUB-TOKEN-BOUNDARY-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-FQT-DEF-001-REMAINS-SOLE-CLOSURE-OWNER-002",
+        "REG-TDRP-NEEDS-USER-ACTION-NO-PROVIDER-AUTHORITY-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [],
+      "test_fixture_ids": [
+        "locked needs-user-action.yml + no-response v0.5.0 immutable bundle + provider tree listing + FQT-DEF-001 + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact upstream workflow and audit-resolved no-response commit/action/bundle identities retained. The mutable v0.5.0 tag and provider tree's absence of LICENSE/package manifest/package lock remain fail-closed third-party provenance; this dependency is not adopted as a Fabushi product/runtime owner.",
+      "reviewer": null,
+      "notes": "Strict index 91 closes only .github/workflows/needs-user-action.yml. FQT-DEF-001 remains sole canonical defect closure owner; GitHub label/auto-close/unmark/reopen state is provider maintenance only. Counters become unknown=16,283 unread=16,258 omitted=0 responsibilities=109. Next strict root index 92 .github/workflows/snap.yml@82f85ae9066a2773512afecb0bcf80875116a8c8. baseline_identity_accepted=false and source_closure_ready=false; fresh child exact-head Actions required."
     }
   ]
 }
