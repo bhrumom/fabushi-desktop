@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "e3f4cd02b3af42993555c338e292d32cbfcff0e1",
+  "target_commit": "22a4c56f2dd4ae8f5e3884cd5bb220275abe41a8",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16245,
-    "unread": 16220,
+    "unknown": 16244,
+    "unread": 16219,
     "omitted": 0,
-    "responsibilities_total": 149,
+    "responsibilities_total": 150,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -40513,6 +40513,260 @@
       "license_and_provenance": "Telegram Info/Qt/memento class names retained only as behavior provenance; no Telegram UI/runtime imported.",
       "reviewer": null,
       "notes": "Strict131 closes only tasks/2026/08/21/preserve-info-thread-identity-and-lifetime.md semantic read/decomposition. Existing ProductShell/detail owners and account-generation fencing are reusable, but thread/sublist subject route identity and destruction lifecycle remain shipping-open. Counters unknown=16,245 unread=16,220 omitted=0 responsibilities=149. Next strict132 tools/clangtidy/README.md@2e64a408cb2d76aed0425706e321a24bb58f350f."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "tools/clangtidy/README.md",
+      "source_blob_sha": "2e64a408cb2d76aed0425706e321a24bb58f350f",
+      "source_kind": "repository_cpp_static_analysis_workflow_and_feedback_provenance",
+      "module_id": "tdesktop.tools.clangtidy.readme",
+      "responsibility_id": "TDRP-R9-CLANG-TIDY-WORKFLOW-001",
+      "source_symbols": [
+        "compile_db.py",
+        "clang-tidy-diff.py",
+        "run-clang-tidy",
+        "clang-tidy >= 20",
+        "tools/rules/hook.py --staged",
+        "tools/rules/test_hook.py",
+        "compile_commands.json"
+      ],
+      "capability_ids": [
+        "CAP-REPOSITORY-STATIC-ANALYSIS",
+        "CAP-CONFIGURED-BUILD-PROVENANCE",
+        "CAP-EDIT-POLICY-FEEDBACK",
+        "CAP-EXACT-HEAD-QUALITY-EVIDENCE"
+      ],
+      "dependency_ids": [
+        "tools/clangtidy/compile_db.py@16a99ac4ad860cc37ee7c84bfb82cf899fb1cced",
+        ".clang-tidy@5610bd13664ca77549993def241eb3edaffeff7a",
+        "tools/rules/hook.py@287b36c948566659970651226c92f7b8b056b434",
+        "tools/rules/test_hook.py@dce99f3507e4ec9f71c8bbd5360e9dde9b62d45f",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md@4d2c88e118ab489d3d0339d2a61371a7ea74e72e",
+        "AGENTS.md@da3e37258c74963970ff5cfc5d54671a37558b97",
+        ".github/workflows/rust-desktop-runtime.yml@905fc0e17e5b4e54cb18708c55d1eb8725d18f83",
+        ".github/workflows/desktop-chat-parity-ci.yml@2689fd2ed01c6818586f251fb8a879a8b162c61b",
+        "desktop/package.json@3d500622ce9b26e3452d98d0c4a7e7dcc019ac84"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-tools-clangtidy-readme-complete-read.md",
+      "behavior_contract": "Static-analysis input must be derived from the actual configured build after configure, analyzer capability/version must support the locked semantic rules, and diff/full-file/pre-commit invocations are developer feedback adapters. Local hooks are never acceptance authority; Fabushi preserves the source-neutral safety intent in existing Rust/TypeScript/platform quality owners and exact-head GitHub Actions rather than retaining a C++/Qt runtime.",
+      "state_machine": "configure canonical build -> derive compilation database from evaluated build -> normalize only tool-incompatible command details -> run analyzer feedback -> optionally run staged/local hook -> exact-head GitHub Actions remains authoritative -> stale/missing/unsupported analyzer or build provenance stays non-passing",
+      "side_effects": [
+        "Generates analyzer-only compile_commands.json from an existing configured Ninja build.",
+        "May reject a local edit or staged commit under upstream repository rules.",
+        "Does not create shipping product/runtime state, user data, network state, or a Fabushi C++ runtime."
+      ],
+      "failure_cases": [
+        "Analyzer runs against a stale or synthetic compilation database.",
+        "clang-tidy older than the required capability silently ignores CustomFunctions.",
+        "A local/pre-commit hook is treated as migration or release acceptance.",
+        "Telegram C++ comment budgets or Qt helper spellings are copied into Fabushi as product policy without independent adoption.",
+        "A C++/Qt shipping runtime or second quality owner is introduced only to preserve upstream tooling.",
+        "Current Cargo test/typecheck evidence is mislabeled as dedicated clippy/fmt/ESLint coverage."
+      ],
+      "ui_disposition": "Not applicable; repository static-analysis/build-tooling provenance only.",
+      "non_ui_responsibilities": [
+        "configured-build-derived analyzer input",
+        "minimum analyzer capability/version",
+        "compiler-command adaptation without inventing build truth",
+        "local staged/edit feedback as non-authoritative adapter",
+        "exact-head CI authority and fail-closed evidence boundary"
+      ],
+      "platform_delta": "The C++/Qt/Ninja/clang-tidy runner is not retained as product architecture. Its applicable safety and configured-build provenance intent maps to Fabushi's existing source-neutral quality/evidence lifecycle and target-language CI gates.",
+      "existing_owner_candidates": [
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Repository source static-analysis migration qualification",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Configured-build graph qualification",
+        "AGENTS.md#Repository edit-policy feedback adapter governance",
+        "GitHub Actions exact-head Rust/TypeScript build-test owners"
+      ],
+      "existing_owner": "Fabushi repository quality/test-evidence governance + configured-build provenance + exact-head GitHub Actions lifecycle",
+      "rejected_existing_owners": [
+        "A Telegram/clang-tidy-specific product owner would duplicate repository quality governance.",
+        "A C++/Qt runtime is not required by Fabushi target architecture.",
+        "Local editor/pre-commit hooks cannot become canonical policy or acceptance owners."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "AGENTS.md",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "desktop/package.json"
+      ],
+      "fabushi_target_symbols": [
+        "Repository source static-analysis migration qualification",
+        "Configured-build graph qualification",
+        "Repository editor/AI post-write hooks are optional fast-feedback adapters",
+        "cargo metadata --no-deps --format-version 1",
+        "npm run typecheck"
+      ],
+      "target_language": "Markdown quality governance + Rust/TypeScript GitHub Actions/toolchain",
+      "language_rationale": "The upstream file is developer-tool workflow provenance. Fabushi keeps the source-neutral quality/build-evidence responsibilities in its current target-language owners rather than shipping upstream C++ tooling.",
+      "command_event_contracts": [
+        "configured build -> derive analyzer input from evaluated compiler commands",
+        "unsupported analyzer version -> fail closed rather than silently weakening rules",
+        "local/staged hook -> early feedback only",
+        "mapping commit -> exact-head GitHub Actions revalidation",
+        "target-language static-analysis gap -> remain mapped-open"
+      ],
+      "state_owner": "Existing repository quality/test-evidence and configured-build provenance lifecycle; no product state owner.",
+      "lifecycle_owner": "Fabushi Test Strategy, AGENTS repository feedback governance and exact-head GitHub Actions.",
+      "persistence_and_restart": "No product persistence. Durable evidence is the locked upstream blobs, dossier/ledger mapping, configured-build/quality contracts and exact-head workflow artifacts.",
+      "concurrency_and_cancellation": "Analyzer and hook runs are disposable evidence/feedback. Ref/head drift invalidates evidence; local hook success cannot fence or replace canonical CI.",
+      "security_boundary": "Developer-tool feedback has no product authorization or security authority. Release/security acceptance remains with existing dedicated gates.",
+      "network_service_dependencies": [
+        "GitHub Actions for authoritative exact-head executable verification"
+      ],
+      "service_owner": "Fabushi repository quality/evidence lifecycle",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "toolchain-equivalent-workflow-mapped-open",
+      "blockers": [
+        "Current exact-head workflows/package scripts have no dedicated cargo clippy or cargo fmt gate.",
+        "Current exact-head workflows/package scripts have no ESLint or dedicated lint script.",
+        "Upstream local/pre-commit hook is provenance only and cannot count as acceptance.",
+        "Recursive source closure remains open.",
+        "Independent release acceptance remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "path:AGENTS.md",
+        "path:.github/workflows/rust-desktop-runtime.yml",
+        "path:.github/workflows/desktop-chat-parity-ci.yml",
+        "path:desktop/package.json"
+      ],
+      "test_evidence": [
+        "strict132 tools/clangtidy/README.md@2e64a408cb2d76aed0425706e321a24bb58f350f fully read",
+        "tools/clangtidy/compile_db.py@16a99ac4ad860cc37ee7c84bfb82cf899fb1cced fully read",
+        ".clang-tidy@5610bd13664ca77549993def241eb3edaffeff7a fully read",
+        "tools/rules/hook.py@287b36c948566659970651226c92f7b8b056b434 fully read",
+        "tools/rules/test_hook.py@dce99f3507e4ec9f71c8bbd5360e9dde9b62d45f fully read",
+        "exact-head workflow/package scan confirms no cargo clippy/fmt, ESLint or dedicated lint script",
+        "TDRP 39984901447 61/61; authority 12514373943 sha256:4a5b71d5e6c8965797eef2bf63a0766da69aebc72f25238a872d2943fb32636c; closure 12514514383 sha256:d26f54c0f5656cba152906a9be28b280ee1887eacca98337da4e03f92ddc3a16; reachability 12516030885 sha256:f4017ca396bd83a4c9b6cdf6553f865ef11f54c418b87d5740a1c27db243df02",
+        "Rust 39984901437 6/6; artifact 12515950645 sha256:1715b509fbad46f9bb3d96634ad3898b6f3a13d8caa9f5953922a6d0cc56fc53"
+      ],
+      "target_commit": "22a4c56f2dd4ae8f5e3884cd5bb220275abe41a8",
+      "workflow_run": 39984901447,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12514373943,
+      "artifact_digest": "sha256:4a5b71d5e6c8965797eef2bf63a0766da69aebc72f25238a872d2943fb32636c",
+      "composition_root": "Fabushi repository quality/test-evidence lifecycle",
+      "composition_slot": "configured-build static-analysis workflow + local feedback adapter",
+      "capability_component": "Target-language static-analysis/build evidence",
+      "variation_axes": [
+        "configured vs stale analyzer input",
+        "supported vs unsupported analyzer capability",
+        "local feedback vs authoritative CI",
+        "C++ provenance vs Rust/TypeScript target-language gates"
+      ],
+      "shared_owner_contracts": [
+        "Fabushi Test Strategy",
+        "Configured-build graph qualification",
+        "AGENTS edit-policy feedback adapter governance",
+        "GitHub Actions exact-head evidence governance"
+      ],
+      "duplicate_root_check": "No Telegram/clang-tidy-specific product runtime, second quality owner or C++/Qt shipping owner introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository quality/tooling only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Repository quality/tooling",
+      "route_contract": "No shipping route",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Configured-build/analyzer evidence is bound to exact source/build identity; stale or local-only feedback cannot be promoted to acceptance.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CLANG-TIDY-WORKFLOW-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CLANG-TIDY-README-SOURCE-001",
+        "ORA-TDRP-CLANG-TIDY-CONFIGURED-COMPDB-001",
+        "ORA-TDRP-CLANG-TIDY-MIN-VERSION-001",
+        "ORA-TDRP-CLANG-TIDY-LOCAL-HOOK-ADAPTER-001",
+        "ORA-TDRP-CLANG-TIDY-FABUSHI-GATE-GAP-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CLANG-TIDY-NO-STALE-CONFIGURED-BUILD-001",
+        "INV-TDRP-CLANG-TIDY-NO-LOCAL-HOOK-ACCEPTANCE-001",
+        "INV-TDRP-CLANG-TIDY-NO-CXX-RUNTIME-001",
+        "INV-TDRP-CLANG-TIDY-EXACT-HEAD-ACTIONS-ONLY-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CLANG-TIDY-CONFIGURED-INPUT-001",
+        "CONTRACT-TDRP-CLANG-TIDY-LOCAL-FEEDBACK-BOUNDARY-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "performance_case_ids": [],
+      "security_case_ids": [],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-CLANG-TIDY-WORKFLOW-001"
+      ],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-RELEASE"
+      ],
+      "test_fixture_ids": [
+        "locked tools/clangtidy README/compile_db/.clang-tidy/hook source blobs"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions hosted runners"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "unknown",
+      "release_gate_status": "pending",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Exact workflow/tooling provenance read from locked telegramdesktop/tdesktop live-dev blobs; no upstream C++/Qt runtime copied.",
+      "notes": "Strict132 closes only tools/clangtidy/README.md semantic read/decomposition. Configured-build-derived analyzer input, minimum analyzer capability and local-feedback boundary map to existing Fabushi repository quality owners. Current exact-head Fabushi has cargo metadata/tests and TypeScript typecheck/build but no dedicated cargo clippy/fmt, ESLint or lint script, so static-analysis coverage remains mapped-open. Counters unknown=16,244 unread=16,219 omitted=0 responsibilities=150. Next strict133 tools/clangtidy/compile_db.py@16a99ac4ad860cc37ee7c84bfb82cf899fb1cced.",
+      "test_execution_evidence": []
     }
   ]
 }

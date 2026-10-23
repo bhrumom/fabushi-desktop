@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16245,
-    "unread_minimum": 16220,
+    "unknown_minimum": 16244,
+    "unread_minimum": 16219,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -122,7 +122,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent e3f4cd02b3af42993555c338e292d32cbfcff0e1 passed TDRP 39982702461 61/61 (authority 12513549223 sha256:b5fbd7884fd2abd35f57347be4e6467a01b3a16e9e582ae964843236cd37dfe8; closure 12514572235 sha256:f68804d349eb8de8603d64f82fbe2b676dd8b1aaa3ee14da692ab69682a17eb7; reachability 12514323191 sha256:a063daddd5128d4ebe3adfbfc23cbfa58b372ea0592ade0e6bea6f78384d8bc3) and Rust 39982702463 6/6 (artifact 12514426199 sha256:dddd8ef35adb63266eb0fdf267a1660588c23942cd5a988a451419f5cd03dbe1). Strict131 tasks/2026/08/21/preserve-info-thread-identity-and-lifetime.md@2ae8fa2751b7a1572d72b5a416b6c3cca3ba0e6b was fully read. Upstream exact anchors prove Info subject identity includes peer/topic/sublist and subject destruction must invalidate the page. Current Fabushi ProductShell/detail owners and account-generation fencing are reusable, but shipping route identity remains agent/conversation scoped without explicit thread/sublist subject lifetime. Counters unknown=16,245 unread=16,220 omitted=0 responsibilities=149. Next strict132 tools/clangtidy/README.md@2e64a408cb2d76aed0425706e321a24bb58f350f.",
+  "note": "Live upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 22a4c56f2dd4ae8f5e3884cd5bb220275abe41a8 passed TDRP 39984901447 61/61 (authority 12514373943 sha256:4a5b71d5e6c8965797eef2bf63a0766da69aebc72f25238a872d2943fb32636c; closure 12514514383 sha256:d26f54c0f5656cba152906a9be28b280ee1887eacca98337da4e03f92ddc3a16; reachability 12516030885 sha256:f4017ca396bd83a4c9b6cdf6553f865ef11f54c418b87d5740a1c27db243df02) and Rust 39984901437 6/6 (artifact 12515950645 sha256:1715b509fbad46f9bb3d96634ad3898b6f3a13d8caa9f5953922a6d0cc56fc53). Strict132 tools/clangtidy/README.md@2e64a408cb2d76aed0425706e321a24bb58f350f was fully read with compile_db.py, .clang-tidy, hook.py and test_hook.py anchors. The applicable responsibility is configured-build-derived static-analysis input plus non-authoritative local feedback and exact-head CI authority; C++/Qt/clang-tidy runner mechanics remain provenance. Current Fabushi CI has Cargo metadata/tests and TypeScript typecheck/build but no dedicated cargo clippy/fmt, ESLint or lint script, so target-language static-analysis coverage remains mapped-open. Counters unknown=16,244 unread=16,219 omitted=0 responsibilities=150. Next strict133 tools/clangtidy/compile_db.py@16a99ac4ad860cc37ee7c84bfb82cf899fb1cced.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
