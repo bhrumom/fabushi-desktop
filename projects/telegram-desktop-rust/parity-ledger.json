@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "cd71c1709bd5a7f8830c553611a0b15f2d7a6b27",
+  "target_commit": "46ca9cb537310f5be0c9e131360b8c5ee00497de",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16247,
-    "unread": 16222,
+    "unknown": 16246,
+    "unread": 16221,
     "omitted": 0,
-    "responsibilities_total": 147,
+    "responsibilities_total": 148,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -39866,6 +39866,338 @@
       "license_and_provenance": "Telegram C++/Qt/storage/protocol names retained as source provenance only. No Telegram runtime, storage key, protocol implementation or UI asset is imported by this mapping.",
       "reviewer": null,
       "notes": "Strict129 closes only tasks/2026/08/19/align-replies-thread-shared-media-attribution.md semantic read/decomposition. Reply identity is shipping-wired through the canonical Message/Transcript/ProductionRenderer path; thread summary/loader and thread-scoped shared-media/pinned production composition remain open. Counters unknown=16,247 unread=16,222 omitted=0 responsibilities=147. Next strict130 tasks/2026/08/20/stop-orphaning-general-id-shared-media-lists.md@c30808ee6b4ffb02561d243c24ec32eef5d5e909."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "tasks/2026/08/20/stop-orphaning-general-id-shared-media-lists.md",
+      "source_blob_sha": "c30808ee6b4ffb02561d243c24ec32eef5d5e909",
+      "source_kind": "shared_media_optional_scope_producer_lifetime_task_provenance",
+      "module_id": "tdesktop.root.tasks.shared-media-general-id-lifetime",
+      "responsibility_id": "TDRP-R9-SHARED-MEDIA-GENERAL-ID-LIFETIME-001",
+      "source_symbols": [
+        "HistoryItem::setIsPinned(bool pinned)",
+        "HistoryItem::topicRootId()",
+        "Data::ForumTopic::kGeneralId",
+        "_history->asForum()",
+        "Storage::SharedMediaAddExisting",
+        "Storage::SharedMediaAddNew",
+        "Storage::SharedMediaAddSlice",
+        "Storage::SharedMediaRemoveOne",
+        "SharedMedia::enforceLists",
+        "SharedMedia::_lifetime",
+        "item->topic()",
+        "sublistPeerId()"
+      ],
+      "capability_ids": [
+        "CAP-CANONICAL-MESSAGE-PIN-STATE",
+        "CAP-CANONICAL-MEDIA-RESOURCE-OWNERSHIP",
+        "CAP-CONVERSATION-MEDIA-COLLECTION-SCOPE",
+        "CAP-THREAD-SCOPED-MEDIA-COLLECTION",
+        "CAP-OPTIONAL-COLLECTION-LIFETIME",
+        "CAP-ACCOUNT-CONVERSATION-THREAD-FENCING"
+      ],
+      "dependency_ids": [
+        "Telegram/SourceFiles/history/history_item.cpp@b753d3ea7bd5fde15cdad206d17ab3eee6d68cab",
+        "Telegram/SourceFiles/storage/storage_shared_media.cpp@b52ec6c64d3c8d05e211ae4abe92b5dc5c19d642",
+        "Telegram/SourceFiles/history/history.cpp@27c0d3c3f9f8668a497c5ab638135972380bfd6b",
+        "Telegram/SourceFiles/data/data_forum_topic.h@383fa26754334435fecbf4bca3b0003034189593",
+        "native/mahayana-messaging/src/message.rs@43befb0734a6d1d6d17aeb11f6aa5608a16a6f5a",
+        "source/host/src/extensions/attachments/attachments_service.rs@783a78e21ad4c87db1930cadf3ba46dd6bbb806e",
+        "source/electron-main/attachments/attachments.ts@764654b8f97b94215a015168c6ba82ae5e80aa45",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/attachment-data.ts@52c8606066fe778b297759434c0f8a28d95fc696",
+        "frontend/src/production/ProductionRenderer.tsx@af8a83a8dd7cf1444474889ce3e64fe796a7d458"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-task-stop-orphaning-general-id-shared-media-lists-complete-read.md",
+      "behavior_contract": "Never instantiate an optional thread-scoped pinned/media collection from a fallback or sentinel root. Whole-conversation, explicit thread and sublist/resource scopes remain independently typed; a scoped collection is created only from authoritative canonical scope, while absent optional scopes remove/read as no-op or empty without fabricating state.",
+      "state_machine": "message/resource exists -> durable canonical conversation scope -> optional explicit thread scope validated independently of UI loadedness -> pin/media membership may create/update only authorized canonical collection -> no authoritative thread means whole-conversation membership only -> stale scope generation is fenced -> unpin/remove from absent optional collection is idempotent",
+      "side_effects": [
+        "prevents orphan thread/media collections",
+        "prevents later ordinary messages from populating a bogus scope",
+        "preserves real General-thread identity when the conversation is actually threaded",
+        "keeps resource bytes in existing attachment owners",
+        "keeps message/collection membership in canonical Message/Transcript composition"
+      ],
+      "failure_cases": [
+        "sentinel or fallback integer interpreted as real thread identity",
+        "thread collection allocated in a non-threaded conversation",
+        "real thread dropped because its UI/topic object is not loaded",
+        "optional remove creates state instead of no-op",
+        "later messages populate an orphan collection",
+        "second shared-media/message store introduced",
+        "resource ownership confused with message collection membership",
+        "recovered UI helper mistaken for shipping thread collection"
+      ],
+      "ui_disposition": "Applicable only as a future canonical ConversationWorkspace/Transcript pinned/media collection or filter. Telegram pinned-bar/Info/Qt presentation is not imported; no shipping Fabushi message-pin/media-collection UI is proven.",
+      "non_ui_responsibilities": [
+        "typed whole-conversation versus explicit-thread collection scope",
+        "producer gating before optional collection allocation",
+        "collection lifetime and idempotent absent removal",
+        "thread identity independent of presentation object loadedness",
+        "resource/message membership separation",
+        "account/conversation/thread stale-generation fencing"
+      ],
+      "platform_delta": "Telegram peer/topic/sublist integer keys and SparseIdsList lifetime map to source-neutral canonical Conversation/Message/Transcript/Resource scope; implementation must not depend on Telegram GeneralId or Qt object lifetime.",
+      "existing_owner_candidates": [
+        "canonical mahayana-messaging Message/MediaRef",
+        "canonical Transcript/Conversation owners",
+        "Host AttachmentsService",
+        "Electron attachment edge",
+        "transcript-card attachment projection",
+        "ProductShell ConversationWorkspace"
+      ],
+      "existing_owner": "Canonical Message/MediaRef owns durable message/media identity and pin state; canonical Transcript/Conversation owners must own scoped membership; Host AttachmentsService and Electron attachment edge own resource bytes/access; transcript-card attachment projection owns typed UI projection; ProductShell owns shipping composition.",
+      "rejected_existing_owners": [
+        "Telegram SharedMedia runtime",
+        "TelegramSharedMediaStore",
+        "second Message or Transcript store",
+        "GeneralId integer namespace as Fabushi thread identity",
+        "topic UI object loadedness as durable thread discriminator",
+        "attachment filesystem owner as message-collection index"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "native/mahayana-messaging/src/message.rs",
+        "source/host/src/extensions/attachments/attachments_service.rs",
+        "source/electron-main/attachments/attachments.ts",
+        "frontend/src/recovered/features/conversation/cards/transcript-card/attachment-data.ts"
+      ],
+      "fabushi_target_symbols": [
+        "pub struct MediaRef {",
+        "pub struct Message {",
+        "pub struct AttachmentsService {",
+        "pub fn resolve_attachment_owner_dir_with_root(",
+        "export function createAttachmentEdgePort(deps: AttachmentEdgeDeps) {",
+        "async resolveMedia(source: unknown)",
+        "export function projectAttachmentCardEntry(value: unknown): AttachmentCardProjection | null {"
+      ],
+      "target_language": "existing Rust canonical message/resource owners + TypeScript Electron/resource edge + React/TypeScript transcript projection",
+      "language_rationale": "Fabushi already has source-neutral durable message and resource owners. Telegram's C++ SharedMedia collection implementation is decomposed into scope/lifetime responsibilities rather than retained or mirrored.",
+      "command_event_contracts": [
+        "pin -> update canonical message state and only authoritative collection scopes",
+        "media/resource projection -> canonical message/resource identity",
+        "explicit thread collection -> require durable canonical thread identity",
+        "missing thread scope -> whole-conversation collection only",
+        "unpin/remove absent optional scope -> no-op",
+        "account/conversation/thread switch -> fence stale collection updates"
+      ],
+      "state_owner": "Canonical Message for durable pin/media identity; canonical Transcript/Conversation for scoped membership; AttachmentsService/resource edge for bytes and access.",
+      "lifecycle_owner": "Existing Conversation/ProductShell + Transcript lifecycle with Host resource ownership; no source-specific collection lifetime owner.",
+      "persistence_and_restart": "Durable message pin/thread/resource identity remains in canonical message/transcript persistence. Any future derived media index must rebuild from authoritative typed identity and must not persist a sentinel-created collection.",
+      "concurrency_and_cancellation": "Scoped collection producers must be generation-fenced by account/conversation/thread; late loads or stale resource projections cannot populate another scope.",
+      "security_boundary": "Resource access remains owner/path scoped and conversation/thread collection membership cannot widen authorization or expose media from another canonical scope.",
+      "network_service_dependencies": [
+        "existing Fabushi transcript/message service boundary",
+        "existing attachment/resource service boundary",
+        "future canonical pinned/media collection projection if implemented",
+        "GitHub exact-head evidence authority"
+      ],
+      "service_owner": "Existing Fabushi Conversation/Transcript/Resource service owners; no Telegram shared-media service.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "shared-media-general-id-lifetime-mapped-open",
+      "blockers": [
+        "no exact-head shipping message-pin mutation surface proven",
+        "no exact-head thread-scoped pinned/shared-media collection owner/entrypoint proven",
+        "ProductionRenderer threadRootId remains null and getThreadSummary returns null",
+        "no packaged E2E for scoped pinned/media membership and stale-generation recovery",
+        "task-local measurements/evidence are absent from accepted tree",
+        "recursive source closure remains open",
+        "independent release acceptance remains open"
+      ],
+      "production_entrypoints": [
+        "native::mahayana_messaging::Message / MediaRef",
+        "host::extensions::attachments::AttachmentsService",
+        "electron-main::attachments::createAttachmentEdgePort",
+        "transcript-card::projectAttachmentCardEntry"
+      ],
+      "production_evidence": [
+        "path:native/mahayana-messaging/src/message.rs",
+        "path:source/host/src/extensions/attachments/attachments_service.rs",
+        "path:source/electron-main/attachments/attachments.ts",
+        "path:frontend/src/recovered/features/conversation/cards/transcript-card/attachment-data.ts",
+        "path:frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "test_evidence": [
+        "strict130 tasks/2026/08/20/stop-orphaning-general-id-shared-media-lists.md@c30808ee6b4ffb02561d243c24ec32eef5d5e909 fully read",
+        "accepted task directory contains only the task file; task-local measurements are not accepted-tree evidence",
+        "accepted history_item/storage_shared_media/history/forum-topic anchors read and producer/enforce/find lifetime reconstructed",
+        "current canonical Message/MediaRef and attachment/resource owners read at exact parent head",
+        "shipping ProductionRenderer still has threadRootId null/getThreadSummary null; no thread-scoped pinned/media collection production composition claimed",
+        "TDRP 39980505627 61/61; authority 12514140088 sha256:188355fe7ceb02ed5aa046da4b2be44dd1ac3df4ef13a0c753bf1b2df7ef6b79; closure 12512474733 sha256:c9aabe9893b50132e6700cf9c93b7deab4c92938f89ff74e78b25a71cd09128b; reachability 12512983501 sha256:65422f858cb3fb172b8db04826bad58db39dcc8b7165ccf1589d54a9b151345d",
+        "Rust 39980505846 6/6; artifact 12513905803 sha256:5f641229b759119053ce7528ef6030310c4bd8f91b2ee5cb2cfb127a6d1cabd7"
+      ],
+      "target_commit": "46ca9cb537310f5be0c9e131360b8c5ee00497de",
+      "workflow_run": 39980505627,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12514140088,
+      "artifact_digest": "sha256:188355fe7ceb02ed5aa046da4b2be44dd1ac3df4ef13a0c753bf1b2df7ef6b79",
+      "composition_root": "Fabushi ProductShell + canonical Message/Conversation/Transcript/Resource composition",
+      "composition_slot": "conversation pinned/media collection scope",
+      "capability_component": "canonical message pin state + typed media resource + optional scoped collection",
+      "variation_axes": [
+        "whole conversation vs explicit thread",
+        "real General thread vs no thread",
+        "forum/thread-capable vs non-threaded conversation",
+        "resource bytes vs message collection membership",
+        "present vs absent optional collection"
+      ],
+      "shared_owner_contracts": [
+        "canonical Message/MediaRef",
+        "canonical Transcript/Conversation",
+        "Host AttachmentsService",
+        "Electron attachment edge",
+        "transcript-card attachment projection",
+        "ProductShell/ConversationWorkspace"
+      ],
+      "duplicate_root_check": "No Telegram SharedMedia runtime, second Message/Transcript store, source-specific media index, or sentinel-based thread namespace introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "canonical conversation capability",
+      "primary_navigation_target": "Messages / existing ProductShell conversation route",
+      "collection_surface": "Canonical ConversationWorkspace/Transcript; scoped pinned/media collection not yet shipping",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Future pin/media actions remain inside the current authorized canonical conversation and optional explicit thread.",
+      "detail_section": "Canonical transcript/media capability, not a Telegram Info root.",
+      "capability_surface": "Existing ConversationWorkspace/Transcript/Resource surfaces; scoped collection implementation open.",
+      "route_contract": "Single ProductShell conversation route; media/pinned views must preserve canonical conversation/thread identity.",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Existing canonical conversation/resource layout.",
+      "accessibility_contract": "Future pinned/media collection reuses canonical transcript/list keyboard, focus and accessible naming contracts.",
+      "keyboard_contract": "Existing ConversationWorkspace contracts; no Telegram-specific shortcuts.",
+      "state_continuity_contract": "Thread capability and durable root survive UI object loading changes; account/conversation/thread switches fence stale collection updates; absent optional scopes remain absent.",
+      "ui_acceptance_scenarios": [
+        "non-threaded conversation never materializes a GeneralId-like optional collection",
+        "real General thread remains distinguishable from whole conversation",
+        "unloaded thread presentation does not erase durable thread scope",
+        "unpin/remove absent scoped collection remains no-op",
+        "attachment projection remains in authorized resource owner",
+        "stale account/conversation/thread load cannot populate another collection"
+      ],
+      "design_system_version": "current Fabushi Design System",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "No new Telegram-derived visual token or shared-media widget.",
+      "canonical_component_ids": [
+        "ConversationTranscript",
+        "TranscriptEntry",
+        "Resource/Attachment projection",
+        "future canonical collection/filter"
+      ],
+      "screen_pattern_id": "canonical conversation workspace",
+      "screen_slots": [
+        "transcript",
+        "typed attachment/resource entry",
+        "optional canonical pinned/media collection"
+      ],
+      "visual_state_matrix": [],
+      "density_contract": "Existing canonical transcript/resource density.",
+      "icon_asset_contract": "Existing Fabushi icons only.",
+      "avatar_contract": "Existing canonical participant/agent avatar contract.",
+      "content_copy_keys": [],
+      "motion_contract": "Existing conversation/list motion contract.",
+      "reduced_motion_contract": "Existing shared reduced-motion contract.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-SHARED-MEDIA-GENERAL-ID-LIFETIME-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-SHARED-MEDIA-GENERAL-ID-EXACT-TASK-SOURCE-001",
+        "ORA-TDRP-SHARED-MEDIA-GENERAL-ID-TOPIC-ROOT-FALLBACK-001",
+        "ORA-TDRP-SHARED-MEDIA-GENERAL-ID-ENFORCE-VS-FIND-001",
+        "ORA-TDRP-SHARED-MEDIA-GENERAL-ID-AS-FORUM-DISCRIMINATOR-001",
+        "ORA-TDRP-SHARED-MEDIA-GENERAL-ID-CANONICAL-MESSAGE-RESOURCE-OWNERS-001",
+        "ORA-TDRP-SHARED-MEDIA-GENERAL-ID-MISSING-SHIPPING-COLLECTION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-SHARED-MEDIA-GENERAL-ID-NO-SENTINEL-THREAD-SCOPE-001",
+        "INV-TDRP-SHARED-MEDIA-GENERAL-ID-NO-TOPIC-LOAD-RACE-GATE-001",
+        "INV-TDRP-SHARED-MEDIA-GENERAL-ID-NO-SECOND-SHARED-MEDIA-STORE-001",
+        "INV-TDRP-SHARED-MEDIA-GENERAL-ID-NO-ORPHAN-COLLECTION-001",
+        "INV-TDRP-SHARED-MEDIA-GENERAL-ID-NO-CROSS-SCOPE-MEDIA-001",
+        "INV-TDRP-SHARED-MEDIA-GENERAL-ID-EXACT-HEAD-ACTIONS-ONLY-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [
+        "STATE-TDRP-SHARED-MEDIA-GENERAL-ID-SCOPE-ALLOCATION-001"
+      ],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-SHARED-MEDIA-GENERAL-ID-CANONICAL-OWNER-001",
+        "CONTRACT-TDRP-SHARED-MEDIA-GENERAL-ID-ABSENT-REMOVE-001"
+      ],
+      "integration_case_ids": [
+        "INTEGRATION-TDRP-SHARED-MEDIA-GENERAL-ID-PRODUCER-CONSUMER-001"
+      ],
+      "functional_e2e_case_ids": [
+        "E2E-TDRP-SHARED-MEDIA-GENERAL-ID-PIN-MEDIA-SCOPE-001"
+      ],
+      "temporal_case_ids": [
+        "TEMP-TDRP-SHARED-MEDIA-GENERAL-ID-TOPIC-LOAD-RACE-001",
+        "TEMP-TDRP-SHARED-MEDIA-GENERAL-ID-STALE-GENERATION-001"
+      ],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-SHARED-MEDIA-GENERAL-ID-NO-ORPHAN-REBUILD-001"
+      ],
+      "ui_functional_case_ids": [
+        "UI-TDRP-SHARED-MEDIA-GENERAL-ID-CANONICAL-COLLECTION-001"
+      ],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [
+        "A11Y-TDRP-SHARED-MEDIA-GENERAL-ID-COLLECTION-NAVIGATION-001"
+      ],
+      "performance_case_ids": [
+        "PERF-TDRP-SHARED-MEDIA-GENERAL-ID-NO-DEAD-COLLECTION-GROWTH-001"
+      ],
+      "soak_case_ids": [
+        "SOAK-TDRP-SHARED-MEDIA-GENERAL-ID-NO-SESSION-LIFETIME-ORPHAN-001"
+      ],
+      "security_case_ids": [
+        "SEC-TDRP-SHARED-MEDIA-GENERAL-ID-NO-CROSS-SCOPE-MEDIA-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-SHARED-MEDIA-GENERAL-ID-REAL-GENERAL-THREAD-001",
+        "REG-TDRP-SHARED-MEDIA-GENERAL-ID-NO-SECOND-OWNER-001",
+        "REG-TDRP-SHARED-MEDIA-GENERAL-ID-NO-BOT-RESOURCE-REGRESSION-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-MODULE",
+        "G-TRACEABILITY",
+        "G-COMPOSITION",
+        "G-COMPONENTS",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "strict130 exact task + accepted shared-media producer/lifetime anchors + exact parent Fabushi owner blobs"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [
+        "TDRP 39980505627 61/61 success",
+        "Rust 39980505846 6/6 success"
+      ],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Telegram C++ SharedMedia key/list implementation and GeneralId constant are retained as behavior provenance only. No Telegram storage runtime, list implementation, protocol key or Qt UI is imported.",
+      "reviewer": null,
+      "notes": "Strict130 closes only tasks/2026/08/20/stop-orphaning-general-id-shared-media-lists.md semantic read/decomposition. Canonical pin/resource owners exist, but thread-scoped pinned/shared-media collection production composition remains open. Counters unknown=16,246 unread=16,221 omitted=0 responsibilities=148. Next strict131 tasks/2026/08/21/preserve-info-thread-identity-and-lifetime.md@2ae8fa2751b7a1572d72b5a416b6c3cca3ba0e6b."
     }
   ]
 }
