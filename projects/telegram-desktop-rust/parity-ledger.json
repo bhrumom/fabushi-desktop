@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "51b5bb86ed636a451b541519a219b0aee5898df7",
+  "target_commit": "79ba8d1e17a8f3736d37a38561e1acec8c82281d",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16267,
-    "unread": 16242,
+    "unknown": 16266,
+    "unread": 16241,
     "omitted": 0,
-    "responsibilities_total": 127,
+    "responsibilities_total": 128,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -33906,6 +33906,291 @@
       "license_and_provenance": "Exact upstream changelog.txt@41b7466f8a11a1866a66ff583809dfe74ad9a3c3 retained as historical release-note provenance; historical text is not current Fabushi product or release truth.",
       "reviewer": null,
       "notes": "Strict index 109 closes only changelog.txt as retained release-note/history provenance. Counters become unknown=16,267 unread=16,242 omitted=0 responsibilities=127. Next strict root index 110 cmake@7ceca3019b4750d7a5acb2de0faffd523ee14095 (gitlink)."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "cmake",
+      "source_blob_sha": "7ceca3019b4750d7a5acb2de0faffd523ee14095",
+      "source_kind": "recursive_build_toolchain_gitlink",
+      "module_id": "tdesktop.root.cmake_helpers",
+      "responsibility_id": "TDRP-R9-UPSTREAM-CMAKE-HELPERS-BUILD-INTEGRATION-PROVENANCE-001",
+      "source_symbols": [
+        "desktop-app/cmake_helpers exact tree f5c386cb34208309aae521187611fac4a2045577: 101 blobs + external/glib/cppgir gitlink",
+        "target initialization / compiler-link option / resource-generation / special-target helpers",
+        "packaged-versus-bundled third-party target wrappers and platform variation",
+        "Qt/static plugin composition for fcitx5/hime/nimf/kimageformats",
+        "GLib GIR/D-Bus/C++ wrapper generation via nested cppgir",
+        "cppgir@47cf94f83b54cda59018135601e19d7fb0c77776: generator + GI wrapper library + overrides/tests/examples",
+        "expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e: header-only result abstraction + tests/build/package",
+        "single upstream Rust staticlib integration constraint and generated wallet binding wiring",
+        "Linux allocation-trace diagnostic helper",
+        "Windows d3dcompiler_47.dll exact version/hash validation and DirectX dynamic resolution",
+        "upstream version/build-option parsing"
+      ],
+      "capability_ids": [
+        "CAP-BUILD-HELPER-PROVENANCE",
+        "CAP-BUILD-TOOLCHAIN-BOUNDARY",
+        "CAP-DEPENDENCY-ACQUISITION-BOUNDARY",
+        "CAP-GENERATED-INPUT-PROVENANCE",
+        "CAP-PLATFORM-BUILD-VARIATION",
+        "CAP-BINARY-BUILD-INPUT-INTEGRITY",
+        "CAP-CONFIGURED-BUILD-TRUTH-SEPARATION"
+      ],
+      "dependency_ids": [
+        "TDRP-R9-ROOT-CMAKE-BUILD-COMPOSITION-PROVENANCE-001",
+        "TDRP-R9-CONFIGURED-BUILD-GRAPH-PROVENANCE-001",
+        "TDRP-R9-CONFIGURED-BUILD-GRAPH-QUALIFICATION-001",
+        "TDRP-R9-CONFIGURED-BUILD-GRAPH-USAGE-001",
+        "desktop/package.json",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        "external/glib/cppgir@47cf94f83b54cda59018135601e19d7fb0c77776",
+        "expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-root-cmake-helpers-build-integration-complete-read.md",
+      "behavior_contract": "Retain the exact recursive cmake_helpers gitlink as upstream build/toolchain/dependency-integration provenance, including nested cppgir and expected-lite authority. Map applicable build composition, dependency provenance, generated-input and platform-build responsibilities to existing Fabushi target-native manifests and evidence owners; never create a Telegram/CMake/Qt build root or treat source helper text as configured-build, runtime, package or release proof.",
+      "state_machine": "read exact root gitlink -> enumerate non-truncated cmake_helpers tree -> read every text blob and account binary blobs -> recurse cppgir -> recurse expected-lite to fixed point -> decompose build/toolchain responsibilities -> reconcile existing root-CMake/configured-build owners -> parent exact-head gates -> CAS accounting publication -> require fresh child exact-head gates",
+      "side_effects": [
+        "Retains complete recursive build-helper provenance for the root cmake gitlink.",
+        "Maps build/toolchain responsibilities onto existing Fabushi build/evidence owners.",
+        "Preserves nested source identities and fixed-point recursion without creating a parallel build graph.",
+        "Introduces no shipping runtime or product owner."
+      ],
+      "failure_cases": [
+        "cmake_helpers or nested gitlinks are treated as transitively closed without full recursive read",
+        "source CMake/helper text is promoted to configured-build or test truth",
+        "Telegram CMake/Qt dependency composition becomes a second Fabushi build root",
+        "upstream version.cmake becomes Fabushi version authority",
+        "cppgir/expected-lite become product-runtime owners",
+        "pinned upstream DirectX DLL identity is treated as Fabushi package/security acceptance",
+        "stale PR/ref/tree/upstream lease is published"
+      ],
+      "ui_disposition": "No shipping UI. Upstream Qt/plugin composition is build provenance only; applicable platform/input behavior remains separately owned.",
+      "non_ui_responsibilities": [
+        "target/build option and platform composition provenance",
+        "dependency acquisition/link/include provenance",
+        "generated resource/GIR/D-Bus/C++ binding provenance",
+        "configured-build truth separation",
+        "binary build-input integrity fencing",
+        "build diagnostics/tooling provenance",
+        "nested build-generator/support-library source provenance"
+      ],
+      "platform_delta": "Telegram's CMake/C++/Qt/ObjC/Ninja/Visual Studio and platform-specific static-plugin choices remain provenance. Fabushi keeps Electron/TypeScript plus Rust target-native shipping composition and the existing platform adapters; only source-neutral responsibilities are carried forward.",
+      "existing_owner_candidates": [
+        "TDRP-R9-ROOT-CMAKE-BUILD-COMPOSITION-PROVENANCE-001 (selected build-composition owner)",
+        "FQT-EVID-001 configured-build graph provenance (selected stronger validator)",
+        "FQT test strategy configured-build qualification (selected qualification owner)",
+        "desktop/package.json and component Cargo/package manifests (selected target-native composition)",
+        "new Telegram/CMake/Qt build root (rejected)",
+        "new cppgir/GI product runtime (rejected)"
+      ],
+      "existing_owner": "TDRP-R9-ROOT-CMAKE-BUILD-COMPOSITION-PROVENANCE-001 plus FQT-EVID-001 configured-build provenance/qualification and existing target-native desktop/package.json + Cargo/package manifest owners",
+      "rejected_existing_owners": [
+        "Source-derived CMake helpers cannot replace configured-build evidence.",
+        "Third-party wrapper files do not own the underlying product capability.",
+        "Upstream Qt/static-plugin composition cannot create a second Fabushi platform-input runtime.",
+        "cppgir/expected-lite are generic build/support dependencies, not product owners.",
+        "A new Telegram/CMake build root would duplicate existing source-neutral composition."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "desktop/package.json",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "fabushi_target_symbols": [
+        "\"build\": \"npm run build:host && npm run build:electron && npm run build:renderer && npm run check:desktop-runtime\"",
+        "\"package\": \"npm run build:host && npm run build:electron && npm run build:renderer && npm run check:desktop-runtime && electron-builder\"",
+        "Configured-build graph provenance evidence",
+        "Configured-build graph qualification",
+        "Rust desktop runtime"
+      ],
+      "target_language": "Target-native JSON/Cargo manifests + source-neutral evidence policy + GitHub Actions",
+      "language_rationale": "This root gitlink is build/toolchain provenance. Its applicable responsibilities are already expressible through Fabushi's target-native build manifests and evidence contracts; copying CMake/Qt/C++ helpers would create a parallel build architecture.",
+      "command_event_contracts": [
+        "source helper observation -> provenance only",
+        "dependency source identity -> exact pinned recursive authority",
+        "configured target/source/link/PCH/definition/generated-input claim -> existing configured-build provenance oracle",
+        "shipping build/package -> existing desktop/package.json and component manifests",
+        "executable verification -> exact-head GitHub Actions only"
+      ],
+      "state_owner": "Existing Fabushi target-native build/package manifests own shipping composition; FQT-EVID-001 owns configured-build evidence qualification; TDRP ledger owns only reviewed upstream disposition.",
+      "lifecycle_owner": "Existing repository development/CI/packaging/release lifecycle plus TDRP strict-read source lifecycle.",
+      "persistence_and_restart": "Committed dossier/ledger/index/lock retain disposition; any changed root/nested object identity or target-owner drift requires fresh recursive reconciliation.",
+      "concurrency_and_cancellation": "Parent evidence and force-with-lease branch CAS fence publication; generated/build claims remain runner-bound and exact-head.",
+      "security_boundary": "Build-helper source, dependency wrapper paths, binary payload provenance and generator configuration grant no runtime authority, credential access, signing authority or release acceptance.",
+      "network_service_dependencies": [
+        "GitHub repository authority",
+        "GitHub Actions hosted runners",
+        "GitHub Actions artifact storage"
+      ],
+      "service_owner": "Existing Fabushi repository build/quality/release workflows; no shipping service added.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "toolchain-equivalent",
+      "blockers": [
+        "Fresh strict110 child exact-head TDRP/Rust Actions are required after publication.",
+        "Underlying third-party implementation/source responsibilities remain independently open.",
+        "Recursive source disposition remains open."
+      ],
+      "production_entrypoints": [
+        "desktop/package.json -> scripts.build",
+        "desktop/package.json -> scripts.package",
+        ".github/workflows/rust-desktop-runtime.yml -> exact-head validation"
+      ],
+      "production_evidence": [
+        "path:desktop/package.json#scripts.build",
+        "path:desktop/package.json#scripts.package",
+        "path:projects/fabushi-communication-platform/quality/evidence-contract.md#Configured-build graph provenance evidence",
+        "path:projects/fabushi-communication-platform/quality/TEST_STRATEGY.md#Configured-build graph qualification"
+      ],
+      "test_evidence": [
+        "desktop-app/cmake_helpers@7ceca3019b4750d7a5acb2de0faffd523ee14095 tree f5c386cb34208309aae521187611fac4a2045577 fully recursively accounted: 170 entries / 102 non-directory; 101 blobs totaling 9,243,742 bytes plus cppgir gitlink; all 99 text blobs fully read and two D3D DLL blobs identity/use/validation accounted.",
+        "cppgir GitLab authority commit 47cf94f83b54cda59018135601e19d7fb0c77776 reconciled to exact-SHA/object GitHub mirror for reading: 126 entries / 104 non-directory, 103 fully read blobs totaling 759,925 bytes plus expected-lite gitlink.",
+        "expected-lite@95b9cb015fa17baa749c2b396b335906e1596a9e fully read: 55 entries / 43 non-directory, 43 blobs totaling 265,949 bytes, no nested gitlink.",
+        "Fresh parent-head uniqueness preflight: cmake path=0, 7ceca3019b4750d7a5acb2de0faffd523ee14095 object=0, strict110 responsibility=0; root-CMake owner=1; configured-build provenance/qualification/usage rows each=1.",
+        "Parent exact-head TDRP run 39923903565 completed 61/61 success; authority 12488317476 sha256:a41831799280c49980822d6400b0e6578b8361c9a65eaa7faf9d1dc838f2e6f4; closure 12488578130 sha256:0d9c4a59f7e3982bccfd219fc3c79057ece05e3d205fc37928b554eb30198de1; reachability 12489375058 sha256:0823e275fd5a07b29a58370145aa800d45305a5b2b24adb8a488ef4e572229c4.",
+        "Parent exact-head Rust run 39923903724 completed 6/6 success; artifact 12488971000 sha256:3ce1613fd1d58bc2afce5ba5c1924a1c2396f1201340c5dd26cba0c7711afc8b.",
+        "Publication preflight: PR/ref remained 79ba8d1e17a8f3736d37a38561e1acec8c82281d/tree ee9ad82afa6084eb8f4cd80f698ec0203b81899b; live upstream dev remained a7f453612f4896ac04d0007a36ab0d377e5bcbcf/tree c539eabfb05e7dcaa84821ac44c35cdfb6551ae5."
+      ],
+      "target_commit": "79ba8d1e17a8f3736d37a38561e1acec8c82281d",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi canonical desktop build/package composition",
+      "composition_slot": "Recursive build-helper/dependency/toolchain provenance",
+      "capability_component": "Source-neutral build-helper provenance disposition",
+      "variation_axes": [
+        "packaged versus bundled dependency inputs",
+        "Windows/macOS/Linux build branches",
+        "Qt static-plugin selection versus Fabushi target-native platform adapters",
+        "source-derived versus configured-build truth",
+        "generated GIR/D-Bus/C++/resource inputs",
+        "exact binary build input versus shipping artifact"
+      ],
+      "shared_owner_contracts": [
+        "TDRP-R9-ROOT-CMAKE-BUILD-COMPOSITION-PROVENANCE-001",
+        "TDRP-R9-CONFIGURED-BUILD-GRAPH-PROVENANCE-001",
+        "TDRP-R9-CONFIGURED-BUILD-GRAPH-QUALIFICATION-001",
+        "TDRP-R9-CONFIGURED-BUILD-GRAPH-USAGE-001",
+        "FQT-EVID-001",
+        "FQT-REL-001",
+        "desktop/package.json build/package",
+        "Rust desktop runtime exact-head workflow"
+      ],
+      "duplicate_root_check": "No Telegram/CMake/Qt build root, second dependency graph, second package/version owner, second configured-build validator, cppgir runtime, GI product owner or local acceptance path introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Repository build/toolchain provenance only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Recursive upstream build-helper, generator and dependency-integration provenance",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Any changed cmake_helpers/cppgir/expected-lite object identity, selected build/evidence owner, PR/ref/tree or live upstream lease requires fresh reconciliation; helper text never advances configured-build/package/release acceptance alone.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "Not applicable",
+      "avatar_contract": "Not applicable",
+      "content_copy_keys": [],
+      "motion_contract": "Not applicable",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-UPSTREAM-CMAKE-HELPERS-BUILD-INTEGRATION-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CMAKE-HELPERS-EXACT-RECURSIVE-SOURCE-001",
+        "ORA-TDRP-CMAKE-HELPERS-EXISTING-BUILD-OWNER-001",
+        "ORA-TDRP-CMAKE-HELPERS-CONFIGURED-TRUTH-SEPARATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CMAKE-HELPERS-NO-SECOND-BUILD-ROOT-001",
+        "INV-TDRP-CMAKE-HELPERS-CHILD-SOURCE-STAYS-INDEPENDENT-001",
+        "INV-TDRP-CMAKE-HELPERS-NO-RELEASE-ACCEPT-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CMAKE-HELPERS-EXACT-RECURSIVE-AUTHORITY-001",
+        "CONTRACT-TDRP-CMAKE-HELPERS-CANONICAL-BUILD-OWNER-001",
+        "CONTRACT-TDRP-CMAKE-HELPERS-EXACT-HEAD-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [
+        "TEMP-TDRP-CMAKE-HELPERS-UPSTREAM-DRIFT-001",
+        "TEMP-TDRP-CMAKE-HELPERS-OWNER-DRIFT-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-CMAKE-HELPERS-STALE-ROOT-001",
+        "FAULT-TDRP-CMAKE-HELPERS-NESTED-GITLINK-OMISSION-001",
+        "FAULT-TDRP-CMAKE-HELPERS-CONFIGURED-TRUTH-OVERCLAIM-001"
+      ],
+      "performance_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-CMAKE-HELPERS-SOURCE-NOT-AUTHORIZATION-001",
+        "SEC-TDRP-CMAKE-HELPERS-BINARY-INPUT-NOT-PACKAGE-ACCEPTANCE-001"
+      ],
+      "soak_case_ids": [],
+      "exploratory_charter_ids": [],
+      "regression_ids": [
+        "REG-TDRP-CMAKE-HELPERS-NO-SECOND-BUILD-ROOT-001",
+        "REG-TDRP-CMAKE-HELPERS-NO-BOT-BUILD-REGRESSION-001"
+      ],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-MODULE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "locked cmake_helpers + nested cppgir/expected-lite + canonical Fabushi build/evidence owners + parent exact-head Actions"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "release_gate_status": "open",
+      "acceptance_reviewer": null,
+      "reviewer": null,
+      "license_and_provenance": "Root gitlink exact identity retained from telegramdesktop/tdesktop. cmake_helpers files reference Desktop App Toolkit legal authority; nested cppgir exact GitLab commit is read through an object-identical GitHub mirror; expected-lite carries Boost Software License 1.0. No upstream build/runtime code is copied into Fabushi by this disposition.",
+      "notes": "Strict index 110 closes only the root cmake gitlink's recursive build/toolchain-integration provenance. Counters become unknown=16,266 unread=16,241 omitted=0 responsibilities=128. Next strict root index 111 docs/api_credentials.md@0d2819bd3cd6b6407ced257edbbd6623b438f262. Fresh child exact-head Actions required.",
+      "test_execution_evidence": []
     }
   ]
 }

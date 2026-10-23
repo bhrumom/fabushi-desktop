@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16267,
-    "unread_minimum": 16242,
+    "unknown_minimum": 16266,
+    "unread_minimum": 16241,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -122,7 +122,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 51b5bb86ed636a451b541519a219b0aee5898df7/tree 943ebdd12b35c8528cd8cd6194c4b9b3000f72fe passed TDRP 39920230784 at 61/61 and Rust 39920230822 at 6/6. Strict109 changelog.txt@41b7466f8a11a1866a66ff583809dfe74ad9a3c3 is retained as historical release-note/history provenance under existing AGENTS.md release-note/release-preparation governance, the already-mapped derived changelog rendering/publication adapters, FQT-REL-001 and FQT-EVID-001; all 5400 lines are structurally accounted, while historical Telegram bullets/version syntax do not become current Fabushi product or release truth and no second release/version/acceptance owner is created. Counters unknown=16,267 unread=16,242 omitted=0 responsibilities=127. Next strict root index 110 cmake@7ceca3019b4750d7a5acb2de0faffd523ee14095 gitlink to desktop-app/cmake_helpers tree f5c386cb34208309aae521187611fac4a2045577. Fresh child exact-head Actions required.",
+  "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 79ba8d1e17a8f3736d37a38561e1acec8c82281d/tree ee9ad82afa6084eb8f4cd80f698ec0203b81899b passed TDRP 39923903565 at 61/61 and Rust 39923903724 at 6/6. Strict110 cmake@7ceca3019b4750d7a5acb2de0faffd523ee14095 is retained as recursive build/toolchain/dependency-integration provenance under the existing root-CMake build-composition owner and configured-build evidence/qualification owners; cmake_helpers is fully read through nested cppgir and expected-lite fixed point, while upstream CMake/Qt/version/generator/binary build inputs do not become Fabushi shipping build/runtime/package/release truth and no second build/dependency/configured-validator owner is created. Counters unknown=16,266 unread=16,241 omitted=0 responsibilities=128. Next strict root index 111 docs/api_credentials.md@0d2819bd3cd6b6407ced257edbbd6623b438f262. Fresh child exact-head Actions required.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
