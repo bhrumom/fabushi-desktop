@@ -361,10 +361,10 @@
   "coverage": {
     "root_source_entries_total": 6893,
     "recursive_source_entries_total": 16379,
-    "unknown_minimum": 16257,
-    "unread_minimum": 16232,
+    "unknown_minimum": 16256,
+    "unread_minimum": 16231,
     "omitted_known": 0,
-    "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 333a3d3cda2561ce9f78a15a89d35c0db62870ea/tree c12c99e9095591f553329ff8e0b223155646eaeb passed TDRP 39948699331 at 61/61 (authority 12499786044 sha256:43043ad5fffae6aef3acfeea531c25e6459095ecdf659100ac7c9c1761e0c1e3; closure 12500360143 sha256:7a68345b695ebbe8d6c31746139c2f4cb9d1a1d75bd7ce32177bbaf1d047f284; reachability 12499308601 sha256:5e3b774072f76f6582e318e48011c4ab0bc463c8dbb5075aeeea3646ccb60d8c) and Rust 39948699324 at 6/6 (artifact 12499730947 sha256:71190f62168ffe12a74b84c35cdbe6334a5d1cfe0f849a3c5a8ecc77060ee167). Strict119 docs/building-mas.md@da7be145bb0a9cbd3c322fa7efe0c1f5729ae1bf is retained as historical Mac App Store/Breakpad provenance. Its Breakpad/LSS pins bc8fb886/a91633d1 have drifted to current prepare.py pins dfcb7b6799/e1e7b0ad8e. Exact-head Fabushi owns MAS metadata and sandbox entitlements, but the referenced resources/mas/Fabushi_AppStore.provisionprofile is absent and all 25 workflow files contain no MAS build/sign/upload pipeline; release-macos-main.yml is Developer ID dmg/zip only. Counters unknown=16,257 unread=16,232 omitted=0 responsibilities=137. Next strict root index 120 docs/building-win.md@d333539fc0709be6f98a8ef719f22fac0346b49a. Fresh child exact-head Actions required."
+    "note": "Live upstream dev authority remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5. Parent 56ffe86edf90a9e246b0be2881a7597dd004de48/tree 362b621ef2ef2a15a35d4206b384827fd8b13813 passed TDRP 39951083002 at 61/61 (authority 12500995492 sha256:8bedd5210a0b86192aadf26a97184f55d81ac941348d5f17e45976e8a39b0c30; closure 12501160409 sha256:a0ec1abdad6cb8bac5d0a3d957c26a03845d4f320d4bf42e2bcde15a426ee06d; reachability 12500971253 sha256:bf5f93e89fd47608776851a54fd24f4ccaab1adf33c60e7bdbbd224a057aab8a) and Rust 39951082971 at 6/6 (artifact 12500940550 sha256:bd017823ef92c06374a24a7a24ff6da34971e1b6f48fab11696d96d688dadee6). Strict120 docs/building-win.md@d333539fc0709be6f98a8ef719f22fac0346b49a is retained as Windows developer-build/toolchain/API-credential provenance. Exact dependencies are win.bat@c73fe2a3e5b0d32f8ec34db2c2bdb148ecb50e59, configure.bat@85b9ddebafd5bc95b3590240fb3a11eae590afb4, configure.py@592b2f02fd0030dffe6a79d94f1d18c529c53645 and prepare.py@a9f3dd2d9e4020df958ab5af942376177d66c78b. Fabushi keeps desktop/package.json@3d500622ce9b26e3452d98d0c4a7e7dcc019ac84 as the canonical package/NSIS owner and existing Account/Auth/Secrets owners for credentials; all 25 workflows were content-scanned and no Windows electron-builder/NSIS/signing/install pipeline exists. Counters unknown=16,256 unread=16,231 omitted=0 responsibilities=138. Next strict root index 121 docs/web-proxy-plan.md@9c805e32d33e8e1ac6b0417b26242b4a09198bd9. Fresh child exact-head Actions required."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -378,7 +378,7 @@
     "requires_generated_inputs": true,
     "requires_resources_locales_assets": true,
     "requires_packaging_updater_tests_tooling_docs_licenses": true,
-    "note": "Strict119 is historical Mac App Store/Breakpad build provenance mapped to existing MAS configuration and sandbox entitlement owners only. Source closure remains open with unknown=16,257 unread=16,232 omitted=0. The configured Fabushi_AppStore.provisionprofile is absent and no exact-head Actions workflow builds/signs/uploads MAS; current Developer ID dmg/zip evidence is not MAS evidence. Fresh child exact-head Actions and independent release acceptance remain required."
+    "note": "Strict120 is Windows developer-build/toolchain/API-credential provenance mapped to existing Fabushi Rust/Electron/NSIS and Account/Auth/Secrets owners only. Source closure remains open with unknown=16,256 unread=16,231 omitted=0. Exact-head workflows validate Windows runtime behavior but no workflow packages/signs/installs the NSIS target; current packaged acceptance is macOS-only. Fresh child exact-head Actions and independent release acceptance remain required."
   },
   "baseline_identity_evidence": {
     "status": "pending-current-head-revalidation",
@@ -1827,5 +1827,5 @@
     "baseline_identity_accepted": false,
     "source_closure_ready": false
   },
-  "target_commit": "333a3d3cda2561ce9f78a15a89d35c0db62870ea"
+  "target_commit": "56ffe86edf90a9e246b0be2881a7597dd004de48"
 }
