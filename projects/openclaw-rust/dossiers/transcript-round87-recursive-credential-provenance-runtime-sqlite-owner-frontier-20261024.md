@@ -520,3 +520,77 @@ These tests were read as source/oracle evidence only; they were not executed in 
 The 100-result cap is materially reduced by production-entry clustering, but repository-global frozen caller closure is still not proven. The broad `createSqliteWorkerOperationAdmission` discovery query itself still reaches the search cap, and GitHub code search indexes the moving default branch rather than providing an exhaustive frozen-ref index. Additional discovered production paths remain to be exact-fetched/classified, and the wrapper consumers of shared-state lifecycle and snapshot source are still broader than the directly closed clusters above.
 
 Therefore the source-only verdict remains unchanged: independent ACCEPT, scoped G01/G02 positive evidence, `unit_authority_ready`, executable/package proof, and release acceptance remain absent. No production implementation, ledger, RTM, or completion flag may be upgraded from this round.
+
+
+## 14. Round81 continuation after live-lease reconciliation
+
+### 14.1 Concurrent lease reconciliation and evidence de-duplication
+
+While this audit was still reading frozen callers, the audit branch advanced from the previously observed `3bdc199de8645bedbdf9cd1162413cb7dd06b058` to `12b8a93b68f20aea9a36f024b3f6f61a20128bb0`. The live dossier was re-read before this write. Its new section 13 already contained a substantial Round81 caller-clustering update, so this continuation does not repeat those identities. Candidate exact-ref identities were checked against the live dossier text and only still-missing frozen evidence is added below.
+
+The upstream remains frozen at `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`. Default-branch code search remains discovery-only. No Actions, build, test, generator, package, production code, ledger, RTM, or flags were modified or run.
+
+### 14.2 Additional frozen SQLite-operation admission callers
+
+The following production callers were re-fetched at the frozen upstream and were absent from the live Round87 dossier:
+
+- `src/state/agent-deletion-recovery.ts@41b0ab2e1efedf957131c3b5b06ee07cd339488e`
+- `src/state/user-background.ts@a149796ff29d5db13c0b496a56870c213ba0e1ca`
+- `src/media/generated-html-provenance.ts@d00a635b7ee764126236a7f7c4c32969acf3f893`
+- `src/agents/worktrees/capacity-store.ts@0c23a3aa416221870df842a1bb1db1c01840f382`
+- `src/agents/harness/native-hook-relay-store.ts@665a74dc20289b403a73c66bd24e9a69a915febc`
+- `src/state/user-preferences.ts@a20e4e1ebc2d60624993f75918858751f244dc3b`
+- `src/state/user-profiles-avatar.ts@26e19acd261d9e34508019aee57082ab6576f2de`
+- `src/trajectory/runtime-retention.ts@82c48e14c7b180632c925629c98f0b216bc67d86`
+- `src/infra/client-credential-async.ts@a99b4e68613e621fdd58bd11cc5db55d2b69a2ce`
+- `src/gateway/mention-inbox-worker.ts@83ecd55c09c400122702641aa3578047d7353bde`
+
+Their admission behavior is not interchangeable:
+
+- Agent-deletion recovery permits only transaction/commit admission and rechecks both the captured state-database admission and the caller's current recovery authority before grant.
+- User-background mutation rechecks database identity, abort signal, and caller-currentness before grant; the publication fence is released only after the worker owner has joined accepted native settlement.
+- Generated-HTML provenance never replays an unknown mutation outcome: if the ordinary reply is lost, only a matching committed receipt may recover the numeric result; otherwise the original error is preserved.
+- Worktree-capacity exact-token release joins native settlement before worker close and aggregates release/close failures rather than declaring the reservation released early.
+- Native-hook relay persistence permits transaction admission only and revalidates both state admission and caller authority.
+- User-preference mutation distinguishes transaction from commit admission and validates returned authority facts for profile/coauthor publication before accepting the commit.
+- Profile-avatar adoption binds the transaction to one canonical profile identity and refuses a commit whose row/profile identity does not match that captured transaction.
+- Trajectory retention passes the existing execution binding through `binding.authorize(request)`, rechecks source authority, and fails when grant custody has expired.
+- Client-credential operations bind database authority plus schema lease to the same captured access object; maintenance/read admission is rechecked before grant and throughout schema lease use.
+- Mention Inbox rechecks state and caller authority before grant. A lost ordinary reply is not replayed: only a matching committed head receipt can be returned as committed.
+
+This expands the source-grounded path beyond section 13 without changing the owner decision: the product/domain caller supplies narrow live authority, while `sqlite-worker-operation-admission` transports and settles that authority; it is not a generic mutation capability.
+
+### 14.3 Additional agent-database close and snapshot/read-source consumers
+
+New frozen production identities absent from the live dossier were also re-read:
+
+- `src/commands/doctor-session-incognito-key-repair.ts@360ddaf3416bb40b2d767eaa316d50103e1848eb`: Doctor closes the target agent database only when that operation did not inherit an already-open owner, preserving pre-existing ownership.
+- `src/infra/state-migrations.meeting-transcripts-detection.ts@ca6bb1efed24a2d0a43dfaf70369f547c89b432a`: migration detection uses artifact-preserving shared-state reads when available, otherwise a read-only SQLite handle with explicit close.
+- `src/state/openclaw-quarantine-store.ts@b70e97d4fda291c9495cd866a39d7e1224d44ff8`: quarantine inspection closes its read-only handle explicitly; close failure is surfaced as `OpenClawQuarantineReadCleanupError` and cannot silently replace the read outcome.
+- `src/agents/auth-profiles/sqlite.ts@b6aa362a3148b38ee480eb1124909aedaf1b5efd`: auth-profile read paths pass the canonical read-only database opener into the profile read/acquisition helpers rather than introducing a second SQLite owner.
+- `src/commands/doctor-database-port-migrations.ts@859e7100d282ebfd2eebc21c5e525ac60cb38dfa`: port-migration inspection opens read-only, admits schema facts, and refuses migration while reserved-incognito-key repair remains pending.
+- `src/infra/state-migrations.legacy-sessions.ts@0aa3d8643bb9c6afbe1621cac03db35731153f20`: legacy-session inspection opens read-only and rejects missing/invalid agent schema ownership metadata instead of treating an arbitrary database as a migratable agent source.
+
+The shared-state async-lifecycle constructor query was re-run as part of this clustering. Its direct constructor surface did not produce a new frozen identity beyond the already-pinned cache/type/test set, so no duplicate constructor evidence is added here; the remaining open work is wrapper/consumer closure, not creation of another lifecycle owner.
+
+### 14.4 Newly pinned focused negative-oracle tests
+
+These frozen tests were read as source/oracle evidence only and were absent from the live dossier before this append:
+
+- `src/infra/client-credential-lifecycle.test.ts@0b687741b0feefd8f2ebad97b1d1b609fab5d8c9`: an in-place copied receipt from another process is refused even when the admission key is unchanged; schema-version damage and physical file replacement force re-admission rather than serving cached authority.
+- `src/agents/agent-delete-safety.test.ts@8d095a1de69cae7298c251cd1938d1dbeb4c4eb2`: deletion planning rejects a session-store replacement that occurs after the safety admission yields.
+- `src/config/sessions/startup-migration.concurrency.test.ts@cde81e35aa49020862d09734403114358592e6a6`: startup drains sibling work and the worker pool before cold database handles close; failed idle-pool retirement retains a cleanup owner and retries through shared-state retirement until native exit succeeds.
+- `src/infra/state-migrations.shared-auth-store.test.ts@e7410c88b67f257b1fbff4c2340001f38919947e`: pre-existing source resources are joined before returning migration-read failure; source credential authority is revoked before relocation; copied inspection preserves live source locks.
+- `src/state/openclaw-quarantine-store.test.ts@29f6775f8027aca86c3666d80ee86f70b9a41382`: read-handle close failure is preserved as cleanup failure, and ABORT/ROLLBACK failure while clearing quarantine preserves the recorded quarantine instead of publishing a false clean state.
+- `src/infra/sqlite-snapshot-source.retained.test.ts@8669140a7e15545aa5cdbfb4e68285c61af3004d`: one retained snapshot owner cannot delete the prepared directory while a joined source still holds it; cleanup completes only after both retained owners and operations close.
+- `src/state/openclaw-state-db-readonly.worker-lifecycle.test.ts@f2122951ca0c0299e28ba6045a851c00dcb4eed9`: shutdown closes pending snapshot preparation before joining the read; failed published cleanup retains ownership for canonical retry; read error and owner-retirement error remain distinguishable.
+- `src/state/openclaw-state-db-readonly.signal-custody.test.ts@0221e580e19b8c0cd9af744669984592c0891a13`: native-close failure retains prepared bytes; direct readers and transport close must settle before removal; cleanup cannot delete through an enclosing retained callback.
+- `src/gateway/mention-inbox.target-capacity.test.ts@656f2c2d32e1c79eb76c3f5099c58a5e5997aa80`: query-only target aliases filling the cache do not make retained mentions disappear, preserving the mutation/read projection contract.
+
+Together these oracles reinforce the same negative boundary: caller cancellation, reply loss, stale cached admission, source replacement, read failure, or cleanup failure cannot manufacture success, silently replay mutation, or release physical custody before the corresponding owner settles.
+
+### 14.5 Round81 continuation frontier
+
+This continuation adds non-duplicate exact-ref evidence after reconciling the concurrent live lease, but it still does not prove repository-global frozen caller closure. The broad `createSqliteWorkerOperationAdmission` discovery surface still hits the 100-result cap, and additional default-branch candidates remain to be exact-fetched and classified at the frozen commit. Wrapper consumers of `openclaw-state-db-async-lifecycle` and `sqlite-snapshot-source` also remain broader than the clusters now pinned.
+
+Independent ACCEPT, scoped G01/G02 positive evidence, `unit_authority_ready`, executable/package proof, OCRM final acceptance, and release acceptance remain absent. No production implementation, ledger, RTM, or completion flag upgrade is justified.
