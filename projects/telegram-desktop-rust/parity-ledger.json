@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "7c599eef9c4609540014fafd976a04afa39be17b",
+  "target_commit": "909cf2db0ee137f4067389e784912a6d8c81fe23",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16189,
-    "unread": 16164,
+    "unknown": 16188,
+    "unread": 16163,
     "omitted": 0,
-    "responsibilities_total": 205,
+    "responsibilities_total": 206,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -54064,6 +54064,270 @@
       "license_and_provenance": "Exact pinned pre-push hook retained as source/developer-tooling/documentation provenance under MicroTeX MIT; resource-license boundary remains separate.",
       "reviewer": "primary-session",
       "notes": "Strict187 MicroTeX pre-push interactive sample-regeneration developer-hook provenance. Counters unknown=16189 unread=16164 omitted=0 responsibilities=205. Hook is tracked non-executable, requires external installation and /dev/tty, mutates documentation/index/history on Y, is not fail-closed, and is not a shipping/GitHub Actions/release gate. Production external_microtex/td_iv responsibilities remain separate and open."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/MicroTeX",
+      "source_blob_sha": "61aaa7cc354de91d5898ffb0b2a6c62628d9a76f",
+      "source_kind": "recursive_child_repository_qt_resource_manifest_provenance",
+      "module_id": "tdesktop.thirdparty.microtex.latex-qrc",
+      "responsibility_id": "TDRP-R9-MICROTEX-LATEX-QRC-PROVENANCE-001",
+      "source_symbols": [
+        "desktop-app/MicroTeX:latex.qrc@cf58a5aea4e53ed0e76ce3de2bbd9ab821af3270",
+        "qresource prefix=/; exact manifest has 70 files = 46 TTF + 24 XML",
+        "resource families: 20 Cyrillic + 20 Greek + 30 res/fonts entries",
+        "src/QtLatex.pri@e5f4efcd78ec9d1e808127e414ce5689b44363b7 -> RESOURCES += latex.qrc",
+        "root CMakeLists.txt@75059dec500cff8114728331eb5cb317abf6daf9 copies res to filesystem but does not attach latex.qrc",
+        "Meson root installs res/fonts,res/greek,res/cyrillic but does not compile latex.qrc",
+        "res/bundled.qrc@303fb6bdf780d66a6e8960a095d17be466b909fa is current shipping bundle: exact 30 TTF entries, no Greek/Cyrillic",
+        "external/microtex/CMakeLists.txt@a1f479d2833bbb0cf0e007ee8fd33a40c10d9334 consumes res/bundled.qrc, not latex.qrc",
+        "tdesktop Q_INIT_RESOURCE(bundled)/RegisterBundledResources + tex::LaTeX::initBundled initialize shipping resources",
+        "resource licenses are layered: project MIT excludes res fonts/XML; font notices and Greek/Cyrillic GPL notices remain separate"
+      ],
+      "capability_ids": [
+        "CAP-DEPENDENCY-SOURCE-PROVENANCE",
+        "CAP-DEPENDENCY-RESOURCE-MANIFEST-PROVENANCE",
+        "CAP-DEPENDENCY-FONT-RESOURCE-PROVENANCE",
+        "CAP-DEPENDENCY-RESOURCE-LICENSE-PROVENANCE"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/MicroTeX@61aaa7cc354de91d5898ffb0b2a6c62628d9a76f",
+        "desktop-app/MicroTeX:latex.qrc@cf58a5aea4e53ed0e76ce3de2bbd9ab821af3270",
+        "desktop-app/MicroTeX:src/QtLatex.pri@e5f4efcd78ec9d1e808127e414ce5689b44363b7",
+        "desktop-app/MicroTeX:CMakeLists.txt@75059dec500cff8114728331eb5cb317abf6daf9",
+        "desktop-app/MicroTeX:meson.build@d9968045f0162b8f1f8f518f554fd71199f067d5",
+        "desktop-app/MicroTeX:res/bundled.qrc@303fb6bdf780d66a6e8960a095d17be466b909fa",
+        "desktop-app/MicroTeX:src/latex.h@0608e92d3b4821fb8cf5c402014f31c1692f014f",
+        "desktop-app/MicroTeX:src/latex.cpp@9ed2d29525b057943da537e8d2dd9e3afedc45b2",
+        "desktop-app/MicroTeX:src/platform/qt/graphic_qt.cpp@016b07c72ad92fab12af5f2daae435976fc82de5",
+        "desktop-app/MicroTeX:res/fonts/licences/Knuth_License.txt@5b03bf8a533e66c79d113b82ba95586f8c7af3b8",
+        "desktop-app/MicroTeX:res/fonts/licences/License_for_dsrom.txt@35e3ff2160fe16cb26f7830f936557ebc44c3e1c",
+        "desktop-app/MicroTeX:res/fonts/licences/OFL.txt@6836a0be000498319aebcc92a172159b6f80bb52",
+        "desktop-app/MicroTeX:res/cyrillic/LICENSE@f288702d2fa16d3cdf0035b15a9fcbc552cd88e7",
+        "desktop-app/MicroTeX:res/greek/LICENSE@f288702d2fa16d3cdf0035b15a9fcbc552cd88e7",
+        "desktop-app/MicroTeX:LICENSE@78a9eca5ca3514f2fd0a2e81018eeb8ae7d981a2",
+        "desktop-app/cmake_helpers:external/microtex/CMakeLists.txt@a1f479d2833bbb0cf0e007ee8fd33a40c10d9334",
+        "telegramdesktop/tdesktop:Telegram/cmake/td_iv.cmake@ec39405fc3c7bec58f8acb42aa49ed69c60d1b30",
+        "telegramdesktop/tdesktop:Telegram/SourceFiles/iv/markdown/iv_markdown_microtex.cpp@5c854b265e6dc67c1c500a72e04fa58b7fc6c3a2",
+        "telegramdesktop/tdesktop:Telegram/SourceFiles/iv/markdown/iv_markdown_math_renderer.cpp@46864b7ce87207c6e57b6bcc7610337120580bea",
+        "telegramdesktop/tdesktop:Telegram/CMakeLists.txt@2ea9badfc5750b9b4eab111052faafe946fea277"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microtex-latex-qrc-complete-read.md",
+      "behavior_contract": "Source/resource provenance for MicroTeX's broad Qt resource manifest. The qmake path directly compiles latex.qrc, which enumerates core TeX fonts plus Greek/Cyrillic font/XML resources. The accepted tdesktop shipping path does not consume this broad manifest: it builds a reduced res/bundled.qrc font bundle through external_microtex and initializes it explicitly. Mapping this manifest must not promote the legacy/general qmake bundle into a second Fabushi resource runtime or claim shipping closure.",
+      "state_machine": "pinned child source -> qmake may compile latex.qrc -> Qt prefix / exposes broad res paths; current tdesktop -> external_microtex_bundled -> res/bundled.qrc -> target_prepare_qrc -> non-mac Q_INIT_RESOURCE(bundled) OR mac external_microtex_bundled.rcc registration -> tex::LaTeX::initBundled -> Font_qt prepends :/ to missing-disk res/fonts paths; Greek/Cyrillic XML parser path is stripped and excluded from current shipping bundle",
+      "side_effects": [
+        "qmake consumption can embed 70 declared resource files into a Qt resource collection",
+        "manifest itself owns no Fabushi runtime state",
+        "current tdesktop shipping embeds only the 30 res/fonts TTF entries from res/bundled.qrc",
+        "Font_qt may load bundled TTFs through QFontDatabase using :/res/fonts/... fallback",
+        "No new Fabushi product owner or UI root"
+      ],
+      "failure_cases": [
+        "latex.qrc incorrectly treated as accepted tdesktop shipping set",
+        "40 Greek/Cyrillic entries accidentally inferred into current bundled shipping",
+        "project MIT incorrectly applied to all fonts/XML",
+        "resource notices omitted",
+        "stale bundled.qrc prose count 28 trusted instead of exact 30 entries",
+        "static qrc translation unit dropped without explicit registration",
+        "bundled font path/load failure",
+        "source-only provenance promoted to production closure"
+      ],
+      "ui_disposition": "Not a Fabushi product UI source; third-party Qt resource/build/license provenance only.",
+      "non_ui_responsibilities": [
+        "exact Qt resource manifest enumeration",
+        "font/map/XML classification",
+        "qmake/CMake/Meson consumer separation",
+        "bundled font lookup context",
+        "resource-license provenance",
+        "latex.qrc versus bundled.qrc shipping separation"
+      ],
+      "platform_delta": "Qt resource-build provenance only. Current Fabushi/tdesktop shipping remains owned by existing external_microtex/td_iv/formula-resource composition.",
+      "existing_owner_candidates": [
+        "Existing TDRP recursive source/resource/license provenance governance (selected)",
+        "Pinned external_microtex shipping build/resource owner (context only)",
+        "Pinned td_iv formula/resource initialization owner (context only)",
+        "New MicroTeXResourceRuntime/second resource root (rejected)"
+      ],
+      "existing_owner": "Existing TDRP recursive source/resource/license provenance governance.",
+      "rejected_existing_owners": [
+        "external_microtex/td_iv shipping responsibilities remain independently open and cannot be closed by manifest reading.",
+        "A new source-specific resource runtime would duplicate current canonical owners.",
+        "Formula UI/render semantics belong to existing canonical renderer."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/dossiers/upstream-microtex-latex-qrc-complete-read.md"
+      ],
+      "fabushi_target_symbols": [
+        "TDRP_MICROTEX_LATEX_QRC_PROVENANCE_001"
+      ],
+      "target_language": "Source-only Qt RCC/XML resource provenance; no shipping implementation.",
+      "language_rationale": "The source is a third-party resource/build input. Applicable production behavior remains with existing resource/formula/build owners.",
+      "command_event_contracts": [
+        "qmake QtLatex.pri -> RESOURCES += latex.qrc",
+        "root CMake copies res filesystem resources and does not attach latex.qrc",
+        "Meson installs resource directories and does not compile latex.qrc",
+        "tdesktop shipping external_microtex -> res/bundled.qrc -> explicit resource initialization",
+        "Font_qt maps missing-disk res/fonts paths to :/res/fonts paths",
+        "resource-license provenance remains fail-closed",
+        "manifest provenance cannot authorize source closure or release acceptance"
+      ],
+      "state_owner": "Third-party resource manifest/build graph only; shipping font resource state remains existing external_microtex/td_iv.",
+      "lifecycle_owner": "qmake resource compiler when broad manifest path is used; accepted tdesktop lifecycle remains external_microtex build plus td_iv one-time initialization.",
+      "persistence_and_restart": "Immutable build/package inputs; no product persistence.",
+      "concurrency_and_cancellation": "No independent manifest concurrency; shipping initialization is fenced by std::once_flag.",
+      "security_boundary": "Exact package membership and resource-license provenance are fail-closed; manifest presence cannot broaden executable authority.",
+      "network_service_dependencies": [
+        "GitHub Actions for exact-head Fabushi evidence"
+      ],
+      "service_owner": "Third-party resource provenance only; no Fabushi network service owner.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-qt-resource-manifest-provenance-mapped-open",
+      "blockers": [
+        "No production closure.",
+        "Shipping external_microtex/td_iv formula/resource responsibilities remain open.",
+        "Broader recursive source closure remains open.",
+        "Fresh receipt-head Actions required."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "latex.qrc@cf58a5aea4e53ed0e76ce3de2bbd9ab821af3270 fully read: 75 line slots / 3375 characters; exact 70 files = 46 TTF + 24 XML.",
+        "Pre-write independent ledger registration count=0.",
+        "Pinned MicroTeX tree truncated=false; pin remains 61aaa7cc354de91d5898ffb0b2a6c62628d9a76f.",
+        "src/QtLatex.pri@e5f4efcd78ec9d1e808127e414ce5689b44363b7 directly consumes latex.qrc; root CMake/Meson do not.",
+        "res/bundled.qrc@303fb6bdf780d66a6e8960a095d17be466b909fa has exact 30 TTF entries; 40-entry difference is exactly Greek/Cyrillic resources; comment count 28 is stale.",
+        "Root MIT explicitly excludes res fonts/XML; Knuth, dsrom, OFL and Greek/Cyrillic GPL notices exact-ref read.",
+        "Pinned external_microtex, td_iv, iv_markdown renderer and Telegram packaging re-read as separate shipping boundary.",
+        "Parent 909cf2db0ee137f4067389e784912a6d8c81fe23: TDRP 40112384872 61/61, Rust 40112384870 6/6, Official MCP 40112384901 1/1 success."
+      ],
+      "target_commit": "909cf2db0ee137f4067389e784912a6d8c81fe23",
+      "workflow_run": 40112384872,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12567730104,
+      "artifact_digest": "sha256:78f21152671ebf2e41f81e2a754f1c0d64a33fb361ded7f0f8cc76e591dcebff",
+      "composition_root": "Existing TDRP recursive source/resource/license provenance governance.",
+      "composition_slot": "Dependency Qt resource-manifest/license provenance only; no shipping slot.",
+      "capability_component": "MicroTeX broad Qt resource manifest provenance; no parallel shipping runtime.",
+      "variation_axes": [
+        "qmake broad qrc vs CMake filesystem vs Meson install",
+        "70-entry latex.qrc vs 30-entry bundled.qrc",
+        "disk font vs Qt resource fallback",
+        "non-mac linked qrc vs mac external rcc",
+        "project MIT vs layered resource licenses"
+      ],
+      "shared_owner_contracts": [
+        "TDRP recursive inventory/source-resource provenance",
+        "Pinned MicroTeX gitlink/tree",
+        "Pinned external_microtex build/resource owner",
+        "Pinned td_iv formula/resource init owner",
+        "GitHub Actions exact-head evidence",
+        "Shipping owners remain separate"
+      ],
+      "duplicate_root_check": "No MicroTeXResourceRuntime, second Qt resource owner, second formula renderer, second package root or second shell.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "No product action; dependency resource-manifest provenance only.",
+      "detail_section": "Not applicable",
+      "capability_surface": "Source-only dependency resource/build/license provenance; no shipping surface.",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Any blob/resource-list/consumer/license/pin/bundled.qrc/external_microtex/td_iv drift requires exact-ref reconciliation.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No icon change.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MICROTEX-LATEX-QRC-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MICROTEX-LATEX-QRC-EXACT-SOURCE-001",
+        "ORA-TDRP-MICROTEX-LATEX-QRC-MANIFEST-001",
+        "ORA-TDRP-MICROTEX-LATEX-QRC-QMAKE-CONSUMER-001",
+        "ORA-TDRP-MICROTEX-LATEX-QRC-SHIPPING-SEPARATION-001",
+        "ORA-TDRP-MICROTEX-LATEX-QRC-LICENSE-BOUNDARY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MICROTEX-LATEX-QRC-NOT-SHIPPING-BUNDLE-001",
+        "INV-TDRP-MICROTEX-LATEX-QRC-NO-PARALLEL-RESOURCE-RUNTIME-001",
+        "INV-TDRP-MICROTEX-LATEX-QRC-PRODUCTION-RESPONSIBILITIES-NOT-CLOSED-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MICROTEX-LATEX-QRC-PINNED-SOURCE-001",
+        "CONTRACT-TDRP-MICROTEX-LATEX-QRC-RESOURCE-BOUNDARY-001",
+        "CONTRACT-TDRP-MICROTEX-LATEX-QRC-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-MICROTEX-LATEX-QRC-SOURCE-DRIFT-001",
+        "FAULT-TDRP-MICROTEX-LATEX-QRC-SHIPPING-CONFLATION-001",
+        "FAULT-TDRP-MICROTEX-LATEX-QRC-LICENSE-CONFLATION-001",
+        "FAULT-TDRP-MICROTEX-LATEX-QRC-PRODUCT-PROMOTION-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "Pinned MicroTeX Qt resource/build/license tree",
+        "Pinned tdesktop MicroTeX/cmake_helpers production boundary",
+        "GitHub Actions exact-head evidence"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact pinned latex.qrc retained as source/resource-manifest provenance. MicroTeX code is MIT but README excludes res fonts/XML; font-license and Greek/Cyrillic GPL notices remain separate. Current tdesktop shipping uses reduced bundled.qrc.",
+      "reviewer": "primary-session",
+      "notes": "Strict188 MicroTeX latex.qrc resource-manifest provenance. Counters unknown=16188 unread=16163 omitted=0 responsibilities=206. Broad qmake manifest is not accepted tdesktop shipping bundle; external_microtex/td_iv production responsibilities remain separate and open."
     }
   ]
 }
