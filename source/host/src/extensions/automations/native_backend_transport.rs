@@ -56,6 +56,32 @@ impl NativeAutomationsBackendTransport {
         if identity(&credential) != self.identity { return Err(auth_error()); }
         Ok(credential)
     }
+
+    pub(super) fn ensure_current_account(&self) -> Result<(), AutomationsBackendError> {
+        self.credential().map(|_| ())
+    }
+
+    pub(super) fn request_native_json(&self, method: reqwest::Method, path: &str, body: Option<&Value>, max_bytes: u64) -> Result<Value, AutomationsBackendError> {
+        if !path.starts_with("/v1/") || path.starts_with("//") || path.contains("/../") || max_bytes > 8*1_048_576 {
+            return Err(invalid_response());
+        }
+        let credential = self.credential()?;
+        let url = self.base.join(path).map_err(|_| invalid_response())?;
+        let mut request = self.http.request(method,url)
+            .bearer_auth(credential.access_token())
+            .header("x-fabushi-device-id", &credential.device_id)
+            .header("accept", "application/json");
+        if let Some(body)=body { request=request.json(body); }
+        let response=request.send()
+            .map_err(|_| AutomationsBackendError::Transport("Native automation request failed; outcome may be unknown.".into()))?;
+        let status=response.status().as_u16();let mut bytes=Vec::new();
+        response.take(max_bytes+1).read_to_end(&mut bytes)
+            .map_err(|_| AutomationsBackendError::Transport("Native automation response was lost; reconcile before replay.".into()))?;
+        self.credential()?;
+        if status!=200 {return Err(AutomationsBackendError::Status{path:path.split('?').next().unwrap_or(path).into(),status});}
+        if bytes.len() as u64>max_bytes {return Err(invalid_response());}
+        serde_json::from_slice(&bytes).map_err(|_| invalid_response())
+    }
 }
 
 impl AutomationsBackendTransport for NativeAutomationsBackendTransport {
@@ -71,25 +97,7 @@ impl AutomationsBackendTransport for NativeAutomationsBackendTransport {
                 return Err(AutomationsBackendError::Backend("Invalid native automation completion request.".into()));
             }
         }
-        let credential = self.credential()?;
-        let url = self.base.join(native_path).map_err(|_| invalid_response())?;
-        let response = self.http.post(url)
-            .bearer_auth(credential.access_token())
-            .header("x-fabushi-device-id", &credential.device_id)
-            .header("accept", "application/json")
-            .json(body).send()
-            .map_err(|_| AutomationsBackendError::Transport("Native automation request failed; outcome may be unknown.".into()))?;
-        let status = response.status().as_u16();
-        let mut bytes = Vec::new();
-        response.take(MAX_RESPONSE_BYTES + 1).read_to_end(&mut bytes)
-            .map_err(|_| AutomationsBackendError::Transport("Native automation response was lost; reconcile before replay.".into()))?;
-        // Never apply the old session's response to a replacement account/runtime.
-        self.credential()?;
-        if !(200..300).contains(&status) {
-            return Err(AutomationsBackendError::Status { path: native_path.into(), status });
-        }
-        if status != 200 || bytes.len() as u64 > MAX_RESPONSE_BYTES { return Err(invalid_response()); }
-        let value: Value = serde_json::from_slice(&bytes).map_err(|_| invalid_response())?;
+        let value = self.request_native_json(reqwest::Method::POST,native_path,Some(body),MAX_RESPONSE_BYTES)?;
         if value.get("protocol").and_then(Value::as_str) != Some(PROTOCOL) { return Err(invalid_response()); }
         if native_path.ends_with("/poll") {
             let events = value.get("events").and_then(Value::as_array).ok_or_else(invalid_response)?;
