@@ -5753,3 +5753,48 @@ New frozen identities:
 
 - Immediately before this append, the live branch lease was `75f7cf96fe1a9ab58ddba1ffe239f15d377fea52`, tree `f82f1ae0d7294dabdeb201cebab5faffacd08cf0`, and the Round87 dossier was blob `8610b58aea9d7ed39f4622b51ec2efac4465b888`, 5702 lines, with no Section 84. All ten newly registered exact path/SHA pairs above occurred zero times in the complete dossier.
 - This pass remains frozen-source/read-only audit work. No GitHub Actions workflow is started or rerun, and no production code, parity ledger, RTM, acceptance flag, source lock, inventory, or source baseline file is modified. The integrated predecessor-public-id -> restart queue settlement -> physical exact-alias deletion -> public exact-run terminal-read fixture remains absent, as do the direct Gateway remote-STOP replacement late-success fence oracle and a distinct failed-publication receiver handoff/new plural native-admission caller. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring parity, package/device proof, release acceptance, and final OCRM acceptance remain open.
+
+## Section 85 — receipt/execution metadata and correlated queue task identity remain separate durable namespaces
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`. This section follows Section 84's `task_runs.run_id` / `child_session_key` / `detail.publicRunId` split into the owner-native Cron receipt tables, execution-identity metadata, `task_delivery_state`, and the correlated session-delivery owner. The following frozen exact refs were absent from the complete dossier before this append:
+
+- `src/cron/store/run-receipt-store.ts@f253643cfa79587ae65e986718a784b89d73a154`
+- `src/cron/store/run-receipt.worker.ts@fe36aaf4db265b2312a6c0b80ad2f9e60229aa26`
+- `src/audit/execution-owner-lifecycle-binding-store.ts@642767392ad82846bc7d566b9f0a2c1080aa24ac`
+- `src/state/openclaw-state-schema.sql@140a0771581c95bd193c402bd02b99224730cf6b`
+- `src/cron/service/run-receipts.ts@3dc3666d0e70499c6074f1513f8da70cb3b494f2`
+- `src/audit/execution-identity-context-build.ts@e372c9913f7a0ebeae08a5dd324a7eae8249dd1a`
+- `packages/gateway-protocol/src/schema/audit-run.ts@7017ba4b0cc28996d8fff72d616e23deeae00f20`
+- `src/agents/subagents/registry/subagent-registry-run-launch-record.ts@17db82d9712f6d39ef202cda85d1692911c10ba6`
+- `src/agents/subagents/registry/subagent-registry-run-recovery.ts@aa3a0e0d17dbaa9a86b44282445dfdb712dd7414`
+
+### 85.1 Public Cron run identity durably reaches the receipt, then execution identity, but not the exact session key
+
+- `run-receipt-store.ts` makes the public/manual request identity durable in the Cron receipt owner: `claimCronRunReceiptInDatabase` inserts `receipt_id` together with `request_run_id = params.requestRunId ?? null`, plus the store/job/agent/owner-process lifecycle fields. Terminal pruning deletes any matching execution-owner metadata before old receipt rows are pruned. This is a real durable `public request runId -> receiptId` edge.
+- `run-receipts.ts` adds the next production edge after admission. `createCronReceiptExecutionIdentity` parses the admitted execution token, verifies its `runId` equals the admitted operational run instance, then issues `cron.bindReceiptExecution` with the same `receiptId` and only `{contextId, executionId}`. The code explicitly describes this as a diagnostic link rather than receipt authority.
+- `run-receipt.worker.ts` commits that link as `ownerKind="cron"`, `ownerId=receiptId`, `contextId`, and `executionId`. `execution-owner-lifecycle-binding-store.ts` confirms those are the complete stored columns for this owner link; there is no `sessionKey`, public `runId`, queue id, or task id in the binding table.
+- The possible hidden bridge through identity JSON is also closed. `execution-identity-context-build.ts` builds the canonical V1 identity from `contextId`, `executionId`, operational `runId`, trust/invoker/ingress/agent/runtime/grant/assurance/lineage facts. The closed `ExecutionIdentityContextV1Schema` in `audit-run.ts` enumerates the same fields and has no `sessionKey` member. Therefore `receiptId -> contextId/executionId -> execution_identity_contexts` does not reconstruct the exact Cron continuation session key.
+- This does not contradict Section 84: the isolated runtime may transiently hold an operational run identity and an exact run session key together, but the newly inspected durable receipt/execution metadata does not persist the missing cross-index back to the public Cron request identity.
+
+### 85.2 `task_delivery_state` is not a hidden public-run/session-delivery join
+
+- `openclaw-state-schema.sql` shows `task_delivery_state` contains only `task_id`, optional `requester_origin_json`, and `last_notified_event_at`, with `task_id` foreign-keyed to `task_runs(task_id)` and deleted by cascade. It has no Cron receipt id, public request run id, exact child session key, or session-delivery queue id.
+- The same schema keeps the relevant namespaces visibly separate: `cron_run_receipts.request_run_id` belongs to the Cron receipt; `execution_owner_lifecycle_bindings` belongs to receipt-to-execution diagnostics; `task_runs.child_session_key` and `detail_json` belong to history; and `task_delivery_state` is only a task-id adjunct. No schema edge newly joins those namespaces to the session-delivery queue.
+
+### 85.3 The correlated queue's `owner.taskId` is subagent task lineage, not the Cron history task/run identity
+
+- Section 71 already established that correlated `subagent_completion` queue rows persist `owner.runId`, `owner.taskId`, generation and deadline alongside the queue payload's requester `sessionKey`. The tempting `taskId` name is not the missing Cron join.
+- `subagent-registry-run-launch-record.ts` separates `runId`, optional `requesterTurnRunId`, and `requesterSessionKey`, then initializes every new subagent record with `taskRunId: runId`. The parent/requester turn identity is stored separately as `requesterTurnRunId`; it is not copied into `taskRunId`.
+- `subagent-registry-run-recovery.ts` preserves that namespace across replacements: steer-like replacement retains `source.taskRunId ?? source.runId`, while a completed follow-up starts a fresh task with `taskRunId = nextRunId`. Thus the queue owner's `taskId: subagent.taskRunId ?? subagent.runId` is the subagent task lineage. It is not Section 84's internal Cron history `task_runs.run_id`, nor the Cron receipt's public `request_run_id`.
+- Consequently a restart queue entry can durably correlate its exact requester `sessionKey` with a subagent completion owner, but the inspected production fields still do not carry the predecessor public Cron run id into that queue row.
+
+### 85.4 The requested integrated oracle and the two secondary frontiers remain absent
+
+- The durable chain now has both sides characterized: public Cron request `runId -> cron_run_receipts.request_run_id/receiptId -> execution identity`, and exact Cron requester `sessionKey -> correlated session-delivery entry -> subagent owner/task lineage`. The inspected production schema and writers contain no durable field that joins those sides. No frozen focused fixture was found that drives one predecessor public Cron run id through restart queue recovery, `settleQueuedSessionDelivery`, real `removeCronRunContinuationSessionIfIdle` deletion, and then `cron.runs{id,runId,limit:1}` reading that same predecessor terminal result in one test.
+- The frozen `session-processes.test.ts` frontier remains narrower than requested: it directly fences a late remote **list** response after request authority closes and has ordinary Stop coverage, but no test starts `sessions.processes.stop`, replaces `placementGeneration` or `activeOwnerEpoch` while the remote Stop is in flight, then resolves a successful late worker reply and asserts the Gateway rejects it. Neighboring node/worker replacement tests remain below that public Gateway-server Stop oracle.
+- Plugin recheck still shows the same two production modules using plural `settlePluginNativeAdmissions`: generation preparation and prepared-model runtime build. The generation worker continues to use singular `settlePluginNativeAdmissionState`. The preparation worker transfers deferred publication retry intent to the admission owner and has failed-capture resource cleanup, but no distinct failed-publication receiver handoff beyond the already registered publication owner chain was found.
+
+### 85.5 Dedupe and write scope
+
+Immediately before this append, the live branch lease was `4a67c948a987b7b52090d84cdcf129a0c2000d79`, tree `692fb6f8b4b839bebfb4b9d36e2a15cedf84c61c`, dossier blob `3130ce00c9e2dbe3dcb959ee8d6c3f9f8e4d73df`, with 5,756 lines, one Section 84, zero Section 85, and all nine exact refs above at zero occurrences. This append is evidence-only: no Actions were started or rerun, and no production code, ledger, RTM, flags, source lock, inventory, or source baseline was modified.
+
