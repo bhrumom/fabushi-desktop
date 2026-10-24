@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "92d9f63f98a141a3c4e9032e9f992ce919b3b954",
+  "target_commit": "cb189b0b2eca841d817cf50bb26f50505d7cbf9f",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16217,
-    "unread": 16192,
+    "unknown": 16216,
+    "unread": 16191,
     "omitted": 0,
-    "responsibilities_total": 177,
+    "responsibilities_total": 178,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -47419,6 +47419,248 @@
       "license_and_provenance": "Exact Microsoft/GSL include/gsl/zstring@2cc13d83840afec61e5bd709c77900026ed225f4 retained under MIT LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02; accepted tdesktop direct-consumer search is empty; no GSL zstring runtime or downstream release authority inferred.",
       "reviewer": "primary-session",
       "notes": "Strict159 closes only GSL include/gsl/zstring as a zero-terminated raw-pointer tag dependency. The aliases add no runtime validation and accepted tdesktop has no direct zstring/basic_zstring consumer; actual future C/OS/library boundaries remain independently open in existing owners. Counters unknown=16,217 unread=16,192 omitted=0 responsibilities=177. Next strict160 Microsoft/GSL tests/algorithm_tests.cpp@e369be0e34dcf786a63631807ebe3cc06fb59544."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/GSL",
+      "source_blob_sha": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+      "source_kind": "recursive_child_repository_dependency_test_provenance",
+      "module_id": "tdesktop.thirdparty.gsl.algorithm-tests",
+      "responsibility_id": "TDRP-R9-GSL-ALGORITHM-COPY-CONTRACT-TEST-PROVENANCE-001",
+      "source_symbols": [
+        "tests/algorithm_tests.cpp@e369be0e34dcf786a63631807ebe3cc06fb59544",
+        "include/gsl/algorithm@584f5cd12beb15e863b1c32bc887638314261399",
+        "gsl::copy(span<SrcElementType, SrcExtent>, span<DestElementType, DestExtent>)",
+        "same_type dynamic/static source-destination matrix",
+        "compatible_type short-to-int dynamic/static source-destination matrix",
+        "CONFIRM_COMPILATION_ERRORS incompatible int-to-int* rejection",
+        "small_destination_span runtime contract death plus static/static compile rejection"
+      ],
+      "capability_ids": [
+        "CAP-BOUNDED-SPAN-COPY-CONTRACT-TEST-PROVENANCE",
+        "CAP-DEPENDENCY-TEST-PROVENANCE",
+        "CAP-NATIVE-DEPENDENCY-REPLACEMENT"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "Microsoft/GSL:tests/algorithm_tests.cpp@e369be0e34dcf786a63631807ebe3cc06fb59544",
+        "Microsoft/GSL:include/gsl/algorithm@584f5cd12beb15e863b1c32bc887638314261399",
+        "Microsoft/GSL:include/gsl/span@d2ef9f7d85ca6e25bf69b001e9308b3d069c5d16",
+        "Microsoft/GSL:tests/deathTestCommon.h@7bf242393f7bcff62c12cd985a87824f48f7bb0b",
+        "Microsoft/GSL:tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a",
+        "Microsoft/GSL:LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-algorithm-tests-complete-read.md",
+      "behavior_contract": "Retain the exact contract proved by the locked Microsoft/GSL algorithm tests without shipping a GSL-shaped runtime. gsl::copy requires source element assignability to destination elements, rejects an insufficient destination statically when both extents are fixed, enforces dest.size() >= src.size() at runtime for dynamic cases, and copies exactly src.size() elements. Same-type and assignment-compatible element types are covered across dynamic/static span combinations; incompatible pointer element types are compile-time failures. Because accepted tdesktop has zero direct gsl::copy consumers, this row closes only dependency test provenance and does not invent or close a Fabushi product caller.",
+      "state_machine": "No independent long-lived state machine. Per invocation: establish source/destination span types and extents -> reject incompatible assignment at compile time -> reject statically known undersized destination at compile time or dynamically undersized destination through Expects -> copy exactly source length into destination -> return. The test suite treats the undersized dynamic cases as contract death.",
+      "side_effects": [
+        "On a valid call, exactly src.size() destination elements beginning at dest.data() are assigned from the source sequence.",
+        "Destination elements beyond src.size() are left unchanged by the tested operation.",
+        "No persistence, service, UI, account, network, retry, cancellation or lifecycle side effect is owned by the helper tests."
+      ],
+      "failure_cases": [
+        "Destination span shorter than source: compile-time rejection when both fixed extents prove the mismatch, otherwise runtime contract termination through Expects.",
+        "Source element not assignable to destination element: compile-time static_assert rejection.",
+        "Inventing a GSLAlgorithmRuntime or global copy owner despite zero accepted tdesktop direct consumers.",
+        "Treating source test provenance as evidence that unrelated future buffer/memory/product callers are migrated or safe.",
+        "Replacing assignment-compatible conversion semantics with an unchecked byte copy or assuming overlap semantics not established by this source."
+      ],
+      "ui_disposition": "No independent UI surface. Any future product effect of a real bounded-copy caller belongs to that caller's existing Fabushi owner and canonical UI, if any.",
+      "non_ui_responsibilities": [
+        "exact GSL algorithm test provenance",
+        "source-to-destination assignability contract",
+        "static and dynamic destination-capacity contract",
+        "exact source-length copy contract",
+        "dynamic/static extent behavior matrix",
+        "zero-direct-consumer accounting"
+      ],
+      "platform_delta": "Fabushi does not ship GSL spans or gsl::copy. An independently migrated Rust caller uses native slices/arrays and the narrowest safe operation: same-type copy can use slice methods such as copy_from_slice after length validation; assignment-compatible cross-type behavior must use explicit checked per-element conversion/assignment in the actual domain owner rather than a raw memory copy.",
+      "existing_owner_candidates": [
+        "TDRP source/dependency inventory and test-provenance owner (selected for this child-source accounting)",
+        "Actual existing Rust/domain owner of any independently discovered bounded-copy consumer (selected for caller semantics)",
+        "Existing repository quality/test-evidence governance (selected for source-test traceability)",
+        "new GSLAlgorithmRuntime or global copy owner (rejected)"
+      ],
+      "existing_owner": "Existing TDRP source/dependency inventory and test-provenance owner; any real bounded-copy behavior remains with the independently migrated existing Rust/domain caller",
+      "rejected_existing_owners": [
+        "A GSL-shaped algorithm compatibility runtime would preserve helper API shape rather than product responsibility.",
+        "A global buffer-copy owner would detach bounds/type/security obligations from the actual domain owner.",
+        "Accepted tdesktop dev has zero direct gsl::copy consumers, so no caller-specific production owner is justified by this row."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md"
+      ],
+      "fabushi_target_symbols": [
+        "| dependency | 递归审查、职责替代、版本/许可证与真实集成证据 |"
+      ],
+      "target_language": "Source-only GSL test provenance plus native Rust slice/array/iterator operations inside actual existing owners; no shipping GSL compatibility API",
+      "language_rationale": "The source is a qualification test for a small C++ span-copy helper, not an application runtime. Rust's ownership, slices and explicit conversion APIs can express the underlying bounds and type obligations directly in the actual caller. Reproducing GSL test/runtime structure would create an unnecessary parallel abstraction.",
+      "command_event_contracts": [
+        "source mapping -> retain exact algorithm test/header blobs, bounds/type behavior and MIT provenance",
+        "real same-type caller -> validate destination capacity before mutation and perform safe slice copy in its existing owner",
+        "real compatible cross-type caller -> perform explicit checked element conversion/assignment in its existing owner",
+        "insufficient destination or incompatible element type -> fail before successful copy; never silently truncate or reinterpret bytes"
+      ],
+      "state_owner": "No helper-owned persistent state. Buffer/data state remains with the actual independently migrated caller.",
+      "lifecycle_owner": "No helper-owned lifecycle. Any buffer lifetime and mutation ownership belongs to the actual independently migrated caller.",
+      "persistence_and_restart": "No algorithm-test persistence or restart semantics. Durable data remains in existing canonical storage/domain owners.",
+      "concurrency_and_cancellation": "No helper-level async/concurrency/cancellation contract is present in the source. A real concurrent caller must own synchronization, cancellation, generation fencing and buffer lifetime independently.",
+      "security_boundary": "Length/type checks are safety boundaries for the copy operation but do not establish authorization, secrecy, provenance, encoding, overlap safety, alias safety outside span validity, or semantic validity of the copied data. No unchecked byte-copy substitution is permitted merely to mimic the C++ helper.",
+      "network_service_dependencies": [
+        "GitHub Actions for exact-head revalidation"
+      ],
+      "service_owner": "No shipping service.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-replaced-mapped-open",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required after strict160 publication.",
+        "Source closure, all production implementation and independent release acceptance remain open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "strict160 tests/algorithm_tests.cpp@e369be0e34dcf786a63631807ebe3cc06fb59544 fully read: 225 line slots / 6404 bytes",
+        "include/gsl/algorithm@584f5cd12beb15e863b1c32bc887638314261399 fully read: 64 line slots / 2339 bytes; it static_asserts assignability and fixed-extent capacity, Expects dynamic destination capacity, then std::copy_n copies exactly src.size() elements",
+        "tests/algorithm_tests.cpp covers same-type int and compatible short-to-int across dynamic/static source/destination matrices, incompatible int-to-int* compile failures, and undersized-destination runtime/static rejection",
+        "supporting deathTestCommon.h@7bf242393f7bcff62c12cd985a87824f48f7bb0b fully read and tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a registers algorithm_tests.cpp",
+        "Microsoft/GSL LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02 confirms MIT",
+        "accepted tdesktop current dev/default-branch code search returned zero direct gsl::copy consumers",
+        "GSL gitlink 87f9d768866548b5b86e72be66c60c5abd4d9b37; child tree 6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41",
+        "Live main fb1189efd9d85c650864d6987ea8fb68c913558d/1a1ef09be4c9fd801354439a5b82cc460f0b4b6a and upstream dev a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5 rechecked immediately before strict160 publication",
+        "Parent exact-head cb189b0b2eca841d817cf50bb26f50505d7cbf9f: TDRP 40051564038 completed 61/61 success; authority 12543343371 sha256:bb98d43c429c9e9c673f92f3f20ede6733c6cf33c13e49830294d6f744cbcb51; closure 12544006689 sha256:cd8d29d6b9f145b01dd169c1f93c0200834ce3c91a0726a27d30b7ac0b07ab08; reachability 12543483483 sha256:b5b02e53426a2f6ad808b8933402fd36ac663de2777ca6c9a6983be609821a63; Rust 40051564033 completed 6/6 success; artifact 12542989074 sha256:5135d7ee3cb0080d9dfa1790dcbb479b0ab89326001406f208502e213d5b0037.",
+        "Superseded fe36cedded8bc7d0cf8215059ee42fa75091fca1 TDRP 40051301759 ended 58 success / 1 failure / 2 skipped with Source authority job 120744360210 reporting the strict159 target-symbol omission; Rust 40051301757 ended cancelled with 5 success / 1 cancelled."
+      ],
+      "target_commit": "cb189b0b2eca841d817cf50bb26f50505d7cbf9f",
+      "workflow_run": 40051564038,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12543343371,
+      "artifact_digest": "sha256:bb98d43c429c9e9c673f92f3f20ede6733c6cf33c13e49830294d6f744cbcb51",
+      "composition_root": "Fabushi source/dependency test-provenance governance plus the actual existing Rust/domain owner for any independently discovered bounded-copy consumer",
+      "composition_slot": "bounded-copy dependency test provenance only",
+      "capability_component": "Source-only GSL algorithm copy contract tests; no shipping compatibility runtime",
+      "variation_axes": [
+        "same-type versus assignment-compatible cross-type elements",
+        "dynamic versus static source extent",
+        "dynamic versus static destination extent",
+        "sufficient versus insufficient destination",
+        "compile-time rejection versus runtime contract death"
+      ],
+      "shared_owner_contracts": [
+        "TDRP source/dependency inventory",
+        "dependency replacement and provenance governance",
+        "actual existing Rust/domain caller ownership when independently evidenced",
+        "exact-head TDRP/Rust evidence"
+      ],
+      "duplicate_root_check": "No GSLAlgorithmRuntime, second buffer model, global copy owner or bulk caller-closure authority.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "No independent product action; this row records dependency test behavior only.",
+      "detail_section": "Not applicable",
+      "capability_surface": "Exact source/dependency test accounting only; no shipping UI/runtime surface.",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Any accepted tdesktop/GSL gitlink, child-tree, algorithm test/header/license blob or gsl::copy consumer-set drift requires fresh reconciliation; actual caller responsibilities remain independently open.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-GSL-ALGORITHM-COPY-CONTRACT-TEST-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GSL-ALGORITHM-EXACT-SOURCE-001",
+        "ORA-TDRP-GSL-ALGORITHM-COPY-BOUNDS-001",
+        "ORA-TDRP-GSL-ALGORITHM-TYPE-COMPATIBILITY-001",
+        "ORA-TDRP-GSL-ALGORITHM-NO-DIRECT-CONSUMER-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GSL-ALGORITHM-DESTINATION-NOT-SMALLER-001",
+        "INV-TDRP-GSL-ALGORITHM-INCOMPATIBLE-TYPE-REJECTED-001",
+        "INV-TDRP-GSL-ALGORITHM-NO-PARALLEL-RUNTIME-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GSL-ALGORITHM-COPY-SEMANTICS-001",
+        "CONTRACT-TDRP-GSL-ALGORITHM-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GSL-ALGORITHM-SOURCE-DRIFT-001",
+        "FAULT-TDRP-GSL-ALGORITHM-UNSAFE-GLOBALIZATION-001",
+        "FAULT-TDRP-GSL-ALGORITHM-BULK-CALLER-CLOSURE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-GSL-ALGORITHM-COPY-BOUNDS-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-GSL-ALGORITHM-NO-SOURCE-OMISSION-001",
+        "REG-TDRP-GSL-ALGORITHM-NO-PARALLEL-RUNTIME-001",
+        "REG-TDRP-GSL-ALGORITHM-NO-TRUNCATING-COPY-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-BEHAVIOR",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "locked GSL algorithm tests + algorithm/span headers + supporting death-test/build registration + MIT license + zero-direct-consumer search + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact Microsoft/GSL tests/algorithm_tests.cpp@e369be0e34dcf786a63631807ebe3cc06fb59544 and include/gsl/algorithm@584f5cd12beb15e863b1c32bc887638314261399 retained under MIT LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02; accepted tdesktop direct gsl::copy consumer search is empty; no GSL algorithm runtime or downstream caller release authority inferred.",
+      "reviewer": "primary-session",
+      "notes": "Strict160 closes only Microsoft/GSL tests/algorithm_tests.cpp as bounded-copy dependency test provenance, anchored to include/gsl/algorithm. The tests prove assignability, exact source-length copy, fixed/dynamic extent behavior and insufficient-destination rejection; accepted tdesktop has zero direct gsl::copy consumers, so no product caller or runtime is closed. Counters unknown=16,216 unread=16,191 omitted=0 responsibilities=178. Next strict161 Microsoft/GSL tests/assertion_tests.cpp@231befc7e415ec53daa09ced61d76505e6be5437."
     }
   ]
 }
