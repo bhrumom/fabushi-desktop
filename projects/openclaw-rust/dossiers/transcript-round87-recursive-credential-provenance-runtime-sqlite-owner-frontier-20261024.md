@@ -4135,3 +4135,111 @@ These tests contend the genuine writer, observe queueing, then release it; they 
 This section adds source/provenance only. Post-commit facts install before fallible notifications; nested rollback removes staged state; unknown native outcomes invalidate or retain custody where retry could duplicate mutation. The session writer remains one FIFO authority per physical path, including prepared writes and migration/repair callers.
 
 No GitHub Actions, build, test, generator, package, production source, parity ledger, RTM, or completion flag was modified or executed in this increment. This evidence does not establish independent ACCEPT, scoped G01/G02 positive proof, Rust implementation/wiring, executable/package proof, OCRM final acceptance, or release acceptance.
+
+## Section 48 — frozen downstream publication observers, worker receipts, and remaining writer-consumer closure
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`). This section continues Section 47 by following its publication/receipt and writer-owner identities to direct downstream production consumers and focused tests. Every path below was fetched at the frozen commit. Paths already named elsewhere in this Round87 dossier are deliberately not re-counted.
+
+### 48.1 Remaining post-commit domain publication consumers
+
+User preference publication:
+- `src/state/user-preferences.store.ts@06a33ea08f4be47d0c638dbc3d46feffb4d67120` is the newly frozen writer-side consumer of `publishUserPreferencesChange`; its database mutations stage the preference revision publication with the owning transaction.
+- `src/state/user-background.ts@a149796ff29d5db13c0b496a56870c213ba0e1ca` and `src/state/user-preferences.ts@a20e4e1ebc2d60624993f75918858751f244dc3b` were already registered elsewhere in this dossier and are not duplicated. Their existing read/mutation fences wait through native settlement and reject changed receipts rather than becoming another writer.
+
+Worker-environment publication:
+- `src/gateway/worker-environments/placement-row-codec.ts@1e0fd74a3f11d3ace5223c2bbfdaad7b2224dfa2` directly publishes native placement row changes through the existing worker-environment projection owner.
+- `src/gateway/worker-environments/placement-lifecycle-store.ts@d4caf456224d13334fd6446d61136ebbb48518c8` reserves publication order under the physical mutation owner, installs the placement lifecycle receipt, then publishes the matching environment patch.
+- `src/gateway/worker-environments/placement-turn-claims-store.ts@22c12e10bf59c265cf73b3a17a2ff54df8cceae6` reserves the same publication owner for turn/workspace-result mutations; an unknown durable outcome invalidates the prepared publication and requires recovery rather than replaying a mutation.
+- `src/infra/device-pairing-worker.ts@190f6301ff4a865992d8bd1c5f3ddf4aff912ca5` was already registered elsewhere; exact re-read confirms its pairing receipt is installed before fallible callbacks and unknown outcomes return to discovery without reviving authority.
+- Focused oracle `src/gateway/worker-environments/store-projection.test.ts@6259670da93d0807db4772f633830b23c3df5c7c` was already registered; it checks rollback discard, ordered post-commit publication, delayed full receipts, and unknown/unsettled authority.
+
+Runtime auth-profile snapshots:
+- `src/agents/auth-profiles/store.ts@e722a7cf907e7c4b266bf33dd25449fe1770b118` was already registered and remains the only direct consumer of `publishRuntimeSnapshotsAfterCommit` / `deferRuntimeSnapshotsAfterCommit`. Exact re-read confirms a committed write cannot be rolled back by snapshot publication failure; only the exact derived runtime owner is evicted or refreshed.
+
+SQLite write-settlement observation:
+- `src/infra/sqlite-wal.ts@a902d75642928bc57db708c445ea43b6fd6fae1c` is the newly frozen production consumer of `onSqliteDatabaseWriteSettled`; PASSIVE periodic WAL checkpoint scheduling arms only after the shared write receipt is published. The listener is maintenance scheduling, not mutation authority.
+
+### 48.2 GitHub, turn-claim, and conversation-binding downstream observers
+
+GitHub connection/publication:
+- `src/gateway/github-personal-oauth.ts@2f55eeadf2e4254f72f7522f4394140ed1103aaf` consumes user-GitHub connection authority and profile-retirement publications. Connection changes invalidate in-flight scans; retirement queues profile cleanup. Neither notification path writes connection authority.
+- `src/gateway/github-publication-store.worker.ts@b4f4c4869b19110960ba927b35cde476a7b735bc` stages shared publication receipts and defers `deferSharedGitHubPublicationChanged` inside the existing transaction.
+- `src/gateway/github-repository-publication-store.worker.ts@4a8e54ce9027baaa4f2c4c31f5c8db03c8f86b78` does the same for repository publication rows.
+- Focused `src/gateway/server-methods/users-github.test.ts@694fa042b95ec846ffd66aa3ab897ee131da6716` observes authority-before-retirement ordering and disconnect cleanup under the native lease.
+- `src/state/user-github-connections.ts@d67e92e4592045b6e3b5db97ca5adf969b19e544` and `src/gateway/github-publication-source.ts@32b16c77cbe306da84fa1aa3d47a4266a7b1ab54` were already registered and are not duplicated.
+
+Worker turn-claim closure:
+- `src/gateway/server-aux-handlers.ts@e5e1ad41cc224917ce366923e26a31a8e47eff46` registers the placement turn-claim close observer and converts closure into approval-authority settlement/publication, then unregisters it on retirement or failed startup.
+- `src/gateway/server-core-runtime.ts@4a2c6b2e5cb895688107343eaf50ca0a2d32dd39` wires the live placement-store registration into the auxiliary handlers.
+- `src/gateway/worker-environments/placement-store.ts@4666e152cc68e44e688370ffbad1d4340b53d903` is the direct path adapter for `registerWorkerTurnClaimClosedHandler`.
+- Focused `src/gateway/server-aux-handlers.authority.test.ts@9da039058c65854cfde720887ca29e7c471b5bda` exercises the production worker-claim observer and verifies both exec and plugin approvals settle/publish on closure.
+
+Current-conversation binding receipts:
+- `src/infra/outbound/prepared-session-binding.ts@0dac5c3432e5eae303de8bb6f6ae87cf9f151a22` subscribes binding facts and waits for native finish to drain committed receipts before declaring a prepared selection unchanged.
+- `src/infra/outbound/current-conversation-bindings.ts@495115111612e693cb136ac2aaa24fafc525c7bb` consumes committed facts into retained binding rows; a receipt supersedes an in-flight older read.
+- `src/infra/outbound/current-conversation-bindings.kernel.ts@ca378b7b74301c2b6ddab2f9e7058b558cd2028b` stages binding postimages/deletions at the owning synchronous mutation.
+- `src/infra/outbound/account-scoped-conversation-bindings.ts@2b6ca244598ae95cc5abf770d45b0eb6c1aafee7` observes publication revision and rejects a selection if facts change during selection.
+- `src/infra/outbound/current-conversation-bindings.worker.ts@29b7ec5b54524c1e69d766cd8dcd61d4b0678d20` wraps worker mutations in one binding receipt and commit admission.
+- Focused oracles: `src/infra/outbound/current-conversation-bindings.queries.test.ts@620339c758f360a209eeeb10c097a07894dd4c66`; `src/infra/outbound/current-conversation-bindings.worker.test.ts@c2849c78a6ab4f6087c4bbe527ca792d8daff0a1`; `src/infra/outbound/prepared-session-binding.test.ts@ece07abdcb183844142ed6f61cb963c99b761e2f`. They cover worker bind/touch/expiry facts before replies, late receipts not restoring a newer deletion, unknown settlement, and prepared-selection settlement.
+
+### 48.3 Concrete state-domain worker receipt consumers
+
+The generic `state-domain-publication` primitive remains shared staging/notification mechanics. Newly frozen concrete domains and their existing-owner worker receipts are:
+
+- exec approvals: `src/infra/exec-approvals-publication.ts@c9cf172b7656c990da0467d885f742c67d91fb4b`; `src/infra/exec-approvals-mutation.worker.ts@e405c9d955107156f45cd8c1d7b243012c469ae7`; `src/infra/exec-approvals-retirement.worker.ts@8e485084537d5a8dd0c6275733ca88772a4679e9`; `src/infra/exec-approvals-authorization.worker.ts@56b1c8c192f8b00e4540ad91fd3ef1be498db779`; `src/infra/exec-approvals-sqlite.ts@6177e0282c9d7489b10e54080e2f6c83eaaab182`. The workers capture the exact policy facts and defer the bounded receipt after the owning transaction.
+- composed operator approval receipt: `src/gateway/operator-approval-store.worker.ts@76f15f1c6d6e35d36056349d82616856397aa501` captures approval, standing-grant, and exec facts into one worker commit receipt. Focused consumers `src/infra/exec-approvals-store.test.ts@be3ebf30b58a0e0c5144a0889af7bb99c58b1ccf` and `src/infra/exec-approvals-store.read-worker.test.ts@b2dfbdd749337c36989d784496ce0655279a15c3` verify committed publication and foreign-commit/read-worker behavior.
+- agent provenance/deletion: `src/state/agent-provenance-publication.ts@e60273c9db53b81d7c23e8d31bd5903c2c230ce1`; `src/state/agent-provenance.ts@491886f799d6a8f5e29f8bf45572f2a246004f11`; `src/state/agent-provenance.kernel.ts@e49c89139983f8d9d4920e70d2ad96f8a4d9bf68`; `src/state/agent-provenance.worker.ts@95c5d1476b43abb8eccbac4c75145239b220b05c`; `src/state/agent-deletion-journal-publication.ts@4da4b096dc3653173758af07c1422da1c67cef82`; `src/state/agent-deletion.worker.ts@d1d4882592fe273256d052a84590e2a3da911860`; `src/state/agent-deletion-journal.ts@0ef1cde953c03c9c0eb783de80977f31b71b0591`; `src/agents/agent-lifecycle-binding.ts@6f9e9b6a0a953c661446173c0428888b3a1b98c3`; `src/agents/agent-lifecycle-registry.ts@03eaef33ea1a66ab5c880886948861684285d953`. Lifecycle projections subscribe to committed provenance/journal facts; committed or unknown receipts supersede stale in-flight reads rather than authorizing a replacement write.
+- workspace state: `src/agents/workspace-state-publication.ts@fbb6eafdfcdaaa3405d5939cd097c705ac8d79db`; `src/agents/workspace-state-cache.ts@04dfc7f627a94a9241db9f4552f0e0d5541c5eb7`; `src/agents/workspace-state-store.kernel.ts@c29a1d0412285622808586946598ae4d2d7bb834`; focused `src/agents/workspace-state-store.test.ts@1169951d6eafac94f55bcea044b5b6c0c0af433d`. Unknown or alias facts invalidate the cache; the physical database owner remains the writer.
+- operator approvals/standing grants: `src/gateway/operator-approval-store.publication.ts@143fbec20655870487a8081b554529f5e80f88cf`; `src/gateway/operator-approval-store.rows.worker.ts@36e60b78b1c45e8ba272cf587450778f4215c70f`; `src/gateway/operator-approval-store.transitions.worker.ts@27291c50008127fa7fec9837fbe0caed10fd0da8`; `src/gateway/operator-approval-store.kernel.worker.ts@d9c305bd9086250f17dcc00697e630a05d08bf75`; `src/gateway/operator-approval-standing-grants.worker.ts@21dee4e00f62a0b403ca2e5108a45eee94977782`; `src/cron/service/config-mutation.ts@47252b7d1a6022dcfcc56de9140fa1813c014428`; `src/cron/store/guarded-mutation.worker.ts@d08a3ed68e35a5966581bb8d129e29c4889f8af2`; `src/cron/store/row-codec.ts@bdf2c8d573141bae3628fbc65632d8af3014df73`; focused `src/gateway/operator-approval-store.worker.test.ts@8b77e33dc56dbd4861bab7b1d50a21e2546ff694`.
+- repository workspace: `src/state/session-repository-workspaces.receipts.ts@5c2f53d9a9dd644dea2b9bf8be936a5a102309cd`; `src/state/session-repository-workspaces.worker.ts@d4410ce30091c28c43aa706b6fe21f3f4a045120`; `src/state/session-repository-workspaces.publication.ts@0633fe30c366782cf58a0520f1954270e6bd4e96`; `src/state/session-repository-workspaces.kernel.ts@522f298b8cb66a8af333ad8d3a198b44f4551be1`; `src/gateway/github-publication-shared-read.ts@9ba3e38edaa0815b59adcfefe671a587da1fa366`. The shared GitHub reader clears pending observations when any of its three committed source domains changes.
+- node prepared workspace: `src/node-host/node-worker-prepared-workspace-publication.ts@d5e7c55dfabd7c679302001b25663a066e5f45fe`; `src/node-host/node-worker-prepared-workspace-store.kernel.ts@c4c0830044d813e94adbba3a5bff889da9b5fd2b`; focused `src/node-host/node-worker-prepared-workspace-publication.test.ts@6e4c57b0f338187bb14e36fda7227e803db4f9bc`. The already-registered journal worker consumes its bounded receipt and fences unknown settlement.
+
+These domains reuse their existing transaction/worker owner. Publication listeners install or invalidate projections, cache, and authority views only; they are not a second durable writer.
+
+### 48.4 Prepared-write and Goal direct-consumer closure
+
+Prepared write:
+- `runPreparedSqliteSessionWrite` has exactly two frozen direct production callers: `src/config/sessions/session-accessor.sqlite-projection.ts@b062842cf60a679400157366a0cebf43a2333dc1` and `src/config/sessions/session-accessor.sqlite-replacement-projection.ts@244cf8bb61598443f18042d770dfe5a4a433c64f`. Both were already registered elsewhere, so no duplicate identity is added. Both revalidate source/currentness at commit and leave durable mutation with the existing session writer.
+
+Goal:
+- `src/gateway/server-methods/sessions-goal.ts@2e1a83a2cce09f869df04df8da92359aba35696b` is the frozen Gateway update/clear production entry. It captures external commit guards, calls `mutateSessionGoal`, publishes only the committed projection, and reuses `operationId` as the continuation idempotency key.
+- `src/config/sessions/session-turn.kernel.ts@0e950e71ec85f512aeb1120d8e53ee055cc49f98` reads and writes the Goal operation receipt in the same transaction as Goal/turn/lifecycle state.
+- `src/config/sessions/goals-management.ts@14bfaf050ce3a02bb10a9ea68bb8b494083bb8b8` is the worker/source-authority adapter and publishes only the admitted worker candidate.
+- focused: `src/infra/database-engine/goal-receipts.conformance.test.ts@ae98434e0dd8aaa4c9434fe87cc4389e48e0fbde`; `src/config/sessions/session-actor-memory-continuations.test.ts@4328d55dc9584e412971a5b00f76465614a4527e`; `src/gateway/server-methods/sessions-goal.event-custody.test.ts@21e87e497cb1331abbfbd6d329425a2f1462f04f`. They cover production-worker receipt persistence/replay, newer-edit preservation/conflict, and commit-before-event/projection custody.
+- moving-main candidates `src/gateway/server-methods/sessions-goal-replace.ts` and `src/gateway/server.chat-goal-replacement.test-support.ts` return 404 at the frozen ref and are excluded.
+
+### 48.5 Transcript rewrite and import direct-consumer closure
+
+Transcript rewrite:
+- The low-level frozen adapter remains `src/config/sessions/session-message-rewrite.ts@b0f8a466053b518c142f0d25441df66c4602c6c3`, already registered. Newly frozen direct production consumers are `src/sessions/user-turn-transcript-updates.ts@6c8d8c5149b413c95bb942ea90f62bfd27b820ac`, `src/gateway/server-methods/chat-transcript-media-enrichment.ts@f3552acdd2a7bc5b4c4f634624a019ed401168ef`, `src/config/sessions/session-accessor.transcript.ts@644efade1b694631d24df408488658f211ce8368`, and `src/gateway/server-methods/chat-transcript-persistence.ts@254cc4b09c39cf9ee1b1a568bd9b60dd8436b876`.
+- These callers carry exact anchors/generations and currentness into the worker; rewrites rotate or preserve generation according to the exact-row contract and do not let a stale prepared payload overwrite a later edit.
+- focused: `src/sessions/user-turn-transcript.test.ts@0efdc7aef9ac8978bf986bdaa99b1ff5b56f957a`; `src/config/sessions/session-actor-memory-reports.test.ts@1993323f686e415d84b973e06c5ce4249e7de8e7`; `src/gateway/server-methods/chat-send-commentary-media.test.ts@248fffd1c381ac5c720e2c1ef649b9189c9c753b`. They cover commit-only prepared projection adoption, later-append preservation/competing edit refusal, and revocation/unknown-commit media rewrite behavior.
+
+Import:
+- `src/commands/doctor-session-sqlite-active.ts@6ff427c6b20e6251a9ec3bcdbb234bbc4cbe33db`, `src/infra/deferred-plugin-session-empty.ts@3e0faf38b932bc327b19ad9e45c34cdee8b5e68b`, and `src/commands/doctor-session-sqlite-import.ts@4eee7b8b249d9b4cd961449bd4216790b515512b` are the remaining frozen production entries to `importSqliteSessionRowsBatch`.
+- focused: `src/config/sessions/session-accessor.sqlite-import.test-support.ts@4c26e497765f52814c01b93b9caa5b3b83ede999`; `src/config/sessions/session-accessor.sqlite-import.test.ts@8f0008110efba14b29f0d53a9db8db2e62700641`; `src/commands/doctor-session-sqlite.active-settlement.test.ts@052c1e9a2efc4b68984c04bcdca6ae5dd0225540`; `src/commands/doctor-session-sqlite.failure-reports.test.ts@0fce213dae2491a294b083560c0262701283a4ab`; `src/config/sessions/session-accessor.sqlite-maintenance-kick.test.ts@4ec849ba76d5378c3f297f54a63c3fe7986b56c3`. The exact import tests cover whole-batch rollback, source revalidation after later readers, cross-store refusal, retained originals, and maintenance interaction.
+
+### 48.6 Message-cut, canonical-repair, and legacy-main closure
+
+Message cut:
+- `src/config/sessions/session-accessor.ts@10fa871d8e24855a2d9fc5eb2839c20b9b192941` is the frozen public re-export surface for fork/rewind/switch; it adds no writer.
+- focused: `src/config/sessions/session-accessor.sqlite-message-cut.test.ts@85251a7bf90042bdad68eb7bba118f689aba8f11`; `src/config/sessions/session-accessor.sqlite-message-cut-native.test.ts@1c2083386d12c2cd323f9e3d9d58e45cb7528c3a`; `src/config/sessions/session-accessor.sqlite-branches.test.ts@b7ab581eed904a603e7474044ba0f7db5494040f`; `src/config/sessions/session-cold-storage.lifecycle.test.ts@aa1b07d18e43a044707f70aa84fca19190974ec7`. These exercise fork/rewind/switch against exact transcript/session state, branch races, and cold-storage lifecycle.
+
+Canonical repair:
+- `src/config/sessions/session-accessor.entry.ts@91210793d8aef900a77b7c57bbb3b5ff2eaef774` and `src/config/sessions/session-accessor.ts@10fa871d8e24855a2d9fc5eb2839c20b9b192941` expose the frozen repair helpers; they do not add authority.
+- The actual production consumer remains the already-registered `src/commands/doctor-session-canonical-keys.ts@6b1afad456b3b633c358d19c56beec5a6103f4b1`: Doctor groups work by database, normalizes generations, rehomes delivery references, copies owned state, then removes losing aliases under the existing repair writer.
+- focused new oracle `src/config/sessions/session-accessor.sqlite-cold-read.test.ts@7c95eac6cf74ae5aec895e0fcc230a739d3c5aa6` exercises cross-store owned-state copy while a cold-read/archive race is committed.
+
+Legacy-main migration:
+- `src/config/sessions/legacy-main-session-migration.ts@4b1bc10415dd0561bd68c09c5c6e95d16c8dd2ba` is the frozen wrapper around Section 47's `processIdenticalClaims` / `repairDivergentClaims`.
+- newly frozen production callers: `src/commands/onboard-agent.ts@087ad1087e16cef0290fb9ed230c30e9d9a84b45`; `src/agents/agent-create.ts@7302b264648e5aef76d3599f7e5a6ba14835ecff`; `src/commands/doctor-session-transcripts.ts@5e4d7b444ed2d16f2fa4c4b0c902f05b5b84a525`; `src/infra/state-migrations.doctor.ts@2b2d8d3c9aa3f879c266d58b8e974139fd9e0ef3`. `src/config/sessions/startup-migration.ts@5dce338ea47b067f6f0447180c71a521b3143660` was already registered and is not duplicated.
+- behavioral focused tests: `src/config/sessions/legacy-main-session-migration.retained.test.ts@8993ce5240e9c67dc19e32429cd602c616d232af`; `src/commands/onboard-agent.persistence.test.ts@c427ab0fb9f813fcd519d3ad4ff44f41c5e176dc`; `src/config/sessions/session-retirement-read.test.ts@aa1a28f9e4322ba6eb536536502d1d78f2eabb22`; `src/agents/agent-create.integration.test.ts@ace041f1e4207b60d57beca34ef1dce2be880a94`; `src/config/sessions/legacy-main-session-migration.test.ts@f6a8357061679a87305728f75d2b10e491493072`; `src/config/sessions/legacy-main-session-migration.input-handoff.test.ts@91215ad3c73205bdac99d2cab26a2177170dcfd4`; `src/config/sessions/legacy-main-session-migration.handoff.test.ts@e632b86741698c97532e9b9e5ad5e69bd9a034fe`.
+- mock/support-only identities were read but are not promoted to production evidence: `src/commands/onboard-agent.test.ts@498a0b157f2dda3242814727626ae9d582a1e776`; `src/agents/agent-create.test.ts@3a78f8514b36c88fe81212471def6d14d2016456`; `src/commands/doctor-session-transcripts.sqlite.test.ts@d5b5a3e45691c79bfc80025f36671d58886aa5e0`; `src/agents/main-session-recovery/main-session-terminal-approval-migration.test-support.ts@a810f89621e477ff7921ddfcc5b953efa980d3be`; `src/commands/onboard-config-provenance.integration.test.ts@b38d86576b2909fb56f9acd5ba61e0581ebbae9a`.
+- previously registered migration race/node-handoff/startup recovery tests remain de-duplicated.
+
+### 48.7 Closure/result
+
+The new downstream evidence keeps the same owner model as Section 47: a transaction/worker commits durable state; the bounded receipt or post-commit publication installs/invalidate derived facts; downstream observers may refresh caches, projections, OAuth/runtime custody, approval notifications, or maintenance scheduling, but do not acquire a second durable writer. Confirmed rollback discards staged publication. Unknown native outcomes invalidate or retain custody and force recovery/currentness rather than retrying a possibly committed mutation.
+
+No GitHub Actions, build, test, generator, package, production source, parity ledger, RTM, or completion flag was modified or executed in this increment. This evidence still does not establish independent ACCEPT, scoped G01/G02 positive proof, Rust implementation/wiring, executable/package proof, OCRM final acceptance, or release acceptance.
+
