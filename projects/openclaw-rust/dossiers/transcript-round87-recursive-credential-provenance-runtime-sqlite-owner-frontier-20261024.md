@@ -1866,3 +1866,133 @@ Default-branch discovery also surfaced `extensions/crabbox/src/crabbox-worker-wa
 This reverse closure adds consumer/test provenance without changing the prior owner conclusion: no newly inspected extension production consumer owns process-wide `closeOpenClawStateDatabaseAsync`. Shipping shared-state retirement remains the already-recorded Gateway shutdown → agent DB retirement → global singleton drain path; extension direct-close calls remain test/test-support/bench teardown or deliberate reopen/lifecycle oracle boundaries.
 
 Independent ACCEPT, scoped G01/G02 positive evidence, `unit_authority_ready`, executable/package proof, OCRM final acceptance and release acceptance remain absent. No Actions/build/test/generator/package was run. No production code, ledger, RTM or flags were modified.
+
+
+## 25. Recovery continuation — remaining extension owner consumers
+
+This continuation completes the reverse consumer/focused-test pass for the remaining Section 23 extension owner families at frozen `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`). Every identity below was fetched at that exact ref and deduplicated against the live Round87 dossier before publication. Seventeen candidate identities were already present and are retained as prior evidence rather than duplicated.
+
+### 25.1 iMessage and Zalo User consumers
+
+New frozen identities:
+- `extensions/imessage/src/monitor/monitor-provider.ts@b25f117cbdfe26fc10c396f170b5079e7b2afd2e`
+- `extensions/zalouser/src/tool.ts@988a8896097a4e2069790cb8ba8d42b0f4a44cb0`
+- `extensions/zalouser/src/credential-persistence.ts@d23e8544a0e75cde0e1794b402eb6236589cbf5a`
+- `extensions/zalouser/src/send.handoff.test.ts@f93f9350fa510de619a7296faf37a40c880e490c`
+- `extensions/zalouser/src/send.media-handoff.test.ts@19bb3781cc885257d71268a0e4fdec52b9f3f9ec`
+
+iMessage production wiring is now traced from the previously locked catchup owner into `monitor-provider.ts`: catchup rows re-enter the same durable live-admission path, oldest-first, while the recovery/catchup cursor advances only through durable enqueue/high-watermark rules. Query or dispatch failure holds the cursor; malformed raw rows can contribute only a raw watermark so parsing failure does not manufacture delivery. The prior `catchup-bridge.test-support.ts@624d6db41ca64f9741d152854dbd8173d8a5f401` remains the focused oracle and is not duplicated.
+
+Zalo User production consumers keep credential identity scoped to the selected profile, serialize credential refresh/revocation, and recheck current authority before/after durable writes. Monitor stop is idempotent and joins ingress retirement before returning. Send handoff tests prove preparation precedes visible dispatch, caller cancellation after dispatch does not rewrite already-visible custody, chunk progress is retained, and guarded media downloads use the runtime dispatcher and close owned transport. Previously recorded listener/credential lifecycle tests remain prior evidence.
+
+### 25.2 Google Meet, 1Password, Signal and Slack consumers
+
+New Google Meet identities:
+- `extensions/google-meet/index.create-ownership.test.ts@9a50bf01cc61387930c256314ed59411e41c6395`
+- `extensions/google-meet/participation-registration.test.ts@7e4c793521c61d5e895181a181d27ec01d3d58b8`
+- `extensions/google-meet/lazy-import.test.ts@2a561de949b6dffcd52acb3bc1781c69d4594cd0`
+- `extensions/google-meet/src/transports/chrome.test.ts@655414213cd43ac2517cb7f72f29827bbcd70030`
+- `extensions/google-meet/src/realtime.process.test.ts@68def97f3b893d9b5fab85d71126bac7c1dd54b1`
+
+The already locked Google Meet runtime/registration/Chrome owners preserve browser-tab ownership across create/leave, reject malformed participation identity before runtime dispatch, preserve unsupported participation as a replayable durable outcome without restoring ended-session authority, and re-resolve recovery against current node inventory rather than a stale session pin. Realtime audio shutdown is idempotent, waits for resistant child processes, and retries only unsettled teardown phases. The previously recorded participation-runtime and OAuth-owner tests remain prior evidence.
+
+New 1Password identities:
+- `extensions/onepassword/index.ts@bceb6880924bff295d2b04d7d0477bb3ba0737d8`
+- `extensions/onepassword/src/cli.ts@f6da6819f0a1598ff20d92ce8f63869f6508181f`
+- `extensions/onepassword/src/op-client.ts@8182d81dfb163ec53a6afe09f24a119b4704f9d6`
+- `extensions/onepassword/src/broker.test.ts@7509e443fc49f4449e6526d5bf4d123dde26fb20`
+- `extensions/onepassword/index.test.ts@3eaa3aee6cecf68b44238a93b132b3c8de277c5b`
+
+The plugin composition opens bounded audit/grant/pending stores and exposes the broker to both tools and pre-tool authorization. Service-account material is read from the dedicated token file and is not exposed by CLI readiness. Approval tests bind pending authorization to the actual call/agent/slug/nonce, join competing approval writes and consume one-use authority once. Existing worker/list grant tests already prove no main-thread SQL, corrupt/null/expired grants fail closed, and rejected bulk reads are not silently retried.
+
+Signal produced no additional nonduplicate identity in this pass: its focused persistent reply-author test was already present in Round87. That prior test remains the oracle that failed persistence cannot erase retained memory and reopen does not fall back to parent-thread SQL.
+
+New Slack/core identities:
+- `extensions/slack/src/conversation-route-owner.test.ts@7bba749195b9f87d82d1cd0eb5e9bce744eaa916`
+- `src/gateway/conversation-route-ownership.ts@eb9920c31651b11d5dee2f7d85400fe1c22a8b49`
+
+Slack route ownership is now traced into the core conversation-route owner resolver. Thread ownership outranks parent ownership without touching liveness; workspace identity is rechecked after async binding inspection; released/degraded identity fails closed. Core routing composes configured bindings, plugin claims and conversation authority rather than creating a Slack-local second writer. Existing Slack binding and core worker tests already cover org-install capability removal and stale preparation/worker-authority fencing.
+
+### 25.3 Zalo hosted media, Buzz and WhatsApp consumers
+
+New Zalo identities:
+- `extensions/zalo/src/monitor.ts@dd42f66fe0f183e895db397e7c12b8309a616a98`
+- `extensions/zalo/src/monitor.polling.media-reply.test-support.ts@e03f5b8df1d3b16ad2e0f3b25767a67099b67c73`
+
+The monitor reaches the already locked hosted-media owner only when hosting is enabled, carrying the account proxy and byte budget into preparation. Partial provider sends retain accepted provider identities so recovery cannot duplicate visible text/media. The prior outbound-media test remains the direct oracle: HEAD returns metadata without consumption, GET consumes once, wrong tokens/malformed ids fail before disk access, proxy-aware fetch is preserved, and invalid expiry fails before download.
+
+New Buzz identities:
+- `extensions/buzz/src/inbound.ts@95b757484319c8b207c9c55b0efd856114cbe24e`
+- `extensions/buzz/src/buzz-bus.history-catchup.test.ts@1eb1311c86c20813aea4d89067daee4164756ef7`
+- `extensions/buzz/src/buzz-bus.test.ts@7477be17d1bd8054d63a431b507caa196a1d2b79`
+- `extensions/buzz/src/buzz-bus.lifecycle.test.ts@4830acd19877ec2f0225b22d8ebf7ca202c62528`
+- `extensions/buzz/src/gateway.lifecycle.test.ts@69f0dd4838a08e75e2d4b205a22397864aea5c73`
+
+Inbound policy waits for the current signed directory before dispatch and consumes only the history snapshot actually used by that reply. Catchup failure/timeout does not claim successful recovery. Bus close joins active presence publication; stopped buses cannot hand off new effects; removed members cease mention authority before a later signed-roster refresh; stalled lookup hands control back to the reconnect owner. Gateway lifecycle keeps only the live account bus and uses standalone sends only after retirement rather than reusing a retired owner.
+
+New WhatsApp identities:
+- `extensions/whatsapp/src/connection-controller.ts@0c2cacb79d9880f5c38448457973b39dc9e99e66`
+- `extensions/whatsapp/src/connection-controller.test.ts@d159847825beb529957b39225578ea4b48f5c7f8`
+- `extensions/whatsapp/src/monitor-inbox.socket-lifecycle.test.ts@416e88c66fd7d846c591f44c171a0a325bc10eb9`
+- `extensions/whatsapp/src/auto-reply.web-auto-reply.connection-and-logging.e2e.test.ts@e243cf0ef5b514ce4b9e4cf358f632209018e29f`
+
+Connection ownership is explicit: one controller owns the connection id/socket/listener/watchdog/reconnect attempt and acquires a Gateway connection-owner lease. Failed open closes the socket; login restart replaces the socket instead of mutating the old generation; socket-session replies created before reconnect use or wait for the replacement socket. The web monitor widens catchup only after an actually active reconnect, drains pending deliveries only while connected, and stops drain/retry work after close. The previously recorded state-migration test remains the credential-provenance oracle: missing/expired/conflicting/incomplete/orphaned originals are preserved until exact authority is recoverable.
+
+### 25.4 X OAuth, OpenAI speech, LINE and IRC consumers
+
+New X identities:
+- `extensions/x/src/oauth.ts@13dee996eacb81d1455a84d931c7d346ffc44f21`
+- `extensions/x/src/api.ts@11fa4387f0c9b94db37757410c6b2682d2b4edde`
+- `extensions/x/src/api.test.ts@5ace0f7419f525a03706683674cf4f982156bc9c`
+- `extensions/x/src/authority.test.ts@d247c071415cdd7671198118cf8eab6d95b2893f`
+- `src/gateway/x-publication-owner-composition.e2e.test.ts@7c88828257c8db77bc806445d9bdbb42a15a0953`
+
+OAuth has one in-flight refresh owner. Rotation persists the replacement refresh token before later requests; response loss is explicitly unknown rather than safe replay; current account authority is checked after async preparation and before final fetch. API mutation distinguishes explicit provider rejection from ambiguous 5xx/transport outcomes. Gateway composition binds public creation to the live publication owner and rejects revocation/owner retirement before commit. The prior client ownership test remains the direct reopen/retired-seed fencing oracle.
+
+New OpenAI speech identities:
+- `extensions/openai/speech-provider.test.ts@18c623ebe51bca85a3ee0a12c873cbf1cba2b28e`
+- `extensions/openai/tts.optional-capture.test.ts@8954a2a7bb24655e4f9dc6703caf90e6fa090974`
+- `extensions/openai/speech-runtime.contract.test.ts@86529ece3d9f404ba0305515cdff7573228d829d`
+- `src/tts/tts-runtime-fallbacks.test.ts@f634af298723b01b706f635ac28b445082e53766`
+
+The OpenAI provider is exercised through the public TTS runtime rather than only its local helper. Provider configuration/voice/model validation precedes dispatch; media byte caps reject oversized responses; hanging responses are deadline-bounded and socket teardown precedes watchdog settlement. Optional diagnostic capture cannot turn successful synthesis into failure, and fallback selection remains owned by the TTS runtime rather than by the OpenAI plugin.
+
+New LINE identities:
+- `extensions/line/src/webhook-spool-migration.ts@95ddb2e6603bfb872d83a05d28e291d4502e4674`
+- `extensions/line/src/webhook-spool-migration.test.ts@6e381b11db0bad69474188c802f75913bd94da72`
+
+The doctor-facing migration now maps to its actual queue transformer: stale legacy claims are recovered only when their payload is the recognized legacy shape, legacy decode dead letters are distinguished from identity-fence/delivery failures, canonical enqueue precedes retiring the legacy row, and one failed rewrite leaves that row pending for an idempotent later retry. Canonical failures are never resurrected. The prior doctor-contract test remains the host-capability/retired-account discovery oracle.
+
+New IRC identities:
+- `extensions/irc/src/irc-ingress.test.ts@34f914368af28749afb000ba86648054b42d8cea`
+- `extensions/irc/src/inbound.behavior.test.ts@98d2d06f1b20002850d7fdcb0ce8d53fb3fa17c4`
+
+Durable ingress append failure propagates instead of dispatching; interrupted queued work recovers after restart; pause/stop owns drain retirement; stop winning an async prune race cannot create a new drain. Inbound reply completion is transferred to the reply-lane adoption lifecycle rather than prematurely settled in the adapter. The prior monitor test remains the reconnect oracle that only the stopped account settles and a delayed reply cannot cross into the replacement socket generation.
+
+### 25.5 Nostr, Device Pair and Beam consumers
+
+New Nostr identities:
+- `extensions/nostr/src/nostr-bus.ts@27f254eabc33ebbe9d7747d6f094af5b2384b43d`
+- `extensions/nostr/src/nostr-bus.inbound.test.ts@1b274ce774341dfb9b79667dddaf586660564412`
+- `extensions/nostr/src/nostr-bus.outbound.test.ts@569bc4c7e4f3d66bc40959e3864dd956bc96dfad`
+
+The bus consumes account-scoped persisted state to derive a monotonic startup cursor, persists transient replay cursor before retiring relays on durable-admission failure, and clears legacy event-id seed only after tombstones exist. Close is memoized and joins relay subscription/pool plus ingress retirement. Outbound tests distinguish preparation from relay handoff, do not retry explicit refusal as if it were unknown, and settle an already handed-off acknowledgement without letting cancellation fabricate non-dispatch. The prior state-store test remains the account isolation/reopen oracle.
+
+New Device Pair identity:
+- `extensions/device-pair/notify-cas.test.ts@0b5a74077d979ee77420fd78b939d547a7ad64d1`
+
+The CAS oracle proves a delivered one-shot arm is removed only if its exact observed arm is still current; changed metadata, a newly armed successor, or removal during delivery cannot be consumed by the stale completion. The previously recorded notify test remains the restart/service-recreation and persisted-seen-receipt oracle.
+
+New Beam identities:
+- `extensions/beam/index.ts@f1990dab6215e40ce1f26a0091a4c6e6a09487a3`
+- `extensions/beam/src/mirror.test.ts@3aabb4d1269305e75dddf1b0134edd4eea98e095`
+- `extensions/beam/src/mirror-retry.test.ts@84c6bfc44a4b95173652d5bd0a2e3d281f7622bc`
+- `test/plugins/beam-mirror-secrets.test.ts@b249485bcd9cbcfaa8cec6c929f951ea28ba1b98`
+
+Plugin composition wires one store/catalog service/HTTP receiver/mirror service. Mirror upload does not follow redirects to another origin, restart rechecks current endpoint/config, stop aborts in-flight work and waits for guarded response cleanup, and terminal retry rotates behind later sessions rather than monopolizing the queue. Receiver-retained retry state has independent clocks and eventually settles the exact target session. SecretRef preparation is resolved through the runtime snapshot; mirror tokens are not recovered from arbitrary ambient state.
+
+### 25.6 Closure result
+
+The remaining Section 23 extension families are now reverse-linked to production consumers and focused lifecycle/oracle evidence at the frozen source ref. No newly inspected production consumer imports or owns process-wide `closeOpenClawStateDatabaseAsync`; the direct calls encountered remain test/test-support teardown or explicit reopen/lifecycle oracles. Shared-state retirement therefore remains the previously established Gateway shutdown → agent DB retirement → global singleton drain sequence.
+
+This evidence does not establish scoped G01/G02, Rust implementation/wiring, executable/package proof, independent ACCEPT, OCRM final acceptance, or release acceptance. No Actions/build/test/generator/package was run, and no production code, ledger, RTM or flags were modified.
