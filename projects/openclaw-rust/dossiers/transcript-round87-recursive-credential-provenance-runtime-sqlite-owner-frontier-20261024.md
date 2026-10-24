@@ -6433,3 +6433,38 @@ New frozen identities:
 Immediately before this append, the live branch lease was `ffe15ff60753bc0c5caaafbd148402dabd06caed`, dossier blob `f26e78f74fa2d24add9f450275487e15d843bb31`, 1 lines, with zero Section 100 and all three refs above at zero occurrences. Frozen upstream `ad8d12f126d29b0db204187adf5092db80294e70` was re-read. No Actions were started or rerun; no production code, ledger, RTM, flags, source lock, inventory, or source baseline changed.
 
 - The requested single predecessor public `runId`/`sessionKey` -> restart/lost-reply session-delivery recovery -> real `settleQueuedSessionDelivery` -> real `removeCronRunContinuationSessionIfIdle` physical exact-alias deletion -> public `cron.runs { id, runId, limit: 1 }` terminal-read fixture remains absent. The direct Stop replacement-late-success oracle and distinct plugin-native failed-publication receiver/new plural caller also remain absent. Independent ACCEPT, scoped G01/G02, Rust implementation/wiring, package/device proof, release acceptance and final OCRM acceptance remain open.
+
+
+## Section 101 — real queued-cron follow-up cleanup removes the exact run alias, but the fixture still has no public Cron receipt/history identity or session-delivery settlement
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`. This pass extends Section 100 one layer deeper into exact-run cleanup consumers and isolated-run identity fixtures. Only frozen refs absent from the complete Round87 dossier before this append are registered.
+
+New frozen identities:
+- `src/agents/bash-tools.exec-background-followup.test.ts@d0ef5164a427408af813fe6e9dd9fd9b9a576465`
+- `src/cron/isolated-agent/run.session-key-isolation.test.ts@de7150505f5d5ff483d76ac2b3df3614a536431b`
+- `src/cron/isolated-agent/run.test-harness.ts@062896be9eee981025be3a1be5cb572d3b17a379`
+
+### 101.1 A real background-exec fixture reaches exact Cron continuation cleanup and observes physical alias removal
+
+- New focused ref `src/agents/bash-tools.exec-background-followup.test.ts@d0ef5164a427408af813fe6e9dd9fd9b9a576465` runs background exec completion through the real session-event handoff and imports the real `removeCronRunContinuationSessionIfIdle`. Its table covers ordinary, live Cron, queued Cron, ended Cron, and Cron-ending-during-admission origins.
+- In the queued-Cron case it persists the stable base row, starts from an exact run key `agent:main:cron:nightly:run:queued-cron`, waits for the session-event receipt to be accepted, writes a ready `cronRunContinuation` marker with `basePersisted: true`, invokes real exact cleanup, then releases the run owner. After completion it waits for the exact row's removal event, asserts the exact alias is absent, asserts the stable base remains, and confirms the completion turn/transcript was projected to that base.
+- This is stronger than the mocked isolated-run cleanup fixtures because the cleanup function and session storage are real. It proves an exact run alias can be physically removed only after the continuation is ready and its stable base is durable, while the completion stays bound to the originating exact run during admission.
+- It is still not the requested integrated Cron fixture: it contains no public Cron `requestRunId`, no receipt/history `runId` projection, no `cron.runs { id, runId, limit: 1 }` read, and no durable session-delivery queue recovery or real `settleQueuedSessionDelivery`. Its session-event receipt is an in-process host handoff rather than the restart/lost-reply queue row from Sections 97–99.
+
+### 101.2 Isolated-run identity tests prove the exact `:run:<sessionId>` cleanup destination but explicitly mock cleanup
+
+- New ref `src/cron/isolated-agent/run.session-key-isolation.test.ts@de7150505f5d5ff483d76ac2b3df3614a536431b` requires consecutive isolated Cron executions to use distinct exact session keys such as `agent:default:cron:daily-monitor:run:run-a` and `:run:run-b`, while retaining a job-level prompt-cache affinity. Its cleanup assertion requires the cleanup target itself to end in the exact run id and requires session-controller work to be inactive before cleanup.
+- New harness ref `src/cron/isolated-agent/run.test-harness.ts@062896be9eee981025be3a1be5cb572d3b17a379` makes the boundary explicit: `removeCronRunContinuationSessionIfIdle` is a `vi.fn` mock in these isolated-run tests. Therefore they prove identity selection and invocation order, not physical deletion, queue settlement, or restart recovery.
+- Neither ref contains public `requestRunId`, Cron receipt identity, `cron.runs`, or a session-delivery queue producer. They cannot bridge Section 100's receipt/history public identity to Section 98's settlement callback.
+
+### 101.3 The requested integrated join is still absent after the closest real cleanup fixture
+
+- The frozen evidence now contains a real exact-alias deletion fixture (`d0ef…`) and separate public-id restart/history fixtures (Sections 96 and 100), but no single fixture carries the same predecessor public id/sessionKey through both domains. No candidate combines restart/lost-reply queue recovery, real `settleQueuedSessionDelivery`, real exact cleanup, physical row deletion, and a subsequent public exact-run history read.
+- Direct Gateway `sessions.processes.stop` replacement-late-success remains absent: the production handler rechecks placement after remote I/O, but the focused Gateway test still only closes request authority for a remote list response rather than replacing generation/owner epoch during an in-flight Stop and returning stale success.
+- Plugin-native enumeration remains unchanged: no third production plural `settlePluginNativeAdmissions` caller and no distinct failed-publication receiver handoff were found.
+
+### 101.4 Dedupe, lease, and remaining acceptance state
+
+Immediately before this append, the live branch lease was `afe8bacbf23fde7454d67d3017b9940db239f7da`, dossier blob `d844bbbd91b03929586937ad3a73b359e7902dbf`, 1 lines, with zero Section 101 and all three refs above at zero occurrences. No Actions were started or rerun; no production code, ledger, RTM, flags, source lock, inventory, or source baseline changed.
+
+- The requested predecessor public-id -> restart/lost-reply session-delivery recovery -> real settlement -> exact physical cleanup -> public exact-run terminal-read fixture remains absent. The direct Stop stale-success oracle and plugin-native failed-publication/new plural caller remain absent. Independent ACCEPT, scoped G01/G02, Rust implementation/wiring, package/device proof, release acceptance and final OCRM acceptance remain open.
