@@ -6052,3 +6052,35 @@ Immediately before this append, the live branch lease was `e908cd491b9c3f614a974
 
 - The public->operational identity question is now narrowed to a conditional diagnostic join rather than a universal cleanup key, but the integrated predecessor-public-id -> restart delivery -> settlement -> physical alias deletion -> exact public terminal-read oracle is still not established. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring parity, package/device proof, release acceptance, and final OCRM acceptance remain open.
 
+
+
+## Section 92 — real-Gateway owner join and the production audit reader make the public→operational bridge explicitly attribution-only
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`. This pass follows Sections 90–91 without re-registering their production identities. It adds only two frozen exact refs that were still absent from the complete Round87 dossier and that directly strengthen the already-established conditional diagnostic bridge:
+
+- `test/e2e/qa-lab/runtime/autonomous-task-lifecycle-receipts.ts@ce57175349951c5e90f1fd492664fdb184c428c8`
+- `src/audit/execution-owner-lifecycle-receipts.ts@6cce3fd3178447799a7ee0346686b0d6ab88e093`
+
+### 92.1 A real Gateway fixture joins the Cron owner to the admitted operational run and proves the join survives Gateway replacement
+
+- New focused exact-ref `test/e2e/qa-lab/runtime/autonomous-task-lifecycle-receipts.ts@ce57175349951c5e90f1fd492664fdb184c428c8` starts the packaged QA Gateway against the mock OpenAI provider with execution-identity collection enabled, creates an isolated Cron agent-turn job, invokes `cron.run`, and waits for a terminal physical join across `cron_run_receipts`, `execution_owner_lifecycle_bindings`, and `execution_identity_contexts`. Its SQL selects the binding `context_id/execution_id`, `context.run_id`, and receipt status for that exact Cron job, so the fixture observes the operational run id through the same durable correlation described in Section 90 rather than inferring it from session aliases.
+- The fixture then inspects that exact execution through the public audit surface, restarts the Gateway without mutating state, inspects the same Cron execution again, and requires the before/after inspection JSON to remain byte-equivalent. It also verifies owner lifecycle facts are not duplicated into generic `execution_decision_facts`.
+- This is stronger integration evidence for the diagnostic correlation, but it is not a single public-run-id oracle: the fixture discards the return value of `cron.run` and locates the receipt by job id. Section 90's request encoder/receipt writer remains the source for the public/manual `runId -> receipt_id/request_run_id` edge.
+
+### 92.2 The shipping consumer labels the owner link as attribution-only instead of authority
+
+- New production exact-ref `src/audit/execution-owner-lifecycle-receipts.ts@6cce3fd3178447799a7ee0346686b0d6ab88e093` is the concrete reader for the Cron owner/execution binding. It joins `cron_run_receipts.receipt_id` to `execution_owner_lifecycle_bindings.owner_id`, requires the supplied execution context id and exact execution id, then projects the already-admitted `context.runId` into the displayed decision receipt.
+- The projection explicitly sets `enforcement.coverageState = "attribution-only"`, `evaluatorRef = "cron-lifecycle-owner"`, and `source.owner = "cron_run_receipts"`. Its decision boundary is `cron.run.lifecycle`; it does not read `request_run_id`, does not grant execution or delivery authority, and does not write a queue id, subagent owner, or continuation alias.
+- Together with Section 90's subagent requester-turn copy and Section 91's retention/SIGKILL negatives, this makes the topology precise: a retained public Cron receipt can be diagnostically correlated to an admitted operational requester run, and that operational run can in turn appear as a persisted subagent `requesterTurnRunId`; the correlation is useful for inspection but is not the durable owner that settles session-delivery recovery or deletes the exact Cron continuation alias.
+
+### 92.3 The three requested acceptance frontiers remain open after targeted frozen re-check
+
+- No frozen focused test was found that starts `sessions.processes.stop`, changes the captured `placementGeneration` or `activeOwnerEpoch` while the remote Stop is in flight, resolves the old worker with a successful reply, and directly proves the Gateway server fences that stale success. The production handler still carries and revalidates both owner facts, while the previously registered deferred-success case remains `sessions.processes.list`.
+- No third production plural `settlePluginNativeAdmissions` caller was found. The production plural callers remain generation preparation and prepared-model-runtime build; generation-worker remains singular settlement. Failed publication remains in the same native-admission publication custody/retry path, with no distinct receiver handoff found.
+- The requested single predecessor-public-id -> restart/lost-reply delivery recovery -> real `settleQueuedSessionDelivery` -> real `removeCronRunContinuationSessionIfIdle` physical exact-alias deletion -> public `cron.runs { id, runId, limit: 1 }` terminal-read fixture is still absent. The new QA oracle proves the diagnostic owner join across restart, not that production cleanup chain.
+
+### 92.4 Dedupe, lease, and remaining acceptance state
+
+Immediately before this append, the live branch lease was `d095273c87c80145332a43d25b68b8cb6fd1434a`, tree `d6e3c306cfe0bd3dbed52a59b24de5987a3be519`, dossier blob `54147c6cc1ef68189d2bd16b79b13112c341a2d2`, 6,055 lines, with zero Section 92 and both exact refs above at zero occurrences. This pass remains frozen-source/read-only audit work: no GitHub Actions workflow was started or rerun, and no production code, ledger, RTM, acceptance flag, source lock, inventory, or source baseline file was modified.
+
+- The conditional public-receipt -> operational-run -> subagent-requester diagnostic chain is now backed by a real-Gateway restart oracle and its shipping attribution-only reader, but it still does not establish cleanup authority or the requested integrated terminal-read fixture. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring parity, package/device proof, release acceptance, and final OCRM acceptance remain open.
