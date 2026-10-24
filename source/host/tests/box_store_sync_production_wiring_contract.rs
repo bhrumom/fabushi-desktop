@@ -5,6 +5,8 @@ use mahayana_host_runtime::extensions::box_store_sync::production::{
     ProductionBoxStoreSyncMode, resolve_production_box_store_sync_mode,
 };
 
+fn local_store_dir() -> PathBuf { std::env::temp_dir().join("fabushi-box-store-policy") }
+
 #[test]
 fn production_mode_is_disabled_without_sync_flag() {
     let env = BTreeMap::new();
@@ -18,13 +20,13 @@ fn production_mode_is_disabled_without_sync_flag() {
 fn production_mode_selects_local_fs_only_with_safe_absolute_configuration() {
     let mut env = BTreeMap::from([
         ("SAND_BOX_STORE_SYNC".to_string(), "1".to_string()),
-        ("SAND_BOX_STORE_LOCAL_DIR".to_string(), "/tmp/fabushi-box-store".to_string()),
+        ("SAND_BOX_STORE_LOCAL_DIR".to_string(), local_store_dir().to_string_lossy().into_owned()),
         ("SAND_BOX_STORE_ID".to_string(), "123e4567-e89b-12d3-a456-426614174000".to_string()),
     ]);
     assert_eq!(
         resolve_production_box_store_sync_mode(&env),
         ProductionBoxStoreSyncMode::LocalFs {
-            base_dir: PathBuf::from("/tmp/fabushi-box-store"),
+            base_dir: local_store_dir(),
             store_id_override: Some("123e4567-e89b-12d3-a456-426614174000".to_string()),
         }
     );
@@ -33,7 +35,7 @@ fn production_mode_selects_local_fs_only_with_safe_absolute_configuration() {
     assert_eq!(
         resolve_production_box_store_sync_mode(&env),
         ProductionBoxStoreSyncMode::LocalFs {
-            base_dir: PathBuf::from("/tmp/fabushi-box-store"),
+            base_dir: local_store_dir(),
             store_id_override: None,
         }
     );
@@ -43,12 +45,12 @@ fn production_mode_selects_local_fs_only_with_safe_absolute_configuration() {
 fn production_mode_uses_source_map_when_local_store_id_is_not_overridden() {
     let env = BTreeMap::from([
         ("SAND_BOX_STORE_SYNC".to_string(), "1".to_string()),
-        ("SAND_BOX_STORE_LOCAL_DIR".to_string(), "/tmp/fabushi-box-store".to_string()),
+        ("SAND_BOX_STORE_LOCAL_DIR".to_string(), local_store_dir().to_string_lossy().into_owned()),
     ]);
     assert_eq!(
         resolve_production_box_store_sync_mode(&env),
         ProductionBoxStoreSyncMode::LocalFs {
-            base_dir: PathBuf::from("/tmp/fabushi-box-store"),
+            base_dir: local_store_dir(),
             store_id_override: None,
         }
     );
@@ -449,7 +451,7 @@ fn shipping_manifest_conflict_uses_frozen_metadata_and_unique_host_owner() {
     assert!(manifest.contains("on_manifest_write_conflict(&conflict_info);"));
     assert!(manifest.contains("report_manifest_write_conflict_diagnostic(&conflict_info);"));
 
-    let owner = include_str!("../src/host_production_extensions.rs");
+    let owner = include_str!("../src/host_production_extensions.rs").replace("\r\n", "\n");
     assert!(owner.contains("report_box_store_manifest_conflict: Arc::new"));
     assert!(owner.contains(
         "box_store_manifest_conflict_logs
@@ -476,7 +478,7 @@ fn shipping_manifest_conflict_uses_frozen_metadata_and_unique_host_owner() {
 
 #[test]
 fn shipping_chrome_session_stage_uses_frozen_mapper_and_unique_host_owner() {
-    let production = include_str!("../src/extensions/box_store_sync/production.rs");
+    let production = include_str!("../src/extensions/box_store_sync/production.rs").replace("\r\n", "\n");
     assert!(production.contains("stage_box_chrome_session_with_report(|report|"));
     assert!(production.contains("chrome_session_stage_telemetry(&report)"));
     assert!(production.contains(

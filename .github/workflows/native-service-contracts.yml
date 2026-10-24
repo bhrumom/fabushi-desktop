@@ -4,17 +4,33 @@ on:
     paths:
       - 'source/host/src/extensions/auth/**'
       - 'source/host/src/extensions/automations/**'
+      - 'source/host/src/extensions/box_store_sync/native_account_store.rs'
+      - 'source/host/src/extensions/box_store_sync/native_object_transfer.rs'
+      - 'source/host/src/extensions/box_store_sync/native_box_object_store.rs'
+      - 'source/host/src/extensions/box_store_sync/box_object_store.rs'
+      - 'source/host/src/extensions/box_store_sync/production.rs'
+      - 'source/host/src/extensions/box_store_sync/extension.rs'
+      - 'source/host/src/extensions/box_store_sync/box_copy_in.rs'
+      - 'source/host/src/box/box_store_backend_policy.rs'
+      - 'source/host/src/host_production_extensions.rs'
+      - 'source/host/src/extensions/box_store_sync/mod.rs'
       - 'source/host/tests/extensions_auth_service_contract.rs'
       - 'source/host/tests/extensions_auth_credential_renewer_contract.rs'
       - 'source/host/tests/automations_backend_contract.rs'
       - 'source/host/tests/native_automation_transport_contract.rs'
+      - 'source/host/tests/native_account_store_contract.rs'
+      - 'source/host/tests/native_object_transfer_contract.rs'
       - '.github/workflows/native-service-contracts.yml'
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
   native-auth-and-journal:
-    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-2025]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v6
@@ -31,6 +47,7 @@ jobs:
           workspaces: source/host -> target
           shared-key: fdn-host-control-owner-contracts-ubuntu-1.97.1
       - name: Install existing Linux native dependencies
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
@@ -41,6 +58,11 @@ jobs:
           --test extensions_auth_credential_renewer_contract
           --test automations_backend_contract
           --test native_automation_transport_contract
+          --test native_account_store_contract
+          --test native_object_transfer_contract
+          --test box_store_sync_extension_contract
+          --test box_foundation_contract
+          --test box_store_sync_production_wiring_contract
       - name: Record evidence scope
         run: |
           git rev-parse HEAD >> "$GITHUB_STEP_SUMMARY"

@@ -5,10 +5,12 @@ use std::sync::OnceLock;
 
 pub const SAND_BOX_STORE_LOCAL_DIR_ENV: &str = "SAND_BOX_STORE_LOCAL_DIR";
 pub const SAND_BOX_STORE_BACKEND_ENV: &str = "SAND_BOX_STORE_BACKEND";
+pub const FABUSHI_NATIVE_BOX_STORE_ENV: &str = "FABUSHI_NATIVE_BOX_STORE";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BoxStoreBackendKind {
     LocalFs,
+    Native,
     SandBoxStoreV2,
     AgentStore,
 }
@@ -25,6 +27,9 @@ pub fn resolve_backend_kind(
 ) -> BoxStoreBackendKind {
     if local_dir.is_some() {
         return BoxStoreBackendKind::LocalFs;
+    }
+    if environment.get(FABUSHI_NATIVE_BOX_STORE_ENV).is_some_and(|v|v == "1") {
+        return BoxStoreBackendKind::Native;
     }
     match environment
         .get(SAND_BOX_STORE_BACKEND_ENV)

@@ -33,6 +33,7 @@ pub const TELEMETRY_DEPENDENCIES: &[HostExtensionId] = &[
 
 fn box_store_backend_kind_tag(kind: BoxStoreBackendKind) -> &'static str {
     match kind {
+        BoxStoreBackendKind::Native => "fabushi-native",
         BoxStoreBackendKind::LocalFs => "local-fs",
         BoxStoreBackendKind::SandBoxStoreV2 => "sand-box-store-v2",
         BoxStoreBackendKind::AgentStore => "agent-store",
