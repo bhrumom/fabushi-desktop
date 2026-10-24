@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "cb189b0b2eca841d817cf50bb26f50505d7cbf9f",
+  "target_commit": "5d72367fcf86a923e8a89c2568dc04b9e6eaa2ec",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16216,
-    "unread": 16191,
+    "unknown": 16215,
+    "unread": 16190,
     "omitted": 0,
-    "responsibilities_total": 178,
+    "responsibilities_total": 179,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -47661,6 +47661,246 @@
       "license_and_provenance": "Exact Microsoft/GSL tests/algorithm_tests.cpp@e369be0e34dcf786a63631807ebe3cc06fb59544 and include/gsl/algorithm@584f5cd12beb15e863b1c32bc887638314261399 retained under MIT LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02; accepted tdesktop direct gsl::copy consumer search is empty; no GSL algorithm runtime or downstream caller release authority inferred.",
       "reviewer": "primary-session",
       "notes": "Strict160 closes only Microsoft/GSL tests/algorithm_tests.cpp as bounded-copy dependency test provenance, anchored to include/gsl/algorithm. The tests prove assignability, exact source-length copy, fixed/dynamic extent behavior and insufficient-destination rejection; accepted tdesktop has zero direct gsl::copy consumers, so no product caller or runtime is closed. Counters unknown=16,216 unread=16,191 omitted=0 responsibilities=178. Next strict161 Microsoft/GSL tests/assertion_tests.cpp@231befc7e415ec53daa09ced61d76505e6be5437."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/GSL",
+      "source_blob_sha": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+      "source_kind": "recursive_child_repository_dependency_test_provenance",
+      "module_id": "tdesktop.thirdparty.gsl.assertion-tests",
+      "responsibility_id": "TDRP-R9-GSL-ASSERTION-CONTRACT-TEST-PROVENANCE-001",
+      "source_symbols": [
+        "tests/assertion_tests.cpp@231befc7e415ec53daa09ced61d76505e6be5437",
+        "include/gsl/assert@d3e6ccdd53d5a254ed3827cf07711a6e86bb4226",
+        "Expects(cond) -> GSL_CONTRACT_CHECK(\"Precondition\", cond)",
+        "Ensures(cond) -> GSL_CONTRACT_CHECK(\"Postcondition\", cond)",
+        "gsl::details::terminate() noexcept",
+        "assertion_tests.expects valid-return plus false-precondition death",
+        "assertion_tests.ensures valid-return plus false-postcondition death"
+      ],
+      "capability_ids": [
+        "CAP-CONTRACT-PREPOSTCONDITION-TEST-PROVENANCE",
+        "CAP-DEPENDENCY-TEST-PROVENANCE",
+        "CAP-NATIVE-DEPENDENCY-REPLACEMENT"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "Microsoft/GSL:tests/assertion_tests.cpp@231befc7e415ec53daa09ced61d76505e6be5437",
+        "Microsoft/GSL:include/gsl/assert@d3e6ccdd53d5a254ed3827cf07711a6e86bb4226",
+        "Microsoft/GSL:tests/deathTestCommon.h@7bf242393f7bcff62c12cd985a87824f48f7bb0b",
+        "Microsoft/GSL:tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a",
+        "Microsoft/GSL:LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-assertion-tests-complete-read.md",
+      "behavior_contract": "Retain the exact precondition/postcondition contract proved by the locked Microsoft/GSL assertion tests without shipping a GSL-shaped assertion runtime. Expects and Ensures both evaluate the supplied condition and do nothing on the likely-true path; a false condition calls gsl::details::terminate(), which is noreturn/noexcept and uses std::terminate() in the normal configuration or the explicit MSVC no-exceptions/kernel workaround. The tests prove a valid Expects call returns its value, a false precondition terminates, a valid Ensures call returns after the postcondition, and a false postcondition terminates. Accepted tdesktop production code uses Expects/Ensures broadly, so this row closes only dependency test provenance and never bulk-closes caller responsibilities.",
+      "state_machine": "No independent long-lived state machine. Per contract check: evaluate caller-owned condition -> likely true => continue with no helper state -> false => gsl::details::terminate() -> standard std::terminate path or configured MSVC no-exceptions/kernel fail-fast path. Expects labels a precondition and Ensures labels a postcondition, but both share the same fail-closed check primitive.",
+      "side_effects": [
+        "True contract checks have no helper-owned state or persistence side effect.",
+        "A false contract check transfers control to a noreturn termination path rather than returning success or a recoverable value.",
+        "Compiler suppression/branch-hint helpers and GSL_ASSUME do not create product state, persistence, network, UI or service side effects."
+      ],
+      "failure_cases": [
+        "Weakening a false Expects/Ensures condition into a debug-only or ignored check.",
+        "Using GSL_ASSUME or an optimizer hint as if it validated untrusted/runtime state.",
+        "Inventing a GSLAssertionRuntime or global validation owner instead of keeping each production invariant with its actual Fabushi domain owner.",
+        "Bulk-closing the hundreds of tdesktop production callers merely because the dependency helper/test was read.",
+        "Claiming the ordinary death tests prove every platform-specific MSVC no-exceptions/kernel path without independent caller/platform evidence."
+      ],
+      "ui_disposition": "No independent UI surface. A caller-visible effect of an actual pre/postcondition belongs to that caller's existing canonical Fabushi owner and UI/error surface, if any.",
+      "non_ui_responsibilities": [
+        "exact GSL assertion test provenance",
+        "precondition false-path termination contract",
+        "postcondition false-path termination contract",
+        "normal-path no-op semantics",
+        "standard versus configured no-exception termination implementation boundary",
+        "direct production caller scope remains independently open"
+      ],
+      "platform_delta": "Fabushi does not ship GSL assertion macros. Each independently migrated caller keeps its invariant/validation responsibility in the actual existing Rust/domain owner. The caller must preserve fail-closed semantics appropriate to its boundary and may not mechanically replace all contracts with one global assertion service or debug-only check.",
+      "existing_owner_candidates": [
+        "TDRP source/dependency inventory and test-provenance owner (selected for this child-source accounting)",
+        "Actual existing Rust/domain owner of each independently read Expects/Ensures production consumer (selected for caller semantics)",
+        "Existing process/lifecycle/error boundary where a caller-specific unrecoverable invariant actually requires fail-fast containment",
+        "new GSLAssertionRuntime or global validation owner (rejected)"
+      ],
+      "existing_owner": "Existing TDRP source/dependency inventory and test-provenance owner; every real Expects/Ensures production responsibility remains with its independently migrated existing Fabushi domain owner",
+      "rejected_existing_owners": [
+        "A GSL-shaped assertion compatibility runtime would preserve helper API shape rather than product responsibility.",
+        "A global validation/assertion owner would detach each pre/postcondition from the state machine and lifecycle that gives it meaning.",
+        "The accepted tdesktop dev search exposes broad production macro use, so no caller-specific behavior can be inferred closed by this helper-test row."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md"
+      ],
+      "fabushi_target_symbols": [
+        "| dependency | 递归审查、职责替代、版本/许可证与真实集成证据 |"
+      ],
+      "target_language": "Source-only GSL contract-test provenance plus caller-specific Rust invariant/error handling inside actual existing owners; no shipping GSL compatibility API",
+      "language_rationale": "The source is a qualification test/header for C++ contract macros, not an application owner. Rust caller responsibilities must express the underlying invariant at the real domain boundary; reproducing a global GSL-style macro runtime would create a parallel abstraction and could weaken caller-specific error semantics.",
+      "command_event_contracts": [
+        "source mapping -> retain exact assertion test/header blobs, termination semantics and MIT provenance",
+        "real Expects caller -> independently read the condition and preserve its precondition responsibility in that caller's existing owner",
+        "real Ensures caller -> independently read the condition and preserve its postcondition responsibility in that caller's existing owner",
+        "false contract condition -> must not proceed as success; the caller-specific migration must provide evidence for its chosen fail-closed behavior"
+      ],
+      "state_owner": "No helper-owned persistent state. The checked state and invariant belong to each actual independently migrated caller.",
+      "lifecycle_owner": "No helper-owned lifecycle. Termination/process containment and caller resource lifecycle remain with the actual Fabushi runtime/domain owner.",
+      "persistence_and_restart": "No assertion-test persistence. Any durable recovery semantics after a caller failure belong to that caller's existing persistence/recovery owner and remain independently open.",
+      "concurrency_and_cancellation": "The helper is synchronous and owns no task/cancellation state. A concurrent caller must independently preserve synchronization, cancellation, generation fencing and stale-state rules around the checked invariant.",
+      "security_boundary": "A contract check is a fail-closed internal invariant primitive, not authentication, authorization or complete untrusted-input validation. A false condition must not be optimized into success, while caller-specific external validation and error reporting remain separate responsibilities.",
+      "network_service_dependencies": [
+        "GitHub Actions for exact-head revalidation"
+      ],
+      "service_owner": "No shipping service.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-replaced-mapped-open",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required after strict161 publication.",
+        "Every actual Expects/Ensures production consumer remains subject to independent source reading/mapping; source closure, all production implementation and independent release acceptance remain open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "strict161 tests/assertion_tests.cpp@231befc7e415ec53daa09ced61d76505e6be5437 fully read: 61 line slots / 1593 bytes",
+        "include/gsl/assert@d3e6ccdd53d5a254ed3827cf07711a6e86bb4226 fully read: 134 line slots / 3988 bytes; Expects/Ensures share GSL_CONTRACT_CHECK and false conditions call gsl::details::terminate()",
+        "tests/assertion_tests.cpp proves valid pre/postcondition paths return and false pre/postconditions terminate via death tests with a temporary std::terminate handler",
+        "supporting deathTestCommon.h@7bf242393f7bcff62c12cd985a87824f48f7bb0b fully read: 12 line slots / 380 bytes; tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a registers assertion_tests.cpp",
+        "Microsoft/GSL LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02 confirms MIT",
+        "accepted tdesktop dev code search currently reports 487 files matching Expects( and 44 files matching Ensures(; representative production paths span main/account, mtproto, storage, data, passport and UI, so callers remain independently open",
+        "accepted tdesktop dev code search reports no direct gsl/assert or GSL_CONTRACT_CHECK repository-code matches; the macro implementation remains in the separately locked GSL child dependency",
+        "GSL gitlink 87f9d768866548b5b86e72be66c60c5abd4d9b37; child tree 6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41",
+        "Live main fb1189efd9d85c650864d6987ea8fb68c913558d/1a1ef09be4c9fd801354439a5b82cc460f0b4b6a and upstream dev a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5 rechecked immediately before strict161 publication",
+        "Parent exact-head 5d72367fcf86a923e8a89c2568dc04b9e6eaa2ec: TDRP 40052761319 completed 61/61 success; authority 12543898833 sha256:395e1b9b93bf1ea56d59ffebaa0c3f208c58965960ce20389d25f9144541e51c; closure 12543919318 sha256:d52234600cc976f6d3911f7ac266f40c1dd8843f24d0588041dcf07093659eb6; reachability 12543953943 sha256:9d641d5636ec50e124991edbd18b2f7cf52755de3aed9444b5b98366e10efffb; Rust 40052761294 completed 6/6 success; artifact 12544086580 sha256:886f9bc2a3852b91e08c71b9011f266ce031575530e2f890bc86aff77afae5c0."
+      ],
+      "target_commit": "5d72367fcf86a923e8a89c2568dc04b9e6eaa2ec",
+      "workflow_run": 40052761319,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12543898833,
+      "artifact_digest": "sha256:395e1b9b93bf1ea56d59ffebaa0c3f208c58965960ce20389d25f9144541e51c",
+      "composition_root": "Fabushi source/dependency test-provenance governance plus the actual existing Rust/domain owner for every independently read contract consumer",
+      "composition_slot": "pre/postcondition dependency test provenance only",
+      "capability_component": "Source-only GSL assertion contract tests; no shipping compatibility runtime",
+      "variation_axes": [
+        "Expects precondition versus Ensures postcondition",
+        "condition true versus false",
+        "normal std::terminate path versus configured MSVC no-exceptions/kernel fail-fast path",
+        "helper provenance versus independently migrated production caller"
+      ],
+      "shared_owner_contracts": [
+        "TDRP source/dependency inventory",
+        "dependency replacement and provenance governance",
+        "actual existing Rust/domain caller ownership",
+        "exact-head TDRP/Rust evidence"
+      ],
+      "duplicate_root_check": "No GSLAssertionRuntime, second validation model, global assertion owner or bulk caller-closure authority.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "No independent product action; this row records dependency contract-test behavior only.",
+      "detail_section": "Not applicable",
+      "capability_surface": "Exact source/dependency test accounting only; no shipping UI/runtime surface.",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Any accepted tdesktop/GSL gitlink, child-tree, assertion test/header/license/build-registration or production macro-consumer-set drift requires fresh reconciliation; actual caller responsibilities remain independently open.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-GSL-ASSERTION-CONTRACT-TEST-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GSL-ASSERTION-EXACT-SOURCE-001",
+        "ORA-TDRP-GSL-ASSERTION-PRECONDITION-DEATH-001",
+        "ORA-TDRP-GSL-ASSERTION-POSTCONDITION-DEATH-001",
+        "ORA-TDRP-GSL-ASSERTION-CALLER-SCOPE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GSL-ASSERTION-FALSE-FAILS-CLOSED-001",
+        "INV-TDRP-GSL-ASSERTION-NO-GLOBAL-RUNTIME-001",
+        "INV-TDRP-GSL-ASSERTION-NO-BULK-CALLER-CLOSURE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GSL-ASSERTION-PREPOSTCONDITION-001",
+        "CONTRACT-TDRP-GSL-ASSERTION-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GSL-ASSERTION-SOURCE-DRIFT-001",
+        "FAULT-TDRP-GSL-ASSERTION-DEBUG-ONLY-WEAKENING-001",
+        "FAULT-TDRP-GSL-ASSERTION-BULK-CALLER-CLOSURE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-GSL-ASSERTION-FAIL-CLOSED-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-GSL-ASSERTION-NO-SOURCE-OMISSION-001",
+        "REG-TDRP-GSL-ASSERTION-NO-PARALLEL-RUNTIME-001",
+        "REG-TDRP-GSL-ASSERTION-NO-BULK-CALLER-CLOSURE-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-BEHAVIOR",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "locked GSL assertion tests + assert header + supporting death-test/build registration + MIT license + direct production macro-consumer scope + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact Microsoft/GSL tests/assertion_tests.cpp@231befc7e415ec53daa09ced61d76505e6be5437 and include/gsl/assert@d3e6ccdd53d5a254ed3827cf07711a6e86bb4226 retained under MIT LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02; accepted tdesktop has broad Expects/Ensures production use, so no downstream caller release authority is inferred.",
+      "reviewer": "primary-session",
+      "notes": "Strict161 closes only Microsoft/GSL tests/assertion_tests.cpp as pre/postcondition dependency test provenance anchored to include/gsl/assert. The tests prove fail-closed termination for false Expects/Ensures and no-op continuation for true conditions; accepted tdesktop production code uses these macros broadly, so every caller remains independently open in its existing owner. Counters unknown=16,215 unread=16,190 omitted=0 responsibilities=179. Next strict162 Microsoft/GSL tests/at_tests.cpp@42b2241bfd472ab384c35267d2042c870edce4a5."
     }
   ]
 }
