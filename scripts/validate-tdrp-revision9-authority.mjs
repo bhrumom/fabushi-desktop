@@ -770,7 +770,7 @@ const recursiveCountBreakdown={
   cppgir_child_non_directory_entries:childEntries.length,
   total:recursiveInventory.length
 };
-const previousEvidence=inventoryIndex.latest_recursive_evidence;
+const previousEvidence=inventoryIndex.latest_recursive_evidence?.previous_historical_evidence;
 fail(previousEvidence?.upstream_commit===lock.previous_historical_baseline.commit,'historical recursive evidence is not bound to previous baseline');
 fail(previousEvidence?.evidence_status==='historical-only','previous recursive evidence must remain historical-only');
 const previousReconciledTotal=recursiveInventory.length+removedPaths.length-addedPaths.length-directComponentDelta;
