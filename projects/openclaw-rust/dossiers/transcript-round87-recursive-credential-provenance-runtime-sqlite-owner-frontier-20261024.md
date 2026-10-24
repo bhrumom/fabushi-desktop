@@ -411,3 +411,112 @@ The source-only chain is now more specific:
 The important negative distinction is now source-grounded at each layer: task success is not native retirement; native close is not durable lease release; resource drainage failure is not native retirement failure; snapshot token retirement is not directory removal. Each has its own retry custody and fail-closed oracle.
 
 This remains source evidence only. The connector's default-branch code-search cap means repository-global exact frozen caller closure is not yet proven for broad modules such as `sqlite-worker-operation-admission`, `openclaw-agent-db-lifecycle`, `openclaw-state-db-async-lifecycle`, and `sqlite-snapshot-source`. Independent ACCEPT, scoped G01/G02 positive evidence, `unit_authority_ready`, executable/package proof, and release acceptance therefore remain open. No status/ledger/RTM/flag upgrade is justified.
+
+
+## 13. Round81 — exact-ref production-entry clustering beyond the 100-result cap
+
+### 13.1 Frozen-source method and exclusions
+
+This round kept the upstream source frozen at `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` and treated GitHub default-branch code search only as a discovery index. Every identity below was re-fetched by path at the frozen commit before it was admitted as evidence. Two discovery hits demonstrate why this distinction matters: `src/gateway/update-automatic-cleanup.ts` and `src/commands/doctor-a2ui-widgets.ts` both exist in the moving default-branch search surface but return NOT_FOUND at the frozen commit, so neither is counted as frozen evidence.
+
+The pre-write audit-branch lease was `3bdc199de8645bedbdf9cd1162413cb7dd06b058`. No Actions, build, test, generator, package, production-code, ledger, RTM, or flag mutation was performed in this round.
+
+### 13.2 SQLite worker operation admission is a caller-owned capability, not generic write authority
+
+New exact frozen production caller identities were clustered by the product entry that supplies the live authority:
+
+- Session/transcript: `src/config/sessions/session-worker-execution-source.ts@f5c07ec10872ec9335660c0905f22286852810da`, `src/config/sessions/session-accessor.sqlite-worker-coordination.ts@b4e805240b51228188ac7e8ff76b02c6a393a042`, `src/config/sessions/session-accessor.sqlite-replacement-worker.ts@8a13a2a9ffea31c161c88d22d394840153d7e2b0`, `src/sessions/session-upstream-links-runtime.ts@5995346380a9bb408e8a6af53d02c917f770b2af`, and `src/sessions/session-state-events.operation.ts@33a66e8dc73f67bf6352b498f3f04233e056607b`.
+- Agent and deletion: `src/state/openclaw-agent-db-worker-admission.ts@0780b01abe79e73d6510ef153cd7d1ed51e73512`, `src/state/openclaw-agent-execution-preparation.ts@16dfe6a62472eb123db20c3cf88cda99a0432f0f`, `src/state/openclaw-agent-execution-cleanup.ts@5553a2e68f51cc6ed1a0f4441ffc50f46160618f`, and `src/agents/agent-deletion-claim.ts@8034afc9b708003e039ab640d5b8c7cef4cea921`.
+- Shared-state/domain mutation: `src/claws/state-mutation-write.ts@54e8cc2bde81b3301805d36f43ff96dccb2dfd14`, `src/state/user-model-account-operations.ts@b7a96637e08f49306374ddf9599ed363eb549a16`, `src/state/user-channel-identity-operations.ts@64c1d7790400298871ace4df953ea6fcbbf8247c`, and `src/agents/workspace-state-store.ts@756994343f97f2ef13ed021fe2ad188ce2007a4b`.
+- Gateway/device/publication: `src/pairing/pairing-store.ts@f36eb9034f1119721093fe142c10265d383e6dfd`, `src/infra/device-pairing-worker.ts@190f6301ff4a865992d8bd1c5f3ddf4aff912ca5`, `src/infra/push-apns-store.ts@810725ff9451fdab7530edce28c640dc2f267083`, `src/infra/push-web-store.ts@9a26c0bc84c51e04ae31d60b442b4a40b3e01789`, `src/acp/runtime/session-meta-worker-mutation.ts@90adaa80c0e149585748f23bf179e661428eb542`, and `src/gateway/github-publication-source.ts@32b16c77cbe306da84fa1aa3d47a4266a7b1ab54`.
+- Shared infrastructure: `src/infra/sqlite-worker-store.ts@9eb422ce572d955d743c94ffce2eed31dcfc4f9b`, `src/infra/sqlite-worker-broker-admission.ts@45133632d6177148977278743c345cee9e5482cf`, `src/infra/sqlite-worker-broker-reply.ts@d53989505d7e36c8075009ac22c0af6e8a03d9a7`, and `src/state/openclaw-state-lease-worker-owner.ts@47668f72bf2b04d69416a530f61cafe590e2fa5f`.
+
+The source-grounded production path is now broader than the core module alone:
+
+`product mutation / session owner / agent owner -> capture physical state and caller authority -> create caller-specific SqliteWorkerOperationAdmission -> native worker requests stage/facts -> revalidate signal + caller/current database + generation/identity -> grant or fail closed -> retain settlement/publication custody`.
+
+The callers do not all authorize the same thing. The canonical write factory in `sqlite-worker-store.ts` enforces ordered transaction/commit phases. ACP session metadata additionally binds a nonce and exact phase, rejecting a callback that differs from its retained transaction. GitHub memory publication permits only a preparation grant. Pairing validates the captured channel and approval facts. Agent/session execution sources first call `binding.authorize(request)`, then recheck the captured execution before granting. Most importantly, `session-accessor.sqlite-worker-coordination.ts` deliberately installs an operation admission that throws `SQLite mutation file admission does not grant transaction authority` outside its reconciliation relay: possession of the file/lifecycle admission is explicitly not mutation authority.
+
+### 13.3 Agent-database lifecycle callers keep close/disposal behind exact physical ownership
+
+New exact frozen production callers of the agent lifecycle include:
+
+- `src/state/openclaw-agent-db-disposal.ts@d4b1cad767943f7ed35d892838973efb7c7288bc`
+- `src/agents/agent-delete-databases.ts@9e5551bb6fe09235e3675437132da161393d7a04`
+- `src/commands/doctor-session-worktree-workspace.ts@7c4096b2aeec2c3d3e17e463f280419ca0f6ef91`
+- `src/commands/doctor-session-sqlite-diagnostics.ts@ff84d6133418519d40a4940a611011febc5416a6`
+- `src/commands/doctor-maintenance-state.ts@e453f1f458d897997b14f8ea2dc1b78a7a12160c`
+- `src/config/sessions/startup-migration.ts@5dce338ea47b067f6f0447180c71a521b3143660`
+- `src/infra/state-migrations.shared-auth-store.ts@c4567d8029e23ff63c2d90267e2e2cec8f1edb5d`
+- `src/infra/update-database-restore.ts@ee222da077c9361a5eca4cacd36ed51ef42b0dcf`
+
+The production path is:
+
+`delete / Doctor / startup migration / rollback -> freeze exact registry and path identity -> drain session/model/read-pool or other registered resources -> closeOpenClawAgentDatabaseByPathAsync -> native handle retirement -> registry/durable-lease publication -> only then replacement/removal`.
+
+`openclaw-agent-db-disposal.ts` rejects multiple native owners, rechecks maintenance plus every captured path identity, waits pending asynchronous owners, and aggregates close failures before registry publication. Update rollback separately requires exclusive shared-state ownership and holds removal exclusions while the complete database family is restored. Startup/Doctor helpers preserve pre-existing open owners: they close a database only when their operation opened it.
+
+### 13.4 Shared-state async lifecycle is the canonical resource-drain owner for production readers and workers
+
+The direct constructor remains centralized in `src/state/openclaw-state-db-cache.ts@adcc28173d50c16683e776dcf6bbd056022dd35a`: it exposes `register`, `capture`, `publish`, `holdExclusion`, and `close` through one `createOpenClawStateDatabaseAsyncLifecycle()` instance. New exact frozen production consumers of those wrappers include:
+
+- `src/state/openclaw-state-read-scope.ts@4059cd39015c788ea8ddbca154d14f58718688b5`
+- `src/cron/service/scheduler-actor.ts@8d896adbe9bc48f6893b3fe4d1f3da9432e85111`
+- `src/secrets/store/secret-store.ts@b2f7e23251568e309d06dafbf3877fa33a2a1545`
+- `src/config/sessions/session-accessor.sqlite-commit-context.ts@4363ab314c71fb0624c0f9a479f9eb465d48b21b`
+- `src/config/sessions/session-accessor.sqlite-archive-session.ts@5e6940270f525cad2859b93cb6f0caca8b94afa3`
+- `src/gateway/mention-inbox.ts@b52705d073f05dcfc6c110f0ba25a1de63b848fb`
+- `src/state/openclaw-state-worker-owner.ts@3524b5a1d28ec1421185cd2e3eabd80a00217fc6`
+- `src/agents/sessions/session-manager-write-admission.ts@29274ecb1af4dacdd3b2a077e73ad21ed153a001`
+- `src/commands/cleanup-utils.ts@71b2404b05f737603953cdcb38d5b23930275bab`
+- `src/cli/update-cli/update-command-database-backup.ts@cb3ef46eb0da12997bf344e810518e83a2f4721d`
+
+The shared lifecycle path is:
+
+`read/worker/scheduler/archive owner -> capture exact state admission -> register retained resource -> track accepted async work -> path/global close seals new reads -> drain matching registered resources -> aggregate failures and retain failed custody -> retire native handles -> release or keep seal according to failure class`.
+
+A retained read scope drains its tracked work and child resources before snapshot cleanup. Session commit/archive contexts register against both shared-state and agent-database lifecycles, so either owner can revoke future work while the accepted close is joined. Mention Inbox records unknown mutation outcomes as requiring synchronization/readback and explicitly does not replay the mutation to manufacture a receipt. Cleanup and update backup acquire the removal exclusion before destructive filesystem activity and revalidate authority immediately before dispatch.
+
+### 13.5 Snapshot-source callers preserve source bytes, identity, and cleanup custody across Doctor/update/plugin flows
+
+New exact frozen production consumers include:
+
+- `src/plugin-sdk/sqlite-runtime.ts@6277ffff34afc3e3c85a0cca8c7bedf8369bd6e5`, which exposes the supported plugin snapshot boundary.
+- `src/infra/gateway-lock-recovery-lease.ts@ae795de771d0cbbae4e790219b4246d90cb29767`.
+- `src/infra/sqlite-maintenance-inspection.ts@982442f494c174774893b9d2dcfbfdc0d2603376`.
+- `src/state/openclaw-state-ownership-preflight.ts@b9513d9293e3e3ef5d8c69a61af65334703e3494`.
+- `extensions/memory-core/src/doctor-vector-index-provider.ts@05dfed9088eb742ece04a28d7a865e5c11048157`.
+- `src/node-host/auto-update-compatibility.ts@11069ad380b737b36684d4be85d3207d9c5e59df`.
+- `src/commands/doctor-update-schema-guard.ts@9f21fdb71c44fe1c489e6c2d0d4b4553ad218c75`.
+- `src/infra/state-migrations.transcript-directives-archives.ts@9a07116e2a020f3ab318abc7eeff6cbec387b67c`.
+- `src/infra/sqlite-index-recovery.ts@cd0a39faf1e253ded17350bd3eb4b520de49bee7`.
+- `src/commands/doctor-db-bloat.read.ts@1b5e04bfcc3e9bf0a501b0179750d8c48a06b716`.
+- `src/infra/database-engine/physical-store.ts@301389b3ce141f844d89e7cf753069114317c97f`.
+- `src/state/openclaw-state-ownership.ts@3910a770050e5d207c6eca47ffa3d5a892fd92af`.
+
+The resulting path is:
+
+`Doctor / ownership / update / plugin read -> artifact-preserving or live-owner snapshot -> immutable/private read location -> read-only consumer -> explicit cleanupAsync/cleanup -> any cleanup failure remains part of the operation outcome`.
+
+Gateway recovery treats a false cleanup result as an error and aggregates inspection/cleanup failures. The memory-core Doctor consumer similarly reports incomplete temporary-snapshot cleanup as a failure. Node auto-update compatibility combines a compatibility failure with cleanup failure rather than losing either error, and the preflight uses a caller signal. State ownership preflight refuses canceled or unauthorized admission before destructive staging and only permits deferred cleanup after a read actually succeeded.
+
+### 13.6 New frozen focused-test identities and negative oracles
+
+These tests were read as source/oracle evidence only; they were not executed in this audit round:
+
+- `src/config/sessions/session-accessor.sqlite-worker-coordination.test.ts@cfe8b31c32e3ef5485fb1938f12cb8554898575b`: accepted cleanup remains valid after the close owner revokes new reads; failed dispatch joins native worker exit; a sibling lease is not over-drained.
+- `src/config/sessions/session-accessor.sqlite-archive-session.test.ts@b6f9e4bb4517d578dc867e9df632d8a808bbd7e2`: queued/scoped archive work joins owner close, late scope work is refused, failed publication is recovered from durable state, and physical replacement cannot receive the old source publication.
+- `src/gateway/server-methods/channel-pairing.test.ts@0251618b7b9f2f5ecfe6159ce79a687911c85d55`: invalid selectors and stale/non-admin authority are rejected, while dismissal does not accidentally approve the sender.
+- `src/node-host/auto-update-compatibility.test.ts@bf6086ee1491e16f8ed710af2994418f9243d68a`: committed WAL rows are consolidated for inspection without modifying live database/WAL families; compatibility/install failures leave current state and the selected runtime intact.
+- `src/infra/update-database-restore.test.ts@ba94920c55b67b15f771efbbbe148082339af640`: authority is rechecked after awaited verification; competing native readers and foreign maintenance owners block replacement; allocation plus cleanup failures preserve the current family and both error causes.
+- `src/state/openclaw-agent-db-disposal.test.ts@3324167141643be37352cedebaeeaa7f5f3d8163`: absent disposal fences a successor open, only the exact cached owner is disposed, file replacement and duplicate native owners are refused, and a worker-created database retires through its registry owner without host data SQL.
+- `src/infra/sqlite-worker-shared-state-idle.test.ts@67e4ace0ddb3c080ba0ddd64cf8f34cedfa3d397`: path close retains pressure-retirement custody until whole drainage, healthy co-users survive unrelated idle retirement, and canonical close joins discharged custody without replaying an earlier operation failure.
+- `src/agents/subagents/registry/subagent-registry-worker.test.ts@d959453013967dc64c90339d6e177bdc0bc5b9d5`: canceled restore publishes no partial rows; unknown mutation outcome remains fenced through source close until canonical restoration; native admission revalidates live caller authority; old-source commits cannot notify a replacement database.
+- `src/state/openclaw-state-ownership.test.ts@b35231b1bccb0b58be49c85a81f4c7bf834e3a27`: cancellation before staging does not create a snapshot; cancellation after adoption still cleans it; unauthorized Doctor staging is refused; WAL/rollback races do not mutate or leak uncommitted ownership.
+- `extensions/memory-core/src/doctor-health.test.ts@3e469f0373ded7be0c536f72ffaf51c10dfbfdef`: plugin Doctor inspection preserves active WAL/database bytes while writes continue and returns a structured non-ready result when inspection cannot be completed.
+
+### 13.7 Round81 frontier
+
+The 100-result cap is materially reduced by production-entry clustering, but repository-global frozen caller closure is still not proven. The broad `createSqliteWorkerOperationAdmission` discovery query itself still reaches the search cap, and GitHub code search indexes the moving default branch rather than providing an exhaustive frozen-ref index. Additional discovered production paths remain to be exact-fetched/classified, and the wrapper consumers of shared-state lifecycle and snapshot source are still broader than the directly closed clusters above.
+
+Therefore the source-only verdict remains unchanged: independent ACCEPT, scoped G01/G02 positive evidence, `unit_authority_ready`, executable/package proof, and release acceptance remain absent. No production implementation, ledger, RTM, or completion flag may be upgraded from this round.
