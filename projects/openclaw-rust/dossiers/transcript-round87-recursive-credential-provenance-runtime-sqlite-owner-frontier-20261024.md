@@ -3705,3 +3705,83 @@ Previously registered Section 42 transaction helpers, lifecycle-projection Worke
 The transaction/publication foundation now closes as one chain: exact transaction preimage -> physical COMMIT/rollback -> typed commit receipt -> retained settlement -> fact installation -> public observers. None of the newly exposed layers treats operation identity, Worker reply, archive file, pending publication, cache state or transport success as substitute commit proof. Unknown outcomes fence state and force fresh read/reconciliation; they do not replay the mutation or create a second writer.
 
 No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. All test files above were read only at the frozen ref and were not executed. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, OCRM final acceptance and release acceptance remain absent.
+
+
+## Section 44 — remaining direct publication consumers and writer-owner diagnostics closure
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`). Section 43 already registered the archive kernel, maintenance finalization/native-binding adapter, reclamation publication and SessionManager publication core; those identities are context only and are not duplicated below.
+
+### 44.1 Post-COMMIT identity publication is deferred from savepoint success and consumed only after durable commit
+
+New frozen identities:
+- `src/config/sessions/session-accessor.sqlite-identity.ts@edcc43bf5ac9e0a1e60210a80ee374ef84696704`
+- `src/config/sessions/session-turn-publication.ts@b25538bcda1f2814d5aec0db907793d5a59dc9f2`
+- `src/config/sessions/session-actor-memory-publication.ts@33f9854fc9450380f0c3b8bf3c53fdbc1ff5e795`
+- `src/config/sessions/session-lifecycle-projection.ts@bca06182a2cdbb47b7c778e0bbb51dc91db4da2b`
+- `src/config/sessions/session-turn.ts@4e062e16b59eb1de19001f5afccfc2bded52e41f`
+- `src/agents/sessions/session-manager-branching.ts@c377c04a50378bc19a312c6363dc34145fd52b5b`
+- `src/agents/sessions/session-manager-persistence.ts@b4b0049d64bf3fc6989df2c709565d3ec382bf05`
+
+The identity owner stages its observer work through `deferSqlitePostCommitPublication(sqlPublicationAnchor(...))`; its source comment explicitly rejects savepoint success as COMMIT. The fallback direct publish path is used only when there is no transaction-local post-COMMIT publication to defer. Lifecycle removals are prepared from exact previous/current facts and the publication binds the already prepared entry-cache facts before emitting identity mutation.
+
+Session-turn publication accepts canonical custody and installs committed transcript message sequences before fallible source/identity observers. Completion callback failure is retained as a committed completion rather than used to undo durable state. Branching likewise treats a committed branch whose later adoption/identity publication fails as a committed error carrying the committed session/version and explicitly forbids replay of that branch.
+
+SessionManager persistence records the committed initial-writer fence and committed header before identity observers can cancel or supersede the run. Identity publication then runs against the admitted database incarnation/physical identity; a failure after that commit invalidates the local view through committed-error handling instead of manufacturing rollback. Actor-memory publication installs the complete committed state/change facts before emitting the identity mutation.
+
+Lifecycle projection keeps the worker commit as the mutation boundary: the acknowledged lifecycle callback is invoked from the committed candidate path, transcript reconcile is scheduled from that committed projection, identity changes publish from the retained worker publication, and `afterCommitted` runs only after those commit/publication steps.
+
+### 44.2 Gateway, patch and actor adapters consume the same committed callback without creating a second writer
+
+New frozen identities:
+- `src/gateway/session-create-service.ts@993f5c8eaef6aa89ce721ae27990ec2d40cefd3c`
+- `src/gateway/server-methods/sessions-patch-engine.ts@9621c39ca3dc3ccbd15d87c43377460733b59c3e`
+- `src/config/sessions/session-actor-entry-adapter.ts@74435cd978d3169ca30dfea0a51d3b60c2f41b78`
+- `src/config/sessions/session-accessor.memory-cleanup.ts@22b57206606a8b5be8c35184dccfe368d8d5a0c2`
+
+Gateway creation marks both lifecycle preparation and target creation committed only inside `onLifecycleCommitted`; its finalizer rolls back prepared gateway lifecycle state only when that callback never established commit. Session patch batching records newly created sessions from the group store's committed callback and runs category/effect follow-up through the later `afterCommitted` hook, preserving commit versus side-effect ordering.
+
+The actor entry adapter invokes its lifecycle callback only from the actor's committed outcome and runs the optional post-commit follow-up while holding the same actor storage/currentness authority. Memory cleanup likewise emits the lifecycle callback only for a `committed` actor-storage result, then performs `afterCommitted` with the same authoritative memory owner. These are consumers of the existing commit owner; none opens a parallel SQLite writer.
+
+### 44.3 Writer-owner diagnostics observe settlement; they never become mutation authority
+
+New frozen identities:
+- `src/config/sessions/session-accessor.sqlite-reclamation-worker-diagnostics.ts@59ea393e29878f735f12a438a27478202c2c0eec`
+- `src/config/sessions/session-history-archive-pruning-diagnostics.ts@8d893c346927ad0b9efd85fa099f055c6e18bc84`
+
+Reclamation diagnostics classify a commit-guard supersession as a caller-owned retry rather than Worker failure, log rejected or >=1s operations, hash the session identity, truncate error/error-frame text, and preserve Worker/main-thread identity only as diagnostics. A fast superseded result is debug-level; slow or real rejection is warning-level. This module does not grant admission, retry a mutation or settle the writer.
+
+Archive-pruning diagnostics wrap the real pruning operation in `try/finally`. They record query/row-deletion/file-removal/measurement/legacy-inventory timing and emit a slow/failure warning only after observing the underlying result. Logger failure is swallowed explicitly so diagnostics cannot replace either the pruning result or its original failure. Instrumentation therefore remains an observer of the real archive/reclamation writers.
+
+### 44.4 Focused writer/admission oracles preserve real owner attribution and off-main-thread reclamation
+
+New frozen identities:
+- `src/state/openclaw-agent-write-admission.test.ts@1a1dc7ed58b6354b45479d99ef17ef0bdfde238d`
+- `src/config/sessions/session-accessor.sqlite-scope.test.ts@1fbd30c78f08def8561d9cb2ba26948d0cda8d89`
+- `src/gateway/server.sessions.reclamation.test.ts@41065c29d3494fd2c3b16bffbce7e5fa342a774b`
+
+Write-admission tests distinguish queue wait from writer execution, attribute reentrant Worker reservations without lending them to foreground callbacks, retain an aborted Worker reservation until actual settlement, avoid reporting a cancelled waiter as holder, and prove diagnostic logging failure cannot replace commit/rollback settlement. The scope diagnostics tests preserve redacted error details, whitelist archive-pruning stage observations, and retain numeric queue/writer timing without leaking payload or raw identity.
+
+The gateway reclamation oracle proves `sessions.delete` reclaims a large session through the reclamation Worker path rather than performing that work on the Gateway thread. This is focused evidence that the diagnostic/worker labels correspond to the existing execution owner and are not a second data owner.
+
+### 44.5 Focused publication oracles distinguish rollback, committed postimage, supersession and lost reply
+
+New frozen identities:
+- `src/config/sessions/session-accessor.sqlite-identity-publication.test.ts@22ac9256d80cc77dd96727756aa1fd1fa5fb73ea`
+- `src/config/sessions/session-lifecycle-projection.worker.test.ts@eee79401c863055492a42d853c8e748e95000a69`
+- `src/config/sessions/session-accessor.sqlite-fresh-upsert-archive.test.ts@8b27d3a2086c754f919e7c05c598fa264143cd42`
+- `src/config/sessions/session-accessor.sqlite-creation-worker.test.ts@a13ba394eabc413c3944b51c438c1ad478d98a46`
+- `src/config/sessions/session-accessor.sqlite-replacement-worker.test.ts@614fe5392a39bbbc4c4c2c4585ed95470d00d738`
+
+Identity-publication tests fence delivery generation during native writes and restore it only for rollback, classify prepared lifecycle publications without treating copied raw events as authoritative identity changes, and preserve a newer native replacement when an earlier Worker identity listener arrives later.
+
+Lifecycle-projection Worker tests preserve snapshot authority across metadata publication, keep guarded committed follow-up work off the host, reject stale prepared upserts without replacing the concurrent row, publish an acknowledged lifecycle exactly once even when the Worker reply is lost, and report the committed count while a following lifecycle operation observes later writes.
+
+Fresh-upsert/archive tests prove an unrelated failed archive export does not block creation of a fresh session; the pending archive remains recoverable and is retried only after a later adoption commit. Creation-worker tests keep ownership atomic through admitted aliases, settle native finalizers after commit, preserve committed creation/header facts when cleanup fails, and distinguish outcome-unknown from rollback. Replacement-worker tests keep ordinary replacement on the Worker owner rather than a caller-thread write transaction, publish committed sharing/reader invalidation before observers, join post-COMMIT follow-up before successor authority, and preserve unknown-outcome fencing.
+
+### 44.6 Direct-consumer closure and exclusions
+
+Exact-symbol searches for the archive-store kernel exports, maintenance transaction/finalization exports, post-COMMIT identity publication helpers, `onLifecycleCommitted`, reclamation Worker diagnostics and archive-pruning diagnostics were reconciled against the live Round87 dossier. Section 43 identities are not duplicated. `src/commands/doctor-relative-session-store-preservation.ts` remains moving-main-only and was absent at the frozen ref. `scripts/database-worker-inventory.mjs` is inventory/provenance support rather than a shipping database owner.
+
+The resulting boundary is unchanged: durable mutation belongs to the existing transaction/Worker/native owner; COMMIT receipts and retained settlement gate fact installation; public callbacks and diagnostics are later consumers. Publication failure or unknown native settlement fences the derived facts/generation and requires fresh read/reconciliation. It does not authorize mutation replay, convert instrumentation into a writer, or create a second storage truth.
+
+No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. All test files above were read only at the frozen ref and were not executed. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, OCRM final acceptance and release acceptance remain absent.
