@@ -2426,3 +2426,87 @@ This recursion closes the Section 28 fronts through their next authoritative wri
 No newly read production file takes ownership of process-wide `closeOpenClawStateDatabaseAsync`. The new state-database consumers use captured worker generations, typed state-worker operations, leases or scoped admissions; process-wide close calls seen in focused tests remain test cleanup. The prior process-wide Gateway/agent/global retirement conclusion is unchanged.
 
 No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. This evidence is source/oracle closure only: scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, independent ACCEPT, OCRM final acceptance and release acceptance remain absent.
+
+
+## 30. Section 29 next-owner recursion: ingress claim settlement, routed-turn custody and worker publication fencing
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`). This section follows only the new production consumers opened by Section 29. The generic channel-ingress queue client, generic SQLite worker admission/store, OpenClaw agent worker store/admission primitives, and previously registered shared-state async lifecycle/owner are not duplicated.
+
+### 30.1 Durable ingress claim settlement owner
+
+New frozen identities:
+- `src/channels/message/ingress-drain.ts@0bf1f7025cfef7aa2a69a2518d66775ac52a8018`
+- `src/channels/message/ingress-monitor-tasks.ts@f8c4bdb6c6374a01c282a8cd4ffb24c5416c59ba`
+- `src/channels/message/ingress-claim-writes.ts@c09988ccc77e5e140236e2fa82d0c67bf93a02ad`
+- `src/channels/message/ingress-drain-state.ts@2d0045541d823727f65967f9a71d5f7fbbbdb15f`
+- `src/channels/message/ingress-drain-lifecycle.ts@ef3968496031ee744bc74e4ac7025454d1976947`
+- `src/channels/message/ingress-claim-owner.ts@a6319397efbdc26671ded13fd5bd98fab94f7bfc`
+- `src/channels/message/ingress-drain.test.ts@b3012a623c0b037d5a4398f3bd01c352697a0039`
+- `src/channels/message/ingress-drain.watchdog.test.ts@4c5bae5ff0387e09452236e8f63a3f4aebf7ff4d`
+
+The shared drain is the sole claim-lifecycle owner above the durable ingress queue. It assigns a process-instance-bound owner ID, claims per lane, refreshes the claim lease while pre-adoption or terminal settlement is still owned, and routes every terminal transition through one `settleOnce` owner. A state becomes `settled` and leaves the in-memory owner maps only after the complete/release/fail write has actually committed.
+
+Adoption is the durable boundary, not handler return. `onAdopted` commits the completion tombstone; `onDeferred` retains the claim; `onAdoptionFinalizing` suppresses the stall watchdog while a durable handoff is completing; cancellation releases without adding a retry attempt; abandonment reopens the row with its prior retry facts; retryable/nonretryable failures select release or dead-letter through the shared policy. A restart-draining error releases the claim without consuming its failure budget so a successor can recover it.
+
+Claim settlement writes are token-fenced and bounded. Completion returning false means the lease was reclaimed and raises `IngressAdoptionLostError`; release/dead-letter returning false is treated as already settled because another owner may have won the race. Known storage errors retry with bounded backoff. `outcome-unknown` and adoption-loss errors never auto-retry: after visible side effects, ambiguous tombstone status is deliberately held rather than risking double dispatch.
+
+The drain retains Gateway root work for a dispatched claim even when its transport/pump admission frame ends. It refreshes the claim until the tombstone commits. If refresh proves the token was reclaimed, the old handler is guillotined and a late adoption fails loudly instead of mutating the successor's claim. The per-drain owner ID includes PID, process start token and UUID; fresh claims owned by another live process instance are protected, while stale/dead-instance claims can be recovered.
+
+Focused tests prove crash-window recovery dispatches exactly once; duplicate adoption is idempotent only after genuine adoption; a live peer drain cannot steal a fresh claim; a failed tombstone after handler side effects keeps the claim owned and is never redispatched; a reclaimed token rejects late adoption without disturbing the successor; and complete/release wrapped in an unknown SQLite outcome retains custody rather than replaying. Watchdog tests show heartbeats keep valid pre-adoption work alive, silence guillotines it through the same canonical retry owner, and an unknown release outcome cannot let a newer same-lane row overtake an unresolved head.
+
+### 30.2 Nostr passive account lifecycle into canonical routed-turn delivery custody
+
+New frozen identities:
+- `src/plugin-sdk/channel-lifecycle.core.ts@45a1d9e08e0cba2a59be528ba259e2e2127e56ae`
+- `src/plugin-sdk/channel-lifecycle.test.ts@20771df1ed91e6adc9e4d19c0b0faff92b0bd1e6`
+- `src/channels/turn/lifecycle.ts@2ea1e0690375e9b3f6955cfc4013a93f39e67f8d`
+- `src/channels/turn/run-channel-turn.ts@a80ee376010064eda13f9be409b2259d12e4cde0`
+- `src/channels/turn/run-channel-turn.custody.test.ts@11e1dc049e0b790415bad0ef05ef18bd3ba10492`
+- `src/channels/turn/run-channel-turn.delivery.test.ts@26904fe3928b8c9954864d88d448d9838d617fd4`
+
+The Nostr account wrapper from Section 29 uses `runPassiveAccountLifecycle`: startup returns one handle, the task remains pending until its account abort signal, and `finally` invokes stop for that exact handle once. Startup failure never invents a handle to stop. Focused lifecycle tests prove readiness/assertion failures still join startup before teardown, while a startup failure itself performs no synthetic stop.
+
+The direct-DM helper then enters the canonical routed-turn lifecycle. The top-level turn carries the ingress adoption lifecycle into dispatch; a prepared turn is rejected if its internally declared dispatch lifecycle does not own the same top-level adoption object. A skipped dispatch adopts only through the explicit lifecycle hook, so the durable ingress owner has one settlement surface.
+
+Outbound visible delivery is separately custodial. Routed delivery obtains pending-final custody before platform-send dispatch. If the writer identity is replaced, later delivery under the stale custody is rejected. Durable or direct delivery preserves provider receipts and partial-delivery results, and settlement waits all pending attempts before returning the dispatch result. An ambiguous native/platform result remains `unknown`; a retryable pre-dispatch rejection can return custody to `prepared`, but a partial visible send cannot be replayed through the direct path.
+
+Focused custody tests show repeated platform-send dispatch calls on the same retained writer settle once and a replaced writer is rejected. Delivery tests show stale delivery callbacks from a retired owner are refused, prepared payload custody survives hooks, unknown-to-delivered transitions retain one delivery identity, durable partial-send visibility is preserved without direct retry, and provider-finalized content is observed only after deferred delivery settlement.
+
+### 30.3 Session transcript worker commit receipt and publication fencing
+
+New frozen identities:
+- `src/config/sessions/session-entry-patch.ts@e0874105f135effcf478c5b7fba0968e4dcd6921`
+- `src/config/sessions/session-entry-patch.settlement.test.ts@99417e8402f4846b0106a74e1d2703b75f289537`
+- `src/config/sessions/session-entry-patch.test.ts@402ec5d682f704eff1b14df3fe294e430490e262`
+- `src/state/openclaw-agent-write-admission.ts@35f9603181d7d8a7ce0000b3f40946bb67d7ecea`
+
+`runSessionEntryWorkerOperation` is the settlement bridge beneath the Section 29 transcript writer. It captures the physical agent database identity, retains both session-entry and transcript publication custody, and requires an exact framed candidate plus matching commit receipt before treating a native write as acknowledged. Transaction facts can validate source authority before the commit grant; publication is begun only from the candidate admitted by that transaction.
+
+The native result and the durable commit receipt are intentionally separate. A confirmed receipt can acknowledge a commit even when the command reply is lost. Conversely, a reply without a trustworthy matching receipt, a lost native settlement, or an ambiguous commit produces `outcome-unknown`; it does not fabricate a rollback and does not re-run the mutation. Confirmed writes settle publication custody even if later acknowledgment/publication callbacks fail, so committed state and projection cleanup are accounted separately.
+
+Prepared source authority is held until the confirmed commit path releases it. Async planning may release the writer FIFO, but the later commit compares the captured preimage and source/currentness again. The worker write admission itself captures the physical database path identity and serializes worker/native writes through the existing per-path queue; worker callbacks cannot reenter an inherited native writer lock.
+
+Focused tests prove two independent commits inside one retained worker operation each receive their own acknowledgment and publication. Patch tests prove revocation at the transaction or final commit grant blocks mutation, source changes during planning refuse the commit without a caller-thread source read, and acknowledged COMMIT publication occurs exactly once even if the command reply is lost. If commit outcome and cleanup both fail, the outward result remains `outcome-unknown` while the already committed row is preserved—cleanup failure does not authorize a retry.
+
+### 30.4 Shared-state worker operation and retained lease boundary
+
+New frozen identities:
+- `src/state/openclaw-state-worker-store.ts@2ae5bde9c3498bc124bcd48335ba585214d863f4`
+- `src/state/openclaw-state-worker-lease.ts@a037686a4e5adb23a81f49d979d784bc3e666091`
+- `src/state/openclaw-state-worker-operation.ts@6b5279b2be6d7bbb9111b909d79c4159769b30ca`
+
+The Meeting transcript and shared ingress state-worker clients from Section 29 terminate at the existing shared-state worker owner. `runOpenClawStateWorkerOperation` rechecks the captured database admission before open and before execution, retains one owner operation for the entire command, and records an open failure only if the same generation is still current. A retired generation therefore cannot publish its refusal into a replacement database owner.
+
+Worker execution also compares the native worker actor's physical path identity with the currently known database identity before each operation. A live alias cannot keep authorizing a worker whose opening path vanished. Captured schema scope and maintenance scope travel with the operation rather than being re-resolved from ambient process state.
+
+A retained worker lease has explicit accepting → draining → closed invocation phases. `release()` seals new operations, runs the optional finalizer under a terminal invocation, joins commands admitted by that finalizer and all previously accepted operations, and only then retires the native store hold. `retire()` invalidates every invocation immediately but still joins already dispatched native commands before releasing the retained operation. If the native store disappears while an active lease is not sealed, command failure triggers retirement and aggregates cleanup failure rather than opening an implicit replacement inside the old lease.
+
+These files lead back to the already registered shared-state worker owner and async database lifecycle; no second shared-state writer or process-wide close owner is introduced.
+
+### 30.5 Scoped closure result
+
+The Section 29 recursion now reaches stable canonical owners for all five active fronts. Shared ingress resolves to one claim settlement owner plus the already registered durable queue/state worker. Nostr resolves through one passive account handle and the canonical routed-turn/delivery custody. Session transcript writes resolve through one physical agent-worker commit receipt/publication fence and the already registered agent worker owner. Meeting/shared-state writes resolve through one captured state-worker operation/lease and the already registered shared-state owner/async lifecycle.
+
+No new dynamic production dependency in these paths establishes an extension-owned `closeOpenClawStateDatabaseAsync`, a second agent-database writer, or a second transcript/ingress state truth. The scoped production-owner chain is therefore closed through this recursion level; further work should move to other still-unregistered Round87 consumers rather than recursively reopening these already resolved generic owners.
+
+No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, OCRM final acceptance and release acceptance remain absent.
