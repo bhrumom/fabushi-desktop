@@ -2510,3 +2510,84 @@ The Section 29 recursion now reaches stable canonical owners for all five active
 No new dynamic production dependency in these paths establishes an extension-owned `closeOpenClawStateDatabaseAsync`, a second agent-database writer, or a second transcript/ingress state truth. The scoped production-owner chain is therefore closed through this recursion level; further work should move to other still-unregistered Round87 consumers rather than recursively reopening these already resolved generic owners.
 
 No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, OCRM final acceptance and release acceptance remain absent.
+
+
+## 31. Residual Round87 close/snapshot consumers: agent close, snapshot staging and source fencing
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`). After Section 30 closed the prior five recursive owner fronts, this pass returned to the remaining capped Round87 close/worker/snapshot families and recorded only identities absent from the live dossier.
+
+### 31.1 Agent-database native close and maintenance ownership
+
+New frozen identities:
+- `src/state/openclaw-agent-db-close.ts@7f8b5f029100efa3fb0bfb99c0c45a4980e60883`
+- `src/state/openclaw-agent-db-maintenance-lease.ts@172b5b8b39c55c182da374deaa84f2a60ccb7c4e`
+- `src/state/openclaw-agent-db-resources.test.ts@933735d4a8230f2c6b19afa48a20b4fe6f2ff564`
+- `src/state/openclaw-agent-db.worker-admission.test.ts@84d1427554f2b531eb3dfd4ec8807829bef7c`
+- `src/state/openclaw-agent-db-maintenance.test.ts@7d45f68dbf7c529636052495acb344ba9566e14e`
+- `src/commands/doctor-maintenance.agent-lease-wait.test.ts@089c26ba0503afbdac9a7c5a4317451ade5cafad`
+
+The native agent-database closer is a scoped lifecycle owner, not a process-wide state-database closer. It captures the existing database lease and path anchor, prepares a clean-close seal for SQLite, performs WAL checkpoint/maintenance close, and retains runtime proof only when the close is healthy and the physical path is still the current database incarnation. When the exact leased database closes, it revokes admissions for that path, releases the agent-database lease, and then releases deletion-cleanup and creation-claim handles. A stale or unhealthy handle therefore cannot publish clean-close proof for a successor.
+
+Agent maintenance is additionally fenced by the shared state lease. A top-level maintenance lease first closes all agent databases and asserts that no agent-database leases remain before maintenance work begins. Nested maintenance may reuse the same retained owner, but it cannot switch to a different state database. One failed ownership observation latches failure across every nested scope under that owner; renewal or further writes then fail closed. Maintenance and integrity work are joined before the scope releases its fence.
+
+Focused resource tests show a selected close joins that owner's registered resources without retiring unrelated owners, keeps the draining root fenced through every asynchronous settlement, refuses unresolved/new admissions throughout close, drains resources before native close, and leaves a later successor registration untouched. A maintenance close failure is surfaced to ordinary close waiters rather than silently forgotten. Worker-admission and maintenance tests further prove a recreated worker stays private until its creation/native-close claims settle, prepared/delegated worker opens are refused during maintenance, and expiry/replacement/abort/owner/version loss fences worker resume after integrity work. A cancelled integrity worker is joined before its database or maintenance fence is released.
+
+Doctor's foreign-lease wait is deliberately outside state ownership: while another process still owns an agent database, Doctor can wait without holding the state lease that the foreign owner needs in order to publish its own close. Own-process or serving-Gateway leases can instead be refused immediately. This preserves one close authority rather than allowing Doctor to steal a live database.
+
+### 31.2 Snapshot staging, single-flight production and cleanup custody
+
+New frozen identities:
+- `src/infra/sqlite-snapshot-staging.ts@45b01f38a5cdd82b6dd2b8dce5872f2c92025685`
+- `src/infra/sqlite-snapshot-single-flight.ts@fdd43625346f66a705e9e71774111369e6f9a6cc`
+- `src/infra/sqlite-snapshot-staging-owner.ts@251f37366ffac2ed5f9e995c785fc9e30993b245`
+- `src/infra/sqlite-snapshot-staging.worker.ts@a2651757b9c915f36aa9f57c15421558260a8b1a`
+- `src/infra/sqlite-snapshot-staging-runtime.ts@20e647e8dec40debb26dd56eae0ce32a95ae0e09`
+- `src/infra/sqlite-snapshot-staging-allocation.ts@e7cdc6684324e5e55e7a9d04f525653e8b398f79`
+- `src/infra/sqlite-snapshot-single-flight.test.ts@ce98e6e19753db7cb8542ed65e0b9505892b4b66`
+
+Snapshot staging has explicit token and cleanup ownership. Read tokens protect staged bytes independently of the child process. Reclamation first acquires retirement authority, retires payload, removes the claimed directory, and only then releases its token; token-close failure keeps cleanup custody visible. Async reclamation and allocation run as retained snapshot work with an abort owner. If an allocation has already produced a directory when cancellation wins, the directory must be removed; failed removal raises `SqliteSnapshotCleanupError` instead of pretending the operation vanished.
+
+The staging owner is keyed by the retained native worker source/runtime generation. One owner tracks active requests and every retained directory. New requests are refused once admission closes. A returned directory remains registered with a native-retirement callback until its exact retirement completes. Owner shutdown joins active requests, preparation cleanup and directory retirement before closing/rotating the worker pool. Cleanup and primary failures are aggregated, so a failed child cleanup cannot be hidden by the request's earlier error.
+
+Inside the staging worker, each published directory has an exact native retire handle. Closing a directory retires native ownership before filesystem removal and reports removal back to the native lifetime owner. Failed preparation attempts cleanup immediately; if that cleanup also fails, the encoded reply carries cleanup failure and retains enough directory identity for the owner to continue custody. The staging runtime shares a native child only across compatible launch context; directory reference counts prevent closing a session while any retained directory exists.
+
+Single-flight snapshot preparation shares one producer without sharing away individual consumer ownership. Each waiter acquires its own reference; only the last release can start base cleanup and producer close. Cancellation withdraws only the canceled demand unless no remaining reference/listener needs the production. Orphan cleanup is tracked and joined before the retained producer is considered settled. A cleanup refusal remains an error rather than deleting the flight and silently allowing an unowned staged image.
+
+Focused single-flight tests prove a synchronously refused producer is not replayed merely because a later call could succeed, one canceled waiter does not abort the surviving waiter, orphan cleanup must finish before tracked production settles, and a snapshot remains retained until a joined waiter actually acquires its lease.
+
+### 31.3 Private/recovery snapshot source identity and cleanup
+
+New frozen identities:
+- `src/infra/sqlite-private-snapshot-fork.ts@3ba0c2082b818c846036e5ccee2aec61960a18cb`
+- `src/infra/sqlite-private-snapshot-fork.test.ts@42f75557b3ea589d5d7df568e31626be18a34e14`
+- `src/infra/sqlite-recovery-snapshot.ts@2945f754048032950f86598e4cd9ae7fdd4c55dd`
+
+A private snapshot fork first acquires a read token for the retained family and revalidates the captured main/WAL fingerprint before copying. A changed source incarnation, WAL removal/replacement, or rollback-journal ambiguity refuses the fork; it does not retry against whatever bytes happen to be current. The destination is a separate writable image, not an alias to the live source. Failure cleans destination work and releases source custody, aggregating cleanup failure rather than replacing the original source error.
+
+Focused tests prove committed WAL rows survive into an independently writable image, retained main/WAL mutation causes `Retained SQLite snapshot changed`, source-WAL removal during copy is refused without retrying live capture, and failed destination work is cleaned while the retained source remains intact.
+
+Recovery snapshots similarly retain the caller's mutation authority and a private directory identity. Directory type, symlink status, permissions and inode/device identity are checked before and after the read and again before cleanup. Cleanup never adopts a successor directory or parent path. Operation and cleanup failures remain distinct and are aggregated when both occur.
+
+### 31.4 Generic SQLite worker client and cross-database source fence
+
+New frozen identities:
+- `src/infra/sqlite-worker-client.ts@8cb2f98eb29edde8474997dcaabce19a944ce160`
+- `src/infra/sqlite-worker-client.test.ts@1e5efebe35204515992c21cc73e5501bf0dfd79f`
+- `src/infra/sqlite-source-fence.ts@dec509c74c343009b74f5c45b700b5194d46929f`
+- `src/infra/sqlite-source-fence.test.ts@ed9a57c49b631cbc783d9030ddc1059e85fe9d56`
+
+The generic SQLite client captures maintenance scope, state context and the caller's worker-admission/currentness callbacks at operation creation. Queued reply callbacks execute those assertions in the captured caller context instead of ambient replacement context. A missing, sealed or draining client refuses work before dispatch. Close seals synchronously, waits every accepted scope, and only then releases the owner; idle retirement likewise refuses to run while scopes or commands remain pending.
+
+The source fence is a worker-only multi-database transaction boundary over already admitted durable handles. It binds the destination and all sources to their captured physical identities, requires exclusive operation custody, rejects aliases whose incarnation changed, reserves source transactions inside the worker, validates the complete retained source set, and obtains a destination commit receipt before accepting the result. Empty acquisition attempts may retry, but once reservations/commit custody exist the operation is not replayed.
+
+Destination COMMIT and source cleanup are separately accounted. If the destination has committed, later source rollback/disposal failure cannot erase its commit receipt or authorize a retry; cleanup failure is surfaced after the committed result is owned. Cancellation or source-owner revocation after an accepted commit likewise cannot retroactively roll back the destination. If native execution disappears before/after commit, settlement reports the unknown/native-stopped state while joining source locks; a post-commit row remains preserved and is not replayed.
+
+Focused source-fence tests prove reservations exclude independent writers until destination settlement, alias identities collapse without creating duplicate locks, earlier empty reservations are released when a later physical lock is busy, accepted commit custody survives caller/source/destination cancellation, absent rows or changed incarnations fail closed, committed receipts survive reply/source-cleanup faults, and native loss joins without replay or leaked source locks. Worker-client tests independently prove active work prevents idle retirement and future commands are refused after the eventual sealed close.
+
+### 31.5 Residual-family closure result
+
+A fresh capped search for `closeOpenClawStateDatabaseAsync` returned 99 distinct indexed paths and every one was already present in the live Round87 dossier before this append. The newly registered agent-close, snapshot and generic worker consumers therefore do not reveal another process-wide shared-state close owner.
+
+The separate agent-close family remains scoped to per-agent database handles, leases and maintenance resources. Snapshot staging owns private temporary generations and their cleanup, not the source database. Source fences own only the exact captured multi-database operation and its commit/cleanup settlement. These responsibilities terminate at the existing state/agent database lifecycle and worker authorities already registered by earlier sections; none establish a second durable writer or hidden fallback owner.
+
+No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, OCRM final acceptance and release acceptance remain absent.
