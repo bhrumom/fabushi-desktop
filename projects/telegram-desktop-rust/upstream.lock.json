@@ -361,10 +361,10 @@
   "coverage": {
     "root_source_entries_total": 6893,
     "recursive_source_entries_total": 16379,
-    "unknown_minimum": 16219,
-    "unread_minimum": 16194,
+    "unknown_minimum": 16218,
+    "unread_minimum": 16193,
     "omitted_known": 0,
-    "note": "Live main ea0689be9ec66e92591c33d57801eb149db27749/9bba99a29e5eb28ac12fa872be3eee3a15f42d35; upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5; GSL 87f9d768866548b5b86e72be66c60c5abd4d9b37/6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41. Parent exact-head 82f642b99966cadebbaa5176eff9d12e22b65992: TDRP 40045459039 61/61 success; authority 12541290947 sha256:0b6b374a47a0a0e951917b50641afe18d6d3000acfb71d6a22c0f3b981cedf7d; closure 12541162056 sha256:f19f6743c9bef2ded89345e011eb4cecc4bccfd47f10a48fa1379d5f7711198e; reachability 12541611679 sha256:0943c19c2dab31f07bc0e3c03d091afdafd25b2411948a387a43d06da2ba90e0; Rust 40045458992 6/6 success; artifact 12540947614 sha256:e8dbc86308f73f52a15371e05380a303c45cce450dd2b39e1d74f379e731c15e. Strict157 Microsoft/GSL include/gsl/string_span@65790ab8bc9ba9e7fc45cf31f96f32ab27b850f7 fully read: 5 line slots / 225 bytes. It is only a compile-time deprecated compatibility redirect to <gsl/zstring>; accepted tdesktop exact-head code search found no direct string_span, gsl::zstring, or basic_zstring hits, so zstring type/null-termination semantics remain independently open. No GSL-shaped runtime or compatibility alias is introduced. Counters unknown=16,219 unread=16,194 omitted=0 responsibilities=175. Next strict158 Microsoft/GSL include/gsl/util@26b2f5fb9d0d8c28c3096f50d575eb42a4b89bad."
+    "note": "Live main fb1189efd9d85c650864d6987ea8fb68c913558d/1a1ef09be4c9fd801354439a5b82cc460f0b4b6a; upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5; GSL 87f9d768866548b5b86e72be66c60c5abd4d9b37/6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41. Parent exact-head 50aeeede7543dd8a189b80eae1a59e16654d5845: TDRP 40047699934 61/61 success; authority 12542076361 sha256:8721db2b5177a2365764ee274d323e8f521c695b38e716d173cceabb8b892617; closure 12542710366 sha256:e0cb77a0a10098616898d06c74f9027f126b13eee271a73035e935fb0713585f; reachability 12541154770 sha256:131e6747d41b79e95213c7bd9627aff6b061c64d69f95c618e72ee25c3818a6e; Rust 40047699891 6/6 success; artifact 12541908261 sha256:06b0a093bc0e976e2c9ec737893195dd27ca9078fff862119bff72a7f1a4cfba. Strict158 Microsoft/GSL include/gsl/util@26b2f5fb9d0d8c28c3096f50d575eb42a4b89bad fully read: 172 line slots / 5222 bytes; tests/utils_tests.cpp@5b64e207eda9ef0e8935701647d6d4bed567960e fully read: 166 line slots / 4211 bytes; tests/at_tests.cpp@42b2241bfd472ab384c35267d2042c870edce4a5 fully read: 174 line slots / 5604 bytes; LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02 confirms MIT. Accepted tdesktop exact-head code search was complete (incomplete=false): 161 unique gsl::finally files = 155 production + 5 test + REVIEW.md; direct gsl::narrow_cast=0 and gsl::at=0. util owns helper-level scope-exit RAII, checked-index and explicit narrowing semantics only; actual caller cleanup/state/security responsibilities remain independently open in their existing native owners. No GSL-shaped runtime is introduced. Counters unknown=16,218 unread=16,193 omitted=0 responsibilities=176. Next strict159 Microsoft/GSL include/gsl/zstring@2cc13d83840afec61e5bd709c77900026ed225f4."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -1827,5 +1827,5 @@
     "baseline_identity_accepted": false,
     "source_closure_ready": false
   },
-  "target_commit": "82f642b99966cadebbaa5176eff9d12e22b65992"
+  "target_commit": "50aeeede7543dd8a189b80eae1a59e16654d5845"
 }

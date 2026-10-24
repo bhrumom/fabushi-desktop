@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "82f642b99966cadebbaa5176eff9d12e22b65992",
+  "target_commit": "50aeeede7543dd8a189b80eae1a59e16654d5845",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16219,
-    "unread": 16194,
+    "unknown": 16218,
+    "unread": 16193,
     "omitted": 0,
-    "responsibilities_total": 175,
+    "responsibilities_total": 176,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -46944,6 +46944,247 @@
       "license_and_provenance": "Exact Microsoft/GSL include/gsl/string_span@65790ab8bc9ba9e7fc45cf31f96f32ab27b850f7 MIT-licensed deprecated compatibility redirect plus locked zstring provenance retained; no runtime string representation or downstream consumer release authority inferred.",
       "reviewer": "primary-session",
       "notes": "Strict157 closes only GSL include/gsl/string_span as a deprecated compile-time compatibility redirect to zstring. It does not close zstring type/null-termination semantics or any caller responsibility. Counters unknown=16,219 unread=16,194 omitted=0 responsibilities=175. Next strict158 Microsoft/GSL include/gsl/util@26b2f5fb9d0d8c28c3096f50d575eb42a4b89bad."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/GSL",
+      "source_blob_sha": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+      "source_kind": "recursive_child_repository_dependency_implementation",
+      "module_id": "tdesktop.thirdparty.gsl.util",
+      "responsibility_id": "TDRP-R9-GSL-UTIL-SCOPE-EXIT-CHECKED-INDEX-DEPENDENCY-001",
+      "source_symbols": [
+        "include/gsl/util@26b2f5fb9d0d8c28c3096f50d575eb42a4b89bad",
+        "gsl::index = std::ptrdiff_t",
+        "gsl::final_action<F> constructors/destructor/move constructor/copy-delete/assignment-delete",
+        "gsl::finally(F&&)",
+        "gsl::narrow_cast<T>(U&&)",
+        "gsl::at builtin-array/container/initializer_list/std::span overloads"
+      ],
+      "capability_ids": [
+        "CAP-SCOPE-EXIT-RAII-CLEANUP",
+        "CAP-CHECKED-INDEX-ACCESS",
+        "CAP-EXPLICIT-NARROWING-CONVERSION",
+        "CAP-NATIVE-DEPENDENCY-REPLACEMENT"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "Microsoft/GSL:include/gsl/util@26b2f5fb9d0d8c28c3096f50d575eb42a4b89bad",
+        "Microsoft/GSL:tests/utils_tests.cpp@5b64e207eda9ef0e8935701647d6d4bed567960e",
+        "Microsoft/GSL:tests/at_tests.cpp@42b2241bfd472ab384c35267d2042c870edce4a5",
+        "Microsoft/GSL:LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02",
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md#TDRP-LANG-03"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-util-complete-read.md",
+      "behavior_contract": "Account for the locked GSL util dependency without preserving its C++ API shape. Preserve final_action/finally exactly-once scope-exit cleanup and move-disarm semantics through native Rust RAII/Drop or domain-specific guards inside each actual Fabushi owner; preserve checked signed-index preconditions and explicit narrowing intent only where independently read callers require them. The helper itself owns no Fabushi product state, UI, persistence or service.",
+      "state_machine": "scope acquires cleanup obligation -> armed guard owns action -> normal/early scope exit invokes once; move transfers callable and armed bit while disarming source -> no double cleanup. Separately, gsl::at validates signed index before access and fails closed on invalid precondition; narrow_cast performs an explicitly named unchecked static conversion.",
+      "side_effects": [
+        "final_action/finally invokes caller-provided cleanup/restoration exactly once when the armed guard leaves scope.",
+        "Move construction transfers cleanup ownership and disables invocation in the moved-from guard.",
+        "gsl::at contract violation terminates through Expects; valid access returns the selected element.",
+        "narrow_cast may intentionally lose information because it is an unchecked named static_cast."
+      ],
+      "failure_cases": [
+        "Cleanup is missed on early return/error path or invoked twice after guard movement.",
+        "Security-sensitive key/secret/crypto cleanup is treated as verified merely because util was mapped.",
+        "A GSLUtilRuntime/global cleanup owner or source-shaped compatibility API is introduced.",
+        "The 155 production gsl::finally callers are bulk-closed instead of independently decomposed.",
+        "Unchecked narrow_cast or checked-at semantics are generalized into unrelated target behavior without an actual caller."
+      ],
+      "ui_disposition": "No independent UI surface. UI-source callers that use gsl::finally retain their state-restoration/product behavior in the canonical Fabushi UI/domain owner and remain independently open.",
+      "non_ui_responsibilities": [
+        "scope-exit RAII cleanup semantics and exactly-once invocation",
+        "cleanup ownership transfer/disarm on guard move",
+        "checked signed-index access precondition",
+        "explicit unchecked narrowing annotation",
+        "exact dependency/test/license provenance and consumer fan-out traceability"
+      ],
+      "platform_delta": "Rust uses deterministic Drop/RAII, ownership and checked indexing inside existing domain/platform owners; no C++ GSL util API or global scope-guard runtime is reproduced. Platform-specific resource release remains with the relevant platform/resource owner.",
+      "existing_owner_candidates": [
+        "TDRP source/dependency inventory and traceability owner (selected for helper accounting)",
+        "Actual Fabushi Rust resource/lifecycle/state/platform owners using RAII/Drop (selected for consumer semantics)",
+        "Existing Rust checked-index/conversion primitives inside actual callers (selected where independently applicable)",
+        "new GSLUtilRuntime or global scope-guard owner (rejected)"
+      ],
+      "existing_owner": "Existing TDRP source/dependency inventory plus the actual Fabushi Rust domain/resource/lifecycle/platform owner for each independently migrated consumer; no new helper runtime state owner",
+      "rejected_existing_owners": [
+        "A GSL-shaped utility runtime would preserve source architecture rather than product responsibility.",
+        "A single global cleanup owner would steal lifecycle/resource ownership from the actual consumer domains.",
+        "Bulk treating every gsl::finally caller as completed from this helper row would violate per-file/per-responsibility traceability."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md"
+      ],
+      "fabushi_target_symbols": [
+        "### TDRP-MAP-01 — 文件全覆盖",
+        "**TDRP-LANG-03:** 通用成熟安全/媒体依赖须登记、锁定和审查，可以替代低层标准能力"
+      ],
+      "target_language": "No shipping GSL compatibility runtime; native Rust RAII/Drop, ownership, checked indexing and explicit conversions inside actual existing owners",
+      "language_rationale": "The source file is a generic header-only utility. Rust natively expresses deterministic cleanup and safe indexing; reproducing a GSL utility API would add a parallel source-shaped owner with no product value.",
+      "command_event_contracts": [
+        "scope-exit obligation -> exactly-once cleanup/restoration at guard drop",
+        "guard move -> cleanup ownership transfers and moved-from guard is disarmed",
+        "checked index request -> validate signed range before element access or fail closed",
+        "consumer migration -> preserve its own cleanup/state/security effect in the existing Fabushi owner"
+      ],
+      "state_owner": "No independent util runtime state. Each actual consumer domain owns the resource or temporary state being cleaned/restored.",
+      "lifecycle_owner": "Actual Fabushi consumer/resource/platform owner; Rust Drop/RAII supplies deterministic scope cleanup.",
+      "persistence_and_restart": "No util-owned persistence/restart state. Any durable/restart effect belongs to each independently migrated caller.",
+      "concurrency_and_cancellation": "No global concurrency or cancellation owner. Cleanup of tasks/signals/handles on cancellation remains caller-specific and must be preserved when that caller is migrated.",
+      "security_boundary": "Do not infer security verification from the helper row. Key destruction, passcode buffer cleansing, crypto handle release and other sensitive cleanup observed among gsl::finally consumers retain independent security/privacy acceptance. Do not introduce broad unsafe conversion or unchecked indexing helpers in Fabushi.",
+      "network_service_dependencies": [
+        "GitHub Actions for exact-head revalidation"
+      ],
+      "service_owner": "No shipping service.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-replaced-mapped-open",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required after strict158 publication.",
+        "161 direct gsl::finally file consumers (155 production, 5 test, REVIEW.md) remain independently open for per-file/per-responsibility migration.",
+        "Source closure, all production implementation and independent release acceptance remain open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "strict158 include/gsl/util@26b2f5fb9d0d8c28c3096f50d575eb42a4b89bad fully read: 172 line slots / 5222 bytes",
+        "tests/utils_tests.cpp@5b64e207eda9ef0e8935701647d6d4bed567960e fully read: 166 line slots / 4211 bytes; proves scope-exit invocation, move-disarm exactly-once behavior, callable forms and narrow_cast lossiness",
+        "tests/at_tests.cpp@42b2241bfd472ab384c35267d2042c870edce4a5 fully read: 174 line slots / 5604 bytes; proves in-range access and fail-closed negative/out-of-range contracts",
+        "Microsoft/GSL LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02 confirms MIT",
+        "accepted tdesktop exact-head code search complete: 161 unique gsl::finally file hits = 155 production + 5 tests + REVIEW.md; gsl::narrow_cast=0; gsl::at=0",
+        "GSL gitlink 87f9d768866548b5b86e72be66c60c5abd4d9b37; child tree 6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41",
+        "Live main fb1189efd9d85c650864d6987ea8fb68c913558d/1a1ef09be4c9fd801354439a5b82cc460f0b4b6a and upstream dev a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5 rechecked after parent double-green",
+        "Parent TDRP 40047699934 61/61 success; authority 12542076361 sha256:8721db2b5177a2365764ee274d323e8f521c695b38e716d173cceabb8b892617; closure 12542710366 sha256:e0cb77a0a10098616898d06c74f9027f126b13eee271a73035e935fb0713585f; reachability 12541154770 sha256:131e6747d41b79e95213c7bd9627aff6b061c64d69f95c618e72ee25c3818a6e; Rust 40047699891 6/6 success; artifact 12541908261 sha256:06b0a093bc0e976e2c9ec737893195dd27ca9078fff862119bff72a7f1a4cfba."
+      ],
+      "target_commit": "50aeeede7543dd8a189b80eae1a59e16654d5845",
+      "workflow_run": 40047699934,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12542076361,
+      "artifact_digest": "sha256:8721db2b5177a2365764ee274d323e8f521c695b38e716d173cceabb8b892617",
+      "composition_root": "Fabushi native domain/resource/platform owners using Rust ownership and RAII",
+      "composition_slot": "low-level scope-exit cleanup / checked-index / explicit-narrowing dependency semantics",
+      "capability_component": "Source-only GSL util dependency replacement; caller behavior stays in actual owners",
+      "variation_axes": [
+        "scope exits normally vs early/error/cancel path",
+        "guard remains local vs move-transferred ownership",
+        "resource cleanup vs temporary state restoration vs security-sensitive cleansing",
+        "checked index valid vs negative/out-of-range",
+        "helper accounting vs independently open domain callers"
+      ],
+      "shared_owner_contracts": [
+        "TDRP source/dependency inventory",
+        "TDRP-LANG-03 dependency replacement boundary",
+        "actual Fabushi Rust resource/lifecycle/platform/domain owners",
+        "exact-head TDRP/Rust evidence"
+      ],
+      "duplicate_root_check": "No GSLUtilRuntime, global scope-guard service, second resource/lifecycle root or bulk caller-closure authority.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "No independent product action; scope-exit effects remain inside actual consumer actions/lifecycles.",
+      "detail_section": "Not applicable",
+      "capability_surface": "Exact source/dependency accounting only; no shipping UI/runtime surface.",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Any accepted tdesktop/GSL gitlink, child-tree, util/tests/license blob or gsl::finally consumer-set drift requires fresh reconciliation; caller lifecycle/state responsibilities remain independently open.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-GSL-UTIL-SCOPE-EXIT-CHECKED-INDEX-DEPENDENCY-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GSL-UTIL-EXACT-SOURCE-001",
+        "ORA-TDRP-GSL-UTIL-FINAL-ACTION-SEMANTICS-001",
+        "ORA-TDRP-GSL-UTIL-CONSUMER-FANOUT-001",
+        "ORA-TDRP-GSL-UTIL-NO-BULK-CALLER-CLOSURE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GSL-UTIL-SCOPE-EXIT-EXACTLY-ONCE-001",
+        "INV-TDRP-GSL-UTIL-NO-GSL-RUNTIME-001",
+        "INV-TDRP-GSL-UTIL-CALLERS-REMAIN-INDEPENDENT-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GSL-UTIL-SCOPE-EXIT-001",
+        "CONTRACT-TDRP-GSL-UTIL-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GSL-UTIL-SOURCE-DRIFT-001",
+        "FAULT-TDRP-GSL-UTIL-DUPLICATE-OR-MISSED-CLEANUP-001",
+        "FAULT-TDRP-GSL-UTIL-BULK-CALLER-CLOSURE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-GSL-UTIL-SENSITIVE-CLEANUP-OWNERSHIP-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-GSL-UTIL-NO-SOURCE-OMISSION-001",
+        "REG-TDRP-GSL-UTIL-NO-PARALLEL-RUNTIME-001",
+        "REG-TDRP-GSL-UTIL-CALLERS-REMAIN-OPEN-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-BEHAVIOR",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "locked GSL util header + utils/at tests + MIT license + accepted exact-head consumer search + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact Microsoft/GSL include/gsl/util@26b2f5fb9d0d8c28c3096f50d575eb42a4b89bad, focused tests and LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02 retained under MIT provenance; accepted tdesktop gsl::finally consumer fan-out retained; no GSL util runtime or downstream consumer release authority inferred.",
+      "reviewer": "primary-session",
+      "notes": "Strict158 closes only GSL include/gsl/util as a low-level helper dependency. final_action/finally scope-exit semantics map to native Rust RAII/Drop in actual owners; 155 production gsl::finally consumers remain independently open, and no direct gsl::narrow_cast/gsl::at consumer was found. Counters unknown=16,218 unread=16,193 omitted=0 responsibilities=176. Next strict159 Microsoft/GSL include/gsl/zstring@2cc13d83840afec61e5bd709c77900026ed225f4."
     }
   ]
 }
