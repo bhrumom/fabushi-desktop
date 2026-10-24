@@ -43,3 +43,8 @@ This dossier is **source-only dependency-test provenance**. It does not claim pr
 - Baseline identity accepted: false
 - Source closure ready: false
 - Independent release acceptance: not accepted
+
+
+## Validator target-symbol anchor
+
+- Target symbol: `TDRP_GSL_OWNER_TEST_PROVENANCE_001`. This dossier-local symbol anchors source-only dependency-test provenance; it does not assert a shipping production implementation or close downstream ownership responsibilities.
