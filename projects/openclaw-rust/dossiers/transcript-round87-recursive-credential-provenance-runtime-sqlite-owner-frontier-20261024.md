@@ -2682,3 +2682,65 @@ The previously capped search for `closeOpenClawStateDatabaseAsync` still has no 
 Agent execution close terminates at the existing per-agent database lifecycle plus its captured shared-state borrow. The worker broker owns bounded actor/slot admission and settlement, not database truth. Read-only native resources own private snapshot/reader cleanup, not source writes. Rollback recovery can prepare evidence but requires the retained product owner to re-admit the exact unchanged source before any native recovery.
 
 No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, OCRM final acceptance and release acceptance remain absent.
+
+
+## 33. Section 32 direct-consumer recursion: state-read streams, bounded admission retry and retained recovery ownership
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`). This pass follows the direct production consumers opened by Section 32 and records only frozen identities absent from the live Round87 dossier. Existing generic state-read worker, state/agent database lifecycle, SQLite broker/admission primitives, update-run contention tests and transcript store owner identities are referenced but not duplicated.
+
+### 33.1 Shared-state read stream, Cron read-only worker and transcript export cleanup
+
+New frozen identities:
+- `src/cron/store/read-only.worker.ts@f51177dc9a0d1277fb71a4c1bea90580f8d7fda7`
+- `src/transcripts/store-export.worker.ts@8102f962b6fc6c10a15b7f6e0155a8d92fff2eb1`
+- `src/transcripts/store-export-jsonl.ts@36969fc4ec00290594d34b481c2223dbc944df79`
+- `src/transcripts/store-export-contract.ts@84d3817f6a445bdbb64bc1aaa93c903b05727a7e`
+- `src/state/openclaw-state-read-stream.ts@f136babeb2032f1711ab4dd9e4b21ae6e6c3d3bc`
+- `src/infra/gateway-owner-lease.worker.ts@ea565ad7df5705ea8d75ea8d2ab19ea61b057b85`
+- `src/cron/store.readonly-compat.test.ts@f2ec84bb5aa90e5f6b62f930486698c1fb2366ae`
+- `src/transcripts/store.test.ts@68924ddb1f51ccbd6773ce3c2c5a128b614ff5a7`
+
+The previously registered Cron read-only host facade was re-read at `src/cron/store/read-only.ts@30f151b914918092a7015380cd3de5e90b513251`. It captures the admitted physical state identity, starts the packaged `cronReadOnly` worker through one `WorkerTaskPool`, and, where required, retains a private staged snapshot under the maintenance resource owner. Close aborts the exact operation, joins worker shutdown, releases staged-directory custody, and surfaces deferred snapshot cleanup rather than silently discarding it. The newly registered worker consumes that retained location, opens either the existing shared-state read connection or the admitted private read target, performs only read-side Cron/history work, and closes the exact connection/database in `finally`. The compatibility test proves an older pre-projection Cron schema can be read without writable schema repair: the missing grant-definition columns remain absent after the read.
+
+The state-read stream is a narrow dispatcher, not another database owner. It requires a bounded receiver for both subagent restore and `meetingTranscripts.export`; transcript export is delegated to the newly registered export worker under the already registered shared-state read worker admission. The export worker opens the retained state read connection, streams bounded utterance chunks, reports transcript-library errors as typed results, rolls back any still-open read transaction before release, and aggregates reader-cleanup failure with the primary export error. `store-export-jsonl.ts` consumes that stream for artifact materialization and closes the artifact handle even when the stream or consumer aborts.
+
+The focused transcript store test proves the important cleanup and snapshot oracles: cancel and consumer-error termination both release the retained export snapshot, and an admitted export remains isolated from concurrent state changes until that export completes; a later export observes the newer canonical state. This separates read snapshot custody from source mutation authority and prevents a failed or abandoned reader from becoming a second state owner.
+
+The Gateway owner-lease worker is another direct shared-state reader. It opens the exact retained state-read connection, performs the owner-lease lookup under the admitted schema/engine context, and refuses an ambiguous result when more than one owner row is visible. The already registered `src/state/openclaw-state-read.worker.test.ts@f0c0ff4b294e21a6e677d859da3b0d68328af60e` remains the focused admission/cleanup oracle for this worker path.
+
+The moving-default discovery set also contained `src/agents/subagents/registry/subagent-registry.store.restore.worker.ts`, but an exact-ref read at the frozen commit returned 404. It is therefore excluded from the frozen source set rather than silently imported from moving main.
+
+### 33.2 The bounded SQLite admission-retry family has two production consumers
+
+New frozen identities:
+- `src/state/user-channel-identities.worker.ts@236b4e9f0f1c8814f56d7e8a168fbab46cffffca`
+- `src/state/user-profiles.worker.ts@8047f64fb1d2e0f745eca1966cca49a017f8b444`
+- `src/state/user-profile-read.worker.ts@46c98df38bb615d6e2873bb37e31e62052a70535`
+- `src/state/user-channel-identities.worker.test.ts@c9b63cfa8c217d31fb158a6530ef09c1970e8758`
+- `src/infra/update-run-mutation.worker.ts@c8c4fec0131df3274ef8241f8db24c4933e945b1`
+- `src/infra/update-run-dispatch.worker.ts@d44444d31e9f771cc3613b08e417aae5ae932247`
+
+The frozen direct-consumer reconciliation for `retrySqliteWorkerAdmission` resolves to these two production mutation families plus the already registered helper itself. Channel-identity change uses a bounded three-attempt admission sequence around the existing state writer. Transaction and commit admission are separate; the commit receipt is deferred only after an actual change. The retry helper can clear only its own admission-timeout refusal after the prior transaction is usable and fully unwound. Any non-timeout refusal, revoked authority, still-open transaction or ambiguous native outcome escapes instead of being replayed.
+
+The user-profile worker is the direct product dispatcher for channel-identity change and other profile operations; the profile read worker reuses the same canonical identity rows for list/resolve reads rather than creating a second profile-state store. The focused channel-identity test withholds transaction or commit admission and proves retry, exhaustion and authority revocation all release the WAL before a subsequent attempt. Failed/exhausted cases leave no partial identity row, and the transaction is closed before the final checkpoint. A revocation remains the admission failure instead of being converted into a retry success.
+
+Update-run mutation uses the same narrow timeout-only retry rule for transaction/commit admission. The dispatch worker routes update-run commands through that owner and distinguishes optional bookkeeping from required recovery evidence: an optional progress record may be reported as bookkeeping-skipped after certified rollback, while required mutations surface a concrete failure. The already registered focused tests `src/infra/update-run-admission-hold.test.ts@f3136576d240c2c8c12e16dc439c85f158212f41` and `src/infra/update-run-contention.test.ts@72e9582bf3ab4d3bd03b5811b315a73c5cc3c62a` prove the writer is released while host commit admission is delayed, transient timeout can retry only after rollback, exhaustion is bounded, and a lock failure after transaction admission is neither replayed nor discarded.
+
+This closes the newly exposed admission-retry consumer family without granting the helper independent write authority. The durable writers remain the existing profile and update-run owners, and a timeout retry is legal only after the previous attempt has lost all transaction/commit custody.
+
+### 33.3 Managed-service rollback recovery remains under the retained product owner
+
+New frozen identity:
+- `src/infra/update-managed-service-handoff-database-identity.test.ts@563b4559716d2822c68bc73b049a46b5e6c6044e`
+
+The Section 32 production owner `src/infra/update-managed-service-handoff-database-recovery.ts@6ab3ef93cf3e24f34cd7da0f342b3a3f6ac46287` was re-read, not re-registered. It retains the managed-handoff database identity, acquires the installation/file lock and process-identity owner, prepares rollback evidence, and invokes `recovery.admit` only after those current-authority checks still hold.
+
+The newly registered focused identity test proves the retained-owner boundary against real rollback-journal cases. A killed writer's cold rollback journal is repaired only for the original admitted managed-handoff owner; live or unknown foreign executor custody is refused without modifying the row; future/unknown retained schemas are not adopted; and mutating the rollback journal after preparation makes admission fail while the original main/journal bytes remain preserved. The recovery primitive therefore remains evidence preparation plus explicit current-owner admission, not an autonomous replay or background writer.
+
+### 33.4 Direct-consumer closure result
+
+The Section 32 direct-reader frontier is now reconciled through the newly registered Cron, transcript-stream and Gateway owner-lease readers; all terminate in the already registered shared-state read/worker lifecycle and keep cleanup custody separate from source mutation. The bounded admission-retry frontier is reconciled through channel identity and update-run mutation, with focused tests proving retry is timeout-only and occurs only after the prior writer/transaction has unwound. Managed rollback recovery remains owned by the retained update handoff authority.
+
+A recheck of `createAgentDatabaseExecutionCloser` found no additional frozen production consumer beyond `src/state/openclaw-agent-execution.worker.ts@a533936aa520fc1770abd779a9fb9baec327ac41`, which Section 32 already registered. No newly read production file imports or owns process-wide `closeOpenClawStateDatabaseAsync`, and none of these readers/retry helpers introduces a second agent database, transcript, profile, Cron or update-run writer.
+
+No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, OCRM final acceptance and release acceptance remain absent.
