@@ -4,6 +4,9 @@ on:
     paths:
       - 'source/host/src/extensions/auth/**'
       - 'source/host/src/extensions/automations/**'
+      - 'source/host/src/extensions/cross_user_sharing/xuser_sharing_environment.rs'
+      - 'source/host/tests/xuser_sharing_environment_contract.rs'
+      - 'source/host/tests/xuser_service_contract.rs'
       - 'source/host/src/extensions/box_store_sync/native_account_store.rs'
       - 'source/host/src/extensions/box_store_sync/native_object_transfer.rs'
       - 'source/host/src/extensions/box_store_sync/native_box_object_store.rs'
@@ -63,6 +66,8 @@ jobs:
           --test box_store_sync_extension_contract
           --test box_foundation_contract
           --test box_store_sync_production_wiring_contract
+          --test xuser_sharing_environment_contract
+          --test xuser_service_contract
       - name: Record evidence scope
         run: |
           git rev-parse HEAD >> "$GITHUB_STEP_SUMMARY"
