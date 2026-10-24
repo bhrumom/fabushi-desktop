@@ -55,9 +55,8 @@ fn identity(c: &FabushiCoreCredential) -> (String, String, String, String) {
     (c.issuer().into(), c.user_id.clone(), c.session_id.clone(), c.device_id.clone())
 }
 fn valid_path(path: &str) -> bool {
-    !path.is_empty() && path.len() <= 4096 && !path.contains(['\\', '\0', ':'])
-        && path.trim() == path
-        && path.split('/').all(|p| !p.is_empty() && p != "." && p != ".." && p.len() <= 255)
+    path.len() <= 4096 && path.trim() == path
+        && super::agent_store_sand_files::normalize_rel_path(path).ok().as_deref() == Some(path)
 }
 fn valid_etag(etag: &str) -> bool {
     etag.strip_prefix("sha256:").is_some_and(|v| v.len() == 64 && v.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b)))

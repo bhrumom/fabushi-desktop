@@ -102,6 +102,9 @@ fn native_file_origin_input_and_redirect_boundaries() {
     let client = NativeAccountStoreClient::for_current_account("https://api.ombhrum.com",account.auth.clone()).unwrap();
     assert!(matches!(client.get("../other","dir/file"),Err(NativeFileError::InvalidInput)));
     assert!(matches!(client.get("agent-a","../secret"),Err(NativeFileError::InvalidInput)));
+    for path in ["dir/CON", "dir/file.", "dir/file ", "dir/control\nname", "dir//file", "C:/file"] {
+        assert!(matches!(client.get("agent-a",path),Err(NativeFileError::InvalidInput)));
+    }
     assert!(matches!(client.put("agent-a","dir/file",b"x",NativeWritePrecondition::BaseEtag("invalid".into())),Err(NativeFileError::InvalidInput)));
 
     let origin = TcpListener::bind("127.0.0.1:0").unwrap(); let foreign = TcpListener::bind("127.0.0.1:0").unwrap(); foreign.set_nonblocking(true).unwrap();
