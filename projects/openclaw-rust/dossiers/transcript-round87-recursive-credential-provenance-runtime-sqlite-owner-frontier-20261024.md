@@ -6509,3 +6509,69 @@ New frozen identities:
 Immediately before this append, the live branch lease was `3a49faa10585aec2b544342da51670e7bb8a90b7`, dossier blob `1c2bfb6c903101337b11e4d55b80c13478b81f9c`, 1 lines, with zero Section 102 and zero occurrences of all three new exact refs above. Frozen upstream `ad8d12f126d29b0db204187adf5092db80294e70` and tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16` were re-read. No Actions were started or rerun; no production code, ledger, RTM, flags, source lock, inventory, or source baseline changed.
 
 - The requested predecessor public-id -> restart/lost-reply session-delivery recovery -> real settlement -> exact physical cleanup -> public exact-run terminal-read fixture remains absent. The direct Stop replacement-late-success oracle and plugin-native distinct failed-publication receiver/third plural caller remain absent. Independent ACCEPT, scoped G01/G02, Rust implementation/wiring, package/device proof, release acceptance and final OCRM acceptance remain open.
+
+## Section 103 — production session-event source identity exhausts to exec provenance; Cron receipt/history and restart queue custody remain separate
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`). This pass starts from Section 102's producer-provenance/non-authority boundary, exhausts every external production caller of `enqueueSessionEventForHost` found at the frozen source, then cross-checks the only source-id writer against Cron receipt/history and restart session-delivery custody. Only frozen refs absent from the complete Round87 dossier before this append are registered.
+
+New frozen identities:
+- `src/gateway/server-node-events-exec-notice.ts@2aa8e3a339adfba53049ac33f47af34ed8d513d7`
+- `src/plugins/runtime/runtime-session-events.ts@8dd8bab48f34c67ed4a7735e47e978c77f29d87f`
+- `src/gateway/server-node-events-notifications.ts@ef95e4491385ac563d4d631cd64237d793852a03`
+- `src/gateway/server-cron-targets.ts@98e9bb3d2320f6d4455aa1d678dbef38fd8be852`
+- `src/sessions/session-state-notices.ts@cc21c8e249def36c0c4a9997fb0bd3f0ed5b7c19`
+- `src/gateway/server/hooks-event-dispatch.ts@db8e55939596c7aaa85b5d995d5c61cc43c59e4b`
+- `src/cron/session-run.ts@233d4a59992101a29ddd0b8b0b2b2451882ba9e1`
+- `src/gateway/server/hooks.ts@060ee7aebc8c74cdbb34bd50f6582d16bddcb0f1`
+- `src/agents/tools/session-tool-handoff.ts@cbcd8a496c20b8773134e7c4a12ca4c10253ad64`
+- `src/gateway/server-methods/system.ts@b82d81e04211d7ec465f003429bf3bd216502db4`
+- `src/agents/bash-tools.exec-notify.ts@963c9f62f69fdd6dde31fbf7f8ae988fdee22b70`
+- `src/agents/cli-runner/execute-process.ts@8c27d4b2932cf5f26693cc6fb5948ca0c1f4ebc4`
+- `src/agents/subagents/spawn/acp-spawn-parent-stream.ts@5c6c24e595cdd2630b6490377c2514bb0fd0f9da`
+- `src/agents/bash-process-registry.ts@77c4b6409a85f5f85438248adf1fed5b2fe778aa`
+- `src/agents/bash-tools.exec-run.ts@df1de2df499b4477ee95c7ebe620ea6231daf487`
+- `src/cron/service/state.ts@d948213eb27076a38c2cb958f5eec3116ce554dc`
+- `src/cron/service/wake.ts@e99b2b96c16b46b8b68ec6b8389846b5e6a67cd4`
+
+### 103.1 The external production caller set exhausts to one explicit sourceRunId/sourceTurnId writer
+
+- Exact-symbol search plus frozen-file reads enumerate fourteen external production caller files for `enqueueSessionEventForHost`; the handoff's own config-readmission recursion is not a new producer. The already-registered restart adapter is one of those fourteen; the other thirteen direct caller refs are registered above.
+- Twelve of the thirteen newly registered direct caller files pass only producer class/context, target, route, occurrence, cancellation, or acceptance facts. They do not write either `sourceRunId` or `sourceTurnId`.
+- The sole direct production writer is `bash-tools.exec-notify.ts@963c9f62…`. Its completion helper always writes `sourceTurnId: exec:<process-instance-id>`; the notify-on-exit path additionally writes `sourceRunId: session.originRunId`.
+- The two supporting refs make that value's provenance explicit. `bash-process-registry.ts@77c4b640…` documents `originRunId` as “Run whose exec call started this process; completion provenance only, never authority.” `bash-tools.exec-run.ts@df1de2df…` assigns it from `defaults?.runId` when the process starts, before any completion wake. No production copy from a Cron run receipt's `requestRunId` into this field was found.
+- Therefore Section 102's contract wording is borne out by the producer graph: the only source-run payload is an operational producer-run provenance value. It is not a durable authority/correlation writer for Cron receipt or session-delivery custody, even if two callers could ever choose equal string values.
+
+### 103.2 Cron's Gateway adapter cannot smuggle requestRunId through SessionEvent source fields
+
+- `cron/service/state.ts@d948213e…` defines the production `CronServiceDeps.enqueueSessionEvent` option shape. It admits agent/session/context/delivery/expected-target/create-if-missing/acceptance-current fields only; `sourceRunId` and `sourceTurnId` are not members.
+- `cron/service/wake.ts@e99b2b96…` builds exactly that bounded option object for immediate/shared-session wake and post-commit notices. It never adds receipt/public run identity.
+- `gateway/server-cron-targets.ts@98e9bb3d…` spreads only those typed Cron options into the host handoff and adds `source: "cron"`. Thus its spread cannot carry an undeclared Cron receipt `requestRunId` into SessionEvent provenance.
+- The separate shared-session scheduled-turn path `cron/session-run.ts@233d4a59…` calls the host handoff directly with `source: "cron"`, `contextKey: cron:<job.id>`, captured target, route, abort signal, and scheduled-automation state; it likewise supplies neither source-id field.
+- Targeted cross-index searches returned no product candidate for `requestRunId + sourceTurnId`, `requestRunId + enqueueSessionEventForHost`, `requestRunId + enqueueSessionDelivery`, or `requestRunId + settleQueuedSessionDelivery`. `requestRunId + sourceRunId` matched only the unrelated release-validation script `scripts/frv.mjs`. `child_session_key + requestRunId` matched the already-registered Cron run-history kernel, where both facts remain history/receipt facts. `child_session_key + sourceRunId` matched only a subagent restart test, not a Cron/session-delivery production join.
+- The already-registered receipt/run-history refs therefore remain the only public-Cron identity bridge: receipt `requestRunId` is projected into Cron history while `child_session_key` is the history session projection. Neither is copied into SessionEvent producer provenance or the durable restart delivery row.
+
+### 103.3 Restart durable session-delivery settlement still has no public-Cron cross-index
+
+- Re-reading the already-registered restart session-event adapter confirms it still enqueues with `source: "restart"` and `contextKey: task:restart-sentinel:<entry.id>`, without either producer source-id field. The durable queue remains keyed by its own entry id/session key and settles through the already-registered queue settlement owner.
+- No new durable queue field, queue-id/public-run-id index, or integrated frozen fixture was found that carries one Cron receipt/history public run id through restart/lost-reply enqueue, real `settleQueuedSessionDelivery(entry.sessionKey, entry.id)`, exact continuation-alias cleanup, physical deletion, then `cron.runs { id, runId, limit: 1 }`.
+- The new producer exhaustion therefore removes the remaining plausible SessionEvent-provenance shortcut: the missing public Cron join is not hidden in `sourceRunId`/`sourceTurnId`.
+
+### 103.4 Direct Gateway Stop replacement-late-success oracle remains absent
+
+- Targeted `sessions.processes.stop + placementGeneration` search still resolves only the already-registered production handler. `sessions.processes.stop + activeOwnerEpoch` adds the same focused test and a control-UI mock, but no replacement oracle.
+- The production handler continues to pass the current owner epoch/generation into remote process observation and to assert current authority after remote I/O and again before publication. The focused Gateway test still exercises only `sessions.processes.list` with request authority closing while the reply is in flight.
+- No direct Gateway-server fixture issues `sessions.processes.stop`, replaces `placementGeneration` or `activeOwnerEpoch` while that Stop is pending, then returns a successful stale worker reply and proves the stale success is rejected.
+
+### 103.5 Plugin-native false/throw remains admission-local; no third plural production caller appears
+
+- Re-reading the already-registered plugin-source publisher and native-admission state keeps the same result: a publisher may return `false` or throw, but the matching admission retains the publication intent and explicit settlement retries it. The worker-to-host `PluginNativeAdmissionTransfer` is the ordinary custody transfer for captured publication intents; it is not a distinct receiver created by a false/throw outcome.
+- Frozen symbol enumeration still finds exactly two production files calling plural `settlePluginNativeAdmissions`: the generation-preparation worker and prepared-model-runtime build already registered in Section 102. Generation-worker still calls singular `settlePluginNativeAdmissionState`. No third production plural caller and no independent failed-publication receiver handoff was found.
+
+### 103.6 Dedupe, lease, tool boundary, and remaining acceptance state
+
+Immediately before this append, the live branch lease was `1e4c8262a9f782c9e7d6cd4178213420145fde88`, dossier blob `a9e41edd9f6b627e554a00a95b12d57b0c4b3d92`, 6512 lines, with zero Section 103 and zero occurrences of all seventeen new exact refs above. Frozen upstream commit/tree were re-read. The requested independent read-only worker spawn was attempted, but the available tunnel returned `Tunnel-client has not been seen for 300 seconds`; no worker result was fabricated and the GitHub audit continued on the independent fronts.
+
+No Actions were started or rerun; no production code, ledger, RTM, flags, source lock, inventory, or source baseline changed.
+
+- The requested predecessor public-id -> restart/lost-reply session-delivery recovery -> real settlement -> exact physical cleanup -> public exact-run terminal-read fixture remains absent. The direct Stop replacement-late-success oracle and plugin-native distinct failed-publication receiver/third plural caller remain absent. Independent ACCEPT, scoped G01/G02, Rust implementation/wiring, package/device proof, release acceptance and final OCRM acceptance remain open.
+
