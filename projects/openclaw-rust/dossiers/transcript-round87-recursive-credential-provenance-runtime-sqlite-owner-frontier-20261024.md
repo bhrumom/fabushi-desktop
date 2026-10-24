@@ -2885,3 +2885,78 @@ The existing-schema consumer reuses only a current admitted runtime schema plus 
 This recursion closes the remaining native-worker lifetime, exact broker-admission cleanup, shared-state borrower and integrity-proof identities exposed by the Section 34 scan. None imports or owns process-wide `closeOpenClawStateDatabaseAsync`; none creates a second shared-state writer. Worker exit, actor/native close receipts, WAL retirement and integrity proof are distinct settlement facts, and stale generations fail closed rather than being adopted by replacements.
 
 No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, OCRM final acceptance and release acceptance remain absent.
+
+
+### 35.6 Retained native-worker direct consumer closes at plugin-generation custody
+
+New frozen identities:
+- `src/plugins/plugin-generation-worker.ts@37e1c105e82b163ed451631136571ebc604d345f`
+- `src/plugins/loader-module-runtime.ts@cc0ff80558f8bfe06310f951c4c204a4ccde3c85`
+- `src/plugins/plugin-generation-worker.test.ts@4455565818cd53faf3478e27ba35fbdc36386193`
+- `src/plugins/loader.async-preparation.test.ts@d88c3e2ab48085dfe5d56ad125078a7d73b53969`
+
+Default-branch search also exposed `src/tts/tts-settings-write-worker.ts`, but exact fetch at frozen `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` returned 404, so it is moving-main-only and remains excluded from this frozen Round87 evidence.
+
+The new frozen production consumer is plugin generation. `preparePluginGenerationArtifact` captures the existing unbound retained-native-worker source and registers a preparation owner with `source.retain`; the owner closes every client, joins worker-pool resource disposal, settles native-admission state and only then releases capture roots. The loader acquires this worker only for async external-source preparation; synchronous CLI or already-retained/cache paths do not create a second capture. This is a direct consumer of the Section 35.1 Worker lifetime owner, not a new Worker or database lifetime authority.
+
+Focused source oracles were read, not executed. They prove that unexpected Worker exit releases host preparation custody only after confirmed pool retirement, terminal native-source shutdown joins retained capture workers, lazy publication is handed back before Worker retirement, sibling captures keep distinct directories, and one plugin acquisition failure does not block its sibling. No new shared-state writer or process-wide close owner is introduced.
+
+### 35.7 Shared-state integrity callers preserve physical-file proof; borrow ownership remains unchanged
+
+New frozen identities:
+- `src/state/openclaw-state-db-open.ts@f90ef3094b42fb50d7110b0ee804e74cda4ced96`
+- `src/state/openclaw-state-db-startup-checkpoint.ts@309735b2bf2701a104fc1e9c32c2d61de486ebcf`
+- `src/state/openclaw-state-db-existing-write.ts@017e5285db360bb3666f76f3a444345749b3f358`
+- `src/state/openclaw-state-db-existing-write.test.ts@d39c294c09e346783a8f73f33213ab7a4f345c0f`
+- `src/state/openclaw-state-db-checkonce.test.ts@49c56f4ee7ca87e00a0bbf950a70e0023a57a28b`
+
+These are newly registered callers of the already-recorded integrity owner. Normal shared-state open verifies integrity before mutation unless current runtime-schema admission already supplies proof. Startup checkpoint uses a private connection, admits the exact catalog, verifies integrity before initialization, can carry clean-close proof across its temporary handle, and closes that private connection instead of publishing a second runtime owner. Existing-state writes intentionally avoid bootstrap/WAL-timer ownership: they require explicit maintenance/schema authority, verify the exact existing file, retain their own connection, and refuse writes after close.
+
+The focused oracles establish negative behavior: QUICK maintenance proof is not lent to a FULL writer; a replacement appearing during lease acquisition is preserved and the stale writer is refused; WAL identity stays stable across admitted local/sibling writes; failed native close keeps cleanup custody and blocks later writes; startup-checkpoint clean-close proof is reused without repeating integrity checks; tracked header change forces readmission; and replacement bytes at the same pathname are validated as a new generation.
+
+The direct `createStateDatabaseRetainer` caller remains `src/state/openclaw-state-db-cache.ts`, already registered earlier in Round87. No new non-duplicate borrower caller was found in this pass, so no second borrow owner is added.
+
+### 35.8 Agent terminal, transaction, WAL, write and admission are one fenced owner chain
+
+New frozen identities:
+- `src/state/openclaw-agent-db-terminal.ts@1fd4b73c372be6fd6b60374720091a8bf0c8aa56`
+- `src/state/openclaw-agent-db-transaction.ts@c74066a5425cad4b944db3c9203a0ef5acf919db`
+- `src/state/openclaw-agent-db.wal.ts@f0a4ffe298ecf3df3069c2f4087a3e61168aa80a`
+- `src/state/openclaw-agent-db-write.ts@e9c1202e550c2931b22c52adb002e7b60db5d5e6`
+- `src/state/openclaw-agent-db-admission.ts@51f2477d111c24da91e0128ce090b6def84896d7`
+- `src/config/sessions/session-accessor.sqlite-entry.ts@917148f35ae026da7bdfa3d0d56ede893b52426f`
+- `src/config/sessions/session-transcript-hydration.ts@f561ef734a46dc8ad5b493695797ee202c734c7c`
+- `src/state/openclaw-agent-db-readonly-scope.ts@5f832541a7df9c6f910d23acb464530d1e6569fe`
+
+The terminal helper only reads the lifecycle owner's global terminal latch. A latched `SqliteIntegrityError` can be cleared only after a fresh native integrity check; the async path rechecks caller currentness before and after the check and clears only the same observed failure. Terminal state therefore cannot be silently bypassed by a fresh open.
+
+The yielding transaction helper captures environment, opens and retains the exact canonical database, yields only for BEGIN admission, rechecks that the same handle is still canonical before the write, and never replays an admitted mutation or post-commit publication. The WAL helper captures exact file identity, retains the database while maintenance is in flight, runs maintenance through the existing worker-write/execution authority, and couples cancellation to the registered async resource; release/unregister occurs only after that worker settlement.
+
+The write helper freezes platform-aware environment and resolved pathname before waiting for admission, checks the physical identity again after the wait, rejects a borrowed handle that closed or changed instead of adopting its replacement, and requires a synchronous mutation callback. If a malformed callback returns a promise, it still joins that callback before rejecting so the next writer cannot overtake a hidden tail.
+
+The admission owner is the single driver around the canonical private open generator. Each pending open keeps its own abort controller, promise, operation count and publication borrow. Main-thread cold opens delegate integrity preparation to the Worker, but resume only after terminal/deletion/creation/repair authority is revalidated. Worker admission retains exact execution identity and schema/integrity publication; coalesced callers do not inherit one another's cleanup authority. Last-caller settlement releases the publication borrow; failed cleanup or stale generation remains fenced rather than becoming a replacement admission.
+
+New direct consumers preserve that chain. Session-entry writes use the yielding transaction path while retaining their captured execution/source predicates. Transcript hydration revalidates the terminal latch before reading and carries transcript admission/read fences. Retained read-only scopes assert terminal-open permission on reuse and explicitly close an idle reader before a writable admission can open the same file.
+
+### 35.9 Focused agent oracles fail closed on stale identity, environment drift and close failure
+
+New frozen identities:
+- `src/state/openclaw-agent-db-write.test.ts@fc1d523a1d190ecbfbb90a3030bd098c56e45819`
+- `src/state/openclaw-agent-db-write.env-capture.test.ts@ba66f38f550c58725c93ed01cd64f3ab3080c1fa`
+- `src/config/sessions/session-accessor.sqlite-entry.env-capture.test.ts@84315ad7b372f45c0d90bb55a11726f493f5d7e1`
+- `src/config/sessions/session-accessor.sqlite-entry-revalidation.test.ts@a0059329c50cf24720aa3b779a87d37c76df52d7`
+- `src/state/openclaw-agent-db.test.ts@1965d916c4b3a3095afb1b1cb6dbacad019ec250`
+
+The already registered `src/state/openclaw-agent-db.worker-admission.test.ts@84d1427554f2b531eb3dfd4ec8807827829bef7c` was re-read as supporting oracle and is not duplicated in the identity list.
+
+The write-admission tests prove FIFO survives aliasing while stale worker reservation is rejected, replacement physical identity cannot receive a queued write, a closed borrowed handle is not rebound, state-directory/environment changes after enqueue cannot retarget the operation, and an accidentally async callback settles before rejection and before the next writer. Environment-capture tests prove Windows case-folded and POSIX case-sensitive state-dir inputs are frozen before admission; canceling one coalesced waiter does not abort the shared physical integrity check.
+
+Session-entry tests prove the captured environment object is the one delivered to the worker/history/maintenance path after later ambient replacement, and commit predicates reject closed/replaced connections, identical-byte physical replacement, changed owner assignment, and stale lifecycle targets. The integrated agent-db oracle additionally proves a failed WAL close retains the durable lease until a successful retry, Worker-close settlement can report the recoverable close error while releasing its lease, creation-claimed handles close when the claim settles, and maintenance fences new writers while prior leases remain live.
+
+Together these tests distinguish terminal latch, operation admission, Worker/native settlement, WAL close and durable lease release. None of those facts alone is treated as proof that another has settled.
+
+### 35.10 Closure result
+
+This pass found new non-duplicate frozen evidence and therefore extends Section 35. The only newly exposed retained-native-worker production consumer at the frozen ref is plugin generation; the default-branch TTS writer is not present in the frozen source. Shared-state integrity gains three newly registered callers, while native borrow still terminates at the already registered cache owner. The remaining agent terminal/transaction/WAL/write/admission family resolves to the existing canonical agent database lifecycle, worker execution admission and exact physical identity; it does not create a second agent writer or a process-wide shared-state close owner.
+
+No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. The test files above are source-level negative oracles only and were not executed in this read-only round. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, OCRM final acceptance and release acceptance remain absent.
