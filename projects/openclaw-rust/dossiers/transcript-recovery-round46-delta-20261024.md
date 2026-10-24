@@ -1,1 +1,0 @@
-OCRM recovered audit delta: loaded Agent updated-only event does not create missing entry; second baseline may erase a newer appended entry; turn delivered count is local SendMessage success, not provider ACK. Exact subject b5db35fa272c83833685d70a730b5f8285fa1176. No Actions tests or pairing writes.
