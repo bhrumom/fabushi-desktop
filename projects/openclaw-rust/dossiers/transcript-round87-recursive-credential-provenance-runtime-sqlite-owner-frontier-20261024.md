@@ -1996,3 +1996,118 @@ Plugin composition wires one store/catalog service/HTTP receiver/mirror service.
 The remaining Section 23 extension families are now reverse-linked to production consumers and focused lifecycle/oracle evidence at the frozen source ref. No newly inspected production consumer imports or owns process-wide `closeOpenClawStateDatabaseAsync`; the direct calls encountered remain test/test-support teardown or explicit reopen/lifecycle oracles. Shared-state retirement therefore remains the previously established Gateway shutdown → agent DB retirement → global singleton drain sequence.
 
 This evidence does not establish scoped G01/G02, Rust implementation/wiring, executable/package proof, independent ACCEPT, OCRM final acceptance, or release acceptance. No Actions/build/test/generator/package was run, and no production code, ledger, RTM or flags were modified.
+
+
+## 26. Recovery continuation — Section 25 recursive owners, scheduler and SQLite-worker dependencies
+
+This continuation stays on frozen `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`) and expands only identities that were absent from the live Round87 dossier immediately before this write. The already-recorded Section 25 identities are not duplicated.
+
+### 26.1 Google Meet shared participation owner and effect boundary
+
+New frozen identities:
+- `extensions/google-meet/src/create.ts@2c8e8af24a8092ea6207af047ae463fc4e1a56c0`
+- `src/meeting-bot/participation.ts@0aecefc1c4d1a76e34df18e8aa929df4df1358c4`
+- `src/meeting-bot/participation-browser.ts@7eb54eab22be98eed4b1aff9633f96f71bfbf724`
+- `src/meeting-bot/participation.capacity-race.test.ts@131901ce685fa0c94c9df751d828f03b9c55fd84`
+- `src/meeting-bot/participation.test.ts@e5094c9174bd0143d681517f627911a79ac07628`
+- `src/meeting-bot/session-runtime.startup.test.ts@d572f98a9c4fc2d80737a85ddc305799963f97df`
+
+`create.ts` is a direct production consumer of the Google Meet runtime: create-and-join routes browser creation through the current `GoogleMeetRuntime` rather than opening a second meeting-session owner. The shared `MeetingParticipation` owner snapshots caller arguments before awaiting, claims a durable request row before effect dispatch, binds observed source authority to the current live session, and treats a pre-existing unfinalized claim as `uncertain` rather than replay-safe. Source action authority is single-use per action type and is invalidated by corrected/revised/expired/own-echo sources or by the live owner becoming non-current.
+
+The browser participation executor rechecks current authority before and after tab discovery/preparation/evaluation and distinguishes pre-dispatch authority loss from post-dispatch uncertainty. Its negative oracle is therefore asymmetric by design: before dispatch, stale tab/session authority must reject without a visible action; after dispatch, an unreadable or interrupted result may be `uncertain` and must not authorize retry.
+
+The focused tests add shared-owner evidence that was not present in Section 25: a capacity cleanup race cannot drop a sibling's newly admitted claim; durable request claims survive reopen and suppress duplicate effects; caller mutation after claim does not change the captured action; leave, browser-tab replacement, node/state changes, caption epoch changes, and source corrections revoke previously issued source authority. These tests also prove that replayed history cannot evict newer live source authority merely because the bounded source set is full.
+
+### 26.2 WhatsApp connection ownership, active sender and transport-confirmed close
+
+New frozen identities:
+- `extensions/whatsapp/src/active-listener.ts@108272560277e1cb5a14687c95011b32d965fa3c`
+- `extensions/whatsapp/src/send.ts@07eed1516361d772502685f37d55ed2ae007ae66`
+- `extensions/whatsapp/src/connection-owner.ts@12636af7fffed1588262309c33bc06706090a72a`
+- `extensions/whatsapp/src/connection-owner.test.ts@42ee95125522f66fca90f5e88152ebe50e372d16`
+- `extensions/whatsapp/src/socket-close.ts@33c808561ad7f2afe347b293f628e9d739891b6f`
+- `extensions/whatsapp/src/socket-close.test.ts@681058e61b18e1b558a0501949d0645d1efe468c`
+- `extensions/whatsapp/src/directory-config.ts@a7273e11ab6a2d75a5029681e07d0f99409bb79b`
+- `extensions/whatsapp/src/agent-tools-call.ts@8b213e2c6a88436a1c82a18f3372d441e334709d`
+
+The direct outbound path resolves the current `WhatsAppConnectionController` and refuses sends when there is no active listener. Multipart sends report each accepted native send before the next fallible send, so later failure retains already accepted provider identities instead of pretending the whole mutation was rolled back. Agent-tool call identity resolution also reads the current controller/socket generation rather than caching a detached socket.
+
+Connection ownership is serialized twice: a process-local owner prevents same-process re-entrant use of one auth directory, and a file lock prevents another process from opening the same auth-backed Baileys connection. Canonicalized real paths make symlink aliases the same owner. Gateway acquisition can wait for a bounded standalone lookup; standalone acquisition fails fast if the gateway already owns the directory. Shutdown aborts pending cross-process owner acquisition rather than allowing a late socket to appear after retirement.
+
+`directory-config.ts` is the production standalone-consumer path: it acquires the standalone owner, opens the temporary directory socket, confirms socket close, verifies credential persistence has drained, and only then releases the owner lease. `socket-close.ts` treats Baileys `end()` completion as insufficient when the underlying WebSocket is still open; it waits for the close handshake or actively closes the transport and fails if closure cannot be confirmed. Focused tests prove process-local exclusion, symlink alias exclusion, shutdown cancellation, asynchronous close-handshake waiting, and failure when transport closure remains unconfirmed.
+
+Negative oracle: an old socket generation or an incompletely closed standalone directory socket must never hand ownership to a replacement merely because a higher-level `end()` promise resolved.
+
+### 26.3 X durable OAuth token owner — exact-ref recheck, no duplicate identity
+
+The frozen ref was re-read for `extensions/x/src/client.ts@11f7bdfa3cf3168dfc8c54bdb1e7c1d6891127dd`, `extensions/x/src/oauth.ts@13dee996eacb81d1455a84d931c7d346ffc44f21`, and `extensions/x/src/api.ts@11fa4387f0c9b94db37757410c6b2682d2b4edde`; all three identities were already present in Round87/Section 25 and are therefore not re-registered as new rows.
+
+The recheck confirms the prior owner conclusion: `client.ts` publishes the complete runtime owner before opening the `x.oauth` keyed store, then uses observe/compare-and-apply to claim a refresh token lineage, reconcile a committed write whose response was lost, and fail closed if the account owner changes before refresh or settlement. `oauth.ts` serializes one in-flight refresh and commits a rotated refresh token before publishing the access token. `api.ts` consumes only that owner and treats post-dispatch unreadable transport/provider outcomes as unknown rather than replay-safe.
+
+### 26.4 Nostr durable ingress, cursor recovery and relay retirement
+
+New frozen identities:
+- `extensions/nostr/src/nostr-ingress.ts@470bf27e070efaef68620993bc28aa66dec74350`
+- `extensions/nostr/src/nostr-cursor.ts@96f4a3a36d8e8110d4c0ab61e4a7b854de195ceb`
+- `extensions/nostr/src/nostr-cursor.test.ts@4563daa18a6e4f56e97c89d39caaaef094b1eff4`
+- `extensions/nostr/src/nostr-relay-subscription.ts@56376ca6d2efdba3bda6b7ef6cf25eb495cb5dfe`
+
+`createNostrIngress` owns the durable channel ingress queue and its monitor. It validates/serializes before admission, maps permanent decode/identity failures to non-retryable outcomes, and on stop first prevents new receives, pauses delivery, then joins the monitor's accepted durable admissions. Legacy migration completion cannot restart a drain after stop.
+
+The cursor owner separates durable append progress from transient replay safety. A transient event that failed durable admission caps the next replay cursor so later durable events cannot skip it. Cursor writes are serialized through one write tail, safety rewinds land after older progress writes, and `flushUntilSuccess` keeps retrying a failed safety write during retirement until the rewind is durable. The focused cursor tests prove a failed higher progress write cannot overtake a later rewind and that failed safety persistence remains pending until durable.
+
+The relay subscription wrapper distinguishes actual EOSE frames from timeout/close synthesis. Caller-requested close marks local retirement so the same close callback is not misclassified as an external relay failure; incomplete relays cannot falsely confirm backfill completion.
+
+Negative oracle: relay shutdown or transient admission failure must not advance a durable replay cursor beyond an event that was never durably admitted.
+
+### 26.5 Beam receiver/store authority and catalog persistence
+
+New frozen identities:
+- `extensions/beam/src/http.ts@21ea1585f0333be2292f3e9158008d90c2c1a701`
+- `extensions/beam/src/http-authority.test.ts@14e5807e815849dd5de54389ce6d97d7b2121674`
+- `extensions/beam/src/session-catalog.ts@5584a34df69f8037044223e6d95af7ec6fd0a6ae`
+- `extensions/beam/src/store.test.ts@63eb157151e43b4c1561d65324f2ec3607488c83`
+- `extensions/beam/src/beam.test.ts@a8685c940f6ddbf5016a74dea6d74eec8a092d7d`
+- `test/plugins/beam-http-identity.test.ts@01cfa4aedaa9baa66a66e6e9d56742f419e0e1a5`
+
+The already-recorded Beam store is now traced through its direct HTTP receiver and catalog consumers. The receiver checks the current Gateway request scope before reading/committing the upload and revalidates publisher authority immediately before store mutation. Publisher profile identity comes from the authenticated request scope, never from the Beam payload. The store's compare-and-apply loop decides replacement against the currently observed revision; a competing writer causes re-observation rather than blind overwrite, and an anonymous replacement does not inherit a prior publisher identity.
+
+Catalog reads expose the persisted uploader identity, use revision-bound transcript cursors, and reject stale cursors after content changes. Store/service tests prove background inventory refresh observes foreign writers, service stop prevents a late in-flight refresh from repopulating retired inventory, and competing upload revision must be rechecked. Receiver tests prove forged payload publisher identity is rejected, stale/equal snapshots do not refresh retained state, and operator-write authorization is required before reading the request body. The cross-server identity test closes/reopens plugin SQLite state and proves the uploader identity comes from the saved snapshot rather than a retained request context or the reader's current identity.
+
+Negative oracle: a stale receiver request, competing upload, or reopened reader must never acquire authority to rewrite uploader identity or resurrect an older Beam revision.
+
+### 26.6 Device Pair notifier scheduler recursion
+
+The Device Pair notifier production identities themselves were already present in Round87 and are not duplicated. Its scheduler dependency adds these previously unregistered frozen identities:
+- `src/plugins/service-scheduler.ts@c99f2b7ce3b2c81fcdbea8dcae6090a753762675`
+- `src/plugins/service-scheduler-binding.ts@180c6cd40567b9e790c682217c5aed5d236d9ffe`
+- `src/plugins/services.scheduler-context.test.ts@0dd382665e6b27d2ed1c805560b0d6ce997678e4`
+
+Plugin service scheduling is scoped to a concrete service/account/CLI owner. Each scope has an abort signal, child scopes, and a close path that first begins close for parent/children and then joins scheduled work. The async binding refuses unbound scheduling and refuses a retired scheduler. The scheduler-context tests prove callbacks keep service ownership after the startup/reload caller is gone, old scheduler generations are aborted on reload, scheduling on a retired scope throws, siblings survive scoped stop, and scheduled callbacks settle before the disposal that stops the service.
+
+This closes the Device Pair notifier's recursive scheduler ownership: its 10-second poll cannot continue on a retired service generation merely because a timer callback was already queued.
+
+### 26.7 Memory-core SQLite-worker production entrypoints
+
+New frozen identities:
+- `extensions/memory-core/src/standing-intents.worker.ts@a27ce6a395c9292e6c4767f4f9ca3c71522242ca`
+- `extensions/memory-core/src/memory/manager-publication.worker.ts@e87d19f14adc17c249659906172ca5ce74410de7`
+- `extensions/memory-core/src/memory/manager-cpu-entrypoints.ts@d5900dfbb1050f92a385d5b1344cd6e70d7ded8b`
+- `extensions/memory-core/src/memory/manager-publication-transfer.test.ts@309feec35e1efc223fc9cb4720c05c001fb9c2e9`
+- `extensions/memory-core/src/memory/manager-publication-crash.test-support.ts@fbfffc4483e08210acfde77727f9962f2d59b539`
+
+The CPU entrypoint map proves these are packaged production worker identities, not test-only filenames: `manager-publication.worker` maps to `memory-publication.worker.js`, while `standing-intents.worker` maps to `standing-intents.worker.js`. Standing intents binds the canonical agent executor's SQLite connection and explicitly leaves retention/close ownership with that executor; commands run under admitted worker search/schema/transaction boundaries instead of a second main-thread writer.
+
+Memory publication has two distinct ownership modes. Agent publication borrows the executor connection and does not own its close; private shadow publication opens its own SQLite connection, configures WAL maintenance, validates file identity/connection policy, and owns stop/close for that private shadow. Every operation is wrapped by SQLite worker admission and scoped write-token checks. The transfer tests prove connection policy survives scalar and staged transfers, declined preparation can reuse a healthy publication owner, concurrent large transfers remain isolated by publication scope, and an original failed publication outcome is preserved even when close itself also fails. Crash support deliberately kills the process before publication commit to exercise recovery rather than treating process death as a successful mutation.
+
+Negative oracle: worker retirement, publication failure, or a failed cleanup must not transfer a borrowed executor connection into a second owner, and private-shadow cleanup failure must not erase the original uncertain/failed publication outcome.
+
+### 26.8 Extension shared-state close / agent-close / snapshot-cleanup dedupe result
+
+A fresh 100-cap extension scan of `closeOpenClawStateDatabaseAsync` and `closeOpenClawAgentDatabasesAsync` found the previously recorded Codex, Feishu, Twitch, ACPX, Reef, Google Vertex, Diffs, Microsoft Teams, Google Meet, iMessage, QA-lab, and memory-core test/support identities; every direct close identity from those result sets was already present in Round87. Extension searches for `cleanupSnapshotOperations`, `sqlite-snapshot-source`, and `sqlite-readonly-location-cleanup` produced no extension production caller at the frozen ref. No duplicate close identity is added here.
+
+The new SQLite-worker evidence above therefore changes caller coverage, not process-wide close ownership. No newly inspected extension production consumer owns process-wide `closeOpenClawStateDatabaseAsync`. Shared-state retirement remains the previously established Gateway shutdown → agent DB retirement → global singleton drain sequence.
+
+### 26.9 Closure status
+
+This pass adds nonduplicate production-consumer, scheduler, durable-ingress and SQLite-worker evidence only. It does not establish scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, independent ACCEPT, OCRM final acceptance, or release acceptance. No Actions/build/test/generator/package was run, and no production code, ledger, RTM or flags were modified.
