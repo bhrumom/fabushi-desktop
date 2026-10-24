@@ -549,20 +549,23 @@
       "referencePath": "source/host/extensions/box-store-sync/box-copy-in.ts",
       "expectedBaseParityMode": "rust-port",
       "parityMode": "rust-adaptation",
-      "targetBlobSha": "779e42560eb686b4c1bbdf60492b8e8e377312c2",
+      "targetBlobSha": "87c90b06eb06a3e1994e83f004e72bf852508f88",
       "behavioralEvidence": [
         "source/host/src/extensions/box_store_sync/box_copy_in.rs",
+        "source/host/src/extensions/box_store_sync/native_box_object_store.rs",
+        "source/host/src/extensions/box_store_sync/native_object_transfer.rs",
         "source/host/src/extensions/telemetry/box_copy_in_telemetry.rs",
         "source/host/src/extensions/telemetry/host_telemetry_service.rs"
       ],
       "testEvidence": [
         "source/host/tests/box_copy_in_frozen_parity_contract.rs",
+        "source/host/tests/native_object_transfer_contract.rs",
         "source/host/tests/box_copy_in_telemetry_contract.rs",
         "source/host/tests/box_copy_in_production_wiring_contract.rs",
         ".github/workflows/rust-desktop-runtime.yml",
         ".github/workflows/desktop-chat-parity-ci.yml"
       ],
-      "rationale": "Adapts frozen Grok box-copy-in from TypeScript to the Mahayana Host Rust owner without changing process ownership. The real --box-copy-in lifecycle remains the producer; started, slow/stuck watchdog, failed and successful terminal level decisions plus the full frozen metadata shape are preserved. Optional hydrate_source/restored_store_db_entries retain undefined-as-omitted semantics, store_backend remains an identity tag as in the frozen standalone telemetry owner, and every event crosses the single typed HostStructuredLogTelemetry::report_box_copy_in facade into the canonical fixed sand.box_copy_in mapper. Coordinator and Electron gain no second structured-log owner."
+      "rationale": "Adapts frozen Grok box-copy-in from TypeScript to the Mahayana Host Rust owner without changing process ownership. The real --box-copy-in lifecycle remains the producer; started, slow/stuck watchdog, failed and successful terminal level decisions plus the full frozen metadata shape are preserved. Optional hydrate_source/restored_store_db_entries retain undefined-as-omitted semantics, store_backend remains an identity tag as in the frozen standalone telemetry owner, and every event crosses the single typed HostStructuredLogTelemetry::report_box_copy_in facade into the canonical fixed sand.box_copy_in mapper. Coordinator and Electron gain no second structured-log owner. The user's 2026-10-24 requirement to preserve cloud files on Fabushi-owned services supersedes proprietary transport parity: explicit native mode now injects the same Host native credential owner, selects the existing BoxObjectStore port with CAS/chunk transfer and emits fabushi-native as its backend tag. Native mode does not select the old V2/AgentStore migration fallback; local-FS precedence and copy-in lifecycle/telemetry behavior are retained. Native HTTP/large-object/port contracts passed in Actions 40057785937 at bd647e94; package, sharing/encryption and full release acceptance remain pending."
     },
     {
       "referencePath": "frontend/src/recovered/runtime/coordinator-source.ts",
