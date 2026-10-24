@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "0c55e509de7caf01e4df3b183af214baa68a9151",
+  "target_commit": "f2e6007709825b16f351f3d4d85f0d202766c4e7",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16221,
-    "unread": 16196,
+    "unknown": 16220,
+    "unread": 16195,
     "omitted": 0,
-    "responsibilities_total": 173,
+    "responsibilities_total": 174,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -46461,6 +46461,265 @@
       "license_and_provenance": "Exact Microsoft/GSL include/gsl/span@d2ef9f7d85ca6e25bf69b001e9308b3d069c5d16 MIT-licensed dependency implementation, focused tests and accepted tdesktop exact-head usage provenance retained; no GSL span runtime or consumer/domain release authority inferred.",
       "reviewer": "primary-session",
       "notes": "Strict155 closes only GSL include/gsl/span as a low-level bounded non-owning view dependency. Direct tdesktop consumers and include/gsl/span_ext remain independently open. Counters unknown=16,221 unread=16,196 omitted=0 responsibilities=173. Next strict156 Microsoft/GSL include/gsl/span_ext@2a7664c70550477e9ff228d6370ff635b5217c81."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/GSL",
+      "source_blob_sha": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+      "source_kind": "recursive_child_repository_dependency_implementation",
+      "module_id": "tdesktop.thirdparty.gsl.span_ext",
+      "responsibility_id": "TDRP-R9-GSL-SPAN-EXT-COMPATIBILITY-DEPENDENCY-001",
+      "source_symbols": [
+        "include/gsl/span_ext@2a7664c70550477e9ff228d6370ff635b5217c81",
+        "gsl::dynamic_extent compatibility constant",
+        "span comparison operators == != < <= > >= outside GSL_KERNEL_MODE",
+        "make_span pointer/count, pointer/pointer, C-array and container adapters",
+        "deprecated smart-pointer make_span overloads",
+        "gsl::at(span,index) signed-index precondition plus span bounds check",
+        "gsl::ssize(span) signed size observer",
+        "free begin/end/rbegin/rend/cbegin/cend/crbegin/crend iterator adapters"
+      ],
+      "capability_ids": [
+        "CAP-SPAN-COMPATIBILITY-ADAPTERS",
+        "CAP-CONTIGUOUS-NONOWNING-VIEW",
+        "CAP-CHECKED-SLICE-INDEX",
+        "CAP-NATIVE-RUST-SLICE-REPLACEMENT"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "Microsoft/GSL:include/gsl/span_ext@2a7664c70550477e9ff228d6370ff635b5217c81",
+        "Microsoft/GSL:include/gsl/span@d2ef9f7d85ca6e25bf69b001e9308b3d069c5d16",
+        "Microsoft/GSL:include/gsl/assert@d3e6ccdd53d5a254ed3827cf07711a6e86bb4226",
+        "Microsoft/GSL:include/gsl/util@26b2f5fb9d0d8c28c3096f50d575eb42a4b89bad",
+        "Microsoft/GSL:tests/span_ext_tests.cpp@dfd2725db3612de97c4a3173f5f168131f7341f3",
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md#TDRP-LANG-03"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-span-ext-compatibility-complete-read.md",
+      "behavior_contract": "Account for the locked GSL span_ext legacy compatibility contract without transplanting source architecture. The header supplies lexicographical/equality span comparisons outside kernel mode, make_span construction adapters, signed checked gsl::at, signed ssize and free iterator adapters over the underlying non-owning span. Fabushi preserves these guarantees with Rust slices/references, checked indexing, ordinary iterator adapters and value comparison inside each existing domain owner; raw pointer+length conversion remains a narrowly audited platform/FFI seam.",
+      "state_machine": "domain owner owns contiguous storage -> create a scoped typed slice/reference from safe owned storage or a separately proven raw boundary -> compare, iterate, observe signed size or perform checked index access -> borrow ends without transferring storage ownership",
+      "side_effects": [
+        "span_ext owns no application state, allocation, persistence, network or UI.",
+        "make_span creates only a non-owning view and does not transfer ownership.",
+        "gsl::at rejects negative indices and delegates upper-bound validation to span.",
+        "ssize changes only the integer representation of size.",
+        "Comparison and iterator helpers do not mutate the viewed storage."
+      ],
+      "failure_cases": [
+        "A null pointer with a nonzero count or otherwise invalid pointer range is accepted as a valid view.",
+        "A negative signed index is cast to an unsigned value without first failing closed.",
+        "An out-of-range index silently truncates, wraps or reads outside the source range.",
+        "A borrowed view outlives or becomes detached from its real storage owner.",
+        "Deprecated smart-pointer make_span overloads are used to justify pointer-centric ownership in Fabushi.",
+        "A generic SpanExtRuntime or compatibility buffer owner duplicates native Rust slice/iterator truth.",
+        "The 16 accepted tdesktop gsl::make_span consumers are incorrectly marked complete by this helper row.",
+        "Source, gitlink, focused-test or consumer drift is ignored."
+      ],
+      "ui_disposition": "No independent UI surface. Some accepted tdesktop gsl::make_span consumers are UI/layout/rendering paths, but their interaction and product responsibilities remain with canonical Fabushi domain/UI owners.",
+      "non_ui_responsibilities": [
+        "non-owning span construction compatibility adapters",
+        "signed checked span indexing",
+        "signed size observation",
+        "free forward/reverse iterator adapters",
+        "non-kernel span equality and lexicographical ordering",
+        "native Rust slice/iterator replacement"
+      ],
+      "platform_delta": "Rust slices and references directly encode non-owning borrows; iterator free functions and ssize helpers do not require a compatibility runtime. Use checked indexing/get at signed-input boundaries before integer conversion. Implement comparison at the actual typed domain value/slice. Raw pointer+length conversion is restricted to unavoidable platform/FFI seams with explicit safety proof.",
+      "existing_owner_candidates": [
+        "TDRP-LANG-03 mature low-level dependency replacement (selected)",
+        "Rust slice/reference/iterator/comparison semantics plus actual domain storage owners (selected)",
+        "platform/FFI adapter only for unavoidable pointer+length interop (conditional)",
+        "new GSL SpanExtRuntime or compatibility buffer owner (rejected)"
+      ],
+      "existing_owner": "Rust slice/reference/iterator/comparison semantics and each existing domain storage owner; platform adapters own only unavoidable scoped raw interop, never product storage",
+      "rejected_existing_owners": [
+        "A GSL-specific span_ext runtime would preserve source architecture and duplicate Rust standard semantics.",
+        "A cross-domain compatibility buffer/view owner would steal storage and lifecycle from protocol, media, calls, passport and UI domain owners.",
+        "Legacy helper functions do not establish a shared product responsibility among their consumers."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md"
+      ],
+      "fabushi_target_symbols": [
+        "**TDRP-MOD-03:** 每个 dossier 必须继续写清 exact-head existing owner、target path/symbol、typed contract、production composition、必要服务端职责、完整测试场景及迁移/回滚。只有研究笔记不算模块完成。",
+        "- **G-FILE:** 每个文件及 non-UI responsibility 均有处置；0 directory-only placeholders；双向 target trace 无遗漏。"
+      ],
+      "target_language": "Rust native slice/reference/iterator/comparison types inside existing owners",
+      "language_rationale": "The source responsibility is a compatibility helper layer over a non-owning view. Rust already provides borrow lifetimes, checked slice access, iterators, signed conversions and typed comparison without a GSL-shaped compatibility subsystem.",
+      "command_event_contracts": [
+        "owned contiguous storage -> borrow a typed slice/reference without transferring ownership",
+        "pointer+count boundary -> prove pointer/length/lifetime before constructing a scoped borrow",
+        "signed index request -> reject negative values before conversion and reject out-of-bounds access",
+        "size observation -> convert only when the target signed representation is valid",
+        "iteration request -> expose forward/reverse iterator behavior over the same scoped borrow",
+        "comparison request -> compare typed slice contents without mutating or re-owning storage"
+      ],
+      "state_owner": "Actual product/domain storage owner; no independent span_ext state.",
+      "lifecycle_owner": "Existing domain storage owner owns data; Rust borrow lifetime owns view validity; a platform adapter owns only the duration of an unavoidable raw interop conversion.",
+      "persistence_and_restart": "No helper/view persistence. Persist stable domain data and reconstruct owned buffers plus scoped borrows after restart; never persist process addresses, iterator positions or borrowed lengths as authority.",
+      "concurrency_and_cancellation": "span_ext supplies no concurrency or cancellation model. Thread-safety, mutation serialization and cancellation remain with each domain owner; Rust aliasing and lifetime rules must not be bypassed to mimic C++ helper flexibility.",
+      "security_boundary": "Fail closed before signed-to-unsigned index conversion and on invalid pointer/count or bounds. Never extend a borrow beyond storage lifetime or turn deprecated smart-pointer adapters into a generic ownership escape hatch.",
+      "network_service_dependencies": [
+        "GitHub Actions for exact-head revalidation"
+      ],
+      "service_owner": "No shipping service.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-replaced-mapped-open",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required after publication.",
+        "All 16 direct accepted tdesktop gsl::make_span consumers remain separate product/domain responsibilities.",
+        "Raw platform/FFI pointer+length safety remains per actual adapter proof.",
+        "Source closure and independent release acceptance remain open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "strict156 include/gsl/span_ext@2a7664c70550477e9ff228d6370ff635b5217c81 fully read: 215 line slots / 6756 bytes",
+        "tests/span_ext_tests.cpp@dfd2725db3612de97c4a3173f5f168131f7341f3 fully read: 381 line slots / 11004 bytes; 12 focused TEST cases cover make_span forms, checked at, iterator helpers, ssize and comparisons",
+        "focused tests include null pointer with nonzero length death and four negative/end-index gsl::at death assertions",
+        "accepted tdesktop exact-head code search found 16 direct gsl::make_span consumer files across MTProto, Passport, Calls, media/audio/streaming, send-files and UI; consumer responsibilities remain independently open",
+        "GSL gitlink 87f9d768866548b5b86e72be66c60c5abd4d9b37; child tree 6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41",
+        "Live main 7394f6dc7687f9b986ee5589d40aa680ce23b90a and upstream dev a7f453612f4896ac04d0007a36ab0d377e5bcbcf rechecked after parent double-green",
+        "Parent TDRP 40043916450 61/61 success; authority 12539664651 sha256:1a13f69d30e25b94e4329f3960abc1b025f66f39dbb9df3b1adc553722e596c4; closure 12540263985 sha256:a6ca1c4942db3e911dc5eaad88fad8235bfbe19ae2ce35ebacfd3fcede213636; reachability 12539669845 sha256:61939fcd5c268bccf6ccf2d1f2b346140a9d84a56d67bbfdd2cc21bd83618c07; Rust 40043916458 6/6 success; artifact 12539884045 sha256:2f89760a2ca2d2899123ac66415608443c81bb241263b34724c0bb98a8f2ed69."
+      ],
+      "target_commit": "f2e6007709825b16f351f3d4d85f0d202766c4e7",
+      "workflow_run": 40043916450,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12539664651,
+      "artifact_digest": "sha256:1a13f69d30e25b94e4329f3960abc1b025f66f39dbb9df3b1adc553722e596c4",
+      "composition_root": "Fabushi native Rust slice/reference model through each existing product/domain storage owner",
+      "composition_slot": "legacy span helper compatibility contract",
+      "capability_component": "Native slice construction/index/iterator/comparison invariants",
+      "variation_axes": [
+        "kernel vs non-kernel comparison availability",
+        "pointer vs array vs container borrow source",
+        "signed vs unsigned index/size boundary",
+        "forward vs reverse and const iterator projection",
+        "native safe borrow vs unavoidable raw pointer+length interop"
+      ],
+      "shared_owner_contracts": [
+        "TDRP-LANG-03",
+        "Rust slice/reference/iterator/comparison semantics",
+        "actual domain storage/lifecycle owners",
+        "platform adapters only for unavoidable raw pointer+length interop",
+        "exact-head TDRP evidence"
+      ],
+      "duplicate_root_check": "No GSL SpanExtRuntime, compatibility buffer owner, second storage root or pointer-centric product subsystem.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Borrowed-view helper construction/index/iterator/comparison contract only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Native Rust slice/reference/iterator/comparison contracts inside existing owners",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Persist stable domain data, not borrowed views, iterators or process addresses. Restart reconstructs owned storage and scoped borrows; source/test/consumer drift requires fresh reconciliation.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-GSL-SPAN-EXT-COMPATIBILITY-DEPENDENCY-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GSL-SPAN-EXT-EXACT-SOURCE-001",
+        "ORA-TDRP-GSL-SPAN-EXT-MAKE-SPAN-001",
+        "ORA-TDRP-GSL-SPAN-EXT-CHECKED-AT-001",
+        "ORA-TDRP-GSL-SPAN-EXT-ITERATOR-SIZE-001",
+        "ORA-TDRP-GSL-SPAN-EXT-COMPARISON-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GSL-SPAN-EXT-NO-OWNERSHIP-001",
+        "INV-TDRP-GSL-SPAN-EXT-BOUNDS-001",
+        "INV-TDRP-GSL-SPAN-EXT-NO-COMPAT-RUNTIME-001",
+        "INV-TDRP-GSL-SPAN-EXT-NO-CONSUMER-ABSORPTION-001",
+        "INV-TDRP-GSL-SPAN-EXT-EXACT-PROVENANCE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GSL-SPAN-EXT-DEPENDENCY-REPLACEMENT-001",
+        "CONTRACT-TDRP-GSL-SPAN-EXT-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GSL-SPAN-EXT-SOURCE-DRIFT-001",
+        "FAULT-TDRP-GSL-SPAN-EXT-NULL-NONZERO-RANGE-001",
+        "FAULT-TDRP-GSL-SPAN-EXT-NEGATIVE-INDEX-001",
+        "FAULT-TDRP-GSL-SPAN-EXT-OUT-OF-BOUNDS-001",
+        "FAULT-TDRP-GSL-SPAN-EXT-DUPLICATE-OWNER-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-GSL-SPAN-EXT-RAW-BORROW-LIFETIME-001",
+        "SEC-TDRP-GSL-SPAN-EXT-BOUNDS-FAIL-CLOSED-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-GSL-SPAN-EXT-NO-OOB-001",
+        "REG-TDRP-GSL-SPAN-EXT-NO-PARALLEL-RUNTIME-001",
+        "REG-TDRP-GSL-SPAN-EXT-NO-CONSUMER-CLOSURE-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-BEHAVIOR",
+        "G-TRACEABILITY",
+        "G-EVIDENCE",
+        "G-SECURITY-PRIVACY"
+      ],
+      "test_fixture_ids": [
+        "locked GSL span_ext header + span_ext focused tests + accepted exact-head make_span consumer search + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact Microsoft/GSL include/gsl/span_ext@2a7664c70550477e9ff228d6370ff635b5217c81 MIT-licensed compatibility-helper implementation, focused tests and accepted tdesktop exact-head usage provenance retained; no GSL span_ext runtime or consumer/domain release authority inferred.",
+      "reviewer": "primary-session",
+      "notes": "Strict156 closes only GSL include/gsl/span_ext as a low-level borrowed-view compatibility helper dependency. Direct tdesktop make_span consumers remain independently open. Counters unknown=16,220 unread=16,195 omitted=0 responsibilities=174. Next strict157 Microsoft/GSL include/gsl/string_span@65790ab8bc9ba9e7fc45cf31f96f32ab27b850f7."
     }
   ]
 }
