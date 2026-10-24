@@ -26,7 +26,11 @@ permissions:
   contents: read
 jobs:
   native-auth-and-journal:
-    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-2025]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v6
@@ -43,6 +47,7 @@ jobs:
           workspaces: source/host -> target
           shared-key: fdn-host-control-owner-contracts-ubuntu-1.97.1
       - name: Install existing Linux native dependencies
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev

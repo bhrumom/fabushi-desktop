@@ -25,6 +25,9 @@ struct Fixture {
     server: Option<thread::JoinHandle<()>>,
 }
 fn read_request(stream: &mut TcpStream) -> (String, Option<Value>) {
+    // macOS can inherit the listener's O_NONBLOCK on accepted sockets.
+    // The listener is polled; each accepted fixture request uses bounded blocking I/O.
+    stream.set_nonblocking(false).unwrap();
     stream.set_read_timeout(Some(std::time::Duration::from_secs(10))).unwrap();
     let mut bytes = Vec::new();
     loop {
@@ -104,7 +107,11 @@ impl Fixture {
     }
 }
 impl Drop for Fixture {
-    fn drop(&mut self) { self.stop.store(true,Ordering::Release); self.server.take().unwrap().join().unwrap(); self.auth.dispose();let _=fs::remove_dir_all(&self.root); }
+    fn drop(&mut self) {
+        self.stop.store(true,Ordering::Release);let joined=self.server.take().unwrap().join();
+        self.auth.dispose();let _=fs::remove_dir_all(&self.root);
+        if !thread::panicking() { joined.expect("native HTTP fixture server failed"); }
+    }
 }
 struct BoundedReader(Cursor<Vec<u8>>);
 impl Read for BoundedReader {
