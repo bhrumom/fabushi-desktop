@@ -6575,3 +6575,52 @@ No Actions were started or rerun; no production code, ledger, RTM, flags, source
 
 - The requested predecessor public-id -> restart/lost-reply session-delivery recovery -> real settlement -> exact physical cleanup -> public exact-run terminal-read fixture remains absent. The direct Stop replacement-late-success oracle and plugin-native distinct failed-publication receiver/third plural caller remain absent. Independent ACCEPT, scoped G01/G02, Rust implementation/wiring, package/device proof, release acceptance and final OCRM acceptance remain open.
 
+
+
+## Section 104 — session-event source identity stays split from execution authority through mailbox, restart-claim, and recovery storage
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`). The requested starting lease `1e4c8262a9f782c9e7d6cd4178213420145fde88` had already advanced by one clean dossier-only commit to live `19c0ca1a8b1ffef87d433077e8a7a6ec88f386ed`, which added Section 103; this pass therefore uses the re-read live head as its lease and continues from that exact evidence without overwriting it. Only frozen refs absent from the complete dossier before this append are registered.
+
+New frozen identities:
+- `src/auto-reply/reply/session-event-context.ts@80fdf4bef229964c109926c90293849568b97525`
+- `src/auto-reply/reply/source-turn-id.ts@751ef06ea592b4c96a478a4b564a91a30d13427f`
+- `src/auto-reply/reply/reply-source-binding.ts@2215cf5e7d1e1a5c38485ac4f196d5ad6bae4d57`
+- `src/auto-reply/reply/agent-runner-run.ts@c814639a15b6e9c303793f69241d3280aaf318d1`
+- `src/agents/agent-command-restart-recovery.ts@efff80c9b2f3959d2e679c3f8aa5d564da557ad0`
+- `src/agents/command/session-preparation.ts@7ba0ed2a2583f7fa96fcd1231abc35dbbccb369c`
+- `src/auto-reply/reply/restart-recovery-claim.ts@337fe4eedb83d1133a5c3e52d028b1dcbd74f806`
+- `src/gateway/session-send-recovery-source.ts@a0e12663b21060e5f4cc86fd2274558d80844248`
+- `src/agents/requester-run-recovery-source.ts@0fd3addd49caba51fcbce5ee39f2a86037fdf7b4`
+- `src/agents/operator-run-recovery-source.ts@3a254d471bf01160215daff54fedf63f9a2eb975`
+
+### 104.1 The host projects sourceRunId only as input provenance and sourceTurnId only as input identity
+
+- `session-event-context.ts@80fdf4…` builds an internal-system message with `CommandAuthorized: false`. When a producer supplied `sourceRunId`, it is copied only to `InputProvenance.runId`; `sourceTurnId` is carried separately through the private channel-source-turn symbol. Neither field grants command authority.
+- `source-turn-id.ts@751ef0…` makes that separation explicit. External channel turns derive a scoped hash from provider/account/conversation/message ids. Internal turns preserve an admitted input identity and only reuse `restartRecoveryDeliverySourceRunId` when the current `restartRecoveryDeliveryRunId` exactly equals the admission run. This is source-turn continuity, not public Cron run correlation.
+- `reply-source-binding.ts@2215cf…` reserves the session-controller mailbox with two different fields: `sourceTurnId: readChannelSourceTurnId(ctx)` and `protocolRunId: options?.runId`. A source identity is therefore not silently promoted to the execution protocol run id.
+- `agent-runner-run.ts@c81463…` reads the private source-turn id for duplicate-source retirement and terminal-delivery steering fences, while its execution run id remains the separately admitted/protocol run. Its fallback to `restartRecoveryDeliverySourceRunId` is also source-turn recovery evidence, not a Cron receipt/history lookup.
+
+### 104.2 Restart durable claims preserve exact source/run pairs but do not ingest SessionEvent InputProvenance.runId as Cron authority
+
+- `agent-command-restart-recovery.ts@efff80…` writes `restartRecoveryDeliveryRunId` and `restartRecoveryDeliverySourceRunId` as separate fields. Its only `inputProvenance`-derived internal completion source is the narrowly gated `inter_session + subagent_settle + internal` path; a SessionEvent's `internal_system` provenance does not satisfy that gate.
+- `session-preparation.ts@7ba0ed…` creates restart requester/operator recovery sources from an explicit recovery `sourceOptions.sourceRunId` or the current execution run id. It does not read `InputProvenance.runId` as an authority source. The resulting claim still keeps active delivery run id and source run id separate.
+- `restart-recovery-claim.ts@337fe4…` tracks an admitted claim by exact session/lifecycle plus the pair `restartRecoveryDeliveryRunId` and `restartRecoveryDeliverySourceRunId`. Recoverable channel delivery additionally requires the persisted user-turn idempotency key to equal `sourceTurnId`. No `receipt.requestRunId`, Cron history `runId`, or session-delivery queue id is consulted by this claim path.
+- `requester-run-recovery-source.ts@0fd3ad…` explicitly labels its persisted requester source as facts retained by the existing restart claim, “never an execution grant”, and re-reads it only when agent/session/incarnation/sourceRunId all match the private current claim.
+- `operator-run-recovery-source.ts@3a254d…` likewise snapshots already-admitted operator evidence, requires re-admission, and rejects both `entry.cronRunContinuation` and `isCronSessionKey(sessionKey)`. It therefore cannot become a hidden public-Cron authority bridge.
+- `session-send-recovery-source.ts@a0e126…` uses `sourceRunId` only to locate an exact consumed sessions.send input and requires matching retained delivery/idempotency facts. It refuses to restore from transcript data that carries requester principal or operator source authority. This recovery index is sessions.send-owned and does not join Cron receipt/history to the restart delivery queue.
+
+### 104.3 The requested public-Cron cross-index is still absent after downstream source-identity exhaustion
+
+- Section 103 proved the only production SessionEvent writer of `sourceRunId/sourceTurnId` is exec completion provenance. The downstream reads above show where those values can go: internal input provenance, source-turn mailbox identity, exact restart claim fields, or sessions.send consumed-input recovery.
+- None of those paths reads or writes Cron `receipt.requestRunId`, public run-history `runId`, or `child_session_key` into `QueuedSessionDelivery`, and none calls `settleQueuedSessionDelivery` with a public Cron id. The requested one-id fixture from public Cron receipt/history through restart/lost-reply settlement, exact alias deletion, and `cron.runs { id, runId, limit: 1 }` therefore remains absent.
+
+### 104.4 Stop and plugin-native frontiers remain unchanged under focused re-scan
+
+- Frozen `session-processes.test.ts@4d65f9bcd624ea2031ecbe7493f9ee1daed3b4d3` still has ordinary Stop authorization/result coverage and a separate in-flight stale-response test for `sessions.processes.list`; the UI stale/replacement tests are panel observation or request-dedupe behavior. No direct Gateway-server test issues Stop, replaces `placementGeneration/activeOwnerEpoch` while the remote Stop is pending, then returns a successful stale worker reply and proves rejection.
+- Frozen plugin-native symbol enumeration still has exactly two production plural callers of `settlePluginNativeAdmissions`: generation-preparation worker and prepared-model-runtime build. `PluginNativeAdmissionTransfer` remains ordinary worker/host custody, and false/throw publication remains retained on the same admission state for explicit retry; no distinct failed-publication receiver and no third plural production caller was found.
+
+### 104.5 Dedupe, lease, and remaining acceptance state
+
+Immediately before this append, live lease was `19c0ca1a8b1ffef87d433077e8a7a6ec88f386ed`, dossier blob `f774473450b952fbd58d03a7e96aef38fed93350`, 6578 lines, Section 104 count zero, and all ten exact refs above had zero occurrences. Frozen upstream commit/tree were re-read. No Actions were started or rerun; no production code, ledger, RTM, flags, source lock, inventory, or source baseline changed.
+
+- The requested integrated public-Cron restart settlement/read oracle, direct Stop replacement-late-success Gateway oracle, and plugin-native distinct failed-publication receiver/third plural caller remain absent. Independent ACCEPT, scoped G01/G02, Rust implementation/wiring parity, package/device proof, release acceptance, and final OCRM acceptance remain open.
