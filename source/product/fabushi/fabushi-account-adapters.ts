@@ -1,4 +1,5 @@
 import { join } from "node:path";
+import { fetchNativeUsageSummary } from "./fabushi-usage.js";
 
 import { createFabushiOfficialDeviceRegistryService } from "./fabushi-official-device-registry.js";
 
@@ -184,8 +185,18 @@ export function createFabushiProductionCursorAccountBinding(): ElectronProductio
         refreshHostMcp: () => context.requireMcp().refreshHostMcp(),
         resolveAvatar: async (_authId, preferredUrl) => preferredUrl ?? null,
         fetchWeeklyUsage: async () => null,
-        isUsagePageEnabled: () => false,
-        fetchUsageSummary: async () => null,
+        isUsagePageEnabled: () => true,
+        fetchUsageSummary: async (getAccessToken) => {
+          const account = context.requireAccount();
+          const freshness = account.currentAuthStatusFreshness();
+          const summary = await fetchNativeUsageSummary({
+            baseUrl: normalizeFabushiApiBaseUrl(context.env.FABUSHI_API_BASE_URL),
+            getAccessToken,
+            fetchImpl: context.native.net?.fetch.bind(context.native.net) ?? globalThis.fetch,
+          });
+          if (freshness !== account.currentAuthStatusFreshness()) throw new Error("Fabushi account changed while loading usage.");
+          return summary;
+        },
         fetchPrReviewPreferences: async () => ({ user: undefined, team: undefined }),
         fetchPrivacyModeEnabled: async () => true,
         cancelTrial: async () => ({ ok: false, message: "This isn’t available in Fabushi." }),

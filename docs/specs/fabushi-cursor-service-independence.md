@@ -1,0 +1,48 @@
+# Fabushi service independence from Cursor
+
+Status: active, full migration and release acceptance NOT complete
+Owner: existing Fabushi product composition, Host service owners and Fabushi backend
+Date: 2026-10-24
+
+## Authority and problem
+The user explicitly requires removal of Cursor service dependencies throughout the product. This supersedes frozen Grok parity where it requires Cursor-owned infrastructure. The prior Sand inquiry must not remain a requirement to obtain a Cursor service owner's contract. Keep provenance and protocol compatibility names where they do not create a service dependency.
+
+Baseline: desktop main 7394f6dc7687f9b986ee5589d40aa680ce23b90a. PR #171 independently corrects premature completion ACK. Product account composition already uses FabushiAuthService, Fabushi Responses and offline ASR. Shared Node and Rust configuration still defaults to api2.cursor.sh; separate telemetry, update and external links retain Cursor origins. Presence in reconstructed source is not proof of reachable production traffic.
+
+## Goal and requirements
+- CSI-R1: no built-in Cursor origin or Cursor environment fallback may select a product service endpoint. Use the existing approved Fabushi origin policy (api.ombhrum.com, isolated CI issuer or loopback) and keep credential issuer binding.
+- CSI-R2: product login/inference/marketplace remain on existing first-party owners; never send Fabushi tokens to another origin. No global string replacement of proprietary RPC methods into supposedly native APIs.
+- CSI-R3: replace or retire legacy remote telemetry, updater and browser links through their existing owners. No Cursor credentials, proprietary Statsig keys or Sentry DSN are required in the released product.
+- CSI-R4: inventory and migrate actual legacy remote capabilities: automation scheduling/event completion/restart state, cloud agents/worker lifecycle, file sync/sharing/media, model catalogs/labeling/image/web tools, notifications, setup rules/skills, feedback, privacy/experiments/analytics and update distribution. Preserve functional capabilities using first-party services or existing local implementations. Explicitly unsupported/native-service-unavailable is incomplete migration, not acceptance.
+- CSI-R5: migration preserves account/device/agent/session data and permissions. Retain one existing owner per responsibility and independent Coordinator/Host/Runner/Electron/renderer boundaries.
+- CSI-R6: all executable validation is GitHub Actions. Exact source tests, signed packages and network observation must prove no automatic Cursor traffic during startup/login/normal operation/update/error/restart. User-supplied arbitrary browser content is distinct from a product dependency.
+
+User decision 2026-10-24: retain cloud automation, cloud Agents and cloud file synchronization by migrating to Fabushi-owned services; deleting those features is not authorized. Shared native service contract work is in Core docs/specs/fabushi-native-cloud-services.md. Public gateway/deployment stay in Backend; product consumers stay in Desktop.
+
+## Architecture and sequence
+1. Establish a first-party-only endpoint selection boundary in shared Node configuration and Host configuration, removing legacy default and Cursor environment selection. Keep the existing native account policy as authority; loopback remains for isolated tests.
+2. Review direct endpoints and individual production call chains before replacing transports. Native JSON/Responses contracts do not imply support for recovered Connect/protobuf routes. Do not bypass credential refusal to make a call appear functional.
+3. Migrate each service in its existing owner and corresponding backend domain with versioned contracts, persistence/idempotency and account fences. Reuse the existing Fabushi auth/Responses/MCP/device services and offline ASR rather than creating parallel owners.
+4. Remove obsolete secret readers, metadata and adapter composition only after native consumers are wired. Legacy key migration never imports foreign bearer credentials as Fabushi sessions.
+5. Verify affected behavior and full product/package network invariants. Preserve exact failures and remaining service gaps.
+
+## Failure, delivery and rollback
+Missing native route/configuration is an explicit unavailable error, never a successful no-op or a fallback to Cursor. Account switch and late response handling require generation/issuer fences. DNS aliases, redirects, WebSocket/media/update download URLs and subprocess clients are in scope of egress acceptance. Origin configuration must reject credentials, remote HTTP and unapproved hosts before auth or request construction. No schema changes in the initial configuration boundary. Release only after full native service parity and package acceptance; rollback must not silently restore Cursor dependencies.
+
+## Acceptance
+AC1: endpoint selection rejects Cursor/foreign origins and ignores CURSOR_API_BASE_URL; native production/CI/loopback cases covered.
+AC2: each CSI-R4 service has a real native producer/owner/consumer plus positive and failure/restart/account-switch evidence.
+AC3: zero automatic Cursor requests in packaged platform acceptance, with dependency denial controls.
+AC4: current exact-head Actions and normal review/integration pass; no unrelated branch/production mutation.
+
+## Compliance / current task
+Discovery is partial. AC1 implementation pending; AC2/AC3/AC4 pending. No native service completeness or production-removal claim is authorized by this document. This task replaces the earlier premise that an external Cursor owner must unblock Fabushi service design. No follow-up email has been sent for this expanded scope yet.
+
+References: source/product/fabushi/fabushi-account-adapters.ts; source/product/fabushi/fabushi-account-policy.ts; source/shared/node/cursor-token.ts; source/host/src/extensions/auth/credential_renewer.rs; source/electron-main/entry.ts; root AGENTS.md; PR #169 and #171. Current user instruction is the authority for this behavioral adaptation.
+
+## Native credential compatibility and transport unit (CSI-R5)
+Discovery found a concrete native compatibility gap: Electron writes issuer in the Host credential file, but HostAuthService's strict FabushiCoreCredentialFile omits that field and rejects it. Before native transport cutover, accept the approved issuer field, retain the legacy missing-issuer default as production only, and expose a method that authorizes an exact same-origin target. Never use generic inference-renewal credentials for native automation. Native target/network clients must apply issuer authorization before accessing device secrets or making requests; redirects must remain disabled. Tests must use actual account-owner file shape and prove approved issuer acceptance, issuer mismatch/foreign denial, expiry and redaction. Missing native route remains unavailable, not fallback or success. Native automation transport remains unenabled until service/lifecycle/recovery acceptance.
+
+Native automation transport contract: implement the existing AutomationsBackendTransport port with explicit mapping of the two run-journal calls to /v1, native Core credentials only, fixed account/session/device/issuer identity, same-origin authorization and redirect refusal. Re-check identity after responses so account changes discard stale results. Require fabushi.automation.v1 and typed events/receipt rather than treating any 200 JSON as completion. This adapter is not wired into the shipping lifecycle until definitions/scheduling/leases/recovery are ready; its presence is not production migration evidence.
+
+Native account usage/help unit: replace product Help links with the existing Fabushi repository support entry and open the existing in-app Usage settings surface instead of a Cursor dashboard. The account summary reads the existing /v1/ai/usage native token budget contract through explicit same-issuer credentials, with redirect refusal, bounded request time and account freshness fencing. Project only real native token usage/reset/availability; do not invent weekly usage, currency charges, enterprise status or Cursor trials. Invalid/unavailable native responses remain unavailable, never synthetic zero usage. Existing UI/IPC ownership and native authentication remain unchanged. Test native field mapping, invalid shape, explicit target binding and no foreign request; full product UI and issued-account acceptance remain separate.

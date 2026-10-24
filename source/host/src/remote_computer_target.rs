@@ -919,6 +919,7 @@ impl FabushiCoreTargetClient {
         base_url.set_path("/");
         let http = Client::builder()
             .timeout(std::time::Duration::from_secs(CORE_REQUEST_TIMEOUT_SECS))
+            .redirect(reqwest::redirect::Policy::none())
             .build()
             .map_err(|_| RemoteComputerTargetError::AuthorityUnavailable)?;
         Ok(Self {
@@ -935,6 +936,8 @@ impl FabushiCoreTargetClient {
         let credential = self
             .credential_provider
             .get_fabushi_core_credential()
+            .map_err(|_| RemoteComputerTargetError::AuthorityUnavailable)?;
+        credential.authorize_origin(self.base_url.as_str())
             .map_err(|_| RemoteComputerTargetError::AuthorityUnavailable)?;
         let device_secret = self.device_secret_provider.get_device_secret(&credential)?;
         if device_secret.len() < 48 || device_secret.len() > 256 {
@@ -2283,6 +2286,7 @@ impl FabushiNetworkEnrollmentBrokerClient {
         base_url.set_path("/");
         let http = Client::builder()
             .timeout(std::time::Duration::from_secs(CORE_REQUEST_TIMEOUT_SECS))
+            .redirect(reqwest::redirect::Policy::none())
             .build()
             .map_err(|_| RemoteComputerTargetError::AuthorityUnavailable)?;
         Ok(Self { base_url, credential_provider, http })
@@ -2306,6 +2310,8 @@ impl FabushiNetworkEnrollmentBrokerClient {
         let credential = self
             .credential_provider
             .get_fabushi_core_credential()
+            .map_err(|_| RemoteComputerTargetError::AuthorityUnavailable)?;
+        credential.authorize_origin(self.base_url.as_str())
             .map_err(|_| RemoteComputerTargetError::AuthorityUnavailable)?;
         let response = self
             .http

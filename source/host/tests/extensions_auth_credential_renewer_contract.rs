@@ -204,3 +204,15 @@ fn background_renewer_reports_failure_then_supports_immediate_retry() {
     assert_eq!(reports[1].outcome, RenewalOutcome::Renewed);
     assert_eq!(stored.lock().unwrap()[0].access_token, "token-2");
 }
+
+#[test]
+fn product_service_origin_has_no_cursor_default_or_foreign_override() {
+    use mahayana_host_runtime::extensions::auth::credential_renewer::configured_product_backend_url;
+    assert_eq!(configured_product_backend_url(None, None).unwrap(), "https://api.ombhrum.com/");
+    assert_eq!(configured_product_backend_url(Some("http://127.0.0.1:4200"), Some("https://api2.cursor.sh")).unwrap(), "http://127.0.0.1:4200/");
+    for origin in ["https://api2.cursor.sh", "https://cursor.com", "https://api3.cursor.sh", "https://example.com", "http://api.ombhrum.com", "https://token@api.ombhrum.com", "https://api.ombhrum.com/?secret=x"] {
+        assert!(configured_product_backend_url(Some(origin), None).is_err(), "origin must be refused");
+        assert!(configured_product_backend_url(None, Some(origin)).is_err(), "legacy override must be refused");
+    }
+    assert!(configured_product_backend_url(Some("https://fabushi-ci-isolated-auth.bhrumom.workers.dev"), None).is_ok());
+}
