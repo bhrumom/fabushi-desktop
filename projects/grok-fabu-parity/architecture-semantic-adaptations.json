@@ -2,6 +2,23 @@
   "schemaVersion": 1,
   "adaptations": [
     {
+      "referencePath": "source/host/extensions/cross-user-sharing/xuser-sharing-environment.ts",
+      "expectedBaseParityMode": "rust-port",
+      "parityMode": "rust-adaptation",
+      "targetBlobSha": "8e511a16499575c6269759bab32b900efdadcf76",
+      "behavioralEvidence": [
+        "source/host/src/extensions/cross_user_sharing/xuser_sharing_environment.rs",
+        "source/host/src/extensions/auth/credential_renewer.rs",
+        "docs/specs/fabushi-cursor-service-independence.md"
+      ],
+      "testEvidence": [
+        "source/host/tests/xuser_sharing_environment_contract.rs",
+        "source/host/tests/xuser_service_contract.rs",
+        ".github/workflows/native-service-contracts.yml"
+      ],
+      "rationale": "The user requires removing Cursor service dependencies while retaining Fabushi cloud capabilities. Reuse the existing native origin authority, identify Fabushi production by exact origin and preserve both development and deliberate-production opt-ins before a dev Host may drain production room events. Foreign/malformed endpoints remain denied even in packaged builds or with both overrides. Existing sharing state and lifecycle owners remain intact; this endpoint fence does not establish native room/relay or packaged sharing acceptance."
+    },
+    {
       "referencePath": "frontend/src/production/ProductionRenderer.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",

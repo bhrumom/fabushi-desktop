@@ -1,8 +1,10 @@
 use std::collections::BTreeMap;
 
 use url::Url;
+use crate::extensions::auth::credential_renewer::{
+    DEFAULT_CURSOR_BACKEND_URL as DEFAULT_FABUSHI_BACKEND_URL, configured_product_backend_url,
+};
 
-pub const DEFAULT_CURSOR_BACKEND_URL: &str = "https://api2.cursor.sh";
 pub const SAND_DEV_XUSER_SHARING_ENV: &str = "SAND_DEV_XUSER_SHARING";
 pub const SAND_XUSER_SHARING_ALLOW_PROD_ENV: &str = "SAND_XUSER_SHARING_ALLOW_PROD";
 
@@ -24,7 +26,7 @@ pub fn is_production_backend_url(backend_url: &str) -> bool {
     let Ok(candidate) = Url::parse(backend_url) else {
         return true;
     };
-    let Ok(production) = Url::parse(DEFAULT_CURSOR_BACKEND_URL) else {
+    let Ok(production) = Url::parse(DEFAULT_FABUSHI_BACKEND_URL) else {
         return true;
     };
     origin(&candidate) == origin(&production)
@@ -34,6 +36,12 @@ pub fn resolve_xuser_sharing_environment(
     backend_url: &str,
     env: &BTreeMap<String, String>,
 ) -> XuserSharingEnvironment {
+    if configured_product_backend_url(Some(backend_url), None).is_err() {
+        return XuserSharingEnvironment {
+            is_allowed: false,
+            reason: Some("Cross-user sharing requires an approved Fabushi service origin.".into()),
+        };
+    }
     let is_dev_build = env.get("SAND_PACKAGED").is_none_or(|value| value != "1")
         || env
             .get("SAND_HOST_DEV_ERROR_DETAIL")
