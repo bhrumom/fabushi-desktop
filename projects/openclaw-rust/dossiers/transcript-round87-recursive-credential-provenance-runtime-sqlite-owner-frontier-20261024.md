@@ -5325,3 +5325,42 @@ Before this append the live Round87 dossier was blob `2240b1ad78ffedebfddd707e14
 
 This pass is documentation-only. No Actions were started or rerun, and no production code, ledger, RTM, flags, source lock, inventory, or source baseline was modified. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, package/device proof, release acceptance and final OCRM acceptance remain open.
 
+
+## Section 73 — normal isolated-run alias retirement, exact public-run reads, and the remaining restart gap
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`. This pass continues the Section 72 frontier without changing the frozen denominator. It registers only new exact refs absent from the complete Round87 dossier and keeps the recovered-delivery, Processes, and plugin conclusions scoped to what the frozen source directly proves.
+
+New frozen identities:
+- `src/cron/isolated-agent/run.ts@30174c0dca30a605f8012f623423ece7c5caeed3`
+- `scripts/lib/gateway-heap-rig-turns.mjs@e66aa2d1c1e4e18e973667ad44d4af0dceddb59e`
+- `test/e2e/qa-lab/runtime/gateway-codex-heartbeat-compaction.ts@45d2c5af12cdc06c70fb78a8e52d1255c1c30559`
+- `test/e2e/qa-lab/runtime/gateway-compaction-state.fixture.ts@a8be0a799450bb2601b6abb82552f8b106673187`
+
+### 73.1 Ordinary isolated Cron completion has a real production caller for the Section 70 exact-alias owner
+
+- New production exact-ref `src/cron/isolated-agent/run.ts@30174c0dca30a605f8012f623423ece7c5caeed3` closes a caller that Section 70 had not separately registered. In the final nested cleanup of a completed isolated turn, it first releases run admission and the run context, releases the session-preparation effect, and only then, when `runContinuationSession` exists, calls `removeCronRunContinuationSessionIfIdle(prepared.context.runSessionKey)`. The source comment explicitly marks this ordering as releasing admission before exact-run alias deletion begins its own lifecycle mutation.
+- This caller is distinct from Section 72's restart-sentinel bridge. It proves that the same exact-alias owner is wired into ordinary isolated Cron completion after the run's own execution/runtime custody has been released; it does not by itself recover a queued subagent delivery, simulate a lost state-worker reply, restart the Gateway, or issue a public history read.
+
+### 73.2 The heap rig directly correlates the acknowledged exact public run id with terminal `cron.runs` and transcript access after normal cleanup
+
+- New verification-rig exact-ref `scripts/lib/gateway-heap-rig-turns.mjs@e66aa2d1c1e4e18e973667ad44d4af0dceddb59e` creates a real isolated Cron job, calls public `cron.run` with `waitTimeoutMs`, and requires the returned terminal payload to preserve one public identity: `cron.run.runId === cron.runId`, with a concrete session id/key and successful terminal status.
+- The same script then performs the exact public read requested by this frontier: `cron.runs { id: job.id, runId: cron.runId, limit: 1 }`. It rejects the run unless the one selected history entry is `ok`, carries exactly the acknowledged public `runId`, and carries the same physical `sessionId` returned by `cron.run`. Immediately afterward it documents that completed Cron runs retire their `:run:` alias and calls `cron.history { id, runId, limit: 20 }` to resolve the recorded physical transcript, including its bounded reply projection.
+- This is the nearest newly discovered same-script consumer joining normal completed-run cleanup to an exact public `cron.runs{runId}` read. It does not inspect the session-store alias directly, inject a lost finalization reply, or restart the Gateway. Physical exact-alias deletion remains the Section 70 `run-continuation-cleanup.test.ts` oracle, and the Section 72 recovered-delivery test still mocks that owner.
+
+### 73.3 A real SIGKILL/restart fixture uses exact public `cron.runs{runId}`, but only for the post-restart successor occurrence
+
+- New focused QA exact-ref `test/e2e/qa-lab/runtime/gateway-codex-heartbeat-compaction.ts@45d2c5af12cdc06c70fb78a8e52d1255c1c30559` contains a real process-restart case rather than a mocked lifecycle transition. It holds a heartbeat occurrence with a durable `runningAtMs`, sends `SIGKILL` to the owned Gateway process group, restarts through a new Gateway pid, and waits for startup repair before forcing the successor heartbeat.
+- Its new helper exact-ref `test/e2e/qa-lab/runtime/gateway-compaction-state.fixture.ts@a8be0a799450bb2601b6abb82552f8b106673187` makes the distinction explicit. `waitForInterruptedHeartbeatRecovery` observes the killed occurrence through `cron.get`: the same monitor must clear `runningAtMs`, retain the interrupted occurrence's `lastRunAtMs`, and record `cron: job interrupted by gateway restart`. By contrast, `waitForHeartbeatTerminal` polls public `cron.runs { id: monitorId, runId, limit: 1 }`, selects only the matching public `runId`, and returns only a terminal `ok`/`error`/`skipped` row.
+- After restart the main fixture calls that exact public reader for the newly forced successor and later asserts the returned terminal `runId` is the successor's `runId`, while also proving the restart did not duplicate the already durable compaction event/accounting. It therefore supplies a direct real-restart + exact-public-reader oracle, but not for the interrupted predecessor itself. The predecessor recovery remains observed through `cron.get`, and this scenario contains no Cron continuation alias deletion assertion. It cannot be promoted into the still-missing one-fixture proof for recovered/lost-reply receipt -> exact-alias deletion -> public terminal history.
+
+### 73.4 The requested recovered-delivery, remote-Stop, and plugin searches still stop at separate owners
+
+- Re-reading the frozen Section 72/70 chain preserves the exact boundary: `server-restart-sentinel.test.ts@35e676a28f3ed0c08f21ceb1b10b9b79de04d4fc` proves recovered correlated settlement is invoked before Cron cleanup but mocks `removeCronRunContinuationSessionIfIdle`; `run-continuation-cleanup.test.ts@9e4b02e3de2269e32631cb2cf4771110b175fe5a` proves the physical exact alias is removed only after its own correlated delivery id is settled and the stable base survives; the new exact-public readers above do not combine those two fixtures. No frozen single fixture was found that subjects the same recovered/lost-reply run to physical alias deletion and then reads that predecessor's terminal result through public `cron.runs{runId}`.
+- Remote Processes searches remain negative under the requested server-test rule. Exact frozen `session-processes.test.ts@4d65f9bcd624ea2031ecbe7493f9ee1daed3b4d3` has one remote test, and it exercises `sessions.processes.list`: request authority is retired while `observeProcesses` is pending and the late reply becomes `UNAVAILABLE`. Its `sessions.processes.stop` coverage is the existing local stale-instance/authorization path. Searches that pair Stop with `placementGeneration`, `ownerEpoch`/`activeOwnerEpoch`, remote worker service, and `UNAVAILABLE` still resolve only to the production handler, that same test, or UI/mock data; no distinct frozen direct test replaces the remote placement generation/owner epoch while Stop is in flight and then asserts the late Stop reply is fenced.
+- Plugin searches likewise found no new production plural `settlePluginNativeAdmissions` caller beyond the previously registered generation-preparation/prepared-model-runtime/Doctor/admission-root boundaries. No distinct failed-publication receiver/capture cleanup owner was found. The plugin chain therefore receives no new registration in this section.
+
+### 73.5 Dedupe, scope, and remaining acceptance state
+
+- Immediately before this append, the live Round87 dossier was blob `46db0e98738a9166390b516d7cdf168cc559cb6d`, 5,328 lines, with no Section 73. Each of the four newly registered exact path/SHA pairs above occurred zero times in the complete dossier. Existing Section 70 exact-alias refs, Section 71 public-reader/Processes refs, and Section 72 recovered-delivery refs remain dependency anchors and are not re-counted.
+- This remains frozen-source source reading only. No GitHub Actions workflow was started or rerun, and no production code, parity ledger, RTM, acceptance flag, source lock, inventory, or source baseline file was modified. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring parity, package/device proof, release acceptance, and final OCRM acceptance remain open.
+
