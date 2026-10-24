@@ -3159,3 +3159,88 @@ Transcript reports pin logical writer authority and physical source identity bef
 The direct production consumers exposed by Section 36 all converge on the existing canonical agent execution/worker-store owner. Their `close()` calls settle connection-bound publication state; they do not own the physical agent database close. Request-class diagnostics are observational only. Across sharing, rewrite, projection, metadata, worker transcript and report paths, native commit, result delivery, publication settlement, worker/task retirement and physical database close remain separate facts, and uncertain post-commit outcomes are not silently replayed.
 
 No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. The tests above were read only as frozen source oracles and were not executed. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, OCRM final acceptance and release acceptance remain absent.
+
+
+## Section 38 — session mutation callers, terminal/WAL infrastructure, and legacy admission compatibility closure
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`). The Section 35 agent terminal/transaction/WAL/write/admission owner files and Section 37 connection-bound backends were re-read at their frozen identities and are not duplicated here.
+
+### 38.1 Session collaboration facades remain consumers of one admitted mutation owner
+
+New frozen identities:
+- `src/config/sessions/session-sharing-store.ts@d6251ac650837d218fd862aa8aae1e0fd1b94951`
+- `src/config/sessions/session-involvement-store.ts@4416a6969c38aa9134477e4ca851a52b59ced4b9`
+- `src/config/sessions/session-metadata-write.async.ts@6b0fd6725c48bd1be81aa85f9120dfc5f83cc344`
+- `src/config/sessions/session-group-categories.ts@652f706e9fead5a8e2ab0062c0d167eb5eb06f14`
+
+The sharing read facade uses the existing projection/history reader or resident actor; it does not acquire a writer. Membership, involvement, owner/suggestion and group-category mutations all converge on the already registered `runSessionCollaborationWrite`. Host callbacks only publish committed row facts after the retained native receipt settles. Category preparation keeps prepared rows in the bound backend and crosses the boundary with target keys; target authority is rechecked before apply. No facade opens/closes an agent database or creates a second transaction/admission owner.
+
+### 38.2 Manual compact, rewrite, event and correction share the same session-entry worker/execution owner
+
+New frozen identities:
+- `src/config/sessions/session-manual-compact.ts@85b8f3f0a5118d87d0a4af77db79ea08a0af7a51`
+- `src/config/sessions/session-message-rewrite.ts@b0f8a466053b518c142f0d25441df66c4602c6c3`
+- `src/config/sessions/session-transcript-correction.ts@ecd04b1e7db732a6733d5e0b3771c8a7a8fe4941`
+
+Re-read and deduplicated:
+- `src/config/sessions/session-transcript-event.ts@9960c0344299449ee9b90ca4c276b9e69a5640ed`
+
+File-backed manual compaction, prepared message rewrites, event append and transcript correction all use `runSessionEntryWorkerOperation`, which passes its already captured `AgentDatabaseExecutionScope` into `executeSessionMessageRewriteOperation`. Prepare/read work is fenced separately from commit; exact source predicates, lifecycle/writer claims and physical source identity are rechecked before commit. Correction selects exact serialized rows and refuses add/remove semantics; a stale generation cannot overwrite a successor. Event append publishes projection reconciliation only after the committed receipt. The in-worker/actor paths retain their existing owner instead of introducing a host-side fallback writer.
+
+### 38.3 The terminal latch is a lifecycle fact holder, not a database owner
+
+New frozen identities:
+- `src/infra/sqlite-terminal-open-latch.ts@8036ceec18321a2184016807905d3e1bade97326`
+- `src/infra/sqlite-terminal-open-latch.test.ts@016436c366dccdfbb2f6397e2f78f94a9f8a7aa0`
+
+The generic latch stores one terminal failure per resolved path and invokes the lifecycle owner's `closeByPath` callback when recording damage. Clear operations remove only the recorded fact. The focused lock oracle proves terminal-failure disposal observes and preserves the reopened writer's POSIX lock until the supplied close callback actually closes that writer. Therefore a terminal latch does not itself own a connection and cannot silently dispose an unrelated generation.
+
+### 38.4 WAL write admission delegates maintenance without lending transaction custody
+
+New frozen identities:
+- `src/infra/sqlite-wal-write-admission.ts@05c6ebd65a736b07f525aff6eed630ffebddde98`
+- `src/infra/sqlite-wal-checkpoint.ts@35a44f96fd509e9f0a1055b50b6fa1874cb325b4`
+- `src/infra/sqlite-wal.agent-admission.test.ts@1358bfc022fc03831efed7277f90ec52ec0283c7`
+- `src/infra/sqlite-wal.checkpoint-tick.test.ts@fd8a29a69a3f0e72f98d46fb225579456123b5e6`
+- `src/infra/sqlite-wal-checkpoint.test.ts@0f6bf6f537991ec8d601d303ac045d54702a9365`
+
+`registerSqliteWalWorkerMaintenance` disables native autocheckpoint and delegates bounded periodic maintenance to the retained worker owner. The scheduler serializes one pending pass, yields between vacuum units and returns both native lock and FIFO custody between units. Worker-side deferred admission stores at most the pending maintenance operation; `flush` must revalidate current authority and verifies that no transaction was left unsettled, while `cancel` removes the pending wake without claiming rollback.
+
+Checkpoint state is diagnostic/maintenance state: native checkpoint outcome is recorded before listeners are called; listener failure cannot change the outcome. Relayed observations keep monotonic native-order facts across worker/host generations, distinguish blocked/error/complete, and never infer ownership from diagnostics.
+
+Focused oracles prove periodic agent maintenance waits behind foreground admission, a closed/replaced generation performs no stale maintenance, retained worker timer writes execute only while the parent grants admission, retire/revoke prevents later timer writes, delegated checkpoint wakeups are cancelled at shutdown, native close joins admitted maintenance, older relayed checkpoint facts cannot replace newer ones, blocked-reader health is preserved, and explicit reader custody remains independent from connection metadata.
+
+The shared-state WAL caller `src/state/openclaw-state-db-cache.wal.ts@8e7ebf8139af85b89ed80ec35774590a156181b2` was already registered earlier in Round87 and is not duplicated.
+
+### 38.5 Agent integrity/lease oracle keeps clean-close certification stricter than handle close
+
+New frozen identity:
+- `src/state/openclaw-agent-db.integrity-lease.test.ts@869a7dfa8c668c659b81a4538dc4b2a602d0ff6b`
+
+This source oracle proves clean-close is published only after the final process/lease is gone and WAL state is checkpointed cleanly. A killed process, stale lease, failed checkpoint, native close failure, pinned reader or same-process read lease keeps verification dirty. Final close can certify only when the WAL is empty; stale process cleanup cannot certify a surviving handle. Fresh read-only admission remains blocked by quarantine/schema-version terminal facts until the exact generation is repaired. These negative cases reinforce Section 35's existing lifecycle owner rather than creating a new one.
+
+### 38.6 Legacy SDK access is an explicit reviewed compatibility boundary, not a production ownership fork
+
+New frozen identities:
+- `src/plugin-sdk/sqlite-runtime-legacy.ts@5a8de5ba7b16e23efe8c1e636c6d9d6d25476f03`
+- `scripts/lib/database-worker-compat.mts@ca295a6c1eccdaa0b97a14336d1d2eeefc7d9c79`
+- `test/scripts/database-worker-compat.test.ts@e9ca65d6378dca3530f8b75522d262f628af6163`
+
+The legacy SDK wrappers emit deprecation diagnostics and forward writable access to the same canonical agent database/write-admission APIs; the released `sqlite-runtime.ts` barrel was already registered and re-read. The compatibility scanner treats only exact reviewed deprecated declarations as compatibility boundaries, follows value-reference reachability, and reports a violation if a reviewed native operation becomes reachable through a live or escaped kernel. Its focused source tests reject bundled runtime references, same-file/live forwarding and escaped reviewed APIs while permitting only exact reviewed one-shot compatibility entries. This boundary therefore preserves compatibility without becoming a second owner or a sanctioned fallback around worker admission.
+
+### 38.7 Re-read deduplication of the Section 35 agent owner chain
+
+Re-read at the frozen source and intentionally not re-registered:
+- `src/state/openclaw-agent-db-terminal.ts@1fd4b73c372be6fd6b60374720091a8bf0c8aa56`
+- `src/state/openclaw-agent-db-transaction.ts@c74066a5425cad4b944db3c9203a0ef5acf919db`
+- `src/state/openclaw-agent-db.wal.ts@f0a4ffe298ecf3df3069c2f4087a3e61168aa80a`
+- `src/state/openclaw-agent-db-write.ts@e9c1202e550c2931b22c52adb002e7b60db5d5e6`
+- `src/state/openclaw-agent-db-admission.ts@51f2477d111c24da91e0128ce090b6def84896d7`
+
+Their Section 35 conclusion remains unchanged: terminal revalidation, yielding transaction admission, WAL maintenance, synchronous write wrappers and private-open admission are one fenced owner chain. Direct production searches did not reveal a new independent agent database close owner, worker broker owner or process-wide shared-state close owner.
+
+### 38.8 Closure result
+
+The newly exposed session mutation callers, terminal latch, WAL admission/checkpoint infrastructure and legacy SDK compatibility boundary all route back to previously established canonical owners. The scan found no second database writer, no new physical close owner, and no replay permission created by lost replies, cancellation, terminal failure, WAL retirement or compatibility forwarding.
+
+No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. All tests above were read only as frozen source oracles and were not executed. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, OCRM final acceptance and release acceptance remain absent.
