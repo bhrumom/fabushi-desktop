@@ -47254,7 +47254,9 @@
       "fabushi_target_paths": [
         "docs/specs/telegram-desktop-rust-equivalence-migration.md"
       ],
-      "fabushi_target_symbols": [],
+      "fabushi_target_symbols": [
+        "不得保留原 tdesktop/desktop-app C++ core 作为业务 owner"
+      ],
       "target_language": "No shipping GSL compatibility API; native Rust &str/String/byte types in product owners and std::ffi::CStr/CString only at independently evidenced C ABI boundaries",
       "language_rationale": "The source is a header-only family of raw-pointer tag aliases with no runtime enforcement. Rust has stronger native text and FFI boundary types; reproducing GSL aliases would weaken ownership/lifetime clarity and create a parallel string abstraction.",
       "command_event_contracts": [
