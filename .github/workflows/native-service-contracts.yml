@@ -21,6 +21,7 @@ on:
       - 'source/host/tests/extensions_auth_credential_renewer_contract.rs'
       - 'source/host/tests/automations_backend_contract.rs'
       - 'source/host/tests/native_automation_transport_contract.rs'
+      - 'source/host/tests/native_cloud_sync_contract.rs'
       - 'source/host/tests/native_account_store_contract.rs'
       - 'source/host/tests/native_object_transfer_contract.rs'
       - '.github/workflows/native-service-contracts.yml'
@@ -61,6 +62,8 @@ jobs:
           --test extensions_auth_credential_renewer_contract
           --test automations_backend_contract
           --test native_automation_transport_contract
+          --test native_cloud_sync_contract
+          --test automations_cloud_sync_contract
           --test native_account_store_contract
           --test native_object_transfer_contract
           --test box_store_sync_extension_contract
