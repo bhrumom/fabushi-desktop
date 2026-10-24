@@ -2111,3 +2111,92 @@ The new SQLite-worker evidence above therefore changes caller coverage, not proc
 ### 26.9 Closure status
 
 This pass adds nonduplicate production-consumer, scheduler, durable-ingress and SQLite-worker evidence only. It does not establish scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, independent ACCEPT, OCRM final acceptance, or release acceptance. No Actions/build/test/generator/package was run, and no production code, ledger, RTM or flags were modified.
+
+
+## 27. Recovery continuation — worker lifecycle, meeting owner, WhatsApp socket generation and Beam Gateway consumer closure
+
+This continuation remains fixed to `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`). Immediately before publication, every identity below was absent from the live Round87 dossier. Prior Section 26 identities are referenced only to establish the already-locked parent owner and are not duplicated.
+
+### 27.1 Memory-core worker acquisition, generation replacement and reindex retirement
+
+New frozen identities:
+- `extensions/memory-core/index.ts@1870c11d40ffc7fa5bf54b6bbef652927bb2acfd`
+- `extensions/memory-core/src/standing-intents.ts@d25cbe9db611b909e33f14a476dd3cde9b9f24ef`
+- `extensions/memory-core/src/memory/manager-database-context.ts@3c91b86fcb4ddb4c8e3876ba2609c242ef0a033b`
+- `extensions/memory-core/src/memory/manager-publication.ts@10579e9f7daf1eeb7c47101d64c2e49a74c6d304`
+- `extensions/memory-core/src/memory/manager-close-observation-lifecycle.test.ts@be49a2659fa3cd23a5e6a34751d2b0331d872439`
+- `extensions/memory-core/src/memory/manager.ts@e36781380a027f2fd18f8eeb0acb52c809a79616`
+- `extensions/memory-core/src/memory/manager-shadow-owner.test.ts@6e841d20193f5a9a00f4065c008beea8e0b470f2`
+- `extensions/memory-core/src/memory/manager-shadow-write.test.ts@fbeb7511aac23d2e780e93880ef4ab5246acc14f`
+- `extensions/memory-core/src/memory/manager-publication-generation.test.ts@44afa0a1890cd5cfd71c0d498be1472a8a7ad2ea`
+- `extensions/memory-core/src/memory/manager-reindex-ops.ts@b9afc419f8b55c33bb270cabef17aa2ef4f083f5`
+
+The plugin entry lazily loads standing-intent code only for the service/tool/turn hooks that need it. The standing-intent service passes the plugin service scheduler into `startStandingIntentMaintenance`; every create/list/cancel/match/sweep operation is serialized per database path, opens the canonical agent SQLite worker through the packaged standing-intents entrypoint, prepares it, executes under the caller's current-authority assertion, then closes the worker in `finally`. Maintenance restart does an immediate sweep before trusting a retained deadline; service retirement clears the global schedule callback and cancels all outstanding jobs. A retired scheduler cannot mint a new sweep.
+
+`MemoryIndexDatabase` is the publication ownership boundary. Published agent state uses the live agent-database executor/borrow; a private reindex shadow instead opens its own publication worker and read-only native handle. Worker open is fenced by the current database owner and source file identity. A failed open clears only the failed publication-worker promise so a later current owner may retry; it does not hand ownership to a second writer.
+
+Publication calls retain an agent-database execution lease across fallback preparation. No-op/refused preparation can complete without opening a worker. Large source writes retain a bounded staged transfer scope; thrown publication failures are cleaned by the host owner rather than issuing a later command that could obscure the original write outcome.
+
+Manager sync generations explicitly close the current publication worker before replacing provider/reindex generation. Reindex builds against an isolated shadow, closes the shadow writer before publication, enters the index generation write lease, and rechecks that the published database object, file identity, and owner are still current before attaching the completed file. A changed owner makes publication fail rather than publishing the stale shadow.
+
+Focused lifecycle tests add the negative oracles: shadow close joins its retained worker before releasing its read-only handle; a worker close failure does not discard already committed data and remains retryable; manager close drains accepted staging before releasing the database; a publication result failure and generation-cleanup failure are both preserved; a tombstone written after staging but before publication rejects the stale shadow; no-op/refused preparation is SQL-free and does not open a worker; observer/provider retirement failure cannot skip publication-worker join or database-lease retention.
+
+### 27.2 Google Meet shared session owner and browser participation currentness
+
+New frozen identities:
+- `src/meeting-bot/session-runtime.ts@07c917cee80539e4c12900044fd6688f35ff2436`
+- `src/meeting-bot/participation-browser.test.ts@d4fcfd91e8513c38240c44b2e11b8e41cdd96631`
+- `src/meeting-bot/observation-provenance.ts@6df9b018a5e12280f49c1d82bf0a67ba0324114d`
+
+The shared `MeetingSessionRuntime` is the live session owner used by the Google Meet subclass. It holds sessions, cleanup handles, transcript state, and the Section 26 `MeetingParticipation` owner. Participation currentness is captured from the exact session object plus browser tab/node/route identity. Leave and external end close participation immediately before terminal cleanup, so an admitted claim waiting on storage cannot regain authority after retirement.
+
+Transcript capture also snapshots browser ownership. When participation is enabled, capture requires the same tab; after async capture it rechecks the owner before accepting lines. Observation provenance copies only bounded validated scalar facts; invalid envelopes cannot donate participant identity or own-echo authority, and caller-owned mutable provenance is never shared as live authority.
+
+The browser focused tests prove: browser-lock queuing rechecks authority before dispatch; stale authority during tab check or preparation is rejected without a visible effect; authority loss at or after native dispatch is `uncertain`, not safe retry; response loss after dispatch is `uncertain`; and an unavailable browser before dispatch is an ordinary failed non-dispatch. This preserves the distinction between “not sent” and “possibly sent”.
+
+### 27.3 WhatsApp socket-session generation, inbound drain and delivery recovery
+
+New frozen identities:
+- `extensions/whatsapp/src/inbound/socket-session.ts@0f62f1651321635159ecdd7548daad17f83d1f44`
+- `extensions/whatsapp/src/inbound/monitor.ts@25100d7ed0d43c7b1dcdd5616427595187f69e68`
+- `extensions/whatsapp/src/inbound/message-delivery.ts@fd68decd72c04504b8920ac4d9e71294814e650e`
+- `extensions/whatsapp/src/directory-config.test.ts@9fc3bd9a5414569ac777a62111a2e525a2f6820b`
+- `extensions/whatsapp/src/send.delivery-recovery.test.ts@4671222144775802e8f03e1077d27152eae4d6ab`
+- `extensions/whatsapp/src/send.test.ts@8a0dcb7531c6f5f1bff4720a4c9b2636a201e77e`
+
+An attached socket session publishes its socket into the controller-owned socket reference, then resolves a current socket on each operation. A captured reply may adopt a successor only when the successor controller has an authenticated identity overlapping the original session; otherwise it returns no current socket. Native send operations bind an exact current-socket assertion. Disconnect-like failure can clear only the still-current socket ref, and retry waits for a replacement while keeping one logical Baileys message identity across attempts.
+
+Reachout-timelock readiness is checked on the current socket before direct-message dispatch. Only the preflight path can raise `PlatformMessageNotDispatchedError`; after an ambiguous native send, a later readiness failure cannot rewrite the prior attempt as definitely not sent. Late accepted native sends are observed only to suppress self-echo and are not converted into a synthetic retry grant.
+
+`inbound/monitor.ts` composes the socket session, delivery coordinator, group-metadata owner and send API. Close stops intake/listeners/cache ownership, drains accepted inbound work, and only then closes the socket. The delivery coordinator uses the socket session's generation-aware getters for replies/read receipts, retains the first accepted delivery preparation across redelivery, and prevents a successor from sharing an account queue with a still-live owner after close-drain timeout.
+
+Focused tests prove the standalone directory path releases ownership only after socket close and credential persistence drain; owner contention does not open a second socket; setup failure closes the created socket. Send recovery preserves every accepted chunk/provider receipt before a later failure or cancellation, pre-connect failure remains replayable, and the eventual connected recovery sends once. Ordinary transient outbound failure is not automatically retried at the top-level sender, preventing duplicate visible sends.
+
+### 27.4 Beam store to Gateway session-catalog authority and service lifecycle
+
+New frozen identities:
+- `src/plugins/session-catalog.ts@7f62db797112b56d9d91e298e6a49e21cd528dac`
+- `src/gateway/server-methods/session-catalog.ts@88330393acc726c9df5fe918e1637cc91532bf18`
+- `src/gateway/server-methods/session-catalog-gateway-copy.ts@a7059404762308ec2dc4cc948c268a306443e74e`
+- `src/gateway/server-methods/session-catalog-visibility.ts@966b3433fdce858d8ed8751c37f762da0a4a15f8`
+- `src/gateway/server-methods/session-catalog-read.ts@b1a5d71206baa43244a0c22969bd8ae066b8de7e`
+- `src/gateway/server-methods/session-catalog-list-operations.ts@2e8c79f8a4f71841f5646d8416ecaad06546e3ec`
+- `src/plugins/services.ts@3c16dd3ce7d522272d6c3c21148eb347a2359368`
+- `src/gateway/server-methods/session-catalog-visibility.test.ts@b2495f2584fb8923359e0cea30275af7bcee84f1`
+- `src/gateway/server-methods/session-catalog-gateway-copy.test.ts@ed9ebbef716209d4963ab7dac54ddff43cfadd32`
+
+The Beam catalog is consumed through the generic typed session-catalog contract rather than a Beam-specific Gateway bypass. Provider list snapshots are logically frozen for one request; provider list operations carry catalog-owner lifetime separately from a requesting connection's lifetime and can be retired by config/gateway/connection generation. Cached pages never donate new adoption authority: delivery rechecks current visibility and canonical session state.
+
+Gateway catalog methods resolve the registered provider, authorize source visibility before provider dispatch, and recheck current policy after async provider enumeration. For catalog mutation, `operator.write` and session-creation policy are authorization boundaries; a commit guard is propagated through adoption/upstream-link/state-event writes. Provider source IO that outlives a caller's role grant cannot release data unless current policy still permits it.
+
+Beam's `copyToGatewaySession` path therefore becomes a fresh Gateway-owned session, not a continuation of Beam authority. Imported catalog content is explicitly labeled untrusted reference material that cannot authorize actions or inherit source machine/tools. Preferred source-model selection is separately policy checked; model-catalog waiting shares the operator/gateway abort signals, and an unavailable/restricted source model falls back to the Team agent's configured model without granting extra authority.
+
+The generic plugin service owner is also the physical lifecycle owner for Beam's catalog service and mirror service. Service stop begins scheduler/node/control-UI closure before invoking service cleanup, joins scheduler work, and retains cleanup custody across timeout/reload rather than starting a replacement while the old generation still owns resources.
+
+Focused tests prove foreign/unprofiled catalog targets are rejected before provider mutation dispatch, Gateway-published Beam rows obey operator visibility, catalog adoption cannot create a disallowed agent session, and Gateway-copy model assessment is bounded before session creation. Copy tests also show history import and adopted-state publication happen only after the new Gateway session exists and use the current commit guard.
+
+### 27.5 Closure result
+
+The four requested Section 26 recursion fronts are now tied one level deeper into their actual production owners and negative oracles. Memory-core worker packaging now reaches host acquisition/generation/reindex retirement; Google Meet participation reaches the shared live session owner and browser-effect currentness; WhatsApp controller ownership reaches the socket-session/inbound-drain/send-recovery generation rules; Beam store/catalog reaches Gateway authorization, copy and plugin-service retirement.
+
+No new evidence changes the prior process-wide SQLite conclusion: extension-local workers and plugin state owners do not become owners of `closeOpenClawStateDatabaseAsync`. No Actions/build/test/generator/package was run. No production code, ledger, RTM or flags were modified. Scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, independent ACCEPT, OCRM final acceptance and release acceptance remain absent.
