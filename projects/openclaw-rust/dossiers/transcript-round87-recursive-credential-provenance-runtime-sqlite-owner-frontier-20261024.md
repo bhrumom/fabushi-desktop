@@ -4243,3 +4243,88 @@ The new downstream evidence keeps the same owner model as Section 47: a transact
 
 No GitHub Actions, build, test, generator, package, production source, parity ledger, RTM, or completion flag was modified or executed in this increment. This evidence still does not establish independent ACCEPT, scoped G01/G02 positive proof, Rust implementation/wiring, executable/package proof, OCRM final acceptance, or release acceptance.
 
+
+
+## Section 49 — frozen Gateway message-cut production transport and concrete publication-consumer recursion
+
+Source remains frozen at `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`). This section continues Section 48 by following the newly frozen publication/receipt consumers one production layer farther and, in particular, closes the real Gateway `sessions.*` message-cut request path. Paths already registered anywhere in Round87 were re-read for linkage but are not re-counted below.
+
+### 49.1 Real Gateway request/registry/transport chain for fork, rewind, and switch
+
+The frozen wire path is now concrete rather than inferred from the public session accessor:
+
+- `src/gateway/server/ws-connection/message-handler.ts@9a733a06b3cf7c1099548008feb65a95af24e331` is the authenticated WebSocket ingress. After connect/authentication, the socket `message` handler passes parsed frames to the authenticated request dispatcher.
+- `src/gateway/server/ws-connection/authenticated-request-dispatch.ts@965068f52f6abd5945d0cd5f0e3ac35ae5c31fc4` validates the request frame, captures device/operator/profile/shared-generation/current-ingress authority, enters request lifetime/admission, then calls `handleGatewayRequest` with `bindWebSocketRequestMutationAuthority`, the current method registry, request-entry fence, and cancellation/currentness sources.
+- `src/gateway/server/ws-connection/authenticated-request-dispatch.server-methods.runtime.ts@aa5f3ec7d8a3853fb2ee0964d9feb6415f613837` is the lazy runtime boundary that re-exports the real server dispatcher.
+- `src/gateway/server-methods.ts@5bebd34bd2b3e5765947fb58a5b71be98588c10a` performs the common pre-dispatch authorization/admission and invokes the handler from the attached request method registry; it does not itself become a session writer.
+- `src/gateway/server-methods/core-handlers.ts@81acd1271c7184e3354e91ad52824c2a60d2408a` maps the `sessions-rewind` family to `./sessions-rewind.js`; `src/gateway/server-methods/lazy-core-handlers.ts@4f71b2dbf2d50263b0df580b20dc1a2b919eb7ba` preserves request-entry lifetime while lazily resolving that family.
+- `src/gateway/methods/core-descriptors.ts@6361c57fbfca7dab4aab55284762f84a385898fc` freezes the public policy: `sessions.branches.list` requires `operator.read`, `sessions.branches.switch` and `sessions.rewind` require `operator.admin`, and `sessions.fork` requires `operator.write`. `src/gateway/session-method-policy.ts@27af8123618ebbb599b330f7d413a86799926d4f` requires the session target field for all three mutations, preventing an unscoped message cut.
+- `src/gateway/server-methods/sessions-rewind.ts@4b72754d8499da9c6c2726c61157108d97c7d1aa` is the real Gateway handler family. It registers `sessions.branches.switch`, `sessions.rewind`, and `sessions.fork`; captures the current session/member/request authority; waits for competing run settlement; re-reads lifecycle/placement/upstream facts; and calls the existing message-cut owner only after those predicates hold. A successful fork records the created session, while all committed mutations publish `sessions.changed` after the owning mutation settles.
+- `src/gateway/server-methods/sessions-fork-runtime-guard.ts@fb02985a4a38c9aa151ce426f35d91faeb67375e` resolves at most one matching external upstream fork harness and binds its source/currentness guard. A configured upstream harness is an explicitly selected external branch of the operation, not a fallback second writer for a local session.
+
+Thus the production path is `WebSocket message -> authenticated dispatcher -> handleGatewayRequest -> lazy core registry -> sessionRewindHandlers -> session mutation owner`; authorization/currentness is retained through the handoff instead of being recreated in the storage layer.
+
+### 49.2 Message-cut durable owner paths below the Gateway handler
+
+The previously registered low-level anchors `src/config/sessions/session-accessor.sqlite-message-cut.ts@f182f54bfbd73528d618dc0fa61e99cdedefb296`, `src/config/sessions/session-message-cut.ts@91e8cf58f7eeef44cb7dffaa698fc186b8f17e33`, `src/config/sessions/session-fork-domain.worker.ts@1a1039e4a281ab8e111b2a48efa3b513b0087b2d`, and the agent-execution operation registry were re-read but are not duplicated. New downstream identities are:
+
+- `src/config/sessions/session-message-cut.worker.ts@2918ada6882adb8f56f08ed1736344afc668c00b` owns the SQLite worker commit kernel. It takes the prevalidated intent, captures identity postimages, performs the in-transaction cut, and returns the mutation result under the existing worker admission.
+- `src/config/sessions/session-fork-domain.ts@448b70f71f9bdb8f65061d62df1aab2838a3c7f6` sends fork-domain commands through the canonical agent worker publication executor; `src/config/sessions/session-parent-fork.types.ts@1aa4d67ae1654ffe52538abef3bbd371dcbbaa8a` binds `session.messageCut.fork` to the worker's `commitSessionForkMessageCut` result contract.
+- `src/config/sessions/session-actor-memory-fork.ts@c680542dc9b0892f58f922e8058595f43ae7497c` implements the equivalent `session.messageCut` command for an in-memory/incognito actor. `src/config/sessions/session-actor-memory-storage-dispatch.ts@6523830974caab9c24e9104be1164080f4d7c57b` routes that command to the actor's fork/message-cut owner instead of opening SQLite.
+- The Gateway handler re-read shows the local branch invokes `mutateSessionAtMessageWithPreconditions` only after current lifecycle/upstream/repository predicates are captured. Repository-fork cleanup runs only when the message-cut result did not commit, and `recordSessionCreated` runs only after a created fork result.
+
+This preserves one durable writer per storage mode: the actor-memory owner for in-memory sessions, or the canonical agent SQLite worker/transaction for persisted sessions.
+
+### 49.3 Shipping client production entry points and transport contracts
+
+Control UI:
+
+- `ui/src/lib/sessions/session-scoped-operations.ts@035d1bcb1091d47901dd0d98b3b386b0c98a8e13` maps `rewind`, `forkAtMessage`, and `switchBranch` to committed Gateway mutations with the exact `sessions.rewind`, `sessions.fork`, and `sessions.branches.switch` methods and scoped session/agent parameters.
+- `ui/src/pages/chat/chat-history-actions.ts@acffe193e0938d3d3b43372f077a242e00122816` is the production rewind/switch consumer: after commit it invalidates the old transcript cache, reloads history/branches, and only restores composer/view state if the original connection/view/composer ownership is still current.
+- `ui/src/pages/chat/chat-pane-history.ts@59b21cb6bd414a52901c19fdeb10431aa5d0963e` is the production fork-at-message consumer and switches/seeds the fork only while the captured pane/session outcome scope remains current.
+- `ui/src/lib/sessions/message-cut.test.ts@19c3e50f9a66d65f64c3afb4aa17e8ef9828040e` is a focused client oracle: a committed rewind survives connection replacement; a committed fork remains a result even when replacement refresh fails; branch switch emits the exact method/parameter contract.
+
+Shared Apple UI/runtime:
+
+- `apps/shared/OpenClawKit/Sources/OpenClawChatUI/ChatGatewayRequest.swift@3641f85c233504c9e4c83b86794a30382d7d264d` constructs the exact `sessions.rewind`, `sessions.fork`, and `sessions.branches.switch` requests with `sessionKey` plus `entryId` or `leafEntryId`.
+- `apps/shared/OpenClawKit/Sources/OpenClawChatUI/ChatGatewayTransport.swift@8c2fe03041d436d96c1a92d15c5667299e7625db` routes those requests through the platform session-action request authority and decodes the committed result.
+- `apps/shared/OpenClawKit/Sources/OpenClawChatUI/ChatViewModel+SessionActions.swift@5e79c509562fdc8b6e8d244881f02528dcaa59a1` is the shipping action owner for rewind, branch switch, and fork-at-message. It fences pending outbox work, overlapping branch activity, stale session completion, and post-RPC navigation before applying UI state.
+- Focused contracts: `apps/shared/OpenClawKit/Tests/OpenClawKitTests/ChatGatewayRequestTests.swift@80397daf234eedf63705d7ab8fd2e22521496464`; `apps/shared/OpenClawKit/Tests/OpenClawKitTests/ChatGatewayTransportTests.swift@4499c9e8d6fedd10500ad7eaf893e8e87812c7ce`; `apps/shared/OpenClawKit/Tests/OpenClawKitTests/ChatViewModelSessionActionTests.swift@59831693e8f4874de4caa2527235159988c27ac2`. They freeze method/parameter routing, authority-hook failure, outbox confirmation, branch epoch/reconciliation, overlapping-switch refusal, and stale completion behavior.
+
+Android shipping surface:
+
+- `apps/android/app/src/main/java/ai/openclaw/app/MainViewModel.kt@e8b7a5d148d7692c6485ff365d13f447767ca68e` exposes the production `rewindChatAtEntry`, `forkChatAtEntry`, and `switchChatSessionBranch` actions through the active runtime, while `apps/android/app/src/main/java/ai/openclaw/app/ui/chat/ChatScreen.kt@8f093c739dd1e8b17881718609ebdfbf5ff3e03e` gates and invokes the branch switch from the live branch picker.
+- `apps/android/app/src/test/java/ai/openclaw/app/chat/ChatControllerSessionActionsTest.kt@89a5e1e31ed2bfc908308aef48db18c3be529e0b` freezes branch-switch dispatch to `sessions.branches.switch`, history/branch refresh on success, and surfaced failure. The lower Android runtime backing for rewind/fork was not promoted as a new identity in this pass because no additional frozen direct literal caller was established from the exact-ref search.
+
+### 49.4 Focused server-side message-cut oracles
+
+Already registered `sessions-rewind.test.ts` and `sessions-rewind.storage.test.ts` were re-read and de-duplicated. New focused identities are:
+
+- `src/gateway/server-methods/sessions-rewind.incognito.test.ts@fe54d3b3454377bc019b9d4c2e0c656c3384c3e6` proves all three mutations use the in-memory session actor for incognito sessions and perform no session-entry data SQL.
+- `src/gateway/server-close.session-rewind.test.ts@c20f561bc5d986764ac40bf76b96b64a6332f457` proves an accepted fork plus queued rewind drain through Gateway close before the agent database retires, while a new late rewind is refused by the closed request-entry fence.
+- `src/gateway/server.sessions.permissions-hooks.test.ts@6cf34b7c828fb6c7160cbb5561b23d5f3c51b0b0` freezes the exact write/admin scopes for fork versus rewind/switch under session permission hooks.
+- `src/gateway/server.sessions.list-changed.test.ts@6d868df1ee91d9878b94640ca1042caf887b8cc4` proves all three message-cut mutations are refused while the target has active runs.
+- `src/gateway/session-sharing.test.ts@ff2f5e0eaf2a209854ea237a91a41db670e70f52` exercises session-sharing mutation authorization for fork, rewind, and branch switch.
+
+### 49.5 One-layer-deeper consumers of Section 48 concrete publications
+
+Path-level de-duplication against the complete current Round87 dossier showed that the binding/cache/publication primitives themselves were already registered. The new production consumers are therefore recorded without repeating those existing identities:
+
+Agent lifecycle projection:
+- Existing `agent-lifecycle-binding.ts` facts are directly consumed by `src/gateway/worker-environments/repository-project-admission.ts@81cef63201ac31ee8c6a3132edf382b4fbd2069d`: repository preparation captures an agent lifecycle binding before GitHub/project work and revalidates it synchronously and asynchronously across awaits, refusing a retired/replaced agent before credential/network work continues.
+- `src/gateway/github-oauth-lifecycle.ts@e60b7b1912b7fecb76aceaf428cd2641cb53c489` captures the same lifecycle identity for agent-scoped device authorization and re-checks it after the device-flow await before persisting authorization state.
+- Focused `src/gateway/worker-environments/repository-project-admission.test.ts@607205b7a6cd648078f7df355cefc1ef66da34c4` refuses preparation when the worker observes agent retirement and verifies caller closure during lifecycle capture/preparation prevents later credential/network work.
+
+Repository-workspace/GitHub shared observation:
+- Existing `github-publication-shared-read.ts` invalidates its retained observation on GitHub-publication, worktree-registry, or repository-workspace receipts. `src/gateway/github-publication-target.ts@f8e08bf4452bbaa2a943df2fc3253c46762e295a` consumes that read to revalidate the bound published PR/head before further publication commands.
+- `src/gateway/github-publication-coordinator-methods.ts@f6b5330b74a291aa6d631fd46000e5c0ca9da2cd` consumes the same shared observation for retained recovery, exact request status, latest-published, and latest-shared discovery.
+- Focused `src/gateway/github-publication-sqlite.test.ts@f8586c53d6431f89e353898c64068f963e57215b` covers shared/repository publication materialization and shows a worktree-GC retirement removes the current shared publication view.
+
+Other Section 48 domains were also re-read one layer down: current-conversation prepared/account-scoped selections, workspace-state cache/store, node prepared-workspace journal/store, and operator approval/standing-grant composition. Their direct consumer identities and focused tests were already present elsewhere in Round87, so this section intentionally does not duplicate them.
+
+### 49.6 Negative oracle and closure/result
+
+- Frozen `ui/src/lib/sessions/message-cut.ts` returns 404 at `ad8d12f...`; it is a moving-main identity and is excluded from frozen production evidence.
+- No generic publication subscriber becomes a durable writer. Message-cut writes remain with the actor-memory or canonical agent SQLite owner; Gateway/client layers carry authority and project committed outcomes.
+- No GitHub Actions, build, test, generator, package, production source, parity ledger, RTM, or completion flag was modified or executed in this increment.
+- This read-only evidence still does not establish independent ACCEPT, scoped G01/G02 positive proof, Rust implementation/wiring, executable/package proof, OCRM final acceptance, or release acceptance.
