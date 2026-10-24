@@ -6020,3 +6020,35 @@ New frozen identities:
 - A real ChatGPT-worker spawn was attempted for the Cron identity, remote Stop, and plugin settlement fronts, but the worker connector reported that its tunnel client had not been seen for 300 seconds. No worker launch or result is claimed; GitHub read-only investigation continued without waiting on that unavailable lane.
 - This pass remains frozen-source/read-only audit work. No GitHub Actions workflow is started or rerun, and no production code, parity ledger, RTM, acceptance flag, source lock, inventory, or source baseline file is modified. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring parity, package/device proof, release acceptance, and final OCRM acceptance remain open.
 
+## Section 91 — pre-activation SIGKILL preserves the public receipt without creating an operational turn, while the diagnostic execution bridge is retention-bounded
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`. This pass continues Section 90 by testing the two ends of its newly established public-receipt -> execution-identity -> operational-run diagnostic correlation: whether the public acknowledgement can survive when no operational run is ever created, and whether the execution-identity side is durable enough to serve as a cleanup authority. Only frozen exact refs that occurred zero times in the complete Round87 dossier immediately before this append are registered.
+
+New frozen identities:
+- `src/cron/service/manual-ack-durability.test.ts@6c3f5d7bb3f348fc74f750a6f71248118995c9d5`
+- `src/audit/execution-identity-context.test.ts@c6262b4513f6dd0d6dc74f5630cabb6f99007f62`
+
+### 91.1 A public manual run can survive SIGKILL and settle after restart without any operational agent run
+
+- New focused exact-ref `src/cron/service/manual-ack-durability.test.ts@6c3f5d7bb3f348fc74f750a6f71248118995c9d5` launches a real child Cron service with eight blocking command runs, waits until those blockers occupy activation, then calls `cron.enqueueRun` for a ninth isolated job, writes the returned acknowledgement, and immediately kills the process with `SIGKILL` before that isolated job can activate. After a fresh service start, the fixture queries `cron_run_receipts` by `request_run_id = ack.runId` and the same job id and requires the retained request to settle as `skipped` with `cron: queued request lost its launch context`.
+- The same file separately proves admission/settlement boundaries: a rejected receipt insert prevents the manual mutation from committing, while a successfully acknowledged run whose job is then removed settles through the retained receipt as `cron: queued job was removed`; in that case `runIsolatedAgentJob` is never called.
+- This is a direct negative oracle against treating public Cron identity as a total alias for operational agent-run identity. The acknowledged public `runId` is durable before operational activation and restart recovery can terminally settle that receipt even when no operational turn existed. Section 90's public-receipt -> operational-run join therefore applies only after an admission actually creates execution identity; it cannot be the universal owner used to recover every public request.
+
+### 91.2 The execution-identity half of the bridge is deliberately bounded and can disappear while receipt/history authority remains
+
+- New focused exact-ref `src/audit/execution-identity-context.test.ts@c6262b4513f6dd0d6dc74f5630cabb6f99007f62` exercises the physical `execution_identity_contexts` retention owner. It proves retention maintenance still prunes an existing execution-identity row after the retention horizon even when new collection is disabled, and proves a shared row cap across independent database connections keeps only the newest rows. Its overflow case can drive the retained set all the way to zero.
+- This makes Section 90's correlation boundary concrete: `execution_identity_contexts` is an audit/diagnostic index with expiry and capacity maintenance, not a permanent cross-index. A retained Cron receipt or terminal history row therefore cannot depend on this table remaining present in order to authorize restart delivery settlement or exact continuation-alias cleanup.
+- Together with 91.1, the identity topology is now asymmetric and explicit: the public request/receipt survives pre-activation failure on its own; an operational run may later gain a bounded diagnostic join back to that receipt; continuation cleanup must still rely on its own exact session/delivery owners rather than reconstructing authority from the diagnostic bridge.
+
+### 91.3 The three requested frontier oracles remain absent after exact re-check
+
+- The requested single frozen fixture is still absent: no test was found that starts from one predecessor public Cron `runId`, crosses restart/lost-reply session-delivery recovery, executes real `settleQueuedSessionDelivery`, performs real `removeCronRunContinuationSessionIfIdle` physical exact-alias deletion, and then reads the same predecessor terminal row through public `cron.runs { id, runId, limit: 1 }`. The new SIGKILL fixture stops earlier by design and demonstrates why an operational identity may not exist at all.
+- The direct Gateway-server `sessions.processes.stop` replacement-late-success oracle remains absent. The frozen handler still fences remote results with captured owner epoch/placement generation and the registered deferred-success focused case remains `sessions.processes.list`, not an in-flight Stop whose owner/generation is replaced before a stale successful reply resolves.
+- Plugin native admission re-check still yields only the two registered production plural `settlePluginNativeAdmissions` callers (generation preparation and prepared-model-runtime build); generation-worker remains singular settlement. Failed publication remains in the same admission publication custody/retry map, with no distinct failed-publication receiver handoff or third production plural caller.
+
+### 91.4 Dedupe, lease, and remaining acceptance state
+
+Immediately before this append, the live branch lease was `e908cd491b9c3f614a9745739631020e970ce68a`, tree `292aaff23d1fb469d96773cb6263f9c4e5aeac35`, dossier blob `c861a96ef3b364ba031f5141361c25afaa0e42b7`, 6,023 lines, with zero Section 91 and both exact refs above at zero occurrences. This pass remains frozen-source/read-only audit work: no GitHub Actions workflow was started or rerun, and no production code, ledger, RTM, acceptance flag, source lock, inventory, or source baseline file was modified.
+
+- The public->operational identity question is now narrowed to a conditional diagnostic join rather than a universal cleanup key, but the integrated predecessor-public-id -> restart delivery -> settlement -> physical alias deletion -> exact public terminal-read oracle is still not established. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring parity, package/device proof, release acceptance, and final OCRM acceptance remain open.
+
