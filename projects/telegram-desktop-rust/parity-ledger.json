@@ -46281,8 +46281,8 @@
         "docs/specs/telegram-desktop-rust-equivalence-migration.md"
       ],
       "fabushi_target_symbols": [
-        "**TDRP-MOD-04 — Test oracle before verified.** 每个 product responsibility 必须绑定 requirement IDs 与一个明确 oracle；涉及排序、状态机、并发、异步、recovery 的责任必须列 invariant 和 event-sequence cases。`eventually visible`、单一 marker、单 screenshot 或单 mock response 不能单独证明等价。",
-        "**G-TRACEABILITY:** 每个 applicable requirement/responsibility 绑定 risk、oracle/invariants、test IDs、current-head evidence 与 acceptance verdict；0 orphan requirement、0 无依据 test、0 verified-without-evidence。"
+        "**TDRP-OWN-01:** inspect existing owners -> select/extend owner -> production wiring。只有所有合理 owner 不适合，才用有批准 ADR 的最小新 owner；禁止整体搬入 TelegramSubsystem/CommunicationCore。",
+        "**TDRP-LANG-01:** C++ 非 UI 产品代码默认重写为 Rust。不得保留原 tdesktop/desktop-app C++ core 作为业务 owner，不得借 FFI、TDLib、sidecar、subprocess 或“过渡适配器”宣称已迁移。"
       ],
       "target_language": "Rust native slice/borrow/array types inside existing owners",
       "language_rationale": "The source contract is a non-owning contiguous view. Rust &[T], &mut [T] and array references encode lifetime, mutability and bounds more directly; raw pointer+length conversion remains a narrow unsafe interop concern.",
