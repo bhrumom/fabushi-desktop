@@ -1220,7 +1220,7 @@ impl ProductionHostExtensions {
         let extension = start_box_store_sync_extension(
             &ProductionBoxStoreSyncFactory,
             BoxStoreSyncExtensionDeps {
-                native_credentials: Some(self.auth.clone()),
+                native_credentials: Some(self.auth.service().clone()),
                 is_idle,
                 resolve_store_id: Arc::new(move || {
                     source_map
