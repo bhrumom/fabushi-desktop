@@ -199,10 +199,6 @@ impl AutomationFireBackendRuntime {
                 self.states.insert(id.to_string(), BackendFireState::Reported);
                 Ok(())
             }
-            Err(error) if matches!(error.status(), Some(404 | 409)) => {
-                self.states.insert(id.to_string(), BackendFireState::Reported);
-                Ok(())
-            }
             Err(error) => Err(error),
         }
     }
@@ -345,9 +341,6 @@ impl AutomationFireBackendRuntime {
         for (id, completion) in completions {
             match self.report_completion(&id, &completion) {
                 Ok(()) => {
-                    self.states.insert(id, BackendFireState::Reported);
-                }
-                Err(error) if matches!(error.status(), Some(404 | 409)) => {
                     self.states.insert(id, BackendFireState::Reported);
                 }
                 Err(_) => {}
