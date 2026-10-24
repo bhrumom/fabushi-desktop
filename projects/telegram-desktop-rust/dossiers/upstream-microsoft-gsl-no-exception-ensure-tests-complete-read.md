@@ -11,3 +11,6 @@ Requirement `TDRP-R9-GSL-NO-EXCEPTION-ENSURE-TEST-PROVENANCE-001`; oracles: `ORA
 Parent exact-head `893fe5dd4a055e33f72674105a80ccb730cc7c58`: TDRP run 40059176705 terminal success 61/61; authority artifact 12547270177 `sha256:9ed7fa0888c165b9719915953d693a271db3b9b7345bd481f5dbae6e072df225`, closure 12547166165 `sha256:27b85dbaaeb686a0d1ca5335a593335660444cac2257b45f94f3f295b89e13e7`, reachability 12546673027 `sha256:32686bfbab31221df0c68b642174a89108579c78db4bc35877238286f51ac9ca`; Rust 40059176755 terminal success 6/6, artifact 12546413750 `sha256:1886ce6d6f521408aae704e0e359b11a17e29a579f4e62ba4ad2e6d3884788f7`. These are parent evidence only.
 
 Counters before strict165: source entries 16,379; unknown 16,212; unread 16,187; omitted 0; responsibilities 182. After: source entries remain 16,379; unknown 16,211; unread 16,186; omitted 0; responsibilities 183. `baseline_identity_accepted=false`, `source_closure_ready=false`; independent release acceptance remains open. Next strict166 `tests/notnull_tests.cpp@df8e5a9acf529a9da9e578da413e955900e91e7d`.
+
+
+<!-- TDRP_GSL_NO_EXCEPTION_ENSURE_TEST_PROVENANCE_001: strict165 provenance audit anchor required by exact-head validator; documentation only, not a production symbol or runtime owner. -->
