@@ -3244,3 +3244,107 @@ Their Section 35 conclusion remains unchanged: terminal revalidation, yielding t
 The newly exposed session mutation callers, terminal latch, WAL admission/checkpoint infrastructure and legacy SDK compatibility boundary all route back to previously established canonical owners. The scan found no second database writer, no new physical close owner, and no replay permission created by lost replies, cancellation, terminal failure, WAL retirement or compatibility forwarding.
 
 No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. All tests above were read only as frozen source oracles and were not executed. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, OCRM final acceptance and release acceptance remain absent.
+
+
+## Section 39 — WAL-budget consumers, history-reclamation custody, and concrete legacy SQLite compatibility callers
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`). Section 35's agent database owner chain and Section 38's WAL/terminal primitives were re-read where required and are not duplicated.
+
+### 39.1 Checkpoint observations gate physical-budget retry; they do not grant mutation authority
+
+New frozen identities:
+- `src/config/sessions/session-history-budget-state.ts@98f68dae45804fb8f6730809ec400df75addd3c1`
+- `src/config/sessions/session-accessor.sqlite-mutation-worker.runtime.ts@ada267318473e3074f694abe183f9ea1447abe84`
+- `src/config/sessions/session-accessor.sqlite-mutation-worker.runtime.test.ts@37da85166d782fe71c3268fa3acf43ff76962bab`
+- `src/config/sessions/session-history-wal-budget.test.ts@643182d4e74fd253208cddcd19a441f6783225fb`
+- `src/config/sessions/session-accessor.sqlite-reclamation-wal.test.ts@4320915885039e6e5fca969d87f8416a8d7b1a2a`
+- `src/state/openclaw-state-db-cache.types.ts@a46066eb3af08e80cd9e62005dcb304e764725e1`
+
+The history-budget state keeps only per-store throttle/blocked-checkpoint facts. Its global WAL listener clears a checkpoint gate only when the same physical database reports a newer completed checkpoint after the recorded monotonic boundary. It never opens a database, grants admission or interprets a checkpoint as deletion permission.
+
+The mutation worker retains the canonical agent claim/lease through each cold-mutation or reclamation request. Worker write admission surrounds the native transaction; source identity and lease are checked again before mutation. WAL observations are relayed only when they belong to the current request. Close uses the existing `settleOpenClawAgentDatabaseWorkerClose`, then releases the claim; a pooled task can close shared state only inside the parent/coordinator admission. Refusal is returned as a no-write result only when the current handle has no unsettled transaction.
+
+The focused oracles prove that blocked or older checkpoint facts cannot unblock a physical-budget gate, reclamation resumes only after a newer completed checkpoint, worker result settlement precedes later maintenance admission, buffered admission replies drain before idle collection, and close joins the retained worker rather than treating IPC result delivery as native settlement.
+
+The already registered `src/state/openclaw-agent-execution-close.ts@ac881adcbea18aaf22dff04bf4d1e645c651a58e` remains the direct agent-close checkpoint consumer and is not duplicated.
+
+### 39.2 History eviction is a serialized physical-budget owner over existing lifecycle/reclamation owners
+
+New frozen identities:
+- `src/config/sessions/session-history-eviction.ts@3939530661269d5feb886764f602876d24b8473e`
+- `src/config/sessions/session-accessor.sqlite-archive.worker.ts@ac720312b8dfaa5f76c5cc6601d8466dece0e045`
+
+The budget owner first measures actual physical bytes and refuses to predict a mutation while its checkpoint gate is blocked. Automatic kicks are throttled per store, serialized through the existing store-writer queue, and detached from the turn that triggered them so caller cancellation cannot silently abandon already-owned cleanup. Before any destructive work it captures the target's physical identity; every archive/reclamation phase reasserts that identity.
+
+Historical eviction materializes the archive before deleting the generation, rechecks live admission/currentness at commit, publishes the canonical archive only after durable deletion, and remeasures physical usage before deciding whether another generation may be removed. Archive pruning is preferred before deleting more searchable history. Archived-entry deletion delegates to the existing lifecycle owner and then performs bounded page reclamation. An incomplete checkpoint returns a deferred result instead of authorizing additional deletion.
+
+The archive worker uses fresh read-only snapshots for materialization and publication verification, bounds staged archive bytes, verifies the canonical stored archive hash before file publication, and owns only its private worker/admission bridge. Failed publication forces the worker toward native exit so cleanup is not inferred from a normal reply.
+
+### 39.3 Direct production callers preserve the captured owner and commit boundary
+
+New frozen identities:
+- `src/acp/runtime/session-meta-entry.ts@f51d16826793af36eead9b7cfab05fb9f4d6fc64`
+- `src/config/sessions/session-cold-storage-selection.ts@e6bcf6698fc9c2d000eb2df0259542d62c0faee3`
+- `src/config/sessions/session-accessor.sqlite-reset.ts@16079f2c60ec85e877428ef6124388ed32501063`
+- `src/config/sessions/session-accessor.sqlite-deletion-plan.ts@333769cdc0d4da037c32da3df56ae55f214a1048`
+- `src/config/sessions/session-accessor.sqlite-lifecycle.ts@24da1958847b8939408046358db6213aeeb5d147`
+
+ACP session-entry mutation schedules history-budget work only after its retained native receipt settles and the committed publication is known; an unsettled native outcome stays `outcome-unknown`. Cold-storage selection is read-only and excludes all live/admitted generations before producing candidates.
+
+Offline session reset retains the selected read-only database claim, inventories database rows and archive artifacts, verifies path identity plus artifact inode/size/time/hash, refuses reset while any session admission is protected, and executes deletion under the established deletion/archive/write lanes. The deletion planner itself grants no authority: it preflights every historical generation against references and admissions, and the commit path rereads the exact generation fingerprint.
+
+The lifecycle owner schedules a physical-budget kick only after a real commit. Historical generations are materialized outside the short writer lane, then rechecked and committed one at a time; each committed removal is published immediately so a later failure cannot erase an already-durable fact. The final entry deletion uses the captured execution when available, publishes identity invalidation after commit, and only then settles receipts. Disk-budget deletion explicitly reuses the store's captured physical owner and disables recursive rescheduling.
+
+### 39.4 Focused history/budget oracles preserve data under contention, cancellation and owner change
+
+New frozen identities:
+- `src/config/sessions/session-history-eviction.memory.test.ts@00fe92fc7899d9c318aa4f989d14415681f5d417`
+- `src/config/sessions/session-history-eviction.lifecycle-contention.test.ts@8d061b670dee156d99afabe61240f688cc6c6365`
+- `src/config/sessions/session-history-eviction.preservation.test.ts@7e50b4e1e5b00c9f13904df47fc0904bae1cc2fd`
+- `src/config/sessions/session-history-eviction.writer-fairness.test.ts@b329489fec6531c56f1d9ac5084cc4c3dcd87142`
+- `src/config/sessions/session-history-eviction.protected-cancellation.test.ts@34b9bfafff1c1fb0cc9a3ac0ed485c77b83b5054`
+- `src/config/sessions/session-history-budget-owner.test.ts@5de322ca5fc81336015a5d07be64294d347e830a`
+- `src/config/sessions/session-history-budget-owner-parity.test.ts@afd0039e3786c2ac05d9b61f6e43e84470fc407c`
+- `src/config/sessions/session-history-archive-pruning.admission.test.ts@b678bc386f0d0b17da2fcc76c8dfff88e2ce2f9d`
+- `src/config/sessions/session-accessor.sqlite-archive.byte-limit.test.ts@caa8a51ddebed529e9860b3ca1fc90a75d15f3ad`
+- `src/config/sessions/session-history-admission-protection.test.ts@d0ef577b88abb402d4c01870cc05a76bdfd91fec`
+- `src/config/sessions/session-cold-storage.publication.test.ts@996e12884c413264e4eba9853d5440164c63ddb1`
+- `src/config/sessions/disk-budget.physical-usage.test.ts@2df5699b2961ec66599145f616891f503a68738a`
+
+These source oracles establish that incognito memory stores never enter disk cleanup; foreign state-maintenance refusal preserves all history and a later fresh pass can resume; registry/recent/pinned/manual protections preserve every generation and raw UTF-16 identity bytes; page reclamation yields between bounded units so foreground writes and unrelated cold-history reads progress; and protection appearing during planning, materialization, worker admission or archived-entry deletion cancels the destructive path while preserving transcript bytes.
+
+They also prove owner parity across canonical/custom/shared stores, reject a foreign candidate without retargeting cleanup, keep archive materialization before durable deletion and file publication after it, stop page reclamation when the owner is revoked, serialize legacy archive unlink with peer publication, preserve a newly claimed canonical archive, enforce archive/record byte limits with staging cleanup, protect normalized/raw admission keys and every referenced generation, publish a cold-restored key exactly once only after worker settlement, and join disk-budget worker drainage including work admitted while retirement is already in progress.
+
+The previously registered main history-eviction/admission/lifecycle tests were re-read as supporting context where needed and are not duplicated.
+
+### 39.5 Legacy SQLite SDK compatibility is explicitly inventoried and time-bounded
+
+New frozen identities:
+- `src/plugins/compat/sqlite-runtime-records.ts@e250f5c619081616fd1d6dc0c5071be33cac951c`
+- `src/plugins/compat/registry-records.ts@4cae202259682223aad5bc6f6b069599b78ee9ec`
+- `src/plugins/sdk-deprecation.ts@c6250a3cd45900aa3948c07a6dab1d5dc46b3cb0`
+
+The compatibility record labels native SQLite runtime access as deprecated SDK compatibility, owned by the SDK surface and replaced by the V2 worker store/awaited domain operations. The central compatibility registry includes that finite record. Deprecation reporting binds usage to a plugin/runtime registration frame when available and records the SQLite compatibility family with its approved final compatibility day. None of these files owns SQLite state or grants database authority.
+
+### 39.6 Concrete legacy imports are read-only, derived-store, Doctor migration or QA boundaries rather than a live agent-writer fork
+
+New frozen identities:
+- `extensions/migrate-hermes/apply.ts@817f26764c2a664559a872a49d082bd105b25046`
+- `extensions/browser/src/browser/system-chrome-cookies.ts@eca6d47a466e7c5c727659bf624d93176cd38e6e`
+- `extensions/memory-core/src/memory/manager-db.ts@fd6e96a37412df2aa003c2491a9720600634d324`
+- `extensions/memory-core/src/memory-forget-index-read.ts@b45cf3257014625ad619e4a48fbb7f6a49ba1a97`
+- `extensions/qa-lab/src/live-transports/matrix/scenarios/scenario-runtime-state-files.ts@7e968d48f35a6045309c07b89f64ac6a91fd20b1`
+- `extensions/codex/src/migration/native-task-assignments.ts@34068854aae2a68fd8770ce1117f63b728e5bc97`
+- `extensions/memory-core/src/migration/doctor-memory-sidecar.ts@7d094a13d24be61df162d97648141651782f459a`
+
+Hermes migration snapshots an existing SQLite source through a read-only native handle and preserves recovery sidecars on failure. Browser cookie import opens only the copied Chromium cookie database read-only. Memory Core's manager uses the V2 worker store for the canonical PostgreSQL/agent-backed publication path; its remaining direct native transaction helper is for the separately owned derived memory index, while canonical agent reads use the read-only agent owner. The forget-index reader uses worker-runtime/in-memory probes plus canonical read-only access and is not a writable legacy consumer.
+
+The QA Matrix state-file helper is a QA scenario fixture, not a shipping database owner. Codex native-task assignment use is a Doctor state migration: it performs read-only inspection and an exact guarded transaction only for historical delivery settlement after rereading the retained task/binding facts. Memory Core sidecar migration is likewise a Doctor migration boundary: it discovers and backs up legacy sidecars, imports derived memory-index data into the selected per-agent database with explicit schema registration, preserves deterministic retry material on uncertainty, and closes the migration handle.
+
+The source compatibility scanner has no path-level exemption for these extension files; its reviewed boundary is the exact deprecated declaration/reachability contract recorded in Section 38. The scanner was read only and was not executed in this round.
+
+### 39.7 Closure result
+
+The WAL-budget, archive/reclamation, direct lifecycle callers and concrete legacy SQLite uses exposed after Section 38 all converge on existing canonical database, lifecycle, session and worker owners. Checkpoint completion is only a maintenance fact; archive materialization is not deletion authority; a worker reply is not native settlement; and deprecated SDK compatibility does not constitute a second online agent database writer.
+
+No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. All tests above were read only as frozen source oracles and were not executed. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, OCRM final acceptance and release acceptance remain absent.
