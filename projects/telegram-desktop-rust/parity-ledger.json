@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "c5c8f81c1dea6d77f90b9f1e0ab31749bf08337a",
+  "target_commit": "584dc11ecd07fd6431e8c876bf9508e1f3436a43",
   "coverage": {
-    "source_entries_total": 16379,
-    "unknown": 16213,
-    "unread": 16188,
+    "source_entries_total": 16380,
+    "unknown": 16212,
+    "unread": 16187,
     "omitted": 0,
-    "responsibilities_total": 181,
+    "responsibilities_total": 182,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -48243,7 +48243,6 @@
       "implementation_status": "mapped",
       "coverage_disposition": "dependency-replaced-mapped-open",
       "blockers": [
-        "Fresh child exact-head TDRP/Rust Actions required after strict163 publication.",
         "All 13 unique observed production byte/to_integer consumer files remain independently scoped; source closure, all production implementation and independent release acceptance remain open."
       ],
       "production_entrypoints": [],
@@ -48257,7 +48256,8 @@
         "accepted tdesktop dev code search incomplete_results=false: gsl::byte 10 files, to_integer< 4 files, to_byte( 0 files; union 13 unique production files with calls_call.cpp overlapping the first two sets",
         "GSL gitlink 87f9d768866548b5b86e72be66c60c5abd4d9b37; child tree 6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41",
         "Live main fb1189efd9d85c650864d6987ea8fb68c913558d/1a1ef09be4c9fd801354439a5b82cc460f0b4b6a and upstream dev a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5 rechecked immediately before strict163 publication",
-        "Parent exact-head c5c8f81c1dea6d77f90b9f1e0ab31749bf08337a: TDRP 40054914813 completed 61/61 success; authority 12544539280 sha256:8469d3852256dc02e0b38567f6091677eb0f54a9ab8af3778016fef3919621c0; closure 12545345565 sha256:ac23b2c5616a1927b8fecd1f91468b5bc104c70e3acef937bce1ea3410e62ff0; reachability 12544669389 sha256:306da3736447347f18a0ea8c3e7ebbfd8352eb32615c819969ecab4f4be26154; Rust 40054914790 completed 6/6 success; artifact 12544587734 sha256:acd60a3e3a141eb67293204b27b873f820441e11f775e3abe26e0e3a2ad34b81."
+        "Parent exact-head c5c8f81c1dea6d77f90b9f1e0ab31749bf08337a: TDRP 40054914813 completed 61/61 success; authority 12544539280 sha256:8469d3852256dc02e0b38567f6091677eb0f54a9ab8af3778016fef3919621c0; closure 12545345565 sha256:ac23b2c5616a1927b8fecd1f91468b5bc104c70e3acef937bce1ea3410e62ff0; reachability 12544669389 sha256:306da3736447347f18a0ea8c3e7ebbfd8352eb32615c819969ecab4f4be26154; Rust 40054914790 completed 6/6 success; artifact 12544587734 sha256:acd60a3e3a141eb67293204b27b873f820441e11f775e3abe26e0e3a2ad34b81.",
+        "Strict163 publication exact-head 584dc11ecd07fd6431e8c876bf9508e1f3436a43: TDRP 40056047058 completed 61/61 success; authority artifact 12545735367 sha256:3250a31b6c5b9664bc3c48d3dee3e3026a19a0100fdba496ea62226e6b9e700b, closure 12545970920 sha256:94b580596f0337a21b2c96c0704e3943392c8329c1f8a9b0383c20d92daba2ac, reachability 12545710914 sha256:6f9aee92263f40a9bf6bac9ead8e29071c5372a11e8cc91eab2f6d09cd0f2cc8; Rust 40056047079 completed 6/6 success, artifact 12545680534 sha256:7482a72b5f904ef7b029fa94e518450ca73f8fc79f2e023a4912591d87746b9b."
       ],
       "target_commit": "c5c8f81c1dea6d77f90b9f1e0ab31749bf08337a",
       "workflow_run": 40054914813,
@@ -48384,7 +48384,246 @@
       "release_gate_status": "open",
       "license_and_provenance": "Exact Microsoft/GSL tests/byte_tests.cpp@634dcc90773e7144a127e29a2d49ce94b816e596 and include/gsl/byte@87d007ef94d197632872e96d91525a013c665da8 retained under MIT LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02; broad accepted tdesktop byte/to_integer use remains caller-specific and no downstream release authority is inferred.",
       "reviewer": "primary-session",
-      "notes": "Strict163 closes only Microsoft/GSL tests/byte_tests.cpp as byte-representation dependency test provenance, reusing strict151 include/gsl/byte mapping. The tests prove explicit construction/conversion, bitwise/shift behavior, integral conversion and aliasing qualification; accepted tdesktop has 13 unique production files across byte/to_integer searches, so every caller remains independently open. Counters unknown=16,213 unread=16,188 omitted=0 responsibilities=181. Next strict164 Microsoft/GSL tests/deathTestCommon.h@7bf242393f7bcff62c12cd985a87824f48f7bb0b."
+      "notes": "Strict163 closes only Microsoft/GSL tests/byte_tests.cpp as byte-representation dependency test provenance, reusing strict151 include/gsl/byte mapping. The tests prove explicit construction/conversion, bitwise/shift behavior, integral conversion and aliasing qualification; accepted tdesktop has 13 unique production files across byte/to_integer searches, so every caller remains independently open. Counters unknown=16,213 unread=16,188 omitted=0 responsibilities=181. Strict163 publication head 584dc11ecd07fd6431e8c876bf9508e1f3436a43 has fresh terminal-green TDRP 40056047058 (61/61) and Rust 40056047079 (6/6); strict164 is tracked in its own source row. The strict163 counters above remain historical to that source-analysis target."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/GSL",
+      "source_blob_sha": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+      "source_kind": "recursive_child_repository_dependency_test_provenance",
+      "module_id": "tdesktop.thirdparty.gsl.death-test-common",
+      "responsibility_id": "TDRP-R9-GSL-DEATH-TEST-COMMON-TEST-PROVENANCE-001",
+      "source_symbols": [
+        "tests/deathTestCommon.h@7bf242393f7bcff62c12cd985a87824f48f7bb0b",
+        "constexpr char deathstring[] = \"Expected Death\"",
+        "constexpr char failed_set_terminate_deathstring[] = \".*\"",
+        "GetExpectedDeathString(std::terminate_handler): non-null -> deathstring; null -> failed_set_terminate_deathstring",
+        "tests/algorithm_tests.cpp@e369be0e34dcf786a63631807ebe3cc06fb59544 includes deathTestCommon.h and calls GetExpectedDeathString",
+        "tests/assertion_tests.cpp@231befc7e415ec53daa09ced61d76505e6be5437 includes deathTestCommon.h and calls GetExpectedDeathString",
+        "tests/at_tests.cpp@42b2241bfd472ab384c35267d2042c870edce4a5 includes deathTestCommon.h and calls GetExpectedDeathString",
+        "tests/notnull_tests.cpp@df8e5a9acf529a9da9e578da413e955900e91e7d includes deathTestCommon.h and calls GetExpectedDeathString",
+        "tests/span_ext_tests.cpp@dfd2725db3612de97c4a3173f5f168131f7341f3 includes deathTestCommon.h and calls GetExpectedDeathString",
+        "tests/span_tests.cpp@d86458bd3bd8e5a1f1739a769436594de2a6b85a includes deathTestCommon.h and calls GetExpectedDeathString",
+        "tests/strict_notnull_tests.cpp@c1b1f54c97abe1c2cf825e81e713bee2fb8a888f includes deathTestCommon.h and calls GetExpectedDeathString",
+        "tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a registers all seven consumers in gsl_tests",
+        "LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02 (MIT)"
+      ],
+      "capability_ids": [
+        "CAP-DEPENDENCY-DEATH-TEST-PROVENANCE",
+        "CAP-DEPENDENCY-TEST-PROVENANCE",
+        "CAP-NATIVE-DEPENDENCY-REPLACEMENT"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "Microsoft/GSL:tests/deathTestCommon.h@7bf242393f7bcff62c12cd985a87824f48f7bb0b",
+        "Microsoft/GSL:tests/algorithm_tests.cpp@e369be0e34dcf786a63631807ebe3cc06fb59544",
+        "Microsoft/GSL:tests/assertion_tests.cpp@231befc7e415ec53daa09ced61d76505e6be5437",
+        "Microsoft/GSL:tests/at_tests.cpp@42b2241bfd472ab384c35267d2042c870edce4a5",
+        "Microsoft/GSL:tests/notnull_tests.cpp@df8e5a9acf529a9da9e578da413e955900e91e7d",
+        "Microsoft/GSL:tests/span_ext_tests.cpp@dfd2725db3612de97c4a3173f5f168131f7341f3",
+        "Microsoft/GSL:tests/span_tests.cpp@d86458bd3bd8e5a1f1739a769436594de2a6b85a",
+        "Microsoft/GSL:tests/strict_notnull_tests.cpp@c1b1f54c97abe1c2cf825e81e713bee2fb8a888f",
+        "Microsoft/GSL:tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a",
+        "Microsoft/GSL:LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-death-test-common-complete-read.md",
+      "behavior_contract": "Retain the exact test-harness contract of Microsoft/GSL deathTestCommon.h without creating a shipping assertion or termination runtime. GetExpectedDeathString returns \"Expected Death\" when a terminate handler is available and \".*\" only when setting the terminate handler failed. Exactly seven pinned GSL test source blobs include and call the helper and are registered in the shared gsl_tests target. tdesktop has zero direct helper/function consumers; no product responsibility is closed transitively.",
+      "state_machine": "No independent long-lived state machine. For each death assertion, the test harness supplies a terminate handler; if non-null the helper selects the stable expected-death matcher, otherwise it selects the fallback regex used to avoid a false-negative caused by handler installation failure. GTest and each test own assertion execution; the helper owns no product state.",
+      "side_effects": [
+        "The helper performs only a constexpr pointer selection for the test matcher.",
+        "No persistence, network, UI, account, authorization, product runtime, or service side effect exists."
+      ],
+      "failure_cases": [
+        "Removing the null-handler fallback can turn a platform/test-harness setup failure into a false test failure.",
+        "Using the fallback as proof that the operation died would weaken the death-test oracle.",
+        "Treating the helper as a production assertion/termination API or creating a GSL-shaped runtime.",
+        "Treating the seven test consumers as tdesktop production consumers or bulk-closing any product responsibility.",
+        "Inferring no-exception/span runtime behavior from the separate no_exception_ensure_tests.cpp source."
+      ],
+      "ui_disposition": "No independent UI surface or UI responsibility.",
+      "non_ui_responsibilities": [
+        "Exact shared death-test matcher selection",
+        "Fallback behavior when terminate-handler installation fails",
+        "Exact seven registered consumer blobs",
+        "CMake/CTest registration provenance",
+        "MIT license provenance",
+        "Zero direct tdesktop consumer boundary",
+        "Fail-closed separation from production and no-exception runtime responsibilities"
+      ],
+      "platform_delta": "The fallback explicitly accommodates a test environment in which setting the terminate handler fails. This is test-harness portability only; it does not define a Fabushi platform adapter or product contract. Existing domain owners retain their own native failure and contract behavior.",
+      "existing_owner_candidates": [
+        "Existing TDRP source/dependency inventory and test-provenance owner (selected)",
+        "Existing assertion/death-test source dossiers for neighboring GSL tests (reused without duplicating their responsibilities)",
+        "A GSLDeathTestRuntime or second assertion/termination owner (rejected)",
+        "A global no-exception/span runtime (rejected)"
+      ],
+      "existing_owner": "Existing TDRP source/dependency inventory and test-provenance owner; no shipping runtime owner is warranted for a C++ test-only helper. Actual contract, termination, span, and caller semantics remain with their actual existing Fabushi domain owners.",
+      "rejected_existing_owners": [
+        "The helper is compiled into dependency tests only and is not a product capability or shipping API.",
+        "A GSLDeathTestRuntime would mirror a test utility rather than a product responsibility.",
+        "A global no-exception/span runtime would improperly combine unrelated native contract and bounds-checking responsibilities.",
+        "The separately registered gsl_noexcept_tests target is a distinct strict165 source entry and is not closed by this row."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-death-test-common-complete-read.md"
+      ],
+      "fabushi_target_symbols": [
+        "TDRP_GSL_DEATH_TEST_COMMON_PROVENANCE_001"
+      ],
+      "target_language": "Source-only C++ dependency-test provenance; no shipping implementation",
+      "language_rationale": "The source is a small C++ test helper, not product logic. Preserve its test oracle and provenance in the TDRP evidence owner; any native Rust product contract or bounds behavior must be implemented and tested inside the actual existing domain owner, not by porting this helper.",
+      "command_event_contracts": [
+        "Non-null terminate handler -> return the exact Expected Death matcher.",
+        "Null terminate handler -> return the .* fallback solely for the test setup failure path.",
+        "The seven listed test files are registered under gsl_tests; the no-exception executable is separate.",
+        "Source-test provenance never authorizes production or release acceptance."
+      ],
+      "state_owner": "No helper-owned persistent state; the test harness supplies terminate-handler presence.",
+      "lifecycle_owner": "GTest/C++ process and each test's local setup; no Fabushi product lifecycle.",
+      "persistence_and_restart": "No persistence or restart behavior; not applicable.",
+      "concurrency_and_cancellation": "No asynchronous or concurrent state and no cancellation contract.",
+      "security_boundary": "No authorization, credential, cryptographic, sandbox, transport, or product security semantics. Death-test matcher selection is not a security boundary.",
+      "network_service_dependencies": [
+        "GitHub Actions exact-head source-authority validation only"
+      ],
+      "service_owner": "No shipping service.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-test-provenance-mapped-open",
+      "blockers": [
+        "Fresh strict164 publication exact-head TDRP/Rust Actions must be read to terminal success after the CAS push.",
+        "Recursive source closure, all production responsibilities, and independent release acceptance remain open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "tests/deathTestCommon.h@7bf242393f7bcff62c12cd985a87824f48f7bb0b fully read: 12 lines / 380 bytes; helper constants and null-handler fallback confirmed.",
+        "tests/algorithm_tests.cpp@e369be0e34dcf786a63631807ebe3cc06fb59544 fully read: 6404 bytes; includes helper at line 23, calls GetExpectedDeathString at 207.",
+        "tests/assertion_tests.cpp@231befc7e415ec53daa09ced61d76505e6be5437 fully read: 1593 bytes; includes helper at line 17, calls GetExpectedDeathString at 48, 59.",
+        "tests/at_tests.cpp@42b2241bfd472ab384c35267d2042c870edce4a5 fully read: 5604 bytes; includes helper at line 30, calls GetExpectedDeathString at 47, 70, 93, 115, 142.",
+        "tests/notnull_tests.cpp@df8e5a9acf529a9da9e578da413e955900e91e7d fully read: 18407 bytes; includes helper at line 29, calls GetExpectedDeathString at 165, 300, 485, 583.",
+        "tests/span_ext_tests.cpp@dfd2725db3612de97c4a3173f5f168131f7341f3 fully read: 11004 bytes; includes helper at line 30, calls GetExpectedDeathString at 38, 213.",
+        "tests/span_tests.cpp@d86458bd3bd8e5a1f1739a769436594de2a6b85a fully read: 36875 bytes; includes helper at line 47, calls GetExpectedDeathString at 121, 169, 655, 778, 822.",
+        "tests/strict_notnull_tests.cpp@c1b1f54c97abe1c2cf825e81e713bee2fb8a888f fully read: 7437 bytes; includes helper at line 20, calls GetExpectedDeathString at 225.",
+        "tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a fully read: 11,090 bytes; all seven exact consumer sources are in gsl_tests (lines 201-221) and registered with CTest.",
+        "LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02 fully read: 1,157 bytes; MIT license and copyright retention confirmed.",
+        "Accepted tdesktop dev exact-symbol searches returned zero results for deathTestCommon.h and GetExpectedDeathString; direct consumer count is 0.",
+        "Separate strict165 boundary: tests/no_exception_ensure_tests.cpp@5fde41cf2f307830c07d592819c7baed5d59d40d is registered as gsl_noexcept_tests and does not include this helper.",
+        "Pinned GSL commit/tree 87f9d768866548b5b86e72be66c60c5abd4d9b37/6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41; tdesktop gitlink path Telegram/ThirdParty/GSL has mode 160000 and exact commit 87f9d768866548b5b86e72be66c60c5abd4d9b37.",
+        "Parent exact-head 584dc11ecd07fd6431e8c876bf9508e1f3436a43: TDRP 40056047058 completed 61/61 success; authority artifact 12545735367 sha256:3250a31b6c5b9664bc3c48d3dee3e3026a19a0100fdba496ea62226e6b9e700b, closure 12545970920 sha256:94b580596f0337a21b2c96c0704e3943392c8329c1f8a9b0383c20d92daba2ac, reachability 12545710914 sha256:6f9aee92263f40a9bf6bac9ead8e29071c5372a11e8cc91eab2f6d09cd0f2cc8; Rust 40056047079 completed 6/6 success, artifact 12545680534 sha256:7482a72b5f904ef7b029fa94e518450ca73f8fc79f2e023a4912591d87746b9b."
+      ],
+      "target_commit": "584dc11ecd07fd6431e8c876bf9508e1f3436a43",
+      "workflow_run": 40056047058,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12545735367,
+      "artifact_digest": "sha256:3250a31b6c5b9664bc3c48d3dee3e3026a19a0100fdba496ea62226e6b9e700b",
+      "composition_root": "Existing TDRP source/dependency inventory and test-provenance governance",
+      "composition_slot": "Dependency test provenance only; no shipping composition slot",
+      "capability_component": "Shared GSL death-test matcher provenance; no shipping surface or runtime",
+      "variation_axes": [
+        "terminate handler available -> Expected Death matcher",
+        "terminate handler unavailable -> .* fallback",
+        "seven gsl_tests consumers versus separate gsl_noexcept_tests executable"
+      ],
+      "shared_owner_contracts": [
+        "TDRP source/dependency inventory",
+        "Existing adjacent GSL source-test provenance",
+        "Actual existing Rust/domain owner for each product contract",
+        "Exact-head TDRP/Rust evidence"
+      ],
+      "duplicate_root_check": "No GSLDeathTestRuntime, no second assertion/termination owner, no global no-exception/span runtime, no product composition root.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "No product action; helper is test-only.",
+      "detail_section": "Not applicable",
+      "capability_surface": "Source-only dependency-test provenance; no shipping surface.",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Any GSL gitlink/tree, helper blob, seven-consumer set, CMake registration or license drift requires exact-ref re-read; this row does not close any production caller, no-exception runtime or release gate.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No icon asset change.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-GSL-DEATH-TEST-COMMON-TEST-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GSL-DEATH-TEST-COMMON-EXACT-SOURCE-001",
+        "ORA-TDRP-GSL-DEATH-TEST-CONSUMER-SET-001",
+        "ORA-TDRP-GSL-DEATH-TEST-COMMON-NO-DIRECT-TDESKTOP-CONSUMER-001",
+        "ORA-TDRP-GSL-DEATH-TEST-CMAKE-REGISTRATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GSL-DEATH-TEST-COMMON-TESTS-ONLY-001",
+        "INV-TDRP-GSL-DEATH-TEST-COMMON-NO-PARALLEL-RUNTIME-001",
+        "INV-TDRP-GSL-DEATH-TEST-COMMON-NO-BULK-CALLER-CLOSURE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GSL-DEATH-TEST-COMMON-REGISTERED-CONSUMERS-001",
+        "CONTRACT-TDRP-GSL-DEATH-TEST-COMMON-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GSL-DEATH-TEST-COMMON-SOURCE-DRIFT-001",
+        "FAULT-TDRP-GSL-DEATH-TEST-COMMON-BUILD-REGISTRATION-001",
+        "FAULT-TDRP-GSL-DEATH-TEST-COMMON-BULK-CALLER-CLOSURE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [],
+      "test_fixture_ids": [],
+      "test_environment_ids": [],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact Microsoft/GSL tests/deathTestCommon.h@7bf242393f7bcff62c12cd985a87824f48f7bb0b, seven registered consumer blobs, tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a and LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02 are retained as source/test provenance under MIT. No GSL code is copied into a shipping runtime; direct tdesktop consumer count is zero.",
+      "reviewer": "primary-session",
+      "notes": "Strict164 closes only Microsoft/GSL tests/deathTestCommon.h as a shared death-test matcher source-provenance entry. It is included by seven exact-ref files in gsl_tests; tdesktop direct consumers are zero. No runtime owner is added. Counters after strict164: unknown=16,212 unread=16,187 omitted=0 responsibilities=182. Strict164 publication-head CI is pending until fresh terminal runs; source closure and independent release acceptance remain open. Next strict165 tests/no_exception_ensure_tests.cpp@5fde41cf2f307830c07d592819c7baed5d59d40d."
     }
   ]
 }
