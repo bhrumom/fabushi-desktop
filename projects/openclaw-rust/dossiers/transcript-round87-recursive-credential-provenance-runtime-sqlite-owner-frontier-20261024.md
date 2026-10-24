@@ -2591,3 +2591,94 @@ A fresh capped search for `closeOpenClawStateDatabaseAsync` returned 99 distinct
 The separate agent-close family remains scoped to per-agent database handles, leases and maintenance resources. Snapshot staging owns private temporary generations and their cleanup, not the source database. Source fences own only the exact captured multi-database operation and its commit/cleanup settlement. These responsibilities terminate at the existing state/agent database lifecycle and worker authorities already registered by earlier sections; none establish a second durable writer or hidden fallback owner.
 
 No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, OCRM final acceptance and release acceptance remain absent.
+
+
+## 32. Residual execution-close, worker-broker, read-snapshot and rollback-recovery ownership
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`). Section 31 closed the native agent-close/snapshot/source-fence primitives; this pass follows the still-unregistered production callers and broker/read/recovery owners exposed by those families. Identities already present in the live dossier, including the SQLite operation-admission core and its timeout tests, are intentionally not duplicated.
+
+### 32.1 Agent execution close and bounded command/doctor cleanup
+
+New frozen identities:
+- `src/state/openclaw-agent-execution-close.ts@ac881adcbea18aaf22dff04bf4d1e645c651a58e`
+- `src/state/openclaw-agent-execution.worker.ts@a533936aa520fc1770abd779a9fb9baec327ac41`
+- `src/state/openclaw-agent-execution.registration.test.ts@28d1588a0e2077d9df8acb495a3a8a9730ef1fb2`
+- `src/cli/runtime-cleanup.ts@99c5ff2d45f8a7e838853c2384e6a56bdc11dcae`
+- `src/commands/agent-exec.ts@5dcadd1090a8befedf5243a31e784297f23920a1`
+- `src/commands/doctor-agent-memory-schema.ts@58461105d06f74d97417b4b7322ea38d1ba8d3b7`
+- `src/commands/doctor-session-delivery-state.ts@6ac2f0f7b920ae6f36ce4839f562508265ec036a`
+
+The execution closer keeps the close receipt, preparation releases, domain close, native agent-database close, agent borrow, and shared-state borrow under one retirement owner. Ordinary close first stops WAL maintenance, performs every synchronous cleanup step without letting an earlier failure suppress later releases, then joins the asynchronous shared-state borrow release; all failures are aggregated. Failed-open cleanup uses the same owner but can use the synchronous shared-borrow release because no successful live execution is being handed back.
+
+A close receipt is produced only when the captured physical execution identity still has durable close evidence: an observed WAL checkpoint for SQLite or the captured PostgreSQL connection identity. The worker binds that closer to the same actor that opened and registered the database. Once the execution owner is closed, further commands are refused; registration/open failures retire native custody before surfacing their final error. The focused registration tests preserve the original admission-refusal provenance across retirement, retain typed quarantine cleanup failures, and do not fabricate a successful close receipt from a failed native opening.
+
+CLI cleanup does not become another database owner. Timed-out disposers remain in a process-global pending set and automatic process exit joins them; deferred cleanup runs after already-pending ordinary disposers rather than racing them. `agent-exec` gives temporary runs their own maintenance scope and, only after runtime cleanup is settled, drains the exact temporary agent databases and then the temporary shared-state database before filesystem teardown. If runtime cleanup is uncertain, it records retained ownership instead of pretending the temporary state is safe to remove.
+
+Doctor's memory-schema repair closes only the selected agent handle after acquiring the doctor maintenance lock plus agent maintenance lease and rechecks lease ownership before and after migration. Session-delivery repair similarly closes a target it opened only when that target was not already open and runs its mutation under the current doctor/schema-maintenance authority. These are scoped maintenance consumers, not alternative production close owners.
+
+### 32.2 SQLite worker broker capacity, lifecycle and operation custody
+
+New frozen identities:
+- `src/infra/sqlite-worker-broker.ts@3710080e88ac48d321133ccf11d8669234900216`
+- `src/infra/sqlite-worker-broker-lifecycle.ts@5245769277deb66b9952597a4d576c6ce980fa7a`
+- `src/infra/sqlite-worker-operation-scope.ts@34191016a7a62d8d4eca7196754e590309451b23`
+- `src/infra/sqlite-worker-operation-settlement.ts@d1c3b24539d751d33f067e2c7ad83f6485839c26`
+- `src/infra/sqlite-worker-input-admission.ts@f8cacdd884aa73f89f7446570c200efa67b7d651`
+- `src/infra/sqlite-worker-admission-retry.ts@612d3acfd6018e7c5d27689ec0080c568cc05686`
+- `src/infra/sqlite-worker-database-admission-relay.ts@c9255bec0333561c868deac1504d56c30c34b4ed`
+- `src/infra/sqlite-worker-broker.capacity.test.ts@00a3a6a2bd5bf765840ecb7794982d35629b4ecb`
+- `src/infra/sqlite-worker-broker-lifecycle.test.ts@eca3e4433dd1f5162c294bfe4ef0fd47d4d2e965`
+
+The broker is the host-side owner of actor reuse, physical-path capture, slot capacity and actor retirement. Opening first acquires the input budget and database-admission turn, rechecks caller currentness, captures state-database access and the admitted physical paths, and refuses reuse when the cached actor, module/input identity, runtime generation, or current owner no longer matches. An actor whose retirement or cleanup is still pending cannot be reopened; the broker must join that exact retirement/close first.
+
+Slot exit marks every actor native-stopped before removing the slot. Admission rejection joins slot/actor cleanup and aggregates cleanup failure with the primary refusal. Runtime-generation settlement first requests retirement of all retained actors, waits actor settlement, reports retirement failures, and only then retires empty slots belonging to that generation. Capacity reclamation therefore cannot silently install a replacement over an unresolved native owner.
+
+Input retention is bounded before a job becomes queued work and shared-state/ordinary opens share that owner budget. The operation scope installs only the broker's private admission port; the settlement object carries request custody, execution authority, refusal, committed facts and native settlement separately. The relay transports database-admission facts across the worker boundary under a bounded peer wait instead of re-resolving ambient authority in the child.
+
+Focused capacity tests prove reclamation waits retirement and atomically consumes the released capacity, never reclaims an idle client from a different runtime generation, and propagates retirement failure without admitting a replacement. Shared-state and ordinary cold opens share one input budget and converge on one physical owner. Lifecycle tests prove canceled slot waiters do not release the carrier before worker exit, and FIFO handoff joins accepted work rather than canceling it to manufacture an idle window.
+
+Admission retry remains narrow: only an admission-timeout path can be reconsidered, and the prior transaction/owner must be usable and fully unwound first. It is not a generic retry surface for an ambiguous native commit or cleanup outcome.
+
+### 32.3 Read-only native resource and retained shared-state reader custody
+
+New frozen identities:
+- `src/infra/sqlite-readonly-native-resource.ts@d9c025f54f23742666cb80fed1930af39cb15029`
+- `src/infra/sqlite-readonly-native-resource.client.ts@6eb4d75a3bd53bb8b4015d3beefa2e7d98918172`
+- `src/infra/sqlite-readonly-native-resource.test.ts@7d6ce64c17376398e2cecde1e9091e11d093a582`
+- `src/state/openclaw-state-db-read-connection.ts@4a8b104a9e24b720159f953ada3a3b5b61c89184`
+- `src/state/openclaw-state-db-read-connection.test.ts@0da080ef8357cbbb20a9e60182a41fbf14f4299f`
+- `src/state/openclaw-state-db-read-connection.cache.test.ts@8722ff79dfbccd1620180026ead5bd658c899d89`
+- `src/state/openclaw-state-db-read-connection.nesting.test.ts@706e368e85a13c4d6a65432ea40fbaa309f3c7db`
+- `src/state/openclaw-state-read.worker.ts@aa7a23ea0a47063dc7f0f5ae7c89312b3ab78d44`
+- `src/state/openclaw-state-read.worker.test.ts@f0c0ff4b294e21a6e677d859da3b0d68328af60e`
+
+The read-only native resource keeps child-process/session custody in the host NativeLifetime owner. The client merely transports typed commands: session creation captures its launch environment, close waits even a refused creation to settle, and a failed close leaves the same session sealed for retry rather than permitting a replacement allocation to inherit it. Copy cancellation cancels that request but does not declare the child dead or release unrelated session ownership.
+
+Focused native-resource tests prove an allocation accepted before target-port loss still belongs to cleanup, a host reader fence can refuse retirement while creator custody remains available for retry, loss of the host fence refuses cleanup without releasing creator custody, and a failed close seals creation and retries against the same native session. Outstanding copy work is joined when the owner closes.
+
+Retained shared-state readers are keyed by physical database identity. A new incarnation at the same canonical path retires the prior reader; nested readers never close their caller's retained handle. The host explicitly joins retained-reader close before replacement/deletion, and idle disposal retries when native cleanup fails instead of deleting the retained entry. Read-only snapshot cleanup, read-admission cleanup and native-reader close are independently accounted, with aggregate failure when both the primary read and cleanup fail.
+
+The state read worker uses this same owner and reports native cleanup failure separately from source admission/result. Cache tests prove peer commits can invalidate only the affected physical identity, stale/missing-file readers retire, replacement during worker preparation is refused, and private snapshots stay task-scoped. The nesting test confirms a nested read settles without closing the outer retained handle.
+
+### 32.4 Cold rollback recovery is evidence preparation, not autonomous replay
+
+New frozen identities:
+- `src/infra/sqlite-rollback-recovery.ts@957930a6267f407125d6fb54db664b015e65532c`
+- `src/infra/sqlite-rollback-recovery.test.ts@226af27291a360c93ecdd347f7d719d2fa0e809a`
+- `src/infra/update-managed-service-handoff-database-recovery.ts@6ab3ef93cf3e24f34cd7da0f342b3a3f6ac46287`
+- `src/infra/package-update-activation-journal.ts@58904bcddde8640d86eba6eb46827804d98af0e0`
+- `src/infra/package-update-activation-immutable-recovery.ts@1aab11dc5566293ecb4a91c6846d74fbfdc82ee7`
+
+Rollback recovery first fingerprints the retained main database and rollback/WAL/SHM sidecars from device/inode/birthtime/size/content hash under caller-provided file-safety checks. Preparation never grants itself authority to replay the source journal. A normal cold read is returned only if that exact file set stays unchanged.
+
+If a hot rollback journal prevents the initial read, preparation rechecks the complete fingerprint, refuses the case if WAL or shared-memory artifacts exist, and reads the expected record through a private verified recovery snapshot. The returned `admit` function then rechecks source identity and caller currentness immediately before touching the live database. Only inside that admitted step may SQLite perform its native rollback-journal recovery, and the resulting record must still equal the prepared evidence. Thus a changed sidecar, owner or record invalidates the recovery instead of adopting successor bytes.
+
+Focused tests prove recovery of a killed writer occurs only after current authority explicitly calls `admit`; replacement of the rollback sidecar makes that admission fail; and a retained WAL is refused without checkpointing, deleting sidecars, or invoking rollback admission. Managed-service handoff recovery adds its installation/file lock and process-identity owner before admission. Package activation and immutable recovery bind the same primitive to their retained publication/control/runtime identities. None turns cold recovery into a background database writer or a replay-on-error fallback.
+
+### 32.5 Closure result
+
+The previously capped search for `closeOpenClawStateDatabaseAsync` still has no unregistered production extension owner: all 99 returned indexed paths were already present in the live Round87 dossier before this append. This pass closes the newly discovered host-side execution-close, broker, read-resource and rollback-recovery layers without changing the process-wide ownership result.
+
+Agent execution close terminates at the existing per-agent database lifecycle plus its captured shared-state borrow. The worker broker owns bounded actor/slot admission and settlement, not database truth. Read-only native resources own private snapshot/reader cleanup, not source writes. Rollback recovery can prepare evidence but requires the retained product owner to re-admit the exact unchanged source before any native recovery.
+
+No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, OCRM final acceptance and release acceptance remain absent.
