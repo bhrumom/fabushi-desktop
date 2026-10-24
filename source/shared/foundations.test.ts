@@ -12,6 +12,7 @@ import {
   accountCacheScope,
   getAccessTokenExpiryMs,
   getAuthClientId,
+  getConfiguredBackendUrl,
   isTokenExpiringSoon,
   parseJwtPayload,
 } from "./node/cursor-token.js";
@@ -205,4 +206,16 @@ test("local-exec process identity fences generation and publication time", () =>
   assert.equal(localExecDiscoveryTimeMatchesProcess(1_500, 1_000, 2_000), true);
   assert.equal(localExecDiscoveryTimeMatchesProcess(61_001, 1_000, 61_001), false);
   assert.equal(localExecDiscoveryTimeMatchesProcess(900, 1_000, 2_000), false);
+});
+
+
+test("product service origin uses native configuration without Cursor fallback", () => {
+  assert.equal(getConfiguredBackendUrl({}), "https://api.ombhrum.com/");
+  assert.equal(getConfiguredBackendUrl({ CURSOR_API_BASE_URL: "https://api2.cursor.sh" }), "https://api.ombhrum.com/");
+  assert.equal(getConfiguredBackendUrl({ FABUSHI_API_BASE_URL: "http://127.0.0.1:4200", SAND_BACKEND_URL: "https://cursor.com" }), "http://127.0.0.1:4200/");
+  assert.equal(getConfiguredBackendUrl({ FABUSHI_API_BASE_URL: "https://fabushi-ci-isolated-auth.bhrumom.workers.dev" }), "https://fabushi-ci-isolated-auth.bhrumom.workers.dev/");
+  for (const origin of ["https://api2.cursor.sh", "https://cursor.com", "https://api3.cursor.sh", "https://example.com", "http://api.ombhrum.com", "https://token@api.ombhrum.com", "https://api.ombhrum.com/?secret=x"]) {
+    assert.throws(() => getConfiguredBackendUrl({ FABUSHI_API_BASE_URL: origin }));
+    assert.throws(() => getConfiguredBackendUrl({ SAND_BACKEND_URL: origin }));
+  }
 });

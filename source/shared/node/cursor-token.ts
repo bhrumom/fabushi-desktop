@@ -1,6 +1,8 @@
 import { createHash } from "node:crypto";
 
-export const DEFAULT_CURSOR_BACKEND_URL = "https://api2.cursor.sh";
+import { DEFAULT_FABUSHI_API_BASE_URL, normalizeFabushiApiBaseUrl } from "./fabushi-service-origin.js";
+// Historical export name retained for internal consumers; the product default is first-party.
+export const DEFAULT_CURSOR_BACKEND_URL = DEFAULT_FABUSHI_API_BASE_URL;
 export const PROD_AUTH_CLIENT_ID = "KbZUR41cY7W6zRSdpSUJ7I7mLYBKOCmB";
 export const DEV_AUTH_CLIENT_ID = "OzaBXLClY5CAGxNzUhQ2vlknpi07tGuE";
 export const TOKEN_REFRESH_LEEWAY_MS = 5 * 60 * 1_000;
@@ -36,7 +38,7 @@ export function getAccessTokenExpiryMs(token: string): number | null {
 }
 
 export function getConfiguredBackendUrl(env: NodeJS.ProcessEnv = process.env): string {
-  return new URL(env.SAND_BACKEND_URL ?? env.CURSOR_API_BASE_URL ?? DEFAULT_CURSOR_BACKEND_URL).toString();
+  return new URL(normalizeFabushiApiBaseUrl(env.FABUSHI_API_BASE_URL ?? env.SAND_BACKEND_URL)).toString();
 }
 
 export function getAuthClientId(backendUrl: string, env: NodeJS.ProcessEnv = process.env): string {
