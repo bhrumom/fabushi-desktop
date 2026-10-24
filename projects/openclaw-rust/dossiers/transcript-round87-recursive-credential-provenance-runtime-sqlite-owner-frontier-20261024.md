@@ -852,3 +852,152 @@ These are frozen source/oracle identities only. No test was executed in this aud
 The first returned `closeOpenClawAgentDatabaseByPathAsync` page is now exact-ref reconciled, including explicit exclusion of both moving-default-only paths. This does not establish repository-global search closure because GitHub code search remains capped/indexed against the moving default branch. The next exact-ref frontier is to perform the same page/cluster reconciliation for `openSqliteReadOnlyDatabase`, `prepareSqliteReadOnlyLocation` / `startSqliteReadOnlyLocationAsync`, and remaining wrapper references around `openclaw-state-db-async-lifecycle`, then compare their frozen path sets against the cumulative Round87 dossier.
 
 Independent ACCEPT, scoped G01/G02 positive evidence, `unit_authority_ready`, executable/package proof, OCRM final acceptance, and release acceptance remain absent. No Actions were run and no production code, ledger, RTM, or flags were changed.
+
+
+## 18. Round81 — snapshot-source entry clusters exact-ref closure
+
+### 18.1 Combined frozen identity set
+
+The discovery sets for `openSqliteReadOnlyDatabase`, `prepareSqliteReadOnlyLocation`, `startSqliteReadOnlyLocationAsync`, and `withSqliteSnapshotSource` were merged by path and reconciled against frozen tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16` at `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`.
+
+The merged moving-default discovery set contains 126 unique paths; 124 exist in the frozen tree. Two default-branch-only test hits are absent at the frozen ref and are excluded from frozen evidence:
+- `src/infra/gateway-lock.hostname.test.ts`
+- `src/infra/doctor-capture-reuse.test.ts`
+
+Every frozen identity newly listed below was also re-read at the frozen ref in this round. Exact identities already recorded in earlier Round87 sections are omitted rather than duplicated.
+
+### 18.2 Newly persisted production / documentation / E2E identities
+
+- `src/state/openclaw-state-db-schema-discovery.ts@ada041a24b45ec995f11d2a58a3aec5119a84e9a` (openSqliteReadOnlyDatabase)
+- `src/infra/deferred-plugin-session-transcript-read.worker.ts@09bcfb86aec221600bd738ef1b8d4b563188612d` (openSqliteReadOnlyDatabase)
+- `src/agents/auth-profiles/store.worker.ts@61521f804456169fa2be9cddcf351a15755f38f1` (openSqliteReadOnlyDatabase)
+- `src/state/openclaw-state-db.ts@adb2af202d485fc4d98fb405935921da8efd2689` (openSqliteReadOnlyDatabase, prepareSqliteReadOnlyLocation)
+- `src/state/openclaw-agent-db-readonly-open.ts@1796b0d3d312ddbbda2fc967b1e8454544e92da9` (openSqliteReadOnlyDatabase)
+- `src/infra/session-sqlite-migration-readers.ts@8b884c2ff641d561aec01dda547e7ecc5a84b708` (openSqliteReadOnlyDatabase)
+- `src/infra/sqlite-readonly-location.worker.ts@c1bcd2687aa4c3d9ce7dbd9310fdc2ca3e90b6c5` (openSqliteReadOnlyDatabase, prepareSqliteReadOnlyLocation)
+- `src/state/openclaw-state-read-snapshot-source.ts@4d97a8303f5e467e9fb9a09178b0e3e1253940ee` (prepareSqliteReadOnlyLocation, startSqliteReadOnlyLocationAsync)
+- `src/infra/sqlite-snapshot.ts@535adc4ecc41b46357daa83d2b7a004d4c50d5c7` (prepareSqliteReadOnlyLocation, withSqliteSnapshotSource)
+- `src/state/openclaw-state-db-readonly.ts@5bd95bc9cf5aa3e1dc24a2d9c4dbbc03e46a67f8` (prepareSqliteReadOnlyLocation)
+- `src/state/openclaw-database-preflight.ts@b826b7c26a13868ea008902bdd37c08d9d123e06` (prepareSqliteReadOnlyLocation)
+- `src/commands/doctor-agent-deletion-journal-quarantine.ts@b9d245d9edfb55b61a26c07bf516405c422dd515` (prepareSqliteReadOnlyLocation)
+- `src/infra/sqlite-live-snapshot.ts@d5d47ff07eee4e247419c35d108aec99491ec799` (prepareSqliteReadOnlyLocation)
+- `src/state/openclaw-state-db-fast-path.ts@8747cb713eb57d6dfef6b95cbe415b1dcd244c86` (prepareSqliteReadOnlyLocation)
+- `src/state/openclaw-state-read-operation.ts@2f8740a2800aa5190b00621da5b7f74bdd17e4e2` (prepareSqliteReadOnlyLocation, startSqliteReadOnlyLocationAsync)
+- `src/commands/doctor-lint-state-snapshot.ts@08e304c6d246e644aff84a9399bdf3284524ef0c` (prepareSqliteReadOnlyLocation)
+- `src/infra/update-candidate-state.postgres.ts@1807749be33a5f92388906baa2034d984e9c786d` (prepareSqliteReadOnlyLocation)
+- `src/infra/update-database-generations.ts@f10a8b0119cb37026a493e2064a9796a67a8638f` (prepareSqliteReadOnlyLocation)
+- `src/infra/gateway-owner-lease.ts@c7c94b2ebe1d17db183df1cab2f80c865b795627` (prepareSqliteReadOnlyLocation)
+- `src/infra/sqlite-readonly-location.ts@c0d765a2cea3faf06300bdbc2edcd77e8ee082f5` (prepareSqliteReadOnlyLocation)
+- `src/infra/update-candidate-state.ts@0fe5c863f20cb8b7e8a53d8c345eaee681f9e1f4` (prepareSqliteReadOnlyLocation)
+- `src/agents/auth-profiles/shared-store-bootstrap.ts@1e17ac08598fe53cc014c6163d8a911b98606a5c` (prepareSqliteReadOnlyLocation)
+- `src/infra/database-engine/diagnostics.ts@bc1a7e305b5ed2e9b2f8dc30613b63d47c2675ba` (prepareSqliteReadOnlyLocation)
+- `src/state/openclaw-agent-db-lease.ts@563373e63e1b0b9aae13f073e74319b3421efe9f` (prepareSqliteReadOnlyLocation)
+- `src/infra/database-engine/port-command.worker.ts@4eeb2269476f6d8d3cb5b0492a93dc9b114dcf15` (prepareSqliteReadOnlyLocation)
+- `src/state/openclaw-state-db-task-delivery-recovery.ts@eaee7cc7b4e4ea88869ff0099a7272ed53758273` (prepareSqliteReadOnlyLocation)
+- `src/commands/doctor-agent-deletion-journal-restore.ts@b131398df443d85a48e2b70e8256b9b3e5e5d8dd` (prepareSqliteReadOnlyLocation)
+- `src/commands/doctor/shared/session-entry-rewrite.ts@83444e017030dbf1c83bd300d957ec322bf8719d` (prepareSqliteReadOnlyLocation)
+- `scripts/e2e/lib/upgrade-survivor/project-worktree-startup.mjs@7b32a76dc62ff3f3d7d9835e1883f913b27ae47c` (prepareSqliteReadOnlyLocation)
+- `src/agents/test-helpers/prepared-model-catalog-inspection.worker.ts@09c9e891074d7c042f369988aaf3e6aecb3a0162` (prepareSqliteReadOnlyLocation)
+- `docs/plugins/sdk-runtime.md@2642713c549589a9ac8a499b552eb9b82e39b8cb` (startSqliteReadOnlyLocationAsync)
+- `extensions/browser/src/browser/system-profiles.ts@9ad071baf9cb432b7f20a352d3696abe203253c2` (startSqliteReadOnlyLocationAsync)
+
+The production paths resolve into four owner clusters rather than one generic snapshot service:
+
+1. **State/agent read owner:** state and agent read-only wrappers capture current physical/database ownership before exposing rows. Clean-close fast paths may read the original file; artifact-preserving or live-WAL paths use private snapshot custody. Read-only handles have explicit close/cleanup ownership and cannot grant mutation authority.
+2. **Snapshot creation and staging owner:** `sqlite-readonly-location.ts`, `sqlite-live-snapshot.ts`, `sqlite-readonly-location.worker.ts`, and `sqlite-snapshot.ts` pin source identity, validate main/WAL family consistency, stage private bytes, and retain tokens/directories until native readers and cleanup settle. Source identity drift or target replacement aborts publication rather than copying successor bytes.
+3. **Doctor/update/maintenance inspection owner:** preflight, Doctor journal restore/quarantine/session rewrite, update candidate/backup/generation, Gateway owner lease, and database-port inspection borrow private read snapshots under the caller's existing maintenance/repair authority. A snapshot is evidence/input, never a write permit; cleanup failure remains separate from the diagnostic or repair result.
+4. **Consumer-specific read projection:** auth-profile readers, migration readers, plugin/runtime inspection, Browser profile capture, and test/e2e upgrade-survivor consumers use the same snapshot/read-only contracts but keep their own product identity and publication rules. The Browser cookie path is an external profile snapshot consumer, not an OpenClaw state writer.
+
+The common source path is therefore:
+
+`captured current source identity -> retained preparation/staging owner -> private/read-only SQLite location -> consumer-specific read/inspection -> native reader/transport close -> retained token/directory cleanup -> retry on cleanup failure`.
+
+A successful query is not proof that the physical snapshot can already be removed.
+
+### 18.3 Newly persisted frozen test/support identities
+
+- `src/infra/sqlite-snapshot-source.rehearsal.test.ts@cb3d6118fad7c7c5ae4e775d4b1d8935feafa1bc` (openSqliteReadOnlyDatabase)
+- `src/agents/auth-profiles/sqlite-read-pool.test.ts@29cc4655feceb86edad005fd268ccb5208f33c26` (openSqliteReadOnlyDatabase)
+- `src/agents/auth-profiles/file-state.test.ts@de667efc7d8dc85a51f67bb3a7c6e82d8a10437f` (openSqliteReadOnlyDatabase)
+- `src/agents/auth-profiles/runtime-snapshots.test.ts@59713bb68ba30956006b9b8954dd261336c0913c` (openSqliteReadOnlyDatabase)
+- `src/agents/auth-profiles.sqlite-read-pool.test.ts@3fb76511bc6e7a04de2da53c4fd94b63028fde03` (openSqliteReadOnlyDatabase)
+- `src/commands/doctor-lint.private-auth-retirement.test-support.ts@7b0a131a6d42acca51bc83bc4f755bc90af1f098` (openSqliteReadOnlyDatabase)
+- `src/gateway/server.agent-database-recreation-product-proof.test.ts@607703a7bc9966cc17773dfdebcf651ac12a3dae` (openSqliteReadOnlyDatabase)
+- `src/commands/doctor-codex-native-inspection.test.ts@f326dcd691698b494ea850785589c7655ea4cdba` (prepareSqliteReadOnlyLocation)
+- `src/infra/database-engine/backup-worker.test-support.ts@b48f57544a5899af165afff52516a340d77e4cd8` (prepareSqliteReadOnlyLocation)
+- `src/infra/sqlite-readonly-location.cancellation.test.ts@531f50de5d30ee42d7c966d42318bcc2cfbaa38d` (prepareSqliteReadOnlyLocation)
+- `src/state/database-preflight-fixtures.test-support.ts@5efb168688048078f8d3b8ce76ceef6f9311e167` (prepareSqliteReadOnlyLocation)
+- `src/cli/update-cli/update-command-schema-cleanup.test.ts@b4c261836015ee6c788792beaf136c90b84ee78b` (prepareSqliteReadOnlyLocation)
+- `src/infra/sqlite-readonly-location.test.ts@c382e670240d7fff3b3a564b1e1aa1e7749af067` (prepareSqliteReadOnlyLocation)
+- `src/state/openclaw-database-preflight.snapshot-cleanup.test.ts@46e1ed2a41da8839b004f99850e5368d88140ee4` (prepareSqliteReadOnlyLocation)
+- `src/state/openclaw-state-db-readonly.test.ts@6a89e2e1cd1953691cacb7089f751b5d2a57f50d` (prepareSqliteReadOnlyLocation, startSqliteReadOnlyLocationAsync)
+- `src/state/openclaw-state-db-readonly.retained.test.ts@a2e6383beba2b39a22c6e1a87336c7d03ecb3f52` (prepareSqliteReadOnlyLocation, startSqliteReadOnlyLocationAsync)
+- `src/infra/sqlite-readonly-worker.test.ts@895bfdd78d9cafe3c9baa8092b1acc9dfd83e065` (prepareSqliteReadOnlyLocation, startSqliteReadOnlyLocationAsync)
+- `src/state/openclaw-database-preflight.lifecycle.test.ts@b9a35df854e4acde9b039ff5bea2118554b86e88` (prepareSqliteReadOnlyLocation)
+- `src/infra/database-engine/backup.test.ts@8659fac3aa48c139d10f4262515c2c06345ddb0e` (prepareSqliteReadOnlyLocation)
+- `src/state/openclaw-database-preflight.test.ts@5487369453c64ddfdf893d46147c80243d56fa9a` (prepareSqliteReadOnlyLocation)
+- `src/flows/doctor-health.update-schema.test.ts@6d500994619660e6f16a938537680b3c5c217755` (prepareSqliteReadOnlyLocation)
+- `src/commands/doctor-lint.sqlite-preservation.test.ts@96efe02be34960eca9c97df4e23594697580a90b` (prepareSqliteReadOnlyLocation)
+- `src/gateway/server.roles-allowlist-update.test.ts@7f8078f4334cb8868cc74f45d8c8db5fb681f575` (prepareSqliteReadOnlyLocation, startSqliteReadOnlyLocationAsync)
+- `src/state/openclaw-state-db-readonly.source-identity.test.ts@25f210cfbefdc44c03c528915432d90f208c13ac` (prepareSqliteReadOnlyLocation, startSqliteReadOnlyLocationAsync)
+- `src/infra/sqlite-readonly-location.cleanup.test.ts@6f0ef3604d6d4939c89e7b84640160e94f6a87c0` (prepareSqliteReadOnlyLocation, startSqliteReadOnlyLocationAsync)
+- `src/infra/sqlite-snapshot-staging.cancellation.test.ts@7058c9fe73dc93b24103bdf7340e725a7441fa47` (prepareSqliteReadOnlyLocation)
+- `src/commands/doctor-update-schema-guard.test.ts@b2c266b1122c4d412e05d4bad4829160249dfa27` (prepareSqliteReadOnlyLocation)
+- `src/infra/database-engine/port-command.recovery.integration.test.ts@446f53c8b429aad62aff8271495748c0744a51e7` (prepareSqliteReadOnlyLocation)
+- `test/scripts/vitest-worker-artifacts.test-support.ts@2dd0f289bf9fb2ff752616c6d7c91e8098f51e58` (prepareSqliteReadOnlyLocation)
+- `src/commands/doctor-update-schema-guard.legacy-windows.test.ts@b8ab753a48928d39a2c43f2c95d34963fd0805cd` (prepareSqliteReadOnlyLocation)
+- `src/state/openclaw-database-preflight.startup-prepared.test.ts@f9a46b807cf672f99c2ef59ba32fa7d3025c51d1` (prepareSqliteReadOnlyLocation)
+- `src/state/openclaw-database-preflight.startup-integrity.test.ts@c539a447781e5eede600b275b4419bed4b861767` (prepareSqliteReadOnlyLocation)
+- `src/state/openclaw-state-db-readonly.snapshot-admission.test.ts@1e3aacff09572c0a154e0fad6bc6a799441999b6` (prepareSqliteReadOnlyLocation, startSqliteReadOnlyLocationAsync)
+- `src/commands/doctor-lint.test.ts@b0f65a892617a620dccc444b267cfeb34e273fc1` (prepareSqliteReadOnlyLocation)
+- `src/commands/doctor-db-bloat.read.test.ts@cb1a50d5e7edd181aeba65fb32638e0cd1627db5` (prepareSqliteReadOnlyLocation)
+- `src/infra/update-database-generations.test.ts@ba11ef700f71889b1df4b6cb8e640e5738ee9796` (prepareSqliteReadOnlyLocation)
+- `src/infra/sqlite-snapshot-source.identity.test.ts@b803b3b760955344ad18eb17363b93c42cf2c596` (prepareSqliteReadOnlyLocation, startSqliteReadOnlyLocationAsync)
+- `src/config/io.plugin-metadata.snapshot-reuse.test.ts@6cda4cd7b32230cc26c687b46326c59b5b97b912` (prepareSqliteReadOnlyLocation)
+- `src/infra/sqlite-readonly-location.interruption.test.ts@5a9c585586264584275c3256e394fc3417717891` (prepareSqliteReadOnlyLocation)
+- `src/infra/sqlite-snapshot-cow.test.ts@132451cc9ad2eff53124a07c29e1427872d006fd` (prepareSqliteReadOnlyLocation)
+- `src/infra/sqlite-readonly-location.owned-native.test.ts@4317eec0ff2e28ce7b80ee1cc726afaa52f19ae4` (prepareSqliteReadOnlyLocation)
+- `src/commands/doctor-maintenance.admission-activation.test.ts@44bb9635681e9ac9118389c26fca676c27b70dc2` (prepareSqliteReadOnlyLocation)
+- `src/infra/sqlite-readonly-location.copy.test.ts@46bdc1e90bf4f3bf97ac2abe84c33704245a6b82` (prepareSqliteReadOnlyLocation)
+- `src/cli/update-cli/progress.observation.test.ts@f8f2f952bf3709bdcc04e202de8b3a495f7d935c` (prepareSqliteReadOnlyLocation, startSqliteReadOnlyLocationAsync)
+- `src/infra/sqlite-readonly-worker.compile-cache-parent.test-support.ts@90e4dbd733eaeea52f24153f6b1a4117269a4a64` (prepareSqliteReadOnlyLocation)
+- `src/cli/update-cli/update-command-legacy-finalize.test-support.ts@98930fc7dcce148cddd564fa477de037f2b97a3d` (prepareSqliteReadOnlyLocation)
+- `src/infra/update-repair-turn-worker.test.ts@2b00379bf50ad0df96c09fda512932000a547364` (prepareSqliteReadOnlyLocation)
+- `src/cli/update-cli/update-command-recovery-cost.test.ts@feb7495c400319aaab7837e95a15dc7d4d2addc1` (prepareSqliteReadOnlyLocation)
+- `src/infra/sqlite-snapshot-staging.ownership.test.ts@0735f38c6fae40bb11364a50cc5a644b6203e0b8` (prepareSqliteReadOnlyLocation)
+- `src/commands/doctor-workspace-alias.test.ts@ff3041ac94e9b9396e0a3309bcf2f49235dc6ac6` (prepareSqliteReadOnlyLocation)
+- `src/daemon/runtime-pin-service.test.ts@fe2bd4b31014940fce253ddc82f65ae77ae3e474` (prepareSqliteReadOnlyLocation)
+- `src/infra/sqlite-readonly-location.worker.test.ts@bb54b1a309a79205b8cf0115665e73101ba0f5e6` (prepareSqliteReadOnlyLocation)
+- `src/infra/gateway-owner-lease.test.ts@15bc343fd03cb91e4e7965f05b217aac377d3a4a` (prepareSqliteReadOnlyLocation)
+- `src/infra/update-database-backup.test.ts@252e5b9586d24b422ca44bda502e9bc3ae5c8336` (prepareSqliteReadOnlyLocation)
+- `src/gateway/server-methods/update-status.test.ts@854f906db046ffa9bec21af33f6e774187d0248a` (prepareSqliteReadOnlyLocation)
+- `src/commands/doctor-maintenance.admission-warm.test.ts@f304c7db84176c3dd4cbbe77e6dd42926335ecb6` (prepareSqliteReadOnlyLocation)
+- `src/infra/database-engine/maintenance-custody.conformance.test.ts@543e27c19f1deaac6464cf9aaf053d259d87546c` (prepareSqliteReadOnlyLocation)
+- `src/cli/update-cli/update-command-recovery.test.ts@e61440199969ca2586b79962e195bbd2fc76234f` (prepareSqliteReadOnlyLocation)
+- `src/commands/doctor-lint.state-isolation.test.ts@1fb7d4989b45ab90f9090e77275e7485fbda7c38` (prepareSqliteReadOnlyLocation)
+- `src/commands/doctor-maintenance.installation.test.ts@2c3c6d41de482c2a4466b1d876134b62afe096f7` (prepareSqliteReadOnlyLocation)
+- `src/cli/update-cli/update-command-terminal-record.test.ts@c97be7dabdcd33f761a2847c2c1c5a3f09f5017b` (prepareSqliteReadOnlyLocation)
+- `src/cli/update-cli/update-command-terminal-authority.test.ts@00d8a219fe009728c917a62da88a479efb3d88ff` (prepareSqliteReadOnlyLocation)
+- `src/gateway/talk/handlers/client-create-authority.test.ts@bf797ae1a86d5c86390592f9885c4dc24074dc17` (prepareSqliteReadOnlyLocation)
+- `src/commands/doctor-maintenance.finish-revalidation.test.ts@910517d0a2034bf8c2013be12005788c7b736c60` (prepareSqliteReadOnlyLocation)
+- `src/infra/sqlite-snapshot-staging-owner.test.ts@b2fde4434537132b0f8738b15c41949ea9da4581` (startSqliteReadOnlyLocationAsync)
+- `src/commands/doctor-config-preflight.pending-read.test.ts@497e9e7998bd0f1d3004cdb03c79a1706b6f5fd5` (startSqliteReadOnlyLocationAsync)
+
+The frozen negative oracles read in this cluster establish:
+
+- **Identity fencing:** successor bytes substituted after validation are rejected; copied/reopened databases do not inherit prior source authority; identical pathname or matching size is insufficient without the captured physical identity.
+- **WAL and source-family consistency:** main/WAL resets, sidecar changes, checkpoint-restored main bytes, and source-family drift are retried or rejected; only a coherent admitted generation is published.
+- **Cancellation and shutdown:** cancelled or closed snapshot scopes join child/native work before releasing staging ownership; a child that ignores graceful shutdown is still joined through bounded fallback; no late launch is allowed after owner shutdown.
+- **Cleanup custody:** failed native close or directory removal preserves private bytes and the exact cleanup owner for canonical retry; nested/independent owners must all release before parent retirement.
+- **Read-only authority:** artifact-preserving inspection refuses shared-state writes, Doctor/update inspection cannot convert a retained snapshot into mutation authority, and maintenance/current admission is revalidated separately.
+- **Update/Doctor integrity:** backup, recovery, schema-guard, terminal publication, port migration, and maintenance tests retain verified source/backup identities through the actual mutation edge and refuse changed ownership or missing custody.
+- **Performance/lifecycle boundaries:** warm/read-only caches may be reused only while their owner identity remains current; idle close failure retains native custody and cannot open unlimited replacement readers; progress/status readers avoid unnecessary snapshot creation.
+- **Publication/result separation:** cleanup or observation failures do not rewrite already committed diagnostic/update results, and an ordinary successful read does not erase deferred cleanup failure.
+
+These are source/oracle reads only. No tests or Actions were executed.
+
+### 18.4 Status after snapshot-source closure work
+
+The combined returned discovery sets for the four snapshot-source entry symbols are now frozen-ref reconciled for this round, with both moving-default-only paths explicitly excluded and all newly persisted frozen identities re-read. This still does not establish repository-global closure for arbitrary indirect/dynamic wrappers, nor does it establish scoped G01/G02 positive evidence.
+
+The remaining source-only frontier is to enumerate indirect wrapper consumers around `openclaw-state-db-async-lifecycle` and the four lifecycle methods it returns (read admission, async-resource registration/drain, native retirement, close/retry), then exact-ref map their production callers/tests and compare against the cumulative Round87 dossier. Independent ACCEPT, `unit_authority_ready`, executable/package proof, OCRM final acceptance, and release acceptance remain absent. No production code, ledger, RTM, or flags were changed and no Actions were run.
