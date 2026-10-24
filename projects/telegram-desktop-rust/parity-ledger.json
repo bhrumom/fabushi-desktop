@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "37ac69d26ec41aa45d8a19fa07fc3ff5df42beec",
+  "target_commit": "feff59d3cc7f683d169bf96114ce9ddfdb858d1c",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16208,
-    "unread": 16183,
+    "unknown": 16207,
+    "unread": 16182,
     "omitted": 0,
-    "responsibilities_total": 186,
+    "responsibilities_total": 187,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -49498,6 +49498,237 @@
       "license_and_provenance": "Exact Microsoft/GSL tests/owner_tests.cpp@87c7cec89a5fab4e1ad9ddda56a938766967316d, include/gsl/pointers@63e193e92478632520eca7e872ac83c643ffd2c0, tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a, and MIT LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02 retained as source/test provenance. No GSL code is copied into a shipping runtime.",
       "reviewer": "primary-session",
       "notes": "Strict168 source-only dependency-test provenance. Parent HEAD 37ac69d26ec41aa45d8a19fa07fc3ff5df42beec had TDRP 40067725777 success 30/30, Rust 40067725696 success 6/6, and Official MCP marketplace 40067725689 success 1/1. No claim that Microsoft/GSL C++ tests executed. Counters after this row: unknown=16208 unread=16183 omitted=0 responsibilities=186. Post-publication exact-head Actions remain pending; baseline identity and source closure remain false."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/GSL",
+      "source_blob_sha": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+      "source_kind": "recursive_child_repository_dependency_test_provenance",
+      "module_id": "tdesktop.thirdparty.gsl.span-compatibility-tests",
+      "responsibility_id": "TDRP-R9-GSL-SPAN-COMPATIBILITY-TEST-PROVENANCE-001",
+      "source_symbols": [
+        "Microsoft/GSL:tests/span_compatibility_tests.cpp@c6e4b02900b22aeb0ee53262377624333a9ac577",
+        "span_compatibility_tests.assertion_tests: 162 runtime EXPECT_TRUE assertions across dynamic/fixed extents, construction, conversion, iterators, subviews and byte views",
+        "286 static_assert expressions: 67 negative constructibility probes, one negative array-pointer convertibility probe, positive/negative as_writable_bytes availability",
+        "include/gsl/span@d2ef9f7d85ca6e25bf69b001e9308b3d069c5d16",
+        "include/gsl/byte@87d007ef94d197632872e96d91525a013c665da8",
+        "include/gsl/assert@d3e6ccdd53d5a254ed3827cf07711a6e86bb4226",
+        "tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a: span_compatibility_tests.cpp line 208; CTest gsl_tests line 221"
+      ],
+      "capability_ids": [
+        "CAP-DEPENDENCY-TEST-PROVENANCE",
+        "CAP-NATIVE-DEPENDENCY-REPLACEMENT"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "Microsoft/GSL:tests/span_compatibility_tests.cpp@c6e4b02900b22aeb0ee53262377624333a9ac577",
+        "Microsoft/GSL:include/gsl/span@d2ef9f7d85ca6e25bf69b001e9308b3d069c5d16",
+        "Microsoft/GSL:include/gsl/byte@87d007ef94d197632872e96d91525a013c665da8",
+        "Microsoft/GSL:include/gsl/assert@d3e6ccdd53d5a254ed3827cf07711a6e86bb4226",
+        "Microsoft/GSL:tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a",
+        "Microsoft/GSL:LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02",
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md#TDRP-LANG-03"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-span-compatibility-tests-complete-read.md",
+      "behavior_contract": "Source-only provenance for the GSL span compatibility test. The registered runtime test exercises a non-owning view across dynamic/fixed extents, pointer/count and pointer/pointer construction, arrays/containers, conversions, iterators, bounded subviews, and byte views. Compile-time negative oracles reject invalid element/extent/constness conversions. This row does not prove production implementation, memory safety, or caller closure.",
+      "state_machine": "No product state machine. The test creates local spans over stack arrays/std::array/container storage, checks observed pointers/sizes/indexed values and subviews, then exits; static_assert expressions are compile-time oracles. No runtime death/throw oracle is present in this source file.",
+      "side_effects": [
+        "Test-local values and non-owning views only; no product state, persistence, network, account, UI or service side effects."
+      ],
+      "failure_cases": [
+        "A span accepts an invalid element/extent/constness conversion that the compile-time matrix forbids.",
+        "Dynamic/fixed extent, pointer/count, pointer/pointer, container conversion, iterator, subview or byte-view behavior diverges from the locked dependency contract.",
+        "The test source or its CMake/CTest registration disappears without re-audit.",
+        "Compile-time negative probes are incorrectly reported as runtime crash tests.",
+        "Source/test provenance is mistaken for a shipping slice implementation, production safety proof, or closure of downstream callers."
+      ],
+      "ui_disposition": "Not a UI source; dependency-test provenance only. Consumer UI/business semantics remain with existing canonical owners.",
+      "non_ui_responsibilities": [
+        "Exact span compatibility test source identity",
+        "Dynamic/fixed extent and construction/conversion compile-time oracle provenance",
+        "Iterator/subview and byte-view compatibility test provenance",
+        "CMake/CTest registration",
+        "Exact span/byte/assert headers and MIT license provenance",
+        "Separation of dependency test evidence from production implementation and caller closure"
+      ],
+      "platform_delta": "No platform-specific product behavior. Compiler type traits and static_asserts form the negative oracle; they are not runtime death tests.",
+      "existing_owner_candidates": [
+        "Existing TDRP source/dependency inventory and test-provenance governance (selected)",
+        "Existing canonical Rust slice/reference/array and borrowing semantics within each product/domain owner",
+        "A GslSpanRuntime, TelegramSpanRuntime or parallel view owner (rejected)"
+      ],
+      "existing_owner": "Existing TDRP source/dependency inventory and test-provenance governance. Actual view/lifetime semantics stay with canonical Rust/domain owners for attachments/resources, media/audio, networking/MTProto, editor commands, profile images, Settings and Conversation/Transcript polls; no shipping GSL span runtime.",
+      "rejected_existing_owners": [
+        "GslSpanRuntime would duplicate native slice/reference/array and borrowing semantics.",
+        "TelegramSpanRuntime or a source-named owner would preserve upstream architecture rather than reuse canonical Fabushi owners.",
+        "A second conversation, networking, media, Settings or resource owner would incorrectly collapse unrelated span consumers into one product domain."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-span-compatibility-tests-complete-read.md"
+      ],
+      "fabushi_target_symbols": [
+        "TDRP_GSL_SPAN_COMPATIBILITY_TEST_PROVENANCE_001"
+      ],
+      "target_language": "Source-only C++ dependency-test provenance; no shipping implementation.",
+      "language_rationale": "The file is a generic dependency compatibility test, not product logic. Rust slices, references, arrays and borrowing encode the applicable low-level view semantics in the relevant existing domain owner; no C++ span runtime is copied.",
+      "command_event_contracts": [
+        "A default/dynamic span reports null data and zero size; a fixed zero extent remains empty.",
+        "Pointer/count and pointer/pointer construction and array/std::array/container conversions preserve the declared element type and extent.",
+        "Invalid element, constness, extent and pointer combinations remain non-constructible at compile time.",
+        "Iterators preserve same-range random-access semantics; first/last/subspan preserve bounds and result extent.",
+        "as_writable_bytes is available for mutable element views and not for const element views.",
+        "Source-test provenance does not authorize production or release acceptance."
+      ],
+      "state_owner": "No product state owner; GTest owns local test values and assertions.",
+      "lifecycle_owner": "Existing Microsoft/GSL CMake/CTest gsl_tests target; no shipping lifecycle owner.",
+      "persistence_and_restart": "No persistence or restart behavior. Spans are non-owning process-local views and must not be persisted as pointer values.",
+      "concurrency_and_cancellation": "Synchronous test assertions; no asynchronous state or cancellation contract.",
+      "security_boundary": "Preserve native lifetime and bounds guarantees at actual domain owners. A span is non-owning and cannot prove the referenced storage outlives the view; do not infer memory safety from dependency-test provenance.",
+      "network_service_dependencies": [],
+      "service_owner": "Not applicable; no network or service contract.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-test-provenance-mapped-open",
+      "blockers": [
+        "No production implementation or release acceptance claim is made.",
+        "Actual production view/lifetime responsibilities and the 15 discovered consumer files remain independently open.",
+        "Fresh exact-head TDRP Revision 9, Rust desktop runtime and Official MCP marketplace Actions evidence is required after publication."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "tests/span_compatibility_tests.cpp@c6e4b02900b22aeb0ee53262377624333a9ac577: 1,024 lines / 60,486 bytes; one runtime GTest, 162 EXPECT_TRUE assertions in the test body, 286 static_assert expressions.",
+        "Negative compile-time oracles: 67 !std::is_constructible probes, one !std::is_convertible array-pointer probe, and two positive/two negative as_writable_bytes availability probes; zero EXPECT_DEATH/ASSERT_DEATH and zero EXPECT_THROW/ASSERT_THROW.",
+        "include/gsl/span@d2ef9f7d85ca6e25bf69b001e9308b3d069c5d16: 864 lines / 31,778 bytes; Expects-based extent, bounds, iterator and subview contracts.",
+        "include/gsl/byte@87d007ef94d197632872e96d91525a013c665da8: 184 lines / 5,962 bytes; include/gsl/assert@d3e6ccdd53d5a254ed3827cf07711a6e86bb4226: 134 lines / 3,988 bytes.",
+        "tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a registers span_compatibility_tests.cpp in gsl_tests at line 208 and CTest gsl_tests at line 221.",
+        "LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02 confirms MIT.",
+        "Bounded exact-ref search for gsl::span returned 15 consumer files; each exact source blob SHA is recorded in this dossier. Exact-name search for span_compatibility_tests.cpp returned no direct production reference.",
+        "No Microsoft/GSL C++ test execution is claimed."
+      ],
+      "target_commit": "feff59d3cc7f683d169bf96114ce9ddfdb858d1c",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Existing TDRP source/dependency governance and the existing canonical Rust/domain owners for each real consumer.",
+      "composition_slot": "Dependency test provenance only; no shipping composition slot.",
+      "capability_component": "Microsoft/GSL span compatibility compile-time and runtime test provenance; no shipping surface/runtime.",
+      "variation_axes": [
+        "dynamic vs fixed extent",
+        "mutable vs const element type",
+        "pointer/count vs pointer/pointer vs array/container construction",
+        "valid vs invalid element/extent conversions",
+        "mutable vs const byte views",
+        "same-range vs unrelated iterator operations"
+      ],
+      "shared_owner_contracts": [
+        "TDRP source/dependency inventory",
+        "Adjacent GSL span/header/test provenance",
+        "Native Rust slices/references/arrays and borrowing",
+        "Actual canonical product/domain owners",
+        "Fresh exact-head GitHub Actions evidence"
+      ],
+      "duplicate_root_check": "No GslSpanRuntime, TelegramSpanRuntime, second messaging/runtime owner, product composition root, or Telegram-specific owner.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "No product action; dependency test-only provenance.",
+      "detail_section": "Not applicable",
+      "capability_surface": "Source-only dependency-test provenance; no shipping surface.",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Any GSL gitlink/tree, owner_tests.cpp blob, owner alias/header, CMake registration, or license drift requires exact-ref re-read; this row does not close indirect or production ownership responsibilities.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No icon change.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-GSL-SPAN-COMPATIBILITY-TEST-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GSL-SPAN-COMPATIBILITY-EXACT-SOURCE-001",
+        "ORA-TDRP-GSL-SPAN-COMPATIBILITY-COMPILE-TIME-NEGATIVES-001",
+        "ORA-TDRP-GSL-SPAN-COMPATIBILITY-CMAKE-REGISTRATION-001",
+        "ORA-TDRP-GSL-SPAN-COMPATIBILITY-NO-DIRECT-PRODUCTION-REFERENCE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GSL-SPAN-COMPATIBILITY-TESTS-ONLY-001",
+        "INV-TDRP-GSL-SPAN-COMPATIBILITY-NO-PARALLEL-RUNTIME-001",
+        "INV-TDRP-GSL-SPAN-COMPATIBILITY-NO-CALLER-CLOSURE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GSL-SPAN-COMPATIBILITY-REGISTERED-TESTS-001",
+        "CONTRACT-TDRP-GSL-SPAN-COMPATIBILITY-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GSL-SPAN-COMPATIBILITY-SOURCE-DRIFT-001",
+        "FAULT-TDRP-GSL-SPAN-COMPATIBILITY-BUILD-REGISTRATION-001",
+        "FAULT-TDRP-GSL-SPAN-COMPATIBILITY-CALLER-CLOSURE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "Pinned Microsoft/GSL CMake/CTest gsl_tests target",
+        "GitHub Actions exact-head TDRP Revision 9 and Rust desktop runtime"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact Microsoft/GSL span_compatibility_tests.cpp, span/byte/assert headers, tests/CMakeLists.txt and MIT LICENSE retained as source/test provenance. No GSL code is copied into a shipping runtime.",
+      "reviewer": "primary-session",
+      "notes": "Strict169 source-only dependency-test provenance. The existing span header responsibility already references this test as a dependency; this row separately records its exact test source, compile-time negative oracles, CMake/CTest registration and license. No production or caller-closure claim. Counters after strict169: unknown=16207 unread=16182 omitted=0 responsibilities=187. Exact-head TDRP/Rust/Official MCP runs after this commit are required."
     }
   ]
 }
