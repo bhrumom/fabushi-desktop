@@ -594,3 +594,73 @@ Together these oracles reinforce the same negative boundary: caller cancellation
 This continuation adds non-duplicate exact-ref evidence after reconciling the concurrent live lease, but it still does not prove repository-global frozen caller closure. The broad `createSqliteWorkerOperationAdmission` discovery surface still hits the 100-result cap, and additional default-branch candidates remain to be exact-fetched and classified at the frozen commit. Wrapper consumers of `openclaw-state-db-async-lifecycle` and `sqlite-snapshot-source` also remain broader than the clusters now pinned.
 
 Independent ACCEPT, scoped G01/G02 positive evidence, `unit_authority_ready`, executable/package proof, OCRM final acceptance, and release acceptance remain absent. No production implementation, ledger, RTM, or completion flag upgrade is justified.
+
+
+## 15. Round81 — first capped admission page exact-ref closure
+
+### 15.1 Exact-ref page accounting
+
+The default-branch discovery query for `createSqliteWorkerOperationAdmission` still returns exactly the connector's 100-result cap. This round classified every path returned on that first capped page against the frozen upstream `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` rather than treating search snippets as source evidence.
+
+- Production paths: 68 returned; 67 exist and were exact-fetched/classified at the frozen commit. `src/gateway/update-automatic-cleanup.ts` is a moving-default-only hit and returns NOT_FOUND at the frozen commit.
+- Test/support paths: 32 returned; 31 exist at the frozen commit. `src/gateway/update-recovery-cleanup.authority.integration.test.ts` is a moving-default-only hit and returns NOT_FOUND at the frozen commit.
+- Four of the 31 frozen test/support identities were already recorded earlier in this dossier and are not duplicated as new evidence: `src/state/openclaw-agent-db-disposal.test.ts@3324167141643be37352cedebaeeaa7f5f3d8163`, `src/infra/sqlite-worker-lifecycle-cleanup.test.ts@99877a3f298b483b75a4756a14430c93fcede43e`, `src/infra/sqlite-worker-operation-attachment.test.ts@259eede9d9ca4f00b6365842ce47e6d486d9058c`, and `src/infra/sqlite-worker-operation-admission.timeout.test.ts@7511cb8ea7ab283094fecb5fc6ddcbcc7500738f`.
+
+This establishes page-level exact-ref closure for the first 100 search results only. It does not establish repository-global caller closure because the discovery query itself remains capped and indexes the moving default branch.
+
+### 15.2 Additional frozen production caller identities from the capped page
+
+The following 33 frozen production identities were exact-fetched after the prior dossier append and were not previously recorded by exact SHA:
+
+- Lifecycle/fencing: `src/infra/sqlite-source-fence-admission.ts@512a8f93e6c09edfab6c150f6b864b2dbb6f6ddb`; `src/state/openclaw-state-db-cache.wal.ts@8e7ebf8139af85b89ed80ec35774590a156181b2`.
+- Product/domain state: `src/skills/library/store-access.ts@783eb79cb551140e0d245f4dcd6519b33753285f`; `src/gateway/managed-image-record-store.ts@8d7b9ee26135bcb856f3876d4c1e00e310871e2a`; `src/state/user-github-connections.ts@d67e92e4592045b6e3b5db97ca5adf969b19e544`; `src/state/user-profile-writes.ts@9a1e6ad80bfb328e317f57147d40bf00742c9dfb`; `src/infra/exec-approvals-store.ts@c3344574bf3451b662fd52eae1bb73b5278a5989`; `src/state/session-repository-workspaces.ts@c0d47b18ad67b1e721f21cbe1692cbe8cf112c11`.
+- Restart/publication: `src/infra/restart-handoff.ts@110728a478545450994f93dfd8ece53a6e1235b3`; `src/infra/restart-intent.ts@4c3382cbe14d5394527a1e772a8a266fbe6e7512`; `src/state/github-publication-worker.ts@1855961b43fac5d1ef45c0474230e00002daadc9`; `src/node-host/node-worker-journal-worker.ts@63a3c7510b8e6b16c502d12019dc75795b4cdfb7`.
+- Worker-environment/channel surfaces: `src/gateway/worker-environments/prepared-pool-presence-worker.ts@19e059602739d25159eb24ab73e426379830eb22`; `src/gateway/worker-environments/placement-worker-mutation.ts@5d33ef4746d17fd5e7fa82dfde681cd55963648c`; `src/gateway/worker-environments/store.ts@bba0f316959629efb648ab65ab8215a6585c8da2`; `src/gateway/session-group-catalog.ts@ea8d8c61139e1bf435a312fb9c00ae76789377c4`; `src/channels/message/ingress-queue.ts@55c883a8347a472bc08b2b5abee7fde9ecb695e2`; `src/infra/outbound/delivery-queue-storage.ts@943977d59dab5314043d3de1d3c80b9f023706c7`.
+- Agent/auth/session/trajectory: `src/agents/worktrees/template-registry-async.ts@60a1fd9693262106e6146cc935ad581ebae14c89`; `src/agents/worktrees/registry-run-end.ts@d448b39cf133d716f22e265dd8d2cbb1b488a960`; `src/agents/auth-profiles/sqlite-read.ts@7ae3540a661bf7b94501bb58c90c94d59b0b8ed5`; `src/agents/auth-profiles/shared-store-bootstrap-async.ts@56ba6a6622b9c3efdf5b41db93e39084523d0015`; `src/agents/auth-profiles/authorization-enrollment-runtime.ts@84e2ae26619ac94ec12a323b8ca1fae2e993acc9`; `src/agents/auth-profiles/store-update.ts@0df87f292ea2d817b6884f22995862cc405c71e5`; `src/infra/session-cost-usage-cache.sqlite.ts@23b9f09f2d7f9207f975e5f3f6c7bc7f736a7aea`; `src/trajectory/runtime-store-writer.ts@3e543ac75e3626a4ccf62902856654633953eae5`; `src/sessions/session-state-events.ts@11f02fcf4ac063897845f1fdbd6d564dd6795fd9`; `src/talk/client-voice-session-write.ts@0012fbb019a8dcce404a2d544e08f126147606c2`; `src/state/openclaw-agent-worker-store.ts@918ab97a3a7142cd3cb3b4fb8c5c6f74e133efab`; `src/config/sessions/conversation-registry.ts@fee9df39bdf9682bf389f88f5187c08377d393e3`; `src/plugin-state/plugin-state-worker-client.ts@d52cf25581ecee6dbb3a4c95affea007840faf76`; `src/agents/subagents/registry/subagent-registry-persistence.ts@dd257d7adffa15d8c1ea4d75ec591b96d41468c5`.
+- Explicit non-authority boundaries: `src/state/user-model-account-authority.ts@4e1b9618d1813a7c996fccd5148f8d1a4a46b642`.
+
+The common production invariant is now source-grounded across the entire returned production page: callers bind domain-specific currentness, stage/order, identity, generation, publication, or settlement facts before native admission. Several callers deliberately deny extra authority. `github-publication-worker.ts` throws if bookkeeping unexpectedly requests source admission; `user-model-account-authority.ts` throws if machine-state writes request separate domain admission; `outbound/delivery-queue-storage.ts` creates an observer admission that grants no host transaction authority and retains queue custody when publication cannot be confirmed. `openclaw-agent-worker-store.ts` also restricts publication cleanup admission to prepare-only and refuses any cleanup attempt to open storage or admit a transaction.
+
+Unknown-result handling remains non-replayable at multiple product entries. Restart intent recovers only from the exact committed consume receipt; managed-image writes and restart handoff likewise require matching committed facts; session state events explicitly do not replay an uncertain signal mutation. Ordered multi-phase callers such as plugin-state replacement, auth-profile update, skill-library writes, ingress claims, exec approvals, worker placement, repository workspaces, and subagent persistence fail closed when a transaction/commit sequence or authority fact is wrong.
+
+### 15.3 New frozen test/support identities from the capped page
+
+The following 27 frozen identities were newly pinned after exact-ref re-read:
+
+- `src/infra/update-run-mutation.worker.test.ts@b1854b10220e3d95eac538960ff36619b19a797d`
+- `src/infra/update-candidate-canary-mocks.test-support.ts@91ad96a62f8160d8113bfe25dbdb2bedf4557942`
+- `src/infra/update-run-reconciliation.worker.test.ts@40af4a66a2bf56c939c2dc663610220fd7fad315`
+- `src/gateway/worker-environments/store-retention.test.ts@6d756c6507a5c85a4ddc7e4a47026292583298e5`
+- `src/gateway/worker-environments/store-recovery.worker.test.ts@f392a257d68a1b3cd918d680971ef8d97ba79c38`
+- `src/gateway/worker-environments/credential-attachment-authority.test.ts@7eea89b0ba8095e9d1eff3d52ba9465ceb151976`
+- `src/gateway/server-methods/approval.settlement.test.ts@b15642202cd86bcff6fc8eb8adf4dbaec3d07a03`
+- `src/cli/update-cli/update-command-execution-validation.test.ts@971bea1c988950b4d614fd9f346376dcfa23c21e`
+- `src/infra/sqlite-worker-open-refusal.test.ts@f5e5587c97e7159f8face94bffb92ee0a9491817`
+- `src/infra/postgres-sync/fixture.test-support.ts@0a4930bea687a20acb1a625025edf94f988c594f`
+- `src/infra/sqlite-writer-admission-client.test.ts@55aa25fcc67fa4b95bb28c1eb6c2e672c0744772`
+- `src/config/sessions/session-worker-receipt.test.ts@60831e427193de2fc26b782b70e2b3cd69ab8ebe`
+- `src/infra/sqlite-worker-owner-probe.test-support.ts@d2d5f9c48496b127242b3ef5cec98f96139da6b2`
+- `src/channels/message/ingress-queue.authority.test.ts@4b7096359982e4ec9d2337229b1f9f88497a579a`
+- `src/infra/sqlite-worker-cold-admission.test.ts@b64c474d7ec8e31a7d5051cb066acdff4041cbf6`
+- `src/infra/sqlite-worker-operation-attachment.test-support.ts@7e3a46aa68b534e804a98d79ee4c42c022ff75af`
+- `src/config/sessions/session-entry-patch-delivery.test-support.ts@d9ae7e50a03b9f1ce2345aa277cea7985886851f`
+- `src/config/sessions/session-entry-patch.authority.test.ts@647ee8854dfd0e76af74c33ccab39c12af1a4bfe`
+- `src/state/openclaw-agent-execution.creation-fixture.test-support.ts@e31eff1e9aa57f573ca380f1bf1b38b833fa3bd8`
+- `src/infra/database-engine/agent-opening-refusal.conformance.test.ts@42256ba97c9633a0f8063d521ba9df0eec210521`
+- `src/config/sessions/session-entry-deletion.test.ts@7f84fb13fb79196c2809edef2b3ea7c32d5e349c`
+- `src/cron/service/admission-timeout.test.ts@11b942831cc17df276c17c2f7e95bb0dca1bfff9`
+- `src/infra/sqlite-transaction.diagnostics.test.ts@7aa69295af06353f8c0d147291fe6440427daa91`
+- `src/state/openclaw-state-lease-worker.test.ts@4f2055fe950166be13ec2534d25c1af212f0e186`
+- `src/infra/push-web.test.ts@62441f17abc27dd5725a0e81fd08b09e1bf83ba0`
+- `src/state/user-background.test.ts@1717184cf93968c8f1c88bf8b512a13afa3e25ee`
+- `src/infra/update-run-contention.test.ts@72e9582bf3ab4d3bd03b5811b315a73c5cc3c62a`
+
+The focused negative oracles include: reconciliation rejects cancellation at commit rather than returning stale history; worker-environment retention defers pruning when live demand changes at commit; unknown revocation/rollback does not manufacture a fence; attachment authority is not lent between queued callers and is rechecked at native commit; pre-native open refusal leaves pooled siblings and recovery intact; prior writer refusal clears only after fresh live authority; unknown session-worker settlement remains outcome-unknown and must not inspect/replay a commit; source-retired ingress is refused without revoking the shared account queue; patch authority is checked at the native mutation grant after asynchronous preparation; a post-commit caller refusal does not destroy another borrower's valid opening lease; session-entry deletion rolls back when cleanup authority is lost at native commit; transaction diagnostics prove admission precedes BEGIN and revoked COMMIT fails; user-background quota/current-authority failures roll back coherent state; and update contention does not replay or discard a lock failure after transaction admission.
+
+Support-only fixtures above are recorded as source identities, not promoted into standalone behavior proof.
+
+### 15.4 Page-level closure does not change the OCRM verdict
+
+The first 100-result discovery page for `createSqliteWorkerOperationAdmission` is now exact-ref classified at the frozen commit, including explicit rejection of both moving-default-only paths. The repository-global caller set is still unknown beyond that page because search remains capped; other symbol families such as `createSqliteDatabaseAdmissionRelay`, `closeOpenClawAgentDatabaseByPathAsync`, shared-state lifecycle wrappers, and snapshot-source entrypoints still require the same frozen page/cluster closure.
+
+No Actions were run. No production code, ledger, RTM, or flags were changed. Independent ACCEPT, scoped G01/G02 positive evidence, `unit_authority_ready`, executable/package proof, OCRM final acceptance, and release acceptance remain absent.
