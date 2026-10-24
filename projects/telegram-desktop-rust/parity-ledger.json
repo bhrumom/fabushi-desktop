@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "38f3195f364ac7924c0368f0d89dea1418255e90",
+  "target_commit": "f53ed57daae12397603fd2fbe50c541542a903dc",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16195,
-    "unread": 16170,
+    "unknown": 16194,
+    "unread": 16169,
     "omitted": 0,
-    "responsibilities_total": 199,
+    "responsibilities_total": 200,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -52568,6 +52568,240 @@
       "license_and_provenance": "Exact MicroTeX Windows Qt workflow, pinned build inputs, action/vcpkg resolution observations, install-qt action MIT provenance, README, root MIT license and resource-specific license split retained as dependency provenance; no child CI, Qt runtime or resource copied into Fabushi shipping runtime by this row.",
       "reviewer": "primary-session",
       "notes": "Strict181 source-only dependency Windows Qt CI/build provenance. Counters unknown=16195 unread=16170 omitted=0 responsibilities=199. All three pinned MicroTeX workflow target blobs are now registered, but real tdesktop MicroTeX formula/Qt/resource/platform responsibilities and broader recursive source closure remain open. Parent Actions terminal-success; receipt-head Actions required. Baseline identity, source closure and independent release acceptance remain false."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/MicroTeX",
+      "source_blob_sha": "61aaa7cc354de91d5898ffb0b2a6c62628d9a76f",
+      "source_kind": "recursive_child_repository_vcs_build_output_exclusion_provenance",
+      "module_id": "tdesktop.thirdparty.microtex.gitignore",
+      "responsibility_id": "TDRP-R9-MICROTEX-GITIGNORE-PROVENANCE-001",
+      "source_symbols": [
+        "desktop-app/MicroTeX:.gitignore@d72676278fbc7981de253a1a0725eb0677bedf30",
+        "runtime-generated names: macro.txt, rp.txt, symbols.txt",
+        "build outputs: _build/, build/, obj/, bin/, cmake-build-*",
+        "IDE/tool/docs outputs: *.cbp, *.depend, *.layout, /CppCheckResults.xml, .DS_Store, docs/, doxyfile, src/doc, src/Doxyfile, .vscode/, prebuilt-scripts/, .idea, .vs",
+        "fixed child tree truncated=false with 315 entries / 279 blobs and zero tracked matches for every ignore target",
+        "README maps build/ to CMake output and _build/ to Meson output",
+        "parent tdesktop gitlink pins tracked child objects; ignored untracked outputs are outside accepted source"
+      ],
+      "capability_ids": [
+        "CAP-DEPENDENCY-SOURCE-PROVENANCE",
+        "CAP-DEPENDENCY-BUILD-OUTPUT-EXCLUSION-PROVENANCE",
+        "CAP-DEPENDENCY-VCS-HYGIENE-PROVENANCE"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/MicroTeX@61aaa7cc354de91d5898ffb0b2a6c62628d9a76f",
+        "desktop-app/MicroTeX:.gitignore@d72676278fbc7981de253a1a0725eb0677bedf30",
+        "desktop-app/MicroTeX:CMakeLists.txt@75059dec500cff8114728331eb5cb317abf6daf9",
+        "desktop-app/MicroTeX:meson.build@d9968045f0162b8f1f8f518f554fd71199f067d5",
+        "desktop-app/MicroTeX:README.md@824af04fd8607532efed3f73752b81e5093577ef",
+        "desktop-app/MicroTeX:LICENSE@78a9eca5ca3514f2fd0a2e81018eeb8ae7d981a2"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microtex-gitignore-complete-read.md",
+      "behavior_contract": "Pinned MicroTeX .gitignore is VCS/worktree hygiene for generated/build/IDE/docs/tool outputs. It does not generate, build, package or execute product code and closes no formula/render/resource/platform/shipping responsibility.",
+      "state_machine": "pinned tracked tree -> Git worktree discovery -> untracked path matches ignore rule -> ordinary untracked discovery suppresses it; tracked objects and parent gitlink remain authoritative.",
+      "side_effects": [
+        "Git worktree hygiene only.",
+        "No compile/link/runtime/product persistence effect.",
+        "No Fabushi release effect."
+      ],
+      "failure_cases": [
+        "Ignored output mistaken for pinned source.",
+        "Tracked source incorrectly omitted due to ignore rule.",
+        "Runtime-generated comment promoted without writer/consumer evidence.",
+        "VCS hygiene promoted to production closure.",
+        "Layered resource licensing flattened."
+      ],
+      "ui_disposition": "Not product UI; dependency VCS/worktree hygiene only.",
+      "non_ui_responsibilities": [
+        "Exact .gitignore identity",
+        "Fixed-tree zero-match proof",
+        "CMake/Meson output boundary",
+        "Tracked object graph versus ignored untracked state",
+        "License provenance separation"
+      ],
+      "platform_delta": "Cross-platform worktree exclusions only; no Fabushi platform behavior or packaging policy.",
+      "existing_owner_candidates": [
+        "Existing TDRP recursive source/dependency provenance and inventory governance (selected)",
+        "Fabushi renderer/resource/platform/package owners (rejected for VCS-only row)",
+        "MicroTeXRuntime/TelegramRenderer/second inventory owner (rejected)"
+      ],
+      "existing_owner": "Existing TDRP recursive source/dependency provenance and inventory governance.",
+      "rejected_existing_owners": [
+        "Shipping owners do not own third-party .gitignore.",
+        "New MicroTeX/Telegram runtime would preserve upstream architecture.",
+        "Second inventory/build owner would duplicate canonical TDRP governance."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/dossiers/upstream-microtex-gitignore-complete-read.md"
+      ],
+      "fabushi_target_symbols": [
+        "TDRP_MICROTEX_GITIGNORE_PROVENANCE_001"
+      ],
+      "target_language": "Source-only Git/VCS provenance; no shipping implementation.",
+      "language_rationale": "Repository hygiene metadata, not product logic or platform adapter.",
+      "command_event_contracts": [
+        "Git applies ignore rules to untracked worktree discovery.",
+        "README documents build/ and _build/ output paths.",
+        "Fixed child tree has zero tracked matches for all ignore targets.",
+        "Parent gitlink pins tracked child objects only.",
+        "VCS exclusion cannot authorize production closure."
+      ],
+      "state_owner": "Git worktree/index discovery state only.",
+      "lifecycle_owner": "Pinned MicroTeX .gitignore plus Git worktree semantics.",
+      "persistence_and_restart": "Ignored outputs are disposable; accepted source persistence is the pinned Git object graph.",
+      "concurrency_and_cancellation": "No product concurrency contract.",
+      "security_boundary": "Only tracked exact-ref Git objects count as source authority; ignored files are not trusted source/release evidence.",
+      "network_service_dependencies": [
+        "Git/GitHub exact-object availability"
+      ],
+      "service_owner": "Source-control/provenance infrastructure only.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-vcs-build-output-exclusion-provenance-mapped-open",
+      "blockers": [
+        "No production implementation/release claim.",
+        "Runtime-generated names lack pinned writer/consumer evidence in this row.",
+        "Real MicroTeX production responsibilities remain open.",
+        "Broader child/source closure remains open.",
+        "Fresh receipt-head Actions required."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        ".gitignore@d72676278fbc7981de253a1a0725eb0677bedf30 fully read: 267 bytes / 28 line slots.",
+        "Pinned MicroTeX tree 462d2794c73bb87f57d9426621bc6ce0f57c5fc2 is truncated=false with 315 entries / 279 blobs.",
+        "Zero tracked matches for every ignore target including *.cbp/*.depend/*.layout.",
+        "README@824af04fd8607532efed3f73752b81e5093577ef maps build/ to CMake output and _build/ to Meson output.",
+        "CMakeLists.txt@75059dec500cff8114728331eb5cb317abf6daf9 and meson.build@d9968045f0162b8f1f8f518f554fd71199f067d5 remain tracked build inputs, separate from ignore metadata.",
+        "Parent f53ed57daae12397603fd2fbe50c541542a903dc exact-head Actions: TDRP 40099678322 61/61; Rust 40099678228 6/6; Official MCP 40099678433 1/1 success."
+      ],
+      "target_commit": "f53ed57daae12397603fd2fbe50c541542a903dc",
+      "workflow_run": 40099678322,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12562720276,
+      "artifact_digest": "sha256:c97b4a54ae59a02f1d144c8c595795d4aa948e3396a1989507de381b3a3d19a2",
+      "composition_root": "Existing TDRP source/dependency provenance and recursive inventory governance.",
+      "composition_slot": "Dependency VCS/build-output exclusion provenance only.",
+      "capability_component": "MicroTeX .gitignore worktree hygiene provenance; no runtime.",
+      "variation_axes": [
+        "runtime-generated names",
+        "CMake outputs",
+        "Meson output",
+        "IDE/tool/docs outputs",
+        "tracked objects versus ignored untracked state"
+      ],
+      "shared_owner_contracts": [
+        "TDRP recursive inventory",
+        "Pinned MicroTeX gitlink/tree",
+        "Exact-head Actions",
+        "Shipping owners remain separate"
+      ],
+      "duplicate_root_check": "No MicroTeXRuntime, TelegramRenderer, second inventory, second build graph or second shipping owner.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "No product action; dependency CI/build-only provenance.",
+      "detail_section": "Not applicable",
+      "capability_surface": "Source-only dependency CI/build provenance; no shipping surface.",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Any gitlink/tree/.gitignore/build-manifest/README/tracking/license drift requires exact-ref re-read.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No icon change.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MICROTEX-GITIGNORE-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MICROTEX-GITIGNORE-EXACT-SOURCE-001",
+        "ORA-TDRP-MICROTEX-GITIGNORE-TRACKED-MATCH-ZERO-001",
+        "ORA-TDRP-MICROTEX-GITIGNORE-CMAKE-BUILD-DIR-001",
+        "ORA-TDRP-MICROTEX-GITIGNORE-MESON-BUILD-DIR-001",
+        "ORA-TDRP-MICROTEX-GITIGNORE-NO-PRODUCTION-CLOSURE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MICROTEX-GITIGNORE-VCS-ONLY-001",
+        "INV-TDRP-MICROTEX-GITIGNORE-NO-PARALLEL-RUNTIME-001",
+        "INV-TDRP-MICROTEX-GITIGNORE-PRODUCTION-RESPONSIBILITIES-NOT-CLOSED-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MICROTEX-GITIGNORE-PINNED-SOURCE-001",
+        "CONTRACT-TDRP-MICROTEX-GITIGNORE-BUILD-OUTPUT-BOUNDARY-001",
+        "CONTRACT-TDRP-MICROTEX-GITIGNORE-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-MICROTEX-GITIGNORE-SOURCE-DRIFT-001",
+        "FAULT-TDRP-MICROTEX-GITIGNORE-IGNORED-PATH-PROMOTION-001",
+        "FAULT-TDRP-MICROTEX-GITIGNORE-SOURCE-OMISSION-001",
+        "FAULT-TDRP-MICROTEX-GITIGNORE-PRODUCT-PROMOTION-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "Pinned MicroTeX .gitignore/tree/CMake/Meson/README",
+        "Pinned tdesktop MicroTeX gitlink boundary",
+        "GitHub Actions exact-head evidence"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact .gitignore/build-output provenance plus root/resource layered-license boundary retained; ignored outputs are not shipping source.",
+      "reviewer": "primary-session",
+      "notes": "Strict182 VCS/build-output exclusion provenance. Counters unknown=16194 unread=16169 omitted=0 responsibilities=200. Zero tracked matches for all ignore targets. Production MicroTeX and recursive closure remain open; receipt-head Actions required; baseline/source closure/release acceptance remain false."
     }
   ]
 }
