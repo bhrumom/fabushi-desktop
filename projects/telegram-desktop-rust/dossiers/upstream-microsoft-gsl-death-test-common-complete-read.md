@@ -59,3 +59,14 @@ Strict165 is recorded separately as test-only no-exception/span contract provena
 
 
 <!-- TDRP_GSL_NO_EXCEPTION_ENSURE_TEST_PROVENANCE_001: strict165 validator target anchor. The ledger row's fabushi_target_paths resolves this marker in the death-test-common dossier; the independent strict165 source analysis remains in upstream-microsoft-gsl-no-exception-ensure-tests-complete-read.md. Documentation only; no production symbol or runtime owner. -->
+
+
+## Strict165 traceability bridge for the ledger-selected dossier
+
+The validator resolves the strict165 ledger row's `source_analysis_path` to this death-test-common dossier, while the standalone source-specific strict165 dossier remains preserved separately. Keep the strict165 traceability IDs present here as well so the ledger's actual path is validator-complete:
+
+- Requirement: TDRP-R9-GSL-NO-EXCEPTION-ENSURE-TEST-PROVENANCE-001
+- Oracles: ORA-TDRP-GSL-NOEXCEPT-EXACT-SOURCE-001, ORA-TDRP-GSL-NOEXCEPT-COMPILE-CONFIG-001, ORA-TDRP-GSL-NOEXCEPT-OUT-OF-RANGE-TERMINATES-001, ORA-TDRP-GSL-NOEXCEPT-NO-DIRECT-TDESKTOP-CONSUMER-001
+- Invariants: INV-TDRP-GSL-NOEXCEPT-TESTS-ONLY-001, INV-TDRP-GSL-NOEXCEPT-NO-PARALLEL-RUNTIME-001
+
+This bridge records provenance only; it does not merge the two source responsibilities or add a production runtime.
