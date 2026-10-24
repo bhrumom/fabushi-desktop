@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "c8edd25411c02a73b843ce38800d419632cd8234",
+  "target_commit": "08f1d0c64ebc342d268d4fc161f768310765c209",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16199,
-    "unread": 16174,
+    "unknown": 16198,
+    "unread": 16173,
     "omitted": 0,
-    "responsibilities_total": 195,
+    "responsibilities_total": 196,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -51554,6 +51554,250 @@
       "license_and_provenance": "Exact Microsoft/GSL iOS workflow, current checkout-v4 resolution context, root/test CMake, README and MIT LICENSE retained as dependency CI/test provenance; no workflow copied into Fabushi shipping iOS/platform runtime.",
       "reviewer": "primary-session",
       "notes": "Strict177 source-only dependency iOS simulator CI provenance. Counters unknown=16199 unread=16174 omitted=0 responsibilities=195. Parent Actions terminal-success; receipt-head Actions required. Baseline identity, source closure and independent release acceptance remain false."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/GSL",
+      "source_blob_sha": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+      "source_kind": "recursive_child_repository_test_build_download_template_provenance",
+      "module_id": "tdesktop.thirdparty.gsl.tests-cmakelists-in",
+      "responsibility_id": "TDRP-R9-GSL-TESTS-CMAKE-IN-PROVENANCE-001",
+      "source_symbols": [
+        "Microsoft/GSL:tests/CMakeLists.txt.in@2535f8f4a53b0a39c9df1ef65f9f216416464ea4",
+        "ExternalProject_Add(googletest) -> https://github.com/google/googletest.git @ 1b18723e874b256c1e39378c6774a90701d70f7a",
+        "download-only ExternalProject: CONFIGURE_COMMAND/BUILD_COMMAND/INSTALL_COMMAND/TEST_COMMAND empty",
+        "tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a configure_file -> googletest-download/CMakeLists.txt -> cmake configure/build -> add_subdirectory googletest-src",
+        "tests/CMakeLists.txt standalone find_package(Microsoft.GSL CONFIG REQUIRED) and Microsoft.GSL_VERSION check",
+        ".github/workflows/cmake_find_package.yml@fd2f7a812ca21e4e125058e50acadd6b5ccb28ec installs GSL then configures tests/ through CMAKE_PREFIX_PATH",
+        "CMakeLists.txt@b1d24e5facfe56b1ae28468a5959797e9f6bacda exports/installs Microsoft.GSL::GSL config/version"
+      ],
+      "capability_ids": [
+        "CAP-DEPENDENCY-TEST-PROVENANCE",
+        "CAP-DEPENDENCY-BUILD-INPUT-PROVENANCE",
+        "CAP-DEPENDENCY-PACKAGE-DISCOVERY-PROVENANCE"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "Microsoft/GSL:tests/CMakeLists.txt.in@2535f8f4a53b0a39c9df1ef65f9f216416464ea4",
+        "google/googletest@1b18723e874b256c1e39378c6774a90701d70f7a (test-only acquisition)",
+        "Microsoft/GSL:tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a",
+        "Microsoft/GSL:CMakeLists.txt@b1d24e5facfe56b1ae28468a5959797e9f6bacda",
+        "Microsoft/GSL:.github/workflows/cmake_find_package.yml@fd2f7a812ca21e4e125058e50acadd6b5ccb28ec",
+        "Microsoft/GSL:README.md@dd61e3fdc4d30614c0ca35f58cce5f58e66dd4df",
+        "Microsoft/GSL:LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02",
+        "Microsoft/GSL:ThirdPartyNotices.txt@552b254c63a2f9909aa46ef21c256ef9a79a0035"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-tests-cmakelists-in-complete-read.md",
+      "behavior_contract": "Source-only provenance for Microsoft/GSL test dependency acquisition and package-discovery scaffolding. When gtest_main is absent, tests/CMakeLists.txt materializes this template, downloads pinned googletest source through a download-only ExternalProject, then adds the source to the GSL test build. Standalone tests separately verify installed Microsoft.GSL package discovery. No Fabushi shipping runtime/package owner is established.",
+      "state_machine": "tests enabled -> pkg_search_module(gtest_main) -> if absent require Git -> configure_file template -> configure/build generated googletest-download project -> materialize pinned googletest source -> add_subdirectory downloaded source -> build GSL tests; standalone package path: install GSL -> configure tests/ with CMAKE_PREFIX_PATH -> find_package(Microsoft.GSL CONFIG REQUIRED).",
+      "side_effects": [
+        "Test-only network acquisition of pinned googletest source when local gtest_main is absent.",
+        "Ephemeral CMake build-tree directories googletest-download/googletest-src/googletest-build.",
+        "No Fabushi product persistence, packaging, updater or release side effects."
+      ],
+      "failure_cases": [
+        "Git unavailable while gtest_main is absent.",
+        "Generated download-project configure/build fails.",
+        "Pinned googletest commit is unreachable.",
+        "Downloaded source cannot be consumed by add_subdirectory.",
+        "Installed Microsoft.GSL config is not discoverable through CMAKE_PREFIX_PATH.",
+        "Dependency test/package provenance is incorrectly promoted to shipping evidence."
+      ],
+      "ui_disposition": "Not a product UI source; dependency test/build/package-discovery provenance only.",
+      "non_ui_responsibilities": [
+        "Exact test template identity",
+        "Pinned googletest acquisition provenance",
+        "Generated CMake consumption chain",
+        "Microsoft.GSL package-discovery caller contract",
+        "README/license/third-party notice provenance",
+        "Fail-closed separation from shipping production ownership"
+      ],
+      "platform_delta": "Portable dependency test scaffolding only; no Fabushi platform, ABI, signing, packaging or release policy.",
+      "existing_owner_candidates": [
+        "Existing TDRP recursive source/dependency and CI/test-provenance governance (selected)",
+        "Fabushi shipping build/package/release owners (rejected)",
+        "GslTestRuntime/GslPackageRuntime/TelegramBuildRuntime (rejected)"
+      ],
+      "existing_owner": "Existing TDRP recursive source/dependency and CI/test-provenance governance.",
+      "rejected_existing_owners": [
+        "Shipping build/package/release owners do not own child test dependency acquisition.",
+        "GSL-specific runtimes would promote dependency provenance into product architecture.",
+        "TelegramBuildRuntime would preserve upstream architecture and violate existing-owner-first."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-tests-cmakelists-in-complete-read.md"
+      ],
+      "fabushi_target_symbols": [
+        "TDRP_GSL_TESTS_CMAKE_IN_PROVENANCE_001"
+      ],
+      "target_language": "Source-only CMake dependency-test/build-input provenance; no shipping implementation.",
+      "language_rationale": "This file is test dependency acquisition/package-discovery scaffolding, not Fabushi product logic.",
+      "command_event_contracts": [
+        "Fallback acquisition occurs only when pre-installed gtest_main is absent.",
+        "GoogleTest is pinned to 1b18723e874b256c1e39378c6774a90701d70f7a.",
+        "ExternalProject performs download only; configure/build/install/test commands are empty.",
+        "Standalone tests require Microsoft.GSL CONFIG package discovery.",
+        "Dependency test/package provenance does not authorize Fabushi shipping package/build or release acceptance."
+      ],
+      "state_owner": "Ephemeral CMake/ExternalProject test-build state only.",
+      "lifecycle_owner": "Pinned Microsoft/GSL tests CMake sources; no Fabushi shipping lifecycle owner.",
+      "persistence_and_restart": "No product persistence; generated build directories and downloaded test sources are disposable.",
+      "concurrency_and_cancellation": "Sequential CMake configure/build ordering; no Fabushi runtime concurrency contract.",
+      "security_boundary": "Pinned network acquisition is test-only. Do not infer production dependency trust, signing, SBOM closure or release approval.",
+      "network_service_dependencies": [
+        "github.com/google/googletest.git test-only source acquisition",
+        "Git and CMake ExternalProject",
+        "GitHub Actions for package-discovery CI"
+      ],
+      "service_owner": "Third-party test/build infrastructure only.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-test-download-template-package-discovery-provenance-mapped-open",
+      "blockers": [
+        "No production implementation or release acceptance claim.",
+        "No tdesktop/Fabushi shipping caller of Microsoft.GSL find_package or GSL_TEST was established.",
+        "The fixed Microsoft/GSL child tree is fully registered after this row, but accepted tdesktop recursive source closure remains open.",
+        "Fresh receipt-head Actions required."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "tests/CMakeLists.txt.in@2535f8f4a53b0a39c9df1ef65f9f216416464ea4 fully re-read: 15 line slots / 477 bytes; download-only ExternalProject pins google/googletest@1b18723e874b256c1e39378c6774a90701d70f7a.",
+        "tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a generates/configures/builds googletest-download then add_subdirectory consumes googletest-src.",
+        "Standalone tests call find_package(Microsoft.GSL CONFIG REQUIRED); cmake_find_package.yml installs GSL then configures tests/ through CMAKE_PREFIX_PATH.",
+        "Root CMakeLists.txt exports/installs Microsoft.GSL::GSL config/version.",
+        "README.md documents header-only use and find_package; LICENSE is MIT; ThirdPartyNotices identifies GoogleTest BSD-3-Clause.",
+        "Pinned Microsoft/GSL tree 6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41 is truncated=false with 44 blobs; exact path+blob comparison left only this target unmatched before strict178.",
+        "Accepted tdesktop exact searches: ThirdParty/GSL only .gitmodules; Microsoft.GSL=0; GSL_TEST=0. GSL header use remains separate production responsibility.",
+        "Parent exact-head 08f1d0c64ebc342d268d4fc161f768310765c209: TDRP 40093199412 61/61 success; Rust 40093199398 6/6 success; Official MCP 40093199411 success."
+      ],
+      "target_commit": "08f1d0c64ebc342d268d4fc161f768310765c209",
+      "workflow_run": 40093199412,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12559188820,
+      "artifact_digest": "sha256:a14ef23f18ab27866451555347228fecc871cd32c307dbee55d708c2f81dcdec",
+      "composition_root": "Existing TDRP source/dependency provenance governance.",
+      "composition_slot": "Dependency test/build/package-discovery provenance only; no shipping composition slot.",
+      "capability_component": "Microsoft/GSL GoogleTest download template/package-discovery provenance; no shipping runtime.",
+      "variation_axes": [
+        "pre-installed gtest_main vs fallback download",
+        "Git/CMake availability",
+        "pinned googletest source acquisition",
+        "embedded tests vs standalone installed-package discovery"
+      ],
+      "shared_owner_contracts": [
+        "TDRP recursive dependency inventory",
+        "Pinned GSL test/root CMake sources",
+        "Pinned package-discovery workflow",
+        "README/license/third-party notices",
+        "Fabushi shipping build/package/release owners remain separate"
+      ],
+      "duplicate_root_check": "No GslTestRuntime, GslPackageRuntime, TelegramBuildRuntime or second shipping package/build root.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "No product action; dependency test/build-only provenance.",
+      "detail_section": "Not applicable",
+      "capability_surface": "Source-only dependency test/build/package-discovery provenance; no shipping surface.",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Any GSL gitlink/tree, tests/CMakeLists.txt.in, googletest pin, package export/discovery, README/license/notice drift requires exact-ref re-read; no product/build closure.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No icon change.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-GSL-TESTS-CMAKE-IN-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GSL-TESTS-CMAKE-IN-EXACT-SOURCE-001",
+        "ORA-TDRP-GSL-GTEST-DOWNLOAD-PIN-001",
+        "ORA-TDRP-GSL-PACKAGE-DISCOVERY-CALLER-001",
+        "ORA-TDRP-GSL-TEST-SCAFFOLD-NO-SHIPPING-OWNER-001",
+        "ORA-TDRP-GSL-CHILD-TREE-REGISTERED-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GSL-TEST-DOWNLOAD-DEPENDENCY-ONLY-001",
+        "INV-TDRP-GSL-TEST-DOWNLOAD-NO-PARALLEL-RUNTIME-001",
+        "INV-TDRP-GSL-TEST-PACKAGE-NO-PRODUCT-CLOSURE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GSL-TESTS-CMAKE-IN-PINNED-SOURCE-001",
+        "CONTRACT-TDRP-GSL-GTEST-PINNED-ACQUISITION-001",
+        "CONTRACT-TDRP-GSL-FIND-PACKAGE-PATH-001",
+        "CONTRACT-TDRP-GSL-TESTS-CMAKE-IN-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GSL-TESTS-CMAKE-IN-SOURCE-DRIFT-001",
+        "FAULT-TDRP-GSL-GTEST-PIN-UNREACHABLE-001",
+        "FAULT-TDRP-GSL-PACKAGE-DISCOVERY-DRIFT-001",
+        "FAULT-TDRP-GSL-TEST-SCAFFOLD-PRODUCT-PROMOTION-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "Pinned GSL tests/CMakeLists.txt.in",
+        "Pinned GSL tests/root CMake and package-discovery workflow",
+        "Pinned README/license/third-party notices",
+        "GitHub Actions exact-head TDRP Revision 9 and Rust desktop runtime"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact GSL test download template, pinned googletest commit, package-discovery chain, README, MIT LICENSE and GoogleTest BSD-3-Clause notice retained as dependency provenance; none copied into Fabushi shipping runtime.",
+      "reviewer": "primary-session",
+      "notes": "Strict178 source-only dependency test/build/package-discovery provenance. Fixed Microsoft/GSL child tree now has 44/44 blobs registered by exact path+blob accounting. Counters unknown=16198 unread=16173 omitted=0 responsibilities=196. Parent Actions terminal-success; receipt-head Actions required. Baseline identity, source closure and independent release acceptance remain false."
     }
   ]
 }
