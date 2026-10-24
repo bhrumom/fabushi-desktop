@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "12b2e83954cc1605d680ff6ade507047949a1384",
+  "target_commit": "73d1f353c12b90806c6ae4e329037c7c3ae9a856",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16191,
-    "unread": 16166,
+    "unknown": 16190,
+    "unread": 16165,
     "omitted": 0,
-    "responsibilities_total": 203,
+    "responsibilities_total": 204,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -53539,6 +53539,255 @@
       "license_and_provenance": "Exact pinned latex2png.cpp retained as optional example provenance. Root MIT plus separate resource-license boundary preserved.",
       "reviewer": "primary-session",
       "notes": "Strict185 optional latex2png CLI/render provenance. Counters unknown=16191 unread=16166 omitted=0 responsibilities=203. Production external_microtex/td_iv responsibilities remain separate and open."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/MicroTeX",
+      "source_blob_sha": "61aaa7cc354de91d5898ffb0b2a6c62628d9a76f",
+      "source_kind": "recursive_child_repository_developer_precommit_build_hook_provenance",
+      "module_id": "tdesktop.thirdparty.microtex.githooks-pre-commit",
+      "responsibility_id": "TDRP-R9-MICROTEX-GITHOOKS-PRECOMMIT-PROVENANCE-001",
+      "source_symbols": [
+        "desktop-app/MicroTeX:githooks/pre-commit@c8ff63e581ecabf277c9592f8967a7bf665587b8",
+        "tracked mode 100644 (non-executable)",
+        "workingDir=$(pwd); cd build",
+        "cmake -DCMAKE_BUILD_TYPE=Debug -DGRAPHICS_DEBUG=ON -DMEM_CHECK=OFF -DHAVE_LOG=ON ..",
+        "make -j32",
+        "no set -e / status capture / explicit failure exit; final echo can mask build failure",
+        "accepted tdesktop shipping uses external_microtex/td_iv, not the repository hook"
+      ],
+      "capability_ids": [
+        "CAP-DEPENDENCY-SOURCE-PROVENANCE",
+        "CAP-DEPENDENCY-DEVELOPER-HOOK-PROVENANCE",
+        "CAP-DEPENDENCY-BUILD-VALIDATION-PROVENANCE"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/MicroTeX@61aaa7cc354de91d5898ffb0b2a6c62628d9a76f",
+        "desktop-app/MicroTeX:githooks/pre-commit@c8ff63e581ecabf277c9592f8967a7bf665587b8",
+        "desktop-app/MicroTeX:githooks/pre-push@b426a77d194ac023a93acb57235635608a0d9e04",
+        "desktop-app/MicroTeX:CMakeLists.txt@75059dec500cff8114728331eb5cb317abf6daf9",
+        "desktop-app/MicroTeX:.gitignore@d72676278fbc7981de253a1a0725eb0677bedf30",
+        "desktop-app/MicroTeX:README.md@824af04fd8607532efed3f73752b81e5093577ef",
+        "desktop-app/MicroTeX:LICENSE@78a9eca5ca3514f2fd0a2e81018eeb8ae7d981a2",
+        "desktop-app/cmake_helpers:external/microtex/CMakeLists.txt@a1f479d2833bbb0cf0e007ee8fd33a40c10d9334",
+        "telegramdesktop/tdesktop:Telegram/cmake/td_iv.cmake@ec39405fc3c7bec58f8acb42aa49ed69c60d1b30",
+        "telegramdesktop/tdesktop:Telegram/SourceFiles/iv/markdown/iv_markdown_microtex.cpp@5c854b265e6dc67c1c500a72e04fa58b7fc6c3a2",
+        "telegramdesktop/tdesktop:Telegram/SourceFiles/iv/markdown/iv_markdown_math_renderer.cpp@46864b7ce87207c6e57b6bcc7610337120580bea",
+        "telegramdesktop/tdesktop:Telegram/CMakeLists.txt@2ea9badfc5750b9b4eab111052faafe946fea277"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microtex-githooks-pre-commit-complete-read.md",
+      "behavior_contract": "Source-only developer pre-commit build-hook provenance. External hook installation/dispatch is required; the tracked file is non-executable, no tracked installer was found, and command failures are not fail-closed. Accepted tdesktop shipping uses separately owned external_microtex/td_iv composition.",
+      "state_machine": "external hook installation/dispatch -> START banner -> capture pwd -> cd build -> CMake Debug diagnostics configure -> make -j32 -> cd workingDir -> DONE banner; without set -e, failures do not abort later commands; absent external installation/execution -> no hook effect",
+      "side_effects": [
+        "May reconfigure ignored build/ output",
+        "May compile local MicroTeX library/sample targets",
+        "Prints terminal banners",
+        "No tracked hook installation",
+        "No Fabushi product side effect"
+      ],
+      "failure_cases": [
+        "tracked file is non-executable/not installed",
+        "build/ missing",
+        "CMake failure can be masked by later commands",
+        "make failure can be masked by later commands",
+        "unquoted workingDir return path is whitespace/glob-sensitive",
+        "fixed -j32 can exceed local resource expectations",
+        "developer hook mistaken for shipping/GitHub Actions gate"
+      ],
+      "ui_disposition": "Not a Fabushi product UI source; standalone upstream developer-tooling hook only.",
+      "non_ui_responsibilities": [
+        "developer hook invocation/installation boundary",
+        "local Debug configure parameters",
+        "parallel compile request",
+        "failure propagation semantics",
+        "ignored build-directory side effects",
+        "shipping-owner separation"
+      ],
+      "platform_delta": "Bash/local developer-worktree provenance only; Fabushi executable verification remains GitHub Actions and accepted tdesktop shipping uses canonical CMake/packaging owners.",
+      "existing_owner_candidates": [
+        "Existing TDRP recursive source/dependency developer-tooling provenance governance (selected)",
+        "Existing GitHub Actions exact-head evidence owner (rejected as runtime owner; hook does not enforce it)",
+        "Shipping formula/render/build/package owners (rejected)",
+        "PreCommitGate/MicroTeXHookRuntime/second CI owner (rejected)"
+      ],
+      "existing_owner": "Existing TDRP recursive source/dependency developer-tooling provenance governance.",
+      "rejected_existing_owners": [
+        "GitHub Actions is the authoritative executable evidence owner, but this upstream hook is only source provenance and cannot be promoted into a second gate.",
+        "Shipping formula/render/build/package semantics are separate from a developer convenience hook.",
+        "A new hook runtime or build gate would duplicate canonical build/evidence ownership."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/dossiers/upstream-microtex-githooks-pre-commit-complete-read.md"
+      ],
+      "fabushi_target_symbols": [
+        "TDRP_MICROTEX_GITHOOKS_PRECOMMIT_PROVENANCE_001"
+      ],
+      "target_language": "Source-only Bash developer-hook provenance; no shipping implementation.",
+      "language_rationale": "The target is third-party developer tooling rather than a product responsibility to mechanically port; Fabushi already has GitHub Actions as the executable evidence owner.",
+      "command_event_contracts": [
+        "external installation/dispatch required",
+        "CMake Debug + GRAPHICS_DEBUG=ON + MEM_CHECK=OFF + HAVE_LOG=ON",
+        "make -j32",
+        "no set -e/status propagation",
+        "no test execution",
+        "production external_microtex/td_iv remains separate",
+        "hook cannot authorize source closure or release acceptance"
+      ],
+      "state_owner": "Local developer worktree/build directory only; no Fabushi product state.",
+      "lifecycle_owner": "External Git hook installation/invocation if any; the repository does not install or own hook lifecycle. Shipping validation lifecycle remains GitHub Actions plus canonical build/package owners.",
+      "persistence_and_restart": "Only ignored local build/ outputs; no durable Fabushi product persistence.",
+      "concurrency_and_cancellation": "Synchronous shell sequence with fixed make -j32 parallelism; no product cancellation contract.",
+      "security_boundary": "Developer convenience hook is not an authorization, security, release, or evidence gate; masked failures must never be interpreted as passing evidence.",
+      "network_service_dependencies": [
+        "GitHub Actions for exact-head Fabushi evidence"
+      ],
+      "service_owner": "Third-party developer-tooling provenance only; not a Fabushi service owner.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-developer-precommit-build-hook-provenance-mapped-open",
+      "blockers": [
+        "No production closure.",
+        "Shipping external_microtex/td_iv responsibilities remain open.",
+        "Broader recursive source closure remains open.",
+        "Fresh receipt-head Actions required."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "githooks/pre-commit@c8ff63e581ecabf277c9592f8967a7bf665587b8 fully read: 20 line slots / 424 characters; fixed tree mode 100644.",
+        "Pinned MicroTeX master equals 61aaa7cc354de91d5898ffb0b2a6c62628d9a76f; recursive tree truncated=false with 315 entries / 279 blobs.",
+        "Exact pin-equivalent searches for githooks/core.hooksPath/pre-commit/START BUILD found no tracked installer/consumer reference.",
+        "README/CMake/.gitignore and sibling pre-push hook were re-read for direct build/installation and negative-oracle context.",
+        "Pinned external_microtex, td_iv, iv_markdown_microtex, iv_markdown_math_renderer and Telegram RCC packaging were re-read as the separate shipping production boundary.",
+        "Parent 73d1f353c12b90806c6ae4e329037c7c3ae9a856: TDRP 40108442473 61/61, Rust 40108442190 6/6, Official MCP 40108442147 1/1 success."
+      ],
+      "target_commit": "73d1f353c12b90806c6ae4e329037c7c3ae9a856",
+      "workflow_run": 40108442473,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12565462338,
+      "artifact_digest": "sha256:584a7eed05e949a44a4c40ca8191316131b13ff56a25b8dac51c49c89a5ca388",
+      "composition_root": "Existing TDRP recursive source/dependency developer-tooling provenance governance.",
+      "composition_slot": "Dependency developer-hook/build provenance only; no shipping slot.",
+      "capability_component": "MicroTeX pre-commit developer build-hook provenance; no shipping runtime.",
+      "variation_axes": [
+        "hook installed vs absent",
+        "executable dispatch vs tracked non-executable source",
+        "build directory present vs missing",
+        "CMake success vs failure",
+        "make success vs failure",
+        "local developer hook vs shipping/GitHub Actions validation"
+      ],
+      "shared_owner_contracts": [
+        "TDRP recursive inventory/source provenance governance",
+        "Pinned MicroTeX gitlink/tree",
+        "Ignored local build-output boundary",
+        "GitHub Actions exact-head evidence",
+        "Pinned cmake_helpers external_microtex production boundary",
+        "Pinned td_iv production consumer boundary",
+        "Shipping owners remain separate"
+      ],
+      "duplicate_root_check": "No PreCommitGate, MicroTeXHookRuntime, second build/CI owner, second formula renderer, second package root, or second application shell.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "No product action; dependency developer-hook provenance only.",
+      "detail_section": "Not applicable",
+      "capability_surface": "Source-only dependency developer tooling; no shipping surface.",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Any target blob/mode, hook-installation evidence, root build graph, MicroTeX pin, external_microtex or td_iv shipping boundary drift requires exact-ref reconciliation.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No icon change.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-MICROTEX-GITHOOKS-PRECOMMIT-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MICROTEX-PRECOMMIT-EXACT-SOURCE-001",
+        "ORA-TDRP-MICROTEX-PRECOMMIT-INSTALLATION-BOUNDARY-001",
+        "ORA-TDRP-MICROTEX-PRECOMMIT-FAILURE-PROPAGATION-001",
+        "ORA-TDRP-MICROTEX-PRECOMMIT-SHIPPING-SEPARATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MICROTEX-PRECOMMIT-NO-PARALLEL-BUILD-GATE-001",
+        "INV-TDRP-MICROTEX-PRECOMMIT-NOT-FAIL-CLOSED-001",
+        "INV-TDRP-MICROTEX-PRECOMMIT-PRODUCTION-RESPONSIBILITIES-NOT-CLOSED-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MICROTEX-PRECOMMIT-PINNED-SOURCE-001",
+        "CONTRACT-TDRP-MICROTEX-PRECOMMIT-DEVELOPER-HOOK-BOUNDARY-001",
+        "CONTRACT-TDRP-MICROTEX-PRECOMMIT-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-MICROTEX-PRECOMMIT-SOURCE-DRIFT-001",
+        "FAULT-TDRP-MICROTEX-PRECOMMIT-MASKED-BUILD-FAILURE-001",
+        "FAULT-TDRP-MICROTEX-PRECOMMIT-PRODUCT-PROMOTION-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "Pinned MicroTeX developer-hook/build tree",
+        "Pinned tdesktop MicroTeX/cmake_helpers production boundary",
+        "GitHub Actions exact-head evidence"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact pinned pre-commit hook retained as source/developer-tooling provenance under MicroTeX MIT; resource-license boundary remains separate.",
+      "reviewer": "primary-session",
+      "notes": "Strict186 MicroTeX pre-commit developer build-hook provenance. Counters unknown=16190 unread=16165 omitted=0 responsibilities=204. Hook is tracked non-executable, has no tracked installer, is not fail-closed, and is not a shipping/GitHub Actions gate. Production external_microtex/td_iv responsibilities remain separate and open."
     }
   ]
 }
