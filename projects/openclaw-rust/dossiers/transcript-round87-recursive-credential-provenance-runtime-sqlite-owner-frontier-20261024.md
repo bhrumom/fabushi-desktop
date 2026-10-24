@@ -2299,3 +2299,130 @@ A fresh capped search of `closeOpenClawStateDatabaseAsync` found extension test/
 X OAuth/runtime authority, Device Pair notifier scheduler/state CAS, and Beam store/mirror/catalog production identities were also rechecked against the live Round87 text and were already registered, so they are not duplicated here.
 
 No Actions, build, test, generator, package, production-code, ledger, RTM, or flags mutation was performed in this pass. Scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, independent ACCEPT, OCRM final acceptance and release acceptance remain absent.
+
+
+## 29. Section 28 next-owner recursion: generation leases, canonical transcript workers and durable channel ingress
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`). Every identity below was absent from the live Round87 dossier immediately before this append. Previously registered generic SQLite worker admission/store primitives, Nostr relay-subscription, and Section 28 owner identities are not duplicated.
+
+### 29.1 Memory provider-use and published-index generation ownership
+
+New frozen identities:
+- `extensions/memory-core/src/memory/manager-embedding-ops.ts@24277e52f58227107e198d93d238307ea04b265c`
+- `extensions/memory-core/src/memory/manager-search-orchestration.ts@0b3ff669ac46a9ed3e28d992b36f6984ad733627`
+- `extensions/memory-core/src/memory/manager-sync-ops.ts@1b0d823a9268bd486bebb7f1824dabb12a4f5814`
+- `extensions/memory-core/src/memory/manager-index-generation-lease.ts@49844fc63668f63d5454214976cd0a3f8d690e02`
+- `extensions/memory-core/src/memory/manager-index-generation-lease.test.ts@bcc739f391c3d1add7fb32a76dfdc029b6ed10ff`
+
+The provider lifecycle from Section 28 is backed by explicit admitted-use custody. `manager-embedding-ops.ts` records active uses per concrete provider, gives each admitted operation an idempotent release, and makes retirement wait `awaitProviderIdle(provider)`. A sync generation captures the exact provider, runtime and provider/index identities and holds one provider-use lease across embedding plus publication; nested sync users share that captured generation and release it only when the final owner exits. Semantic search likewise retains the exact provider during its embed call and releases it in `finally`.
+
+`manager-search-orchestration.ts` separately leases the published index generation. Search releases its read generation before bootstrap, repair or sync can replace the index, then reacquires a fresh generation before continuing. This prevents a search from combining an old database generation with a newly selected provider. Cancellation does not itself degrade the provider, and fallback is attempted only after the old provider-use lease is released.
+
+`manager-sync-ops.ts` closes the same loop from the writer side: fallback activation is serialized, the current provider is retired before a fallback provider is constructed, and a sync that detects provider failure explicitly ends its own sync generation before fallback activation so it cannot deadlock waiting on itself. An explicitly required semantic provider fails closed instead of publishing an FTS-only replacement over an existing semantic index when fallback cannot be established.
+
+The generation lease is keyed by normalized database path. A queued writer waits for all admitted readers; queued readers behind that writer do not leapfrog it. Abort removes only a still-queued waiter, while an already admitted reader continues to own its generation until explicit release. Focused tests prove a pre-aborted reader is refused, a canceled queued reader does not admit its successor ahead of publication, and a signal that aborts after reader admission cannot release the generation early.
+
+### 29.2 Meeting transcript canonical state-worker, summary and capture finalization chain
+
+New frozen identities:
+- `src/transcripts/store.ts@edf0bd6a943fd11ed814a0f67eeaba7f6d23903c`
+- `src/transcripts/capture-summary.ts@c72d3f11dd320b010b4a4d97d502de78f4511ae7`
+- `src/transcripts/store-errors.ts@e8dba1f92e6a29ab9a1e3e90216b55603ab0023a`
+- `src/transcripts/store-worker-client.ts@132dfb7fea390d1d28d5bd9123ebad93b86b029e`
+- `src/transcripts/store-worker-contract.ts@050c1ccedd8fb0c7435a2dd32b9d3a10ef13c02c`
+- `src/transcripts/store-write.worker-contract.ts@17505611211a398b61d255dd7492a9246c0ea347`
+- `src/transcripts/store-worker.types.ts@6474f826170169d8b4882ffb96f1547b48d82082`
+- `src/transcripts/store-worker-write.ts@cd89a70c5388f10db6dd10a11c80d1ecd1d126c8`
+- `src/transcripts/store-worker-read.ts@ece97ebc0e2eec6983b427ea8153f02cd145d124`
+- `src/transcripts/store-sqlite-write.ts@49da9ad3d91420c1dacc0d1bd953f42bf54e9dc4`
+- `src/transcripts/store-sqlite.ts@23530d17b919be17a4f2a2927a7803f52a7f4b93`
+- `src/state/openclaw-state-worker-registry.ts@a29e1cb519ac3dfbcaabb84dbeab64bc395f6025`
+- `src/infra/sqlite-worker-transcripts.test.ts@8c520c1d36885eeaaaeafac212c376b7efb3cee8`
+- `src/transcripts/capture.ts@10f1d0101a2a62c20bea76fb9e5d894938b2aece`
+
+`TranscriptsStore` is the canonical meeting-capture store; filesystem files are explicit exports, not a second durable source. One `createTranscriptStoreOperation` captures the state-database worker generation across planning and persistence. Ordinary reads and writes go through that captured state worker, while export artifacts additionally require an exact `meeting-transcript.export` lease.
+
+The worker registry dynamically loads both `store-worker-read` and `store-worker-write` under the single `transcripts` worker namespace. Every session, utterance, summary and empty-candidate mutation in `store-worker-write.ts` executes inside `runOpenClawStateWriteTransaction` and rechecks worker admission at both the transaction and commit stages. Export-manifest mutations substitute an exact lease assertion whose scope and session export key must match.
+
+The SQLite writer enforces the durable identity inside that same writer boundary. Session updates check expected input/session revisions and canonical selector ownership; admitted `sessionIdOrigin` cannot be rewritten later. Summary publication validates the current transcript input revision, utterance sequence, prior summary revision and stopped/append state before replacing notes. Utterance append performs exact-ID dedupe and allocates/increments the sequence in the same database operation. A retry owner may delete only its unchanged, stopped, empty admission with no utterance, summary or export ownership.
+
+`capture-summary.ts` adds a per-session summary lane with a generation counter. Replacing a live summary owner first stops the prior owner; retirement aborts active inference, increments the lane generation, and drains the pending lane. A late inference or summary write therefore raises `TranscriptsSummaryChangedError` instead of overwriting a successor.
+
+`capture.ts` is the outer production capture owner. Finalization first drains accepted appends and summary work, then rechecks the exact `activeSessions` owner, writes the stopped descriptor and final summary, and only after persistence settlement releases the provider. Failed startup retains cleanup and restoration custody instead of admitting an unseen replacement provider.
+
+Focused worker tests prove cold and warm transcript access stays off the caller-thread SQLite writer, exact utterance IDs deduplicate with stable sequence order, stale session/input revisions and selector conflicts fail with typed errors, and—critically—retiring the owner at either the worker transaction or commit grant for discard, session update, or summary update rejects the mutation while preserving the previously committed data. Test-only process database close helpers remain cleanup seams, not meeting production ownership of process-wide close.
+
+### 29.3 WhatsApp durable receive through the shared channel-ingress worker
+
+New frozen identities:
+- `extensions/whatsapp/src/inbound/durable-receive.ts@a0275d9f0ab71c52e961ea77ece9d93ba19d47a8`
+- `extensions/whatsapp/src/inbound/durable-receive.test.ts@70c6ff8c2bd2ddac958921ff1aa73645a120914c`
+- `extensions/whatsapp/src/inbound/ingress-lifecycle.ts@1c978aa68060e2afc3ff34c451165e99da8c04e7`
+- `extensions/whatsapp/src/inbound/message-debounce.ts@40028399b7d94e2407e0583722a00e908a90deef`
+- `src/channels/message/ingress-queue.worker.ts@66e8717cd3b20711681d60fc165e44e8fc25d7f3`
+- `src/channels/message/ingress-monitor.ts@08885501ce6b528d87a235bc4b38aa377c080f28`
+- `src/channels/message/ingress-monitor-admission.ts@f87da19b2e7574e15bfce9da825214f558819397`
+- `src/channels/message/ingress-monitor.test.ts@c4ca63f653e18bd5336ca92f92d1ba570a10b336`
+- `src/channels/message/ingress-monitor.admission.test.ts@4e9e75080335799966f2fcd3ebd6a232d415b42d`
+
+WhatsApp derives one durable event identity from the native remote JID plus message ID and one conversation lane from the remote JID. Its account queue is opened through the shared runtime state API; the extension does not own a separate SQLite writer. The private ingress lifecycle is attached to the in-memory message through a symbol rather than being serialized as payload authority.
+
+The shared ingress worker is the durable writer for enqueue/claim/recover/refresh/complete/release/fail/delete/resubmit/prune/purge. Mutations run inside the state-database write transaction and assert the shared SQLite worker admission at transaction and commit. Claim transitions can carry the already-admitted clock attachment, preserving the exact snapshot used to decide the claim.
+
+Admission distinguishes a known append failure from an unknown native result. Known append failure can use the bounded retry schedule. If a worker result is `outcome-unknown`, the monitor does not replay or acknowledge the mutation; if the fused enqueue-and-claim may have committed, it retires the empty drain owner so the ordinary recovery path can discover the durable row instead of generating a duplicate claim.
+
+WhatsApp debounce keeps each durable claim distinct even when several messages fan into one visible turn. Batch ordering is timestamp then receive order, sender changes force a flush before group attribution can mix, and the fan-in lifecycle settles only after the downstream turn succeeds; read receipts occur after settlement. An exception abandons the combined lifecycle instead of marking the messages read.
+
+Focused tests prove missing native message identity is a permanent refusal, pre-adoption dispatch failure releases the claim back to pending, duplicate adoption callbacks are idempotent, old pending rows beyond legacy age/count limits are still recovered, and unknown native admission is neither retried nor acknowledged. Shared monitor tests further prove restart drain returns a claimed event to pending without consuming retry budget and a successor delivers it once; pre-adoption stop releases for retry; a completed result racing stop stays completed; a deferred handoff racing stop remains owned by the deferred owner; and shutdown joins the final claim settlement write before drain disposal. WhatsApp itself selects `admissionMode: "while-running"`, so the generic opt-in append-after-stop mode does not grant a retired WhatsApp monitor late transport admission.
+
+### 29.4 Nostr gateway bus generation and exact Gateway authorization consumer
+
+New frozen identities:
+- `extensions/nostr/src/gateway.ts@619ad4ff081212762b2ca84b9acf10fa2d199410`
+- `extensions/nostr/src/nostr-gateway.admission.test-support.ts@c4c6ef2b41c4f0ea84541711bf38acf05f2901df`
+- `src/channels/direct-dm.ts@4ea0dc80f2caa9f12dc77bedf2d898722e453daf`
+- `src/plugin-sdk/channel-inbound.ts@831d6b0c8af9f576c288e44841fd3ac6a5130614`
+
+The Nostr gateway is the production consumer that binds the already-registered bus, relay subscription, durable ingress and outbound owner. `activeBuses` is account-scoped. Shutdown first removes the exact old bus from that map and only then awaits `bus.close()`; it deletes only when the map still points to that bus, so a late old close cannot erase a successor. Every new outbound lookup reads the current map.
+
+Inbound uses a two-stage authorization boundary. The relay-side optimization can reject obvious nonmembers before durable work, but after decryption the gateway resolves current canonical access again. Before dispatch it invokes `dispatchInboundDirectDm` with a route-binding callback that resolves access against the final agent/session/message context. A previously admitted sender whose policy changed therefore cannot use its durable admission as authorization.
+
+`dispatchInboundDirectDm` resolves the final route first, asks the channel for exact ingress authority bound to that route, builds the typed context, and passes any live authority assertion plus turn-adoption lifecycle into the canonical channel turn. The plugin SDK module is only the shipped facade for that existing owner.
+
+Focused Nostr Gateway tests use the real bus, relay, durable queue and Gateway policy resolution while stubbing only downstream model dispatch. A signed outsider burst and forged author do not reach dispatch when a literal allowlist can be optimized; abort/join with a changed allowlist creates a new generation that accepts only the new member; changing the live policy to disabled after initial author matching prevents dispatch; and configurations ineligible for the pre-crypto optimization may still durably admit an event, but that durable admission never grants authorization. The state DB close in this test support is cleanup only.
+
+### 29.5 Session-catalog commit guard into the canonical session transcript writer
+
+New frozen identities:
+- `src/gateway/server-methods/session-mutation-guards.ts@6c304c09080c1eee4c10b4c6c4a10f5e381268df`
+- `src/gateway/session-sharing-committed-read.test.ts@6660a176caabe9bafce0cb8d4896e1f1b105d5bc`
+- `src/gateway/session-control.incognito.test.ts@8ba11f9ae003c7d24db79d375efd57329e039051`
+- `src/plugin-sdk/session-transcript-runtime.ts@cd323a123459f3a7cb8f0f4c13d6a3a63777c8fd`
+- `src/plugin-sdk/session-transcript-runtime.worker-preparation.test.ts@37abcff81412d5a065689844d6cc6675f042604d`
+- `src/plugin-sdk/session-transcript-lock.worker.test.ts@13feb8568590a06b00b0d1ca54242126d8bcaf97`
+- `src/plugin-sdk/session-transcript-lock-runtime.ts@3d7d0fb7d8d68110b5cfa9e93dfe5582e73e0b14`
+- `src/config/sessions/transcript-write-context.ts@082d652ac7cca1f6cabda7a61f983ed3fcebedd4`
+- `src/config/sessions/session-source-authority.ts@4ec91ea30076ea098e96500eb311ae51cdd15544`
+- `src/config/sessions/session-accessor.sqlite-transcript-turn.ts@d2afb51165b2556fd5c1578b050ad97a73219481`
+- `src/config/sessions/session-accessor.sqlite-transcript-write.ts@003377de6010f04795ba5e8be92a0d13c0169033`
+- `src/config/sessions/session-cold-storage.ts@a92697f35b79311c870771bb5768e62cda6441a5`
+- `src/config/sessions/session-transcript-locked-write.ts@80972cb5565b55930073aa65be366d9b68be3918`
+- `src/config/sessions/session-transcript-event.ts@9960c0344299449ee9b90ca4c276b9e69a5640ed`
+
+The Section 28 catalog import guard reaches the existing session mutation authority rather than inventing a catalog writer. `withSessionMutationCommitGuard` composes operator/profile/source checks onto normal currentness, prepared worker grants, transaction assertions, admitted-input authority and target checks. Already accepted input retains the authority explicitly transferred to it, while new durable effects must continue to pass the live guard.
+
+The session transcript side keeps this source authority through the canonical writer context. `withSessionTranscriptWrite` resolves the exact runtime target and uses ordered optimistic sequence writes. The projected lock captures the selected store/owner across awaits, closes the callback surface when the callback returns, and publishes queued transcript updates only after the callback succeeds; individual message commits and publication settlement therefore remain distinct.
+
+`transcript-write-context.ts` binds the admitted run/session/store/agent identity in AsyncLocal ownership and refuses rebound to another target. Composed source assertions prepare storage-dependent sources, retain them through the scoped operation, check currentness before/after the effect, and release them in reverse order while preserving cleanup failures.
+
+Durable sequence/turn writes delegate to the agent-database canonical writer. Async message preparation is followed by an exact database/transcript identity check before commit; a foreign append or replacement during preparation produces a mutation conflict rather than allowing stale prepared data to overwrite the new generation. The dynamically loaded locked-write owner retains the agent DB generation claim, pending-input custody and prepared source authority through every queued read/append/replace. Cold transcript restoration uses the same exclusive writer and source/generation assertions, so restoring an archive does not create a second transcript writer. Raw guarded events also enter the same canonical worker path and reconcile projection only after a committed result.
+
+Focused tests show physical or logical writer authority revoked during preparation causes the append to fail with no persisted message; an external byte rewrite invalidates the prepared snapshot even when parsed values and watermarks look unchanged; and a callback failure after a successful append leaves that append durable while suppressing its queued publication. Worker-preparation tests reject an async prepared message after a foreign transcript write and preserve idempotent non-append only when the original source remains current. Committed sharing tests show unrelated rows and the same writer's uncommitted changes cannot manufacture or revoke committed authority, while a committed source/session change does revoke it.
+
+### 29.6 Closure and ownership result
+
+This recursion closes the Section 28 fronts through their next authoritative writer layers: Memory provider-use plus index-generation leases; Meeting capture through the canonical state-worker transcript store; WhatsApp through shared channel-ingress admission and state-worker transitions; Nostr through the account bus and exact Gateway ingress route; and catalog history mutation through the existing session-source and transcript writer.
+
+No newly read production file takes ownership of process-wide `closeOpenClawStateDatabaseAsync`. The new state-database consumers use captured worker generations, typed state-worker operations, leases or scoped admissions; process-wide close calls seen in focused tests remain test cleanup. The prior process-wide Gateway/agent/global retirement conclusion is unchanged.
+
+No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. This evidence is source/oracle closure only: scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, independent ACCEPT, OCRM final acceptance and release acceptance remain absent.
