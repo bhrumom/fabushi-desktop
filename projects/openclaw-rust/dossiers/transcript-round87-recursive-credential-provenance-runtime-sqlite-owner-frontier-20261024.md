@@ -6084,3 +6084,48 @@ Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e7
 Immediately before this append, the live branch lease was `d095273c87c80145332a43d25b68b8cb6fd1434a`, tree `d6e3c306cfe0bd3dbed52a59b24de5987a3be519`, dossier blob `54147c6cc1ef68189d2bd16b79b13112c341a2d2`, 6,055 lines, with zero Section 92 and both exact refs above at zero occurrences. This pass remains frozen-source/read-only audit work: no GitHub Actions workflow was started or rerun, and no production code, ledger, RTM, acceptance flag, source lock, inventory, or source baseline file was modified.
 
 - The conditional public-receipt -> operational-run -> subagent-requester diagnostic chain is now backed by a real-Gateway restart oracle and its shipping attribution-only reader, but it still does not establish cleanup authority or the requested integrated terminal-read fixture. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring parity, package/device proof, release acceptance, and final OCRM acceptance remain open.
+
+
+
+## Section 93 — exact-run continuation ownership stays session-key based across cleanup and correlated follow-up
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`. This pass continues Sections 90–92 by crossing the bounded public-receipt/execution-identity diagnostic chain with the two production ends that actually own a detached Cron continuation: the exact `:run:` session-row writer and the completion/follow-up paths that later keep or remove that row. Only frozen exact refs that occurred zero times in the complete Round87 dossier immediately before this append are registered.
+
+New frozen identities:
+- `src/cron/isolated-agent/run-session-state.ts@24acddb90a17939a51b00a2c01eb2937e3b1776a`
+- `src/cron/isolated-agent/run.session-lifecycle.test.ts@5ea0ad3e4fe7ddbf5b07c7b751c79e890aa4ed99`
+- `src/agents/tools/sessions-send-followup.ts@1ff80a29feb7991a0225d244a6c4c066a9aa7efb`
+- `src/auto-reply/reply/session-event-automation.ts@5b68b32848b869b7c4e02f69e3989264729d0686`
+- `src/agents/tools/media-generate-background-shared.ts@eddf353d11f110c9dc6a1fbcc99e1cb2875d4604`
+- `src/agents/tools/media-generation-lifecycle.test-support.ts@64ddce06f1f5654e1a81622d82a973bda493be49`
+- `src/agents/tools/image-generate-tool.test.ts@0d6c21cb8a0484fa3cddd7b3a6f7e1763811180c`
+
+### 93.1 The exact Cron continuation row is authored from run-session identity, not public request identity
+
+- New production exact-ref `src/cron/isolated-agent/run-session-state.ts@24acddb90a17939a51b00a2c01eb2937e3b1776a` is the concrete writer for the hidden detached `:run:` continuation owner. `createCronRunContinuationSession` receives `runSessionKey` and persists a `cron-run-continuation` operation directly at that session key, carrying lifecycle revision, phase, tool policy and creation metadata. It never accepts or persists the public Cron receipt/request `runId`.
+- The same module gives preparation custody to a session controller whose primary target is `runSessionKey` and whose aliases are the base `agentSessionKey`, prior session id and lifecycle-revision identity. That is the authority shape later consumed by continuation cleanup: exact session incarnation plus lifecycle ownership, not the public manual-run id.
+- New focused exact-ref `src/cron/isolated-agent/run.session-lifecycle.test.ts@5ea0ad3e4fe7ddbf5b07c7b751c79e890aa4ed99` makes the identity separation observable during real fallback orchestration. For the detached continuation case it requires the runner `sessionKey` to contain `:run:`, while the operational agent `runId` is separately stable across fallback attempts and explicitly differs from the session id. The fixture exercises terminal/cancel/error boundaries but does not introduce a public Cron request id.
+
+### 93.2 Correlated follow-up intentionally does not copy requesterTurnRunId from a Cron run-session
+
+- New production exact-ref `src/agents/tools/sessions-send-followup.ts@1ff80a29feb7991a0225d244a6c4c066a9aa7efb` is a direct negative bridge between the requester operational identity and subagent completion ownership. Its `requesterTurn` claim requires `!isCronRunSessionKey(options.requesterSessionKey)`; therefore an exact Cron requester session deliberately cannot use `requesterTurnRunId` as the completion claim.
+- When a child is registered, `requesterTurnRunId` is populated from that gated `completionTurn`, while `requesterSessionKey` is always retained independently. For a Cron requester the durable correlation remains the exact requester session key and child run/generation owner; the operational requester-turn id from Sections 90–92 is not promoted into this completion authority.
+- This narrows the proposed public→operational→queue join: even where a public receipt can be diagnostically correlated to an operational run, the Cron follow-up path does not consume that operational turn id as the durable completion owner.
+
+### 93.3 Exact-run cleanup callers capture the session destination and outlive asynchronous work without reading the public receipt id
+
+- New production exact-ref `src/auto-reply/reply/session-event-automation.ts@5b68b32848b869b7c4e02f69e3989264729d0686` captures the exact Cron run-session key, store path and worker context before config/state remapping, then schedules detached cleanup that calls real `removeCronRunContinuationSessionIfIdle(sessionKey, ...)`. Its cleanup destination is explicitly the exact session key; no receipt/request `runId` is an input.
+- New production exact-ref `src/agents/tools/media-generate-background-shared.ts@eddf353d11f110c9dc6a1fbcc99e1cb2875d4604` carries the same rule for detached media. After the generated-media task run context is cleared, a one-shot Cron whose job may already have been deleted is reaped by calling `removeCronRunContinuationSessionIfIdle(handle.requesterSessionKey)`. Again the cleanup owner is the retained exact requester session key, not a public Cron run id.
+- New support/ref pair `src/agents/tools/media-generation-lifecycle.test-support.ts@64ddce06f1f5654e1a81622d82a973bda493be49` and `src/agents/tools/image-generate-tool.test.ts@0d6c21cb8a0484fa3cddd7b3a6f7e1763811180c` exercises a run-scoped Cron image task at `agent:main:cron:daily-media:run:run-123`, proves that exact key is retained as the requester session for the asynchronous task, and joins every real cleanup promise before test teardown. This is stronger evidence that detached work actually reaches the cleanup tail, but it still does not assert physical alias deletion, restart/lost-reply queue settlement, or a public `cron.runs` read for the same public id.
+
+### 93.4 The requested integrated fixture and the other two frontiers remain absent
+
+- Frozen searches for a fixture containing both real `settleQueuedSessionDelivery` and public `cron.runs`, or both `recoverPendingRestartContinuationDeliveries` and public `cron.runs`, returned no path. Existing `cron.runs` + `:run:` fixtures such as the registered session-reaper/heap-rig proofs cover history and alias retirement, while the registered correlated-recovery fixture covers real queue settlement; none combines them around one predecessor public request id.
+- The direct Gateway-server `sessions.processes.stop` replacement-late-success oracle is still absent. Exact re-check of `src/gateway/server-methods/session-processes.test.ts@4d65f9bcd624ea2031ecbe7493f9ee1daed3b4d3` confirms its deferred remote reply invokes `sessions.processes.list`, not Stop. Searches for a deferred Stop with `activeOwnerEpoch` or placement-generation replacement found no additional frozen focused test.
+- Plugin native-admission settlement remains unchanged: the only production plural `settlePluginNativeAdmissions` callers are still generation preparation and prepared-model-runtime build; generation-worker uses singular `settlePluginNativeAdmissionState`. Failed publication remains in the already registered admission publication map/custody path, with no distinct receiver handoff or third production plural caller found.
+
+### 93.5 Dedupe, lease, and remaining acceptance state
+
+Immediately before this append, the live branch lease was `48435fccee8dacc27cc60c3ff42b135f558ff122`, tree `9cbaa244b6ed66f8db6954be074a3ef361440b73`, dossier blob `ad0502bd46a20f867b8698645ae502e3f6e7aae6`, 6,087 lines, with zero Section 93 and all seven exact refs above at zero occurrences. This pass remains frozen-source/read-only audit work: no GitHub Actions workflow was started or rerun, and no production code, ledger, RTM, acceptance flag, source lock, inventory, or source baseline file was modified.
+
+- The cleanup topology is now tighter: exact Cron continuation creation, correlated follow-up, session-event cleanup and detached-media cleanup all use the run-session/session-delivery ownership domain, while the public-receipt→execution-identity→operational-run bridge remains diagnostic. The requested predecessor-public-id → restart/lost-reply recovery → real queue settlement → physical exact-alias deletion → exact public terminal-read oracle is still not established. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring parity, package/device proof, release acceptance, and final OCRM acceptance remain open.
