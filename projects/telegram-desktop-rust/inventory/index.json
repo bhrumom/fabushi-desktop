@@ -51,69 +51,35 @@
     "official_mcp_marketplace_run_id": 40085527664,
     "official_mcp_marketplace_jobs": "1/1 success",
     "previous_historical_evidence": {
-      "run_id": 40077360069,
-      "run_attempt": 1,
-      "job_id": 120823500154,
-      "head_sha": "9b83aaf942ec850ad13fd91d2ca28245b4128e05",
-      "artifact_id": 12553573731,
-      "artifact_name": "tdrp-revision9-authority-9b83aaf942ec850ad13fd91d2ca28245b4128e05",
-      "artifact_digest": "sha256:8727b23a22f27a9d2dd1fe9f9dcf48ae2f2b6ac9a75472b4c3556e559ba4a52a",
+      "status": "historical-only",
+      "runner": "github-actions",
+      "validation_head_sha": "94de4915c1828a5abc651b4ba282af421d6e23e1",
+      "upstream_commit": "83f9f56347cc3421c1e3ef537c7bb6dd06ce7cd0",
+      "upstream_tree": "bb0159bfedb38dd96e579af4ffe6360b6beb7332",
+      "recursive_non_directory_entries": 16377,
+      "tdrp_run_id": 39898075641,
+      "tdrp_jobs": "61/61 success",
+      "source_authority_artifact": {
+        "id": 12477538096,
+        "digest": "sha256:957966daab1d7907d0cabb9e3410b3d1f8f38f0eb38f4b30f8151f82480626eb"
+      },
       "recursive_closure_artifact": {
-        "id": 12553947186,
-        "digest": "sha256:cb90dbf3920cc82081c822852261be45c9d4d9005c6e1743930123dcacff762f"
+        "id": 12477394597,
+        "digest": "sha256:0a08735564b448a06dd49f6dfcbbd3829ddc28ddb987731362d7c08398bab167"
       },
       "recursive_reachability_artifact": {
-        "id": 12553544238,
-        "digest": "sha256:e7fbe758124e58ec01e1735541d0ca18e1a76889690bd6498bee52e978f247bb"
+        "id": 12477353200,
+        "digest": "sha256:6d969c50cd781fdf4fd6655415cd2a5a72aae14685775348c4ade2e2db12f228"
       },
-      "boost_reachability_artifact": {
-        "id": 12553832502,
-        "digest": "sha256:bce380578a2f394498f2f5a32a0e03fd6b7cee54d3fbc5e11e169f989fe0fa43"
-      },
-      "evidence_status": "historical-only-after-receipt-commit",
-      "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-      "upstream_tree": "c539eabfb05e7dcaa84821ac44c35cdfb6551ae5",
-      "recursive_non_directory_entries": 16379,
-      "source_closure_ready": false,
-      "rust_run_id": 40077360156,
+      "rust_run_id": 39898075663,
       "rust_jobs": "6/6 success",
       "rust_artifact": {
-        "id": 12553349416,
-        "digest": "sha256:ccce53d6c36040cc984035e55c29acb5eed9b608f0dd2bef038f867e4ec29103"
+        "id": 12477162917,
+        "digest": "sha256:2bd9915e9f3fdf6480f88ef7f5b8df95609c0d9c9897e845616bcba56a15399a"
       },
-      "official_mcp_marketplace_run_id": 40077360113,
-      "official_mcp_marketplace_jobs": "1/1 success",
-      "previous_historical_evidence": {
-        "status": "historical-only",
-        "runner": "github-actions",
-        "validation_head_sha": "94de4915c1828a5abc651b4ba282af421d6e23e1",
-        "upstream_commit": "83f9f56347cc3421c1e3ef537c7bb6dd06ce7cd0",
-        "upstream_tree": "bb0159bfedb38dd96e579af4ffe6360b6beb7332",
-        "recursive_non_directory_entries": 16377,
-        "tdrp_run_id": 39898075641,
-        "tdrp_jobs": "61/61 success",
-        "source_authority_artifact": {
-          "id": 12477538096,
-          "digest": "sha256:957966daab1d7907d0cabb9e3410b3d1f8f38f0eb38f4b30f8151f82480626eb"
-        },
-        "recursive_closure_artifact": {
-          "id": 12477394597,
-          "digest": "sha256:0a08735564b448a06dd49f6dfcbbd3829ddc28ddb987731362d7c08398bab167"
-        },
-        "recursive_reachability_artifact": {
-          "id": 12477353200,
-          "digest": "sha256:6d969c50cd781fdf4fd6655415cd2a5a72aae14685775348c4ade2e2db12f228"
-        },
-        "rust_run_id": 39898075663,
-        "rust_jobs": "6/6 success",
-        "rust_artifact": {
-          "id": 12477162917,
-          "digest": "sha256:2bd9915e9f3fdf6480f88ef7f5b8df95609c0d9c9897e845616bcba56a15399a"
-        },
-        "baseline_identity_accepted": false,
-        "source_closure_ready": false,
-        "evidence_status": "historical-only"
-      }
+      "baseline_identity_accepted": false,
+      "source_closure_ready": false,
+      "evidence_status": "historical-only"
     }
   },
   "closure_rules": {
