@@ -1655,3 +1655,110 @@ Feishu test-support consumers were exact-ref read so helper cleanup is tied to r
 The expanded extension closure still finds no extension production module directly owning process-wide `closeOpenClawStateDatabaseAsync`. The new positive evidence is caller/oracle provenance around existing plugin-state, durable-ingress, worker and lifecycle owners. Shipping shared-state retirement remains the already-recorded Gateway/global-singleton path; extension cleanup calls are test isolation or bounded feature-state recovery evidence.
 
 Independent ACCEPT, scoped G01/G02 positive evidence, `unit_authority_ready`, executable/package proof, OCRM final acceptance and release acceptance remain absent. No Actions/build/test/generator/package was run. No production code, ledger, RTM or flags were modified.
+
+
+## 23. Round83 continuation — exact production owners behind extension close callers
+
+This continuation starts from the Round82 direct-close/test-support frontier and follows those callers through their frozen production imports. Every identity below was fetched at `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`; the frozen upstream tree remains `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`. These are source/owner/oracle mappings only: no Actions/build/test/generator/package execution occurred, and no production code, ledger, RTM or flags are changed.
+
+### 23.1 Crabbox: warm-image state, worker provider, snapshots, Gateway and doctor
+
+Frozen production identities:
+- `extensions/crabbox/index.ts@f7b32bbed65069e3a0fcad1d01592f8c154ef487`
+- `extensions/crabbox/src/crabbox-worker-warm-image-store.ts@1031bf93f52dc15f65eaacd4e7a0a6197ace60bd`
+- `extensions/crabbox/src/crabbox-worker-provider.ts@a0ef59bbd42ef07b88d3bfb5a5a73fdc507b1b11`
+- `extensions/crabbox/src/crabbox-worker-snapshot-actions.ts@78a412b39bfd4b54b7935049d4a8c3f08e8b4f57`
+- `extensions/crabbox/src/crabbox-gateway-methods.ts@b55bdd1f79ee96963561a3806c19dc8366251cba`
+- `extensions/crabbox/src/doctor.ts@aa26ac1aab70a3f199ab0a8698ad866b4ce9341e`
+- `extensions/crabbox/src/crabbox-process.ts@0ccfe03b9db815de9ea466891396eacc76597203`
+- `extensions/crabbox/src/crabbox-worker-command.ts@36a37ad3f476e4baa7ace04e72202942a6c4481d`
+
+The warm-image store owns bounded canonical records through a V2 compare-and-apply store with `reject-new`. Only explicit comparison conflicts are retried; uncertain writes remain with their owner. Provision replay is fenced to the recorded profile/project/runtime identity. Manual capture recovery requires explicit provider-cleanup acknowledgement and an unchanged selector; changed or absent selectors leave state untouched. Gateway mutation methods validate complete parameter shape before owner access and distinguish invalid-request refusal from unavailable/storage failure. Provider disposal aborts the provider generation and joins heartbeat, maintenance, snapshot and binary-resolver lifetimes; maintenance calls `context.assertCurrent()` before and after asynchronous resolution. This is the production path exercised by the six Round82 Crabbox direct-close/test-support callers, not a new shared-state close owner.
+
+Negative oracles retained from the exact tests: pending retirement cannot be erased by a stale cleanup; a replacement provider generation remains usable after the old generation stops; malformed mutation input performs no state access; recovery mutates only the acknowledged exact capture; future/unsupported/paid ownership is preserved; abort/stop joins owned work rather than publishing a false successful release.
+
+### 23.2 Voice Call: manager lifecycle and durable call-event state
+
+Frozen production identities:
+- `extensions/voice-call/src/manager.ts@7a69169734f13bf408d502cd5e3f248c130e8e97`
+- `extensions/voice-call/src/manager/context.ts@ce51fd51b75eb04008e922ff811e293ebbb0b7ec`
+- `extensions/voice-call/src/manager/store.ts@20c0beb20d5d9fb78fb9d5295c873eea9a688d5a`
+- `extensions/voice-call/doctor-contract-api.ts@835c7cb2ffc16beaa2afc9803f4e1d6fd4302f4f`
+
+`CallManager` is the lifecycle owner for active calls, provider aliases, replayed event IDs, timers, pending admissions/work and end-call operations. Once stopping begins, new operations reject; transcript waiters and timers are explicitly settled, and restored calls are revalidated before becoming live. Durable call snapshots are written as chunked event records; guarded registration keeps the final await under caller authority, while ordinary writes preserve the historical publish-before-prune recovery contract. Active-call restoration rebuilds call/provider/replay identity and excludes terminal records. Doctor migration repairs the plugin-local SQLite schema without resurrecting the retired call-log owner.
+
+Negative oracles: shutdown must release timers/database workers/directories and refuse new work; unavailable history is not equivalent to an absent call; a stale or replaced call record cannot regain automatic-response authority; terminal calls are not restored as active; legacy call-log absence/refusal cannot create a second state authority.
+
+### 23.3 Reef: replay claim owner, trust operations and flow state
+
+Frozen production identities:
+- `extensions/reef/src/flow.ts@e559f42e2c4311fee5420b7cec8247befb1fbff0`
+- `extensions/reef/src/state.ts@d8b6d43c03c6a00b699e88cab1a74f97fa6ae520`
+- `extensions/reef/src/replay-store.ts@477603189a3054766209c9c4be502b1f06ab1a7c`
+- `extensions/reef/src/trust-store.ts@210bcdce7369e11da1d059b7fbccea6ac69728b1`
+- `extensions/reef/src/transport.ts@1182e2dcbcc2fb54706461388868160d7794dc79`
+- `extensions/reef/src/commands.ts@2dd636fea24c477e2bda9b6f90c2f915d9157506`
+- `extensions/reef/src/friends.ts@923882cfe58307584aa7814fed33520b35629d59`
+
+`ReefSqliteReplayStore` serializes durable replay mutations, stores a generated claim owner, requires matching peer/id/envelope hash, and only completes/refreshes/releases the currently published claim owner. Conflicting live claims return `in_flight`; expired claims can be reacquired with a new owner. `ReefTrustStore` builds multi-store operations with `assertCurrent` and optional owner revalidation, keeps removal/request settlement one-shot, and binds trust/autonomy mutations to revision and identity scope. These owners are the production paths behind the Reef close-caller tests.
+
+Negative oracles: stale completion/cleanup cannot overwrite a successor; a conflict retry must re-read eligibility; nonce/preparation failure preserves current custody; malformed approval never authorizes; borrowed worker results after revocation are rejected; request/removal settlement cannot be consumed twice; peer-key/revision changes fence later trust commits; durable delivery markers cannot be silently synthesized after persistence failure.
+
+### 23.4 QA Lab, ACPX and Copilot runtime ownership
+
+QA Lab frozen identities:
+- `extensions/qa-lab/src/providers/shared/auth-store.ts@d3e2ae91bc8800966cd712c8a4fd2e7ba8c9921a`
+- `extensions/qa-lab/src/codex-plugin.fixture.ts@b81238b6758697e5047709bb95f7cad6fd66f4fc`
+- `extensions/qa-lab/src/gateway-child-lifecycle.ts@fbfd3784b675a84dfce4baaba39af3a4698074e6`
+- `extensions/qa-lab/src/gateway-child-setup.ts@a45a9f46523ce4aab792ad29bdb06ef35e915c0f`
+- `extensions/qa-lab/src/providers/live-frontier/auth.ts@071c9b5ab1c9544472f05ee8468d7cd7aef49fc8`
+
+The QA paths are isolated child/fixture authority: staged auth must not mutate inherited host shared state; target auth DB refusal and pending legacy-source refusal fail closed; Codex API-key handoff stays in the child Gateway environment rather than becoming a persisted profile; plugin repair cannot silently fall back to a different credential path.
+
+ACPX frozen identities:
+- `extensions/acpx/src/service.ts@84b89ceaf35fd7910b2e3f2fa416344a877ca394`
+- `extensions/acpx/src/process-lease.ts@ddb075ac0dd9b29b2dfb487880724eead13b3a33`
+- `extensions/acpx/src/state.ts@c3ae7f58ef5f9206cc65554ae8e7f22483486e4f`
+
+The service persists a Gateway instance identity, snapshots legacy session ownership under the service owner, and reaps only matching persisted process leases. Recovery is fenced by a lifecycle revision and owner assertion. Process identity is encoded as explicit lease-id + Gateway-instance-id arguments; closing/lost terminal lease state removes that exact lease record. A pending wrapper with no proven process identity cannot be treated as proof that detached descendants are gone. Tests therefore require exact publication/retraction, no probe/health side effects under skip mode, and no disposal of another active runtime lease.
+
+Copilot frozen identities:
+- `extensions/copilot/harness.ts@4b65bef752744a8280437b269a7956f4f2f268a8`
+- `extensions/copilot/src/attempt.ts@30fa89f2a1fc2a9fba195733fe8d69f721c79f44`
+- `extensions/copilot/src/attempt-transcript-journal.ts@2ec5b3c88f66c7d19643f7cc65c45015fdeae218`
+- `extensions/copilot/src/runtime.ts@5b31fee1560e71ad37a7350e828b38b221f0aa0b`
+
+The harness owns pool lifetime, in-flight attempts, per-session binding serialization, deferred-compaction cleanup and tracked native sessions. New attempts reject after disposal. Reuse requires a compatible session binding; settled-tool finalization fails closed without the exact compatible SDK session. Compaction requires host source authority and rechecks it before/inside the SDK operation. Durable binding cleanup failure does not authorize deletion/reuse of a different native session. Negative oracles from the close-caller harness include: revoked ownership/cancellation cannot dispatch further SDK work; late sessions disconnect after deadline; dispose errors surface; deferred cleanup blocks reuse; reset cannot delete a session owned by another OpenClaw session; auth/model/cwd compatibility changes prevent reuse.
+
+### 23.5 Visitor Access and channel/runtime families
+
+Visitor Access production identities:
+- `extensions/visitor-access/index.ts@fbb00cb9b7e53f8901be0e38dac98e28991a5341`
+- `extensions/visitor-access/src/visitors.ts@f86cc538256012ee846c6e5ab56511842af00962`
+- `extensions/visitor-access/src/tool-results.ts@c09f283ab4a4edc18cd81a4c87768fcacaa81188`
+
+`VisitorAccessService` serializes grant mutations, publishes live grant authorities with abort controllers, refuses authorization before initialization/after close, and aborts every live grant when stopping. Resume uses the exact durable grant id instead of inventing authority when the grant map is unavailable. Invite/revoke mutation paths take caller `assertCurrent`; selector forms are mutually exclusive. Negative oracles: post-provider-read identity changes must be rechecked; expired/revoked grants never renew; person-wide revocation is distinct from exact invite cancellation; stop aborts provider cleanup and removes live authority.
+
+Additional frozen production anchors behind the remaining Round82 close callers:
+- iMessage catchup: `extensions/imessage/src/monitor/catchup-bridge.ts@66a55bba5d35dedfd5836d213584b6bf3cf2a1dd`, `extensions/imessage/src/monitor/catchup.ts@6eb6ab1633030fd5ce011cb615bc12bb3d7d825c`. Oldest-first bounded catchup advances its cursor only through the defined dispatch/high-watermark contract; dispatch/query failure cannot silently skip custody.
+- Zalo User: `extensions/zalouser/src/session-state.ts@c5bd529cecb715c96520c951802eccd01610ae36`, `extensions/zalouser/src/monitor.ts@f7b9dcc7b5912d052e6403fbde3ff4bfea0d79b5`, `extensions/zalouser/src/zalo-js.ts@7306d88d7c45786b667f2bda1c832bfcde1e4e4b`. Credential identity remains account/profile scoped; listener cleanup may permit a successor only after the old listener settles.
+- Google Meet: `extensions/google-meet/index.ts@643dcd738d66f40daaa52948a8765692237ddead`, `extensions/google-meet/src/plugin-registration.ts@b13d2c9fb8511f4eaf58b2699d5aac70115741fb`, `extensions/google-meet/src/runtime.ts@875f106ac2e3e61fc29fb0ad55588dd035a1af25`, `extensions/google-meet/src/transports/chrome.ts@d052dde1e38198f0f5043d02b78c13177ccf9328`. Persisted unsupported participation outcomes can replay diagnostically but cannot restore authority to an ended participation session.
+- 1Password: `extensions/onepassword/src/broker.ts@34e151d4917f83379a46e2cc11d85e4f4dc51999`, `extensions/onepassword/src/tool.ts@01da2e6faf38b0828c2c94cd9ff5d72d8e731b3f`. Grant/authorization selection stays with the broker; corrupt/null/expired rows remain inactive and competing tool executions cannot turn one approval into two owners.
+- Signal reply authors: `extensions/signal/src/reply-authors-state.ts@fd2a1eae1b967dcaece99e0b0bc6b58d3a3306dc`, `extensions/signal/src/reply-authors.ts@e5fbfc0a6e979354601ddaf1f5c9922d18c4f49a`. Persisted merged context survives reopen; a failed mutation cannot erase already-retained memory or fall back to parent-thread SQL.
+- Slack bindings: `extensions/slack/src/conversation-route-owner.ts@b582fecf04cc6fb1ca73b3726d0b21d2c7b8bc33`, `extensions/slack/src/installation-identity-state.ts@5d10ae91d250360cc9dc534a7be80ac69607cfdb`, `extensions/slack/src/channel.ts@69edb5c0f9c64bf7380472faedf7bf9ddb280ec1`. Workspace binding capability is distinct from org-install identity; unsupported org installs cannot advertise/select/mutate workspace-only bindings.
+- Zalo hosted media: `extensions/zalo/src/outbound-media.ts@67f5e65d602c0b91029cbfd85f6d59766a5b1d42`, `extensions/zalo/src/runtime.ts@e92ba6643449f8693da8fde08d4ae504dac438c3`. Token/expiry/id validation happens before serving bytes; HEAD does not consume media; proxy-aware fetch identity is retained.
+- Buzz: `extensions/buzz/src/buzz-bus.ts@0f8865f0f9eba10747f01fdf3af844347a428eef`, `extensions/buzz/src/gateway.ts@df46f8dd8b31b22a69ba5d6a774ab09e551ab444`. Signed roster/current presence is authoritative; stale snapshots cannot authorize removal or downgrade a newer push role.
+- WhatsApp: `extensions/whatsapp/src/state-migrations.ts@789857bcaf986319acb9a91821fd15754ef22776`, `extensions/whatsapp/src/auto-reply/monitor.ts@68302af6ee2f6364cc75db2603801c1b429d21c2`, `extensions/whatsapp/src/runtime.ts@ba058a32940198ba7a2aa51ee50f8bdb78d90ac3`. Credential migration preserves conflicting/incomplete/orphaned originals until their exact authority can be reconciled; auto-reply close remains harness teardown, not the shared DB owner.
+- X OAuth: `extensions/x/src/client.ts@11f7bdfa3cf3168dfc8c54bdb1e7c1d6891127dd`, `extensions/x/src/runtime.ts@ea1d378ffb2dd290d09bd237d178238b95f44766`. Grant rotation is fenced across reopen/retry; retired seed state cannot overwrite the replacement; completed rotation is not exchanged twice after uncertain commit.
+- OpenAI speech: `extensions/openai/speech-provider.ts@b1e50a3dde970c3cbac6cfdc2ee47d5ed9717567`, `extensions/openai/index.ts@2cb4ed48ef19dd9d79f6f8575bd2d06a86aa5cb9`. Invalid audio and byte/time-budget violations fail before accepting capture; rejected upstream sockets close without manufacturing a successful transcript.
+- LINE doctor: `extensions/line/doctor-contract-api.ts@60a16182e6b8d660399424f2b32776316dbf5c09`, `extensions/line/index.ts@3bb6e17f1620046fab38be5d1b6cb74ff2ece001`. Pre-drain migration is conditional on real rows/host capability and fails visibly if the channel ingress queue is unavailable.
+- IRC: `extensions/irc/src/monitor.ts@4fb0671e956c6f512c0a173909e822e05fb924c2`, `extensions/irc/src/irc-ingress.ts@fbc921ac020adce4ab701d46d488df6425b43a52`. A delayed reply from an old connection cannot cross into a reconnected client generation; only the stopped account settles.
+- Nostr: `extensions/nostr/src/nostr-state-store.ts@35372930926095f28634536e1a18fa4d9e3954dd`. Bus/profile state is account scoped, survives reopen and advances its since-watermark monotonically from valid persisted timestamps.
+- Device Pair: `extensions/device-pair/notify-state.ts@496b212e0207adb67652d34ab3e17ab6ee89809a`, `extensions/device-pair/notify.ts@d83b9cd3c595fcbe803b9b51ed9613d8421b06c0`, `extensions/device-pair/index.ts@5aca2651ad0687ffc33c04903ad1cabe8a34c1c4`. One-shot notification custody survives service recreation and cannot be consumed twice by a slow delivery or same-millisecond re-arm.
+- Beam: `extensions/beam/src/store.ts@b501ac4a7948988366e771cd411bec6425159fc9`, `extensions/beam/src/mirror.ts@011c9422ddded974f5c4317251e81115dfbaf036`. The close caller remains test-support cleanup around the Beam store/mirror owners; it is not a process-wide DB close path.
+
+### 23.6 Closure result for this frontier
+
+The Round82 extension direct-close frontier is now linked through frozen exact production owners for the high-risk lifecycle/state families rather than only through test filenames. No inspected extension production module imports or owns process-wide `closeOpenClawStateDatabaseAsync`; direct extension calls remain test/test-support/bench teardown or deliberate reopen-oracle boundaries. The shipping shared-state retirement owner therefore remains the already-recorded Gateway shutdown → agent DB retirement → global singleton drain sequence. This does not upgrade Rust implementation, production wiring, scoped G01/G02, executable/package proof or independent acceptance.
+
+Independent ACCEPT, scoped G01/G02 positive evidence, `unit_authority_ready`, OCRM final acceptance and release acceptance remain absent. No Actions/build/test/generator/package was run. No production code, ledger, RTM or flags were modified.
