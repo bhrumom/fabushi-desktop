@@ -2835,3 +2835,53 @@ The broker-side consumers likewise preserve existing custody. Auth-profile reade
 The priority extension recursion exposes new direct consumers but no new process-wide shared-state close owner, agent-database writer, OAuth-token writer, Nostr cursor/ingress writer, Beam receiver owner or Device Pair scheduler writer. Google Meet terminates at the shared meeting/participation runtime plus node bridge; WhatsApp at the account connection controller; X at the existing `x.oauth` CAS store and ingress queue; Nostr at the registered bus/cursor/ingress owners; Device Pair at the durable plugin-state stores plus pairing authority. The residual host close paths are explicitly per-path or per-temporary-environment consumers.
 
 No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, OCRM final acceptance and release acceptance remain absent.
+
+
+## 35. Native worker lifetime, shared-state borrower and integrity-proof owner recursion
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`). This pass follows the still-unregistered worker-admission/shared-state lifecycle identities exposed after Section 34. Moving-main-only `src/infra/doctor-capture-reuse.ts` was explicitly excluded after exact-ref fetch at the frozen commit returned 404.
+
+### 35.1 Retained native worker source is a process resource owner, not database truth
+
+New frozen identity:
+- `src/infra/worker-native-lifecycle.ts@4afc06188377ae708c7a9db36a272b650f719086`
+
+The native-worker lifecycle owns Worker/thread, control-port, spawned native-resource broker and registered domain cleanup. A source is captured against one runtime generation; it refuses new work once closing, and `closeDefaultRetainedNativeWorkerSource` joins registered domain owners before terminating the retained runtime and broker. Control-channel loss rejects callers but does not release native custody: the actual Worker exit is the receipt that resolves the owner join. Runtime close refuses while execution handles remain, and failed domain cleanup is aggregated instead of clearing the source.
+
+The already registered CLI cleanup scope, CLI worker-focused test and state-read worker are direct consumers. Their existing oracle proves ordinary command cleanup preserves borrowed lifetimes, while process-scope cleanup waits adopted plugin-resource disposal and final state reads before the shared database and Worker actually retire. Command return or control-port loss therefore cannot masquerade as native settlement.
+
+### 35.2 Worker broker/store type contracts retain exact admission and cleanup custody
+
+New frozen identities:
+- `src/state/openclaw-state-worker-store.types.ts@8025540788b80382ab78f76b2924462da94b5152`
+- `src/infra/sqlite-worker-broker.types.ts@dc06ffc41367d79ac9df23cb7373b8099b134aef`
+
+These contracts make the Section 32 broker custody explicit. A shared-state store entry retains its captured runtime source/context, opening promise, exact actor identity, admission cleanup handle, active-operation count and native-loss listeners. Broker jobs separately retain request custody, operation admission, native settlement, maintenance/schema access, input-transfer ownership and caller currentness. Actor state keeps physical database path, state-access identity, close receipt, native-stopped receipt, retirement/settlement promises and failed cleanup state. A failed admission therefore has its own `SqliteWorkerAdmissionCleanup`; pathname cleanup is not allowed to stand in for exact actor custody.
+
+The already registered broker capacity/lifecycle and SQLite admission-retention oracles remain the focused negative evidence: retained source/write-scope receipts survive until their last release, physical mutation invalidates old tokens, stale captured admissions cannot overwrite the newer physical identity, and retirement failure blocks replacement admission. These types carry custody; they do not create another database writer.
+
+### 35.3 Shared-state native borrowers keep retirement behind the last current owner
+
+New frozen identities:
+- `src/state/openclaw-state-db-borrow.ts@110fa342365db59e7270a61e98d7ed556e66aa0d`
+- `src/state/openclaw-state-db-borrow.test.ts@60ca10d5168c75467f21ddab5324b1a289694abc`
+
+The canonical cache supplies database identity; this layer owns native references and retirement handoff only. Retain rechecks the captured canonical handle and rejects an owner already retiring. Writer release can transfer its retirement request behind outstanding read pins. Async retirement holds a synthetic reference while WAL maintenance joins; cleanup failure keeps the reference and calls `retainFailed` instead of making the database reopenable. A read pin may observe only the same still-open canonical handle and never runs inside an active native transaction.
+
+Focused tests prove the writer retirement request survives when a read pin releases last, concurrent repeated release shares the same asynchronous WAL join, failed WAL stop keeps the handle borrowed and blocks replacement, and a changed owner cancels stale retirement rather than closing the successor. Read-pin tests also reject stale observation and release the original pin exactly once.
+
+### 35.4 Shared-state integrity proof is revocable evidence owned by the physical database lifetime
+
+New frozen identities:
+- `src/state/openclaw-state-db-integrity-admission.ts@20b32e52ca5bd5eb363e304b99fbd00339b83356`
+- `src/state/openclaw-state-db-existing-schema.ts@003b2ae94cc7482ba3ec5bd7dfd74b4cfe4e5d3f`
+
+Integrity admission binds proof to the tracked physical database identity, schema/user-version tuple and a shared revision epoch. Schema mutation or native-handle replacement invalidates that epoch. A caller using `require-proof` fails closed when physical identity or epoch no longer matches; an ordinary verifier may recompute integrity, but publishes reusable proof only if the same epoch remains current, staging publication behind transaction commit when necessary.
+
+The existing-schema consumer reuses only a current admitted runtime schema plus integrity proof. Otherwise it validates ownership/schema metadata inside a read snapshot, checks canonical runtime shape and absence of retired repair state, and publishes runtime admission only after validation. A warm handle still rebinds revocation custody for the proof it borrows. This remains validation evidence for the existing shared-state owner, not a schema or state writer.
+
+### 35.5 Closure result
+
+This recursion closes the remaining native-worker lifetime, exact broker-admission cleanup, shared-state borrower and integrity-proof identities exposed by the Section 34 scan. None imports or owns process-wide `closeOpenClawStateDatabaseAsync`; none creates a second shared-state writer. Worker exit, actor/native close receipts, WAL retirement and integrity proof are distinct settlement facts, and stale generations fail closed rather than being adopted by replacements.
+
+No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, OCRM final acceptance and release acceptance remain absent.
