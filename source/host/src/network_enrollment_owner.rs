@@ -304,9 +304,12 @@ impl NetworkEnrollmentOwner {
     }
 
     fn credential(&self) -> Result<FabushiCoreCredential, NetworkEnrollmentError> {
-        self.credential_provider
+        let credential = self.credential_provider
             .get_fabushi_core_credential()
-            .map_err(|_| NetworkEnrollmentError::AuthorityUnavailable)
+            .map_err(|_| NetworkEnrollmentError::AuthorityUnavailable)?;
+        credential.authorize_origin(self.base_url.as_str())
+            .map_err(|_| NetworkEnrollmentError::AuthorityUnavailable)?;
+        Ok(credential)
     }
 
     fn authority(&self) -> Result<(FabushiCoreCredential, String), NetworkEnrollmentError> {
