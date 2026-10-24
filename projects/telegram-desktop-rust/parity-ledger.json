@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "9b83aaf942ec850ad13fd91d2ca28245b4128e05",
+  "target_commit": "dcea9a7c52c944d4dff14f45f6506206001a8c1d",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16205,
-    "unread": 16180,
+    "unknown": 16204,
+    "unread": 16179,
     "omitted": 0,
-    "responsibilities_total": 189,
+    "responsibilities_total": 190,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -50197,6 +50197,235 @@
       "license_and_provenance": "Exact Microsoft/GSL span_ext_tests.cpp, tested headers, tests/CMakeLists.txt and MIT LICENSE retained as source/test provenance. No GSL code copied into shipping runtime.",
       "reviewer": "primary-session",
       "notes": "Strict171 source-only dependency-test provenance. Counters unknown=16205 unread=16180 omitted=0 responsibilities=189. Parent Actions terminal-success; receipt-head Actions required. Baseline identity, source closure and independent release acceptance remain false."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/GSL",
+      "source_blob_sha": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+      "source_kind": "recursive_child_repository_dependency_test_provenance",
+      "module_id": "tdesktop.thirdparty.gsl.utils-tests",
+      "responsibility_id": "TDRP-R9-GSL-UTILS-TEST-PROVENANCE-001",
+      "source_symbols": [
+        "Microsoft/GSL:tests/utils_tests.cpp@5b64e207eda9ef0e8935701647d6d4bed567960e",
+        "10 GoogleTest cases; 5 EXPECT_THROW/ASSERT_THROW expressions; 1 static_assert; 0 death assertions",
+        "gsl::index typedef; final_action/finally scope-exit behavior; move disables moved-from invocation",
+        "narrow_cast unchecked static_cast behavior; narrow checked round-trip/sign behavior and narrowing_error",
+        "tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a: utils_tests.cpp line 213; CTest gsl_tests line 221",
+        "Accepted tdesktop exact search: gsl::finally 161 complete pinned results = 155 production + 5 tests + REVIEW.md; direct narrow/narrow_cast results=0",
+        "LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02"
+      ],
+      "capability_ids": [
+        "CAP-DEPENDENCY-TEST-PROVENANCE",
+        "CAP-CHECKED-NUMERIC-CONVERSION",
+        "CAP-NATIVE-DEPENDENCY-REPLACEMENT"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "Microsoft/GSL:tests/utils_tests.cpp@5b64e207eda9ef0e8935701647d6d4bed567960e",
+        "Microsoft/GSL:include/gsl/util@26b2f5fb9d0d8c28c3096f50d575eb42a4b89bad",
+        "Microsoft/GSL:include/gsl/narrow@7b1a7912163185e2b2cbecc34ad64a539d566173",
+        "Microsoft/GSL:tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a",
+        "Microsoft/GSL:CMakeLists.txt@b1d24e5facfe56b1ae28468a5959797e9f6bacda",
+        "Microsoft/GSL:LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02",
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md#TDRP-LANG-03"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-utils-tests-complete-read.md",
+      "behavior_contract": "Source-only provenance for pinned Microsoft/GSL utility tests. The matrix verifies gsl::index type identity, final_action/finally exactly-once scope-exit semantics including move transfer, unchecked narrow_cast truncation, and checked narrow value/sign-loss rejection. It does not prove shipping implementation or any downstream caller closure.",
+      "state_machine": "No product state machine. Test-local values create a final_action or perform conversions; final_action invokes its callable on scope exit unless invocation ownership was moved, while narrow either returns a value-preserving conversion or throws narrowing_error.",
+      "side_effects": [
+        "Test-local values and scope-exit callbacks only; no product persistence, network, account, UI, service or durable state."
+      ],
+      "failure_cases": [
+        "Moved-from final_action invokes again or moved-to guard fails to invoke.",
+        "finally fails to execute at scope exit.",
+        "narrow_cast stops reflecting explicit unchecked cast behavior.",
+        "narrow accepts value/sign loss or fails to reject a lossy conversion.",
+        "Source/build registration drift is ignored.",
+        "Test provenance is mistaken for production implementation or closure of 155 production gsl::finally consumers."
+      ],
+      "ui_disposition": "Not a UI source; dependency-test provenance only. UI and lifecycle semantics in production gsl::finally consumers remain with existing canonical owners.",
+      "non_ui_responsibilities": [
+        "Exact utils_tests.cpp source identity",
+        "final_action/finally scope-exit test provenance",
+        "narrow_cast unchecked conversion test provenance",
+        "narrow checked conversion and throw-oracle provenance",
+        "CMake/CTest and MIT provenance",
+        "test-versus-production separation"
+      ],
+      "platform_delta": "No Fabushi product platform mode. GSL_KERNEL_MODE excludes the narrow test; this remains dependency-test/build provenance only.",
+      "existing_owner_candidates": [
+        "Existing TDRP source/dependency inventory and test-provenance governance (selected)",
+        "Existing Rust/domain/platform owners for resource cleanup and lifecycle",
+        "Existing checked conversion/validation boundaries",
+        "GslUtilRuntime, GslFinallyRuntime or TelegramScopeGuardRuntime (rejected)"
+      ],
+      "existing_owner": "Existing TDRP source/dependency governance for test provenance; actual cleanup and conversion semantics remain in each current Rust/domain/platform owner.",
+      "rejected_existing_owners": [
+        "GslUtilRuntime duplicates language/runtime semantics and centralizes unrelated domain responsibilities.",
+        "GslFinallyRuntime or TelegramScopeGuardRuntime preserves upstream architecture instead of existing-owner-first.",
+        "A global conversion service duplicates domain validation truth."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-utils-tests-complete-read.md"
+      ],
+      "fabushi_target_symbols": [
+        "TDRP_GSL_UTILS_TEST_PROVENANCE_001"
+      ],
+      "target_language": "Source-only C++ dependency-test provenance; no shipping implementation.",
+      "language_rationale": "The file is dependency testing. Applicable production cleanup maps to Rust ownership/Drop/local guards in existing owners; checked conversion maps to TryFrom/TryInto or explicit domain validation.",
+      "command_event_contracts": [
+        "final_action invokes once on scope exit when it owns invocation.",
+        "Moving final_action transfers invocation ownership and disables the moved-from guard.",
+        "narrow_cast is explicitly unchecked conversion.",
+        "narrow rejects value loss and arithmetic sign changes with narrowing_error.",
+        "Source-test provenance does not authorize production acceptance or downstream caller closure."
+      ],
+      "state_owner": "No product state owner; GTest/local scope owns test values.",
+      "lifecycle_owner": "Microsoft/GSL CMake/CTest gsl_tests target; production lifecycle remains with each actual consumer owner.",
+      "persistence_and_restart": "No persistence or restart behavior.",
+      "concurrency_and_cancellation": "Synchronous tests only.",
+      "security_boundary": "Resource cleanup and conversion validity must remain enforced in actual domain/platform owners; test provenance is not a production lifetime, exception or validation proof.",
+      "network_service_dependencies": [],
+      "service_owner": "Not applicable; no network/service contract.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-test-provenance-mapped-open",
+      "blockers": [
+        "No production implementation or release acceptance claim.",
+        "155 direct production tdesktop gsl::finally source/header consumers remain independently open.",
+        "Indirect conversion responsibilities remain independently open despite zero direct narrow/narrow_cast code-search matches.",
+        "Fresh receipt-head Actions required."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "tests/utils_tests.cpp@5b64e207eda9ef0e8935701647d6d4bed567960e: 166 line slots / 4,211 bytes; 10 TEST cases.",
+        "5 EXPECT_THROW/ASSERT_THROW expressions and 1 static_assert; no death assertions.",
+        "include/gsl/util@26b2f5fb9d0d8c28c3096f50d575eb42a4b89bad and include/gsl/narrow@7b1a7912163185e2b2cbecc34ad64a539d566173 fully re-read.",
+        "tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a registers utils_tests.cpp at line 213 and CTest gsl_tests at line 221.",
+        "Exact accepted tdesktop search for gsl::finally returned 161 complete pinned results: 155 production source/header, 5 test files, REVIEW.md; direct gsl::narrow/gsl::narrow_cast/narrow_cast returned zero.",
+        "Parent exact-head dcea9a7c52c944d4dff14f45f6506206001a8c1d: TDRP 40085527657 61/61 success; Rust 40085527748 6/6 success; Official MCP 40085527664 success. No Microsoft/GSL C++ test execution is claimed."
+      ],
+      "target_commit": "dcea9a7c52c944d4dff14f45f6506206001a8c1d",
+      "workflow_run": 40085527657,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12556976659,
+      "artifact_digest": "sha256:daa5917eb0afbd394859c5ec12f7d3ac18a7574cd3f57f0dbac53f41eb8608a2",
+      "composition_root": "Existing TDRP source/dependency governance and current Rust/domain/platform owners for actual consumers.",
+      "composition_slot": "Dependency test provenance only; no shipping composition slot.",
+      "capability_component": "Microsoft/GSL utils test provenance; no shipping runtime.",
+      "variation_axes": [
+        "scope callback kind and move state",
+        "unchecked vs checked conversion",
+        "kernel vs non-kernel narrow-test coverage"
+      ],
+      "shared_owner_contracts": [
+        "TDRP source/dependency inventory",
+        "Rust ownership/Drop/local scope guards",
+        "Checked domain conversion/validation",
+        "Actual product/domain/platform owners",
+        "Exact-head Actions evidence"
+      ],
+      "duplicate_root_check": "No GslUtilRuntime, GslFinallyRuntime, TelegramScopeGuardRuntime or second validation root.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "No product action; dependency test-only provenance.",
+      "detail_section": "Not applicable",
+      "capability_surface": "Source-only dependency-test provenance; no shipping surface.",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Any GSL gitlink/tree, utils_tests.cpp blob, tested util/narrow header, CMake registration, license or accepted direct-consumer search drift requires exact-ref re-read; no production ownership closure.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No icon change.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-GSL-UTILS-TEST-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GSL-UTILS-TEST-EXACT-SOURCE-001",
+        "ORA-TDRP-GSL-UTILS-TEST-FINALLY-ONCE-001",
+        "ORA-TDRP-GSL-UTILS-TEST-NARROW-FAILURE-001",
+        "ORA-TDRP-GSL-UTILS-TEST-CMAKE-REGISTRATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GSL-UTILS-TESTS-ONLY-001",
+        "INV-TDRP-GSL-UTILS-NO-PARALLEL-RUNTIME-001",
+        "INV-TDRP-GSL-UTILS-NO-CALLER-CLOSURE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GSL-UTILS-REGISTERED-TESTS-001",
+        "CONTRACT-TDRP-GSL-UTILS-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GSL-UTILS-SOURCE-DRIFT-001",
+        "FAULT-TDRP-GSL-UTILS-BUILD-REGISTRATION-001",
+        "FAULT-TDRP-GSL-UTILS-CALLER-CLOSURE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "Pinned Microsoft/GSL CMake/CTest gsl_tests target",
+        "GitHub Actions exact-head TDRP Revision 9 and Rust desktop runtime"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact Microsoft/GSL utils_tests.cpp, util/narrow headers, tests/CMakeLists.txt and MIT LICENSE retained as source/test provenance. No GSL code copied into shipping runtime.",
+      "reviewer": "primary-session",
+      "notes": "Strict172 source-only dependency-test provenance. Counters unknown=16204 unread=16179 omitted=0 responsibilities=190. Parent Actions terminal-success; receipt-head Actions required. Baseline identity, source closure and independent release acceptance remain false."
     }
   ]
 }
