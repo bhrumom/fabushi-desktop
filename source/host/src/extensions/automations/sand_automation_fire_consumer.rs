@@ -80,7 +80,7 @@ pub struct BackendAutomationFire {
 }
 
 impl BackendAutomationFire {
-    fn from_value(value: &Value) -> Option<Self> {
+    pub(super) fn from_value(value: &Value) -> Option<Self> {
         Some(Self {
             id: value.get("id")?.as_str()?.to_string(),
             sand_agent_id: value.get("sandAgentId")?.as_str()?.to_string(),

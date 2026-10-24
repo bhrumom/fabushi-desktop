@@ -14,3 +14,5 @@ pub mod automations_proto;
 pub mod sand_automation_cloud_sync;
 
 pub mod production_lifecycle;
+
+pub mod native_backend_transport;
