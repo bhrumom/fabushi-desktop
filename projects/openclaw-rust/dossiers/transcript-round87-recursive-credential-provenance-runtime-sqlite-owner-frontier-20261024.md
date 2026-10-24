@@ -6468,3 +6468,44 @@ New frozen identities:
 Immediately before this append, the live branch lease was `afe8bacbf23fde7454d67d3017b9940db239f7da`, dossier blob `d844bbbd91b03929586937ad3a73b359e7902dbf`, 1 lines, with zero Section 101 and all three refs above at zero occurrences. No Actions were started or rerun; no production code, ledger, RTM, flags, source lock, inventory, or source baseline changed.
 
 - The requested predecessor public-id -> restart/lost-reply session-delivery recovery -> real settlement -> exact physical cleanup -> public exact-run terminal-read fixture remains absent. The direct Stop stale-success oracle and plugin-native failed-publication/new plural caller remain absent. Independent ACCEPT, scoped G01/G02, Rust implementation/wiring, package/device proof, release acceptance and final OCRM acceptance remain open.
+
+
+## Section 102 — session-event provenance stays producer-local, plugin-native publication rejection stays admission-local, and neither closes the missing Cron/Stop joins
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`. This pass starts from Section 101's real queued-Cron exact-alias deletion and follows the closest unregistered producer/provenance and plugin-publication boundaries. Only frozen refs absent from the complete Round87 dossier before this append are registered.
+
+New frozen identities:
+- `src/auto-reply/reply/session-event-contract.ts@e2a915fc142b0f589664e5711b1cdb1b27393e3a`
+- `src/auto-reply/reply/session-event-target.ts@451596bec8eaa0f71b70b011f0b83ecfca1f2ec4`
+- `src/plugins/plugin-source-admission-context.ts@673949efb3f6250d29505fc7cd348eec44f2b6e5`
+
+### 102.1 Session-event receipts expose sourceRunId provenance, not the public Cron requestRunId/history identity
+
+- New contract ref `src/auto-reply/reply/session-event-contract.ts@e2a915fc142b0f589664e5711b1cdb1b27393e3a` gives `SessionEventOptions` two stable producer provenance fields: `sourceTurnId` and `sourceRunId`. The contract explicitly states that `sourceRunId` is the run that started producer work and is a provenance fact for the turn, never authority.
+- New target ref `src/auto-reply/reply/session-event-target.ts@451596bec8eaa0f71b70b011f0b83ecfca1f2ec4` derives delivery policy from the current Gateway tool caller's operational run instance and validates caller/receipt authority while capturing the session event target. It does not translate that operational identity into a Cron run receipt `requestRunId`, history `runId`, or session-delivery queue cross-index.
+- The already-registered restart session-event adapter `src/gateway/server-restart-sentinel-session-event.ts@7a60182cb166efb87b9032d9b304c03933a30424` enqueues the recovered event with `source: "restart"` and `contextKey: task:restart-sentinel:<entry.id>`, then waits on the in-process host receipt's `settled` outcome. It supplies neither `sourceRunId` nor `sourceTurnId`. Therefore the durable queue row's `entry.id/sessionKey` remains unjoined to the Cron public request/history identity at this handoff.
+- The already-registered host handoff `src/auto-reply/reply/session-event-handoff.ts@91de747dfd4c779bc569132e8fb558ee65c2f7a9` generates/receives its own operational run id during turn execution and forwards that id into scheduled-automation settlement when such an automation is explicitly supplied. Restart-sentinel recovery does not supply that scheduled-automation contract, so this path cannot silently recover the missing public Cron identity.
+
+### 102.2 The requested public-Cron -> durable queue -> settle -> public reader fixture is still absent
+
+- Re-reading the frozen queue/storage/recovery, Cron receipt/history, correlated subagent completion, restart recovery, and public `cron.runs` refs found no new durable field carrying `requestRunId/publicRunId` inside `QueuedSessionDelivery`, no queueId<->publicRunId cross-index, and no frozen integrated fixture that sends one predecessor public Cron id through restart/lost-reply session delivery, real `settleQueuedSessionDelivery(entry.sessionKey, entry.id)`, exact alias cleanup, physical deletion, then `cron.runs { id, runId, limit: 1 }`.
+- The closest correlated recovery fixture remains subagent-owned: `src/gateway/server-runtime-services.correlated-recovery.test.ts@668c3ec09b71a4d3c71ca00ea7cddcf58c3e4b49` binds queue id/session key to a subagent run id and proves durable completion-owner reconciliation across restart, but that run id is a subagent identity, not a Cron public request/history id.
+- `src/cron/store/run-recovery.kernel.ts@fbe9699a2a8ec1473b3c6c25e757c5d9f46b2f96` remains the real public-id recovery boundary: it projects retained `receipt.requestRunId` into interrupted Cron history. That projection stays in Cron receipt/history storage and does not enter the session-delivery queue producer.
+
+### 102.3 Stop still lacks the direct replacement-late-success Gateway oracle
+
+- The frozen production handler `src/gateway/server-methods/session-processes.ts@b1455a7f54e47e84dd1844424e54057385db2065` sends remote process operations with `ownerEpoch: owner.activeOwnerEpoch` and `placementGeneration: owner.generation`, passes an `assertCurrent` callback to the worker environment, and re-runs `assertCurrent()` after remote I/O and again before publication.
+- The focused frozen test `src/gateway/server-methods/session-processes.test.ts@4d65f9bcd624ea2031ecbe7493f9ee1daed3b4d3` still covers only `sessions.processes.list` with request authority closing while the remote response is in flight. It does not issue `sessions.processes.stop`, replace placement generation/owner epoch during that in-flight Stop, return a successful stale worker reply, and assert the Gateway rejects that stale success.
+- The real Control UI/Gateway background-work E2E still proves a normal successful exact process stop, not replacement-late-success fencing. No new direct Gateway-server Stop oracle was found.
+
+### 102.4 Plugin-native failed publication remains an admission-local retained intent; plural production callers remain two
+
+- New ref `src/plugins/plugin-source-admission-context.ts@673949efb3f6250d29505fc7cd348eec44f2b6e5` shows the publication callback is carried only through `AsyncLocalStorage`: capture workers receive publication authority from their host, never from the database. This is transport/custody for the existing admission publication, not a distinct failed-publication receiver.
+- The already-registered `src/plugins/plugin-native-admission-state.ts@ba6313894f34788a37545d124a79e9916cf37665` keeps rejected/false publications in `state.publications`; only an accepted publication commits native roots and removes the queued publication. Thrown publication errors are warned and retained for later explicit settlement. No separate receiver handoff is created.
+- The frozen plural production callers of `settlePluginNativeAdmissions` remain exactly the two already registered sites: `src/plugins/plugin-generation-preparation.worker.ts@22055912ec8cfadd3ccaeaffd5298bc0056ab260` and `src/agents/prepared-model-runtime.build.ts@0fec2f4ad347ded36c4a4f713b2126b09cd29562`. `src/plugins/plugin-generation-worker.ts@37e1c105e82b163ed451631136571ebc604d345f` still settles one captured admission state with singular `settlePluginNativeAdmissionState`; no third production plural caller was found.
+
+### 102.5 Dedupe, lease, and remaining acceptance state
+
+Immediately before this append, the live branch lease was `3a49faa10585aec2b544342da51670e7bb8a90b7`, dossier blob `1c2bfb6c903101337b11e4d55b80c13478b81f9c`, 1 lines, with zero Section 102 and zero occurrences of all three new exact refs above. Frozen upstream `ad8d12f126d29b0db204187adf5092db80294e70` and tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16` were re-read. No Actions were started or rerun; no production code, ledger, RTM, flags, source lock, inventory, or source baseline changed.
+
+- The requested predecessor public-id -> restart/lost-reply session-delivery recovery -> real settlement -> exact physical cleanup -> public exact-run terminal-read fixture remains absent. The direct Stop replacement-late-success oracle and plugin-native distinct failed-publication receiver/third plural caller remain absent. Independent ACCEPT, scoped G01/G02, Rust implementation/wiring, package/device proof, release acceptance and final OCRM acceptance remain open.
