@@ -4,10 +4,13 @@ on:
     paths:
       - 'source/host/src/extensions/auth/**'
       - 'source/host/src/extensions/automations/**'
+      - 'source/host/src/extensions/box_store_sync/native_account_store.rs'
+      - 'source/host/src/extensions/box_store_sync/mod.rs'
       - 'source/host/tests/extensions_auth_service_contract.rs'
       - 'source/host/tests/extensions_auth_credential_renewer_contract.rs'
       - 'source/host/tests/automations_backend_contract.rs'
       - 'source/host/tests/native_automation_transport_contract.rs'
+      - 'source/host/tests/native_account_store_contract.rs'
       - '.github/workflows/native-service-contracts.yml'
   workflow_dispatch:
 permissions:
@@ -41,6 +44,7 @@ jobs:
           --test extensions_auth_credential_renewer_contract
           --test automations_backend_contract
           --test native_automation_transport_contract
+          --test native_account_store_contract
       - name: Record evidence scope
         run: |
           git rev-parse HEAD >> "$GITHUB_STEP_SUMMARY"

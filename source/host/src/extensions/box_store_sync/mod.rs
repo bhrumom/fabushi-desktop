@@ -14,6 +14,7 @@ pub mod extension;
 pub mod store_db_snapshot_upload;
 pub mod box_store_pack;
 pub mod agent_store_sand_files;
+pub mod native_account_store;
 pub mod box_copy_in;
 pub mod box_object_store;
 pub mod box_store_download;
