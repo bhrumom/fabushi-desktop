@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "dcea9a7c52c944d4dff14f45f6506206001a8c1d",
+  "target_commit": "bf0149a2407f16d2557a8372312b6bd13126b24c",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16204,
-    "unread": 16179,
+    "unknown": 16203,
+    "unread": 16178,
     "omitted": 0,
-    "responsibilities_total": 190,
+    "responsibilities_total": 191,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -50426,6 +50426,220 @@
       "license_and_provenance": "Exact Microsoft/GSL utils_tests.cpp, util/narrow headers, tests/CMakeLists.txt and MIT LICENSE retained as source/test provenance. No GSL code copied into shipping runtime.",
       "reviewer": "primary-session",
       "notes": "Strict172 source-only dependency-test provenance. Counters unknown=16204 unread=16179 omitted=0 responsibilities=190. Parent Actions terminal-success; receipt-head Actions required. Baseline identity, source closure and independent release acceptance remain false."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/GSL",
+      "source_blob_sha": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+      "source_kind": "recursive_child_repository_ci_test_workflow_provenance",
+      "module_id": "tdesktop.thirdparty.gsl.android-ci",
+      "responsibility_id": "TDRP-R9-GSL-ANDROID-CI-WORKFLOW-PROVENANCE-001",
+      "source_symbols": [
+        "Microsoft/GSL:.github/workflows/android.yml@a2c88fc987a7db248c6bd1719fa6b2c1340732f6",
+        "CI_Android push/pull_request main workflow with concurrency cancel-in-progress",
+        "macos-latest-large; Java 8 Zulu; Android API 24 x86_64 emulator",
+        "Android NDK CMake toolchain; ANDROID_PLATFORM=16; ANDROID_ABI=x86_64; Debug",
+        "build -> emulator boot -> adb deploy tests -> execute *_tests",
+        "accepted tdesktop direct GSL_TEST=0, Microsoft.GSL=0; ThirdParty/GSL only .gitmodules"
+      ],
+      "capability_ids": [
+        "CAP-DEPENDENCY-CI-PROVENANCE",
+        "CAP-DEPENDENCY-TEST-PROVENANCE"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "Microsoft/GSL:.github/workflows/android.yml@a2c88fc987a7db248c6bd1719fa6b2c1340732f6",
+        "Microsoft/GSL:CMakeLists.txt@b1d24e5facfe56b1ae28468a5959797e9f6bacda",
+        "Microsoft/GSL:tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-android-workflow-complete-read.md",
+      "behavior_contract": "Source-only provenance for the pinned Microsoft/GSL Android dependency test workflow: configure an Android NDK x86_64 debug build, boot an API 24 emulator, deploy generated tests and execute them. This does not define Fabushi or tdesktop shipping Android behavior.",
+      "state_machine": "GitHub event -> cancel superseded same-group run -> checkout child -> provision Java/emulator -> CMake Android configure/build -> wait for device -> deploy test executables -> execute tests -> workflow terminal result.",
+      "side_effects": [
+        "CI-only provisioning of Android SDK system image/emulator and test binaries on an ephemeral runner; no product persistence, user account, messaging, release or shipping state."
+      ],
+      "failure_cases": [
+        "Android system image/AVD provisioning fails.",
+        "CMake Android NDK configure/build fails.",
+        "Emulator does not become ready within timeout.",
+        "Test deployment or *_tests execution fails.",
+        "Dependency CI provenance is incorrectly promoted to Fabushi shipping Android requirements."
+      ],
+      "ui_disposition": "Not a product UI source; third-party dependency CI/test workflow only.",
+      "non_ui_responsibilities": [
+        "Exact Android workflow source identity",
+        "Dependency emulator/NDK test topology provenance",
+        "Concurrency/cancel-in-progress provenance",
+        "Fail-closed separation from shipping mobile ownership"
+      ],
+      "platform_delta": "The source tests Microsoft/GSL on an Android x86_64 emulator. It is not a Fabushi Android platform adapter or release configuration.",
+      "existing_owner_candidates": [
+        "Existing TDRP recursive source/dependency and CI/test-provenance governance (selected)",
+        "Fabushi Android/mobile product owners (rejected for this dependency-only source)",
+        "GslAndroidRuntime or TelegramAndroidRuntime (rejected)"
+      ],
+      "existing_owner": "Existing TDRP recursive source/dependency and CI/test-provenance governance.",
+      "rejected_existing_owners": [
+        "Fabushi Android/mobile product owners are not owners of Microsoft/GSL child CI topology.",
+        "GslAndroidRuntime duplicates a non-shipping dependency test environment.",
+        "TelegramAndroidRuntime would preserve upstream architecture and violate existing-owner-first."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-android-workflow-complete-read.md"
+      ],
+      "fabushi_target_symbols": [
+        "TDRP_GSL_ANDROID_CI_WORKFLOW_PROVENANCE_001"
+      ],
+      "target_language": "Source-only YAML dependency-CI provenance; no shipping implementation.",
+      "language_rationale": "The workflow is evidence about a third-party child test environment, not product code to port.",
+      "command_event_contracts": [
+        "push/pull_request main triggers CI_Android",
+        "superseded same-group runs cancel",
+        "Android toolchain config/build precedes emulator test execution",
+        "workflow provenance does not authorize mobile product acceptance"
+      ],
+      "state_owner": "GitHub Actions ephemeral job state only; no product state owner.",
+      "lifecycle_owner": "Pinned Microsoft/GSL CI_Android workflow; no Fabushi shipping lifecycle owner.",
+      "persistence_and_restart": "No product persistence; ephemeral CI workspace/emulator only.",
+      "concurrency_and_cancellation": "GitHub workflow concurrency group cancels an in-progress superseded run.",
+      "security_boundary": "Do not copy third-party CI environment assumptions into shipping Android security, signing, credentials or release gates.",
+      "network_service_dependencies": [
+        "GitHub Actions hosted runner",
+        "Android SDK/NDK package sources"
+      ],
+      "service_owner": "Third-party CI infrastructure only; not a Fabushi service owner.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-ci-test-workflow-provenance-mapped-open",
+      "blockers": [
+        "No production implementation or release acceptance claim.",
+        "No proven tdesktop shipping consumer for this child workflow.",
+        "Fabushi Android/mobile release responsibilities remain independently owned and open where their own evidence is incomplete.",
+        "Fresh receipt-head Actions required."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        ".github/workflows/android.yml@a2c88fc987a7db248c6bd1719fa6b2c1340732f6 fully re-read: 60 line slots / 2,052 bytes.",
+        "Workflow configures Java 8 Zulu, Android API 24 x86_64 emulator and Android NDK CMake Debug build, then deploys and runs *_tests.",
+        "Accepted tdesktop exact searches: GSL_TEST=0, Microsoft.GSL=0, ThirdParty/GSL only .gitmodules.",
+        "Parent exact-head bf0149a2407f16d2557a8372312b6bd13126b24c: TDRP 40086843574 61/61 success; Rust 40086843577 6/6 success; Official MCP 40086843528 success. No Microsoft/GSL Android workflow execution is claimed in Fabushi CI."
+      ],
+      "target_commit": "bf0149a2407f16d2557a8372312b6bd13126b24c",
+      "workflow_run": 40086843574,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12557124242,
+      "artifact_digest": "sha256:5b7af3a4c95a112fd04536e95efee204791bf53d0b2373220e03b8be3b5d152d",
+      "composition_root": "Existing TDRP source/dependency provenance governance.",
+      "composition_slot": "Dependency CI/test provenance only; no shipping composition slot.",
+      "capability_component": "Microsoft/GSL Android CI workflow provenance; no shipping runtime.",
+      "variation_axes": [
+        "push vs pull_request",
+        "emulator/toolchain provisioning success vs failure"
+      ],
+      "shared_owner_contracts": [
+        "TDRP recursive dependency inventory",
+        "Exact-head Actions evidence",
+        "Existing Fabushi mobile/platform owners remain separate"
+      ],
+      "duplicate_root_check": "No GslAndroidRuntime, TelegramAndroidRuntime or second mobile product/build root.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "No product action; dependency CI-only provenance.",
+      "detail_section": "Not applicable",
+      "capability_surface": "Source-only dependency CI/test provenance; no shipping surface.",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Any GSL gitlink/tree or Android workflow blob drift requires exact-ref re-read; no product/mobile ownership closure.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No icon change.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-GSL-ANDROID-CI-WORKFLOW-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GSL-ANDROID-CI-EXACT-SOURCE-001",
+        "ORA-TDRP-GSL-ANDROID-CI-EMULATOR-TEST-001",
+        "ORA-TDRP-GSL-ANDROID-CI-NO-SHIPPING-OWNER-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GSL-ANDROID-CI-DEPENDENCY-ONLY-001",
+        "INV-TDRP-GSL-ANDROID-CI-NO-PARALLEL-RUNTIME-001",
+        "INV-TDRP-GSL-ANDROID-CI-NO-PRODUCT-CLOSURE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GSL-ANDROID-CI-PINNED-WORKFLOW-001",
+        "CONTRACT-TDRP-GSL-ANDROID-CI-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GSL-ANDROID-CI-SOURCE-DRIFT-001",
+        "FAULT-TDRP-GSL-ANDROID-CI-PRODUCT-PROMOTION-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "Pinned Microsoft/GSL child workflow source",
+        "GitHub Actions exact-head TDRP Revision 9 and Rust desktop runtime"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact Microsoft/GSL Android workflow retained as source/CI provenance under the pinned child repository; no workflow copied into Fabushi shipping runtime.",
+      "reviewer": "primary-session",
+      "notes": "Strict173 source-only dependency CI/test workflow provenance. Counters unknown=16203 unread=16178 omitted=0 responsibilities=191. Parent Actions terminal-success; receipt-head Actions required. Baseline identity, source closure and independent release acceptance remain false."
     }
   ]
 }
