@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "869b77142fe13e67b9aa8acd142f55a16a3e00be",
+  "target_commit": "c8edd25411c02a73b843ce38800d419632cd8234",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16200,
-    "unread": 16175,
+    "unknown": 16199,
+    "unread": 16174,
     "omitted": 0,
-    "responsibilities_total": 194,
+    "responsibilities_total": 195,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -51317,6 +51317,243 @@
       "license_and_provenance": "Exact Microsoft/GSL compiler workflow, composite CMake action, supported-compiler README and MIT LICENSE retained as source/CI provenance; no workflow copied into Fabushi shipping runtime.",
       "reviewer": "primary-session",
       "notes": "Strict176 source-only dependency compiler CI/toolchain-matrix provenance. Counters unknown=16200 unread=16175 omitted=0 responsibilities=194. Parent Actions terminal-success; receipt-head Actions required. Baseline identity, source closure and independent release acceptance remain false."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/GSL",
+      "source_blob_sha": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+      "source_kind": "recursive_child_repository_ci_test_workflow_provenance",
+      "module_id": "tdesktop.thirdparty.gsl.ios-workflow",
+      "responsibility_id": "TDRP-R9-GSL-IOS-WORKFLOW-PROVENANCE-001",
+      "source_symbols": [
+        "Microsoft/GSL:.github/workflows/ios.yml@a7f2f104f0b75d715102cf0a41b1f9d4a206b485",
+        "CI_iOS; push/pull_request main; macos-latest",
+        "actions/checkout@v4 currently resolves to actions/checkout commit 11d5960a326750d5838078e36cf38b85af677262; action.yml@24e73e5a12126edc2adb9e5cd1bf245ce85bde56",
+        "CMake Xcode configure: CMAKE_SYSTEM_NAME=iOS, CMAKE_OSX_ARCHITECTURES=arm64;x86_64, CMAKE_OSX_DEPLOYMENT_TARGET=9, STATIC_LIBRARY try-compile",
+        "Release build against iphonesimulator SDK",
+        "xcrun simctl runtime/device selection, bootstatus, install, launch --console, uninstall for generated *.app tests",
+        "Microsoft/GSL:CMakeLists.txt@b1d24e5facfe56b1ae28468a5959797e9f6bacda",
+        "Microsoft/GSL:tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a",
+        "Microsoft/GSL:README.md@dd61e3fdc4d30614c0ca35f58cce5f58e66dd4df",
+        "Microsoft/GSL:LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02"
+      ],
+      "capability_ids": [
+        "CAP-DEPENDENCY-CI-PROVENANCE",
+        "CAP-DEPENDENCY-TEST-PROVENANCE",
+        "CAP-DEPENDENCY-IOS-SIMULATOR-PROVENANCE"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "Microsoft/GSL:.github/workflows/ios.yml@a7f2f104f0b75d715102cf0a41b1f9d4a206b485",
+        "actions/checkout@v4 -> 11d5960a326750d5838078e36cf38b85af677262 (current resolution only)",
+        "Microsoft/GSL:CMakeLists.txt@b1d24e5facfe56b1ae28468a5959797e9f6bacda",
+        "Microsoft/GSL:tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a",
+        "Microsoft/GSL:README.md@dd61e3fdc4d30614c0ca35f58cce5f58e66dd4df",
+        "Microsoft/GSL:LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-ios-workflow-complete-read.md",
+      "behavior_contract": "Source-only provenance for the pinned Microsoft/GSL iOS simulator CI workflow. It configures the child dependency with the Xcode/iOS CMake toolchain, builds Release simulator test apps and installs/launches/uninstalls them through simctl. It is not a tdesktop or Fabushi shipping iOS/platform owner.",
+      "state_machine": "push/pull_request main -> checkout child -> create build directory -> Xcode/iOS CMake configure -> Release iphonesimulator build -> resolve and boot available simulator -> enumerate generated test app bundles -> install -> read bundle id -> launch with console -> uninstall -> workflow terminal result.",
+      "side_effects": [
+        "CI-only build tree, generated simulator app bundles and ephemeral simulator install/launch state; no Fabushi product persistence, account, messaging, signing, packaging, deployment or release state."
+      ],
+      "failure_cases": [
+        "Checkout action or hosted macOS runner/toolchain resolution fails.",
+        "CMake Xcode/iOS configuration fails for the declared architecture/deployment settings.",
+        "Release iphonesimulator build fails.",
+        "No compatible iOS simulator runtime/device is available or boot fails.",
+        "A test app cannot be found, installed, identified, launched or uninstalled.",
+        "Dependency simulator CI is incorrectly promoted to Fabushi shipping iOS/platform or release evidence."
+      ],
+      "ui_disposition": "Not a product UI source; third-party dependency iOS simulator CI workflow only.",
+      "non_ui_responsibilities": [
+        "Exact iOS workflow source identity",
+        "Direct checkout action reference/current-resolution provenance",
+        "CMake/Xcode iOS simulator configure/build contract",
+        "Generated test-app simulator install/launch/uninstall execution contract",
+        "README/license provenance",
+        "Fail-closed separation from shipping iOS/platform ownership"
+      ],
+      "platform_delta": "The child workflow validates Microsoft/GSL tests in an Apple iOS simulator. It does not define Fabushi native iOS platform behavior, supported OS/device matrix, signing, entitlements, packaging, TestFlight or App Store release policy.",
+      "existing_owner_candidates": [
+        "Existing TDRP recursive source/dependency and CI/test-provenance governance (selected)",
+        "Fabushi shipping iOS/platform, packaging/signing and release owners (rejected for this dependency-only source)",
+        "GslIOSRuntime or TelegramIOSRuntime (rejected)"
+      ],
+      "existing_owner": "Existing TDRP recursive source/dependency and CI/test-provenance governance.",
+      "rejected_existing_owners": [
+        "Fabushi shipping iOS/platform owners are not owners of Microsoft/GSL child simulator CI topology.",
+        "GslIOSRuntime would turn dependency CI provenance into a parallel product/platform runtime.",
+        "TelegramIOSRuntime would preserve upstream architecture and violate existing-owner-first."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-ios-workflow-complete-read.md"
+      ],
+      "fabushi_target_symbols": [
+        "TDRP_GSL_IOS_WORKFLOW_PROVENANCE_001"
+      ],
+      "target_language": "Source-only YAML dependency-CI/iOS-simulator provenance; no shipping implementation.",
+      "language_rationale": "The source is third-party child CI/build/test orchestration, not Fabushi product logic or a platform adapter to port.",
+      "command_event_contracts": [
+        "push/pull_request main triggers the child iOS CI job.",
+        "Configure precedes build; simulator boot precedes app install/launch.",
+        "Every discovered simulator app is installed, launched with console output, then uninstalled.",
+        "Dependency CI provenance does not authorize Fabushi iOS/platform production or release acceptance."
+      ],
+      "state_owner": "GitHub Actions ephemeral workflow and simulator state only; no Fabushi product state owner.",
+      "lifecycle_owner": "Pinned Microsoft/GSL ios.yml workflow; no Fabushi shipping lifecycle owner.",
+      "persistence_and_restart": "No product persistence; build outputs and simulator installation state are ephemeral CI artifacts/state.",
+      "concurrency_and_cancellation": "Single job with shell-loop test execution; no Fabushi runtime concurrency/cancellation contract.",
+      "security_boundary": "Do not infer Fabushi signing, entitlements, device trust, App Store readiness or production platform security from unsigned dependency simulator CI. actions/checkout@v4 is mutable in this child source.",
+      "network_service_dependencies": [
+        "GitHub Actions macOS hosted runner",
+        "actions/checkout@v4",
+        "Hosted Xcode/CMake/iOS simulator tooling"
+      ],
+      "service_owner": "Third-party CI infrastructure only; not a Fabushi service owner.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-ci-ios-simulator-provenance-mapped-open",
+      "blockers": [
+        "No production implementation or release acceptance claim.",
+        "No proven tdesktop shipping iOS workflow consumer beyond the GSL gitlink.",
+        "Mutable actions/checkout@v4 reference remains dependency-CI provenance rather than a frozen Fabushi shipping pin.",
+        "Fresh receipt-head Actions required."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        ".github/workflows/ios.yml@a7f2f104f0b75d715102cf0a41b1f9d4a206b485 fully re-read: 55 line slots / 1,666 bytes.",
+        "actions/checkout@v4 current tag resolution 11d5960a326750d5838078e36cf38b85af677262 and action.yml@24e73e5a12126edc2adb9e5cd1bf245ce85bde56 re-read; workflow itself does not pin this commit.",
+        "CMakeLists.txt@b1d24e5facfe56b1ae28468a5959797e9f6bacda and tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a fully re-read for build/test ownership.",
+        "README.md@dd61e3fdc4d30614c0ca35f58cce5f58e66dd4df and MIT LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02 fully re-read.",
+        "Accepted tdesktop exact searches: ThirdParty/GSL only .gitmodules; GSL_TEST=0; Microsoft.GSL=0.",
+        "Parent exact-head c8edd25411c02a73b843ce38800d419632cd8234: TDRP 40091720209 61/61 success; Rust 40091720144 6/6 success; Official MCP 40091720164 success. No Microsoft/GSL iOS workflow execution is claimed in Fabushi CI."
+      ],
+      "target_commit": "c8edd25411c02a73b843ce38800d419632cd8234",
+      "workflow_run": 40091720209,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12558424178,
+      "artifact_digest": "sha256:702a2dcd0f5e63bba4de78d03c5c5153a9234af9b56979d798cee2ffc33fda17",
+      "composition_root": "Existing TDRP source/dependency provenance governance.",
+      "composition_slot": "Dependency CI/test provenance only; no shipping iOS/platform composition slot.",
+      "capability_component": "Microsoft/GSL iOS simulator CI provenance; no shipping runtime.",
+      "variation_axes": [
+        "hosted macOS/Xcode image",
+        "iOS simulator runtime/device",
+        "arm64/x86_64 configure architectures",
+        "deployment target",
+        "generated test app set"
+      ],
+      "shared_owner_contracts": [
+        "TDRP recursive dependency inventory",
+        "Exact-head Actions evidence",
+        "Pinned Microsoft/GSL CMake/test sources",
+        "Fabushi shipping iOS/platform owners remain separate"
+      ],
+      "duplicate_root_check": "No GslIOSRuntime, TelegramIOSRuntime, second iOS platform owner or second shipping build root.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "No product action; dependency CI-only provenance.",
+      "detail_section": "Not applicable",
+      "capability_surface": "Source-only dependency CI/test provenance; no shipping surface.",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Any GSL gitlink/tree, ios workflow, checkout action reference/resolution, CMake/test build contract, README or license drift requires exact-ref re-read; no Fabushi iOS/platform closure.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No icon change.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-GSL-IOS-WORKFLOW-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GSL-IOS-WORKFLOW-EXACT-SOURCE-001",
+        "ORA-TDRP-GSL-IOS-WORKFLOW-BUILD-TEST-CHAIN-001",
+        "ORA-TDRP-GSL-IOS-WORKFLOW-NO-SHIPPING-OWNER-001",
+        "ORA-TDRP-GSL-IOS-WORKFLOW-MUTABLE-ACTION-REF-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GSL-IOS-WORKFLOW-DEPENDENCY-ONLY-001",
+        "INV-TDRP-GSL-IOS-WORKFLOW-NO-PARALLEL-PLATFORM-001",
+        "INV-TDRP-GSL-IOS-WORKFLOW-NO-PRODUCT-CLOSURE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GSL-IOS-WORKFLOW-PINNED-SOURCE-001",
+        "CONTRACT-TDRP-GSL-IOS-WORKFLOW-CMAKE-TEST-001",
+        "CONTRACT-TDRP-GSL-IOS-WORKFLOW-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GSL-IOS-WORKFLOW-SOURCE-DRIFT-001",
+        "FAULT-TDRP-GSL-IOS-WORKFLOW-TOOLCHAIN-DRIFT-001",
+        "FAULT-TDRP-GSL-IOS-WORKFLOW-PRODUCT-PROMOTION-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "Pinned Microsoft/GSL ios.yml source",
+        "Current actions/checkout@v4 resolution provenance",
+        "Pinned Microsoft/GSL root/test CMake",
+        "GitHub Actions exact-head TDRP Revision 9 and Rust desktop runtime"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact Microsoft/GSL iOS workflow, current checkout-v4 resolution context, root/test CMake, README and MIT LICENSE retained as dependency CI/test provenance; no workflow copied into Fabushi shipping iOS/platform runtime.",
+      "reviewer": "primary-session",
+      "notes": "Strict177 source-only dependency iOS simulator CI provenance. Counters unknown=16199 unread=16174 omitted=0 responsibilities=195. Parent Actions terminal-success; receipt-head Actions required. Baseline identity, source closure and independent release acceptance remain false."
     }
   ]
 }
