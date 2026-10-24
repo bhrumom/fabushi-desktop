@@ -3604,3 +3604,104 @@ Module-path searches for `session-accessor.sqlite-archive-store`, `disk-budget-f
 The resulting ownership boundary remains unchanged: canonical row mutation belongs to the existing agent/lifecycle writers; worker admission is retained until native settlement; archive publication and filesystem deletion are later/derived effects; retained workers are keyed and retired by exact database identity/lease; read workers and transformed SDK imports reuse existing ownership rather than creating parallel writers.
 
 No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. All tests above were read only at the frozen ref and were not executed. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, OCRM final acceptance and release acceptance remain absent.
+
+
+## Section 43 — commit-receipt, retained-publication and native-binding settlement closure
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`). Concurrent Section 42 already registered archive-transaction, lifecycle-state and maintenance-transaction helpers; those identities are referenced here only as context and are not duplicated.
+
+### 43.1 Canonical archive rows and reclamation publication are exact committed facts
+
+New frozen identities:
+- `src/config/sessions/session-accessor.sqlite-archive-store-kernel.ts@56ca662cf55dfcec2169f054f796813358561ae2`
+- `src/config/sessions/session-accessor.sqlite-reclamation-publication.ts@a940e269d3f11d9778ec57e7ee39d00ede1d03b2`
+- `src/config/sessions/session-accessor.sqlite-projection-state.ts@3a97da585d9510b9a35efa36741a274f4c228590`
+- `src/config/sessions/session-lifecycle-worker-publication.ts@9b91a17eca3b999a319613ead3290ec7dc696500`
+
+The archive kernel stores the canonical archive row inside the owning lifecycle transaction. A duplicate `session_id + generation` is accepted only when archive name, hash, created-at, encoding, reason, session owner and every archive byte match the committed row; otherwise the transaction fails with a conflicting-archive error. Publication planning is bounded to four pending canonical rows and may normalize only unpublished names under that session's write scope. Recording file-publication results only updates the exact matching session/generation row under caller-owned write admission.
+
+Reclamation publication selects only rows the transaction actually removed. Maintenance publication uses `committedEntryIndices`; failed history eviction publishes no changed keys. Identity mutation is prepared only for committed lifecycle/projection/finalization results, never from the existence of a plan or Worker reply.
+
+The lifecycle projection transaction rereads every exact removal/upsert row inside the admitted transaction. A changed row throws stale-lifecycle conflict; materialization failure excludes archive-requiring removals instead of deleting them; reset boundaries and owner assignment are applied only after the exact preimage is validated. The worker lifecycle publication emits progress-card reset and transcript-index reconciliation only for a committed lifecycle-projection result.
+
+### 43.2 Commit receipts describe exact postimages; they are not replay authority
+
+New frozen identities:
+- `src/infra/sqlite-commit-receipt.ts@11d3905fc2bde1288d12180c58cdf27250d832d1`
+- `src/infra/sqlite-post-commit.ts@a203acefc5d28361a24a620fd132c8f264e8f4e9`
+
+A SQLite commit receipt covers an explicit domain, source identity/incarnation and exact key set. An omitted key is unknown, never proof of absence. The source comments explicitly state that an operation identity is not a durable idempotency key or permission to replay. Worker receipts are validated once for exact coverage; domain-specific code remains responsible for currentness and supersession.
+
+Post-commit state is staged transaction-locally. Immediately before physical COMMIT, transferable readers can be fenced; after COMMIT, committed facts install before fallible public observers. Failure installing committed facts invalidates/fences those facts but does not transform the durable transaction into rollback. Notification failures are logged and remaining committed notifications continue. Rollback discards nested staged state, while an unknown/lost transaction invalidates all staged facts rather than publishing them.
+
+### 43.3 Entry, conversation and transcript publication retain final-grant custody until native settlement
+
+New frozen identities:
+- `src/config/sessions/session-accessor.sqlite-entry-worker-publication.ts@1e8ff2d82954b82b68c91a4f7df971a84e87ab78`
+- `src/config/sessions/session-accessor.sqlite-conversation-publication.ts@ad85b9c549294b5ae4b73f8c3031356372abd9c9`
+- `src/config/sessions/session-accessor.sqlite-entry-cache-publication-state.ts@a13dcafeaf70a301afb18201604fb7e84f46ddbc`
+- `src/config/sessions/session-accessor.sqlite-entry-cache-publication.ts@4d6a01611a75e196baf6531a0b6817339b866566`
+- `src/config/sessions/session-accessor.sqlite-sharing-acquisition.ts@0adb3ce8e43d5ebaced7c4bf863d9db35c3cf2e8`
+- `src/config/sessions/session-transcript-authority.ts@f3f3947a0fc9561f26bd0f321343534c0493eab4`
+
+Entry publication's final-grant owner fences old facts independently of result delivery. Confirmed removals publish absence; incomplete postimages are invalidated. Superseded keys cannot be revived by an older delayed receipt. A COMMIT receipt may survive unknown settlement, but unknown settlement fences retained facts and deliberately does not acknowledge an identity mutation.
+
+Conversation publication uses the same commit-receipt/post-commit phases. The existing commit grant owns the unavailable interval through native settlement; a native SDK write may commit before a queued Worker result arrives. Outcome is `published` only when the exact receipt is installed and settlement is completed; otherwise retained conversation facts become unavailable/unknown.
+
+Entry-cache and sharing-acquisition state bind retained predicates/generations to the physical database identity and original session generation. Newer committed facts supersede delayed older publications. Unknown postimages require a fresh read, and mismatched generation/membership facts invalidate the retained acquisition instead of adopting another lifecycle.
+
+Transcript authority is captured in the existing mutation before COMMIT/savepoint release, produces exact commit receipts, and is published by the native settlement owner while it still holds the writer FIFO. Retained transcript publication checks source identity and supersession; outcome-unknown or a receipt mismatch installs unknown facts rather than pretending a committed transcript postimage.
+
+### 43.4 Native-binding, deletion and maintenance adapters keep one settlement owner
+
+New frozen identities:
+- `src/config/sessions/session-entry-deletion.ts@6977a11ded189cd9bbf00524934d86555ae063b7`
+- `src/config/sessions/session-maintenance-finalization.ts@75fdd2b8379bbd4a09aea4d0216913b19bca5fd1`
+- `src/config/sessions/session-native-binding.ts@0c0cdd1384232ca54fa1e89c43650506b856e3f3`
+- `src/config/sessions/session-agent-purge.kernel.ts@aa88b8642535c3ecc27d337430b3dbfe44297028`
+- `src/config/sessions/session-maintenance-finalization.worker.ts@eaa8261973d8619a77ee14635bdd503ac32bc5e3`
+
+Entry deletion and maintenance finalization reuse the caller's retained execution and choose the native-binding operation only when exact deletion participants were captured. Maintenance sizing/statistics also stay on that original executor. Finalization publishes only the committed maintenance result.
+
+Native-binding settlement rechecks caller authority, captured deletion authority, shared-state admission and every participant before transaction entry. It waits the retained transaction settlement and the admission settlement, then accepts only a typed closed receipt proving committed or rolled-back phases. If receipt/settlement is absent, transport outcome is uncertain, or plugin-state publication fails, every participant is settled `unknown`, the publication is marked unknown and that native generation is forbidden from reuse. An explicit committed/rolled-back receipt is required for those stronger outcomes.
+
+The purge kernel recomputes the currently owned session-key set and requires it to equal the prepared set before deleting. It rechecks every planned lifecycle artifact preimage, deletes only materialized plans that still match, then applies maintenance. Historical windows not owned by the retired entry remain under retention ownership.
+
+The maintenance-finalization Worker runs the same database finalizer and transfers a candidate through the existing agent admission; native bindings use the established native-binding transaction, otherwise the existing agent `writeTransaction`.
+
+### 43.5 SessionManager and actor transports install only exact native receipts
+
+New frozen identities:
+- `src/agents/sessions/session-manager-publication.ts@309970072817c5d5a8160dbf888f7749a8a6d75f`
+- `src/config/sessions/session-actor-sqlite.ts@18682b93ee88e4b18c5cae3b1aecf6c0bad1d7f2`
+
+SessionManager parses transcript, entry and conversation publication receipts at commit admission and requires every receipt source identity to equal the admitted database identity. It retains all publication domains under one native receipt boundary. Committed facts must match the admitted postimage exactly before identity publication; otherwise publication is refused. If retained settlement completes without a recognized commit receipt, only a confirmed non-protocol rollback can be classified rolled-back; all other cases settle the retained facts as unknown.
+
+The SQLite session actor similarly keeps admission and settlement with its durable transport. Transaction/commit grants require target-specific admission evidence and live authority. A committed actor result is accepted only after retained native settlement plus the exact transferred receipt matching command id, phase id and phase. Transport timeout or reply loss is not native settlement. Unknown outcomes invalidate the replica and require reconciliation before another command; committed outcomes may run retained follow-up work only after the commit has already been installed.
+
+### 43.6 Focused oracles distinguish commit, rollback, unknown and supersession
+
+New frozen identities:
+- `src/config/sessions/session-accessor.sqlite-maintenance-writer.test.ts@1d73fd1a9c779d959b3d37b4f32edb34d2fafbc9`
+- `src/config/sessions/session-accessor.sqlite-archive.worker.test.ts@c4bf1c580dce8721a903d161e885f0e09c829bf2`
+- `src/config/sessions/session-accessor.sqlite-replacement-publication.test.ts@f0bd876a0eaf6cabc680d769ed87f35f53d662c0`
+- `src/config/sessions/session-accessor.sqlite-replacement-receipts.test.ts@67e44bc974192f1e8fba9340876931d818a30df0`
+- `src/config/sessions/session-actor.test.ts@1bd4a01192153c103d085afa07d3e3f2ca99ad3c`
+
+Maintenance-writer oracles show finalization returns only exact committed indices, preserves changed/conflicting entries, protects active session-key/session-id identities, does not block foreground ingress behind automatic finalization, and preserves committed planner statistics through later predicate/authorization failures.
+
+Archive-worker oracles prove materialization never creates the derived archive file itself, preserves distinct generations for a restored physical session id, normalizes oversized pending names after deletion commit, routes a logical agent through the exact physical owner, rejects deduped plans with conflicting snapshots, refuses transcript changes between planning/materialization/commit, and leaves lifecycle state untouched when archive materialization cannot be safely published.
+
+Replacement-publication tests explicitly exercise commit, rollback and unknown boundaries, lost/overtaken result delivery, callback/release failure and superseding writes. During a committed-but-not-yet-installed interval retained conversation authority is unavailable; withholding the real COMMIT receipt never invents a postimage. Unknown publication invalidates retained facts without emitting identity mutation.
+
+Replacement-receipt tests verify exact receipt coverage in autocommit and transaction modes, prevent later native writes from certifying older metadata, keep unrelated predicates current, preserve newer successor facts over delayed older receipts, fence all retained readers after native publication installation failure, bind removal receipts to their original physical store across locator rebinding, and preserve durable native commit even when public fact/projection installation fails before notification.
+
+Actor tests recover a transferred native commit after ordinary reply loss without replay, refuse incomplete outcome transfer, preserve FIFO around rolled-back mutations, install append receipts before retained follow-up work, preserve committed state through worker-publication/reply/observer failures, require reconciliation after unknown settlement, wait actual native settlement on release, and refuse new admission while already accepted work finishes its committed reducers.
+
+Previously registered Section 42 transaction helpers, lifecycle-projection Worker, worker-operation settlement and conversation-route ownership tests were re-read only as context and are not duplicated.
+
+### 43.7 Closure result
+
+The transaction/publication foundation now closes as one chain: exact transaction preimage -> physical COMMIT/rollback -> typed commit receipt -> retained settlement -> fact installation -> public observers. None of the newly exposed layers treats operation identity, Worker reply, archive file, pending publication, cache state or transport success as substitute commit proof. Unknown outcomes fence state and force fresh read/reconciliation; they do not replay the mutation or create a second writer.
+
+No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. All test files above were read only at the frozen ref and were not executed. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, OCRM final acceptance and release acceptance remain absent.
