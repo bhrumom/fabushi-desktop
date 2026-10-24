@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "e46b8e9f0c95f3020b4b8bdd61195f5a6dc0dd94",
+  "target_commit": "a67a56cb4073d375629bb0d325b20a4dcf26257b",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16193,
-    "unread": 16168,
+    "unknown": 16192,
+    "unread": 16167,
     "omitted": 0,
-    "responsibilities_total": 201,
+    "responsibilities_total": 202,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -53053,6 +53053,244 @@
       "license_and_provenance": "Exact pinned wrap source retained as dependency acquisition/package-discovery provenance. Its mutable remote HEAD is not accepted as shipping authority. Root MicroTeX is MIT while README preserves separate font/XML resource licenses; no dependency or resource code is copied into Fabushi shipping runtime by this row.",
       "reviewer": "primary-session",
       "notes": "Strict183 source-only mutable Meson wrap acquisition/package-discovery provenance. Counters unknown=16193 unread=16168 omitted=0 responsibilities=201. revision=head remains mutable/non-authoritative; fixed child has no wrap consumer; tdesktop shipping uses pinned desktop-app MicroTeX through pinned cmake_helpers. Production MicroTeX and recursive closure remain open; receipt-head Actions required; baseline/source closure/release acceptance remain false."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/MicroTeX",
+      "source_blob_sha": "61aaa7cc354de91d5898ffb0b2a6c62628d9a76f",
+      "source_kind": "recursive_child_repository_optional_example_cmake_build_package_discovery_provenance",
+      "module_id": "tdesktop.thirdparty.microtex.example-cmake",
+      "responsibility_id": "TDRP-R9-MICROTEX-EXAMPLE-CMAKE-PROVENANCE-001",
+      "source_symbols": [
+        "desktop-app/MicroTeX:example/CMakeLists.txt@cd997be0b043913d17c49c1e1e2c50df2c5d6942",
+        "add_executable(latex2png latex2png.cpp)",
+        "find_package Qt5/Qt6 Core+Gui REQUIRED",
+        "target_link_libraries latex2png -> local LaTeX + Qt Core/Gui",
+        "root CMake BUILD_EXAMPLE defaults OFF; add_subdirectory(example) only when enabled",
+        "direct example/latex2png.cpp context-read only; remains independently unread",
+        "accepted tdesktop shipping uses pinned external_microtex/td_iv instead"
+      ],
+      "capability_ids": [
+        "CAP-DEPENDENCY-SOURCE-PROVENANCE",
+        "CAP-DEPENDENCY-EXAMPLE-BUILD-PROVENANCE",
+        "CAP-DEPENDENCY-PACKAGE-DISCOVERY-PROVENANCE"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/MicroTeX@61aaa7cc354de91d5898ffb0b2a6c62628d9a76f",
+        "desktop-app/MicroTeX:example/CMakeLists.txt@cd997be0b043913d17c49c1e1e2c50df2c5d6942",
+        "desktop-app/MicroTeX:CMakeLists.txt@75059dec500cff8114728331eb5cb317abf6daf9",
+        "desktop-app/cmake_helpers:external/microtex/CMakeLists.txt@a1f479d2833bbb0cf0e007ee8fd33a40c10d9334",
+        "telegramdesktop/tdesktop:Telegram/cmake/td_iv.cmake@ec39405fc3c7bec58f8acb42aa49ed69c60d1b30",
+        "telegramdesktop/tdesktop:Telegram/CMakeLists.txt@2ea9badfc5750b9b4eab111052faafe946fea277",
+        "desktop-app/MicroTeX:README.md@824af04fd8607532efed3f73752b81e5093577ef",
+        "desktop-app/MicroTeX:LICENSE@78a9eca5ca3514f2fd0a2e81018eeb8ae7d981a2"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microtex-example-cmakelists-complete-read.md",
+      "behavior_contract": "Source-only optional example-build/package-discovery provenance. BUILD_EXAMPLE must be enabled before latex2png is configured; accepted tdesktop bypasses this graph and uses pinned external_microtex.",
+      "state_machine": "BUILD_EXAMPLE OFF -> no example target; ON -> add_subdirectory(example) -> resolve Qt Core/Gui -> compile latex2png.cpp -> link local LaTeX + Qt. Accepted tdesktop follows pinned external_microtex/td_iv.",
+      "side_effects": [
+        "Optional creation of latex2png build target",
+        "Qt package discovery for optional example",
+        "No default child-build effect",
+        "No Fabushi product side effect"
+      ],
+      "failure_cases": [
+        "Qt package unavailable",
+        "example compile/link failure",
+        "optional example graph mistaken for shipping",
+        "contextual direct-source read miscounted as closure",
+        "example provenance promoted to production closure"
+      ],
+      "ui_disposition": "Not a product UI source; optional third-party example-build metadata only.",
+      "non_ui_responsibilities": [
+        "exact example CMake identity",
+        "BUILD_EXAMPLE gating",
+        "Qt Core/Gui discovery",
+        "local LaTeX linkage",
+        "direct source consumer boundary",
+        "shipping separation",
+        "README/license provenance"
+      ],
+      "platform_delta": "Optional Qt example metadata only; no Fabushi platform or renderer ownership.",
+      "existing_owner_candidates": [
+        "Existing TDRP recursive source/dependency example-build and package-discovery provenance governance (selected)",
+        "Shipping formula/resource/platform/package owners (rejected)",
+        "MicroTeXExampleRuntime/TelegramRenderer/second build graph (rejected)"
+      ],
+      "existing_owner": "Existing TDRP recursive source/dependency example-build and package-discovery provenance governance.",
+      "rejected_existing_owners": [
+        "Shipping owners do not own optional third-party demo metadata.",
+        "Parallel runtime/example app would preserve upstream sample architecture.",
+        "Second package/build graph would duplicate canonical governance."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/dossiers/upstream-microtex-example-cmakelists-complete-read.md"
+      ],
+      "fabushi_target_symbols": [
+        "TDRP_MICROTEX_EXAMPLE_CMAKE_PROVENANCE_001"
+      ],
+      "target_language": "Source-only CMake example/package-discovery provenance; no shipping implementation.",
+      "language_rationale": "Optional build metadata rather than product logic, canonical UI, or platform adapter.",
+      "command_event_contracts": [
+        "BUILD_EXAMPLE defaults OFF",
+        "enabled path creates latex2png",
+        "Qt Core/Gui + local LaTeX only",
+        "accepted tdesktop uses external_microtex",
+        "example provenance cannot authorize release closure"
+      ],
+      "state_owner": "CMake optional example graph only; no Fabushi product state.",
+      "lifecycle_owner": "Pinned child CMake plus explicit optional build invocation; no shipping lifecycle owner.",
+      "persistence_and_restart": "No product persistence; generated example build state only.",
+      "concurrency_and_cancellation": "No product concurrency contract.",
+      "security_boundary": "No shipping trust authority; accepted exact pinned tdesktop/MicroTeX/cmake_helpers refs remain authoritative.",
+      "network_service_dependencies": [
+        "GitHub Actions for exact-head Fabushi evidence"
+      ],
+      "service_owner": "Third-party build configuration only; not a Fabushi service owner.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-optional-example-cmake-package-discovery-provenance-mapped-open",
+      "blockers": [
+        "No production closure.",
+        "Direct latex2png.cpp remains independently unread.",
+        "Accepted tdesktop shipping bypasses example graph.",
+        "Real MicroTeX production responsibilities remain open.",
+        "Broader recursive source closure remains open.",
+        "Fresh receipt-head Actions required."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "example/CMakeLists.txt@cd997be0b043913d17c49c1e1e2c50df2c5d6942 fully read: 300 bytes.",
+        "Pinned MicroTeX tree truncated=false with 315 entries / 279 blobs.",
+        "Root CMakeLists.txt@75059dec500cff8114728331eb5cb317abf6daf9 defines BUILD_EXAMPLE OFF and conditional add_subdirectory(example).",
+        "Direct example source was fully read for edge verification but remains independently unread in accounting.",
+        "Pinned cmake_helpers external_microtex production graph, td_iv link, and Telegram RCC packaging re-read.",
+        "README and MIT/resource-license boundary re-read.",
+        "Parent a67a56cb4073d375629bb0d325b20a4dcf26257b: TDRP 40104206558 61/61, Rust 40104206565 6/6, Official MCP 40104206597 1/1 success."
+      ],
+      "target_commit": "a67a56cb4073d375629bb0d325b20a4dcf26257b",
+      "workflow_run": 40104206558,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12563787417,
+      "artifact_digest": "sha256:ec6bdf03e11f001533114106b613b5fe9bffe0c335d843cbc7751f67ba3ab613",
+      "composition_root": "Existing TDRP recursive source/dependency example-build and package-discovery provenance governance.",
+      "composition_slot": "Optional dependency example-build/package-discovery provenance only; no shipping slot.",
+      "capability_component": "MicroTeX example CMake provenance; no shipping runtime.",
+      "variation_axes": [
+        "BUILD_EXAMPLE OFF/ON",
+        "Qt5/Qt6",
+        "standalone child vs accepted tdesktop shipping graph"
+      ],
+      "shared_owner_contracts": [
+        "TDRP recursive inventory/build provenance governance",
+        "Pinned MicroTeX gitlink/tree",
+        "Pinned cmake_helpers external_microtex production boundary",
+        "Exact-head Actions evidence",
+        "Shipping owners remain separate"
+      ],
+      "duplicate_root_check": "No MicroTeXExampleRuntime, TelegramRenderer, second package registry or second build graph.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "No product action; optional dependency example-build provenance only.",
+      "detail_section": "Not applicable",
+      "capability_surface": "Source-only dependency example-build/package-discovery provenance; no shipping surface.",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Any pin, example CMake, BUILD_EXAMPLE gate, direct source binding, Qt dependency, or external_microtex shipping graph drift requires exact-ref reconciliation.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No icon change.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-MICROTEX-EXAMPLE-CMAKE-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MICROTEX-EXAMPLE-CMAKE-EXACT-SOURCE-001",
+        "ORA-TDRP-MICROTEX-EXAMPLE-CMAKE-OPTIONAL-GRAPH-001",
+        "ORA-TDRP-MICROTEX-EXAMPLE-CMAKE-SHIPPING-SEPARATION-001",
+        "ORA-TDRP-MICROTEX-EXAMPLE-CMAKE-NO-PRODUCTION-CLOSURE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MICROTEX-EXAMPLE-CMAKE-NO-PARALLEL-RUNTIME-001",
+        "INV-TDRP-MICROTEX-EXAMPLE-CMAKE-DIRECT-CONSUMER-INDEPENDENT-001",
+        "INV-TDRP-MICROTEX-EXAMPLE-CMAKE-PRODUCTION-RESPONSIBILITIES-NOT-CLOSED-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MICROTEX-EXAMPLE-CMAKE-PINNED-SOURCE-001",
+        "CONTRACT-TDRP-MICROTEX-EXAMPLE-CMAKE-OPTIONAL-BUILD-BOUNDARY-001",
+        "CONTRACT-TDRP-MICROTEX-EXAMPLE-CMAKE-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-MICROTEX-EXAMPLE-CMAKE-SOURCE-DRIFT-001",
+        "FAULT-TDRP-MICROTEX-EXAMPLE-CMAKE-EXAMPLE-PROMOTION-001",
+        "FAULT-TDRP-MICROTEX-EXAMPLE-CMAKE-PRODUCT-PROMOTION-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "Pinned MicroTeX example/root CMake tree",
+        "Pinned tdesktop MicroTeX/cmake_helpers production boundary",
+        "GitHub Actions exact-head evidence"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact pinned example CMake retained as dependency provenance. Root MIT plus separate resource-license boundary preserved.",
+      "reviewer": "primary-session",
+      "notes": "Strict184 optional example CMake provenance. Counters unknown=16192 unread=16167 omitted=0 responsibilities=202. BUILD_EXAMPLE defaults OFF; direct example source remains independently unread; production closure open."
     }
   ]
 }
