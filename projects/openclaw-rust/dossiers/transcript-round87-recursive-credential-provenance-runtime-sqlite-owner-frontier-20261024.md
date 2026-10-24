@@ -5655,3 +5655,47 @@ New frozen identities:
 
 - Immediately before this append, the live branch lease was `cf5364e40706e6556d72d157a537f8b39938b1d9`, tree `3475e9b66b741213a2eb9623b0186dfd9a19c7c5`, and the Round87 dossier was blob `b5f7aaaa36f205d67388ed037224f989cc92d2e1`, 5621 lines, with no Section 82. Both newly registered exact path/SHA pairs above occurred zero times in the complete dossier.
 - This pass remains frozen-source/read-only audit work. No GitHub Actions workflow is started or rerun, and no production code, parity ledger, RTM, acceptance flag, source lock, inventory, or source baseline file is modified. The requested single pre-replacement/lost-reply Cron predecessor public `runId` -> real `removeCronRunContinuationSessionIfIdle` exact-alias deletion -> public `cron.runs { id, runId, limit: 1 }` terminal-read fixture remains absent, as do the direct Gateway remote-STOP replacement late-success fence oracle and a distinct failed-publication receiver handoff/new plural native-admission caller. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring parity, package/device proof, release acceptance, and final OCRM acceptance remain open.
+
+## Section 83 — Cron public history identity and exact continuation-session identity are separate production domains; the recovery queue carries only the exact session key
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`. This pass continues Section 82 by tracing the queue entry backward through Cron launch/history identity creation and forward through isolated-session preparation. It registers only frozen exact refs that occurred zero times in the complete Round87 dossier immediately before this append.
+
+New frozen identities:
+- `src/cron/service/run-queue-execution.ts@d5729ef5279b1166a674714d5458e330519d4f89`
+- `src/cron/service/run-history.ts@2197b1c79a8f70949f689b4719c312f21479fe87`
+- `src/cron/service/timer-job-runner.ts@97e691480dd42e435905bb716cf1177f304c584b`
+- `src/cron/isolated-agent/run-prepare.ts@77691d665c888536752aeb50325f22500c136aa2`
+- `src/cron/isolated-agent/session.ts@7ac14ac184e50e8fd2c8d13e17100ea029aa4d8b`
+- `src/infra/session-delivery-queue.records.ts@5d7df389d777c649fc9357e8f79dff9a0a5c2ac2`
+- `src/infra/session-delivery-queue-storage.ts@ad14b0d99392d9a884fbfd0a58a4c62a62280ece`
+
+### 83.1 The acknowledged public Cron run id enters the history/task identity, but that identity stops before isolated-agent execution
+
+- New production exact-ref `src/cron/service/run-queue-execution.ts@d5729ef5279b1166a674714d5458e330519d4f89` passes the accepted request's public `options.runId` into `createCronRunHandle` together with the active durable receipt, obtains `taskRunId`, and passes that value to `executeJobCoreWithTimeout`.
+- New production exact-ref `src/cron/service/run-history.ts@2197b1c79a8f70949f689b4719c312f21479fe87` defines that handle precisely: the durable receipt id is preferred as the history discriminator, the public id is appended as a suffix when it differs, and a random discriminator is used only when neither is present. This is the Cron task/history identity that allows recovery to preserve the acknowledged public id without making that public id the execution-session identity.
+- New production exact-ref `src/cron/service/timer-job-runner.ts@97e691480dd42e435905bb716cf1177f304c584b` uses `opts.runId` to register the active Cron task and cancellation owner, but deliberately constructs `ExecuteJobCoreOptions` without that run id before calling `executeJobCore`. The already registered `timer-execution.ts@792dda1688c37120155dcf68082b582dab48b9a2` then calls `runIsolatedAgentJob` with the job, admission/delivery fences and execution callbacks, not with the history/public run id.
+- The already registered production Gateway wrapper `server-cron-agent-run.ts@e1d95fbfe3836e87a3b17826927cb4456d69471a` therefore starts the isolated turn from the stable base `sessionKey: cron:<jobId>`; it does not reintroduce the public Cron run id at that boundary.
+
+### 83.2 The exact `:run:` alias is minted from a fresh session id, independently of the public/history run id
+
+- New production exact-ref `src/cron/isolated-agent/run-prepare.ts@77691d665c888536752aeb50325f22500c136aa2` resolves the stable Cron session key, enables an exact run session for detached/cron execution, and constructs `runSessionKey` as `<agentSessionKey>:run:<runSessionId>`, where `runSessionId` comes from the prepared session entry. Its internal input provenance also names this `runSessionId`, not the public Cron history id.
+- New production exact-ref `src/cron/isolated-agent/session.ts@7ac14ac184e50e8fd2c8d13e17100ea029aa4d8b` shows that a forced fresh isolated run mints that session id with `crypto.randomUUID()` and independently mints the lifecycle revision. The exact continuation alias consumed by the already registered `removeCronRunContinuationSessionIfIdle` path is therefore session-incarnation identity, not a textual alias of the acknowledged public Cron run id.
+- This identity split explains why the existing `run-recovery.test.ts@f519dde1c823a1322de0e6e6f2e71ffb4f170f84` can preserve predecessor public ids such as its acknowledged/legacy manual-run ids while the exact session cleanup path has no public id parameter to reuse.
+
+### 83.3 The durable delivery queue recognizes exact Cron-session authority but stores no Cron receipt/public-run binding
+
+- New schema exact-ref `src/infra/session-delivery-queue.records.ts@5d7df389d777c649fc9357e8f79dff9a0a5c2ac2` persists `sessionKey` on both delivery payload forms plus retry/settlement state. Its optional owner `runId` belongs specifically to `subagent_completion` together with task/generation/deadline; the queue payload has no Cron `publicRunId` or Cron receipt field.
+- New production storage exact-ref `src/infra/session-delivery-queue-storage.ts@ad14b0d99392d9a884fbfd0a58a4c62a62280ece` parses an exact Cron `:run:` suffix only to acquire and fence the corresponding session incarnation before enqueue/publication. `enqueueSessionDelivery` and `enqueueClaimedSessionDelivery` persist the supplied payload without augmenting it with Cron history/receipt identity.
+- Consequently Section 82's production restart recovery can carry the exact `entry.sessionKey` into `settleQueuedSessionDelivery` and then physical exact-alias cleanup, but that queue row cannot by itself recover the predecessor public Cron run id. The already registered `cron.history.test.ts@3f73f83b907ba2df874edb7eef772d1a2c72e244` proves a seeded history record can contain both a public `runId` and an exact `sessionKey`; it does not prove the runtime queue/cleanup path performs that join.
+- No frozen focused fixture found in this pass combines one pre-replacement/lost-reply public Cron run id with the real queue settlement, real `removeCronRunContinuationSessionIfIdle` deletion, and a subsequent public `cron.runs { id, runId, limit: 1 }` terminal read.
+
+### 83.4 Remote Stop and native-publication frontiers remain unchanged
+
+- Re-reading `session-processes.test.ts@4d65f9bcd624ea2031ecbe7493f9ee1daed3b4d3` confirms its deferred remote reply still dispatches `sessions.processes.list`; its `sessions.processes.stop` case checks authorization/stale instance handling and does not replace `placementGeneration` or `activeOwnerEpoch` while Stop is in flight. The already registered production post-I/O currentness fence remains stronger than its direct test coverage, but the requested late-success Stop replacement oracle is still absent.
+- Frozen native-admission recheck still finds only the already registered production plural `settlePluginNativeAdmissions` callers in `plugin-generation-preparation.worker.ts@22055912ec8cfadd3ccaeaffd5298bc0056ab260` and `prepared-model-runtime.build.ts@0fec2f4ad347ded36c4a4f713b2126b09cd29562`. The additional generation worker settles one captured admission state with the singular API; it is not a new plural caller. Rejected/throwing publication remains retained in admission custody for retry, with no distinct failed-publication receiver handoff discovered.
+
+### 83.5 Dedupe, lease, and remaining acceptance state
+
+- Immediately before this append, the live branch lease was `d346fae8e3491dde9f8acb3a7e409c84bfe18263`, tree `f2d5c0acb25d26dbbcc68e53958bae0bca7ba4e2`, and the Round87 dossier was blob `7d1a70e47c50d468db94b4f9e23b95891c0d2ce5`, 5658 lines, with no Section 83. All seven newly registered exact path/SHA pairs above occurred zero times in the complete dossier.
+- This pass remains frozen-source/read-only audit work. No GitHub Actions workflow is started or rerun, and no production code, parity ledger, RTM, acceptance flag, source lock, inventory, or source baseline file is modified. The requested integrated predecessor-public-id -> real exact-alias deletion -> public exact-run terminal-read fixture remains absent, as do the direct Gateway remote-STOP replacement late-success oracle and a distinct failed-publication receiver handoff/new plural native-admission caller. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring parity, package/device proof, release acceptance, and final OCRM acceptance remain open.
+
