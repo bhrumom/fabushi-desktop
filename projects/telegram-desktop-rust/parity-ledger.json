@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "db0f4b96eaa7b2ee0fce83e29a3f5278a1c66ef8",
+  "target_commit": "59d84e726b285a40020e473a72599710994a75b2",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16187,
-    "unread": 16162,
+    "unknown": 16186,
+    "unread": 16161,
     "omitted": 0,
-    "responsibilities_total": 207,
+    "responsibilities_total": 208,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -54603,6 +54603,268 @@
       "license_and_provenance": "Exact pinned Meson build/install provenance retained. MicroTeX code is MIT, while README excludes res fonts/XML and Meson resource subtree installs preserve font-specific plus Greek/Cyrillic license files. Accepted tdesktop shipping separately uses reduced bundled.qrc CMake path.",
       "reviewer": "primary-session",
       "notes": "Strict189 MicroTeX meson.build standalone build/install provenance. Counters unknown=16187 unread=16162 omitted=0 responsibilities=207. Current Meson composition is Cairo/GTK-oriented and does not enter tracked Qt manifest; accepted tdesktop external_microtex CMake shipping bypass remains separate and open."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/MicroTeX",
+      "source_blob_sha": "61aaa7cc354de91d5898ffb0b2a6c62628d9a76f",
+      "source_kind": "recursive_child_repository_meson_option_schema_provenance",
+      "module_id": "tdesktop.thirdparty.microtex.meson-options",
+      "responsibility_id": "TDRP-R9-MICROTEX-MESON-OPTIONS-PROVENANCE-001",
+      "source_symbols": [
+        "desktop-app/MicroTeX:meson_options.txt@998b92ad0052398df0f7843422c79f674c20dd58",
+        "TARGET_DEVEL: Meson boolean option, default true",
+        "TARGET_DEMO: Meson combo option, choices NONE|GTK, default NONE; comment records QT and Win32 as future TODO only",
+        "src/meson.build@84ce4f05fceb8419a326bf6a059d2583c793fc9a: sole direct TARGET_DEVEL get_option owner (2 reads) and one TARGET_DEMO non-NONE read",
+        "src/samples/meson.build@68e634d18291a5113c800725782bcc4d5e7b3327: direct TARGET_DEMO == GTK branch",
+        "derived install_headerfiles fans TARGET_DEVEL into conditional install_headers blocks; tracked Qt header branch is still outside current platform composition",
+        ".github/workflows/ubuntu-gtk.yml@9863f6100fd12d94b21e81e1c5f4859aad3c1764: meson _build -DTARGET_DEMO=GTK; TARGET_DEVEL left at default true",
+        "accepted tdesktop shipping bypass: cmake_helpers external/microtex/CMakeLists.txt@a1f479d2833bbb0cf0e007ee8fd33a40c10d9334 uses BUILD_QT + bundled.qrc and does not consume TARGET_DEVEL/TARGET_DEMO"
+      ],
+      "capability_ids": [
+        "CAP-DEPENDENCY-SOURCE-PROVENANCE",
+        "CAP-DEPENDENCY-BUILD-OPTION-SCHEMA-PROVENANCE",
+        "CAP-DEPENDENCY-MESON-COMPOSITION-PROVENANCE",
+        "CAP-DEPENDENCY-LICENSE-PROVENANCE"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/MicroTeX@61aaa7cc354de91d5898ffb0b2a6c62628d9a76f",
+        "desktop-app/MicroTeX:meson_options.txt@998b92ad0052398df0f7843422c79f674c20dd58",
+        "desktop-app/MicroTeX:meson.build@d9968045f0162b8f1f8f518f554fd71199f067d5",
+        "desktop-app/MicroTeX:src/meson.build@84ce4f05fceb8419a326bf6a059d2583c793fc9a",
+        "desktop-app/MicroTeX:src/samples/meson.build@68e634d18291a5113c800725782bcc4d5e7b3327",
+        "desktop-app/MicroTeX:src/platform/meson.build@d2995274e8aea630f6f45cc1761353d18fd1854e",
+        "desktop-app/MicroTeX:src/platform/qt/meson.build@b73017e71c4362fc5c99df52b6792e1a13763161",
+        "desktop-app/MicroTeX:.github/workflows/ubuntu-gtk.yml@9863f6100fd12d94b21e81e1c5f4859aad3c1764",
+        "desktop-app/MicroTeX:README.md@824af04fd8607532efed3f73752b81e5093577ef",
+        "desktop-app/MicroTeX:LICENSE@78a9eca5ca3514f2fd0a2e81018eeb8ae7d981a2",
+        "desktop-app/MicroTeX:res/greek/LICENSE@f288702d2fa16d3cdf0035b15a9fcbc552cd88e7",
+        "desktop-app/MicroTeX:res/cyrillic/LICENSE@f288702d2fa16d3cdf0035b15a9fcbc552cd88e7",
+        "desktop-app/cmake_helpers:external/microtex/CMakeLists.txt@a1f479d2833bbb0cf0e007ee8fd33a40c10d9334",
+        "telegramdesktop/tdesktop:Telegram/cmake/td_iv.cmake@ec39405fc3c7bec58f8acb42aa49ed69c60d1b30",
+        "telegramdesktop/tdesktop:Telegram/CMakeLists.txt@2ea9badfc5750b9b4eab111052faafe946fea277"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microtex-meson-options-complete-read.md",
+      "behavior_contract": "Source/build-option provenance for the pinned MicroTeX Meson option schema. TARGET_DEVEL is boolean default true and gates standalone Meson development metadata/header installation through src/meson.build. TARGET_DEMO is combo NONE|GTK default NONE; NONE omits the sample subdir/executable and GTK enters the GTK sample branch. Meson rejects values outside the declared combo choices. Accepted tdesktop shipping does not consume these options and instead builds the pinned fork through cmake_helpers external_microtex with BUILD_QT and bundled.qrc. This row must not promote standalone Meson configuration into Fabushi/tdesktop shipping ownership or close formula/render/package responsibilities.",
+      "state_machine": "Meson option parse -> TARGET_DEVEL boolean default true; TARGET_DEMO combo default NONE with legal values NONE|GTK -> src/meson.build reads TARGET_DEVEL into install_headerfiles and separately gates pkg-config -> TARGET_DEMO NONE skips samples/executable; GTK enters src/samples and defines GTK sources/dependencies before executable construction -> invalid TARGET_DEMO value rejected by option schema before composition -> accepted tdesktop alternate path bypasses Meson options and composes external_microtex_bundled through CMake.",
+      "side_effects": [
+        "TARGET_DEVEL=true exposes standalone Meson pkg-config generation and conditional development-header install rules; false suppresses those development surfaces but does not suppress the clatexmath library or root resource installation.",
+        "TARGET_DEMO=GTK selects GTK sample sources/dependencies and an installable sample executable; NONE selects no sample executable.",
+        "The Ubuntu GTK workflow sets TARGET_DEMO=GTK only, so TARGET_DEVEL remains at its default true; the workflow compiles/archives but does not run tests or install.",
+        "No Fabushi product persistence, account, messaging, renderer or release side effects are owned by this option file."
+      ],
+      "failure_cases": [
+        "TARGET_DEVEL incorrectly treated as controlling the core clatexmath library or root resource installation.",
+        "TARGET_DEMO=NONE incorrectly treated as building the GTK sample.",
+        "A value such as QT or Win32 incorrectly treated as currently legal because the source comment names them as TODO; the combo choices contain only NONE and GTK.",
+        "The combo schema is broadened to a new non-NONE value without adding a corresponding src/samples branch, leaving samples_src/samples_dep undefined when src/meson.build constructs the executable.",
+        "Ubuntu compile-only workflow evidence promoted to runtime/test/product acceptance.",
+        "Standalone Meson option behavior promoted to accepted tdesktop/Fabushi shipping composition.",
+        "Root MIT provenance flattened across res fonts/XML despite the README exclusion and resource-specific licenses."
+      ],
+      "ui_disposition": "Not a Fabushi product UI source; third-party standalone Meson build/install/development-environment provenance only.",
+      "non_ui_responsibilities": [
+        "Exact TARGET_DEVEL boolean schema/default",
+        "Exact TARGET_DEMO combo schema/default/legal-value set",
+        "Complete direct get_option consumer inventory across all 17 tracked meson.build manifests",
+        "TARGET_DEVEL derived header-install composition boundary",
+        "TARGET_DEMO NONE/GTK composition and invalid-value negative oracle",
+        "Ubuntu GTK direct configure consumer provenance",
+        "Accepted tdesktop CMake shipping bypass",
+        "Layered license/provenance boundary"
+      ],
+      "platform_delta": "The pinned standalone Meson graph exposes only NONE and GTK demo values and currently composes Cairo/GTK; the comment's QT/Win32 text is future intent, not an active option. Accepted tdesktop shipping reaches Qt through the separate pinned CMake external_microtex owner, so no second platform/runtime owner is introduced.",
+      "existing_owner_candidates": [
+        "Existing TDRP recursive source/build-option/license provenance governance (selected)",
+        "Pinned external_microtex shipping build/resource owner (context only)",
+        "Pinned td_iv/formula renderer owners (context only)",
+        "New MicroTeXMesonOptionsRuntime or second build root (rejected)"
+      ],
+      "existing_owner": "Existing TDRP recursive source/build-option/license provenance governance.",
+      "rejected_existing_owners": [
+        "external_microtex/td_iv shipping responsibilities remain independently open and cannot be closed by standalone option-schema reading.",
+        "A MicroTeXMesonOptionsRuntime or second build/package owner would preserve source-specific dependency architecture.",
+        "Formula rendering/UI semantics belong to existing canonical renderer/resource owners."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/dossiers/upstream-microtex-meson-options-complete-read.md"
+      ],
+      "fabushi_target_symbols": [
+        "TDRP_MICROTEX_MESON_OPTIONS_PROVENANCE_001"
+      ],
+      "target_language": "Source-only Meson option-schema/composition/license provenance; no shipping implementation.",
+      "language_rationale": "The target is third-party build configuration schema; applicable product behavior remains with existing formula/resource/package owners.",
+      "command_event_contracts": [
+        "Meson configure with no overrides -> TARGET_DEVEL=true and TARGET_DEMO=NONE.",
+        "TARGET_DEVEL=true -> pkg-config generation plus derived conditional header-install rules; false -> those development surfaces omitted.",
+        "TARGET_DEMO=NONE -> no samples subdir and no clatexmath sample executable.",
+        "TARGET_DEMO=GTK -> enter src/samples, require fontconfig/gtkmm-3.0/gtksourceviewmm-3.0, then build/install sample executable.",
+        "Any TARGET_DEMO value outside NONE|GTK -> fail option validation rather than silently selecting a backend.",
+        "Accepted tdesktop -> ignore Meson option schema and compose pinned external_microtex CMake target with BUILD_QT/bundled.qrc."
+      ],
+      "state_owner": "Third-party standalone Meson configure option state only.",
+      "lifecycle_owner": "Meson option parse/configure and derived build/install rule generation; accepted tdesktop shipping lifecycle remains external_microtex/td_iv.",
+      "persistence_and_restart": "Meson options live in external build configuration; no Fabushi account/session/product persistence.",
+      "concurrency_and_cancellation": "No product concurrency/cancellation contract; Meson/Ninja scheduling belongs to external build tooling.",
+      "security_boundary": "Option-schema legal values and defaults are fail-closed source authority. TODO comments, tracked-but-unselected backends, and standalone package surfaces cannot broaden shipping authority; resource-license boundaries remain independent of option choice.",
+      "network_service_dependencies": [
+        "GitHub Actions for exact-head Fabushi evidence",
+        "Ubuntu apt repositories for the child TARGET_DEMO=GTK workflow consumer"
+      ],
+      "service_owner": "Third-party build/CI infrastructure only; no Fabushi network service owner.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-meson-option-schema-provenance-mapped-open",
+      "blockers": [
+        "No production formula/render/package closure.",
+        "Accepted shipping external_microtex/td_iv responsibilities remain separately open.",
+        "Broader recursive source closure remains open.",
+        "Fresh receipt-head Actions required."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "meson_options.txt@998b92ad0052398df0f7843422c79f674c20dd58 fully read: 5 physical lines / 257 Git-tree bytes; mode 100644.",
+        "Pre-write independent responsibility registration count=0; the exact target occurs in exactly two existing dependency-context rows (strict179 Ubuntu GTK and strict189 meson.build).",
+        "Pinned MicroTeX recursive tree is truncated=false with 315 entries / 279 blobs; meson_options.txt follows meson.build in current tree order.",
+        "All 17 tracked meson.build manifests were exact-blob re-read. Direct get_option reads: src/meson.build has TARGET_DEVEL twice and TARGET_DEMO once; src/samples/meson.build has TARGET_DEMO once; no other manifest directly reads either option.",
+        "TARGET_DEVEL fans through install_headerfiles to conditional install_headers blocks; strict189 established 45 tracked declarations / 44 currently reachable because the Qt manifest is unselected.",
+        "ubuntu-gtk.yml@9863f6100fd12d94b21e81e1c5f4859aad3c1764 configures only -DTARGET_DEMO=GTK, leaving TARGET_DEVEL at default true, then builds/archives without a test or install phase.",
+        "README.md@824af04fd8607532efed3f73752b81e5093577ef documents the Cairo Meson path and NONE/GTK examples; the comment/TODO does not add legal option choices.",
+        "Pinned external_microtex/td_iv/Telegram CMake shipping chain re-read; it uses BUILD_QT and bundled.qrc and does not consume TARGET_DEVEL, TARGET_DEMO or meson_options.txt.",
+        "Root LICENSE is MIT for project code/build files; README excludes fonts/XML under res, with Greek/Cyrillic GPL-3.0 texts and font-specific licenses remaining separate.",
+        "Parent exact-head 59d84e726b285a40020e473a72599710994a75b2: TDRP 40116367956 completed 61/61 success; Rust 40116367954 completed 6/6 success; Official MCP 40116368142 completed 1/1 success."
+      ],
+      "target_commit": "59d84e726b285a40020e473a72599710994a75b2",
+      "workflow_run": 40116367956,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12570285067,
+      "artifact_digest": "sha256:c87d85698a5fc45a63c77ac3f49f06333020862031bd4830a967c12b69af08f6",
+      "composition_root": "Existing TDRP recursive source/build-option/license provenance governance.",
+      "composition_slot": "Dependency Meson option-schema/composition provenance only; no shipping renderer/resource/package slot.",
+      "capability_component": "MicroTeX standalone Meson option schema provenance; no parallel shipping runtime.",
+      "variation_axes": [
+        "TARGET_DEVEL true/false",
+        "TARGET_DEMO NONE/GTK",
+        "invalid combo value rejection",
+        "derived header-install fanout",
+        "standalone Meson composition versus accepted tdesktop CMake shipping",
+        "project MIT versus layered resource licenses"
+      ],
+      "shared_owner_contracts": [
+        "TDRP recursive dependency/build provenance",
+        "Pinned MicroTeX gitlink/tree",
+        "Pinned cmake_helpers external_microtex shipping owner",
+        "Pinned td_iv formula/resource initialization owner",
+        "GitHub Actions exact-head evidence",
+        "Shipping owners remain separate"
+      ],
+      "duplicate_root_check": "No MicroTeXMesonOptionsRuntime, second formula renderer, second resource owner, second package root or second shell.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "No product action; dependency build/install provenance only.",
+      "detail_section": "Not applicable",
+      "capability_surface": "Source-only dependency build/install/development-environment provenance; no shipping surface.",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Any target blob, option schema/default/legal-value set, direct Meson consumer, MicroTeX/cmake_helpers pin, accepted tdesktop shipping owner or license drift requires exact-ref reconciliation. Expanding TARGET_DEMO requires a matching sample-composition branch before a new value can be considered valid in practice.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No icon change.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MICROTEX-MESON-OPTIONS-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MICROTEX-MESON-OPTIONS-EXACT-SOURCE-001",
+        "ORA-TDRP-MICROTEX-TARGET-DEVEL-SCHEMA-CONSUMER-001",
+        "ORA-TDRP-MICROTEX-TARGET-DEMO-NONE-GTK-COMPOSITION-001",
+        "ORA-TDRP-MICROTEX-TARGET-DEMO-INVALID-CHOICE-001",
+        "ORA-TDRP-MICROTEX-MESON-OPTIONS-UBUNTU-GTK-CONSUMER-001",
+        "ORA-TDRP-MICROTEX-MESON-OPTIONS-TDESKTOP-SHIPPING-BYPASS-001",
+        "ORA-TDRP-MICROTEX-MESON-OPTIONS-LICENSE-BOUNDARY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MICROTEX-MESON-OPTIONS-NOT-TDESKTOP-SHIPPING-ROOT-001",
+        "INV-TDRP-MICROTEX-TARGET-DEMO-CHOICES-COUPLED-TO-SAMPLE-CONSUMER-001",
+        "INV-TDRP-MICROTEX-PRODUCTION-RESPONSIBILITIES-NOT-CLOSED-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MICROTEX-MESON-OPTIONS-PINNED-SOURCE-001",
+        "CONTRACT-TDRP-MICROTEX-MESON-OPTIONS-COMPOSITION-001",
+        "CONTRACT-TDRP-MICROTEX-MESON-OPTIONS-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-MICROTEX-MESON-OPTIONS-SOURCE-DRIFT-001",
+        "FAULT-TDRP-MICROTEX-TARGET-DEMO-SCHEMA-CONSUMER-DRIFT-001",
+        "FAULT-TDRP-MICROTEX-MESON-OPTIONS-LICENSE-CONFLATION-001",
+        "FAULT-TDRP-MICROTEX-MESON-OPTIONS-SHIPPING-PROMOTION-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "Pinned MicroTeX Meson option/manifests fixed tree",
+        "Pinned tdesktop MicroTeX/cmake_helpers production boundary",
+        "GitHub Actions exact-head TDRP Revision 9, Rust desktop runtime and Official MCP marketplace"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact pinned meson_options.txt retained as source/build-option provenance. The option file/project code is under the root MIT license; README explicitly excludes res fonts/XML, preserving Greek/Cyrillic GPL-3.0 texts and font-specific notices. Accepted tdesktop shipping separately uses the reduced bundled.qrc CMake path.",
+      "reviewer": "primary-session",
+      "notes": "Strict190 MicroTeX meson_options.txt standalone option-schema/composition provenance. Counters unknown=16186 unread=16161 omitted=0 responsibilities=208. TARGET_DEVEL is boolean default true; TARGET_DEMO is combo NONE|GTK default NONE; all direct Meson consumers and the accepted tdesktop CMake bypass were re-read. Production formula/resource/package responsibilities remain separate and open."
     }
   ]
 }
