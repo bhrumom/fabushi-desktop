@@ -2960,3 +2960,120 @@ Together these tests distinguish terminal latch, operation admission, Worker/nat
 This pass found new non-duplicate frozen evidence and therefore extends Section 35. The only newly exposed retained-native-worker production consumer at the frozen ref is plugin generation; the default-branch TTS writer is not present in the frozen source. Shared-state integrity gains three newly registered callers, while native borrow still terminates at the already registered cache owner. The remaining agent terminal/transaction/WAL/write/admission family resolves to the existing canonical agent database lifecycle, worker execution admission and exact physical identity; it does not create a second agent writer or a process-wide shared-state close owner.
 
 No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. The test files above are source-level negative oracles only and were not executed in this read-only round. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, OCRM final acceptance and release acceptance remain absent.
+
+
+## 36. Agent worker operation registry and connection-bound domain recursion
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`. This pass follows the still-unregistered production consumers exposed by Section 35.8/35.9 through the agent worker operation registry, without widening the frozen source or treating ordinary business kernels as new lifecycle owners.
+
+### 36.1 Session entry writer and recovery remain consumers of the admitted agent writer
+
+New frozen identities:
+- `src/config/sessions/session-accessor.sqlite-entry-write.ts@530b6a896146a1bdc263f3b6107956105301d2bb`
+- `src/config/sessions/session-accessor.sqlite-entry-mutation.ts@d7f771df2fc2b586036355b5a21d364293231153`
+- `src/config/sessions/session-accessor.sqlite-maintenance-store.ts@a0b50c2d288a3a602c5eea1f450275669adf13e4`
+- `src/config/sessions/session-accessor.sqlite-write-operation.ts@b8ca6e93718adf94daa6d4721629228b5393be62`
+- `src/config/sessions/session-accessor.sqlite-recovery.ts@565b7cbfeddcc63668720fb1c0aa4cbf7d9a3f88`
+- `src/infra/database-engine/session-entry-write.conformance.test.ts@d7a8dd0bff8c12220bf026657aad81a7bc43cc14`
+- `src/config/sessions/session-entry-recovery.worker.test.ts@b3a72c57cabd59362c3faf469bafc87023287c8a`
+- `src/config/sessions/session-accessor.recovery.test.ts@474741531b4ae68de0eab6459c600d80c9a1fad5`
+
+`writeSessionEntry` performs canonical-key/lineage validation, same-transaction canonical row reads, scoped node/window/snapshot/conversation mutation and staged cache/publication updates on the already-open `OpenClawAgentDatabase`; it never acquires or closes the database. Entry mutation explicitly documents that the caller owns transaction admission and post-commit publication. Maintenance batches reuse the same writer and revalidate candidate/protection facts before commit. The write-operation union is diagnostic classification only.
+
+Restart-tombstone recovery runs through the existing session-entry worker and retained worker transaction admission. It publishes only after the retained native admission reports completed settlement plus a matching commit receipt. Result loss after native commit is reconciled from that receipt; missing receipt or unknown native settlement becomes `outcome-unknown` rather than a replay. Focused recovery tests prove transaction/commit authority revocation refuses the mutation, committed recovery survives result loss and independent owner retirement, and uncertain native settlement remains uncertain.
+
+The database-engine conformance oracle proves archive batching matches sequential writes, rollback restores the prior state, refused/revoked worker commits do not publish, and actor/patch pairs do not create hidden extra writes. These are writer consumers, not a second writer owner.
+
+### 36.2 Agent operation registry is lazy routing; transaction and admission remain injected authority
+
+New frozen identities:
+- `src/state/openclaw-agent-execution-operations.ts@b70693f9b86af6555736bcd9f9e3950939d3ff7b`
+- `src/state/openclaw-agent-operation-context.ts@5e6a7e79255f00befca69729c13b5c952986bcba`
+- `src/state/worker-operation-registry.ts@84ddd568e26bbb07586389f997d590ebf6bb2762`
+- `src/state/openclaw-agent-execution-operations.test-support.ts@860e7501cf11283c0cdf9ae5a3946e1f89cc3d35`
+- `src/state/openclaw-state-worker-registry.test.ts@99d892fd9e5c9d5ca001f05e4049d826a7f8cf7b`
+
+The registry lazily loads a command namespace and dispatches only exact prepared operation names. It has no database-open, transaction or close capability. `AgentWorkerOperationContext` carries the canonical executor's `open`, `admit`, `writeTransaction` and optional exact shared-owner settlement callback into handlers. The already registered `openclaw-agent-execution.worker.ts@a533936aa520fc1770abd779a9fb9baec327ac41` constructs this context after checking physical identity, and its transaction wrapper rejects a different native handle before invoking the handler.
+
+The focused registry oracle explicitly supplies context functions that throw if the registry attempts to open a database or transact, proves only the requested domain is loaded, and proves an unprepared exact operation cannot execute. Therefore the large operation-loader map does not itself create another writer, admission service or lifecycle owner.
+
+### 36.3 Maintenance, schema refresh and connection-bound domains keep canonical ownership
+
+New frozen identities:
+- `src/state/openclaw-agent-execution-maintenance.ts@acb75cac5a3cd26c1c45107ee7979f82be9998bc`
+- `src/state/openclaw-agent-execution-domain.ts@0eb392c200c2b70913a58cad5c47e72ad6ca6eb1`
+- `src/state/openclaw-agent-db-schema-refresh.ts@1eaa87398b3aa7032dafcfbc16fe2c6cd99e875e`
+- `src/state/openclaw-agent-db-schema-refresh.test.ts@fd11999d7d7ea48f4a7247e861b3aa5a163fb951`
+- `src/state/openclaw-agent-db-validation-cache.test.ts@980f2051cab6cf3c6af0ab9aacc03d879be2328b`
+
+Maintenance preparation retains only its bounded snapshot and releases it on replacement/cleanup. Metadata commit opens the executor's writer, refuses a different canonical database, stages a commit receipt, and obtains transaction/commit admission from the injected context. Startup FTS repair additionally requires the one exclusive live agent lease under the shared-state write fence.
+
+Schema refresh explicitly re-admits an already-retained connection without replacing its native generation or lease. It refuses an active transaction, revalidates schema metadata/integrity, and invalidates validation on failure. Focused tests prove derived DDL can be republished without replacing the retained reader, a stale/replaced schema is readmitted, rollback does not certify canonical proof, delayed proof cannot revive after revocation, and replacement receives distinct physical validation.
+
+The domain owner binds only a static local module and borrows `context.assertCurrent()`'s canonical connection. Admission restrictions must dispatch exactly one grant at the original stage. Domain cleanup first revokes its authority, requires synchronous backend close, and cannot admit a transaction after revocation. A failed/unfinished binding is surfaced by `assertSettled`; the domain never owns the database close.
+
+### 36.4 Dynamic operation consumers use injected admission; no new database close owner was found
+
+New frozen identities with direct lifecycle/admission use:
+- `src/config/sessions/session-native-binding.worker.ts@db80768739b49d455d5109adecb121372ddde72d`
+- `src/config/sessions/session-entry-patch.worker.ts@07b5981995d3c9cf8ea3873ea9159d20974172bc`
+- `src/config/sessions/session-turn.worker.ts@4dbf1d36d210b49b3d9ee6bd56e4a5cf19269f17`
+- `src/acp/runtime/session-meta-entry.worker.ts@fbc2e983f8c10655ed7082182a086bdcd03c66a7`
+- `src/config/sessions/provider-review-store.worker.ts@740126306078995ad62229c7f00196ad4b2e81f0`
+- `src/config/sessions/session-pending-input-operations.kernel.ts@61b2f9f4a9d0df2962b8550f91e412d7634e6968`
+- `src/config/sessions/session-pending-input-withdrawal.worker.ts@2704dfdff20bd44ed31dd85266f14b53c4626bed`
+- `src/config/sessions/session-pending-input-history-reconcile.ts@78914f148d0dbf37a161f18fb849d2f602be111b`
+- `src/config/sessions/session-history-archive-pruning.worker.ts@c3acadb82a439b20bcb8745f3269456fdccdffc9`
+- `src/agents/auth-profiles/store-agent.worker.ts@6a668b093534d74f2303f7fe7b5eaa2db0d90fbe`
+
+The remaining dynamic modules under `createAgentWorkerOperationLoaders` were also exact-ref read. Ordinary read/replacement-state/conversation/trajectory kernels either have no lifecycle call or consume only the injected `open`/`writeTransaction`/`admit` context. The files above directly request admission or stage commit receipts, but none creates a new worker broker, native database generation or close authority.
+
+Native-binding settlement is the highest-risk direct consumer because it coordinates agent and shared-state writes. It explicitly receives `writeSharedTransaction` from the canonical executor and stages exact transfer receipts. Entry patch/turn, ACP metadata, provider review, pending inputs and archive pruning similarly request transaction/commit grants at the mutation boundary. Auth-profile read uses a preparation MessageChannel only to receive the host-supplied read field and closes those ports after preparation; it does not own the agent database.
+
+### 36.5 Focused negative oracles distinguish commit, delivery, settlement and close
+
+New frozen identities:
+- `src/config/sessions/session-native-binding.settlement.test.ts@021b30018cfa25e57de49a05cf30f9beca9e11b4`
+- `src/config/sessions/session-native-binding.reclamation.test.ts@f31f2580afc9ed628146c1ac070cb46cdb926faf`
+- `src/config/sessions/session-entry-patch.retention.test.ts@c469ae802025ce5821be72b100e589796ff2387d`
+- `src/config/sessions/session-entry-cohort.worker.test.ts@4d5d6cb5c882165c2c89aa47cffae7679e9b4037`
+- `src/config/sessions/session-pending-input-operations.test.ts@c68bd4996404552d2d9aa91b52e9e00a71aaf904`
+- `src/config/sessions/session-pending-input-withdrawal.test.ts@5e5c1b5e15bb21fce840a03bdb86fcd58e829f67`
+- `src/config/sessions/session-transcript-append-postimage.test.ts@744127ad72a01b9b7c9121fd42231b94502d3fe5`
+- `src/state/openclaw-agent-db-readonly-scope.test.ts@faae659f204b73c4effd8ea78da10e346554b7c0`
+- `src/infra/sqlite-readonly-worker.model-auth.test.ts@0f182913529f79f3054423bb5df20b5da637497c`
+
+The already registered `src/state/openclaw-agent-worker-store.test.ts@a8d5a1fd1284a2e5522021e58370bd3c04ea0f86` and `src/state/openclaw-agent-worker-store.env-capture.test.ts@9b1b4eee583263b2b1180839f5d01f331e73f911` were re-read as supporting domain-close oracles and are not duplicated in the identity list.
+
+Native-binding tests prove result loss plus storage-settlement failure is `outcome-unknown`, a mismatched commit receipt cannot finalize custody, worker loss after either shared or agent commit does not replay/compensate, rollback keeps original rows/binding, and final authority is revoked only after acknowledged deletion. Pending-input tests prove stale custody and lifecycle changes refuse completion, a commit refusal rolls back, lost reply/unknown settlement does not duplicate a mutation, and a confirmed committed withdrawal can be recovered from retained native admission. Entry-patch tests distinguish replacement, rollback, revoked lease and retained trajectory cleanup. Read-only auth tests prove admitted reads drain before maintenance close and cannot reuse a closed scope.
+
+The already registered agent-worker-store oracle further proves a publication can retain its database while root close remains pending, failed publication/domain cleanup is retryable, cleanup admission refusal cannot commit a close-time mutation, and a fresh worker is required after terminal failure. These facts keep database close, domain cleanup, native commit, result delivery and operation settlement separate.
+
+### 36.6 Connection-bound backend close only releases domain-local state
+
+New frozen identities read through the domain factory surface:
+- `src/config/sessions/session-fork-domain.worker.ts@1a1039e4a281ab8e111b2a48efa3b513b0087b2d`
+- `src/session-cards/progress-card-store.worker.ts@b64e91738285cda596e907551ca0da00af2ecd81`
+- `src/agents/harness/context-engine-turn-outbox.worker.ts@3734e5aef62ccb42efaca5230692aff0b38b7a23`
+- `src/boards/sqlite-board-store.worker.ts@b5def508fa1a35a7f4e625ced9faba64aa40b838`
+- `src/agents/auth-profiles/inline-usage.worker.ts@61bf2c6c4bc530cc222397e9d75bc22d55c54097`
+- `src/config/sessions/goals-operations.worker.ts@6e051c2e7840113a14b8880e43b63973216ed2a6`
+- `src/agents/plugin-model-catalog.worker.ts@df3005e5454613b194aed7413573df08b0a671f0`
+- `src/gateway/worker-environments/transcript-commit.worker.ts@9254c2d883d7523e248d6684b76ee0bdb6fa6a85`
+- `extensions/memory-core/src/memory-entry-origins.worker.ts@739181547f945eafeed93a14f9427f8ce43fe672`
+- `src/config/sessions/session-sharing-store.worker.ts@336463030dd13417c4dec7088f8f13f429ee14f3`
+- `src/config/sessions/session-lifecycle-projection.worker.ts@fc3802154834a866848e69ed78543bf342c18c41`
+- `src/agents/sessions/session-manager-metadata.worker.ts@9949b7fc7c0f5509713bfc03a148d60aec8dbf04`
+- `src/config/sessions/session-message-rewrite.worker.ts@9565b87c2030eee94e3986879a2809df5399c339`
+- `src/config/sessions/session-transcript-projection-publication.worker.ts@3de0b42301943511019e076d98d9a970494a91e5`
+- `src/config/sessions/session-accessor.sqlite-transcript-reports.worker.ts@aeccb6297d072b0c9464c3246fd43d9f1404e3ce`
+
+`extensions/memory-core/src/standing-intents.worker.ts` and `extensions/memory-core/src/memory/manager-publication.worker.ts` were already present in Round87 and were not re-registered.
+
+These backend factories all receive the canonical connection from the domain owner. Where a backend exposes `close()`, it releases only domain-local prepared state or auxiliary resources: transcript commit and transcript reports clear their prepared plans, while session-manager metadata explicitly documents that it neither opens nor closes the database. The domain owner revokes admission authority before invoking such cleanup. No backend in this scan became an independent agent database close owner.
+
+### 36.7 Closure result
+
+Section 36 closes the new frontier from the Section 35 agent admission chain through session entry writes, restart recovery, the lazy worker-operation registry, maintenance/schema refresh, connection-bound publication domains and their direct admission-consuming handlers. The canonical native database generation, durable lease and physical close remain owned by the existing agent lifecycle/executor. Registry handlers and domain backends borrow that owner; their local cleanup cannot reopen, replace or independently close it.
+
+No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. All test files above are source-level oracles only and were not executed in this read-only round. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, OCRM final acceptance and release acceptance remain absent.
