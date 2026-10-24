@@ -78,7 +78,8 @@
         "digest": "sha256:2bd9915e9f3fdf6480f88ef7f5b8df95609c0d9c9897e845616bcba56a15399a"
       },
       "baseline_identity_accepted": false,
-      "source_closure_ready": false
+      "source_closure_ready": false,
+      "evidence_status": "historical-only"
     }
   },
   "closure_rules": {
