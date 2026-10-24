@@ -1,0 +1,257 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "schema_version": 1,
+  "$id": "https://github.com/bhrumom/fabushi-desktop/blob/main/projects/openclaw-rust/schemas/source-inventory.schema.json",
+  "title": "OCRM canonical tracked source inventory",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format_version",
+    "project_id",
+    "upstream",
+    "counts",
+    "entries"
+  ],
+  "properties": {
+    "format_version": {
+      "const": 1
+    },
+    "project_id": {
+      "const": "OCRM-001"
+    },
+    "upstream": {
+      "type": "object",
+      "required": [
+        "repository",
+        "commit",
+        "tree"
+      ],
+      "properties": {
+        "repository": {
+          "const": "openclaw/openclaw"
+        },
+        "commit": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "tree": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "counts": {
+      "type": "object",
+      "properties": {
+        "tracked_entries_total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "blob_entries_total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "symlink_entries_total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "gitlink_entries_total": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "tracked_entries_total",
+        "blob_entries_total",
+        "symlink_entries_total",
+        "gitlink_entries_total"
+      ],
+      "additionalProperties": false
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source_repository",
+          "source_commit",
+          "source_tree",
+          "path",
+          "mode",
+          "git_type",
+          "sha",
+          "entry_kind",
+          "blob_sha",
+          "size_bytes",
+          "language_kind",
+          "module_id",
+          "dependency_edges",
+          "read_status",
+          "read_ranges",
+          "content_identity",
+          "responsibility_ids",
+          "responsibility_status",
+          "disposition",
+          "license_provenance",
+          "reviewer",
+          "evidence_refs"
+        ],
+        "properties": {
+          "source_repository": {
+            "const": "openclaw/openclaw"
+          },
+          "source_commit": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$"
+          },
+          "source_tree": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$"
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "mode": {
+            "enum": [
+              "100644",
+              "100755",
+              "120000",
+              "160000"
+            ]
+          },
+          "git_type": {
+            "enum": [
+              "blob",
+              "commit"
+            ]
+          },
+          "sha": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$"
+          },
+          "entry_kind": {
+            "enum": [
+              "blob",
+              "symlink",
+              "gitlink"
+            ]
+          },
+          "blob_sha": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9a-f]{40}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "size_bytes": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "language_kind": {
+            "type": "string",
+            "minLength": 1
+          },
+          "module_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "dependency_edges": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "read_status": {
+            "enum": [
+              "unread",
+              "partial",
+              "read-complete"
+            ]
+          },
+          "read_ranges": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "start_line",
+                "end_line"
+              ],
+              "properties": {
+                "start_line": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "end_line": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "content_digest": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "content_identity": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "responsibility_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "responsibility_status": {
+            "enum": [
+              "unclassified",
+              "mapped",
+              "reviewed"
+            ]
+          },
+          "disposition": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "license_provenance": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "reviewer": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "evidence_refs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          }
+        }
+      }
+    }
+  }
+}

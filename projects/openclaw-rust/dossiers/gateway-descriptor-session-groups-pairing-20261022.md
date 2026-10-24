@@ -1,0 +1,57 @@
+# Gateway descriptor, authenticated profile, group catalog and device pairing — source audit 2026-10-22
+
+**Unit:** OCRM-UNIT-GW-INGRESS-001; GW-AUTH-01/02; OCRM-M01/M04. **Status:** audited frozen subset only. Scoped G01/G02 NOT ACCEPTED; OCRM Spec §11.1 NOT MET. This dossier is **not** a Rust implementation, ledger/RTM change, independent approval or global source closure.
+
+## Authority and completed exact-subject Actions
+
+- Frozen upstream: `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`, tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`.
+- Subject H: `bhrumom/fabushi-desktop@0ad9c1d034178df096524de0079b18ef1d165e6d`, tree `187d5c11d421b12cac2d6f169880dc69fd154c42`, PR #169 branch `ocrm/p0-source-authority-20261022`. The run's PR base was `f6eb1758c59d65aba93e5608d7aba445e0bad42b`; target **live main** when inspected was `7394f6dc7687f9b986ee5589d40aa680ce23b90a`, not the subject.
+- GitHub Actions run **39761926743** attempt 1: `completed/success`. `source-authority` job **119767940095** and `persist-verified-inventory` job **119768587795** both `completed/success`. Actual logs explicitly run `git checkout --progress --force 0ad9c1d034178df096524de0079b18ef1d165e6d`, then validate that checkout against `SUBJECT_SHA` and frozen upstream SHA/tree. No synthetic merge is substituted.
+- P0 logs: **58,750** tracked rows; **58** persisted shards; reverse reconstruction `PASS`; canonical inventory SHA256 `586cadaa199916ac9593782b59059bfdcf8c72a717e534a72225e7e883977153`. G02 negative probes reject duplicate source paths, unread denominator tampering, unbacked accepted verdicts and orphan responsibilities. Persist job reported `No new source-derived shard content`.
+- Immutable artifact **12417813902**, `ocrm-p0-authority-0ad9c1d034178df096524de0079b18ef1d165e6d`, ZIP digest **sha256:744ccfc7fe1544b0174eb3a8fe5dc847639b7c2349a0e4d048d7846b8194a1d0**, size 4,479,292 bytes; both upload and subsequent download logs confirm that digest. This is **P0 tracked-tree G01 and structural G02 only**, not scoped Gateway or product equivalence. This document's later carrier commit needs its own evidence; H's receipt never transfers automatically.
+
+## Exact frozen-source reading
+
+All 5 requested files fetched at the frozen upstream ref and verified against the specified blob SHA, including full blob access and segmented source inspection:
+
+| Source | Git blob | Complete content range |
+| --- | --- | --- |
+| `src/gateway/server-methods/shared-types.ts` | `253c1ac4e95c8e2c5be076fefde2ae20878881ad` | 1–739 (740th line trailing newline); segmented 1–160, 161–335, 336–485, 484–610, 611–739 |
+| `src/gateway/methods/descriptor.ts` | `f36351dfe5d1db8430f3f467d35190344633deb1` | 1–112 |
+| `src/gateway/server-methods/gateway-client-identity.ts` | `d7bf828d12d055a669ed9bc6257523559bf1c960` | 1–165 |
+| `src/gateway/session-group-catalog.ts` | `ea8d8c61139e1bf435a312fb9c00ae76789377c4` | 1–267, segmented 1–145 and 146–267 |
+| `src/infra/device-pairing-approval.ts` | `708db58a83f4d743054f70e2208a4fc4cc08bb3b` | 1–137 |
+| `src/infra/device-pairing-worker.ts` | `190f6301ff4a865992d8bd1c5f3ddf4aff912ca5` | 1–239, segmented 1–140 and 140–239 |
+| `src/state/openclaw-state-worker-store.ts` | `2ae5bde9c3498bc124bcd48335ba585214d863f4` | 1–137 |
+| `src/gateway/session-group-catalog.types.ts` | `8b345d54e12d9e874a00e178a6148922558f33e9` | 1–48 |
+
+**Bounded next-hop identity lock, not full read:** `src/infra/device-pairing-admission.types.ts@5ca4d8260d643920adcd0bf10e74c921916774e9`; `device-pairing-core.types.ts@2cc2a8adfc6b75ad9faf21506e1f8a1dbd07751f`; `device-pairing-lock.ts@de139c29b9f96b57fa19d339bef3ef4937baedc6`; `device-pairing-resolution.ts@53f26d60aa67be1cc546e81ca244440ca79e4e62`; `device-pairing-state.kernel.ts@d5714607a7ad69b27fe142cb38fc162f7d734b2a`; `device-pairing-worker-contract.ts@202047fca6cbe2c7e0ead969fa2bffbdd0a5190d`; `device-pairing-publication.ts@a8d9e7bcbde564ebf8d08cd00ca7fd8e6cf97666`; `src/infra/sqlite-worker-operation-admission.ts@90f03a25678f00a88489c13392e19dbb09df6a40`; `src/state/openclaw-state-db-readonly.ts@5bd95bc9cf5aa3e1dc24a2d9c4dbbc03e46a67f8`; `src/gateway/operator-role-policy.ts@5da2445fcab7a509191a8a79b5a415ac744f7ad6`; `src/gateway/server-methods/gateway-personal-caller.ts@2c3583ee843fae0ea0f9fdecf67d2c34e20984f7`; `src/shared/gateway-method-policy.ts@c582ec83ee62b04ce131067cafa7550161183675`; `src/auto-reply/command-sender-authority.ts@dcccaf745ebc3b312f8c6a9352aee3a9d8861100`. These are only a partial set of direct and recursive imports. No complete dependency closure is claimed.
+
+`shared-types.ts` has 52 static import declarations and **44 `import(...)` TypeScript type-expression occurrences**, including registry, lifecycle, session, desktop, worker and approval interfaces. Those type expressions are **not runtime lazy module loads**. The 121 runtime lazy handler modules inventoried in the prior dossier are a separate still-unreviewed frontier. Package `@openclaw/normalization-core`, additional transitive persistence/protocol imports, generators/tests and external lock integrity are not yet closed.
+
+## Reviewed behavior and owner assessment
+
+1. **Gateway descriptor** (`descriptor.ts:19–112`): method scope distinguishes operator, node-only and handler-computed dynamic scope. `createPluginGatewayMethodDescriptor` normalizes scope, defaults to ADMIN and requires authenticated profile unless overridden. A session write access contract and shared-read TTL/invalidation metadata are separate from authorization, and availability/advertising do not grant capabilities. Real method-registry/dispatcher enforcement still needs independent contract proof.
+2. **Profile authority** (`gateway-client-identity.ts:21–165`): session-scoped access requires a verified operator profile; unavailable GitHub verification returns retryable UNAVAILABLE (429 has reset delay). Missing verified operator role for session access is FORBIDDEN. Synthetic callers do not inherit ordinary command authority; remote delegated ingress only lends it while un-aborted/current and matching the exact operator profile. Sender/creator attribution comes from verified profile or explicitly constrained fallback, not arbitrary request fields.
+3. **Request lifecycle and socket context** (`shared-types.ts:190–739`): separates kernel, transport and resident bridges; carries live device/profile invalidation hooks; session mutation retains exact previously-admitted target and commit-time guards into detached work. Request disconnect/cancel and accepted mutation settlement are **not equivalent**. The gateway request type is not itself the authoritative permission writer.
+4. **Group catalog** (`session-group-catalog.ts:23–267`): shared singleton keyed by physical SQLite identity, revision-guarded cache, invalidation on database lifecycle, a prepared read-only snapshot worker and serialized mutation queue. Transaction-stage SQLite admission validates current database plus `SessionGroupCatalogAdmission`; failures invalidate cache and attempt a reconciled refresh. A stale initial read cannot reinstall facts from before COMMIT. The group catalog is not the device pairing store.
+5. **Pairing approval** (`src/infra/device-pairing-approval.ts:36–137`): under pairing lock, worker admission rechecks pending request expiry and current approval policy from captured pending/existing facts. The worker (`device-pairing-worker.ts:78–221`) enforces transaction/commit stage order and source-current checks, only installing durable state after native COMMIT receipt. Post-COMMIT publication invalidates paired-card cache and notifies token replacement; failure to erase a retired cached token cannot revive already revoked server authority. Unknown outcome needs native reconciliation, not blind retry.
+6. **Fabushi current target**: `source/host/src/gateway_server.rs@1ce506ae0bc75ee96418e55eb64a935dd7865ac0:27–109` owns existing HTTP method allowlist and `source/host/src/host_gateway_api.rs@e93659285baf4903d3c97cf85629864341ad4126:10–188` maps allowed Host methods to existing domain owners. Neither inspected registry advertises `devicePairing.*` methods. `source/host/src/network_enrollment_owner.rs@dac2ea3dfa439570de57722c23f583b160f15af9` owns **Fabushi FDN enrollment**, user/device scoped grant persistence and network worker lifecycle; `remote_computer_target.rs@602493decac443fbefdf3e9af3ccda2caad2012d` consumes its `NetworkWorkerService`. This is an existing integration owner, **not yet proven** to be the one OpenClaw pairing/role/token state writer. Target Renderer, CLI, companion and Coordinator producer→writer→storage→consumer chain is still incomplete. No new owner is elected without full existing-owner audit.
+
+## Designed but unexecuted falsifiable oracles
+
+- OCRM-GW-WS-O39: an unscoped plugin method, forged node client or dynamically chosen scope never bypasses default ADMIN, verified-profile and session participation checks.
+- OCRM-GW-WS-O40: GitHub verification failure, synthetic ingress, stale delegate, aborted remote ingress or profile mismatch fails closed before sender identity or mutation acceptance.
+- OCRM-GW-WS-O41: expired pending pairing, changed policy/scope/key/role after an approval plan but before SQLite transaction leads to refusal, not token grant.
+- OCRM-GW-WS-O42: COMMIT receipt and revision precede approval publication; duplicate callback or crash cannot create a second device writer; cache cleanup failure cannot reauthorize a revoked device.
+- OCRM-GW-WS-O43: read/mutation overlapping DB close/reopen/alias and stale revision cannot publish old group catalog; serialized writes and transaction-stage authority preserve order.
+- OCRM-GW-WS-O44: requester disconnect before admission, admitted detached mutation, unknown outcome, service restart and reconcile produce distinct valid lifecycle transitions, never implicit duplicate mutation.
+- OCRM-GW-WS-O45: shipping UI/CLI/Gateway/companion consumers converge on one Rust pairing authority with account/device fence, committed storage and use-time reauthorization; FDN network enrollment is not a silent alternate approval writer.
+
+**All these oracles are designs, NOT Actions tests, not accepted.**
+
+## Open gates / next ready work
+
+`GW-AUTH-01`: read and lock remaining recursive method registry, worker transaction/admission, authorization, paired-device persistence, 121 lazy handler modules, test and external dependency integrity. `GW-AUTH-02`: verify current target Host auth and pairing storage/writer, downstream Coordinator/UI/CLI/companion consumers and rejected-owner analysis. `GW-AUTH-03`: author/execute fail-closed scoped G01/G02 Actions with exact dependency set and obtain independent reviewer ACCEPT. Until all §11.1 requirements are positive, **do not edit production Rust, ledger/RTM or acceptance flags**. Independent subagent review could not be invoked here (no usable subagent tool exposed); no independent verdict claimed. No user-operation blocker newly proven; no repeat support email.
+
+Next read-only concrete targets at frozen commit: `src/infra/sqlite-worker-operation-admission.ts@90f03a25678f00a88489c13392e19dbb09df6a40`; `src/infra/device-pairing-publication.ts@a8d9e7bcbde564ebf8d08cd00ca7fd8e6cf97666`; `src/state/openclaw-state-db-readonly.ts@5bd95bc9cf5aa3e1dc24a2d9c4dbbc03e46a67f8`; `src/gateway/operator-role-policy.ts@5da2445fcab7a509191a8a79b5a415ac744f7ad6`; then exact Host/CLI/UI/native consumer chain. No executable tests outside GitHub Actions.
