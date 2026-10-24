@@ -6170,3 +6170,44 @@ New frozen identities:
 Immediately before this append, the live branch lease was `229a7babd9cef414e2bacb51370b447fa8862e4e`, tree `1bbb4f7d52a473ecc5668cd3d955fb329fa190d7`, dossier blob `b1211bcaab9ceb187cc09843fe0ea96e3bb051a3`, 6,132 lines, with zero Section 94 and all three exact refs above at zero occurrences. This pass remains frozen-source/read-only audit work: no GitHub Actions workflow was started or rerun, and no production code, ledger, RTM, acceptance flag, source lock, inventory, or source baseline file was modified.
 
 - The session-delivery side of the topology is now explicit from shipping code through durable failure and a real Gateway success: queue idempotency/message identity, requester/session lifecycle binding, queue attempt state and queue-row settlement are the operational authorities. The requested public-run-id→restart delivery→real cleanup→exact terminal-read integrated oracle is still not established. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring parity, package/device proof, release acceptance, and final OCRM acceptance remain open.
+
+
+
+## Section 95 — runtime-owner replacement fences stale queue work and settlement cleanup retries without delivery replay
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`. This pass continues Section 94 at the durable session-delivery runtime boundary. It adds only three frozen exact refs that were absent from the complete Round87 dossier and that directly specify owner replacement, pending-row rescheduling, and the split between delivery and settlement cleanup.
+
+New frozen identities:
+- `src/infra/session-delivery-queue-runtime.ts@74b8d747ebd245bd009f93fe4fb992651c93409b`
+- `src/infra/session-delivery-queue-runtime.test.ts@d6a7957fec4fc161638bb83b6b7a0731b06d1d6c`
+- `src/infra/session-delivery-queue.recovery.test.ts@c02aff1c20381b765c13eebb9ead549b4c52e744`
+
+### 95.1 The production session-delivery runtime has an explicit owner-replacement fence
+
+- New production exact-ref `src/infra/session-delivery-queue-runtime.ts@74b8d747ebd245bd009f93fe4fb992651c93409b` retires the previous scheduler before installing a new runtime owner. Its stop function clears the global runtime only when it still owns that slot and joins both the scoped scheduler and every admitted asynchronous scheduling read before disposal.
+- `scheduleSessionDelivery` requires both the caller's worker admission and the active runtime's admission to remain current, requires their database identity keys to match, and rejects a retired state owner. After the asynchronous row lookup it re-checks `runtime !== activeRuntime` before arming delivery, so a late lookup from the previous runtime cannot schedule work into its replacement.
+- `schedulePendingSessionDeliveries` scans the durable pending rows only through the currently installed runtime and arms those rows under that owner's scheduler. The runtime API accepts queue ids and worker/database authority; it does not accept a public Cron request/history `runId`.
+
+### 95.2 Focused restart/replacement tests prove old runtime work cannot leak into the new owner
+
+- New focused exact-ref `src/infra/session-delivery-queue-runtime.test.ts@d6a7957fec4fc161638bb83b6b7a0731b06d1d6c` stops an old runtime after scheduling a pending delivery and requires the old delivery callback not to run, the durable row to remain pending, and direct scheduling to return false while no runtime owner exists. After a new runtime starts, `schedulePendingSessionDeliveries` discovers that same row and the resumed owner delivers it.
+- The same fixture holds an old drain in flight while a replacement runtime accepts a different row. Stopping the old owner joins only its admitted drain; after the old delivery resolves, the old row is retired while the replacement row remains pending and schedulable by the new runtime.
+- Its delayed lookup/scan cases replace the runtime while an old asynchronous database read is held. Releasing the old read after replacement does not invoke delivery and leaves the row pending; only the new owner's read is allowed to schedule the work. This is a direct session-delivery stale-owner oracle, distinct from the still-missing Gateway `sessions.processes.stop` placement-generation late-success oracle.
+
+### 95.3 Recovery persists settlement outcome and retries cleanup without replaying the delivery side effect
+
+- New focused exact-ref `src/infra/session-delivery-queue.recovery.test.ts@c02aff1c20381b765c13eebb9ead549b4c52e744` makes `onSettled` fail once after a delivery has either succeeded or produced a terminal dead-letter outcome. The first drain persists `settlementOutcome` on the pending row; the second drain calls `onSettled` again but requires the delivery callback to remain at exactly one invocation.
+- After the settlement callback succeeds, the pending row disappears. For exhausted acknowledged tombstones the fixture goes further: recovery invokes `onSettled` while the delivery callback is never called at all.
+- This is the queue contract used by the previously registered production `settleQueuedSessionDelivery` callback: delivery execution and cleanup settlement are separate durable phases. The test intentionally supplies a mock settlement callback, so it does not by itself prove real `removeCronRunContinuationSessionIfIdle` ran or that a public Cron `runId` was later read.
+
+### 95.4 The requested integrated fixture and the two parallel frontiers remain open
+
+- Even with a real runtime-owner replacement fence and an explicit cleanup-without-replay contract, no frozen fixture found here binds one predecessor public Cron `runId` to that queue row, drives restart/lost-reply recovery, executes real `settleQueuedSessionDelivery`, proves physical exact-alias deletion, and then reads the same predecessor through public `cron.runs { id, runId, limit: 1 }`.
+- The direct Gateway-server `sessions.processes.stop` replacement late-success oracle remains absent. Targeted frozen searches continue to find the production revalidation and the already registered deferred `sessions.processes.list` case, but no Stop-specific held stale success after `placementGeneration` or `activeOwnerEpoch` replacement.
+- Plugin native admission remains unchanged: no distinct failed-publication receiver handoff and no third production plural `settlePluginNativeAdmissions` caller were found; generation preparation and prepared-model-runtime build remain the plural production callers, and generation-worker remains singular.
+
+### 95.5 Dedupe, lease, and remaining acceptance state
+
+Immediately before this append, the live branch lease was `ae7317729bdb850d3ff2918f560e0f5369a42407`, tree `7e0a20174dfa28d510f80a685c963ab0c3748148`, dossier blob `51004b2dc7951fa13535bc791123223692469ad0`, 6,173 lines, with zero Section 95 and all three exact refs above at zero occurrences. This pass remains frozen-source/read-only audit work: no GitHub Actions workflow was started or rerun, and no production code, ledger, RTM, acceptance flag, source lock, inventory, or source baseline file was modified.
+
+- The restart/lost-reply side is now more tightly bounded: a durable queue row survives owner replacement, stale scheduling work is fenced, and a persisted settlement outcome can retry cleanup without replaying delivery. What remains missing is the single public Cron identity that ties those phases to real exact-alias deletion and the exact public terminal reader. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring parity, package/device proof, release acceptance, and final OCRM acceptance remain open.
