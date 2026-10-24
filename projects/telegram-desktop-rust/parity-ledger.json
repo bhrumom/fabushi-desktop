@@ -6,10 +6,10 @@
   "target_commit": "584dc11ecd07fd6431e8c876bf9508e1f3436a43",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16212,
-    "unread": 16187,
+    "unknown": 16211,
+    "unread": 16186,
     "omitted": 0,
-    "responsibilities_total": 182,
+    "responsibilities_total": 183,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -48624,6 +48624,227 @@
       "license_and_provenance": "Exact Microsoft/GSL tests/deathTestCommon.h@7bf242393f7bcff62c12cd985a87824f48f7bb0b, seven registered consumer blobs, tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a and LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02 are retained as source/test provenance under MIT. No GSL code is copied into a shipping runtime; direct tdesktop consumer count is zero.",
       "reviewer": "primary-session",
       "notes": "Strict164 closes only Microsoft/GSL tests/deathTestCommon.h as a shared death-test matcher source-provenance entry. It is included by seven exact-ref files in gsl_tests; tdesktop direct consumers are zero. No runtime owner is added. Counters after strict164: unknown=16,212 unread=16,187 omitted=0 responsibilities=182. Strict164 publication-head CI is pending until fresh terminal runs; source closure and independent release acceptance remain open. Next strict165 tests/no_exception_ensure_tests.cpp@5fde41cf2f307830c07d592819c7baed5d59d40d."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/GSL",
+      "source_blob_sha": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+      "source_kind": "recursive_child_repository_dependency_test_provenance",
+      "module_id": "tdesktop.thirdparty.gsl.no-exception-ensure-tests",
+      "responsibility_id": "TDRP-R9-GSL-NO-EXCEPTION-ENSURE-TEST-PROVENANCE-001",
+      "source_symbols": [
+        "tests/no_exception_ensure_tests.cpp@5fde41cf2f307830c07d592819c7baed5d59d40d",
+        "gsl::span<int> over int[10], deliberate sp[11]",
+        "include/gsl/span@d2ef9f7d85ca6e25bf69b001e9308b3d069c5d16: Expects(idx < size())",
+        "include/gsl/assert@d3e6ccdd53d5a254ed3827cf07711a6e86bb4226: terminate dispatch",
+        "tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a: -fno-exceptions / _HAS_EXCEPTIONS=0 / gsl_noexcept_tests"
+      ],
+      "capability_ids": [
+        "CAP-DEPENDENCY-DEATH-TEST-PROVENANCE",
+        "CAP-DEPENDENCY-TEST-PROVENANCE",
+        "CAP-NATIVE-DEPENDENCY-REPLACEMENT"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "Microsoft/GSL:tests/deathTestCommon.h@7bf242393f7bcff62c12cd985a87824f48f7bb0b",
+        "Microsoft/GSL:tests/algorithm_tests.cpp@e369be0e34dcf786a63631807ebe3cc06fb59544",
+        "Microsoft/GSL:tests/assertion_tests.cpp@231befc7e415ec53daa09ced61d76505e6be5437",
+        "Microsoft/GSL:tests/at_tests.cpp@42b2241bfd472ab384c35267d2042c870edce4a5",
+        "Microsoft/GSL:tests/notnull_tests.cpp@df8e5a9acf529a9da9e578da413e955900e91e7d",
+        "Microsoft/GSL:tests/span_ext_tests.cpp@dfd2725db3612de97c4a3173f5f168131f7341f3",
+        "Microsoft/GSL:tests/span_tests.cpp@d86458bd3bd8e5a1f1739a769436594de2a6b85a",
+        "Microsoft/GSL:tests/strict_notnull_tests.cpp@c1b1f54c97abe1c2cf825e81e713bee2fb8a888f",
+        "Microsoft/GSL:tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a",
+        "Microsoft/GSL:LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-no-exception-ensure-tests-complete-read.md",
+      "behavior_contract": "Standalone dependency test installs a termination handler, performs out-of-range span access sp[11] against extent 10 under no-exception compiler flags, and must terminate. test_terminate exits 0; reaching main's return -1 is the negative oracle. This is test provenance only, not a shipping no-exception/span runtime.",
+      "state_machine": "No independent long-lived state machine. For each death assertion, the test harness supplies a terminate handler; if non-null the helper selects the stable expected-death matcher, otherwise it selects the fallback regex used to avoid a false-negative caused by handler installation failure. GTest and each test own assertion execution; the helper owns no product state.",
+      "side_effects": [
+        "The helper performs only a constexpr pointer selection for the test matcher.",
+        "No persistence, network, UI, account, authorization, product runtime, or service side effect exists."
+      ],
+      "failure_cases": [
+        "Removing the null-handler fallback can turn a platform/test-harness setup failure into a false test failure.",
+        "Using the fallback as proof that the operation died would weaken the death-test oracle.",
+        "Treating the helper as a production assertion/termination API or creating a GSL-shaped runtime.",
+        "Treating the seven test consumers as tdesktop production consumers or bulk-closing any product responsibility.",
+        "Inferring no-exception/span runtime behavior from the separate no_exception_ensure_tests.cpp source."
+      ],
+      "ui_disposition": "No independent UI surface or UI responsibility.",
+      "non_ui_responsibilities": [
+        "Exact shared death-test matcher selection",
+        "Fallback behavior when terminate-handler installation fails",
+        "Exact seven registered consumer blobs",
+        "CMake/CTest registration provenance",
+        "MIT license provenance",
+        "Zero direct tdesktop consumer boundary",
+        "Fail-closed separation from production and no-exception runtime responsibilities"
+      ],
+      "platform_delta": "The fallback explicitly accommodates a test environment in which setting the terminate handler fails. This is test-harness portability only; it does not define a Fabushi platform adapter or product contract. Existing domain owners retain their own native failure and contract behavior.",
+      "existing_owner_candidates": [
+        "Existing TDRP source/dependency inventory and test-provenance owner (selected)",
+        "Existing assertion/death-test source dossiers for neighboring GSL tests (reused without duplicating their responsibilities)",
+        "A GSLDeathTestRuntime or second assertion/termination owner (rejected)",
+        "A global no-exception/span runtime (rejected)"
+      ],
+      "existing_owner": "Existing TDRP source/dependency inventory and test-provenance owner; no shipping runtime owner is warranted for a C++ test-only helper. Actual contract, termination, span, and caller semantics remain with their actual existing Fabushi domain owners.",
+      "rejected_existing_owners": [
+        "The helper is compiled into dependency tests only and is not a product capability or shipping API.",
+        "A GSLDeathTestRuntime would mirror a test utility rather than a product responsibility.",
+        "A global no-exception/span runtime would improperly combine unrelated native contract and bounds-checking responsibilities.",
+        "The separately registered gsl_noexcept_tests target is a distinct strict165 source entry and is not closed by this row."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-death-test-common-complete-read.md"
+      ],
+      "fabushi_target_symbols": [
+        "TDRP_GSL_NO_EXCEPTION_ENSURE_TEST_PROVENANCE_001"
+      ],
+      "target_language": "Source-only C++ dependency-test provenance; no shipping implementation",
+      "language_rationale": "The source is a small C++ test helper, not product logic. Preserve its test oracle and provenance in the TDRP evidence owner; any native Rust product contract or bounds behavior must be implemented and tested inside the actual existing domain owner, not by porting this helper.",
+      "command_event_contracts": [
+        "Non-null terminate handler -> return the exact Expected Death matcher.",
+        "Null terminate handler -> return the .* fallback solely for the test setup failure path.",
+        "The seven listed test files are registered under gsl_tests; the no-exception executable is separate.",
+        "Source-test provenance never authorizes production or release acceptance."
+      ],
+      "state_owner": "No helper-owned persistent state; the test harness supplies terminate-handler presence.",
+      "lifecycle_owner": "GTest/C++ process and each test's local setup; no Fabushi product lifecycle.",
+      "persistence_and_restart": "No persistence or restart behavior; not applicable.",
+      "concurrency_and_cancellation": "No asynchronous or concurrent state and no cancellation contract.",
+      "security_boundary": "No authorization, credential, cryptographic, sandbox, transport, or product security semantics. Death-test matcher selection is not a security boundary.",
+      "network_service_dependencies": [
+        "GitHub Actions exact-head source-authority validation only"
+      ],
+      "service_owner": "No shipping service.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-test-provenance-mapped-open",
+      "blockers": [
+        "Fresh strict164 publication exact-head TDRP/Rust Actions must be read to terminal success after the CAS push.",
+        "Recursive source closure, all production responsibilities, and independent release acceptance remain open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "no_exception_ensure_tests.cpp@5fde41cf2f307830c07d592819c7baed5d59d40d fully read, 1,644 bytes; sp[11] line 27, return -1 line 54.",
+        "span operator[]@d2ef9f7d85ca6e25bf69b001e9308b3d069c5d16 checks Expects(idx < size()).",
+        "assert@d3e6ccdd53d5a254ed3827cf07711a6e86bb4226 routes failed Expects to termination.",
+        "CMakeLists@9de2519b366d6bc6803329a51afe459b0a6a357a: -fno-exceptions, _HAS_EXCEPTIONS=0, gsl_noexcept_tests CTest registration.",
+        "MIT LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02. tdesktop direct searches for test/target/workaround returned zero."
+      ],
+      "target_commit": "893fe5dd4a055e33f72674105a80ccb730cc7c58",
+      "workflow_run": 40059176705,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12547270177,
+      "artifact_digest": "sha256:9ed7fa0888c165b9719915953d693a271db3b9b7345bd481f5dbae6e072df225",
+      "composition_root": "Existing TDRP source/dependency inventory and test-provenance governance",
+      "composition_slot": "Dependency test provenance only; no shipping composition slot",
+      "capability_component": "Shared GSL death-test matcher provenance; no shipping surface or runtime",
+      "variation_axes": [
+        "terminate handler available -> Expected Death matcher",
+        "terminate handler unavailable -> .* fallback",
+        "seven gsl_tests consumers versus separate gsl_noexcept_tests executable"
+      ],
+      "shared_owner_contracts": [
+        "TDRP source/dependency inventory",
+        "Existing adjacent GSL source-test provenance",
+        "Actual existing Rust/domain owner for each product contract",
+        "Exact-head TDRP/Rust evidence"
+      ],
+      "duplicate_root_check": "No GSLDeathTestRuntime, no second assertion/termination owner, no global no-exception/span runtime, no product composition root.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "No product action; helper is test-only.",
+      "detail_section": "Not applicable",
+      "capability_surface": "Source-only dependency-test provenance; no shipping surface.",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Any GSL gitlink/tree, helper blob, seven-consumer set, CMake registration or license drift requires exact-ref re-read; this row does not close any production caller, no-exception runtime or release gate.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No icon asset change.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-GSL-NO-EXCEPTION-ENSURE-TEST-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GSL-NOEXCEPT-EXACT-SOURCE-001",
+        "ORA-TDRP-GSL-NOEXCEPT-COMPILE-CONFIG-001",
+        "ORA-TDRP-GSL-NOEXCEPT-OUT-OF-RANGE-TERMINATES-001",
+        "ORA-TDRP-GSL-NOEXCEPT-NO-DIRECT-TDESKTOP-CONSUMER-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GSL-NOEXCEPT-TESTS-ONLY-001",
+        "INV-TDRP-GSL-NOEXCEPT-NO-PARALLEL-RUNTIME-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GSL-DEATH-TEST-COMMON-REGISTERED-CONSUMERS-001",
+        "CONTRACT-TDRP-GSL-DEATH-TEST-COMMON-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GSL-DEATH-TEST-COMMON-SOURCE-DRIFT-001",
+        "FAULT-TDRP-GSL-DEATH-TEST-COMMON-BUILD-REGISTRATION-001",
+        "FAULT-TDRP-GSL-DEATH-TEST-COMMON-BULK-CALLER-CLOSURE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [],
+      "test_fixture_ids": [],
+      "test_environment_ids": [],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact Microsoft/GSL tests/deathTestCommon.h@7bf242393f7bcff62c12cd985a87824f48f7bb0b, seven registered consumer blobs, tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a and LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02 are retained as source/test provenance under MIT. No GSL code is copied into a shipping runtime; direct tdesktop consumer count is zero.",
+      "reviewer": "primary-session",
+      "notes": "Strict165 only records no_exception_ensure_tests.cpp test provenance; no global no-exception/span runtime. Counters unknown=16,211 unread=16,186 omitted=0 responsibilities=183. Fresh exact-head Actions required. Next strict166 tests/notnull_tests.cpp@df8e5a9acf529a9da9e578da413e955900e91e7d."
     }
   ]
 }

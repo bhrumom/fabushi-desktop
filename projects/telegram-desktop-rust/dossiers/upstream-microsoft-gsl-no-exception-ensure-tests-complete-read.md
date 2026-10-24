@@ -1,0 +1,13 @@
+# Microsoft/GSL tests/no_exception_ensure_tests.cpp complete read — strict165
+
+Pinned source: `Microsoft/GSL tests/no_exception_ensure_tests.cpp@5fde41cf2f307830c07d592819c7baed5d59d40d` (1,644 bytes), `include/gsl/span@d2ef9f7d85ca6e25bf69b001e9308b3d069c5d16`, `include/gsl/assert@d3e6ccdd53d5a254ed3827cf07711a6e86bb4226`, `tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a`, MIT `LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02`. GSL gitlink/tree: `87f9d768866548b5b86e72be66c60c5abd4d9b37` / `6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41`; tdesktop dev `a7f453612f4896ac04d0007a36ab0d377e5bcbcf` / `c539eabfb05e7dcaa84821ac44c35cdfb6551ae5`.
+
+`gsl_noexcept_tests` builds with `-fno-exceptions` on non-MSVC or `_HAS_EXCEPTIONS=0` on MSVC. It installs a terminate handler and evaluates `sp[11]` for a 10-element span. `span::operator[]` enforces `Expects(idx < size())`; assertion failure dispatches to the configured termination path. The handler exits 0. **Negative oracle:** if the invalid access returns, `main()` reaches `return -1`, so the test fails. The MSVC handler-slot workaround is test portability only.
+
+Exact tdesktop searches for `no_exception_ensure_tests.cpp`, `gsl_noexcept_tests`, and `GSL_MSVC_USE_STL_NOEXCEPTION_WORKAROUND` returned zero results. Existing-owner-first: use TDRP test-provenance ownership only; do not add a global no-exception/span runtime or second assertion owner. Production caller behavior and release acceptance remain open.
+
+Requirement `TDRP-R9-GSL-NO-EXCEPTION-ENSURE-TEST-PROVENANCE-001`; oracles: `ORA-TDRP-GSL-NOEXCEPT-EXACT-SOURCE-001`, `ORA-TDRP-GSL-NOEXCEPT-COMPILE-CONFIG-001`, `ORA-TDRP-GSL-NOEXCEPT-OUT-OF-RANGE-TERMINATES-001`, `ORA-TDRP-GSL-NOEXCEPT-NO-DIRECT-TDESKTOP-CONSUMER-001`.
+
+Parent exact-head `893fe5dd4a055e33f72674105a80ccb730cc7c58`: TDRP run 40059176705 terminal success 61/61; authority artifact 12547270177 `sha256:9ed7fa0888c165b9719915953d693a271db3b9b7345bd481f5dbae6e072df225`, closure 12547166165 `sha256:27b85dbaaeb686a0d1ca5335a593335660444cac2257b45f94f3f295b89e13e7`, reachability 12546673027 `sha256:32686bfbab31221df0c68b642174a89108579c78db4bc35877238286f51ac9ca`; Rust 40059176755 terminal success 6/6, artifact 12546413750 `sha256:1886ce6d6f521408aae704e0e359b11a17e29a579f4e62ba4ad2e6d3884788f7`. These are parent evidence only.
+
+Counters before strict165: source entries 16,379; unknown 16,212; unread 16,187; omitted 0; responsibilities 182. After: source entries remain 16,379; unknown 16,211; unread 16,186; omitted 0; responsibilities 183. `baseline_identity_accepted=false`, `source_closure_ready=false`; independent release acceptance remains open. Next strict166 `tests/notnull_tests.cpp@df8e5a9acf529a9da9e578da413e955900e91e7d`.

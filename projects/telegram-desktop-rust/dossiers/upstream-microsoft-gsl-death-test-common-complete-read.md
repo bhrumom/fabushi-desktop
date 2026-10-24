@@ -55,4 +55,4 @@ Invariants: `INV-TDRP-GSL-DEATH-TEST-COMMON-TESTS-ONLY-001`, `INV-TDRP-GSL-DEATH
 
 Counters before strict164: source entries 16,379; unknown 16,213; unread 16,188; omitted 0; responsibilities 181. After this one source entry is accounted: source entries remain 16,379; unknown 16,212; unread 16,187; omitted 0; responsibilities 182. `baseline_identity_accepted=false`, `source_closure_ready=false`, and independent release acceptance remain open.
 
-Next: strict165 `Microsoft/GSL tests/no_exception_ensure_tests.cpp@5fde41cf2f307830c07d592819c7baed5d59d40d`, as a separate test-provenance row and without a global no-exception/span runtime.
+Strict165 is recorded separately as test-only no-exception/span contract provenance. Counters after strict164 remain unknown=16,212 unread=16,187 omitted=0 responsibilities=182. Next strict166 `Microsoft/GSL tests/notnull_tests.cpp@df8e5a9acf529a9da9e578da413e955900e91e7d`.
