@@ -3,6 +3,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import test from "node:test";
+import { buildApplicationMenuTemplate } from "./application-menu.js";
 
 import { getSimulatedGatewayLatencyMs, setSimulatedGatewayLatencyMs, SIMULATED_GATEWAY_LATENCY_MAX_MS } from "./dev/dev-network-latency.js";
 import { DEFAULT_DEV_CONTROL_PORT, isDevControlsEnabled, resolveDevControlPort } from "./dev/dev-controls-gate.js";
@@ -482,4 +483,17 @@ test("MAS packaging declares camera and microphone authority for Human calls", (
   const extendInfo = desktopPackage.build?.mas?.extendInfo ?? {};
   assert.equal(typeof extendInfo.NSMicrophoneUsageDescription, "string");
   assert.equal(typeof extendInfo.NSCameraUsageDescription, "string");
+});
+
+
+test("application Help uses Fabushi support while preserving the native menu owner", () => {
+  const opened: string[] = [];
+  const template = buildApplicationMenuTemplate({
+    applyWindowShortcut: () => {}, canUseDevTools: () => false,
+    emitOpenAbout: () => {}, emitOpenFeedback: () => {}, platform: "linux",
+  }, { appName: "Fabushi", openExternal: async (url) => { opened.push(url); } });
+  const help = template.find(item => item.role === "help")?.submenu?.find(item => item.label === "Help Center");
+  assert.ok(help?.click);
+  help.click();
+  assert.deepEqual(opened, ["https://github.com/bhrumom/fabushi-desktop/issues"]);
 });
