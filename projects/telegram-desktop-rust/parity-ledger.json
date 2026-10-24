@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "50aeeede7543dd8a189b80eae1a59e16654d5845",
+  "target_commit": "92d9f63f98a141a3c4e9032e9f992ce919b3b954",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16218,
-    "unread": 16193,
+    "unknown": 16217,
+    "unread": 16192,
     "omitted": 0,
-    "responsibilities_total": 176,
+    "responsibilities_total": 177,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -47184,6 +47184,241 @@
       "license_and_provenance": "Exact Microsoft/GSL include/gsl/util@26b2f5fb9d0d8c28c3096f50d575eb42a4b89bad, focused tests and LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02 retained under MIT provenance; accepted tdesktop gsl::finally consumer fan-out retained; no GSL util runtime or downstream consumer release authority inferred.",
       "reviewer": "primary-session",
       "notes": "Strict158 closes only GSL include/gsl/util as a low-level helper dependency. final_action/finally scope-exit semantics map to native Rust RAII/Drop in actual owners; 155 production gsl::finally consumers remain independently open, and no direct gsl::narrow_cast/gsl::at consumer was found. Counters unknown=16,218 unread=16,193 omitted=0 responsibilities=176. Next strict159 Microsoft/GSL include/gsl/zstring@2cc13d83840afec61e5bd709c77900026ed225f4."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/GSL",
+      "source_blob_sha": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+      "source_kind": "recursive_child_repository_dependency_implementation",
+      "module_id": "tdesktop.thirdparty.gsl.zstring",
+      "responsibility_id": "TDRP-R9-GSL-ZSTRING-NULL-TERMINATED-STRING-TAG-DEPENDENCY-001",
+      "source_symbols": [
+        "include/gsl/zstring@2cc13d83840afec61e5bd709c77900026ed225f4",
+        "gsl::basic_zstring<CharT, Extent = dynamic_extent> = CharT*",
+        "gsl::czstring / gsl::zstring",
+        "gsl::cwzstring / gsl::wzstring",
+        "gsl::cu16zstring / gsl::u16zstring",
+        "gsl::cu32zstring / gsl::u32zstring"
+      ],
+      "capability_ids": [
+        "CAP-NULL-TERMINATED-STRING-TAG-CONTRACT",
+        "CAP-NATIVE-STRING-BOUNDARY-REPLACEMENT",
+        "CAP-NATIVE-DEPENDENCY-REPLACEMENT"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "Microsoft/GSL:include/gsl/zstring@2cc13d83840afec61e5bd709c77900026ed225f4",
+        "Microsoft/GSL:include/gsl/span_ext@2a7664c70550477e9ff228d6370ff635b5217c81",
+        "Microsoft/GSL:LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02",
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md#TDRP-LANG-03"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-zstring-complete-read.md",
+      "behavior_contract": "Account for the locked GSL zstring dependency without preserving its C++ alias API. zstring is a family of compile-time pointer tags for null-terminated C-style character arrays; basic_zstring aliases CharT* and adds no runtime validation, length, ownership, encoding or lifetime behavior. Preserve an actual null-terminated C ABI obligation only inside the independently migrated Fabushi FFI/platform/domain owner that needs it, using native Rust text/byte types and CStr/CString at real C boundaries rather than a global GSL-compatible string runtime.",
+      "state_machine": "No independent runtime state machine. At compile time, basic_zstring/alias selection annotates a raw pointer as intended to reference a zero-terminated character sequence; the header performs no construction, scan, bounds check, encoding check, allocation, ownership transfer or lifetime transition.",
+      "side_effects": [
+        "No runtime side effect: all declarations are type aliases.",
+        "Const aliases express read-only pointee intent; mutable aliases express mutable pointee intent.",
+        "Char width is preserved across char, wchar_t, char16_t and char32_t alias families."
+      ],
+      "failure_cases": [
+        "Treating a zstring alias as proof that the pointer is non-null, valid, bounded, correctly encoded, owned or actually zero terminated.",
+        "Introducing a GSLZStringRuntime, second canonical string model or product-wide raw-pointer string abstraction in Fabushi.",
+        "Converting ordinary Fabushi text into C strings outside a real FFI/platform boundary.",
+        "Bulk-closing future C/OS/library callsites merely because the helper tag itself is mapped.",
+        "Losing const/mutable or character-width obligations at an actual native boundary."
+      ],
+      "ui_disposition": "No independent UI surface. Any text shown in Fabushi stays in canonical native text owners/components; C-string representation is a boundary-only concern when an independently migrated platform/FFI caller requires it.",
+      "non_ui_responsibilities": [
+        "null-terminated C-string annotation provenance",
+        "const versus mutable pointee intent",
+        "char/wchar_t/char16_t/char32_t width provenance",
+        "explicit boundary-only replacement with native Rust string/FFI types",
+        "exact dependency/license/source traceability"
+      ],
+      "platform_delta": "Rust product text remains &str/String or other domain-native representations. Byte-oriented data remains byte slices/vectors. Only a real independently audited C ABI boundary may use std::ffi::CStr/CString or the narrowest platform adapter equivalent; no GSL zstring aliases are reproduced.",
+      "existing_owner_candidates": [
+        "TDRP source/dependency inventory and traceability owner (selected for helper accounting)",
+        "Actual Fabushi FFI/platform/domain owner for any independently migrated null-terminated-string boundary (selected for consumer semantics)",
+        "Canonical Fabushi text/resource models using native Rust/TypeScript strings (selected for product text)",
+        "new GSLZStringRuntime or second string owner (rejected)"
+      ],
+      "existing_owner": "Existing TDRP source/dependency inventory plus the actual Fabushi FFI/platform/domain owner for any independently evidenced C-string boundary; canonical product text remains in existing text/domain owners",
+      "rejected_existing_owners": [
+        "A GSL-shaped zstring compatibility runtime would preserve source API shape rather than product responsibility.",
+        "A global C-string owner would leak unsafe FFI representation into unrelated product text.",
+        "No accepted tdesktop direct zstring consumer exists to justify a new caller-specific runtime or owner."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md"
+      ],
+      "fabushi_target_symbols": [
+        "**TDRP-LANG-03:** 通用成熟安全/媒体依赖须登记、锁定和审查，可以替代低层标准能力"
+      ],
+      "target_language": "No shipping GSL compatibility API; native Rust &str/String/byte types in product owners and std::ffi::CStr/CString only at independently evidenced C ABI boundaries",
+      "language_rationale": "The source is a header-only family of raw-pointer tag aliases with no runtime enforcement. Rust has stronger native text and FFI boundary types; reproducing GSL aliases would weaken ownership/lifetime clarity and create a parallel string abstraction.",
+      "command_event_contracts": [
+        "source mapping -> retain exact null-terminated pointer-tag semantics and provenance only",
+        "real C ABI consumer -> convert at the narrowest existing owner boundary, validate boundary-specific preconditions, and keep the representation local",
+        "ordinary product text -> remain native canonical text; do not route through C-string compatibility types"
+      ],
+      "state_owner": "No independent zstring runtime state. Product text/state remains with existing Fabushi domain owners; transient C-string representation, if needed, belongs to the actual FFI/platform call boundary.",
+      "lifecycle_owner": "Actual independently migrated FFI/platform/domain owner; no helper-owned lifecycle.",
+      "persistence_and_restart": "No zstring-owned persistence or restart semantics. Persistent text/data remains in existing canonical storage/domain representations.",
+      "concurrency_and_cancellation": "No helper-level concurrency or cancellation semantics. Any buffer lifetime across asynchronous/native calls must be owned and fenced by the actual independently migrated caller.",
+      "security_boundary": "A zstring alias is not a safety proof. Null termination does not establish pointer validity, non-nullness, allocation extent, encoding, lifetime, ownership, secrecy or sanitization. Unsafe/C ABI conversion must remain local to a real existing owner and receive independent security/privacy acceptance when sensitive.",
+      "network_service_dependencies": [
+        "GitHub Actions for exact-head revalidation"
+      ],
+      "service_owner": "No shipping service.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-replaced-mapped-open",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required after strict159 publication.",
+        "Source closure, all production implementation and independent release acceptance remain open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "strict159 include/gsl/zstring@2cc13d83840afec61e5bd709c77900026ed225f4 fully read: 59 line slots / 1976 bytes",
+        "basic_zstring aliases CharT* with Extent defaulting to dynamic_extent; const/mutable aliases cover char, wchar_t, char16_t and char32_t; header explicitly says the aliases add no runtime features/semantics",
+        "Microsoft/GSL LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02 confirms MIT",
+        "accepted tdesktop current dev search returned zero direct matches for gsl::basic_zstring, gsl::zstring, gsl::czstring, gsl::wzstring, gsl::cwzstring, gsl::u16zstring, gsl::cu16zstring, gsl::u32zstring and gsl::cu32zstring",
+        "GSL gitlink 87f9d768866548b5b86e72be66c60c5abd4d9b37; child tree 6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41",
+        "Live main fb1189efd9d85c650864d6987ea8fb68c913558d/1a1ef09be4c9fd801354439a5b82cc460f0b4b6a and upstream dev a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5 rechecked after repaired strict158 child double-green",
+        "Parent exact-head 92d9f63f98a141a3c4e9032e9f992ce919b3b954: TDRP 40049224913 completed 61/61 success; authority 12542722367 sha256:0d6b4713f89e1d9c75e39fbb144e4621c9e768137e3e7f549297472c2c5698ce; closure 12542234806 sha256:c33765474010635265d940cf70ecbd2aa8e474ec14edcb9aef143f956b78de3d; reachability 12542748005 sha256:525811a6f89796201200cee94b75deb675190d2c513f48ca8b90d39bd92f4cbd; Rust 40049224929 completed 6/6 success; artifact 12542527912 sha256:cbdc2d2e41a7b3e96e49a7ef3354fbc5ddfeee668bf7e5bfb54ab42f734ee005.",
+        "Strict158 original child 1b84c2c3f38207676643f28af3595699e0586664 TDRP 40048841440 failed source authority for duplicate target symbol; repair 92d9f63f98a141a3c4e9032e9f992ce919b3b954 removed exactly that duplicate parity-ledger symbol and fresh TDRP/Rust passed."
+      ],
+      "target_commit": "92d9f63f98a141a3c4e9032e9f992ce919b3b954",
+      "workflow_run": 40049224913,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12542722367,
+      "artifact_digest": "sha256:0d6b4713f89e1d9c75e39fbb144e4621c9e768137e3e7f549297472c2c5698ce",
+      "composition_root": "Fabushi canonical native text/domain owners plus narrow existing FFI/platform adapters",
+      "composition_slot": "boundary-only null-terminated string representation provenance",
+      "capability_component": "Source-only GSL zstring dependency replacement; no shipping compatibility runtime",
+      "variation_axes": [
+        "const versus mutable pointee",
+        "char versus wchar_t versus char16_t versus char32_t",
+        "ordinary product text versus real C ABI boundary",
+        "type-tag provenance versus independently verified caller behavior"
+      ],
+      "shared_owner_contracts": [
+        "TDRP source/dependency inventory",
+        "TDRP-LANG-03 dependency replacement boundary",
+        "canonical Fabushi text/domain owners",
+        "actual narrow FFI/platform owner when independently required",
+        "exact-head TDRP/Rust evidence"
+      ],
+      "duplicate_root_check": "No GSLZStringRuntime, second canonical string model, global C-string owner or bulk caller-closure authority.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "No independent product action; representation is boundary-only when an actual consumer requires it.",
+      "detail_section": "Not applicable",
+      "capability_surface": "Exact source/dependency accounting only; no shipping UI/runtime surface.",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Any accepted tdesktop/GSL gitlink, child-tree, zstring/license blob or direct-consumer-set drift requires fresh reconciliation; actual FFI/platform caller responsibilities remain independently open.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-GSL-ZSTRING-NULL-TERMINATED-STRING-TAG-DEPENDENCY-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GSL-ZSTRING-EXACT-SOURCE-001",
+        "ORA-TDRP-GSL-ZSTRING-NO-RUNTIME-SEMANTICS-001",
+        "ORA-TDRP-GSL-ZSTRING-NO-DIRECT-CONSUMER-001",
+        "ORA-TDRP-GSL-ZSTRING-NO-PARALLEL-STRING-OWNER-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GSL-ZSTRING-BOUNDARY-ONLY-001",
+        "INV-TDRP-GSL-ZSTRING-NO-GSL-RUNTIME-001",
+        "INV-TDRP-GSL-ZSTRING-NO-IMPLIED-POINTER-SAFETY-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GSL-ZSTRING-TAG-SEMANTICS-001",
+        "CONTRACT-TDRP-GSL-ZSTRING-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GSL-ZSTRING-SOURCE-DRIFT-001",
+        "FAULT-TDRP-GSL-ZSTRING-UNSAFE-GLOBALIZATION-001",
+        "FAULT-TDRP-GSL-ZSTRING-BULK-CALLER-CLOSURE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-GSL-ZSTRING-FFI-BOUNDARY-SAFETY-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-GSL-ZSTRING-NO-SOURCE-OMISSION-001",
+        "REG-TDRP-GSL-ZSTRING-NO-PARALLEL-RUNTIME-001",
+        "REG-TDRP-GSL-ZSTRING-NATIVE-TEXT-OWNER-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-BEHAVIOR",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "locked GSL zstring header + MIT license + zero-direct-consumer search + repaired parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact Microsoft/GSL include/gsl/zstring@2cc13d83840afec61e5bd709c77900026ed225f4 retained under MIT LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02; accepted tdesktop direct-consumer search is empty; no GSL zstring runtime or downstream release authority inferred.",
+      "reviewer": "primary-session",
+      "notes": "Strict159 closes only GSL include/gsl/zstring as a zero-terminated raw-pointer tag dependency. The aliases add no runtime validation and accepted tdesktop has no direct zstring/basic_zstring consumer; actual future C/OS/library boundaries remain independently open in existing owners. Counters unknown=16,217 unread=16,192 omitted=0 responsibilities=177. Next strict160 Microsoft/GSL tests/algorithm_tests.cpp@e369be0e34dcf786a63631807ebe3cc06fb59544."
     }
   ]
 }
