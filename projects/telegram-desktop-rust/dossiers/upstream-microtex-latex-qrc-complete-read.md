@@ -150,6 +150,7 @@ These are parent evidence only after this receipt commit is created. The receipt
 ## Traceability
 
 - Requirement: `TDRP-R9-MICROTEX-LATEX-QRC-PROVENANCE-001`
+- Target symbol: `TDRP_MICROTEX_LATEX_QRC_PROVENANCE_001`
 - Exact-source oracle: `ORA-TDRP-MICROTEX-LATEX-QRC-EXACT-SOURCE-001`
 - Manifest oracle: `ORA-TDRP-MICROTEX-LATEX-QRC-MANIFEST-001`
 - Consumer oracle: `ORA-TDRP-MICROTEX-LATEX-QRC-QMAKE-CONSUMER-001`
