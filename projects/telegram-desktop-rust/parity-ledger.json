@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "bf0149a2407f16d2557a8372312b6bd13126b24c",
+  "target_commit": "65351f0d75afd5b27a1a36d4fa6a026388b8192d",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16203,
-    "unread": 16178,
+    "unknown": 16202,
+    "unread": 16177,
     "omitted": 0,
-    "responsibilities_total": 191,
+    "responsibilities_total": 192,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -50640,6 +50640,227 @@
       "license_and_provenance": "Exact Microsoft/GSL Android workflow retained as source/CI provenance under the pinned child repository; no workflow copied into Fabushi shipping runtime.",
       "reviewer": "primary-session",
       "notes": "Strict173 source-only dependency CI/test workflow provenance. Counters unknown=16203 unread=16178 omitted=0 responsibilities=191. Parent Actions terminal-success; receipt-head Actions required. Baseline identity, source closure and independent release acceptance remain false."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/GSL",
+      "source_blob_sha": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+      "source_kind": "recursive_child_repository_ci_test_workflow_provenance",
+      "module_id": "tdesktop.thirdparty.gsl.cmake-action",
+      "responsibility_id": "TDRP-R9-GSL-CMAKE-ACTION-PROVENANCE-001",
+      "source_symbols": [
+        "Microsoft/GSL:.github/workflows/cmake/action.yml@0ac09bfa4b7702e768f42ad841563169aef267e0",
+        "Composite CMake action with generator/build type/compiler/C++ standard/extra args/build/test/shell inputs",
+        "mkdir build -> cmake configure with CI_TESTING=ON and -Werror=dev -> build_cmd -> test_cmd",
+        "Microsoft/GSL:.github/workflows/compilers.yml@23866a631659aa7d5290e4824b93908de21d42f4 invokes ./.github/workflows/cmake four times",
+        "Microsoft/GSL:LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02"
+      ],
+      "capability_ids": [
+        "CAP-DEPENDENCY-CI-PROVENANCE",
+        "CAP-DEPENDENCY-TEST-PROVENANCE"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "Microsoft/GSL:.github/workflows/cmake/action.yml@0ac09bfa4b7702e768f42ad841563169aef267e0",
+        "Microsoft/GSL:.github/workflows/compilers.yml@23866a631659aa7d5290e4824b93908de21d42f4",
+        "Microsoft/GSL:CMakeLists.txt@b1d24e5facfe56b1ae28468a5959797e9f6bacda",
+        "Microsoft/GSL:LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-cmake-action-complete-read.md",
+      "behavior_contract": "Source-only provenance for the pinned Microsoft/GSL composite CMake CI action. It parameterizes configure/build/test execution for the child compiler matrix and is not a tdesktop or Fabushi shipping build/runtime owner.",
+      "state_machine": "Child workflow checkout -> composite action creates build directory -> CMake configure using supplied generator/build type/compiler/C++ standard and optional args with CI_TESTING=ON -> supplied build command -> supplied test command -> action terminal result.",
+      "side_effects": [
+        "CI-only build directory, generated build files, compiled child dependency tests and test execution on ephemeral GitHub runners; no product state, account, persistence, packaging or service side effects."
+      ],
+      "failure_cases": [
+        "Build directory creation fails.",
+        "CMake configure rejects the selected compiler/generator/standard or developer warnings.",
+        "Supplied build command fails.",
+        "Supplied test command fails.",
+        "Dependency CI action semantics are incorrectly promoted to Fabushi shipping build/runtime requirements."
+      ],
+      "ui_disposition": "Not a product UI source; third-party dependency CI composite action only.",
+      "non_ui_responsibilities": [
+        "Exact composite-action source identity",
+        "Parameterized CMake configure/build/test CI provenance",
+        "Direct child-workflow consumer provenance",
+        "Fail-closed separation from shipping build/runtime ownership"
+      ],
+      "platform_delta": "The action is shared by the Microsoft/GSL compiler CI matrix across Linux, macOS and Windows. It is not a Fabushi platform adapter or release pipeline.",
+      "existing_owner_candidates": [
+        "Existing TDRP recursive source/dependency and CI/test-provenance governance (selected)",
+        "Fabushi shipping build/platform owners (rejected for this dependency-only source)",
+        "GslCMakeRuntime or TelegramBuildRuntime (rejected)"
+      ],
+      "existing_owner": "Existing TDRP recursive source/dependency and CI/test-provenance governance.",
+      "rejected_existing_owners": [
+        "Fabushi shipping build/platform owners are not owners of Microsoft/GSL child CI topology.",
+        "GslCMakeRuntime would turn CI provenance into a parallel shipping runtime.",
+        "TelegramBuildRuntime would preserve upstream architecture and violate existing-owner-first."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-cmake-action-complete-read.md"
+      ],
+      "fabushi_target_symbols": [
+        "TDRP_GSL_CMAKE_ACTION_PROVENANCE_001"
+      ],
+      "target_language": "Source-only YAML dependency-CI composite-action provenance; no shipping implementation.",
+      "language_rationale": "The source is CI orchestration for a pinned third-party child dependency, not product code to port.",
+      "command_event_contracts": [
+        "Consumer supplies generator/build type/compiler/C++ standard and optional configure/build/test/shell inputs.",
+        "Action always configures with CI_TESTING=ON, verbose Makefile output and -Werror=dev.",
+        "Configure precedes build, and build precedes test.",
+        "Dependency CI provenance does not authorize Fabushi product or release acceptance."
+      ],
+      "state_owner": "GitHub Actions ephemeral composite-action execution only; no product state owner.",
+      "lifecycle_owner": "Pinned Microsoft/GSL composite CMake action invoked by child compiler CI; no Fabushi shipping lifecycle owner.",
+      "persistence_and_restart": "No product persistence; ephemeral build directory and CI runner only.",
+      "concurrency_and_cancellation": "No independent concurrency policy in the action; caller workflow controls job/matrix concurrency and cancellation.",
+      "security_boundary": "Do not copy child CI compiler, generator or warning assumptions into shipping build/security/release gates without independent Fabushi authority.",
+      "network_service_dependencies": [
+        "GitHub Actions hosted runner",
+        "CMake/toolchain packages supplied by the caller environment"
+      ],
+      "service_owner": "Third-party CI infrastructure only; not a Fabushi service owner.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-ci-test-workflow-provenance-mapped-open",
+      "blockers": [
+        "No production implementation or release acceptance claim.",
+        "Direct consumer compilers.yml remains an independent child source entry even though it was fully re-read as caller evidence.",
+        "No proven tdesktop shipping entrypoint for this child composite action.",
+        "Fresh receipt-head Actions required."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        ".github/workflows/cmake/action.yml@0ac09bfa4b7702e768f42ad841563169aef267e0 fully re-read: 56 line slots / 1,353 bytes.",
+        ".github/workflows/compilers.yml@23866a631659aa7d5290e4824b93908de21d42f4 fully re-read: 104 line slots / 3,164 bytes; four uses of ./.github/workflows/cmake.",
+        "Composite action runs mkdir build, CMake configure with CI_TESTING=ON/CMAKE_VERBOSE_MAKEFILE=ON/-Werror=dev, caller build_cmd, then caller test_cmd.",
+        "MIT LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02 confirmed.",
+        "Parent exact-head 65351f0d75afd5b27a1a36d4fa6a026388b8192d: TDRP 40087585670 61/61 success; Rust 40087585716 6/6 success; Official MCP 40087585579 success. No Microsoft/GSL composite-action execution is claimed in Fabushi CI."
+      ],
+      "target_commit": "65351f0d75afd5b27a1a36d4fa6a026388b8192d",
+      "workflow_run": 40087585670,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12558165789,
+      "artifact_digest": "sha256:fd0b629f49291daedba7cbfae273b03870b6b88a1d96da820538aa6cf8491168",
+      "composition_root": "Existing TDRP source/dependency provenance governance.",
+      "composition_slot": "Dependency CI/test provenance only; no shipping composition slot.",
+      "capability_component": "Microsoft/GSL composite CMake CI action provenance; no shipping runtime.",
+      "variation_axes": [
+        "generator/build type/compiler/C++ standard",
+        "extra configure args",
+        "build/test command",
+        "shell",
+        "caller OS/toolchain"
+      ],
+      "shared_owner_contracts": [
+        "TDRP recursive dependency inventory",
+        "Exact-head Actions evidence",
+        "Pinned child compiler-workflow caller",
+        "Existing Fabushi build/platform owners remain separate"
+      ],
+      "duplicate_root_check": "No GslCMakeRuntime, TelegramBuildRuntime or second shipping build/product root.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "No product action; dependency CI-only provenance.",
+      "detail_section": "Not applicable",
+      "capability_surface": "Source-only dependency CI/test provenance; no shipping surface.",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Any GSL gitlink/tree, composite-action blob, direct child workflow caller or license drift requires exact-ref re-read; no product/build ownership closure.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No icon change.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-GSL-CMAKE-ACTION-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GSL-CMAKE-ACTION-EXACT-SOURCE-001",
+        "ORA-TDRP-GSL-CMAKE-ACTION-DIRECT-CALLER-001",
+        "ORA-TDRP-GSL-CMAKE-ACTION-NO-SHIPPING-OWNER-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GSL-CMAKE-ACTION-DEPENDENCY-ONLY-001",
+        "INV-TDRP-GSL-CMAKE-ACTION-NO-PARALLEL-RUNTIME-001",
+        "INV-TDRP-GSL-CMAKE-ACTION-NO-PRODUCT-CLOSURE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GSL-CMAKE-ACTION-PINNED-SOURCE-001",
+        "CONTRACT-TDRP-GSL-CMAKE-ACTION-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GSL-CMAKE-ACTION-SOURCE-DRIFT-001",
+        "FAULT-TDRP-GSL-CMAKE-ACTION-CALLER-DRIFT-001",
+        "FAULT-TDRP-GSL-CMAKE-ACTION-PRODUCT-PROMOTION-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "Pinned Microsoft/GSL child composite-action source",
+        "Pinned Microsoft/GSL compilers.yml caller",
+        "GitHub Actions exact-head TDRP Revision 9 and Rust desktop runtime"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact Microsoft/GSL composite CMake action, child caller, root CMake context and MIT LICENSE retained as source/CI provenance; no workflow copied into Fabushi shipping runtime.",
+      "reviewer": "primary-session",
+      "notes": "Strict174 source-only dependency CI/test composite-action provenance. Counters unknown=16202 unread=16177 omitted=0 responsibilities=192. Parent Actions terminal-success; receipt-head Actions required. Baseline identity, source closure and independent release acceptance remain false."
     }
   ]
 }
