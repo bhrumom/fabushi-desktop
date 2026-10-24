@@ -83,6 +83,9 @@ impl NativeAccountStoreClient {
         if identity(&c) != self.identity { return Err(NativeFileError::Account); }
         Ok(c)
     }
+    pub(super) fn ensure_current_account(&self) -> Result<(), NativeFileError> {
+        self.credential().map(|_| ())
+    }
     fn url(&self, agent: &str) -> Result<Url, NativeFileError> {
         if agent.is_empty() || agent.len() > 160 || !agent.as_bytes()[0].is_ascii_alphanumeric()
             || !agent.bytes().all(|b| b.is_ascii_alphanumeric() || b"._:-".contains(&b)) {
