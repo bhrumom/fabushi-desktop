@@ -84,6 +84,9 @@ fn production_webauthn_runtime_reconnects_and_disposes_without_waiting_for_sse_s
         while !server_stop.load(Ordering::Acquire) {
             match listener.accept() {
                 Ok((stream, _)) => {
+                    stream
+                        .set_nonblocking(false)
+                        .expect("restore blocking gateway stream");
                     let gets = Arc::clone(&server_get_count);
                     let posts = Arc::clone(&server_post_count);
                     handlers.push(thread::spawn(move || handle_connection(stream, gets, posts)));

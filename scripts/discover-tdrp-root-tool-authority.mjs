@@ -34,10 +34,21 @@ async function sourceLine(item){
 }
 function hashUrl(url,id){
   const dest=path.join(temp,id.replace(/[^A-Za-z0-9_.-]/g,'_'));
-  run('curl',['-fsSL','--retry','3','--connect-timeout','20','--max-time','120','-o',dest,url]);
+  const urls=[url];
+  if(url.startsWith('https://ftp.gnu.org/pub/gnu/')){
+    urls.push('https://ftpmirror.gnu.org/'+url.slice('https://ftp.gnu.org/pub/gnu/'.length));
+  }
+  const errors=[];
+  let fetchedUrl=null;
+  for(const candidate of urls){
+    const r=spawnSync('curl',['-fsSL','--retry','3','--connect-timeout','20','--max-time','120','-o',dest,candidate],{encoding:'utf8',maxBuffer:8*1024*1024});
+    if(r.status===0){fetchedUrl=candidate;break;}
+    errors.push(candidate+': '+String(r.stderr||'').trim());
+  }
+  fail(fetchedUrl,'download failed across immutable transport candidates for '+url+'\n'+errors.join('\n'));
   const sha=run('sha256sum',[dest]).trim().split(/\s+/)[0];
   fail(/^[0-9a-f]{64}$/.test(sha),'download hash invalid for '+url);
-  return {url,sha256:sha};
+  return {url,fetched_url:fetchedUrl,transport_candidates:urls,sha256:sha};
 }
 function resolveRef(url,ref){
   const r=spawnSync('git',['ls-remote',url,'refs/heads/'+ref,'refs/tags/'+ref,'refs/tags/'+ref+'^{}'],{encoding:'utf8',maxBuffer:8*1024*1024});

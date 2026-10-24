@@ -33,6 +33,8 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "${TDRP_TARGET_SHA}"
+      - name: Test Qt acquisition ref parsing
+        run: node --test scripts/test-tdrp-root-open-authority.mjs
       - name: Validate Revision 9 source authority
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -555,6 +557,7 @@ jobs:
 
   root-source-archive-accounting:
     name: Root source archive accounting
+    needs: candidate-authority
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -567,11 +570,41 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "${TDRP_TARGET_SHA}"
-      - name: Verify and inspect immutable source archives
+      - name: Download same-head source authority provenance
+        uses: actions/download-artifact@v4
+        with:
+          name: tdrp-revision9-authority-${{ env.TDRP_TARGET_SHA }}
+          path: artifacts/tdrp-authority
+      - name: Verify and inspect immutable source archives from live provenance
         shell: bash
         run: |
           set -euo pipefail
           node scripts/discover-tdrp-root-source-archives.mjs
+      - name: Fail closed on archive provenance and open closure
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const lock = require('./projects/telegram-desktop-rust/upstream.lock.json');
+          const discovery = JSON.parse(fs.readFileSync('artifacts/tdrp-authority/root-tool-authority-discovery.json', 'utf8'));
+          const report = JSON.parse(fs.readFileSync('artifacts/tdrp-root-source-archives/root-source-archive-discovery.json', 'utf8'));
+          const target = process.env.TDRP_TARGET_SHA;
+          if (discovery.target_commit !== target || report.target_commit !== target) throw new Error('target_commit provenance mismatch');
+          if (discovery.upstream_commit !== lock.upstream.commit || report.upstream_commit !== lock.upstream.commit) throw new Error('upstream_commit provenance mismatch');
+          if (report.upstream_tree !== lock.upstream.tree || report.lock_commit !== lock.upstream.commit || report.lock_tree !== lock.upstream.tree) throw new Error('lock commit/tree provenance mismatch');
+          if (report.source_authority_target_commit !== target || report.source_authority_upstream_commit !== lock.upstream.commit) throw new Error('source authority artifact provenance mismatch');
+          if (report.baseline_identity_accepted !== false || report.source_closure_ready !== false || report.recursive_disposition_status !== 'open') throw new Error('archive accounting must preserve unaccepted baseline and open source closure');
+          if (report.closure_status !== 'archive-discovery-complete-disposition-pending') throw new Error('archive disposition must remain pending');
+          if (lock.upstream.accepted !== false || lock.acceptance.accepted !== false || lock.acceptance.baseline_ready !== false) throw new Error('lock acceptance flags unexpectedly advanced');
+          if (!Array.isArray(report.archives) || report.archives.length !== 2) throw new Error('archive provenance cardinality mismatch');
+          for (const archive of report.archives) {
+            if (archive.target_commit !== target || archive.upstream_commit !== lock.upstream.commit || archive.upstream_tree !== lock.upstream.tree || archive.lock_commit !== lock.upstream.commit || archive.lock_tree !== lock.upstream.tree) throw new Error('archive target/upstream/lock provenance mismatch: ' + archive.id);
+            if (!archive.source_path || !Number.isInteger(archive.source_line) || archive.source_line < 1 || !archive.source_text.replaceAll('$VERSION', archive.version).includes(archive.url)) throw new Error('archive source path/line/URL provenance mismatch: ' + archive.id);
+            if (!/^[0-9a-f]{64}$/.test(archive.expected_sha256) || archive.actual_sha256 !== archive.expected_sha256) throw new Error('archive SHA-256 provenance mismatch: ' + archive.id);
+            if (archive.recursive_disposition_status !== 'open') throw new Error('archive recursive disposition must remain open: ' + archive.id);
+          }
+          NODE
       - name: Upload source archive evidence
         uses: actions/upload-artifact@v4
         with:
@@ -619,7 +652,7 @@ jobs:
           curl --fail --location --retry 4 --retry-delay 2 "${BOOST_URL}" -o "${RUNNER_TEMP}/tdrp-boost/boost.tar.gz"
           echo "${BOOST_SHA256}  ${RUNNER_TEMP}/tdrp-boost/boost.tar.gz" | sha256sum --check -
           tar -xzf "${RUNNER_TEMP}/tdrp-boost/boost.tar.gz" -C "${RUNNER_TEMP}/tdrp-boost"
-      - name: Execute accepted TDesktop Boost regex build path
+      - name: Execute observed TDesktop Boost regex build path (baseline unaccepted)
         shell: bash
         run: |
           set -euo pipefail
@@ -646,6 +679,10 @@ jobs:
           const fs = require('node:fs');
           const report = JSON.parse(fs.readFileSync('artifacts/tdrp-boost-reachability/boost-build-reachability.json','utf8'));
           if (report.target_commit !== process.env.TDRP_TARGET_SHA) throw new Error('Boost reachability HEAD drift');
+          const lock = require('./projects/telegram-desktop-rust/upstream.lock.json');
+          const source = JSON.parse(fs.readFileSync('artifacts/tdrp-source-archives/root-source-archive-discovery.json', 'utf8'));
+          if (report.upstream_commit !== lock.upstream.commit || report.upstream_tree !== lock.upstream.tree || report.lock_commit !== lock.upstream.commit || report.lock_tree !== lock.upstream.tree) throw new Error('Boost reachability lock provenance drift');
+          if (source.upstream_commit !== lock.upstream.commit || source.upstream_tree !== lock.upstream.tree || source.baseline_identity_accepted !== false || source.source_closure_ready !== false || source.recursive_disposition_status !== 'open') throw new Error('Boost reachability must preserve source archive provenance and open closure');
           if (report.acquisition_candidates !== 582 || report.dispositioned !== 582 || report.open !== 0) throw new Error('Boost acquisition accounting is not closed');
           if (report.status !== 'complete-for-boost-acquisition-candidates') throw new Error('Boost candidate status is not complete');
           if (report.source_closure_ready !== false) throw new Error('Boost candidate closure must not fabricate full source closure');
