@@ -3419,3 +3419,109 @@ The already registered reclamation worker/preparation/lifetime and Section 39 WA
 Archive pruning, physical disk measurement, page reclamation, commit authorization and retained reclamation-worker reuse all remain subordinate to existing canonical database/session owners. A checkpoint is not deletion authority, archive file removal is not row commit, IPC delivery is not native settlement, a retained worker is not a cross-database writer, and retirement cannot discard a mismatched lease by assumption.
 
 No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. All tests above were read only as frozen source oracles and were not executed. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, OCRM final acceptance and release acceptance remain absent.
+
+
+## Section 41 — archive publication, reclamation core, canonical validation, and lifecycle direct-consumer closure
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`). Section 40's page-reclamation/commit-gate/reuse identities remain canonical and are not duplicated.
+
+### 41.1 Canonical archive rows remain the recovery source; derived-file export is post-commit
+
+New frozen identities:
+- `src/config/sessions/session-accessor.sqlite-archive-store.ts@800fc86deada8588bd6bda377fa5b069b45dc60c`
+- `src/config/sessions/session-archive-publication.ts@24e47fda67680f5c7178d4f828f3bc01d099ff44`
+
+`publishSessionStateArchives` enters the existing mutation-worker lifetime and archive session, revalidates the captured source, and either uses the canonical worker owner or the explicit native maintenance owner. An empty requested set still retries previously committed pending archive rows. Worker publication binds the exact physical identity before preparation and verifies the native location again before record publication.
+
+`publishPreparedSessionStateArchives` repeatedly prepares canonical rows, writes derived files outside the SQLite commit, and records successful exports only afterward. A failed/colliding export throws with the canonical row still pending instead of claiming rollback. Retention similarly drops a canonical row only after the derived file is already absent and the row is rechecked under a fresh writer admission; rows are processed in bounded batches so the archive writer is not held across the whole scan.
+
+### 41.2 Physical disk accounting is read-only and cleanup remains admission-scoped
+
+New frozen identities:
+- `src/config/sessions/disk-budget-files.ts@f0c5e96d188e4a245f36e057476e411790493b94`
+- `src/config/sessions/disk-budget.worker.ts@4707f7a8bb04b81a88174ee68083fd17d643c286`
+
+The disk-budget worker only returns byte totals. The file layer measures canonical session artifacts plus durable SQLite main/WAL paths, excludes SHM/seal metadata and migration rollback artifacts from eviction accounting, canonicalizes/deduplicates paths, and performs bounded directory stats. File removal rechecks that the target is still a file and calls the current database-maintenance admission assertion immediately before unlink; it never grants database write authority.
+
+### 41.3 Retained reclamation workers are keyed by physical database identity and uncertain mutations are never replayed
+
+New frozen identities:
+- `src/config/sessions/session-accessor.sqlite-reclamation-worker.ts@282e66791782b28e143c65398380f8ea9ef774c6`
+- `src/config/sessions/session-accessor.sqlite-reclamation.ts@8be0a591987c450bc8fc09821ef39f0e84b2beb4`
+- `src/config/sessions/session-entry-deletion.worker.ts@9f54e46706976c9a378440c74ceff06fe0f8b019`
+
+The retained worker map is keyed by the physical reader-database path. Requester aliases are registered only as cleanup selectors; they do not own the worker. Before reuse the worker must match both options and expected identity. On failure it is reusable only if the captured source and worker identity are still current. Replacement, revocation or transport uncertainty closes the worker, and the failed mutation is never replayed; a replacement may serve only a later request.
+
+The transaction core routes every plan kind through the established agent/lifecycle transaction owners. Entry and lifecycle-artifact plans reread their prepared snapshots before deleting; historical and budget eviction recheck live protection/recency at commit. Page maintenance calls the database WAL owner with before/on/after commit hooks. Best-effort free-page reclamation after an already durable deletion is explicitly non-authoritative: failure leaves the deletion committed for a later budget pass.
+
+The entry-deletion worker executes the same reclamation transaction through the admitted agent worker context or native-binding transaction. Its publication candidate is built from the transaction result and transferred only through the existing worker admission; it is not an independent writer.
+
+### 41.4 Cleanup, purge, projection, creation and maintenance all compose the same owners
+
+New frozen identities:
+- `src/config/sessions/session-agent-purge.ts@0dc25706e6e825eb1c7e4f0dc657bcc9572bd514`
+- `src/config/sessions/session-accessor.sqlite-artifact-cleanup.ts@4f178e77c5cf1cb39ce82c36d2d1f1c7210ec4c7`
+- `src/config/sessions/session-accessor.sqlite-projection.ts@b062842cf60a679400157366a0cebf43a2333dc1`
+- `src/config/sessions/session-accessor.sqlite-maintenance.ts@b38fb99b63c96b4b4e4cfbf0b76b35573877389f`
+- `src/config/sessions/session-accessor.sqlite-creation.ts@7de68f8215b37294a87f4cb30a954056adb21f58`
+- `src/config/sessions/session-accessor.sqlite-maintenance-kick.ts@7df8c90a8fe20bd324120aec410e64c92c6669ce`
+- `src/config/sessions/session-accessor.sqlite-replacement-projection.ts@244cf8bb61598443f18042d770dfe5a4a433c64f`
+
+Agent purge captures the deletion execution, prepares exact removals, materializes archives before commit, commits through the existing deletion/native-binding owner, finalizes maintenance only after the writer is released, and publishes derived archives afterward.
+
+Lifecycle artifact cleanup captures either the incognito actor owner or the exact SQLite file identity. An absent captured store cannot later be silently adopted if startup creates it. SQLite planning runs through the history worker, deletion uses the existing reclamation owner, planner statistics refresh happens after the SQL commit, and archive publication is a separate post-commit boundary.
+
+Lifecycle projection and entry replacement both project first, materialize deletion archives outside the short writer section, capture maintenance preservation, then commit through the existing projection/reclamation/native owner. Post-commit archive publication and retention cleanup can fail independently and may be reported/captured, but cannot erase committed row changes.
+
+Creation retains one source owner across preparation, transcript initialization, entry commit and any pending archive recovery. A worker outcome-unknown is propagated rather than converted to a retry. Maintenance groups shared/historical ownership into indivisible batches, gives writers turns between bounded sizing/finalization work, counts only committed entry removals, and treats archive-publication/planner-statistics failures as later cleanup work rather than transaction rollback.
+
+### 41.5 Canonical-validation readiness certifies rows without becoming a data writer
+
+New frozen identity:
+- `src/config/sessions/session-canonical-validation-readiness.ts@247fc8b2ba556ebd4df5c3d6f5f7e1c21e63f2b9`
+
+Readiness retains the existing read-only database claim and current integrity receipt, then certifies pending canonical rows through the reclamation worker in bounded 128-row / 1 MiB batches. Each batch re-enters the existing writer admission and rechecks owner, mutation lifetime, claim and worker identity. Canonical readiness is marked only after the final batch and only while the same physical database remains current. Runtime callers may share one active drain by database incarnation, but success or failure is not cached as a replacement owner.
+
+### 41.6 Direct production consumers pass expected state or live authority back to the lifecycle owner
+
+New frozen identities:
+- `src/gateway/boot.ts@43fb88903468039b3f4ebb5b65580c4290efcff0`
+- `src/cron/session-reaper.ts@b1d615cf5b6ab55b3f58775aa4251e36eeb7c53a`
+- `src/agents/internal-session-effects.ts@39b67f292ce6d3de40d151754f2284ca58b6c211`
+- `src/cron/isolated-agent/run-prepare-runtime.ts@2e86cf678a59e642ae1bab0a8576a7002e18eb23`
+- `src/config/sessions/session-registry-maintenance.ts@884cc20b6317345891e9f840ef3a69f410f6842d`
+- `src/commands/doctor-session-canonical-keys.ts@6b1afad456b3b633c358d19c56beec5a6103f4b1`
+- `src/commands/doctor-heartbeat-main-session-repair.ts@645e2c5ab1bdf4882a473b80aeed14d518aa3cf7`
+- `src/config/sessions/session-accessor.reset.ts@8ccd9abd1322723534e3b434bea17804d10cba99`
+- `src/config/sessions/session-accessor.entry-mutation.ts@2bea4b74ddb1d498d31a89aed868c2ea1bd8f00c`
+
+Gateway boot removes only the session id it created. Cron reaping supplies the exact entry/session plus a continuation-aware commit guard and treats archive retention as separate history policy. Hidden internal-session cleanup supplies its expected session/entry and disables unrelated maintenance. Isolated cron preparation passes the live run guard into lifecycle mutation. Registry maintenance verifies its captured ancestry revision again at commit.
+
+Doctor canonical repair is the explicit exceptional path: `allowCanonicalRepair` plus in-transaction delivery/state rehoming is required, while stale loser stores are removed through exact lifecycle removals and verified archives. Heartbeat repair similarly moves an exact expected main entry. Reset composes its creation binding into the commit guard, and public create-entry mutation enters `createSessionEntryWithTranscriptInScope` through the already prepared lifecycle scope. None of these consumers opens a parallel reclamation writer.
+
+### 41.7 Focused negative oracles close publication, generation, receipt and readiness races
+
+New frozen identities:
+- `src/config/sessions/session-canonical-validation-readiness.test.ts@2d2bffbf0dba4db1708c0f0179b4a3c37bb7a274`
+- `src/commands/doctor-maintenance.session-workers.test.ts@f11ed762566e2159f943c83fd4b10eb22e783fc6`
+- `src/config/sessions/startup-migration.registry-recovery.test.ts@d18732aef16788998da09eaea13801b15c14d8b2`
+- `src/config/sessions/session-accessor.sqlite-cleanup-race.test.ts@4a8414f5f0d023e91d752c8e7150733095257508`
+- `src/config/sessions/cleanup-service.fix-missing.test.ts@b1fa957072538826b38b9eb04f8fc2af6b8919dc`
+- `src/config/sessions/session-accessor.sqlite-deletion-receipts.test.ts@45d24705c0e06a8e9a03d445a71e88ea33633403`
+- `src/agents/sessions/agent-session.reclamation-admission.test.ts@14d481e443da13dc89fddc6ca60c0c1e694e03d8`
+
+Canonical-validation tests prove schema drift, replacement, revoked receipts, row changes and superseded startup authority fail closed; a large backlog retains one worker while admitting foreground writes between batches; copied stores require a fresh full certification; shared active drains retain neither success nor failure after completion. Doctor tests show certification and archive/cold-history work drain without retaining worker leases between repairs. Startup registry recovery refuses to create missing configured stores and preserves durable lineage/held deletion state.
+
+Cleanup-race tests prove entry/generation facts are revalidated after async materialization; foreign plugin/agent owners survive; writers progress while archive bytes are produced; maintenance continues only for unchanged batch members; already committed earlier history remains published when a later generation changes; an empty cleanup pass republishes a pending canonical archive; and physical replacement after classification is rejected.
+
+Fix-missing tests prove pending canonical archive rows reconstruct every missing derived file after commit, collision bytes are never overwritten, lifecycle-delete failure rolls back the canonical archive, foreign appends survive classification-to-commit, rewritten generations are reclassified, and retention deletes a canonical row only after its derived file is gone.
+
+Deletion-receipt tests prove rollback retains write scopes/receipts; successful deletion retires only the exact session scopes; stale captured admission state cannot revive retired scopes; alias retarget settles receipts against the original database; batch failure retires only already committed rows; aborted deletion/context reset preserve receipts. Agent-session reclamation admission proves unrelated transcript publication remains queued until reclamation writer admission settles.
+
+The previously registered startup-migration, gateway canonical-validation, native-binding, archive-session, reclamation worker lifetime and Section 40 tests were re-read where necessary and are not duplicated.
+
+### 41.8 Closure result
+
+The newly exposed archive store, reclamation core/worker, disk accounting, lifecycle composition and canonical-validation paths do not introduce a second database writer, a second physical-close owner, archive-file-as-commit semantics, or receipt retirement by inference. Canonical row commit, native transaction settlement, derived-file publication, receipt retirement, worker exit and physical close remain separately evidenced boundaries.
+
+No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. All test files above were read only at the frozen ref and were not executed. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, OCRM final acceptance and release acceptance remain absent.
