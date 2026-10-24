@@ -6396,3 +6396,40 @@ New frozen identities:
 Immediately before this append, the live branch lease was `9457a3c198227737dbd0c01f396a32fa8945bbcc`, tree `0a09cdc76159f32719d74f8d3db215cc03db5666`, dossier blob `195c8960aad3d2fb8ef5ba09e34197e7f8d2089c`, 6,353 lines, with zero Section 99 and all four exact refs above at zero occurrences. Frozen upstream commit `ad8d12f126d29b0db204187adf5092db80294e70` was re-read in this pass. This remains frozen-source/read-only audit work: no GitHub Actions workflow was started or rerun, and no production code, ledger, RTM, acceptance flag, source lock, inventory, or source baseline file was modified.
 
 - The requested single predecessor-public-id -> restart/lost-reply session-delivery recovery -> real `settleQueuedSessionDelivery` -> real `removeCronRunContinuationSessionIfIdle` physical exact-alias deletion -> public `cron.runs { id, runId, limit: 1 }` terminal-read fixture remains absent. The direct Gateway remote-Stop replacement late-success oracle and a distinct plugin-native failed-publication receiver/new plural settlement caller also remain absent. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring parity, package/device proof, release acceptance, and final OCRM acceptance remain open.
+
+
+## Section 100 — bounded cron.run waiting and restart receipt recovery preserve the public run id, but still do not join it to session-delivery cleanup
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`. This pass reverses Sections 98–99 from the public side: `cron.run` bounded waiting, receipt-backed restart recovery, terminal history disclosure, then the requested queue-cleanup join. Only frozen refs absent from the complete Round87 dossier before this append are registered.
+
+New frozen identities:
+- `src/gateway/server-methods/cron-run-wait.test-support.ts@25ed561784b7e9a5e467d29913921eb9d6416250`
+- `src/cron/store/run-recovery.kernel.ts@fbe9699a2a8ec1473b3c6c25e757c5d9f46b2f96`
+- `src/gateway/server-methods/cron.validation.test.ts@cc14db5412b0e5b78edaf08d6ebf9dc6927e9c2e`
+
+### 100.1 Bounded waiting is a caller-lane optimization, not cleanup custody
+
+- New focused ref `cron-run-wait.test-support.ts@25ed…` proves `cron.run` skips `waitForManualRun` when the run queues behind the caller's own lane and waits only when the destination lane can finish meanwhile. Its destination matrix follows the actual delivery target rather than creator lane. Every case returns the same public enqueue `runId`; it never opens a receipt, drains session delivery, calls `settleQueuedSessionDelivery`, or invokes exact Cron continuation cleanup.
+- Re-reading registered production `server-methods/cron.ts@5af61dea384a7c51824228fb3c4fe08f48443b9e` and `service/ops-run.ts@c3fdb223be0de76fa8ce5e7af1069a89effc6bb6` confirms the wait only observes the accepted run's completion promise. Once settled, the handler separately calls `cron.runs { id, runId, limit: 1 }`; wait state never becomes session/queue cleanup authority.
+
+### 100.2 Restart repair explicitly projects retained receipt public identity back into terminal history
+
+- New production ref `run-recovery.kernel.ts@fbe9699a2a8ec1473b3c6c25e757c5d9f46b2f96` reads `receipt.requestRunId`, overlays it onto the interrupted public detail, records terminal history, and then finishes the abandoned receipt. The physical task record still uses its task/internal execution identity; restart authority remains the job/receipt/task tuple.
+- Registered `service/run-recovery.test.ts@f519dde1c823a1322de0e6e6f2e71ffb4f170f84` supplies the corresponding oracle: `acknowledged-manual-run` survives restart as the terminal public `runId`, uncertain payload is not replayed, and a second start does not duplicate history. Legacy internal history is likewise projected back through the retained receipt public id.
+- This closes the reverse edge from public receipt identity into restart history, but the kernel has no session-delivery entry id/key and never calls `recoverPendingRestartContinuationDeliveries`, `settleQueuedSessionDelivery`, or `removeCronRunContinuationSessionIfIdle`.
+
+### 100.3 Post-wait disclosure is same-run-id and authority-fenced, still outside cleanup
+
+- New focused ref `cron.validation.test.ts@cc14db5412b0e5b78edaf08d6ebf9dc6927e9c2e` makes the wait settle while history contains `runId: "run-1"`. A caller whose read authority remains current receives that terminal row; a caller revoked during history read receives only the enqueue acknowledgement. This directly oracles the same-public-id disclosure fence after bounded wait, but the fixture uses mocked wait/history surfaces and no real session-delivery recovery or alias deletion.
+
+### 100.4 The requested integrated fixture and the two parallel frontiers remain absent
+
+- Targeted searches for `requestRunId` with `settleQueuedSessionDelivery`, `requestRunId` with `removeCronRunContinuationSessionIfIdle`, `cron.runs` with either cleanup function, and `session-delivery` with `requestRunId` returned no candidate path. The frozen source therefore still proves two separate domains: receipt/history retains the public id across restart; queue/session custody owns settlement and exact-alias cleanup.
+- Direct `sessions.processes.stop` search still resolves only registered `session-processes.ts@b1455a7f54e47e84dd1844424e54057385db2065` and `session-processes.test.ts@4d65f9bcd624ea2031ecbe7493f9ee1daed3b4d3`. No direct Gateway test replaces `placementGeneration`/`activeOwnerEpoch` during an in-flight Stop and then returns successful stale reply.
+- Plugin-native production enumeration is unchanged: plural `settlePluginNativeAdmissions` callers remain registered generation-preparation worker `22055912…` and prepared-model-runtime build `0fec2f4a…`; generation-worker `37e1c105…` remains singular. No distinct failed-publication receiver handoff or new production plural caller was found.
+
+### 100.5 Dedupe, lease, and remaining acceptance state
+
+Immediately before this append, the live branch lease was `ffe15ff60753bc0c5caaafbd148402dabd06caed`, dossier blob `f26e78f74fa2d24add9f450275487e15d843bb31`, 1 lines, with zero Section 100 and all three refs above at zero occurrences. Frozen upstream `ad8d12f126d29b0db204187adf5092db80294e70` was re-read. No Actions were started or rerun; no production code, ledger, RTM, flags, source lock, inventory, or source baseline changed.
+
+- The requested single predecessor public `runId`/`sessionKey` -> restart/lost-reply session-delivery recovery -> real `settleQueuedSessionDelivery` -> real `removeCronRunContinuationSessionIfIdle` physical exact-alias deletion -> public `cron.runs { id, runId, limit: 1 }` terminal-read fixture remains absent. The direct Stop replacement-late-success oracle and distinct plugin-native failed-publication receiver/new plural caller also remain absent. Independent ACCEPT, scoped G01/G02, Rust implementation/wiring, package/device proof, release acceptance and final OCRM acceptance remain open.
