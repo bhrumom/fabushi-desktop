@@ -1001,3 +1001,220 @@ These are source/oracle reads only. No tests or Actions were executed.
 The combined returned discovery sets for the four snapshot-source entry symbols are now frozen-ref reconciled for this round, with both moving-default-only paths explicitly excluded and all newly persisted frozen identities re-read. This still does not establish repository-global closure for arbitrary indirect/dynamic wrappers, nor does it establish scoped G01/G02 positive evidence.
 
 The remaining source-only frontier is to enumerate indirect wrapper consumers around `openclaw-state-db-async-lifecycle` and the four lifecycle methods it returns (read admission, async-resource registration/drain, native retirement, close/retry), then exact-ref map their production callers/tests and compare against the cumulative Round87 dossier. Independent ACCEPT, `unit_authority_ready`, executable/package proof, OCRM final acceptance, and release acceptance remain absent. No production code, ledger, RTM, or flags were changed and no Actions were run.
+
+
+## 19. Round81 — shared-state async lifecycle wrapper and close-page exact-ref closure
+
+<!-- Round81 shared-state async lifecycle wrapper closure marker -->
+
+### 19.1 Direct lifecycle wrapper discovery sets
+
+The moving-default discovery sets for `registerOpenClawStateDatabaseAsyncResource`, `captureOpenClawStateDatabaseReadAdmission`, `captureOpenClawStateIntegrityAdmission`, and `publishOpenClawStateDatabaseWorkerAdmission` were reconciled path-by-path against frozen `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`. The returned set sizes were 64, 41, 2, and 9 respectively. Relative to the cumulative Round87 dossier, 42, 28, 1, and 7 returned paths required frozen re-read; overlaps were deduplicated. No newly missing wrapper candidate in these four sets was accepted as frozen evidence without an exact-ref read.
+
+New production/direct wrapper identities:
+
+- `src/infra/push-web-store.scope.ts@23d1db86930961e1c612f694701a14c24c27fc67`
+- `src/state/openclaw-state-lease-cleanup.ts@dbd2944cb7b78b2a670cc65dd0b6e8b6df900290`
+- `src/agents/sandbox/registry-currentness.ts@6ca2c97cea15b8c5c658e7384b7a08fcf46bd4d9`
+- `src/infra/device-pairing-tokens.ts@5e2f2662f1401e0f1f40f419a95557b458875027`
+- `src/proxy-capture/store.async.ts@8573b9411bb0d71f06b868feb57a499372551ead`
+- `src/infra/exec-approvals-cron-policy.ts@f47a9e9b7e3fe9ef3d40b5a8a14df7bb42038662`
+- `src/channels/message/ingress-queue-health-cache.ts@1371ec2378d2b0c3ff4d52a0edc728f82ba190a1`
+- `src/skills/lifecycle/upload-store-install-owner.ts@70b2aafd1cbe560909f94a6bda0341fd8e194eac`
+- `src/cron/store/read-only.ts@30f151b914918092a7015380cd3de5e90b513251`
+- `src/infra/device-pairing-publication.ts@a8d9e7bcbde564ebf8d08cd00ca7fd8e6cf97666`
+- `src/agents/auth-profiles/file-state.ts@63839e1f215b44b474b52195c5979342ddbc2a61`
+- `src/gateway/session-utils-store-sources.ts@f88d78469cb680a60d7498e3d6bddfdffb0abdb4`
+- `src/state/openclaw-state-db-current-reader.ts@0550cc0d4e91cf296149dc051a698b377b42421c`
+- `src/state/user-profile-events.ts@18e2a7e6982576f8009096680925833fae9515dd`
+- `src/agents/subagents/registry/subagent-registry-queued-registration-wait.ts@c109d8566f55f90cdec2400ba86bc63d11251682`
+- `src/gateway/github-oauth-lifecycle-helpers.ts@22938008c08fa66c9ce2d5882ebcbb17d60360fb`
+- `src/state/openclaw-state-read-worker.ts@d247c009cf515b8d42623512fd400efc792fbe5e`
+- `src/state/openclaw-agent-execution-owner.ts@a96b04c0fd188ef1c3f621ba246a6cdb4ae009d1`
+- `src/config/sessions/session-accessor.sqlite-canonical-worker-pool.ts@c9a493148783df0e8f9042301f22ab821a12c2e1`
+- `src/config/sessions/session-transcript-worker-resources.ts@ffd341bd00fad8380d81181124bac3ab6aa5d454`
+- `src/config/sessions/session-accessor.sqlite-reclamation-worker-lifetime.ts@47b74b249e5c398c908c84180b097e048b0f9712`
+- `src/state/openclaw-state-worker-context.ts@5600eb0b0734e01b4b09fae5fa90c404dc376c7f`
+- `src/plugin-state/plugin-state-operation-epochs.ts@ce11d357cee6dba6765f83ec40be7763becfd650`
+- `src/state/openclaw-state-db-readonly-reuse.ts@6e007de1d9f17b9b3e0b4f2d1baf48858c56eb02`
+- `src/plugin-state/plugin-state.worker.ts@99beb7ae2ddc3dc7c003221e197d980e0521f442`
+- `src/agents/subagents/registry/subagent-registry-read-cache.ts@9e2d4502a94394e2d39b5a6090a60db0609e9e38`
+- `src/state/openclaw-state-db-schema-runtime.ts@353f481db2749a49c8c2a42df4327b2894733dd7`
+- `src/state/openclaw-agent-execution-native.ts@16712ac15dc69461baf6f0b4ff0367294578bd96`
+
+New focused test/support identities:
+
+- `src/state/openclaw-state-lease-async.cancel.test.ts@9b2f1a60c067a96e972c0059a623a6c8811a5c43`
+- `src/trajectory/runtime-retention.test.ts@b3259ab6127d839b23fe535827d5fed050f7d8f9`
+- `src/state/openclaw-state-worker-lease.test.ts@6c19da4c4546dc2b6f3bff8633ad36d7a4fcbc44`
+- `src/projects/project-registry.authority.test.ts@6dc1bef97b2e3fe243bbcbc4c6737450a2cb9886`
+- `src/state/openclaw-agent-worker-store.env-capture.test.ts@9b1b4eee583263b2b1180839f5d01f331e73f911`
+- `src/config/sessions/session-accessor.sqlite-worker-request.lifetime.test.ts@df3e54b6e737088ccda55446005ac52755b40dc9`
+- `src/state/openclaw-state-lease-async.test-mocks.ts@9898e5d97158ac9f66401b9c4eb8ac368683c7cf`
+- `src/cron/store.readonly-worker-cleanup.test.ts@59dc81b5450bdf45ebe0ff86f26f1366a8ba56f2`
+- `src/cli/runtime-cleanup-scope.retirement.test.ts@e9bc88b426b29a4d727ea791d0a816e4879d94f1`
+- `src/test-utils/temp-home.test.ts@5e4a0dfaabb8e8da2829c366a8392d3341be8e0b`
+- `src/infra/device-bootstrap.maintenance.test.ts@7c874285d01f13e75d4b45371881a7e38e1a7050`
+- `src/state/openclaw-state-db-async-lifecycle.test.ts@3dbf4c77279d7759d2cc3ae9b8d8773e1fd8550a`
+- `src/config/state-corpus-fixture-lifetime.test.ts@d34dcebbf14e651dd0dc59d364d7e4c36144ad9f`
+- `src/gateway/worker-environments/service-inventory-recovery.test.ts@79806d4aed5c98a371df8aa6ba708c08e9711721`
+- `src/gateway/test-helpers.server-storage.test.ts@46ae1a2ebc72a52a0adec8fcd9c5d42806af2b22`
+- `src/agents/subagents/registry/subagent-registry-pressure.test.ts@3b0f95e9d1706a4747722da51fb3e5a8b23ff4b7`
+- `test/non-isolated-runner.sqlite-fixtures.ts@77b3ff3d6da36579dea3ebc390588554e8a814be`
+- `src/state/openclaw-state-read-worker.test.ts@42ddc8320e9b4b2dbae3d2c03e7310c3cc82710d`
+- `src/agents/subagents/registry/subagent-restart-recovery.test-support.ts@c3e18a056eae89d74d568a975842e9f8c448bd5c`
+- `src/agents/sessions/session-manager-static-notes.test.ts@30502cd8694e2e4eeb0b2bb9986c7137fb1ffed8`
+- `src/commands/onboard-non-interactive/local/auth-choice.setup-replacement.test.ts@084e194c63c278a450595355bc3dc6f0db835073`
+- `src/infra/push-apns-store.worker-read.test.ts@9b41a0805094c8d05c659d07ee0b3cb2a46badd7`
+- `src/projects/project-environment.test.ts@b7ebb07f4d15426f7654f083203a48c824298805`
+- `src/state/openclaw-state-db.windows.test.ts@2be01639a8d4971e80fe3208663433066dce6694`
+- `src/state/openclaw-agent-registration.test-support.ts@7b9d9ff76d59a5a96298ac47ff860c7eb1272556`
+- `src/agents/subagents/swarm/swarm-scheduler.claim-close.test.ts@37e4dc31a42e21fa5959898a87280a75797937ae`
+- `src/state/openclaw-state-read-worker.bun.test-support.ts@56cb545ce563e2eb16a80edece30332092481857`
+- `src/gateway/talk/relay/index.test.ts@3e81170284ac02f43771c008cc1308d9fc0de0e5`
+- `src/gateway/event-web-push.storage-scope.test.ts@fc17384ddb6df1a475046de59f890f6558575398`
+- `src/state/openclaw-state-db-read-admission.test.ts@67e35c387465f743492e6ff1002dbf197b7ba271`
+- `src/config/sessions/session-accessor.sqlite-reclamation-worker.test.ts@5d8d81d14161325d3375bf54aee94affe57218cd`
+- `src/agents/subagents/registry/subagent-registry-state.async.test.ts@42099257d92b70ee2f487ab37f7ff92465c34380`
+- `src/infra/sqlite-writer-admission-service.test.ts@e6dd9c9a644cf710d1cffe8b381ffa5bff3d4da4`
+
+### 19.2 Shared-state async lifecycle production path
+
+`openclaw-state-db-async-lifecycle.ts@fefa1e8c9dffbac0967263c91dbe74ede6d29fb9` and `openclaw-state-db-cache.ts@adcc28173d50c16683e776dcf6bbd056022dd35a` remain the process-wide shared-state lifecycle owner. The frozen source establishes these separate responsibilities rather than a generic close helper:
+
+- **Read admission generation:** `capture` binds a read admission to one physical identity record and generation. `assertCurrent` fails after sealing, identity replacement, generation replacement, or admission replacement. Warm capture may reuse a retained admission only while the same physical record remains current.
+- **Worker publication:** `publishOpenClawStateDatabaseWorkerAdmission` binds worker-created storage to the captured database path/physical identity and immediately rechecks the original admission. Publication does not mint fresh authority for a revoked requester and does not publish a host native handle.
+- **Async-resource custody:** `registerOpenClawStateDatabaseAsyncResource` adds accepted async owners to the process-wide resource set and to any close attempt already draining. Identity-bound resources settle only for the matching physical database. `phase: after-resources` finalizers are ordered behind ordinary accepted work.
+- **Drain versus native retirement:** path/global close seals and invalidates reads first, drains accepted resources, then calls the native retirement callback. Failed ordinary drainage retains failed resources; for a non-superseded database it releases the read seal so service may resume, and the explicit retry seals/invalidate again. A failed native retirement keeps the seal and close custody because the native owner is still live.
+- **Replacement fencing:** replacing a physical file invalidates the old generation. If an earlier close has failed, its record stays sealed/custodied even after the logical path publishes a successor. Alias/path equality alone does not transfer the old admission to replacement bytes.
+- **Removal exclusion:** offline state removal uses `holdExclusion`, awaits path async close, rechecks maintenance authority, then retains a native removal exclusion until the maintenance owner releases it. A failed close releases only the temporary removal admission; it does not pretend native retirement succeeded.
+
+These wrapper consumers preserve domain-specific owners: web push, device pairing, exec approvals, cron reads, auth-profile observations, plugin-state epochs, user-profile authority, GitHub OAuth inventory, subagent waits, state readers, agent execution, and session reclamation all enter the shared lifecycle through an explicit admission/resource contract rather than becoming second state writers.
+
+### 19.3 Focused negative oracles frozen in this cluster
+
+- `openclaw-state-db-async-lifecycle.test.ts` distinguishes failed resource drainage from failed native close: drainage failure retains the failed resource but can reopen reads, retry reseals; native close failure keeps the seal. It also verifies first-creation targeting, replacement identity fencing, alias normalization, native-reader join, retained after-resource finalizers, close coalescing, and maintenance exclusion.
+- `openclaw-state-worker-lease.test.ts` closes fresh callback admission while accepted callbacks/terminal writes finish, drains commands accepted before cold acquisition, cancels queued callbacks without abandoning the actor, and joins accepted native opening before retiring an abandoned actor.
+- `cron/store.readonly-worker-cleanup.test.ts` refuses new reader admission while canonical close drains an earlier reader; `trajectory/runtime-retention.test.ts` retains failed cleanup custody and exposes the original failure to lifecycle joiners.
+- `test/non-isolated-runner.sqlite-fixtures.ts` preserves a failed native handle/lease across teardown, allows unrelated independent cleanup to proceed, rebinds read pools to a successor generation, and prevents a retired generation from installing an owner against the current cache.
+- `openclaw-state-read-worker.test.ts`, corpus-fixture lifetime, worker-environment recovery, web-push storage scope, read-admission, reclamation-worker, and writer-admission-service tests preserve source identity, join accepted child/native work, reject stale descriptors, and keep shutdown/revocation final.
+- Project, update, OAuth, device, and session tests in the identity list remain source/oracle evidence only; their negative paths do not turn a successful SQLite operation into proof that cleanup, lease release, or publication authority also succeeded.
+
+### 19.4 First capped `closeOpenClawStateDatabaseAsync` page
+
+The moving-default search returned exactly 100 paths, so the result is explicitly treated as a capped page, not repository-global closure. Three page paths were already pinned before this subsection (`src/state/openclaw-state-db-cache.ts`, `src/state/openclaw-state-db.ts`, and the Round18 `src/cli/update-cli/progress.observation.test.ts` identity). The other 97 paths were individually queried at the frozen ref. Nine moving-default-only hits are absent at the frozen source and are excluded:
+
+- `scripts/perf/plugin-state-polling.mts`
+- `scripts/perf/managed-git-maintenance-measure.ts`
+- `scripts/perf/session-lifecycle-boot.ts`
+- `scripts/perf/database-page-cache-measure.ts`
+- `scripts/perf/adoption-candidates-measure.ts`
+- `scripts/perf/session-catalog-selection-measure.ts`
+- `scripts/perf/managed-attachment-cleanup-measure.mjs`
+- `scripts/perf/subagent-maintenance-capture-measure.ts`
+- `src/commands/doctor-capture-repeat.test.ts`
+
+That leaves 91 frozen paths on this first page. Eighty-eight were not previously in the dossier before this round; `src/state/openclaw-state-db.windows.test.ts@2be01639a8d4971e80fe3208663433066dce6694` is already listed in §19.1 because it also belongs to the read-admission wrapper set, leaving 87 additional identities below.
+
+Production/tooling/documentation/E2E identities:
+
+- `src/plugin-sdk/sqlite-runtime-testing.ts@2d234e0ac3a3ee7fad62394f6e21bec26ec8584e`
+- `src/cli/runtime-cleanup-scope.ts@931bbb9c668e8e80c9286823c2e6ef103c6d8375`
+- `src/acp/server.ts@4d63e0c08b9a18eac1825b3ead16cc669e84c8ff`
+- `docs/help/testing/fixtures.md@d2670a0fa0ac4f79201b447b96260a8007ec935d`
+- `scripts/perf/README.md@c4f41f25a487aa9bca7e188898c6581bb49286c5`
+- `scripts/bench-channel-ingress-writer.ts@7fa4f259b0241b6447074adfc130b89bf00fda17`
+- `scripts/bench-usage-refresh-memory.ts@f0c4851b146e902982e3a1f5ba83b98d03cd69f8`
+- `scripts/bench-session-history.ts@56c8f77d5bcb53a11f7f5407d4838b82890ca7c7`
+- `scripts/perf/transcript-hydration-headroom.ts@85b444d8117b4015f65b558d141b06f16a9116f2`
+- `scripts/perf/team-shape-fixture.ts@e6b34df3baae232551400c3134eae7ca7f8387ae`
+- `scripts/perf/seal-version-restart.ts@9c72a7864495350081cf7eb1dec3c9ff33186e6d`
+- `scripts/bench-gateway-startup.ts@913c8760a25cddba01b35d9691cb2bf7ca476ae1`
+- `scripts/perf/history-diff-measure.ts@21dcc30a8845af2f2ce769dd64f7f0b82ac864a0`
+- `src/infra/update-migrated-finalize.worker.ts@3a700fab13573ccb836b8c437240ae6c8da8edf8`
+- `scripts/bench-agent-concurrency-worker.ts@9f826c96de174beac4c959327b976af6fa2a2a75`
+- `scripts/perf/session-profile-reference-measure.ts@2417f5f0e45dbf767cb508017347d2e0a432f2a9`
+- `scripts/e2e/lib/upgrade-survivor/dreaming-cron.mjs@748b6eaabbcdc268857b6503169bc6ce140d0728`
+- `scripts/perf/transcript-broadcast-measure.ts@0903d6cba90b6b1366c98494a5b82aaf4eb55fd1`
+- `scripts/perf/worker-placement-reconcile-shutdown-measure.ts@0095614d2c7f0f4e7b87d9658e1073e68c9f686a`
+
+Test/support identities:
+
+- `src/acp/server.startup.test.ts@79cd50262a5f48ddef8493c2d05906aa8c11b6bf`
+- `extensions/codex/src/app-server/run-attempt-session-owners.test.ts@62c24d304632c145ea37cf871919809e5e28db4b`
+- `src/gateway/server.placement-abandonment.lifecycle.test.ts@bca95735a0d06a2eb403060080c6d2847ba4984f`
+- `src/node-host/config.test.ts@8b01a2f1158a4076f3bb0b9f58b2293077345570`
+- `src/node-host/local-id.test.ts@98ca5bff8b3c48a1ffa9868c9d0ecd53cb6f0547`
+- `src/system-agent/audit.test.ts@1e27c9238eddc758e6062381bdbd0700a702fcbe`
+- `src/cli/node-cli/identity.test.ts@cc81bd509309cfe29fcb514e8e536f988cf9f197`
+- `src/cli/local-state-owner.test.ts@cf391331f417aa8f275a054107a08144db72f2e9`
+- `src/test-utils/database-cleanup.ts@4add142b952b9e414bb5f2b4f55f1e99650fdce5`
+- `extensions/feishu/src/dedup.test.ts@d9648c3b0d53c2bed944b13a54bbdd68a4dea59c`
+- `src/agents/mcp-oauth-writes.test.ts@1bc09ded77017fda460dcb840d8880caf1b78f4d`
+- `src/config/io.runtime-models.test.ts@5758a21d9f60e3ed0e26395699537263b4595c62`
+- `src/acp/event-ledger.test-support.ts@47329984e0f2851c96d036bafb22b64d718c5dff`
+- `src/agents/mcp-oauth.test-harness.ts@6bb3efbb36219b0743af85c307958229bcf127bd`
+- `src/config/io.worker.test-support.ts@9bf5959f3ac6b5cccfc05514e1a63259d41e704a`
+- `src/gateway/board-store.test.ts@bc98b31164ffdf8faac7b4584cba9b2fc519369d`
+- `src/canvas/widget-tool.test-support.ts@40fc60df77aa691b10299aa2ffc17ffb1085c4f9`
+- `src/system-agent/rescue-policy.test.ts@7138f1cd61c67f4c0114b4e0eb6ea0c07db27a8d`
+- `src/boards/board-store.test-support.ts@2556cf54c7a603f80f7ad18257ce41669876307e`
+- `src/commands/doctor-lint.crabbox.test.ts@9cb877df525fa0f9ebfbf0c4c83d59e3a53288d5`
+- `src/gateway/auth-token-store-ref.test.ts@aeffeee1ca24b80513c9eb1209fc43ed5b8c8584`
+- `src/claws/provenance-runtime-read.test.ts@a671344f387b6d417744880fe8998f0e3d774806`
+- `src/infra/update-run-windows-user.test.ts@6355ba3053f8133e1a93018631b236ea521b82c3`
+- `src/infra/sqlite-worker-claw-read.test.ts@7979970ebb9622dbcc95ace5a9726cacb3e82951`
+- `extensions/twitch/src/oauth-owner.test.ts@4a49b14a7dc651b86be8b742def05f277af99d36`
+- `src/gateway/session-utils.test-support.ts@cd212f0d7f9fd2cba3991883e8fd21bd8c9ab415`
+- `extensions/acpx/src/process-lease.test.ts@c6a3da52a01852d9ee93adfc490ac9bee5e77ef2`
+- `src/system-agent/transcript-store.test.ts@801d535c392b4b17cb6a9386b13e273565d2ab6e`
+- `src/acp/runtime/session-meta-list.test.ts@fa6c496c84531e13a91259b09503907ef797728f`
+- `extensions/reef/src/state.test-support.ts@4a5379e1c7b0ff827d62f0e08c2c13782ca7d5b8`
+- `src/test-utils/state-database-temp-dirs.ts@7e59ba84ddc3080ce3763283e515c59c2457ac0c`
+- `src/infra/device-bootstrap.pruning.test.ts@f866ab8a4f96f06066ffe1f0a5e3a4b807234452`
+- `src/agents/live-cache-test-support.test.ts@2e99b290c9dd84a2774bd272c40c14e3c2577bdc`
+- `src/cli/update-cli/status.readonly.test.ts@c928d068bf1cfd1a91968af9172da4471091b395`
+- `src/agents/mcp-oauth-provider.read.test.ts@4a51687e9ae404d8d0408dae43879150d8380936`
+- `src/cli/database-ownership.process.test.ts@ee28c016dd6acb9e88820c32fa541835af9c1dbf`
+- `src/infra/update-run-admission-hold.test.ts@f3136576d240c2c8c12e16dc439c85f158212f41`
+- `src/commands/doctor-db-bloat.worker.test.ts@dad5b3fc7755438944a59edad67eabfa7432d8c4`
+- `extensions/acpx/doctor-contract-api.test.ts@b6988f76f196727d248224c2a68c720b23282556`
+- `src/state/openclaw-state-lease-async.test.ts@d51b248bd6ce43eeb46e44d634136837e8636c8c`
+- `src/agents/worktrees/run-lease-store.test.ts@ba8dfd88c6413bba1ba9bedbda137a42fd7ccb8e`
+- `extensions/google/vertex-adc-refresh.test.ts@f38061a9f284becf9f99b14544d3dfb8bc72cab9`
+- `src/acp/runtime/session-meta.test-support.ts@f6411636df8c273572f543d8ab8930fe8416fb78`
+- `src/agents/mcp-oauth-refresh-boundary.test.ts@89f0312bd692227d68dac73743485ee839a07d06`
+- `test/helpers/stage-live-auth-profiles.test.ts@2891756bd19dea7f73766dd3f37afed4535e3a05`
+- `src/cli/runtime-cleanup-scope.workers.test.ts@6c8896bb3ba7034f51485203f7940a7d990f6f84`
+- `extensions/diffs/src/test-helpers.ts@2368786f614ef6c81cb092d1473209bc112d40b9`
+- `src/infra/device-auth-store.client.test.ts@153b0503430a5493091c918353911cd6a8300afb`
+- `extensions/msteams/src/sso-token-store.test.ts@61c6a90fab391a54c6cf12d71631661bebef13b1`
+- `src/cron/store/run-finalization.worker.test.ts@7b053d0451dd5a46d744eceeeb17d021ccb774e1`
+- `src/node-host/invoke-system-run.socket.test.ts@f7450e117949318e5967855d59483b4b282b34cc`
+- `extensions/google-meet/src/oauth-owner.test.ts@e5fffed4e7158e7a8becdca72e67e55e18ae9abf`
+- `src/commands/doctor/cron/schema-safety.test.ts@d82ebc128c772daa46c97114e3ed202fa67a7553`
+- `src/gateway/openresponses-session-store.test.ts@103fe0a268e22ab1d3deee20753203dfc75e8580`
+- `src/infra/update-run-interruption-store.test.ts@f4bff27824e4649e2a6b264de16ee612f4c92f5f`
+- `src/state/openclaw-state.worker.imports.test.ts@fd99991ffcbd7e0586aea2545cee1020240ab8f3`
+- `src/infra/sqlite-worker-existing-schema.test.ts@c50283c555ee4d2d0131bd0a89809e08d2c153e7`
+- `src/state/user-profiles-fixture.test-support.ts@3e62ef20c5cb11010cd403f2da8ddc713a151c6a`
+- `src/boards/board-store.fixtures.test-support.ts@1f778f2d810c8199f0d6b67c288ce6665c45d015`
+- `extensions/imessage/src/test-support/runtime.ts@25cded6db858b37e9ba184e5c72820c2c7a21198`
+- `src/gateway/session-groups.registration.test.ts@90ccf302446c6f3b8576ea9417d174fd2ac1f7e3`
+- `src/infra/client-credential-state-owner.test.ts@f398b95f8d8923ff848a499a15e6f3bd6ebac54b`
+- `src/snapshot/git-backup-command.test-support.ts@6ab73d8859cce0fcd767af85b21d250d3383bf0d`
+- `src/agents/mcp-oauth-requesters.test.ts@211a2ebec9c6e5a08c913c928ac92a975c445a76`
+- `src/infra/update-immutable-protection.test.ts@519edd3144543280617259061ab1f55b6a53b0d9`
+- `src/agents/mcp-oauth-refresh.test.ts@57d6edd89264389d9d362332ad13fa01db444d16`
+- `src/state/openclaw-state-db.index-repair.test.ts@420c6fb2ef8cc0d50b65a37756a4a5ee85147482`
+- `src/infra/message-tool-run-outcome-store.test.ts@e1fcb15157bbf17c57f169a004b6aa1fcdc078e3`
+
+The close-page production path has real shipping entrypoints in addition to validation harnesses: CLI process cleanup dynamically imports the async state close, ACP shutdown closes shared state after transport teardown, and update finalization includes async state retirement. The plugin SDK file is a testing export surface; benchmark/perf/E2E files are validation consumers and are not production ownership evidence. The testing fixture documentation explicitly requires awaiting async close before raw SQLite access, copying, hashing, or snapshotting because synchronous test close may merely start worker retirement and leave WAL/native ownership live.
+
+Close-page negative oracles include ACP transport teardown before state close, retained seeded/session ownership when maintenance or agent drain fails, cancelled-startup join before replacement work, state-directory identity separation, fail-closed identity minting, durable OAuth/token replacement across reopen, writer release before delayed retry, lease expiry before effect, accepted callback drain during canonical close, caller cancellation while another lease/HTTP exchange settles, worker join after CLI executable cleanup, Doctor schema/WAL fail-closed behavior, no mutation replay after close, generation-replacement refusal, and prevention of stale refresh/logout resurrection.
+
+### 19.5 Status and remaining frontier
+
+The four direct lifecycle-wrapper discovery sets returned in this round are frozen-ref reconciled, and the first 100-result `closeOpenClawStateDatabaseAsync` page is frozen-ref reconciled with all nine moving-default-only paths excluded. This is not repository-global close-caller closure: GitHub code search is capped and indexed against the moving default branch, so additional production-entry clusters and indirect/dynamic wrappers can remain outside this page.
+
+Independent ACCEPT, scoped G01/G02 positive evidence, `unit_authority_ready`, executable/package proof, OCRM final acceptance, and release acceptance remain absent. No Actions, build, test, generator, package, production code, ledger, RTM, or flags were run or modified in this round. The next source-only frontier is to split global-close/lifecycle consumers by production entry and exact-ref reconcile paths beyond the capped page, then close remaining indirect lifecycle listeners/removal/cache wrappers without upgrading implementation or acceptance state from source-only provenance.
