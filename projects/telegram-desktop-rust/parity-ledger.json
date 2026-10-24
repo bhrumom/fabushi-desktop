@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "65351f0d75afd5b27a1a36d4fa6a026388b8192d",
+  "target_commit": "cfa73543c24f3d86275bee7f6c8b8b6583a8aa20",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16202,
-    "unread": 16177,
+    "unknown": 16201,
+    "unread": 16176,
     "omitted": 0,
-    "responsibilities_total": 192,
+    "responsibilities_total": 193,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -50861,6 +50861,228 @@
       "license_and_provenance": "Exact Microsoft/GSL composite CMake action, child caller, root CMake context and MIT LICENSE retained as source/CI provenance; no workflow copied into Fabushi shipping runtime.",
       "reviewer": "primary-session",
       "notes": "Strict174 source-only dependency CI/test composite-action provenance. Counters unknown=16202 unread=16177 omitted=0 responsibilities=192. Parent Actions terminal-success; receipt-head Actions required. Baseline identity, source closure and independent release acceptance remain false."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/GSL",
+      "source_blob_sha": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+      "source_kind": "recursive_child_repository_ci_test_workflow_provenance",
+      "module_id": "tdesktop.thirdparty.gsl.cmake-find-package",
+      "responsibility_id": "TDRP-R9-GSL-CMAKE-FIND-PACKAGE-PROVENANCE-001",
+      "source_symbols": [
+        "Microsoft/GSL:.github/workflows/cmake_find_package.yml@fd2f7a812ca21e4e125058e50acadd6b5ccb28ec",
+        "ubuntu-latest/macos-latest matrix; checkout@v4; lukka/get-cmake@latest with cmakeVersion 3.14.0",
+        "cmake -S . -B build -G Ninja -D GSL_TEST=OFF -D CMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/build/install",
+        "cmake --build build --target install",
+        "cmake -S tests/ -B build/tests_find_package -G Ninja -D CMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/build/install -D CMAKE_BUILD_TYPE=Release",
+        "CMakeLists.txt@b1d24e5facfe56b1ae28468a5959797e9f6bacda install/export Microsoft.GSL::GSL; tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a find_package(Microsoft.GSL CONFIG REQUIRED)"
+      ],
+      "capability_ids": [
+        "CAP-DEPENDENCY-CI-PROVENANCE",
+        "CAP-DEPENDENCY-PACKAGE-DISCOVERY-PROVENANCE"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "Microsoft/GSL:.github/workflows/cmake_find_package.yml@fd2f7a812ca21e4e125058e50acadd6b5ccb28ec",
+        "Microsoft/GSL:CMakeLists.txt@b1d24e5facfe56b1ae28468a5959797e9f6bacda",
+        "Microsoft/GSL:tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a",
+        "Microsoft/GSL:LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-cmake-find-package-workflow-complete-read.md",
+      "behavior_contract": "Source-only provenance for the pinned Microsoft/GSL CMake package-discovery CI workflow. It installs the child project into a temporary prefix and verifies that a separate tests/ configure can discover Microsoft.GSL through CMAKE_PREFIX_PATH. It is not a tdesktop or Fabushi shipping packaging owner.",
+      "state_machine": "push/pull_request main -> OS matrix checkout -> provision CMake 3.14.0 -> configure child with tests disabled and install prefix -> build install target -> configure tests/ against installed prefix -> workflow terminal result.",
+      "side_effects": [
+        "CI-only build/install directories and generated CMake package metadata in an ephemeral runner; no product persistence, account, network protocol, application packaging or release state."
+      ],
+      "failure_cases": [
+        "Requested CMake tool provisioning fails.",
+        "GSL configure or install target fails.",
+        "Installed Microsoft.GSL package metadata is missing or malformed.",
+        "tests/ cannot resolve find_package(Microsoft.GSL CONFIG REQUIRED) through CMAKE_PREFIX_PATH.",
+        "Dependency package-discovery CI is incorrectly promoted to Fabushi shipping packaging or release requirements."
+      ],
+      "ui_disposition": "Not a product UI source; third-party dependency package-discovery CI only.",
+      "non_ui_responsibilities": [
+        "Exact cmake_find_package workflow source identity",
+        "Installed CMake package discovery CI provenance",
+        "Root install/export and tests find_package consumer provenance",
+        "Fail-closed separation from shipping package/release ownership"
+      ],
+      "platform_delta": "The workflow exercises package discovery on Ubuntu and macOS hosted runners. It is not a Fabushi Linux/macOS packaging adapter or release pipeline.",
+      "existing_owner_candidates": [
+        "Existing TDRP recursive source/dependency and CI/test-provenance governance (selected)",
+        "Fabushi packaging/updater/release owners (rejected for this dependency-only source)",
+        "GslPackageRuntime or TelegramPackagingRuntime (rejected)"
+      ],
+      "existing_owner": "Existing TDRP recursive source/dependency and CI/test-provenance governance.",
+      "rejected_existing_owners": [
+        "Fabushi packaging/updater/release owners are not owners of Microsoft/GSL child package-discovery CI.",
+        "GslPackageRuntime would turn build-system provenance into a product runtime.",
+        "TelegramPackagingRuntime would preserve upstream architecture and violate existing-owner-first."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-cmake-find-package-workflow-complete-read.md"
+      ],
+      "fabushi_target_symbols": [
+        "TDRP_GSL_CMAKE_FIND_PACKAGE_PROVENANCE_001"
+      ],
+      "target_language": "Source-only YAML dependency-CI/package-discovery provenance; no shipping implementation.",
+      "language_rationale": "The source is third-party child build/package verification, not product logic to port.",
+      "command_event_contracts": [
+        "push/pull_request main triggers the child workflow.",
+        "The install target must succeed before the consumer configure runs.",
+        "The consumer configure must resolve Microsoft.GSL through the temporary install prefix.",
+        "Dependency CI provenance does not authorize Fabushi product packaging or release acceptance."
+      ],
+      "state_owner": "GitHub Actions ephemeral workflow state only; no product state owner.",
+      "lifecycle_owner": "Pinned Microsoft/GSL cmake_find_package workflow; no Fabushi shipping lifecycle owner.",
+      "persistence_and_restart": "No product persistence; temporary install prefix exists only in the CI workspace.",
+      "concurrency_and_cancellation": "Matrix jobs execute independently; this workflow defines no product concurrency/cancellation contract.",
+      "security_boundary": "Do not infer product trust, package signing, updater integrity or release provenance from third-party child CMake package-discovery CI.",
+      "network_service_dependencies": [
+        "GitHub Actions hosted runners",
+        "lukka/get-cmake action/tool download"
+      ],
+      "service_owner": "Third-party CI infrastructure only; not a Fabushi service owner.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-ci-package-discovery-provenance-mapped-open",
+      "blockers": [
+        "No production implementation or release acceptance claim.",
+        "No proven tdesktop shipping package consumer for this child workflow.",
+        "Fabushi packaging/updater/release responsibilities remain independently owned and open where their own evidence is incomplete.",
+        "Fresh receipt-head Actions required."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        ".github/workflows/cmake_find_package.yml@fd2f7a812ca21e4e125058e50acadd6b5ccb28ec fully re-read: 25 line slots / 807 bytes.",
+        "Root CMakeLists.txt@b1d24e5facfe56b1ae28468a5959797e9f6bacda defines Microsoft.GSL::GSL, GSL_INSTALL, install/export namespace Microsoft.GSL:: and Microsoft.GSLConfigVersion.cmake.",
+        "tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a uses find_package(Microsoft.GSL CONFIG REQUIRED) when configured as its own source root.",
+        "MIT LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02 confirmed.",
+        "Parent exact-head cfa73543c24f3d86275bee7f6c8b8b6583a8aa20: TDRP 40089287644 61/61 success; Rust 40089287862 6/6 success; Official MCP 40089287740 success. No Microsoft/GSL child workflow execution is claimed in Fabushi CI."
+      ],
+      "target_commit": "cfa73543c24f3d86275bee7f6c8b8b6583a8aa20",
+      "workflow_run": 40089287644,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12558079480,
+      "artifact_digest": "sha256:433108b2058f07a46984736c09f12ab305013f4aa5e76b1ef3805600b5565f74",
+      "composition_root": "Existing TDRP source/dependency provenance governance.",
+      "composition_slot": "Dependency CI/package-discovery provenance only; no shipping composition slot.",
+      "capability_component": "Microsoft/GSL CMake find-package CI provenance; no shipping runtime.",
+      "variation_axes": [
+        "ubuntu vs macOS hosted runner",
+        "configure/install success vs package-discovery failure"
+      ],
+      "shared_owner_contracts": [
+        "TDRP recursive dependency inventory",
+        "Exact-head Actions evidence",
+        "Pinned child root CMake install/export contract",
+        "Pinned child tests find_package consumer",
+        "Existing Fabushi packaging/release owners remain separate"
+      ],
+      "duplicate_root_check": "No GslPackageRuntime, TelegramPackagingRuntime or second shipping package/release root.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "No product action; dependency CI-only provenance.",
+      "detail_section": "Not applicable",
+      "capability_surface": "Source-only dependency CI/package-discovery provenance; no shipping surface.",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Any GSL gitlink/tree, cmake_find_package workflow blob, root install/export contract, tests find_package consumer or license drift requires exact-ref re-read; no product/package ownership closure.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No icon change.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-GSL-CMAKE-FIND-PACKAGE-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GSL-CMAKE-FIND-PACKAGE-EXACT-SOURCE-001",
+        "ORA-TDRP-GSL-CMAKE-FIND-PACKAGE-INSTALL-001",
+        "ORA-TDRP-GSL-CMAKE-FIND-PACKAGE-CONSUMER-001",
+        "ORA-TDRP-GSL-CMAKE-FIND-PACKAGE-NO-SHIPPING-OWNER-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GSL-CMAKE-FIND-PACKAGE-DEPENDENCY-ONLY-001",
+        "INV-TDRP-GSL-CMAKE-FIND-PACKAGE-NO-PARALLEL-RUNTIME-001",
+        "INV-TDRP-GSL-CMAKE-FIND-PACKAGE-NO-PRODUCT-CLOSURE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GSL-CMAKE-FIND-PACKAGE-PINNED-SOURCE-001",
+        "CONTRACT-TDRP-GSL-CMAKE-FIND-PACKAGE-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GSL-CMAKE-FIND-PACKAGE-SOURCE-DRIFT-001",
+        "FAULT-TDRP-GSL-CMAKE-FIND-PACKAGE-INSTALL-DRIFT-001",
+        "FAULT-TDRP-GSL-CMAKE-FIND-PACKAGE-PRODUCT-PROMOTION-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "Pinned Microsoft/GSL child cmake_find_package workflow",
+        "Pinned root CMake install/export contract",
+        "Pinned tests find_package consumer",
+        "GitHub Actions exact-head TDRP Revision 9 and Rust desktop runtime"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact Microsoft/GSL CMake find-package workflow, root install/export context, tests consumer and MIT LICENSE retained as source/CI provenance; no workflow copied into Fabushi shipping runtime.",
+      "reviewer": "primary-session",
+      "notes": "Strict175 source-only dependency CI/package-discovery provenance. Counters unknown=16201 unread=16176 omitted=0 responsibilities=193. Parent Actions terminal-success; receipt-head Actions required. Baseline identity, source closure and independent release acceptance remain false."
     }
   ]
 }
