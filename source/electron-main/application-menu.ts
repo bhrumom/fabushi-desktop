@@ -98,7 +98,7 @@ export function buildApplicationMenuTemplate(
       {
         label: "Help Center",
         click: () => {
-          void electron.openExternal("https://cursor.com/help");
+          void electron.openExternal("https://github.com/bhrumom/fabushi-desktop/issues");
         },
       },
       { type: "separator" },

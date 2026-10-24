@@ -310,3 +310,33 @@ test("deviceAgentSession exposes only the current production Fabushi account bea
   release();
   assert.equal(await stale, null, "an account epoch change must fence a stale device-agent bearer");
 });
+
+test("native usage projects token budgets without foreign weekly or currency semantics", async () => {
+  const { nativeUsageSummary, fetchNativeUsageSummary } = await import("./fabushi-usage.js");
+  const budget = { windowStart: 100, windowEnd: 200, tokenLimit: 1000, usedTokens: 250, reservedTokens: 100, remainingTokens: 650, unlimited: false };
+  const summary = nativeUsageSummary(budget);
+  assert.equal(summary.sandUsagePercent, 25);
+  assert.equal(summary.sandUsageResetTimestampMs, 200000);
+  assert.equal(summary.onDemand, null);
+  assert.equal(summary.isSandTrial, false);
+  assert.equal(summary.canCancelSandTrial, false);
+  assert.equal(nativeUsageSummary({ ...budget, unlimited: true }).sandUsagePercent, null);
+  assert.throws(() => nativeUsageSummary({}));
+  assert.throws(() => nativeUsageSummary({ ...budget, usedTokens: -1 }));
+  assert.throws(() => nativeUsageSummary({ ...budget, windowEnd: Number.MAX_SAFE_INTEGER }));
+  let requested = "";
+  const result = await fetchNativeUsageSummary({
+    baseUrl: "https://api.ombhrum.com",
+    getAccessToken: async ({ backendUrl }) => { assert.equal(backendUrl, "https://api.ombhrum.com"); return "native-test-token"; },
+    fetchImpl: async (url, init) => {
+      requested = String(url);
+      assert.equal(init?.redirect, "error");
+      assert.equal(new Headers(init?.headers).get("authorization"), "Bearer native-test-token");
+      return Response.json(budget);
+    },
+  });
+  assert.equal(requested, "https://api.ombhrum.com/v1/ai/usage");
+  assert.equal(result.sandUsagePercent, 25);
+  await assert.rejects(fetchNativeUsageSummary({ baseUrl: "https://api2.cursor.sh", getAccessToken: async () => { throw new Error("must not request credentials"); } }));
+  await assert.rejects(fetchNativeUsageSummary({ getAccessToken: async () => "native-test-token", fetchImpl: async () => new Response(null, { status: 503 }) }));
+});
