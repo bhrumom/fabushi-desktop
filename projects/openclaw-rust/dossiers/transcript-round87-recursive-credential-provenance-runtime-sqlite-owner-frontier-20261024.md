@@ -2200,3 +2200,102 @@ Focused tests prove foreign/unprofiled catalog targets are rejected before provi
 The four requested Section 26 recursion fronts are now tied one level deeper into their actual production owners and negative oracles. Memory-core worker packaging now reaches host acquisition/generation/reindex retirement; Google Meet participation reaches the shared live session owner and browser-effect currentness; WhatsApp controller ownership reaches the socket-session/inbound-drain/send-recovery generation rules; Beam store/catalog reaches Gateway authorization, copy and plugin-service retirement.
 
 No new evidence changes the prior process-wide SQLite conclusion: extension-local workers and plugin state owners do not become owners of `closeOpenClawStateDatabaseAsync`. No Actions/build/test/generator/package was run. No production code, ledger, RTM or flags were modified. Scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, independent ACCEPT, OCRM final acceptance and release acceptance remain absent.
+
+
+## 28. Section 27 next-owner recursion: retirement, durable delivery and catalog custody
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`). This section records only identities that were absent from the live Round87 dossier when this pass began. Previously registered X OAuth/runtime authority, Device Pair notifier state/CAS, Beam store/mirror/session-catalog, WhatsApp connection-controller/socket-session, and Nostr cursor/bus/state-store identities are intentionally not duplicated.
+
+### 28.1 Memory provider retirement and PostgreSQL staging custody
+
+New frozen identities:
+- `extensions/memory-core/src/memory/manager-postgres-reindex.ts@532277877c30c9313c2d3970b3d46f6073e3b6ff`
+- `extensions/memory-core/src/memory/manager-provider-lifecycle.ts@1adcaed8d4f4afc840d3e21e6a48f9334491adbb`
+- `extensions/memory-core/src/memory/manager-provider-lifecycle-fallback.test.ts@1a07ed9ce76d3f2e0ca3097f3fb1fc1a131e8890`
+- `extensions/memory-core/src/memory/manager-provider-lifecycle-leases.test.ts@cbc4baee055e61ea69ca3e8335ac77e7b1582f9a`
+- `extensions/memory-core/src/memory/manager-provider-lifecycle.test.ts@9cd748303061328f60bd256517f4cf474359140e`
+
+`MemoryProviderLifecycle` serializes provider retirement through `providerRetirementPromise` and a retained `providersPendingRetirement` set. Replacing the current provider first removes it from new admission, then retirement waits for admitted users through `awaitProviderIdle` before invoking the provider's close operation. A close failure leaves that provider pending, preserves the first retirement error, and prevents a fallback/retry provider from being opened through the same lifecycle until retirement is retried. The focused tests show that fallback activation and retry initialization do not race a previous worker shutdown, an admitted provider user blocks retirement, a leased runtime remains valid for its already-admitted operation, and manager teardown waits admitted search/vector-probe/index-generation work before provider close. Required configured providers fail closed when fallback cannot initialize; optional paths may remain in bounded FTS-only recovery instead of inventing a second embedding authority.
+
+PostgreSQL reindexing keeps the published owner distinct from a private staging database. `withPostgresMemoryReindex` starts the stage only under the still-current published owner, always closes the private stage in `finally`, and discards the stage only while the published database is still open and its currentness assertion passes. `publishPostgresMemoryStage` requires the retained stage identity plus the expected revision. A retired or replaced publication owner therefore cannot donate stale stage writer authority.
+
+### 28.2 Google Meet cleanup, durable transcript owner and dynamic bridge
+
+New frozen identities:
+- `src/meeting-bot/session-cleanup-tracker.ts@1793332dde2610754d053d0b9960893fbcf9d8ae`
+- `src/meeting-bot/session-durable-transcripts.ts@00527dd670b4c5c38b4bb09924c107530ccba08f`
+- `src/meeting-bot/session-runtime-browser-tabs.ts@85dfaf9d230e2f3030b68269259284609bd8d05a`
+- `src/meeting-bot/session-runtime.test.ts@7128288366d501d259cfbc20272d62303f9772de`
+- `src/meeting-bot/session-transcript-store.ts@b33bed17d154fa71a79d9a01822514516cec6185`
+- `src/meeting-bot/session-transcript-store.test.ts@ac13530b720c904dca72d144cb823b37d0ac939b`
+- `src/meeting-bot/transcripts-bridge.runtime.ts@7ad966bec17d753f23ed2e3020b2f9197c5468c7`
+- `src/meeting-bot/transcripts-bridge.ts@a2c03644b240252a94b48507cfd03656289d2d2b`
+- `src/meeting-bot/transcripts-bridge.test.ts@d367ff4bc9ed7e10f0b3b3030497fa74c0d39cb9`
+- `src/meeting-bot/transcripts-bridge.provenance.test.ts@0368243142e57e75ebf506f297ae9c22fd3bd55a`
+
+The durable transcript runtime is a recursive dynamic dependency: `MeetingSessionDurableTranscripts` lazily imports `./transcripts-bridge.runtime.js`. The cleanup tracker installs setup custody before invoking callbacks, drains every adopted stop handle even when startup failed, and removes a stop only after that stop succeeds. Terminal cleanup records transport/runtime settlement and browser settlement independently; a successful half is not repeated merely because the other half failed, and the state is released only after both halves settle and no runtime handle remains.
+
+Retained browser tabs are transferable only when transport, meeting URL, node, target ID, and prior plugin-owned-tab provenance match. A retained entry is consumed only after successful adoption or browser release; failed replacement cleanup keeps the remaining entries available for another settlement attempt and does not replace the original join failure.
+
+Durable transcript policy changes are serialized. A failed bridge finalization creates token-scoped retry custody with exponential backoff capped at 60 seconds; a stale retry token cannot retire a successor. The transcript store serializes captures per session and acknowledges durable delivery incrementally, so a later line failure does not erase already delivered lines and pending rows remain flushable. Epoch/gap handling advances the retained cursor without replaying prior source rows.
+
+The dynamically loaded bridge owns the durable `TranscriptsStore`, per-session lifecycle queue, and subscriber delivery queue. Start and stop share the same lifecycle key. Stop marks the exact capture closing, clears polling, drains an in-flight periodic capture, retries `MeetingTranscriptDeliveryError` final delivery up to three times, persists the stopped descriptor and summary under an exact active-capture currentness assertion, and only then retires that capture. Attachment replay rechecks the same active capture and refuses attachment once closing begins. Detach is queued behind the meeting owner and consumes only the same subscriber object, so a delayed detach cannot remove a replacement attachment that reused the same public session ID.
+
+Focused tests prove that failed subscriber delivery detaches only that subscriber while durable rows continue, finalization rejects late attachment, detach drains admitted delivery, terminal status delivery does not block meeting finalization, and provenance is cloned for subscribers so subscriber-local mutation cannot rewrite stored observation authority. Meeting leave/failed-join tests also preserve settled cleanup progress across retries instead of repeating already-settled side effects.
+
+### 28.3 WhatsApp durable inbound drain and reconnect metadata ownership
+
+New frozen identities:
+- `extensions/whatsapp/src/monitor-inbox.delivery-and-dedupe.test.ts@b65ca80dfd38ad62a3a61dd444027cc37cd3e4d1`
+- `extensions/whatsapp/src/monitor-inbox.metadata-cache.test.ts@3d77e77f9daa8ceff32a2e461354551fca418d4b`
+
+These tests deepen the already-registered connection-owner/socket-session/message-delivery production path rather than introducing another socket owner. The durable queue delays read receipts until accepted inbound handlers settle, keeps a duplicate transport delivery behind the first durable claim, does not redispatch a completed transport-key duplicate, and lets a ciphertext stub be replaced by the later decrypted message without producing a second logical turn. A transient queue persistence failure such as `SQLITE_FULL` is absorbed only by the bounded durable-enqueue recovery path.
+
+Monitor close waits already-admitted same-lane turns and serialized replies before socket close; after a successful drain, durable claims and pending rows are empty. Explicit retryable turn failures and reply-session conflicts retain durable retry custody, while this does not weaken the Section 27 rule that an ambiguous ordinary outbound send is not blindly replayed.
+
+Reconnect metadata is a cache/projection, not a second participant authority. Narrow group facts can survive reconnect, but hydrated participant identities do not outlive provider expiry; membership changes invalidate them. A live metadata fetch completing after the owner closes is never republished, listeners are detached on close, and reconnect entries are bounded. Thus a retired socket/cache generation cannot republish participant authority into its successor.
+
+### 28.4 Nostr ingress admission, relay retirement and generation tests
+
+New frozen identities:
+- `extensions/nostr/src/nostr-ingress.test.ts@f5dfd7a39ec1e71ce13ea492a36e441729b19109`
+- `extensions/nostr/src/nostr-relay-subscription.test.ts@8d5ae303693a79e15c694b7a11616ac8dc11c114`
+- `extensions/nostr/src/channel.outbound.test.ts@46566e04181870ce136760dd97ff0fe46ec5fa79`
+- `extensions/nostr/src/nostr-bus.admission.test-support.ts@0d04e7208733718856a51f1fa64ac266a5cf4edc`
+
+The already-registered Nostr cursor/ingress/bus owners are now backed by focused admission and retirement oracles. Durable ingress advances its cursor only after the exact raw event has entered the sender lane. An interrupted, uncompleted relay event is recovered by a fresh drain exactly once. Malformed or cyclic events are isolated from later admissions, while the first durable append failure is latched across already-queued admissions rather than allowing later events to leapfrog an unknown persistence outcome.
+
+Ingress rate/backlog limits are checked before expensive work, and stop quiesces delivery before waiting for an in-flight durable admission; after stop, new receive attempts fail with the stopped-owner error. Relay backfill is confirmed only after every relay reports a real EOSE. Timeout-synthesized EOSE is not treated as confirmation, and same-turn relay close can veto synthetic completion. Local abort/close is not reported as a remote relay failure, while actual relay closure is.
+
+Gateway-account tests retire the old bus before shutdown settlement so new sends cannot target the closing generation, while a newly installed replacement bus remains current even if the prior close completes later. Signed admission tests also show that denied/forged events do not reach the durable queue and a matching literal author string is not sufficient authorization. The state-database close calls appearing in these focused tests remain test cleanup seams; they do not make Nostr a production owner of the process-wide state database.
+
+### 28.5 Generic Gateway session-catalog admission, lifetime and import commit guards
+
+New frozen identities:
+- `src/gateway/server-methods/session-catalog-import.ts@94af949aeb008661826747d26603a44ce6c295d6`
+- `src/gateway/server-methods/session-catalog-list-admission.ts@dd9c711f965edb11c6758e8403830abf1a266b15`
+- `src/gateway/server-methods/session-catalog-list-lifetime.ts@803a5d37f633dd99badf096891657fbca6b6ab80`
+- `src/gateway/server-methods/session-catalog-provider-access.ts@25c54973b5fcbbe51dec46d4533df675942f8c4b`
+- `src/plugins/session-catalog-history-import.ts@6c11d31cad33beded9c3e3d8f71541dd8e0f2d`
+- `src/gateway/server-methods/session-catalog-provider-access.test.ts@b0eb299eecfe052d83b1f77f86acd931b876af15`
+- `src/gateway/server-methods/session-catalog-list-admission.test.ts@a1b732e281ad3c57f92d5d66f0423e6476414fc6`
+- `src/gateway/server-methods/session-catalog-list-lifetime.test.ts@78b3108b6511731c8c4c8a6240207cdcfcf6e1e0`
+- `src/gateway/server-methods/session-catalog-list-retention.test.ts@44c6e815b1605005dcbcb99efed10364391b02cd`
+- `src/gateway/server-methods/session-catalog-import.test.ts@f520a40b85e4430af8b0fb138b16c64704c43e80`
+- `src/gateway/server-methods/session-catalog-import.integration.test.ts@fc5b66c7ea211f0ab639c2355ae616bc68dd4460`
+
+This is the next generic consumer layer beneath the Section 27 Beam catalog mapping. Listing has a bounded global admission owner (16 active, 32 queued). A stepped provider operation holds its admission slot until that operation ends and checks cancellation/currentness before each next step. Provider access captures the plugin instance consumer, refuses further steps if the instance stops accepting calls or its owner is revoked, closes the stepped operation in `finally`, and releases the retained plugin consumer only after registered `waitUntil` completions settle.
+
+The list lifetime intentionally separates response/delivery lifetime from native-work custody. Connection/gateway/deadline retirement can stop subscriber delivery while an already-admitted native completion still retains Gateway root work until it settles. Focused tests show queued callers retain their original plugin scope and Gateway root; retired queued callers are released without ever starting the provider; an abort lets the already-started page settle but prevents the next page; 1,000 reconnects do not leak provider/listener state; and delivery expiry cannot release native work that ignores cancellation. Pending provider keys are bounded and an evicted operation's late page cannot republish.
+
+Import reads a bounded source history, then reauthorizes the source before destination creation. It composes the source-current assertion with the destination session mutation guard and carries that guard through Gateway session creation, history preservation, and the imported state event. Destination authorization is released in `finally`. History import removes raw provider payload, bounds items/bytes, detects repeated cursors, uses stable idempotency identities, and wraps imported text as external/untrusted content; imported history cannot inherit the source machine or tool authority.
+
+Unit and integration tests prove source sharing/custody revocation at the creation commit or during re-import append blocks the remaining mutation, stalled copy cancellation can leave no durable artifacts and then succeed on a fresh retry, ordinary durable session/projection/transcript owners handle re-import idempotently, and existing-target write plus draft/shared visibility remain enforced.
+
+### 28.6 De-duplication and closure result
+
+A fresh capped search of `closeOpenClawStateDatabaseAsync` found extension test/support callers in Codex, Feishu, Twitch, acpx, Reef, Google, diffs, Teams, Google Meet and iMessage; every returned extension identity was already present in the live Round87 dossier before this append. No new extension production consumer was found that owns the process-wide state-database close. The process-wide ownership conclusion therefore remains unchanged: extension-local workers, durable queues, transcript stores, channel buses, and catalog providers retain their own scoped cleanup custody but do not replace the existing Gateway/agent/global database retirement chain.
+
+X OAuth/runtime authority, Device Pair notifier scheduler/state CAS, and Beam store/mirror/catalog production identities were also rechecked against the live Round87 text and were already registered, so they are not duplicated here.
+
+No Actions, build, test, generator, package, production-code, ledger, RTM, or flags mutation was performed in this pass. Scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, independent ACCEPT, OCRM final acceptance and release acceptance remain absent.
