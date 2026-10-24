@@ -49,7 +49,37 @@
       "digest": "sha256:0dd721ba998d9293e346583575e7a7a280732f9de0e5c2201b07ce0a2925a5c2"
     },
     "official_mcp_marketplace_run_id": 40073333919,
-    "official_mcp_marketplace_jobs": "1/1 success"
+    "official_mcp_marketplace_jobs": "1/1 success",
+    "previous_historical_evidence": {
+      "status": "historical-only",
+      "runner": "github-actions",
+      "validation_head_sha": "94de4915c1828a5abc651b4ba282af421d6e23e1",
+      "upstream_commit": "83f9f56347cc3421c1e3ef537c7bb6dd06ce7cd0",
+      "upstream_tree": "bb0159bfedb38dd96e579af4ffe6360b6beb7332",
+      "recursive_non_directory_entries": 16377,
+      "tdrp_run_id": 39898075641,
+      "tdrp_jobs": "61/61 success",
+      "source_authority_artifact": {
+        "id": 12477538096,
+        "digest": "sha256:957966daab1d7907d0cabb9e3410b3d1f8f38f0eb38f4b30f8151f82480626eb"
+      },
+      "recursive_closure_artifact": {
+        "id": 12477394597,
+        "digest": "sha256:0a08735564b448a06dd49f6dfcbbd3829ddc28ddb987731362d7c08398bab167"
+      },
+      "recursive_reachability_artifact": {
+        "id": 12477353200,
+        "digest": "sha256:6d969c50cd781fdf4fd6655415cd2a5a72aae14685775348c4ade2e2db12f228"
+      },
+      "rust_run_id": 39898075663,
+      "rust_jobs": "6/6 success",
+      "rust_artifact": {
+        "id": 12477162917,
+        "digest": "sha256:2bd9915e9f3fdf6480f88ef7f5b8df95609c0d9c9897e845616bcba56a15399a"
+      },
+      "baseline_identity_accepted": false,
+      "source_closure_ready": false
+    }
   },
   "closure_rules": {
     "executable_runner": "github-actions",
