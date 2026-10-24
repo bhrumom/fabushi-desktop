@@ -1762,3 +1762,107 @@ Additional frozen production anchors behind the remaining Round82 close callers:
 The Round82 extension direct-close frontier is now linked through frozen exact production owners for the high-risk lifecycle/state families rather than only through test filenames. No inspected extension production module imports or owns process-wide `closeOpenClawStateDatabaseAsync`; direct extension calls remain test/test-support/bench teardown or deliberate reopen-oracle boundaries. The shipping shared-state retirement owner therefore remains the already-recorded Gateway shutdown → agent DB retirement → global singleton drain sequence. This does not upgrade Rust implementation, production wiring, scoped G01/G02, executable/package proof or independent acceptance.
 
 Independent ACCEPT, scoped G01/G02 positive evidence, `unit_authority_ready`, OCRM final acceptance and release acceptance remain absent. No Actions/build/test/generator/package was run. No production code, ledger, RTM or flags were modified.
+
+
+## 24. Recovery continuation — reverse consumer and lifecycle-test closure
+
+This continuation reverse-walks the frozen Section 23 production owners into their direct consumers and focused lifecycle tests. All exact identities below were fetched from `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`) and deduplicated against the live Round87 dossier before publication. Entries already present in Round87 are referenced as prior evidence rather than counted again.
+
+### 24.1 Crabbox warm-image consumers and generation/retirement oracles
+
+New frozen identities:
+- `extensions/crabbox/src/crabbox-worker-warm-image-cli.ts@28f1b4d2cca8bf199145de123290f680b9fd54dc`
+- `extensions/crabbox/src/crabbox-worker-warm-image-allocation.ts@27427bcb41602ad97b157f7f6e736b20b44b1221`
+- `extensions/crabbox/src/crabbox-worker-warm-image.ts@af4b96a5fab3adf751864b784981e01c61fb8be5`
+- `extensions/crabbox/src/crabbox-worker-warm-image-capture.ts@12cc2cbcd40a33502927bc1a284216cc66428912`
+- `extensions/crabbox/src/crabbox-worker-warm-image-lifecycle.test.ts@ce9907a7e82397be46e50e51a2ba9c1d032799c5`
+- `extensions/crabbox/src/crabbox-worker-warm-image-retirement.test.ts@37e850c507874009ab6a62dbf0900ef08de365f0`
+- `extensions/crabbox/src/crabbox-worker-warm-image-recovery.test.ts@66ddbed3b5941e17fab48ffa662cdb31a690d296`
+- `extensions/crabbox/src/crabbox-worker-node-enrollment.test.ts@b6f534ec508c97ee0cf3624b05a668570eb20dab`
+
+Production path: CLI recovery requires the inspected exact selector and explicit provider-cleanup acknowledgement; allocation rechecks `assertCurrent` around generation-bound store updates; the warm-image manager records retirement as durable deletion debt and only clears it through the compare-and-apply owner; capture claims the operation before source preparation/scrub and rechecks owner authority across async boundaries. If capture ownership changes before publication, the returned checkpoint is not published as the current generation and is instead surfaced for reconciliation.
+
+Focused negative oracles: provider disposal aborts its heartbeat generation; explicit recovery clears only the selected abandoned reservation; failed retirement remains durable across restart; old retirement completion cannot erase a newer generation; recovered scrub completion cannot overwrite a replacement capture; project authority closing during scrub prevents native capture. The already-recorded `crabbox-worker-warm-image-allocation.test.ts@89af0fe6b67238f2605fb960287d56c2e7f3c811` remains prior Round87 evidence and is not counted as new here.
+
+### 24.2 Voice Call stop/restart/delivery consumers
+
+New frozen identities:
+- `extensions/voice-call/src/runtime.ts@19cb120156df6983b446d29056722c32f3b8d7c4`
+- `extensions/voice-call/src/webhook.ts@e9ee3f612a5441d6a0a53eb13cafaf9c3e924458`
+- `extensions/voice-call/src/call-delivery-runtime.ts@a6a5a20590683645b00814111d1a8137cc65da10`
+- `extensions/voice-call/src/manager/lifecycle.ts@8f7ae8937f0bf75a55c5b672fac6e7f2d9abd5db`
+- `extensions/voice-call/src/manager/mutations.ts@c1ef7d69d7205791eb4000cd4fca3b56e6334fb5`
+- `extensions/voice-call/src/manager/events.ts@e25232482a124c88f3c57c6b2b6a48d29f0366c7`
+- `extensions/voice-call/src/webhook/stale-call-reaper.ts@3eb34f6c1c5d1245fb1d9af70663888233ff68c3`
+- `extensions/voice-call/src/manager.restore.test.ts@6fb5eb6139777903874497a8344985df24a74f87`
+- `extensions/voice-call/src/webhook.auto-response.lifecycle.test.ts@e3e35986ddc19adc5558285f716b601a8e0193c7`
+- `extensions/voice-call/src/webhook/realtime-handler.lifecycle.test.ts@5036337d8d5e044ce2211803cb9e88b8ba697158`
+- `extensions/voice-call/src/call-delivery-runtime.test.ts@55578bcc97f59329592b470d962c3ba0ac6bedb5`
+- `extensions/voice-call/src/runtime.test.ts@1446dd483f86dc2b30a798e86c068fc04d9fe190`
+
+Production path: runtime shutdown is memoized and joins transport/webhook/delivery/manager shutdown; webhook shutdown joins stale-call reaping, upgraded media/realtime bridges and server close; delivery aborts new work, clears timers and waits until all tracked pending work settles. Manager lifecycle persists terminal state before clearing max-duration/notify timers and transcript waiters. Event processing preserves durable replay identity and treats terminal retained calls as replayable/ignored rather than reactivating them.
+
+Focused negative oracles: a replayed webhook performs no duplicate side effect; shutdown cannot report complete while carrier admission or provider bridge cleanup is still pending; a failed startup remains nonterminal until manager-owned carrier termination succeeds; a disconnected speech generation cannot invalidate its replacement; restored terminal calls stay terminal; interrupted pending delivery is persisted as failed after restart without describing or sending it. `webhook.hangup-once.lifecycle.test.ts@ffc8ecc016201a315c43fca222a18416be8ae9d4` was already present in Round87 and is not duplicated.
+
+### 24.3 Reef replay/trust production consumers and authority oracles
+
+New frozen identities:
+- `extensions/reef/src/channel.ts@5ea1c4dd1ffafed3fdb88f3a4c563b336fbfdd7b`
+- `extensions/reef/src/cli.ts@1fe237e18a7baa005b7e7c79026a3212cf584768`
+- `extensions/reef/src/flow.source-authority.test.ts@0fe25561b21aaed26bf72bd0fb176361b887a603`
+- `extensions/reef/src/transport-capacity-recovery.test.ts@f0275f58df9c3f848e85a08662df824eeac53075`
+- `extensions/reef/src/flow.worker-outbound.test.ts@acc24e5ab41bb51a8e597dcfadc3a5efdb875fbb`
+- `extensions/reef/src/friends.test.ts@28cafce404cebcad0875b286fd934f88411739b1`
+
+Production path: the channel creates one runtime authority, opens identity/replay/review/trust stores under that authority, and rechecks it before handing accepted ingress/rejection notices to the host. Friend requests persist owner intent before the relay side effect; ambiguous relay failure or authority loss therefore keeps custody instead of inventing success or silently dropping the request. CLI registration similarly keeps relay claim/session provenance so a retry can recognize a previously completed remote claim rather than double-claiming.
+
+Focused negative oracles: source authority revocation plus routing change fences later outbound/delivery effects; parked delivered-capacity entries do not advance the durable cursor, while persisted replay allows bounded redispatch only when confirmation is absent; trust/key changes during classification fence dispatch; a durable approval cannot be reused for another recipient; accepted friend intent survives ambiguous authority loss, while queued commands after owner revocation are rejected and do not create new intents. The previously recorded `replay-state.test.ts@985725beaf1ff0051978666fad58d561106cdf76` and `trust-store.test.ts@e89a0d689db8945dbd95287f798c0ceba8f8dde1` remain the direct replay/trust owner oracles.
+
+### 24.4 ACPX lease consumers and successor-safe reaping
+
+New frozen identities:
+- `extensions/acpx/src/runtime-process-cleanup.ts@1c36d65b5b5248df0875600f37b397fe540d85f1`
+- `extensions/acpx/src/runtime-session-store.ts@fd323e75bff5f39eb477765e2938f3766fb07866`
+- `extensions/acpx/src/runtime.ts@6161d771645741126de0be8240b9b654a185be3c`
+- `extensions/acpx/src/process-reaper.ts@b88c6e111285dbff908d2f589a55a9243b09e634`
+- `extensions/acpx/src/session-owner-migration.ts@b5f0de55523c1f953890bc869c56953137945aa3`
+- `extensions/acpx/src/process-reaper.test.ts@c3d0d79073bf33e17803563db0618ddc11d65f62`
+- `extensions/acpx/src/runtime-process-cleanup.process.test.ts@48d69f460a1930e9c410bb36cf40d9f78487f8ee`
+- `extensions/acpx/src/runtime.test.ts@092d6f027f0aca882a4074152a76a466f60a8dd3`
+
+Production path: cleanup snapshots the exact lease/gateway identity before backend close can yield, selects by PID when available, marks only that lease closing, and maps ambiguous/unverified pending cleanup to `lost` rather than false `closed`. The session store retains the exact old close record even when publication is fenced, while the runtime refuses command reuse/reconnect for another Gateway instance. The reaper validates wrapper ownership plus lease identity before killing and rechecks caller authority around awaited inspection/termination. Doctor migration refuses repair when process/lease ownership is live, uncertain, mismatched or incomplete.
+
+Focused negative oracles: process-list timeout fails closed without kill; lease mismatch prevents tree termination; owner revocation during awaited cleanup blocks later SIGKILL; delayed close of an old record leaves a newly leased successor wrapper alive; a foreign Gateway lease cannot be reused or reconnected. `process-lease.test.ts@c6a3da52a01852d9ee93adfc490ac9bee5e77ef2` and `service.test.ts@bdae46d9585b4ac9882e68ca2b388032c06f2523` were already present in Round87 and are not duplicated.
+
+### 24.5 Copilot attempt consumers and finalization/session-binding oracles
+
+New frozen identities:
+- `extensions/copilot/src/attempt-finalize.ts@8d257b2a7a4a9a4f90558d191ea1266c88457f60`
+- `extensions/copilot/src/attempt-active-run.ts@122eb7e078ab6986393421f32e958c1ae5d35180`
+- `extensions/copilot/src/attempt-execution.ts@259d933af3d0b6d5d3f696caab622bc595b3908f`
+- `extensions/copilot/src/attempt-transcript-journal.test.ts@36748323ee0922606550fc0d22d8a0f091a73b51`
+- `extensions/copilot/src/attempt-active-run.test.ts@60562ba36a7e695542b8ffe7b8a1727f62c4c0c0`
+- `extensions/copilot/src/attempt-session.integration.test.ts@0be7e9b43b37fd047b097b68ff60859f771e0ff6`
+
+Production path: finalization consumes the caller-owned transcript journal and explicitly refuses to reconstruct the deleted dual-write transcript mirror. Active-run source preparation may await, so it is completed before live-run checks and no send occurs after settled/aborted state; cancel/abort also settles pending Gateway user input before aborting the active SDK session. Attempt execution distinguishes freshly created native sessions from resumed sessions so incomplete cleanup cannot authorize deletion of an older retained session.
+
+Focused negative oracles: tool transcript persistence must join before finalization completes; journal failure/replay invalidity is preserved instead of manufacturing a validated transcript; source steering cannot dispatch after the run settles or aborts; provider failure→retry→resume→settled-tool finalization keeps the compatible host session binding and resumes only the expected SDK session. `harness.test.ts@c45431e9fc39abe3f1a05d60c2b9dcf30bf8c7c6` was already present in Round87 and is not duplicated.
+
+### 24.6 Visitor Access grant consumers and expiry/revocation authority
+
+New frozen identities:
+- `extensions/visitor-access/src/runtime.ts@b81f16ae1df91e107ea0dae76de625708c03a25b`
+- `extensions/visitor-access/src/visitors.test.ts@8afcb1046f0305df76d8b094f8b5f1747a507338`
+- `extensions/visitor-access/src/visitors.authority.test.ts@a8a23f162e5a24a91a7cbf83fecd0728942b08e4`
+
+Production path: the runtime store exposes a single Gateway-published VisitorAccessService slot so tools share the same mutation queue and lifetime; the already-recorded `index.ts` owner initializes the service, publishes only after initialization/current-lifetime checks, runs serialized sweeps, and on stop closes the service, aborts lifetime authority and joins any sweep.
+
+Focused negative oracles: legacy/incompatible state refuses invite/revoke before provider or grant effects; caller authority is rechecked after durable cleanup is recorded and before provider access is granted; if authority closes after the final durable/provider effect, the already-successful operation settles instead of being rolled back; expiry or revocation aborts the old live authority; restart resumes only the exact durable grant id, and an expired grant never regains authority; closing while a grant read is in flight prevents starting a new durable revocation.
+
+### 24.7 Frozen-ref exclusions and closure result
+
+Default-branch discovery also surfaced `extensions/crabbox/src/crabbox-worker-warm-image-reconciliation.ts`, `extensions/copilot/harness.detached.integration.test.ts`, `extensions/visitor-access/src/welcome.ts`, and `extensions/visitor-access/src/visitors.onboarding.test.ts`, but each returned `NOT_FOUND` at the frozen upstream SHA and is therefore excluded as moving-default-only evidence rather than backfilled from a different source identity.
+
+This reverse closure adds consumer/test provenance without changing the prior owner conclusion: no newly inspected extension production consumer owns process-wide `closeOpenClawStateDatabaseAsync`. Shipping shared-state retirement remains the already-recorded Gateway shutdown → agent DB retirement → global singleton drain path; extension direct-close calls remain test/test-support/bench teardown or deliberate reopen/lifecycle oracle boundaries.
+
+Independent ACCEPT, scoped G01/G02 positive evidence, `unit_authority_ready`, executable/package proof, OCRM final acceptance and release acceptance remain absent. No Actions/build/test/generator/package was run. No production code, ledger, RTM or flags were modified.
