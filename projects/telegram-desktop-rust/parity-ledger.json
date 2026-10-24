@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "f2e6007709825b16f351f3d4d85f0d202766c4e7",
+  "target_commit": "82f642b99966cadebbaa5176eff9d12e22b65992",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16220,
-    "unread": 16195,
+    "unknown": 16219,
+    "unread": 16194,
     "omitted": 0,
-    "responsibilities_total": 174,
+    "responsibilities_total": 175,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -46720,6 +46720,230 @@
       "license_and_provenance": "Exact Microsoft/GSL include/gsl/span_ext@2a7664c70550477e9ff228d6370ff635b5217c81 MIT-licensed compatibility-helper implementation, focused tests and accepted tdesktop exact-head usage provenance retained; no GSL span_ext runtime or consumer/domain release authority inferred.",
       "reviewer": "primary-session",
       "notes": "Strict156 closes only GSL include/gsl/span_ext as a low-level borrowed-view compatibility helper dependency. Direct tdesktop make_span consumers remain independently open. Counters unknown=16,220 unread=16,195 omitted=0 responsibilities=174. Next strict157 Microsoft/GSL include/gsl/string_span@65790ab8bc9ba9e7fc45cf31f96f32ab27b850f7."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/GSL",
+      "source_blob_sha": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+      "source_kind": "recursive_child_repository_dependency_implementation",
+      "module_id": "tdesktop.thirdparty.gsl.string_span",
+      "responsibility_id": "TDRP-R9-GSL-STRING-SPAN-DEPRECATED-COMPATIBILITY-DEPENDENCY-001",
+      "source_symbols": [
+        "include/gsl/string_span@65790ab8bc9ba9e7fc45cf31f96f32ab27b850f7",
+        "#pragma once",
+        "#pragma message(\"This header will soon be removed. Use <gsl/zstring> instead of <gsl/string_span>\")",
+        "#include \"zstring\""
+      ],
+      "capability_ids": [
+        "CAP-DEPRECATED-HEADER-COMPATIBILITY-SHIM",
+        "CAP-DEPENDENCY-REDIRECT",
+        "CAP-NATIVE-DEPENDENCY-REPLACEMENT"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "Microsoft/GSL:include/gsl/string_span@65790ab8bc9ba9e7fc45cf31f96f32ab27b850f7",
+        "Microsoft/GSL:include/gsl/zstring@2cc13d83840afec61e5bd709c77900026ed225f4",
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md#TDRP-LANG-03"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-string-span-compatibility-complete-read.md",
+      "behavior_contract": "Account only for the locked legacy string_span header as a compile-time deprecation/redirect boundary. Including it emits a diagnostic that the header will be removed and instructs callers to use <gsl/zstring>, then forwards to zstring. It owns no runtime string representation, null-termination semantics, validation, storage or product behavior. Fabushi keeps exact dependency provenance and uses native Rust string/byte handling in actual owners when the independently open zstring responsibility is analyzed; it does not introduce a GSL StringSpan compatibility runtime or alias.",
+      "state_machine": "source include request -> compiler deprecation diagnostic -> zstring header is included -> downstream declarations become available -> no runtime state is created; target migration records the redirect while leaving zstring semantics independently open",
+      "side_effects": [
+        "Compile-time deprecation diagnostic only.",
+        "No runtime data, allocation, persistence, network, service or UI state.",
+        "No ownership/null-termination contract is defined by string_span itself."
+      ],
+      "failure_cases": [
+        "Redirect header incorrectly closes zstring semantics.",
+        "A StringSpanCompat runtime/alias is introduced despite no runtime source behavior.",
+        "A future direct consumer or blob/gitlink drift is ignored."
+      ],
+      "ui_disposition": "No independent UI surface; no accepted exact-head direct tdesktop consumer.",
+      "non_ui_responsibilities": [
+        "deprecated compatibility-header accounting",
+        "dependency redirect provenance to zstring",
+        "source inventory traceability",
+        "native dependency replacement without source-shaped runtime"
+      ],
+      "platform_delta": "Rust needs no deprecated C++ include shim. Retain exact provenance, and express actual downstream string/byte semantics with native Rust types only after zstring is independently analyzed.",
+      "existing_owner_candidates": [
+        "TDRP source/dependency inventory and traceability owner (selected)",
+        "TDRP-LANG-03 dependency replacement plus actual native string owners for downstream semantics (selected)",
+        "new GSL StringSpanCompat runtime or alias (rejected)"
+      ],
+      "existing_owner": "Existing TDRP source/dependency inventory and traceability plus actual native string/domain owners when zstring is independently closed; no new runtime state owner",
+      "rejected_existing_owners": [
+        "A GSL-specific runtime preserves a deprecated source include shape with no runtime responsibility.",
+        "A compatibility alias would falsely imply ownership of zstring semantics."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md"
+      ],
+      "fabushi_target_symbols": [
+        "### TDRP-MAP-01 — 文件全覆盖",
+        "- **G-INVENTORY:** accepted exact root tree + all recursive gitlinks/external acquisitions；0 unknown/unread/omitted source entries。"
+      ],
+      "target_language": "No shipping compatibility runtime; exact source accounting plus native Rust string/byte types inside actual owners",
+      "language_rationale": "The source file is only a deprecated C++ header redirect. Recreating it in Rust adds architecture with no product behavior.",
+      "command_event_contracts": [
+        "legacy source include -> deprecation diagnostic and redirect to zstring at compile time",
+        "Fabushi dependency mapping -> retain exact string_span/zstring provenance without runtime shim",
+        "downstream zstring semantics -> remain separate responsibility"
+      ],
+      "state_owner": "No independent runtime state.",
+      "lifecycle_owner": "Existing build/source-inventory lifecycle only; actual downstream string/domain owners retain lifecycle.",
+      "persistence_and_restart": "No compatibility-header persistence/restart state.",
+      "concurrency_and_cancellation": "No concurrency, async work or cancellation semantics.",
+      "security_boundary": "Do not infer null-termination, pointer validity, encoding, length or lifetime safety from this redirect; those belong to independently open zstring and its consumers.",
+      "network_service_dependencies": [
+        "GitHub Actions for exact-head revalidation"
+      ],
+      "service_owner": "No shipping service.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-replaced-mapped-open",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required after publication.",
+        "include/gsl/zstring remains independently unread/open and retains real type/null-termination semantics.",
+        "Source closure and independent release acceptance remain open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "strict157 include/gsl/string_span@65790ab8bc9ba9e7fc45cf31f96f32ab27b850f7 fully read: 5 line slots / 225 bytes",
+        "exact content is only #pragma once, a removal warning directing callers to <gsl/zstring>, and #include \"zstring\"",
+        "include/gsl/zstring remains separate locked blob 2cc13d83840afec61e5bd709c77900026ed225f4",
+        "accepted tdesktop exact-head code search found no direct string_span, gsl::zstring or basic_zstring hits",
+        "GSL gitlink 87f9d768866548b5b86e72be66c60c5abd4d9b37; child tree 6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41",
+        "Live main ea0689be9ec66e92591c33d57801eb149db27749 and upstream dev a7f453612f4896ac04d0007a36ab0d377e5bcbcf rechecked after parent double-green",
+        "Parent TDRP 40045459039 61/61 success; authority 12541290947 sha256:0b6b374a47a0a0e951917b50641afe18d6d3000acfb71d6a22c0f3b981cedf7d; closure 12541162056 sha256:f19f6743c9bef2ded89345e011eb4cecc4bccfd47f10a48fa1379d5f7711198e; reachability 12541611679 sha256:0943c19c2dab31f07bc0e3c03d091afdafd25b2411948a387a43d06da2ba90e0; Rust 40045458992 6/6 success; artifact 12540947614 sha256:e8dbc86308f73f52a15371e05380a303c45cce450dd2b39e1d74f379e731c15e."
+      ],
+      "target_commit": "82f642b99966cadebbaa5176eff9d12e22b65992",
+      "workflow_run": 40045459039,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12541290947,
+      "artifact_digest": "sha256:0b6b374a47a0a0e951917b50641afe18d6d3000acfb71d6a22c0f3b981cedf7d",
+      "composition_root": "Fabushi native dependency/build graph through actual string/domain owners",
+      "composition_slot": "deprecated GSL string_span compile-time redirect boundary",
+      "capability_component": "Source-only deprecation/redirect accounting",
+      "variation_axes": [
+        "legacy include present vs absent",
+        "compile-time diagnostic vs no target shim",
+        "redirected zstring provenance vs independently open zstring behavior"
+      ],
+      "shared_owner_contracts": [
+        "TDRP source/dependency inventory",
+        "TDRP-LANG-03 dependency replacement boundary",
+        "actual native string/domain owners",
+        "exact-head TDRP evidence"
+      ],
+      "duplicate_root_check": "No GSL StringSpanCompat runtime, compatibility alias owner, second string type root or zstring ownership transfer.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Compile-time dependency compatibility redirect only",
+      "detail_section": "Not applicable",
+      "capability_surface": "Exact source/dependency accounting; no shipping UI/runtime surface",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Any accepted tdesktop/GSL gitlink, child-tree, string_span or redirected zstring blob drift requires fresh reconciliation; zstring semantics remain independently open.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-GSL-STRING-SPAN-DEPRECATED-COMPATIBILITY-DEPENDENCY-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GSL-STRING-SPAN-EXACT-SOURCE-001",
+        "ORA-TDRP-GSL-STRING-SPAN-DEPRECATION-REDIRECT-001",
+        "ORA-TDRP-GSL-STRING-SPAN-NO-ZSTRING-CLOSURE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GSL-STRING-SPAN-NO-RUNTIME-001",
+        "INV-TDRP-GSL-STRING-SPAN-NO-DOWNSTREAM-CLOSURE-001",
+        "INV-TDRP-GSL-STRING-SPAN-EXACT-PROVENANCE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GSL-STRING-SPAN-DEPENDENCY-REDIRECT-001",
+        "CONTRACT-TDRP-GSL-STRING-SPAN-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GSL-STRING-SPAN-SOURCE-DRIFT-001",
+        "FAULT-TDRP-GSL-STRING-SPAN-REDIRECT-DRIFT-001",
+        "FAULT-TDRP-GSL-STRING-SPAN-DUPLICATE-RUNTIME-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-GSL-STRING-SPAN-NO-ZSTRING-SAFETY-ASSUMPTION-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-GSL-STRING-SPAN-NO-SOURCE-OMISSION-001",
+        "REG-TDRP-GSL-STRING-SPAN-NO-PARALLEL-RUNTIME-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-BEHAVIOR",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "locked GSL string_span redirect header + redirected zstring blob + accepted exact-head consumer search + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact Microsoft/GSL include/gsl/string_span@65790ab8bc9ba9e7fc45cf31f96f32ab27b850f7 MIT-licensed deprecated compatibility redirect plus locked zstring provenance retained; no runtime string representation or downstream consumer release authority inferred.",
+      "reviewer": "primary-session",
+      "notes": "Strict157 closes only GSL include/gsl/string_span as a deprecated compile-time compatibility redirect to zstring. It does not close zstring type/null-termination semantics or any caller responsibility. Counters unknown=16,219 unread=16,194 omitted=0 responsibilities=175. Next strict158 Microsoft/GSL include/gsl/util@26b2f5fb9d0d8c28c3096f50d575eb42a4b89bad."
     }
   ]
 }

@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16220,
-    "unread_minimum": 16195,
+    "unknown_minimum": 16219,
+    "unread_minimum": 16194,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -122,7 +122,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Live main 7394f6dc7687f9b986ee5589d40aa680ce23b90a/fbeb0bb32d944d0c1053880c471fe5c52279f052; upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5; GSL 87f9d768866548b5b86e72be66c60c5abd4d9b37/6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41. Parent exact-head f2e6007709825b16f351f3d4d85f0d202766c4e7: TDRP 40043916450 61/61 success; authority 12539664651 sha256:1a13f69d30e25b94e4329f3960abc1b025f66f39dbb9df3b1adc553722e596c4; closure 12540263985 sha256:a6ca1c4942db3e911dc5eaad88fad8235bfbe19ae2ce35ebacfd3fcede213636; reachability 12539669845 sha256:61939fcd5c268bccf6ccf2d1f2b346140a9d84a56d67bbfdd2cc21bd83618c07; Rust 40043916458 6/6 success; artifact 12539884045 sha256:2f89760a2ca2d2899123ac66415608443c81bb241263b34724c0bb98a8f2ed69. Strict156 Microsoft/GSL include/gsl/span_ext@2a7664c70550477e9ff228d6370ff635b5217c81 fully read: 215 line slots / 6756 bytes; tests/span_ext_tests.cpp@dfd2725db3612de97c4a3173f5f168131f7341f3 fully read: 381 slots / 11004 bytes, 12 focused cases. span_ext retains legacy span comparisons outside GSL_KERNEL_MODE, make_span adapters, signed checked gsl::at, ssize and iterator free functions. Accepted tdesktop exact-head code search found 16 direct gsl::make_span consumer files across MTProto, Passport, Calls, media, send-files and UI; those domain responsibilities remain independently open. Preserve the helper guarantees with native Rust slices/references/iterators/comparisons and checked indexing inside existing owners; do not create a GSL SpanExtRuntime. Counters unknown=16,220 unread=16,195 omitted=0 responsibilities=174. Next strict157 Microsoft/GSL include/gsl/string_span@65790ab8bc9ba9e7fc45cf31f96f32ab27b850f7.",
+  "note": "Live main ea0689be9ec66e92591c33d57801eb149db27749/9bba99a29e5eb28ac12fa872be3eee3a15f42d35; upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5; GSL 87f9d768866548b5b86e72be66c60c5abd4d9b37/6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41. Parent exact-head 82f642b99966cadebbaa5176eff9d12e22b65992: TDRP 40045459039 61/61 success; authority 12541290947 sha256:0b6b374a47a0a0e951917b50641afe18d6d3000acfb71d6a22c0f3b981cedf7d; closure 12541162056 sha256:f19f6743c9bef2ded89345e011eb4cecc4bccfd47f10a48fa1379d5f7711198e; reachability 12541611679 sha256:0943c19c2dab31f07bc0e3c03d091afdafd25b2411948a387a43d06da2ba90e0; Rust 40045458992 6/6 success; artifact 12540947614 sha256:e8dbc86308f73f52a15371e05380a303c45cce450dd2b39e1d74f379e731c15e. Strict157 Microsoft/GSL include/gsl/string_span@65790ab8bc9ba9e7fc45cf31f96f32ab27b850f7 fully read: 5 line slots / 225 bytes. It is only a compile-time deprecated compatibility redirect to <gsl/zstring>; accepted tdesktop exact-head code search found no direct string_span, gsl::zstring, or basic_zstring hits, so zstring type/null-termination semantics remain independently open. No GSL-shaped runtime or compatibility alias is introduced. Counters unknown=16,219 unread=16,194 omitted=0 responsibilities=175. Next strict158 Microsoft/GSL include/gsl/util@26b2f5fb9d0d8c28c3096f50d575eb42a4b89bad.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
