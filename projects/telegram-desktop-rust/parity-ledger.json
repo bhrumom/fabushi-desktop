@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "5ce86b88df3e6e37dcf3ec7b1adf0df2dac7cfcc",
+  "target_commit": "37ac69d26ec41aa45d8a19fa07fc3ff5df42beec",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16209,
-    "unread": 16184,
+    "unknown": 16208,
+    "unread": 16183,
     "omitted": 0,
-    "responsibilities_total": 185,
+    "responsibilities_total": 186,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -49280,6 +49280,224 @@
       "license_and_provenance": "Pinned Microsoft/GSL notnull_tests.cpp, pointers/assert headers, deathTestCommon.h, CMakeLists and MIT LICENSE retained as source/test provenance. No GSL code copied into shipping runtime.",
       "reviewer": "primary-session",
       "notes": "Strict167 source-only test provenance. Parent TDRP 40065985915 success 61/61; Rust 40065985904 success 6/6; marketplace 40065985932 success. No claim that GSL C++ tests executed. Counters unknown=16209 unread=16184 omitted=0 responsibilities=185. Next strict168 owner_tests.cpp@87c7cec89a5fab4e1ad9ddda56a938766967316d."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/GSL",
+      "source_blob_sha": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+      "source_kind": "recursive_child_repository_dependency_test_provenance",
+      "module_id": "tdesktop.thirdparty.gsl.owner-tests",
+      "responsibility_id": "TDRP-R9-GSL-OWNER-TEST-PROVENANCE-001",
+      "source_symbols": [
+        "tests/owner_tests.cpp@87c7cec89a5fab4e1ad9ddda56a938766967316d",
+        "owner_tests.basic_test: owner<int*> = new int(120), f(int*) increments to 121, delete p",
+        "owner_tests.check_pointer_constraint: guarded compile-error probes owner<int> and owner<std::shared_ptr<int>>",
+        "include/gsl/pointers@63e193e92478632520eca7e872ac83c643ffd2c0: owner alias constrained by std::is_pointer<T>::value",
+        "tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a: owner_tests.cpp line 207; CTest gsl_tests line 221"
+      ],
+      "capability_ids": [
+        "CAP-DEPENDENCY-TEST-PROVENANCE",
+        "CAP-NATIVE-DEPENDENCY-REPLACEMENT"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "Microsoft/GSL:tests/owner_tests.cpp@87c7cec89a5fab4e1ad9ddda56a938766967316d",
+        "Microsoft/GSL:include/gsl/pointers@63e193e92478632520eca7e872ac83c643ffd2c0",
+        "Microsoft/GSL:tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a",
+        "Microsoft/GSL:LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-owner-tests-complete-read.md",
+      "behavior_contract": "Source-only dependency-test provenance for gsl::owner<T>: the alias must be limited to pointer types at compile time; the positive test records raw-pointer allocation, mutation through a callee, and explicit delete. This row does not establish production ownership/lifetime safety or close callers.",
+      "state_machine": "No product state machine. The positive GTest has a local allocation/mutation/deallocation sequence; guarded CONFIRM_COMPILATION_ERRORS declarations are compile-time probes and may not execute in normal test builds.",
+      "side_effects": [
+        "Test-local heap allocation and deallocation only; no product, UI, network, persistence, account or service side effects."
+      ],
+      "failure_cases": [
+        "Removing the std::is_pointer<T> constraint permits the guarded non-pointer declarations to lose their intended compile-error oracle.",
+        "Treating the alias as a runtime owner, RAII wrapper, lifetime tracker, or allocation manager.",
+        "Treating guarded compile-error probes as executed runtime assertions.",
+        "Removing owner_tests.cpp from gsl_tests registration without re-audit.",
+        "Treating the dependency test as production ownership implementation or closing indirect callers."
+      ],
+      "ui_disposition": "Not a UI source; dependency-test provenance only.",
+      "non_ui_responsibilities": [
+        "Exact owner<T> pointer-type constraint provenance",
+        "Raw owning-pointer allocation/mutation/delete example",
+        "Guarded compile-error probe provenance",
+        "CMake/CTest registration",
+        "Exact source/header and MIT license provenance",
+        "Separation of dependency tests from production ownership responsibilities"
+      ],
+      "platform_delta": "No platform-specific product behavior. CONFIRM_COMPILATION_ERRORS controls compile-error probes; it is not runtime evidence.",
+      "existing_owner_candidates": [
+        "Existing TDRP source/dependency inventory and test-provenance owner (selected)",
+        "Existing canonical Fabushi Rust/domain owners for actual memory ownership and lifecycle semantics",
+        "A GslOwnerRuntime, second allocation manager, or Telegram-specific pointer owner (rejected)"
+      ],
+      "existing_owner": "Existing TDRP source/dependency inventory and test-provenance owner. Actual ownership/lifetime semantics stay with the relevant existing canonical Fabushi Rust/domain owners; no shipping GSL owner runtime.",
+      "rejected_existing_owners": [
+        "gsl::owner is a compile-time alias, not a runtime owner or RAII implementation.",
+        "A second allocation manager or GslOwnerRuntime would mirror a dependency annotation instead of a product responsibility.",
+        "A Telegram-specific pointer wrapper would duplicate canonical ownership/domain owners."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-owner-tests-complete-read.md"
+      ],
+      "fabushi_target_symbols": [
+        "TDRP_GSL_OWNER_TEST_PROVENANCE_001"
+      ],
+      "target_language": "Source-only C++ dependency-test provenance; no shipping implementation",
+      "language_rationale": "This source is a dependency test and type alias contract, not product logic. Record exact provenance; any actual ownership/lifetime behavior must be implemented and tested in the relevant existing Rust/domain owner.",
+      "command_event_contracts": [
+        "owner<T> is well-formed only for pointer T via std::is_pointer<T>::value.",
+        "The positive test allocates an int, passes the pointer to f(int*), verifies the increment, and deletes the pointer.",
+        "The two non-pointer declarations are guarded compile-error probes, not normal runtime test cases.",
+        "Source-test provenance does not authorize production or release acceptance."
+      ],
+      "state_owner": "No product state owner; GTest owns local test variables and assertions.",
+      "lifecycle_owner": "Existing Microsoft/GSL CMake/CTest gsl_tests target; no shipping lifecycle owner.",
+      "persistence_and_restart": "No persistence or restart behavior.",
+      "concurrency_and_cancellation": "Synchronous test operations; no asynchronous state or cancellation contract.",
+      "security_boundary": "Source/test provenance does not replace canonical product memory-safety, permission, or ownership boundaries.",
+      "network_service_dependencies": [],
+      "service_owner": "Not applicable; no network or service contract.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-test-provenance-mapped-open",
+      "blockers": [
+        "No production implementation or acceptance claim is made.",
+        "Actual production ownership/lifetime responsibilities and indirect callers remain open.",
+        "Fresh exact-head TDRP Revision 9, Rust desktop runtime, and Official MCP marketplace Actions evidence is required after publication."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "tests/owner_tests.cpp@87c7cec89a5fab4e1ad9ddda56a938766967316d: 44 lines / 1,285 bytes; owner_tests.basic_test lines 26-33; guarded compile-error probes lines 36-42.",
+        "include/gsl/pointers@63e193e92478632520eca7e872ac83c643ffd2c0: owner alias template constraint at lines 78-79.",
+        "tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a: owner_tests.cpp line 207; CTest add_test(gsl_tests gsl_tests) line 221.",
+        "LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02 confirms MIT.",
+        "Bounded tdesktop code searches for gsl::owner, owner<, owner_tests.cpp returned zero results; this does not close indirect consumers.",
+        "No Microsoft/GSL C++ test execution is claimed."
+      ],
+      "target_commit": "37ac69d26ec41aa45d8a19fa07fc3ff5df42beec",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Existing TDRP source/dependency inventory and test-provenance governance",
+      "composition_slot": "Dependency test provenance only; no shipping composition slot",
+      "capability_component": "Microsoft/GSL gsl::owner compile-time alias and test provenance; no shipping surface/runtime",
+      "variation_axes": [
+        "pointer type versus non-pointer type",
+        "compile-time alias constraint versus runtime pointer operations",
+        "guarded compile-error probes versus ordinary GTest cases"
+      ],
+      "shared_owner_contracts": [
+        "TDRP source/dependency inventory",
+        "Adjacent GSL source/test provenance",
+        "Existing Rust/domain owners for actual product ownership behavior",
+        "Fresh exact-head GitHub Actions evidence"
+      ],
+      "duplicate_root_check": "No GslOwnerRuntime, second allocation manager, pointer wrapper, product composition root, or Telegram-specific owner.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "No product action; dependency test-only provenance.",
+      "detail_section": "Not applicable",
+      "capability_surface": "Source-only dependency-test provenance; no shipping surface.",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Any GSL gitlink/tree, owner_tests.cpp blob, owner alias/header, CMake registration, or license drift requires exact-ref re-read; this row does not close indirect or production ownership responsibilities.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No icon change.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-GSL-OWNER-TEST-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GSL-OWNER-EXACT-SOURCE-001",
+        "ORA-TDRP-GSL-OWNER-POINTER-TYPE-CONSTRAINT-001",
+        "ORA-TDRP-GSL-OWNER-CMAKE-REGISTRATION-001",
+        "ORA-TDRP-GSL-OWNER-NO-DIRECT-TDESKTOP-CONSUMER-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GSL-OWNER-TESTS-ONLY-001",
+        "INV-TDRP-GSL-OWNER-NO-PARALLEL-RUNTIME-001",
+        "INV-TDRP-GSL-OWNER-NO-BULK-CALLER-CLOSURE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GSL-OWNER-REGISTERED-TESTS-001",
+        "CONTRACT-TDRP-GSL-OWNER-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GSL-OWNER-SOURCE-DRIFT-001",
+        "FAULT-TDRP-GSL-OWNER-BUILD-REGISTRATION-001",
+        "FAULT-TDRP-GSL-OWNER-BULK-CALLER-CLOSURE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "Pinned Microsoft/GSL CMake/CTest gsl_tests target",
+        "GitHub Actions exact-head TDRP Revision 9 and Rust desktop runtime"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact Microsoft/GSL tests/owner_tests.cpp@87c7cec89a5fab4e1ad9ddda56a938766967316d, include/gsl/pointers@63e193e92478632520eca7e872ac83c643ffd2c0, tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a, and MIT LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02 retained as source/test provenance. No GSL code is copied into a shipping runtime.",
+      "reviewer": "primary-session",
+      "notes": "Strict168 source-only dependency-test provenance. Parent HEAD 37ac69d26ec41aa45d8a19fa07fc3ff5df42beec had TDRP 40067725777 success 30/30, Rust 40067725696 success 6/6, and Official MCP marketplace 40067725689 success 1/1. No claim that Microsoft/GSL C++ tests executed. Counters after this row: unknown=16208 unread=16183 omitted=0 responsibilities=186. Post-publication exact-head Actions remain pending; baseline identity and source closure remain false."
     }
   ]
 }
