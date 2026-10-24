@@ -1218,3 +1218,175 @@ Close-page negative oracles include ACP transport teardown before state close, r
 The four direct lifecycle-wrapper discovery sets returned in this round are frozen-ref reconciled, and the first 100-result `closeOpenClawStateDatabaseAsync` page is frozen-ref reconciled with all nine moving-default-only paths excluded. This is not repository-global close-caller closure: GitHub code search is capped and indexed against the moving default branch, so additional production-entry clusters and indirect/dynamic wrappers can remain outside this page.
 
 Independent ACCEPT, scoped G01/G02 positive evidence, `unit_authority_ready`, executable/package proof, OCRM final acceptance, and release acceptance remain absent. No Actions, build, test, generator, package, production code, ledger, RTM, or flags were run or modified in this round. The next source-only frontier is to split global-close/lifecycle consumers by production entry and exact-ref reconcile paths beyond the capped page, then close remaining indirect lifecycle listeners/removal/cache wrappers without upgrading implementation or acceptance state from source-only provenance.
+
+
+## 20. Round81 continuation — gateway capped caller clusters
+
+<!-- Round81 gateway capped-cluster continuation marker -->
+
+### 20.1 `sqlite-worker-operation-admission`: gateway cluster beyond the broad page
+
+Moving-default discovery for `createSqliteWorkerOperationAdmission repo:openclaw/openclaw path:src/gateway` returned 37 paths, below the 100-result cap. Fourteen were already frozen in the cumulative Round87 dossier; the other 23 were individually re-read at frozen `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` and are new source/oracle identities:
+
+- `src/gateway/worker-environments/prepared-pool-presence-store.test.ts@208749210e5bbe6b8ff82f4c503b748bca0bf993`
+- `src/gateway/worker-environments/placement-session-tool-operations.worker.test.ts@e0bed91c1631c2a6f5cd0ff79f517052fd481b5f`
+- `src/gateway/server.sessions.create.firstbirth.test.ts@c1aa45b1eea4d3f39dabecfa40f7f0746c2c4e21`
+- `src/gateway/session-sharing-groups.test.ts@e2cc6f1f46a8b78fb82658449a56e03b143248dd`
+- `src/gateway/server-methods/users-preferences.test.ts@98b6354efbfcb5ab5a02687cc1b95c423feb8bfb`
+- `src/gateway/server.pending-input-media-custody.test.ts@51fa5ac2d69a5f56bfee86e78cace5e01a5c3281`
+- `src/gateway/worker-environments/prepared-environment-store.test.ts@46e3fd870eced6da680eb82a8aa7f7d1d87a053e`
+- `src/gateway/session-pr-workspace-adoption.test.ts@b4b4b1fb84519c6f6b087037feaf79f900062c2d`
+- `src/gateway/conversation-route-ownership.worker.test.ts@72e3ba95a3ca07e54f45f0a0652852c9d3baf6ac`
+- `src/gateway/worker-environments/transcript-commit-store.test.ts@4af4b77815eaa57c4420cd78880eae3b730ea4db`
+- `src/gateway/server-methods/users-enumeration.worker.test.ts@395b7a2cb08881c800f15c24aa5d2bed60b17848`
+- `src/gateway/talk/relay/agent-consult.registration.test.ts@6a2228fda07c6a9ad317a50fcc21a5d7c4464e62`
+- `src/gateway/talk/handlers/client-consult-authority.test.ts@d37b2b44e52449c54fb8c3b1cfd0781086308023`
+- `src/gateway/worker-environments/placement-read-cache.worker.test.ts@ad5e8faea2aa391d7f08abfbf6e24c1b6b2a4e63`
+- `src/gateway/worker-environments/placement-workspace-journal.test.ts@3eef43664df68eee3b8dc2e2d34226b936c0ec66`
+- `src/gateway/talk/handlers/client-create-cross-store-authority.test.ts@3ef2a9b19eda86a4e83bd70bf2e312fa0b11ff92`
+- `src/gateway/worker-environments/placement-store.move.test.ts@8d32b917dea7b24ed31e5e8b38c61049ed6c7163`
+- `src/gateway/server-methods/agent.visitor-access.test-utils.ts@9701a48b89670e75403c5a8b9767938461b84714`
+- `src/gateway/worker-environments/placement-turn-claims.worker.test.ts@91d8d0f434d299063952f2db15ca6419b5b43b48`
+- `src/gateway/managed-image-attachments.sqlite-visibility.test.ts@427054bf20a2ecbffaa7869e7e3430cca885b620`
+- `src/gateway/server-methods/chat-send-pending-input-withdrawal.test.ts@8bb4629f8866bff348a43d596dc0355ffd01938d`
+- `src/gateway/worker-environments/destination-authority.e2e.test.ts@6061f7dc2dfa1c4d5a83421eedb3ef24c23acc76`
+- `src/gateway/server-methods/chat-metadata-runtime.personal-accounts.test.ts@27c459378c207118dca4a392553c2153f48933a6`
+
+These are test/oracle callers, not new product owners. The production gateway writers already frozen earlier in Round87 remain the owner path: mention inbox, automatic update cleanup, managed-image record store, prepared-pool presence worker, session-group catalog, placement worker mutation, GitHub publication source, and worker-environment store.
+
+The new negative oracle set materially closes admission semantics. Prepared-pool and prepared-environment writes rollback if host/placement authority changes at transaction or commit. Placement tool operations seal admission before teardown, drain committed receipts, make an indeterminate settlement require restart recovery, and prevent a stale close or delayed uncertain outcome from fencing a reopened same-byte successor. Transcript-commit storage preserves exact tuple/idempotency ordering, rechecks transaction/commit authority, and retains only committed state. PR workspace adoption reports `outcome-unknown` after a native commit rather than undoing the committed binding. Workspace journal and managed-media tests distinguish committed custody from refused commit, unknown settlement, rollback, and post-commit revocation. Pending-input withdrawal keeps the input/adoption available after a refused commit and only aborts/retire-custody after the withdrawal itself commits. Conversation-route and Talk tests prevent platform effects or cross-store voice publication when route/source/caller authority changes before the relevant grant. Destination and placement-move tests bind mutation to exact generation/source and refuse stale or policy-revoked transitions.
+
+### 20.2 Gateway state-close caller clusters: capped page split to non-capped families
+
+The capped gateway search was split by production surface. The returned moving-default candidate counts are `server-methods=32`, `worker-environments=29`, `talk=1`, and `server=3`. Every candidate was checked at the frozen ref. Two moving-default-only paths are absent at the frozen source and are excluded from evidence:
+
+- `src/gateway/server-methods/sessions-create-chat-type.test.ts`
+- `src/gateway/server-methods/cron.inference-binding.test-support.ts`
+
+Frozen server-methods identities newly reconciled in this continuation include:
+
+- `src/gateway/server-methods/audit.trim.store.test.ts@38eb7e42caf5c2a54121362cb94d387aed208dff`
+- `src/gateway/server-methods/session-goal-request.test.ts@ba1ead40225eeb3a165a268d58a5951bbe618d7e`
+- `src/gateway/server-methods/chat-webchat-acp-binding.test.ts@5775ef578798c0800d7f3759bc836e0b6800f5d6`
+- `src/gateway/server-methods/worktrees.authorization.test.ts@725a774c0d5c248437ca77e24de11da5bb100be9`
+- `src/gateway/server-methods/system-agent-reset-boundary.test.ts@88a5f6734373e60a38d6415cc445f0bd50ce41db`
+- `src/gateway/server-methods/skills-upload.test.ts@50f57aa5c6ec1a75fc79cde10cb759aa3230f11b`
+- `src/gateway/server-methods/sessions.messages-subscribe-perf.test.ts@b69b6ec86fc7aa092230af5ed84342509e967a22`
+- `src/gateway/server-methods/worktrees.test.ts@2ad6c7358d1b59026fd3ba553f565a7edf57960a`
+- `src/gateway/server-methods/board.test.ts@7f01288c3908b8bac40368689af0305753a99114`
+- `src/gateway/server-methods/sessions-create-category.test.ts@acf45773e843695059b3e6fa002c14e1bec02f8c`
+- `src/gateway/server-methods/exec-approvals.test.ts@0c75172a137f0f2c5aa9cd94992d8c9d3e3c535c`
+- `src/gateway/server-methods/themes.test.ts@d5cf83a2c191067b816a5ea26d724f2b2377a2f0`
+- `src/gateway/server-methods/transcripts.test.ts@f106096c1546b0393ba22bc1a805a7c1be8171cb`
+- `src/gateway/server-methods/system-agent.audit-worker.test.ts@2f8990a7480c0ff84b070f7148549b56fc101477`
+- `src/gateway/server-methods/approval.test.ts@aa75b413f3f2f50adc4654228f9aad0da6ac78e9`
+- `src/gateway/server-methods/system-changes.test.ts@8af820097dfbb8284c098ca135f70e3c170738ff`
+- `src/gateway/server-methods/system-agent-setup-concurrent.test.ts@02b1b61818d92261708c9a82d2c29d89b2731af9`
+- `src/gateway/server-methods/sessions-files.incognito.test.ts@0cf0a6bbca83e1e9ec78bce0728f663175779706`
+- `src/gateway/server-methods/artifacts.request-authority.test.ts@c1092397afb691fedd0abcff2a13cae1299bf96c`
+- `src/gateway/server-methods/sessions.initial-transfer-custody.test.ts@e08e3603e0c3562dbfccf90db6be96f23da5fe5b`
+- `src/gateway/server-methods/sessions-diff.test.ts@12f1fd74b02f54285a086c529fd9f8a3e0dc9f93`
+- `src/gateway/server-methods/sessions.send-yield-resume.test.ts@071fb004fae5e5a54d72e92d85f07399ddb8dc84`
+- `src/gateway/server-methods/update-report-run.test.ts@60e7439390470f1136219f97306c68bd742afcba`
+- `src/gateway/server-methods/mcp-app.view-grant.test.ts@96852c8834a114d48bdf951d932d6147d7b1ce39`
+- `src/gateway/server-methods/board.runtime-boundaries.test.ts@5cb56e4dabeeb698859ed5f33966333d9164bf6e`
+- `src/gateway/server-methods/sessions-create-worktree-base.test.ts@dcdb31e8f68749fbeb0686b0ceffb1db0352ac19`
+- `src/gateway/server-methods/session-controls.incognito.test.ts@bba61e496256e6626b7bfdf0f6998f5a3b912c6b`
+- `src/gateway/server-methods/sessions-rewind.storage.test.ts@ce08c4f7301aeda0f899a6e7ab8519091332187d`
+- `src/gateway/server-methods/agent.visitor-access.test-utils.ts@9701a48b89670e75403c5a8b9767938461b84714`
+- `src/gateway/server-methods/system-agent-nested-inference.integration.test.ts@46b41178149bfd1fdd9ea11df4a4e261d96a9f19`
+
+Frozen worker-environment identities newly reconciled include:
+
+- `src/gateway/worker-environments/prepared-pool-presence-store.test.ts@208749210e5bbe6b8ff82f4c503b748bca0bf993`
+- `src/gateway/worker-environments/store.test.ts@372e28939af3ed8b2d78bf0dfe12a6fc9cc60bea`
+- `src/gateway/worker-environments/service-inventory-recovery.test.ts@79806d4aed5c98a371df8aa6ba708c08e9711721`
+- `src/gateway/worker-environments/store-retention.test.ts@6d756c6507a5c85a4ddc7e4a47026292583298e5`
+- `src/gateway/worker-environments/bundle.test.ts@f1c08a870f2c3d21509d164409aed1afb6ce707e`
+- `src/gateway/worker-environments/placement-change-snapshot.test.ts@76a109464c6ad96010b2238900eb7ea19c723e85`
+- `src/gateway/worker-environments/placement-session-read.test.ts@25a0bb2f437576c6ae082128fad732f7c310fc00`
+- `src/gateway/worker-environments/store-worker.test.ts@9d9aa15ffbd40e21962a15b1b8d860225dd3018a`
+- `src/gateway/worker-environments/local-workspace-incremental.test-support.ts@2d7fba74547c7b835de3357d54ebf256b9476e8b`
+- `src/gateway/worker-environments/prepared-pool.test-support.ts@a7955c719f93856b733d5cef00f93a81eb10d075`
+- `src/gateway/worker-environments/store-recovery.worker.test.ts@f392a257d68a1b3cd918d680971ef8d97ba79c38`
+- `src/gateway/worker-environments/store-runtime-refresh.test.ts@9102f4f52931e384ab3058f4bce333dfdcdca691`
+- `src/gateway/worker-environments/inference-store.test.ts@2da2b6ac97710f4759a794db96f708404194706b`
+- `src/gateway/worker-environments/workspace-result-ref-mutation.test.ts@f5e3f59953814bc8c5c01aa80e745f140f47039b`
+- `src/gateway/worker-environments/local-workspace-projection.test.ts@f8775b34e79ce43e1ea75e9fd98c0c0139dad82f`
+- `src/gateway/worker-environments/service.test-support.ts@e559e40dd481c1f9247bccdac4380aa861941b03`
+- `src/gateway/worker-environments/node-enrollment.test.ts@e6ed8536fd9ab0d45f91f7bce2c6fb131d0bd65d`
+- `src/gateway/worker-environments/store-node-enrollment.test.ts@65bb5e51adcde97d0a6ea18b880f1a483eaabe92`
+- `src/gateway/worker-environments/placement-read-cache.worker.test.ts@ad5e8faea2aa391d7f08abfbf6e24c1b6b2a4e63`
+- `src/gateway/worker-environments/local-workspace-generated-paths.test-support.ts@09f59bc07042f234985bb10b54df18242ebd52a2`
+- `src/gateway/worker-environments/environment-access.test.ts@5da412dfd2d3b8cad267dacd334afec127b82c38`
+- `src/gateway/worker-environments/placement-read-projection.worker.test.ts@a17ab5f9c2fda6ce09ca801590e853a14a503924`
+- `src/gateway/worker-environments/local-workspace-store.test.ts@a2fe8026eb0656a2e714f2267bf8ec97ebbc686e`
+- `src/gateway/worker-environments/placement-move-abandon.test.ts@eb8f611681b33c8ee93b6cd07f820db0b6df1d5e`
+- `src/gateway/worker-environments/workspace-result-repository.test-support.ts@b6b0ea54f83d830b130f4342a723cd34f66a9423`
+- `src/gateway/worker-environments/placement-dispatch-authority.test.ts@1985e27e8201c07911428e0009b42aa4e46dfc7d`
+- `src/gateway/worker-environments/worker-turn-launcher.test-support.ts@9b6977a86c46576cceb286ecf3e1872f11d4352e`
+- `src/gateway/worker-environments/node-workspace-transfer-revocation.test.ts@cfa33c7126f6af8fa5c677b2ac3745b66664d6f1`
+- `src/gateway/worker-environments/placement-dispatch-staged-results.test.ts@bd695a7789e1e95590a6bb2b7e43d908320b3894`
+
+The remaining state-close gateway split identities are `src/gateway/talk/session-registry.test.ts@c8b1908b5fc0ef5ab0f4b8edef32b9da725b80e1`, `src/gateway/server/ws-connection.startup.test.ts@2ad61ffb0b66184fb3a4708f2c995bd2bcab00e5`, `src/gateway/server/ws-connection/message-handler.worker.test.ts@196a5c3f0a36d3ec9f586557fc90d445bd162e1c`, and `src/gateway/server/ws-connection/update-report-authority.server.test.ts@3b6580f26ec8812fabb162fdedd7493a85571793`.
+
+These tests preserve the close contract instead of making close itself a business owner: read admission becomes invalid across close/replacement; accepted writes, callbacks, transport/authentication setup, workspace transfer, and result publication settle before teardown; failed or unknown native/worker outcomes retain recovery custody; and stale generation, config, role, connection, request, or source authority cannot be revived by reopening a cache.
+
+### 20.3 Gateway agent-database close clusters
+
+The broad gateway discovery for `closeOpenClawAgentDatabases` was likewise split below the cap: `server-methods=37`, `worker-environments=9`, `talk=5`, `server=1`. Re-reads confirmed the previously listed overlap plus these additional frozen identities:
+
+- `src/gateway/server-methods/environments.session.test.ts@98e34d67fd78e5d71deb0d0e4cae2eb5fe26281e`
+- `src/gateway/server-methods/sessions-suggestions.test-support.ts@9e37b62d6ae9ed53c831f71f1906534d8bbce30c`
+- `src/gateway/server-methods/sessions-public-share.test.ts@e4d8ca755e9081a9203515ecef225429e7dfb952`
+- `src/gateway/server-methods/sessions-read-fixture-lifetime.test.ts@4e756675280e49f1ce8d402013b372f9ca6aec04`
+- `src/gateway/server-methods/sessions-read-metadata.test.ts@012b872a8d0080b5335bf6c8db67336c6a88a6e6`
+- `src/gateway/server-methods/task-suggestions.owner-recovery.test.ts@f12c65e645ef54ad9cc0fdac0d8a362f6313d8ae`
+- `src/gateway/server-methods/sessions.abort-durability.test.ts@d832fca26f98f0a43f6602b006891f526d1076db`
+- `src/gateway/server-methods/chat-history-ownership.test.ts@fba84c428fe37610c6d8853e569f5dc0f948782a`
+- `src/gateway/server-methods/sessions-abort.test.ts@8102c26babcc6711220706a07ba166a9f41f8398`
+- `src/gateway/server-methods/sessions-mutations.perf.test.ts@095cea2618c29fb51c3dec5e31e30462c64bc00b`
+- `src/gateway/server-methods/task-suggestions-session-start.test.ts@c3ed225919b9091b40e5db2be9a49f78f03e668d`
+- `src/gateway/server-methods/chat-history-delta.test.ts@8ffdb1c7492c9e09231906c6696ea0cd56839f53`
+- `src/gateway/server-methods/chat.abort-live-proof.test.ts@cdd8d788eb98b1619425993b04f5c145c3b52efb`
+- `src/gateway/server-methods/approval.handlers.test-support.ts@4350cdccec752ed5e40aa071cef2fc1c706a0719`
+- `src/gateway/server-methods/chat-restart-recovery.worker.test.ts@9ad0e62447bed47b0591656ca983750d6ba5f050`
+- `src/gateway/server-methods/chat-send-reply-session.test.ts@4608b20fc8953c3816caa5d4b4e2fd5c9bb826c2`
+- `src/gateway/server-methods/sessions-search.test.ts@3fb2cfe103994c422d3980adfacfd25ba432abbc`
+- `src/gateway/server-methods/sessions-typing.test.ts@104d4e6ac15495c6f6645c68e18188dd21f12c7f`
+- `src/gateway/server-methods/models-session.test.ts@5f5cc82c5b275680d740fe89d214a90af40924eb`
+- `src/gateway/server-methods/sessions-sharing.patch-worker.test.ts@61403471db58f75e682e8ca1f30c32c3538302c8`
+- `src/gateway/server-methods/task-suggestions.test.ts@41c6e7538a1ed4a5646f381aea41595af60713d7`
+- `src/gateway/server-methods/sessions-sharing.test.ts@7a421543b7d44d64d3a3f8270ef669609272acce`
+- `src/gateway/server-methods/sessions-rewind.test.ts@33ae5ded6db8d22e368a1dcc2173054e01fda41d`
+- `src/gateway/server-methods/chat-send-admission-authority.test.ts@edbad03b9b8435e1aa3c87807e8636f8b8c95ae2`
+- `src/gateway/server-methods/sessions-read-visibility.test.ts@9301f1162e06969552ef440e94b80b589973a17d`
+- `src/gateway/server-methods/chat-metadata-session-writes.test.ts@66c85f1123f5aaa983d599092ef6163ac28de5b7`
+- `src/gateway/server-methods/chat-send-global-identity.test.ts@2244a525a8bdbc450a3454e23abc154904578062`
+- `src/gateway/server-methods/requester-cron-authority.test-support.ts@35aec092c6a94600c32236b16c4f4fa3f9042d0e`
+- `src/gateway/server-methods/sessions-files.repository.test.ts@f5e6f19b9927412c7f062fef8526cd76575ede3d`
+- `src/gateway/server-methods/sessions-mutations.sticky-model.test.ts@e59b5ed8cf8e0764a7ba11cbf87a20b32ce105c8`
+- `src/gateway/server-methods/sessions-mutations.catalog-queue.test.ts@a2e9b3b69f0fe3846f62e8425c107a67edd814b5`
+- `src/gateway/server-methods/sessions-mutations.archive-attribution.test.ts@2d213eb0cc13a0f4936669a77cd9ab6e80c9c594`
+- `src/gateway/worker-environments/provider-provisioning-node.test.ts@cc1f319082bbdf73e38aa5f2591588be738b40a1`
+- `src/gateway/worker-environments/session-attachment-service.test.ts@fd8144b4571a0f17702a44be7e3f04d7e3b9bac0`
+- `src/gateway/worker-environments/live-events.media.test.ts@23d9de654b91da327cfd9a8c16139a6cbdc36399`
+- `src/gateway/worker-environments/transcript-commit.fixture.test-support.ts@c4020d5319c57a441976fa0ec734d47c3db3e535`
+- `src/gateway/worker-environments/device-placement-demand.test.ts@81fbcb3afde4e6d987f5b4c406710f1020f30df3`
+- `src/gateway/worker-environments/live-events-settlement.test.ts@e762963cab2ef0672315880c2515613950aaad11`
+- `src/gateway/worker-environments/live-events.test.ts@da268393f94434bd52808dad15abb2564a8efbf6`
+- `src/gateway/worker-environments/transcript-commit.test.ts@93e8e002d54756bf8ab59d31c956ca981cd66dd4`
+- `src/gateway/talk/handlers/client-create-source-authority.test-support.ts@909099345bcfadfc2fd462ffaca1c6fc0ac77556`
+- `src/gateway/talk/handlers/client-create-authority.test.ts@bf797ae1a86d5c86390592f9885c4dc24074dc17`
+- `src/gateway/talk/relay/agent-consult.registration.test.ts@6a2228fda07c6a9ad317a50fcc21a5d7c4464e62`
+- `src/gateway/talk/handlers/client-consult-authority.test.ts@d37b2b44e52449c54fb8c3b1cfd0781086308023`
+- `src/gateway/talk/client-gateway-control.agent-consult.test.ts@cf23bb44196b357a57d8a8d3bddf7f82d275260d`
+- `src/gateway/server/__tests__/server.sessions.reclamation-admission.test.ts@7b320996686fdef3b7d60fc25f7ed1153e1a9670`
+
+The same missing `cron.inference-binding.test-support.ts` moving-default path is excluded here as well. The agent-close negative oracles keep native close separate from logical session/run settlement: active writes and accepted events join before close, restart recovery does not tombstone successor/source facts, stale public-share/session generations are rejected, late abort cannot undo an already committed terminal reply, and caller/source/role/config replacement must be revalidated before mutation or presentation.
+
+### 20.4 Status after gateway cluster split
+
+This continuation removes the 100-result ambiguity for the gateway subfamilies above and records the exact frozen identities and negative oracles. It does **not** establish repository-global closure: `extensions` remains a capped family for state close (160 moving-default hits) and must be split by extension family; additional indirect/dynamic lifecycle wrappers outside the searched symbols can still exist. Direct `withSqliteSnapshotSource` discovery under `src/gateway` and `extensions` returned zero, so no gateway/extension snapshot-source caller is inferred from those queries.
+
+Independent ACCEPT, scoped G01/G02 positive evidence, `unit_authority_ready`, executable/package proof, OCRM final acceptance, and release acceptance remain absent. No Actions, build, test, generator, package, production code, ledger, RTM, or flags were run or modified. This remains source/oracle provenance only.
