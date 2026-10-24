@@ -163,3 +163,27 @@ Search for `runtimeProcessEntrypoints.sessionTranscript` additionally found `scr
 - **Packaging:** the manifest's declared source and dist paths must match the actual worker entry file, build entry registration, and package inclusion/exclusion rules. Until those files and package artifacts are traced, packaged-runtime closure remains unproven.
 
 These are source-level assertions only. No tests, build, packaging or Actions were executed. No implementation was changed, and no acceptance flag was upgraded.
+
+
+## 9. Worker source and packaging closure evidence (partial)
+
+The branch live ref was re-read immediately before this write. Source is still pinned to the frozen upstream commit above.
+
+| Source | Exact blob SHA | Verified source fact |
+|---|---|---|
+| `src/config/sessions/session-transcript.worker.ts` | `4d18ec90f10f6cff1a1f2e6823fb939c6c4a9732` | Worker entrypoint is present at the exact manifest-derived source path. Its full 31,859-byte body was fetched. It installs database engine selection from worker data, routes typed worker messages, handles session/transcript/SQLite maintenance kinds, and includes close handling that validates captured physical paths, releases read validation and prunes closed history scopes. Every message-kind branch and all dependencies still need detailed mapping. |
+| `scripts/lib/runtime-process-core-build-entries.mts` | `9d1b728dc156a80a1fcf3e22e0a69db03683621d` | Core build entry list consumes `runtimeProcessEntrypoints.sessionTranscript`. This is positive source registration evidence, but the actual generated artifact/package inclusion and npm/portable-deploy inclusion rules are not yet verified. |
+| `src/config/sessions/session-transcript-context-read.worker.test.ts` | `b761d295820ba7c1c3d6faf4928bf3385b35ca4c` | 22,820-byte focused concurrency test body pinned; it includes read/close interleaving and checks that disclosure after close is refused. Complete test-case inventory still needs to be mapped. |
+| `src/infra/worker-task-host.ts` | `25a837385fd6bbca851c369abf2091cbd798f233` | Host for worker task pool uses MessageChannel, detached async context, DB reader fences and explicit worker retirement state; this is a cross-cutting lifecycle owner. |
+| `src/state/openclaw-agent-db-lifecycle.ts` | `581228a0469b553b9ae23beb494374c92c8ec68a` | Agent DB lifecycle closes engine/native handles with explicit finally-path cleanup and exposes async-resource registration. Exact caller chain to transcript worker retirement remains open. |
+| `src/state/openclaw-state-db-async-lifecycle.ts` | `fefa1e8c9dffbac0967263c91dbe74ede6d29fb9` | State DB lifecycle keeps failed native retirement under custody for explicit retry; failed drainage does not silently release its seal. Exact consumer and race paths need to be joined to transcript pool closure. |
+| `src/infra/runtime-worker-url.ts` | `77701a6697c824f5229b86f634e0c0ca635495bf` | Full source read confirms installed-root/dist/source-sibling resolution and Node TypeScript loader selection for source URLs. |
+
+### 9.1 Source identity → test → production path → negative oracle
+
+- Worker manifest `574271fcb7457427d90fbe9d94a57312f938bafa` → build entry registry `9d1b728dc156a80a1fcf3e22e0a69db03683621d` → `session-transcript.worker.ts` `4d18ec90f10f6cff1a1f2e6823fb939c6c4a9732` → runtime pool `b385c34a0a015ee98fc81c541a7c22d05daa4a5a` / worker facade `ad0c7325b4e81607c49dd0eddfda7dccb615e99f`.
+- Negative oracle: build entry must point to the same worker implementation as source/installed runtime URL; worker messages must be validated against captured DB physical paths; close must release validation and prune only closed history scopes; unknown or malformed worker messages must not produce a success result. The exact message-kind table and negative branches remain to be extracted from the worker's full body.
+- Pool lifecycle tests `cbb10d47a221f4533fc0739281c425370e39c4a8` and read/close concurrency tests `b761d295820ba7c1c3d6faf4928bf3385b35ca4c` are test-source identities, not executed evidence. The native SQLite test `777bbf05672d062acbe65d0de8fca90261cfe9d4` still requires per-case mapping to close policy, worker retirement and retained snapshot cleanup.
+- Package version/lock/toolchain are represented in the frozen root package manifest `af543c4c033b5c5e0c466061ada470feeda777f3`; its presence alone does not prove the transcript worker's published package contents.
+
+Remaining work: enumerate the worker's full message protocol and every import; read the runtime-process build helper's full inclusion/exclusion behavior and relevant package scripts; trace all worker lifecycle callers from DB-close request through worker retirement, native close, Kysely cache eviction, snapshot retirement and retry custody; enumerate all direct/dynamic consumers and negative tests. No Actions, build, package or tests were run. Acceptance remains open.
