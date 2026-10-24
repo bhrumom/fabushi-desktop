@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "f53ed57daae12397603fd2fbe50c541542a903dc",
+  "target_commit": "e46b8e9f0c95f3020b4b8bdd61195f5a6dc0dd94",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16194,
-    "unread": 16169,
+    "unknown": 16193,
+    "unread": 16168,
     "omitted": 0,
-    "responsibilities_total": 200,
+    "responsibilities_total": 201,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -52802,6 +52802,257 @@
       "license_and_provenance": "Exact .gitignore/build-output provenance plus root/resource layered-license boundary retained; ignored outputs are not shipping source.",
       "reviewer": "primary-session",
       "notes": "Strict182 VCS/build-output exclusion provenance. Counters unknown=16194 unread=16169 omitted=0 responsibilities=200. Zero tracked matches for all ignore targets. Production MicroTeX and recursive closure remain open; receipt-head Actions required; baseline/source closure/release acceptance remain false."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/MicroTeX",
+      "source_blob_sha": "61aaa7cc354de91d5898ffb0b2a6c62628d9a76f",
+      "source_kind": "recursive_child_repository_mutable_meson_wrap_acquisition_provenance",
+      "module_id": "tdesktop.thirdparty.microtex.clatexmath-wrap",
+      "responsibility_id": "TDRP-R9-MICROTEX-CLATEXMATH-WRAP-PROVENANCE-001",
+      "source_symbols": [
+        "desktop-app/MicroTeX:clatexmath.wrap@8f3ab2d23c4dee823ec31aeeb5843950ed9b6a33",
+        "[wrap-git] url=https://github.com/NanoMichael/cLaTeXMath.git",
+        "revision=head",
+        "[provide] dependency_names=clatexmath",
+        "NanoMichael/cLaTeXMath redirect -> NanoMichael/MicroTeX; master observed at 0e3707f6dafebb121d98b53c64364d16fefe481d (mutable observation only)",
+        "fixed MicroTeX tree has 18 Meson manifest/options blobs and zero subproject()/wrap consumers",
+        "tdesktop pins MicroTeX fork and cmake_helpers gitlinks; cmake_helpers external_microtex compiles the fork directly"
+      ],
+      "capability_ids": [
+        "CAP-DEPENDENCY-SOURCE-PROVENANCE",
+        "CAP-DEPENDENCY-BUILD-TIME-ACQUISITION-PROVENANCE",
+        "CAP-DEPENDENCY-PACKAGE-DISCOVERY-PROVENANCE"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/MicroTeX@61aaa7cc354de91d5898ffb0b2a6c62628d9a76f",
+        "desktop-app/MicroTeX:clatexmath.wrap@8f3ab2d23c4dee823ec31aeeb5843950ed9b6a33",
+        "NanoMichael/MicroTeX@master -> 0e3707f6dafebb121d98b53c64364d16fefe481d (mutable observation only)",
+        "tdesktop:cmake@7ceca3019b4750d7a5acb2de0faffd523ee14095",
+        "desktop-app/cmake_helpers:external/microtex/CMakeLists.txt@a1f479d2833bbb0cf0e007ee8fd33a40c10d9334",
+        "telegramdesktop/tdesktop:Telegram/cmake/td_iv.cmake@ec39405fc3c7bec58f8acb42aa49ed69c60d1b30",
+        "telegramdesktop/tdesktop:Telegram/SourceFiles/iv/markdown/iv_markdown_microtex.cpp@5c854b265e6dc67c1c500a72e04fa58b7fc6c3a2",
+        "telegramdesktop/tdesktop:Telegram/CMakeLists.txt@2ea9badfc5750b9b4eab111052faafe946fea277",
+        "desktop-app/MicroTeX:README.md@824af04fd8607532efed3f73752b81e5093577ef",
+        "desktop-app/MicroTeX:LICENSE@78a9eca5ca3514f2fd0a2e81018eeb8ae7d981a2"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microtex-clatexmath-wrap-complete-read.md",
+      "behavior_contract": "Treat the pinned clatexmath.wrap as source-only Meson acquisition/package-discovery provenance. It advertises a mutable remote Git HEAD as dependency name clatexmath for downstream Meson resolution; because the fixed child itself has no subproject/wrap consumer and accepted tdesktop pins/compiles the desktop-app fork directly through cmake_helpers, this row authorizes no shipping dependency substitution or formula/render/resource closure.",
+      "state_machine": "downstream Meson dependency resolution (if a caller chooses this wrap) -> resolve historical NanoMichael/cLaTeXMath URL -> follow current repository redirect -> resolve mutable head -> expose dependency name clatexmath; fixed MicroTeX self-build does not traverse this path; accepted tdesktop shipping instead consumes its pinned gitlink via pinned cmake_helpers.",
+      "side_effects": [
+        "Potential network Git acquisition only when an external/downstream Meson resolver elects to consume the wrap.",
+        "Resolution target may drift whenever the remote default/head changes.",
+        "No effect in the fixed child self-build because no fixed Meson manifest invokes subproject/wrap fallback.",
+        "No Fabushi product persistence, account, messaging, deployment or release side effect."
+      ],
+      "failure_cases": [
+        "Mutable remote HEAD moves and yields different source.",
+        "Historical repository URL redirects or disappears.",
+        "dependency_names metadata is mistaken for a fixed package lock.",
+        "A current observed NanoMichael/MicroTeX SHA is promoted to accepted authority despite revision=head.",
+        "Wrap provenance is mistaken for the tdesktop shipping acquisition path.",
+        "Production formula/render/resource/platform/package responsibilities are closed by metadata-only evidence."
+      ],
+      "ui_disposition": "Not a product UI source; dependency acquisition/package-discovery metadata only.",
+      "non_ui_responsibilities": [
+        "Exact wrap source identity",
+        "Mutable revision=head acquisition semantics",
+        "Remote repository redirect/current-head observation provenance",
+        "Fixed-child Meson no-consumer proof",
+        "Package-discovery dependency_names provenance",
+        "Separation from pinned tdesktop external_microtex shipping graph",
+        "README/root/resource-license boundary"
+      ],
+      "platform_delta": "Cross-platform Meson metadata only. It does not define Fabushi platform support, package selection, renderer backend, packaging or release policy.",
+      "existing_owner_candidates": [
+        "Existing TDRP recursive source/dependency acquisition and package-discovery provenance governance (selected)",
+        "Fabushi rich-document/formula renderer/resource/platform/package owners (rejected for metadata-only row)",
+        "MicroTeXRuntime/TelegramRenderer/second package manager/second build graph (rejected)"
+      ],
+      "existing_owner": "Existing TDRP recursive source/dependency acquisition and package-discovery provenance governance.",
+      "rejected_existing_owners": [
+        "Shipping formula/resource/platform/package owners do not own third-party mutable wrap metadata.",
+        "A MicroTeXRuntime or TelegramRenderer would preserve upstream dependency architecture.",
+        "A second package manager or build graph would duplicate canonical source/build governance."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/dossiers/upstream-microtex-clatexmath-wrap-complete-read.md"
+      ],
+      "fabushi_target_symbols": [
+        "TDRP_MICROTEX_CLATEXMATH_WRAP_PROVENANCE_001"
+      ],
+      "target_language": "Source-only Meson wrap/acquisition provenance; no shipping implementation.",
+      "language_rationale": "The source is dependency metadata rather than product logic, UI or a platform adapter. The only correct Fabushi result for this row is provenance and negative-boundary accounting.",
+      "command_event_contracts": [
+        "A downstream Meson consumer may use dependency name clatexmath to select the wrap.",
+        "The wrap resolves a Git URL at revision=head and therefore does not provide immutable content identity.",
+        "The pinned MicroTeX child self-build does not invoke a wrap/subproject consumer.",
+        "Accepted tdesktop uses pinned MicroTeX/cmake_helpers gitlinks and desktop-app::external_microtex instead.",
+        "Mutable package-discovery provenance cannot authorize shipping product or release closure."
+      ],
+      "state_owner": "Meson downstream wrap-resolution state only; no Fabushi product state.",
+      "lifecycle_owner": "Pinned clatexmath.wrap source plus external Git/Meson resolution semantics; no shipping lifecycle owner.",
+      "persistence_and_restart": "No product persistence. A downstream resolver/cache is external build state and may resolve different bytes after remote HEAD movement.",
+      "concurrency_and_cancellation": "No product concurrency contract; external Git/Meson acquisition may fail/cancel independently of Fabushi runtime.",
+      "security_boundary": "revision=head is not immutable or supply-chain-stable. The observed current remote SHA is provenance only. Accepted shipping authority remains the exact tdesktop gitlinks and pinned cmake_helpers production graph.",
+      "network_service_dependencies": [
+        "GitHub/repository availability for NanoMichael historical URL/redirect if a downstream wrap consumer uses it",
+        "Meson wrap/subproject resolver in an external build context",
+        "GitHub Actions for exact-head Fabushi evidence"
+      ],
+      "service_owner": "Third-party source-control/build acquisition infrastructure only; not a Fabushi service owner.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-mutable-wrap-acquisition-package-discovery-provenance-mapped-open",
+      "blockers": [
+        "No production implementation or release acceptance claim.",
+        "revision=head is mutable and cannot be accepted as immutable authority.",
+        "No fixed-child Meson consumer exists for the wrap.",
+        "Real tdesktop MicroTeX formula/render/resource/platform/package responsibilities remain open.",
+        "Broader recursive source closure remains open.",
+        "Fresh receipt-head Actions required."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "clatexmath.wrap@8f3ab2d23c4dee823ec31aeeb5843950ed9b6a33 fully read: 120 Git-tree bytes / 7 line slots including trailing slot.",
+        "Pinned MicroTeX tree 462d2794c73bb87f57d9426621bc6ce0f57c5fc2 is truncated=false with 315 entries / 279 blobs.",
+        "All 18 fixed MicroTeX Meson manifest/options blobs re-read (7,352 characters total); none contains subproject() or a wrap consumer.",
+        "NanoMichael/cLaTeXMath GitHub URL currently redirects to NanoMichael/MicroTeX; default master observed at 0e3707f6dafebb121d98b53c64364d16fefe481d / tree 960f63c2bb1f2541b7f4ba40dfb1de5de9454a08, retained only as mutable provenance.",
+        "Accepted tdesktop root tree pins cmake gitlink 7ceca3019b4750d7a5acb2de0faffd523ee14095 and Telegram/ThirdParty/MicroTeX gitlink 61aaa7cc354de91d5898ffb0b2a6c62628d9a76f.",
+        "Pinned cmake_helpers external/microtex/CMakeLists.txt@a1f479d2833bbb0cf0e007ee8fd33a40c10d9334 requires the desktop-app fork, compiles external_microtex_bundled and exposes desktop-app::external_microtex.",
+        "Pinned td_iv.cmake@ec39405fc3c7bec58f8acb42aa49ed69c60d1b30 links desktop-app::external_microtex and includes iv_markdown_microtex.cpp/.h.",
+        "Pinned iv_markdown_microtex.cpp@5c854b265e6dc67c1c500a72e04fa58b7fc6c3a2 initializes external_microtex_bundled.rcc/LaTeX::initBundled and owns bounded measure/render/Graphics2D_qt calls; those production responsibilities remain open.",
+        "README.md@824af04fd8607532efed3f73752b81e5093577ef documents Meson/local runtime behavior and the layered resource-license boundary; LICENSE@78a9eca5ca3514f2fd0a2e81018eeb8ae7d981a2 is MIT.",
+        "Parent e46b8e9f0c95f3020b4b8bdd61195f5a6dc0dd94 exact-head Actions: TDRP 40102519928 61/61 success; Rust 40102519960 6/6 success; Official MCP 40102519980 1/1 success."
+      ],
+      "target_commit": "e46b8e9f0c95f3020b4b8bdd61195f5a6dc0dd94",
+      "workflow_run": 40102519928,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12562794860,
+      "artifact_digest": "sha256:e3168e9bd2c7c1eda128e315d1628fb3b347bff5d6e85f9b4ed88c32f169ac60",
+      "composition_root": "Existing TDRP recursive source/dependency acquisition and package-discovery provenance governance.",
+      "composition_slot": "Mutable dependency acquisition/package-discovery provenance only; no shipping formula/render/resource/platform/package slot.",
+      "capability_component": "MicroTeX clatexmath.wrap provenance; no shipping runtime.",
+      "variation_axes": [
+        "historical URL redirect state",
+        "mutable remote head/default branch",
+        "downstream Meson wrap selection",
+        "dependency_names=clatexmath package-discovery metadata",
+        "fixed child self-build versus accepted tdesktop pinned shipping graph"
+      ],
+      "shared_owner_contracts": [
+        "TDRP recursive inventory and build-time acquisition governance",
+        "Pinned MicroTeX gitlink/tree",
+        "Pinned cmake_helpers external_microtex production boundary",
+        "Exact-head Actions evidence",
+        "Shipping formula/resource/platform/package owners remain separate"
+      ],
+      "duplicate_root_check": "No MicroTeXRuntime, TelegramRenderer, second package manager, second dependency registry or second build graph.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "No product action; dependency acquisition/package-discovery provenance only.",
+      "detail_section": "Not applicable",
+      "capability_surface": "Source-only dependency acquisition/package-discovery provenance; no shipping surface.",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Any accepted tdesktop/MicroTeX/cmake_helpers pin, clatexmath.wrap URL/revision/dependency name, remote redirect/head observation, fixed-child Meson consumer set or shipping external_microtex graph drift requires exact-ref reconciliation.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No icon change.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MICROTEX-CLATEXMATH-WRAP-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MICROTEX-CLATEXMATH-WRAP-EXACT-SOURCE-001",
+        "ORA-TDRP-MICROTEX-CLATEXMATH-WRAP-MUTABLE-HEAD-001",
+        "ORA-TDRP-MICROTEX-CLATEXMATH-WRAP-MESON-NO-CONSUMER-001",
+        "ORA-TDRP-MICROTEX-CLATEXMATH-WRAP-SHIPPING-PIN-SEPARATION-001",
+        "ORA-TDRP-MICROTEX-CLATEXMATH-WRAP-NO-PRODUCTION-CLOSURE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MICROTEX-CLATEXMATH-WRAP-MUTABLE-NON-AUTHORITY-001",
+        "INV-TDRP-MICROTEX-CLATEXMATH-WRAP-NO-PARALLEL-RUNTIME-001",
+        "INV-TDRP-MICROTEX-CLATEXMATH-WRAP-PRODUCTION-RESPONSIBILITIES-NOT-CLOSED-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MICROTEX-CLATEXMATH-WRAP-PINNED-SOURCE-001",
+        "CONTRACT-TDRP-MICROTEX-CLATEXMATH-WRAP-ACQUISITION-BOUNDARY-001",
+        "CONTRACT-TDRP-MICROTEX-CLATEXMATH-WRAP-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-MICROTEX-CLATEXMATH-WRAP-SOURCE-DRIFT-001",
+        "FAULT-TDRP-MICROTEX-CLATEXMATH-WRAP-MUTABLE-HEAD-DRIFT-001",
+        "FAULT-TDRP-MICROTEX-CLATEXMATH-WRAP-PACKAGE-PROMOTION-001",
+        "FAULT-TDRP-MICROTEX-CLATEXMATH-WRAP-PRODUCT-PROMOTION-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "Pinned MicroTeX clatexmath.wrap and fixed Meson tree",
+        "Observed mutable NanoMichael/MicroTeX master provenance",
+        "Pinned tdesktop MicroTeX/cmake_helpers production boundary",
+        "GitHub Actions exact-head evidence"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact pinned wrap source retained as dependency acquisition/package-discovery provenance. Its mutable remote HEAD is not accepted as shipping authority. Root MicroTeX is MIT while README preserves separate font/XML resource licenses; no dependency or resource code is copied into Fabushi shipping runtime by this row.",
+      "reviewer": "primary-session",
+      "notes": "Strict183 source-only mutable Meson wrap acquisition/package-discovery provenance. Counters unknown=16193 unread=16168 omitted=0 responsibilities=201. revision=head remains mutable/non-authoritative; fixed child has no wrap consumer; tdesktop shipping uses pinned desktop-app MicroTeX through pinned cmake_helpers. Production MicroTeX and recursive closure remain open; receipt-head Actions required; baseline/source closure/release acceptance remain false."
     }
   ]
 }
