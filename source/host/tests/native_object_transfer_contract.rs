@@ -10,6 +10,8 @@ use base64::Engine;
 use mahayana_host_runtime::extensions::auth::auth_service::{HostAuthEnvironment, HostAuthService, HostAuthServiceOptions, FABUSHI_HOST_ACCESS_CREDENTIAL_FILE_ENV};
 use mahayana_host_runtime::extensions::box_store_sync::native_account_store::{NativeAccountStoreClient, NativeWritePrecondition, NativeWriteOutcome};
 use mahayana_host_runtime::extensions::box_store_sync::native_object_transfer::{NativeObjectTransfer, NATIVE_CHUNK_BYTES};
+use mahayana_host_runtime::extensions::box_store_sync::native_box_object_store::NativeBoxObjectStoreProvider;
+use mahayana_host_runtime::extensions::box_store_sync::box_object_store::{BoxObjectStoreProvider, BoxObjectStoreProviderDependencies, resolve_box_object_store_provider};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
@@ -65,10 +67,22 @@ impl Fixture {
                 assert_eq!(url.path(),"/v1/account/agents/agent-a/store");
                 let mut files = store.lock().unwrap();
                 let (status,value) = if fields[0]=="GET" {
-                    let path = url.query_pairs().find(|(k,_)|k=="path").unwrap().1.into_owned();
-                    match files.get(&path) {
+                    if let Some((_,path))=url.query_pairs().find(|(k,_)|k=="path") {
+                    let path=path.into_owned();match files.get(&path) {
                         Some(bytes)=>{let digest=sha(bytes);(200,json!({"agentId":"agent-a","path":path,"dataBase64":base64::engine::general_purpose::STANDARD.encode(bytes),"sizeBytes":bytes.len(),"sha256":digest,"blobId":digest,"etag":format!("sha256:{digest}")}))},
                         None=>(404,json!({"error":"agent_store_object_not_found","agentId":"agent-a","path":path})),
+                    }
+                    } else {
+                        let prefix=url.query_pairs().find(|(k,_)|k=="prefix").map(|(_,v)|v.into_owned()).unwrap_or_default();
+                        (200,json!({"agentId":"agent-a","files":files.iter().filter(|(key,_)|key.starts_with(&prefix)).map(|(key,bytes)|json!({"path":key,"etag":format!("sha256:{}",sha(bytes))})).collect::<Vec<_>>()}))
+                    }
+                } else if fields[0]=="DELETE" {
+                    let path=url.query_pairs().find(|(k,_)|k=="path").unwrap().1.into_owned();
+                    let expected=url.query_pairs().find(|(k,_)|k=="baseEtag").unwrap().1.into_owned();
+                    match files.get(&path).map(|v|format!("sha256:{}",sha(v))) {
+                        Some(etag) if etag!=expected=>(200,json!({"deleted":false,"conflict":true,"agentId":"agent-a","path":path,"etag":etag})),
+                        Some(_)=>{files.remove(&path);(200,json!({"deleted":true,"agentId":"agent-a","path":path}))},
+                        None=>(200,json!({"deleted":false,"agentId":"agent-a","path":path})),
                     }
                 } else {
                     assert_eq!(fields[0],"PUT"); let body=body.unwrap(); let path=body["path"].as_str().unwrap().to_string();
@@ -126,4 +140,53 @@ fn native_large_objects_reject_missing_corrupt_chunks_and_do_not_publish_failed_
     assert!(fixture.transfer.head("not-published").unwrap().is_none());
     fixture.transfer.upload("empty",&mut Cursor::new(b""),NativeWritePrecondition::ExpectAbsent).unwrap();
     let empty=fixture.transfer.head("empty").unwrap().unwrap();assert_eq!(fixture.transfer.download(&empty,&mut Vec::new(),0).unwrap(),0);
+}
+
+#[test]
+fn native_box_object_store_port_keeps_old_baselines_and_streams_private_staging_files() {
+    let fixture=Fixture::new();
+    let credential=fixture.auth.get_fabushi_core_credential().unwrap();
+    let provider=NativeBoxObjectStoreProvider::new(credential.issuer(),fixture.auth.clone()).unwrap();
+    let first=provider.for_store("agent-a");let second=provider.for_store("agent-a");
+    first.put("config",b"one").unwrap();assert_eq!(first.get("config").unwrap().unwrap(),b"one");assert_eq!(second.get("config").unwrap().unwrap(),b"one");
+    first.put("config",b"two").unwrap();assert!(second.put("config",b"stale").is_err());
+    assert_eq!(second.get("config").unwrap().unwrap(),b"two");
+    assert!(!second.put_if_unchanged("config",Some(b"one"),b"wrong").unwrap());
+    assert!(second.put_if_unchanged("config",Some(b"two"),b"three").unwrap());
+    assert_eq!(first.list("conf").unwrap(),vec!["config"]);
+
+    let bytes=vec![29;9*1024*1024];let source=fixture.root.join("source.bin");fs::write(&source,&bytes).unwrap();
+    first.put_from_file("blobs/large",&source).unwrap();first.put_from_file("blobs/large",&source).unwrap();
+    let destination=fixture.root.join("download.part");
+    assert_eq!(first.get_to_file("blobs/large",&destination,Some(bytes.len() as u64)).unwrap(),Some(bytes.len() as u64));
+    assert_eq!(fs::read(&destination).unwrap(),bytes);
+    assert!(first.get_to_file("blobs/large",&destination,None).is_err());
+    assert_eq!(fs::read(&destination).unwrap(),bytes,"existing staging bytes must not be truncated");
+    #[cfg(unix)] {
+        use std::os::unix::fs::{symlink,PermissionsExt};
+        assert_eq!(fs::metadata(&destination).unwrap().permissions().mode()&0o777,0o600);
+        let link=fixture.root.join("linked.part");symlink(&source,&link).unwrap();
+        assert!(first.get_to_file("blobs/large",&link,None).is_err());
+        assert!(first.put_from_file("blobs/symlink",&link).is_err());
+        assert_eq!(fs::read(&source).unwrap(),bytes);
+    }
+    first.get("config").unwrap();first.delete("config").unwrap();assert!(first.get("config").unwrap().is_none());
+    assert!(first.list("conf").unwrap().is_empty());
+    assert!(fixture.files.lock().unwrap().keys().any(|key|key.starts_with(".fabushi-chunks-v1/")),"logical deletion must retain immutable chunks for separate GC");
+}
+
+#[test]
+fn native_box_mode_selects_existing_provider_and_never_uses_legacy_credentials() {
+    use mahayana_host_runtime::r#box::box_store_backend_policy::{BoxStoreBackendKind,resolve_box_store_backend_policy};
+    let fixture=Fixture::new();let credential=fixture.auth.get_fabushi_core_credential().unwrap();
+    let mut env=BTreeMap::from([("FABUSHI_NATIVE_BOX_STORE".into(),"1".into()),("SAND_BOX_STORE_BACKEND".into(),"v2".into())]);
+    assert_eq!(resolve_box_store_backend_policy(&env).kind,BoxStoreBackendKind::Native);
+    let provider=resolve_box_object_store_provider(&env,BoxObjectStoreProviderDependencies {
+        backend_url:Some(credential.issuer().into()),native_credentials:Some(fixture.auth.clone()),
+        get_access_token:Some(Arc::new(||panic!("native mode used legacy token"))),get_machine_id:Some(Arc::new(||panic!("native mode used legacy machine resolver"))),
+    }).unwrap();
+    provider.for_store("agent-a").put("native-mode",b"ok").unwrap();
+    assert!(resolve_box_object_store_provider(&env,BoxObjectStoreProviderDependencies::default()).is_err());
+    env.insert("SAND_BOX_STORE_LOCAL_DIR".into(),fixture.root.to_string_lossy().into_owned());
+    assert_eq!(resolve_box_store_backend_policy(&env).kind,BoxStoreBackendKind::LocalFs);
 }

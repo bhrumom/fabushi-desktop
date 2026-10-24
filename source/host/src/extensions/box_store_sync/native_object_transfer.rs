@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use super::agent_store_sand_files::normalize_rel_path;
-use super::native_account_store::{NativeAccountStoreClient, NativeWriteOutcome, NativeWritePrecondition};
+use super::native_account_store::{NativeAccountStoreClient, NativeDeleteOutcome, NativeWriteOutcome, NativeWritePrecondition};
 
 pub const NATIVE_CHUNK_BYTES: usize = 4 * 1024 * 1024;
 pub const MAX_NATIVE_OBJECT_BYTES: u64 = 32 * 1024 * 1024 * 1024;
@@ -63,12 +63,28 @@ impl Manifest {
 }
 impl NativeObjectTransfer {
     pub fn new(client: Arc<NativeAccountStoreClient>, agent: String) -> Self { Self { client, agent } }
+    pub fn ensure_current_account(&self) -> Result<(), String> { self.client.ensure_current_account().map_err(|e|e.to_string()) }
     pub fn head(&self, key: &str) -> Result<Option<NativeObjectHead>, String> {
         let Some(root) = self.client.get(&self.agent, &root_key(key)?).map_err(|e|e.to_string())? else { return Ok(None); };
         if root.bytes.len() > 1024 * 1024 { return Err("Native object manifest exceeds limit.".into()); }
         let manifest: Manifest = serde_json::from_slice(&root.bytes).map_err(|_|"Invalid native object manifest JSON.")?;
         manifest.validate(key)?;
         Ok(Some(NativeObjectHead { etag: root.etag, manifest, owner: self.client.clone(), agent: self.agent.clone() }))
+    }
+    pub fn list(&self, prefix: &str) -> Result<Vec<String>, String> {
+        let mut keys = std::collections::BTreeSet::new();
+        for path in self.client.list(&self.agent, ".fabushi-box-v1/refs").map_err(|e|e.to_string())? {
+            let Some(root) = self.client.get(&self.agent, &path).map_err(|e|e.to_string())? else { continue; };
+            if root.bytes.len() > 1024 * 1024 { return Err("Native object manifest exceeds limit.".into()); }
+            let manifest: Manifest = serde_json::from_slice(&root.bytes).map_err(|_|"Invalid native object manifest JSON.")?;
+            manifest.validate(&manifest.key)?;
+            if root_key(&manifest.key)? != path { return Err("Native object key binding mismatch.".into()); }
+            if manifest.key.starts_with(prefix) { keys.insert(manifest.key); }
+        }
+        Ok(keys.into_iter().collect())
+    }
+    pub fn delete(&self, key: &str, etag: &str) -> Result<NativeDeleteOutcome, String> {
+        self.client.delete(&self.agent, &root_key(key)?, etag).map_err(|e|e.to_string())
     }
     pub fn download(&self, head: &NativeObjectHead, staging: &mut impl Write, max_bytes: u64) -> Result<u64, String> {
         if !Arc::ptr_eq(&head.owner, &self.client) || head.agent != self.agent { return Err("Native object owner mismatch.".into()); }

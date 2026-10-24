@@ -105,6 +105,7 @@ pub type MachineIdResolver =
 
 #[derive(Clone)]
 pub struct BoxStoreSyncExtensionDeps {
+    pub native_credentials: Option<Arc<dyn crate::extensions::auth::auth_service::FabushiCoreCredentialProvider>>,
     pub is_idle: Arc<dyn Fn() -> bool + Send + Sync>,
     pub resolve_store_id: StoreIdResolver,
     pub backend_url: Option<String>,

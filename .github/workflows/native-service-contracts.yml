@@ -6,6 +6,13 @@ on:
       - 'source/host/src/extensions/automations/**'
       - 'source/host/src/extensions/box_store_sync/native_account_store.rs'
       - 'source/host/src/extensions/box_store_sync/native_object_transfer.rs'
+      - 'source/host/src/extensions/box_store_sync/native_box_object_store.rs'
+      - 'source/host/src/extensions/box_store_sync/box_object_store.rs'
+      - 'source/host/src/extensions/box_store_sync/production.rs'
+      - 'source/host/src/extensions/box_store_sync/extension.rs'
+      - 'source/host/src/extensions/box_store_sync/box_copy_in.rs'
+      - 'source/host/src/box/box_store_backend_policy.rs'
+      - 'source/host/src/host_production_extensions.rs'
       - 'source/host/src/extensions/box_store_sync/mod.rs'
       - 'source/host/tests/extensions_auth_service_contract.rs'
       - 'source/host/tests/extensions_auth_credential_renewer_contract.rs'
@@ -48,6 +55,9 @@ jobs:
           --test native_automation_transport_contract
           --test native_account_store_contract
           --test native_object_transfer_contract
+          --test box_store_sync_extension_contract
+          --test box_foundation_contract
+          --test box_store_sync_production_wiring_contract
       - name: Record evidence scope
         run: |
           git rev-parse HEAD >> "$GITHUB_STEP_SUMMARY"

@@ -140,6 +140,7 @@ fn extension_pins_diagnostics_starts_service_projects_api_and_disposes() {
     let extension = start_box_store_sync_extension(
         &factory,
         BoxStoreSyncExtensionDeps {
+            native_credentials: None,
             is_idle: Arc::new(|| true),
             resolve_store_id: Arc::new(|| Ok("source-map-store".to_string())),
             backend_url: None,

@@ -16,6 +16,7 @@ pub mod box_store_pack;
 pub mod agent_store_sand_files;
 pub mod native_account_store;
 pub mod native_object_transfer;
+pub mod native_box_object_store;
 pub mod box_copy_in;
 pub mod box_object_store;
 pub mod box_store_download;

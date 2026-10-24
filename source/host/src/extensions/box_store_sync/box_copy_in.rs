@@ -688,6 +688,7 @@ pub fn execute_production_box_copy_in_from_env(
     let sand_root = get_sand_root_dir();
     let policy = resolve_box_store_backend_policy(environment);
     let store_backend = match policy.kind {
+        BoxStoreBackendKind::Native => "fabushi-native",
         BoxStoreBackendKind::LocalFs => "local-fs",
         BoxStoreBackendKind::AgentStore => "agent-store",
         BoxStoreBackendKind::SandBoxStoreV2 => "sand-box-store-v2",
@@ -738,6 +739,7 @@ pub fn execute_production_box_copy_in_from_env(
         let token_auth = Arc::clone(&auth);
         let machine_auth = Arc::clone(&auth);
         BoxObjectStoreProviderDependencies {
+            native_credentials: Some(auth.clone()),
             backend_url: Some(backend_url),
             get_access_token: Some(Arc::new(move || {
                 token_auth.get_access_token().map_err(|error| error.to_string())
