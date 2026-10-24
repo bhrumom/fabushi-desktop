@@ -1,0 +1,1408 @@
+{
+  "schemaVersion": 1,
+  "adaptations": [
+    {
+      "referencePath": "frontend/src/production/ProductionRenderer.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "af8a83a8dd7cf1444474889ce3e64fe796a7d458",
+      "behavioralEvidence": [
+        "frontend/src/production/ProductionRenderer.tsx",
+        "frontend/src/recovered/features/account/session/sign-in-status.tsx",
+        "frontend/src/production/ForwardMessageDialog.tsx",
+        "source/host/src/extensions/session/production.rs"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/pr20-verify-once.yml",
+        "source/host/tests/session_gateway_contract.rs",
+        "desktop/e2e/openbot-packaged-acceptance.spec.ts",
+        ".github/workflows/release-macos-main.yml",
+        "native/mahayana-messaging/tests/service_contract.rs"
+      ],
+      "rationale": "Preserves the frozen Grok 0.18 React renderer structure while adapting shipping Fabushi contracts only: browser-login status application is monotonic so a late logging-in acknowledgement cannot overwrite a newer logged-in observation; the root exposes stable Agent-shell markers used by product parity acceptance; empty sidebar-section records fall back to Grok visible-Agent ordering; and complete-roster reconciliation settles an unselected account on the first visible Agent. These adaptations also publish the live sidebar width to the shell so the recovered WindowChrome drag carrier does not overlap Fabushi Agent header controls; the sidebar header remains the local drag surface and its controls are explicit no-drag regions. They keep authentication real through cursorAccount.login/getStatus and keep roster/selection state on the production Coordinator path rather than introducing a parallel renderer. It also preserves optimistic user-message text and committed attachment metadata while correlated authoritative message/attachment echoes settle, so the live transcript does not drop attachment chips between send acceptance and durable echo. Authoritative transcript baselines, updates, and appends are reconciled by message id and client nonce while unioning committed attachment metadata, so transport ordering or a late durable snapshot cannot erase a user's attachment chip after send acceptance. Initial openAgentTail completion is also reconciled with entries that arrived while the initial page request was in flight, preventing a stale first-page response from erasing an optimistic or newly echoed attachment-bearing turn. Transcript feed snapshots also retain only unresolved pending-* user turns that have not yet been correlated by id/clientNonce, so a late empty or stale authoritative baseline cannot erase the optimistic turn between submit acceptance and its durable echo; ordinary non-pending rows remain fully baseline-authoritative. The shipping renderer now also owns the recovered Grok sidebar multi-selection composition: modifier/range selection, clear, and bulk move-to-existing/new-section callbacks are wired to renderer state and the account-scoped sidebarSectionsStore, so the byte-identical sidebar selection UI is reachable without a legacy shell. Phase 1 additionally absorbs Human conversations into this same renderer owner: the existing sidebar/workspace/composer/transcript are reused, Human sends keep the recovered optimistic/reconnect queue, canonical attachment commit path and reply controller, and explicit Human-to-Agent handoff still crosses the established Coordinator-to-Host-to-Runner boundary. No parallel Human shell or message runtime is introduced. Phase 1 reconnect convergence now refreshes an already-open Human transcript from the same Host-owned canonical Session/Transcript immediately after native history sync, while baseline reconciliation preserves unresolved optimistic rows; the Host shipping-client contract separately proves bounded multi-page multi-device gap recovery without a renderer-side message truth. Human older-history loading now reuses the existing transcript pagination controller against a Host gateway that pages the same canonical Human Session SQLite owner; initial Human open syncs native transport then projects only the latest bounded tail, while scroll pagination retains the existing cursor, viewport-anchor, request-fencing, and deduplication ownership. Phase 1 roster recovery further separates local Agent roster readiness from shipping Human convergence: listAgents publishes the canonical loaded/empty Agent state before a potentially slow remote Human sync, while Human sync remains account/transport/attempt fenced, keeps its durable local fallback, and refreshes the active Human transcript after convergence. This prevents Human network latency from holding the canonical Agent shell in an indefinite loading state without weakening either synchronization path. Phase 1 Human reactions now reuse the recovered reaction pills/action surface while mutation and settlement remain Host-owned: the renderer calls the existing Coordinator client, receives the canonical updated Human transcript row, and never creates a reaction store. Human Find-in-chat likewise reuses the recovered find controller and canonical transcript pagination owner: full durable Human search is provided by the Host search gateway, while navigation to an older hit reveals bounded history through the existing pagination controller and virtual transcript handle instead of replacing the timeline with a parallel search result model. Phase 1 additionally routes canonical UI language/accessibility preferences through this existing boundary and applies them to the shipping renderer without creating a parallel settings owner. Restored Human selections are also retried through the same canonical openAgent path once the asynchronous Human roster establishes the conversation type; same-selection reopen remains allowed only while no transcript page is loaded, closing the restart race where a Human id could be briefly addressed through the Agent tail method without introducing alternate state. A successful Host-settled Human send now upserts the authoritative row by canonical id/client nonce, so a concurrent initial-page or roster reconciliation cannot silently erase the accepted backend result from the visible transcript. Human remote-search settlement now promotes the first authoritative match through the existing find controller step path only when no current match exists, so the recovered ordinal/navigation contract and bounded older-page reveal converge without a renderer-side search truth. THEME-I18N-A11Y further keeps this canonical owner while making locale changes immediately visible in the mounted Settings shell, providing locale-sensitive formatting/announcement evidence, and fencing real composition input so CJK/RTL mixed-direction editing cannot submit or be externally overwritten mid-composition. Stop response also settles the renderer running projection only after the canonical Host interrupt call confirms `interrupted: true`, so CHAT-011's packaged acceptance can hide the stop control and accept a subsequent turn without moving operation ownership into the renderer. The shipping renderer removes the obsolete iOS menu entry and keeps account labels consistent with Fabushi branding. The same canonical renderer now exposes Human-message Forward through the recovered ConversationTranscript and a source-neutral ForwardMessageDialog, while execution remains on the existing Coordinator/Host Human Conversation owner; the renderer keeps only dialog, query and settlement projection state and does not become a second Message or Search truth."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "5cf2f33c394f885a37709a01361dc516b0fb4240",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/production/ProductionRenderer.tsx",
+        "frontend/src/production/ForwardMessageDialog.tsx"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/src/extensions/session/production.rs"
+      ],
+      "rationale": "Preserves the frozen Grok ConversationTranscript as the single shipping transcript owner while adding one source-neutral message-action seam: an optional onForward callback. MessageActionAnchor exposes Forward only for settled ordinary messages when the shipping Conversation owner supplies that callback, including attachment-bearing messages, while preserving read-only gating, reply/thread/reaction actions, transcript identity, rendering and lifecycle. ProductionRenderer supplies this callback only for canonical Human conversations and execution crosses the existing Coordinator/Host message owner; no Telegram/ShareBox transcript, route, Message store, or renderer-side forward truth is introduced."
+    },
+    {
+      "referencePath": "frontend/src/production/model.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "a8607a383ec32f6fba7142bd7ce8ae93f6af7dc5",
+      "behavioralEvidence": [
+        "frontend/src/production/model.ts",
+        "frontend/src/production/coordinator-client.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/pr20-verify-once.yml"
+      ],
+      "rationale": "Keeps Grok 0.18 Agent projection/filter/sort semantics while accepting the shipping Mahayana Coordinator agents event envelope { agents: [...] } in addition to the frozen direct array form. The adaptation is limited to transport normalization at the renderer projection boundary; Agent identity, hidden state, activity and ordering continue through the frozen Grok projection logic. It also normalizes authoritative Mahayana transcript echoes that carry Grok attachment contexts on user messages, preserving committed path/name/MIME/size metadata for mixed and attachment-only sends without relying on optimistic renderer state. Phase 1 extends this same projection boundary with Human-conversation and Human-transcript normalization while preserving the RendererAgent/ConversationTranscriptEntry contracts, including canonical attachment metadata, reply relation fields and trusted Agent author names. The renderer also maps legacy Grok/Grok Bot default profile names to the Fabushi product label while preserving all other configured Agent names."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/conversation/workspace/draft-state.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "638a2df9675ec9809ab63c0684222e65f416d0e9",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/workspace/draft-state.ts"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Preserves the frozen Grok 0.18 account-scoped composer draft store while adapting a shipping race exposed by real desktop attachment staging: a late persistence restore must not overwrite a draft mutation that occurred while the read was in flight. A monotonic mutation revision fences both pre-read and post-read restore settlement without changing account generation semantics, persistence format, or normal draft equality rules. The explicit .ts model import makes this recovered module executable under the Node 24 strip-types contract-test runner while remaining valid under the desktop Bundler TypeScript configuration."
+    },
+    {
+      "referencePath": "source/electron-preload/preload.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "4d4aadb62aacb85cae559c4cb6aa01885a9990b8",
+      "behavioralEvidence": [
+        "source/electron-preload/preload.ts",
+        "source/electron-preload/runtime/primary.ts",
+        "docs/specs/desktop-miniapp-publisher.md",
+        "source/electron-main/mcp/miniapp-publisher.ts",
+        "desktop/scripts/build-electron-runtime.mjs",
+        "docs/specs/desktop-miniapp-management-ui.md",
+        "source/electron-main/mcp/miniapp-production.ts"
+      ],
+      "testEvidence": [
+        "source/electron-preload/preload-boundaries.test.ts",
+        "source/electron-main/mcp/miniapp-publisher.contract.test.ts",
+        ".github/workflows/miniapp-publisher-ci.yml",
+        "source/electron-preload/coordinator-port-bridge.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "frontend/src/production/human-call-media.tsx",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts",
+        "source/electron-main/mcp/miniapp-production.contract.test.ts",
+        ".github/workflows/miniapp-management-ci.yml"
+      ],
+      "rationale": "Preserves the frozen Grok 0.18 thin preload boundary while adapting Fabushi's native attachment IPC contract: renderer Uint8Array payloads are encoded to the native bytesBase64 field, rich native staging results are normalized to the recovered {ok,path} contract, and rich committed attachment records are normalized to string paths. Commit requests carry path/name pairs as native items so file names survive the staging-to-committed transition. The shipping preload is bundled from source/electron-preload/runtime/primary.ts by desktop/scripts/build-electron-runtime.mjs; no deleted desktop/electron compatibility root is retained as behavioral or test evidence. Phase 1 additionally routes canonical UI language/accessibility preferences through this existing boundary and applies them to the shipping renderer without creating a parallel settings owner. Phase 1 media/device settings remain on this same canonical Settings/MainEdge/preload owner: selected microphone/camera IDs are normalized and persisted locally, exposed through the existing callMedia bridge, projected by recovered Settings, and consumed by the shipping Human call capture path with stale-device fallback. MP-01..05 additionally routes an optional first-party publisher facet through this same native composition: exact trusted-main sender, current account auth kept internal, bounded OS-selected signed package, account-departure fence and no uncertain-write retry. Backend retains namespace/artifact/review authority; the bridge exposes no reviewer credential, approval or installation runtime. Existing MCP, Coordinator and Host responsibilities are preserved. MU production wiring uses only appId intents and public metadata at the existing MCP owner; Account supplies confirmed authId scope and departure fences, Host retains verification on MainData, and main alone decodes resources into isolated windows. First-party Account and publisher requests use Electron net with no cookies or weakened origin checks."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "988a89ff68792b3764d8982df08e98c2a8fce49b",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/workspace/rich-text-editor.tsx",
+        "frontend/src/recovered/features/conversation/workspace/composer.tsx"
+      ],
+      "testEvidence": [
+        "desktop/e2e/mahayana-agent-workbench.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "desktop/e2e/grok-parity.spec.ts"
+      ],
+      "rationale": "The frozen TipTap composer is preserved semantically, with only Fabushi ownership boundaries around local persistence and voice input. Agent switches fence queued transactions from the previous scope. Browser beforeinput releases the fence before ordinary edits; committed DOM input also performs a one-shot canonical-state rescue when ProseMirror has already reconciled the DOM without emitting an accepted onUpdate, preventing visible prompt text from diverging from the persisted Agent-scoped draft. Programmatic voice/dictation insertion explicitly releases the same fence before insertText. The focused Electron parity E2E reads the real client-persistence slice and guards this ownership boundary. THEME-I18N-A11Y further keeps this canonical owner while making locale changes immediately visible in the mounted Settings shell, providing locale-sensitive formatting/announcement evidence, and fencing real composition input so CJK/RTL mixed-direction editing cannot submit or be externally overwritten mid-composition."
+    },
+    {
+      "referencePath": "source/electron-main/adapters/attachment-gateway.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "cbd9411d15f6659eef5490790dedc6e948642dca",
+      "behavioralEvidence": [
+        "source/electron-main/adapters/attachment-gateway.ts",
+        "source/shared/media/link-preview-image-bounds.ts",
+        "source/shared/rpc/coordinator-main.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Preserves Grok attachment-gateway behavior while removing a forbidden Electron-main dependency on the legacy TypeScript Host attachment service. Link metadata now crosses the existing Coordinator main leg, and bounded preview-image handling lives in shared media code. This keeps Electron Main, Coordinator and Host as independent Grok-shaped processes while retaining the same attachment/link-preview contract."
+    },
+    {
+      "referencePath": "source/electron-main/adapters/mcp-oauth.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "ffbc225bfaaccbab7960ff8df31039553efdf1ec",
+      "behavioralEvidence": [
+        "source/electron-main/adapters/mcp-oauth.ts",
+        "docs/specs/desktop-miniapp-publisher.md",
+        "source/electron-main/mcp/miniapp-publisher.ts",
+        "source/electron-main/mcp/desktop-mcp-manager.ts",
+        "source/electron-main/coordinator/coordinator-executors.ts",
+        "source/node-agent-coordinator/src/mcp_lifecycle_relay.rs",
+        "source/host/src/extensions/mcp/coordinator_relay.rs",
+        "source/shared/node/sand-data-root.ts",
+        "source/electron-main/mcp/mcp-runtime.ts",
+        "source/shared/rpc/coordinator-main.ts",
+        "source/node-agent-coordinator/src/main.rs",
+        "source/host/app/src/main.rs",
+        "source/electron-main/mcp/host-plugin-skills-loader.ts",
+        "source/host/src/host_production_extensions.rs",
+        "source/host/src/extensions/mcp/plugin_skills.rs",
+        "source/host/src/extensions/mcp/production.rs",
+        "source/shared/node/mcp/mcp-discovery-settlement.ts",
+        "source/host/src/extensions/telemetry/mcp_discovery_telemetry.rs",
+        "source/host/src/extensions/telemetry/connector_auth_telemetry.rs",
+        "docs/specs/desktop-miniapp-management-ui.md",
+        "source/electron-main/mcp/miniapp-production.ts",
+        "source/electron-main/mcp/official-mcp-service.ts",
+        "source/shared/node/mcp/fabushi-official-catalog.ts",
+        "source/electron-main/mcp/official-mcp-oauth.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        "source/electron-main/coordinator/coordinator-executors.test.ts",
+        "source/node-agent-coordinator/tests/mcp_lifecycle_relay_contract.rs",
+        "source/electron-main/mcp/miniapp-publisher.contract.test.ts",
+        ".github/workflows/miniapp-publisher-ci.yml",
+        "source/host/tests/mcp_coordinator_relay_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/host/tests/box_mcp_exec_contract.rs",
+        "source/host/tests/mcp_state_executor_contract.rs",
+        "source/host/tests/host_production_extensions_contract.rs",
+        "source/shared/node/mcp/mcp-discovery-settlement.contract.test.ts",
+        "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+        "source/host/tests/mcp_discovery_telemetry_contract.rs",
+        "source/host/tests/mcp_discovery_production_wiring_contract.rs",
+        "source/host/tests/connector_auth_telemetry_contract.rs",
+        "source/host/tests/connector_auth_production_wiring_contract.rs",
+        "source/electron-main/mcp/miniapp-production.contract.test.ts",
+        ".github/workflows/miniapp-management-ci.yml",
+        "source/electron-main/mcp/official-mcp.contract.test.ts",
+        ".github/workflows/official-mcp-marketplace.yml"
+      ],
+      "rationale": "Preserves Grok MCP/OAuth composition while keeping SandMcpManager as the single Electron/Coordinator-owned MCP manager and the Mahayana Host as the owner of Plugin Skills lifecycle, cache, authenticated startup, refresh, install/uninstall resync, live-reference cleanup, and Skill Publish. The Cursor Dashboard/marketplace-dependent installed-plugin loader stays as a narrow TypeScript SDK edge in Electron Main and is reached only through the existing allowlisted, correlated Mahayana Coordinator MCP relay. This preserves the frozen Grok process and responsibility boundaries while choosing TypeScript for the Cursor Node SDK edge and Rust for Host lifecycle/state; it does not introduce a second MCP manager or collapse Coordinator/Host/Runner. The approved row-62 MCP discovery failure extension now forwards the frozen success/failure/stale/elapsed settlement through a dedicated reportMcpDiscoveryFailed Coordinator main-data request to the unique HostStructuredLogTelemetry owner; generic MCP diagnostics remain separate. MP-01..05 additionally routes an optional first-party publisher facet through this same native composition: exact trusted-main sender, current account auth kept internal, bounded OS-selected signed package, account-departure fence and no uncertain-write retry. Backend retains namespace/artifact/review authority; the bridge exposes no reviewer credential, approval or installation runtime. Existing MCP, Coordinator and Host responsibilities are preserved. MU production wiring uses only appId intents and public metadata at the existing MCP owner; Account supplies confirmed authId scope and departure fences, Host retains verification on MainData, and main alone decodes resources into isolated windows. First-party Account and publisher requests use Electron net with no cookies or weakened origin checks. Current-main official MCP integration preserves the native Fabushi issuer guard, composes the fixed official provider directory/native vault into the existing MCP facade, and treats foreign legacy Dashboard lookup failure as explicit degraded state rather than broadening account-token origins. The Mini App management subtree now keeps the same dialog parent and sibling position while the ordinary plugin marketplace resolves asynchronously, so an in-flight native install keeps its renderer lifecycle generation instead of being remounted into an empty transient projection; Host installation authority and account fencing remain unchanged."
+    },
+    {
+      "referencePath": "source/electron-main/attachments/attachment-manager.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "0d055b7d65c49911deb18ff08af2caa1639d93f7",
+      "behavioralEvidence": [
+        "source/electron-main/attachments/attachment-manager.ts",
+        "source/shared/node/sand-data-root.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Keeps the frozen Grok attachment manager semantics while sourcing data-root and path reanchoring from the shared Node boundary rather than legacy Host TypeScript. This is a dependency-direction adaptation only; attachment lifecycle and path semantics remain owned by Electron Main."
+    },
+    {
+      "referencePath": "source/electron-main/coordinator/production-root-auxiliary-provider.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "3afe596fea71772b463454d3350c8841d9a3335a",
+      "behavioralEvidence": [
+        "source/electron-main/coordinator/production-root-auxiliary-provider.ts",
+        "source/shared/node/sand-data-root.ts",
+        "source/node-agent-coordinator/src/main.rs"
+      ],
+      "testEvidence": [
+        "source/electron-main/coordinator/coordinator-executors.test.ts",
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves Grok Electron-main Coordinator auxiliary wiring while resolving the Fabushi data directory through shared Node infrastructure instead of importing legacy Host TypeScript. The Coordinator itself remains the independent Rust Mahayana process; this adaptation only cleans the Electron-side dependency edge."
+    },
+    {
+      "referencePath": "source/electron-main/dev/dev-box-recreate-plane.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "193f53527195afee77c3863ad7a8242cd59c58f0",
+      "behavioralEvidence": [
+        "source/electron-main/dev/dev-box-recreate-plane.ts",
+        "source/shared/node/sand-data-root.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves Grok development box-recreate behavior while moving the data-root dependency to the shared Node layer. This prevents the development control plane from retaining a second legacy Host runtime dependency."
+    },
+    {
+      "referencePath": "source/electron-main/media/media-protocol.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "af339a90e398c66fb89eebcb76e43947ad76b4e3",
+      "behavioralEvidence": [
+        "source/electron-main/media/media-protocol.ts",
+        "source/shared/node/sand-data-root.ts",
+        "docs/specs/desktop-miniapp-window.md",
+        "source/electron-main/mcp/miniapp-window.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/electron-main/mcp/miniapp-window.contract.test.ts",
+        ".github/workflows/miniapp-window-ci.yml"
+      ],
+      "rationale": "Keeps Grok media-protocol behavior and changes only the path-reanchoring dependency from legacy Host TypeScript to the shared data-root utility, preserving Electron Main ownership of privileged media protocol handling. DMW-01 adds an optional native-only declaration list to this same single pre-ready registration call; the production entry appends the isolated mini-app scheme, without another global registration or changes to sand-media handlers. The default call remains backward compatible."
+    },
+    {
+      "referencePath": "source/electron-main/production-binding-providers.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "e65c2b1e9160d30dad1b549558e3d01826069dce",
+      "behavioralEvidence": [
+        "source/electron-main/production-binding-providers.ts",
+        "source/electron-main/local-exec/local-exec-daemon-protocol.ts",
+        "source/shared/node/sand-data-root.ts",
+        "docs/specs/desktop-miniapp-window.md",
+        "source/electron-main/mcp/miniapp-window.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/local-exec/local-exec-daemon-protocol.test.ts",
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/electron-main/mcp/miniapp-window.contract.test.ts",
+        ".github/workflows/miniapp-window-ci.yml"
+      ],
+      "rationale": "Preserves the frozen Grok production binding graph while cutting two legacy Host-TypeScript imports: local-exec daemon protocol ownership is now in Electron Main and the data-root resolver is shared. The actual local-exec supervision still belongs to Mahayana Coordinator, so this adaptation strengthens rather than collapses the Grok process boundary. DMW-01 additionally injects the mini-app scheme through the existing MediaProtocol registration owner, with an empty default for existing callers. No second protocol bootstrap, Host or account owner is introduced."
+    },
+    {
+      "referencePath": "source/electron-main/startup/desktop-user-data-bootstrap.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "089200ea0477712de5d7d4edf3331181032df50a",
+      "behavioralEvidence": [
+        "source/electron-main/startup/desktop-user-data-bootstrap.ts",
+        "source/shared/node/sand-data-root.ts",
+        "docs/specs/desktop-miniapp-factory-acceptance.md"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/electron-main/startup/desktop-user-data-bootstrap.contract.test.ts",
+        ".github/workflows/miniapp-management-ci.yml",
+        "desktop/e2e/miniapp-packaged-acceptance.spec.ts"
+      ],
+      "rationale": "Preserves Grok desktop user-data bootstrap semantics while moving Fabushi data-root helpers from legacy Host TypeScript into the shared Node layer, so Electron startup no longer depends on a parallel Host implementation. MFA-04 extends this same pre-ready owner with explicit absolute appData/temp overrides and pins the existing Host RuntimeStore and shared profile root beneath the selected appData. Ordinary startup defaults and the existing userData/sessionData owner remain unchanged; no parallel credential store or database is added. The isolated factory consumer selects its verified disposable RAM volume. Focused bootstrap contracts and signed account-transition acceptance remain mandatory."
+    },
+    {
+      "referencePath": "source/electron-main/startup/startup-data-root-migration.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "7ebfb05b0870a546617b2a69b6f49cc550dc4166",
+      "behavioralEvidence": [
+        "source/electron-main/startup/startup-data-root-migration.ts",
+        "source/electron-main/startup/host-process-identity.ts",
+        "source/shared/node/sand-data-root.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves Grok startup data-root migration behavior while replacing legacy Host path/lock imports with shared data-root utilities and an Electron-main host-process identity seam. This lets migration safely recognize the shipping Mahayana Host without retaining the old Host runtime implementation."
+    },
+    {
+      "referencePath": "source/host/local-exec/local-tool-approvals.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "6073ccbc46298057200f287e4a01bfab30b54adf",
+      "behavioralEvidence": [
+        "source/host/local-exec/local-tool-approvals.ts",
+        "source/shared/node/sand-data-root.ts",
+        "source/node-agent-coordinator/src/local_exec/supervisor.rs"
+      ],
+      "testEvidence": [
+        "source/node-agent-coordinator/tests/local_exec_shipping_contract.rs",
+        "source/node-agent-coordinator/tests/local_exec_supervisor_runtime.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Keeps Grok local-tool approval persistence semantics while moving the common data-root lookup to shared Node infrastructure. The shipping local-exec lifecycle is supervised by the independent Rust Coordinator; this TypeScript compatibility module no longer owns or imports a Host runtime path."
+    },
+    {
+      "referencePath": "source/shared/node/cursor-backend/cursor-inference.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "296eeb02b7b0bc37256fc0d89b5c215d7cd1d501",
+      "behavioralEvidence": [
+        "source/shared/node/cursor-backend/cursor-inference.ts",
+        "source/shared/node/sand-data-root.ts",
+        "source/node-agent-coordinator/src/inference_router.rs",
+        "source/host/src/runner_production_bridge.rs"
+      ],
+      "testEvidence": [
+        "source/node-agent-coordinator/tests/inference_host_boundary_contract.rs",
+        "source/node-agent-coordinator/tests/inference_router_attachments.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the Cursor backend path but deliberately removes the legacy in-process TypeScript provider-session fallback. Any non-Cursor provider must route through Mahayana Coordinator and the independent Host/Runner pipeline, enforcing the required Grok Coordinator/Host/Runner fault and responsibility boundaries rather than keeping a second inference runtime."
+    },
+    {
+      "referencePath": "source/shared/rpc/coordinator-main.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "9ee4b210ea92fbaeb4933b41ccb8e22ae5f3f4f3",
+      "behavioralEvidence": [
+        "source/shared/rpc/coordinator-main.ts",
+        "source/electron-main/adapters/attachment-gateway.ts",
+        "source/node-agent-coordinator/src/main.rs",
+        "source/electron-main/adapters/mcp-oauth.ts",
+        "source/host/app/src/main.rs",
+        "source/shared/node/mcp/mcp-discovery-settlement.ts",
+        "source/host/src/extensions/telemetry/mcp_discovery_telemetry.rs",
+        "docs/specs/desktop-miniapp-window.md",
+        "source/node-agent-coordinator/src/miniapp_management_relay.rs"
+      ],
+      "testEvidence": [
+        "source/electron-main/coordinator/coordinator-executors.test.ts",
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/box_mcp_exec_contract.rs",
+        "source/host/tests/mcp_state_executor_contract.rs",
+        "source/shared/node/mcp/mcp-discovery-settlement.contract.test.ts",
+        "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+        "source/host/tests/mcp_discovery_telemetry_contract.rs",
+        "source/host/tests/mcp_discovery_production_wiring_contract.rs",
+        "source/electron-main/mcp/miniapp-window.contract.test.ts",
+        ".github/workflows/miniapp-window-ci.yml"
+      ],
+      "rationale": "Extends the frozen Coordinator-main RPC contract only for approved cross-boundary capabilities: fetchLinkMetadata plus Box MCP load/list-servers/list-tools-raw/execute-tool-raw operations. Electron remains the MCP manager owner; the calls cross the existing Coordinator protocol into the shipping Host/Box implementation with request/reply ownership preserved and no parallel transport channel. The approved row-62 MCP discovery failure extension now forwards the frozen success/failure/stale/elapsed settlement through a dedicated reportMcpDiscoveryFailed Coordinator main-data request to the unique HostStructuredLogTelemetry owner; generic MCP diagnostics remain separate. MU-02 adds five named package intents only on the existing native MainData carrier; Coordinator rejects Renderer Data and Control attempts before Host dispatch. Immutable resource bytes remain native-only and no generic transport or renderer installation authority is introduced."
+    },
+    {
+      "referencePath": "source/electron-main/coordinator/coordinator-executors.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "0e12efd790bdfb60bb54d07048c80547c3581080",
+      "behavioralEvidence": [
+        "source/electron-main/coordinator/coordinator-executors.ts",
+        "source/electron-main/coordinator/production-provider.ts",
+        "source/node-agent-coordinator/src/mcp_lifecycle_relay.rs"
+      ],
+      "testEvidence": [
+        "source/electron-main/coordinator/coordinator-executors.test.ts",
+        "source/node-agent-coordinator/tests/mcp_lifecycle_relay_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen Grok Coordinator executor surface and adds only Fabushi-approved MCP lifecycle calls required by the independent Rust Host, including the installed Plugin Skills SDK-edge request. Each command fails closed when its Electron owner is unavailable; the Rust Coordinator relay separately freezes the allowlist, request correlation, and failure settlement and contains no Plugin Skills business logic."
+    },
+    {
+      "referencePath": "source/electron-main/coordinator/production-provider.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "3b7591fbaf07cd7a5b13bfda27bca717c8603e01",
+      "behavioralEvidence": [
+        "source/electron-main/coordinator/production-provider.ts",
+        "source/electron-main/coordinator/coordinator-executors.ts",
+        "source/electron-main/adapters/mcp-oauth.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/coordinator/coordinator-executors.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Keeps the Grok production Coordinator provider graph while wiring the approved Host MCP lifecycle and Plugin Skills loader calls to the existing Electron ProductionMcpService. This is dependency injection across the established Coordinator boundary: Electron provides the Cursor SDK edge, Rust Host owns Plugin Skills lifecycle/state, and no second manager or in-process Host replacement is introduced. Phase 1 also derives an account-scoped durable Fabushi Human identity only after successful account authorization and passes it through the existing Coordinator bootstrap into Host; account transitions clear that identity. This is identity dependency injection on the existing process graph, not a second communication runtime."
+    },
+    {
+      "referencePath": "source/electron-main/main-production-services.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "8ca982cf2401d31a4782870b37688703e7f96895",
+      "behavioralEvidence": [
+        "source/electron-main/main-production-services.ts",
+        "docs/specs/desktop-miniapp-publisher.md",
+        "source/electron-main/mcp/miniapp-publisher.ts",
+        "source/electron-main/adapters/mcp-oauth.ts",
+        "source/electron-main/window-broadcast.ts",
+        "docs/specs/desktop-miniapp-management-ui.md",
+        "source/electron-main/mcp/miniapp-production.ts",
+        "source/product/fabushi/fabushi-official-device-registry.ts",
+        "source/product/fabushi/fabushi-account-adapters.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        "source/electron-main/coordinator/coordinator-executors.test.ts",
+        "source/electron-main/mcp/miniapp-publisher.contract.test.ts",
+        ".github/workflows/miniapp-publisher-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/electron-main/mcp/miniapp-production.contract.test.ts",
+        ".github/workflows/miniapp-management-ci.yml",
+        "source/product/fabushi/fabushi-official-device-registry.contract.test.ts",
+        ".github/workflows/fdn-official-device-registration.yml"
+      ],
+      "rationale": "Preserves the frozen Grok production composition while applying two explicit Fabushi product adaptations without moving ownership: the existing Host lifecycle/Plugin Skills SDK-edge surface remains in the single Electron MCP owner, and renderer-scoped BrowserWindow delivery is narrowed at the shipping composition boundary to the trusted main WebContents. The frozen source/electron-main/window-broadcast.ts helper remains byte-identical to Grok for truly global fanout; MCP OAuth completion and dev-control renderer events no longer use that all-window helper in production. Coordinator, Host, Runner, MCP manager, and MainEdge ownership remain unchanged. MP-01..05 additionally routes an optional first-party publisher facet through this same native composition: exact trusted-main sender, current account auth kept internal, bounded OS-selected signed package, account-departure fence and no uncertain-write retry. Backend retains namespace/artifact/review authority; the bridge exposes no reviewer credential, approval or installation runtime. Existing MCP, Coordinator and Host responsibilities are preserved. MU production wiring uses only appId intents and public metadata at the existing MCP owner; Account supplies confirmed authId scope and departure fences, Host retains verification on MainData, and main alone decodes resources into isolated windows. First-party Account and publisher requests use Electron net with no cookies or weakened origin checks. FDN-001 composes the existing Fabushi Account owner with the existing official device registry at this same production composition boundary: packaged Desktop authenticates only its current Fabushi account session on the outbound /agent WebSocket, account epoch/revoke closes stale registration, and the only newly advertised remote tool delegates read-only status to the existing private App Agent Surface. This creates neither a second device database nor a native executor; exact-head Actions enforce account-switch fencing, bearer non-disclosure, read-only preflight and no retry of stale/write-shaped calls."
+    },
+    {
+      "referencePath": "source/electron-main/mcp/desktop-mcp-manager.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "17af10771dfaea32dec8626f5a9e3ab4d5be6ad8",
+      "behavioralEvidence": [
+        "source/electron-main/mcp/desktop-mcp-manager.ts",
+        "source/shared/node/mcp/mcp-manager.ts",
+        "source/electron-main/adapters/mcp-oauth.ts",
+        "source/electron-main/mcp/mcp-runtime.ts",
+        "source/shared/rpc/coordinator-main.ts",
+        "source/host/src/extensions/mcp/box_mcp_exec.rs",
+        "source/shared/node/mcp/mcp-discovery-settlement.ts",
+        "source/host/src/extensions/telemetry/mcp_discovery_telemetry.rs",
+        "source/electron-main/mcp/official-mcp-service.ts",
+        "source/shared/node/mcp/fabushi-official-catalog.ts",
+        "source/electron-main/mcp/official-mcp-oauth.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        "source/electron-main/coordinator/coordinator-executors.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "source/host/tests/box_mcp_exec_contract.rs",
+        "source/host/tests/mcp_state_executor_contract.rs",
+        "source/shared/node/mcp/mcp-discovery-settlement.contract.test.ts",
+        "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+        "source/host/tests/mcp_discovery_telemetry_contract.rs",
+        "source/host/tests/mcp_discovery_production_wiring_contract.rs",
+        "source/electron-main/mcp/official-mcp.contract.test.ts",
+        ".github/workflows/official-mcp-marketplace.yml"
+      ],
+      "rationale": "Preserves the Grok SandMcpManager implementation as the single MCP owner while exposing approved Fabushi capabilities through the typed desktop facade: force-refresh catalog options, external-auth completion, and Box MCP server loading/tool discovery/tool execution backed by the existing Coordinator→Host Box path. Manager ownership is not duplicated in Rust Host and the Coordinator/Host/Runner failure boundaries remain independent. The approved row-62 MCP discovery failure extension now forwards the frozen success/failure/stale/elapsed settlement through a dedicated reportMcpDiscoveryFailed Coordinator main-data request to the unique HostStructuredLogTelemetry owner; generic MCP diagnostics remain separate. Current-main official MCP integration preserves the native Fabushi issuer guard, composes the fixed official provider directory/native vault into the existing MCP facade, and treats foreign legacy Dashboard lookup failure as explicit degraded state rather than broadening account-token origins."
+    },
+    {
+      "referencePath": "source/electron-main/mcp/mcp-runtime.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "086c3f90e772951d3548b6b16c0975a16ceacc9e",
+      "behavioralEvidence": [
+        "source/electron-main/mcp/mcp-runtime.ts",
+        "source/electron-main/mcp/desktop-mcp-manager.ts",
+        "source/electron-main/adapters/mcp-oauth.ts",
+        "source/shared/rpc/coordinator-main.ts",
+        "source/node-agent-coordinator/src/main.rs",
+        "source/host/app/src/main.rs",
+        "source/shared/node/mcp/mcp-discovery-settlement.ts",
+        "source/host/src/extensions/telemetry/mcp_discovery_telemetry.rs"
+      ],
+      "testEvidence": [
+        "source/electron-main/coordinator/coordinator-executors.test.ts",
+        "source/node-agent-coordinator/tests/coordinator_contract.rs",
+        "source/host/tests/box_mcp_exec_contract.rs",
+        "source/host/tests/mcp_state_executor_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/shared/node/mcp/mcp-discovery-settlement.contract.test.ts",
+        "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+        "source/host/tests/mcp_discovery_telemetry_contract.rs",
+        "source/host/tests/mcp_discovery_production_wiring_contract.rs"
+      ],
+      "rationale": "Preserves the frozen Grok MCP runtime lifecycle while adding only the approved dependency forwarding needed by Fabushi Box MCP parity: loadBoxMcpServers, listBoxMcpServers, listBoxMcpToolsRaw, and executeBoxMcpToolRaw are passed into the single SandMcpManager created by the existing runtime. No second manager, transport, or lifecycle owner is introduced. The approved row-62 MCP discovery failure extension now forwards the frozen success/failure/stale/elapsed settlement through a dedicated reportMcpDiscoveryFailed Coordinator main-data request to the unique HostStructuredLogTelemetry owner; generic MCP diagnostics remain separate."
+    },
+    {
+      "referencePath": "source/electron-main/coordinator/coordinator-runtime.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "52af61f060b59b7f1f6675a6c9b2b7c93a7f4e13",
+      "behavioralEvidence": [
+        "source/electron-main/coordinator/coordinator-runtime.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/coordinator/coordinator-runtime.test.ts",
+        "source/electron-main/coordinator/coordinator-launcher.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen Grok Coordinator runtime ownership/relaunch model while adapting one Fabushi-approved resource-lifetime boundary: the shipping Mahayana Host owns a managed loopback box exec-daemon on a single fixed production endpoint, so renderer-port replacement and explicit Coordinator restart must retire the previous Coordinator/Host generation completely before launching the successor. Intentional retirement is fenced from crash-relaunch accounting, and repeated renderer requests coalesce behind the same generation replacement. This prevents overlapping shipping Host generations from racing for the managed daemon without moving Host or Runner responsibilities into Electron Main or collapsing the independent Coordinator/Host/Runner failure boundaries."
+    },
+    {
+      "referencePath": "source/shared/node/mcp/tools-discovery.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "ae33a1211849a163873648de0018f03b5d6f06c4",
+      "behavioralEvidence": [
+        "source/shared/node/mcp/tools-discovery.ts",
+        "source/shared/node/mcp/mcp-discovery-settlement.ts",
+        "source/electron-main/mcp/desktop-mcp-manager.ts",
+        "source/electron-main/mcp/mcp-runtime.ts"
+      ],
+      "testEvidence": [
+        "source/shared/node/mcp/mcp-discovery-settlement.contract.test.ts",
+        "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+        "source/host/tests/mcp_discovery_telemetry_contract.rs",
+        "source/host/tests/mcp_discovery_production_wiring_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Preserves the frozen Grok MCP tools discovery algorithm while extracting its success/failure settlement into a dependency-free typed helper so the exact success-no-failure-event, cold-failure clear, stale-serving, error-class, and elapsed semantics are executable contracts. The shipping producer still owns discovery/cache settlement; only failure reporting is forwarded through the dedicated Coordinator request to the unique HostStructuredLogTelemetry owner."
+    },
+    {
+      "referencePath": "source/host/extensions/box-store-sync/box-copy-in.ts",
+      "expectedBaseParityMode": "rust-port",
+      "parityMode": "rust-adaptation",
+      "targetBlobSha": "779e42560eb686b4c1bbdf60492b8e8e377312c2",
+      "behavioralEvidence": [
+        "source/host/src/extensions/box_store_sync/box_copy_in.rs",
+        "source/host/src/extensions/telemetry/box_copy_in_telemetry.rs",
+        "source/host/src/extensions/telemetry/host_telemetry_service.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/box_copy_in_frozen_parity_contract.rs",
+        "source/host/tests/box_copy_in_telemetry_contract.rs",
+        "source/host/tests/box_copy_in_production_wiring_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Adapts frozen Grok box-copy-in from TypeScript to the Mahayana Host Rust owner without changing process ownership. The real --box-copy-in lifecycle remains the producer; started, slow/stuck watchdog, failed and successful terminal level decisions plus the full frozen metadata shape are preserved. Optional hydrate_source/restored_store_db_entries retain undefined-as-omitted semantics, store_backend remains an identity tag as in the frozen standalone telemetry owner, and every event crosses the single typed HostStructuredLogTelemetry::report_box_copy_in facade into the canonical fixed sand.box_copy_in mapper. Coordinator and Electron gain no second structured-log owner."
+    },
+    {
+      "referencePath": "frontend/src/recovered/runtime/coordinator-source.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "db7859728adba5129fab1d0572720390807dabad",
+      "behavioralEvidence": [
+        "frontend/src/recovered/runtime/coordinator-source.ts",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "testEvidence": [
+        "desktop/e2e/openbot-packaged-acceptance.spec.ts",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen Grok 0.18 Coordinator renderer source except for the explicit Fabushi user-interrupt extension required by the shipping Agent product: interruptAgent is admitted through the closed method table, its {agentId, interrupted} reply is fail-closed validated, and telemetry remains owned by the existing send domain. The production renderer exposes the corresponding Stop response control, while signed packaged acceptance verifies cancellation settles and a fresh post-cancel turn completes; no parallel transport, owner, or legacy shell is introduced."
+    },
+    {
+      "referencePath": "source/shared/inference-router.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "2bc1550891cfc60a1f5b36ee35e39ac80f63e5bd",
+      "behavioralEvidence": [
+        "source/shared/inference-router.ts",
+        "source/product/fabushi/fabushi-account-adapters.ts",
+        "source/host/src/extensions/settings/settings_service.rs",
+        "source/host/src/extensions/inference/provider_session.rs"
+      ],
+      "testEvidence": [
+        "source/host/tests/inference_provider_session_contract.rs",
+        "source/host/tests/inference_extension_composition_contract.rs",
+        "source/node-agent-coordinator/tests/inference_host_boundary_contract.rs",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "Preserves the frozen Grok 0.18 inference-router ownership and provider-selection contract while adding one Fabushi product provider identity required by the shipping account boundary. Fresh Fabushi profiles select the first-party provider in product composition; the independent Mahayana Host/Runner reuses the existing Responses lifecycle, tool, checkpoint, usage, and cancellation machinery with the account-bound Fabushi credential and official product endpoint. Cursor, Codex, Claude Code, and OpenRouter retain their original identities and ownership, and the upstream Grok default remains Cursor outside Fabushi composition. This adaptation prevents a Fabushi product bearer from being misrouted to Cursor private backend infrastructure without creating a parallel inference runtime or collapsing Coordinator/Host/Runner responsibility boundaries."
+    },
+    {
+      "referencePath": "frontend/src/recovered/contracts/surface-notice.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "0ddf77339c4ea91f49cada27b0bf54bc563994d4",
+      "behavioralEvidence": [
+        "frontend/src/recovered/contracts/surface-notice.ts",
+        "frontend/src/recovered/features/settings/overlay/desktop-surface.tsx"
+      ],
+      "testEvidence": [
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts"
+      ],
+      "rationale": "Phase 1 adds canonical Fabushi language/accessibility preferences without introducing a second settings runtime: persistence stays in the existing Electron SandSettingsStore, mutations cross the existing typed MainEdge/preload bridge, and the recovered Settings surface only projects that owner. Locale/direction, reduced-motion, high-contrast controls, and bounded text scaling are normalized fail-closed and applied to the shipping renderer document; account, Coordinator, Host, Runner, theme, and Agent ownership are unchanged. Phase 1 media/device settings remain on this same canonical Settings/MainEdge/preload owner: selected microphone/camera IDs are normalized and persisted locally, exposed through the existing callMedia bridge, projected by recovered Settings, and consumed by the shipping Human call capture path with stale-device fallback."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/settings/overlay/desktop-surface.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "2ccb6c4f94c094495c24907be32cee6447796d6d",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/settings/overlay/desktop-surface.tsx",
+        "frontend/src/recovered/features/settings/overlay/desktop.ts",
+        "frontend/src/recovered/features/settings/overlay/panels.tsx"
+      ],
+      "testEvidence": [
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts",
+        "frontend/src/production/human-call-media.tsx"
+      ],
+      "rationale": "Phase 1 adds canonical Fabushi language/accessibility preferences without introducing a second settings runtime: persistence stays in the existing Electron SandSettingsStore, mutations cross the existing typed MainEdge/preload bridge, and the recovered Settings surface only projects that owner. Locale/direction, reduced-motion, high-contrast controls, and bounded text scaling are normalized fail-closed and applied to the shipping renderer document; account, Coordinator, Host, Runner, theme, and Agent ownership are unchanged. THEME-I18N-A11Y further keeps this canonical owner while making locale changes immediately visible in the mounted Settings shell, providing locale-sensitive formatting/announcement evidence, and fencing real composition input so CJK/RTL mixed-direction editing cannot submit or be externally overwritten mid-composition. Phase 1 media/device settings remain on this same canonical Settings/MainEdge/preload owner: selected microphone/camera IDs are normalized and persisted locally, exposed through the existing callMedia bridge, projected by recovered Settings, and consumed by the shipping Human call capture path with stale-device fallback. Phase 1 Settings capability decisions stay projected from canonical production owners instead of inventing preference stores: privacy is read from the production account policy; media/device remains a persisted Settings/MainEdge preference; system notifications remain intentionally disabled by the canonical settings store; durable conversation/session/attachment storage keeps its existing app-profile/Host roots; attachment downloads keep native Save As ownership; and window shortcuts keep the fixed Electron owner rather than a global or user-remappable registry. The Settings surface makes those applicable or intentionally non-configurable decisions visible and accessible while existing advanced and update controls retain their established owners."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/settings/overlay/desktop.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "ff8e61b13ea9475c502da6ed58a0906fd44538d6",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/settings/overlay/desktop.ts",
+        "frontend/src/recovered/features/settings/overlay/desktop-surface.tsx"
+      ],
+      "testEvidence": [
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "frontend/src/production/human-call-media.tsx",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts"
+      ],
+      "rationale": "Phase 1 adds canonical Fabushi language/accessibility preferences without introducing a second settings runtime: persistence stays in the existing Electron SandSettingsStore, mutations cross the existing typed MainEdge/preload bridge, and the recovered Settings surface only projects that owner. Locale/direction, reduced-motion, high-contrast controls, and bounded text scaling are normalized fail-closed and applied to the shipping renderer document; account, Coordinator, Host, Runner, theme, and Agent ownership are unchanged. Phase 1 media/device settings remain on this same canonical Settings/MainEdge/preload owner: selected microphone/camera IDs are normalized and persisted locally, exposed through the existing callMedia bridge, projected by recovered Settings, and consumed by the shipping Human call capture path with stale-device fallback. Phase 1 Settings capability decisions stay projected from canonical production owners instead of inventing preference stores: privacy is read from the production account policy; media/device remains a persisted Settings/MainEdge preference; system notifications remain intentionally disabled by the canonical settings store; durable conversation/session/attachment storage keeps its existing app-profile/Host roots; attachment downloads keep native Save As ownership; and window shortcuts keep the fixed Electron owner rather than a global or user-remappable registry. The Settings surface makes those applicable or intentionally non-configurable decisions visible and accessible while existing advanced and update controls retain their established owners."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/settings/overlay/panels.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "994d0e009430e6dfb0b1edb39f717b673be40a8f",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/settings/overlay/panels.tsx",
+        "frontend/src/recovered/features/settings/overlay/desktop-surface.tsx"
+      ],
+      "testEvidence": [
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts",
+        "frontend/src/production/human-call-media.tsx"
+      ],
+      "rationale": "Phase 1 adds canonical Fabushi language/accessibility preferences without introducing a second settings runtime: persistence stays in the existing Electron SandSettingsStore, mutations cross the existing typed MainEdge/preload bridge, and the recovered Settings surface only projects that owner. Locale/direction, reduced-motion, high-contrast controls, and bounded text scaling are normalized fail-closed and applied to the shipping renderer document; account, Coordinator, Host, Runner, theme, and Agent ownership are unchanged. THEME-I18N-A11Y further keeps this canonical owner while making locale changes immediately visible in the mounted Settings shell, providing locale-sensitive formatting/announcement evidence, and fencing real composition input so CJK/RTL mixed-direction editing cannot submit or be externally overwritten mid-composition. Phase 1 media/device settings remain on this same canonical Settings/MainEdge/preload owner: selected microphone/camera IDs are normalized and persisted locally, exposed through the existing callMedia bridge, projected by recovered Settings, and consumed by the shipping Human call capture path with stale-device fallback. Phase 1 Settings capability decisions stay projected from canonical production owners instead of inventing preference stores: privacy is read from the production account policy; media/device remains a persisted Settings/MainEdge preference; system notifications remain intentionally disabled by the canonical settings store; durable conversation/session/attachment storage keeps its existing app-profile/Host roots; attachment downloads keep native Save As ownership; and window shortcuts keep the fixed Electron owner rather than a global or user-remappable registry. The Settings surface makes those applicable or intentionally non-configurable decisions visible and accessible while existing advanced and update controls retain their established owners. Account, theme, security-key, local-computer permission, and timezone copy now use the active Settings locale; legacy product names render Fabushi."
+    },
+    {
+      "referencePath": "source/electron-main/main-edge.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "34ebc09f00048d16649fb7b326b2335d85d03734",
+      "behavioralEvidence": [
+        "source/electron-main/main-edge.ts",
+        "source/shared/node/settings/sand-settings-store.ts",
+        "source/shared/rpc/main.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "frontend/src/production/human-call-media.tsx",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts"
+      ],
+      "rationale": "Phase 1 adds canonical Fabushi language/accessibility preferences without introducing a second settings runtime: persistence stays in the existing Electron SandSettingsStore, mutations cross the existing typed MainEdge/preload bridge, and the recovered Settings surface only projects that owner. Locale/direction, reduced-motion, high-contrast controls, and bounded text scaling are normalized fail-closed and applied to the shipping renderer document; account, Coordinator, Host, Runner, theme, and Agent ownership are unchanged. Phase 1 media/device settings remain on this same canonical Settings/MainEdge/preload owner: selected microphone/camera IDs are normalized and persisted locally, exposed through the existing callMedia bridge, projected by recovered Settings, and consumed by the shipping Human call capture path with stale-device fallback."
+    },
+    {
+      "referencePath": "source/shared/desktop.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "0d786b53d38efdaeba61ba2c6f4ad2902a2016b4",
+      "behavioralEvidence": [
+        "source/shared/desktop.ts",
+        "source/shared/node/settings/sand-settings-store.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "frontend/src/production/human-call-media.tsx",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts"
+      ],
+      "rationale": "Phase 1 adds canonical Fabushi language/accessibility preferences without introducing a second settings runtime: persistence stays in the existing Electron SandSettingsStore, mutations cross the existing typed MainEdge/preload bridge, and the recovered Settings surface only projects that owner. Locale/direction, reduced-motion, high-contrast controls, and bounded text scaling are normalized fail-closed and applied to the shipping renderer document; account, Coordinator, Host, Runner, theme, and Agent ownership are unchanged. Phase 1 media/device settings remain on this same canonical Settings/MainEdge/preload owner: selected microphone/camera IDs are normalized and persisted locally, exposed through the existing callMedia bridge, projected by recovered Settings, and consumed by the shipping Human call capture path with stale-device fallback."
+    },
+    {
+      "referencePath": "source/shared/node/settings/sand-settings-store.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "52aeef0a22edeb64dab446a4aecf8c79590ee90f",
+      "behavioralEvidence": [
+        "source/shared/node/settings/sand-settings-store.ts",
+        "source/electron-main/main-edge.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "frontend/src/production/human-call-media.tsx",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts"
+      ],
+      "rationale": "Phase 1 adds canonical Fabushi language/accessibility preferences without introducing a second settings runtime: persistence stays in the existing Electron SandSettingsStore, mutations cross the existing typed MainEdge/preload bridge, and the recovered Settings surface only projects that owner. Locale/direction, reduced-motion, high-contrast controls, and bounded text scaling are normalized fail-closed and applied to the shipping renderer document; account, Coordinator, Host, Runner, theme, and Agent ownership are unchanged. Phase 1 media/device settings remain on this same canonical Settings/MainEdge/preload owner: selected microphone/camera IDs are normalized and persisted locally, exposed through the existing callMedia bridge, projected by recovered Settings, and consumed by the shipping Human call capture path with stale-device fallback."
+    },
+    {
+      "referencePath": "source/electron-main/adapters/main-rpc.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "2ae92ffde6e817c146a272f21ceee0e448ad6297",
+      "behavioralEvidence": [
+        "source/electron-main/adapters/main-rpc.ts",
+        "source/electron-main/call-media.ts",
+        "source/electron-main/main-edge.ts",
+        "source/electron-preload/preload.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/foundations.test.ts",
+        "desktop/e2e/mahayana-agent-workbench.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Phase 1 Human realtime calls adapt the frozen Main RPC composition only to inject Electron-owned microphone/camera permission and desktopCapturer ports into the existing MainEdge. Durable Session/Transcript/Host/CallSession ownership and Coordinator transport remain unchanged; the renderer receives only typed media-device capabilities while signaling and claimed-device authority stay Host/backend-owned."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/settings/overlay/notice.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "c6a0c0f94010c819177d8c463ca96490b51dc3bd",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/settings/overlay/notice.tsx",
+        "frontend/src/recovered/features/settings/overlay/localization.ts",
+        "frontend/src/recovered/features/settings/overlay/desktop-surface.tsx"
+      ],
+      "testEvidence": [
+        "desktop/e2e/mahayana-agent-workbench.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen Settings notice rendering while adapting Fabushi accessibility semantics: successful dynamic notices are polite status announcements and failures are assertive alerts, so screen readers receive the existing canonical Settings mutation results without a second notification owner."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/settings/overlay/view.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "c79bf6787f5d423e7c958bc85bf068e65f45b0d3",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/settings/overlay/view.tsx",
+        "frontend/src/recovered/features/settings/overlay/localization.ts",
+        "frontend/src/recovered/features/settings/overlay/desktop-surface.tsx"
+      ],
+      "testEvidence": [
+        "desktop/e2e/mahayana-agent-workbench.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen Settings modal structure, focus trap, keyboard dismissal, and section ownership while adapting visible labels and accessible names to the canonical Fabushi UI locale. Section identity and routing remain unchanged; only localized presentation is added through the existing Settings owner."
+    },
+    {
+      "referencePath": "frontend/src/production/command-palette-root-commands.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "48c7c7878843756a800414aa6f9db68b723aed47",
+      "behavioralEvidence": [
+        "frontend/src/production/command-palette-root-commands.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "frontend/src/production/evidence.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "2f97fde079e0ca0180d0ae709fa4c291fd9c7a99",
+      "behavioralEvidence": [
+        "frontend/src/production/evidence.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/access/cover/view.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "c7bd674ed0f6f3a73e6dc532c6db69e5e21f7cb2",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/access/cover/view.tsx",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/account/session/menu.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "d7f2fe093ad210eee719441ea54f725222970391",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/account/session/menu.tsx",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/agent-info/shared-room/view.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "5603d2b7dc1ee9dde296a3689786d068cde245a1",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/agent-info/shared-room/view.tsx",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/computer/rebuild/banner.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "eaf9324f9f8eef3a264ba80da124f4ab52752282",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/computer/rebuild/banner.tsx",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/computer/shell/view.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "3289962193d6bca326229a0abf63d99e84a65af4",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/computer/shell/view.tsx",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/computer/update/confirmation.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "abb473539ed217cf1ee00329c48a1a9795df177d",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/computer/update/confirmation.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/conversation/cards/transcript-card/resolver.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "43cbf95294b1954294f3295705ed8661bcb6f032",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/cards/transcript-card/resolver.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/electron-main/account/cursor-auth-wiring.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "21cea3702d46d78002ed550786c0ab0c83ef830a",
+      "behavioralEvidence": [
+        "source/electron-main/account/cursor-auth-wiring.ts",
+        "source/shared/product-name.ts",
+        "source/electron-main/account/auth-service-contract.ts",
+        "docs/specs/desktop-miniapp-factory-acceptance.md"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/product/fabushi/fabushi-account-service.contract.test.ts",
+        ".github/workflows/miniapp-management-ci.yml"
+      ],
+      "rationale": "Preserves frozen account wiring and Fabushi product copy. MFA-TS-01..03 moves only the existing AuthServicePort and SandAuthStatus definitions into the same account owner's implementation-free contract and re-exports the old import path. Every type field and method remains unchanged, with one definition and no runtime implementation, factory or credential authority in the contract. This prevents product-policy type checking from depending on the unrelated Cursor implementation graph without suppressing strict compilation. Existing wiring and runtime behavior remain unchanged; focused real-service race/issuer contracts, strict product tsc and packaged gates remain mandatory."
+    },
+    {
+      "referencePath": "source/electron-main/account/cursor-auth.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "2e70b891f524daf8a4ef04d443d6158a83b4ca08",
+      "behavioralEvidence": [
+        "source/electron-main/account/cursor-auth.ts",
+        "source/shared/product-name.ts",
+        "source/electron-main/account/auth-service-contract.ts",
+        "docs/specs/desktop-miniapp-factory-acceptance.md"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        "source/product/fabushi/fabushi-account-service.contract.test.ts",
+        ".github/workflows/miniapp-management-ci.yml"
+      ],
+      "rationale": "Preserves frozen Cursor authentication behavior and Fabushi product copy. MFA-TS-01..03 extracts only the unchanged SandAuthStatus type to the existing account owner's neutral auth-service-contract and type-re-exports it from this compatibility module. The single type definition has no implementation imports, runtime state or authentication owner. No credential, login, logout or provider behavior changes here. Strict product-policy tsc and existing account/Electron regression gates verify the extraction rather than suppressing dependencies or weakening types."
+    },
+    {
+      "referencePath": "source/electron-main/dev/dev-controls-window.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "079aae8e532553edb7984b6b00fdd702bb5ece8b",
+      "behavioralEvidence": [
+        "source/electron-main/dev/dev-controls-window.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/electron-main/startup/startup-move-check.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "f49f51c7497bfc8352b3ba3d9221ae9f582b59ea",
+      "behavioralEvidence": [
+        "source/electron-main/startup/startup-move-check.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/agents/disk-saver.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "d175b498b15fd13290de1f28c160d914efc10fdf",
+      "behavioralEvidence": [
+        "source/shared/agents/disk-saver.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/channel-messaging.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "33a52c1eddd7ea71114d3cccb9071158651b1f24",
+      "behavioralEvidence": [
+        "source/shared/channel-messaging.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/local-exec-gateway.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "a0e6c5e2959ed2169f766c25845baea66e9d6e10",
+      "behavioralEvidence": [
+        "source/shared/local-exec-gateway.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/local-tool-permission-machinery.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "b8b0c1636eef216040c9e8024682f21781af196f",
+      "behavioralEvidence": [
+        "source/shared/local-tool-permission-machinery.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/node/mcp/mcp-account-slot-lifecycle.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "e162c6a2509acea35d3af5e485e29e5cad38855f",
+      "behavioralEvidence": [
+        "source/shared/node/mcp/mcp-account-slot-lifecycle.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/node/mcp/mcp-auth-watch-lifecycle.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "eb538d8bc3df4e86e948cfed805343e31c7c014f",
+      "behavioralEvidence": [
+        "source/shared/node/mcp/mcp-auth-watch-lifecycle.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/node/mcp/mcp-display-runtime.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "ec8cd459d779827629bf8dcd1920faff568b2d2f",
+      "behavioralEvidence": [
+        "source/shared/node/mcp/mcp-display-runtime.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/node/mcp/mcp-listing-summaries.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "bcdc9cbbfd6da7d585a5ef9901514ec5a0c598c9",
+      "behavioralEvidence": [
+        "source/shared/node/mcp/mcp-listing-summaries.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/os-notification.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "ffaf599dada09e938f362d75aa202327eed3a4ad",
+      "behavioralEvidence": [
+        "source/shared/os-notification.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/product-name.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "2b3707cc8e2dfb08a8717e7ce9868dcc6bdcf818",
+      "behavioralEvidence": [
+        "source/shared/product-name.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/sand-spotlight.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "21ab8a595ed7cd77c4fd1d674a097401e094cbcc",
+      "behavioralEvidence": [
+        "source/shared/sand-spotlight.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "source/shared/webauthn-gateway.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "c7ad9fa32953417618d9e71dce43d7cf2ca44d2c",
+      "behavioralEvidence": [
+        "source/shared/webauthn-gateway.ts",
+        "source/shared/product-name.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This module retains its frozen behavior and architecture. Its only product-specific change is user-facing copy that identifies the shipped application as Fabushi; it does not alter backend contracts, persistence identifiers, or capability ownership."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/settings/overlay/auto-review.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "72525e61e61f4360b272e7031c2bde8e3aa376a1",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/settings/overlay/auto-review.tsx"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This recovered settings panel preserves rule behavior while localizing user-facing labels and descriptions for the active Settings locale and using Fabushi identity."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/settings/overlay/computer-view.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "60335e93cdb628e13d985fda2c8f970779345e64",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/settings/overlay/computer-view.tsx"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This recovered settings panel preserves computer update/reset behavior while replacing legacy product labels with Fabushi."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/settings/overlay/updates.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "2da4ba45f821bec3242ff88ae2b82f1246219182",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/settings/overlay/updates.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/desktop-chat-parity-ci.yml"
+      ],
+      "rationale": "This recovered settings status copy preserves update and egress behavior while replacing legacy product labels with Fabushi."
+    },
+    {
+      "referencePath": "frontend/src/production/command-palette-model.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "8f3ac50a132c2b2e050a51ccc911b81dca897b21",
+      "behavioralEvidence": [
+        "frontend/src/production/command-palette-model.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/tdrp-canonical-search-contract.spec.ts",
+        ".github/workflows/tdrp-search-responsibility.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen Grok command-palette search/scoring behavior while adapting canonical participant identity reconciliation required by TDRP Revision 9. The shipping projection deduplicates roster rows by stable participant id, preserves the first slot, and replaces that slot with the newest authoritative row before visible/hidden filtering. This prevents stale and replacement roster objects from appearing as duplicate Search results or projecting contradictory hidden state. The adaptation stays inside the existing command-palette/Search owner and is covered by exact-head focused Search contract evidence plus an independent review job; it does not create a parallel participant or search truth."
+    },
+    {
+      "referencePath": "source/shared/external-url-policy.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "a126587a99580c5ea0be801b688cc164a16947df",
+      "behavioralEvidence": [
+        "source/shared/external-url-policy.ts",
+        "source/product/fabushi/fabushi-account-adapters.ts"
+      ],
+      "testEvidence": [
+        "desktop/e2e/tdrp-external-url-auth-policy.spec.ts",
+        ".github/workflows/tdrp-external-url-auth-responsibility.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "Preserves the frozen Grok allowlisted external-URL parsing boundary while adapting TDRP Revision 9 credential containment. Ordinary external URLs strip foreign web-login token parameters from query and fragment, including repeatedly encoded parameter names, while a distinct server-accepted path may preserve the exact URL only when it is HTTP(S), credential-free, and matches the expected first-party origin. The accepted-auth capability remains owned by the Fabushi account adapter and is not exposed to MainEdge. Exact-head focused contract evidence and independent review prove this privilege boundary without weakening the general external-URL gate."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/org-chart/workspace/graph.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "a1fd0a426dba3964dfbc9bab82e4ed01a0f7f967",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/org-chart/workspace/graph.tsx",
+        "frontend/src/recovered/features/org-chart/workspace/view.tsx",
+        "projects/fabushi-communication-platform/visual-acceptance.md"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/recovered-foundations.contract.test.ts",
+        "desktop/e2e/grok-parity.spec.ts",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "rationale": "Preserves the frozen Grok Agent Network interaction model while adapting only its layout lifecycle to the canonical Fabushi workspace. When explicit dimensions are absent, the Agent Network region fills its current workspace, ResizeObserver owns live rendered geometry, layout/pan/zoom all consume that measured geometry, and the non-passive wheel listener is rebound when live layout dimensions change. This removes the recovered fixed 760x500 behavior and the stale-listener dependency bug without creating a second shell, state owner, or Agent runtime. Existing region/button accessibility semantics remain intact; the exact-head recovered-foundations contract locks measurement/listener dependencies, while the real Electron parity journey proves parent-fill geometry, aria-pressed state, wheel zoom behavior, and captures responsive Agent Network screenshot evidence. The release workflow now treats this evidence-locked architecture adaptation as a packaging-affecting input, so the same exact HEAD must re-pass the strict architecture gate before signed/notarized packaged acceptance can exist."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/plugins/overlay/desktop-surface.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "1a1efe486dd1bdabe4e1a93e11d1a430f439cedb",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/plugins/overlay/desktop-surface.tsx",
+        "frontend/src/recovered/features/plugins/overlay/miniapp-publisher.tsx",
+        "frontend/src/recovered/features/plugins/overlay/miniapp-management.tsx",
+        "docs/specs/desktop-miniapp-management-ui.md",
+        "docs/specs/desktop-miniapp-publisher.md",
+        "source/electron-main/mcp/miniapp-window.ts",
+        "source/electron-main/mcp/official-mcp-service.ts",
+        "source/shared/node/mcp/fabushi-official-catalog.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/mcp/miniapp-publisher.contract.test.ts",
+        "source/electron-main/mcp/miniapp-management.contract.test.ts",
+        ".github/workflows/miniapp-management-ci.yml",
+        ".github/workflows/miniapp-publisher-ci.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/release-macos-main.yml",
+        "source/electron-main/mcp/official-mcp.contract.test.ts",
+        ".github/workflows/official-mcp-marketplace.yml"
+      ],
+      "rationale": "Explicit MP-01 exception adds proprietary offline-package publication to the existing Plugins surface, not a separate Mini Apps product root. The recovered connector/skills navigation and lifecycle remain intact. The same publisher panel remains reachable during legacy MCP catalog loading/failure; it owns only transient UI state. Trusted native authentication and fixed package selection own privileged submission; Backend remains namespace, artifact and review authority. No Agent, installation, approval or runtime state moves into React. Contract CI exercises the real signed candidate and account/sender fences; renderer and packaged acceptance remain independent gates. MU-01..05 adds transient management projection in this same dialog, preserving Connector/Skills content. Host owns install state and account isolation; absent native support is explicit, and remove-code retains user data. Current-main official MCP integration preserves the native Fabushi issuer guard, composes the fixed official provider directory/native vault into the existing MCP facade, and treats foreign legacy Dashboard lookup failure as explicit degraded state rather than broadening account-token origins."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/plugins/overlay/view.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "d1b80a3c0d850b9c637faf3ca4e9f98ada004625",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/plugins/overlay/view.tsx",
+        "frontend/src/recovered/features/plugins/overlay/desktop-surface.tsx",
+        "docs/specs/desktop-miniapp-publisher.md"
+      ],
+      "testEvidence": [
+        "source/electron-main/mcp/miniapp-publisher.contract.test.ts",
+        ".github/workflows/miniapp-publisher-ci.yml",
+        ".github/workflows/desktop-chat-parity-ci.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "rationale": "Preserves the frozen Plugins dialog, navigation and connector browser while adding one optional first-party publisher presentation slot under MP-01. Existing callers need no change and the view gains no authentication, upload, review or installation authority. This is the user-requested Fabushi Marketplace product adaptation within the single Plugins owner, not restoration of the removed standalone Mini Apps shell. Exact-head renderer/contract and packaged gates must pass before publication is claimed."
+    },
+    {
+      "referencePath": "source/electron-main/main.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "b8eeed322ec07e5c8f67fa367cd2f58ac212b4f0",
+      "behavioralEvidence": [
+        "source/electron-main/main.ts",
+        "source/electron-main/mcp/miniapp-window.ts",
+        "docs/specs/desktop-miniapp-window.md",
+        "docs/specs/desktop-catalog-package-installation.md"
+      ],
+      "testEvidence": [
+        "source/electron-main/mcp/miniapp-window.contract.test.ts",
+        ".github/workflows/miniapp-window-ci.yml",
+        ".github/workflows/rust-desktop-runtime.yml",
+        ".github/workflows/release-macos-main.yml"
+      ],
+      "rationale": "DCI-07 and DMW-03 remove the process-wide no-sandbox switch, which would defeat the requested untrusted Mini App isolation even when a new window requests sandbox=true. All existing main startup, singleton, window/preload, GPU and lifecycle behavior remains intact; this does not globally force trusted first-party windows into a different preload mode or change Human calls/browser networking. Each downloaded app uses its own sandboxed no-preload window and partition. Actual Electron and same-source signed package gates must prove this security adaptation; no frozen inventory or reference blob is rewritten."
+    },
+    {
+      "referencePath": "source/host/local-exec/local-exec-machine.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "863c8ab5e02744cfd380e478c8be5db6a3ce7f55",
+      "behavioralEvidence": [
+        "source/host/local-exec/local-exec-machine.ts",
+        "source/host/local-exec/local-exec-provider.ts"
+      ],
+      "testEvidence": [
+        "source/node-agent-coordinator/tests/local_exec_shipping_contract.rs",
+        "source/host/tests/native_local_exec_file_sandbox_contract.rs",
+        ".github/workflows/fdn-g12-native-file-e2e.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "FDN-001 G12 hardens the existing frozen local-exec path owner rather than creating a parallel file service. Authorized file paths are canonicalized through the nearest-existing real path and rejected when they escape the configured root or cross a filesystem/mount device boundary. This intentionally changes the frozen reference-copy semantics to a reviewed Fabushi TypeScript adaptation; the shipping provider now delegates the actual read/write/staged-commit boundary to the Mahayana Host native file helper, which walks Unix paths with directory handles plus openat/O_NOFOLLOW and Windows paths with RootDirectory-relative NtCreateFile plus FILE_OPEN_REPARSE_POINT; canonical realpath remains only a policy preflight, not the TOCTOU security boundary."
+    },
+    {
+      "referencePath": "source/host/local-exec/local-exec-provider.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "56a4905d142e12d1be8f642697861f401d57cfc3",
+      "behavioralEvidence": [
+        "source/host/local-exec/local-exec-provider.ts",
+        "source/host/local-exec/local-exec-machine.ts",
+        "source/shared/node/atomic-write.ts",
+        "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs"
+      ],
+      "testEvidence": [
+        "source/node-agent-coordinator/tests/local_exec_shipping_contract.rs",
+        "source/host/tests/native_local_exec_file_sandbox_contract.rs",
+        ".github/workflows/fdn-g12-native-file-e2e.yml",
+        "source/host/src/extensions/local_exec/native_file_sandbox.rs",
+        "source/host/src/extensions/local_exec/mod.rs",
+        "source/host/app/src/main.rs",
+        "source/node-agent-coordinator/src/main.rs",
+        "source/host/tests/native_local_exec_file_sandbox_contract.rs",
+        "source/host/tests/native_local_exec_file_sandbox_contract.rs",
+        "source/host/tests/native_local_exec_file_sandbox_contract.rs"
+      ],
+      "rationale": "FDN-001 G12 extends the existing shipping local-exec file provider with bounded production safety semantics: canonical path fencing, SHA-256/version conflicts, disk peak-space preflight, and an explicitly chunked upload-start/upload-chunk/upload-commit protocol. Chunks are staged in the target directory with offset/size checks and fsync, hashed incrementally, revalidated against the starting file version/path, and atomically renamed only at commit. The provider keeps the established permission/approval and response transport; the actual filesystem boundary is now enforced by the shipping Mahayana Host native handle-relative/no-follow helper, with cross-platform symlink/reparse swap, traversal, conflict, hash, ENOSPC and atomic-commit acceptance in GitHub Actions."
+    },
+    {
+      "referencePath": "source/electron-main/mcp/mcp-desktop.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "4a1b0c1d6c23c6ae7c4d7702e08df49938406c22",
+      "behavioralEvidence": [
+        "source/electron-main/mcp/mcp-desktop.ts",
+        "source/electron-main/mcp/official-mcp-service.ts",
+        "source/shared/node/mcp/fabushi-official-catalog.ts",
+        "source/electron-main/mcp/official-mcp-oauth.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/mcp/official-mcp.contract.test.ts",
+        ".github/workflows/official-mcp-marketplace.yml"
+      ],
+      "rationale": "Preserve all existing MCP IPC, settings sync and permission boundaries while refreshing the canonical Host MCP tool inventory after a tool-disable toggle. Official connector disabled state is stored in its scoped native vault and enforced again at execution. Official provider consent now uses the existing Fabushi account origin through a session-bound broker; native encrypted delivery/refresh/revoke remains on this MCP edge. Existing auth-event broadcast and Host refresh settle the existing Plugins surface, without exposing service tokens in renderer or moving account/Coordinator ownership."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/plugins/overlay/desktop.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "692b4ea24d01a69166c82c6c2458d1d0b3bf6243",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/plugins/overlay/desktop.ts",
+        "source/electron-main/mcp/official-mcp-service.ts",
+        "source/shared/node/mcp/fabushi-official-catalog.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/mcp/official-mcp.contract.test.ts",
+        ".github/workflows/official-mcp-marketplace.yml"
+      ],
+      "rationale": "Preserve existing Plugins projection/install/private-skill flows, while independently settling catalog, effective installs and server inventory. Catalog failure remains fatal; unavailable installed/server state produces an explicit warning and leaves available directory data inspectable. Official provider Add bypasses optional manual credentials and uses the existing install/native-auth/external-opener lifecycle; installed entries expose Connect for retry. Required custom/team setup and native permission, token, account and broker boundaries remain intact. Actions verifies ordering, failure propagation and manual/legacy preservation."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/plugins/overlay/browser.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/plugins/overlay/browser.tsx",
+        "source/electron-main/mcp/official-mcp-service.ts"
+      ],
+      "testEvidence": [
+        "source/electron-main/mcp/official-mcp.contract.test.ts",
+        ".github/workflows/official-mcp-marketplace.yml"
+      ],
+      "rationale": " Official provider Add bypasses optional manual credentials and uses the existing install/native-auth/external-opener lifecycle; installed entries expose Connect for retry. Required custom/team setup and native permission, token, account and broker boundaries remain intact. Actions verifies ordering, failure propagation and manual/legacy preservation.",
+      "targetBlobSha": "c7d49ff93d1d0f3df044ae1b67457ed65f7e441c"
+    }
+  ]
+}

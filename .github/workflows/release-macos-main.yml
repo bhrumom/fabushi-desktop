@@ -1,0 +1,675 @@
+name: Package macOS installer from exact source
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Exact source commit to package. Empty means main.
+        required: false
+        type: string
+      publish_release:
+        description: Publish the signed artifact as a GitHub prerelease only after packaged acceptance passes.
+        required: true
+        default: false
+        type: boolean
+      miniapp_version:
+        description: Exact approved Mini App version for installed acceptance
+        required: false
+        type: string
+        default: '0.4.0'
+      miniapp_digest:
+        description: Exact approved Mini App SHA-256 for installed acceptance
+        required: false
+        type: string
+        default: '1c3f3291ae6d7a531502641edb9aee136f1f7cbef42777a31cb668ca11c8e22b'
+      native_engine_digest:
+        description: SHA-256 of the executable resource inside the approved Mini App
+        required: false
+        type: string
+        default: 'a3e50d3f0a003e89dc95236b86839fab49ca1b8a1d90ad77e683418f24fc7569'
+      iterate_existing_miniapp_candidate:
+        description: Diagnose the fixed e62ea0 signed binary with this harness; never publish or claim this harness SHA is the binary source.
+        required: false
+        default: false
+        type: boolean
+      promote_existing_candidate:
+        description: Publish only the immutable main candidate already accepted by production and isolated factory gates.
+        type: boolean
+        default: false
+      accepted_candidate_run_id:
+        type: string
+      accepted_candidate_artifact_id:
+        type: string
+      accepted_candidate_archive_sha256:
+        type: string
+      factory_acceptance_run_id:
+        type: string
+  push:
+    branches: [main]
+    paths:
+      - 'desktop/**'
+      - 'source/**'
+      - 'frontend/**'
+      - 'projects/grok-fabu-parity/architecture-semantic-adaptations.json'
+      - 'scripts/check-grok-architecture.mjs'
+      - 'contracts/**'
+      - 'native/**'
+      - 'projects/telegram-desktop-rust/**'
+      - 'source/mahayana/**'
+      - '.github/workflows/release-macos-main.yml'
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: package-macos-${{ github.event_name == 'push' && github.sha || inputs.source_sha || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.promote_existing_candidate }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Verify exact binary, all gates and factory cleanup before immutable promotion
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PROMOTION_SOURCE_SHA: ${{ inputs.source_sha }}
+          PROMOTION_CANDIDATE_RUN_ID: ${{ inputs.accepted_candidate_run_id }}
+          PROMOTION_ARTIFACT_ID: ${{ inputs.accepted_candidate_artifact_id }}
+          PROMOTION_ARCHIVE_SHA256: ${{ inputs.accepted_candidate_archive_sha256 }}
+          PROMOTION_FACTORY_RUN_ID: ${{ inputs.factory_acceptance_run_id }}
+          PROMOTION_PUBLISH: ${{ inputs.publish_release }}
+          PROMOTION_DIAGNOSTIC: ${{ inputs.iterate_existing_miniapp_candidate }}
+        run: node .github/scripts/promote-miniapp-candidate.mjs
+  miniapp-iteration:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.iterate_existing_miniapp_candidate && !inputs.promote_existing_candidate }}
+    uses: ./.github/workflows/miniapp-packaged-iteration.yml
+    secrets:
+      FABUSHI_CI_TEST_USERNAME: ${{ secrets.FABUSHI_CI_TEST_USERNAME }}
+      FABUSHI_CI_TEST_PASSWORD: ${{ secrets.FABUSHI_CI_TEST_PASSWORD }}
+  publish:
+    if: ${{ github.event_name != 'workflow_dispatch' || (!inputs.iterate_existing_miniapp_candidate && !inputs.promote_existing_candidate) }}
+    name: Build, notarize, and publish macOS arm64
+    runs-on: macos-15
+    timeout-minutes: 180
+    env:
+      SUPPORT_REPO: bhrumom/fabushi
+      SUPPORT_SHA: 5d75920308fa17f5000308df1a0153309eb8e9ab
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'push' && github.sha || inputs.source_sha || 'main' }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Bind exact source
+        id: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha="$(git rev-parse HEAD)"
+          requested="${{ inputs.source_sha }}"
+          if [ -n "$requested" ]; then
+            test "$sha" = "$requested"
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            test "$sha" = "${{ github.sha }}"
+            test "${{ github.ref }}" = "refs/heads/main"
+          else
+            test "$(git rev-parse --abbrev-ref HEAD)" = "main"
+          fi
+          version="$(node -p "require('./desktop/package.json').version")"
+          short="${sha:0:12}"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "short=$short" >> "$GITHUB_OUTPUT"
+          echo "tag=macos-main-v${version}-${short}" >> "$GITHUB_OUTPUT"
+          {
+            echo "## macOS exact-source package"
+            echo "- Source: \`$sha\`"
+            echo "- Publish release: \`${{ inputs.publish_release }}\`"
+            echo "- Version: \`$version\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Require Apple signing secrets
+        shell: bash
+        env:
+          MACOS_CERTIFICATE_P12_BASE64: ${{ secrets.MACOS_CERTIFICATE_P12_BASE64 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
+        run: |
+          set -euo pipefail
+          test -n "$MACOS_CERTIFICATE_P12_BASE64"
+          test -n "$MACOS_CERTIFICATE_PASSWORD"
+          if { [ -z "$APPLE_ID" ] || [ -z "$APPLE_APP_SPECIFIC_PASSWORD" ]; } &&              { [ -z "$APP_STORE_CONNECT_API_KEY_ID" ] || [ -z "$APP_STORE_CONNECT_API_ISSUER_ID" ] || [ -z "$APP_STORE_CONNECT_API_KEY_BASE64" ]; }; then
+            echo "::error::Apple notarization credentials are not configured."
+            exit 1
+          fi
+
+      - name: Private builds cannot bypass immutable factory-bound promotion
+        env:
+          REQUEST_PUBLIC_RELEASE: ${{ inputs.publish_release }}
+        run: |
+          set -euo pipefail
+          if [ "$REQUEST_PUBLIC_RELEASE" = true ]; then
+            echo "::error::Public release requires promote_existing_candidate and exact binary-bound factory proof; rebuilding cannot substitute for accepted bytes."
+            exit 1
+          fi
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Require complete Grok architecture cutover
+        shell: bash
+        run: node scripts/check-grok-architecture.mjs --strict
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+
+      - name: Set up Go for the packaged FDN worker
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.27.1'
+          cache-dependency-path: source/fabushi-network-worker/go.mod
+
+      - name: Confirm Apple Silicon runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = "arm64"
+
+      - name: Install desktop dependencies
+        shell: bash
+        run: npm --prefix desktop ci --prefer-offline --no-audit --no-fund
+
+      - name: Compile and collect the installed Mini App gate before packaging
+        working-directory: desktop
+        run: |
+          ./node_modules/.bin/tsc --noEmit --strict --skipLibCheck --target ES2022 --module NodeNext --moduleResolution NodeNext --esModuleInterop e2e/miniapp-packaged-acceptance.spec.ts
+          npx playwright test e2e/miniapp-packaged-acceptance.spec.ts --list
+          /usr/bin/osacompile -o "$RUNNER_TEMP/miniapp-save-report.scpt" ../.github/scripts/miniapp-save-report.applescript
+          node --test ../.github/scripts/miniapp-release-evidence.test.mjs
+          node --test ../.github/scripts/promote-miniapp-candidate.test.mjs
+
+      - name: Validate Fabushi product adapter contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm --prefix desktop run build:electron
+          ./desktop/node_modules/.bin/tsc -p desktop/tsconfig.fabushi-product.json
+          node --test desktop/.tmp-fabushi-product/source/product/fabushi/fabushi-account-service.contract.test.js
+
+      - name: Restore Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: source/mahayana/mahayana-rs -> target
+          shared-key: fabushi-desktop-macos-release-rust-1.97.1
+
+      - name: Install Developer ID identity
+        shell: bash
+        env:
+          MACOS_CERTIFICATE_P12_BASE64: ${{ secrets.MACOS_CERTIFICATE_P12_BASE64 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          CONFIGURED_IDENTITY: ${{ secrets.MACOS_CODESIGN_IDENTITY }}
+        run: |
+          set -euo pipefail
+          cert="$RUNNER_TEMP/fabushi-developer-id.p12"
+          keychain="$RUNNER_TEMP/fabushi-developer-id.keychain-db"
+          keychain_password="$(openssl rand -hex 24)"
+          printf '%s' "$MACOS_CERTIFICATE_P12_BASE64" | base64 --decode > "$cert"
+          security create-keychain -p "$keychain_password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$keychain_password" "$keychain"
+          security import "$cert" -k "$keychain" -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$keychain_password" "$keychain" >/dev/null
+          security list-keychains -d user -s "$keychain"
+          security default-keychain -d user -s "$keychain"
+          identity="$CONFIGURED_IDENTITY"
+          if [ -z "$identity" ]; then
+            identity="$(security find-identity -v -p codesigning "$keychain" | awk -F '"' '/Developer ID Application/ {print $2; exit}')"
+          fi
+          case "$identity" in *'Developer ID Application:'*) ;; *) echo "::error::Developer ID Application identity was not found."; exit 1 ;; esac
+          echo "MACOS_CODESIGN_IDENTITY=$identity" >> "$GITHUB_ENV"
+          echo "CSC_IDENTITY_AUTO_DISCOVERY=true" >> "$GITHUB_ENV"
+          probe="$RUNNER_TEMP/fabushi-team-probe"
+          cp /usr/bin/true "$probe"
+          codesign --force --options runtime --timestamp --sign "$identity" "$probe"
+          team_id="$(codesign -dv --verbose=4 "$probe" 2>&1 | awk -F= '/^TeamIdentifier=/{print $2; exit}')"
+          test -n "$team_id"
+          echo "APPLE_TEAM_ID_RESOLVED=$team_id" >> "$GITHUB_ENV"
+          security find-identity -v -p codesigning "$keychain"
+
+      - name: Build and stage the signed FDN network worker
+        working-directory: source/fabushi-network-worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p target/release
+          go mod tidy
+          GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 \
+            go build -trimpath -ldflags='-s -w' \
+            -o target/release/fabushi-network-worker .
+          test -x target/release/fabushi-network-worker
+          file target/release/fabushi-network-worker | grep -F 'arm64'
+
+      - name: Build and stage Mahayana desktop host
+        working-directory: desktop
+        shell: bash
+        run: npm run build:host
+
+      - name: Build pinned offline ASR engine
+        shell: bash
+        run: |
+          set -euo pipefail
+          manifest="source/packaging/offline-asr-engine.json"
+          test -f "$manifest"
+          repo="$(node -e 'const fs=require("fs");const m=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));process.stdout.write(m.whisperCpp.repository)' "$manifest")"
+          commit="$(node -e 'const fs=require("fs");const m=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));process.stdout.write(m.whisperCpp.commit)' "$manifest")"
+          test -n "$repo"
+          if [[ ! "$commit" =~ ^[0-9a-fA-F]{40}$ ]]; then
+            echo "::error::offline ASR manifest commit is not a full SHA"
+            exit 1
+          fi
+          src="$RUNNER_TEMP/whisper-cpp"
+          build="$RUNNER_TEMP/whisper-build"
+          rm -rf "$src" "$build"
+          fetched=false
+          for attempt in 1 2 3; do
+            rm -rf "$src"
+            git init -q "$src"
+            git -C "$src" remote add origin "$repo"
+            if git -C "$src" -c http.version=HTTP/1.1 fetch --depth=1 --filter=blob:none origin "$commit"; then
+              git -C "$src" checkout --detach FETCH_HEAD
+              if [[ "$(git -C "$src" rev-parse HEAD)" == "$commit" ]]; then
+                fetched=true
+                break
+              fi
+            fi
+            echo "::warning::offline ASR exact-source fetch attempt $attempt failed for $commit"
+            sleep $((attempt * 2))
+          done
+          if [[ "$fetched" != "true" ]]; then
+            echo "::error::failed to fetch pinned offline ASR commit $commit after 3 attempts"
+            exit 1
+          fi
+          test "$(git -C "$src" rev-parse HEAD)" = "$commit"
+          cmake -S "$src" -B "$build"             -DWHISPER_BUILD_TESTS=OFF             -DWHISPER_BUILD_EXAMPLES=ON             -DWHISPER_BUILD_SERVER=OFF             -DBUILD_SHARED_LIBS=OFF             -DGGML_NATIVE=OFF
+          cmake --build "$build" --config Release --parallel 2
+          binary="$(find "$build" -type f -name whisper-cli -perm -111 -print -quit)"
+          test -n "$binary"
+          out="desktop/resources/asr/darwin-arm64"
+          rm -rf "$out"
+          mkdir -p "$out"
+          cp "$binary" "$out/whisper-cli"
+          chmod 755 "$out/whisper-cli"
+          cp "$src/LICENSE" "$out/LICENSE.whisper.cpp"
+          printf '{"repository":"%s","commit":"%s","platform":"darwin","arch":"arm64"}\n' "$repo" "$commit" > "$out/build.json"
+
+      - name: Stage bundled Computer Use runtime
+        shell: bash
+        env:
+          CHATGPT_COMPUTER_CODESIGN_IDENTITY: ${{ env.MACOS_CODESIGN_IDENTITY }}
+          CHATGPT_COMPUTER_TEAM_ID: ${{ env.APPLE_TEAM_ID_RESOLVED }}
+        run: |
+          set -euo pipefail
+          support="$RUNNER_TEMP/fabushi-support"
+          git clone --filter=blob:none --no-checkout "https://github.com/$SUPPORT_REPO.git" "$support"
+          git -C "$support" sparse-checkout init --cone
+          git -C "$support" sparse-checkout set chatgpt-vps-control
+          git -C "$support" checkout "$SUPPORT_SHA"
+          npm --prefix "$support/chatgpt-vps-control" ci --ignore-scripts --prefer-offline --no-audit --no-fund
+          mkdir -p "$support/desktop/resources"
+          export CHATGPT_COMPUTER_HOME="$support/desktop/resources/computer-control"
+          node "$support/chatgpt-vps-control/bin/prepare-fabushi-bundle.js"
+          rm -rf desktop/resources/computer-control
+          mkdir -p desktop/resources/computer-control
+          rsync -a "$support/desktop/resources/computer-control/" desktop/resources/computer-control/
+          test -f desktop/resources/computer-control/active-runtime.json
+
+      - name: Build Electron runtime and renderer
+        working-directory: desktop
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run build:electron
+          npm run build:renderer
+          npm run check:desktop-runtime
+
+      - name: Enforce built desktop bundle boundary
+        working-directory: desktop
+        shell: bash
+        run: node scripts/check-desktop-bundle.mjs
+
+      - name: Package signed and notarized macOS installer
+        working-directory: desktop
+        shell: bash
+        env:
+          FABUSHI_MACOS_SIGNED: '1'
+          FABUSHI_MACOS_NOTARIZE: '1'
+          MACOS_CODESIGN_IDENTITY: ${{ env.MACOS_CODESIGN_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ env.APPLE_TEAM_ID_RESOLVED }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
+        run: npx electron-builder --mac --arm64 --publish never
+
+      - name: Reject application-owned Mini App engines
+        shell: bash
+        run: |
+          set -euo pipefail
+          app="$(find desktop/release -maxdepth 3 -type d -name '*.app' -print -quit)"
+          test -n "$app"
+          test ! -e "$app/Contents/Resources/bin/dandelion"
+          test ! -e "$app/Contents/Resources/bin/dandelion-default.toml"
+          test ! -e "$app/Contents/Resources/bin/dandelion-build.json"
+
+      - name: Notarize and staple DMG
+        shell: bash
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ env.APPLE_TEAM_ID_RESOLVED }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
+        run: |
+          set -euo pipefail
+          dmg="$(find desktop/release -maxdepth 1 -type f -name '*.dmg' -print -quit)"
+          app="$(find desktop/release -maxdepth 3 -type d -name '*.app' -print -quit)"
+          test -n "$dmg"
+          test -n "$app"
+          args=()
+          if [ -n "${APPLE_ID:-}" ] && [ -n "${APPLE_APP_SPECIFIC_PASSWORD:-}" ]; then
+            args=(--apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD")
+          else
+            key_dir="$RUNNER_TEMP/private_keys"
+            mkdir -p "$key_dir"
+            key="$key_dir/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8"
+            printf '%s' "$APP_STORE_CONNECT_API_KEY_BASE64" | base64 --decode > "$key"
+            chmod 600 "$key"
+            args=(--key "$key" --key-id "$APP_STORE_CONNECT_API_KEY_ID" --issuer "$APP_STORE_CONNECT_API_ISSUER_ID")
+          fi
+          xcrun notarytool submit "$dmg" "${args[@]}" --wait --output-format json > "$RUNNER_TEMP/dmg-notary.json"
+          node -e "const r=require(process.argv[1]); if(r.status!=='Accepted') { console.error(r); process.exit(1) }" "$RUNNER_TEMP/dmg-notary.json"
+          node .github/scripts/validate-apple-ticket.mjs --staple "$dmg"
+          node .github/scripts/validate-apple-ticket.mjs "$dmg"
+          codesign --verify --deep --strict --verbose=2 "$app"
+          node .github/scripts/validate-apple-ticket.mjs "$app"
+          spctl --assess --type execute --verbose=4 "$app"
+
+      - name: Verify desktop updater metadata
+        shell: bash
+        env:
+          VERSION: ${{ steps.source.outputs.version }}
+        run: |
+          set -euo pipefail
+          metadata="desktop/release/latest-mac.yml"
+          test -s "$metadata"
+          grep -F "fabushi-${VERSION}-macos-arm64.zip" "$metadata"
+          find desktop/release -maxdepth 1 -type f -name '*.blockmap' -size +0c -print -quit | grep -q .
+
+      - name: Bind packaged candidate executable
+        id: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_app="$(find desktop/release -maxdepth 4 -type d -name '*.app' -print -quit)"
+          test -n "$source_app"
+
+          # Packaged macOS production startup intentionally prompts to move an app
+          # that is launched outside /Applications before creating BrowserWindow.
+          # Exercise the exact signed/notarized candidate as an installed app
+          # instead of bypassing that shipping startup contract in the test.
+          source_executable_name="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$source_app/Contents/Info.plist")"
+          source_executable="$source_app/Contents/MacOS/$source_executable_name"
+          test -x "$source_executable"
+          source_before_sha256="$(shasum -a 256 "$source_executable" | awk '{print $1}')"
+          source_before_size="$(stat -f '%z' "$source_executable")"
+
+          installed_app="/Applications/Fabushi Candidate ${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.app"
+          rm -rf "$installed_app"
+          /usr/bin/ditto "$source_app" "$installed_app"
+          codesign --verify --deep --strict --verbose=2 "$installed_app"
+          node .github/scripts/validate-apple-ticket.mjs "$installed_app"
+          spctl --assess --type execute --verbose=4 "$installed_app"
+
+          executable_name="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$installed_app/Contents/Info.plist")"
+          test "$executable_name" = "$source_executable_name"
+          executable="$installed_app/Contents/MacOS/$executable_name"
+          test -x "$executable"
+          installed_sha256="$(shasum -a 256 "$executable" | awk '{print $1}')"
+          installed_size="$(stat -f '%z' "$executable")"
+          source_after_sha256="$(shasum -a 256 "$source_executable" | awk '{print $1}')"
+          source_after_size="$(stat -f '%z' "$source_executable")"
+          test "$source_before_sha256" = "$source_after_sha256"
+          test "$source_before_size" = "$source_after_size"
+          test "$source_before_sha256" = "$installed_sha256"
+          test "$source_before_size" = "$installed_size"
+
+          jq -n \
+            --arg sourceSha "${{ steps.source.outputs.sha }}" \
+            --arg sourceApp "$source_app" \
+            --arg sourceExecutable "$source_executable" \
+            --arg sourceBeforeSha256 "$source_before_sha256" \
+            --arg sourceAfterSha256 "$source_after_sha256" \
+            --arg installedApp "$installed_app" \
+            --arg installedExecutable "$executable" \
+            --arg installedSha256 "$installed_sha256" \
+            --argjson sourceSize "$source_before_size" \
+            --argjson installedSize "$installed_size" \
+            '{sourceSha:$sourceSha,sourceApp:$sourceApp,sourceExecutable:$sourceExecutable,sourceBeforeSha256:$sourceBeforeSha256,sourceAfterSha256:$sourceAfterSha256,installedApp:$installedApp,installedExecutable:$installedExecutable,installedSha256:$installedSha256,sourceSize:$sourceSize,installedSize:$installedSize,sourceStable:true,exactSha256Equal:true,copyRelationship:"byte-exact"}' \
+            > "$RUNNER_TEMP/fabushi-packaged-executable-copy-identity.json"
+
+          echo "executable=$executable" >> "$GITHUB_OUTPUT"
+          echo "Installed candidate app: $installed_app" >> "$GITHUB_STEP_SUMMARY"
+          echo "Candidate executable: $executable" >> "$GITHUB_STEP_SUMMARY"
+          echo "Candidate executable SHA-256: \`$installed_sha256\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Provision bounded production CI account session
+        shell: bash
+        env:
+          FABUSHI_CI_TEST_USERNAME: ${{ secrets.FABUSHI_CI_TEST_USERNAME }}
+          FABUSHI_CI_TEST_PASSWORD: ${{ secrets.FABUSHI_CI_TEST_PASSWORD }}
+          FABUSHI_API_BASE_URL: https://api.ombhrum.com
+          DEVICE_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}-macos-app
+        run: |
+          set -euo pipefail
+          test -n "$FABUSHI_CI_TEST_USERNAME"
+          test -n "$FABUSHI_CI_TEST_PASSWORD"
+          support="$RUNNER_TEMP/fabushi-support"
+          test -f "$support/chatgpt-vps-control/scripts/login-ci-test-account.mjs"
+          test -f "$support/chatgpt-vps-control/scripts/export-ci-app-account-session.mjs"
+          account_dir="$RUNNER_TEMP/fabushi-candidate-account"
+          app_session_dir="$RUNNER_TEMP/fabushi-candidate-app-session"
+          mkdir -p "$account_dir" "$app_session_dir"
+          chmod 700 "$account_dir" "$app_session_dir"
+          export FABUSHI_ACCOUNT_SESSION_FILE="$account_dir/session.json"
+          export FABUSHI_CI_ACCOUNT_SESSION_FILE="$app_session_dir/session.json"
+          node "$support/chatgpt-vps-control/scripts/login-ci-test-account.mjs"
+          node "$support/chatgpt-vps-control/scripts/export-ci-app-account-session.mjs"
+          umask 077
+          jq -ce --arg issuer "$FABUSHI_API_BASE_URL" '. + {issuer: $issuer}' "$FABUSHI_CI_ACCOUNT_SESSION_FILE" > "$app_session_dir/issuer-bound.json"
+          mv "$app_session_dir/issuer-bound.json" "$FABUSHI_CI_ACCOUNT_SESSION_FILE"
+          chmod 600 "$FABUSHI_CI_ACCOUNT_SESSION_FILE"
+          jq -e '.provider == "github-actions" and .ciRunner == true and (.refreshToken | not)' "$FABUSHI_CI_ACCOUNT_SESSION_FILE" >/dev/null
+          rm -f "$FABUSHI_ACCOUNT_SESSION_FILE"
+          {
+            echo "DEVICE_ID=$DEVICE_ID"
+            echo "FABUSHI_CI_ACCOUNT_SESSION_FILE=$FABUSHI_CI_ACCOUNT_SESSION_FILE"
+          } >> "$GITHUB_ENV"
+          echo "Bounded refresh-token-free production account session prepared for signed candidate acceptance." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify packaged FDN worker sibling
+        shell: bash
+        run: |
+          set -euo pipefail
+          executable="${{ steps.candidate.outputs.executable }}"
+          # The bound executable is inside <app>/Contents/MacOS; ascend three
+          # levels to the .app bundle before resolving sibling resources.
+          candidate_app="$(cd "$(dirname "$executable")/../.." && pwd)"
+          test -d "$candidate_app/Contents"
+          worker="$candidate_app/Contents/Resources/bin/fabushi-network-worker"
+          host="$candidate_app/Contents/Resources/bin/mahayana-app-host"
+          test -x "$worker"
+          test -x "$host"
+          codesign --verify --strict --verbose=2 "$worker"
+          file "$worker" | grep -F 'arm64'
+          worker_sha256="$(shasum -a 256 "$worker" | awk '{print $1}')"
+          jq -n \
+            --arg sourceSha "${{ steps.source.outputs.sha }}" \
+            --arg appPath "$candidate_app" \
+            --arg workerPath "$worker" \
+            --arg workerSha256 "$worker_sha256" \
+            '{sourceSha:$sourceSha,appPath:$appPath,workerPath:$workerPath,workerSha256:$workerSha256,hostSibling:true,codesignVerified:true}' \
+            > "$RUNNER_TEMP/fabushi-packaged-network-worker.json"
+          {
+            echo "## Packaged FDN worker"
+            echo "- Worker: \`$worker\`"
+            echo "- SHA-256: \`$worker_sha256\`"
+            echo "- Sibling Host: \`$host\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Run real signed packaged acceptance
+        working-directory: desktop
+        shell: bash
+        timeout-minutes: 60
+        env:
+          OBF_REAL_ACCEPTANCE: '1'
+          OBF_SOURCE_SHA: ${{ steps.source.outputs.sha }}
+          OBF_EXPECTED_SOURCE_SHA: ${{ steps.source.outputs.sha }}
+          OBF_EVIDENCE_DIR: ${{ runner.temp }}/fabushi-candidate-acceptance
+          FABUSHI_ELECTRON_EXECUTABLE: ${{ steps.candidate.outputs.executable }}
+          FABUSHI_FEATURE_HOST_MODE: production
+          FABUSHI_E2E: '0'
+        run: |
+          set -euo pipefail
+          rm -rf "$OBF_EVIDENCE_DIR"
+          mkdir -p "$OBF_EVIDENCE_DIR"
+          recorder="$GITHUB_WORKSPACE/desktop/scripts/macos-session-recorder.sh"
+          test -f "$recorder"
+          test -s "$GITHUB_WORKSPACE/desktop/scripts/macos-session-video.swift"
+          bash "$recorder" start "$OBF_EVIDENCE_DIR"
+          bash "$recorder" assert-live "$OBF_EVIDENCE_DIR"
+          test_status=0
+          npx playwright test e2e/openbot-packaged-acceptance.spec.ts --workers=1 || test_status=$?
+          stop_status=0
+          bash "$recorder" stop "$OBF_EVIDENCE_DIR" || stop_status=$?
+          verify_status=0
+          bash "$recorder" verify "$OBF_EVIDENCE_DIR" || verify_status=$?
+          test "$test_status" -eq 0
+          test "$stop_status" -eq 0
+          test "$verify_status" -eq 0
+          test -s "$OBF_EVIDENCE_DIR/trace.zip"
+          test -s "$OBF_EVIDENCE_DIR/runtime.log"
+          test -s "$OBF_EVIDENCE_DIR/lifecycle.json"
+          test -s "$OBF_EVIDENCE_DIR/candidate.json"
+          find "$OBF_EVIDENCE_DIR/screenshots" -type f -name '*.png' -size +0c -print -quit | grep -q .
+          find "$OBF_EVIDENCE_DIR" -type f \( -name '*.mp4' -o -name '*.mov' -o -name '*.webm' \) -size +0c -print -quit | grep -q .
+
+      - name: Run approved Mini App installed and OS-offline lifecycle acceptance
+        working-directory: desktop
+        shell: bash
+        timeout-minutes: 40
+        env:
+          MINIAPP_REAL_ACCEPTANCE: '1'
+          MINIAPP_REQUIRE_NATIVE_ENGINE: '1'
+          MINIAPP_NATIVE_EXECUTABLE_DIGEST: ${{ inputs.native_engine_digest || 'a3e50d3f0a003e89dc95236b86839fab49ca1b8a1d90ad77e683418f24fc7569' }}
+          MINIAPP_PACKAGE_VERSION: ${{ inputs.miniapp_version || '0.4.0' }}
+          MINIAPP_PACKAGE_DIGEST: ${{ inputs.miniapp_digest || '1c3f3291ae6d7a531502641edb9aee136f1f7cbef42777a31cb668ca11c8e22b' }}
+          MINIAPP_EVIDENCE_DIR: ${{ runner.temp }}/fabushi-miniapp-acceptance
+          OBF_SOURCE_SHA: ${{ steps.source.outputs.sha }}
+          OBF_EXPECTED_SOURCE_SHA: ${{ steps.source.outputs.sha }}
+          FABUSHI_ELECTRON_EXECUTABLE: ${{ steps.candidate.outputs.executable }}
+          FABUSHI_FEATURE_HOST_MODE: production
+          FABUSHI_E2E: '0'
+        run: |
+          set -euo pipefail
+          test "$MINIAPP_REAL_ACCEPTANCE" = 1
+          recorder="$GITHUB_WORKSPACE/desktop/scripts/macos-session-recorder.sh"
+          mkdir -p "$MINIAPP_EVIDENCE_DIR"
+          bash "$recorder" start "$MINIAPP_EVIDENCE_DIR"
+          bash "$recorder" assert-live "$MINIAPP_EVIDENCE_DIR"
+          test_status=0
+          npx playwright test e2e/miniapp-packaged-acceptance.spec.ts --workers=1 || test_status=$?
+          stop_status=0
+          bash "$recorder" stop "$MINIAPP_EVIDENCE_DIR" || stop_status=$?
+          verify_status=0
+          bash "$recorder" verify "$MINIAPP_EVIDENCE_DIR" || verify_status=$?
+          test "$test_status" -eq 0
+          test "$stop_status" -eq 0
+          test "$verify_status" -eq 0
+          find "$MINIAPP_EVIDENCE_DIR" -type f -name acceptance.json -size +0c -print -quit | grep -q .
+
+      - name: Upload Mini App installed acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: fabushi-miniapp-installed-${{ steps.source.outputs.short }}
+          path: ${{ runner.temp }}/fabushi-miniapp-acceptance
+          if-no-files-found: warn
+
+      - name: Upload packaged acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: fabushi-candidate-acceptance-${{ steps.source.outputs.short }}
+          path: |
+            ${{ runner.temp }}/fabushi-candidate-acceptance/screenshots
+            ${{ runner.temp }}/fabushi-candidate-acceptance/*.json
+            ${{ runner.temp }}/fabushi-candidate-acceptance/*.txt
+            ${{ runner.temp }}/fabushi-candidate-acceptance/*.log
+            ${{ runner.temp }}/fabushi-candidate-acceptance/*.zip
+            ${{ runner.temp }}/fabushi-candidate-acceptance/*.mov
+            ${{ runner.temp }}/fabushi-candidate-acceptance/*.mp4
+            ${{ runner.temp }}/fabushi-packaged-network-worker.json
+            ${{ runner.temp }}/fabushi-packaged-executable-copy-identity.json
+            desktop/playwright-report
+            desktop/test-results
+          if-no-files-found: warn
+          retention-days: 90
+          compression-level: 0
+
+      - name: Write checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd desktop/release
+          find . -maxdepth 1 -type f \( -name '*.dmg' -o -name '*.zip' \) -print0 | sort -z | xargs -0 shasum -a 256 > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Upload workflow artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: fabushi-macos-${{ steps.source.outputs.short }}
+          path: |
+            desktop/release/*.dmg
+            desktop/release/*.zip
+            desktop/release/*.blockmap
+            desktop/release/latest-mac.yml
+            desktop/release/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+
+      - name: Keep accepted installer private until binary-bound factory promotion
+        run: echo 'Candidate retained as immutable Actions artifact; public promotion requires matching factory acceptance and zero-residue evidence.' >> "$GITHUB_STEP_SUMMARY"
