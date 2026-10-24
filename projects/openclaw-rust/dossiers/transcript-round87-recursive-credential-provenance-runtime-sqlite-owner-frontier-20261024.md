@@ -6211,3 +6211,44 @@ New frozen identities:
 Immediately before this append, the live branch lease was `ae7317729bdb850d3ff2918f560e0f5369a42407`, tree `7e0a20174dfa28d510f80a685c963ab0c3748148`, dossier blob `51004b2dc7951fa13535bc791123223692469ad0`, 6,173 lines, with zero Section 95 and all three exact refs above at zero occurrences. This pass remains frozen-source/read-only audit work: no GitHub Actions workflow was started or rerun, and no production code, ledger, RTM, acceptance flag, source lock, inventory, or source baseline file was modified.
 
 - The restart/lost-reply side is now more tightly bounded: a durable queue row survives owner replacement, stale scheduling work is fenced, and a persisted settlement outcome can retry cleanup without replaying delivery. What remains missing is the single public Cron identity that ties those phases to real exact-alias deletion and the exact public terminal reader. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring parity, package/device proof, release acceptance, and final OCRM acceptance remain open.
+
+
+
+## Section 96 — public Cron request identity is retained for history but deliberately excluded from the recovery handle
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`. This pass continues Sections 90–95 by following the public `requestRunId` into the Cron queue owner and then checking exactly what restart/lost-reply recovery is allowed to retain. It adds only four frozen exact refs that were absent from the complete Round87 dossier immediately before this append.
+
+New frozen identities:
+- `src/cron/store/run-receipt-read.ts@3a851f9480f8f342fb26a28c8ce8b03509e40e49`
+- `src/cron/store/run-receipt.types.ts@8b1ad063d6ca57dd758dc9b632ca6ed76ffacb9c`
+- `src/cron/store/run-queue.worker.ts@e33a83391931a6a703f67c1d2cb0d7fde0b888a0`
+- `src/cron/store/run-queue.worker.test.ts@1d48c551be9a583b4e34c694a3db637f094efa3a`
+
+### 96.1 The receipt row preserves public request identity, while the recovery contract intentionally strips it
+
+- New production exact-ref `src/cron/store/run-receipt-read.ts@3a851f9480f8f342fb26a28c8ce8b03509e40e49` maps `cron_run_receipts.request_run_id` into `CronRunReceipt.requestRunId`, but its `receiptHandle()` projection returns only receipt/store/job/config/agent/process/start ownership. `requestRunId` is not copied into the handle used by current-facts and recovery reads.
+- New type exact-ref `src/cron/store/run-receipt.types.ts@8b1ad063d6ca57dd758dc9b632ca6ed76ffacb9c` makes that omission contractual: `CronRunReceipt` has optional `requestRunId`, while `CronRunReceiptHandle` and `CronRunReceiptRecoveryCandidate` are a Pick that excludes it. The current-receipt read command likewise accepts only the physical receipt/owner tuple.
+- This is a direct negative authority boundary. Public/manual identity remains recoverable from the retained receipt row for history/inspection, but Cron ownership and restart recovery do not use it as their fencing key.
+
+### 96.2 Queue admission stores the public id, then all launch/recovery ownership proceeds through receipt identity
+
+- New production exact-ref `src/cron/store/run-queue.worker.ts@e33a83391931a6a703f67c1d2cb0d7fde0b888a0` passes `request.requestRunId` only when claiming the physical Cron receipt. Subsequent queue activation, cancellation, skip, capacity, lost-context recovery and run launch operate on `receiptId` plus job/config/owner facts and repeatedly project through `receiptHandle()`.
+- When a queued run is skipped, the worker records history with the physical `receiptId`; the already registered history kernel is what resolves the retained `request_run_id` back into the public history `runId`. Thus public terminal-read identity is a receipt/history projection, not the queue recovery owner.
+
+### 96.3 A focused worker oracle separates public terminal history from lost-reply recovery
+
+- New focused exact-ref `src/cron/store/run-queue.worker.test.ts@1d48c551be9a583b4e34c694a3db637f094efa3a` queues a manual request with `requestRunId: "public-ack"`, disables it before activation, drains the queue, and then requires history filtered by `public-ack` to return a terminal skipped row whose `runId` is exactly `public-ack`.
+- The same fixture separately drops the first committed worker reply for both request and cancellation. After worker-context replacement, recovery observes the persisted queue/receipt state and avoids replay: a lost request drains the same receipt once, while a lost cancellation remains cancelled and yields one terminal history entry. Those lost-reply cases are keyed by the receipt request and do not reconstruct authority from a public `requestRunId`.
+- This is not the still-requested integrated fixture: the public-id history case and the lost-reply recovery cases are separate test cases, and neither executes real `settleQueuedSessionDelivery` plus real `removeCronRunContinuationSessionIfIdle` physical alias deletion before a public `cron.runs { id, runId, limit: 1 }` read.
+
+### 96.4 The three requested acceptance frontiers remain open
+
+- The predecessor-public-id -> restart/lost-reply session-delivery recovery -> real queue settlement -> physical exact-run alias deletion -> exact public terminal-read chain is still not covered by one frozen fixture. Sections 93–96 now show why the identities remain separated: continuation/session-delivery ownership is session/queue based, while public `runId` is retained through the Cron receipt/history projection.
+- No direct Gateway-server focused oracle was found for `sessions.processes.stop` where a remote Stop is already in flight, `placementGeneration` or `activeOwnerEpoch` is replaced, the old worker returns success, and the Gateway itself rejects that stale success.
+- No distinct failed-publication receiver handoff or third production plural `settlePluginNativeAdmissions` caller was found; generation preparation and prepared-model-runtime build remain the production plural callers and generation-worker remains singular.
+
+### 96.5 Dedupe, lease, and remaining acceptance state
+
+Immediately before this append, the live branch lease was `3c39b8276acbf906daac96e18f930481509c538c`, tree `undefined`, dossier blob `d8cd9833f3c2eb157a4629cb16f7c5de1640b738`, 6,214 lines, with zero Section 96 and all four exact refs above at zero occurrences. This pass remains frozen-source/read-only audit work: no GitHub Actions workflow was started or rerun, and no production code, ledger, RTM, acceptance flag, source lock, inventory, or source baseline file was modified.
+
+- Public Cron identity is now explicitly proven to survive as receipt/history metadata while being excluded from the recovery handle itself. The requested integrated cleanup/terminal-read oracle is still absent. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring parity, package/device proof, release acceptance, and final OCRM acceptance remain open.
