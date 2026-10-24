@@ -3077,3 +3077,85 @@ These backend factories all receive the canonical connection from the domain own
 Section 36 closes the new frontier from the Section 35 agent admission chain through session entry writes, restart recovery, the lazy worker-operation registry, maintenance/schema refresh, connection-bound publication domains and their direct admission-consuming handlers. The canonical native database generation, durable lease and physical close remain owned by the existing agent lifecycle/executor. Registry handlers and domain backends borrow that owner; their local cleanup cannot reopen, replace or independently close it.
 
 No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. All test files above are source-level oracles only and were not executed in this read-only round. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, OCRM final acceptance and release acceptance remain absent.
+
+
+## Section 37 — connection-bound domain production consumers and request-class closure
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`). This section follows Section 36's connection-bound backend frontier into the direct production consumers and the request-class/worker-store producer path. Previously registered backend, executor and worker-store identities were re-read where needed but are not duplicated below.
+
+### 37.1 `database.domain.bind/publish/close` is produced by the existing worker-store owner; request classification is diagnostic only
+
+New frozen identities:
+- `src/infra/sqlite-worker-request-class.ts@38c3192d19125098292285ce9087048085dbc871`
+- `src/infra/worker-request-diagnostics.ts@0a3fe3cdb8be124d2c259c5975160c6f5db237c0`
+- `src/state/openclaw-agent-db.permissions.test.ts@3f196c01d52084fde30bcd3384bb0eda83b97164`
+
+Re-read without duplicate registration:
+- `src/state/openclaw-agent-worker-store.ts@918ab97a3a7142cd3cb3b4fb8c5c6f74e133efab`
+- `src/state/openclaw-agent-execution-domain.ts@0eb392c200c2b70913a58cad5c47e72ad6ca6eb1`
+- `src/state/openclaw-agent-execution.worker.ts@a533936aa520fc1770abd779a9fb9baec327ac41`
+
+The one-shot producer `executeOpenClawAgentWorkerPublication` emits `database.domain.publish` through an already-admitted `AgentDatabaseExecutionScope`. The multi-command publication path in `openclaw-agent-worker-store.ts` allocates one binding id, sends `database.domain.bind`, serializes exact `database.domain.execute` commands, waits for all accepted command promises, then attempts `database.domain.close` from a fresh cleanup scope whose admission can only grant `prepare`. That cleanup scope cannot open storage or admit a transaction. A refused cleanup admission retires the captured native generation instead of treating cleanup refusal as proof that durable work rolled back.
+
+The request-class table gives `database.domain.bind`, `database.domain.publish` and `database.domain.close` stable diagnostic labels below the database contracts. `worker-request-diagnostics.ts` unwraps the inner command for domain execute/publish metrics and special-cases transcript-projection commands to bounded labels; it never grants admission, opens a database or closes one. The permissions oracle proves that a warm borrowed write still rolls back when commit authority is refused and that backend settlement is checked independently. This classification path therefore does not introduce a second writer or lifecycle owner.
+
+### 37.2 Session sharing is a direct consumer of the canonical execution owner and preserves unknown outcomes
+
+New frozen identities:
+- `src/config/sessions/session-sharing-store.async.ts@efce88278bbb5404058722c132194c6b2dc70471`
+- `src/config/sessions/session-sharing-store.worker.test.ts@33a6ee577545ceca368dac2159427e988e8a7a89`
+
+The file-backed path captures `OpenClawAgentDatabaseExecution`, joins the existing write-admission FIFO, prepares a replacement only when the canonical execution has no physical identity, and opens the already registered sharing backend through `runtimeProcessEntrypoints.sessionSharingStore`. Host-side admission captures the exact candidate receipt before commit, retained admission settlement is observed separately from the ordinary worker reply, and cache/session-row publication happens only from committed facts that match the admitted candidate. `worker.close()` is in the inner `finally`; `execution.release()` is in the outer `finally`.
+
+A lost ordinary reply after dispatch is not replay permission. Missing/conflicting receipts, a lost result, or a close that happens after native commit remain `outcome-unknown`; publication custody is invalidated rather than synthesizing a second mutation. The focused sharing oracle covers aliased physical owners, stale manager authority, participant/owner publication, and lost-reply cases with valid, conflicting and missing receipts, including host close before the synthetic failure. Only the valid native receipt settles the committed mutation.
+
+### 37.3 Session message rewrite uses a one-shot domain publication; stale generations stay fenced
+
+New frozen identities:
+- `src/config/sessions/session-message-rewrite-domain.ts@7653df1ff0b554ef6bb0f5c116cc41f9002e5fb4`
+- `src/config/sessions/session-message-rewrite.test.ts@6f758eba67fa5685eeb6c3b8cb520d536da13ed6`
+- `src/config/sessions/session-actor-message-rewrite.test.ts@681cc901ae5fb7264de2ff98e080dbfcaa656f7e`
+
+`executeSessionMessageRewriteOperation` does not own a connection. It receives the caller's admitted execution scope, creates a fresh publication id and invokes `executeOpenClawAgentWorkerPublication` against the registered message-rewrite backend. The rewrite oracles prove that the exact prepared payload/generation is committed without an authoritative re-read, that replacement or reset between prepare and commit is refused, stale writer fences cannot publish, and a response lost after commit retains the committed receipt rather than replaying the mutation. Stale-preimage and commit-refused cases remain non-committed.
+
+### 37.4 Transcript projection publication separates native publication, reconcile worker tasks and physical close
+
+New frozen identities:
+- `src/config/sessions/session-transcript-reconcile.ts@b2dc846174ea53e9ccdd84824ca6ea8f4572cc4a`
+- `src/config/sessions/session-transcript-projection-writer.ts@bafc4b0beef56b8be1b0a1940bb45d4a4b6c6537`
+- `src/config/sessions/session-transcript-index-status.test.ts@5cec4ad153d43f934c5b98e144686ac8432131ea`
+- `src/config/sessions/session-transcript-reconcile.continuation.test.ts@0d66ab839c64af9dca8da4c3cd6f98639a21f4fe`
+- `src/config/sessions/session-transcript-reconcile.publication.test.ts@c7fcdef32fbd4b2580cb951a1fca8e6149944ae9`
+
+When an execution owner is available, reconciliation opens the connection-bound projection backend and uses it only as a `ProjectionPublisher`; the separate reconcile task prepares/parses plans and sends chunks over its own task port. `publicationClient.close()` runs in the pass `finally`, while the captured execution is released by the enclosing operation. When no execution owner exists, the fallback path uses the existing exclusive session-write owner instead of creating a parallel database owner.
+
+Projection status and write helpers reuse the same backend and close/release it after the bounded read/write scope. Dirty state is durable, so retirement or cancellation leaves discoverable pending work rather than authorizing replay. Focused oracles prove admission is reacquired after contention, cancelled admission rolls back, committed finalization is delivered before close allows a physical successor, retired scheduled owners are refused, and an explicit fresh repair can later resume the durable backlog. Worker task completion, projection publication settlement and database close are therefore distinct facts.
+
+### 37.5 Session-manager metadata and unbound transcript append borrow the same canonical worker store
+
+New frozen identities:
+- `src/agents/sessions/session-manager-metadata-runtime.ts@49b2c2e318d1863a78a4adf74c26e70edd493220`
+- `src/agents/sessions/session-manager-message-runtime.ts@0dc744269642d6bd790eb91385c970cb1437d348`
+- `src/agents/sessions/session-manager-maintenance-async.test.ts@de408b9c57ae890f7519bdd2978f2a7a2ec92c09`
+
+The metadata runtime prepares the existing execution through `runOpenClawAgentWorkerWrite`, opens the registered metadata backend, applies host-side admission/publication hooks, and closes the publication worker after the operation. If the operation already completed and cleanup alone fails, the cleanup failure is diagnostic and does not erase the committed receipt; if the operation itself failed, cleanup failure is aggregated with it.
+
+The message runtime keeps the resident actor path separate. Only an unbound SDK append captures `OpenClawAgentDatabaseExecution`, opens the metadata backend, validates the pending-input publication, closes the worker and then releases the execution. Multiple lifecycle failures aggregate, while a committed transcript message is surfaced as committed even if later cleanup/notification fails. The maintenance oracle exercises queued rewrites, stale writer fences and post-commit target rebinding, preserving committed state without granting stale publications.
+
+### 37.6 Worker transcript commit and transcript reports close only their publication scopes
+
+New frozen identities:
+- `src/gateway/worker-environments/transcript-commit.runtime.ts@047e3e64748ec70bbb140a39163287d230a647ed`
+- `src/gateway/worker-environments/worker-turn-rpc.transcript.test.ts@92b23eed071f0f35cb81fb1c61f21ca196004e71`
+- `src/config/sessions/session-accessor.sqlite-transcript-reports.ts@9a6fb6fe2393e290f0f34d6c1142b8860081d22d`
+- `src/config/sessions/session-accessor.sqlite-transcript-reports.test.ts@eecc543ac450c5ed30de034c788c35f6ba941d52`
+
+The worker-transcript runtime captures the canonical execution, opens the registered transcript-commit backend, prepares and commits through the bound writer, and closes the worker plus releases the execution after the result. Cleanup failures after a committed batch are logged/aggregated without turning that committed batch into replay permission. The separate transcript commit ledger keeps begin/replay/recover semantics, and the focused RPC oracle preserves committed progress when the worker claim is released or replaced while refusing a mismatched placement.
+
+Transcript reports pin logical writer authority and physical source identity before yielding. The report path captures the canonical execution, prepares replacement under that owner, binds the registered report backend, and nests two settlement wrappers so `worker.close()` and `execution.release()` are both observed. A cleanup-only failure after a committed report cannot replace the committed result with a replayable failure. Focused tests reject byte-identical physical replacement and redirection to another store, fence stale lifecycle claims, preserve committed fallback reports, and retry selection only on a proven no-write revision mismatch.
+
+### 37.7 Closure result
+
+The direct production consumers exposed by Section 36 all converge on the existing canonical agent execution/worker-store owner. Their `close()` calls settle connection-bound publication state; they do not own the physical agent database close. Request-class diagnostics are observational only. Across sharing, rewrite, projection, metadata, worker transcript and report paths, native commit, result delivery, publication settlement, worker/task retirement and physical database close remain separate facts, and uncertain post-commit outcomes are not silently replayed.
+
+No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. The tests above were read only as frozen source oracles and were not executed. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, OCRM final acceptance and release acceptance remain absent.
