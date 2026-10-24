@@ -3525,3 +3525,82 @@ The previously registered startup-migration, gateway canonical-validation, nativ
 The newly exposed archive store, reclamation core/worker, disk accounting, lifecycle composition and canonical-validation paths do not introduce a second database writer, a second physical-close owner, archive-file-as-commit semantics, or receipt retirement by inference. Canonical row commit, native transaction settlement, derived-file publication, receipt retirement, worker exit and physical close remain separately evidenced boundaries.
 
 No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. All test files above were read only at the frozen ref and were not executed. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, OCRM final acceptance and release acceptance remain absent.
+
+
+## Section 42 — recursive archive/reclamation direct-consumer, maintenance-admission and publication-order closure
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`). This section continues Section 41 by closing module-path callers and focused tests that are not discoverable from exported-function searches alone. All identities were exact-ref fetched at the frozen source and de-duplicated against the live Round87 dossier before this append.
+
+A moving-main search also exposed `src/commands/doctor-relative-session-store-preservation.ts`, but exact-ref fetch at the frozen source returned 404. It is therefore excluded from this frozen-source evidence rather than being silently imported from moving main.
+
+### 42.1 Disk-budget deletion remains filesystem cleanup under maintenance admission
+
+New frozen identities:
+- `src/config/sessions/disk-budget.removal-failures.test.ts@cca23248f471b8d4033e960bd4285fb0aaedfa05`
+- `src/config/sessions/disk-budget.test.ts@77401a8e5a5c6549ba175d6334b33baa622b02ed`
+
+The removal-failure oracles show that a revoked maintenance owner prevents unlink, failed transcript/prompt/archive removal does not claim freed bytes, and cleanup continues only over independently removable victims. The main disk-budget oracles preserve referenced primary transcripts, migration recovery archives and fresh/in-flight prompt artifacts; they prove a cap-evicted artifact is retained if the reduced index cannot be durably committed first, and that a file concurrently removed before `rm` is not counted as a successful removal. These tests reinforce Section 41: filesystem accounting/removal is not database mutation authority and cannot manufacture deletion settlement.
+
+### 42.2 Maintenance/reclamation admission retains writer custody through native settlement
+
+New frozen identities:
+- `src/config/sessions/session-accessor.sqlite-maintenance-admission.test.ts@303a54062aafcd0c1bd5168a8056c82531bed573`
+- `src/config/sessions/session-accessor.sqlite-prepared-admission.test-support.ts@86d91c45311c68990fd251380a056d014028b1f6`
+- `src/config/sessions/session-accessor.sqlite-reclamation-maintenance.test.ts@f6c73968c745d899c2d0feb19097e523acdef824`
+- `src/config/sessions/session-accessor.sqlite-reclamation-reuse.test-support.ts@8d1f546c82496bcd40ddf2a22fc4bcf8bda14c2d`
+- `src/config/sessions/session-accessor.sqlite-maintenance-preparation.test-support.ts@373bc7ce7504028f0ff88c78fb35e7377e6f3af9`
+- `src/config/sessions/session-accessor.sqlite-maintenance-worker.test.ts@8ff65e5c6ed5b02fd418fdfcb9fbdd036e7160c0`
+- `src/config/sessions/session-accessor.sqlite-maintenance.test-support.ts@d3eda634daae3e35cc706c5baebd942870f5e137`
+- `src/config/sessions/session-accessor.sqlite-maintenance-read.test.ts@3da7b2d25dbf64192c76709d33c782e541e9f97d`
+- `src/config/sessions/session-accessor.sqlite-maintenance-cadence.test.ts@2621929d9d5aabf0a48c8cd211849cc81ba9da7a`
+
+Maintenance preparation deliberately yields between planning/validation boundaries so foreground writers can progress, but the final commit admission remains held through publication and native settlement. The native maintenance failure matrix proves unsafe rollback/close outcomes keep the database locked, keep the exact worker lease retained and block a following writer until Worker exit; only then is the retained lease released. Prepared-admission support separately verifies integrity work occurs in child/Worker execution rather than caller-thread data SQL, joins those native workers at close, and observes a retained finalizer only against the same current open database.
+
+The Worker maintenance oracles additionally show that post-COMMIT parent predicate retirement does not erase a committed mutation, retained worker reuse stays on the same native worker only while its source remains valid, only committed removal indices are published, and committed statistics survive a later caller predicate failure. Cadence/read oracles keep bounded batches and fresh protection facts authoritative across concurrent writes; stale prepared work is rejected instead of being forced through.
+
+### 42.3 Publication ordering is post-commit and shared across transformed SDK module identity
+
+New frozen identities:
+- `src/config/sessions/session-accessor.sqlite-lifecycle-publication.test.ts@bcbc49134c970934a6f60128d7dff87497bd909e`
+- `src/state/openclaw-agent-db-module-identity-exports.test-support.ts@7b32e2c6ed27662b9ae854dae24325b679b6f437`
+- `src/state/openclaw-agent-db-module-identity.test.ts@f87a90a9137d14c4303f78304731c20feccf2158`
+
+Lifecycle-publication tests distinguish transaction commit, post-commit publication and writer-return settlement. A rollback publishes nothing; a publication failure leaves the committed lifecycle present; and a later writer-return failure occurs only after commit/publication have already settled. Confirmed removals retire prepared sharing/generation/cache facts before identity and row observers can recreate the key.
+
+The module-identity oracle proves transformed plugin SDK imports resolve the same canonical agent database object, the same archive/reclamation FIFO singletons, the same post-commit publication observers and the same worker-store runtime. Host and plugin calls serialize through one queue, plugin borrowing does not physically reopen or repeat integrity validation, explicit owner disposal revokes retained borrowers, and native/transformed publication clients reuse the same native Worker. This is direct negative evidence against a second writer/queue being created by SDK module duplication.
+
+### 42.4 Archive/reclamation transaction helpers still delegate to existing canonical writers
+
+New frozen identities:
+- `src/config/sessions/session-accessor.sqlite-archive-transaction.ts@9852b3f7700bb07ec9fdbcb38efc81e0e2061664`
+- `src/config/sessions/session-accessor.sqlite-lifecycle-state.ts@b158417ef0a9202d29bd8340060a50fd07c4335d`
+- `src/config/sessions/session-accessor.sqlite-replacement-state.ts@acafd2f86f9cd4027fd6bcbf01eeef8a17a48fa8`
+- `src/config/sessions/session-entry-read.worker.ts@3e4bef825d05c7f39339641ab2618e5b0a992a73`
+- `src/config/sessions/session-accessor.sqlite-maintenance-transaction.ts@ebd8006f34743bef9868db7f89dc00dfb8c25cfd`
+- `src/config/sessions/session-accessor.sqlite-maintenance-worker.ts@7368a047111417909ac975eda8c11466434e7ecd`
+
+Archive publication transaction code calls the established `runOpenClawAgentWriteTransaction`; maintenance transaction code uses the established agent write/deletion transaction owners for planning, metadata and finalization. The maintenance Worker refuses a missing/non-captured file database and performs metadata work through the existing session-entry worker mutation path. Lifecycle/replacement state modules produce/archive/project state inside those transactions, while `session-entry-read.worker.ts` remains a read/snapshot worker with physical-identity checks and post-commit publication anchoring. None of these modules introduces an independent host-side writable connection or physical-close authority.
+
+### 42.5 Gateway, sharing and projection consumers preserve commit/lease boundaries
+
+New frozen identities:
+- `src/gateway/server.sessions.delete-state-lifecycle.test.ts@23d7e16ab48820eb4d694715ee12d6d3efb98187`
+- `src/config/sessions/session-sharing-store.test.ts@665628e7863614b463f797af79f35884a50a8160`
+- `src/gateway/session-row-projection.archived.test.ts@e98174fd9f24a76d7de4ec4329c7cb5618d2da56`
+
+Gateway deletion tests recheck exact entry generation, authorization and placement after asynchronous transcript materialization; post-commit placement retirement may happen during archive publication/worker queue without reclassifying the already committed deletion. Sharing-store tests join exited maintenance leases before fixture/store teardown and keep membership publication after the containing transaction. Archived row projection tests prove a committed removal can publish before a reentrant listener recreates the same key; the replacement survives and is what subsequent projection reads observe.
+
+### 42.6 Writer-owner attribution remains bounded to the real commit owner
+
+New frozen identity:
+- `src/config/sessions/session-accessor.sqlite-writer-owners.test.ts@aa6a3d6a374b88ba36dd0da83c3de4a54e4ff37f`
+
+The writer-owner oracles attribute lifecycle mutations to their actual inline/split commits, record archive-pruning writer stages separately, and coalesce automatic maintenance through native planning/finalization. Worker outcomes keep their native Worker identity and do not turn archive pruning or maintenance instrumentation into a second data owner.
+
+### 42.7 Recursive direct-consumer closure
+
+Module-path searches for `session-accessor.sqlite-archive-store`, `disk-budget-files`, `session-accessor.sqlite-reclamation-worker` and `session-accessor.sqlite-reclamation.js` were reconciled against the live dossier. Previously registered runtime callers/tests were not duplicated. The newly listed identities above close the remaining frozen-ref production/support/test consumers exposed by those module-level searches. Search-only configuration baselines and inventory scripts are not treated as shipping database owners.
+
+The resulting ownership boundary remains unchanged: canonical row mutation belongs to the existing agent/lifecycle writers; worker admission is retained until native settlement; archive publication and filesystem deletion are later/derived effects; retained workers are keyed and retired by exact database identity/lease; read workers and transformed SDK imports reuse existing ownership rather than creating parallel writers.
+
+No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. All tests above were read only at the frozen ref and were not executed. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, OCRM final acceptance and release acceptance remain absent.
