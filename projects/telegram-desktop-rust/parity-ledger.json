@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "5d72367fcf86a923e8a89c2568dc04b9e6eaa2ec",
+  "target_commit": "760f674d7e4f3dabbd40721481133b890d14f24a",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16215,
-    "unread": 16190,
+    "unknown": 16214,
+    "unread": 16189,
     "omitted": 0,
-    "responsibilities_total": 179,
+    "responsibilities_total": 180,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -47901,6 +47901,250 @@
       "license_and_provenance": "Exact Microsoft/GSL tests/assertion_tests.cpp@231befc7e415ec53daa09ced61d76505e6be5437 and include/gsl/assert@d3e6ccdd53d5a254ed3827cf07711a6e86bb4226 retained under MIT LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02; accepted tdesktop has broad Expects/Ensures production use, so no downstream caller release authority is inferred.",
       "reviewer": "primary-session",
       "notes": "Strict161 closes only Microsoft/GSL tests/assertion_tests.cpp as pre/postcondition dependency test provenance anchored to include/gsl/assert. The tests prove fail-closed termination for false Expects/Ensures and no-op continuation for true conditions; accepted tdesktop production code uses these macros broadly, so every caller remains independently open in its existing owner. Counters unknown=16,215 unread=16,190 omitted=0 responsibilities=179. Next strict162 Microsoft/GSL tests/at_tests.cpp@42b2241bfd472ab384c35267d2042c870edce4a5."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/GSL",
+      "source_blob_sha": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+      "source_kind": "recursive_child_repository_dependency_test_provenance",
+      "module_id": "tdesktop.thirdparty.gsl.at-tests",
+      "responsibility_id": "TDRP-R9-GSL-AT-BOUNDS-CHECK-TEST-PROVENANCE-001",
+      "source_symbols": [
+        "tests/at_tests.cpp@42b2241bfd472ab384c35267d2042c870edce4a5",
+        "include/gsl/util@26b2f5fb9d0d8c28c3096f50d575eb42a4b89bad",
+        "gsl::at(T (&arr)[N], index)",
+        "gsl::at(Cont&, index)",
+        "gsl::at(initializer_list<T>, index)",
+        "gsl::at(std::span<T, extent>, index) when C++20 span is available",
+        "negative index and index==size death cases",
+        "constexpr built-in/std::array/initializer_list coverage"
+      ],
+      "capability_ids": [
+        "CAP-BOUNDS-CHECKED-INDEX-TEST-PROVENANCE",
+        "CAP-DEPENDENCY-TEST-PROVENANCE",
+        "CAP-NATIVE-DEPENDENCY-REPLACEMENT"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "Microsoft/GSL:tests/at_tests.cpp@42b2241bfd472ab384c35267d2042c870edce4a5",
+        "Microsoft/GSL:include/gsl/util@26b2f5fb9d0d8c28c3096f50d575eb42a4b89bad",
+        "Microsoft/GSL:include/gsl/assert@d3e6ccdd53d5a254ed3827cf07711a6e86bb4226",
+        "Microsoft/GSL:tests/deathTestCommon.h@7bf242393f7bcff62c12cd985a87824f48f7bb0b",
+        "Microsoft/GSL:tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a",
+        "Microsoft/GSL:LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-at-tests-complete-read.md",
+      "behavior_contract": "Retain the exact bounds-checked indexing contract proved by the locked Microsoft/GSL at tests without shipping a GSL-shaped indexing runtime. gsl::at requires i >= 0 and i < size/extent before indexing. Built-in arrays additionally statically constrain N to a ptrdiff_t-representable extent; container and span overloads convert the checked index to the container size type only after the Expects guard. The tests prove valid indices preserve the referenced element for built-in arrays, std::array, std::vector and std::span, preserve values for initializer_list, reject negative and end-boundary indices by contract death, and support constexpr access for the covered forms. Accepted tdesktop has zero direct gsl::at consumers, so this row closes only dependency test provenance.",
+      "state_machine": "No long-lived helper state. Per access: receive caller-owned container/array/span plus signed gsl::index -> require index nonnegative and below current extent -> convert only after the check -> return the addressed element/reference or value; invalid negative or end-boundary index terminates through Expects. Built-in arrays also reject extents beyond ptrdiff_t representability at compile time.",
+      "side_effects": [
+        "Valid at() access returns the same element/reference identity for mutable/const array/container/span forms tested.",
+        "initializer_list access returns the selected value after the same signed bounds check.",
+        "Invalid index terminates rather than wrapping a negative signed index into an unsigned subscript or indexing the end sentinel.",
+        "No helper persistence, network, UI, account, retry or lifecycle side effect exists."
+      ],
+      "failure_cases": [
+        "Negative index converted to unsigned before validation.",
+        "Index equal to size/extent accepted as valid.",
+        "Replacing checked indexing with unchecked [] in a real caller without independently proving the caller invariant.",
+        "Inventing a GSLAtRuntime/global container owner despite zero accepted tdesktop direct consumers.",
+        "Treating two generic <gsl/util> includes as proof that gsl::at is consumed; those files may use other util helpers and must be assessed by actual symbol use."
+      ],
+      "ui_disposition": "No independent UI surface. Any visible effect of an actual indexing caller belongs to that caller's existing Fabushi owner and canonical surface.",
+      "non_ui_responsibilities": [
+        "exact GSL at test provenance",
+        "signed pre-index bounds validation",
+        "negative-index rejection",
+        "end-boundary rejection",
+        "container/array/span element identity semantics",
+        "constexpr test provenance",
+        "zero-direct-consumer accounting"
+      ],
+      "platform_delta": "Fabushi does not ship gsl::at. An independently discovered Rust caller should keep indexing/bounds responsibility in its actual existing domain owner and use native checked indexing/slice APIs or explicit range validation appropriate to the caller. No global compatibility helper is justified by this source-only row.",
+      "existing_owner_candidates": [
+        "TDRP source/dependency inventory and test-provenance owner (selected for this child-source accounting)",
+        "Actual existing Rust/domain owner of any independently discovered indexed-access consumer (selected for caller semantics)",
+        "Existing repository quality/test-evidence governance (selected for source-test traceability)",
+        "new GSLAtRuntime or global container/index owner (rejected)"
+      ],
+      "existing_owner": "Existing TDRP source/dependency inventory and test-provenance owner; any real indexed-access behavior remains with the independently migrated existing Rust/domain caller",
+      "rejected_existing_owners": [
+        "A GSL-shaped at compatibility runtime would preserve helper API shape rather than product responsibility.",
+        "A global container/index owner would detach bounds and failure semantics from the actual domain state owner.",
+        "Accepted tdesktop dev has zero direct gsl::at consumers, so no caller-specific production owner is justified by this row."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md"
+      ],
+      "fabushi_target_symbols": [
+        "安全原因不保留某个具体实现手段时，仍需等价安全产品行为及明确审查；没有实现就是 blocked，不是通过。"
+      ],
+      "target_language": "Source-only GSL bounds-check test provenance plus native Rust checked indexing inside actual existing owners; no shipping GSL compatibility API",
+      "language_rationale": "The source is a dependency qualification test for a small bounds-check helper. Rust already provides signed/range validation and checked slice/container access in the actual caller; reproducing a global GSL utility layer would create a parallel abstraction.",
+      "command_event_contracts": [
+        "source mapping -> retain exact at test/header blobs, bounds behavior and MIT provenance",
+        "real caller -> validate/retain its actual index invariant in the existing Rust/domain owner",
+        "negative index or index >= current size -> fail before successful element access according to the caller's required fail-closed contract",
+        "generic gsl/util include without gsl::at symbol use -> do not infer or close an at caller"
+      ],
+      "state_owner": "No helper-owned persistent state. Container/index state belongs to the actual independently migrated caller.",
+      "lifecycle_owner": "No helper-owned lifecycle. Container lifetime and mutation ownership belong to the actual caller.",
+      "persistence_and_restart": "No at-test persistence or restart semantics. Durable data remains in existing canonical owners.",
+      "concurrency_and_cancellation": "No helper-level async/concurrency/cancellation contract. A concurrent real caller must independently own synchronization, generation fencing and container lifetime.",
+      "security_boundary": "Bounds checking prevents negative/end out-of-range access at this helper boundary but does not establish authorization, semantic validity, synchronization or trust of container contents. Checked indexing must remain caller-scoped.",
+      "network_service_dependencies": [
+        "GitHub Actions for exact-head revalidation"
+      ],
+      "service_owner": "No shipping service.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-replaced-mapped-open",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required after strict162 publication.",
+        "Source closure, all production implementation and independent release acceptance remain open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "strict162 tests/at_tests.cpp@42b2241bfd472ab384c35267d2042c870edce4a5 fully read: 174 line slots / 5604 bytes",
+        "include/gsl/util@26b2f5fb9d0d8c28c3096f50d575eb42a4b89bad fully read: 172 line slots / 5222 bytes; each at overload performs Expects(i >= 0 && i < extent/size) before conversion/subscript",
+        "at_tests.cpp covers mutable/const built-in arrays, std::array, std::vector, initializer_list, C++20 std::span when available, negative/end-boundary death, and constexpr access",
+        "supporting deathTestCommon.h@7bf242393f7bcff62c12cd985a87824f48f7bb0b fully read and tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a registers at_tests.cpp",
+        "Microsoft/GSL LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02 confirms MIT",
+        "accepted tdesktop dev code search returned zero direct gsl::at and zero using gsl::at consumers; two <gsl/util> includes do not establish at usage",
+        "GSL gitlink 87f9d768866548b5b86e72be66c60c5abd4d9b37; child tree 6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41",
+        "Live main fb1189efd9d85c650864d6987ea8fb68c913558d/1a1ef09be4c9fd801354439a5b82cc460f0b4b6a and upstream dev a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5 rechecked immediately before strict162 publication",
+        "Parent exact-head 760f674d7e4f3dabbd40721481133b890d14f24a: TDRP 40053896937 completed 61/61 success; authority 12544532413 sha256:77aba723f1859c68608c5f34c5660f6c1c17882a2465dd8d847c89bdcf102700; closure 12544337666 sha256:7cfbfae914e3041d9ab8c618f4d694abdf4893315ab6d5b8c12c1718b30f73f0; reachability 12544557978 sha256:274037a3db36d9aa539e56a17e616cc2d653303567cc19bc2148d93d2e514ce5; Rust 40053896993 completed 6/6 success; artifact 12544806414 sha256:4a659ee10c2c40e1348f93438c3777f2a079d6f97dd722c21e2972483fd83134.",
+        "Superseded strict161 publication e35c414440048cdecf4489df72f0c5df919f9074: TDRP 40053570607 completed failure with 58 success / 1 failure / 2 skipped; Source authority job 120751406554 failed exactly because strict161 reused the strict160 target symbol without an explicit split. Rust 40053570606 completed cancelled with 5 success / 1 cancelled. Repair commit 760f674d7e4f3dabbd40721481133b890d14f24a changed only parity-ledger.json to a unique target symbol; fresh exact-head TDRP/Rust then became fully green."
+      ],
+      "target_commit": "760f674d7e4f3dabbd40721481133b890d14f24a",
+      "workflow_run": 40053896937,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12544532413,
+      "artifact_digest": "sha256:77aba723f1859c68608c5f34c5660f6c1c17882a2465dd8d847c89bdcf102700",
+      "composition_root": "Fabushi source/dependency test-provenance governance plus the actual existing Rust/domain owner for any independently discovered indexed-access consumer",
+      "composition_slot": "bounds-checked indexing dependency test provenance only",
+      "capability_component": "Source-only GSL at bounds-check tests; no shipping compatibility runtime",
+      "variation_axes": [
+        "built-in array versus std::array versus std::vector versus initializer_list versus std::span",
+        "mutable versus const reference forms",
+        "valid index versus negative index versus index==size",
+        "runtime versus constexpr coverage"
+      ],
+      "shared_owner_contracts": [
+        "TDRP source/dependency inventory",
+        "dependency replacement and provenance governance",
+        "actual existing Rust/domain caller ownership when independently evidenced",
+        "exact-head TDRP/Rust evidence"
+      ],
+      "duplicate_root_check": "No GSLAtRuntime, second container model, global index owner or bulk util-caller closure authority.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "No independent product action; this row records dependency test behavior only.",
+      "detail_section": "Not applicable",
+      "capability_surface": "Exact source/dependency test accounting only; no shipping UI/runtime surface.",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Any accepted tdesktop/GSL gitlink, child-tree, at test/util header/license/build-registration or gsl::at consumer-set drift requires fresh reconciliation; actual callers remain independently open.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-GSL-AT-BOUNDS-CHECK-TEST-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GSL-AT-EXACT-SOURCE-001",
+        "ORA-TDRP-GSL-AT-VALID-IDENTITY-001",
+        "ORA-TDRP-GSL-AT-BOUNDS-DEATH-001",
+        "ORA-TDRP-GSL-AT-NO-DIRECT-CONSUMER-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GSL-AT-CHECK-BEFORE-CONVERSION-001",
+        "INV-TDRP-GSL-AT-END-EXCLUSIVE-001",
+        "INV-TDRP-GSL-AT-NO-PARALLEL-RUNTIME-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GSL-AT-BOUNDS-001",
+        "CONTRACT-TDRP-GSL-AT-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GSL-AT-SOURCE-DRIFT-001",
+        "FAULT-TDRP-GSL-AT-UNSIGNED-WRAP-001",
+        "FAULT-TDRP-GSL-AT-BULK-CALLER-CLOSURE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-GSL-AT-BOUNDS-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-GSL-AT-NO-SOURCE-OMISSION-001",
+        "REG-TDRP-GSL-AT-NO-PARALLEL-RUNTIME-001",
+        "REG-TDRP-GSL-AT-NO-UNCHECKED-SUBSTITUTION-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-BEHAVIOR",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "locked GSL at tests + util/assert headers + death-test/build registration + MIT license + zero-direct-consumer search + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact Microsoft/GSL tests/at_tests.cpp@42b2241bfd472ab384c35267d2042c870edce4a5 and include/gsl/util@26b2f5fb9d0d8c28c3096f50d575eb42a4b89bad retained under MIT LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02; accepted tdesktop has zero direct gsl::at consumers, so no downstream caller release authority is inferred.",
+      "reviewer": "primary-session",
+      "notes": "Strict162 closes only Microsoft/GSL tests/at_tests.cpp as bounds-checked indexing dependency test provenance anchored to include/gsl/util. The tests prove valid identity/value access, negative/end-boundary fail-closed behavior and constexpr coverage; accepted tdesktop has zero direct gsl::at consumers, so no product caller or runtime is closed. Counters unknown=16,214 unread=16,189 omitted=0 responsibilities=180. Next strict163 Microsoft/GSL tests/byte_tests.cpp@634dcc90773e7144a127e29a2d49ce94b816e596."
     }
   ]
 }
