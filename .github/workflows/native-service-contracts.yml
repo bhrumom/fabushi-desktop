@@ -1,0 +1,47 @@
+name: Native service contracts
+on:
+  pull_request:
+    paths:
+      - 'source/host/src/extensions/auth/**'
+      - 'source/host/src/extensions/automations/**'
+      - 'source/host/tests/extensions_auth_service_contract.rs'
+      - 'source/host/tests/extensions_auth_credential_renewer_contract.rs'
+      - 'source/host/tests/automations_backend_contract.rs'
+      - 'source/host/tests/native_automation_transport_contract.rs'
+      - '.github/workflows/native-service-contracts.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-auth-and-journal:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - name: Bind exact source
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: source/host -> target
+          shared-key: fdn-host-control-owner-contracts-ubuntu-1.97.1
+      - name: Install existing Linux native dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
+      - name: Native credentials, issuer and HTTP journal contracts
+        run: >-
+          cargo test --manifest-path source/host/Cargo.toml
+          --test extensions_auth_service_contract
+          --test extensions_auth_credential_renewer_contract
+          --test automations_backend_contract
+          --test native_automation_transport_contract
+      - name: Record evidence scope
+        run: |
+          git rev-parse HEAD >> "$GITHUB_STEP_SUMMARY"
+          echo 'Native credential and loopback HTTP transport evidence only; no deployed-cloud, full lifecycle or packaged-platform acceptance.' >> "$GITHUB_STEP_SUMMARY"
