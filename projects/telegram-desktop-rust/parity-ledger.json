@@ -5,7 +5,7 @@
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
   "target_commit": "584dc11ecd07fd6431e8c876bf9508e1f3436a43",
   "coverage": {
-    "source_entries_total": 16380,
+    "source_entries_total": 16379,
     "unknown": 16212,
     "unread": 16187,
     "omitted": 0,

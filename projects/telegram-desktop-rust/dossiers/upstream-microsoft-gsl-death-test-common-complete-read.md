@@ -53,6 +53,6 @@ Oracles: `ORA-TDRP-GSL-DEATH-TEST-COMMON-EXACT-SOURCE-001`, `ORA-TDRP-GSL-DEATH-
 
 Invariants: `INV-TDRP-GSL-DEATH-TEST-COMMON-TESTS-ONLY-001`, `INV-TDRP-GSL-DEATH-TEST-COMMON-NO-PARALLEL-RUNTIME-001`, `INV-TDRP-GSL-DEATH-TEST-COMMON-NO-BULK-CALLER-CLOSURE-001`.
 
-Counters before strict164: source entries 16,379; unknown 16,213; unread 16,188; omitted 0; responsibilities 181. After this one source entry: source entries 16,380; unknown 16,212; unread 16,187; omitted 0; responsibilities 182. `baseline_identity_accepted=false`, `source_closure_ready=false`, and independent release acceptance remain open.
+Counters before strict164: source entries 16,379; unknown 16,213; unread 16,188; omitted 0; responsibilities 181. After this one source entry is accounted: source entries remain 16,379; unknown 16,212; unread 16,187; omitted 0; responsibilities 182. `baseline_identity_accepted=false`, `source_closure_ready=false`, and independent release acceptance remain open.
 
 Next: strict165 `Microsoft/GSL tests/no_exception_ensure_tests.cpp@5fde41cf2f307830c07d592819c7baed5d59d40d`, as a separate test-provenance row and without a global no-exception/span runtime.

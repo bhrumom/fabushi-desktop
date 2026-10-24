@@ -360,7 +360,7 @@
   },
   "coverage": {
     "root_source_entries_total": 6893,
-    "recursive_source_entries_total": 16380,
+    "recursive_source_entries_total": 16379,
     "unknown_minimum": 16212,
     "unread_minimum": 16187,
     "omitted_known": 0,
@@ -1815,7 +1815,7 @@
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
-    "recursive_total": 16380,
+    "recursive_total": 16379,
     "open": {
       "authorities": 95,
       "gitlinks": 133,
