@@ -5842,3 +5842,56 @@ Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e7
 
 Immediately before this append, the live branch lease was `5b78efd5a9b52345a3a2c92c50b90b9a04ffc24e`, tree `608ab541553581e0bab7fe4fe777f9f57632dfe8`, dossier blob `cfa71f790f2262f1c71524ede8241951b1f86527`, 5,801 lines, with zero Section 86 and all eight exact refs above at zero occurrences. This pass remains evidence-only: no Actions were started or rerun, and no production code, ledger, RTM, flags, source lock, inventory, or source baseline was modified.
 - The requested predecessor-public-id -> restart session-delivery identity -> settlement -> physical Cron alias deletion -> public exact-run terminal-read oracle is still not established. Independent ACCEPT, scoped G01/G02 evidence, Rust implementation/wiring completion, package/device proof, release acceptance, and final OCRM acceptance remain open.
+
+## Section 87 — requester-settle durability stays synthetic; session-delivery producers still do not bridge public Cron run identity
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`. This pass follows Section 86 through requester claim/yield persistence, requester-settle identity, session-delivery producer fields, exact Cron continuation-key parsing, and the two unchanged focused-oracle frontiers. The following exact refs were absent from the complete dossier before this append:
+
+- `src/agents/subagents/registry/subagent-requester-settle-identity.ts@286f11ac1fa6ca69bcbfabed5ace0656b51cb839`
+- `src/agents/subagents/registry/subagent-requester-settle-identity.test.ts@aac69b342748270a6d34393125694a693a19f533`
+- `src/agents/subagents/registry/subagent-registry-requester-claim.ts@12e5baf4e6a76e4f2cd91d871cb71b6411cf2942`
+- `src/agents/subagents/registry/subagent-registry-requester-yield.ts@a26de4ad17fc41605e89d79086f5ccbe598f0d24`
+- `src/agents/subagents/announce/subagent-announce.requester-settle-wake.ts@2c35d5b83efe77ddaf040e9332433f9d7c53f002`
+- `src/agents/subagents/announce/subagent-announce-controller-source.ts@caff38b52e9937b0f8ef1041868215720b6856aa`
+- `src/agents/subagents/announce/subagent-announce-delivery.ts@076340ab4f12f74cb8556b0a34b733725c51a6c4`
+- `src/gateway/server-restart-sentinel-continuation-intent.ts@985d29f7c5d47bdf98cf0261a1d8f73e2d5c160c`
+- `src/sessions/input-provenance.ts@a113a1dfc2538927c1a35b1fef1ed866f9bd6844`
+- `src/sessions/session-key-utils.ts@23e5152bdd2694ed46dc0a5241b2dc194721dc33`
+
+### 87.1 Requester claim/yield durability preserves the child cohort, not the public Cron request id
+
+- `subagent-registry-requester-claim.ts` derives `requesterTurnRunId` from `params.requesterRunInstance.runId`, selects durable child rows by requester session/agent/turn, and rebuilds accepted spawns from each child `taskRunId ?? runId` plus `childSessionKey`. That is the operational requester-turn identity already separated from the public Cron request/history id in Section 86.
+- `subagent-registry-requester-yield.ts` makes the handoff durable in one registry transaction. A yielded cohort persists `requesterSettleWake` with its frozen `batchRunIds`, `requesterYieldBatch`, `rearmGeneration`, attempt state, and optional progress/final markers. The same transfer later clears `requesterTurnRunId` and `requesterTurnYielded` when the cohort is released. No field in that durable wake copies a Cron public request/history run id.
+- This closes the claim/yield candidate as another false join: restart durability retains child-run membership and generation rather than retaining the predecessor's public Cron history identity.
+
+### 87.2 The durable requester-settle run id is synthesized from requester plus child batch
+
+- `subagent-requester-settle-identity.ts` derives a `batchKey` from requester agent, requester session key, sorted child run ids, optional yield generation, and optional pause marker. It then creates the continuation `runId` through the announce idempotency-key builder, with retry suffixes when required. Its captured run identity includes child `runId`/`taskRunId`, requester/controller session facts, and `requesterTurnRunId`, but no Cron request/history id.
+- `subagent-requester-settle-identity.test.ts` is the focused oracle for this namespace: it expects synthetic identities of the `announce:requester-settle:...` family and checks retry/yield/pause evolution. The identity is therefore reproducible from the requester/child cohort, not inherited from the public Cron run namespace.
+- `subagent-announce.requester-settle-wake.ts` uses that synthetic identity as `directIdempotencyKey` (or a recovered receipt for the same identity), stores it in retained private input, reserves the controller source with it, and passes it through continuation and settlement. `subagent-announce-controller-source.ts` resolves recovery custody only against those same synthetic `runId`/`retainedRunId` values in main-session restart-recovery evidence. Section 86 already established that main restart recovery rejects Cron session keys, so this path cannot import an unrelated public Cron history id.
+
+### 87.3 A generic provenance runId exists, but the inspected durable queue producers do not populate it with the public Cron id
+
+- `input-provenance.ts` permits optional `jobId` and `runId`, so it was a plausible durable cross-index candidate. The production queue producers inspected here do not use it that way.
+- `subagent-announce-delivery.ts` builds the durable agent-turn handoff with the canonical requester `sessionKey`, a message/idempotency key derived from the requester-settle identity, and inter-session provenance containing only `sourceSessionKey`, `sourceChannel`, and `sourceTool`. When correlated delivery is used, its owner remains the already registered child subagent run/task/generation owner; otherwise the generic queue row has no additional Cron-history owner.
+- `server-restart-sentinel-continuation-intent.ts` likewise persists the passed session key and a restart-sentinel session/kind/revision idempotency identity, plus optional expected session/route/delivery context. It does not add a public Cron request/history id, a correlated Cron-history owner, or an input-provenance run id.
+- Together with the already registered queue schema and completion-owner writers, no inspected producer writes the public Cron request/history run id into queued `entry.sessionKey`, requester binding, input provenance, or correlated owner.
+
+### 87.4 The exact Cron continuation suffix is a session-id namespace
+
+- `session-key-utils.ts` names the parsed terminal `:run:<value>` component `runId`, but that is a lexical parser field. The already registered `run-prepare.ts` constructs the actual exact key as `${agentSessionKey}:run:${runSessionId}`, where `runSessionId` is `cronSession.sessionEntry.sessionId`.
+- Combined with Section 86's operational `randomUUID()` agent-run identity and the separately persisted public Cron request/history run id, the frozen source therefore exposes three distinct namespaces: public Cron run identity, operational agent-turn run identity, and exact continuation session identity.
+- The already registered `run-continuation-cleanup.ts` owns physical exact-alias deletion. It gates on that exact Cron session suffix and checks pending session-delivery rows by identical `entry.sessionKey` (excluding the currently settled delivery id); it never joins cleanup to the public Cron request/history id.
+
+### 87.5 The requested integrated, remote-Stop, and plugin-publication frontiers remain open
+
+- Re-reading the frozen Gateway surface still finds no direct `sessions.processes.stop` oracle in which a remote Stop is in flight, `placementGeneration` or `activeOwnerEpoch` is replaced, the old worker returns late success, and the Gateway server directly rejects that success. The existing focused late-response test still holds a `sessions.processes.list` reply; the Stop checks are separate.
+- Plugin-native admission still has the same two registered production plural `settlePluginNativeAdmissions` users: generation preparation and prepared-model runtime construction. The generation worker remains on singular `settlePluginNativeAdmissionState`; failed publication intent remains admission-owned for later settlement, and no distinct failed-publication receiver handoff or third production plural caller was found.
+- No frozen focused fixture was found that carries one predecessor public Cron request/history run id through restart session-delivery recovery, real `settleQueuedSessionDelivery`, real `removeCronRunContinuationSessionIfIdle` physical exact-alias deletion, and a subsequent public `cron.runs { id, runId, limit: 1 }` terminal read. The integrated oracle remains absent.
+
+### 87.6 Dedupe, lease, and scope
+
+Immediately before this append, the live branch lease was `55ee303c585c4c2780cca9dfac511dae6a0fa45d`, tree `061dd7389cc269161063ce1384789c866628447f`, dossier blob `f1a31175f17647b210f05a6274920b614f7dc21b`, with 5,845 lines, one Section 86, zero Section 87, and all ten exact refs above at zero occurrences. This pass remains evidence-only: no Actions were started or rerun, and no production code, ledger, RTM, flags, source lock, inventory, or source baseline was modified.
+
+- The requested predecessor-public-id -> restart session-delivery identity -> settlement -> physical Cron alias deletion -> public exact-run terminal-read oracle is still not established. The direct Gateway remote-Stop replacement late-success oracle and a distinct plugin failed-publication receiver/new plural settlement caller also remain absent. Independent ACCEPT, scoped G01/G02 evidence, Rust implementation/wiring completion, package/device proof, release acceptance, and final OCRM acceptance remain open.
+
