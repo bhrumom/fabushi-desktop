@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "a67a56cb4073d375629bb0d325b20a4dcf26257b",
+  "target_commit": "12b2e83954cc1605d680ff6ade507047949a1384",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16192,
-    "unread": 16167,
+    "unknown": 16191,
+    "unread": 16166,
     "omitted": 0,
-    "responsibilities_total": 202,
+    "responsibilities_total": 203,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -53291,6 +53291,254 @@
       "license_and_provenance": "Exact pinned example CMake retained as dependency provenance. Root MIT plus separate resource-license boundary preserved.",
       "reviewer": "primary-session",
       "notes": "Strict184 optional example CMake provenance. Counters unknown=16192 unread=16167 omitted=0 responsibilities=202. BUILD_EXAMPLE defaults OFF; direct example source remains independently unread; production closure open."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/MicroTeX",
+      "source_blob_sha": "61aaa7cc354de91d5898ffb0b2a6c62628d9a76f",
+      "source_kind": "recursive_child_repository_optional_example_cli_qt_render_png_provenance",
+      "module_id": "tdesktop.thirdparty.microtex.example-latex2png",
+      "responsibility_id": "TDRP-R9-MICROTEX-EXAMPLE-LATEX2PNG-PROVENANCE-001",
+      "source_symbols": [
+        "desktop-app/MicroTeX:example/latex2png.cpp@49d80c656e8437e56cf50cccbad451fa2ae46c91",
+        "QGuiApplication app(argc, argv)",
+        "TexGuard -> tex::LaTeX::init()/release()",
+        "argc==3; usage/missing/open/save failures -> exits 1/2/3/4",
+        "LaTeX::parse(width=600,textSize=20,lineSpace=20/3.f,fg=0xff424242)",
+        "QPixmap(render width,height) -> white fill -> QPainter antialias -> Graphics2D_qt -> TeXRender::draw(0,0)",
+        "QPixmap::save with .png suffix normalization",
+        "accepted tdesktop shipping uses external_microtex/td_iv bounded QImage renderer"
+      ],
+      "capability_ids": [
+        "CAP-DEPENDENCY-SOURCE-PROVENANCE",
+        "CAP-DEPENDENCY-OPTIONAL-EXAMPLE-PROVENANCE",
+        "CAP-DEPENDENCY-QT-RENDER-PROVENANCE"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/MicroTeX@61aaa7cc354de91d5898ffb0b2a6c62628d9a76f",
+        "desktop-app/MicroTeX:example/latex2png.cpp@49d80c656e8437e56cf50cccbad451fa2ae46c91",
+        "desktop-app/MicroTeX:example/CMakeLists.txt@cd997be0b043913d17c49c1e1e2c50df2c5d6942",
+        "desktop-app/MicroTeX:src/latex.h@0608e92d3b4821fb8cf5c402014f31c1692f014f",
+        "desktop-app/MicroTeX:src/latex.cpp@9ed2d29525b057943da537e8d2dd9e3afedc45b2",
+        "desktop-app/MicroTeX:src/platform/qt/graphic_qt.h@777faa8d7dd18695fb4b42f4a2992c4f913c79d4",
+        "desktop-app/MicroTeX:src/render.cpp@e58454a430f08cefbc1330482e12c709902bc699",
+        "desktop-app/cmake_helpers:external/microtex/CMakeLists.txt@a1f479d2833bbb0cf0e007ee8fd33a40c10d9334",
+        "telegramdesktop/tdesktop:Telegram/cmake/td_iv.cmake@ec39405fc3c7bec58f8acb42aa49ed69c60d1b30",
+        "telegramdesktop/tdesktop:Telegram/SourceFiles/iv/markdown/iv_markdown_microtex.cpp@5c854b265e6dc67c1c500a72e04fa58b7fc6c3a2",
+        "telegramdesktop/tdesktop:Telegram/SourceFiles/iv/markdown/iv_markdown_math_renderer.cpp@46864b7ce87207c6e57b6bcc7610337120580bea",
+        "telegramdesktop/tdesktop:Telegram/CMakeLists.txt@2ea9badfc5750b9b4eab111052faafe946fea277",
+        "desktop-app/MicroTeX:README.md@824af04fd8607532efed3f73752b81e5093577ef",
+        "desktop-app/MicroTeX:LICENSE@78a9eca5ca3514f2fd0a2e81018eeb8ae7d981a2"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microtex-example-latex2png-complete-read.md",
+      "behavior_contract": "Source-only optional example CLI/render provenance. QGuiApplication establishes Qt GUI facilities; TexGuard brackets LaTeX init/release; exact argc/file/save failures are sample exits; parse/render paints to a white QPixmap and saves PNG. Accepted tdesktop shipping uses separately bounded bundled-resource QImage/cache behavior.",
+      "state_machine": "process start -> QGuiApplication -> LaTeX init -> argc validation -> input exists/open -> readAll -> parse -> render dimensions -> QPixmap/QPainter/Graphics2D_qt draw -> save -> 0; exits 1/2/3/4 for usage/missing/open/save; TexGuard releases on stack unwinding.",
+      "side_effects": [
+        "Initializes/releases MicroTeX globals for sample",
+        "Reads one TeX file",
+        "Allocates and paints QPixmap",
+        "Writes PNG",
+        "No Fabushi product side effect"
+      ],
+      "failure_cases": [
+        "argc != 3",
+        "input missing",
+        "input open failure",
+        "parse/draw/allocation exceptions not translated by sample",
+        "QPixmap save false",
+        "sample behavior mistaken for shipping contract"
+      ],
+      "ui_disposition": "Not a Fabushi product UI source; standalone upstream Qt CLI example only.",
+      "non_ui_responsibilities": [
+        "QGuiApplication setup",
+        "LaTeX init/release RAII",
+        "CLI/file failure semantics",
+        "fixed parse sizing",
+        "TeXRender dimensions",
+        "Graphics2D_qt/QPixmap painting",
+        "PNG save result mapping",
+        "shipping-owner separation"
+      ],
+      "platform_delta": "Qt example provenance only; shipping tdesktop uses bundled resources, caps, exception containment, DPR-aware QImage and cache.",
+      "existing_owner_candidates": [
+        "Existing TDRP recursive source/dependency optional-example provenance governance (selected)",
+        "Shipping formula/render/resource/platform/package owners (rejected)",
+        "MicroTeXExampleRuntime/Latex2PngService/second image pipeline (rejected)"
+      ],
+      "existing_owner": "Existing TDRP recursive source/dependency optional-example provenance governance.",
+      "rejected_existing_owners": [
+        "Shipping owner semantics are stronger and separate.",
+        "Parallel sample runtime would preserve upstream demo architecture.",
+        "Second image/render root would duplicate canonical ownership."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/dossiers/upstream-microtex-example-latex2png-complete-read.md"
+      ],
+      "fabushi_target_symbols": [
+        "TDRP_MICROTEX_EXAMPLE_LATEX2PNG_PROVENANCE_001"
+      ],
+      "target_language": "Source-only C++ optional-example provenance; no shipping implementation.",
+      "language_rationale": "The target is third-party demonstration code, not a product implementation to mechanically port.",
+      "command_event_contracts": [
+        "argc==3",
+        "append .png when absent",
+        "missing/open/save -> 2/3/4",
+        "parse fixed sample sizing",
+        "production td_iv remains separate",
+        "example cannot authorize release closure"
+      ],
+      "state_owner": "Sample process stack plus MicroTeX globals only; no Fabushi product state.",
+      "lifecycle_owner": "TexGuard in optional sample; shipping lifecycle remains Iv::Markdown bundled initialization.",
+      "persistence_and_restart": "Only input file read and output PNG write.",
+      "concurrency_and_cancellation": "Synchronous sample flow; no product concurrency contract.",
+      "security_boundary": "Whole-file sample input and uncaught parse/draw failures are provenance only, not accepted shipping limits.",
+      "network_service_dependencies": [
+        "GitHub Actions for exact-head Fabushi evidence"
+      ],
+      "service_owner": "Third-party optional example only; not a Fabushi service owner.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-optional-example-cli-qt-render-png-provenance-mapped-open",
+      "blockers": [
+        "No production closure.",
+        "Shipping external_microtex/td_iv responsibilities remain open.",
+        "Broader recursive source closure remains open.",
+        "Fresh receipt-head Actions required."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "example/latex2png.cpp@49d80c656e8437e56cf50cccbad451fa2ae46c91 fully read: 76 line slots / 1,733 characters.",
+        "latex.h/latex.cpp/graphic_qt.h/render.cpp direct boundaries re-read at pinned MicroTeX.",
+        "Pinned MicroTeX tree truncated=false with 315 entries / 279 blobs.",
+        "Pinned external_microtex, td_iv, iv_markdown_microtex, iv_markdown_math_renderer and Telegram RCC packaging re-read.",
+        "Parent 12b2e83954cc1605d680ff6ade507047949a1384: TDRP 40106609346 61/61, Rust 40106609299 6/6, Official MCP 40106609306 1/1 success."
+      ],
+      "target_commit": "12b2e83954cc1605d680ff6ade507047949a1384",
+      "workflow_run": 40106609346,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12565055929,
+      "artifact_digest": "sha256:82d3588d769150942ce963df104c50a166371c97667f35b77f6dcab9d988b0e8",
+      "composition_root": "Existing TDRP recursive source/dependency optional-example provenance governance.",
+      "composition_slot": "Optional dependency example CLI/render provenance only; no shipping slot.",
+      "capability_component": "MicroTeX latex2png example provenance; no shipping runtime.",
+      "variation_axes": [
+        "argc valid/invalid",
+        "input exists/openable vs missing/open failure",
+        "output suffix present/absent",
+        "PNG save success/failure",
+        "optional sample vs accepted tdesktop shipping runtime"
+      ],
+      "shared_owner_contracts": [
+        "TDRP recursive inventory/source provenance governance",
+        "Pinned MicroTeX gitlink/tree",
+        "Pinned cmake_helpers external_microtex production boundary",
+        "Pinned td_iv production consumer boundary",
+        "Exact-head Actions evidence",
+        "Shipping owners remain separate"
+      ],
+      "duplicate_root_check": "No MicroTeXExampleRuntime, Latex2PngService, TelegramRenderer, second application shell, second image pipeline or second build graph.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "No product action; optional dependency example provenance only.",
+      "detail_section": "Not applicable",
+      "capability_surface": "Source-only dependency optional example; no shipping surface.",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Any target blob, LaTeX/render/Qt dependency, example build gate, external_microtex or td_iv shipping boundary drift requires exact-ref reconciliation.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No icon change.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-MICROTEX-EXAMPLE-LATEX2PNG-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MICROTEX-LATEX2PNG-EXACT-SOURCE-001",
+        "ORA-TDRP-MICROTEX-LATEX2PNG-CLI-FAILURES-001",
+        "ORA-TDRP-MICROTEX-LATEX2PNG-RENDER-BOUNDARY-001",
+        "ORA-TDRP-MICROTEX-LATEX2PNG-SHIPPING-SEPARATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MICROTEX-LATEX2PNG-NO-PARALLEL-RUNTIME-001",
+        "INV-TDRP-MICROTEX-LATEX2PNG-PRODUCTION-RESPONSIBILITIES-NOT-CLOSED-001",
+        "INV-TDRP-MICROTEX-LATEX2PNG-FAILURE-SEMANTICS-SAMPLE-ONLY-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MICROTEX-LATEX2PNG-PINNED-SOURCE-001",
+        "CONTRACT-TDRP-MICROTEX-LATEX2PNG-OPTIONAL-BUILD-BOUNDARY-001",
+        "CONTRACT-TDRP-MICROTEX-LATEX2PNG-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-MICROTEX-LATEX2PNG-SOURCE-DRIFT-001",
+        "FAULT-TDRP-MICROTEX-LATEX2PNG-EXAMPLE-PROMOTION-001",
+        "FAULT-TDRP-MICROTEX-LATEX2PNG-PRODUCT-PROMOTION-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "Pinned MicroTeX example/runtime source tree",
+        "Pinned tdesktop MicroTeX/cmake_helpers production boundary",
+        "GitHub Actions exact-head evidence"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact pinned latex2png.cpp retained as optional example provenance. Root MIT plus separate resource-license boundary preserved.",
+      "reviewer": "primary-session",
+      "notes": "Strict185 optional latex2png CLI/render provenance. Counters unknown=16191 unread=16166 omitted=0 responsibilities=203. Production external_microtex/td_iv responsibilities remain separate and open."
     }
   ]
 }
