@@ -1390,3 +1390,185 @@ The same missing `cron.inference-binding.test-support.ts` moving-default path is
 This continuation removes the 100-result ambiguity for the gateway subfamilies above and records the exact frozen identities and negative oracles. It does **not** establish repository-global closure: `extensions` remains a capped family for state close (160 moving-default hits) and must be split by extension family; additional indirect/dynamic lifecycle wrappers outside the searched symbols can still exist. Direct `withSqliteSnapshotSource` discovery under `src/gateway` and `extensions` returned zero, so no gateway/extension snapshot-source caller is inferred from those queries.
 
 Independent ACCEPT, scoped G01/G02 positive evidence, `unit_authority_ready`, executable/package proof, OCRM final acceptance, and release acceptance remain absent. No Actions, build, test, generator, package, production code, ledger, RTM, or flags were run or modified. This remains source/oracle provenance only.
+
+## 21. Round81 continuation — extension page-2 and snapshot-source closure
+
+This section appends only evidence absent from the live Round87 dossier at branch head 343f5235216bff71bb1172598974d602a6dd793a. It does not repeat the gateway cluster identities added by the concurrent Round81 writer. All source identities below were re-read at frozen upstream openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70.
+
+### 21.1 Shipping close owner and exact shutdown order
+
+New production identities absent from the prior dossier:
+- src/gateway/server-close.ts@7d579c6f40580d2d1f90d3910bea7d969fffac60
+- src/shared/global-singleton.ts@92c598b9c0e835ac80c39b48c55f97a062e6929
+- src/gateway/server-close.agent-databases.test.ts@d7f1c8468451d65ba2e7c5117ad9ceb68840d
+- src/gateway/server-plugin-reload.recovery.test.ts@3b2d747bf5ff73a48acfa47e753ae2c35404ef69
+
+server-close.ts first drains accepted Gateway, channel, runner, transport, provider, socket, request, transcript-worker, plugin and cleanup work. Its terminal retirement sequence then closes agent databases with closeOpenClawAgentDatabasesAsync and only afterward calls drainGlobalSingletonLifecycleState. The already-anchored state DB cache registers the state database under the shared-state singleton lifecycle, so the later singleton drain is the shipping shared-state close. This proves the product ordering directly: agent DB native close and durable lease release occur while shared state is still available; process-wide shared state retires afterward. Close errors are accumulated and surfaced, not silently collapsed into success.
+
+server-close.agent-databases.test.ts proves accepted work joins before actor/database retirement and that new work is refused while the root drains. server-plugin-reload.recovery.test.ts proves a stale lifecycle getter cannot mutate a replacement scheduler. This is production owner evidence; extension direct-close imports below remain test cleanup/oracle evidence.
+
+### 21.2 Extension capped callers exact-ref reconciled by family
+
+The moving-default closeOpenClawStateDatabaseAsync extension query returned 160 results and later 163 while the audit was running. That drift is why search remained candidate discovery only. The broad set was split by extension family below the 100-result cap and each positive path was exact-ref read. No extension production module was found directly owning process-wide state/agent DB close.
+
+Codex exact identities:
+- extensions/codex/src/session-catalog-cold-native.test.ts@d1f1c7c4a397e603f33341490be729bab6d5ceef
+- extensions/codex/src/app-server/run-attempt.reasoning-effort.test.ts@be05d1485870c93ccb9921df87d504ee463c3473
+- extensions/codex/src/session-catalog-ephemeral.test.ts@46dd707d2630fe68c1d6656770bf84783bfd4172
+- extensions/codex/index.test.ts@fe825a0b262a61e8ab53d56f2324bf278c963064
+- extensions/codex/src/app-server/run-attempt-session-owners.test-support.ts@7b80baef553aa67fe26ce8da4eb6010c1a9d5f2f
+- extensions/codex/src/app-server/dynamic-tool-build.test-support.ts@57f50d8fbb854171e36dca2d249cdf9c190bfba1
+- extensions/codex/src/app-server/thread-lifecycle.native.test.ts@4072bdff8c267ae69d1924881af9d6f2c4628090
+- extensions/codex/src/commands.test-support.ts@29b216181090a5b8ddeb7e3be5eea847137fb97a
+- extensions/codex/src/session-catalog-resident-state.test.ts@31cf26106b9e60fd62fbcf08cf36be957567fbb5
+- extensions/codex/src/migration/provider.test-support.ts@1b38b06093dafa6be523fe27258bd7d189eab7d5
+- extensions/codex/doctor-contract-api.test.ts@cd20cfcbe6c5a4865ed019fcc20a191330ad2d1e
+- extensions/codex/src/app-server/session-binding.test.ts@fbb707403ba16acf836c920cd5266a39f3b396b8
+- extensions/codex/src/session-catalog-adoption.test.ts@445279dbc8a2c8a1fee85861122479c0f7434dbc
+- extensions/codex/src/session-catalog.test-helpers.ts@9a3f63c30cda494fa5525a880dd149c5f836ccc4
+- extensions/codex/src/app-server/upstream-session-fork.test.ts@cba794860ab22a2f3b9b74b5a77b35405738aef5
+- extensions/codex/src/app-server/session-binding.reads.test.ts@dc290cd57fedef6965634c2b10c65968e79b547f
+- extensions/codex/doctor-contract-api.native-assignments.test.ts@f1b16a56aaa02ae5def67e3970e227d476057057
+- extensions/codex/src/app-server/native-subagent-submission-store.test.ts@c08015f4104120a0eadcd38188d694dd0842bd83
+- extensions/codex/src/app-server/thread-lifecycle.warm-cleanup.native.test.ts@7d25c11bfbb2387f183c0e255e828ef8becffc85
+- extensions/codex/src/native-thread-tool.test-helpers.ts@98dad6a5f57a4a36b95dd745f6d0f098295f2256
+- extensions/codex/src/app-server/transcript-mirror.test-harness.ts@29e1bde685c6cc0eeecbab2acb608d9810e7cd0b
+- extensions/codex/src/app-server/session-history.test-support.ts@55c7187b61bd5e1e03541eab3b74d7765c349fdc
+- extensions/codex/src/app-server/event-projector.test-harness.ts@2ac58cb8ccc1832f34e234038e70075dad5a5b03
+- extensions/codex/src/native-thread-tool-selection.test.ts@20bb85e234ad8a46ab19f0762c78dc51e10734c5
+- extensions/codex/src/app-server/session-warnings.test.ts@5f707cada8f357f975abe6ca979d74b7bb6d26e6
+- extensions/codex/src/app-server/native-execution-policy.authority-chain.test.ts@14f52efccaaa85806606310add9e2729c70f6490
+- extensions/codex/src/app-server/upstream-fork-import.test.ts@47182bbe56b1f8d55d0265e006d83fd680a1844a
+- extensions/codex/src/conversation-binding.test.ts@89839aead6ecf2a72feb8fff5a9118be211c0f68
+
+Moving-default-only Codex exclusion: extensions/codex/src/app-server/reasoning-effort.native.test.ts was NOT_FOUND at the frozen commit.
+
+memory-core exact identities:
+- extensions/memory-core/doctor-contract-api.test-support.ts@a9278eb62da2c6b71b9c9ccc27b6b212e638a313
+- extensions/memory-core/src/memory-search-operation.test.ts@310b0dc2375d7e92f94acf629f0308db89910f42
+- extensions/memory-core/src/memory/manager.unicode-query.test.ts@4a8c34edf91726d381be732eef04b788c83a5d0a
+- extensions/memory-core/src/test-helpers.ts@5878a057aceb86d59b6683b6c1d3e74d5430c161
+- extensions/memory-core/src/dreaming-state.test.ts@69b46797546e5662b84fafa8e9edc9561967d291
+- extensions/memory-core/src/cli.test.ts@dcd7458521d2a5c7d0c5d1ae8921faadc7b46726
+- extensions/memory-core/src/standing-intents.test.ts@fe7c92902bd5d801c4ff61fc26e4045214503d11
+- extensions/memory-core/src/memory-mutation-authority.test.ts@56394bf21d80e6029d1d3bc12b777bb40857960e
+- extensions/memory-core/src/memory-entry-origins.test.ts@25c6cff5f240710c6d28ce17bd6f6c4712b813be
+- extensions/memory-core/src/chunking-upgrade-real-transport.test.ts@ef2d48a2a035cf839c802cbedcd7c9965b22574f
+- extensions/memory-core/src/standing-intents.async.test.ts@13e891b9ec50df9105155cedd0efa7cb6262b92b
+- extensions/memory-core/src/memory/manager.fts-only-reindex.test.ts@60503c0e50661f62ec4e664030bb576026c8a47c
+- extensions/memory-core/src/memory/manager.reindex-recovery.test.ts@fff81b380cc6afbe89f84ef8726ed2374aeac2ad
+- extensions/memory-core/src/memory/manager-search-upgrade.test.ts@0bc3f6215dbd392721ecc327ef0a6fc1009f6d70
+- extensions/memory-core/src/memory-forget.sources.test.ts@4aa2b95ab84edd42ec18911aa864b54a10528acf
+- extensions/memory-core/src/tools.index-upgrade.test.ts@a3386af074318b5ad08baa646843b2e9432ead10
+- extensions/memory-core/src/memory/manager-compatible-index.test-support.ts@187764b89fbf162365d714cabb903026ef1154bb
+- extensions/memory-core/src/tools.real-manager.test.ts@9c89f1cbc4188418e28512d110e45b64803b540b
+- extensions/memory-core/src/session-backfill.test.ts@b42a2788ff9364bd523351ce4ec94e8c5aa89d98
+- extensions/memory-core/src/memory/manager-embedding-cache-dimensions.integration.test.ts@5cd5b8ad1e8da40817f6593d9323f7f1e322ca84
+- extensions/memory-core/src/memory/manager-publication-admission.test.ts@0267dd2742b03d474483aef99739d24ccd22d3bd
+- extensions/memory-core/src/memory-forget-consolidation.test.ts@20c4d5216d9e4e0d486d3db5e1d5de53e1357c16
+- extensions/memory-core/src/memory/index.test.ts@238264c6ad174c34d2dab1455a9c7822cb005373
+- extensions/memory-core/src/memory/manager-publication-settlement.test.ts@faad70b9ae6e3dee07df60685ccd24ec8710477e
+- extensions/memory-core/src/memory/manager.borrowed-connection.test.ts@f7796dea6cfcb83ae74b3ee0b3d2b0c7268c83cf
+
+Matrix exact identities:
+- extensions/matrix/src/approval-config.storage.test.ts@108376672e42cd90c71a5f99c2c5c4d53586f017
+- extensions/matrix/src/matrix/account-state.postgres.test.ts@202a2e32af8430f3aaa3dc0931844ed4c4f93757
+- extensions/matrix/src/test-runtime.ts@326a990f8e10eb13309ed39a0ced0d528a1e5380
+- extensions/matrix/src/matrix/client/sync-store.test-support.ts@9bc15ca6ae9a5350197fef1203169404f2951801
+- extensions/matrix/src/matrix/send.authority.integration.test.ts@c7df7b0caab0519ba179032d4dee8461676d010b
+- extensions/matrix/src/matrix/client/create-client.storage.test.ts@c2c1f08322298ba86ff0af3e08c352078a9edcd5
+- extensions/matrix/src/matrix/monitor/handler.restart.test.ts@777ceb7c16527c4947613ecb935f1ff52dbdb7da
+- extensions/matrix/src/matrix/monitor/index.credentials.test.ts@4b0ba4b7f382b79f6a377cd25bc3aa75f33b1e89
+- extensions/matrix/src/matrix/sdk/idb-persistence.test.ts@016ee7a586258b5582de9e0b4a4591243f1d3167
+- extensions/matrix/src/direct-encryption.test.ts@6401c118ab8dc2089ebd787601f2598dbb3987b5
+- extensions/matrix/doctor-contract-api.import.test.ts@a36380d03f1d08138f06a7890e78fa83c00a314d
+- extensions/matrix/src/matrix/credentials.test.ts@0ea1a107f0bda3790374f9805c86016b7e702fe1
+- extensions/matrix/src/matrix/sdk/client-discovery-recovery.test.ts@6028acb9bafc12e3d94ca0fa3f66a73afd0ccba1
+- extensions/matrix/doctor-contract-api.test.ts@13c2368e5e0bfd68079301bda8d7ed904ab911a2
+- extensions/matrix/src/matrix/client/storage.test.ts@60793120f45d52b63245535fa5de9a37f0fd08b5
+- extensions/matrix/src/matrix/crypto-unsafe-state-doctor.test.ts@88074301f475c75448ba8f5a2782b2871a3e1d04
+- extensions/matrix/src/matrix/sdk.test.ts@0d57b822b34d689cad14b76403197c71298a55c2
+- extensions/matrix/src/matrix/client/file-sync-store.test.ts@f14014482f0144e1914335903c42285ceaef36e2
+- extensions/matrix/src/matrix/conversation-route-owner.test.ts@8bbd96e43129b9ab3d308aae229eca1c843f9bc9
+- extensions/matrix/src/matrix/sdk/client-real-snapshot-custody.test.ts@bcea02f581e9d3fac624be385e4a4cb5e1a5a630
+- extensions/matrix/src/matrix/sdk/recovery-key-store.test.ts@a2988556cdd75415c785b66952302a1b2c7e01c7
+- extensions/matrix/src/session-route.test.ts@16728785143a5588f80e1401ba5adcb941cddf1c
+- extensions/matrix/src/exec-approvals.test.ts@a127eefe534fec21ca002af4b5d7c7c5a986f831
+
+Microsoft Teams exact identities:
+- extensions/msteams/src/token-refresh-boundary.test.ts@e6a91c2dc1104bb72894313fa8589a2a691aeb86
+- extensions/msteams/src/token.test.ts@13e583cfd61b70d01e0cf5c73c4d6a5bb56d38b4
+- extensions/msteams/src/sent-message-cache.state.test.ts@e0a20e32666a44a90b1ecdeaf25d6a4d1cf6a017
+- extensions/msteams/src/conversation-store.shared.test.ts@8c68b5472e43b2a8213d59095c390532579bacad
+- extensions/msteams/src/pending-uploads-fs.test.ts@7f21502349e229570f0a0a46374fcb734c2e07c3
+- extensions/msteams/src/polls.test.ts@7f28558f92b66708064f243c9a4445be5edd94a4
+- extensions/msteams/src/conversation-store-state.test.ts@ac8ff99591ab22e33e076d73910101694b59ff05
+- extensions/msteams/src/msteams-ingress.test.ts@6a4034179eeef55d8dfc02d760e4a09926b4507b
+- extensions/msteams/src/monitor-sso.ingress.test.ts@f8f639a852ee52319d4a8df6f725ace39289785a
+- extensions/msteams/doctor-contract-api.test.ts@3f29edb66c066a183343606add421314a5157758
+- extensions/msteams/src/monitor-handler/message-handler.ingress-lifecycle.test.ts@e955d7d52144bc43bce7e741e65c15a1bc6b6dd6
+
+Telegram exact identities:
+- extensions/telegram/src/bot.callback-retry.test.ts@2095d968ce7b42f467ab3841e4a43be125fada03
+- extensions/telegram/src/monitor.webhook-identity.test.ts@5a7ff2347a0f0e4859d7142959ad1b0cddebe548
+- extensions/telegram/src/telegram-ingress-spool.test.ts@e86e3611e9131b1f5af4d5a9dd78d1004152221b
+- extensions/telegram/src/send.history.test.ts@4f4f9afe94500f70bfeda4353303a7d69217437b
+- extensions/telegram/src/bot.test.ts@5bca5184a06682a0d72856c2a37b8e7242ae364b
+- extensions/telegram/src/polling-session.test.ts@cad1d8c4caf8e938d40ad7a1b06e65daa9f1bfb9
+- extensions/telegram/src/webhook.test.ts@8025ba7ac60784cb14a85174ab22e104be334232
+- extensions/telegram/src/bot.media.e2e.test-harness.ts@baeb0b533d47bf59ac8f01cb4e791c0f316fc22f
+- extensions/telegram/src/telegram-ingress-drain.test.ts@6eaa9d8885163c6e3c371110880094fdfa02a385
+- extensions/telegram/src/bot-message-context.dm-session.test.ts@25c69c4c1b21b2322ed1f759386cb8a6fe79e3e0
+- extensions/telegram/src/bot.create-telegram-bot.test.ts@12e87146785aa4d7c39555292c4606664026edc5
+- extensions/telegram/src/telegram-ingress-coalescing-fixture.test-support.ts@93a0d6dbc1e77c648ea2420188cbb6c457462e90
+
+These family oracles are consistent: old borrower/finalizer release cannot close a replacement; terminal revocation requires re-admission; lost final seal/guard and unknown commit outcome fail closed; queued maintenance cannot reopen retired source; committed prune or mutation reply loss is not replay authority; SDK/sync/credential generations cannot be deleted or resurrected by stale owners.
+
+### 21.3 Extension state-close page-2 tail outside the core families
+
+Additional exact identities beyond the former first-100 page:
+- extensions/memory-wiki/doctor-contract-api.test.ts@4bb640c56807a480da821868a4a7339c2f594d4d
+- extensions/feishu/src/monitor.reaction.test.ts@7eddee3cd0d25ea764b6ab7f21d8cde8eb061c1a
+- extensions/imessage/src/monitor/catchup.test-support.ts@6dd10e8a351abf0bf47943b6d48fac3c72a00f61
+- extensions/agentsapi/agentsapi-harness.persistence.test-helpers.ts@f5cd356ca7d37b336b462ea5e2463efd9afedd95
+- extensions/slack/src/monitor.test-helpers.ts@4e21721cd694d28258c72b39832a0b33d894eddc
+- extensions/migrate-hermes/secrets.test.ts@a7be6d4f342834373fd10af3009944b3c3351996
+- extensions/zalo/src/test-support/monitor-mocks-test-support.ts@3d73b586a71b376504020a66c4d8cdc64d2044c1
+- extensions/active-memory/index.test.ts@b74453be4b0769daeeb298493c52e76ea3586fe7
+- extensions/qa-lab/src/runtime-parity.test.ts@d4cf45a9f6497819e9666b55307eac8b8f7cb513
+- extensions/voice-call/src/manager/store.test.ts@00cbfc1349f21fe93b1ee49875e7c6ae62b2c29b
+- extensions/migrate-hermes/files-and-skills.test.ts@eaa3a7222d9157e5e89794b43690b73b2e0e027b
+- extensions/synology-chat/src/outbound-media.test.ts@a677f10822ef89262bcbbc21962a84dfd852bd36
+- extensions/qa-lab/src/live-transports/matrix/scenarios/scenario-runtime-state-files.test.ts@8be42ee9f24bff6e082e83a4cbbaedd2ee4eecb6
+- extensions/crabbox/src/crabbox-worker-warm-image.test-support.ts@16bda6158d6bbb1e6a25039f4b4bb179ffd829fb
+- extensions/imessage/src/monitor/catchup-startup.test.ts@3d723bafb92e03c38be39e8cfe7abb5e67a5d9b4
+- extensions/zalouser/src/zalo-js.credentials.test.ts@1f44050e1fe98ba0d86d404e4a1a68392d7fef41
+- extensions/buzz/src/gateway.cold-start-recovery.test.ts@3234123e959cae88b1761753c64f1f36385b930c
+- extensions/nextcloud-talk/src/inbound.behavior.test.ts@75833c8e0e94c0c85326f757ea7012cd4f1a33f1
+- extensions/voice-call/src/manager.async-store.test.ts@e3d1a853fc044aebf1abd08baeac2c4e45d57471
+- extensions/feishu/src/test-support/lifecycle-test-support.ts@5d60acbae519cec963657594cbfa91e6fad4952d
+- extensions/feishu/src/monitor.vc-meeting-invited-handler.test.ts@597abc244a9e1ad73eeab73d5ca4b5fe09d3325f
+- extensions/memory-wiki/src/compiled-cache.integration.test.ts@7b3db4fc008931f21b80d4a2e502a730e9e27211
+- extensions/feishu/src/monitor.message-handler.ingress.test.ts@7516a634c07c1333185a901922202a5f946919dd
+- extensions/voice-call/src/webhook.hangup-once.lifecycle.test.ts@ffc8ecc016201a315c43fca222a18416be8ae9d4
+- extensions/signal/src/monitor/event-handler.reply-session-conflict.test.ts@25088991d8b08b42aecacafcd7c610e222f9f2ac
+- extensions/clickclack/src/discussions/service-state-persistence.test.ts@9b5527419a1207564b457a9388bc4a79ddd1b48d
+- extensions/crabbox/src/crabbox-worker-warm-image-maintenance.test.ts@dc5e22a5f1e7290cbaa6a5bda1ddd65e8f34de73
+- extensions/mattermost/src/mattermost/monitor-posts.thread-history.test.ts@8f0d2bf75c68bfad71ea3dd2b374a12fb5f5b881
+- extensions/crabbox/src/crabbox-worker-warm-image-allocation.test.ts@89af0fe6b67238f2605fb960287d56c2e7f3c811
+
+These are test/test-support direct close callers, not production close owners. New negative oracles include unknown settlement refusing authority restoration, old finalization preserving a successor, aborted ingress preventing late dispatch, uncertain capture remaining fenced after restart, and old borrower retention until exact release.
+
+### 21.4 sqlite-snapshot-source cap closure and production chain
+
+Frozen source: src/infra/sqlite-snapshot-source.ts@14931e709dbccb2daab535c15201dfc671994904.
+
+Export-level moving-default candidate counts were split as follows: openSqliteReadOnlyDatabase=22, prepareSqliteReadOnlyLocation=101, startSqliteReadOnlyLocationAsync=22, prepareSqliteReadOnlyLocationAwaited=4, forkSqlitePrivateSnapshot=11, prepareSqliteReadOnlyLocationSync=64, withSqliteSnapshotSource=2, readSqliteSourceContentVersionSync=6. Thus the only actual 100-result overflow for this module was prepareSqliteReadOnlyLocation; its unique page-2 candidate is now frozen as src/cli/update-cli/update-command-terminal-outcome.test.ts@8f91387479cafce091df40b22a24422809999622.
+
+Previously anchored production consumers were re-read rather than duplicated in this dossier: openclaw-state-read-snapshot-source, openclaw-state-read-operation, openclaw-database-preflight, sqlite-snapshot, sqlite-maintenance-inspection, state-ownership-preflight, and plugin-sdk/sqlite-runtime. The re-read confirms one retained snapshot-preparation owner across native reader/worker close and cleanup. Artifact-preserving reads capture expected physical identity before publishing private bytes. Awaited/private-fork paths recheck cancellation and current authority after native work returns and before adoption. Cleanup failures remain first-class and can aggregate with the triggering error. withSqliteSnapshotSource retries only after discovering a rollback-journal-backed source and then operates on the prepared immutable copy; cleanup remains in finally. A retired copy child is recovered with a new scoped worker plus explicit staging reconcile/removal rather than abandoned custody.
+
+### 21.5 Status
+
+The requested broad capped caller frontier is now materially narrower: gateway capped pages have been split and reconciled by the concurrent Round81 section 20, extension close callers have now been split and exact-ref reconciled through their hidden page-2 tail, and sqlite-snapshot-source has been decomposed by export with its sole 101st caller frozen. No new production DB-close owner emerged; the shipping owner proof converges on Gateway shutdown, agent DB retirement, and later shared-state singleton drain.
+
+Independent ACCEPT, scoped G01/G02 positive evidence, unit_authority_ready, executable/package proof, OCRM final acceptance, and release acceptance remain absent. No Actions, build, test, generator, package, production code, ledger, RTM, or flags were run or modified. This remains source/oracle provenance only.
