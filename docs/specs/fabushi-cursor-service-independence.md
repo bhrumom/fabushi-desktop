@@ -17,6 +17,8 @@ Baseline: desktop main 7394f6dc7687f9b986ee5589d40aa680ce23b90a. PR #171 indepen
 - CSI-R5: migration preserves account/device/agent/session data and permissions. Retain one existing owner per responsibility and independent Coordinator/Host/Runner/Electron/renderer boundaries.
 - CSI-R6: all executable validation is GitHub Actions. Exact source tests, signed packages and network observation must prove no automatic Cursor traffic during startup/login/normal operation/update/error/restart. User-supplied arbitrary browser content is distinct from a product dependency.
 
+User decision 2026-10-24: retain cloud automation, cloud Agents and cloud file synchronization by migrating to Fabushi-owned services; deleting those features is not authorized. Shared native service contract work is in Core docs/specs/fabushi-native-cloud-services.md. Public gateway/deployment stay in Backend; product consumers stay in Desktop.
+
 ## Architecture and sequence
 1. Establish a first-party-only endpoint selection boundary in shared Node configuration and Host configuration, removing legacy default and Cursor environment selection. Keep the existing native account policy as authority; loopback remains for isolated tests.
 2. Review direct endpoints and individual production call chains before replacing transports. Native JSON/Responses contracts do not imply support for recovered Connect/protobuf routes. Do not bypass credential refusal to make a call appear functional.
