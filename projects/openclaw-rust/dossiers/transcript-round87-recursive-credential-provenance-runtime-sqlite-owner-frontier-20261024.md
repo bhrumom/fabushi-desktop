@@ -3785,3 +3785,149 @@ Exact-symbol searches for the archive-store kernel exports, maintenance transact
 The resulting boundary is unchanged: durable mutation belongs to the existing transaction/Worker/native owner; COMMIT receipts and retained settlement gate fact installation; public callbacks and diagnostics are later consumers. Publication failure or unknown native settlement fences the derived facts/generation and requires fresh read/reconciliation. It does not authorize mutation replay, convert instrumentation into a writer, or create a second storage truth.
 
 No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. All test files above were read only at the frozen ref and were not executed. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, OCRM final acceptance and release acceptance remain absent.
+
+
+## Section 45 — committed completion, observer subscriptions, creation publication and committed-error closure
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`). Sections 43–44 already registered the transaction/receipt owners and the first post-COMMIT consumers. This section closes the newly exposed direct import/subscription frontier without recursively treating every downstream business action as a new writer.
+
+### 45.1 Transcript committed completion is an acknowledged-work join, not replay authority
+
+New frozen identities:
+- `src/config/sessions/session-transcript-commit-completion.ts@6366ab0021f3f856d58912991c5a8ed1a9008691`
+- `src/config/sessions/session-accessor.transcript-turn.ts@042cf4adc51536643fce80e1ae4f37af25339cf2`
+- `src/gateway/server-restart-sentinel.test-support.ts@8299aa1f179f9601820ab3ef1205646ad4a9a099`
+
+`completeSessionTranscriptCommit` calls every synchronous committed-message callback while admission is open, captures only the explicit completion promises registered during that callback frame, closes completion admission before yielding, then joins every accepted completion. A synchronous callback failure is preserved after already accepted completion promises settle; an asynchronous completion rejection is surfaced after all accepted completions settle. Late completion registration is rejected. The helper therefore joins follow-up work for an already committed append; it is not a mutation retry path.
+
+The non-SQLite transcript-turn adapter invokes the same helper only after its append result exists and awaits the returned completion before advancing its outer flow. Its multi-message path remembers committed transcript sequences only after the append loop has completed. The frozen direct-import closure also includes the previously registered SQLite transcript-turn owner and Section 44 session-turn publication; those are not duplicated here. Restart-sentinel test support is the only additional frozen direct importer and exercises the same committed-completion boundary in a controlled test harness.
+
+### 45.2 Lifecycle and row-change observers have explicit committed-facts -> projection -> public-notification phases
+
+New frozen identities:
+- `src/sessions/session-lifecycle-events.ts@4edec62a6dd698edbda47b6e2f45965efdafa814`
+- `src/sessions/session-row-changes.ts@ad63721c00c626b4792b3ea5793cb348ba9fc5a4`
+- `src/gateway/session-row-projection-publication.ts@f812c4dfe9f7f79c3cf169fe7342fbd1c507d625`
+- `src/gateway/server-runtime-subscriptions.ts@c8113e1c9ab231277dd4826069d59370cbeba09f`
+
+Lifecycle/identity listeners live in close-and-restart global sets. The lifecycle event surface is a notification channel; physical database identity is carried only by the separate identity-mutation payload. Listener registration returns an unsubscribe handle and notification fanout does not turn listeners into storage owners.
+
+`session-row-changes.ts` is stricter: transaction capture is tied to the SQL publication anchor, savepoint rollback removes captured postimages, and committed publication installs private/authority facts first, then resident projection listeners, then public notifications. Pending/indeterminate work uses `invalidate`, which fences facts/projections without announcing a committed public change. Failed committed-fact installation triggers invalidation instead of synthesizing rollback. Row revision advances on both committed fact installation and invalidation so derived reads can detect supersession.
+
+The Gateway row projection subscribes separately to fact, projection, lifecycle and identity channels. Participant writers publish facts before their display-only lifecycle notification; identity mutation advances generation separately. Runtime subscriptions consume lifecycle events for activity/broadcast behavior and preserve the canonical owner tuple rather than becoming row writers.
+
+Focused frozen oracles:
+- `src/sessions/session-lifecycle-events.test.ts@9dbf23171d4ab46980bfc5dfda1a5076e55b16b9`
+- `src/sessions/session-row-changes.test.ts@3f8ee5ee40b6ae9d39f4918822d08f2a617e2c68`
+- `src/gateway/session-row-projection.test.ts@b221068780a1b74ffcaef91e30d5ac91286f72d4`
+- `src/gateway/server-runtime-subscriptions.test.ts@63221da7f0a6cf3249a3d0013608c852a299d7a5`
+
+These tests prove unsubscribe semantics and continued fanout after a listener throws; surviving savepoint postimages with a separate transaction anchor; post-COMMIT observers outside the committing Worker; private authority installation before public observers without duplicate presentation notifications; queued-commit projection settlement; row-store ownership for newly committed unknown rows; generation fencing for lifecycle events; and terminal dispatch joining before final settlement.
+
+### 45.3 Remaining frozen direct row-change subscribers consume committed/invalidation facts; none is a second writer
+
+New frozen direct subscriber identities:
+- `src/infra/agent-run-activity.ts@2b2817c64e200167b57ecf103207a6d2c056e69f`
+- `src/gateway/server-work-metrics.ts@2222f1c0c2b36a4a27b4a6a4e670564ec1afa1ed`
+- `src/gateway/control-ui-public-session-cache.ts@2194ed4e5610fe7f7ccec6c1813875bfe2954156`
+- `src/auto-reply/reply/reply-turn-recovery.ts@df62cf7f9b37aee68601e387194367adeb05c5a7`
+- `src/gateway/github-publication-discovery.ts@99984886eb62756e6f4ca3b22a720bcb95148c8b`
+- `src/gateway/session-access-authority.ts@569c9aadf2523081367967a01557716abf2e234e`
+- `src/gateway/question-session-access.ts@af0f3e42bcedc0f85fae837192aad69fe3beda16`
+- `src/gateway/server-chat-metadata-lifecycle.ts@4f76b4e5ada7e72417891f2fe7ddd5a206a9e8a4`
+- `src/agents/tools/sessions-send-followup-custody.ts@e8d23c0d26b20e3f170176e49d6c8e12edbdd93a`
+- `src/gateway/cron-stream-sandbox-authority.ts@36817f9d3ef81657007631ed62443b804e69859f`
+- `src/config/sessions/session-placement-evidence.ts@3a728041ac55bb39f1f558a46528e8104a8d9e87`
+- `src/config/sessions/session-delivery-generation.ts@d636f687f9ca80ca484e32f6b08fe0b67d0f0f4f`
+- `src/agents/subagents/registry/subagent-registry-restart-recovery-coordinator.ts@bc52af01ab601b4e7ff0d88c4ab981bd95175387`
+- `src/agents/main-session-recovery/main-session-restart-recovery-runtime.ts@91d5ca789b3425de3c1647ba3449b4a914a1d843`
+- `src/plugins/runtime/session-changes.ts@cbf20524fdc2c395f6b26f7e7314e2254591134a`
+- `src/trajectory/runtime-window-facts.ts@258cb1e7b8a0fe6bc109380ca5c691c2b744cdb6`
+- `src/gateway/server-agent-deletion-recovery.ts@2f343842c5c3b1f2e31ca66e94eb9908aa43b411`
+- `src/gateway/session-activity-summary-entry-receipts.ts@113bf99274e134a3c57585dac10012661ec23be2`
+- `src/cron/maintenance.ts@59a71be5a9f84c4971e08ae845d735d642f07760`
+- `src/gateway/session-incognito-lifetime.ts@472fa50f813a87eea8c821741e0e5eadfb291065`
+- `src/gateway/session-cost-usage-lifetime.ts@a7612d7ce5ef0d9eb79dea19fca111d2a0f477a1`
+- `src/acp/runtime/session-meta-resume-authorization.ts@b74b78ea9c46da28b42e7213d1e9ae4ddce2a473`
+- `src/gateway/session-recovery-source.ts@3c6289c6a395bc98312d6979c3b29a89ccc97cf6`
+- `src/gateway/server-connection-state.ts@527bb3a278b2e26dbed0a8f29ab517d07c036699`
+- `src/plugins/service-mcp-events.ts@717799923ed880afa608024aea7b5a9440dd3f55`
+- `src/acp/runtime/session-meta-memory-control.ts@36cbc5d57af2ff7151e632cc254bf12b2f031685`
+- `src/agents/worktrees/owner-protection.ts@099db66db3f8ab49359b5bc943c335361e4b9d6e`
+- `src/gateway/session-utils-read-lifetime.ts@5e3014e9df59b84ff9d60e62b2a724743682e43e`
+- `src/agents/tools/sessions-control-authority.ts@8224ea8d0199d70994e7242dc4a86a4fb41ba70a`
+- `src/state/agent-deletion-journal.read.ts@e617f627466d74c50d9a0cb5ed792355a0995eda`
+- `src/gateway/session-utils-store-retained.ts@48f14779219dc56e62464f55291b1ed9dd4ff101`
+- `src/gateway/session-utils-store-lookup.ts@5f0f621ba6006e77db96759f4300ae5efc079764`
+- `src/gateway/session-sharing-preparation.ts@7f015c63748f7099a8d91264451dc525e5494f87`
+- `src/config/sessions/session-actor-replica.ts@ca84f4a69573c977df2323bf913c04d348efdef2`
+- `src/config/sessions/session-entry-read-ordered.ts@dadefe564992231dc87e9f80394529bccb1ebbaf`
+- `src/gateway/control-ui-session-pr-prepared-read.ts@a50a63c2e080acce229eea51211450e825d5a2eb`
+- `src/gateway/server-worker-placement-startup.ts@3fbdd8c99aff71b775bd1a6624e3428ff1db1bb1`
+- `src/agents/tools/sessions-send-communication.ts@45f1deba220a921dbe0f597a732a4abc7f8736be`
+- `src/agents/embedded-agent-runner/run/model-setup.ts@4f630f68032f58c5f86c945c111526583a4a02c7`
+- `src/gateway/control-ui-session-pr-subscriptions.ts@cdd25e0c2efd66b1bd7a64fc2b22b3b0167d4667`
+- `src/agents/subagents/spawn/subagent-session-store.ts@91681e14d2c2562d9219d0d7aba790eda16f5bee`
+- `src/gateway/worker-environments/placement-session-retirement.ts@6ec6f2ce9d7ef562cf916e12bbf5c8a6826f9152`
+- `src/agents/subagents/registry/subagent-controller-read.ts@a375e08603789022d7ae5982bf0e10249c080d40`
+- `src/auto-reply/reply/dispatch-from-config.harness-defaults.ts@8f590e44c894938b223018b2196f567eb75ff0df`
+- `src/gateway/server-worker-placement-dispatch-admission.ts@2eb9696067901e5177d0c958beee019aa6011b92`
+
+These subscribers use committed facts or invalidation as freshness/authority fences for run activity, metrics, Control UI caches, reply recovery, GitHub discovery, access checks, questions/follow-ups, cron/sandbox authority, delivery generation, recovery, plugins, trajectory windows, deletion recovery, maintenance, incognito/usage lifetimes, ACP metadata, MCP events, worktree protection, retained reads, sharing, actor replicas, ordered reads, worker placement, model setup and subagent ownership. Several explicitly ignore runtime-only changes for storage authority; others subscribe to facts/projection rather than public notifications because permission or routing decisions require committed private facts first. Their callbacks invalidate/re-read/recheck retained authority; they do not acquire transaction ownership merely by observing a change.
+
+Previously registered direct subscribers (`cron/service/scheduler-actor.ts`, `cron/session-reaper.ts`, `gateway/mention-inbox.ts`, `gateway/github-publication-source.ts`, `acp/runtime/session-meta-worker-mutation.ts`, `config/sessions/session-registry-maintenance.ts`, `config/sessions/session-transcript-authority.ts`, and `config/sessions/session-accessor.sqlite-maintenance-kick.ts`) were re-read and not duplicated. `src/cron/parent-reset-watch.ts` appears on moving main but is absent at the frozen ref and is excluded.
+
+### 45.4 Entry-creation publication feeds exact generation/membership/projection consumers
+
+New frozen identities:
+- `src/config/sessions/session-accessor.sqlite-entry-cache.ts@691f2cde7600892ab1e2612ac74e5fdb3cf06ed1`
+- `src/gateway/session-row-projection-generation.ts@74791dc7ed84fbd91cd3184c9c29bea7556b2cac`
+- `src/config/sessions/session-reset.ts@20663fede42b8b95e0d9086c0dc00c8afa6e2d6b`
+- `src/gateway/session-row-projection-transcript.ts@e204f10af07e982775c1d70509814a7cae705d88`
+- `src/config/sessions/session-delivery-generation-memory.ts@2505eb31b67bd4778ffb4983a37883ed98ac65f8`
+- `src/gateway/session-row-projection.ts@7864ea9bfb00c04374d6a63d714384c09e54aa1c`
+- `src/gateway/session-membership-projection.ts@8fc1989b90e21b2bf9e4beb622e271b63ecadf87`
+- `src/gateway/session-row-projection-record.ts@27fa159634bf3cfcc4c4c7b5ebff06e84f8d9daa`
+
+The entry cache re-exports the canonical creation-publication API and treats only complete current metadata as reusable. A generation gap or raw/sibling write forces authoritative reload. Derived cache projection failure invalidates the cache without rolling back the authoritative write. Participant and sharing publication carries prepared source identity/revision when available; missing derived facts require reconciliation rather than invention.
+
+Generation projection consumes committed identity mutations. Reset binds its prepared entry publication to the committed reset event. Transcript projection accepts a prepared source only when its physical identity matches the row's current store identity. Memory delivery generation binds creation only once to the exact memory database incarnation and rejects changed creation admission. Membership projection explicitly states that committed session publications are its only refresh clock and rejects source identity/revision mismatches. Worker placement dispatch retains the prepared entry predicate and distinguishes its own committed publication from a foreign/superseding publication before granting dispatch authority.
+
+Focused frozen oracles:
+- `src/config/sessions/session-creation-publication.windows-path.test.ts@34faed9d085964b348ea2c0623030427d1e62c33`
+- `src/config/sessions/session-accessor.transcript-turn-initialization.test.ts@cdae09e8239e3f3743b4a1ddb4cd81e0f82aae5b`
+- `src/config/sessions/session-accessor.sqlite-entry-admission.test.ts@70abf59fd0e5504f83bb3c2cca047b0092401c52`
+- `src/gateway/session-sharing-creation-receipts.test.ts@f4efbcc5e3dbca41be2a9c388862765354aeba77`
+
+The creation oracles cover platform-path publication identity, atomic first-session/header/Goal/input/run creation, rollback of placeholder/header when the receipt cannot commit, refusal to recreate a concurrently created/deleted target, FIFO and physical-owner retention during cold admission, currentness recheck after commit admission, and preservation of acknowledged creation through its committed sharing receipts.
+
+### 45.5 SessionManager committed errors preserve the durable receipt and forbid replay
+
+New frozen identities:
+- `src/agents/sessions/session-manager-persistence-error.ts@b639632adcbce2968499e2dcad64fcf9afc4ef8e`
+- `src/config/sessions/session-accessor.sqlite-compaction-runtime.ts@47bbf3660095b880380943ee9a96619a876f657b`
+- `src/agents/sessions/session-manager-append.ts@f624df73e5463b0b0599cd6287b914d48b020725`
+- `src/agents/sessions/session-manager-actor-append.ts@c4fd712adec10532fc84c029ec3a9f2ef5e1b56e`
+- `src/agents/sessions/session-manager-memory.ts@a8f21ac67a90ff030b58655c28afec87302c1566`
+- `src/agents/sessions/session-manager-entries.ts@b4f935e22d7e628da1553e53febf28a5caf19540`
+- `src/agents/sessions/session-manager.ts@1b91fb2ef35d9d21a84a50c42156a0b622839292`
+- `src/agents/sessions/session-manager-suffix-persistence.ts@43870f0f020395c96de57dca7118553d2305c3d2`
+
+`SessionManagerActorCommittedError` carries the acknowledged typed reply privately and is named explicitly as a do-not-replay condition. `receiveSessionManagerCommit` unwraps only an error for the exact command and returns the committed reply plus the publication failure; unrelated failures still throw. `SessionEntryCommittedError` similarly carries committed entry id, exact target and committed transcript version and explicitly forbids replay after publication failure.
+
+Compaction converts an acknowledged publication failure into `SessionEntryCommittedError` with the exact committed boundary/version; projection reconciliation is scheduled only for a successful committed receipt without that publication failure. Append adoption treats a later native SDK view as superseding rather than replaying its older receipt, and if an actually appended entry cannot be adopted it invalidates the local view and raises a committed error. Rewrite and suffix operations follow the same rule: after an acknowledged commit, view-publication failure invalidates the view and is surfaced as a committed error; it does not reissue the mutation.
+
+Focused frozen oracles:
+- `src/agents/sessions/session-manager-target-capture.test.ts@65e4bcad5492ab3ccae46381e918d8281c78c3ad`
+- `src/config/sessions/session-accessor.compaction-boundary.test.ts@2659792ffb09b24e996633495d81ebc5cd60b3be`
+- `src/agents/sessions/session-manager-memory.test.ts@830dec6462404cd810fc06f4de2860217586db19`
+
+They retain committed raw-write facts across target changes, capture the target before cwd/read/callback drift, roll back when compaction authority fails before COMMIT, recover from Worker crash before COMMIT, retain a committed receipt when later manager retargeting disrupts publication, and retain a committed initial-writer receipt even when host publication throws.
+
+### 45.6 Closure result
+
+Direct module-import searches for `session-transcript-commit-completion.js`, `session-manager-persistence-error.js`, `session-accessor.sqlite-entry-cache-publication.js`, plus direct `onSessionLifecycleEvent` and `sessionChanges.subscribe*` searches were reconciled against the live Round87 dossier. Existing Section 43/44 identities were not duplicated. The broad `session-transcript-reconcile.js` import surface is downstream reconciliation infrastructure, not a new mutation owner exposed by this frontier; this section records only reconciliation calls directly coupled to the committed-error paths above.
+
+The closed chain is now: durable transaction/Worker commit -> exact receipt -> committed completion join -> fact installation -> resident projection -> public lifecycle/row observers -> downstream authority invalidation/re-read. A callback, observer, projection, logger or reconciliation request cannot retroactively turn a committed mutation into rollback, authorize replay, or become a second writer.
+
+No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. All tests above were read only at the frozen ref and were not executed. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, OCRM final acceptance and release acceptance remain absent.
