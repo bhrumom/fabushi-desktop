@@ -664,3 +664,61 @@ Support-only fixtures above are recorded as source identities, not promoted into
 The first 100-result discovery page for `createSqliteWorkerOperationAdmission` is now exact-ref classified at the frozen commit, including explicit rejection of both moving-default-only paths. The repository-global caller set is still unknown beyond that page because search remains capped; other symbol families such as `createSqliteDatabaseAdmissionRelay`, `closeOpenClawAgentDatabaseByPathAsync`, shared-state lifecycle wrappers, and snapshot-source entrypoints still require the same frozen page/cluster closure.
 
 No Actions were run. No production code, ledger, RTM, or flags were changed. Independent ACCEPT, scoped G01/G02 positive evidence, `unit_authority_ready`, executable/package proof, OCRM final acceptance, and release acceptance remain absent.
+
+
+## 16. Round81 — database-admission relay exact-ref cluster
+
+### 16.1 Complete 13-result discovery cluster at the frozen ref
+
+The default-branch discovery query for `createSqliteDatabaseAdmissionRelay` returned 13 paths. Every returned path was re-fetched against frozen `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`.
+
+Frozen production identities:
+- `src/infra/sqlite-worker-operation-admission.ts@90f03a25678f00a88489c13392e19dbb09df6a40` — relay implementation, already pinned earlier.
+- `src/infra/worker-task-host.ts@25a837385fd6bbca851c369abf2091cbd798f233`
+- `src/state/openclaw-state-lease-heartbeat.ts@95a67834df4cfc17fed8387a71c7be2d1f4ab096`
+- `src/config/sessions/session-accessor.sqlite-worker-coordination.ts@b4e805240b51228188ac7e8ff76b02c6a393a042` — already pinned in section 13.
+- `src/config/sessions/session-accessor.sqlite-archive.ts@641db353303686f59e98c30ee46103a9225989d9`
+- `src/config/sessions/session-accessor.sqlite-worker-request.ts@b2ce0e07a1134e74e84d994fb57abbcdc96fc4e6`
+
+Frozen test identities:
+- `src/state/openclaw-state-lease-heartbeat.test.ts@b4ade28ef5bdc68e5033abdbc187ede6b2a59ac8`
+- `src/infra/sqlite-database-admission.retention.test.ts@596649f5c2a405c7bb570a2b9b97dec9f1d6edf5`
+- `src/config/sessions/session-accessor.sqlite-worker-coordination.test.ts@cfe8b31c32e3ef5485fb1938f12cb8554898575b` — already pinned in section 13.
+- `src/infra/sqlite-worker-operation-admission.test.ts@2ce87b63c700ee3d5f6f2d3487d57ee6dabd5760`
+
+Moving-default-only discovery hits rejected at the frozen ref:
+- `src/infra/database-engine/state-read-admission-owners.postgres.test.ts` — NOT_FOUND.
+- `src/infra/database-engine/state-read-admission.postgres.test.ts` — NOT_FOUND.
+- `src/infra/database-engine/state-read-admission-publication.postgres.test.ts` — NOT_FOUND.
+
+Thus this 13-result discovery cluster is exact-ref closed for the frozen source, while the three PostgreSQL test paths are explicitly excluded as later default-branch additions rather than silently counted.
+
+### 16.2 Production path and owner boundary
+
+`worker-task-host.ts` retains one relay per native worker. The relay is installed on first use, serviced through the host's retained admission service, transferred only once to that worker, and `finish()` is tied to worker retirement. This makes database-admission transport part of the retained worker lifetime instead of a free-standing permission snapshot.
+
+`openclaw-state-lease-heartbeat.ts` requires an established file identity before starting the actor, captures the current state-database admission, and treats sampled diagnostics as non-authoritative. Renewal/startup have explicit bounded timers. Commit publication can precede the ordinary actor reply, so the parent tracks committed expiry separately from reply delivery; outcome-unknown renewal failures remain distinct from an explicit lease loss.
+
+`session-accessor.sqlite-archive.ts` creates a relay for the archive worker and closes it together with the one-shot worker admission service. Cold archive mutations keep their cleanup/exit lifetime instead of borrowing a sweep connection. State-database authority remains a separate captured object and is rechecked by the archive write path.
+
+`session-accessor.sqlite-worker-request.ts` separates caller cancellation, database-owner closure, worker transport settlement, commit requests, and mutation authority. A worker's `admission-request` can create a database relay only after the parent write-admission path has accepted the operation and, when database authority exists, revalidated the captured owner. Parent authority failures take precedence over a generic worker unwind error; transport settlement does not erase a caller refusal.
+
+The resulting production chain is:
+
+`retained worker/session owner -> captured exact database identity/current authority -> per-worker database-admission relay -> on-demand fact exchange -> native transaction/commit path -> explicit relay finish on worker/resource retirement`.
+
+The relay transports current database facts; it does not replace the domain mutation owner or make a stale database identity current.
+
+### 16.3 Negative oracles
+
+`openclaw-state-lease-heartbeat.test.ts@b4ade28ef5bdc68e5033abdbc187ede6b2a59ac8` proves retained lease callbacks stop after completion/closure, activation waits for a contended renewal to commit, and a caller revoked at commit is rejected rather than publishing the attempted write.
+
+`sqlite-database-admission.retention.test.ts@596649f5c2a405c7bb570a2b9b97dec9f1d6edf5` exercises retained cold receipts and write scopes across physical-fact reads, invalidation, deletion, release, worker exchange, and clean close. Its source-level oracle is that a retained scope preserves the exact admitted fact only for its lifetime; invalidation is not suppressed merely because a scope is retained, and released/deleted scopes cannot keep stale authority alive.
+
+`sqlite-worker-operation-admission.test.ts@2ce87b63c700ee3d5f6f2d3487d57ee6dabd5760` covers relay/operation integration and fail-closed lifecycle: finish is terminal and repeatable only with the same failure, late observers cannot reopen a closed admission, elapsed time before host servicing is not itself authority, and a close/revocation before the grant prevents transaction admission.
+
+These are source/oracle reads only; no tests were executed in this audit round.
+
+### 16.4 Frontier
+
+The `createSqliteDatabaseAdmissionRelay` discovery cluster is frozen exact-ref closed. Repository-global SQLite lifecycle closure is still open because `closeOpenClawAgentDatabaseByPathAsync` itself returns a capped 100-result search surface and the broader snapshot/read-only caller families still contain unclassified test/consumer paths. Independent ACCEPT, scoped G01/G02 positive evidence, `unit_authority_ready`, executable/package proof, and release acceptance remain absent. No production code, ledger, RTM, or flags were changed and no Actions were run.
