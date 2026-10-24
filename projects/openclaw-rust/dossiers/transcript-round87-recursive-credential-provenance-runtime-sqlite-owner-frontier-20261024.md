@@ -5798,3 +5798,47 @@ Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e7
 
 Immediately before this append, the live branch lease was `4a67c948a987b7b52090d84cdcf129a0c2000d79`, tree `692fb6f8b4b839bebfb4b9d36e2a15cedf84c61c`, dossier blob `3130ce00c9e2dbe3dcb959ee8d6c3f9f8e4d73df`, with 5,756 lines, one Section 84, zero Section 85, and all nine exact refs above at zero occurrences. This append is evidence-only: no Actions were started or rerun, and no production code, ledger, RTM, flags, source lock, inventory, or source baseline was modified.
 
+## Section 86 — restored requester-turn identity is durable but still not the public Cron run identity
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`. This pass follows Section 85 through the remaining `requesterTurnRunId`, restart-recovery, and run-history recovery candidates. The following exact refs were absent from the complete dossier before this append:
+
+- `src/agents/subagents/requester-cron-authority.ts@e8dc07d25c512a1c30912ec3e275b966781bb529`
+- `src/agents/subagents/registry/subagent-registry-restore-requester.ts@2e55422efb292ead5eae5a4a67ca159bfe78c4e7`
+- `src/agents/requester-run-settlement.ts@090765515b834f9f9cb209bce77afe6860799b9e`
+- `src/config/sessions/restart-recovery-state.ts@d9ee9d70d3c3279cb465bd6c04f71b42a650092d`
+- `src/config/sessions/restart-recovery-receipt-state.ts@0fd278ac65bcf856aada4ebbb50e5896ffd9b8e1`
+- `src/config/sessions/restart-recovery-receipt.ts@f7e3ab5dd6e7e6a4b3be2403db21705e314fdebb`
+- `src/agents/openclaw-tools.ts@6599998dc27e78fcd21cf440def9fa5c34e455ae`
+- `src/cron/service/startup-run-repair.ts@39869128d28cb380bbfcf4e1486a881720459414`
+
+### 86.1 `requesterTurnRunId` does form a restored cross-index, but it is the operational agent-turn id
+
+- `openclaw-tools.ts` passes the live tool runtime `options.runId` into both `createSessionsSpawnTool(... requesterTurnRunId: options?.runId ...)` and the requester-yield callback. `requester-run-settlement.ts` uses the same `params.runId` as `requesterTurnRunId` when it settles accepted session spawns. For isolated Cron execution, the already registered `src/cron/isolated-agent/run.ts@30174c0dca30a605f8012f623423ece7c5caeed3` creates that agent run id with `randomUUID()` per invocation. It is therefore the operational agent-turn identity, not the acknowledged public/manual Cron request id stored in `result.request?.runId` and later public history detail.
+- `subagent-registry-restore-requester.ts` is a real startup restoration path. It groups restored records by `[requesterAgentId, requesterSessionKey, requesterTurnRunId]`, reselects surviving children, then calls `settleRequesterTurn` with that same requester identity plus `acceptedSessionSpawns` built from each child's `taskRunId ?? runId` and `childSessionKey`. This proves a durable requester-turn-to-session/child cross-index exists across registry restoration.
+- That cross-index still cannot join the requested namespaces. Its restored `requesterTurnRunId` is the operational agent-turn UUID described above; Section 84/85 already established that the public Cron id is the separate request/history identity. No inspected writer copies the public Cron request id into `requesterTurnRunId`.
+
+### 86.2 The Cron-authority bridge is explicitly live-memory authority, not restart persistence
+
+- `requester-cron-authority.ts` can transiently hold `requesterTurnRunId` beside `requesterSessionKey` and capture active Cron-management authority for that pair. Its owner is a process-global singleton whose state is only a `WeakMap` plus `Map`; reset retires the entries and clears the map. Binding later stores the authority only in those in-memory indexes. It is therefore an active-turn fence/capability bridge, not a durable restart cross-index.
+- This distinction matters because the name `CronAuthority` is otherwise tempting: it authorizes automation management while a requester turn is live, but it does not persist a public Cron history id or a queue entry id and cannot restore a predecessor public run after process restart.
+
+### 86.3 Main restart-recovery cannot be the hidden Cron exact-session restoration path
+
+- `restart-recovery-state.ts` closes this candidate directly: `isMainRestartRecoveryCandidate` rejects subagent sessions, ACP sessions, and specifically every `isCronSessionKey(sessionKey)`. The durable `restartRecoveryDeliverySourceRunId` / `restartRecoveryDeliveryRunId` fields and `sourceTurnId` channel authority therefore belong to main-session restart recovery, not Cron exact-run continuation aliases.
+- `restart-recovery-receipt-state.ts` and `restart-recovery-receipt.ts` keep that subsystem exact by `sessionId`, `sessionKey`, `sourceTurnId`, delivery run id, and tool-call id, including ambiguous-terminal retry handling. Those fields do not change the admission rule above and expose no Cron receipt id or public Cron request id.
+
+### 86.4 Run-history startup recovery restores job/receipt outcome, not session-delivery queue identity
+
+- The already registered `src/cron/service/run-history-recovery.ts@ed93973c1031841fc804ab62d27e1e57007ab213` returns only the recovered internal `taskRunId`, receipt id, and optional finalized history projection. Its production caller in `run-recovery.kernel.ts` may recover a public id from `receipt.requestRunId` for interrupted history and may feed a finalized entry into startup repair, but it does not enqueue a session-delivery row from that history identity.
+- New `startup-run-repair.ts` confirms the finalized branch consumes the recovered `CronRunLogEntry` through `applyJobResult` to repair Cron job scheduling/result state and deferred notifications. It has no session-delivery queue enqueue, no `settleQueuedSessionDelivery` call, and no continuation-alias restoration. Thus a history row may durably contain both public id and recorded session binding without becoming the missing restart-queue cross-index.
+
+### 86.5 Integrated fixture, remote Stop, and plugin publication frontiers remain open
+
+- Frozen code search still yields no file containing the requested integrated cleanup/read sequence: no focused fixture combines real `settleQueuedSessionDelivery`, real `removeCronRunContinuationSessionIfIdle`, and public `cron.runs { id, runId, limit: 1 }` for the same predecessor public id. The already registered `server-restart-sentinel.test.ts` verifies settlement ordering but mocks `removeCronRunContinuationSessionIfIdle`; it therefore cannot prove physical exact-alias deletion before the public exact-run read.
+- The only combined `sessions.processes.stop` plus `activeOwnerEpoch` test surface remains the already registered `session-processes.test.ts`. Its held late remote reply is still a `sessions.processes.list` request; Stop coverage is separate and does not replace `placementGeneration`/`activeOwnerEpoch` in flight before resolving a successful Stop reply. The direct Gateway-server remote-STOP replacement late-success oracle remains absent.
+- Plugin discovery still finds the same two production plural `settlePluginNativeAdmissions` users already registered: generation preparation and prepared-model runtime build. `plugin-generation-worker.ts` remains on singular `settlePluginNativeAdmissionState`; no distinct failed-publication receiver handoff or third production plural caller was found.
+
+### 86.6 Dedupe, lease, and scope
+
+Immediately before this append, the live branch lease was `5b78efd5a9b52345a3a2c92c50b90b9a04ffc24e`, tree `608ab541553581e0bab7fe4fe777f9f57632dfe8`, dossier blob `cfa71f790f2262f1c71524ede8241951b1f86527`, 5,801 lines, with zero Section 86 and all eight exact refs above at zero occurrences. This pass remains evidence-only: no Actions were started or rerun, and no production code, ledger, RTM, flags, source lock, inventory, or source baseline was modified.
+- The requested predecessor-public-id -> restart session-delivery identity -> settlement -> physical Cron alias deletion -> public exact-run terminal-read oracle is still not established. Independent ACCEPT, scoped G01/G02 evidence, Rust implementation/wiring completion, package/device proof, release acceptance, and final OCRM acceptance remain open.
