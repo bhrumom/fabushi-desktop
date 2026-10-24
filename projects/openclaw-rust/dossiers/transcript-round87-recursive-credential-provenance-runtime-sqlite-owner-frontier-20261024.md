@@ -3931,3 +3931,143 @@ Direct module-import searches for `session-transcript-commit-completion.js`, `se
 The closed chain is now: durable transaction/Worker commit -> exact receipt -> committed completion join -> fact installation -> resident projection -> public lifecycle/row observers -> downstream authority invalidation/re-read. A callback, observer, projection, logger or reconciliation request cannot retroactively turn a committed mutation into rollback, authorize replay, or become a second writer.
 
 No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. All tests above were read only at the frozen ref and were not executed. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, OCRM final acceptance and release acceptance remain absent.
+
+
+## Section 46 — transcript reconcile lease/readiness and retained authority closure
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`). The core `session-transcript-reconcile.ts`, entry-cache publication state, projection writer, server-close integration and several lease/admission/publication oracles were already registered in earlier Round87 sections; they were re-read as context and are not duplicated here.
+
+### 46.1 Reconcile pool, readiness and Worker keep lease settlement authoritative
+
+New frozen identities:
+- `src/config/sessions/session-transcript-reconcile-pool.ts@7b4d5940afb7c0c00232d22280dc42e4a635da34`
+- `src/config/sessions/session-transcript-reconcile-readiness.ts@b918dffc9bd62c4984454ab818d9660851b4e74c`
+- `src/config/sessions/session-transcript-reconcile.worker.ts@da7d2c020e9be0f6f384cbc7875f03d94000d4df`
+- `src/gateway/server/process-vitals.ts@d60ead9522356487ea432dd03c9d0cf9e1a4224d`
+
+The reconcile pool tracks the complete operation owner, not just the parser task. Each operation has its own abort controller and registered database async resource; revocation stops new work while accepted native settlement remains joined. Pool shutdown closes admission first, waits accepted operations, permits already accepted owners to dispatch lease-release tasks, and only after a five-second grace aborts remaining operations/tasks before closing the worker fleet.
+
+Task finalization joins any in-flight message handler before asking the planner to release its independent lease. If the planner closed without a definitive lease result, the same operation launches a release-only task using the original lease id/path/state directory. A cleanup failure is surfaced as a restart-before-agent-deletion error; if the projection operation also failed, both failures are preserved. Native lease cleanup is therefore never converted into mutation replay or silently treated as success.
+
+The Worker captures the database path identity before admission, requires lifecycle coordination, claims the database lease before opening its read-only database, and rechecks the captured physical identity. Each prepared plan/chunk/finalization step advances only after a parent `continue` acknowledgement. After its terminal `done`/ `failed` message, the Worker waits for the parent's explicit release command before closing its read-only database and releasing the lease. A release-only task can finish the same durable lease after planner retirement.
+
+Readiness is observation-only. It uses the retained database execution when available, otherwise a read-only database check. During database retirement it reports not-ready rather than attempting repair; an explicit abort still propagates cancellation. Process vitals only reports the pool snapshot and does not own reconciliation state.
+
+The previously registered core owner was re-read: one database path has one `runningReconciles` owner; later writes latch `pending` and at most one preferred session onto it, and bounded backoff prevents sustained writers from causing an unbounded tight rebuild loop. Requested-session waits poll only while that session still needs reconcile; revoked work retains its close fence until settlement. A failed background repair is rediscovered from durable dirty state on a later request/restart.
+
+### 46.2 Remaining direct reconcile consumers trigger or await repair without becoming the projection writer
+
+New frozen identities:
+- `src/gateway/server-startup-session-migration.ts@0a592a377e459418a7d18f332fbc13b7c64b0ead`
+- `src/gateway/server-methods/chat-send-retry.ts@b8c747b507dcd3d03fa69a113bc6312a2b7ae8e7`
+- `src/gateway/session-transcript-title-reader.ts@900a4a3bfaf04d266bdcc12d93a2fb292d578a65`
+- `src/config/sessions/session-transcript-match.ts@fdf096280ca244be8e70ecd04d947f26150f796e`
+- `src/gateway/session-activity-summary-source.ts@47281c135c34421f25d0916e4c4d51011724dd9d`
+- `src/gateway/session-transcript-preview.ts@a954447fa1f15e808a8d6414b0b56e9e43376037`
+- `src/config/sessions/session-accessor.sqlite-active-projection.ts@75da205498d4cc0cc0779fa370f4694a802df893`
+- `src/auto-reply/reply/memory-flush-session.ts@f03f7ebf07b99a48b62e6290183efd440a18b934`
+- `src/config/sessions/session-message-cut.ts@91e8cf58f7eeef44cb7dffaa698fc186b8f17e33`
+- `src/sessions/user-turn-transcript.persistence.ts@120322db2fe81093573e4123a1cd05d0354f2960`
+- `src/config/sessions/session-transcript-delta-read.ts@900f6ad57f8cd30d66e039f9f0c86c1bb0ebd906`
+- `src/sessions/user-turn-transcript-annotation.ts@a51e6492cbbdeb18f20af8bc3409af63f1ad632c`
+- `src/config/sessions/session-transcript-search.ts@b94a0eee99d85cf64b1192446c08f8f9353628fe`
+- `src/gateway/server-methods/chat-send-commentary-media.ts@b09ae96efb906c627f6d689128c47b2843980b49`
+- `src/gateway/server-methods/chat-send-session.ts@09a10ca981e72406fbb54b713747002120652207`
+- `src/config/sessions/session-accessor.sqlite-transcript-batch.ts@2131cb9e85341263104127b198d85308519a2da4`
+- `src/config/sessions/session-history-worker-runtime.ts@ae06c627437aff42327e3bf7da5b1a070edd1978`
+- `src/agents/embedded-agent-runner/run-orchestrator.ts@9825cd4682c70d60c68b4f45a028bbc651915860`
+- `src/agents/embedded-agent-runner/run/session-prompt-state.ts@822cf185ff10e2bb530706027f9e15b551e83b0a`
+- `src/config/sessions/session-accessor.sqlite-transcript-rewrite.ts@f81755105e871166b0a413f7677f12a0e7f56ba4`
+- `src/config/sessions/session-accessor.sqlite-active-events.ts@dedccd7add7861eb48ed65efb8d3a902bd0cf9cd`
+- `src/agents/embedded-agent-runner/run/attempt-prompt-submit.ts@b9142b6bbb031989a9bf67dba6740973bd373c8d`
+- `src/config/sessions/session-accessor.sqlite-transcript-store.ts@0b096873adac63a964887254033d38eeb673181d`
+- `src/config/sessions/session-accessor.sqlite-transcript-suffix.ts@5eeb7dbeb1cb923333b37903f4bd25ef48d54510`
+- `src/agents/embedded-agent-runner/run/attempt-session-prepare.ts@aa46883ca1da868aa3203ae2de60c16ab6900a67`
+
+These direct importers use the canonical reconcile surface in three bounded ways. Startup/migration code may run explicit reconciliation. Read/search/preview/title/activity/chat/agent paths either start repair after a projection-unavailable result or wait only for the requested projection before retrying the read. Transcript mutation helpers mark/schedule the derived index repair after their owning durable write; they do not parse or write the index from the caller stack.
+
+The previously registered reset, lifecycle publication/projection, turn publication, SessionManager, recovery, branch, message runtime/persistence, locked-write, compaction, suffix and worker transcript-commit paths were re-read and not duplicated. Their `projectionNeedsReconcile` handling is post-commit repair: a committed receipt may request reconciliation, but a publication failure represented as a committed error is not replayed. Dirty projection state remains the durable rediscovery mechanism.
+
+### 46.3 Physical publication scope prevents logical aliases from donating stale row authority
+
+New frozen identity:
+- `src/sessions/session-row-facts.ts@604d6215aa0a15e85a19458e099622e9b321cf12`
+
+`prepareSessionRowPublicationScope` records both configured/unsuffixed paths and any selected physical database identity captured before reads. `sessionChangeAffectsStoredRow` rejects display/runtime/auth-only changes and unrelated session keys. When a physical publication identity exists, it wins over path matching; otherwise canonical/resolved paths are used. A logical agent id alone does not fence a physical row publication, preserving cross-owner aliases correctly. Optional topology ignores are explicit.
+
+This is a read/publication fence only. It neither resolves a new owner nor writes storage. It lets downstream readers decide whether their previously selected physical source has been superseded.
+
+### 46.4 Retained entry predicates keep authorization current across pending/superseding publications
+
+The canonical predicate implementation `session-accessor.sqlite-entry-cache-publication-state.ts@a13dcafeaf70a301afb18201604fb7e84f46ddbc` was already registered and was re-read. It retains a physical `databaseIdentity + sessionKey`, tracks pending publications, captures a revision, and accepts refresh only when the retained predicate remains active/current and the revision still matches. Pending policy/postimage work withholds current authority; unknown sharing authority cannot be repaired by an arbitrary fresh snapshot. `prepareRead` joins already admitted publications but queued writers cannot block their owner.
+
+New frozen direct consumer identities:
+- `src/agents/harness/node-execution-authority.ts@6c57c74e3ce5253ed8b2ee7e58a6e0b7f5c35d85`
+- `src/auto-reply/reply/commands-compact.runtime.ts@8085a2d463298cc96cf168ffcc5871d835308833`
+- `src/gateway/worker-environments/session-attachment-session.ts@6e430362c46493660f86e39d4ce0b1ccf0203e3c`
+- `src/auto-reply/reply/reply-tool-authority-cohort.ts@cbf106c1f9c9473475144878d566d992a47fee4b`
+- `src/gateway/agent-turn/agent-run-final-media.ts@dc7ff02f441189ab579fdf0ef8d37b5cfb1a8d0b`
+- `src/gateway/server-methods/chat-metadata-session-read.ts@cf07db4a3d724f8f84a3fa06ef70e8d6027b61ec`
+- `src/auto-reply/reply/steering-delivery-preparation.ts@a60a95b151728700ce204b1dd733f3d4e7339ca7`
+- `src/gateway/server-methods/session-rewind-repository-entries.ts@ef321f7a81cd8dd3077181ba77d4aa40dc21dde7`
+- `src/gateway/approval-channel-custody.ts@34249d9b662959a222973b10edd4c347339c1d51`
+- `src/skills/workshop/experience-review.ts@dbd80e1ae4696233bb451108a1d9d4475847684b`
+- `src/plugins/runtime/runtime-agent.ts@c24b43e1aa810fcf374b3f8640477251a4b484aa`
+- `src/config/sessions/session-entry-source-authority.ts@6c527569f4f5efde086887cf96641db33d0cd12e`
+- `src/gateway/node-claude-skill-runtime.ts@4d5e5858c5c90b3b411f3662b5884c763a23b877`
+- `src/auto-reply/reply/session-writer-delivery-authority.ts@aba2abffd8a1d620e6436c83d20befad73aa6e69`
+- `src/gateway/server-methods/skills-library.ts@8d08bd48cbca629229b37a0eabe2f758fb7bda66`
+- `src/gateway/server-methods/chat-reply-media.ts@a713240920bcf31c3c8151acefe45ead906da851`
+- `src/gateway/server-methods/sessions-delete.ts@e12aa82b9a33b411d0106184adbaf6a45ef3c7c5`
+- `src/agents/main-session-recovery/main-session-restart-recovery-exact-target.ts@7f2a2b9095a9e1d8e751b99de2c1edd8e7c5a2e0`
+- `src/gateway/github-publication-availability.ts@9ea701c92c2732de2fbc4b03eb912fa813639a70`
+- `src/agents/cli-runner/cli-run-transcript.ts@67a97717f9eee19f30b30a63dd64fa68387ef469`
+- `src/config/sessions/session-entry-current-check.ts@b2c4673a568fce1927d914d561da4553d450e07d`
+- `src/agents/agent-harness-completion-recovery.ts@fe19a1bc2a5db741ad3516ed33e3d1ebd3d099bb`
+- `src/plugins/runtime/runtime-agent-session-create.ts@55bbb43724aa8859008fd3c2eb40da7fb8283182`
+- `src/gateway/server-worker-placement-session-target.ts@008732e0a8ef63b65a4eb226a6d2788effe655dd`
+- `src/gateway/worker-environments/local-workspace-projection.ts@fed03c97fe7e166c4880e80c34389f0e6fd3d981`
+- `src/gateway/worker-environments/worker-turn-transcript-target.ts@e2c5503722ffee38c2bedb3d786d56ccb608a9ca`
+- `src/agents/main-session-recovery/main-session-restart-recovery-delivery.ts@88e0dfe7fd57b85f6fa68ad7eb9209308f86fb58`
+- `src/agents/main-session-recovery/main-session-restart-dispatch.ts@b762ce0bf29ca4d5d239e906a478b344cfc46d50`
+
+Node execution separately retains session identity and Full-permission predicates; live facts can revoke admitted permission but never create new Full authority. Session deletion joins a pending publication, re-reads through the Worker and only `acknowledge`s the refresh if the original physical source and captured revision still match. Reply media waits retained publication before attachment delivery and rechecks delivery/placement authority. Plugin runtime, approval custody, exact restart recovery and worker transcript preparation all release their retained facts on exit and fail closed when the selected identity/lifecycle/delivery predicate changes. Worker transcript preparation can keep a separate settlement predicate for already completed results, but it remains bound to the same physical source.
+
+Previously registered `session-utils-read-lifetime.ts`, `subagent-session-store.ts` and `server-worker-placement-dispatch-admission.ts` consumers were re-read and not duplicated. `src/gateway/server-methods/chat-inject.ts` appears on moving main search but is absent at the frozen ref and is excluded.
+
+### 46.5 Focused oracles cover scheduling, readiness, native exit, shutdown, lease phases and retained-fact invalidation
+
+New frozen reconcile/lifecycle oracle identities:
+- `src/config/sessions/session-transcript-reconcile.scheduling.test.ts@76a3455f1e4a73182e58d63059fd0eff673f8368`
+- `src/config/sessions/session-transcript-reconcile.readiness.test.ts@dcc2ec5b073a5c3444a6f9ead11fce887e0fe54a`
+- `src/config/sessions/session-transcript-reconcile.native-exit.test.ts@1d06c3bfa80955290690f176c19ea697d9c91637`
+- `src/config/sessions/session-transcript-reconcile-pool.test.ts@3f62b0bf9399072f98773b3abfeadc4d1895ce44`
+- `src/config/sessions/session-transcript-reconcile.lifecycle.test.ts@3dec9aadc83f5feeae3f7e433f492369e9a137bc`
+- `src/config/sessions/session-transcript-reconcile.lifecycle-phases.test.ts@b03b18806589f36249ce5cc61285fde48912794d`
+- `src/config/sessions/session-transcript-reconcile.bootstrap.test.ts@0d53d644c933e49afe228ee615bb9079faf32fb5`
+- `src/config/sessions/session-transcript-reconcile.backlog-order.test.ts@d9ee41a3b624ed69801e33c71066fe7237dd7993`
+- `src/config/sessions/session-transcript-reconcile.test-support.ts@9565c1e3d88140e269d45354941d7bd6e21ae89a`
+- `src/test-utils/openclaw-test-state.test.ts@cd05531592bdd4f4a2de3d075d17c8c8dae75f4a`
+- `src/config/sessions/session-accessor.sqlite-active-events.test.ts@81b43e4929df8dbb2c77327192ebfdb853becf84`
+- `src/agents/embedded-agent-runner/run-orchestrator.projection.test.ts@41da168c82c37473ec00dcc26596c13bcfd376f7`
+- `src/agents/embedded-agent-runner/run/attempt-session-boundary.orphan.test.ts@d4c517c9de28ebd37f267c3a98fb95f8c12d58d1`
+
+Scheduling drains deferred work after the caller retires and does not invent a missing store. Readiness can resolve the foreground session while foreign writes continue and preserves cancellation/lifetime. Pool tests reject queued admission after shutdown, drain accepted active/queued work, join lease settlement before agent close, and revoke a scheduled reconcile before its first disk admission. Native-exit tests join queued lifecycle phases after native exit. Lifecycle tests cover reusable fleet workers, state-directory-scoped draining, requested-session readiness before unrelated repairs, pending-pass backoff/coalescing, idle retirement and keeping the operation pending through lease release. Lifecycle-phase tests cover cold/warm cleanup and shared-state close failure after lease deletion. Bootstrap refuses replacement during first canonical creation and joins revocation before dispatch. Backlog ordering yields at a session boundary so another agent gets a turn without introducing a second priority queue.
+
+Previously registered `session-transcript-reconcile.lease.test.ts`, `continuation.test.ts`, `admission.test.ts` and `publication.test.ts` were re-read and not duplicated.
+
+New retained/publication oracle identities:
+- `src/config/sessions/session-accessor.sqlite-owner.test.ts@51f9db197f55583486280bc78bb8d7eb2d5d1c7b`
+- `src/gateway/session-row-projection.accepted-facts.test.ts@7c3b7c7ccecff99ea74adb3fd3f78f54bd46dee9`
+- `src/gateway/session-row-projection.worker-read.test.ts@a89b3e94bf5dc8f8fca0aabc49a9f60fc5c06117`
+- `src/config/sessions/session-transcript-worker-readers.test.ts@f84264ce40604f9972f356e94be467539cc15d2d`
+
+These oracles refuse stale session identity/lifecycle before owner assignment, preserve accepted facts only while custody is current, discard invalidated facts after release, keep newer keyed replacements over older Worker replies, fence replacement lifecycles, and preserve exact serialized read/cancellation/result contracts. Previously registered actor/replacement/transcript-report/worker-transcript oracles were re-read and not duplicated.
+
+### 46.6 Closure result
+
+Exact module-path and symbol searches for `session-transcript-reconcile.js`, its pool/readiness/Worker modules, `prepareSessionRowPublicationScope`, `sessionChangeAffectsStoredRow`, `retainPreparedSessionEntryPredicate`, and committed `projectionNeedsReconcile` callers were reconciled against the live dossier. Scripts/benchmarks were treated as support rather than shipping owners. Moving-main-only paths were excluded by exact frozen-ref 404 checks.
+
+The resulting lifecycle remains single-owner: durable transcript writes mark derived projection state dirty; the reconcile owner prepares off-thread and commits through the canonical projection writer; a retained native lease survives planner/owner retirement until exact release; readers can wait for only the projection they require; retained row predicates can revoke or refresh authority but cannot mint permission or replace physical source identity. Failed publication/reconciliation remains repairable from durable dirty state and never authorizes replay of an already committed mutation.
+
+No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. All tests above were read only at the frozen ref and were not executed. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, OCRM final acceptance and release acceptance remain absent.
