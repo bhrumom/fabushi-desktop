@@ -6252,3 +6252,50 @@ New frozen identities:
 Immediately before this append, the live branch lease was `3c39b8276acbf906daac96e18f930481509c538c`, tree `undefined`, dossier blob `d8cd9833f3c2eb157a4629cb16f7c5de1640b738`, 6,214 lines, with zero Section 96 and all four exact refs above at zero occurrences. This pass remains frozen-source/read-only audit work: no GitHub Actions workflow was started or rerun, and no production code, ledger, RTM, acceptance flag, source lock, inventory, or source baseline file was modified.
 
 - Public Cron identity is now explicitly proven to survive as receipt/history metadata while being excluded from the recovery handle itself. The requested integrated cleanup/terminal-read oracle is still absent. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring parity, package/device proof, release acceptance, and final OCRM acceptance remain open.
+
+## Section 97 — restart session-event handoff reaches exact Cron cleanup through queue/session custody, but still never imports the predecessor public run id
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`. This pass starts from Section 96's proven public `requestRunId` -> receipt/history projection and recovery-handle exclusion, then crosses the closest production restart-session-event path that actually enters Cron continuation cleanup. Only frozen exact refs that occurred zero times in the complete Round87 dossier immediately before this append are registered.
+
+New frozen identities:
+- `src/auto-reply/reply/session-event-handoff.ts@91de747dfd4c779bc569132e8fb558ee65c2f7a9`
+- `src/gateway/server-restart-sentinel-session-event.ts@7a60182cb166efb87b9032d9b304c03933a30424`
+- `src/gateway/server-restart-sentinel.system-event-owner.test.ts@ff7b827f7161ee539962d66a4de2b4dc3ece5b32`
+- `src/cron/service.restart-session-event.test.ts@7370b18157397c1aec6f670ba27e5e96634b3ae9`
+
+### 97.1 The restart queue hands a session event forward with queue-id/session custody, not Cron public identity
+
+- New production exact-ref `src/gateway/server-restart-sentinel-session-event.ts@7a60182cb166efb87b9032d9b304c03933a30424` receives the durable `QueuedSessionDelivery`, the resolved session key and the worker context. It captures the current session-event target, forwards `contextKey: task:restart-sentinel:<entry.id>`, and only after the host event adopts the turn calls `markSessionDeliveryAttemptStarted(entry,...)`.
+- Terminal classification is likewise queue/attempt owned: a completed host event returns normally, an adopted/started or explicitly non-retryable failure becomes `SessionDeliveryDeadLetteredError`, and a pre-adoption retryable failure becomes `SessionDeliverySafeRetryError`. The file contains no `requestRunId`, Cron `receiptId`, `:run:` derivation, or public `cron.runs` lookup.
+- This is the concrete producer-side correlation owner immediately below `deliverQueuedSessionDelivery`: the durable queue entry id plus resolved session target are what cross into the host session-event runtime. The predecessor public Cron request id is not copied into that handoff.
+
+### 97.2 The host session-event path captures the exact cleanup destination before remapping and invokes cleanup only after owner settlement
+
+- New production exact-ref `src/auto-reply/reply/session-event-handoff.ts@91de747dfd4c779bc569132e8fb558ee65c2f7a9` calls `prepareCronRunContinuationCleanup(sessionKey, storePath, env)` immediately after resolving the event input, before later session-generation/readmission work can remap state. The already registered implementation of that helper retains the exact session destination for real `removeCronRunContinuationSessionIfIdle`.
+- Its finish path first settles pending input and the session-event outcome, then waits for `operation.ownerSettlement` when one exists, and only in that completion tail invokes the captured cleanup continuation. Thus the production restart-session-event path now has a direct queue/session -> host event -> exact Cron cleanup chain without needing a public-history identity.
+- The same file can receive an operational agent `runId` in `onTerminal` for scheduled-automation settlement, but it has no `requestRunId` or Cron `receiptId`; that operational id is not an argument to the cleanup continuation. The cleanup destination remains the captured session key/store owner.
+
+### 97.3 A focused queue-owner fixture proves the entry survives until adoption/settlement, but still supplies no public-id join
+
+- New focused exact-ref `src/gateway/server-restart-sentinel.system-event-owner.test.ts@ff7b827f7161ee539962d66a4de2b4dc3ece5b32` uses the real SQLite session-delivery queue and real `deliverQueuedSessionDelivery` while substituting the host event surface. Its owner cases require the queued session key to remain unchanged as routing resolves the actual agent/session owner.
+- For an adopted event, the fixture holds settlement after `onAdopted`, verifies the physical pending row now carries `deliveryStartedAt`, then requires exactly one settlement callback with that same queue `id`, the expected terminal outcome, and the same worker context. Pre-adoption retryable failure instead keeps the row pending with incremented retry state and no attempt marker.
+- This is a strong queue-correlation oracle, but its `onSettled` callback is test-supplied rather than real `settleQueuedSessionDelivery`. The file has no `requestRunId`, Cron `receiptId`, `:run:` alias or public `cron.runs` reader, so it does not create the missing predecessor-public-id cross-index.
+
+### 97.4 The closest Cron restart/history fixture still records restart-safe terminal history without carrying the acknowledged public request id
+
+- New focused exact-ref `src/cron/service.restart-session-event.test.ts@7370b18157397c1aec6f670ba27e5e96634b3ae9` runs main-session Cron events through `runCronSessionTurn`. One case holds a foreground owner so the Cron occurrence queues, tears down the active Cron task/service, drains global restart lifecycle state, starts a replacement service, and requires exactly one interrupted history row with no later replay of the cancelled occurrence.
+- Its adopted-turn case separately requires Cron history to remain empty while the model is running and while outbound transport is still held, then writes exactly one successful history row only after transport settlement. Stopping, draining restart lifecycle state and starting the Cron service again preserves that single terminal row without replay.
+- This is the closest frozen fixture found in this pass that combines real Cron restart behavior, session-event ownership and terminal history. It nevertheless contains no `requestRunId`, explicit public `runId`, Cron `receiptId`, `:run:` alias, session-delivery queue drain, real `settleQueuedSessionDelivery`, real exact-alias deletion, or public `cron.runs { id, runId, limit: 1 }` read. It therefore remains a neighboring oracle, not the requested integrated predecessor-public-id fixture.
+
+### 97.5 The run-history reader and the two parallel acceptance frontiers remain unchanged after the new cross-check
+
+- Re-reading the already registered `src/cron/store/run-history.kernel.ts@08248dc78bade861cfa32717ddadf7f98ad372b8` and `src/gateway/server-methods/cron-runs.ts@e7f3def1901e6b2b69d48bb97055f5bcd0990f57` confirms Section 84's durable history join remains history-only: the task row retains internal `run_id`, `child_session_key` and detail/public run id, while the Gateway reader filters/projects the history entry and uses its session key for disclosure visibility. Neither reader nor row becomes session-delivery cleanup authority.
+- The direct Gateway-server `sessions.processes.stop` replacement-late-success oracle remains absent. Frozen `session-processes.test.ts@4d65f9bcd624ea2031ecbe7493f9ee1daed3b4d3` still holds only a remote `sessions.processes.list` reply while request authority closes; the Stop case does not replace `placementGeneration` or `activeOwnerEpoch` in flight and then return a successful stale worker reply.
+- Native-admission discovery remains unchanged: code search for plural `settlePluginNativeAdmissions` still yields only the already registered production callers in generation preparation and prepared-model-runtime build; generation-worker remains singular. Targeted failed-publication searches found no distinct receiver handoff beyond the already registered admission/publication custody path.
+- No frozen search in this pass found a production field or focused fixture that carries the same acknowledged predecessor public Cron run id from receipt/history into the restart session-delivery row or its cleanup owner. The production chain is now tighter on the session side—queue entry -> restart session event -> owner settlement -> exact Cron cleanup—but the public-id side still terminates in receipt/history attribution rather than queue/session authority.
+
+### 97.6 Dedupe, lease, and remaining acceptance state
+
+Immediately before this append, the live branch lease was `4ac37ec8bcc5f2ac466caa11e2d785832ed913de`, tree `b1d857d73ec9c5ac4bfd01937ea55c13f66dcec9`, dossier blob `cad3b466b434a3fdc48fa9ca212add0e55826f3b`, 6,255 lines, with zero Section 97 and all four exact refs above at zero occurrences. This pass remains frozen-source/read-only audit work: no GitHub Actions workflow was started or rerun, and no production code, ledger, RTM, acceptance flag, source lock, inventory, or source baseline file was modified.
+
+- The requested single predecessor-public-id -> restart/lost-reply session-delivery recovery -> real `settleQueuedSessionDelivery` -> real `removeCronRunContinuationSessionIfIdle` physical exact-alias deletion -> public `cron.runs { id, runId, limit: 1 }` terminal-read fixture is still absent. The direct Gateway remote-Stop replacement late-success oracle and a distinct failed-publication receiver handoff/new plural native-admission caller are also still absent. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring parity, package/device proof, release acceptance, and final OCRM acceptance remain open.
