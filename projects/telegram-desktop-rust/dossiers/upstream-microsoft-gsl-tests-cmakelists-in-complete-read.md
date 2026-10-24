@@ -41,6 +41,11 @@ At accepted `tdesktop@a7f453612f4896ac04d0007a36ab0d377e5bcbcf`, exact search fo
 
 No `GslTestRuntime`, `GslPackageRuntime`, `TelegramBuildRuntime`, second package owner, or second production build root is created.
 
+## Traceability anchor
+
+- Target symbol: `TDRP_GSL_TESTS_CMAKE_IN_PROVENANCE_001`
+- Responsibility: `TDRP-R9-GSL-TESTS-CMAKE-IN-PROVENANCE-001`
+
 ## Owner disposition
 
 Selected owner: existing TDRP recursive source/dependency and CI/test-provenance governance. Fabushi shipping build/package/release owners are rejected because this is third-party child test scaffolding. New GSL/Telegram runtimes are rejected because they would promote dependency provenance into product architecture and violate existing-owner-first. Production entrypoints and production evidence remain empty.
