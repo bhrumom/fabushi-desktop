@@ -1,0 +1,139 @@
+name: FDN tsnet network worker
+
+on:
+  pull_request:
+    paths:
+      - "docs/specs/fdn-001-tsnet-network-worker.md"
+      - "source/fabushi-network-worker/**"
+      - "source/host/src/network_worker_process.rs"
+      - "source/host/src/lib.rs"
+      - "source/host/tests/network_worker_process_contract.rs"
+      - ".github/workflows/fdn-tsnet-worker.yml"
+  push:
+    branches: [main]
+    paths:
+      - "docs/specs/fdn-001-tsnet-network-worker.md"
+      - "source/fabushi-network-worker/**"
+      - "source/host/src/network_worker_process.rs"
+      - "source/host/src/lib.rs"
+      - "source/host/tests/network_worker_process_contract.rs"
+      - ".github/workflows/fdn-tsnet-worker.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fdn-tsnet-worker-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  go-worker:
+    name: Go worker / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-2025]
+    defaults:
+      run:
+        working-directory: source/fabushi-network-worker
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - name: Bind exact tested HEAD
+        shell: bash
+        working-directory: .
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            expected="${{ github.event.pull_request.head.sha }}"
+          else
+            expected="${{ github.sha }}"
+          fi
+          test "$actual" = "$expected"
+          echo "Exact tested HEAD: $actual" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.27.1"
+          cache-dependency-path: source/fabushi-network-worker/go.sum
+      - name: Resolve locked module graph
+        shell: bash
+        run: |
+          set -euo pipefail
+          go mod tidy
+          grep -F 'tailscale.com v1.104.1' go.mod
+          go list -m all > module-list.txt
+          grep -F 'tailscale.com v1.104.1' module-list.txt
+      - name: Record Go dependency lock
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: fdn-tsnet-go-lock-${{ github.sha }}
+          path: |
+            source/fabushi-network-worker/go.mod
+            source/fabushi-network-worker/go.sum
+            source/fabushi-network-worker/module-list.txt
+          if-no-files-found: error
+          retention-days: 90
+      - name: Format
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          gofmt -d .
+          test -z "$(gofmt -l .)"
+      - name: Unit tests
+        shell: bash
+        run: go test ./...
+      - name: Vet
+        shell: bash
+        run: go vet ./...
+      - name: Compile packaged worker
+        shell: bash
+        run: go build ./...
+
+  rust-host-supervisor:
+    name: Rust Host supervisor
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - name: Bind exact tested HEAD
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            expected="${{ github.event.pull_request.head.sha }}"
+          else
+            expected="${{ github.sha }}"
+          fi
+          test "$actual" = "$expected"
+          echo "Exact tested HEAD: $actual" >> "$GITHUB_STEP_SUMMARY"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+          components: rustfmt
+      - name: Install Linux native desktop dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
+      - name: Format changed Host sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustfmt --edition 2024 --check source/host/src/network_worker_process.rs
+          rustfmt --edition 2024 --check source/host/tests/network_worker_process_contract.rs
+      - name: Test Host network worker supervisor
+        shell: bash
+        run: cargo test --manifest-path source/host/Cargo.toml --test network_worker_process_contract

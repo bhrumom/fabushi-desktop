@@ -1,0 +1,141 @@
+{
+  "format_version": 1,
+  "project_id": "TDRP-001",
+  "spec_revision": 9,
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+    "tree": "c539eabfb05e7dcaa84821ac44c35cdfb6551ae5",
+    "baseline_identity_accepted": false
+  },
+  "inventory": {
+    "root_non_directory_entries": 6893,
+    "recursive_non_directory_entries": 16379,
+    "semantic_read_complete": false,
+    "responsibility_decomposition_complete": false,
+    "unknown_minimum": 16221,
+    "unread_minimum": 16196,
+    "omitted_known": 0
+  },
+  "latest_recursive_evidence": {
+    "run_id": 39898075641,
+    "run_attempt": 1,
+    "job_id": 120233020779,
+    "head_sha": "94de4915c1828a5abc651b4ba282af421d6e23e1",
+    "artifact_id": 12477538096,
+    "artifact_name": "tdrp-revision9-authority-94de4915c1828a5abc651b4ba282af421d6e23e1",
+    "artifact_digest": "sha256:957966daab1d7907d0cabb9e3410b3d1f8f38f0eb38f4b30f8151f82480626eb",
+    "evidence_status": "historical-only",
+    "upstream_commit": "83f9f56347cc3421c1e3ef537c7bb6dd06ce7cd0",
+    "upstream_tree": "bb0159bfedb38dd96e579af4ffe6360b6beb7332",
+    "recursive_non_directory_entries": 16377,
+    "source_closure_ready": false,
+    "previous_historical_evidence": {
+      "run_id": 39811011165,
+      "run_attempt": 1,
+      "job_id": 119936923653,
+      "head_sha": "fa74eb579788dd4213c58af93b6759304ac1aea7",
+      "artifact_id": 12440511633,
+      "artifact_name": "tdrp-revision9-authority-fa74eb579788dd4213c58af93b6759304ac1aea7",
+      "artifact_digest": "sha256:180b49eb531507e9a8518e4f3bacd7477338ad8c8b7b38b4218aab95737c57c8",
+      "evidence_status": "historical-only",
+      "upstream_commit": "52a47639d9aa38713098974dd2ce07e631cb3381",
+      "upstream_tree": "42998681c09cdffcf75c0f38df71f663fc7b7b28",
+      "recursive_non_directory_entries": 16371,
+      "source_closure_ready": false,
+      "previous_historical_evidence": {
+        "run_id": 39790915088,
+        "run_attempt": 1,
+        "job_id": 119866386369,
+        "head_sha": "6fd8c9ecc96706e977a389e947406338bbc58ae8",
+        "artifact_id": 12430393507,
+        "artifact_name": "tdrp-revision9-authority-6fd8c9ecc96706e977a389e947406338bbc58ae8",
+        "artifact_digest": "sha256:12c602206a68c76eee9fcc0456945e2d8cf19589cb8b37ad5bc7ca4bc4742221",
+        "evidence_status": "historical-only",
+        "upstream_commit": "5380230173ea60a5222aa9d977f074dd41e76139",
+        "upstream_tree": "bd6a23621d2a6d69bd986d3a0f01514c2f2cf96b",
+        "recursive_non_directory_entries": 16371,
+        "source_closure_ready": false,
+        "previous_historical_evidence": {
+          "run_id": 39784881105,
+          "run_attempt": 1,
+          "job_id": 119845308570,
+          "head_sha": "661b9b1fc4e41c8dfaa20cd26489b50f649df61b",
+          "artifact_id": 12428832434,
+          "artifact_name": "tdrp-revision9-authority-661b9b1fc4e41c8dfaa20cd26489b50f649df61b",
+          "artifact_digest": "sha256:3f6a4942690f56f8a7d144eb439bdde4334cd3eff41423f4fd3524cc651483ae",
+          "evidence_status": "historical-only",
+          "upstream_commit": "cade9c628cc62a777d13ae4c449c91101a6c823b",
+          "upstream_tree": "2d5bfab9a2595d19e9d6c3327e6199ace8ed478f",
+          "recursive_non_directory_entries": 16370,
+          "source_closure_ready": false,
+          "previous_historical_evidence": {
+            "run_id": 39783170356,
+            "run_attempt": 1,
+            "head_sha": "0142e94d679523093c7f534785cd86737f7c7b7a",
+            "artifact_id": 12427354242,
+            "artifact_name": "tdrp-revision9-authority-0142e94d679523093c7f534785cd86737f7c7b7a",
+            "artifact_digest": "sha256:9c1f3c409cd306de6e3ff498b842852205211fda54b29745763e0383db6a586d",
+            "evidence_status": "historical-only",
+            "upstream_commit": "fe4afa4fbe9f5fd33fdb8f755ff42a975942b670",
+            "upstream_tree": "66602c9da1ce59199a3f0983c2c526283e386d63",
+            "recursive_non_directory_entries": 16370,
+            "source_closure_ready": false,
+            "previous_historical_evidence": {
+              "run_id": 39778877315,
+              "run_attempt": 1,
+              "job_id": 119824723125,
+              "head_sha": "7a63a7f3028b2f2c14493e4c61a65aefe0159573",
+              "artifact_id": 12425906432,
+              "artifact_name": "tdrp-revision9-authority-7a63a7f3028b2f2c14493e4c61a65aefe0159573",
+              "artifact_digest": "sha256:15b0d0da0328a5558728fdd571cf4d875a49f39dea1019011942d626d5dacb1e",
+              "evidence_status": "historical-only",
+              "upstream_commit": "42e2af80cdd20a99edecb4255470f0aa6bae6bcb",
+              "upstream_tree": "19740740209ea84bf3768f3f63ca92ea8d861087",
+              "recursive_non_directory_entries": 16306,
+              "source_closure_ready": false,
+              "previous_historical_evidence": {
+                "run_id": 39763526560,
+                "run_attempt": 1,
+                "job_id": 119773278418,
+                "head_sha": "a23bef39fecccc6bdba36fdd90805ab139cd26fa",
+                "artifact_id": 12418569928,
+                "artifact_name": "tdrp-revision9-authority-a23bef39fecccc6bdba36fdd90805ab139cd26fa",
+                "artifact_digest": "sha256:e6cbfee3985f5558611e6c5000fe68d2183f16397b2f354d2c6802c4d44a209c",
+                "evidence_status": "historical-only",
+                "upstream_commit": "e14f1566d277d2204f4c8e553bf7cc157047e88b",
+                "upstream_tree": "241f8ab614292cc90e395ef0c966e289fdb3e985",
+                "recursive_non_directory_entries": 16306,
+                "source_closure_ready": false
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "closure_rules": {
+    "executable_runner": "github-actions",
+    "require_unknown_zero": true,
+    "require_unread_zero": true,
+    "require_omitted_zero": true,
+    "require_bidirectional_traceability": true,
+    "require_same_head_evidence": true
+  },
+  "note": "Live main 7394f6dc7687f9b986ee5589d40aa680ce23b90a/fbeb0bb32d944d0c1053880c471fe5c52279f052; upstream dev remains a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5; GSL 87f9d768866548b5b86e72be66c60c5abd4d9b37/6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41. Parent TDRP 40042002309 61/61 success; authority 12540170216 sha256:51134beba021160f9a50a6176a59a7785fa6a6097084154a4b36d46403d4b1e8; closure 12539687359 sha256:c8f07f7f6bb8410517cb419928a932210dbfeeae1e8446ddfc8e8b13a0a3772f; reachability 12539738357 sha256:88275fb46bd4ce7300f46f9a1f4369ac0a2f3890a0b99e7bc3e78ef366bbcb14; Rust 40042002244 6/6 success; artifact 12539204325 sha256:ab6c324177652a0e074d1f7c3e7f44ee7be824a134bfd56fd5630e687fb575ad. Strict155 Microsoft/GSL include/gsl/span@d2ef9f7d85ca6e25bf69b001e9308b3d069c5d16 fully read: 864 line slots / 31778 bytes; tests/span_tests.cpp@d86458bd3bd8e5a1f1739a769436594de2a6b85a 1384 slots / 36875 bytes, tests/span_compatibility_tests.cpp@c6e4b02900b22aeb0ee53262377624333a9ac577 1024 slots / 60486 bytes, tests/span_ext_tests.cpp@dfd2725db3612de97c4a3173f5f168131f7341f3 381 slots / 11004 bytes fully read. span is a non-owning contiguous fixed/dynamic-extent view: construction preserves extent/element-conversion constraints; first/last/subspan and element/front/back access fail closed on invalid bounds; iterators are range-bound; as_bytes preserves read-only representation and as_writable_bytes is limited to non-const views. Accepted tdesktop exact-head code search found 14 direct gsl::span consumer files across attachment preview, media/audio streaming, MTProto, editor commands, settings, peer/profile and poll UI. Preserve the primitive with native Rust &[T]/&mut [T]/array references and safe slice operations inside each existing domain owner; raw pointer+length and typed-byte projection stay narrow audited interop/representation seams, never a GSL SpanRuntime. Counters unknown=16,221 unread=16,196 omitted=0 responsibilities=173. Next strict156 Microsoft/GSL include/gsl/span_ext@2a7664c70550477e9ff228d6370ff635b5217c81.",
+  "current_head_validation_evidence": {
+    "status": "pending-current-head-revalidation",
+    "head_sha": null,
+    "recursive_total": 16379,
+    "open": {
+      "authorities": 95,
+      "gitlinks": 133,
+      "acquisition_candidates": 3865,
+      "generated_inputs": 4674,
+      "resource_inputs": 4602,
+      "tool_inputs": 4255
+    },
+    "baseline_identity_accepted": false,
+    "source_closure_ready": false
+  }
+}
