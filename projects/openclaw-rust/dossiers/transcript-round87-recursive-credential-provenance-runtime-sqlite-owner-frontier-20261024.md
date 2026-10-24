@@ -5895,3 +5895,44 @@ Immediately before this append, the live branch lease was `55ee303c585c4c2780cca
 
 - The requested predecessor-public-id -> restart session-delivery identity -> settlement -> physical Cron alias deletion -> public exact-run terminal-read oracle is still not established. The direct Gateway remote-Stop replacement late-success oracle and a distinct plugin failed-publication receiver/new plural settlement caller also remain absent. Independent ACCEPT, scoped G01/G02 evidence, Rust implementation/wiring completion, package/device proof, release acceptance, and final OCRM acceptance remain open.
 
+## Section 88 — physical session-delivery SQLite ownership forms a subagent cross-index, not a public Cron-run bridge
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`. This pass follows Section 87 into the physical session-delivery worker/storage representation, the atomic subagent completion admission owner, and completion queue-receipt reconciliation, then repeats the three focused negative searches. The following frozen exact refs were absent from the complete dossier before this append:
+
+- `src/infra/delivery-queue-sqlite-bound.ts@bfa7bb7bf34b97142691b36ed1378cdade75a99a`
+- `src/infra/delivery-queue-sqlite.kernel.ts@49d4167a049679cc4e0f8a2dbe822e924733bf22`
+- `src/infra/session-delivery-queue.worker.ts@97e0f481ccecedbee035a90a0bc20915022f67af`
+- `src/agents/subagents/completion/subagent-completion-admission.worker.ts@61cf0e3ae85ca3947484aae142428ad3a1898018`
+- `src/agents/subagents/completion/subagent-completion-queue-receipt.ts@8e512e10a7dd7416c768a960e75338d0d22b2075`
+- `src/agents/subagents/registry/subagent-registry.store.sqlite.ts@0fae914f861abceb3567c4d7d7def77017e52b41`
+
+### 88.1 The session-delivery SQLite row has a projected session key, but no public Cron identity column
+
+- `delivery-queue-sqlite-bound.ts` is the canonical physical binder. Its metadata projection extracts only entry kind, session key, channel, target, and account id; it serializes the complete typed queue entry separately as `entry_json`. The bound row writes `queue_name`, queue `id`, status, `entry_kind`, `session_key`, channel/target/account, retry/error/recovery facts, `entry_json`, retention fields, and timestamps. There is no dedicated public Cron request/history run id, Cron receipt id, task-run id, or continuation-cleanup id column.
+- This matches the already registered frozen schema: `delivery_queue_entries` indexes the projected `session_key`, while JSON remains canonical for payload-only ownership fields. In particular, a correlated `owner.runId/taskId/generation/deadlineAt` is not promoted into its own SQL column.
+- `delivery-queue-sqlite.kernel.ts` reinforces the same boundary. Exact receipt/owner reads address rows by queue namespace and queue id, returning status/recovery ownership and inflating the full payload only from `entry_json`. It does not join `delivery_queue_entries` to `cron_run_receipts`, `task_runs`, or any public-run index.
+- `session-delivery-queue.worker.ts` likewise exposes enqueue/claim/defer/advance/settlement/complete/fail/load/list/move-to-failed operations keyed by the session queue id. Settlement and failure mutate the canonical queue payload and status, but no operation accepts or persists a public Cron request/history run id.
+
+### 88.2 There is a real durable queue-to-subagent cross-index, but it terminates in the subagent namespace
+
+- `subagent-completion-admission.worker.ts` is the strongest newly inspected cross-owner join. Before one shared-state worker transaction inserts a correlated session queue entry and its completion owner, it requires `queueEntry.owner.runId === subagent.runId === expected.runId`, the same owner generation/deadline, and `queueEntry.id === subagent.delivery.queueId`. The queue row and bound subagent row are then committed together. Duplicate admission re-reads the existing queue payload and refuses any change in owner run/task/generation/deadline, session key, requester binding, or current delivery queue id.
+- That proves a durable `queue id <-> queue owner run id <-> subagent run/delivery` cross-index exists. It is not the missing Cron join: none of the validated fields is the public Cron request/history id characterized in Sections 84-87.
+- `subagent-registry.store.sqlite.ts` shows the physical registry side. The authoritative row is keyed by `subagent_runs.run_id` and separately projects child/controller/requester session keys plus store paths and creation time; richer fields such as `taskRunId`, `requesterTurnRunId`, delivery state and queue id live in the record payload. Section 86 already established that requester-turn identity is the operational agent-turn id, not the acknowledged public Cron request id. The new queue-to-subagent join therefore stops before the public Cron namespace.
+
+### 88.3 Completion receipt reconciliation also does not import a public Cron run id
+
+- `subagent-completion-queue-receipt.ts` reads an existing session-queue intent only by queue id. Terminal receipts reduce to `{id,status}`; a pending requester-outcome receipt snapshots a bounded system-event payload containing session key, agent id, text, delivery context, idempotency key, retry policy and retention. It carries no public Cron request/history run id, Cron receipt id, or task-history identity.
+- Receipt reconciliation only proves that the same committed queue intent still exists and has not been replaced. It therefore cannot provide the missing `public Cron run id -> exact queue sessionKey/cleanup owner` bridge.
+
+### 88.4 Reverse discovery and the two secondary focused-oracle frontiers remain negative
+
+- Targeted production searches for `request_run_id + queueId`, `requestRunId + queueId`, `publicRunId + queueId`, `cron_run_receipts + delivery_queue_entries`, and `detail.runId + queueId` found no queue producer or storage join. The only `request_run_id + session_key` hits are the already registered Cron history/schema paths where public history detail and recorded session identity coexist without becoming session-delivery ownership.
+- Focused fixture searches combining real `settleQueuedSessionDelivery`, real `removeCronRunContinuationSessionIfIdle`, restart recovery, and public `cron.runs` returned no integrated test. The already registered `run-continuation-cleanup.test.ts` and restart-sentinel tests cover physical exact-alias and settlement behavior separately; the already registered live Gateway Cron fixture covers public exact-run history separately.
+- Re-reading the frozen Processes path changes no verdict: the production handler carries `activeOwnerEpoch` and `placementGeneration` into remote observation and rechecks current authority after the remote await, but the already registered `session-processes.test.ts` still has no focused `sessions.processes.stop` case that replaces that owner/generation while Stop is in flight and then resolves a late successful worker reply.
+- Plugin search likewise still yields only the two already registered production plural `settlePluginNativeAdmissions` callers, generation preparation and prepared-model runtime build. No distinct failed-publication receiver handoff or third plural production caller was found.
+
+### 88.5 Dedupe, lease, and remaining acceptance state
+
+Immediately before this append, the live branch lease was `dc0c7ac49f35512ea7eadfe41a1274cc2ac631e3`, tree `3ff8b8b1cbb8ca3dd07b3f1efdbb274282e317e5`, dossier blob `eb04dae7429b9d71692c1e8b77287de42fe8f51c`, 5,898 lines, with zero Section 88 and all six exact refs above at zero occurrences. This pass remains evidence-only: no Actions were started or rerun, and no production code, ledger, RTM, flags, source lock, inventory, or source baseline was modified.
+
+- The requested predecessor-public-id -> restart session-delivery identity -> settlement -> physical Cron alias deletion -> public exact-run terminal-read oracle is still not established. The direct Gateway remote-Stop replacement late-success focused oracle and a distinct plugin failed-publication receiver/new plural settlement caller also remain absent. Independent ACCEPT, scoped G01/G02 evidence, Rust implementation/wiring completion, package/device proof, release acceptance, and final OCRM acceptance remain open.
