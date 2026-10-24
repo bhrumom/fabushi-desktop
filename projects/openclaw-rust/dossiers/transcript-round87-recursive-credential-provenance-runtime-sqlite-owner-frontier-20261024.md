@@ -3348,3 +3348,74 @@ The source compatibility scanner has no path-level exemption for these extension
 The WAL-budget, archive/reclamation, direct lifecycle callers and concrete legacy SQLite uses exposed after Section 38 all converge on existing canonical database, lifecycle, session and worker owners. Checkpoint completion is only a maintenance fact; archive materialization is not deletion authority; a worker reply is not native settlement; and deprecated SDK compatibility does not constitute a second online agent database writer.
 
 No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. All tests above were read only as frozen source oracles and were not executed. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, OCRM final acceptance and release acceptance remain absent.
+
+
+## Section 40 — archive pruning, page reclamation and retained reclamation-worker settlement closure
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`). This section follows Section 39 into the pruning/reclamation implementations that actually own bounded physical cleanup. Previously registered agent execution, WAL, history-budget and mutation-worker identities are referenced but not duplicated.
+
+### 40.1 Archive pruning separates measurement, per-item writer custody and WAL/page settlement
+
+New frozen identities:
+- `src/config/sessions/session-history-archive-pruning.ts@f22f01b7d945753cc53fb3133038e929043d34cf`
+- `src/config/sessions/session-accessor.sqlite-page-reclamation.ts@0961c128bf30f246b7d706c9a365461959ec8256`
+
+`reclaimSqliteFreePages` treats a vacuum pass as creating a new checkpoint boundary. A pre-vacuum checkpoint cannot settle the vacuum commit; an incomplete checkpoint records the blocked fact and stops physical deletion. Canonical archive pruning performs filesystem measurement outside writer admission, then acquires the archive writer only for one selected row/file removal. A canonical row is deleted only after its derived file was removed or proven absent; a failed file removal keeps the canonical recovery row.
+
+Page reclamation captures the requester's physical file identity before any admission can wait. A symlink/alias retarget therefore cannot redirect the operation. Doctor/offline maintenance retains its native owner, while normal runtime work captures the canonical agent execution, uses the existing worker writer for each bounded page/archive mutation, relays WAL observations as maintenance facts, and releases the execution only after the enclosing sweep settles.
+
+### 40.2 Disk-budget measurement and generic artifact cleanup do not become database writers
+
+New frozen identities:
+- `src/config/sessions/disk-budget-runtime.ts@3e4f0d7fb694fe76b20051b2fb793a05a8e5ba0d`
+- `src/config/sessions/disk-budget.ts@003728432f7a4751aaabb0dd924cb79651cf3577`
+
+Physical usage is measured in a reader-class worker pool. Drain joins every admitted measurement before rotating the pool; a concurrent teardown joins the same rotation instead of retiring a successor worker.
+
+The generic artifact budget protects canonical referenced transcript/trajectory paths, fresh store-temp files and in-flight prompt blobs. Orphan cleanup is cheapest-first. If cap-archived entries must be sacrificed, the reduced index is durably committed before unlinking the victim's artifacts; without that durable commit callback, the artifacts are deliberately retained as recoverable orphans. This filesystem budget layer therefore cannot stand in for the canonical SQLite lifecycle writer.
+
+### 40.3 Reclamation commit authorization is a one-way commit edge
+
+New frozen identity:
+- `src/config/sessions/session-accessor.sqlite-reclamation-commit.ts@9aee50916acea9dd4be5ae729be1e5be799913fa`
+
+The shared commit gate moves from WAITING to REQUESTED, then only the captured owner context may atomically accept REQUESTED to COMMITTING after rechecking authority. Revocation can reject a pending request, but cannot undo an already accepted commit. Worker-side wait times out/refuses unless COMMITTING is observed. SETTLED is published only after the transaction ended or the connection successfully closed. A refused request may reuse a connection only after native rollback is established.
+
+### 40.4 Reclamation routing preserves native maintenance, retained claims and worker ownership as separate modes
+
+New frozen identity:
+- `src/config/sessions/session-accessor.sqlite-reclamation-run.ts@955f799e97c3ced8754eb0eb29f0c4ca7463aa5b`
+
+Doctor/migration or explicit schema-maintenance authority stays on the native exclusive owner. Ordinary runtime reclamation does not open a new host writer: it first reuses a current retained read-only claim when one exists, otherwise captures the canonical agent execution and prepares the reclamation worker against the exact observed file identity. Maintenance metadata keeps its established executor.
+
+Worker preparation and mutation use separate writer admissions. The request's claim, source identity and caller authority are revalidated at every boundary. After native transaction settlement, session/conversation invalidations and lifecycle effects are published while the writer is still held; result delivery is not used as proof of commit. Archive bytes transferred to the worker are owned transfer buffers, so host mutation does not continue over shared payload state.
+
+### 40.5 Focused commit, binding, retention and admission-race oracles
+
+New frozen identities:
+- `src/config/sessions/session-accessor.sqlite-reclamation-commit.test.ts@699bd4d614b872f91821066cfb42bab46301358f`
+- `src/config/sessions/session-accessor.sqlite-page-reclamation.binding.test.ts@b8828f29cd1f25ddc2745ae4a3816d425e5b8fdd`
+- `src/config/sessions/session-history-archive-retention.test.ts@1518d07fbcdd599a1776e6aebf82a13cc841b92c`
+- `src/config/sessions/session-accessor.sqlite-reclamation-admission-race.test.ts@f9ca029371c1a82f9382861a205cb32b7e30ae3f`
+
+The commit oracle proves an accepted reclamation keeps writer admission through native settlement; later revocation cannot abandon it, while authority/revocation before acceptance rolls the transaction back. The binding oracle proves symlinked requester paths retire through either path/root ownership and that retargeting after capture or while write admission is queued fails with an identity change instead of mutating the replacement.
+
+Archive-retention oracles bound selection to 256 stable candidates, roll back a whole deletion batch on a late failure, allow foreground writes during selection and between batches, and recheck delayed candidates for changed file/generation/name/publication/reference facts before deletion. The admission-race oracle proves a reclamation already bound to an opened database is not redirected when an alias changes, and that caller authority closing before admission preserves current plus historical transcript data.
+
+### 40.6 Retained reclamation-worker reuse keeps proof, lease and native exit custody exact
+
+New frozen identities:
+- `src/config/sessions/session-accessor.sqlite-reclamation.test.ts@5d5a033678267a20efd19a50e9d45ebab298af3b`
+- `src/config/sessions/session-accessor.sqlite-reclamation-reuse.test.ts@7d040123f406d800815829d6060c8618046dd61b`
+
+The reclamation tests show native maintenance checks authority before a cold open can repair/reopen a target, captured aliases remain bound to the original database, one reclamation pass leaves bounded free pages for later maintenance, queued operations reuse a worker only for the same database, and diagnostic/log failures do not lend reclamation metadata to successor writers.
+
+The reuse oracles prove transferred integrity proof is reused only while current, a competing newer parent verification cannot be overwritten by a delayed worker result, explicit database retirement forces a fresh worker/generation, revoked retained claims are refused on the next admission, queued cold reclamation is cancelled without waiting unrelated archive work, and memory-pressure/Gateway/idle retirement releases every exact worker lease before reuse. A crashed worker preserves the uncommitted victim and drops transferable validation; a mismatched retained lease is not silently deleted or retried until its exact receipt is restored.
+
+The already registered reclamation worker/preparation/lifetime and Section 39 WAL/archive oracles were re-read where necessary and are not duplicated.
+
+### 40.7 Closure result
+
+Archive pruning, physical disk measurement, page reclamation, commit authorization and retained reclamation-worker reuse all remain subordinate to existing canonical database/session owners. A checkpoint is not deletion authority, archive file removal is not row commit, IPC delivery is not native settlement, a retained worker is not a cross-database writer, and retirement cannot discard a mismatched lease by assumption.
+
+No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. All tests above were read only as frozen source oracles and were not executed. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, OCRM final acceptance and release acceptance remain absent.
