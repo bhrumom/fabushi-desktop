@@ -180,7 +180,7 @@ fn extension_tracks_multiplayer_gate_and_owns_service_lifecycle() {
 
     let extension = Arc::new(CrossUserSharingExtension::new(
         Arc::clone(&svc),
-        "https://dev.example.invalid",
+        "http://127.0.0.1:4200",
         &env,
     ));
     let experiments = Arc::new(HostExperimentsExtension::new(
