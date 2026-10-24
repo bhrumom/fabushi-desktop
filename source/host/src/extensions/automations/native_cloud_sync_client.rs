@@ -94,6 +94,7 @@ impl CloudSyncClient for NativeCloudSyncClient {
     fn list_sand_automations(&self,agent:&str)->Result<ListAutomationsResponse,SandConnectError>{
         let _operation=self.operation.lock().map_err(|_|invalid())?;self.current()?;
         if !valid_id(agent){return Err(invalid());}
+        self.lock()?.listed_agents.remove(agent);
         let mut records=BTreeMap::new();let mut cursor=String::new();let mut complete=false;
         for _ in 0..200 {
             let mut query=url::form_urlencoded::Serializer::new(String::new());
