@@ -217,3 +217,94 @@ This section follows the previously pinned worker entrypoint through its full so
 ### 10.2 Remaining closure
 
 Still not complete: enumerate all worker message input/output types and specialized dynamic imports; trace all consumers of worker exports including `resolveSessionSqliteTargetInWorker` and `prepareSessionEntriesInWorker`; inspect build script/package rules that emit and ship the entrypoint; enumerate native-close test cases; and link each cleanup owner from acquisition to release, cancellation, worker death, retry and final disposal. No Actions/build/test/package execution occurred. No production code or protected project records changed.
+
+
+## 11. Round79 additive closure: protocol types, dynamic imports, consumers, build packaging and cleanup custody
+
+This section is additive evidence for report round 79. The frozen upstream remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`; no Actions, build, test, generator or package command was executed. No pairing, Box, Gateway production code, ledger, RTM or completion flag was modified.
+
+### 11.1 Worker import closure and typed request/reply surface
+
+The exact `src/config/sessions/session-transcript.worker.ts` blob remains `4d18ec90f10f6cff1a1f2e6823fb939c6c4a9732`. Its complete static import-module set is:
+
+- `node:diagnostics_channel`
+- `node:v8`
+- `node:worker_threads`
+- `../../infra/agent-database-readers.js`
+- `../../infra/database-engine/context.js`
+- `../../infra/session-cost-usage-worker.types.js`
+- `../../infra/worker-task-server.js`
+- `../config-env-vars.js`
+- `./session-accessor.sqlite-entry-availability.js`
+- `./session-history-read-operation-kind.js`
+- `./session-history-worker-errors.js`
+- `./session-transcript-projection-facts-scope.js`
+- `./session-transcript-worker-scopes.js`
+- `./session-transcript-worker.types.js`
+
+Its complete literal dynamic-import module set at the frozen blob is:
+
+`../../state/openclaw-agent-db-validation-cache.js`, `../../gateway/cli-session-history.process-held.js`, `./session-sqlite-target.js`, `../../infra/session-cost-usage-worker.js`, `./session-transcript-search.js`, `./session-history-read-operation.worker.js`, `./cleanup-service-read.worker.js`, `./session-accessor.sqlite-lifecycle-artifacts.js`, `../../state/openclaw-agent-db-readonly.js`, `../../gateway/session-history-worker-reader.js`, `../../gateway/server-methods/chat-history-page-kernel.js`, `../../gateway/server-methods/chat-history-response-page.js`, `../../gateway/session-history-snapshot.js`, `../../infra/sqlite-transaction.js`, `./session-history-eviction-candidates.js`, `./session-accessor.sqlite-archive-store-kernel.js`, `./session-accessor.sqlite-read.js`, `./session-history.js`, `./session-memory-targets.js`, `./session-accessor.sqlite-history.js`, `../../../packages/memory-host-sdk/src/host/session-transcript-corpus.js`, `./session-accessor.sqlite-archive-read.js`, `./session-history-archive-pruning.worker.js`, `./session-cold-storage-worker.js`, `./session-store-target-inventory.js`, `./session-retirement-read.worker.js`, `./session-entry-read.worker.js`, `./session-entry-current-admission.worker.js`, `./combined-store-topology.worker.js`, `./session-accessor.sqlite-entry-availability.js`, `./session-canonical-key.js`, `./session-entry-list.worker.js`, `./session-accessor.sqlite-summary.js`, `../../talk/client-voice-session-lookup.worker.js`, `./session-membership-facts.js`, `./session-transcript-index.js`, `./session-sharing-store.kernel.js`, `./session-reaction-store.read.js`, `./session-suggestion-store.kernel.js`, `./session-pending-input-history-read.worker.js`, `./conversation-binding-facts.worker.js`, `./session-accessor.sqlite-conversation-read.js`, `./conversation-delivery-store.kernel.js`, `./goals-operations.js`, `./goals-operation-policy.js`, `../../session-cards/progress-card-store.js`, `./session-accessor.sqlite-exact-read.js`, `./session-memory-entry.worker.js`, `./session-transcript-read-fence.js`, `../../gateway/session-activity-summary-source.worker.js`, `./session-transcript-hydration-read.worker.js`, and `../../../packages/memory-host-sdk/src/host/session-reset-recall-read.js`.
+
+The exact protocol owner `src/config/sessions/session-transcript-worker.types.ts@0fdb634747ccd9325bb4f33d7af4d4bb81c1b26f` was read. It composes `SessionTranscriptWorkerInput` from SQLite-target, history, model-context, context-messages, single-entry, multi-entry and reset-recall inputs, then attaches dispatch-owned optional physical validation and projection receipts. Reply values are keyed by request `kind`, so malformed kind/result pairing is not an accepted successful reply. `src/config/sessions/session-history-read.types.ts@cc8e4aeadb662e9071fb0da836738be827bf9695` confirms `context-messages` carries the resolved runtime target, optional current-turn transcript admission receipt and optional expected physical database identity.
+
+### 11.2 Dynamic cleanup, retirement and entry-current admission modules
+
+New exact identities and semantics:
+
+| Source | Blob | Read-only finding |
+|---|---|---|
+| `src/config/sessions/cleanup-service-read.worker.ts` | `cdc444dd4cedf30bee92f1e6a19c7edfd64261e8` | Reads cleanup state only through the captured physical database owner and throws if cleanup loses that owner. |
+| `src/config/sessions/session-accessor.sqlite-lifecycle-artifacts.ts` | `e13ecf4c541207cbc80c265a4d12b4c7b340b7f1` | Plans lifecycle artifact cleanup under a SQLite read snapshot; planning does not itself perform file writes or row deletion, and uncertain sources remain with writable repair/integrity owners. |
+| `src/config/sessions/session-retirement-read.worker.ts` | `73f68d87c4d7deaac62c86457024ac9f2b080c83` | Worker-side retirement read is a read projection over the captured database, not a second retirement writer. |
+| `src/config/sessions/session-entry-current-admission.worker.ts` | `2f1bb9520e0a3df029580170e1fa09ff98428a42` | Current-entry reads use canonical session admission. Writer receipts invalidate cached facts; multi-entry admission chains each physical request and does not let one cached result authorize unrelated entries. |
+| `src/config/sessions/session-history-read-operation.worker.ts` | `9f9f7609e09f69e223f3bc324541641407f0f37c` | History operations execute beneath transcript read fences and snapshot-aware dispatch; board/history branches preserve the same admission boundary. |
+| `src/state/openclaw-agent-db-validation-cache.ts` | `2d760bc4a78dffa9c597025e101e08da6ce2ed35` | Validation proof is bound to live physical admission; replacement retires old proof, and reader cleanup releases local metadata without revoking independent shared proof. |
+| `src/infra/sqlite-transaction.ts` | `eac4144f319f561bc786c99d2dd01223dc3b1337` | Transaction failure clears Kysely cache before native close; rollback/native-close failure remains recorded rather than silently clearing failure state. |
+| `src/infra/kysely-sync-cache-state.ts` | `29f87af9b2d2837db28cb2e1f26c6e8428de3108` | Native close/replace disposes dependent callbacks and statement cache before deleting the per-database Kysely cache, preventing stale statements from retaining a closed database. |
+
+Together with the previously pinned worker/resource and snapshot owners, this closes the observed order as: resource acquisition/captured physical admission → fenced dispatch → abort/timeout-aware task custody → lane rotation/resource close → database lifecycle retirement → Kysely/statement dependent disposal → native SQLite close → private snapshot cleanup. Failed native close or failed snapshot cleanup remains in explicit retained custody for retry rather than becoming a successful release.
+
+### 11.3 Four requested worker APIs: production consumers and tests
+
+All paths below were re-fetched at the frozen commit; code-search discovery was not treated as frozen evidence until the exact path was fetched at `ad8d12f126d29b0db204187adf5092db80294e70`.
+
+1. `readSessionTranscriptModelContextInWorker`
+   - Production: `src/config/sessions/session-transcript-context-read.ts@73a3440268f760a4d491ce753ef3ee00184220a2`.
+   - Test/support consumers: `session-manager-fixtures.test-support.ts@500ac75c749c120e38e9f2c14c67f13feefadd8b`, `session-transcript-read-worker-runtime.test.ts@9c3d1e8352c5db65241d87d533efcd59072b6ee5`, `sdk.auth-migration.test.ts@96a44fc1ae2a9b2b6c71f3591ba52bb50130719a`, `session-manual-compact.worker.test.ts@2140f9316ca7c7bc31fb26e3fd8195644e2300a4`, `session-transcript-context-read.worker.test.ts@b761d295820ba7c1c3d6faf4928bf3385b35ca4c`, `worker-turn-detached-context.test.ts@ca58648bddf4fee335f2fb172d186941f093d3ae`, `session-manager-model-context-snapshot.test.ts@b2ef133f85fd3240f5b3be29384412a4fe1af643`, and `bun-sqlite-library.worker.test.ts@777bbf05672d062acbe65d0de8fca90261cfe9d4`.
+   - Negative oracle: a read scanned before owner close must still fail disclosure if ownership/admission is revoked before acceptance; detached async context, auth migration and native-close placement must not revive a stale snapshot.
+
+2. `readSessionTranscriptContextMessagesInWorker`
+   - Production: `src/agents/sessions/session-manager-incognito.ts@6e1f3abc2959c090035970014f5fbd7216fbb0b9`.
+   - Focused test: `session-transcript-context-read.worker.test.ts@b761d295820ba7c1c3d6faf4928bf3385b35ca4c`.
+   - Negative oracle: current-turn admission mismatch or physical identity change rejects the read; post-scan close is not accepted as valid detached context.
+
+3. `prepareSessionEntriesInWorker`
+   - Production: `packages/memory-host-sdk/src/host/session-files.ts@295fd643799c6ae1c0b90d9be7a17ae26df4361b`; the compatibility binder is `packages/memory-host-sdk/src/host/openclaw-runtime-session.ts@8860e441f3d62f539cf50b9ae4723f662d83fa51`.
+   - Focused test: `src/config/sessions/session-memory-working-set.test.ts@2e66effe75408f73431e94ab0827f15e22b533b5`.
+   - Negative oracle: bulk preparation preserves input/result cardinality and cannot publish a partially prepared working set after worker failure/cancellation; the production caller keeps snapshots closed before observer work.
+
+4. `resolveSessionSqliteTargetInWorker`
+   - Production: dynamic caller `src/config/sessions/session-sqlite-target.ts@0c9153419035016e260523479eab420b67e0e93e`.
+   - Focused tests: `session-transcript-events.worker.test.ts@1e47bfb2d8d18deddf8caf650e9cbf8239ba4645`, `session-accessor.sqlite-shared-write-order.test.ts@38c06212a51ec080eebc6a04e6a62bf17075ca97`, and `session-transcript-anchor-read.worker.test.ts@c80fdf9d05f67a303a65a9b80da908a3ee38be63`.
+   - Negative oracle: target change during repair/write admission rejects pending work; alias close and replacement cannot be silently converted into a successful target selection.
+
+No additional frozen production consumer for these four exact exported symbols was found beyond the listed production paths and the memory-host compatibility re-export/binder.
+
+### 11.4 Build and package reachability
+
+The frozen build/package chain is now pinned further:
+
+- `scripts/lib/runtime-process-core-build-entries.mts@9d1b728dc156a80a1fcf3e22e0a69db03683621d` includes `runtimeProcessEntrypoints.sessionTranscript`; its standalone output enables code splitting for the transcript worker under `config/sessions/transcript-[name]-[hash].mjs`.
+- `scripts/lib/runtime-process-build-entries.mts@f6e8fa68718647a63f9edc36703ec5dd63f8ce77` composes core runtime-process entrypoints into the package build entry map.
+- `tsdown.config.ts@81b8af9ce7170a958c4028fafb6b5099941eedb0` injects runtime-process build entries into the root `dist` build and separately applies standalone runtime-process output options.
+- `test/scripts/runtime-process-package.test.ts@fbc2150e022759142b28517dbccf95a729fa836a` derives required `dist/<runtime entry>` paths from the same core entrypoint list and checks npm-pack inventory behavior.
+- `test/scripts/runtime-process-build-graph.test.ts@faa8c29daa855f26cb8060965b39e7ae606b43d4` checks the standalone runtime-process graph against forbidden dependency classes.
+
+This is source-level packaging evidence only. These tests were not executed in this round, so package emission/distribution remains unverified evidence rather than an ACCEPT condition.
+
+### 11.5 Lifecycle custody and remaining acceptance gap
+
+The worker-resource owner `session-transcript-worker-resources.ts@ffd341bd00fad8380d81181124bac3ab6aa5d454` uses abort-aware preparation, 60-second task timeouts, lane pending counts, idle retirement, per-database close resources and failed-retirement custody. `worker-task-pool.ts@5a8565c4678f35b029c24921a62e14c7f026755b` exposes explicit `retryFailedRetirements`, `rotate`, `startCloseResources` and pool close operations. Kysely cache disposal is tied to database close/replace, while snapshot cleanup separately preserves cleanup errors.
+
+The recursive source path is materially narrower, but scoped G01/G02 positive evidence, unit authority readiness, executable package proof and independent ACCEPT are still absent. Therefore this audit does not authorize production changes, Actions execution, ledger/RTM/flag upgrades, or an implementation-complete claim.
