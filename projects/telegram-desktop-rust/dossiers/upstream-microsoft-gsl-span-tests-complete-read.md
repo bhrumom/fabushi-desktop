@@ -61,3 +61,11 @@ These artifacts are parent-head-only evidence; they do not claim Microsoft/GSL C
 - Independent release acceptance: not accepted
 
 Requirement: `TDRP-R9-GSL-SPAN-TEST-PROVENANCE-001`. Target anchor: `TDRP_GSL_SPAN_TEST_PROVENANCE_001`. Source-only provenance; no production-completion or release-acceptance claim.
+
+## Traceability anchors
+
+- Requirement: `TDRP-R9-GSL-SPAN-TEST-PROVENANCE-001`
+- Oracles: `ORA-TDRP-GSL-SPAN-TEST-EXACT-SOURCE-001`, `ORA-TDRP-GSL-SPAN-TEST-DEFAULT-DEATH-ORACLES-001`, `ORA-TDRP-GSL-SPAN-TEST-GUARDED-COMPILE-ERRORS-001`, `ORA-TDRP-GSL-SPAN-TEST-CMAKE-REGISTRATION-001`
+- Invariants: `INV-TDRP-GSL-SPAN-TESTS-ONLY-001`, `INV-TDRP-GSL-SPAN-TEST-NO-PARALLEL-RUNTIME-001`, `INV-TDRP-GSL-SPAN-TEST-NO-CALLER-CLOSURE-001`
+
+These anchors cover source identity, enabled death-test and guarded compile-error distinctions, CMake/CTest registration, and the prohibition on treating dependency-test provenance as a parallel runtime or production caller closure.
