@@ -47735,7 +47735,7 @@
         "docs/specs/telegram-desktop-rust-equivalence-migration.md"
       ],
       "fabushi_target_symbols": [
-        "| dependency | 递归审查、职责替代、版本/许可证与真实集成证据 |"
+        "这不豁免其 source/dependency inventory，也不允许隐藏原 Telegram C++ 业务模块"
       ],
       "target_language": "Source-only GSL contract-test provenance plus caller-specific Rust invariant/error handling inside actual existing owners; no shipping GSL compatibility API",
       "language_rationale": "The source is a qualification test/header for C++ contract macros, not an application owner. Rust caller responsibilities must express the underlying invariant at the real domain boundary; reproducing a global GSL-style macro runtime would create a parallel abstraction and could weaken caller-specific error semantics.",
