@@ -101,9 +101,24 @@ fn update(id:&str)->UpdateAutomationRequest {UpdateAutomationRequest{automation_
     assert!(client.update_sand_automation(update("routine")).is_err());let calls=server.state.lock().unwrap().calls.len();
     assert!(client.update_sand_automation(update("routine")).is_err());assert_eq!(server.state.lock().unwrap().calls.len(),calls);
     client.list_sand_automations("agent-a").unwrap();server.state.lock().unwrap().lose_response=true;
-    assert!(client.update_sand_automation(update("routine")).is_err());let calls=server.state.lock().unwrap().calls.len();
+    let before=server.state.lock().unwrap().calls.len();
+    assert!(client.update_sand_automation(update("routine")).is_err());let calls=server.state.lock().unwrap().calls.len();assert_eq!(calls,before+1,"unknown write must have one network attempt");
     assert!(client.delete_sand_automation("routine").is_err());assert_eq!(server.state.lock().unwrap().calls.len(),calls);
     let readback=client.list_sand_automations("agent-a").unwrap();assert!(!readback.workflows[0].workflow.as_ref().unwrap().enabled);
+}
+
+#[test]fn native_workflow_serde_preserves_every_projected_trigger_variant_and_protobuf_hash_input(){
+    use prost::Message;
+    let variants=vec![trigger::Trigger::Cron(CronTrigger{cron:"CRON_TZ=Asia/Shanghai @daily".into()}),
+        trigger::Trigger::Git(GitTrigger::default()),trigger::Trigger::SlackTrigger(SlackTrigger::default()),
+        trigger::Trigger::Linear(LinearTrigger::default()),trigger::Trigger::Pagerduty(PagerDutyTrigger::default()),
+        trigger::Trigger::Sentry(SentryTrigger::default()),trigger::Trigger::MicrosoftTeamsTrigger(MicrosoftTeamsTrigger::default()),
+        trigger::Trigger::SlackReactionAdded(SlackReactionAddedTrigger::default()),trigger::Trigger::SlackMention(SlackMentionTrigger::default()),
+        trigger::Trigger::SlackAnyReactionAdded(SlackAnyReactionAddedTrigger::default())];
+    let workflow=Workflow{triggers:variants.into_iter().map(|t|Trigger{trigger:Some(t)}).collect(),prompts:vec![Prompt{prompt:"preserved".into()}]};
+    let json=serde_json::to_value(&workflow).unwrap();
+    let restored:Workflow=serde_json::from_value(json.clone()).unwrap();assert_eq!(workflow,restored);assert_eq!(workflow.encode_to_vec(),restored.encode_to_vec());
+    let mut invalid=json;invalid["triggers"][0]["unknown"]=json!(true);assert!(serde_json::from_value::<Workflow>(invalid).is_err());
 }
 #[test]fn malformed_pages_origins_account_changes_and_redirects_never_become_empty_success(){
     let server=Service::new();let account=Account::new(&server.base);

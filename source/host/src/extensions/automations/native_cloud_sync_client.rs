@@ -96,7 +96,9 @@ impl CloudSyncClient for NativeCloudSyncClient {
         if !valid_id(agent){return Err(invalid());}
         let mut records=BTreeMap::new();let mut cursor=String::new();let mut complete=false;
         for _ in 0..200 {
-            let query=url::form_urlencoded::Serializer::new(String::new()).append_pair("agentId",agent).append_pair("cursor",&cursor).finish();
+            let mut query=url::form_urlencoded::Serializer::new(String::new());
+            query.append_pair("agentId",agent).append_pair("cursor",&cursor);
+            let query=query.finish();
             let page=self.http.request_native_json(Method::GET,&format!("/v1/automations?{query}"),None,8*1_048_576).map_err(transport)?;
             if page.get("protocol").and_then(Value::as_str)!=Some(PROTOCOL){return Err(invalid());}
             let rows=page.get("records").and_then(Value::as_array).ok_or_else(invalid)?;
