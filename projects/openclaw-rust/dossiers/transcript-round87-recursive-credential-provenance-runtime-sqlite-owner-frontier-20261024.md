@@ -2744,3 +2744,94 @@ The Section 32 direct-reader frontier is now reconciled through the newly regist
 A recheck of `createAgentDatabaseExecutionCloser` found no additional frozen production consumer beyond `src/state/openclaw-agent-execution.worker.ts@a533936aa520fc1770abd779a9fb9baec327ac41`, which Section 32 already registered. No newly read production file imports or owns process-wide `closeOpenClawStateDatabaseAsync`, and none of these readers/retry helpers introduces a second agent database, transcript, profile, Cron or update-run writer.
 
 No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, OCRM final acceptance and release acceptance remain absent.
+
+
+## 34. Priority extension lifecycle consumers and residual path-scoped close/broker recursion
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`). This pass starts from the Section 25/32/33 frontier, exact-ref reads the still-unregistered priority extension consumers and host-side path-scoped close/broker consumers, and omits identities already present in the live Round87 dossier.
+
+### 34.1 Google Meet platform/runtime and node-host boundary
+
+New frozen identities:
+- `extensions/google-meet/src/transports/google-meet-platform-adapter.ts@7aa2486d483b2c6776a1142c7928348c7f1d00e5`
+- `extensions/google-meet/src/transports/google-meet-platform-adapter.test.ts@c4c389f7e10f515ced5f1402bc39b2f4fd214b63`
+- `extensions/google-meet/src/node-host.ts@4fda39fa5203185e4d86bc7c0bc61c5b2b55ce70`
+- `extensions/google-meet/node-host.test.ts@1b72bee11a14a05489c5b3ba4419f441d18c531c`
+- `extensions/google-meet/src/node-invoke-policy.ts@63fafd3dc1a9cfeeab6c1f330e0e4b7c368742d5`
+- `extensions/google-meet/src/node-invoke-policy.test.ts@6cba7787c168a1b9154f2c563f267ec7b09a25f8`
+
+The adapter is the direct Google Meet consumer of the shared meeting runtime contract: it fixes the stable platform id/session prefix, URL normalization/reuse, manual-action categories, caption capture, audio-route readiness and the exact paired-node command. Durable caption observation is enabled independently while live transcript visibility remains gated by `MeetingSessionRuntime`; the capture script refuses a page whose `__openclawMeetAudioSession` no longer matches the current meeting session. The focused adapter test proves stale capture ownership is rejected and realtime readiness remains false until both input and output routing are verified.
+
+The node host consumes the same adapter URL contract and owns only the node-side command-pair bridge processes. Its tests prove non-Meet URLs are refused before Chrome side effects, a retired output process cannot close the replacement bridge, SIGTERM-resistant children are joined and escalated to SIGKILL, concurrent `stopByUrl` calls share one cleanup, and closed bridges disappear from the active list. The invoke policy strips caller-supplied executable fields and reconstructs start/setup parameters from trusted configuration; invalid URL/action input is rejected before node dispatch. These are platform/process consumers of the already registered participation/session owner, not a second MeetingSessionRuntime or participation store.
+
+### 34.2 WhatsApp connection-controller runtime context closes the direct consumer fan-out
+
+New frozen identity:
+- `extensions/whatsapp/src/connection-controller-runtime-context.ts@960f8b89bd42079d410601e231fb0d1ce6a299d6`
+
+The facade reads exactly two channel-runtime capabilities, `connection-controller` and `connection-owner-pending`, and exposes only active listener/current socket/self identity for the requested account. The already registered direct consumers were re-read rather than duplicated: `active-listener.ts` and `send.ts` obtain the active listener only through this controller; `agent-tools-call.ts` obtains current socket LID mapping and self identity through it; `directory-config.ts` starts a standalone directory socket only when neither a live controller nor a pending connection owner exists, then closes that exact socket, drains credential persistence and releases the same owner lease; `inbound/socket-session.ts` may adopt a successor only when the authenticated self identity overlaps the retired socket and asserts the chosen socket is still current at each send.
+
+This keeps socket replacement, standalone directory lookup and captured replies under one account connection owner. A stale socket generation cannot silently become the reply owner, and a pending owner prevents the directory path from creating a competing socket.
+
+### 34.3 X ingress/publication recursion reaches the existing durable OAuth owner without creating another token writer
+
+New frozen identities:
+- `extensions/x/src/ingress.ts@ba9efc8e5ec8696b29ce85a5808551b0a29cca48`
+- `extensions/x/src/monitor.ts@725d04ab00bdb73db5055dffe3a2d8f65475666d`
+- `extensions/x/src/send.ts@4d3de2caa63b3bf4697ba951d5071ac5263c17f6`
+
+The previously registered `extensions/x/src/client.ts@11f7bdfa3cf3168dfc8c54bdb1e7c1d6891127dd`, `extensions/x/src/oauth.ts@13dee996eacb81d1455a84d931c7d346ffc44f21` and `extensions/x/src/client.test.ts@e9ffcd5c4e903c5140351aa653a596e468662bfb` were exact-ref re-read to close the dynamic dependency. `getXApi` owns the durable `x.oauth` V2 keyed store, claims a refresh token with CAS, records a claim id, reconciles a committed settlement whose reply was lost, and refuses a retired account/runtime lineage. OAuth refresh itself marks response-loss as unknown and never treats caller cancellation as cancellation of the joined refresh owner.
+
+The new monitor is the production consumer that acquires that API, opens the account cursor/ingress queue and re-resolves ingress policy before dispatch/publication. `ingress.ts` binds publication preparation to the same config, route, allowlist snapshot and runtime generation. `send.ts` obtains the same API owner, constrains visible replies to the retained work origin, rechecks runtime/config/allowlist immediately before media upload and every reply POST, and reports partial visible delivery instead of replaying already posted chunks.
+
+The already registered X ownership tests remain the focused oracle: transport credential rotation joins the active refresh; a retired seed cannot overwrite the replacement grant; lost provider response or invalid rotation remains fenced across SQLite/runtime reopen; pre/post-commit persistence failures do not exchange the completed rotation twice; and aborting one caller detaches it while the joined owner persists a late rotation. Thus these new production consumers terminate at the existing `x.oauth` store rather than introducing a second refresh-token writer.
+
+### 34.4 Nostr runtime and legacy ingress migration terminate at the registered bus/queue owners
+
+New frozen identities:
+- `extensions/nostr/src/nostr-ingress-state.ts@0f275170c605fa3b1729335ae156ccf21b2f2906`
+- `extensions/nostr/src/runtime.ts@6866046d229c8ce22579b32fcc7b6375351d5b4c`
+- `extensions/nostr/index.ts@34d17d1c74f10da78649c24a1d3505b487e9dbf1`
+
+The ingress-state helper validates event id/pubkey and derives the durable direct-message lane key. Its legacy migration converts only the retired recent-event-id seed into completion tombstones in the canonical ingress queue; it completes a marker only when this migration accepted it or observes its own empty legacy payload, and refuses a failed completion rather than silently losing replay protection. The runtime file is only the plugin runtime store. The bundled index installs that runtime and its trusted-operator profile route; it does not own ingress rows or cursor writes.
+
+The already registered `nostr-ingress.ts`, `nostr-bus.ts`, cursor/store and gateway owners were re-read as the direct consumers. Gateway stop removes the exact active bus before awaiting fallible bus close, so new work cannot reacquire a retiring bus. The frozen Beam tree was also enumerated exactly: it contains no separate `receiver` production module; the only relevant store/mirror production identities are the already registered `extensions/beam/src/store.ts@b501ac4a7948988366e771cd411bec6425159fc9` and `extensions/beam/src/mirror.ts@011c9422ddded974f5c4317251e81115dfbaf036`. No duplicate Beam evidence is added.
+
+### 34.5 Device Pair scheduler is gated by command-owner authority and exact-arm CAS
+
+New frozen identities:
+- `extensions/device-pair/pair-command-auth.ts@61c041e196b74576a4bb8d5e502ab01f2cc581f4`
+- `extensions/device-pair/index.test.ts@3fed39f698278b0080534f36910b19b0800babfa`
+
+The already registered notifier scheduler and CAS test were re-read. The notifier stores a random `armId`, observes the current subscription before visible send, and deletes a one-shot subscription only with compare-and-apply against that observation; a changed/new/removed arm therefore remains owned by its writer. Failed send, observation or settlement does not fabricate a seen receipt, and every durable notify-state write wakes the scheduler so a lost reply can be reconciled. Scheduler abort clears the wake owner.
+
+The newly registered command-authority helper keeps internal Gateway scopes distinct from external command-owner authority. Missing `operator.pairing` or setup-secret authority fails closed; external non-owners gain neither pairing nor setup authority; an admitted external command owner receives only the intended pairing approval scope while full setup remains tied to that owner assertion. The focused index tests prove unauthorized approve paths refuse before reading/approving a request, caller scopes are preserved, requests above the caller session are rejected, and non-Gateway command ownership is rechecked after asynchronous Gateway URL discovery before issuing a bootstrap token. The scheduler therefore remains a consumer of durable notifier state and pairing authority, not an independent pairing writer.
+
+### 34.6 Residual path-scoped state close and worker-broker production consumers
+
+New frozen identities:
+- `src/commands/doctor-database-port-state.ts@998ef00cca4636e33b8e91a67f887323c98bcd62`
+- `src/entry.ts@a60dc1657d8b48df5ec3ff01527a0902ebb4f570`
+- `src/worker/worker.runtime.ts@0b7e727769ff4d45862437859e6792c897c092b0`
+- `src/worker/worker-runtime-environment.test.ts@22079b97a86794eb823e66d9e31e0bafcf11408d`
+- `src/infra/update-candidate-rehearsal.ts@48b8053aba050aa13af34b8df0361b68161d6ac8`
+- `src/wizard/setup.migration-stage.ts@150b853a057b424886e6729eca90393985cb0fc8`
+- `src/cli/update-cli/update-command-doctor-child.ts@e7aef7bb0e177ea793eed3c0e9faf882732bd03e`
+- `src/agents/auth-profiles/reader-cleanup.ts@86914036169ef4a841626987b48bcd0b95800104`
+- `src/infra/database-engine/worker-store.ts@0b2b1a43ac608cf524493aecf272d31b03ea1008`
+- `src/gateway/operator-approval-store.ts@ac797094062c7c20988720a6d6e5cdccf93b9342`
+- `src/infra/session-cost-usage-worker-scope.ts@400645d764e26be55729117d41510e05b218e693`
+- `src/infra/session-cost-usage-worker-runtime.ts@6a672d8ba99b231fb9ce0b0195bd219dc6037360`
+- `src/config/sessions/session-transcript-usage-lifecycle.test.ts@9c465cafdcbee63d8a2487a2e6ce7b304bdbdc94`
+
+These consumers use path-scoped close rather than process-wide shutdown. Database-port Doctor runs under the local state owner, follows the physical store during interrupted publication, and closes only its admitted shared-state path. Managed-node CLI startup opens and finalizes the exact managed state path. A worker runtime environment first joins process/exec cleanup, then closes only its temporary state database before restoring ambient state and removing the directory; its focused test proves the worker-owned database closes while an unrelated state database remains open and usable.
+
+Update rehearsal closes only its candidate snapshot database after revalidating directory custody and before removing retained directories. Setup migration disposes the staged agent database and staged shared-state path before promotion/cleanup and explicitly does not promote the live shared-state database. The update Doctor child closes only the child state path in `finally`, then revokes admission and releases the same process custody. None is a new process-wide `closeOpenClawStateDatabaseAsync` owner.
+
+The broker-side consumers likewise preserve existing custody. Auth-profile reader cleanup disposes every captured reader and aggregates cleanup failure with the original read failure. The database-engine worker store seals before close, joins any reopen, refuses replay after an unavailable worker because the prior command may have committed, and routes writes through the existing worker-store admission. Operator-approval storage reserves input/identity/path leases, publishes only committed broker facts, and retains a committed receipt even if the command reply is lost. Session-cost usage keeps physical database resources, native cleanup retries and host effects separately; native worker exit does not settle an admitted host write. The focused usage-lifecycle test proves retained cleanup is drained by captured path before physical retirement, failed cleanup remains retryable and blocks new work, sibling state remains unaffected, queued writes are canceled/revoked without mutation, and changed file identity is refused.
+
+### 34.7 Closure result
+
+The priority extension recursion exposes new direct consumers but no new process-wide shared-state close owner, agent-database writer, OAuth-token writer, Nostr cursor/ingress writer, Beam receiver owner or Device Pair scheduler writer. Google Meet terminates at the shared meeting/participation runtime plus node bridge; WhatsApp at the account connection controller; X at the existing `x.oauth` CAS store and ingress queue; Nostr at the registered bus/cursor/ingress owners; Device Pair at the durable plugin-state stores plus pairing authority. The residual host close paths are explicitly per-path or per-temporary-environment consumers.
+
+No Actions, build, test, generator or package task was run. No production code, parity ledger, RTM or completion flags were modified. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring, executable/package proof, OCRM final acceptance and release acceptance remain absent.
