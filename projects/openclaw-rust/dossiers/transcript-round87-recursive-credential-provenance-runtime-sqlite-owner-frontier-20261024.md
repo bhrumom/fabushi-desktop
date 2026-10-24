@@ -6129,3 +6129,44 @@ New frozen identities:
 Immediately before this append, the live branch lease was `48435fccee8dacc27cc60c3ff42b135f558ff122`, tree `9cbaa244b6ed66f8db6954be074a3ef361440b73`, dossier blob `ad0502bd46a20f867b8698645ae502e3f6e7aae6`, 6,087 lines, with zero Section 93 and all seven exact refs above at zero occurrences. This pass remains frozen-source/read-only audit work: no GitHub Actions workflow was started or rerun, and no production code, ledger, RTM, acceptance flag, source lock, inventory, or source baseline file was modified.
 
 - The cleanup topology is now tighter: exact Cron continuation creation, correlated follow-up, session-event cleanup and detached-media cleanup all use the run-session/session-delivery ownership domain, while the public-receipt→execution-identity→operational-run bridge remains diagnostic. The requested predecessor-public-id → restart/lost-reply recovery → real queue settlement → physical exact-alias deletion → exact public terminal-read oracle is still not established. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring parity, package/device proof, release acceptance, and final OCRM acceptance remain open.
+
+
+
+## Section 94 — queue recovery identity stays queue/session-owned through real Gateway settlement and failed persistence
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`. This pass continues Section 93 at the session-delivery side of the requested join. It registers only three frozen exact refs that were absent from the complete Round87 dossier and that directly expose the production queued-run identity, the durable settlement-write boundary, and a real Gateway claim-release settlement.
+
+New frozen identities:
+- `src/gateway/server-restart-sentinel-agent-delivery.ts@e3e5ce170675f9491f8c4e3f8fc52866830a0388`
+- `src/infra/session-delivery-queue.recovery.persistence.test.ts@360ef3393f748d403ab2ff6464a943e7c880c816`
+- `src/gateway/session-delivery-clock-jump.integration.test.ts@74c946b74bb2f4e5e636e0b2262a1ef83248a9de`
+
+### 94.1 The shipping Gateway delivery path derives its operational run identity from the queue entry, not the public Cron receipt
+
+- New production exact-ref `src/gateway/server-restart-sentinel-agent-delivery.ts@e3e5ce170675f9491f8c4e3f8fc52866830a0388` defines `resolveQueuedAgentRunId(entry)` as `entry.idempotencyKey ?? entry.messageId`, plus an `:attempt:<n>` suffix when `agentRunAttempt` is present. That queue-derived id is reused for host transcript idempotency, subagent completion controller-source reservation, and the synthetic Gateway `agent` call's `idempotencyKey`.
+- Admission is fenced independently by `entry.requesterBinding` (`agentId`, `sessionId`, `lifecycleRevision`) and, for subagent completion, by `entry.owner.runId`. For a Cron continuation the code only derives the owning session id from `sessionEntry.cronRunContinuation.lifecycleRevision` and enables `allowSyntheticCronRunContinuation`; it does not read a Cron receipt `request_run_id` or public manual-run id to authorize or identify the queued turn.
+- The delivery attempt is durably marked before Gateway admission, and post-acceptance failure is not downgraded to a safe replay. This makes the queue entry plus requester/session owner the execution fence that recovery must preserve; the public-receipt→execution-identity chain from Sections 90–92 remains attribution rather than delivery authority.
+
+### 94.2 A failed settlement write leaves the queue row pending instead of treating the observed outcome as authority
+
+- New focused exact-ref `src/infra/session-delivery-queue.recovery.persistence.test.ts@360ef3393f748d403ab2ff6464a943e7c880c816` injects a real SQLite trigger on the session `delivery_queue_entries` row and rejects either the retry-state write or the terminal settlement write during both startup recovery and targeted drain.
+- When a terminal delivery raises `SessionDeliveryDeadLetteredError` but the settlement update is rejected, the fixture requires the physical queue row to remain pending with `retryCount: 0` and no persisted `settlementOutcome` or `lastError`. The dead-letter observation alone therefore does not retire ownership. When a retry-state write is rejected, removing the trigger and running recovery again replays the pending delivery and removes it only after a successful durable transition.
+- This is a direct persistence oracle for the queue-owned settlement boundary: recovery authority follows the committed queue row, not a prior callback result, operational run id, or public Cron receipt id.
+
+### 94.3 A real Gateway can settle a released claim after a wall-clock jump using only queue/session identity
+
+- New integration exact-ref `src/gateway/session-delivery-clock-jump.integration.test.ts@74c946b74bb2f4e5e636e0b2262a1ef83248a9de` starts a real Gateway/client and mock provider, enqueues a claimed agent-turn delivery with a normal session key and queue idempotency key, schedules it, advances wall time by 24 hours, releases the claim, and schedules the same queue id again.
+- The fixture requires the real provider to receive the proof turn, the subscribed client to observe `CLOCK_JUMP DELIVERED`, `loadPendingSessionDeliveries` to become empty, and the physical session queue row to be `completed`. It also requires Gateway root work to return to zero.
+- No Cron public `runId` participates in that proof. This does not cover restart/lost-reply or exact Cron alias cleanup, but it independently confirms that live session-delivery settlement is keyed by queue/session custody rather than by the public Cron history identity.
+
+### 94.4 The requested integrated fixture and the two parallel frontiers still remain open
+
+- No frozen fixture found in this pass carries one predecessor public Cron `runId` through restart/lost-reply recovery, real `settleQueuedSessionDelivery`, real `removeCronRunContinuationSessionIfIdle` physical exact-alias deletion, and then public `cron.runs { id, runId, limit: 1 }` for the same predecessor. The new refs strengthen the negative boundary by showing what the queue actually uses instead.
+- The direct Gateway-server `sessions.processes.stop` placement-generation/active-owner replacement late-success oracle remains absent; the registered deferred successful stale-reply case is still `sessions.processes.list`, not Stop.
+- No distinct failed-publication receiver handoff or third production plural `settlePluginNativeAdmissions` caller was found. The production plural callers remain generation preparation and prepared-model-runtime build, while generation-worker remains singular settlement.
+
+### 94.5 Dedupe, lease, and remaining acceptance state
+
+Immediately before this append, the live branch lease was `229a7babd9cef414e2bacb51370b447fa8862e4e`, tree `1bbb4f7d52a473ecc5668cd3d955fb329fa190d7`, dossier blob `b1211bcaab9ceb187cc09843fe0ea96e3bb051a3`, 6,132 lines, with zero Section 94 and all three exact refs above at zero occurrences. This pass remains frozen-source/read-only audit work: no GitHub Actions workflow was started or rerun, and no production code, ledger, RTM, acceptance flag, source lock, inventory, or source baseline file was modified.
+
+- The session-delivery side of the topology is now explicit from shipping code through durable failure and a real Gateway success: queue idempotency/message identity, requester/session lifecycle binding, queue attempt state and queue-row settlement are the operational authorities. The requested public-run-id→restart delivery→real cleanup→exact terminal-read integrated oracle is still not established. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring parity, package/device proof, release acceptance, and final OCRM acceptance remain open.
