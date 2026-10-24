@@ -46,6 +46,31 @@ No `GslTestRuntime`, `GslPackageRuntime`, `TelegramBuildRuntime`, second package
 - Target symbol: `TDRP_GSL_TESTS_CMAKE_IN_PROVENANCE_001`
 - Responsibility: `TDRP-R9-GSL-TESTS-CMAKE-IN-PROVENANCE-001`
 
+## Traceability IDs
+
+- `CAP-DEPENDENCY-TEST-PROVENANCE`
+- `CAP-DEPENDENCY-BUILD-INPUT-PROVENANCE`
+- `CAP-DEPENDENCY-PACKAGE-DISCOVERY-PROVENANCE`
+- `ORA-TDRP-GSL-TESTS-CMAKE-IN-EXACT-SOURCE-001`
+- `ORA-TDRP-GSL-GTEST-DOWNLOAD-PIN-001`
+- `ORA-TDRP-GSL-PACKAGE-DISCOVERY-CALLER-001`
+- `ORA-TDRP-GSL-TEST-SCAFFOLD-NO-SHIPPING-OWNER-001`
+- `ORA-TDRP-GSL-CHILD-TREE-REGISTERED-001`
+- `INV-TDRP-GSL-TEST-DOWNLOAD-DEPENDENCY-ONLY-001`
+- `INV-TDRP-GSL-TEST-DOWNLOAD-NO-PARALLEL-RUNTIME-001`
+- `INV-TDRP-GSL-TEST-PACKAGE-NO-PRODUCT-CLOSURE-001`
+- `CONTRACT-TDRP-GSL-TESTS-CMAKE-IN-PINNED-SOURCE-001`
+- `CONTRACT-TDRP-GSL-GTEST-PINNED-ACQUISITION-001`
+- `CONTRACT-TDRP-GSL-FIND-PACKAGE-PATH-001`
+- `CONTRACT-TDRP-GSL-TESTS-CMAKE-IN-EXACT-HEAD-EVIDENCE-001`
+- `FAULT-TDRP-GSL-TESTS-CMAKE-IN-SOURCE-DRIFT-001`
+- `FAULT-TDRP-GSL-GTEST-PIN-UNREACHABLE-001`
+- `FAULT-TDRP-GSL-PACKAGE-DISCOVERY-DRIFT-001`
+- `FAULT-TDRP-GSL-TEST-SCAFFOLD-PRODUCT-PROMOTION-001`
+- `G-FILE`
+- `G-TRACEABILITY`
+- `G-EVIDENCE`
+
 ## Owner disposition
 
 Selected owner: existing TDRP recursive source/dependency and CI/test-provenance governance. Fabushi shipping build/package/release owners are rejected because this is third-party child test scaffolding. New GSL/Telegram runtimes are rejected because they would promote dependency provenance into product architecture and violate existing-owner-first. Production entrypoints and production evidence remain empty.
