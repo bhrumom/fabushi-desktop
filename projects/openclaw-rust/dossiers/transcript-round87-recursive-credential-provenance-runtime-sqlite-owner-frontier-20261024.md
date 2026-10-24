@@ -722,3 +722,133 @@ These are source/oracle reads only; no tests were executed in this audit round.
 ### 16.4 Frontier
 
 The `createSqliteDatabaseAdmissionRelay` discovery cluster is frozen exact-ref closed. Repository-global SQLite lifecycle closure is still open because `closeOpenClawAgentDatabaseByPathAsync` itself returns a capped 100-result search surface and the broader snapshot/read-only caller families still contain unclassified test/consumer paths. Independent ACCEPT, scoped G01/G02 positive evidence, `unit_authority_ready`, executable/package proof, and release acceptance remain absent. No production code, ledger, RTM, or flags were changed and no Actions were run.
+
+
+## 17. Round81 — agent-database close capped-page closure
+
+### 17.1 Frozen page accounting
+
+The default-branch discovery query for `closeOpenClawAgentDatabaseByPathAsync` returned 99 unique paths: 14 production/helper paths and 85 test/support paths. The frozen upstream tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16` was used as a second exact-ref identity check after the per-file reads.
+
+At frozen `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`:
+- 97 of the 99 returned paths exist in the frozen tree.
+- `src/commands/doctor-a2ui-widgets.ts` is a moving-default-only production discovery hit and is absent from the frozen tree/fetch.
+- `src/infra/database-engine/session-archive-alias.conformance.test.ts` is a moving-default-only test discovery hit and is absent from the frozen tree/fetch.
+- The other 97 paths were exact-ref reconciled. Identities already present elsewhere in this dossier are not repeated below; only the 85 exact identities absent from the live dossier before this append are listed.
+
+This is exact-ref closure for this returned search page, not proof that GitHub code search exposed every repository caller.
+
+### 17.2 Newly persisted frozen production/helper identities
+
+- `src/commands/sessions.test-helpers.ts@db1260b349aa0444a91b5621146116fa0eb8ba5f`
+- `src/agents/cli-runner.test-helpers.ts@b71515fb78058b9baad2518516a4690aa7d88ae5`
+
+The two helper files are test-fixture lifecycle owners rather than shipping product entrypoints. `sessions.test-helpers.ts` drains suffixed database owners before handing off fixture state, while `cli-runner.test-helpers.ts` joins fixture lifetime, agent/state database closure, auth-profile read pools, and owned resource cleanup. They are recorded as test infrastructure and are not promoted into production-completion evidence.
+
+All shipping production paths returned on this page were either already pinned in sections 12–16 or re-confirmed here. Their closure chain remains:
+
+`captured physical owner / maintenance or deletion authority -> drain registered session/read/worker resources -> closeOpenClawAgentDatabaseByPathAsync -> native handle retirement -> durable lease/registry settlement -> only then file replacement, deletion, migration, or handoff`.
+
+### 17.3 Newly persisted frozen test/support identities
+
+- `src/gateway/server-methods/agents-mutate.test.ts@de5c9342216271e382b352e3c70f9cdbf7e4f4be`
+- `src/agents/cli-runner.prepare-fixture.test.ts@e60cca0579153b2b07bd5dcc504edf77017893ca`
+- `src/infra/worker-task-pool.sqlite-idle.test.ts@90b587ed15d2388c703f3b7f4b288b8d1c851d91`
+- `src/state/openclaw-agent-execution.alias.test.ts@05c79bc0b86539e004145461f23be2e2bccf0e08`
+- `src/config/sessions/lifecycle-read.worker.test.ts@21cc03de409cb0e64f99d8ab22fc07307f27763c`
+- `test/non-isolated-runner.agent-reader-fixtures.ts@70938a98b6de4d8cab5218cfe9f227aa8165bb49`
+- `src/agents/session-maintenance/run.test-support.ts@55dc0da4365874e95b29107be0a5b8e338ad1a6e`
+- `src/gateway/assistant-media-policy.lifetime.test.ts@c010cfda4c5769e7279629e537cfc9bff21cb342`
+- `src/gateway/server.sessions.face.test.ts@997819ffd7979846c12adf3c81cf880e761dded3`
+- `src/agents/cli-runner/session-history.async.test.ts@edacda478a6b6c9b35038f1e332257fe48811ccf`
+- `src/config/sessions/session-sqlite-target.worker.test.ts@67f79f15c2b5acae85e812e9d9be23a124e6efc2`
+- `src/config/sessions/session-transcript-read-pools.test.ts@cbb10d47a221f4533fc0739281c425370e39c4a8`
+- `src/commands/doctor-maintenance.sqlite-reclamation.test.ts@14ad9baa1967664549dc31b3e9ce9ae4169ac4b8`
+- `src/config/sessions/session-sqlite-target.ownership.test.ts@f1cc7bab71c30f2943bbb3fd8908486a8e621aad`
+- `src/config/sessions/targets.test.ts@cf715aa132832d9c29dc947dee1934e7d3c168da`
+- `src/agents/sessions/session-manager-metadata-runtime.test.ts@591ebbb8a9abbeb3ab727dece694db8c9d4db3a0`
+- `src/infra/database-engine/receipt-lifecycle.conformance.test.ts@549f090958fc48eec8b6f16b57030ec61675ffb2`
+- `src/config/sessions/session-history-eviction.archived.test.ts@0b67ff94fa7b3d36d519279dd48be3a3d01e5560`
+- `src/state/openclaw-agent-db.postgres.test-support.ts@b1b6e28f24fa1c600ed710a593f9cb2fab3c87d0`
+- `src/agents/sessions/session-manager-model-context-rewrite.test.ts@01b7d5e92a54e912130b6499fc51a999673310d8`
+- `src/config/sessions/provider-review-store.test.ts@3c1f13438a85c69e479650ecca7d3f8fd7102e09`
+- `src/config/sessions/session-transcript-events.worker.test.ts@1e47bfb2d8d18deddf8caf650e9cbf8239ba4645`
+- `src/commands/reset.sessions.test.ts@0d2a55942f8063c58dd221edd1410058db54a0bb`
+- `src/infra/database-engine/mixed-agent-readers.conformance.test.ts@c38c6d8ba05128cf5eaca51027428b8a56fb4e82`
+- `src/state/openclaw-agent-execution.idle.test.ts@e67dbc4d228341c954eadae735a1c655df38c445`
+- `src/gateway/agent-turn/agent-request-routing.session-id.test.ts@6cd4ecb7f4624f88a1d3ccf37f6ee671959161bf`
+- `src/acp/runtime/session-meta-read.test.ts@02775e755b71f4b9125e0056e4fcaf006d611615`
+- `src/agents/auth-profiles/candidate-stores.test.ts@73fa480a62c910d722fa4722d6c5c875a0cd5a69`
+- `src/config/sessions/session-cold-storage.test.ts@ffb69bb7cae5c1a32b3c8620a88d1cf4cb58a572`
+- `src/cron/session-reaper.test.ts@ec029bd79195ee186507ffa90da696d13beff3dc`
+- `src/gateway/session-history-worker-lifecycle.test.ts@56cb8f4ce748afd244565fc97dc02339fec8f139`
+- `src/config/sessions/session-accessor.sqlite-reclamation-preparation.test.ts@f4636ab37018de1b4bfd218fb5f75836cd214e05`
+- `src/gateway/conversation-send.test.ts@71997d5a6a20bb83428e9545b90714ea3aeab2c1`
+- `src/agents/sandbox/sdk-state-owner.process.test.ts@5761a56a6093d8081fc0711f8e5e0236aaa44a85`
+- `src/commands/agent-exec.state-lock.test.ts@0741c51a386a841415f75b543a1e52a52852a70b`
+- `src/cron/isolated-agent/session.preparation.test.ts@29511e2e9459899313f5d514336d4f64772a07a2`
+- `src/gateway/control-ui-session-prs-staleness.test.ts@20cf075d88859d6c2c2f1dc20cc7c3944bf2e28b`
+- `src/gateway/session-utils-read-lifetime.test.ts@da6f97ab4bd168dd85e6eec1b4b2e6817aae0fe0`
+- `src/agents/command/session.exact-target.test.ts@ec79bed3d83777b1e2841237b5490a703ff0cc42`
+- `src/gateway/server-methods/artifacts-list.benchmark.test.ts@4f70218955f7030a2262913aaada5c87d76bd93a`
+- `src/config/sessions/session-transcript-reconcile.admission.test.ts@d3000a9489eedd29c867a88d470d3d9526e2131a`
+- `src/gateway/session-sharing-preparation.test.ts@c64ea3b5641a07bc943956d4f36207e8c4d2d880`
+- `src/gateway/control-ui-session-pr-access.test.ts@97f93df29ead605c1454b8a4ac66c9756cdfdf61`
+- `src/state/agent-deletion-cleanup.test.ts@51cb29c3e0636a3199d30fc7906a364a11c98bda`
+- `src/auto-reply/reply/reply-turn-admission.worker.test.ts@854267b887daa094a6c650f9702143b3206733e7`
+- `src/agents/sessions/session-manager-hydration.test.ts@4121b78d29adb4405e76e5b1e9fe37038de73b89`
+- `src/gateway/session-observer.worker.test.ts@0ddcf38853e6159d70b9e92dc842cffb3a064462`
+- `src/gateway/server-worker-placement-provision-cancellation.test-support.ts@9dc341cea26990667195fe27a3f6bc259937f2f8`
+- `src/gateway/server-methods.canonical-validation.test.ts@9d15865546806a6474a00846ce51bc31c6687c86`
+- `src/state/openclaw-agent-doctor-media.postgres.test.ts@51f9ed1b56fc9fc7e42dfd3d8820a98e1efecd43`
+- `src/gateway/conversation-turn.test.ts@5453100b8cbac5beb081e7a81402dbfc1b292927`
+- `src/agents/auth-profiles/store-state-owner.test.ts@5d2e7eb9e47577c8321c6780585ce24b0a73eaaf`
+- `src/gateway/test-helpers.server-rpc.test.ts@4d6edb57af049c1cb91e23cb6ec5b84204ea4532`
+- `src/state/openclaw-agent-db.postgres.test.ts@d0eb281bacee5ddd0c279215d42aee8eeddae571`
+- `src/agents/harness/native-session/binding-authority.prepared.test.ts@32f819f5243fcace3d3c61eafb2eff975b01fd1d`
+- `src/config/sessions/session-entry-read.worker.test.ts@6edad9b228bcc648c68ead4d466c8acb7baefdc8`
+- `src/gateway/session-access-authority.test.ts@4c964168c452e3a0196d5be5c7513ebfb4e3d813`
+- `src/config/sessions/session-transcript-search.worker.test.ts@baaa492e0d65375001f6e1b8b285c90b1047a977`
+- `src/config/sessions/session-accessor.sqlite-maintenance-close.test.ts@e173a3eadd97e2896aca30b131baaa07f9de50a4`
+- `src/agents/auth-profiles/oauth.peer-settlement.test.ts@bab977c7123d1f531b183c84577e368cd7fec501`
+- `src/infra/database-engine/gateway-agent-inspection.conformance.test.ts@8b464622de8115e39891e185dfc7b52a8f117ce7`
+- `src/gateway/control-ui-session-prs-publication.test.ts@21da3f16e6ac2f323d87b88b3ed5228ea835889b`
+- `src/state/openclaw-agent-db.registration-settlement.test.ts@4796fbf08929fe3eb0330dd61f1c025caa0f268c`
+- `src/infra/session-cost-usage-cache.admission.test.ts@270c004e73419c5037a9d58de05617a0c24877e0`
+- `src/infra/session-cost-usage-worker-env.test.ts@f6eb3d02e41581cd172def5588150b3abd723d99`
+- `src/config/sessions/session-actor-worker.test-support.ts@198c816851e8c12d58b1a895469a11928f1036b8`
+- `src/config/sessions/session-history-eviction.admission.test.ts@c3e7b798196ee74b851b45872edf36cf0c6b0270`
+- `src/gateway/server-methods/models-session.test.ts@5f5cc82c5b275680d740fe89d214a90af40924eb`
+- `src/gateway/managed-image-attachments.authority.test.ts@ea06c0e964f7c419c0435f6b0be3104f20b08038`
+- `src/config/sessions/session-history-eviction.test.ts@28d55d1c9c4fb4463a232f4191cf3a2dd407dd5e`
+- `src/config/sessions/startup-migration.acp.test.ts@e06e747aa5b07528d633617c076f5c4fde02cc0e`
+- `src/config/sessions/session-transcript-reconcile.lease.test.ts@b086cf9a05f0ff8788972f7794dd316a9f2b6130`
+- `src/gateway/session-row-transcript-backfill.test.ts@803d336f08129f62c2a69a468312475c1254ae8e`
+- `src/config/sessions/session-entry-current-check.test.ts@2c36aa79eaad101a78d43daa571b1b74b0cd4bb4`
+- `src/boards/sqlite-board-store.worker.test.ts@46a81c493f06715724b8afc526c837ec052598ef`
+- `src/state/openclaw-agent-db.checkonce.test.ts@6567ecc7af16b579ec20b093aec949c092291af1`
+- `src/config/sessions/transcript.media-identity.test.ts@502c7ce875483307c4efa65bbb1a7bdd0f0e14d9`
+- `src/gateway/server-methods/chat-send-reply-session.test.ts@4608b20fc8953c3816caa5d4b4e2fd5c9bb826c2`
+- `src/config/sessions/session-history-eviction.lifecycle.test.ts@d32227bebfd6d64f78e41574c324c952dbb166b1`
+- `src/auto-reply/reply/reply-turn-admission.database-claim.test.ts@43a32bd3c1f63669aff6e57c121f3099d0d6f6b0`
+- `src/config/sessions/session-entry-readonly.worker.test.ts@968061da3df84e21c3c5cc1bf324e34caccbda0e`
+- `src/agents/anthropic-transport-stream.live.test.ts@b595596e4153424e4ee86c0aaef99dc2f6c3aa8c`
+- `src/gateway/session-row-projection.accepted-facts.test-support.ts@5d20960331a60682501fd1f4e61441df44692725`
+
+The per-file reads group these negative oracles into distinct lifecycle classes:
+
+- **Physical identity and replacement:** alias/reopen tests preserve admitted creator reads on the original physical file, reject successor disclosure, fail closed on mismatched owners, and invalidate same-path/same-row cached reads after physical replacement.
+- **Close joins accepted work:** CLI fixture cleanup, transcript/history pools, maintenance finalization, agent deletion, session reconciliation, usage cache, session actor/read workers, and Gateway fixture release all require accepted reader/worker/resource work to settle before file cleanup or owner retirement.
+- **Authority at the final native edge:** lifecycle read, session-entry patch/deletion/current checks, Board writes, provider review, channel/reply admission, repository/workspace/session operations, and auth/OAuth flows recheck current authority after asynchronous preparation and reject revoked commit/use rather than publishing stale success.
+- **Unknown outcome is not replay:** conversation send/turn, registration settlement, worker-backed session operations, and publication tests preserve unknown/committed receipts separately from ordinary reply delivery and do not resend a mutation merely because a reply or cleanup acknowledgement was lost.
+- **Failure custody and recovery:** failed idle eviction, native close, archive/retention cleanup, resource drain, or cleanup publication keeps explicit custody until retry/reopen/close settles; healthy sibling readers/workers remain usable when the failed owner is unrelated.
+- **Read-only and schema boundaries:** read workers, target discovery, Doctor/port/mixed-engine conformance, PostgreSQL support tests, and cold-storage tests keep inspection/read authority separate from write authority and reject unavailable/ambiguous ownership instead of manufacturing an owner.
+- **Cancellation and deadline:** reply admission, transcript search, session preparation, Gateway provisioning, and live-stream/worker tests distinguish caller cancellation from database-owner closure and ensure cancellation cannot leak or silently convert an accepted native mutation into rollback/success.
+
+These are frozen source/oracle identities only. No test was executed in this audit round.
+
+### 17.4 Remaining closure frontier
+
+The first returned `closeOpenClawAgentDatabaseByPathAsync` page is now exact-ref reconciled, including explicit exclusion of both moving-default-only paths. This does not establish repository-global search closure because GitHub code search remains capped/indexed against the moving default branch. The next exact-ref frontier is to perform the same page/cluster reconciliation for `openSqliteReadOnlyDatabase`, `prepareSqliteReadOnlyLocation` / `startSqliteReadOnlyLocationAsync`, and remaining wrapper references around `openclaw-state-db-async-lifecycle`, then compare their frozen path sets against the cumulative Round87 dossier.
+
+Independent ACCEPT, scoped G01/G02 positive evidence, `unit_authority_ready`, executable/package proof, OCRM final acceptance, and release acceptance remain absent. No Actions were run and no production code, ledger, RTM, or flags were changed.
