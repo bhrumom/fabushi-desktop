@@ -5936,3 +5936,42 @@ Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e7
 Immediately before this append, the live branch lease was `dc0c7ac49f35512ea7eadfe41a1274cc2ac631e3`, tree `3ff8b8b1cbb8ca3dd07b3f1efdbb274282e317e5`, dossier blob `eb04dae7429b9d71692c1e8b77287de42fe8f51c`, 5,898 lines, with zero Section 88 and all six exact refs above at zero occurrences. This pass remains evidence-only: no Actions were started or rerun, and no production code, ledger, RTM, flags, source lock, inventory, or source baseline was modified.
 
 - The requested predecessor-public-id -> restart session-delivery identity -> settlement -> physical Cron alias deletion -> public exact-run terminal-read oracle is still not established. The direct Gateway remote-Stop replacement late-success focused oracle and a distinct plugin failed-publication receiver/new plural settlement caller also remain absent. Independent ACCEPT, scoped G01/G02 evidence, Rust implementation/wiring completion, package/device proof, release acceptance, and final OCRM acceptance remain open.
+
+
+## Section 89 — canonical subagent row payload and restart receipts still terminate at operational/session identity
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`. This pass follows Section 88 through the registry row codec/binder, the complete canonical record shape that is retained in `payload_json`, the producer of its nested operator-recovery source, and restart-recovery ownership. The following frozen exact refs were absent from the complete dossier before this append:
+
+- `src/agents/subagents/registry/subagent-registry.store.codec.ts@e13491514060094c0019731abafc17dcf3b4039d`
+- `src/agents/subagents/registry/subagent-registry.types.ts@c151f5cd5c7a24352557779ff5ddba9992866da6`
+- `src/agents/subagents/registry/subagent-registry-run-launch.ts@371f8d68287647ccea59d3b61567faf2404c967a`
+- `src/agents/subagents/registry/subagent-registry-restart-recovery.ts@a9c95f105d106049f48bde7e3204d8236d01a971`
+- `src/agents/subagents/registry/subagent-recovery-state.ts@cf1444c1235ed91c1b3efa3a02dba1c851c058eb`
+
+### 89.1 The row codec makes `payload_json` complete, but the authoritative row identity is still subagent/session-scoped
+
+- `subagent-registry.store.codec.ts` confirms that `bindSubagentRunRecord` serializes the complete normalized canonical record into `payload_json` while separately projecting only `run_id`, child/controller/requester session keys, requester/controller store paths, and creation time. On read, `rowToSubagentRunRecord` parses the payload and then overwrites its run/session/store identity from those indexed row columns; its comment explicitly rejects rehydrating two competing copies of authoritative state.
+- That closes the remaining ambiguity from Section 88: richer durable fields can exist inside `payload_json`, so absence from a dedicated SQL column alone is not enough. The full canonical record therefore has to be checked for a hidden public Cron bridge rather than inferred from the projection.
+
+### 89.2 The complete durable record has several run-like fields, but none is the public Cron request/history identity
+
+- `subagent-registry.types.ts` defines the persisted restart receipt as `sessionId`, `sessionMarker`, optional `sessionLifecycleRevision`, optional `sessionLifecycleRunId`, `idempotencyKey`, a bounded phase, and optional `lifecycleGeneration`. The same record can retain `taskRunId`, `requesterTurnRunId`, requester-settle private input, and `operatorRecoverySource`, but exposes no public Cron request/history run-id field, Cron receipt id, or history-record id.
+- The nested `operatorRecoverySource.sourceRunId` is not an unexamined escape hatch. `subagent-registry-run-launch.ts` constructs that source only from the admitted requester's `registerParams.requesterTurnRunId`, with the matching requester session id/lifecycle revision and operator snapshot; accepted-run replay separately requires the persisted `requesterTurnRunId` to equal that same admitted requester-turn identity.
+- Section 86 already established the identity class of that value: `requesterTurnRunId` is the operational agent-turn id supplied to the tool runtime, while isolated Cron execution has a distinct acknowledged public/manual request id that is later exposed through Cron history. Persisting the requester turn again as `operatorRecoverySource.sourceRunId` therefore does not turn it into the public Cron request/history id.
+
+### 89.3 Restart recovery preserves child/session custody and does not import a Cron history id into queue cleanup
+
+- `subagent-registry-restart-recovery.ts` reconciles a retained subagent by its registry `runId`, child session identity, saved `execution.restartRecovery` receipt, and current lifecycle ownership. A resumed successor is named from the predecessor subagent run and checked against `successor.taskRunId === (entry.taskRunId ?? runId)`, the same child identity, and current Gateway/session authority. The file contains no public Cron run-id or Cron receipt/history join and does not write one into the session-delivery queue owner.
+- `subagent-recovery-state.ts` narrows the restart receipt further: restart custody is suppressed when the saved lifecycle generation is no longer current, while kill ownership has its own lifecycle generation. Its durable fence is therefore a Gateway/agent lifecycle generation, not a public Cron history key.
+- Re-reading the already registered completion mutation and session-delivery recovery owners does not change this boundary. Recovered completion settlement validates queue id, `owner.runId`, generation/deadline, current subagent row, requester store identity, and current `delivery.queueId`; delivery recovery replays/finalizes the queue entry and invokes its producer settlement callback. Neither path accepts a public Cron request/history id or promotes one into the cleanup owner.
+
+### 89.4 The two secondary focused-oracle frontiers remain unchanged after exact re-check
+
+- The already registered Gateway process handler does pass the remote worker the captured `activeOwnerEpoch` and placement `generation`, and it executes its currentness assertion both before and after the remote await and again before publication. The registered focused test with a deferred successful remote reply is still a `sessions.processes.list` request whose request authority is closed; Stop coverage is separate. No frozen Gateway-server test was found that starts `sessions.processes.stop`, replaces the placement generation/active owner epoch while the remote Stop is in flight, then resolves the old successful worker reply and directly proves the server fences it.
+- Plugin search still yields only the two registered production plural `settlePluginNativeAdmissions` callers: generation preparation and prepared-model runtime build. The generation worker uses singular `settlePluginNativeAdmissionState`. Failed publication remains retained in the same admission state's publication map for later settlement/retry, including disposal settlement; no distinct failed-publication receiver handoff or third production plural caller was found.
+
+### 89.5 Dedupe, lease, and remaining acceptance state
+
+Immediately before this append, the live branch lease was `87d813a5fe1348643821afb81cf754bfabbf63a3`, tree `09da4dbffd8638218049dc96d9a83c7a41d7d8d0`, dossier blob `3eac32ee378584e4ab13aa8e26723ea92f932309`, 5,939 lines, with zero Section 89 and all five exact refs above at zero occurrences. This pass remains evidence-only: no Actions were started or rerun, and no production code, ledger, RTM, flags, source lock, inventory, or source baseline was modified.
+
+- The requested predecessor-public-id -> restart session-delivery identity -> settlement -> physical Cron exact-alias deletion -> public `cron.runs { id, runId, limit: 1 }` terminal-read oracle is still not established. The direct Gateway remote-Stop replacement late-success focused oracle and a distinct plugin failed-publication receiver/new plural settlement caller also remain absent. Independent ACCEPT, scoped G01/G02 evidence, Rust implementation/wiring completion, package/device proof, release acceptance, and final OCRM acceptance remain open.
