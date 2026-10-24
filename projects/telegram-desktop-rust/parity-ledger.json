@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "760f674d7e4f3dabbd40721481133b890d14f24a",
+  "target_commit": "c5c8f81c1dea6d77f90b9f1e0ab31749bf08337a",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16214,
-    "unread": 16189,
+    "unknown": 16213,
+    "unread": 16188,
     "omitted": 0,
-    "responsibilities_total": 180,
+    "responsibilities_total": 181,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -48145,6 +48145,246 @@
       "license_and_provenance": "Exact Microsoft/GSL tests/at_tests.cpp@42b2241bfd472ab384c35267d2042c870edce4a5 and include/gsl/util@26b2f5fb9d0d8c28c3096f50d575eb42a4b89bad retained under MIT LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02; accepted tdesktop has zero direct gsl::at consumers, so no downstream caller release authority is inferred.",
       "reviewer": "primary-session",
       "notes": "Strict162 closes only Microsoft/GSL tests/at_tests.cpp as bounds-checked indexing dependency test provenance anchored to include/gsl/util. The tests prove valid identity/value access, negative/end-boundary fail-closed behavior and constexpr coverage; accepted tdesktop has zero direct gsl::at consumers, so no product caller or runtime is closed. Counters unknown=16,214 unread=16,189 omitted=0 responsibilities=180. Next strict163 Microsoft/GSL tests/byte_tests.cpp@634dcc90773e7144a127e29a2d49ce94b816e596."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/GSL",
+      "source_blob_sha": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+      "source_kind": "recursive_child_repository_dependency_test_provenance",
+      "module_id": "tdesktop.thirdparty.gsl.byte-tests",
+      "responsibility_id": "TDRP-R9-GSL-BYTE-CONTRACT-TEST-PROVENANCE-001",
+      "source_symbols": [
+        "tests/byte_tests.cpp@634dcc90773e7144a127e29a2d49ce94b816e596",
+        "include/gsl/byte@87d007ef94d197632872e96d91525a013c665da8",
+        "GSL_USE_STD_BYTE -> std::byte/std::to_integer when available",
+        "fallback enum class byte : unsigned char with may-alias where supported",
+        "to_byte(T) restricted to unsigned char",
+        "to_byte<I>() compile-time range 0..255",
+        "integral bitwise/shift operators and to_integer",
+        "byte_tests construction/bitwise_operations/to_integer/aliasing"
+      ],
+      "capability_ids": [
+        "CAP-BYTE-REPRESENTATION-TEST-PROVENANCE",
+        "CAP-DEPENDENCY-TEST-PROVENANCE",
+        "CAP-NATIVE-DEPENDENCY-REPLACEMENT"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "Microsoft/GSL:tests/byte_tests.cpp@634dcc90773e7144a127e29a2d49ce94b816e596",
+        "Microsoft/GSL:include/gsl/byte@87d007ef94d197632872e96d91525a013c665da8",
+        "Microsoft/GSL:tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a",
+        "Microsoft/GSL:LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-byte-tests-complete-read.md",
+      "behavior_contract": "Retain exact qualification-test provenance for the locked Microsoft/GSL byte representation without creating a GSL-shaped runtime. The header selects std::byte/std::to_integer when available; otherwise it exposes an unsigned-char-backed byte type with integral shifts, bitwise operations, integral to_integer, runtime to_byte restricted to unsigned char, and compile-time to_byte<I>() constrained to 0..255. The focused tests prove construction, bitwise/shift behavior, integral conversion and byte-alias use. Accepted tdesktop uses byte representation across multiple production domains, so this row closes only tests/byte_tests.cpp and never bulk-closes those callers.",
+      "state_machine": "No independent long-lived state machine. Representation selection is compile-time: use standard byte when available, otherwise fallback byte. Per explicit conversion: accept only the supported unsigned-char runtime input or compile-time 0..255 constant -> form one byte; bitwise/shift operations transform the byte value; to_integer converts only to integral output. Caller-owned protocol, key, buffer, visual and crash state remains outside the helper.",
+      "side_effects": [
+        "Byte construction and bitwise/integral conversion have no helper-owned persistence, account, network, UI or service side effects.",
+        "Fallback compound bitwise/shift operators mutate only the referenced byte value.",
+        "The aliasing test exercises byte access to object representation but does not define caller endianness, cryptographic protocol or durable format semantics."
+      ],
+      "failure_cases": [
+        "Implicitly accepting arbitrary char/int runtime input where the source requires explicit unsigned-char to_byte input.",
+        "Allowing compile-time to_byte constants outside 0..255 or silently truncating them.",
+        "Treating byte representation tests as proof of MTProto/auth-key, RSA, Passport, Calls, Storage, crash lifecycle or UI-effect behavior.",
+        "Inventing a GSLByteTestRuntime, generic binary-data root or source-branded buffer subsystem instead of native Rust representation inside existing owners.",
+        "Assuming aliasing tests prove endianness, secrecy, zeroization, cryptographic validity or protocol framing."
+      ],
+      "ui_disposition": "No independent UI surface. The two UI-effect consumers retain animation/randomization behavior in their own canonical Fabushi UI/effect owners; the dependency row supplies no UI state.",
+      "non_ui_responsibilities": [
+        "exact GSL byte test provenance",
+        "standard-byte versus fallback-byte selection boundary",
+        "explicit byte construction and 0..255 range contract",
+        "bitwise and shift operation semantics",
+        "integral to_integer contract",
+        "byte aliasing qualification",
+        "production consumer scope remains independently open"
+      ],
+      "platform_delta": "Fabushi Rust uses native u8, byte arrays/slices, Vec<u8> or existing domain-specific binary wrappers in the actual owner. FFI/crypto seams may use narrower reviewed representations, but no global GSL byte compatibility layer is introduced and no security-sensitive caller inherits release evidence from this row.",
+      "existing_owner_candidates": [
+        "Existing TDRP source/dependency inventory and test-provenance owner (selected for this test-source accounting)",
+        "Existing byte-representation dependency mapping from strict151 (reused; not duplicated)",
+        "Actual existing Rust/domain owner of each independently read binary-data caller (selected for caller semantics)",
+        "new GSLByteTestRuntime or global binary-data owner (rejected)"
+      ],
+      "existing_owner": "Existing TDRP source/dependency inventory and test-provenance owner, reusing strict151 byte-representation dependency mapping; every real production consumer remains with its independently migrated existing Fabushi domain owner",
+      "rejected_existing_owners": [
+        "A GSL-shaped byte compatibility runtime would preserve helper API shape rather than product responsibility.",
+        "A global binary-data owner would absorb unrelated crypto, protocol, storage, crash and UI semantics.",
+        "Broad byte/to_integer use proves representation reuse, not a common product state machine or permission/lifecycle owner."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "docs/specs/telegram-desktop-rust-equivalence-migration.md"
+      ],
+      "fabushi_target_symbols": [
+        "非 UI 产品职责没有以“not needed”跳过的通用出口。"
+      ],
+      "target_language": "Source-only GSL byte-test provenance plus native Rust byte representations inside actual existing owners; no shipping GSL compatibility API",
+      "language_rationale": "The source is a C++ dependency qualification test, not a product runtime. Rust natively expresses bytes and byte slices; the migration obligation is preserving each caller's protocol, cryptographic, storage, lifecycle or UI semantics in that caller's existing owner rather than reproducing GSL.",
+      "command_event_contracts": [
+        "source mapping -> retain exact byte test/header blobs, explicit conversion/bitwise behavior, build registration and MIT provenance",
+        "real binary-data caller -> independently read and migrate its protocol/state/security semantics into its existing owner",
+        "unsupported runtime conversion or out-of-range compile-time byte constant -> reject rather than silently truncate",
+        "test/helper closure -> never infer caller production or release acceptance"
+      ],
+      "state_owner": "No helper-owned persistent state. Byte buffers and their meanings belong to the actual independently migrated domain caller.",
+      "lifecycle_owner": "No helper-owned lifecycle. Buffer/key/crypto/crash/UI resource lifetime remains with the actual existing Fabushi owner.",
+      "persistence_and_restart": "No byte-test persistence. Durable formats, keys and restart/recovery behavior remain in existing storage/security/domain owners and are independently open.",
+      "concurrency_and_cancellation": "The byte helper/tests own no async or cancellation state. Any concurrent buffer/key/call/network consumer must independently preserve synchronization, cancellation, generation fencing and stale-state rules.",
+      "security_boundary": "Byte representation is a low-level type boundary, not cryptography or authorization. Security-sensitive callers must separately preserve key material lifetime, zeroization where required, protocol framing, bounds, endianness and authentication semantics. No caller is certified by this test row.",
+      "network_service_dependencies": [
+        "GitHub Actions for exact-head revalidation"
+      ],
+      "service_owner": "No shipping service.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-replaced-mapped-open",
+      "blockers": [
+        "Fresh child exact-head TDRP/Rust Actions required after strict163 publication.",
+        "All 13 unique observed production byte/to_integer consumer files remain independently scoped; source closure, all production implementation and independent release acceptance remain open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "strict163 tests/byte_tests.cpp@634dcc90773e7144a127e29a2d49ce94b816e596 fully read: 135 line slots / 3518 bytes",
+        "include/gsl/byte@87d007ef94d197632872e96d91525a013c665da8 fully read: 184 line slots / 5962 bytes; standard-byte selection and fallback byte/conversion/bitwise contracts verified",
+        "tests/byte_tests.cpp has four focused tests: construction, bitwise_operations, to_integer and aliasing; guarded compile-error cases reject unsupported to_byte inputs",
+        "tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a registers byte_tests.cpp; Microsoft/GSL LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02 confirms MIT",
+        "existing strict151 byte-representation dossier already maps the header implementation; strict163 adds only the standalone test-source entry",
+        "accepted tdesktop dev code search incomplete_results=false: gsl::byte 10 files, to_integer< 4 files, to_byte( 0 files; union 13 unique production files with calls_call.cpp overlapping the first two sets",
+        "GSL gitlink 87f9d768866548b5b86e72be66c60c5abd4d9b37; child tree 6d9ffc01c1dd5b232fc2bdd634c8f95fa80f4f41",
+        "Live main fb1189efd9d85c650864d6987ea8fb68c913558d/1a1ef09be4c9fd801354439a5b82cc460f0b4b6a and upstream dev a7f453612f4896ac04d0007a36ab0d377e5bcbcf/c539eabfb05e7dcaa84821ac44c35cdfb6551ae5 rechecked immediately before strict163 publication",
+        "Parent exact-head c5c8f81c1dea6d77f90b9f1e0ab31749bf08337a: TDRP 40054914813 completed 61/61 success; authority 12544539280 sha256:8469d3852256dc02e0b38567f6091677eb0f54a9ab8af3778016fef3919621c0; closure 12545345565 sha256:ac23b2c5616a1927b8fecd1f91468b5bc104c70e3acef937bce1ea3410e62ff0; reachability 12544669389 sha256:306da3736447347f18a0ea8c3e7ebbfd8352eb32615c819969ecab4f4be26154; Rust 40054914790 completed 6/6 success; artifact 12544587734 sha256:acd60a3e3a141eb67293204b27b873f820441e11f775e3abe26e0e3a2ad34b81."
+      ],
+      "target_commit": "c5c8f81c1dea6d77f90b9f1e0ab31749bf08337a",
+      "workflow_run": 40054914813,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12544539280,
+      "artifact_digest": "sha256:8469d3852256dc02e0b38567f6091677eb0f54a9ab8af3778016fef3919621c0",
+      "composition_root": "Fabushi source/dependency test-provenance governance plus strict151 native byte-representation mapping and the actual existing domain owner for every production consumer",
+      "composition_slot": "byte dependency test provenance only",
+      "capability_component": "Source-only GSL byte qualification tests; no shipping compatibility runtime",
+      "variation_axes": [
+        "std::byte path versus fallback byte path",
+        "runtime unsigned-char to_byte versus compile-time 0..255 to_byte",
+        "bitwise/shift operations versus integral conversion",
+        "dependency test provenance versus independently migrated production consumer"
+      ],
+      "shared_owner_contracts": [
+        "TDRP source/dependency inventory",
+        "strict151 byte-representation dependency replacement",
+        "actual existing Rust/domain caller ownership",
+        "exact-head TDRP/Rust evidence"
+      ],
+      "duplicate_root_check": "No GSLByteTestRuntime, second binary-data root, generic crypto/storage buffer owner or bulk caller-closure authority.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "No independent product action; this row records dependency qualification-test behavior only.",
+      "detail_section": "Not applicable",
+      "capability_surface": "Exact source/dependency test accounting only; no shipping UI/runtime surface.",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Any accepted tdesktop/GSL gitlink, child tree, byte test/header/license/build-registration or production byte/to_integer consumer-set drift requires fresh reconciliation; actual caller responsibilities remain independently open.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-GSL-BYTE-CONTRACT-TEST-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GSL-BYTE-TEST-EXACT-SOURCE-001",
+        "ORA-TDRP-GSL-BYTE-TEST-CONVERSION-001",
+        "ORA-TDRP-GSL-BYTE-TEST-BITWISE-001",
+        "ORA-TDRP-GSL-BYTE-TEST-CALLER-SCOPE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GSL-BYTE-TEST-NO-IMPLICIT-TRUNCATION-001",
+        "INV-TDRP-GSL-BYTE-TEST-NO-PARALLEL-RUNTIME-001",
+        "INV-TDRP-GSL-BYTE-TEST-NO-BULK-CALLER-CLOSURE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GSL-BYTE-REPRESENTATION-TEST-001",
+        "CONTRACT-TDRP-GSL-BYTE-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GSL-BYTE-TEST-SOURCE-DRIFT-001",
+        "FAULT-TDRP-GSL-BYTE-TEST-TRUNCATING-CONVERSION-001",
+        "FAULT-TDRP-GSL-BYTE-TEST-BULK-CALLER-CLOSURE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-GSL-BYTE-CALLERS-REMAIN-INDEPENDENT-001"
+      ],
+      "regression_ids": [
+        "REG-TDRP-GSL-BYTE-TEST-NO-SOURCE-OMISSION-001",
+        "REG-TDRP-GSL-BYTE-TEST-NO-PARALLEL-RUNTIME-001",
+        "REG-TDRP-GSL-BYTE-TEST-NO-CALLER-ABSORPTION-001"
+      ],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-INVENTORY",
+        "G-FILE",
+        "G-BEHAVIOR",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "locked GSL byte tests + byte header + build registration + MIT license + exact production consumer search + parent exact-head evidence"
+      ],
+      "test_environment_ids": [
+        "ENV-GITHUB-ACTIONS-EXACT-HEAD-001"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact Microsoft/GSL tests/byte_tests.cpp@634dcc90773e7144a127e29a2d49ce94b816e596 and include/gsl/byte@87d007ef94d197632872e96d91525a013c665da8 retained under MIT LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02; broad accepted tdesktop byte/to_integer use remains caller-specific and no downstream release authority is inferred.",
+      "reviewer": "primary-session",
+      "notes": "Strict163 closes only Microsoft/GSL tests/byte_tests.cpp as byte-representation dependency test provenance, reusing strict151 include/gsl/byte mapping. The tests prove explicit construction/conversion, bitwise/shift behavior, integral conversion and aliasing qualification; accepted tdesktop has 13 unique production files across byte/to_integer searches, so every caller remains independently open. Counters unknown=16,213 unread=16,188 omitted=0 responsibilities=181. Next strict164 Microsoft/GSL tests/deathTestCommon.h@7bf242393f7bcff62c12cd985a87824f48f7bb0b."
     }
   ]
 }
