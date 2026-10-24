@@ -56,3 +56,6 @@ Invariants: `INV-TDRP-GSL-DEATH-TEST-COMMON-TESTS-ONLY-001`, `INV-TDRP-GSL-DEATH
 Counters before strict164: source entries 16,379; unknown 16,213; unread 16,188; omitted 0; responsibilities 181. After this one source entry is accounted: source entries remain 16,379; unknown 16,212; unread 16,187; omitted 0; responsibilities 182. `baseline_identity_accepted=false`, `source_closure_ready=false`, and independent release acceptance remain open.
 
 Strict165 is recorded separately as test-only no-exception/span contract provenance. Counters after strict164 remain unknown=16,212 unread=16,187 omitted=0 responsibilities=182. Next strict166 `Microsoft/GSL tests/notnull_tests.cpp@df8e5a9acf529a9da9e578da413e955900e91e7d`.
+
+
+<!-- TDRP_GSL_NO_EXCEPTION_ENSURE_TEST_PROVENANCE_001: strict165 validator target anchor. The ledger row's fabushi_target_paths resolves this marker in the death-test-common dossier; the independent strict165 source analysis remains in upstream-microsoft-gsl-no-exception-ensure-tests-complete-read.md. Documentation only; no production symbol or runtime owner. -->

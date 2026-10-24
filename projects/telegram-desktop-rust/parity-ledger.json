@@ -6,10 +6,10 @@
   "target_commit": "584dc11ecd07fd6431e8c876bf9508e1f3436a43",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16211,
-    "unread": 16186,
+    "unknown": 16210,
+    "unread": 16185,
     "omitted": 0,
-    "responsibilities_total": 183,
+    "responsibilities_total": 184,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -48845,6 +48845,230 @@
       "license_and_provenance": "Exact Microsoft/GSL tests/deathTestCommon.h@7bf242393f7bcff62c12cd985a87824f48f7bb0b, seven registered consumer blobs, tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a and LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02 are retained as source/test provenance under MIT. No GSL code is copied into a shipping runtime; direct tdesktop consumer count is zero.",
       "reviewer": "primary-session",
       "notes": "Strict165 only records no_exception_ensure_tests.cpp test provenance; no global no-exception/span runtime. Counters unknown=16,211 unread=16,186 omitted=0 responsibilities=183. Fresh exact-head Actions required. Next strict166 tests/notnull_tests.cpp@df8e5a9acf529a9da9e578da413e955900e91e7d."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/GSL",
+      "source_blob_sha": "87f9d768866548b5b86e72be66c60c5abd4d9b37",
+      "source_kind": "recursive_child_repository_dependency_test_provenance",
+      "module_id": "tdesktop.thirdparty.gsl.notnull-tests",
+      "responsibility_id": "TDRP-R9-GSL-NOTNULL-TEST-PROVENANCE-001",
+      "source_symbols": [
+        "tests/notnull_tests.cpp@df8e5a9acf529a9da9e578da413e955900e91e7d",
+        "not_null<T> constructors enforce Expects(ptr_ != nullptr)",
+        "nullptr constructor/assignment are deleted",
+        "make_not_null forwards into not_null<T>",
+        "TestNotNullConstructors; TestNotNullostream; TestNotNullCasting; TestNotNullAssignment",
+        "TestNotNullRawPointerComparison; TestNotNullDereferenceOperator; TestNotNullSharedPtrComparison; TestNotNullCustomPtrComparison",
+        "TestNotNullConstructorTypeDeduction; TestVariantEmplace; TestMakeNotNull; TestStdHash",
+        "EXPECT_DEATH negative oracles for null construction, assignment, CTAD and make_not_null"
+      ],
+      "capability_ids": [
+        "CAP-DEPENDENCY-DEATH-TEST-PROVENANCE",
+        "CAP-DEPENDENCY-TEST-PROVENANCE",
+        "CAP-NATIVE-DEPENDENCY-REPLACEMENT"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/GSL@87f9d768866548b5b86e72be66c60c5abd4d9b37",
+        "Microsoft/GSL:tests/notnull_tests.cpp@df8e5a9acf529a9da9e578da413e955900e91e7d",
+        "Microsoft/GSL:include/gsl/pointers@63e193e92478632520eca7e872ac83c643ffd2c0",
+        "Microsoft/GSL:include/gsl/assert@d3e6ccdd53d5a254ed3827cf07711a6e86bb4226",
+        "Microsoft/GSL:tests/deathTestCommon.h@7bf242393f7bcff62c12cd985a87824f48f7bb0b",
+        "Microsoft/GSL:tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a",
+        "Microsoft/GSL:LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-notnull-tests-complete-read.md",
+      "behavior_contract": "Retain exact Microsoft/GSL not_null and make_not_null test provenance only. Valid non-null access/conversion is preserved; null constructor, assignment, CTAD and factory paths must terminate. This row does not close every production not_null caller.",
+      "state_machine": "No product state machine. A valid non-null value passes the wrapper precondition; null violates Expects(ptr_ != nullptr) and must terminate. Test assertions fail if invalid operations return. Conditional compile-error probes are not ordinary runtime tests.",
+      "side_effects": [
+        "Pinned GSL test harness and process-death assertions only; no product state, persistence, service or UI side effects."
+      ],
+      "failure_cases": [
+        "Null constructor returns instead of terminating",
+        "Null-backed wrapper assignment returns instead of terminating",
+        "Null CTAD path returns instead of terminating",
+        "make_not_null accepts null",
+        "notnull_tests.cpp or CTest registration disappears",
+        "Pinned source/header/build/license drift without re-audit"
+      ],
+      "ui_disposition": "Not a UI source; dependency test provenance only.",
+      "non_ui_responsibilities": [
+        "not_null constructor/value/assignment negative-oracle provenance",
+        "make_not_null null rejection",
+        "Pointer/smart-pointer conversion/comparison/streaming/dereference/variant/hash tests",
+        "CMake/CTest registration",
+        "Exact source/header and MIT license provenance",
+        "Separation between dependency tests and production callers"
+      ],
+      "platform_delta": "Compiler-conditional compile-error probes and narrow MSVC no-exceptions workaround are test portability only.",
+      "existing_owner_candidates": [
+        "Existing TDRP source/dependency inventory and test-provenance owner",
+        "Existing canonical Fabushi Rust/domain owners for actual pointer ownership and nullability"
+      ],
+      "existing_owner": "Existing TDRP source/dependency inventory and test-provenance owner; production nullability stays with canonical Fabushi domain owners. No shipping GSL not-null runtime owner.",
+      "rejected_existing_owners": [
+        "GSLNotNullRuntime/global pointer-wrapper runtime",
+        "Second assertion/termination owner",
+        "Parallel C++ or Telegram-specific pointer ownership subsystem"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/dossiers/upstream-microsoft-gsl-notnull-tests-complete-read.md"
+      ],
+      "fabushi_target_symbols": [
+        "TDRP_GSL_NOTNULL_TEST_PROVENANCE_001"
+      ],
+      "target_language": "Source-only C++ dependency-test provenance; no shipping implementation",
+      "language_rationale": "Accounts for source tests only; no C++ test machinery is copied into production.",
+      "command_event_contracts": [],
+      "state_owner": "No product state owner; GTest owns local test setup/assertions.",
+      "lifecycle_owner": "Existing Microsoft/GSL CMake/CTest gsl_tests target; no shipping lifecycle owner.",
+      "persistence_and_restart": "No persistence or restart behavior.",
+      "concurrency_and_cancellation": "Synchronous test assertions and process-death oracles; no asynchronous task/cancellation owner.",
+      "security_boundary": "Source/test provenance does not replace canonical product permission, ownership or validation boundaries.",
+      "network_service_dependencies": [],
+      "service_owner": "Not applicable; no network or service contract.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-test-provenance-mapped-open",
+      "blockers": [
+        "No production implementation or acceptance claim is made",
+        "Other GSL source responsibilities and production callers remain open",
+        "Fresh exact-head TDRP, Rust desktop runtime and Official MCP marketplace Actions evidence required"
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "tests/notnull_tests.cpp@df8e5a9acf529a9da9e578da413e955900e91e7d: 649 lines / 18,407 bytes; helper include line 29; GetExpectedDeathString lines 165, 300, 485, 583.",
+        "include/gsl/pointers@63e193e92478632520eca7e872ac83c643ffd2c0: Expects(ptr_ != nullptr) lines 104/110; deleted nullptr constructor/assignment lines 130-131; make_not_null lines 147-150.",
+        "include/gsl/assert@d3e6ccdd53d5a254ed3827cf07711a6e86bb4226: noreturn/noexcept termination and Expects dispatch lines 111-127.",
+        "tests/CMakeLists.txt@9de2519b366d6bc6803329a51afe459b0a6a357a: notnull_tests.cpp in gsl_tests line 206; CTest registration line 221.",
+        "tests/deathTestCommon.h@7bf242393f7bcff62c12cd985a87824f48f7bb0b is the existing shared matcher; no second matcher/runtime.",
+        "LICENSE@aa58667a3fd3784b0dfa11bf17f05f5e8dbd7d02 confirms MIT.",
+        "Negative oracles: constructor line 178; assignment line 307; CTAD lines 492/500/506-507; make_not_null lines 591/600/606-607. Invalid operation returning makes EXPECT_DEATH fail.",
+        "CONFIRM_COMPILATION_ERRORS sections are compile-error probes, not ordinary runtime evidence."
+      ],
+      "target_commit": "9c1778e76f54db28811066127789009615fc356d",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Existing TDRP source/dependency inventory and test-provenance governance",
+      "composition_slot": "Dependency test provenance only; no shipping composition slot",
+      "capability_component": "Microsoft/GSL not_null and make_not_null test provenance; no shipping surface/runtime",
+      "variation_axes": [
+        "non-null versus null raw pointer",
+        "construction versus assignment versus CTAD",
+        "not_null versus make_not_null",
+        "raw pointer versus smart-pointer-like value",
+        "valid operators versus invalid null input"
+      ],
+      "shared_owner_contracts": [
+        "TDRP source/dependency inventory",
+        "Adjacent GSL source/test provenance",
+        "Existing Rust/domain owners for product contracts",
+        "Fresh exact-head GitHub Actions evidence"
+      ],
+      "duplicate_root_check": "No GSLNotNullRuntime, second assertion/termination owner, global pointer wrapper, product composition root or Telegram-specific owner.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "No product action; dependency test-only provenance.",
+      "detail_section": "Not applicable",
+      "capability_surface": "Source-only dependency-test provenance; no shipping surface.",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Any GSL gitlink/tree, test/header/helper/build registration or license drift requires exact-ref re-read; no downstream caller is closed.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No icon change.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-GSL-NOTNULL-TEST-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-GSL-NOTNULL-EXACT-SOURCE-001",
+        "ORA-TDRP-GSL-NOTNULL-CONSTRUCTOR-REJECTS-NULL-001",
+        "ORA-TDRP-GSL-NOTNULL-ASSIGNMENT-REJECTS-NULL-001",
+        "ORA-TDRP-GSL-NOTNULL-MAKE-NOT-NULL-REJECTS-NULL-001",
+        "ORA-TDRP-GSL-NOTNULL-CMAKE-REGISTRATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-GSL-NOTNULL-TESTS-ONLY-001",
+        "INV-TDRP-GSL-NOTNULL-NO-PARALLEL-RUNTIME-001",
+        "INV-TDRP-GSL-NOTNULL-NO-BULK-CALLER-CLOSURE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-GSL-NOTNULL-REGISTERED-TESTS-001",
+        "CONTRACT-TDRP-GSL-NOTNULL-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-GSL-NOTNULL-SOURCE-DRIFT-001",
+        "FAULT-TDRP-GSL-NOTNULL-BUILD-REGISTRATION-001",
+        "FAULT-TDRP-GSL-NOTNULL-BULK-CALLER-CLOSURE-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "Pinned Microsoft/GSL CMake/CTest gsl_tests target",
+        "GitHub Actions exact-head TDRP Revision 9 and Rust desktop runtime"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Pinned Microsoft/GSL notnull_tests.cpp, pointers/assert headers, deathTestCommon.h, CMakeLists and MIT LICENSE retained as source/test provenance. No GSL code copied into shipping runtime.",
+      "reviewer": "primary-session",
+      "notes": "Strict166 covers pinned notnull_tests.cpp test provenance only; null constructor/assignment/CTAD/make_not_null cases are negative death oracles and conditional compile-error probes remain separate. No runtime owner is added. Parent exact-head 9c1778e76f54db28811066127789009615fc356d TDRP run 40062760120 failed because TDRP_GSL_NO_EXCEPTION_ENSURE_TEST_PROVENANCE_001 was absent from the ledger target dossier; this publication repairs the anchor while preserving the independent strict165 dossier. Parent Rust 40062760136 and Official MCP marketplace 40062760143 succeeded but are historical for this publication. Counters after strict166: unknown=16210 unread=16185 omitted=0 responsibilities=184; source closure and independent release acceptance remain open. Next strict167 tests/strict_notnull_tests.cpp@c1b1f54c97abe1c2cf825e81e713bee2fb8a888f."
     }
   ]
 }
