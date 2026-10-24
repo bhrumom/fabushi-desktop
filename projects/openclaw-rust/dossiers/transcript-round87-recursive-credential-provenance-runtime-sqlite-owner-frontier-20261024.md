@@ -6350,3 +6350,49 @@ This establishes the source-level timing chain: host owner settlement -> first e
 Immediately before this append, the live branch lease was `71e56fa81b4989755ee726fa09a65b9bcd38e772`, tree `ae57abf2fccc1306bb80eea52c6cb393a96b5661`, dossier blob `7a8aab329d073a8952906774648f7e3e4a526e01`, 6302 lines, with zero Section 98 and all four exact refs above at zero occurrences. Frozen upstream commit `ad8d12f126d29b0db204187adf5092db80294e70` was re-read in this pass. This remains frozen-source/read-only audit work: no GitHub Actions workflow was started or rerun, and no production code, ledger, RTM, acceptance flag, source lock, inventory, or source baseline file was modified.
 
 - No frozen fixture found in this pass carries the same predecessor public Cron run id from Section 84 history attribution through real restart/lost-reply session-delivery recovery, real `settleQueuedSessionDelivery`, real `removeCronRunContinuationSessionIfIdle` physical exact-alias deletion, and a subsequent public `cron.runs { id, runId, limit: 1 }` terminal read. The direct remote-Stop replacement late-success oracle and a distinct plugin-native failed-publication receiver/new plural settlement caller are also still absent. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring parity, package/device proof, release acceptance, and final OCRM acceptance remain open.
+
+
+## Section 99 — gateway recovery lifecycle is joined at shutdown, but its focused harness still substitutes settlement; plugin publisher capture and registry rollback are not a new native-admission failure receiver
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70`. This pass starts from Section 98's source-level ordering for host cleanup, durable settlement marking, `onSettled=settleQueuedSessionDelivery`, current-row exemption and physical queue finalization. It registers only frozen exact refs that occurred zero times in the complete Round87 dossier immediately before this append.
+
+New frozen identities:
+- `src/gateway/server-runtime-services.test.ts@23d88332f3e7e41e66d663b9750d5c40e48bbf89`
+- `src/gateway/server-runtime-services.test-harness.ts@b52b74640a0a5719edd26425977e3268c0228851`
+- `src/plugins/plugin-generation-artifact.ts@15a068dfe6e7879add4679d414c08842714ff25e`
+- `src/plugins/loader-runtime-core.ts@cb9faa946f87387e658c55d64b5727ba7f11a8ad`
+
+### 99.1 Runtime lifecycle tests prove admitted recovery/import is joined before shutdown, not that production settlement and Cron cleanup run
+
+- New focused exact-ref `src/gateway/server-runtime-services.test.ts@23d88332f3e7e41e66d663b9750d5c40e48bbf89` holds restart admission/recovery work and requires gateway shutdown to remain pending until that admitted recovery or scheduling promise completes or aborts. Another case holds the dynamic import of `server-restart-sentinel.js`, starts service/scheduler shutdown, then releases the import and proves neither the session-delivery runtime nor restart-continuation recovery is installed after shutdown has won.
+- The same fixture explicitly provides a mocked module export set containing `deliverQueuedSessionDelivery`, `recoverPendingRestartContinuationDeliveries`, and `settleQueuedSessionDelivery`. Its lifecycle assertions therefore establish root-work/import fencing and shutdown joining, but they never execute the production `settleQueuedSessionDelivery`, never call the real `removeCronRunContinuationSessionIfIdle`, and never inspect a physical pending session-delivery row.
+- No case in this new ref carries Section 84's public history `runId`/`sessionKey` binding through recovery, physical exact-alias deletion and a later `cron.runs { id, runId, limit: 1 }` read. It closes a lifecycle boundary only.
+
+### 99.2 The shared runtime-services harness confirms the settlement callback is a test double throughout those focused lifecycle cases
+
+- New exact-ref `src/gateway/server-runtime-services.test-harness.ts@b52b74640a0a5719edd26425977e3268c0228851` declares `startSessionDeliveryRuntime`, `recoverPendingRestartContinuationDeliveries`, `deliverQueuedSessionDelivery`, and `settleQueuedSessionDelivery` as `vi.fn` test doubles and injects them into the runtime-services module graph.
+- The harness resets those mocks between cases; it contains no queue storage, `settlementOutcome`, `acknowledgedAt`, `settledDeliveryId`, Cron continuation cleanup, public receipt/history identity, or public `cron.runs` reader. This makes the negative boundary explicit: the runtime-services lifecycle suite can prove admission/join/teardown ordering without being an integrated oracle for the production queue-settlement-to-Cron-cleanup chain.
+- Re-reading the already registered production `server-runtime-services.ts` remains necessary for the actual wiring fact: production passes `onSettled: settleQueuedSessionDelivery`. The newly registered tests do not upgrade that wiring fact into an end-to-end public-id cleanup fixture.
+
+### 99.3 The requested predecessor public-id cleanup/read fixture remains absent after crossing the runtime lifecycle surface
+
+- Targeted frozen-path cross-checks still leave the public identity and cleanup domains separate. The already registered `cron.history.test.ts` remains the strongest fixture for a public history `runId` bound to a `sessionKey`; the already registered queue/recovery/cleanup refs establish physical settlement and exact-alias cleanup. No frozen focused fixture found here drives those two domains together through the real production settlement callback and then asks public `cron.runs { id, runId, limit: 1 }` for the same predecessor.
+- In particular, the newly registered runtime-services test and harness do not introduce `requestRunId`, Cron receipt identity, `:run:` alias ownership, or a public terminal-read assertion. Section 98's conclusion therefore remains unchanged rather than being weakened by a mock-backed lifecycle test.
+
+### 99.4 The direct Gateway `sessions.processes.stop` replacement-late-success oracle is still not present
+
+- Re-scanning the direct `sessions.processes.stop` surface still resolves the already registered Gateway handler/unit path plus already registered UI/background-work callers. No new frozen direct Gateway-server fixture was found that starts a remote Stop, replaces `placementGeneration` or `activeOwnerEpoch` while that request is in flight, then returns a successful stale worker reply and proves the Gateway rejects it before publication.
+- Lower worker-placement authority tests exist, but they are not the requested direct Gateway-server Stop oracle and are therefore not promoted here.
+
+### 99.5 Native artifact publisher capture and loader registry rollback are two new false joins, not a distinct failed-publication receiver or new plural settlement caller
+
+- New production exact-ref `src/plugins/plugin-generation-artifact.ts@15a068dfe6e7879add4679d414c08842714ff25e` obtains the current native-admission state, creates a `PluginSourceAdmissionPublisher` only when the resolved artifact is owned and the state is not artifact-preserving read-only, then binds that publisher into `capturePluginGenerationArtifactInScope`. Its purpose is to seed publication authority so deferred materialization retains the publisher after the synchronous scope exits.
+- That file never calls `settlePluginNativeAdmissions`, `settlePluginNativeAdmissionState`, `queuePluginNativeAdmissionPublication`, or `adoptPluginNativeAdmissions`, and it has no failed-publication receiver callback. It is a producer/custody seed, not the missing failure handoff.
+- New production exact-ref `src/plugins/loader-runtime-core.ts@cb9faa946f87387e658c55d64b5727ba7f11a8ad` separately publishes only complete plugin registries into the loader cache; if construction/activation fails before activation, its catch rolls back global side effects for newly built plugins while retaining predecessor instances. This is loader registry-selection rollback, not plugin-native admission publication settlement.
+- The loader ref likewise contains no plural `settlePluginNativeAdmissions` caller and no native-admission publication receiver handoff. Plural production callers therefore remain the already registered generation-preparation worker and prepared-model-runtime build; generation-worker remains singular.
+
+### 99.6 Dedupe, lease, and remaining acceptance state
+
+Immediately before this append, the live branch lease was `9457a3c198227737dbd0c01f396a32fa8945bbcc`, tree `0a09cdc76159f32719d74f8d3db215cc03db5666`, dossier blob `195c8960aad3d2fb8ef5ba09e34197e7f8d2089c`, 6,353 lines, with zero Section 99 and all four exact refs above at zero occurrences. Frozen upstream commit `ad8d12f126d29b0db204187adf5092db80294e70` was re-read in this pass. This remains frozen-source/read-only audit work: no GitHub Actions workflow was started or rerun, and no production code, ledger, RTM, acceptance flag, source lock, inventory, or source baseline file was modified.
+
+- The requested single predecessor-public-id -> restart/lost-reply session-delivery recovery -> real `settleQueuedSessionDelivery` -> real `removeCronRunContinuationSessionIfIdle` physical exact-alias deletion -> public `cron.runs { id, runId, limit: 1 }` terminal-read fixture remains absent. The direct Gateway remote-Stop replacement late-success oracle and a distinct plugin-native failed-publication receiver/new plural settlement caller also remain absent. Independent ACCEPT, scoped G01/G02 positive evidence, Rust implementation/wiring parity, package/device proof, release acceptance, and final OCRM acceptance remain open.
