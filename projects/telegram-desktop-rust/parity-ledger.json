@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "c71b1a215b44d64cbe70f1c969304760393f0783",
+  "target_commit": "993a5bf9c8c6b19d0b970cf6035474fd6f316b7f",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16197,
-    "unread": 16172,
+    "unknown": 16196,
+    "unread": 16171,
     "omitted": 0,
-    "responsibilities_total": 197,
+    "responsibilities_total": 198,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -52045,6 +52045,261 @@
       "license_and_provenance": "Exact MicroTeX Ubuntu GTK workflow, build inputs, mutable action resolutions, README, root MIT license and resource-specific license split retained as dependency provenance; no child CI or resource copied into Fabushi shipping runtime by this row.",
       "reviewer": "primary-session",
       "notes": "Strict179 source-only dependency Linux/GTK CI/build provenance. Counters unknown=16197 unread=16172 omitted=0 responsibilities=197. Parent Actions terminal-success; receipt-head Actions required. Real tdesktop MicroTeX formula/resource responsibilities remain open. Baseline identity, source closure and independent release acceptance remain false."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/MicroTeX",
+      "source_blob_sha": "61aaa7cc354de91d5898ffb0b2a6c62628d9a76f",
+      "source_kind": "recursive_child_repository_ci_build_workflow_provenance",
+      "module_id": "tdesktop.thirdparty.microtex.windows-gdi-workflow",
+      "responsibility_id": "TDRP-R9-MICROTEX-WINDOWS-GDI-WORKFLOW-PROVENANCE-001",
+      "source_symbols": [
+        "desktop-app/MicroTeX:.github/workflows/windows-gdi.yml@4adace4d194d60ffc027a1b5d99fa33d200b07aa",
+        "windows-2019 -> actions/checkout@v2 -> lukka/get-cmake@latest -> unpinned Microsoft/vcpkg clone/bootstrap -> ilammy/msvc-dev-cmd@v1 x64 -> CMake Release/Ninja with vcpkg toolchain -> ninja",
+        "CMake WIN32 branch -> BUILD_WIN32 -> LaTeXWin32Sample from graphic_win32.cpp + win32_main.cpp -> gdiplus + LaTeX",
+        "vcpkg.json@c6c84611e66339b7a599902cd19009719532efef -> tinyxml2",
+        "No CTest/test/sample-launch/executable-run/assertion step",
+        "actions/checkout@v2 -> 0717577d45739eb3c851188b29f50ed6c0b2194e; lukka/get-cmake@latest -> da37b03df250c343a90268c30948f7814f31d88e; ilammy/msvc-dev-cmd@v1 -> 0b201ec74fa43914dc39ae48a89fd1d8cb592756; Microsoft/vcpkg master live -> 0c2a9ace1964b818b15f7ae50ba1c42404918a7b",
+        "tdesktop production boundary: external_microtex formula/render/resource/package responsibilities remain open"
+      ],
+      "capability_ids": [
+        "CAP-DEPENDENCY-CI-PROVENANCE",
+        "CAP-DEPENDENCY-BUILD-INPUT-PROVENANCE",
+        "CAP-DEPENDENCY-WINDOWS-GDI-BUILD-PROVENANCE"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/MicroTeX@61aaa7cc354de91d5898ffb0b2a6c62628d9a76f",
+        "desktop-app/MicroTeX:.github/workflows/windows-gdi.yml@4adace4d194d60ffc027a1b5d99fa33d200b07aa",
+        "actions/checkout@v2 -> 0717577d45739eb3c851188b29f50ed6c0b2194e (current mutable-tag resolution)",
+        "lukka/get-cmake@latest -> da37b03df250c343a90268c30948f7814f31d88e (current mutable-branch resolution)",
+        "ilammy/msvc-dev-cmd@v1 -> 0b201ec74fa43914dc39ae48a89fd1d8cb592756 (current mutable-tag resolution)",
+        "Microsoft/vcpkg@master -> 0c2a9ace1964b818b15f7ae50ba1c42404918a7b (current no-ref clone resolution)",
+        "desktop-app/MicroTeX:vcpkg.json@c6c84611e66339b7a599902cd19009719532efef",
+        "desktop-app/MicroTeX:CMakeLists.txt@75059dec500cff8114728331eb5cb317abf6daf9",
+        "desktop-app/MicroTeX:src/platform/gdi_win/graphic_win32.cpp@054860effc94bd42c7004e3bd6523f71aee059b5",
+        "desktop-app/MicroTeX:src/platform/gdi_win/graphic_win32.h@f2ee130adfd6e61c5871d972197466bd163cf88b",
+        "desktop-app/MicroTeX:src/samples/win32_main.cpp@a7c2a150c96ec2568394fa017c9bf67204006713",
+        "desktop-app/MicroTeX:README.md@824af04fd8607532efed3f73752b81e5093577ef",
+        "desktop-app/MicroTeX:LICENSE@78a9eca5ca3514f2fd0a2e81018eeb8ae7d981a2"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microtex-windows-gdi-workflow-complete-read.md",
+      "behavior_contract": "Source-only provenance for the pinned MicroTeX Windows GDI+ CI workflow. It validates a Windows-2019 Release/Ninja compile graph through mutable/unpinned external acquisition points, executes no tests or sample launch, and does not close tdesktop/Fabushi formula rendering, resource packaging, Windows shipping or release responsibilities.",
+      "state_machine": "push/pull_request -> windows-2019 -> checkout@v2 -> get-cmake@latest -> clone/bootstrap live vcpkg default branch -> msvc-dev-cmd@v1 x64 -> CMake Release/Ninja using vcpkg toolchain -> ninja -> workflow terminal result; no test/runtime phase.",
+      "side_effects": [
+        "CI-only checkout, build directory creation, vcpkg repository clone/bootstrap and compiled child artifacts.",
+        "CMake resolves the pinned child manifest through the live cloned vcpkg toolchain.",
+        "No Fabushi product persistence, account, messaging, deployment or release side effects."
+      ],
+      "failure_cases": [
+        "Mutable checkout/get-cmake/msvc action references drift or disappear.",
+        "Unpinned Microsoft/vcpkg default branch changes dependency/toolchain behavior.",
+        "windows-2019 hosted runner or Visual Studio environment becomes unavailable.",
+        "CMake/Ninja/GDI+ compile graph fails.",
+        "Build success is incorrectly promoted to test/runtime/product/release acceptance.",
+        "MicroTeX production formula/resource responsibilities are incorrectly closed by child CI evidence.",
+        "Resource-license split is flattened into an incorrect all-MIT shipping claim."
+      ],
+      "ui_disposition": "Not a Fabushi product UI source; third-party dependency Windows GDI+ CI/build workflow only.",
+      "non_ui_responsibilities": [
+        "Exact Windows GDI+ workflow identity",
+        "Mutable action/toolchain and no-ref vcpkg acquisition provenance",
+        "CMake WIN32/GDI+ source/sample build path provenance",
+        "No-test/no-launch negative oracle",
+        "README/root/resource-license provenance boundary",
+        "Separation from real tdesktop MicroTeX production consumers"
+      ],
+      "platform_delta": "The child workflow compiles MicroTeX on windows-2019 using MSVC environment setup, GDI+, CMake/Ninja and a live vcpkg clone. It does not define Fabushi Windows packaging, renderer behavior, supported platform matrix or release policy.",
+      "existing_owner_candidates": [
+        "Existing TDRP recursive source/dependency and CI/build-provenance governance (selected)",
+        "Fabushi rich-document/formula renderer/resource/Windows platform/package owners (rejected for this workflow-only row)",
+        "MicroTeXRuntime/TelegramRenderer/second rich-document or Windows platform root (rejected)"
+      ],
+      "existing_owner": "Existing TDRP recursive source/dependency and CI/build-provenance governance.",
+      "rejected_existing_owners": [
+        "Shipping renderer/resource/platform/package owners do not own third-party child CI topology.",
+        "A MicroTeXRuntime would preserve dependency architecture instead of mapping source-neutral formula responsibilities.",
+        "A TelegramRenderer, second rich-document root or second Windows platform owner would violate existing-owner-first."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/dossiers/upstream-microtex-windows-gdi-workflow-complete-read.md"
+      ],
+      "fabushi_target_symbols": [
+        "TDRP_MICROTEX_WINDOWS_GDI_WORKFLOW_PROVENANCE_001"
+      ],
+      "target_language": "Source-only YAML dependency-CI/build provenance; no shipping implementation.",
+      "language_rationale": "The target is third-party workflow orchestration and build provenance, not product logic to port.",
+      "command_event_contracts": [
+        "Push/pull_request triggers the windows-2019 build job.",
+        "The job obtains mutable checkout/CMake/MSVC helpers and an unpinned vcpkg checkout.",
+        "CMake configures Release with Ninja through the cloned vcpkg toolchain and compiles the WIN32/GDI+ graph.",
+        "The workflow does not execute tests or launch the sample.",
+        "Dependency CI provenance does not authorize formula/platform/product/release closure."
+      ],
+      "state_owner": "GitHub Actions ephemeral workflow/build state only.",
+      "lifecycle_owner": "Pinned MicroTeX windows-gdi.yml workflow; no Fabushi shipping lifecycle owner.",
+      "persistence_and_restart": "No product persistence; cloned toolchain/build outputs are disposable CI state.",
+      "concurrency_and_cancellation": "Single matrix job with one windows-2019 value; no Fabushi runtime concurrency/cancellation contract.",
+      "security_boundary": "checkout@v2, get-cmake@latest and msvc-dev-cmd@v1 are mutable references; Microsoft/vcpkg is cloned without a ref. Treat current resolutions as provenance observations only, not immutable supply-chain or shipping-trust evidence.",
+      "network_service_dependencies": [
+        "GitHub Actions hosted Windows runner",
+        "actions/checkout@v2",
+        "lukka/get-cmake@latest",
+        "ilammy/msvc-dev-cmd@v1",
+        "Microsoft/vcpkg default branch clone",
+        "GitHub repository availability"
+      ],
+      "service_owner": "Third-party CI/toolchain infrastructure only; not a Fabushi service owner.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-ci-windows-gdi-build-provenance-mapped-open",
+      "blockers": [
+        "No production implementation or release acceptance claim.",
+        "Workflow contains no test or sample-launch step.",
+        "Remote action/toolchain/vcpkg resolutions are mutable or unpinned.",
+        "Real MicroTeX production responsibilities in tdesktop remain open.",
+        "MicroTeX resource-license provenance requires independent source-by-source closure.",
+        "Fresh receipt-head Actions required."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        ".github/workflows/windows-gdi.yml@4adace4d194d60ffc027a1b5d99fa33d200b07aa fully re-read: 41 line slots / 1,030 Git-tree bytes; one compile-only windows-2019 job and no test/sample-launch step.",
+        "actions/checkout@v2 current resolution 0717577d45739eb3c851188b29f50ed6c0b2194e; action.yml@9f346aa7726e2cb9df0d98417c0bcf77a6f215c7.",
+        "lukka/get-cmake@latest current branch resolution da37b03df250c343a90268c30948f7814f31d88e; action.yml@f3fa62850305cbb701f746f6d6a14fc8cf2a8739.",
+        "ilammy/msvc-dev-cmd@v1 current resolution 0b201ec74fa43914dc39ae48a89fd1d8cb592756; action.yml@b20fad3c4c1f9c98913251f57311e941b69a57cc.",
+        "Microsoft/vcpkg default branch master current head 0c2a9ace1964b818b15f7ae50ba1c42404918a7b; child workflow clone has no ref.",
+        "vcpkg.json, root CMake WIN32 path, GDI+ adapter source/header, win32 sample, README and layered licenses re-read.",
+        "Accepted tdesktop .github exact subtree truncated=false/32 entries and has zero windows-gdi/MicroTeX/GDI workflow paths; separate external_microtex production consumers remain open.",
+        "Parent exact-head 993a5bf9c8c6b19d0b970cf6035474fd6f316b7f: TDRP 40096598641 61/61 success; Rust 40096598643 6/6 success; Official MCP 40096598672 1/1 success."
+      ],
+      "target_commit": "993a5bf9c8c6b19d0b970cf6035474fd6f316b7f",
+      "workflow_run": 40096598641,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12561370914,
+      "artifact_digest": "sha256:6525d788f6043c6a0fea213f7544008a7819b2de17efc74ccfb7312d15946946",
+      "composition_root": "Existing TDRP source/dependency provenance governance.",
+      "composition_slot": "Dependency CI/build provenance only; no shipping renderer/resource/Windows platform/package composition slot.",
+      "capability_component": "MicroTeX Windows GDI+ child build workflow provenance; no shipping runtime.",
+      "variation_axes": [
+        "windows-2019 runner/MSVC environment",
+        "GDI+ WIN32 CMake branch",
+        "mutable checkout/get-cmake/msvc action resolution",
+        "unpinned Microsoft/vcpkg default branch resolution"
+      ],
+      "shared_owner_contracts": [
+        "TDRP recursive dependency inventory",
+        "Exact-head Actions evidence",
+        "Pinned MicroTeX workflow/build sources",
+        "Fabushi shipping renderer/resource/platform/package owners remain separate"
+      ],
+      "duplicate_root_check": "No MicroTeXRuntime, TelegramRenderer, second rich-document owner, second Windows platform owner or second shipping build root.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "No product action; dependency CI/build-only provenance.",
+      "detail_section": "Not applicable",
+      "capability_surface": "Source-only dependency CI/build provenance; no shipping surface.",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "Not applicable",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Any MicroTeX gitlink/tree, windows-gdi workflow, mutable action resolution, vcpkg default-branch resolution, CMake WIN32/GDI+ build contract, README or layered-license drift requires exact-ref re-read; no product/rendering/platform closure.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No icon change.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "No reduced-motion change.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MICROTEX-WINDOWS-GDI-WORKFLOW-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MICROTEX-WINDOWS-GDI-WORKFLOW-EXACT-SOURCE-001",
+        "ORA-TDRP-MICROTEX-WINDOWS-GDI-NO-TEST-STEP-001",
+        "ORA-TDRP-MICROTEX-WINDOWS-GDI-NO-SHIPPING-WORKFLOW-001",
+        "ORA-TDRP-MICROTEX-WINDOWS-GDI-MUTABLE-REFS-001",
+        "ORA-TDRP-MICROTEX-WINDOWS-GDI-VCPKG-UNPINNED-001",
+        "ORA-TDRP-MICROTEX-PRODUCTION-CONSUMERS-REMAIN-OPEN-002"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MICROTEX-WINDOWS-GDI-DEPENDENCY-CI-ONLY-001",
+        "INV-TDRP-MICROTEX-WINDOWS-GDI-NO-PARALLEL-RUNTIME-001",
+        "INV-TDRP-MICROTEX-WINDOWS-GDI-PRODUCTION-RESPONSIBILITIES-NOT-CLOSED-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MICROTEX-WINDOWS-GDI-PINNED-SOURCE-001",
+        "CONTRACT-TDRP-MICROTEX-WINDOWS-GDI-CMAKE-BUILD-001",
+        "CONTRACT-TDRP-MICROTEX-WINDOWS-GDI-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-MICROTEX-WINDOWS-GDI-SOURCE-DRIFT-001",
+        "FAULT-TDRP-MICROTEX-WINDOWS-GDI-TOOLCHAIN-DRIFT-001",
+        "FAULT-TDRP-MICROTEX-WINDOWS-GDI-MUTABLE-REF-DRIFT-001",
+        "FAULT-TDRP-MICROTEX-WINDOWS-GDI-VCPKG-DRIFT-001",
+        "FAULT-TDRP-MICROTEX-WINDOWS-GDI-PRODUCT-PROMOTION-001",
+        "FAULT-TDRP-MICROTEX-RESOURCE-LICENSE-DRIFT-002"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [],
+      "test_environment_ids": [
+        "Pinned MicroTeX windows-gdi.yml source",
+        "Pinned MicroTeX CMake/WIN32/GDI+ sources",
+        "Current checkout-v2/get-cmake-latest/msvc-dev-cmd-v1/vcpkg-master resolution provenance",
+        "GitHub Actions exact-head TDRP Revision 9 and Rust desktop runtime"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "Exact MicroTeX Windows GDI+ workflow, pinned build inputs, mutable action/vcpkg resolution observations, README, root MIT license and resource-specific license split retained as dependency provenance; no child CI or resource copied into Fabushi shipping runtime by this row.",
+      "reviewer": "primary-session",
+      "notes": "Strict180 source-only dependency Windows GDI+ CI/build provenance. Counters unknown=16196 unread=16171 omitted=0 responsibilities=198. Parent Actions terminal-success; receipt-head Actions required. Real tdesktop MicroTeX formula/resource/platform responsibilities remain open. Baseline identity, source closure and independent release acceptance remain false."
     }
   ]
 }
