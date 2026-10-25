@@ -6931,3 +6931,37 @@ The direct-Gateway `sessions.processes.stop` cross-search produced no new exact 
 A concurrent append created the unique Section 111 before this write. Immediately before this extension, the live branch lease re-read exactly as `208eb51a600b1ad51a1a05ade072341166b0660a`, tree `a9ed519b63174512fc937adfbbbb3a85d6cdc3e5`, and dossier blob `953ae7695207380ed6d605204aaac8955eb77401`, 6910 lines. The dossier contained exactly one `## Section 111`; each of the six newly registered exact refs in Sections 111.5-111.6 had zero exact occurrences. This write extends that existing unique section rather than creating a second Section 111.
 
 No Actions were started or rerun, and no production code, ledger, RTM, flags, source lock, inventory, or source baseline was changed. The requested public-Cron receipt/history identity -> session-delivery queue id/sessionKey durable bridge and predecessor public-Cron -> restart settlement -> continuation cleanup/physical finalize -> public terminal-read integrated fixture remain absent. The direct Stop replacement-late-success Gateway oracle and plugin-native distinct failed-publication receiver/third production plural caller also remain absent. Independent ACCEPT, scoped G01/G02, Rust implementation/wiring parity, package/device proof, release acceptance, and final OCRM acceptance remain open.
+
+
+
+## Section 112 — Frozen Cron identity-domain closure, Stop replacement fencing, and plugin publication receiver audit
+
+### 112.1 Cron execution identity remains distinct from the public request/history identity
+
+- New exact ref `src/cron/run-id.ts@edf78a9a780933bebd9d80b1804c2e2308d5ccc9` defines `createCronExecutionId(jobId, startedAt)` as exactly `cron:<jobId>:<startedAt>`. This is the stable diagnostic/session execution identity only; it contains neither a receipt id nor the public manual `requestRunId`.
+- Cross-reading this new ref with the already-registered `run-history.kernel`, `run-result`, `run-history-detail`, `run-receipt`, and `cron.runs` refs preserves the previously established split: the `task_runs.run_id` row identity can be an execution/receipt-derived internal id, while the public run id exposed by `cron.runs` is projected from detail/receipt state. No new field copies that public id into the session-delivery queue's `entry.id` or `sessionKey`.
+- Exact repository searches for `cron.runs settleQueuedSessionDelivery`, `cron.runs removeCronRunContinuationSessionIfIdle`, and `requestRunId settleQueuedSessionDelivery` returned no frozen production/test path that joins those APIs. Existing public-run terminal-read fixtures remain separate from restart session-delivery settlement.
+
+### 112.2 Stop has production owner-generation fencing, but still lacks the requested direct Gateway replacement-late-success oracle
+
+- New exact ref `src/worker/worker-process-observation.ts@0d53f50c438ed0c9a5439710ced29f18daf61b5d` defines the worker-process request binding with both `ownerEpoch` and `placementGeneration`; Stop additionally carries exact `processId` and `instanceId`. The worker wire therefore has the identities needed to reject a stale owner, but this schema is not itself a Gateway late-reply oracle.
+- New exact ref `src/node-host/node-worker-process-observation.ts@0c0fae3a5133a1de6ab756998ee858b891a78567` fences a remote process request with `assertCurrent()` before send and again after the worker response. That guard rejects if the owner is no longer current, is retiring/stopping, no longer matches the binding, or its `placementGeneration`/bundle changed. Production therefore discards an otherwise successful reply that returns after owner replacement.
+- The frozen direct Gateway test surface still does not exercise the requested successful `sessions.processes.stop` reply arriving after a `placementGeneration`/`activeOwnerEpoch` replacement. The already-registered Gateway focused test covers late response authority loss for `sessions.processes.list`; the worker runtime test covers stale-owner rejection and a normal Stop, not replacement-after-dispatch. The requested direct Gateway Stop oracle therefore remains absent.
+
+### 112.3 Plugin source-admission failures still have no independent production receiver or third production plural settlement caller
+
+- New exact ref `src/plugins/plugin-source-admission.types.ts@84d0b1509e21aab5615a1bd7e7f852c086235511` defines a publication as only `pluginId`, `rootDir`, optional `installRecordHash`, `key`, and `receipt`. The publication contract carries no failure-receiver identity, callback, handoff destination, or secondary retry owner.
+- New exact ref `src/plugins/plugin-cache.types.ts@fd4d9db05fa99fee4027db8d3de2e412e21ce54a` exposes the cache's source-admission lifecycle only as `invalidate(): void` and `dispose(): Promise<void>`; it adds no independent failed-publication receiver hook.
+- Rechecking every frozen plural `settlePluginNativeAdmissions` occurrence leaves the same production classification: `plugin-generation-preparation.worker.ts` and `prepared-model-runtime.build.ts` are the two production plural callers; `plugin-generation-worker.ts` uses singular `settlePluginNativeAdmissionState`; remaining plural occurrences are tests. A publisher `false` remains retained by the existing admission owner for later settlement, while a throw is warned by that same owner. No third production plural caller and no distinct receiver were found.
+
+### 112.4 Cross-index and integrated-fixture result after reverse exhaustion
+
+- The already-registered session-delivery recovery path still settles `onSettled(entry, outcome)` before physical finalization by `entry.id`, and `settleQueuedSessionDelivery` still calls Cron continuation cleanup with only `entry.sessionKey` and `entry.id`.
+- The already-registered public Cron terminal-read fixtures prove that one public `cron.run` id can later be read through `cron.runs { id, runId, ... }`; none of those fixtures also drives that same public id through restart session-delivery settlement, physical queue deletion, continuation cleanup, and then the terminal read.
+- No durable field or integrated fixture was found that joins `cron_run_receipts.request_run_id` / run-history `child_session_key` to a session-delivery queue `entry.id`/`sessionKey` for the same public run. The requested true same-public-run restart-settlement -> continuation-cleanup -> physical-finalize -> `cron.runs` terminal-read proof therefore remains absent.
+
+### 112.5 Dedupe, lease, and acceptance state
+
+Immediately before this append, the live branch lease re-read exactly as `18dfd04164bb2d8323735283a09ddca0e1cd6d19`, tree `272ed234dcbf893fff19666cfc5932c080e8d3d0`, and dossier blob `c4aac57e1013e066390231e1f43b353f6cfe879a`, 6934 lines. `## Section 112` count was zero, and each of the five new exact refs in this section had zero exact occurrences in the prior dossier.
+
+No Actions were started or rerun, and no production code, ledger, RTM, flags, source lock, inventory, or source baseline was changed. The public-Cron durable cross-index/integrated terminal-read fixture, direct Gateway Stop replacement-late-success oracle, plugin failed-publication independent receiver, and third production plural settlement caller remain absent. Independent ACCEPT, scoped G01/G02, Rust implementation/wiring parity, package/device proof, release acceptance, and final OCRM acceptance remain open.
