@@ -78,5 +78,8 @@ pub mod send_trace_host;
 
 pub mod sand_multitask;
 
+pub mod device_pairing_owner;
+pub use device_pairing_owner::DevicePairingOwner;
+
 pub mod host_gateway_api;
 pub mod sand_host;
