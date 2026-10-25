@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use mahayana_host_runtime::agents::agent_profile::SandAgentProfile;
 use mahayana_host_runtime::device_pairing_owner::DevicePairingOwner;
 use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
@@ -103,13 +104,21 @@ fn test_ocrm_chat_o02_session_key_stripping_and_unknown_session_rejection() {
         .is_some();
     assert!(!exists);
 
-    // Now create an agent and verify it exists
-    let created = store.create_session(None, "user", None).expect("create session");
+    // Now create an agent with identity and verify it exists
+    let profile = SandAgentProfile {
+        name: "Test Agent".into(),
+        description: "desc".into(),
+        title: "Title".into(),
+        avatar_shape: "round".into(),
+        avatar_color: "blue".into(),
+    };
+    let created = store.create_session(Some(&profile), "user", None).expect("create session");
     let exists_now = workers
         .summarize_agent_by_id(&created.id, None)
         .expect("summary query")
         .is_some();
     assert!(exists_now);
+    let _ = std::fs::remove_dir_all(&root);
 }
 
 #[test]
@@ -210,6 +219,7 @@ fn test_ocrm_cron_o01_cron_list_empty_and_populated_mappings() {
     }
     let res = json!({ "jobs": jobs });
     assert_eq!(res["jobs"].as_array().unwrap().len(), 0);
+    let _ = std::fs::remove_dir_all(&root);
 }
 
 #[test]
@@ -344,7 +354,7 @@ fn test_ocrm_node_o03_node_list_includes_sand_local_node_and_paired_devices() {
         "device.pair.approve",
         &json!({ "requestId": request_id, "role": "operator" }),
     ).unwrap();
-    assert_eq!(approved["status"], "approved");
+    assert_eq!(approved["decision"], "approved");
 
     let pair_list_after = pairing_owner.handle_pairing_command("device.pair.list", &json!({})).unwrap();
     let paired_items = pair_list_after["paired"].as_array().unwrap();

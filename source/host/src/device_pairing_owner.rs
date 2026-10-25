@@ -248,7 +248,7 @@ impl DevicePairingOwner {
         }
 
         if let Some(dev_id) = device_id {
-            let paired_row: Option<(String, String)> = conn
+            let paired_row: Option<(String, Option<String>)> = conn
                 .query_row(
                     "SELECT device_id, display_name FROM device_pairing_paired WHERE device_id = ?1",
                     params![dev_id],
@@ -261,7 +261,7 @@ impl DevicePairingOwner {
                     "status": "approved",
                     "device": {
                         "deviceId": d_id,
-                        "displayName": name
+                        "displayName": name.unwrap_or_else(|| d_id.clone())
                     }
                 }));
             }
