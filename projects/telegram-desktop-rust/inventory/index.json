@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16142,
-    "unread_minimum": 16117,
+    "unknown_minimum": 16141,
+    "unread_minimum": 16116,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -90,7 +90,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Strict234 TDRP-R9-MICROTEX-RES-CYRILLIC-WNSSBX10-TTF-PROVENANCE-001: wnssbx10.ttf root/c154-parent is 30732 bytes blob d45380bc with family wnssbx10; c154/pinned is 30864 bytes blob 125e05cc with TDesktop wnssbx10 namespace. c154 changes name/head checksum semantics only; glyph/layout/OS2/cmap semantics remain unchanged. Pinned sfnt has 15 tables, 98 glyphs, UPM=1000, OS/2 weight=400/fsType=0. Adjacent wnssbx10.xml@9fefc1c7 is root/c154/pinned-identical 25211 bytes/606 lines with 95 Char/406 Kern/36 Lig, roman=wnbx10 and tt=wntt10. Historical FontInfo lazily binds the adjacent TTF; accepted addTeXFontDescription is disabled/fenced and Formula::getExternalFont default SansSerif/Serif fallback is not WNSSBX10 XML loading. RES_README/Meson/legacy latex.qrc include/install target; accepted bundled.qrc excludes Cyrillic/Greek. README excludes res fonts/XML from MIT and res/cyrillic/LICENSE is GPLv3 provenance; fsType is not license authority. Existing TDRP source/resource/font/parser/license/install/packaging/provenance owner remains selected. Counters unknown=16142 unread=16117 omitted=0 responsibilities=252. Parent b2566fe8 TDRP 61/61, Rust 6/6, MCP 1/1. Next res/cyrillic/wnssbx10.xml@9fefc1c78c8b4bb1406173b8ac491c11f030a076.",
+  "note": "Strict235 TDRP-R9-MICROTEX-RES-CYRILLIC-WNSSBX10-XML-PROVENANCE-001: wnssbx10.xml@9fefc1c7 is root/c154-parent/c154/pinned byte-identical at 25211 bytes / 606 lines with exact-path history root init only. It contains 95 Char / 95 unique codes 171..1141, 406 Kern / 36 Lig, space=0.366669 xHeight=0.458333 quad=1.100006, roman=wnbx10 and tt=wntt10; depth 0..0.194445 with 13 nonzero and italic 0..0.02139 with 7 nonzero. WNBX10 reciprocally names ssVersion=wnssbx10 while WNTT10 is the shared typewriter variant. Historical XML parsing materializes metrics/Kern/Lig/style IDs and lazily binds adjacent wnssbx10.ttf; accepted addTeXFontDescription throws/fences ex_alphabet_registration and Formula::getExternalFont default SansSerif/Serif fallback is not WNSSBX10 XML loading. RES_README/Meson/legacy latex.qrc include/install target; accepted bundled.qrc excludes Cyrillic/Greek and tdesktop ships external_microtex_bundled.rcc without this XML. README excludes res fonts/XML from MIT and res/cyrillic/LICENSE is GPLv3 provenance. Existing TDRP source/resource/font/parser/license/install/packaging/provenance owner remains selected. Counters unknown=16141 unread=16116 omitted=0 responsibilities=253. Parent 33b13662 TDRP 61/61, Rust 6/6, MCP 1/1. Next res/cyrillic/wnssi10.ttf@affdad63d2ae3393cb25554cbc3df05a98d6556e.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
@@ -106,38 +106,38 @@
     "baseline_identity_accepted": false,
     "source_closure_ready": false
   },
-  "target_commit": "b2566fe85cc0e6389e5e85ece6f77eeebce39347",
+  "target_commit": "33b13662714f6f532ba942e5d888fe9d5780d6cb",
   "last_completed_parent_head_validation": {
     "evidence_status": "historical-only-after-receipt-commit",
-    "head_sha": "b2566fe85cc0e6389e5e85ece6f77eeebce39347",
+    "head_sha": "33b13662714f6f532ba942e5d888fe9d5780d6cb",
     "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
     "upstream_tree": "c539eabfb05e7dcaa84821ac44c35cdfb6551ae5",
     "recursive_non_directory_entries": 16379,
-    "tdrp_run_id": 40201112885,
+    "tdrp_run_id": 40206011406,
     "tdrp_jobs": "61/61 success",
     "source_authority_artifact": {
-      "id": 12601629648,
-      "digest": "sha256:547d095268c4806c3e3fcdc567e1b610a97060dfd6a46bcadb7d2b36221ac95d"
+      "id": 12603329184,
+      "digest": "sha256:e85732b5bf7251a7e530e8e0537d84dad6ac14b2b9aa0dc9bb8834d828b15f4d"
     },
     "recursive_closure_artifact": {
-      "id": 12601503472,
-      "digest": "sha256:63dcde3446f29ad741026f37bf439127a1ed38ff4bdba4f7d071f0b8fe7c5da5"
+      "id": 12603958086,
+      "digest": "sha256:bab54130255cc2a3b021302a524583e7181ab18c53079f63fa9ace514a509228"
     },
     "recursive_reachability_artifact": {
-      "id": 12601949650,
-      "digest": "sha256:232e0e39937c1779c392df91dd882012ed2884f0f15743a4c0fb239f7113a5c2"
+      "id": 12603029823,
+      "digest": "sha256:db146d3b8a7a57e4ff2ca0b112cd35409c0ffe886af4f44b66d925d5336c0c1a"
     },
     "boost_reachability_artifact": {
-      "id": 12602475024,
-      "digest": "sha256:44b537fde3553b4212b0149ad2d911235f1952d9baae3f6c615e59e09a91542e"
+      "id": 12602929912,
+      "digest": "sha256:229deb1aee153c3ea0827aeb84e175b00498a8f84fd8671e3d63a5ee7b53e7b2"
     },
-    "rust_run_id": 40201112856,
+    "rust_run_id": 40206011382,
     "rust_jobs": "6/6 success",
     "rust_artifact": {
-      "id": 12601898909,
-      "digest": "sha256:66a0aadb1c4ee9f7bbd5453fdb67f78e28420704850a1e3f09052abdb4bac171"
+      "id": 12603663186,
+      "digest": "sha256:9075ecd6f3989187bd698f715cb8cee7db298abb3b98e225f7ae304c747c3e81"
     },
-    "official_mcp_marketplace_run_id": 40201112905,
+    "official_mcp_marketplace_run_id": 40206011383,
     "official_mcp_marketplace_jobs": "1/1 success",
     "baseline_identity_accepted": false,
     "source_closure_ready": false,
