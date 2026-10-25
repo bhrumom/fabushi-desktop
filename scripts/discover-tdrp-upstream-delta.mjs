@@ -33,7 +33,9 @@ async function treeEntries(commit) {
       else output.push({ ...entry, path: fullPath });
     }
   }
-  await walk(commit);
+  const rootTreeSha = recursive.sha ?? (await get(`https://api.github.com/repos/${repository}/git/commits/${commit}`)).tree?.sha;
+  if (!/^[0-9a-f]{40}$/.test(rootTreeSha ?? '')) throw new Error(`truncated tree ${commit} did not expose a root tree SHA`);
+  await walk(rootTreeSha);
   return output;
 }
 
