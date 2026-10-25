@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16139,
-    "unread_minimum": 16114,
+    "unknown_minimum": 16138,
+    "unread_minimum": 16113,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -90,7 +90,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Strict237 WNSSI10 XML/font-metrics/style/parser/runtime/license/install/packaging provenance. Counters unknown=16139 unread=16114 omitted=0 responsibilities=255. root/c154-parent/c154/pinned are byte-identical 26762-byte blob 5c2318c6; 95 Char/406 Kern/36 Lig; roman=wnti10/tt=wntt10/bold=wnssbx10; exact-path history root-only. Parent 1edd236d TDRP 40211520354 exposed strict236 dossier traceability omission, repaired in this receipt without production-code changes. Last terminal-success parent evidence remains b13adb5f. Next res/cyrillic/wnti10.ttf@1dd164b2a3602494a1418eb16aca22d298b01ebd.",
+  "note": "Strict238 WNTI10 TTF/font-metrics/style/parser/runtime/license/install/packaging provenance. Counters unknown=16138 unread=16113 omitted=0 responsibilities=256. root/c154-parent=51164-byte eb5217f6; c154/pinned=51280-byte 1dd164b2; c154 changes name namespace plus head checksum only while cmap/glyf/OS2/hhea/maxp semantics stay unchanged. Adjacent wnti10.xml=31229 bytes/708 lines, 95 Char/512 Kern/36 Lig, roman=wnr10/bold=wnbxti10/ss=wnssi10/tt=wntt10. Parent b0eb1da1 TDRP 40212507141 30/30 and Rust 40212507186 6/6 are terminal-success. Next res/cyrillic/wnti10.xml@55046e15cbd13b5ceaed2ea6955cd378f6167599.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
@@ -106,38 +106,38 @@
     "baseline_identity_accepted": false,
     "source_closure_ready": false
   },
-  "target_commit": "1edd236d3fb6c08f3afeacdbad34f7924d8a8f80",
+  "target_commit": "b0eb1da1f1180d184c7fcb8ab72496decde8e8f7",
   "last_completed_parent_head_validation": {
     "evidence_status": "historical-only-after-receipt-commit",
-    "head_sha": "b13adb5f77ac9e8cd11146ffa953f699ff3dfcd5",
+    "head_sha": "b0eb1da1f1180d184c7fcb8ab72496decde8e8f7",
     "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
     "upstream_tree": "c539eabfb05e7dcaa84821ac44c35cdfb6551ae5",
     "recursive_non_directory_entries": 16379,
-    "tdrp_run_id": 40208877191,
-    "tdrp_jobs": "61/61 success",
+    "tdrp_run_id": 40212507141,
+    "tdrp_jobs": "30/30 success",
     "source_authority_artifact": {
-      "id": 12604683682,
-      "digest": "sha256:2174b1c15a0730fa15307a7334f10584ad09e45cdf66e9164d281b8ec3312008"
+      "id": 12606565351,
+      "digest": "sha256:644e9b4234bca60fffb9a5a4919a8f413cda54031777efd92ab2148818c10735"
     },
     "recursive_closure_artifact": {
-      "id": 12604908806,
-      "digest": "sha256:dbac15b28edb970ce326ea21c1286784c55c2063f738fc0577881cf8b74cb6ad"
+      "id": 12606064691,
+      "digest": "sha256:f91c91a88c7bb75f74ba2fde01193264cad7821cfe77352cffb687602f021e96"
     },
     "recursive_reachability_artifact": {
-      "id": 12604034096,
-      "digest": "sha256:6b182435c687760b54781fa926ed727bb8233b8cc8ff46349c88450f603e61c9"
+      "id": 12605888380,
+      "digest": "sha256:e45001fd3438215c85a492d5db69384bb27e3f73dbed420629426c49816bd0ea"
     },
     "boost_reachability_artifact": {
-      "id": 12605133022,
-      "digest": "sha256:5e21d1e79c7e9f7b9a3da8d423d6bdf89826cf861ff2576927f7ae42a62e6357"
+      "id": 12606530752,
+      "digest": "sha256:5a8a1921f951b19e39da31d863d2a1661f7b82c72d1e5fa608fc483111a30b53"
     },
-    "rust_run_id": 40208877250,
+    "rust_run_id": 40212507186,
     "rust_jobs": "6/6 success",
     "rust_artifact": {
-      "id": 12604593649,
-      "digest": "sha256:dedd0c36ddea027a5995aa3b5aa8c64cce03521e20a720795172cccb03e62aee"
+      "id": 12605779659,
+      "digest": "sha256:0470d1545aa0b8a278d82d29b823134d4205d0b0f279331c85dbd770d7b3e1f5"
     },
-    "official_mcp_marketplace_run_id": 40208877193,
+    "official_mcp_marketplace_run_id": 40212507152,
     "official_mcp_marketplace_jobs": "1/1 success",
     "baseline_identity_accepted": false,
     "source_closure_ready": false,
