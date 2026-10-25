@@ -330,6 +330,12 @@ export function createDandelionCliBackend(
       if (ticket !== generation) throw new Error("DANDELION_CANCELLED");
       if (!config.targetPools.some((pool) => pool.id === sendConfig.targetPoolId)) throw new Error("UNKNOWN_TARGET_POOL");
       const argv = ["run", "--source", root];
+      // The selected target pool is an execution policy, not just a Host-side
+      // capability label. The signed v0.4.5 CLI requires the explicit mode
+      // switch; omitting it leaves a local composer waiting on the configured
+      // remote transport and never produces a completion receipt.
+      if (sendConfig.targetPoolId === "loopback") argv.push("--local-loopback");
+      if (sendConfig.targetPoolId === "lan") argv.push("--lan-only");
       if (sendConfig.repeat !== undefined) argv.push("--repeat", String(sendConfig.repeat));
       if (sendConfig.watch === true) argv.push("--watch");
       if (sendConfig.intervalMs !== undefined) argv.push("--interval-ms", String(sendConfig.intervalMs));

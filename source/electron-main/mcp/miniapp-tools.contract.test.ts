@@ -181,6 +181,7 @@ test("CLI backend spawns real argv-only binary for scan, async transfer, cancell
         "if cmd[:2] == ['scan', 'metadata']:",
         "    print(json.dumps({'mode': 'metadata', 'files': 3, 'bytes': 4096, 'source': cmd[3]}))",
         "elif cmd[:1] == ['run']:",
+        "    assert '--lan-only' in cmd, f'missing explicit LAN policy: {cmd}'",
         "    if 'slow' in cmd[2]:",
         "        time.sleep(10)",
         "    print(json.dumps({'packets': 8, 'verifiedBytes': 4096, 'source': cmd[2]}))",
