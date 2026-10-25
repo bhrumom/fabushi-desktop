@@ -361,10 +361,10 @@
   "coverage": {
     "root_source_entries_total": 6893,
     "recursive_source_entries_total": 16379,
-    "unknown_minimum": 16157,
-    "unread_minimum": 16132,
+    "unknown_minimum": 16156,
+    "unread_minimum": 16131,
     "omitted_known": 0,
-    "note": "Strict219 TDRP-R9-MICROTEX-RES-SAMPLES-TEX-PROVENANCE-001: desktop-app/MicroTeX res/SAMPLES.tex@e03f0088e3fba1d225b90d06d586f32c5f70310b is a pinned 9,933-byte / 9,549-character / 262-line sample corpus with 11 pure-percent separators and exactly 12 ordered non-empty blocks. Exact-path history is 13 commits/page2 empty; creation dfa166a has parent c389273 tree truncated=false/187 with target absent and changes exactly six paths. Samples::readSamples defaults to LaTeX::getResRootPath()/SAMPLES.tex, splits only non-space pure-% lines and drops blank/space-only lines; headless batch requires outputdir, rejects zero samples, and emits indexed SVGs. pre-push regenerates samples.md + sample_0..11.svg; Meson standalone install_data includes SAMPLES.tex. Accepted cmake_helpers external_microtex_bundled and tdesktop td_iv/Telegram/iv shipping files have zero SAMPLES.tex/sample_ refs and ship compiled MicroTeX + bundled qrc/font resources instead. Existing-owner-first selects TDRP recursive source/test-fixture/resource/build/provenance governance; no MicroTeX/Fabushi parallel runtime. Counters unknown=16157 unread=16132 omitted=0 responsibilities=237. Parent 52e148efdbe7217f1d40982f6c6ff00ae3f204cc: TDRP 40166899536 61/61 success; Rust 40166899589 6/6 success; Official MCP 40166899582 1/1 success. Receipt-head Actions required; baseline_identity_accepted=false/source_closure_ready=false. Next res/bundled.qrc@303fb6bdf780d66a6e8960a095d17be466b909fa."
+    "note": "Strict220 TDRP-R9-MICROTEX-RES-BUNDLED-QRC-PROVENANCE-001: res/bundled.qrc@303fb6bdf780d66a6e8960a095d17be466b909fa is 2,329 chars/55 lines, prefix /res, exactly 30 unique TTF and 30/30 pinned-tree resolved. Comment/creation say 28; manifest truth 30 is authoritative. Exact history one e956481/page2 empty; parent fe129888 truncated=false/314 target absent; 3 creation paths. Font_qt :/ fallback + initBundled; cmake qrc/AUTORCC/Apple rcc; accepted tdesktop Q_INIT_RESOURCE or .rcc registration and macOS shipping. Zero Greek/Cyrillic paths; resource license boundary preserved. Existing-owner-first selects TDRP recursive runtime-resource/font/license/build/packaging provenance; no Fabushi parallel runtime. Counters unknown=16156 unread=16131 omitted=0 responsibilities=238. Parent 106299cf exact-head TDRP 61/61, Rust 6/6, Official MCP 1/1. Receipt-head Actions required; baseline_identity_accepted=false/source_closure_ready=false. Next res/cyrillic/LICENSE."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -1827,38 +1827,38 @@
     "baseline_identity_accepted": false,
     "source_closure_ready": false
   },
-  "target_commit": "52e148efdbe7217f1d40982f6c6ff00ae3f204cc",
+  "target_commit": "106299cf2e385174f4483c1e7cfae4219deee818",
   "last_completed_parent_head_validation": {
     "evidence_status": "historical-only-after-receipt-commit",
-    "head_sha": "52e148efdbe7217f1d40982f6c6ff00ae3f204cc",
+    "head_sha": "106299cf2e385174f4483c1e7cfae4219deee818",
     "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
     "upstream_tree": "c539eabfb05e7dcaa84821ac44c35cdfb6551ae5",
     "recursive_non_directory_entries": 16379,
-    "tdrp_run_id": 40166899536,
+    "tdrp_run_id": 40168277972,
     "tdrp_jobs": "61/61 success",
     "source_authority_artifact": {
-      "id": 12588204365,
-      "digest": "sha256:d09a1be68cd40bca26f18a6a518cf25fd7f822427bd503863e80965ca1361db1"
+      "id": 12589885820,
+      "digest": "sha256:5240a8cf31ab6ec5157d7185b04ffaea41fecac63aa602dc0383db4c8d863db1"
     },
     "recursive_closure_artifact": {
-      "id": 12588049206,
-      "digest": "sha256:258e1f226dac55af0fc663c7ba105998daeb3df5ecc46f314fe694d3b7bec814"
+      "id": 12589846114,
+      "digest": "sha256:b72cc6b1ebd5c5e6997a2b7c6f36c453c94cd4269e9436c871c3deab11647c23"
     },
     "recursive_reachability_artifact": {
-      "id": 12588254549,
-      "digest": "sha256:e43d8bbad8a0c695d7585ed7f3e7a607420bbbe22246300b63b0ae65354668a4"
+      "id": 12589911143,
+      "digest": "sha256:e9c67b9619675d1c680b28c4b26bbb20757c11f6ac6245d28d46f9e18ef5f2d9"
     },
     "boost_reachability_artifact": {
-      "id": 12587994328,
-      "digest": "sha256:eb1aedb81e48254bf7b2f85e9a6acb4be2ac294830702283d519f58f7ac571e1"
+      "id": 12590070570,
+      "digest": "sha256:083e320d34838a84600cd7f19064c914dd4eb9f084e08d9de74d11bdd2e68cab"
     },
-    "rust_run_id": 40166899589,
+    "rust_run_id": 40168277964,
     "rust_jobs": "6/6 success",
     "rust_artifact": {
-      "id": 12588293982,
-      "digest": "sha256:edd3dddbb242af1ce500ef6e59a55f220536763bb2b65732a943763c96838a79"
+      "id": 12589095911,
+      "digest": "sha256:ea50f045c1a9cb0fd29563f26390487e38c4b162ab7db5d98b39be2f5b6465b0"
     },
-    "official_mcp_marketplace_run_id": 40166899582,
+    "official_mcp_marketplace_run_id": 40168277936,
     "official_mcp_marketplace_jobs": "1/1 success",
     "baseline_identity_accepted": false,
     "source_closure_ready": false,
