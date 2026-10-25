@@ -233,7 +233,8 @@ fn test_ocrm_storage_o08_ensure_settings_file() {
     assert!(path.exists());
 
     let settings = read_sand_settings_file(&path);
-    assert!(!settings.auto_mode);
+    assert_eq!(settings.notify_on_agent_updates, true);
+    assert_eq!(settings.hidden_from_sidebar, false);
 
     // Second call preserves existing
     let path_second = ensure_settings_file(&db_path).expect("second ensure");
