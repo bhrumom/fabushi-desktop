@@ -361,10 +361,10 @@
   "coverage": {
     "root_source_entries_total": 6893,
     "recursive_source_entries_total": 16379,
-    "unknown_minimum": 16132,
-    "unread_minimum": 16107,
+    "unknown_minimum": 16131,
+    "unread_minimum": 16106,
     "omitted_known": 0,
-    "note": "Strict244 CMMIB10 TTF/compiled-bold-math-italic-font/metrics/kerns/next-larger/rendering/license/install/packaging provenance. Counters unknown=16132 unread=16107 omitted=0 responsibilities=262. root/c154-parent=24348-byte blob 5ae39768; c154/pinned=24484-byte blob 6772eafd; c154 changes name plus head checksumAdjustment/modified timestamp while preserving the other 13 sfnt tables. Pinned sfnt has 15 tables/134 glyphs/unitsPerEm=1000/cmap=133, bbox -15,-250..1216,750, hhea 750/-250/90, OS/2 weight=700; compiled cmmib10.def has 128 metrics/166 kerns/3 next-larger links with roman=cmbx10/ss=cmssbx10/tt=cmtt10/it=cmbxti10, and cmmib10_unchanged has 67/37/3 over the same TTF. Builtin FontSet registers both and bundled.qrc ships cmmib10 in external_microtex_bundled.rcc. Parent 128eadfe TDRP 40221044843 30/30, Rust 40221044813 6/6 and MCP 40221044851 1/1 are terminal-success. Next res/fonts/euler/eufb10.ttf@935f84bd27c682b1ed2ed6e79c89c139d55943b9."
+    "note": "Strict245 EUFB10 TTF/compiled-Euler-bold-Fraktur-font/metrics/style-link/rendering/license/install/packaging provenance. Counters unknown=16131 unread=16106 omitted=0 responsibilities=263. root/c154-parent=23744-byte blob 0c09926d; c154/pinned=23860-byte blob 935f84bd; c154 changes name plus head checksumAdjustment/modified timestamp bookkeeping while preserving the other 15 sfnt tables. Pinned sfnt has 17 tables/97 glyphs/unitsPerEm=2048/cmap=97, bbox -51,-457..2537,1516, hhea 1487/-473/0, OS/2 weight=400; compiled eufb10.def has 92 metrics/0 kerns/0 next-larger links; eufm10.def declares bold(eufb10), and mathfrak maps to eufm10. Builtin FontSet registers both; OFL marks eufb10/eufm10 Reserved Font Names and c154 uses the TDesktop namespace; bundled.qrc ships eufb10 in external_microtex_bundled.rcc. Parent e40549e8 TDRP 40223320224 61/61 success, Rust 40223320234 6/6 success and MCP 40223320279 1/1 success are terminal-success. Next res/fonts/euler/eufm10.ttf@93c3452962c71ac7364c6184a58b2ef06b337c79."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -1827,38 +1827,38 @@
     "baseline_identity_accepted": false,
     "source_closure_ready": false
   },
-  "target_commit": "128eadfe2836d61e513c42e93d07e6ff1dcc190f",
+  "target_commit": "e40549e8cdd408aba2e8c58870f657367c2938d5",
   "last_completed_parent_head_validation": {
     "evidence_status": "historical-only-after-receipt-commit",
-    "head_sha": "128eadfe2836d61e513c42e93d07e6ff1dcc190f",
+    "head_sha": "e40549e8cdd408aba2e8c58870f657367c2938d5",
     "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
     "upstream_tree": "c539eabfb05e7dcaa84821ac44c35cdfb6551ae5",
     "recursive_non_directory_entries": 16379,
-    "tdrp_run_id": 40221044843,
-    "tdrp_jobs": "30/30 success",
+    "tdrp_run_id": 40223320224,
+    "tdrp_jobs": "61/61 success",
     "source_authority_artifact": {
-      "id": 12609725213,
-      "digest": "sha256:6664b4cf159eb68588a9c7bdbf8a733c9e8db66767ec2e13030ca72b02f3ecc6"
+      "id": 12610083306,
+      "digest": "sha256:5579f0ce38086dfd2c5d96c3ac002342588716ba408f766dfb54ee1314d0ad10"
     },
     "recursive_closure_artifact": {
-      "id": 12608733993,
-      "digest": "sha256:6a4da0cbd975f096dabf754427ebdddb2a2f855d8673915cf432f14f4886c3d3"
+      "id": 12609854180,
+      "digest": "sha256:a225cb97b437112c3c6c5259397e46f2149d5e7c88cc2e142f90aae06e68b5f4"
     },
     "recursive_reachability_artifact": {
-      "id": 12608868996,
-      "digest": "sha256:a4d71f646380553b92b53ef6691f22f953d9dc0529fe0588af73d0fac65ab55d"
+      "id": 12610143741,
+      "digest": "sha256:92c41352325dd87463779f4cd7a8c61fc9aeb6c906a3fba99c4eba942b3d9a2d"
     },
     "boost_reachability_artifact": {
-      "id": 12609740519,
-      "digest": "sha256:7b014cac53c12f8d655695e2da695f27dbe62937b1381c2e42ee7653516df358"
+      "id": 12610706013,
+      "digest": "sha256:457dff07a14d8d5a5368e510ef54a638d8b3fc97b06de3287cb6d132cb9e9b7c"
     },
-    "rust_run_id": 40221044813,
+    "rust_run_id": 40223320234,
     "rust_jobs": "6/6 success",
     "rust_artifact": {
-      "id": 12609387547,
-      "digest": "sha256:bb1a624abf2a4e2cf2c353eda30cfeec8c784580e6b8e7fd68fee568eb7d333b"
+      "id": 12610198039,
+      "digest": "sha256:7a4d0349e9506a07056b1cb29b44574201a8e597124d4bb7c633240e804d767b"
     },
-    "official_mcp_marketplace_run_id": 40221044851,
+    "official_mcp_marketplace_run_id": 40223320279,
     "official_mcp_marketplace_jobs": "1/1 success",
     "baseline_identity_accepted": false,
     "source_closure_ready": false,
