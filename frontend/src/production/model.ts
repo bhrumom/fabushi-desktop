@@ -345,7 +345,7 @@ export function reconcileTranscriptFeedUpdate(current: readonly ConversationTran
 
 export function reconcileLateInitialTranscriptPage(current: readonly ConversationTranscriptEntry[], incoming: readonly ConversationTranscriptEntry[]): ConversationTranscriptEntry[] {
   const baseline = reconcileAuthoritativeTranscriptBaseline(current, incoming);
-  const arrivedWhileLoading = current.filter((currentEntry) => !incoming.some((incomingEntry) => transcriptEntriesCorrelate(incomingEntry, currentEntry)));
+  const arrivedWhileLoading = current.filter((currentEntry) => !baseline.some((baselineEntry) => transcriptEntriesCorrelate(baselineEntry, currentEntry)));
   return [...baseline, ...arrivedWhileLoading];
 }
 
