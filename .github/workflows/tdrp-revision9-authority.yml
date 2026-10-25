@@ -34,13 +34,15 @@ jobs:
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "${TDRP_TARGET_SHA}"
       - name: Verify Revision 9 validator contracts
-        run: node --test scripts/validate-tdrp-revision9-authority.contract.test.mjs scripts/discover-tdrp-upstream-delta.contract.test.mjs scripts/tdrp-upstream-candidate.contract.test.mjs
+        run: node --test scripts/validate-tdrp-revision9-authority.contract.test.mjs scripts/discover-tdrp-upstream-delta.contract.test.mjs scripts/tdrp-upstream-candidate.contract.test.mjs scripts/discover-tdrp-candidate-root-inventory.contract.test.mjs
       - name: Initialize authority artifact directory
         run: mkdir -p artifacts/tdrp-authority
       - name: Discover exact upstream delta
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/discover-tdrp-upstream-delta.mjs
+      - name: Record exact candidate root inventory
+        run: node scripts/discover-tdrp-candidate-root-inventory.mjs
       - name: Validate Revision 9 source authority
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -183,7 +185,7 @@ jobs:
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "${TDRP_TARGET_SHA}"
       - name: Verify Revision 9 validator contracts
-        run: node --test scripts/validate-tdrp-revision9-authority.contract.test.mjs scripts/discover-tdrp-upstream-delta.contract.test.mjs scripts/tdrp-upstream-candidate.contract.test.mjs
+        run: node --test scripts/validate-tdrp-revision9-authority.contract.test.mjs scripts/discover-tdrp-upstream-delta.contract.test.mjs scripts/tdrp-upstream-candidate.contract.test.mjs scripts/discover-tdrp-candidate-root-inventory.contract.test.mjs
       - name: Verify full source-closure mode rejects current open baseline
         shell: bash
         env:
