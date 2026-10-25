@@ -127,13 +127,13 @@ fn test_system_info_schema_and_zero_secret_leakage() {
 #[test]
 fn test_sessions_get_empty_messages_200_invariant() {
     // Parser for canonical session keys: agent:<id>:main
-    let parse_agent_id = |raw_key: &str| -> &str {
+    fn parse_agent_id(raw_key: &str) -> &str {
         if let Some(stripped) = raw_key.strip_prefix("agent:") {
             stripped.split(':').next().unwrap_or(stripped)
         } else {
             raw_key
         }
-    };
+    }
 
     assert_eq!(parse_agent_id("agent:agent-123:main"), "agent-123");
     assert_eq!(parse_agent_id("agent-456"), "agent-456");
