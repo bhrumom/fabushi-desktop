@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16164,
-    "unread_minimum": 16139,
+    "unknown_minimum": 16163,
+    "unread_minimum": 16138,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -90,7 +90,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Strict212 TDRP-R9-MICROTEX-README-SAMPLE-8-SVG-PROVENANCE-001: desktop-app/MicroTeX readme/samples/sample_8.svg@2a3aceabd646957e4f47900551b60204b19b4794 source-only generated SVG provenance with stable source/output drift: accepted 59,582 ASCII bytes / 530 split-line slots, 187pt x 248pt/viewBox 0 0 187 248, 51 symbol + 73 path + 116 local/resolved use + 1 rect + 116 g + 51 unique ids and no active/external content; creation a100e93e3ea0e89087525dc872618ab3456f431b is 59,572 bytes with identical 187pt x 248pt/viewBox 0 0 187 248 root geometry and identical structural cardinalities, and exactly 8 split-line slots differ. Exact-path history is exhausted at 95a54b5 creation -> 08d9d6b accepted update, page 2 empty; creation parent lacks target, creation co-add is 13 paths and update co-change is 8 paths. Normalized index-8 SAMPLES.tex and samples.md bodies remain exact-equal at 283 chars across creation, 63555c2, 08d9d6b and current. 95a54b5..08d9d6b spans 34 commits/155 files, so stable source plus output drift is not promoted to a single renderer/font/toolchain cause. pre-push remains b426a77d while gtkmm_main and graphic_cairo drift. MicroTeX CMake/Qt/bundled resources and child workflows have zero generated sample_8 refs; Meson installs res/SAMPLES.tex as source/demo input only. Accepted BUILD_QT + graphic_qt + bundled.qrc external_microtex/td_iv/Telegram shipping has zero sample_8/readme-samples/SAMPLES refs. Hook dispatch, exact historical binary/toolchain/scour/font environment, raw pre-scour bytes, bit-for-bit regeneration and single-cause attribution remain unproven; README excludes res fonts/XML from blanket MIT and finalized paths do not prove per-outline font derivation. Counters unknown=16164 unread=16139 omitted=0 responsibilities=230. Parent 8ae2941cee9b4a34473276e761c6c564a2bdf45e: TDRP 40155900566 61/61 success (authority 12584655350 sha256:68d6e7d8bc903c3461b40b9c955d421c8adeb6ddceab077e5a50f0d4765da816; closure 12585115143 sha256:310ba25e8b850e0e9034aa0054a56f5332cb9b82157f9be2186eefd082cbeae3; reachability 12584541128 sha256:fe3799eee77c56d9072e1ca01223878495b8a2e1f2861490e480f08b4ecab3ef; Boost 12584324297 sha256:9ceabf55eb90c4565cc9575ee2ab9bc876ed4e31f91eb701bee574cc764dff8e), Rust 40155900574 6/6 success (artifact 12583864597 sha256:40f06dc60a959e38b0f85498cd877312c0562a928cf056376eef986e209bb6df), Official MCP 40155900579 1/1 success. Receipt-head Actions required; baseline_identity_accepted=false/source_closure_ready=false. Next readme/samples/sample_9.svg@fc19f5fa1c500f2b1659eaaee05352ae0024990f.",
+  "note": "Strict213 TDRP-R9-MICROTEX-README-SAMPLE-9-SVG-PROVENANCE-001: desktop-app/MicroTeX readme/samples/sample_9.svg@fc19f5fa1c500f2b1659eaaee05352ae0024990f source-only generated SVG provenance with creation-identical accepted bytes: 258,669 ASCII bytes / 1,703 split-line slots, 740pt x 491pt/viewBox 0 0 740 491, 253 symbol + 254 path + 312 local/resolved use + 1 rect + 312 g + 253 unique ids and no active/external content. Exact-path history is exhausted at the single 95a54b5 creation commit, page 2 empty; creation parent lacks target and creation co-add is exactly 13 paths. 08d9d6b changes eight sibling/docs paths but not sample_9, so creation and accepted resolve the identical fc19f5fa blob. Normalized index-9 SAMPLES.tex and samples.md bodies remain exact-equal at 1,080 chars across creation, 63555c2, 08d9d6b and current. The 95a54b5..08d9d6b range spans 34 commits/155 files while the target stays byte-identical; this proves tracked artifact stability across that range, not installed-hook execution or environment-independent reproducibility. pre-push remains b426a77d; MicroTeX CMake/Qt/bundled resources and child workflows have zero generated sample_9 refs; Meson installs res/SAMPLES.tex as source/demo input only. Accepted BUILD_QT + graphic_qt + bundled.qrc external_microtex/td_iv/Telegram shipping has zero sample_9/readme-samples/SAMPLES refs. Hook dispatch, exact historical binary/toolchain/scour/font environment, raw pre-scour bytes and bit-for-bit regeneration in an unspecified environment remain unproven; README excludes res fonts/XML from blanket MIT and finalized paths do not prove per-outline font derivation. Counters unknown=16163 unread=16138 omitted=0 responsibilities=231. Parent 197766c57c2b568c4ed607bb69c5372c5802e95b: TDRP 40156855653 61/61 success (authority 12585321044 sha256:053bff832bbcb8cb3b22ac4f8306abea84546ed7bfd212c970d8684c080017e1; closure 12584611928 sha256:307025fa510614ca70a59753fca3bcc7fad714e9cba9e73151c077be00eeac1f; reachability 12585556027 sha256:56ceb49fcec6c9d15bfa9851ee4915c9c8cd2c8a69a7e8510a89f3b41cdf3c3e; Boost 12584741689 sha256:d29dfd25a570b3e027810b077a01f5ae9fc0c0650e32eb22a8713ff88567a2b4), Rust 40156855703 6/6 success (artifact 12585151183 sha256:305b5f15a6eb446376e9631acdb393bc40163def9ca72e53c0b20bbd99b3872a), Official MCP 40156855672 1/1 success. Receipt-head Actions required; baseline_identity_accepted=false/source_closure_ready=false. Next readme/samples/sample_10.svg@31a02661b1fccb964dc9c0b8a727b521a85f42ea.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
@@ -106,38 +106,38 @@
     "baseline_identity_accepted": false,
     "source_closure_ready": false
   },
-  "target_commit": "8ae2941cee9b4a34473276e761c6c564a2bdf45e",
+  "target_commit": "197766c57c2b568c4ed607bb69c5372c5802e95b",
   "last_completed_parent_head_validation": {
     "evidence_status": "historical-only-after-receipt-commit",
-    "head_sha": "8ae2941cee9b4a34473276e761c6c564a2bdf45e",
+    "head_sha": "197766c57c2b568c4ed607bb69c5372c5802e95b",
     "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
     "upstream_tree": "c539eabfb05e7dcaa84821ac44c35cdfb6551ae5",
     "recursive_non_directory_entries": 16379,
-    "tdrp_run_id": 40155900566,
+    "tdrp_run_id": 40156855653,
     "tdrp_jobs": "61/61 success",
     "source_authority_artifact": {
-      "id": 12584655350,
-      "digest": "sha256:68d6e7d8bc903c3461b40b9c955d421c8adeb6ddceab077e5a50f0d4765da816"
+      "id": 12585321044,
+      "digest": "sha256:053bff832bbcb8cb3b22ac4f8306abea84546ed7bfd212c970d8684c080017e1"
     },
     "recursive_closure_artifact": {
-      "id": 12585115143,
-      "digest": "sha256:310ba25e8b850e0e9034aa0054a56f5332cb9b82157f9be2186eefd082cbeae3"
+      "id": 12584611928,
+      "digest": "sha256:307025fa510614ca70a59753fca3bcc7fad714e9cba9e73151c077be00eeac1f"
     },
     "recursive_reachability_artifact": {
-      "id": 12584541128,
-      "digest": "sha256:fe3799eee77c56d9072e1ca01223878495b8a2e1f2861490e480f08b4ecab3ef"
+      "id": 12585556027,
+      "digest": "sha256:56ceb49fcec6c9d15bfa9851ee4915c9c8cd2c8a69a7e8510a89f3b41cdf3c3e"
     },
     "boost_reachability_artifact": {
-      "id": 12584324297,
-      "digest": "sha256:9ceabf55eb90c4565cc9575ee2ab9bc876ed4e31f91eb701bee574cc764dff8e"
+      "id": 12584741689,
+      "digest": "sha256:d29dfd25a570b3e027810b077a01f5ae9fc0c0650e32eb22a8713ff88567a2b4"
     },
-    "rust_run_id": 40155900574,
+    "rust_run_id": 40156855703,
     "rust_jobs": "6/6 success",
     "rust_artifact": {
-      "id": 12583864597,
-      "digest": "sha256:40f06dc60a959e38b0f85498cd877312c0562a928cf056376eef986e209bb6df"
+      "id": 12585151183,
+      "digest": "sha256:305b5f15a6eb446376e9631acdb393bc40163def9ca72e53c0b20bbd99b3872a"
     },
-    "official_mcp_marketplace_run_id": 40155900579,
+    "official_mcp_marketplace_run_id": 40156855672,
     "official_mcp_marketplace_jobs": "1/1 success",
     "baseline_identity_accepted": false,
     "source_closure_ready": false,
