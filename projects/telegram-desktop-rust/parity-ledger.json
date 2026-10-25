@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "b0eb1da1f1180d184c7fcb8ab72496decde8e8f7",
+  "target_commit": "2fa0a0d811ea04247a13495284919fc46a1e456c",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16138,
-    "unread": 16113,
+    "unknown": 16137,
+    "unread": 16112,
     "omitted": 0,
-    "responsibilities_total": 256,
+    "responsibilities_total": 257,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -8350,7 +8350,7 @@
         "Recovery and convergence",
         "Assessment",
         "Handoff and commit boundaries",
-        "Test account (portable data) — hard rules",
+        "Test account (portable data) \u2014 hard rules",
         "Design evidence from this task",
         "Telegram overlay mechanics",
         "Telegram build & run discipline",
@@ -15761,9 +15761,9 @@
       ],
       "platform_delta": "The upstream OpenAI YAML is provider-host registration metadata. Fabushi already defines source-neutral repository quality-health native-invocation qualification/evidence, so applicable responsibility is retained as declarative provenance/routing rather than copied as a Telegram/OpenAI product runtime.",
       "existing_owner_candidates": [
-        "projects/fabushi-communication-platform/quality/evidence-contract.md — Repository quality-health native invocation evidence",
-        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md — Repository quality-health native invocation qualification",
-        "AGENTS.md — repository quality-health command orchestration governance"
+        "projects/fabushi-communication-platform/quality/evidence-contract.md \u2014 Repository quality-health native invocation evidence",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md \u2014 Repository quality-health native invocation qualification",
+        "AGENTS.md \u2014 repository quality-health command orchestration governance"
       ],
       "existing_owner": "Fabushi repository quality-health native invocation / evidence governance",
       "rejected_existing_owners": [
@@ -15993,11 +15993,11 @@
       ],
       "platform_delta": "Fabushi already owns the applicable source-neutral responsibility through repository quality-health exact-source/provenance evidence, the recursive build-acquisition inventory and fail-closed security/release governance. Do not add a Telegram-specific fork scanner, backport runtime, second dependency findings store or shipping updater owner.",
       "existing_owner_candidates": [
-        "projects/fabushi-communication-platform/quality/evidence-contract.md — exact-revision repository quality-health/provenance evidence",
-        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md — exact-source qualification and fail-closed evidence",
-        "projects/fabushi-communication-platform/quality/plans/security-privacy-test-plan.md — security/release applicability gates",
-        "projects/telegram-desktop-rust/inventory/build-time-acquisitions.json — exact pinned build-input and recursive reachability evidence",
-        "AGENTS.md — canonical repository quality-health command/orchestration governance"
+        "projects/fabushi-communication-platform/quality/evidence-contract.md \u2014 exact-revision repository quality-health/provenance evidence",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md \u2014 exact-source qualification and fail-closed evidence",
+        "projects/fabushi-communication-platform/quality/plans/security-privacy-test-plan.md \u2014 security/release applicability gates",
+        "projects/telegram-desktop-rust/inventory/build-time-acquisitions.json \u2014 exact pinned build-input and recursive reachability evidence",
+        "AGENTS.md \u2014 canonical repository quality-health command/orchestration governance"
       ],
       "existing_owner": "Fabushi source-neutral repository quality-health dependency-provenance / source-authority evidence governance",
       "rejected_existing_owners": [
@@ -16257,10 +16257,10 @@
       ],
       "platform_delta": "Fabushi already owns the applicable source-neutral responsibility through repository quality-health exact-revision evidence, fresh exact-source qualification and security/privacy release gates. This entry strengthens evidence semantics only; it does not justify a Telegram-specific dependency updater, release scanner, second findings store or deployment owner.",
       "existing_owner_candidates": [
-        "projects/fabushi-communication-platform/quality/evidence-contract.md — repository quality-health exact-revision/provenance evidence",
-        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md — fresh exact-source qualification and fail-closed release evidence",
-        "projects/fabushi-communication-platform/quality/plans/security-privacy-test-plan.md — security/privacy P0/P1 release blocking",
-        "AGENTS.md — canonical repository quality-health orchestration and GitHub Actions evidence policy"
+        "projects/fabushi-communication-platform/quality/evidence-contract.md \u2014 repository quality-health exact-revision/provenance evidence",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md \u2014 fresh exact-source qualification and fail-closed release evidence",
+        "projects/fabushi-communication-platform/quality/plans/security-privacy-test-plan.md \u2014 security/privacy P0/P1 release blocking",
+        "AGENTS.md \u2014 canonical repository quality-health orchestration and GitHub Actions evidence policy"
       ],
       "existing_owner": "Fabushi source-neutral repository quality-health release-trust / security evidence governance",
       "rejected_existing_owners": [
@@ -16519,10 +16519,10 @@
       ],
       "platform_delta": "Fabushi already owns the applicable source-neutral behavior through repository quality-health command orchestration and exact-revision evidence. The Telegram-specific Python helper is not copied; its exact-source/fail-closed/storage/version-classification responsibilities remain within the existing repository quality/evidence lifecycle.",
       "existing_owner_candidates": [
-        "AGENTS.md — Repository quality-health command orchestration governance for exact-revision acquisition, dependency refresh, detached inspection and fail-visible execution",
-        "projects/fabushi-communication-platform/quality/evidence-contract.md — Repository quality-health exact-revision/source-authority evidence",
-        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md — fresh exact-source qualification and GitHub Actions evidence",
-        "projects/fabushi-communication-platform/quality/plans/security-privacy-test-plan.md — fail-closed security/release gate"
+        "AGENTS.md \u2014 Repository quality-health command orchestration governance for exact-revision acquisition, dependency refresh, detached inspection and fail-visible execution",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md \u2014 Repository quality-health exact-revision/source-authority evidence",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md \u2014 fresh exact-source qualification and GitHub Actions evidence",
+        "projects/fabushi-communication-platform/quality/plans/security-privacy-test-plan.md \u2014 fail-closed security/release gate"
       ],
       "existing_owner": "Fabushi source-neutral repository quality-health exact-revision acquisition / evidence orchestration",
       "rejected_existing_owners": [
@@ -16785,10 +16785,10 @@
       ],
       "platform_delta": "Fabushi already owns these source-neutral test/evidence responsibilities through repository quality-health integrated regression evidence and command-orchestration qualification. The Telegram-specific unittest fixture is not copied; its applicable positive/negative contracts remain qualification requirements of the existing exact-source quality owner.",
       "existing_owner_candidates": [
-        "AGENTS.md — Repository quality-health command orchestration governance for fresh exact source, fail-visible acquisition and detached worktree safety",
-        "projects/fabushi-communication-platform/quality/evidence-contract.md — Repository quality-health integrated regression and command-orchestration evidence",
-        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md — repository-quality qualification and GitHub-Actions-only FBCP/TDRP executable verification",
-        "projects/fabushi-communication-platform/quality/plans/security-privacy-test-plan.md — fail-closed security/privacy release gate"
+        "AGENTS.md \u2014 Repository quality-health command orchestration governance for fresh exact source, fail-visible acquisition and detached worktree safety",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md \u2014 Repository quality-health integrated regression and command-orchestration evidence",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md \u2014 repository-quality qualification and GitHub-Actions-only FBCP/TDRP executable verification",
+        "projects/fabushi-communication-platform/quality/plans/security-privacy-test-plan.md \u2014 fail-closed security/privacy release gate"
       ],
       "existing_owner": "Fabushi source-neutral repository quality-health integrated regression / command-orchestration evidence owner",
       "rejected_existing_owners": [
@@ -16805,7 +16805,7 @@
       "fabushi_target_symbols": [
         "Repository quality-health integrated regression evidence",
         "Repository quality-health command orchestration evidence",
-        "FBCP/TDRP 所有 executable verification 只在 GitHub Actions"
+        "FBCP/TDRP \u6240\u6709 executable verification \u53ea\u5728 GitHub Actions"
       ],
       "target_language": "Markdown",
       "language_rationale": "The upstream entry is a repository-development unittest suite for source/dependency evidence mechanics, not Fabushi shipping product behavior. Its applicable semantics belong to the existing source-neutral quality/evidence qualification owner instead of a retained Telegram-specific Python test runtime.",
@@ -17066,10 +17066,10 @@
       ],
       "platform_delta": "Fabushi already owns the applicable source-neutral repository task/review/evidence lifecycle and adaptive verification policy. The upstream skill is repository-development orchestration, not a shipping Telegram capability; preserve the behavioral contract in existing governance/evidence owners rather than porting provider adapters, workspace.py semantics or a second product Task scheduler.",
       "existing_owner_candidates": [
-        "AGENTS.md — ordinary repository task/review/evidence lifecycle, repository quality-task classification, source-neutral worker effort and GitHub-Actions-only FBCP/TDRP execution",
-        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md — repository quality-task qualification, AI review phase policy and adaptive evidence loop/bounded recovery",
-        "projects/fabushi-communication-platform/quality/evidence-contract.md — independent/durable review ledger and task-local handoff/evidence contracts",
-        "Existing Fabushi shipping Task/Agent/Host/Runner owners — inspected but semantically separate product runtime"
+        "AGENTS.md \u2014 ordinary repository task/review/evidence lifecycle, repository quality-task classification, source-neutral worker effort and GitHub-Actions-only FBCP/TDRP execution",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md \u2014 repository quality-task qualification, AI review phase policy and adaptive evidence loop/bounded recovery",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md \u2014 independent/durable review ledger and task-local handoff/evidence contracts",
+        "Existing Fabushi shipping Task/Agent/Host/Runner owners \u2014 inspected but semantically separate product runtime"
       ],
       "existing_owner": "Fabushi source-neutral repository task/review/evidence lifecycle and adaptive verification governance",
       "rejected_existing_owners": [
@@ -17334,10 +17334,10 @@
       ],
       "platform_delta": "Fabushi exact-head already owns the applicable source-neutral repository task/review/evidence lifecycle in root AGENTS.md, TEST_STRATEGY.md and evidence-contract.md. There is no Fabushi .agents/skills/perform-task copy at b34f; that absence does not create a novel product capability because index46 is only provider interface metadata. Preserve the behavioral boundary in existing governance rather than adding a second shipping Task/Agent/runtime owner.",
       "existing_owner_candidates": [
-        "AGENTS.md — ordinary repository task/review/evidence lifecycle and source-neutral quality governance",
-        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md — repository quality-task qualification, AI review policy and adaptive evidence loop",
-        "projects/fabushi-communication-platform/quality/evidence-contract.md — independent/durable review and task-local evidence contracts",
-        "Existing Fabushi shipping Task/Agent/Host/Runner owners — explicitly not the owner of repository-development host interface metadata"
+        "AGENTS.md \u2014 ordinary repository task/review/evidence lifecycle and source-neutral quality governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md \u2014 repository quality-task qualification, AI review policy and adaptive evidence loop",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md \u2014 independent/durable review and task-local evidence contracts",
+        "Existing Fabushi shipping Task/Agent/Host/Runner owners \u2014 explicitly not the owner of repository-development host interface metadata"
       ],
       "existing_owner": "Fabushi source-neutral repository task/review/evidence governance; index46 is only provider invocation/interface metadata for that lifecycle",
       "rejected_existing_owners": [
@@ -17593,10 +17593,10 @@
       ],
       "platform_delta": "FBCP/TDRP executable verification is GitHub-Actions-only. Preserve the source-neutral oracle/directness/fail-closed/evidence semantics in existing repository governance rather than copying a host-specific Computer Use wrapper. Shipping Computer remains a separate product runtime.",
       "existing_owner_candidates": [
-        "AGENTS.md — adaptive verification/evidence recovery and GitHub-Actions-only FBCP/TDRP execution",
-        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md — UI verification plus adaptive evidence loop and bounded recovery",
-        "projects/fabushi-communication-platform/quality/evidence-contract.md — append-only run evidence and TEST_FLAW directness recovery",
-        "frontend/src/recovered/features/computer/* — shipping ForeverBox/VNC/status/handoff runtime, explicitly rejected"
+        "AGENTS.md \u2014 adaptive verification/evidence recovery and GitHub-Actions-only FBCP/TDRP execution",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md \u2014 UI verification plus adaptive evidence loop and bounded recovery",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md \u2014 append-only run evidence and TEST_FLAW directness recovery",
+        "frontend/src/recovered/features/computer/* \u2014 shipping ForeverBox/VNC/status/handoff runtime, explicitly rejected"
       ],
       "existing_owner": "Fabushi source-neutral adaptive verification, test strategy and durable evidence governance",
       "rejected_existing_owners": [
@@ -17864,10 +17864,10 @@
       ],
       "platform_delta": "The upstream lane names Telegram Debug builds and Telegram code-health tooling. For FBCP/TDRP, preserve the source-neutral class eligibility, behavior-preservation, direct proof, review and drop/reclassification semantics under existing Fabushi repository-quality governance, while all executable migration verification remains GitHub-Actions-only. Do not copy Telegram workflow mechanics into any shipping product runtime.",
       "existing_owner_candidates": [
-        "AGENTS.md — Repository quality-task classification governance",
-        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md — Repository quality-task class qualification",
-        "projects/fabushi-communication-platform/quality/evidence-contract.md — Repository quality-task class evidence",
-        "Shipping Task/Agent/Computer/Host/Runner owners — explicitly rejected because they own product/runtime behavior, not repository code-health governance"
+        "AGENTS.md \u2014 Repository quality-task classification governance",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md \u2014 Repository quality-task class qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md \u2014 Repository quality-task class evidence",
+        "Shipping Task/Agent/Computer/Host/Runner owners \u2014 explicitly rejected because they own product/runtime behavior, not repository code-health governance"
       ],
       "existing_owner": "Fabushi source-neutral repository quality-task classification, qualification and evidence governance",
       "rejected_existing_owners": [
@@ -18145,10 +18145,10 @@
       ],
       "platform_delta": "Upstream prompts mention Telegram-specific build/account/UI-driver and host adapters. Fabushi preserves source-neutral phase ownership, artifact completion, blind/focused review, convergence, directness recovery, campaign caps and worker lifecycle semantics in existing repository governance. FBCP/TDRP executable verification remains GitHub-Actions-only; no Telegram workflow runtime is copied into the product.",
       "existing_owner_candidates": [
-        "AGENTS.md — canonical repository lifecycle, context handoff, worker effort/lifecycle/adapter safety and exact-head verification",
-        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md — independent/focused review, arbitration/convergence, adaptive evidence and worker/build recovery qualification",
-        "projects/fabushi-communication-platform/quality/evidence-contract.md — immutable scope/run, review ledger, worker execution, context provenance and adaptive recovery evidence",
-        "Shipping Task/Agent/Computer/Host/Runner/Conversation — rejected: product/runtime owners, not repository workflow governance"
+        "AGENTS.md \u2014 canonical repository lifecycle, context handoff, worker effort/lifecycle/adapter safety and exact-head verification",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md \u2014 independent/focused review, arbitration/convergence, adaptive evidence and worker/build recovery qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md \u2014 immutable scope/run, review ledger, worker execution, context provenance and adaptive recovery evidence",
+        "Shipping Task/Agent/Computer/Host/Runner/Conversation \u2014 rejected: product/runtime owners, not repository workflow governance"
       ],
       "existing_owner": "Fabushi source-neutral repository development lifecycle, independent review/test strategy and durable evidence governance",
       "rejected_existing_owners": [
@@ -18445,10 +18445,10 @@
       ],
       "platform_delta": "Upstream prompts mention Telegram-specific build/account/UI-driver and host adapters. Fabushi preserves source-neutral phase ownership, artifact completion, blind/focused review, convergence, directness recovery, campaign caps and worker lifecycle semantics in existing repository governance. FBCP/TDRP executable verification remains GitHub-Actions-only; no Telegram workflow runtime is copied into the product. The private-remote ai-<checkout-tag> mirror is source-host workflow detail rather than shipping product behavior; it does not create a Fabushi product/runtime owner.",
       "existing_owner_candidates": [
-        "AGENTS.md — canonical repository lifecycle, context handoff, worker effort/lifecycle/adapter safety and exact-head verification",
-        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md — independent/focused review, arbitration/convergence, adaptive evidence and worker/build recovery qualification",
-        "projects/fabushi-communication-platform/quality/evidence-contract.md — immutable scope/run, review ledger, worker execution, context provenance and adaptive recovery evidence",
-        "Shipping Task/Agent/Computer/Host/Runner/Conversation — rejected: product/runtime owners, not repository workflow governance"
+        "AGENTS.md \u2014 canonical repository lifecycle, context handoff, worker effort/lifecycle/adapter safety and exact-head verification",
+        "projects/fabushi-communication-platform/quality/TEST_STRATEGY.md \u2014 independent/focused review, arbitration/convergence, adaptive evidence and worker/build recovery qualification",
+        "projects/fabushi-communication-platform/quality/evidence-contract.md \u2014 immutable scope/run, review ledger, worker execution, context provenance and adaptive recovery evidence",
+        "Shipping Task/Agent/Computer/Host/Runner/Conversation \u2014 rejected: product/runtime owners, not repository workflow governance"
       ],
       "existing_owner": "Fabushi source-neutral repository development lifecycle, independent review/test strategy and durable evidence governance",
       "rejected_existing_owners": [
@@ -20493,7 +20493,7 @@
       ],
       "platform_delta": "Upstream Windows/WSL/local-build mechanics are environment-specific. Fabushi retains source-neutral Git semantics and Actions-only executable verification.",
       "existing_owner_candidates": [
-        "AGENTS.md#Stage 6 — Integrate / Deliver",
+        "AGENTS.md#Stage 6 \u2014 Integrate / Deliver",
         "AGENTS.md#Adaptive verification and evidence recovery",
         "Process-inbox/task lifecycle (rejected)",
         "Shipping owners (rejected)"
@@ -20553,7 +20553,7 @@
       "artifact_id": null,
       "artifact_digest": null,
       "composition_root": "Fabushi repository development lifecycle",
-      "composition_slot": "Stage 6 — Integrate / Deliver",
+      "composition_slot": "Stage 6 \u2014 Integrate / Deliver",
       "capability_component": "Intent-preserving branch integration governance",
       "variation_axes": [
         "ambiguous replay",
@@ -21652,16 +21652,16 @@
         "frontmatter description",
         "allowed-tools",
         "# Process Crash Reports",
-        "Phase 0 — open the run",
-        "Phase 1 — plan the waves",
-        "Phase 2 — investigate each wave",
-        "stage 1 — investigate",
-        "stage 2 — verify",
-        "Phase 3 — apply and commit, serially",
+        "Phase 0 \u2014 open the run",
+        "Phase 1 \u2014 plan the waves",
+        "Phase 2 \u2014 investigate each wave",
+        "stage 1 \u2014 investigate",
+        "stage 2 \u2014 verify",
+        "Phase 3 \u2014 apply and commit, serially",
         "record",
         "reconcile",
         "--dry-run",
-        "Phase 4 — build and report",
+        "Phase 4 \u2014 build and report",
         "Known noise, worth checking before investigating"
       ],
       "capability_ids": [
@@ -22192,7 +22192,7 @@
         "Step 0a: Clipboard grab",
         ".claude/grab_clipboard.sh",
         ".claude/grab_clipboard.ps1",
-        "Step 0b: Fail-fast — verify vectosolve MCP",
+        "Step 0b: Fail-fast \u2014 verify vectosolve MCP",
         "Step 0c: Follow-up detection",
         "Step 0d: New icon setup",
         "Step 0e: Follow-up setup",
@@ -22279,7 +22279,7 @@
       "fabushi_target_symbols": [
         "## 10. Iconography",
         "| IconButton | icon size, tooltip, accessible name, selected/pressed, danger |",
-        "- icons 来自 canonical registry，用户可见外部品牌 asset 无非法残留。"
+        "- icons \u6765\u81ea canonical registry\uff0c\u7528\u6237\u53ef\u89c1\u5916\u90e8\u54c1\u724c asset \u65e0\u975e\u6cd5\u6b8b\u7559\u3002"
       ],
       "target_language": "Markdown design-system/component/visual-acceptance governance with source-controlled canonical icon assets",
       "language_rationale": "The source file is a repository developer command, not shipping product logic. Its applicable output responsibilities already belong to Fabushi's canonical iconography/component/a11y/visual evidence contract, so no new Rust/TypeScript product subsystem or provider-specific runtime is justified.",
@@ -24725,9 +24725,9 @@
       ],
       "fabushi_target_symbols": [
         "Repository feature-request intake adapter governance",
-        "#### Stage 0 — Discover",
-        "#### Stage 1 — Spec",
-        "#### Stage 2 — Architecture / Plan",
+        "#### Stage 0 \u2014 Discover",
+        "#### Stage 1 \u2014 Spec",
+        "#### Stage 2 \u2014 Architecture / Plan",
         "current existing owner first"
       ],
       "target_language": "Repository governance / product proposal and spec-intake policy",
@@ -27641,7 +27641,7 @@
       ],
       "fabushi_target_symbols": [
         "Routing never proves a defect invalid, a proposal rejected, a support outcome complete, or an applicable source responsibility unnecessary.",
-        "reproduce->fix->targeted regression->affected regression->current-head evidence 才 close。"
+        "reproduce->fix->targeted regression->affected regression->current-head evidence \u624d close\u3002"
       ],
       "target_language": "Repository governance / provider issue-intake routing adapter",
       "language_rationale": "The source is GitHub issue-maintenance orchestration and mutable JavaScript-provider behavior, not shipping runtime; applicable responsibility belongs to existing repository routing and canonical defect closure governance.",
@@ -29222,7 +29222,7 @@
         "projects/fabushi-communication-platform/quality/defect-regression-policy.md"
       ],
       "fabushi_target_symbols": [
-        "reproduce->fix->targeted regression->affected regression->current-head evidence 才 close。Flaky 是 defect；critical gate flaky 即 block，禁止 rerun-until-green。"
+        "reproduce->fix->targeted regression->affected regression->current-head evidence \u624d close\u3002Flaky \u662f defect\uff1bcritical gate flaky \u5373 block\uff0c\u7981\u6b62 rerun-until-green\u3002"
       ],
       "target_language": "Repository governance / issue-maintenance provenance",
       "language_rationale": "The source is GitHub issue automation rather than shipping product logic; applicable behavior is bounded by the existing source-neutral defect policy and provider-adapter governance.",
@@ -29477,7 +29477,7 @@
       ],
       "fabushi_target_symbols": [
         "Byte-exact copies require source-before/source-after stability plus equal raw SHA-256 and size for the copied executable.",
-        "每份 passing evidence 至少包含 target SHA、upstream/baseline SHA（若相关）、workflow/run/attempt/job/event、actual checkout SHA、suite/case IDs、fixture/environment IDs、start/end、result、artifact name/ID/digest。"
+        "\u6bcf\u4efd passing evidence \u81f3\u5c11\u5305\u542b target SHA\u3001upstream/baseline SHA\uff08\u82e5\u76f8\u5173\uff09\u3001workflow/run/attempt/job/event\u3001actual checkout SHA\u3001suite/case IDs\u3001fixture/environment IDs\u3001start/end\u3001result\u3001artifact name/ID/digest\u3002"
       ],
       "target_language": "Repository packaging / artifact-evidence governance",
       "language_rationale": "This is build/release infrastructure and maps to current source-neutral release/evidence owners.",
@@ -29733,7 +29733,7 @@
         "projects/fabushi-communication-platform/quality/defect-regression-policy.md"
       ],
       "fabushi_target_symbols": [
-        "ID、SHA/environment、steps、expected/actual、frequency、screens/video/logs、affected requirement/oracle、severity、root cause、fix SHA、regression IDs、evidence、reviewer。"
+        "ID\u3001SHA/environment\u3001steps\u3001expected/actual\u3001frequency\u3001screens/video/logs\u3001affected requirement/oracle\u3001severity\u3001root cause\u3001fix SHA\u3001regression IDs\u3001evidence\u3001reviewer\u3002"
       ],
       "target_language": "Repository governance / issue-maintenance provenance",
       "language_rationale": "The source is GitHub administrative automation. Applicable responsibility maps to the source-neutral canonical defect policy rather than shipping Rust/React.",
@@ -30833,7 +30833,7 @@
         "projects/fabushi-communication-platform/quality/release-entry-exit-criteria.md"
       ],
       "fabushi_target_symbols": [
-        "每份 passing evidence 至少包含 target SHA、upstream/baseline SHA（若相关）、workflow/run/attempt/job/event、actual checkout SHA、suite/case IDs、fixture/environment IDs、start/end、result、artifact name/ID/digest。",
+        "\u6bcf\u4efd passing evidence \u81f3\u5c11\u5305\u542b target SHA\u3001upstream/baseline SHA\uff08\u82e5\u76f8\u5173\uff09\u3001workflow/run/attempt/job/event\u3001actual checkout SHA\u3001suite/case IDs\u3001fixture/environment IDs\u3001start/end\u3001result\u3001artifact name/ID/digest\u3002",
         "Every executable that moves from built/signed candidate bytes into staging, installation, acceptance, promotion, or release must retain an explicit provenance edge. Byte-exact copies require source-before/source-after stability plus equal raw SHA-256 and size for the copied executable. Intentional transformations require an applicable format-specific equivalence oracle in addition to both raw identities. Missing provenance, historical-copy reuse, mutable-source evidence, or a normalized digest presented as exact identity is BLOCKED."
       ],
       "target_language": "Repository build/test/artifact-evidence governance",
@@ -31109,8 +31109,8 @@
         "projects/fabushi-communication-platform/quality/release-entry-exit-criteria.md"
       ],
       "fabushi_target_symbols": [
-        "相关 source/spec/oracle/baseline 改变后旧证据降 historical。截图/视频存在但未关联 case/verdict 不算 pass。独立验收记录 reviewer、reviewed evidence IDs、异常与 verdict。",
-        "frozen exact SHA；applicable specs/oracles/RTM ready；required services/accounts/signing/config available or blocked；fixtures/baselines versioned；known P0=0；workflows target exact source。"
+        "\u76f8\u5173 source/spec/oracle/baseline \u6539\u53d8\u540e\u65e7\u8bc1\u636e\u964d historical\u3002\u622a\u56fe/\u89c6\u9891\u5b58\u5728\u4f46\u672a\u5173\u8054 case/verdict \u4e0d\u7b97 pass\u3002\u72ec\u7acb\u9a8c\u6536\u8bb0\u5f55 reviewer\u3001reviewed evidence IDs\u3001\u5f02\u5e38\u4e0e verdict\u3002",
+        "frozen exact SHA\uff1bapplicable specs/oracles/RTM ready\uff1brequired services/accounts/signing/config available or blocked\uff1bfixtures/baselines versioned\uff1bknown P0=0\uff1bworkflows target exact source\u3002"
       ],
       "target_language": "Repository release/evidence governance and external catalog publication provenance",
       "language_rationale": "The source is GitHub release automation and external catalog mutation. Applicable responsibilities map to current source-neutral evidence/release governance, not production Rust/React.",
@@ -31854,8 +31854,8 @@
       "fabushi_target_symbols": [
         "**PR #20 / canonical Fabushi is the only target product architecture.**",
         "**FBCP-001 / TDRP-001 project exception:** all executable verification for this migration project runs **only in GitHub Actions**.",
-        "上游是完整产品行为、状态机、边界条件与工程责任的 source authority，不是最终 runtime/network/product。",
-        "只有无产品运行责任的文档/法律/纯来源记录能以有依据的 non-runtime accounted 闭合；任何承载产品行为的文件/子责任都必须有真实实现/替代证据。"
+        "\u4e0a\u6e38\u662f\u5b8c\u6574\u4ea7\u54c1\u884c\u4e3a\u3001\u72b6\u6001\u673a\u3001\u8fb9\u754c\u6761\u4ef6\u4e0e\u5de5\u7a0b\u8d23\u4efb\u7684 source authority\uff0c\u4e0d\u662f\u6700\u7ec8 runtime/network/product\u3002",
+        "\u53ea\u6709\u65e0\u4ea7\u54c1\u8fd0\u884c\u8d23\u4efb\u7684\u6587\u6863/\u6cd5\u5f8b/\u7eaf\u6765\u6e90\u8bb0\u5f55\u80fd\u4ee5\u6709\u4f9d\u636e\u7684 non-runtime accounted \u95ed\u5408\uff1b\u4efb\u4f55\u627f\u8f7d\u4ea7\u54c1\u884c\u4e3a\u7684\u6587\u4ef6/\u5b50\u8d23\u4efb\u90fd\u5fc5\u987b\u6709\u771f\u5b9e\u5b9e\u73b0/\u66ff\u4ee3\u8bc1\u636e\u3002"
       ],
       "target_language": "Repository governance Markdown + TDRP JSON evidence + GitHub Actions",
       "language_rationale": "The strict101 source entry is repository/development guidance. Its applicable source-neutral responsibility is governance/evidence policy, while product responsibilities it mentions remain mapped only through their actual source owners later; no Rust/React shipping implementation is justified by this document alone.",
@@ -32800,7 +32800,7 @@
         "docs/specs/telegram-desktop-rust-equivalence-migration.md"
       ],
       "fabushi_target_symbols": [
-        "保留法律要求的 LICENSE/NOTICE/版权与 source provenance"
+        "\u4fdd\u7559\u6cd5\u5f8b\u8981\u6c42\u7684 LICENSE/NOTICE/\u7248\u6743\u4e0e source provenance"
       ],
       "target_language": "Repository governance / retained legal-record provenance",
       "language_rationale": "LEGAL carries legal/source provenance rather than executable behavior.",
@@ -33022,7 +33022,7 @@
         "docs/specs/telegram-desktop-rust-equivalence-migration.md"
       ],
       "fabushi_target_symbols": [
-        "研究/更新/保留必要来源与法律记录，不伪装成运行时迁移"
+        "\u7814\u7a76/\u66f4\u65b0/\u4fdd\u7559\u5fc5\u8981\u6765\u6e90\u4e0e\u6cd5\u5f8b\u8bb0\u5f55\uff0c\u4e0d\u4f2a\u88c5\u6210\u8fd0\u884c\u65f6\u8fc1\u79fb"
       ],
       "target_language": "Repository governance / retained legal-record provenance",
       "language_rationale": "LICENSE is legal/source provenance rather than executable behavior.",
@@ -33253,7 +33253,7 @@
         "docs/specs/telegram-desktop-rust-equivalence-migration.md"
       ],
       "fabushi_target_symbols": [
-        "TDRP-SRC-02 — 全仓库、递归依赖、资源和工具链"
+        "TDRP-SRC-02 \u2014 \u5168\u4ed3\u5e93\u3001\u9012\u5f52\u4f9d\u8d56\u3001\u8d44\u6e90\u548c\u5de5\u5177\u94fe"
       ],
       "target_language": "Repository governance / retained source documentation provenance",
       "language_rationale": "README.md is source documentation and provenance rather than executable product behavior; product/build/dependency responsibilities it references remain owned and proven elsewhere.",
@@ -33421,12 +33421,12 @@
       "source_symbols": [
         "Empty line before closing brace",
         "No consecutive empty lines",
-        "Multi-line expressions — operators at the start of continuation lines",
-        "Minimize type checks — prefer direct cast over is + as",
+        "Multi-line expressions \u2014 operators at the start of continuation lines",
+        "Minimize type checks \u2014 prefer direct cast over is + as",
         "Always initialize variables of basic types",
         "Use tr:: projections for TextWithEntities",
-        "Multi-line calls — one argument per line",
-        "std::optional access — avoid value()",
+        "Multi-line calls \u2014 one argument per line",
+        "std::optional access \u2014 avoid value()",
         "Sort includes alphabetically, nested folders first",
         "Use C++17 nested namespace syntax",
         "Merge consecutive branches with identical bodies",
@@ -33475,12 +33475,12 @@
       "non_ui_responsibilities": [
         "Empty line before closing brace",
         "No consecutive empty lines",
-        "Multi-line expressions — operators at the start of continuation lines",
-        "Minimize type checks — prefer direct cast over is + as",
+        "Multi-line expressions \u2014 operators at the start of continuation lines",
+        "Minimize type checks \u2014 prefer direct cast over is + as",
         "Always initialize variables of basic types",
         "Use tr:: projections for TextWithEntities",
-        "Multi-line calls — one argument per line",
-        "std::optional access — avoid value()",
+        "Multi-line calls \u2014 one argument per line",
+        "std::optional access \u2014 avoid value()",
         "Sort includes alphabetically, nested folders first",
         "Use C++17 nested namespace syntax",
         "Merge consecutive branches with identical bodies",
@@ -34542,8 +34542,8 @@
       "fabushi_target_symbols": [
         "## 4. Fixed screenshot matrix",
         "## 13. Content and brand acceptance",
-        "品牌 logo/illustration 色彩另由 brand asset authority 管理，不能用历史 token 推断 Fabushi 品牌主色。",
-        "visual 保存 baseline/actual/diff"
+        "\u54c1\u724c logo/illustration \u8272\u5f69\u53e6\u7531 brand asset authority \u7ba1\u7406\uff0c\u4e0d\u80fd\u7528\u5386\u53f2 token \u63a8\u65ad Fabushi \u54c1\u724c\u4e3b\u8272\u3002",
+        "visual \u4fdd\u5b58 baseline/actual/diff"
       ],
       "target_language": "Existing Markdown visual/design/quality contracts; shipping UI remains React/TypeScript under canonical Fabushi owners",
       "language_rationale": "The source entry is a binary presentation asset, not reusable runtime logic. Its applicable responsibilities are provenance, branding boundary and visual-evidence discipline already owned by Fabushi design/quality contracts; copying the image would preserve source branding rather than migrate behavior.",
@@ -34797,11 +34797,11 @@
         "projects/fabushi-communication-platform/quality/evidence-contract.md"
       ],
       "fabushi_target_symbols": [
-        "扫描用户可见 Telegram/Grok/Gok/其他来源品牌文案与 asset；合法 provenance 不属于产品 UI。",
-        "Approved baseline 必须来自已验收 design contract，不能把失败状态重新录成 baseline。",
-        "外部产品品牌图标不得成为 Fabushi 通用 UI asset。",
-        "相关 source/spec/oracle/baseline 改变后旧证据降 historical。",
-        "截图/视频存在但未关联 case/verdict 不算 pass。"
+        "\u626b\u63cf\u7528\u6237\u53ef\u89c1 Telegram/Grok/Gok/\u5176\u4ed6\u6765\u6e90\u54c1\u724c\u6587\u6848\u4e0e asset\uff1b\u5408\u6cd5 provenance \u4e0d\u5c5e\u4e8e\u4ea7\u54c1 UI\u3002",
+        "Approved baseline \u5fc5\u987b\u6765\u81ea\u5df2\u9a8c\u6536 design contract\uff0c\u4e0d\u80fd\u628a\u5931\u8d25\u72b6\u6001\u91cd\u65b0\u5f55\u6210 baseline\u3002",
+        "\u5916\u90e8\u4ea7\u54c1\u54c1\u724c\u56fe\u6807\u4e0d\u5f97\u6210\u4e3a Fabushi \u901a\u7528 UI asset\u3002",
+        "\u76f8\u5173 source/spec/oracle/baseline \u6539\u53d8\u540e\u65e7\u8bc1\u636e\u964d historical\u3002",
+        "\u622a\u56fe/\u89c6\u9891\u5b58\u5728\u4f46\u672a\u5173\u8054 case/verdict \u4e0d\u7b97 pass\u3002"
       ],
       "target_language": "Existing Markdown visual/design/quality contracts; shipping UI remains React/TypeScript under canonical Fabushi owners",
       "language_rationale": "The source entry is a binary AppStream marketing screenshot rather than reusable runtime logic. Its applicable responsibilities are immutable visual provenance, presentation-claim boundaries, branding exclusion and evidence discipline already owned by Fabushi design/quality contracts; copying the image or treating its caption as runtime proof would preserve source branding instead of migrating behavior.",
@@ -35061,11 +35061,11 @@
         "projects/fabushi-communication-platform/quality/evidence-contract.md"
       ],
       "fabushi_target_symbols": [
-        "用户可见外部品牌 asset 无非法残留。",
-        "本文件定义 gate，不代表仓库已经实现 screenshot harness、token lint 或 visual baseline。后续实现只能在 GitHub Actions 取证。",
-        "这些是 migration input，不是来源品牌永久 API。必须在不破坏现有行为的前提下建立 Fabushi-owned semantic layer。",
-        "通用 UI 只使用一个 canonical icon registry/family。",
-        "独立验收记录 reviewer、reviewed evidence IDs、异常与 verdict。"
+        "\u7528\u6237\u53ef\u89c1\u5916\u90e8\u54c1\u724c asset \u65e0\u975e\u6cd5\u6b8b\u7559\u3002",
+        "\u672c\u6587\u4ef6\u5b9a\u4e49 gate\uff0c\u4e0d\u4ee3\u8868\u4ed3\u5e93\u5df2\u7ecf\u5b9e\u73b0 screenshot harness\u3001token lint \u6216 visual baseline\u3002\u540e\u7eed\u5b9e\u73b0\u53ea\u80fd\u5728 GitHub Actions \u53d6\u8bc1\u3002",
+        "\u8fd9\u4e9b\u662f migration input\uff0c\u4e0d\u662f\u6765\u6e90\u54c1\u724c\u6c38\u4e45 API\u3002\u5fc5\u987b\u5728\u4e0d\u7834\u574f\u73b0\u6709\u884c\u4e3a\u7684\u524d\u63d0\u4e0b\u5efa\u7acb Fabushi-owned semantic layer\u3002",
+        "\u901a\u7528 UI \u53ea\u4f7f\u7528\u4e00\u4e2a canonical icon registry/family\u3002",
+        "\u72ec\u7acb\u9a8c\u6536\u8bb0\u5f55 reviewer\u3001reviewed evidence IDs\u3001\u5f02\u5e38\u4e0e verdict\u3002"
       ],
       "target_language": "Existing Markdown visual/design/quality contracts; shipping UI remains React/TypeScript under canonical Fabushi owners",
       "language_rationale": "The source entry is a binary AppStream marketing screenshot rather than reusable runtime logic. Its applicable responsibilities are immutable visual provenance, marketing-claim boundaries, branding exclusion and evidence discipline already owned by Fabushi design/quality contracts; actual account/session/sync independence remains executable product behavior and cannot be inherited from the image.",
@@ -35326,11 +35326,11 @@
         "projects/fabushi-communication-platform/quality/evidence-contract.md"
       ],
       "fabushi_target_symbols": [
-        "每次 visual acceptance 绑定 target SHA、workflow/run/attempt/job、platform/runtime、viewport、theme、locale、fixture、artifact ID/digest。HEAD 或 relevant token/component/screen baseline 改变后旧截图只作历史证据。",
-        "故意视觉变更需要 design rationale、affected screenshots、before/after artifact、reviewer、baseline update commit。不能自动 accept all snapshots。",
-        "截图之外断言：唯一 primary nav、唯一 ConversationWorkspace、唯一 Composer、唯一 Search/CommandPalette root、正确 route/slot、没有重复 hidden app tree。Visual green 不能掩盖 architecture duplication。",
-        "关键 packaged journey 必须录制完整 session video。Artifact 存在不等于审阅完成：独立 reviewer 必须从开始到结束实际检查，并记录 reviewer、charter、time range、observations、defects/none、verdict。只看 final screenshot 不能替代 temporal review。",
-        "本 Design System accepted 需要：Fabushi semantic layer 已进入 shipping product；新 migrated UI 只使用该公共合同；核心 legacy surfaces 通过 adapter 收口；visual acceptance 全绿。本文当前是规范，不宣称实现完成。"
+        "\u6bcf\u6b21 visual acceptance \u7ed1\u5b9a target SHA\u3001workflow/run/attempt/job\u3001platform/runtime\u3001viewport\u3001theme\u3001locale\u3001fixture\u3001artifact ID/digest\u3002HEAD \u6216 relevant token/component/screen baseline \u6539\u53d8\u540e\u65e7\u622a\u56fe\u53ea\u4f5c\u5386\u53f2\u8bc1\u636e\u3002",
+        "\u6545\u610f\u89c6\u89c9\u53d8\u66f4\u9700\u8981 design rationale\u3001affected screenshots\u3001before/after artifact\u3001reviewer\u3001baseline update commit\u3002\u4e0d\u80fd\u81ea\u52a8 accept all snapshots\u3002",
+        "\u622a\u56fe\u4e4b\u5916\u65ad\u8a00\uff1a\u552f\u4e00 primary nav\u3001\u552f\u4e00 ConversationWorkspace\u3001\u552f\u4e00 Composer\u3001\u552f\u4e00 Search/CommandPalette root\u3001\u6b63\u786e route/slot\u3001\u6ca1\u6709\u91cd\u590d hidden app tree\u3002Visual green \u4e0d\u80fd\u63a9\u76d6 architecture duplication\u3002",
+        "\u5173\u952e packaged journey \u5fc5\u987b\u5f55\u5236\u5b8c\u6574 session video\u3002Artifact \u5b58\u5728\u4e0d\u7b49\u4e8e\u5ba1\u9605\u5b8c\u6210\uff1a\u72ec\u7acb reviewer \u5fc5\u987b\u4ece\u5f00\u59cb\u5230\u7ed3\u675f\u5b9e\u9645\u68c0\u67e5\uff0c\u5e76\u8bb0\u5f55 reviewer\u3001charter\u3001time range\u3001observations\u3001defects/none\u3001verdict\u3002\u53ea\u770b final screenshot \u4e0d\u80fd\u66ff\u4ee3 temporal review\u3002",
+        "\u672c Design System accepted \u9700\u8981\uff1aFabushi semantic layer \u5df2\u8fdb\u5165 shipping product\uff1b\u65b0 migrated UI \u53ea\u4f7f\u7528\u8be5\u516c\u5171\u5408\u540c\uff1b\u6838\u5fc3 legacy surfaces \u901a\u8fc7 adapter \u6536\u53e3\uff1bvisual acceptance \u5168\u7eff\u3002\u672c\u6587\u5f53\u524d\u662f\u89c4\u8303\uff0c\u4e0d\u5ba3\u79f0\u5b9e\u73b0\u5b8c\u6210\u3002"
       ],
       "target_language": "Existing Markdown visual/design/quality contracts; shipping UI remains React/TypeScript under canonical Fabushi owners",
       "language_rationale": "The source entry is a binary AppStream marketing screenshot rather than reusable runtime logic. Its applicable responsibilities are immutable visual provenance, marketing-claim boundaries and exact-head visual evidence discipline; actual media/resource viewer behavior remains with canonical Fabushi Resource/Media owners and is not inherited from the image.",
@@ -38996,7 +38996,7 @@
         "pub fn release_settlement(",
         "pub fn resolve_trusted_payment_intent<C: PaymentCatalog>(",
         "pub async fn admin_release_settlement(",
-        "Discover test basis -> risk -> oracle/invariants -> RTM/test design -> fixture/environment -> implement tests -> GitHub Actions -> evidence review -> defect/regression -> independent acceptance -> release summary。"
+        "Discover test basis -> risk -> oracle/invariants -> RTM/test design -> fixture/environment -> implement tests -> GitHub Actions -> evidence review -> defect/regression -> independent acceptance -> release summary\u3002"
       ],
       "target_language": "existing Rust payment domain/service + source-neutral test/evidence governance",
       "language_rationale": "The task is provenance/test-oracle input. Applicable product settlement stays in current Rust payment owners; fixture evidence stays in existing quality governance. No source-specific WalletKit/TON runtime is justified.",
@@ -39069,7 +39069,7 @@
       "novel_capability": false,
       "owner_absence_evidence": [],
       "minimal_owner_adr": null,
-      "ui_entry_class": "Not applicable — test/provenance task",
+      "ui_entry_class": "Not applicable \u2014 test/provenance task",
       "primary_navigation_target": "Existing canonical Fabushi ProductShell",
       "collection_surface": "Not applicable",
       "creation_flow": "Not applicable",
@@ -43348,8 +43348,8 @@
         "projects/telegram-desktop-rust/module-map.md"
       ],
       "fabushi_target_symbols": [
-        "研究/更新/保留必要来源与法律记录，不伪装成运行时迁移",
-        "工具链、schema、资源、许可证、可重现发布"
+        "\u7814\u7a76/\u66f4\u65b0/\u4fdd\u7559\u5fc5\u8981\u6765\u6e90\u4e0e\u6cd5\u5f8b\u8bb0\u5f55\uff0c\u4e0d\u4f2a\u88c5\u6210\u8fd0\u884c\u65f6\u8fc1\u79fb",
+        "\u5de5\u5177\u94fe\u3001schema\u3001\u8d44\u6e90\u3001\u8bb8\u53ef\u8bc1\u3001\u53ef\u91cd\u73b0\u53d1\u5e03"
       ],
       "target_language": "Repository governance / retained recursive-dependency legal-record provenance",
       "language_rationale": "Legal text, not executable C++ behavior.",
@@ -43585,8 +43585,8 @@
         "projects/telegram-desktop-rust/module-map.md"
       ],
       "fabushi_target_symbols": [
-        "递归审查、职责替代、版本/许可证与真实集成证据",
-        "Fabushi 自有 CI/packaging、最薄平台适配、审查过的通用依赖"
+        "\u9012\u5f52\u5ba1\u67e5\u3001\u804c\u8d23\u66ff\u4ee3\u3001\u7248\u672c/\u8bb8\u53ef\u8bc1\u4e0e\u771f\u5b9e\u96c6\u6210\u8bc1\u636e",
+        "Fabushi \u81ea\u6709 CI/packaging\u3001\u6700\u8584\u5e73\u53f0\u9002\u914d\u3001\u5ba1\u67e5\u8fc7\u7684\u901a\u7528\u4f9d\u8d56"
       ],
       "target_language": "Repository governance / dependency and build-interface provenance",
       "language_rationale": "README documentation and dependency/build contracts are not executable C++ product logic.",
@@ -44060,8 +44060,8 @@
         "projects/telegram-desktop-rust/module-map.md"
       ],
       "fabushi_target_symbols": [
-        "产品标识统一为 Fabushi，清理 Telegram/Grok Bot/Gok Bot 品牌、Logo、默认素材和独立入口；保留法律要求的 LICENSE/NOTICE/版权与 source provenance。历史研究中的上游名字不能被抹去，否则账本失去可验证性。新 owner 名称使用业务职责，不使用来源品牌。",
-        "0 omitted/unmapped files or responsibilities；所有 non-UI 产品责任 rewritten + wired + verified；所有 UI/platform/toolchain 替代有证明；法律来源记录保留；0 open in-scope blocker。数量相等、目录级 mapping、编译绿或旧 dossier 都不是完成证据。"
+        "\u4ea7\u54c1\u6807\u8bc6\u7edf\u4e00\u4e3a Fabushi\uff0c\u6e05\u7406 Telegram/Grok Bot/Gok Bot \u54c1\u724c\u3001Logo\u3001\u9ed8\u8ba4\u7d20\u6750\u548c\u72ec\u7acb\u5165\u53e3\uff1b\u4fdd\u7559\u6cd5\u5f8b\u8981\u6c42\u7684 LICENSE/NOTICE/\u7248\u6743\u4e0e source provenance\u3002\u5386\u53f2\u7814\u7a76\u4e2d\u7684\u4e0a\u6e38\u540d\u5b57\u4e0d\u80fd\u88ab\u62b9\u53bb\uff0c\u5426\u5219\u8d26\u672c\u5931\u53bb\u53ef\u9a8c\u8bc1\u6027\u3002\u65b0 owner \u540d\u79f0\u4f7f\u7528\u4e1a\u52a1\u804c\u8d23\uff0c\u4e0d\u4f7f\u7528\u6765\u6e90\u54c1\u724c\u3002",
+        "0 omitted/unmapped files or responsibilities\uff1b\u6240\u6709 non-UI \u4ea7\u54c1\u8d23\u4efb rewritten + wired + verified\uff1b\u6240\u6709 UI/platform/toolchain \u66ff\u4ee3\u6709\u8bc1\u660e\uff1b\u6cd5\u5f8b\u6765\u6e90\u8bb0\u5f55\u4fdd\u7559\uff1b0 open in-scope blocker\u3002\u6570\u91cf\u76f8\u7b49\u3001\u76ee\u5f55\u7ea7 mapping\u3001\u7f16\u8bd1\u7eff\u6216\u65e7 dossier \u90fd\u4e0d\u662f\u5b8c\u6210\u8bc1\u636e\u3002"
       ],
       "target_language": "Repository governance / dependency third-party notice provenance",
       "language_rationale": "ThirdPartyNotices.txt is legal/source provenance, not executable product logic.",
@@ -44310,8 +44310,8 @@
         "projects/telegram-desktop-rust/module-map.md"
       ],
       "fabushi_target_symbols": [
-        "**TDRP-MOD-01:** 每个 module dossier 至少说明：准确源文件/symbol、用户效果、输入/输出、命令/事件、状态机、状态/生命周期 owner、依赖图、调用关系、持久化/迁移、线程/任务与资源所有权、顺序/去重/幂等、重试/backoff、取消/dispose、重启/reconnect、错误/权限/安全/隐私、平台差异、性能与资源预算、许可证、观察到的设计优点/债务。",
-        "每个源文件记录 exact repository/commit/path/blob、分类、module/responsibility IDs、完整理解记录、UI 与非 UI 责任划分、capabilities/dependencies、existing owner 候选与选择、Fabushi target paths/symbols、语言与理由、状态/lifecycle/persistence/security/concurrency、服务端依赖、生产入口、测试/证据、target SHA、blockers 与 licenses/provenance。"
+        "**TDRP-MOD-01:** \u6bcf\u4e2a module dossier \u81f3\u5c11\u8bf4\u660e\uff1a\u51c6\u786e\u6e90\u6587\u4ef6/symbol\u3001\u7528\u6237\u6548\u679c\u3001\u8f93\u5165/\u8f93\u51fa\u3001\u547d\u4ee4/\u4e8b\u4ef6\u3001\u72b6\u6001\u673a\u3001\u72b6\u6001/\u751f\u547d\u5468\u671f owner\u3001\u4f9d\u8d56\u56fe\u3001\u8c03\u7528\u5173\u7cfb\u3001\u6301\u4e45\u5316/\u8fc1\u79fb\u3001\u7ebf\u7a0b/\u4efb\u52a1\u4e0e\u8d44\u6e90\u6240\u6709\u6743\u3001\u987a\u5e8f/\u53bb\u91cd/\u5e42\u7b49\u3001\u91cd\u8bd5/backoff\u3001\u53d6\u6d88/dispose\u3001\u91cd\u542f/reconnect\u3001\u9519\u8bef/\u6743\u9650/\u5b89\u5168/\u9690\u79c1\u3001\u5e73\u53f0\u5dee\u5f02\u3001\u6027\u80fd\u4e0e\u8d44\u6e90\u9884\u7b97\u3001\u8bb8\u53ef\u8bc1\u3001\u89c2\u5bdf\u5230\u7684\u8bbe\u8ba1\u4f18\u70b9/\u503a\u52a1\u3002",
+        "\u6bcf\u4e2a\u6e90\u6587\u4ef6\u8bb0\u5f55 exact repository/commit/path/blob\u3001\u5206\u7c7b\u3001module/responsibility IDs\u3001\u5b8c\u6574\u7406\u89e3\u8bb0\u5f55\u3001UI \u4e0e\u975e UI \u8d23\u4efb\u5212\u5206\u3001capabilities/dependencies\u3001existing owner \u5019\u9009\u4e0e\u9009\u62e9\u3001Fabushi target paths/symbols\u3001\u8bed\u8a00\u4e0e\u7406\u7531\u3001\u72b6\u6001/lifecycle/persistence/security/concurrency\u3001\u670d\u52a1\u7aef\u4f9d\u8d56\u3001\u751f\u4ea7\u5165\u53e3\u3001\u6d4b\u8bd5/\u8bc1\u636e\u3001target SHA\u3001blockers \u4e0e licenses/provenance\u3002"
       ],
       "target_language": "Repository dependency/API behavior documentation provenance; later executable equivalents in native Fabushi Rust/TypeScript/platform owners",
       "language_rationale": "docs/headers.md is documentation. Its executable semantics must be translated from individual implementation headers, not copied into a GSL/C++ runtime.",
@@ -44552,8 +44552,8 @@
         "projects/telegram-desktop-rust/module-map.md"
       ],
       "fabushi_target_symbols": [
-        "| build_test_tooling | 改为 Fabushi 自有构建/测试/打包/更新链，保留对应工程保证 |",
-        "| build/generator/resources/dependencies | 工具链、schema、资源、许可证、可重现发布 | Fabushi 自有 CI/packaging、最薄平台适配、审查过的通用依赖 |"
+        "| build_test_tooling | \u6539\u4e3a Fabushi \u81ea\u6709\u6784\u5efa/\u6d4b\u8bd5/\u6253\u5305/\u66f4\u65b0\u94fe\uff0c\u4fdd\u7559\u5bf9\u5e94\u5de5\u7a0b\u4fdd\u8bc1 |",
+        "| build/generator/resources/dependencies | \u5de5\u5177\u94fe\u3001schema\u3001\u8d44\u6e90\u3001\u8bb8\u53ef\u8bc1\u3001\u53ef\u91cd\u73b0\u53d1\u5e03 | Fabushi \u81ea\u6709 CI/packaging\u3001\u6700\u8584\u5e73\u53f0\u9002\u914d\u3001\u5ba1\u67e5\u8fc7\u7684\u901a\u7528\u4f9d\u8d56 |"
       ],
       "target_language": "Repository dependency/build-interface provenance mapped to existing Fabushi CI/packaging/dependency tooling",
       "language_rationale": "The source is a CMake build definition; Fabushi retains its engineering guarantees through the canonical build/package toolchain rather than copying a GSL CMake graph.",
@@ -44784,8 +44784,8 @@
         "docs/specs/telegram-desktop-rust-equivalence-migration.md"
       ],
       "fabushi_target_symbols": [
-        "`coverage_disposition` 区分 rewritten、fabushi-ui-replacement、platform-equivalent、toolchain-equivalent、dependency-replaced、retained-legal-record 等。只有无产品运行责任的文档/法律/纯来源记录能以有依据的 non-runtime accounted 闭合；任何承载产品行为的文件/子责任都必须有真实实现/替代证据。",
-        "**TDRP-LANG-03:** 通用成熟安全/媒体依赖须登记、锁定和审查，可以替代低层标准能力；这不豁免其 source/dependency inventory，也不允许隐藏原 Telegram C++ 业务模块。不要自行发明密码学来满足表面语言指标。"
+        "`coverage_disposition` \u533a\u5206 rewritten\u3001fabushi-ui-replacement\u3001platform-equivalent\u3001toolchain-equivalent\u3001dependency-replaced\u3001retained-legal-record \u7b49\u3002\u53ea\u6709\u65e0\u4ea7\u54c1\u8fd0\u884c\u8d23\u4efb\u7684\u6587\u6863/\u6cd5\u5f8b/\u7eaf\u6765\u6e90\u8bb0\u5f55\u80fd\u4ee5\u6709\u4f9d\u636e\u7684 non-runtime accounted \u95ed\u5408\uff1b\u4efb\u4f55\u627f\u8f7d\u4ea7\u54c1\u884c\u4e3a\u7684\u6587\u4ef6/\u5b50\u8d23\u4efb\u90fd\u5fc5\u987b\u6709\u771f\u5b9e\u5b9e\u73b0/\u66ff\u4ee3\u8bc1\u636e\u3002",
+        "**TDRP-LANG-03:** \u901a\u7528\u6210\u719f\u5b89\u5168/\u5a92\u4f53\u4f9d\u8d56\u987b\u767b\u8bb0\u3001\u9501\u5b9a\u548c\u5ba1\u67e5\uff0c\u53ef\u4ee5\u66ff\u4ee3\u4f4e\u5c42\u6807\u51c6\u80fd\u529b\uff1b\u8fd9\u4e0d\u8c41\u514d\u5176 source/dependency inventory\uff0c\u4e5f\u4e0d\u5141\u8bb8\u9690\u85cf\u539f Telegram C++ \u4e1a\u52a1\u6a21\u5757\u3002\u4e0d\u8981\u81ea\u884c\u53d1\u660e\u5bc6\u7801\u5b66\u6765\u6ee1\u8db3\u8868\u9762\u8bed\u8a00\u6307\u6807\u3002"
       ],
       "target_language": "Rust native type/slice/collection safety through existing owners",
       "language_rationale": "The source is a generic C++ dependency utility, not product architecture. Rust native type and slice semantics are the source-neutral replacement; actual product callers remain owned by their domain modules.",
@@ -45026,8 +45026,8 @@
         "docs/specs/telegram-desktop-rust-equivalence-migration.md"
       ],
       "fabushi_target_symbols": [
-        "- **G-BEHAVIOR:** 功能/错误/顺序/重复/取消/销毁/重启/网络恢复等与合同等价；mock 仅作局部测试，不代替真实 E2E。",
-        "- **G-FAULT-RECOVERY:** timeout/disconnect/reconnect/restart/cancel/stale/duplicate/out-of-order/permission/service failure 中适用场景 fail-closed。"
+        "- **G-BEHAVIOR:** \u529f\u80fd/\u9519\u8bef/\u987a\u5e8f/\u91cd\u590d/\u53d6\u6d88/\u9500\u6bc1/\u91cd\u542f/\u7f51\u7edc\u6062\u590d\u7b49\u4e0e\u5408\u540c\u7b49\u4ef7\uff1bmock \u4ec5\u4f5c\u5c40\u90e8\u6d4b\u8bd5\uff0c\u4e0d\u4ee3\u66ff\u771f\u5b9e E2E\u3002",
+        "- **G-FAULT-RECOVERY:** timeout/disconnect/reconnect/restart/cancel/stale/duplicate/out-of-order/permission/service failure \u4e2d\u9002\u7528\u573a\u666f fail-closed\u3002"
       ],
       "target_language": "Rust native validation/invariant/error and diagnostic mechanisms through existing domain owners",
       "language_rationale": "The source is a generic C++ contract-support dependency. Preserve non-continuation and diagnostic behavior at native Rust/domain boundaries without retaining macro/runtime architecture.",
@@ -45281,8 +45281,8 @@
         "docs/specs/telegram-desktop-rust-equivalence-migration.md"
       ],
       "fabushi_target_symbols": [
-        "每个 upstream 文件必须有映射；禁止只写“history → transcript”就宣布几百个文件完成。允许多源文件归并为一个高内聚 Fabushi owner，也允许一个混合文件拆到多个目标；不要求保留上游文件名、目录、类层级、线程模型或 UI 实现。",
-        "每个文件中的独立责任有 `responsibility_id`，每个模块有稳定 `module_id`。文件→责任→capability→Fabushi owner/path/symbol→production entrypoint→tests/evidence 必须双向可查。共享实现不能把多个源文件的独特边界行为淹没。"
+        "\u6bcf\u4e2a upstream \u6587\u4ef6\u5fc5\u987b\u6709\u6620\u5c04\uff1b\u7981\u6b62\u53ea\u5199\u201chistory \u2192 transcript\u201d\u5c31\u5ba3\u5e03\u51e0\u767e\u4e2a\u6587\u4ef6\u5b8c\u6210\u3002\u5141\u8bb8\u591a\u6e90\u6587\u4ef6\u5f52\u5e76\u4e3a\u4e00\u4e2a\u9ad8\u5185\u805a Fabushi owner\uff0c\u4e5f\u5141\u8bb8\u4e00\u4e2a\u6df7\u5408\u6587\u4ef6\u62c6\u5230\u591a\u4e2a\u76ee\u6807\uff1b\u4e0d\u8981\u6c42\u4fdd\u7559\u4e0a\u6e38\u6587\u4ef6\u540d\u3001\u76ee\u5f55\u3001\u7c7b\u5c42\u7ea7\u3001\u7ebf\u7a0b\u6a21\u578b\u6216 UI \u5b9e\u73b0\u3002",
+        "\u6bcf\u4e2a\u6587\u4ef6\u4e2d\u7684\u72ec\u7acb\u8d23\u4efb\u6709 `responsibility_id`\uff0c\u6bcf\u4e2a\u6a21\u5757\u6709\u7a33\u5b9a `module_id`\u3002\u6587\u4ef6\u2192\u8d23\u4efb\u2192capability\u2192Fabushi owner/path/symbol\u2192production entrypoint\u2192tests/evidence \u5fc5\u987b\u53cc\u5411\u53ef\u67e5\u3002\u5171\u4eab\u5b9e\u73b0\u4e0d\u80fd\u628a\u591a\u4e2a\u6e90\u6587\u4ef6\u7684\u72ec\u7279\u8fb9\u754c\u884c\u4e3a\u6df9\u6ca1\u3002"
       ],
       "target_language": "Rust native u8, fixed byte arrays, byte vectors, or existing domain binary types",
       "language_rationale": "The source is a generic C++ 8-bit representation dependency. Rust already has native byte primitives and typed arrays/vectors, so preserve explicit conversion/range semantics at actual domain boundaries rather than reimplementing GSL byte.",
@@ -45532,8 +45532,8 @@
         "docs/specs/telegram-desktop-rust-equivalence-migration.md"
       ],
       "fabushi_target_symbols": [
-        "通用成熟安全/媒体依赖须登记、锁定和审查，可以替代低层标准能力；这不豁免其 source/dependency inventory，也不允许隐藏原 Telegram C++ 业务模块。不要自行发明密码学来满足表面语言指标。",
-        "必须枚举精确 commit 的全部 tracked entries，而非选定几个源码目录：源码、头文件、inline/template、platform branches、schemas、生成器/生成产物、资源/语言/素材、build/package/update/test/tooling/docs/license，以及 `.gitmodules` 中全部 gitlink。"
+        "\u901a\u7528\u6210\u719f\u5b89\u5168/\u5a92\u4f53\u4f9d\u8d56\u987b\u767b\u8bb0\u3001\u9501\u5b9a\u548c\u5ba1\u67e5\uff0c\u53ef\u4ee5\u66ff\u4ee3\u4f4e\u5c42\u6807\u51c6\u80fd\u529b\uff1b\u8fd9\u4e0d\u8c41\u514d\u5176 source/dependency inventory\uff0c\u4e5f\u4e0d\u5141\u8bb8\u9690\u85cf\u539f Telegram C++ \u4e1a\u52a1\u6a21\u5757\u3002\u4e0d\u8981\u81ea\u884c\u53d1\u660e\u5bc6\u7801\u5b66\u6765\u6ee1\u8db3\u8868\u9762\u8bed\u8a00\u6307\u6807\u3002",
+        "\u5fc5\u987b\u679a\u4e3e\u7cbe\u786e commit \u7684\u5168\u90e8 tracked entries\uff0c\u800c\u975e\u9009\u5b9a\u51e0\u4e2a\u6e90\u7801\u76ee\u5f55\uff1a\u6e90\u7801\u3001\u5934\u6587\u4ef6\u3001inline/template\u3001platform branches\u3001schemas\u3001\u751f\u6210\u5668/\u751f\u6210\u4ea7\u7269\u3001\u8d44\u6e90/\u8bed\u8a00/\u7d20\u6750\u3001build/package/update/test/tooling/docs/license\uff0c\u4ee5\u53ca `.gitmodules` \u4e2d\u5168\u90e8 gitlink\u3002"
       ],
       "target_language": "Rust/native module imports inside existing owners; no new runtime",
       "language_rationale": "The source is a C++ aggregation header, not a runtime subsystem. Rust/Fabushi should import the needed native/existing abstractions explicitly while retaining exact source/dependency provenance and constituent responsibility boundaries.",
@@ -45773,8 +45773,8 @@
         "docs/specs/telegram-desktop-rust-equivalence-migration.md"
       ],
       "fabushi_target_symbols": [
-        "**TDRP-MOD-02:** 定义行为 oracle：相同输入及对应服务事件，在 Fabushi 应产生什么输出、可见状态、持久化结果和副作用。说明因自有协议、平台、UI 或品牌改变的差异；允许实现不同，但不得把功能缩水包装成架构优化。",
-        "**G-BEHAVIOR:** 功能/错误/顺序/重复/取消/销毁/重启/网络恢复等与合同等价；mock 仅作局部测试，不代替真实 E2E。"
+        "**TDRP-MOD-02:** \u5b9a\u4e49\u884c\u4e3a oracle\uff1a\u76f8\u540c\u8f93\u5165\u53ca\u5bf9\u5e94\u670d\u52a1\u4e8b\u4ef6\uff0c\u5728 Fabushi \u5e94\u4ea7\u751f\u4ec0\u4e48\u8f93\u51fa\u3001\u53ef\u89c1\u72b6\u6001\u3001\u6301\u4e45\u5316\u7ed3\u679c\u548c\u526f\u4f5c\u7528\u3002\u8bf4\u660e\u56e0\u81ea\u6709\u534f\u8bae\u3001\u5e73\u53f0\u3001UI \u6216\u54c1\u724c\u6539\u53d8\u7684\u5dee\u5f02\uff1b\u5141\u8bb8\u5b9e\u73b0\u4e0d\u540c\uff0c\u4f46\u4e0d\u5f97\u628a\u529f\u80fd\u7f29\u6c34\u5305\u88c5\u6210\u67b6\u6784\u4f18\u5316\u3002",
+        "**G-BEHAVIOR:** \u529f\u80fd/\u9519\u8bef/\u987a\u5e8f/\u91cd\u590d/\u53d6\u6d88/\u9500\u6bc1/\u91cd\u542f/\u7f51\u7edc\u6062\u590d\u7b49\u4e0e\u5408\u540c\u7b49\u4ef7\uff1bmock \u4ec5\u4f5c\u5c40\u90e8\u6d4b\u8bd5\uff0c\u4e0d\u4ee3\u66ff\u771f\u5b9e E2E\u3002"
       ],
       "target_language": "Rust native checked/fallible conversion at actual owner boundaries",
       "language_rationale": "The source provides generic checked conversion semantics. Rust has native fallible conversion and Result patterns, so preserve value/sign failure behavior without reimplementing GSL exceptions.",
@@ -46022,8 +46022,8 @@
         "docs/specs/telegram-desktop-rust-equivalence-migration.md"
       ],
       "fabushi_target_symbols": [
-        "**TDRP-MOD-04 — Test oracle before verified.** 每个 product responsibility 必须绑定 requirement IDs 与一个明确 oracle；涉及排序、状态机、并发、异步、recovery 的责任必须列 invariant 和 event-sequence cases。`eventually visible`、单一 marker、单 screenshot 或单 mock response 不能单独证明等价。",
-        "**G-TRACEABILITY:** 每个 applicable requirement/responsibility 绑定 risk、oracle/invariants、test IDs、current-head evidence 与 acceptance verdict；0 orphan requirement、0 无依据 test、0 verified-without-evidence。"
+        "**TDRP-MOD-04 \u2014 Test oracle before verified.** \u6bcf\u4e2a product responsibility \u5fc5\u987b\u7ed1\u5b9a requirement IDs \u4e0e\u4e00\u4e2a\u660e\u786e oracle\uff1b\u6d89\u53ca\u6392\u5e8f\u3001\u72b6\u6001\u673a\u3001\u5e76\u53d1\u3001\u5f02\u6b65\u3001recovery \u7684\u8d23\u4efb\u5fc5\u987b\u5217 invariant \u548c event-sequence cases\u3002`eventually visible`\u3001\u5355\u4e00 marker\u3001\u5355 screenshot \u6216\u5355 mock response \u4e0d\u80fd\u5355\u72ec\u8bc1\u660e\u7b49\u4ef7\u3002",
+        "**G-TRACEABILITY:** \u6bcf\u4e2a applicable requirement/responsibility \u7ed1\u5b9a risk\u3001oracle/invariants\u3001test IDs\u3001current-head evidence \u4e0e acceptance verdict\uff1b0 orphan requirement\u30010 \u65e0\u4f9d\u636e test\u30010 verified-without-evidence\u3002"
       ],
       "target_language": "Rust native ownership/reference/nullability types inside existing owners",
       "language_rationale": "The source is a generic C++ pointer contract. Rust references, owned values and smart pointers encode non-null and ownership invariants directly; raw/NonNull is reserved for narrow interop seams.",
@@ -46281,8 +46281,8 @@
         "docs/specs/telegram-desktop-rust-equivalence-migration.md"
       ],
       "fabushi_target_symbols": [
-        "**TDRP-OWN-01:** inspect existing owners -> select/extend owner -> production wiring。只有所有合理 owner 不适合，才用有批准 ADR 的最小新 owner；禁止整体搬入 TelegramSubsystem/CommunicationCore。",
-        "**TDRP-LANG-01:** C++ 非 UI 产品代码默认重写为 Rust。不得保留原 tdesktop/desktop-app C++ core 作为业务 owner，不得借 FFI、TDLib、sidecar、subprocess 或“过渡适配器”宣称已迁移。"
+        "**TDRP-OWN-01:** inspect existing owners -> select/extend owner -> production wiring\u3002\u53ea\u6709\u6240\u6709\u5408\u7406 owner \u4e0d\u9002\u5408\uff0c\u624d\u7528\u6709\u6279\u51c6 ADR \u7684\u6700\u5c0f\u65b0 owner\uff1b\u7981\u6b62\u6574\u4f53\u642c\u5165 TelegramSubsystem/CommunicationCore\u3002",
+        "**TDRP-LANG-01:** C++ \u975e UI \u4ea7\u54c1\u4ee3\u7801\u9ed8\u8ba4\u91cd\u5199\u4e3a Rust\u3002\u4e0d\u5f97\u4fdd\u7559\u539f tdesktop/desktop-app C++ core \u4f5c\u4e3a\u4e1a\u52a1 owner\uff0c\u4e0d\u5f97\u501f FFI\u3001TDLib\u3001sidecar\u3001subprocess \u6216\u201c\u8fc7\u6e21\u9002\u914d\u5668\u201d\u5ba3\u79f0\u5df2\u8fc1\u79fb\u3002"
       ],
       "target_language": "Rust native slice/borrow/array types inside existing owners",
       "language_rationale": "The source contract is a non-owning contiguous view. Rust &[T], &mut [T] and array references encode lifetime, mutability and bounds more directly; raw pointer+length conversion remains a narrow unsafe interop concern.",
@@ -46543,8 +46543,8 @@
         "docs/specs/telegram-desktop-rust-equivalence-migration.md"
       ],
       "fabushi_target_symbols": [
-        "**TDRP-MOD-03:** 每个 dossier 必须继续写清 exact-head existing owner、target path/symbol、typed contract、production composition、必要服务端职责、完整测试场景及迁移/回滚。只有研究笔记不算模块完成。",
-        "- **G-FILE:** 每个文件及 non-UI responsibility 均有处置；0 directory-only placeholders；双向 target trace 无遗漏。"
+        "**TDRP-MOD-03:** \u6bcf\u4e2a dossier \u5fc5\u987b\u7ee7\u7eed\u5199\u6e05 exact-head existing owner\u3001target path/symbol\u3001typed contract\u3001production composition\u3001\u5fc5\u8981\u670d\u52a1\u7aef\u804c\u8d23\u3001\u5b8c\u6574\u6d4b\u8bd5\u573a\u666f\u53ca\u8fc1\u79fb/\u56de\u6eda\u3002\u53ea\u6709\u7814\u7a76\u7b14\u8bb0\u4e0d\u7b97\u6a21\u5757\u5b8c\u6210\u3002",
+        "- **G-FILE:** \u6bcf\u4e2a\u6587\u4ef6\u53ca non-UI responsibility \u5747\u6709\u5904\u7f6e\uff1b0 directory-only placeholders\uff1b\u53cc\u5411 target trace \u65e0\u9057\u6f0f\u3002"
       ],
       "target_language": "Rust native slice/reference/iterator/comparison types inside existing owners",
       "language_rationale": "The source responsibility is a compatibility helper layer over a non-owning view. Rust already provides borrow lifetimes, checked slice access, iterators, signed conversions and typed comparison without a GSL-shaped compatibility subsystem.",
@@ -46783,8 +46783,8 @@
         "docs/specs/telegram-desktop-rust-equivalence-migration.md"
       ],
       "fabushi_target_symbols": [
-        "### TDRP-MAP-01 — 文件全覆盖",
-        "- **G-INVENTORY:** accepted exact root tree + all recursive gitlinks/external acquisitions；0 unknown/unread/omitted source entries。"
+        "### TDRP-MAP-01 \u2014 \u6587\u4ef6\u5168\u8986\u76d6",
+        "- **G-INVENTORY:** accepted exact root tree + all recursive gitlinks/external acquisitions\uff1b0 unknown/unread/omitted source entries\u3002"
       ],
       "target_language": "No shipping compatibility runtime; exact source accounting plus native Rust string/byte types inside actual owners",
       "language_rationale": "The source file is only a deprecated C++ header redirect. Recreating it in Rust adds architecture with no product behavior.",
@@ -47018,7 +47018,7 @@
         "docs/specs/telegram-desktop-rust-equivalence-migration.md"
       ],
       "fabushi_target_symbols": [
-        "**TDRP-LANG-03:** 通用成熟安全/媒体依赖须登记、锁定和审查，可以替代低层标准能力"
+        "**TDRP-LANG-03:** \u901a\u7528\u6210\u719f\u5b89\u5168/\u5a92\u4f53\u4f9d\u8d56\u987b\u767b\u8bb0\u3001\u9501\u5b9a\u548c\u5ba1\u67e5\uff0c\u53ef\u4ee5\u66ff\u4ee3\u4f4e\u5c42\u6807\u51c6\u80fd\u529b"
       ],
       "target_language": "No shipping GSL compatibility runtime; native Rust RAII/Drop, ownership, checked indexing and explicit conversions inside actual existing owners",
       "language_rationale": "The source file is a generic header-only utility. Rust natively expresses deterministic cleanup and safe indexing; reproducing a GSL utility API would add a parallel source-shaped owner with no product value.",
@@ -47255,7 +47255,7 @@
         "docs/specs/telegram-desktop-rust-equivalence-migration.md"
       ],
       "fabushi_target_symbols": [
-        "不得保留原 tdesktop/desktop-app C++ core 作为业务 owner"
+        "\u4e0d\u5f97\u4fdd\u7559\u539f tdesktop/desktop-app C++ core \u4f5c\u4e3a\u4e1a\u52a1 owner"
       ],
       "target_language": "No shipping GSL compatibility API; native Rust &str/String/byte types in product owners and std::ffi::CStr/CString only at independently evidenced C ABI boundaries",
       "language_rationale": "The source is a header-only family of raw-pointer tag aliases with no runtime enforcement. Rust has stronger native text and FFI boundary types; reproducing GSL aliases would weaken ownership/lifetime clarity and create a parallel string abstraction.",
@@ -47494,7 +47494,7 @@
         "docs/specs/telegram-desktop-rust-equivalence-migration.md"
       ],
       "fabushi_target_symbols": [
-        "| dependency | 递归审查、职责替代、版本/许可证与真实集成证据 |"
+        "| dependency | \u9012\u5f52\u5ba1\u67e5\u3001\u804c\u8d23\u66ff\u4ee3\u3001\u7248\u672c/\u8bb8\u53ef\u8bc1\u4e0e\u771f\u5b9e\u96c6\u6210\u8bc1\u636e |"
       ],
       "target_language": "Source-only GSL test provenance plus native Rust slice/array/iterator operations inside actual existing owners; no shipping GSL compatibility API",
       "language_rationale": "The source is a qualification test for a small C++ span-copy helper, not an application runtime. Rust's ownership, slices and explicit conversion APIs can express the underlying bounds and type obligations directly in the actual caller. Reproducing GSL test/runtime structure would create an unnecessary parallel abstraction.",
@@ -47735,7 +47735,7 @@
         "docs/specs/telegram-desktop-rust-equivalence-migration.md"
       ],
       "fabushi_target_symbols": [
-        "这不豁免其 source/dependency inventory，也不允许隐藏原 Telegram C++ 业务模块"
+        "\u8fd9\u4e0d\u8c41\u514d\u5176 source/dependency inventory\uff0c\u4e5f\u4e0d\u5141\u8bb8\u9690\u85cf\u539f Telegram C++ \u4e1a\u52a1\u6a21\u5757"
       ],
       "target_language": "Source-only GSL contract-test provenance plus caller-specific Rust invariant/error handling inside actual existing owners; no shipping GSL compatibility API",
       "language_rationale": "The source is a qualification test/header for C++ contract macros, not an application owner. Rust caller responsibilities must express the underlying invariant at the real domain boundary; reproducing a global GSL-style macro runtime would create a parallel abstraction and could weaken caller-specific error semantics.",
@@ -47979,7 +47979,7 @@
         "docs/specs/telegram-desktop-rust-equivalence-migration.md"
       ],
       "fabushi_target_symbols": [
-        "安全原因不保留某个具体实现手段时，仍需等价安全产品行为及明确审查；没有实现就是 blocked，不是通过。"
+        "\u5b89\u5168\u539f\u56e0\u4e0d\u4fdd\u7559\u67d0\u4e2a\u5177\u4f53\u5b9e\u73b0\u624b\u6bb5\u65f6\uff0c\u4ecd\u9700\u7b49\u4ef7\u5b89\u5168\u4ea7\u54c1\u884c\u4e3a\u53ca\u660e\u786e\u5ba1\u67e5\uff1b\u6ca1\u6709\u5b9e\u73b0\u5c31\u662f blocked\uff0c\u4e0d\u662f\u901a\u8fc7\u3002"
       ],
       "target_language": "Source-only GSL bounds-check test provenance plus native Rust checked indexing inside actual existing owners; no shipping GSL compatibility API",
       "language_rationale": "The source is a dependency qualification test for a small bounds-check helper. Rust already provides signed/range validation and checked slice/container access in the actual caller; reproducing a global GSL utility layer would create a parallel abstraction.",
@@ -48220,7 +48220,7 @@
         "docs/specs/telegram-desktop-rust-equivalence-migration.md"
       ],
       "fabushi_target_symbols": [
-        "非 UI 产品职责没有以“not needed”跳过的通用出口。"
+        "\u975e UI \u4ea7\u54c1\u804c\u8d23\u6ca1\u6709\u4ee5\u201cnot needed\u201d\u8df3\u8fc7\u7684\u901a\u7528\u51fa\u53e3\u3002"
       ],
       "target_language": "Source-only GSL byte-test provenance plus native Rust byte representations inside actual existing owners; no shipping GSL compatibility API",
       "language_rationale": "The source is a C++ dependency qualification test, not a product runtime. Rust natively expresses bytes and byte slices; the migration obligation is preserving each caller's protocol, cryptographic, storage, lifecycle or UI semantics in that caller's existing owner rather than reproducing GSL.",
@@ -54875,9 +54875,9 @@
       "module_id": "tdesktop.thirdparty.microtex.prebuilt-gitignore",
       "responsibility_id": "TDRP-R9-MICROTEX-PREBUILT-GITIGNORE-PROVENANCE-001",
       "source_symbols": [
-        "desktop-app/MicroTeX:prebuilt/.gitignore@777ef934cd0b38e8a1c21cec325f77c53dba7cd3 — exact content *.clm, mode 100644, 5 bytes",
+        "desktop-app/MicroTeX:prebuilt/.gitignore@777ef934cd0b38e8a1c21cec325f77c53dba7cd3 \u2014 exact content *.clm, mode 100644, 5 bytes",
         "fixed MicroTeX tree 462d2794c73bb87f57d9426621bc6ce0f57c5fc2: truncated=false, 315 entries / 279 blobs, zero tracked .clm paths",
-        "prebuilt/otf_clm.py@aba6e00be5221f7ee18d4ae71f8acbf8c92cf17b — direct context: Python2/FontForge OpenType-to-CLM generator, positional output path",
+        "prebuilt/otf_clm.py@aba6e00be5221f7ee18d4ae71f8acbf8c92cf17b \u2014 direct context: Python2/FontForge OpenType-to-CLM generator, positional output path",
         "MicroTeX CMake/Meson/Qt-pri and three child workflows: zero direct .clm/prebuilt/otf_clm references in the exact candidate build/package/CI set",
         "README Prebuilt packages section describes external openSUSE cLaTeXMath/cairo binaries and is not a prebuilt/*.clm consumer",
         "accepted tdesktop external_microtex@a1f479d... + bundled.qrc@303fb6b... + td_iv@ec39405f... shipping chain has zero CLM/prebuilt/tool references"
@@ -55139,8 +55139,8 @@
       "module_id": "tdesktop.thirdparty.microtex.prebuilt-otf-clm-generator",
       "responsibility_id": "TDRP-R9-MICROTEX-PREBUILT-OTF-CLM-GENERATOR-PROVENANCE-001",
       "source_symbols": [
-        "desktop-app/MicroTeX:prebuilt/otf_clm.py@aba6e00be5221f7ee18d4ae71f8acbf8c92cf17b — mode 100755, 14,267 bytes / 507 physical lines, Python2 + FontForge OpenType-to-CLM generator",
-        "parse_otf(sys.argv[1], sys.argv[2] == 'true', sys.argv[3]) — positional input/math/output contract with no argv-count/help validation",
+        "desktop-app/MicroTeX:prebuilt/otf_clm.py@aba6e00be5221f7ee18d4ae71f8acbf8c92cf17b \u2014 mode 100755, 14,267 bytes / 507 physical lines, Python2 + FontForge OpenType-to-CLM generator",
+        "parse_otf(sys.argv[1], sys.argv[2] == 'true', sys.argv[3]) \u2014 positional input/math/output contract with no argv-count/help validation",
         "CLM header: native bool '?' is_math_font, then network-order !H em and !H xHeight",
         "unicode map: network-order !H count then sorted !IH codepoint/glyph-id records",
         "kerning classes: network-order class/member counts and !HH glyph/class records, followed by signed !h nonzero-class matrix cells",
@@ -55423,7 +55423,7 @@
       "module_id": "tdesktop.thirdparty.microtex.readme-break-everywhere-false-svg",
       "responsibility_id": "TDRP-R9-MICROTEX-README-BREAK-EVERYWHERE-FALSE-SVG-PROVENANCE-001",
       "source_symbols": [
-        "desktop-app/MicroTeX:readme/example_bw_false.svg@9e812c823d3c3be06ab43ee77f10b6122bd638dd — mode 100644, 57,285 bytes / 681 physical lines, 499pt x 71pt SVG 1.1 viewBox 0 0 499 71",
+        "desktop-app/MicroTeX:readme/example_bw_false.svg@9e812c823d3c3be06ab43ee77f10b6122bd638dd \u2014 mode 100644, 57,285 bytes / 681 physical lines, 499pt x 71pt SVG 1.1 viewBox 0 0 499 71",
         "SVG structure: 44 <symbol>, 44 inline <path>, 180 <use>; all 180 href/xlink:href values are local # fragments; 0 script/image/style/text/font-face/external href",
         "README.md@824af04fd8607532efed3f73752b81e5093577ef directly embeds readme/example_bw_false.svg for \\\\breakEverywhere{false}; true uses separate readme/example_bw_true.svg@c7f73236f4569d8b25b9ebcc481f2372864adb45",
         "src/core/macro_def.cpp@0ccf9fe8b4028f97c62834555d2a3d344d0f8726 registers macro_breakEverywhere as breakEverywhere",
@@ -55695,7 +55695,7 @@
       "module_id": "tdesktop.thirdparty.microtex.readme-break-everywhere-true-svg",
       "responsibility_id": "TDRP-R9-MICROTEX-README-BREAK-EVERYWHERE-TRUE-SVG-PROVENANCE-001",
       "source_symbols": [
-        "desktop-app/MicroTeX:readme/example_bw_true.svg@c7f73236f4569d8b25b9ebcc481f2372864adb45 — mode 100644, 57,295 bytes / 681 line slots, 499pt x 71pt SVG 1.1 viewBox 0 0 499 71",
+        "desktop-app/MicroTeX:readme/example_bw_true.svg@c7f73236f4569d8b25b9ebcc481f2372864adb45 \u2014 mode 100644, 57,295 bytes / 681 line slots, 499pt x 71pt SVG 1.1 viewBox 0 0 499 71",
         "SVG structure: 44 <symbol>, 44 inline <path>, 180 <use>; all 180 href/xlink:href values are local # fragments; 0 script/image/style/text/font-face/external href",
         "README.md@824af04fd8607532efed3f73752b81e5093577ef directly embeds readme/example_bw_true.svg for \\\\breakEverywhere{true}; false uses separate readme/example_bw_false.svg@9e812c823d3c3be06ab43ee77f10b6122bd638dd",
         "true/false de-dup: same 180 local use fragment-ID sequence but 58 use records differ in layout coordinates (indices 122..179); distinct target blob is 10 bytes larger",
@@ -55977,9 +55977,9 @@
       "module_id": "tdesktop.thirdparty.microtex.readme-cjk-trying-svg",
       "responsibility_id": "TDRP-R9-MICROTEX-README-CJK-TRYING-SVG-PROVENANCE-001",
       "source_symbols": [
-        "desktop-app/MicroTeX:readme/example_cjk_trying.svg@3434f8ef08e6cb63a0fa379cf46ef07b03ca3454 — mode 100644, 17,746 bytes / 55 line slots, 86pt x 55pt SVG 1.1 viewBox 0 0 86 55",
+        "desktop-app/MicroTeX:readme/example_cjk_trying.svg@3434f8ef08e6cb63a0fa379cf46ef07b03ca3454 \u2014 mode 100644, 17,746 bytes / 55 line slots, 86pt x 55pt SVG 1.1 viewBox 0 0 86 55",
         "SVG structure: 8 <symbol>, 8 inline <path>, 8 <use>; href sequence #h,#g,#f,#e,#d,#c,#b,#a is local-only; 0 script/image/style/text/font-face/font-family/external href",
-        "README.md@824af04fd8607532efed3f73752b81e5093577ef directly embeds readme/example_cjk_trying.svg for the unregistered-CJK TextLayout example \\\\int_{now}^{\\\\infty} \\\\text{努力}",
+        "README.md@824af04fd8607532efed3f73752b81e5093577ef directly embeds readme/example_cjk_trying.svg for the unregistered-CJK TextLayout example \\\\int_{now}^{\\\\infty} \\\\text{\u52aa\u529b}",
         "src/platform/cairo/graphic_cairo.h@99ee55dd019d95e994ce201be31405510d57b035 and graphic_cairo.cpp@16331bfdb1d69926b7e14c7276acb3df052f40a8 declare/implement TextLayout_cairo with Pango/Cairo layout, UTF conversion, baseline, bounds, draw and TextLayout::create factory",
         "src/fonts/alphabet.cpp@e9604b6ac6e73d2a2f6017f4164675a2121cf891 defines BASIC_LATIN/LATIN1/CYRILLIC/GREEK/GREEK_EXTENDED, UNKNOWN complement semantics, dynamic define(), and UnicodeBlock::of(); CJK is not a predefined registered block",
         "exact-path history has one change commit 63555c2e902a42bfad457d3d58a4a24c5c51c53e (2019-02-25, new version README), adding README plus this and other README examples; exact generator/font command remains unproven",
@@ -56068,7 +56068,7 @@
       "language_rationale": "Static third-party documentation belongs to provenance governance; applicable text-layout/Unicode behavior belongs to existing canonical runtime ownership.",
       "command_event_contracts": [
         "README CJK/TextLayout docs -> render exact example_cjk_trying.svg.",
-        "README documents 努/力 as unregistered-CJK TextLayout input; asset does not own the runtime decision.",
+        "README documents \u52aa/\u529b as unregistered-CJK TextLayout input; asset does not own the runtime decision.",
         "alphabet.cpp predefined blocks exclude CJK; UNKNOWN is resolved after registered blocks.",
         "TextLayout_cairo context -> Pango/Cairo text layout, bounds and drawing.",
         "Accepted tdesktop shipping -> target asset not composed by checked external_microtex/td_iv path."
@@ -56097,7 +56097,7 @@
         "Target exact read: mode 100644, 17,746 bytes, 55 line slots, 86pt x 55pt, viewBox 0 0 86 55.",
         "SVG counts: 8 symbol, 8 path, 8 use; href sequence #h..#a local-only; zero script/image/style/text/font markers/external href.",
         "Pre-write exact target ledger mention count=0 and independent responsibility count=0.",
-        "README direct CJK/TextLayout consumer verified for \\\\int_{now}^{\\\\infty} \\\\text{努力}.",
+        "README direct CJK/TextLayout consumer verified for \\\\int_{now}^{\\\\infty} \\\\text{\u52aa\u529b}.",
         "TextLayout_cairo header/cpp context verified: Pango/Cairo layout, wide2utf8, font description, baseline, bounds, draw and TextLayout factory.",
         "alphabet.cpp context verified: five predefined blocks, UNKNOWN complement behavior, dynamic define and UnicodeBlock::of; CJK is not predefined.",
         "Exact-path history contains only 63555c2e902a42bfad457d3d58a4a24c5c51c53e; exact generator/font binding remains unproven.",
@@ -56253,7 +56253,7 @@
       "module_id": "tdesktop.thirdparty.microtex.readme-custom-symbols-svg",
       "responsibility_id": "TDRP-R9-MICROTEX-README-CUSTOM-SYMBOLS-SVG-PROVENANCE-001",
       "source_symbols": [
-        "desktop-app/MicroTeX:readme/example_custom_symbols.svg@45888ac3f5cf19100b9c4096eb8d38bb29d0419f — mode 100644, 9,078 bytes / 93 line slots, 257pt x 33pt SVG 1.1 viewBox 0 0 257 33",
+        "desktop-app/MicroTeX:readme/example_custom_symbols.svg@45888ac3f5cf19100b9c4096eb8d38bb29d0419f \u2014 mode 100644, 9,078 bytes / 93 line slots, 257pt x 33pt SVG 1.1 viewBox 0 0 257 33",
         "SVG structure: 8 <symbol>, 8 inline <path>, 20 <use>; href sequence #d,#c,#h,#b,#a,#d,#c,#g,#b,#a,#d,#c,#f,#b,#a,#e,#d,#c,#b,#a is local-only; 0 script/image/text/style/external href and no font identity metadata",
         "README.md@824af04fd8607532efed3f73752b81e5093577ef Custom symbols section directly lists \\\\varparallel, \\\\nvarparallel, \\\\varparalleleq and \\\\parallelogram and embeds readme/example_custom_symbols.svg",
         "src/res/builtin/tex_symbols.res.cpp@8ce76d17a0b995cf745601a82e569dc96ab31a30 registers all four names as ordinary SymbolAtom entries via sym(ord, ...)",
@@ -56536,7 +56536,7 @@
       "module_id": "tdesktop.thirdparty.microtex.readme-graphics-debug-svg",
       "responsibility_id": "TDRP-R9-MICROTEX-README-GRAPHICS-DEBUG-SVG-PROVENANCE-001",
       "source_symbols": [
-        "desktop-app/MicroTeX:readme/example_debug.svg@7253c8c54e66c98bb95e2c2174e064cd05825662 — mode 100644, 116,055 bytes / 765 line slots, 539pt x 174pt SVG 1.1 viewBox 0 0 539 174",
+        "desktop-app/MicroTeX:readme/example_debug.svg@7253c8c54e66c98bb95e2c2174e064cd05825662 \u2014 mode 100644, 116,055 bytes / 765 line slots, 539pt x 174pt SVG 1.1 viewBox 0 0 539 174",
         "SVG: 65 symbol, 319 path, 1 rect, 103 g, 103 use; all 103 hrefs local fragments; zero script/image/text/style/foreignObject/event/url()/external href",
         "README.md@824af04fd8607532efed3f73752b81e5093577ef directly binds GRAPHICS_DEBUG, \\debug/\\undebug and readme/example_debug.svg",
         "CMakeLists.txt@75059dec500cff8114728331eb5cb317abf6daf9 defaults GRAPHICS_DEBUG ON and conditionally adds -DGRAPHICS_DEBUG",
@@ -56820,7 +56820,7 @@
       "module_id": "tdesktop.thirdparty.microtex.readme-have-log-svg",
       "responsibility_id": "TDRP-R9-MICROTEX-README-HAVE-LOG-SVG-PROVENANCE-001",
       "source_symbols": [
-        "desktop-app/MicroTeX:readme/example_have_log.svg@33e769ade7b0c73864528d43ea8162df32e5cd1e — mode 100644, 15,276 bytes / 80 line slots, 184pt x 46pt SVG 1.1 viewBox 0 0 184 46",
+        "desktop-app/MicroTeX:readme/example_have_log.svg@33e769ade7b0c73864528d43ea8162df32e5cd1e \u2014 mode 100644, 15,276 bytes / 80 line slots, 184pt x 46pt SVG 1.1 viewBox 0 0 184 46",
         "SVG: 12 symbol, 13 path, 1 rect, 12 g, 12 use; all 12 hrefs local fragments; zero script/image/text/style/foreignObject/event/url()/external href",
         "README.md@824af04fd8607532efed3f73752b81e5093577ef directly binds HAVE_LOG runtime diagnostics and readme/example_have_log.svg; later build example passes -DHAVE_LOG=OFF",
         "CMakeLists.txt@75059dec500cff8114728331eb5cb317abf6daf9 defaults HAVE_LOG ON and conditionally adds -DHAVE_LOG",
@@ -57108,7 +57108,7 @@
       "module_id": "tdesktop.thirdparty.microtex.readme-keep-trying-svg",
       "responsibility_id": "TDRP-R9-MICROTEX-README-KEEP-TRYING-SVG-PROVENANCE-001",
       "source_symbols": [
-        "desktop-app/MicroTeX:readme/example_keep_trying.svg@e2ed234fb25c82c47f6852e0c21edfa341e0e38d — mode 100644, 20,571 bytes / 102 line slots, 131pt x 55pt SVG 1.1 viewBox 0 0 131 55",
+        "desktop-app/MicroTeX:readme/example_keep_trying.svg@e2ed234fb25c82c47f6852e0c21edfa341e0e38d \u2014 mode 100644, 20,571 bytes / 102 line slots, 131pt x 55pt SVG 1.1 viewBox 0 0 131 55",
         "SVG structure: 15 <symbol>, 15 inline <path>, 1 rect, 17 g, 16 <use>; all 16 href/xlink:href values are local # fragments; zero active/external SVG surface",
         "README.md@824af04fd8607532efed3f73752b81e5093577ef directly embeds the target for \\\\int_{now}^{+\\\\infty} \\\\text{Keep trying} after documenting LaTeX::parse, builder and TeXRender draw via Graphics2D_cairo",
         "src/latex.cpp@9ed2d29525b057943da537e8d2dd9e3afedc45b2 implements current LaTeX::parse -> Formula::setLaTeX -> shared TeXRenderBuilder::build runtime context",
@@ -57398,7 +57398,7 @@
       "module_id": "tdesktop.thirdparty.microtex.readme-logos-svg",
       "responsibility_id": "TDRP-R9-MICROTEX-README-LOGOS-SVG-PROVENANCE-001",
       "source_symbols": [
-        "desktop-app/MicroTeX:readme/example_logos.svg@d0c1d1f9659ace5e73ac750c6c359215999fa5b1 — mode 100644, 5,456 bytes / 51 line slots, 81pt x 63pt SVG 1.1 viewBox 0 0 81 63",
+        "desktop-app/MicroTeX:readme/example_logos.svg@d0c1d1f9659ace5e73ac750c6c359215999fa5b1 \u2014 mode 100644, 5,456 bytes / 51 line slots, 81pt x 63pt SVG 1.1 viewBox 0 0 81 63",
         "SVG structure: 7 <symbol>, 7 inline <path>, 1 rect, 8 g, 7 <use>; all 7 href/xlink:href values are local # fragments; zero active/external SVG surface",
         "README.md@824af04fd8607532efed3f73752b81e5093577ef directly documents \\\\TeX and \\\\AndroidTeX and embeds readme/example_logos.svg as their static illustration",
         "src/core/formula_def.cpp@ec6143102ae919689ca4fbae4ae371812598a367 defines TeX -> \\\\large{\\\\dT\\\\dE\\\\dX}, Android -> \\\\Huge{\\\\android}, and AndroidTeX -> Android + dT/dE/dX predefined formula expansion",
@@ -57696,7 +57696,7 @@
       "module_id": "tdesktop.thirdparty.microtex.readme-ubuntu-png",
       "responsibility_id": "TDRP-R9-MICROTEX-README-UBUNTU-PNG-PROVENANCE-001",
       "source_symbols": [
-        "desktop-app/MicroTeX:readme/example_ubuntu.png@006e26c90dd76187249b36f5987b29a2c314fa15 — mode 100644, 227,676 bytes, PNG 1363 x 675",
+        "desktop-app/MicroTeX:readme/example_ubuntu.png@006e26c90dd76187249b36f5987b29a2c314fa15 \u2014 mode 100644, 227,676 bytes, PNG 1363 x 675",
         "PNG metadata contains tEXt Software=gnome-screenshot; capture tool family is proven, exact capture environment is not",
         "README.md@824af04fd8607532efed3f73752b81e5093577ef directly identifies the screenshot as Ubuntu using GTK and embeds readme/example_ubuntu.png",
         "README also requires GTKMM and GSVMM for Linux GTK builds",
@@ -57973,7 +57973,7 @@
       "module_id": "tdesktop.thirdparty.microtex.readme-windows-png",
       "responsibility_id": "TDRP-R9-MICROTEX-README-WINDOWS-PNG-PROVENANCE-001",
       "source_symbols": [
-        "desktop-app/MicroTeX:readme/example_windows.png@1d5682ae38d994aa0b4ebb1ac31d7a38b8f8581c — mode 100644, 77,867 bytes, PNG 1151 x 711",
+        "desktop-app/MicroTeX:readme/example_windows.png@1d5682ae38d994aa0b4ebb1ac31d7a38b8f8581c \u2014 mode 100644, 77,867 bytes, PNG 1151 x 711",
         "PNG contains no tEXt/iTXt/zTXt capture metadata; exact screenshot tool and capture environment are not proven",
         "README.md@824af04fd8607532efed3f73752b81e5093577ef directly identifies readme/example_windows.png as the Windows demo screenshot",
         "CMakeLists.txt@75059dec500cff8114728331eb5cb317abf6daf9 default WIN32 branch defines BUILD_WIN32, compiles graphic_win32.cpp + win32_main.cpp and links gdiplus",
@@ -58266,7 +58266,7 @@
       "module_id": "tdesktop.thirdparty.microtex.readme-samples-md",
       "responsibility_id": "TDRP-R9-MICROTEX-README-SAMPLES-MD-PROVENANCE-001",
       "source_symbols": [
-        "desktop-app/MicroTeX:readme/samples.md@4eb0be8a26e15f098156040366683f4e835631f6 — mode 100644, 9,390 bytes, 302 line slots",
+        "desktop-app/MicroTeX:readme/samples.md@4eb0be8a26e15f098156040366683f4e835631f6 \u2014 mode 100644, 9,390 bytes, 302 line slots",
         "12 fenced TeX blocks exactly equal the 12 pinned res/SAMPLES.tex segments under githooks/pre-push transformation",
         "12 local image refs map sequentially to readme/samples/sample_0.svg through sample_11.svg",
         "githooks/pre-push defines headless LaTeX -> Markdown assembly -> scour -> tracked docs -> optional update samples commit",
@@ -58557,7 +58557,7 @@
       "module_id": "tdesktop.thirdparty.microtex.readme-sample-0-svg",
       "responsibility_id": "TDRP-R9-MICROTEX-README-SAMPLE-0-SVG-PROVENANCE-001",
       "source_symbols": [
-        "desktop-app/MicroTeX:readme/samples/sample_0.svg@9b71b0170ea06428a3f05f06766840c3bb66f866 — mode 100644, 125,265 bytes / 666 line slots, 156pt x 221pt, viewBox 0 0 156 221",
+        "desktop-app/MicroTeX:readme/samples/sample_0.svg@9b71b0170ea06428a3f05f06766840c3bb66f866 \u2014 mode 100644, 125,265 bytes / 666 line slots, 156pt x 221pt, viewBox 0 0 156 221",
         "SVG structure: 108 symbol, 109 path, 110 use, 1 rect, 111 g; all 110 href/xlink:href local and resolved; zero text/script/image/foreignObject/style/font-face/external href/DOCTYPE",
         "current and creation-time first res/SAMPLES.tex segment exactly equals the corresponding samples.md fenced body; 360 characters; same-index image reference is sample_0.svg",
         "exact-path history is only 95a54b5a493335679f227ed42dbe29660309d9f1; parent 105a81c58cac19ba3be2d66cd88ba05bf92ebcc1 lacks the target",
@@ -58853,7 +58853,7 @@
       "module_id": "tdesktop.thirdparty.microtex.readme-sample-1-svg",
       "responsibility_id": "TDRP-R9-MICROTEX-README-SAMPLE-1-SVG-PROVENANCE-001",
       "source_symbols": [
-        "desktop-app/MicroTeX:readme/samples/sample_1.svg@52dd4b61d61cfc5e96ec118a422de7fa20fe2092 — mode 100644, 315,729 bytes / 1,260 split-line slots including terminal LF slot, 244pt x 293pt, viewBox 0 0 244 293",
+        "desktop-app/MicroTeX:readme/samples/sample_1.svg@52dd4b61d61cfc5e96ec118a422de7fa20fe2092 \u2014 mode 100644, 315,729 bytes / 1,260 split-line slots including terminal LF slot, 244pt x 293pt, viewBox 0 0 244 293",
         "SVG structure: 160 symbol, 160 path, 257 use, 1 rect, 258 g; all 257 href/xlink:href local and resolved; zero text/script/image/foreignObject/style/font-face/external href/DOCTYPE",
         "creation/current index-1 res/SAMPLES.tex segment exactly equals same-index samples.md fenced body; 929 characters; reference is sample_1.svg",
         "exact-path history only 95a54b5a493335679f227ed42dbe29660309d9f1; parent lacks target; page 2 empty; creation co-add is samples.md plus sample_0.svg..sample_11.svg",
@@ -59144,7 +59144,7 @@
       "module_id": "tdesktop.thirdparty.microtex.readme-sample-2-svg",
       "responsibility_id": "TDRP-R9-MICROTEX-README-SAMPLE-2-SVG-PROVENANCE-001",
       "source_symbols": [
-        "desktop-app/MicroTeX:readme/samples/sample_2.svg@64ce25f438a4d4d88ff7b9d8947e0b3dd74257b0 — mode 100644, 424,975 bytes / 2,462 split-line slots including terminal LF slot, 515pt x 443pt, viewBox 0 0 515 443",
+        "desktop-app/MicroTeX:readme/samples/sample_2.svg@64ce25f438a4d4d88ff7b9d8947e0b3dd74257b0 \u2014 mode 100644, 424,975 bytes / 2,462 split-line slots including terminal LF slot, 515pt x 443pt, viewBox 0 0 515 443",
         "accepted SVG structure: 368 symbol, 378 path, 447 use, 1 rect, 447 g, 368 ids; all 447 href/xlink:href local and resolved; zero text/script/image/foreignObject/style/font-face/external href/DOCTYPE/comments",
         "creation/current index-2 res/SAMPLES.tex segment exactly equals same-index samples.md fenced body; 1,562 characters; reference is sample_2.svg; index-2 text stays identical across creation, 63555c2 source revision, 08d9d6b generated update and accepted pin",
         "exact-path history exhausted at two commits: 95a54b5a493335679f227ed42dbe29660309d9f1 creates blob 40d2bb0a7c304497a994c92ed4a5d4ed76e2d1fb with parent target absent and 13-path co-add; 08d9d6b3ca060f4923ccf0117565430c865059e9 updates to accepted blob 64ce25f438a4d4d88ff7b9d8947e0b3dd74257b0 with 8-path co-change; history page 2 empty",
@@ -59444,7 +59444,7 @@
       "module_id": "tdesktop.thirdparty.microtex.readme-sample-3-svg",
       "responsibility_id": "TDRP-R9-MICROTEX-README-SAMPLE-3-SVG-PROVENANCE-001",
       "source_symbols": [
-        "desktop-app/MicroTeX:readme/samples/sample_3.svg@3937fe165e4c90414c4b9e18ae5b32c27784c7e6 — mode 100644, 459,845 bytes / 2,654 split-line slots including terminal LF slot, 460pt x 494pt, viewBox 0 0 460 494",
+        "desktop-app/MicroTeX:readme/samples/sample_3.svg@3937fe165e4c90414c4b9e18ae5b32c27784c7e6 \u2014 mode 100644, 459,845 bytes / 2,654 split-line slots including terminal LF slot, 460pt x 494pt, viewBox 0 0 460 494",
         "accepted SVG structure: 370 symbol, 379 path, 508 use, 1 rect, 509 g, 371 unique ids; all 508 href/xlink:href local and resolved; zero text/script/image/foreignObject/style/font-face/external href/DOCTYPE/comments",
         "index-3 source transition: creation 95a54b5 SAMPLES.tex@7fea7399 and samples.md@bed457ee bodies are exact-equal at 2,232 chars with no fatalIfCmdConflict; 63555c2 SAMPLES.tex@e03f0088 becomes 2,259 chars by adding exactly \\fatalIfCmdConflict{false} while samples.md remains the old 2,232-char body; 08d9d6b/current samples.md@4eb0be8a synchronizes to the same 2,259-char body",
         "fatalIfCmdConflict is pre-existing runtime context, not introduced by the source edit: creation macro_def registers it and macro_impl toggles NewCommandMacro::_errIfConflict; at 63555c2/08d9d6b macro_impl uses args[1] == L\"true\" and checkNew/checkRenew honor the flag; current accepted code additionally protects built-ins and resets the flag between formulas",
@@ -59772,13 +59772,13 @@
       "module_id": "tdesktop.thirdparty.microtex.readme-sample-4-svg",
       "responsibility_id": "TDRP-R9-MICROTEX-README-SAMPLE-4-SVG-PROVENANCE-001",
       "source_symbols": [
-        "desktop-app/MicroTeX:readme/samples/sample_4.svg@77d65ed8eabdd51063b6a54104f6d5c96d595a7d — mode 100644, 85,147 ASCII bytes / 555 split-line slots including terminal LF slot, 476pt x 128pt, viewBox 0 0 476 128",
+        "desktop-app/MicroTeX:readme/samples/sample_4.svg@77d65ed8eabdd51063b6a54104f6d5c96d595a7d \u2014 mode 100644, 85,147 ASCII bytes / 555 split-line slots including terminal LF slot, 476pt x 128pt, viewBox 0 0 476 128",
         "accepted SVG structure: 69 symbol, 86 path, 108 use, 1 rect, 108 g, 69 unique ids; all 108 href/xlink:href local and resolved; zero text/script/image/foreignObject/style/font-face/external href/DOCTYPE/comments",
         "normalized index-4 source body is stable at exactly 433 chars across 95a54b5 creation, 63555c2 source-change state, 08d9d6b update and accepted pin; 63555c2 changes index 3 only",
         "exact-path history exhausted at two commits: 95a54b5 creates blob 7625bf33c1413b92f34b1bc1dc37b4f934f9b18e with parent target absent and 13-path co-add; 08d9d6b updates to accepted blob 77d65ed8eabdd51063b6a54104f6d5c96d595a7d with 8-path co-change; page 2 empty",
         "creation SVG is 85,152 ASCII bytes / 555 slots, 478pt x 128pt/viewBox 0 0 478 128 with identical structural cardinalities/local topology; creation vs accepted differs at exactly 116 line slots",
-        "95a54b5..08d9d6b spans 34 commits / 155 changed files including formula/render/font/resource/Cairo changes, so stable source plus 478pt→476pt output drift does not prove one causal renderer/font/toolchain/resource change",
-        "pre-push stays b426a77d while gtkmm_main is 3b7b1c8a→e0dc5783→d491af61 and graphic_cairo is 5d8c3b46→ae153505→16331bfd; lineage is SAMPLES index 4→LaTeX::parse→Cairo SvgSurface/Graphics2D_cairo→indexed SVG→scour",
+        "95a54b5..08d9d6b spans 34 commits / 155 changed files including formula/render/font/resource/Cairo changes, so stable source plus 478pt\u2192476pt output drift does not prove one causal renderer/font/toolchain/resource change",
+        "pre-push stays b426a77d while gtkmm_main is 3b7b1c8a\u2192e0dc5783\u2192d491af61 and graphic_cairo is 5d8c3b46\u2192ae153505\u219216331bfd; lineage is SAMPLES index 4\u2192LaTeX::parse\u2192Cairo SvgSurface/Graphics2D_cairo\u2192indexed SVG\u2192scour",
         "MicroTeX CMake/Qt/bundled resources and child workflows have zero generated sample_4 refs; Meson installs res/SAMPLES.tex as source/demo data only; accepted BUILD_QT external_microtex/td_iv shipping has zero target generated-doc refs"
       ],
       "capability_ids": [
@@ -59831,7 +59831,7 @@
         "target SVG/source binding drifts",
         "two-commit history/co-change is truncated or promoted to execution proof",
         "stable 433-character index-4 source is misreported as changed because index 3 changed in the same file",
-        "478pt→476pt or 116-line output delta is attributed to one renderer/font/toolchain/resource cause without evidence",
+        "478pt\u2192476pt or 116-line output delta is attributed to one renderer/font/toolchain/resource cause without evidence",
         "generator source is promoted to exact binary/toolchain proof",
         "unspecified scour/font/GTK/Cairo environment is promoted to byte determinism",
         "font/resource-derived paths are flattened into blanket MIT",
@@ -60073,7 +60073,7 @@
       "test_execution_evidence": [],
       "acceptance_reviewer": null,
       "release_gate_status": "open",
-      "license_and_provenance": "Exact generated SVG, stable normalized 433-character index-4 source, two-commit path history and 478pt→476pt / 116-line-slot output drift retained. Hook dispatch, exact historical binary/toolchain/scour/font environment, raw pre-scour bytes and bit-for-bit regeneration remain unproven. Root MIT does not flatten separate res font/XML/resource licenses or establish per-outline font derivation.",
+      "license_and_provenance": "Exact generated SVG, stable normalized 433-character index-4 source, two-commit path history and 478pt\u2192476pt / 116-line-slot output drift retained. Hook dispatch, exact historical binary/toolchain/scour/font environment, raw pre-scour bytes and bit-for-bit regeneration remain unproven. Root MIT does not flatten separate res font/XML/resource licenses or establish per-outline font derivation.",
       "reviewer": "primary-session",
       "notes": "Strict208 MicroTeX readme/samples/sample_4.svg standalone generated-documentation/stable-source output-drift provenance. Counters unknown=16168 unread=16143 omitted=0 responsibilities=226. sample_5.svg@67e94f41adf1098fc2a083bdd13427ca2aae0c61 is next; no formula/render/font/shipping responsibility is closed."
     },
@@ -60086,12 +60086,12 @@
       "module_id": "tdesktop.thirdparty.microtex.readme-sample-5-svg",
       "responsibility_id": "TDRP-R9-MICROTEX-README-SAMPLE-5-SVG-PROVENANCE-001",
       "source_symbols": [
-        "desktop-app/MicroTeX:readme/samples/sample_5.svg@67e94f41adf1098fc2a083bdd13427ca2aae0c61 — mode 100644, 27,657 ASCII bytes / 248 split-line slots including terminal LF slot, 349pt x 115pt, viewBox 0 0 349 115",
+        "desktop-app/MicroTeX:readme/samples/sample_5.svg@67e94f41adf1098fc2a083bdd13427ca2aae0c61 \u2014 mode 100644, 27,657 ASCII bytes / 248 split-line slots including terminal LF slot, 349pt x 115pt, viewBox 0 0 349 115",
         "accepted SVG structure: 20 symbol, 27 path, 58 use, 1 rect, 58 g, 20 unique ids; all 58 href/xlink:href local and resolved; zero text/script/image/foreignObject/style/font-face/external href/DOCTYPE/comments",
         "normalized index-5 source body is stable at exactly 208 chars across 95a54b5 creation, 63555c2 source-change state, 08d9d6b generated-update state and accepted pin; creation/current samples.md fenced body is exact-equal",
         "exact-path history is exhausted at one commit: 95a54b5 creates blob 67e94f41adf1098fc2a083bdd13427ca2aae0c61; parent 105a81c lacks the target; creation co-adds exactly samples.md plus sample_0.svg..sample_11.svg; page 2 is empty",
         "creation blob and accepted blob are byte-for-byte identical at 67e94f41adf1098fc2a083bdd13427ca2aae0c61; unchanged tracked bytes do not prove installed-hook execution or deterministic regeneration",
-        "pre-push remains b426a77d while gtkmm_main is 3b7b1c8a→e0dc5783→d491af61 and graphic_cairo is 5d8c3b46→ae153505→16331bfd; lineage is SAMPLES index 5→LaTeX::parse→Cairo SvgSurface/Graphics2D_cairo→indexed SVG→scour",
+        "pre-push remains b426a77d while gtkmm_main is 3b7b1c8a\u2192e0dc5783\u2192d491af61 and graphic_cairo is 5d8c3b46\u2192ae153505\u219216331bfd; lineage is SAMPLES index 5\u2192LaTeX::parse\u2192Cairo SvgSurface/Graphics2D_cairo\u2192indexed SVG\u2192scour",
         "MicroTeX CMake/Qt/bundled resources and child workflows have zero generated sample_5 refs; Meson installs res/SAMPLES.tex as source/demo data only; accepted BUILD_QT external_microtex/td_iv shipping has zero target generated-doc refs"
       ],
       "capability_ids": [
@@ -60398,13 +60398,13 @@
       "module_id": "tdesktop.thirdparty.microtex.readme-sample-6-svg",
       "responsibility_id": "TDRP-R9-MICROTEX-README-SAMPLE-6-SVG-PROVENANCE-001",
       "source_symbols": [
-        "desktop-app/MicroTeX:readme/samples/sample_6.svg@b007345c2b8ffa1d60199bff3dceb84f4d17de7e — mode 100644, 208,154 ASCII bytes / 1,083 split-line slots including terminal LF slot, 740pt x 102pt, viewBox 0 0 740 102",
+        "desktop-app/MicroTeX:readme/samples/sample_6.svg@b007345c2b8ffa1d60199bff3dceb84f4d17de7e \u2014 mode 100644, 208,154 ASCII bytes / 1,083 split-line slots including terminal LF slot, 740pt x 102pt, viewBox 0 0 740 102",
         "accepted SVG structure: 193 symbol, 202 path, 219 use, 1 rect, 135 g, 193 unique ids; all 219 href/xlink:href local and resolved; zero text/script/image/foreignObject/style/font-face/external href/DOCTYPE/comments",
         "normalized index-6 source body is stable at exactly 227 chars across 95a54b5 creation, 63555c2 source-change state, 08d9d6b generated-update state and accepted pin; corresponding samples.md fenced body is exact-equal at every checked state",
         "exact-path history is exhausted at two commits: 95a54b5 creates blob 887087474bf73f63383d2c686fd17b5a913f23d5; 08d9d6b updates it to accepted blob b007345c2b8ffa1d60199bff3dceb84f4d17de7e; page 2 is empty; creation parent 105a81c lacks the target",
         "creation co-add is exactly samples.md plus sample_0.svg..sample_11.svg; 08d9d6b co-change is exactly eight paths: samples.md plus sample_2,3,4,6,7,8,11 SVGs",
         "creation 693pt x 80pt / 207,821 bytes and accepted 740pt x 102pt / 208,154 bytes retain identical structural cardinalities while exactly 210 split-line slots differ; 95a54b5..08d9d6b spans 34 commits / 155 files",
-        "pre-push remains b426a77d while gtkmm_main is 3b7b1c8a→e0dc5783→d491af61 and graphic_cairo is 5d8c3b46→ae153505→16331bfd; stable source plus output drift is not promoted to a single renderer/font/toolchain cause",
+        "pre-push remains b426a77d while gtkmm_main is 3b7b1c8a\u2192e0dc5783\u2192d491af61 and graphic_cairo is 5d8c3b46\u2192ae153505\u219216331bfd; stable source plus output drift is not promoted to a single renderer/font/toolchain cause",
         "MicroTeX CMake/Qt/bundled resources and child workflows have zero generated sample_6 refs; Meson installs res/SAMPLES.tex as source/demo data only; accepted BUILD_QT external_microtex/td_iv shipping has zero target generated-doc refs"
       ],
       "capability_ids": [
@@ -60700,7 +60700,7 @@
       "test_execution_evidence": [],
       "acceptance_reviewer": null,
       "release_gate_status": "open",
-      "license_and_provenance": "Exact generated SVG, stable normalized 227-character index-6 source, two-commit path history and 693pt×80pt→740pt×102pt / 210-line-slot output drift retained. Hook dispatch, exact historical binary/toolchain/scour/font environment, raw pre-scour bytes, bit-for-bit regeneration and single-cause attribution remain unproven. Root MIT does not flatten separate res font/XML/resource licenses or establish per-outline font derivation.",
+      "license_and_provenance": "Exact generated SVG, stable normalized 227-character index-6 source, two-commit path history and 693pt\u00d780pt\u2192740pt\u00d7102pt / 210-line-slot output drift retained. Hook dispatch, exact historical binary/toolchain/scour/font environment, raw pre-scour bytes, bit-for-bit regeneration and single-cause attribution remain unproven. Root MIT does not flatten separate res font/XML/resource licenses or establish per-outline font derivation.",
       "reviewer": "primary-session",
       "notes": "Strict210 MicroTeX readme/samples/sample_6.svg standalone generated-documentation/stable-source output-drift provenance. Counters unknown=16166 unread=16141 omitted=0 responsibilities=228. sample_7.svg@6fe53b06b0df9d4433650c9deff13804c74a57d7 is next; no formula/render/font/shipping responsibility is closed."
     },
@@ -60713,13 +60713,13 @@
       "module_id": "tdesktop.thirdparty.microtex.readme-sample-7-svg",
       "responsibility_id": "TDRP-R9-MICROTEX-README-SAMPLE-7-SVG-PROVENANCE-001",
       "source_symbols": [
-        "desktop-app/MicroTeX:readme/samples/sample_7.svg@6fe53b06b0df9d4433650c9deff13804c74a57d7 — mode 100644, 77,841 ASCII bytes / 519 split-line slots including terminal LF slot, 380pt x 123pt, viewBox 0 0 380 123",
+        "desktop-app/MicroTeX:readme/samples/sample_7.svg@6fe53b06b0df9d4433650c9deff13804c74a57d7 \u2014 mode 100644, 77,841 ASCII bytes / 519 split-line slots including terminal LF slot, 380pt x 123pt, viewBox 0 0 380 123",
         "accepted SVG structure: 63 symbol, 83 path, 101 use, 1 rect, 101 g, 63 unique ids; all 101 href/xlink:href local and resolved; zero text/script/image/foreignObject/style/font-face/external href/DOCTYPE/comments",
         "normalized index-7 source body is stable at exactly 595 chars across 95a54b5 creation, 63555c2 source-change state, 08d9d6b generated-update state and accepted pin; corresponding samples.md fenced body is exact-equal at every checked state",
         "exact-path history is exhausted at two commits: 95a54b5 creates blob be74e604b13e93e8cd92914fbd5079600e838867; 08d9d6b updates it to accepted blob 6fe53b06b0df9d4433650c9deff13804c74a57d7; page 2 is empty; creation parent 105a81c lacks the target",
         "creation co-add is exactly samples.md plus sample_0.svg..sample_11.svg; 08d9d6b co-change is exactly eight paths: samples.md plus sample_2,3,4,6,7,8,11 SVGs",
         "creation 381pt x 123pt / 77,850 bytes and accepted 380pt x 123pt / 77,841 bytes retain identical structural cardinalities while exactly 111 split-line slots differ; 95a54b5..08d9d6b spans 34 commits / 155 files",
-        "pre-push remains b426a77d while gtkmm_main is 3b7b1c8a→e0dc5783→d491af61 and graphic_cairo is 5d8c3b46→ae153505→16331bfd; stable source plus output drift is not promoted to a single renderer/font/toolchain cause",
+        "pre-push remains b426a77d while gtkmm_main is 3b7b1c8a\u2192e0dc5783\u2192d491af61 and graphic_cairo is 5d8c3b46\u2192ae153505\u219216331bfd; stable source plus output drift is not promoted to a single renderer/font/toolchain cause",
         "MicroTeX CMake/Qt/bundled resources and child workflows have zero generated sample_7 refs; Meson installs res/SAMPLES.tex as source/demo data only; accepted BUILD_QT external_microtex/td_iv shipping has zero target generated-doc refs"
       ],
       "capability_ids": [
@@ -61015,7 +61015,7 @@
       "test_execution_evidence": [],
       "acceptance_reviewer": null,
       "release_gate_status": "open",
-      "license_and_provenance": "Exact generated SVG, stable normalized 595-character index-7 source, two-commit path history and 381pt×123pt→380pt×123pt / 111-line-slot output drift retained. Hook dispatch, exact historical binary/toolchain/scour/font environment, raw pre-scour bytes, bit-for-bit regeneration and single-cause attribution remain unproven. Root MIT does not flatten separate res font/XML/resource licenses or establish per-outline font derivation.",
+      "license_and_provenance": "Exact generated SVG, stable normalized 595-character index-7 source, two-commit path history and 381pt\u00d7123pt\u2192380pt\u00d7123pt / 111-line-slot output drift retained. Hook dispatch, exact historical binary/toolchain/scour/font environment, raw pre-scour bytes, bit-for-bit regeneration and single-cause attribution remain unproven. Root MIT does not flatten separate res font/XML/resource licenses or establish per-outline font derivation.",
       "reviewer": "primary-session",
       "notes": "Strict211 MicroTeX readme/samples/sample_7.svg standalone generated-documentation/stable-source output-drift provenance. Counters unknown=16165 unread=16140 omitted=0 responsibilities=229. sample_8.svg@2a3aceabd646957e4f47900551b60204b19b4794 is next; no formula/render/font/shipping responsibility is closed."
     },
@@ -61028,13 +61028,13 @@
       "module_id": "tdesktop.thirdparty.microtex.readme-sample-8-svg",
       "responsibility_id": "TDRP-R9-MICROTEX-README-SAMPLE-8-SVG-PROVENANCE-001",
       "source_symbols": [
-        "desktop-app/MicroTeX:readme/samples/sample_8.svg@2a3aceabd646957e4f47900551b60204b19b4794 — mode 100644, 59,582 ASCII bytes / 530 split-line slots including terminal LF slot, 187pt x 248pt, viewBox 0 0 187 248",
+        "desktop-app/MicroTeX:readme/samples/sample_8.svg@2a3aceabd646957e4f47900551b60204b19b4794 \u2014 mode 100644, 59,582 ASCII bytes / 530 split-line slots including terminal LF slot, 187pt x 248pt, viewBox 0 0 187 248",
         "accepted SVG structure: 51 symbol, 73 path, 116 use, 1 rect, 116 g, 51 unique ids; all 116 href/xlink:href local and resolved; zero text/script/image/foreignObject/style/font-face/external href/DOCTYPE/comments",
         "normalized index-8 source body is stable at exactly 283 chars across 95a54b5 creation, 63555c2 source-change state, 08d9d6b generated-update state and accepted pin; corresponding samples.md fenced body is exact-equal at every checked state",
         "exact-path history is exhausted at two commits: 95a54b5 creates blob a100e93e3ea0e89087525dc872618ab3456f431b; 08d9d6b updates it to accepted blob 2a3aceabd646957e4f47900551b60204b19b4794; page 2 is empty; creation parent 105a81c lacks the target",
         "creation co-add is exactly samples.md plus sample_0.svg..sample_11.svg; 08d9d6b co-change is exactly eight paths: samples.md plus sample_2,3,4,6,7,8,11 SVGs",
         "creation 187pt x 248pt / 59,572 bytes and accepted 187pt x 248pt / 59,582 bytes retain identical structural cardinalities while exactly 8 split-line slots differ; 95a54b5..08d9d6b spans 34 commits / 155 files",
-        "pre-push remains b426a77d while gtkmm_main is 3b7b1c8a→e0dc5783→d491af61 and graphic_cairo is 5d8c3b46→ae153505→16331bfd; stable source plus output drift is not promoted to a single renderer/font/toolchain cause",
+        "pre-push remains b426a77d while gtkmm_main is 3b7b1c8a\u2192e0dc5783\u2192d491af61 and graphic_cairo is 5d8c3b46\u2192ae153505\u219216331bfd; stable source plus output drift is not promoted to a single renderer/font/toolchain cause",
         "MicroTeX CMake/Qt/bundled resources and child workflows have zero generated sample_8 refs; Meson installs res/SAMPLES.tex as source/demo data only; accepted BUILD_QT external_microtex/td_iv shipping has zero target generated-doc refs"
       ],
       "capability_ids": [
@@ -61330,7 +61330,7 @@
       "test_execution_evidence": [],
       "acceptance_reviewer": null,
       "release_gate_status": "open",
-      "license_and_provenance": "Exact generated SVG, stable normalized 283-character index-8 source, two-commit path history and same-geometry 187pt×248pt creation/accepted output with 8-line-slot drift retained. Hook dispatch, exact historical binary/toolchain/scour/font environment, raw pre-scour bytes, bit-for-bit regeneration and single-cause attribution remain unproven. Root MIT does not flatten separate res font/XML/resource licenses or establish per-outline font derivation.",
+      "license_and_provenance": "Exact generated SVG, stable normalized 283-character index-8 source, two-commit path history and same-geometry 187pt\u00d7248pt creation/accepted output with 8-line-slot drift retained. Hook dispatch, exact historical binary/toolchain/scour/font environment, raw pre-scour bytes, bit-for-bit regeneration and single-cause attribution remain unproven. Root MIT does not flatten separate res font/XML/resource licenses or establish per-outline font derivation.",
       "reviewer": "primary-session",
       "notes": "Strict212 MicroTeX readme/samples/sample_8.svg standalone generated-documentation/stable-source output-drift provenance. Counters unknown=16164 unread=16139 omitted=0 responsibilities=230. sample_9.svg@fc19f5fa1c500f2b1659eaaee05352ae0024990f is next; no formula/render/font/shipping responsibility is closed."
     },
@@ -61343,7 +61343,7 @@
       "module_id": "tdesktop.thirdparty.microtex.readme-sample-9-svg",
       "responsibility_id": "TDRP-R9-MICROTEX-README-SAMPLE-9-SVG-PROVENANCE-001",
       "source_symbols": [
-        "desktop-app/MicroTeX:readme/samples/sample_9.svg@fc19f5fa1c500f2b1659eaaee05352ae0024990f — mode 100644, 258,669 ASCII bytes / 1,703 split-line slots including terminal LF slot, 740pt x 491pt, viewBox 0 0 740 491",
+        "desktop-app/MicroTeX:readme/samples/sample_9.svg@fc19f5fa1c500f2b1659eaaee05352ae0024990f \u2014 mode 100644, 258,669 ASCII bytes / 1,703 split-line slots including terminal LF slot, 740pt x 491pt, viewBox 0 0 740 491",
         "accepted SVG structure: 253 symbol, 254 path, 312 use, 1 rect, 312 g, 253 unique ids; all 312 href/xlink:href local and resolved; zero text/script/image/foreignObject/style/font-face/external href/DOCTYPE/comments",
         "normalized index-9 source body is stable at exactly 1,080 chars across 95a54b5 creation, 63555c2 source-change state, 08d9d6b generated-update state and accepted pin; corresponding samples.md fenced body is exact-equal at every checked state",
         "exact-path history is exhausted at one commit: 95a54b5 creates blob fc19f5fa1c500f2b1659eaaee05352ae0024990f; page 2 is empty; creation parent 105a81c lacks the target",
@@ -61661,13 +61661,13 @@
       "module_id": "tdesktop.thirdparty.microtex.readme-sample-10-svg",
       "responsibility_id": "TDRP-R9-MICROTEX-README-SAMPLE-10-SVG-PROVENANCE-001",
       "source_symbols": [
-        "desktop-app/MicroTeX:readme/samples/sample_10.svg@31a02661b1fccb964dc9c0b8a727b521a85f42ea — mode 100644, 62,158 ASCII bytes / 334 split-line slots including terminal LF slot, 124pt x 189pt, viewBox 0 0 124 189",
+        "desktop-app/MicroTeX:readme/samples/sample_10.svg@31a02661b1fccb964dc9c0b8a727b521a85f42ea \u2014 mode 100644, 62,158 ASCII bytes / 334 split-line slots including terminal LF slot, 124pt x 189pt, viewBox 0 0 124 189",
         "accepted SVG structure: 54 symbol, 57 path, 54 use, 1 rect, 54 g, 54 unique ids; all 54 href/xlink:href local and resolved; zero text/script/image/foreignObject/style/font-face/external href/DOCTYPE/comments",
         "normalized index-10 source body is stable at exactly 250 chars across 95a54b5 creation, 63555c2 source-change state, 08d9d6b generated-update state and accepted pin; corresponding samples.md fenced body is exact-equal at every checked state",
         "exact-path history is exhausted at one commit: 95a54b5 creates blob 31a02661b1fccb964dc9c0b8a727b521a85f42ea; page 2 is empty; creation parent 105a81c lacks the target",
         "creation co-add is exactly samples.md plus sample_0.svg..sample_11.svg; 08d9d6b co-change is exactly eight paths: samples.md plus sample_2,3,4,6,7,8,11 SVGs and excludes sample_10",
         "creation and accepted are byte-identical at 124pt x 189pt / 62,158 bytes with zero split-line differences; 95a54b5..08d9d6b spans 34 commits / 155 files",
-        "pre-push remains b426a77d while gtkmm_main is 3b7b1c8a→e0dc5783→d491af61 and graphic_cairo is 5d8c3b46→ae153505→16331bfd; stable source plus byte-identical output is not promoted to hook execution or environment-independent reproducibility",
+        "pre-push remains b426a77d while gtkmm_main is 3b7b1c8a\u2192e0dc5783\u2192d491af61 and graphic_cairo is 5d8c3b46\u2192ae153505\u219216331bfd; stable source plus byte-identical output is not promoted to hook execution or environment-independent reproducibility",
         "MicroTeX CMake/Qt/bundled resources and child workflows have zero generated sample_10 refs; Meson installs res/SAMPLES.tex as source/demo data only; accepted BUILD_QT external_microtex/td_iv shipping has zero target generated-doc refs"
       ],
       "capability_ids": [
@@ -61979,14 +61979,14 @@
       "module_id": "tdesktop.thirdparty.microtex.readme-sample-11-svg",
       "responsibility_id": "TDRP-R9-MICROTEX-README-SAMPLE-11-SVG-PROVENANCE-001",
       "source_symbols": [
-        "desktop-app/MicroTeX:readme/samples/sample_11.svg@28039e570607bab47db7ff3976b16847c32fd768 — mode 100644, 45,691 ASCII bytes / 307 split-line slots including terminal LF slot, 146pt x 181pt, viewBox 0 0 146 181",
+        "desktop-app/MicroTeX:readme/samples/sample_11.svg@28039e570607bab47db7ff3976b16847c32fd768 \u2014 mode 100644, 45,691 ASCII bytes / 307 split-line slots including terminal LF slot, 146pt x 181pt, viewBox 0 0 146 181",
         "accepted SVG structure: 39 symbol, 45 path, 59 use, 1 rect, 59 g, 39 unique ids; all 59 href/xlink:href local and resolved; zero text/script/image/foreignObject/style/font-face/external href/DOCTYPE/comments",
         "normalized index-11 source body is stable at exactly 217 chars across 95a54b5 creation, 63555c2 source-change state, 08d9d6b generated-update state and accepted pin; corresponding samples.md fenced body is exact-equal at every checked state",
         "exact-path history is exhausted at two commits: 95a54b5 creates blob d8427615bb612cb40fb6d0fa6d07ad2b74185a02; 08d9d6b updates it to accepted blob 28039e570607bab47db7ff3976b16847c32fd768; page 2 is empty; creation parent 105a81c lacks the target",
         "creation co-add is exactly samples.md plus sample_0.svg..sample_11.svg; 08d9d6b co-change is exactly eight paths: samples.md plus sample_2,3,4,6,7,8,11 SVGs",
         "creation 148pt x 181pt / 45,698 bytes and accepted 146pt x 181pt / 45,691 bytes retain identical structural cardinalities while exactly 10 split-line slots differ; 95a54b5..08d9d6b spans 34 commits / 155 files",
-        "the 10 changed slots are 2,122,124,126,138,140,152,154,169,172: root/rect width contracts 148→146, four use x-coordinates move, two horizontal path extents shorten and two final use x-coordinates move",
-        "pre-push remains b426a77d while gtkmm_main is 3b7b1c8a→e0dc5783→d491af61 and graphic_cairo is 5d8c3b46→ae153505→16331bfd; stable source plus output drift is not promoted to a single renderer/font/toolchain cause",
+        "the 10 changed slots are 2,122,124,126,138,140,152,154,169,172: root/rect width contracts 148\u2192146, four use x-coordinates move, two horizontal path extents shorten and two final use x-coordinates move",
+        "pre-push remains b426a77d while gtkmm_main is 3b7b1c8a\u2192e0dc5783\u2192d491af61 and graphic_cairo is 5d8c3b46\u2192ae153505\u219216331bfd; stable source plus output drift is not promoted to a single renderer/font/toolchain cause",
         "MicroTeX CMake/Qt/bundled resources and child workflows have zero generated sample_11 refs; Meson installs res/SAMPLES.tex as source/demo data only; accepted BUILD_QT external_microtex/td_iv shipping has zero target generated-doc refs"
       ],
       "capability_ids": [
@@ -62039,7 +62039,7 @@
         "target SVG blob, passive/local structure or index-11 source binding drifts",
         "two-commit history, 13-path creation co-add or 8-path update co-change is truncated or misattributed",
         "the stable 217-character index-11 source is confused with unrelated corpus edits",
-        "the 148pt→146pt root-width and 10-slot output drift are promoted to a single renderer/font/toolchain cause",
+        "the 148pt\u2192146pt root-width and 10-slot output drift are promoted to a single renderer/font/toolchain cause",
         "generator source is promoted to exact historical binary/toolchain proof",
         "unspecified scour/font/GTK/Cairo/Pango/Freetype/Fontconfig environment is promoted to byte determinism",
         "font/resource-derived outlines are flattened into blanket MIT",
@@ -62085,7 +62085,7 @@
         "TDRP_MICROTEX_README_SAMPLE_11_SVG_PROVENANCE_001"
       ],
       "target_language": "Source-only SVG/documentation/tooling provenance with stable-source output drift and reproducibility boundary; no shipping implementation.",
-      "language_rationale": "The target is a passive generated documentation asset. Stable index-11 source with 148pt→146pt generated root-width drift and ten exact changed line slots proves tracked output changed while source identity stayed stable; it does not establish installed-hook execution, a single renderer/font/toolchain cause, or reproducibility under an unspecified environment.",
+      "language_rationale": "The target is a passive generated documentation asset. Stable index-11 source with 148pt\u2192146pt generated root-width drift and ten exact changed line slots proves tracked output changed while source identity stayed stable; it does not establish installed-hook execution, a single renderer/font/toolchain cause, or reproducibility under an unspecified environment.",
       "command_event_contracts": [
         "95a54b5/63555c2/08d9d6b/current index-11 SAMPLES.tex body -> identical normalized 217-char samples.md fenced body",
         "95a54b5 creation -> sample_11.svg blob d8427615; 08d9d6b -> accepted 28039e57",
@@ -62189,7 +62189,7 @@
       "responsive_disposition": "Not applicable",
       "accessibility_contract": "No Fabushi accessibility surface.",
       "keyboard_contract": "Not applicable",
-      "state_continuity_contract": "Any target/source/reference/history/generator/pin/shipping/license drift requires exact-ref reconciliation. The stable 217-character source plus 148pt→146pt/10-slot output drift proves tracked generated output changed while source identity stayed stable; it does not identify a single causal renderer/font/toolchain change, backfill hook execution or prove environment-independent reproducibility.",
+      "state_continuity_contract": "Any target/source/reference/history/generator/pin/shipping/license drift requires exact-ref reconciliation. The stable 217-character source plus 148pt\u2192146pt/10-slot output drift proves tracked generated output changed while source identity stayed stable; it does not identify a single causal renderer/font/toolchain change, backfill hook execution or prove environment-independent reproducibility.",
       "ui_acceptance_scenarios": [],
       "design_system_version": "Not applicable",
       "semantic_token_usage": [],
@@ -62286,7 +62286,7 @@
       "test_execution_evidence": [],
       "acceptance_reviewer": null,
       "release_gate_status": "open",
-      "license_and_provenance": "Exact generated SVGs, stable normalized 217-character index-11 source, two-commit path history and 148pt×181pt creation -> 146pt×181pt accepted output with 10-line-slot drift retained. Hook dispatch, exact historical binary/toolchain/scour/font environment, raw pre-scour bytes, bit-for-bit regeneration and single-cause attribution remain unproven. Root MIT does not flatten separate res font/XML/resource licenses or establish per-outline font derivation.",
+      "license_and_provenance": "Exact generated SVGs, stable normalized 217-character index-11 source, two-commit path history and 148pt\u00d7181pt creation -> 146pt\u00d7181pt accepted output with 10-line-slot drift retained. Hook dispatch, exact historical binary/toolchain/scour/font environment, raw pre-scour bytes, bit-for-bit regeneration and single-cause attribution remain unproven. Root MIT does not flatten separate res font/XML/resource licenses or establish per-outline font derivation.",
       "reviewer": "primary-session",
       "notes": "Strict215 MicroTeX readme/samples/sample_11.svg standalone generated-documentation/stable-source output-drift provenance. Counters unknown=16161 unread=16136 omitted=0 responsibilities=233. readme/tex_logo.svg@33647d95ba36e42839ac5a2469464c8cde2b6c99 is next; no formula/render/font/shipping responsibility is closed."
     },
@@ -62299,7 +62299,7 @@
       "module_id": "tdesktop.thirdparty.microtex.readme-tex-logo-svg",
       "responsibility_id": "TDRP-R9-MICROTEX-README-TEX-LOGO-SVG-PROVENANCE-001",
       "source_symbols": [
-        "desktop-app/MicroTeX:readme/tex_logo.svg@33647d95ba36e42839ac5a2469464c8cde2b6c99 — mode 100644, 1,298 ASCII bytes / 20 split-line slots including terminal LF slot, 61pt x 22pt, viewBox 0 0 61 22",
+        "desktop-app/MicroTeX:readme/tex_logo.svg@33647d95ba36e42839ac5a2469464c8cde2b6c99 \u2014 mode 100644, 1,298 ASCII bytes / 20 split-line slots including terminal LF slot, 61pt x 22pt, viewBox 0 0 61 22",
         "accepted SVG structure: 3 symbol, 3 path, 3 use, 1 g, 3 unique ids; all 3 xlink:href local and resolved; zero text/script/image/foreignObject/style/font-face/external href/DOCTYPE/comments",
         "accepted and creation resolve the identical blob 33647d95ba36e42839ac5a2469464c8cde2b6c99",
         "exact-path history is exhausted at one commit: 63555c2e902a42bfad457d3d58a4a24c5c51c53e creates the target; page 2 is empty; creation parent c85c84194835439319981a38485dc3fa4e8d4236 lacks the target",
@@ -62591,7 +62591,7 @@
       "module_id": "tdesktop.thirdparty.microtex.res-clatexmath-res-root",
       "responsibility_id": "TDRP-R9-MICROTEX-RES-CLATEXMATH-RES-ROOT-PROVENANCE-001",
       "source_symbols": [
-        "desktop-app/MicroTeX:res/.clatexmath-res_root@e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 — mode 100644, exact zero-byte Git blob",
+        "desktop-app/MicroTeX:res/.clatexmath-res_root@e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 \u2014 mode 100644, exact zero-byte Git blob",
         "single exact-path creation 3bdd94b9b7263e1a30325d75aafe275a2f00fc45; page 2 empty; parent cd291c031d5b7c3b20fa739501dc36ff53665e65 lacks target",
         "creation changes exactly meson.build, meson_options.txt, res/.clatexmath-res_root, src/latex.cpp, src/latex.h",
         "queryResourceLocation probes custom/CLM_DEVEL/XDG_DATA_HOME/XDG_DATA_DIRS/HOME/system roots by marker existence",
@@ -62884,7 +62884,7 @@
       "module_id": "tdesktop.thirdparty.microtex.res-res-readme",
       "responsibility_id": "TDRP-R9-MICROTEX-RES-README-PROVENANCE-001",
       "source_symbols": [
-        "desktop-app/MicroTeX:res/RES_README@386c018fee9c3fd41cd42860bd0c1c33ef61a9ee — 1,661 bytes / 73 unique newline-delimited resource paths",
+        "desktop-app/MicroTeX:res/RES_README@386c018fee9c3fd41cd42860bd0c1c33ef61a9ee \u2014 1,661 bytes / 73 unique newline-delimited resource paths",
         "73/73 entries resolve to pinned-tree blobs: 3 license texts + 46 TTF + 24 XML",
         "exact history e45a487 creation/page2 empty; parent bab5cff tree truncated=false/217 and target absent; creation 90 paths",
         "exact qrc overlap 30; remaining 43 = 3 license texts + 20 Greek + 20 Cyrillic; bundled.qrc excludes Greek/Cyrillic"
@@ -63150,7 +63150,7 @@
       "module_id": "tdesktop.thirdparty.microtex.res-samples-tex",
       "responsibility_id": "TDRP-R9-MICROTEX-RES-SAMPLES-TEX-PROVENANCE-001",
       "source_symbols": [
-        "desktop-app/MicroTeX:res/SAMPLES.tex@e03f0088e3fba1d225b90d06d586f32c5f70310b — mode 100644, 9,933 bytes / 9,549 UTF-8 characters / 262 line slots",
+        "desktop-app/MicroTeX:res/SAMPLES.tex@e03f0088e3fba1d225b90d06d586f32c5f70310b \u2014 mode 100644, 9,933 bytes / 9,549 UTF-8 characters / 262 line slots",
         "11 pure-percent separator lines -> exactly 12 ordered non-empty sample blocks; decoded block lengths 360,929,1562,2259,433,208,228,595,283,1080,250,217",
         "Samples::readSamples defaults to LaTeX::getResRootPath()/SAMPLES.tex; separator iff non-space line is all '%' characters; blank/space-only lines are discarded",
         "Headless::runBatch requires outputdir; zero samples -> failure; otherwise emits prefix+index.svg",
@@ -63432,7 +63432,7 @@
       "module_id": "tdesktop.thirdparty.microtex.res-bundled-qrc",
       "responsibility_id": "TDRP-R9-MICROTEX-RES-BUNDLED-QRC-PROVENANCE-001",
       "source_symbols": [
-        "desktop-app/MicroTeX:res/bundled.qrc@303fb6bdf780d66a6e8960a095d17be466b909fa — 2,329 chars / 55 lines / prefix /res / 30 unique TTF entries",
+        "desktop-app/MicroTeX:res/bundled.qrc@303fb6bdf780d66a6e8960a095d17be466b909fa \u2014 2,329 chars / 55 lines / prefix /res / 30 unique TTF entries",
         "30/30 qrc paths resolve to pinned-tree blobs; zero Greek/Cyrillic paths",
         "qrc comment and creation message say 28; manifest truth is 30",
         "Font_qt disk-miss prepends :/",
@@ -63723,7 +63723,7 @@
       "module_id": "tdesktop.thirdparty.microtex.res-cyrillic-license",
       "responsibility_id": "TDRP-R9-MICROTEX-RES-CYRILLIC-LICENSE-PROVENANCE-001",
       "source_symbols": [
-        "desktop-app/MicroTeX:res/cyrillic/LICENSE@f288702d2fa16d3cdf0035b15a9fcbc552cd88e7 — 35,149 bytes / 675 line slots / full GPLv3 text",
+        "desktop-app/MicroTeX:res/cyrillic/LICENSE@f288702d2fa16d3cdf0035b15a9fcbc552cd88e7 \u2014 35,149 bytes / 675 line slots / full GPLv3 text",
         "GPLv3 complete: title, preamble, sections 0..17, END OF TERMS AND CONDITIONS, application appendix",
         "exact history one 59f45372bed05c743f9a37a67a18be71e5521d87; page2 empty; creation only res/cyrillic/LICENSE",
         "parent 4658e41a97ba1b499c4085f4611304c8f1e857ca recursive tree truncated=false/275 and target absent",
@@ -64007,7 +64007,7 @@
       "module_id": "tdesktop.thirdparty.microtex.res-cyrillic-cyrillic-map-xml",
       "responsibility_id": "TDRP-R9-MICROTEX-RES-CYRILLIC-MAP-XML-PROVENANCE-001",
       "source_symbols": [
-        "desktop-app/MicroTeX:res/cyrillic/cyrillic.map.xml@5431dc86108e722f7899fbf3db4db7af67badcc4 — 5,472 bytes / 101 line slots / 93 unique SymbolMapping entries",
+        "desktop-app/MicroTeX:res/cyrillic/cyrillic.map.xml@5431dc86108e722f7899fbf3db4db7af67badcc4 \u2014 5,472 bytes / 101 line slots / 93 unique SymbolMapping entries",
         "93/93 entries have unique name and codepoint and fontId=wnr10",
         "language_cyrillic.xml includes cyrillic.map.xml and wnr10.xml",
         "mappings_cyrillic.xml maps Unicode codepoints to the symbol names consumed by cyrillic.map.xml",
@@ -64315,7 +64315,7 @@
       "module_id": "tdesktop.thirdparty.microtex.res-cyrillic-language-xml",
       "responsibility_id": "TDRP-R9-MICROTEX-RES-CYRILLIC-LANGUAGE-XML-PROVENANCE-001",
       "source_symbols": [
-        "language_cyrillic.xml@b638f957889b97b24d1f6d98c615e4290acab1a8 — 579 bytes / 28 line slots",
+        "language_cyrillic.xml@b638f957889b97b24d1f6d98c615e4290acab1a8 \u2014 579 bytes / 28 line slots",
         "1 SymbolMappings -> cyrillic.map.xml",
         "8 Metrics -> wnr10/wnti10/wntt10/wnss10/wnssi10/wnssbx10/wnbx10/wnbxti10.xml",
         "1 TeXSymbols -> symbols_cyrillic.xml",
@@ -64610,11 +64610,11 @@
       "module_id": "tdesktop.thirdparty.microtex.res-cyrillic-mappings-xml",
       "responsibility_id": "TDRP-R9-MICROTEX-RES-CYRILLIC-MAPPINGS-XML-PROVENANCE-001",
       "source_symbols": [
-        "mappings_cyrillic.xml@15d7f60b319e8f7ca6b6c35824d4e7c2948e11ee — 4556 bytes / 117 line slots",
-        "CharacterToSymbolMappings — 91 entries / 91 unique chars / 91 unique symbols",
-        "CharacterToFormulaMappings — 13 entries / 11 unique chars",
-        "char 1027 formula source order — \\'\\CYRG, \\'\\CYRG, \\'\\CYRK",
-        "historical character-keyed assignment — ordered last-write-wins; char 1027 final \\'\\CYRK",
+        "mappings_cyrillic.xml@15d7f60b319e8f7ca6b6c35824d4e7c2948e11ee \u2014 4556 bytes / 117 line slots",
+        "CharacterToSymbolMappings \u2014 91 entries / 91 unique chars / 91 unique symbols",
+        "CharacterToFormulaMappings \u2014 13 entries / 11 unique chars",
+        "char 1027 formula source order \u2014 \\'\\CYRG, \\'\\CYRG, \\'\\CYRK",
+        "historical character-keyed assignment \u2014 ordered last-write-wins; char 1027 final \\'\\CYRK",
         "historical TeXFormula::addSymbolMappings parses symbol and formula sections",
         "accepted Formula::addSymbolMappings(file) throws ex_invalid_state because XML loaders are removed",
         "accepted external-font/TextRenderingAtom fallback remains",
@@ -64925,12 +64925,12 @@
       "module_id": "tdesktop.thirdparty.microtex.res-cyrillic-symbols-xml",
       "responsibility_id": "TDRP-R9-MICROTEX-RES-CYRILLIC-SYMBOLS-XML-PROVENANCE-001",
       "source_symbols": [
-        "symbols_cyrillic.xml@80e88bf296d68d4f0d65e4b502f1a60f6281626f — 3577 bytes / 105 line slots",
-        "TeXSymbols — 95 Symbol entries / 93 unique names",
-        "symbol types — 93 ord / 2 acc",
-        "duplicate CYRE — source positions 9 and 13, both ord",
-        "duplicate cyre — source positions 43 and 47, both ord",
-        "historical TeXSymbolParser::readSymbols — source-ordered map assignment / last-write-wins",
+        "symbols_cyrillic.xml@80e88bf296d68d4f0d65e4b502f1a60f6281626f \u2014 3577 bytes / 105 line slots",
+        "TeXSymbols \u2014 95 Symbol entries / 93 unique names",
+        "symbol types \u2014 93 ord / 2 acc",
+        "duplicate CYRE \u2014 source positions 9 and 13, both ord",
+        "duplicate cyre \u2014 source positions 43 and 47, both ord",
+        "historical TeXSymbolParser::readSymbols \u2014 source-ordered map assignment / last-write-wins",
         "historical DefaultTeXFontParser::parseExtraPath -> SymbolAtom::addSymbolAtom(file)",
         "accepted addTeXFontDescription throws ex_alphabet_registration because XML loaders are removed",
         "accepted built-in tex_symbols has zero CYRA/cyrbreve definitions",
@@ -65254,9 +65254,9 @@
       "module_id": "tdesktop.thirdparty.microtex.res-cyrillic-wnbx10-ttf",
       "responsibility_id": "TDRP-R9-MICROTEX-RES-CYRILLIC-WNBX10-TTF-PROVENANCE-001",
       "source_symbols": [
-        "wnbx10.ttf@5a79b6d484953b3664ae4875afc06139b56a2dc0 — 31940 bytes / sfnt 15 tables / 98 glyphs / unitsPerEm 1000 / OS/2 fsType 0",
+        "wnbx10.ttf@5a79b6d484953b3664ae4875afc06139b56a2dc0 \u2014 31940 bytes / sfnt 15 tables / 98 glyphs / unitsPerEm 1000 / OS/2 fsType 0",
         "name family/full=TDesktop wnbx10; unique/PostScript=TDesktop-wnbx10; no name IDs 13/14",
-        "root 17f3fc78 blob 436ff077793a52495d39927068f43e09dd35d394 — 31824 bytes / family wnbx10",
+        "root 17f3fc78 blob 436ff077793a52495d39927068f43e09dd35d394 \u2014 31824 bytes / family wnbx10",
         "c1546216 Attempt to force our fonts -> current blob; c154 parent still root blob",
         "root->current table delta is name + head checksumAdjustment only; glyph/layout table records unchanged",
         "wnbx10.xml@3e42b024a4d96f96a650babd183e58c31a02d31a binds name=wnbx10.ttf id=wnbx10 unicode=95",
@@ -65568,7 +65568,7 @@
       "module_id": "tdesktop.thirdparty.microtex.res-cyrillic-wnbx10-xml",
       "responsibility_id": "TDRP-R9-MICROTEX-RES-CYRILLIC-WNBX10-XML-PROVENANCE-001",
       "source_symbols": [
-        "wnbx10.xml@3e42b024a4d96f96a650babd183e58c31a02d31a — 25643 bytes / 616 lines",
+        "wnbx10.xml@3e42b024a4d96f96a650babd183e58c31a02d31a \u2014 25643 bytes / 616 lines",
         "Font(name=wnbx10.ttf,id=wnbx10,space=0.383331,xHeight=0.444445,quad=1.149994,unicode=95,itVersion=wnbxti10,ssVersion=wnssbx10,ttVersion=wntt10)",
         "95 Char records / 95 unique codes / range 171..1141",
         "416 Kern records: -0.031944 x266; -0.095833 x117; -0.127777 x13; -0.063889 x19; +0.031944 x1",
@@ -65892,9 +65892,9 @@
       "module_id": "tdesktop.thirdparty.microtex.res-cyrillic-wnbxti10-ttf",
       "responsibility_id": "TDRP-R9-MICROTEX-RES-CYRILLIC-WNBXTI10-TTF-PROVENANCE-001",
       "source_symbols": [
-        "wnbxti10.ttf@e85a2a442738554dc728a75546d10fd6fef419d1 — 52160 bytes / sfnt 15 tables / 98 glyphs / unitsPerEm 1000 / OS/2 fsType 0",
+        "wnbxti10.ttf@e85a2a442738554dc728a75546d10fd6fef419d1 \u2014 52160 bytes / sfnt 15 tables / 98 glyphs / unitsPerEm 1000 / OS/2 fsType 0",
         "name family/full=TDesktop wnbxti10; subfamily=Regular; unique=TDesktop-wnbxti10:Version 1.001; PostScript=TDesktop-wnbxti10; no name IDs 13/14",
-        "root 17f3fc78 blob d7b5cb69ae108e64f2de62b72442d237e98a5bc4 — 52028 bytes / family/full/unique/PostScript wnbxti10",
+        "root 17f3fc78 blob d7b5cb69ae108e64f2de62b72442d237e98a5bc4 \u2014 52028 bytes / family/full/unique/PostScript wnbxti10",
         "c1546216 Attempt to force our fonts -> current blob; c154 parent 43904b5cbae8154f041209eea6d13f7c8c4ffd6e still holds root blob",
         "root->current table delta is name 612->741 bytes plus head checksumAdjustment only; glyf/loca/hmtx/cmap/GDEF/GPOS/GSUB/OS/2/maxp/hhea/post unchanged",
         "sfnt style metadata remains Regular: OS/2 weight=400/fsSelection=64, head.macStyle=0, post.italicAngle=0",
@@ -66213,7 +66213,7 @@
       "module_id": "tdesktop.thirdparty.microtex.res-cyrillic-wnbxti10-xml",
       "responsibility_id": "TDRP-R9-MICROTEX-RES-CYRILLIC-WNBXTI10-XML-PROVENANCE-001",
       "source_symbols": [
-        "wnbxti10.xml@de5036e7cec6e7cfdda57f63ed2be550aa04781f — 31184 bytes / 708 lines",
+        "wnbxti10.xml@de5036e7cec6e7cfdda57f63ed2be550aa04781f \u2014 31184 bytes / 708 lines",
         "Font(name=wnbxti10.ttf,id=wnbxti10,space=0.414441,xHeight=0.444445,quad=1.182211,unicode=95,romanVersion=wnbx10,ttVersion=wntt10,ssVersion=wnssbx10)",
         "95 Char records / 95 unique codes / range 171..1141",
         "512 Kern records: -0.029445 x325; -0.088333 x128; -0.117777 x35; -0.058888 x23; +0.029445 x1",
@@ -66548,9 +66548,9 @@
       "module_id": "tdesktop.thirdparty.microtex.res-cyrillic-wnr10-ttf",
       "responsibility_id": "TDRP-R9-MICROTEX-RES-CYRILLIC-WNR10-TTF-PROVENANCE-001",
       "source_symbols": [
-        "wnr10.ttf@a93586f1efd00c4009b72fc63a365661ce461435 — 36196 bytes / sfnt 15 tables / 98 glyphs / unitsPerEm 1000 / OS/2 fsType 0",
+        "wnr10.ttf@a93586f1efd00c4009b72fc63a365661ce461435 \u2014 36196 bytes / sfnt 15 tables / 98 glyphs / unitsPerEm 1000 / OS/2 fsType 0",
         "name family/full=TDesktop wnr10; subfamily=Regular; unique=TDesktop-wnr10:Version 1.001; PostScript=TDesktop-wnr10; no name IDs 13/14",
-        "root 17f3fc78 blob b13a442c026d8520a0cb02ab755e297c484b19b1 — 36084 bytes / family wnr10",
+        "root 17f3fc78 blob b13a442c026d8520a0cb02ab755e297c484b19b1 \u2014 36084 bytes / family wnr10",
         "c1546216 Attempt to force our fonts -> current blob; c154 parent 43904b5cbae8154f041209eea6d13f7c8c4ffd6e retains root blob; c154 blob equals pinned",
         "root->current semantic table delta is name 603->714 bytes plus head checksumAdjustment only; glyf/loca/hmtx/cmap/GDEF/GPOS/GSUB/OS/2/maxp/hhea/post unchanged",
         "head bounds (-41,-205)..(1152,868), macStyle=0; OS/2 v3 weight=400 width=5 fsSelection=64; hhea 98 metrics; post italicAngle=0",
@@ -66869,7 +66869,7 @@
       "module_id": "tdesktop.thirdparty.microtex.res-cyrillic-wnr10-xml",
       "responsibility_id": "TDRP-R9-MICROTEX-RES-CYRILLIC-WNR10-XML-PROVENANCE-001",
       "source_symbols": [
-        "wnr10.xml@319d5db2d3ab2471d565e77e83dfdd29450fb106 — 25900 bytes / 616 lines",
+        "wnr10.xml@319d5db2d3ab2471d565e77e83dfdd29450fb106 \u2014 25900 bytes / 616 lines",
         "root 17f3fc7816e4de1f5764036f34d759d50098ae58 / c1546216f32d398dca90e1dc33df34842683ec42 / pinned 61aaa7cc354de91d5898ffb0b2a6c62628d9a76f all resolve to the same 319d5db2 blob and bytes; exact-path history is root init only",
         "Font(name=wnr10.ttf,id=wnr10,space=0.333334,xHeight=0.430555,quad=1.000003,unicode=95,boldVersion=wnbx10,ssVersion=wnss10,ttVersion=wntt10,itVersion=wnti10)",
         "95 Char records / 95 unique codes / range 171..1141; width 0.277779..1.194448; height 0.430555..0.891615; depth 0..0.194445; italic 0..0.013888",
@@ -67528,7 +67528,7 @@
       "module_id": "tdesktop.thirdparty.microtex.res-cyrillic-wnss10-xml",
       "responsibility_id": "TDRP-R9-MICROTEX-RES-CYRILLIC-WNSS10-XML-PROVENANCE-001",
       "source_symbols": [
-        "wnss10.xml@660c29af27ddab8188fcc7594bae0941cc45d9f6 — 25262 bytes / 606 lines",
+        "wnss10.xml@660c29af27ddab8188fcc7594bae0941cc45d9f6 \u2014 25262 bytes / 606 lines",
         "root 17f3fc7816e4de1f5764036f34d759d50098ae58 / c1546216f32d398dca90e1dc33df34842683ec42 / pinned 61aaa7cc354de91d5898ffb0b2a6c62628d9a76f all resolve to the same 660c29af blob and bytes; exact-path history is root init only",
         "Font(name=wnss10.ttf,id=wnss10,space=0.333334,xHeight=0.444445,quad=1.000003,unicode=95,romanVersion=wnr10,ttVersion=wntt10,boldVersion=wnssbx10,itVersion=wnssi10)",
         "95 Char records / 95 unique codes / range 171..1141; width 0.23889..1.111117; height 0.438889..0.902727; depth 0..0.194445; italic 0..0.019444",
@@ -68186,7 +68186,7 @@
       "module_id": "tdesktop.thirdparty.microtex.res-cyrillic-wnssbx10-xml",
       "responsibility_id": "TDRP-R9-MICROTEX-RES-CYRILLIC-WNSSBX10-XML-PROVENANCE-001",
       "source_symbols": [
-        "wnssbx10.xml@9fefc1c78c8b4bb1406173b8ac491c11f030a076 — 25211 bytes / 606 lines",
+        "wnssbx10.xml@9fefc1c78c8b4bb1406173b8ac491c11f030a076 \u2014 25211 bytes / 606 lines",
         "root 17f3fc7816e4de1f5764036f34d759d50098ae58 / c154 parent 43904b5cbae8154f041209eea6d13f7c8c4ffd6e / c1546216f32d398dca90e1dc33df34842683ec42 / pinned 61aaa7cc354de91d5898ffb0b2a6c62628d9a76f all resolve to the same 9fefc1c7 blob and bytes; exact-path history is root init only",
         "Font(name=wnssbx10.ttf,id=wnssbx10,space=0.366669,xHeight=0.458333,quad=1.100006,unicode=95,romanVersion=wnbx10,ttVersion=wntt10)",
         "95 Char records / 95 unique codes / range 171..1141; width 0.255557..1.250008; height 0.458333..0.902727; depth 0..0.194445; italic 0..0.02139",
@@ -69483,6 +69483,341 @@
       "license_and_provenance": "wnti10.ttf is under res/cyrillic. MicroTeX README excludes fonts and XML resources under res from the project MIT blanket; res/cyrillic/LICENSE is GPLv3 provenance. Standalone Meson/legacy latex.qrc include the TTF, while accepted tdesktop bundled shipping excludes the Cyrillic XML/font resource set. OS/2 fsType=0 is embedding metadata, not license authority.",
       "reviewer": "primary-session",
       "notes": "Strict238 WNTI10 TTF/font-metrics/style/parser/runtime/license/install/packaging provenance. Counters unknown=16138 unread=16113 omitted=0 responsibilities=256. Root/c154-parent are 51164-byte eb5217f6; c154/pinned are 51280-byte 1dd164b2; c154 changes name namespace plus head checksum only. Adjacent wnti10.xml is 31229 bytes/708 lines with 95 Char/512 Kern/36 Lig and roman=wnr10/bold=wnbxti10/ss=wnssi10/tt=wntt10. Parent b0eb1da1 exact-head TDRP 40212507141 is 30/30 success and Rust 40212507186 is 6/6 success. Next deterministic non-directory entry is res/cyrillic/wnti10.xml@55046e15cbd13b5ceaed2ea6955cd378f6167599."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/MicroTeX",
+      "source_blob_sha": "61aaa7cc354de91d5898ffb0b2a6c62628d9a76f",
+      "source_kind": "recursive_child_repository_cyrillic_xml_font_metrics_style_parser_runtime_license_install_packaging_provenance",
+      "module_id": "tdesktop.thirdparty.microtex.res-cyrillic-wnti10-xml",
+      "responsibility_id": "TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-PROVENANCE-001",
+      "source_symbols": [
+        "wnti10.xml@55046e15cbd13b5ceaed2ea6955cd378f6167599 - 31229 bytes / 708 lines; root/c154-parent/c154/pinned byte-identical",
+        "exact-path history has exactly root 17f3fc7816e4de1f5764036f34d759d50098ae58 init; c154 changes adjacent TTF namespace, not this XML",
+        "Font name=wnti10.ttf id=wnti10 space=0.357776 xHeight=0.430555 quad=1.022217 unicode=95 romanVersion=wnr10 boldVersion=wnbxti10 ssVersion=wnssi10 ttVersion=wntt10",
+        "95 Char / 95 unique codes 171..1141; width 0.306665..1.152216; height 0.430555..0.891615; depth 0..0.194445 (12 nonzero); italic 0..0.183611 (93 nonzero)",
+        "512 Kern: -0.025556 x325, -0.076666 x128, -0.1022215 x35, -0.051111 x23, +0.025556 x1; 36 Lig",
+        "style reciprocity: wnr10.itVersion=wnti10; wnssi10.romanVersion=wnti10; language_cyrillic.xml includes wnti10.xml",
+        "historical FontInfo preserves style ids and lazily Font::create(_path, Formula::PIXELS_PER_POINT)",
+        "accepted addTeXFontDescription throws/fences ex_alphabet_registration; generic Formula::getExternalFont fallback uses SansSerif/Serif rather than WNTI10 XML metrics",
+        "RES_README/Meson/legacy latex.qrc include/install target; accepted bundled.qrc excludes Cyrillic/Greek",
+        "MicroTeX README excludes res fonts/XML from MIT blanket; res/cyrillic/LICENSE is GPLv3 provenance"
+      ],
+      "capability_ids": [
+        "CAP-DEPENDENCY-SOURCE-PROVENANCE",
+        "CAP-RUNTIME-RESOURCE-PROVENANCE",
+        "CAP-FONT-RESOURCE-PROVENANCE",
+        "CAP-DEPENDENCY-LICENSE-PROVENANCE",
+        "CAP-DEPENDENCY-BUILD-INSTALL-PROVENANCE",
+        "CAP-DEPENDENCY-PACKAGING-BOUNDARY-PROVENANCE"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/MicroTeX@61aaa7cc354de91d5898ffb0b2a6c62628d9a76f",
+        "desktop-app/MicroTeX:res/cyrillic/wnti10.xml@55046e15cbd13b5ceaed2ea6955cd378f6167599",
+        "desktop-app/MicroTeX:res/cyrillic/wnti10.ttf@1dd164b2a3602494a1418eb16aca22d298b01ebd",
+        "desktop-app/MicroTeX:res/cyrillic/wnti10.ttf@eb5217f6c6b9d1a3a99fbbcf0840b8188bfb8a7a",
+        "desktop-app/MicroTeX:17f3fc7816e4de1f5764036f34d759d50098ae58",
+        "desktop-app/MicroTeX:c1546216f32d398dca90e1dc33df34842683ec42",
+        "desktop-app/MicroTeX:43904b5cbae8154f041209eea6d13f7c8c4ffd6e",
+        "desktop-app/MicroTeX:res/cyrillic/wnr10.xml@319d5db2d3ab2471d565e77e83dfdd29450fb106",
+        "desktop-app/MicroTeX:res/cyrillic/wnbxti10.xml@de5036e7cec6e7cfdda57f63ed2be550aa04781f",
+        "desktop-app/MicroTeX:res/cyrillic/wnssi10.xml@5c2318c66e402f47c05ffb67015bcff0780523a8",
+        "desktop-app/MicroTeX:res/cyrillic/wntt10.xml@4baea371bade60de759650135b4773fbf2f28ee2",
+        "desktop-app/MicroTeX:res/cyrillic/language_cyrillic.xml@b638f957889b97b24d1f6d98c615e4290acab1a8",
+        "desktop-app/MicroTeX:src/fonts/font_info.cpp@f957a586e157f5a192498dd14bf3d609ca4738c8",
+        "desktop-app/MicroTeX:src/fonts/fonts.cpp@21ab54c071a72db3d13ecfb89561bc8ffa149c5b",
+        "desktop-app/MicroTeX:src/fonts/alphabet.cpp@e9604b6ac6e73d2a2f6017f4164675a2121cf891",
+        "desktop-app/MicroTeX:src/core/formula.cpp@c4781c1da1369d71f4f303cd341709dda5ecb303",
+        "desktop-app/MicroTeX:res/RES_README@386c018fee9c3fd41cd42860bd0c1c33ef61a9ee",
+        "desktop-app/MicroTeX:latex.qrc@cf58a5aea4e53ed0e76ce3de2bbd9ab821af3270",
+        "desktop-app/MicroTeX:meson.build@d9968045f0162b8f1f8f518f554fd71199f067d5",
+        "desktop-app/MicroTeX:res/bundled.qrc@303fb6bdf780d66a6e8960a095d17be466b909fa",
+        "desktop-app/MicroTeX:README.md@824af04fd8607532efed3f73752b81e5093577ef",
+        "desktop-app/MicroTeX:res/cyrillic/LICENSE@f288702d2fa16d3cdf0035b15a9fcbc552cd88e7",
+        "telegramdesktop/tdesktop:Telegram/SourceFiles/iv/markdown/iv_markdown_microtex.cpp@5c854b265e6dc67c1c500a72e04fa58b7fc6c3a2",
+        "telegramdesktop/tdesktop:Telegram/CMakeLists.txt@2ea9badfc5750b9b4eab111052faafe946fea277",
+        "telegramdesktop/tdesktop:Telegram/build/build_mac.py@881a1c212486976b318777b7f6e5c944da2bd5d3"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microtex-res-cyrillic-wnti10-xml-complete-read.md",
+      "behavior_contract": "Preserve exact WNTI10 XML metric/shaping semantics, TTF path binding, style-version graph, historical lazy FontInfo behavior, accepted XML-loader-disabled/default-font fallback, install/license/packaging boundaries, without introducing a source-specific Fabushi font runtime.",
+      "state_machine": "Historical Cyrillic registration -> language_cyrillic.xml -> wnti10.xml -> FontInfo(path=wnti10.ttf, style ids roman=wnr10/bold=wnbxti10/ss=wnssi10/tt=wntt10) -> lazy Font::create. c154 namespaces the adjacent TTF family/PostScript names while keeping this XML unchanged. Accepted registration -> addTeXFontDescription throws -> addAlphabet fences -> no WNTI10 XML FontInfo; non-Latin parser may use Formula::getExternalFont default SansSerif/Serif. Accepted bundled qrc excludes the XML and TTF.",
+      "side_effects": [
+        "Historical XML mode materializes per-character dimensions, 512 Kern and 36 Lig relations and style variant ids.",
+        "Historical FontInfo may lazily load the adjacent WNTI10 TTF by path.",
+        "c154 changes the adjacent TTF namespace only; XML path/id/metric/style semantics remain unchanged.",
+        "Accepted runtime does not parse/register WNTI10 XML.",
+        "Standalone Meson/legacy latex.qrc include target; accepted tdesktop bundle excludes it.",
+        "No Fabushi runtime side effect introduced."
+      ],
+      "failure_cases": [
+        "XML/blob drift",
+        "exact-path history misattribution",
+        "Font constant drift",
+        "Char/Kern/Lig cardinality drift",
+        "metric value drift",
+        "style graph loss",
+        "TTF path binding drift",
+        "adjacent TTF namespace change misattributed to XML",
+        "historical loader represented as accepted production",
+        "generic fallback represented as guaranteed WNTI10 rendering",
+        "legacy qrc/install inclusion conflated with accepted shipping",
+        "GPLv3/MIT provenance flattened",
+        "parallel Fabushi font runtime promotion"
+      ],
+      "ui_disposition": "No Fabushi product UI; dependency XML/font-metric/style-loader/resource/license/install/packaging provenance only.",
+      "non_ui_responsibilities": [
+        "exact XML/blob integrity",
+        "font constants",
+        "per-character dimensions",
+        "Kern/Lig shaping relations",
+        "style-version graph",
+        "TTF path binding",
+        "adjacent TTF namespace provenance",
+        "historical lazy FontInfo semantics",
+        "accepted XML-loader-disabled/default-external-font fallback",
+        "accepted bundled-qrc exclusion",
+        "install/legacy qrc provenance",
+        "GPLv3 provenance boundary",
+        "existing-owner-first disposition"
+      ],
+      "platform_delta": "Standalone MicroTeX historically parses wnti10.xml and may load wnti10.ttf; c154 changes only the adjacent TTF family/PostScript namespace, while this XML remains byte-identical. Accepted tdesktop disables XML registration and excludes Cyrillic/Greek from bundled resources.",
+      "existing_owner_candidates": [
+        "Existing TDRP recursive source/resource/font/parser/license/install/packaging/provenance governance (selected)",
+        "Fabushi renderer runtime-assets owner (context)",
+        "Fabushi desktop packaging/release composition (context)",
+        "Fabushi resource/attachment lifecycle (context)",
+        "New MicroTeX/Cyrillic font registry/runtime (rejected)"
+      ],
+      "existing_owner": "Existing TDRP recursive source/resource/font/parser/license/install/packaging/provenance governance.",
+      "rejected_existing_owners": [
+        "Renderer runtime-assets does not own excluded third-party Cyrillic XML metric provenance.",
+        "Desktop packaging/release must not invent a shipping role for XML excluded from accepted bundling.",
+        "Resource/attachment lifecycle does not own third-party XML/font source-history/license truth.",
+        "A source-specific MicroTeX/Cyrillic font runtime would duplicate canonical owners and contradict accepted XML-loader disablement."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/dossiers/upstream-microtex-res-cyrillic-wnti10-xml-complete-read.md"
+      ],
+      "fabushi_target_symbols": [
+        "TDRP_MICROTEX_RES_CYRILLIC_WNTI10_XML_PROVENANCE_001"
+      ],
+      "target_language": "Source-only XML/font-metrics/style-loader/resource/license/install/packaging provenance; no Fabushi shipping implementation.",
+      "language_rationale": "Accepted production strips Cyrillic XML registration and excludes Cyrillic resources from bundled shipping; the responsibility is metric/style/runtime-boundary/license provenance, not a replacement runtime.",
+      "command_event_contracts": [
+        "root/c154-parent/c154/pinned -> wnti10.xml blob 55046e15 / 31229 bytes / 708 lines",
+        "exact-path history -> root init only",
+        "Font -> name wnti10.ttf / id wnti10 / space .357776 / xHeight .430555 / quad 1.022217 / unicode 95",
+        "style -> roman=wnr10 / bold=wnbxti10 / ss=wnssi10 / tt=wntt10; wnr10.itVersion=wnti10; wnssi10.romanVersion=wnti10",
+        "95 Char / 512 Kern / 36 Lig / 12 nonzero depth / 93 nonzero italic",
+        "Kern distribution -0.025556x325 -0.076666x128 -0.1022215x35 -0.051111x23 +0.025556x1",
+        "historical FontInfo -> lazy Font::create(path)",
+        "accepted addTeXFontDescription -> ex_alphabet_registration; generic fallback -> SansSerif/Serif",
+        "RES_README + Meson + legacy latex.qrc include/install res/cyrillic",
+        "accepted bundled.qrc excludes Cyrillic/Greek; tdesktop packaged rcc therefore omits target",
+        "README MIT exclusion -> res/cyrillic GPLv3",
+        "next wntt10.ttf@649e9b1b24b3805646ad7cee71ae6e8d6e73e2c9"
+      ],
+      "state_owner": "Git-tracked third-party WNTI10 XML/font-metric/style-loader provenance only.",
+      "lifecycle_owner": "Pinned dependency font/resource/parser/license/install/package provenance lifecycle; Fabushi product owners remain canonical.",
+      "persistence_and_restart": "Git/install/package artifacts persist XML and provenance; historical FontInfo could cache style ids and a lazily-created font, but accepted production does not register this XML and Fabushi adds no state.",
+      "concurrency_and_cancellation": "Static XML and one-time upstream initialization semantics only; no new Fabushi concurrency.",
+      "security_boundary": "XML identity, shaping metrics, TTF path/style bindings, adjacent TTF namespace provenance, runtime reachability, package exclusion and license provenance remain auditable; generic fallback must not be misrepresented as source-font execution.",
+      "network_service_dependencies": [
+        "GitHub Actions for exact-head evidence"
+      ],
+      "service_owner": "No Fabushi network service owner.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-xml-font-metrics-style-parser-runtime-license-install-packaging-provenance-mapped-open",
+      "blockers": [
+        "No Fabushi production closure claimed for accepted-unreachable source-specific Cyrillic XML metrics.",
+        "Broader recursive source closure remains open.",
+        "Fresh receipt-head Actions required.",
+        "Independent release acceptance remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "Pre-write independent strict239 responsibility row count=0.",
+        "Pinned/root/c154-parent/c154 WNTI10 XML fully read; all resolve blob 55046e15, 31229 bytes, 708 lines.",
+        "Exact-path history endpoint returns only root 17f3fc78 init.",
+        "Font constants and 95 unique Char codes 171..1141 independently parsed; width 0.306665..1.152216, height 0.430555..0.891615, 12 nonzero depth and 93 nonzero italic.",
+        "512 Kern / 36 Lig independently counted; Kern value distribution independently computed.",
+        "wnr10/wnbxti10/wnssi10/wntt10 and language_cyrillic style/include graph re-read.",
+        "Pinned FontInfo/fonts/alphabet/formula loader and fallback semantics re-read.",
+        "RES_README/Meson/latex.qrc/bundled.qrc/README/LICENSE and accepted tdesktop rcc packaging path re-read.",
+        "Parent 2fa0a0d8 exact-head: TDRP 40214093535 30/30 success including source authority 121231364510; Rust 40214093545 6/6 success including rust-host 121231365052; Official MCP 40214093561 1/1 success."
+      ],
+      "target_commit": "2fa0a0d811ea04247a13495284919fc46a1e456c",
+      "workflow_run": 40214093535,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12606159782,
+      "artifact_digest": "sha256:8c2ada2d0292d785faff0c54f467089ecf1c5e6d9abf27eb0045e39fdc1d8063",
+      "composition_root": "Existing TDRP recursive source/resource/font/parser/license/install/packaging/provenance governance.",
+      "composition_slot": "Dependency Cyrillic XML/font-metric/style-loader/resource/license/install/package boundary only; no Fabushi shipping slot.",
+      "capability_component": "MicroTeX wnti10.xml exact metric/shaping/style/runtime-boundary and packaging provenance.",
+      "variation_axes": [
+        "31229-byte immutable XML across root/c154-parent/c154/pinned",
+        "95 Char/512 Kern/36 Lig",
+        "space .357776/xHeight .430555/quad 1.022217",
+        "roman=wnr10/bold=wnbxti10/ss=wnssi10/tt=wntt10",
+        "12 nonzero depth/93 nonzero italic records",
+        "adjacent TTF c154 namespace rewrite while XML stays unchanged",
+        "historical XML registration vs accepted stripped loader/default fallback",
+        "legacy qrc + standalone install vs accepted bundle exclusion",
+        "GPLv3 subtree provenance vs MIT blanket"
+      ],
+      "shared_owner_contracts": [
+        "TDRP recursive provenance",
+        "Pinned MicroTeX tree",
+        "Accepted tdesktop production composition",
+        "Fabushi quality/evidence contracts",
+        "Fabushi runtime-assets/resource/package/release owners",
+        "GitHub Actions exact-head evidence"
+      ],
+      "duplicate_root_check": "No MicroTeX/Cyrillic font registry/runtime, second Resource owner, second font store, second license store, second packaging root or Telegram runtime.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "No Fabushi product action.",
+      "detail_section": "Not applicable",
+      "capability_surface": "Source-only third-party Cyrillic XML/font-loader/license/resource/install/packaging provenance surface.",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "No Fabushi accessibility surface.",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Any target blob/size, exact-path history, metric cardinality/value, TTF path/style graph, adjacent TTF namespace attribution, historical FontInfo binding, accepted fallback, install/shipping/license/owner drift requires exact-ref reconciliation.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No Fabushi asset change.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-EXACT-SOURCE-001",
+        "ORA-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-HISTORY-001",
+        "ORA-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-FONT-CONSTANTS-001",
+        "ORA-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-METRICS-001",
+        "ORA-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-KERN-LIG-001",
+        "ORA-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-STYLE-VERSION-001",
+        "ORA-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-HISTORICAL-FONTINFO-001",
+        "ORA-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-ACCEPTED-FALLBACK-001",
+        "ORA-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-INSTALL-001",
+        "ORA-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-SHIPPING-EXCLUSION-001",
+        "ORA-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-LICENSE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-31229-708-001",
+        "INV-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-95-CHAR-001",
+        "INV-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-512-KERN-36-LIG-001",
+        "INV-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-ROOT-C154-PINNED-UNCHANGED-001",
+        "INV-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-TTF-PATH-BINDING-001",
+        "INV-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-STYLE-GRAPH-001",
+        "INV-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-DORMANT-ACCEPTED-001",
+        "INV-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-NOT-BUNDLED-001",
+        "INV-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-NO-PARALLEL-OWNER-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-PINNED-SOURCE-001",
+        "CONTRACT-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-HISTORY-001",
+        "CONTRACT-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-METRIC-TABLE-001",
+        "CONTRACT-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-STYLE-VERSION-001",
+        "CONTRACT-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-HISTORICAL-FONTINFO-001",
+        "CONTRACT-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-ACCEPTED-FALLBACK-001",
+        "CONTRACT-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-SHIPPING-BOUNDARY-001",
+        "CONTRACT-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-LICENSE-BOUNDARY-001",
+        "CONTRACT-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-SOURCE-DRIFT-001",
+        "FAULT-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-HISTORY-MISATTRIBUTION-001",
+        "FAULT-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-FONT-CONSTANT-DRIFT-001",
+        "FAULT-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-METRIC-CARDINALITY-DRIFT-001",
+        "FAULT-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-KERN-LIG-DRIFT-001",
+        "FAULT-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-STYLE-LINK-LOSS-001",
+        "FAULT-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-TTF-BINDING-DRIFT-001",
+        "FAULT-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-TTF-NAMESPACE-MISATTRIBUTION-001",
+        "FAULT-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-HISTORICAL-AS-PRODUCTION-001",
+        "FAULT-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-FALLBACK-AS-GUARANTEED-RENDER-001",
+        "FAULT-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-LATEX-QRC-AS-SHIPPING-001",
+        "FAULT-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-INSTALL-SHIPPING-CONFLATION-001",
+        "FAULT-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-LICENSE-FLATTENING-001",
+        "FAULT-TDRP-R9-MICROTEX-RES-CYRILLIC-WNTI10-XML-RUNTIME-PROMOTION-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "Pinned WNTI10 XML blob",
+        "Root/c154-parent/c154/pinned WNTI10 XML identity",
+        "Pinned WNTI10 XML metric/style graph",
+        "Pinned adjacent WNTI10 TTF path/namespace binding",
+        "Pinned historical FontInfo semantics",
+        "Pinned accepted XML-loader/default-external-font fallback",
+        "Pinned RES_README/Meson/latex.qrc/bundled.qrc/license boundaries",
+        "Accepted tdesktop external_microtex_bundled.rcc composition",
+        "Live Fabushi existing owners"
+      ],
+      "test_environment_ids": [
+        "Pinned MicroTeX tree",
+        "Accepted tdesktop shipping boundary",
+        "Live Fabushi exact-head authority",
+        "GitHub Actions exact-head TDRP/Rust/MCP"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "wnti10.xml is under res/cyrillic. MicroTeX README excludes fonts and XML resources under res from the project MIT blanket; res/cyrillic/LICENSE is GPLv3 provenance. Standalone Meson/legacy latex.qrc include the XML, while accepted tdesktop bundled shipping excludes the Cyrillic XML-loader resource set.",
+      "reviewer": "primary-session",
+      "notes": "Strict239 WNTI10 XML/font-metrics/style/parser/runtime/license/install/packaging provenance. Counters unknown=16137 unread=16112 omitted=0 responsibilities=257. root/c154-parent/c154/pinned are byte-identical 31229-byte blob 55046e15 with root-only exact-path history; 95 Char/512 Kern/36 Lig, roman=wnr10/bold=wnbxti10/ss=wnssi10/tt=wntt10, 12 nonzero depth/93 nonzero italic. Parent 2fa0a0d8 TDRP 40214093535 30/30, Rust 40214093545 6/6 and MCP 40214093561 1/1 are terminal-success. Next res/cyrillic/wntt10.ttf@649e9b1b24b3805646ad7cee71ae6e8d6e73e2c9."
     }
   ]
 }
