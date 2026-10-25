@@ -78,3 +78,27 @@ Zero methods remain unhandled or fall back to an external runtime.
 10. `test_ocrm_node_o03_node_list_includes_sand_local_node_and_paired_devices`: Verifies roster includes local host node and approved paired devices.
 11. `test_ocrm_node_o04_node_status_local_and_remote`: Verifies active status of local node and approved devices, plus 400 BadRequest for unknown nodes.
 12. `test_ocrm_node_o05_node_invoke_contract_and_security`: Verifies argument validation, local command invocation, and rejection of unconnected nodes.
+
+---
+
+## 5. GitHub Actions Verification Receipts
+
+- **Tested Commit SHA**: `0bf05a9fe47098cbef0728c89b7cf395d9e504c5`
+- **Workflow Run**: [GitHub Actions Run 40221028279](https://github.com/bhrumom/fabushi-desktop/actions/runs/40221028279) (`Rust desktop runtime`)
+- **Overall Status**: `completed`
+- **Overall Conclusion**: `success`
+- **Matrix Job Receipts**:
+  - `renderer`: `completed` (`success`)
+  - `Pressure profiler / ubuntu-24.04`: `completed` (`success`)
+  - `rust-host`: `completed` (`success`) (including full integration test suite with all 12 `openclaw_chat_cron_node_contract` oracles)
+  - `platform-worker`: `completed` (`success`)
+  - `Pressure profiler / macos-15`: `completed` (`success`)
+  - `Pressure profiler / windows-2025`: `completed` (`success`)
+
+---
+
+## 6. Multi-Agent Synthesis (Modules OCRM-M08 & OCRM-M06)
+
+- **Subagent B (`ec3ab771`)**: Completed deep architecture analysis of `OCRM-M08` (Memory, Vault & Knowledge Retrieval). Formulated 12 falsifiable test oracles covering single-writer Markdown sharding (`user/memory/shards/<agent_id>`, `projects/<slug>/memory/shards/<agent_id>`), two-phase LLM synthesis with `sourceEvidenceIds` grounding and CAS fingerprint checking, tombstone resurrection prevention, and `sqlite-vec` + FTS5 hybrid retrieval.
+- **Subagent C (`cbb1e2a0`)**: Completed deep architecture analysis of `OCRM-M06` (Plugin SDK & Hook Lifecycle). Formulated 7 falsifiable test oracles covering fail-closed hook execution, parameter immutability during approval, 16 hook lifecycle stages, and mapping to Fabushi's 22-layered `RoutedToolBridge` pipeline.
+
