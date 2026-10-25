@@ -235,11 +235,11 @@ function bytesLabel(size: number): string {
   return size < 1024 ? `${size} B` : size < 1024 ** 2 ? `${(size / 1024).toFixed(1)} KiB` : `${(size / 1024 ** 2).toFixed(1)} MiB`;
 }
 
-async function verifyWasmFileReport(page: Page, inputFile: string, inputBytes: number): Promise<void> {
+async function verifyWasmFileReport(page: Page, inputFile: string, inputBytes: number, nativeLocalOverride?: boolean): Promise<void> {
   const status = page.locator('#composer-status');
   await expect(status, 'the signed app must expose its live composer status').toBeVisible({ timeout: 45_000 });
   await expect.poll(async () => page.locator('#launch').isEnabled(), { timeout: 45_000, message: 'Wasm Rust adapter must enable the real composer launch control' }).toBe(true);
-  const nativeLocal = await page.evaluate(async () => {
+  const nativeLocal = nativeLocalOverride ?? await page.evaluate(async () => {
     const bridge = (globalThis as unknown as { fabushi?: { invoke(tool: string, args?: Record<string, unknown>): Promise<{ data?: { capabilities?: string[]; targetPools?: Array<{ id?: string }> } }> } }).fabushi;
     const result = await bridge?.invoke('offline.capabilities');
     const data = result?.data;
@@ -533,14 +533,15 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
       await openWithNativePermission(catalog.row, app.process.pid!);
       let mini = await findMiniAppPage(app.browser);
       await markPhase('online-runtime-self-test');
-      evidence.installedNativeVerified.push(await verifyInstalledNativeRuntime(mini));
+      const onlineNativeVerified = await verifyInstalledNativeRuntime(mini);
+      evidence.installedNativeVerified.push(onlineNativeVerified);
       if (process.env.MINIAPP_REQUIRE_NATIVE_ENGINE === '1') {
         const digests = await activeNativeDigests(appDataDir);
         expect(digests).toEqual([process.env.MINIAPP_NATIVE_EXECUTABLE_DIGEST]);
         evidence.installedNativeDigests.push(...digests);
       }
       await markPhase('online-composer');
-      await verifyWasmFileReport(mini, inputFile, fixtureStat.size);
+      await verifyWasmFileReport(mini, inputFile, fixtureStat.size, onlineNativeVerified);
       await markPhase('online-report-export');
       await exportAndVerifyReport(mini, app.process.pid!, evidenceDir, inputFile, fixtureStat.size);
       evidence.launchModes.push('online-install');
@@ -568,9 +569,10 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
       await openWithNativePermission(catalog.row, app.process.pid!);
       mini = await findMiniAppPage(app.browser);
       await markPhase('offline-runtime-self-test');
-      evidence.installedNativeVerified.push(await verifyInstalledNativeRuntime(mini));
+      const offlineNativeVerified = await verifyInstalledNativeRuntime(mini);
+      evidence.installedNativeVerified.push(offlineNativeVerified);
       await markPhase('offline-composer');
-      await verifyWasmFileReport(mini, inputFile, fixtureStat.size);
+      await verifyWasmFileReport(mini, inputFile, fixtureStat.size, offlineNativeVerified);
       await markPhase('offline-report-export');
       await exportAndVerifyReport(mini, app.process.pid!, evidenceDir, inputFile, fixtureStat.size);
       evidence.launchModes.push('os-network-disabled-cold-launch');
