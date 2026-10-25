@@ -615,7 +615,12 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
       await writeFile(path.join(evidenceDir, 'acceptance.json'), JSON.stringify(evidence, null, 2));
     } catch (error) {
       // Disposable Actions desktop only; never collect the native credential store.
-      execFileSync('/usr/sbin/screencapture', ['-x', path.join(evidenceDir, 'failure-desktop.png')], { timeout: 10_000 });
+      // Auxiliary capture must not replace the original acceptance failure.
+      try {
+        execFileSync('/usr/sbin/screencapture', ['-x', path.join(evidenceDir, 'failure-desktop.png')], { timeout: 10_000 });
+      } catch {
+        // The machine may be headless or the capture service may be unavailable.
+      }
       await writeFile(path.join(evidenceDir, 'failure.json'), JSON.stringify({
         ...evidence,
         failure: {
@@ -624,9 +629,13 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
           stack: error instanceof Error ? error.stack : undefined,
         },
       }, null, 2));
-      await writeFile(path.join(evidenceDir, 'report-directories.json'), JSON.stringify(
-        await Promise.all((await readdir(evidenceDir)).filter((name) => name.startsWith('report-'))
-          .map(async (name) => ({ directory: name, members: await readdir(path.join(evidenceDir, name)) }))), null, 2));
+      try {
+        await writeFile(path.join(evidenceDir, 'report-directories.json'), JSON.stringify(
+          await Promise.all((await readdir(evidenceDir)).filter((name) => name.startsWith('report-'))
+            .map(async (name) => ({ directory: name, members: await readdir(path.join(evidenceDir, name)) }))), null, 2));
+      } catch {
+        // failure.json is the required diagnostic artifact; directory inventory is best effort.
+      }
       throw error;
     } finally {
       try {
