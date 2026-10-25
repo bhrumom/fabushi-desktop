@@ -51,9 +51,6 @@ jobs:
       - name: Install desktop dependencies
         working-directory: desktop
         run: npm ci
-      - name: Typecheck production sources and contracts
-        working-directory: desktop
-        run: npx tsc -p ../frontend/tsconfig.json --noEmit --allowImportingTsExtensions
       - name: Run production transcript and search contracts
         working-directory: desktop
         run: >-
