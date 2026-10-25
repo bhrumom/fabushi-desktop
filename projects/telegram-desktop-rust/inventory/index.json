@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16151,
-    "unread_minimum": 16126,
+    "unknown_minimum": 16150,
+    "unread_minimum": 16125,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -90,7 +90,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Strict225 TDRP-R9-MICROTEX-RES-CYRILLIC-SYMBOLS-XML-PROVENANCE-001: res/cyrillic/symbols_cyrillic.xml@80e88bf296d68d4f0d65e4b502f1a60f6281626f is 3577 bytes/105 line slots with exactly 95 Symbol entries / 93 unique names; types are 93 ord + 2 acc. CYRE occurs at source positions 9/13 and cyre at 43/47; historical TeXSymbolParser writes source-order into the symbol map so duplicates are last-write-wins, with both duplicate definitions retaining ord type. Historical language_cyrillic.xml -> DefaultTeXFontParser::parseExtraPath -> SymbolAtom::addSymbolAtom -> TeXSymbolParser::readSymbols consumed this file. Accepted MicroTeX keeps CyrillicRegistration but strips XML font/symbol loading: addTeXFontDescription throws ex_alphabet_registration, accepted built-in tex_symbols contains no Cyrillic CYRA/cyrbreve definitions, and parser handling falls through to external-font/TextRenderingAtom. RES_README/Meson standalone install retained; bundled.qrc/tdesktop shipping excludes Cyrillic/Greek; README excludes res/cyrillic from the MIT blanket and subtree LICENSE is GPLv3 provenance. Counters unknown=16151 unread=16126 omitted=0 responsibilities=243. Parent f78f321 exact-head TDRP 61/61, Rust 6/6, Official MCP 1/1. Receipt-head Actions required. Next res/cyrillic/wnbx10.ttf@5a79b6d484953b3664ae4875afc06139b56a2dc0.",
+  "note": "Strict226 TDRP-R9-MICROTEX-RES-CYRILLIC-WNBX10-TTF-PROVENANCE-001: res/cyrillic/wnbx10.ttf@5a79b6d484953b3664ae4875afc06139b56a2dc0 is 31940 bytes with 15 sfnt tables, 98 glyphs, unitsPerEm=1000 and OS/2 fsType=0. Exact-path history is root 17f3fc78 old blob 436ff077793a52495d39927068f43e09dd35d394 (31824 bytes) plus c1546216 Attempt to force our fonts.; page2 empty and c154 parent still has the old blob. Root->current changes only name plus head checksumAdjustment: family/full wnbx10 -> TDesktop wnbx10 and PostScript/unique -> TDesktop-wnbx10; glyph/layout table records remain unchanged, matching Qt system-font-shadowing avoidance. Historical wnbx10.xml binds id=wnbx10 to wnbx10.ttf and language_cyrillic.xml includes it among eight Metrics; historical FontInfo lazily Font::create(path). Accepted XML font-description loading throws ex_alphabet_registration, so Cyrillic falls back to external-font/TextRenderingAtom; bundled.qrc excludes Cyrillic/Greek while standalone Meson installs res/cyrillic. TTF has no name IDs 13/14; fsType=0 is embedding metadata, not a license grant. README excludes res/cyrillic from MIT and subtree LICENSE is GPLv3 provenance. Counters unknown=16150 unread=16125 omitted=0 responsibilities=244. Parent 03cddd03 exact-head TDRP 61/61, Rust 6/6, Official MCP 1/1. Receipt-head Actions required. Next res/cyrillic/wnbx10.xml@3e42b024a4d96f96a650babd183e58c31a02d31a.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
@@ -106,38 +106,38 @@
     "baseline_identity_accepted": false,
     "source_closure_ready": false
   },
-  "target_commit": "f78f321a063b54a1a705266bd397089f81792b0b",
+  "target_commit": "03cddd03d9e2317c57703804bc0d10180ae05b3a",
   "last_completed_parent_head_validation": {
     "evidence_status": "historical-only-after-receipt-commit",
-    "head_sha": "f78f321a063b54a1a705266bd397089f81792b0b",
+    "head_sha": "03cddd03d9e2317c57703804bc0d10180ae05b3a",
     "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
     "upstream_tree": "c539eabfb05e7dcaa84821ac44c35cdfb6551ae5",
     "recursive_non_directory_entries": 16379,
-    "tdrp_run_id": 40178765618,
+    "tdrp_run_id": 40180703488,
     "tdrp_jobs": "61/61 success",
     "source_authority_artifact": {
-      "id": 12593900023,
-      "digest": "sha256:0248658750a0a3cdc357cee2238aac5bf439c7eef665861e517aaa12a3596a86"
+      "id": 12593519003,
+      "digest": "sha256:55d2d81eaffa930633f2b98d665fbeac5e20ddda67771a4523c3a49fff381d76"
     },
     "recursive_closure_artifact": {
-      "id": 12593785535,
-      "digest": "sha256:c5f3dc5f2754ca7574619c0debca669b2517c83e20948acfc107348c4359925b"
+      "id": 12593444624,
+      "digest": "sha256:5808c17d91ecdb8fb6c5c93a95e43f73da69e840fa20d509eb8f9c59f65eb274"
     },
     "recursive_reachability_artifact": {
-      "id": 12592504695,
-      "digest": "sha256:46e0a53f3eacecfbda0ceaec7ffcbf36241dfc6ee5006c09fb634a1c419a386a"
+      "id": 12593889034,
+      "digest": "sha256:8fe34bc7ce581ede03b52aa6d1ae6feaaedc7ae7f6de477a8d7707b36ff8a237"
     },
     "boost_reachability_artifact": {
-      "id": 12594110121,
-      "digest": "sha256:cd1d3f9eef4b13fc24143a1adeac8ae0ca37cd20538507cdc673b3d7672eea1f"
+      "id": 12594247156,
+      "digest": "sha256:6325e89000b3d5a86db925cdf8ced8e6a788e2b5b7046756fc27a188b61e9dd7"
     },
-    "rust_run_id": 40178765629,
+    "rust_run_id": 40180703490,
     "rust_jobs": "6/6 success",
     "rust_artifact": {
-      "id": 12592189888,
-      "digest": "sha256:e3b3443c4b46a5d6e1b4e72b0651bb3f16380730e369c3e2a61a133029243cf4"
+      "id": 12593988362,
+      "digest": "sha256:f5250facae02e0140911a1e6614d4e8c61277a6ec8efafcacae5fdbc9bd141e8"
     },
-    "official_mcp_marketplace_run_id": 40178765627,
+    "official_mcp_marketplace_run_id": 40180703500,
     "official_mcp_marketplace_jobs": "1/1 success",
     "baseline_identity_accepted": false,
     "source_closure_ready": false,
