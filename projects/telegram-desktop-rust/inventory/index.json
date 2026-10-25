@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16158,
-    "unread_minimum": 16133,
+    "unknown_minimum": 16157,
+    "unread_minimum": 16132,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -90,7 +90,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Strict218 TDRP-R9-MICROTEX-RES-README-PROVENANCE-001: desktop-app/MicroTeX res/RES_README@386c018fee9c3fd41cd42860bd0c1c33ef61a9ee is a 1,661-byte newline-delimited resource manifest with 73 unique paths, all resolving to pinned-tree blobs: 3 license texts, 46 TTFs and 24 XML files. Exact-path history is one e45a487 creation/page2 empty; parent bab5cff tree truncated=false/217 and target absent; creation changes exactly 90 paths. Of 73 entries, exactly 30 match accepted bundled.qrc; remaining 43 are exactly 3 font license texts + 20 Greek + 20 Cyrillic entries, while bundled.qrc explicitly excludes Greek/Cyrillic. Accepted Meson installs res/fonts, res/greek, res/cyrillic plus RES_README/SAMPLES.tex/root marker; README separates project MIT from res fonts/XML under different licenses. Existing-owner-first selects TDRP recursive source/build/resource/license/packaging provenance governance; Fabushi attachments/artifacts/resource lifecycle and desktop packaging remain canonical runtime context, with no new MicroTeX resource/font/license runtime. Counters unknown=16158 unread=16133 omitted=0 responsibilities=236. Parent 413d2b1b38b8c676bc331a03839ee4f150429124: TDRP 40165548344 61/61 success; Rust 40165548329 6/6 success; Official MCP 40165548321 1/1 success. Receipt-head Actions required; baseline_identity_accepted=false/source_closure_ready=false. Next res/SAMPLES.tex@e03f0088e3fba1d225b90d06d586f32c5f70310b.",
+  "note": "Strict219 TDRP-R9-MICROTEX-RES-SAMPLES-TEX-PROVENANCE-001: desktop-app/MicroTeX res/SAMPLES.tex@e03f0088e3fba1d225b90d06d586f32c5f70310b is a pinned 9,933-byte / 9,549-character / 262-line sample corpus with 11 pure-percent separators and exactly 12 ordered non-empty blocks. Exact-path history is 13 commits/page2 empty; creation dfa166a has parent c389273 tree truncated=false/187 with target absent and changes exactly six paths. Samples::readSamples defaults to LaTeX::getResRootPath()/SAMPLES.tex, splits only non-space pure-% lines and drops blank/space-only lines; headless batch requires outputdir, rejects zero samples, and emits indexed SVGs. pre-push regenerates samples.md + sample_0..11.svg; Meson standalone install_data includes SAMPLES.tex. Accepted cmake_helpers external_microtex_bundled and tdesktop td_iv/Telegram/iv shipping files have zero SAMPLES.tex/sample_ refs and ship compiled MicroTeX + bundled qrc/font resources instead. Existing-owner-first selects TDRP recursive source/test-fixture/resource/build/provenance governance; no MicroTeX/Fabushi parallel runtime. Counters unknown=16157 unread=16132 omitted=0 responsibilities=237. Parent 52e148efdbe7217f1d40982f6c6ff00ae3f204cc: TDRP 40166899536 61/61 success; Rust 40166899589 6/6 success; Official MCP 40166899582 1/1 success. Receipt-head Actions required; baseline_identity_accepted=false/source_closure_ready=false. Next res/bundled.qrc@303fb6bdf780d66a6e8960a095d17be466b909fa.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
@@ -106,38 +106,38 @@
     "baseline_identity_accepted": false,
     "source_closure_ready": false
   },
-  "target_commit": "413d2b1b38b8c676bc331a03839ee4f150429124",
+  "target_commit": "52e148efdbe7217f1d40982f6c6ff00ae3f204cc",
   "last_completed_parent_head_validation": {
     "evidence_status": "historical-only-after-receipt-commit",
-    "head_sha": "413d2b1b38b8c676bc331a03839ee4f150429124",
+    "head_sha": "52e148efdbe7217f1d40982f6c6ff00ae3f204cc",
     "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
     "upstream_tree": "c539eabfb05e7dcaa84821ac44c35cdfb6551ae5",
     "recursive_non_directory_entries": 16379,
-    "tdrp_run_id": 40165548344,
+    "tdrp_run_id": 40166899536,
     "tdrp_jobs": "61/61 success",
     "source_authority_artifact": {
-      "id": 12588556259,
-      "digest": "sha256:4e7956b90dca5ec46b375aad90356a5d9971e2993cf378ec1b462bb0b0c3cc6d"
+      "id": 12588204365,
+      "digest": "sha256:d09a1be68cd40bca26f18a6a518cf25fd7f822427bd503863e80965ca1361db1"
     },
     "recursive_closure_artifact": {
-      "id": 12588546650,
-      "digest": "sha256:0861ce729a4d76bed7e1b4d47d36528de72e269c08e1be1ab501077b71f1f4e1"
+      "id": 12588049206,
+      "digest": "sha256:258e1f226dac55af0fc663c7ba105998daeb3df5ecc46f314fe694d3b7bec814"
     },
     "recursive_reachability_artifact": {
-      "id": 12588297013,
-      "digest": "sha256:f7c0813c174702148f51fbf994c6ec5079f81859aef616fa54d42e6036e35760"
+      "id": 12588254549,
+      "digest": "sha256:e43d8bbad8a0c695d7585ed7f3e7a607420bbbe22246300b63b0ae65354668a4"
     },
     "boost_reachability_artifact": {
-      "id": 12588646290,
-      "digest": "sha256:124f6ec56afab8927d0590b752aacc723ccd44c6469c39aba3bef0bbb0a4b5b1"
+      "id": 12587994328,
+      "digest": "sha256:eb1aedb81e48254bf7b2f85e9a6acb4be2ac294830702283d519f58f7ac571e1"
     },
-    "rust_run_id": 40165548329,
+    "rust_run_id": 40166899589,
     "rust_jobs": "6/6 success",
     "rust_artifact": {
-      "id": 12587847541,
-      "digest": "sha256:f20f12249379f91e5c0b2ccadd37f08d3bd619139bba0dfd1bce065c872f6206"
+      "id": 12588293982,
+      "digest": "sha256:edd3dddbb242af1ce500ef6e59a55f220536763bb2b65732a943763c96838a79"
     },
-    "official_mcp_marketplace_run_id": 40165548321,
+    "official_mcp_marketplace_run_id": 40166899582,
     "official_mcp_marketplace_jobs": "1/1 success",
     "baseline_identity_accepted": false,
     "source_closure_ready": false,
