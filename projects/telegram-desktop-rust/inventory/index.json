@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16134,
-    "unread_minimum": 16109,
+    "unknown_minimum": 16133,
+    "unread_minimum": 16108,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -90,7 +90,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Strict242 CMEX10 TTF/compiled-math-extension-font/metrics/extensions/next-larger/rendering/license/install/packaging provenance. Counters unknown=16134 unread=16109 omitted=0 responsibilities=260. root/c154-parent=19240-byte blob 5ac93ac4; c154/pinned=19356-byte blob 4df1d6c8; c154 changes only name table plus head checksum, preserving the other 15 sfnt tables. Pinned sfnt has 17 tables/134 glyphs/unitsPerEm=2048/cmap=133; compiled cmex10.def.cpp has 128 metrics, 28 extension recipes and 76 next-larger links; Builtin FontSet registers cmex10 and bundled.qrc ships it in external_microtex_bundled.rcc. Parent 804c3b78 TDRP 40218118036 30/30, Rust 40218118026 6/6 and MCP 40218118035 1/1 are terminal-success. Next res/fonts/base/cmmi10.ttf@c12851691ef7a5424f83752e7d39737af9860c79.",
+  "note": "Strict243 CMMI10 TTF/compiled-math-italic-font/metrics/kerns/next-larger/rendering/license/install/packaging provenance. Counters unknown=16133 unread=16108 omitted=0 responsibilities=261. root/c154-parent=26576-byte blob f10c3af2; c154/pinned=26708-byte blob c1285169; c154 changes name plus head checksumAdjustment/modified timestamp while preserving the other 13 sfnt tables. Pinned sfnt has 15 tables/134 glyphs/unitsPerEm=1000/cmap=133; compiled cmmi10.def has 128 metrics/166 kerns/3 next-larger links and cmmi10_unchanged has 57/37/3 over the same TTF. Builtin FontSet registers both and bundled.qrc ships cmmi10 in external_microtex_bundled.rcc. Parent 476a7968 TDRP 40219459433 30/30, Rust 40219459435 6/6 and MCP 40219459427 1/1 are terminal-success. Next res/fonts/base/cmmib10.ttf@6772eafd5b8c4d0d0a85b12d9e92c4a05d2caf64.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
@@ -106,38 +106,38 @@
     "baseline_identity_accepted": false,
     "source_closure_ready": false
   },
-  "target_commit": "804c3b78a465246e1a63a02641cff1e9a5b2dfaa",
+  "target_commit": "476a7968f5c1bc1522e1ab3b54c7d093438664aa",
   "last_completed_parent_head_validation": {
     "evidence_status": "historical-only-after-receipt-commit",
-    "head_sha": "804c3b78a465246e1a63a02641cff1e9a5b2dfaa",
+    "head_sha": "476a7968f5c1bc1522e1ab3b54c7d093438664aa",
     "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
     "upstream_tree": "c539eabfb05e7dcaa84821ac44c35cdfb6551ae5",
     "recursive_non_directory_entries": 16379,
-    "tdrp_run_id": 40218118036,
+    "tdrp_run_id": 40219459433,
     "tdrp_jobs": "30/30 success",
     "source_authority_artifact": {
-      "id": 12608124578,
-      "digest": "sha256:6a99dfb5879259449f5277447d9e149ed6826505804ad101afc8d462e7440ba0"
+      "id": 12609077100,
+      "digest": "sha256:536dd2252126fe81a843451fa756e5f1d168fb2b7dbb4696df0500ee0a2aeafe"
     },
     "recursive_closure_artifact": {
-      "id": 12608420808,
-      "digest": "sha256:469380f6c9225101762ad512ba15fad9ef4bf48121a2cc3ba3e3ddb6c8897771"
+      "id": 12609071508,
+      "digest": "sha256:6ae3862c8ea8eb2689b75f7137cb7f8e5847fba50e8c04e98ea3c20c4f2a0f34"
     },
     "recursive_reachability_artifact": {
-      "id": 12608840536,
-      "digest": "sha256:3db3f322f52d864cf9c7ddfcc13315809c0cbda23dcd991f351aebaa143755c7"
+      "id": 12608716889,
+      "digest": "sha256:3d621d50726ece643e24fdd1b6552503530de7d22c73bf909bd370e434073a07"
     },
     "boost_reachability_artifact": {
-      "id": 12608920268,
-      "digest": "sha256:921a2c14a2baad8c13f800cfdffc85ac970e64fa09e8649c053808480abc9c8c"
+      "id": 12609232157,
+      "digest": "sha256:ad2c0ceb0e49e0dbf3f9bb3b2f6f5b45585c1903176ebb145052e9be68661073"
     },
-    "rust_run_id": 40218118026,
+    "rust_run_id": 40219459435,
     "rust_jobs": "6/6 success",
     "rust_artifact": {
-      "id": 12608189021,
-      "digest": "sha256:a1bbf45a4aa497f425101484791c76e6b2a41f1b5f0aaf00a2ed3c704ab1ae34"
+      "id": 12608682352,
+      "digest": "sha256:b3a7591b99544b91affd694a41efa67e5e4a4dc02d53696ca0edf646ab83276d"
     },
-    "official_mcp_marketplace_run_id": 40218118035,
+    "official_mcp_marketplace_run_id": 40219459427,
     "official_mcp_marketplace_jobs": "1/1 success",
     "baseline_identity_accepted": false,
     "source_closure_ready": false,
