@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16156,
-    "unread_minimum": 16131,
+    "unknown_minimum": 16155,
+    "unread_minimum": 16130,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -90,7 +90,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Strict220 TDRP-R9-MICROTEX-RES-BUNDLED-QRC-PROVENANCE-001: res/bundled.qrc@303fb6bdf780d66a6e8960a095d17be466b909fa is 2,329 chars/55 lines, prefix /res, exactly 30 unique TTF and 30/30 pinned-tree resolved. Comment/creation say 28; manifest truth 30 is authoritative. Exact history one e956481/page2 empty; parent fe129888 truncated=false/314 target absent; 3 creation paths. Font_qt :/ fallback + initBundled; cmake qrc/AUTORCC/Apple rcc; accepted tdesktop Q_INIT_RESOURCE or .rcc registration and macOS shipping. Zero Greek/Cyrillic paths; resource license boundary preserved. Existing-owner-first selects TDRP recursive runtime-resource/font/license/build/packaging provenance; no Fabushi parallel runtime. Counters unknown=16156 unread=16131 omitted=0 responsibilities=238. Parent 106299cf exact-head TDRP 61/61, Rust 6/6, Official MCP 1/1. Receipt-head Actions required; baseline_identity_accepted=false/source_closure_ready=false. Next res/cyrillic/LICENSE.",
+  "note": "Strict221 TDRP-R9-MICROTEX-RES-CYRILLIC-LICENSE-PROVENANCE-001: res/cyrillic/LICENSE@f288702d2fa16d3cdf0035b15a9fcbc552cd88e7 is 35,149 bytes/675 line slots and complete GPLv3. Exact history one 59f45372/page2 empty; creation only LICENSE; parent 4658e41a truncated=false/275 target absent. README excludes res/cyrillic from MIT blanket. RES_README lists 20 Cyrillic runtime entries (8 TTF+12 XML). Meson installs entire res/cyrillic subtree, but bundled.qrc has zero Cyrillic file entries and explicitly excludes Cyrillic/Greek; accepted tdesktop registers/ships only bundled qrc/.rcc. Existing-owner-first selects TDRP recursive license/resource/install/packaging provenance. Counters unknown=16155 unread=16130 omitted=0 responsibilities=239. Parent 28596225 exact-head TDRP 61/61, Rust 6/6, Official MCP 1/1. Receipt-head Actions required. Next res/cyrillic/cyrillic.map.xml@5431dc86108e722f7899fbf3db4db7af67badcc4.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
@@ -106,38 +106,38 @@
     "baseline_identity_accepted": false,
     "source_closure_ready": false
   },
-  "target_commit": "106299cf2e385174f4483c1e7cfae4219deee818",
+  "target_commit": "285962256732264555f6fdb8ce17573470e47d68",
   "last_completed_parent_head_validation": {
     "evidence_status": "historical-only-after-receipt-commit",
-    "head_sha": "106299cf2e385174f4483c1e7cfae4219deee818",
+    "head_sha": "285962256732264555f6fdb8ce17573470e47d68",
     "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
     "upstream_tree": "c539eabfb05e7dcaa84821ac44c35cdfb6551ae5",
     "recursive_non_directory_entries": 16379,
-    "tdrp_run_id": 40168277972,
+    "tdrp_run_id": 40170692344,
     "tdrp_jobs": "61/61 success",
     "source_authority_artifact": {
-      "id": 12589885820,
-      "digest": "sha256:5240a8cf31ab6ec5157d7185b04ffaea41fecac63aa602dc0383db4c8d863db1"
+      "id": 12590094543,
+      "digest": "sha256:224c30c95b4006ca4052f10ac9ac6902a90c24cbf5ce64894003d6ca84e0aff1"
     },
     "recursive_closure_artifact": {
-      "id": 12589846114,
-      "digest": "sha256:b72cc6b1ebd5c5e6997a2b7c6f36c453c94cd4269e9436c871c3deab11647c23"
+      "id": 12590515563,
+      "digest": "sha256:f218287f8474e4a9b1b24cc8a132221e42e93c61c0065de3ac1401b05550c115"
     },
     "recursive_reachability_artifact": {
-      "id": 12589911143,
-      "digest": "sha256:e9c67b9619675d1c680b28c4b26bbb20757c11f6ac6245d28d46f9e18ef5f2d9"
+      "id": 12590705304,
+      "digest": "sha256:aa9d8e0884e89b5a4376e937b0ff348939fcfbd26bfc748c37e3e3659f23ccdd"
     },
     "boost_reachability_artifact": {
-      "id": 12590070570,
-      "digest": "sha256:083e320d34838a84600cd7f19064c914dd4eb9f084e08d9de74d11bdd2e68cab"
+      "id": 12590495458,
+      "digest": "sha256:6227f02a7ca734aa088763a5f1bded86741c513c78c787254bac1786485e266c"
     },
-    "rust_run_id": 40168277964,
+    "rust_run_id": 40170692312,
     "rust_jobs": "6/6 success",
     "rust_artifact": {
-      "id": 12589095911,
-      "digest": "sha256:ea50f045c1a9cb0fd29563f26390487e38c4b162ab7db5d98b39be2f5b6465b0"
+      "id": 12590370442,
+      "digest": "sha256:39e6f66038def5f566f838358f8e8c692eb6f9293e12c034d1972330a7399caf"
     },
-    "official_mcp_marketplace_run_id": 40168277936,
+    "official_mcp_marketplace_run_id": 40170692405,
     "official_mcp_marketplace_jobs": "1/1 success",
     "baseline_identity_accepted": false,
     "source_closure_ready": false,
