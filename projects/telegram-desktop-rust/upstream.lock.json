@@ -361,10 +361,10 @@
   "coverage": {
     "root_source_entries_total": 6893,
     "recursive_source_entries_total": 16379,
-    "unknown_minimum": 16159,
-    "unread_minimum": 16134,
+    "unknown_minimum": 16158,
+    "unread_minimum": 16133,
     "omitted_known": 0,
-    "note": "Strict217 TDRP-R9-MICROTEX-RES-CLATEXMATH-RES-ROOT-PROVENANCE-001: desktop-app/MicroTeX res/.clatexmath-res_root@e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 is a zero-byte standalone resource-root sentinel, not accepted tdesktop shipping. History is one 3bdd94b9 creation/page2 empty; parent cd291c tree truncated=false/257 and target absent; creation changes exactly five paths. Accepted queryResourceLocation probes custom/CLM_DEVEL/XDG/HOME/system marker roots and returns empty on no hit, preserving RES_BASE=res. d699592/4ba3bc6/6fbdd5c repair environment/platform path handling; b56c224->0e3db008 repairs Meson marker install path. Accepted tdesktop external_microtex_bundled + bundled.qrc + td_iv + initBundled bypasses marker discovery and macOS packages external_microtex_bundled.rcc. Existing-owner-first selects TDRP source/build/resource/packaging provenance; Fabushi attachments/artifacts/platform lifecycle/packaging owners remain canonical context. Counters unknown=16159 unread=16134 omitted=0 responsibilities=235. Parent b745d625d41eeccdfc3404bf07947b9fdefd838f: TDRP 40163570117 61/61 success; Rust 40163570116 6/6 success; Official MCP 40163570243 1/1 success. Receipt-head Actions required; baseline_identity_accepted=false/source_closure_ready=false. Next res/RES_README@386c018fee9c3fd41cd42860bd0c1c33ef61a9ee."
+    "note": "Strict218 TDRP-R9-MICROTEX-RES-README-PROVENANCE-001: desktop-app/MicroTeX res/RES_README@386c018fee9c3fd41cd42860bd0c1c33ef61a9ee is a 1,661-byte newline-delimited resource manifest with 73 unique paths, all resolving to pinned-tree blobs: 3 license texts, 46 TTFs and 24 XML files. Exact-path history is one e45a487 creation/page2 empty; parent bab5cff tree truncated=false/217 and target absent; creation changes exactly 90 paths. Of 73 entries, exactly 30 match accepted bundled.qrc; remaining 43 are exactly 3 font license texts + 20 Greek + 20 Cyrillic entries, while bundled.qrc explicitly excludes Greek/Cyrillic. Accepted Meson installs res/fonts, res/greek, res/cyrillic plus RES_README/SAMPLES.tex/root marker; README separates project MIT from res fonts/XML under different licenses. Existing-owner-first selects TDRP recursive source/build/resource/license/packaging provenance governance; Fabushi attachments/artifacts/resource lifecycle and desktop packaging remain canonical runtime context, with no new MicroTeX resource/font/license runtime. Counters unknown=16158 unread=16133 omitted=0 responsibilities=236. Parent 413d2b1b38b8c676bc331a03839ee4f150429124: TDRP 40165548344 61/61 success; Rust 40165548329 6/6 success; Official MCP 40165548321 1/1 success. Receipt-head Actions required; baseline_identity_accepted=false/source_closure_ready=false. Next res/SAMPLES.tex@e03f0088e3fba1d225b90d06d586f32c5f70310b."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -1827,38 +1827,38 @@
     "baseline_identity_accepted": false,
     "source_closure_ready": false
   },
-  "target_commit": "b745d625d41eeccdfc3404bf07947b9fdefd838f",
+  "target_commit": "413d2b1b38b8c676bc331a03839ee4f150429124",
   "last_completed_parent_head_validation": {
     "evidence_status": "historical-only-after-receipt-commit",
-    "head_sha": "b745d625d41eeccdfc3404bf07947b9fdefd838f",
+    "head_sha": "413d2b1b38b8c676bc331a03839ee4f150429124",
     "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
     "upstream_tree": "c539eabfb05e7dcaa84821ac44c35cdfb6551ae5",
     "recursive_non_directory_entries": 16379,
-    "tdrp_run_id": 40163570117,
+    "tdrp_run_id": 40165548344,
     "tdrp_jobs": "61/61 success",
     "source_authority_artifact": {
-      "id": 12586794955,
-      "digest": "sha256:11c8a9a50ed096c87c66a67e6f73ce97537ce82e0a7f9f1817131f7f1b41e9c8"
+      "id": 12588556259,
+      "digest": "sha256:4e7956b90dca5ec46b375aad90356a5d9971e2993cf378ec1b462bb0b0c3cc6d"
     },
     "recursive_closure_artifact": {
-      "id": 12587770458,
-      "digest": "sha256:9e2a7d72cd079eb9a3d863631d0370b7fc42fe218f0827f249163bd1b7965098"
+      "id": 12588546650,
+      "digest": "sha256:0861ce729a4d76bed7e1b4d47d36528de72e269c08e1be1ab501077b71f1f4e1"
     },
     "recursive_reachability_artifact": {
-      "id": 12587293320,
-      "digest": "sha256:e3d5070795dfe8bc0c99546d3c879845feaf4382816394cfd928a8bdbfff6b93"
+      "id": 12588297013,
+      "digest": "sha256:f7c0813c174702148f51fbf994c6ec5079f81859aef616fa54d42e6036e35760"
     },
     "boost_reachability_artifact": {
-      "id": 12587810346,
-      "digest": "sha256:202bc01fb14468fa5efd3a14dbf97fc0bc0790801feadccd3d7c7ef79c9f9056"
+      "id": 12588646290,
+      "digest": "sha256:124f6ec56afab8927d0590b752aacc723ccd44c6469c39aba3bef0bbb0a4b5b1"
     },
-    "rust_run_id": 40163570116,
+    "rust_run_id": 40165548329,
     "rust_jobs": "6/6 success",
     "rust_artifact": {
-      "id": 12586694904,
-      "digest": "sha256:7d7e4193a598830252f21bbe98d3a7e96b56891832fb21ed87f2e1c1c42e1bc9"
+      "id": 12587847541,
+      "digest": "sha256:f20f12249379f91e5c0b2ccadd37f08d3bd619139bba0dfd1bce065c872f6206"
     },
-    "official_mcp_marketplace_run_id": 40163570243,
+    "official_mcp_marketplace_run_id": 40165548321,
     "official_mcp_marketplace_jobs": "1/1 success",
     "baseline_identity_accepted": false,
     "source_closure_ready": false,

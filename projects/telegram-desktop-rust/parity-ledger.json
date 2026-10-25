@@ -3,13 +3,13 @@
   "project_id": "TDRP-001",
   "spec_revision": 9,
   "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
-  "target_commit": "b745d625d41eeccdfc3404bf07947b9fdefd838f",
+  "target_commit": "413d2b1b38b8c676bc331a03839ee4f150429124",
   "coverage": {
     "source_entries_total": 16379,
-    "unknown": 16159,
-    "unread": 16134,
+    "unknown": 16158,
+    "unread": 16133,
     "omitted": 0,
-    "responsibilities_total": 235,
+    "responsibilities_total": 236,
     "unmapped_responsibilities": 0
   },
   "rows": [
@@ -62874,6 +62874,272 @@
       "license_and_provenance": "Exact zero-byte control file under res; no license payload. Presence is resource-root provenance only and does not flatten neighboring resource licenses. Accepted package membership is separately bounded by bundled.qrc/RCC.",
       "reviewer": "primary-session",
       "notes": "Strict217 resource-root sentinel provenance. Counters unknown=16159 unread=16134 omitted=0 responsibilities=235. Next res/RES_README@386c018fee9c3fd41cd42860bd0c1c33ef61a9ee; no formula/render/font/shipping responsibility is closed."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
+      "source_path": "Telegram/ThirdParty/MicroTeX",
+      "source_blob_sha": "61aaa7cc354de91d5898ffb0b2a6c62628d9a76f",
+      "source_kind": "recursive_child_repository_resource_manifest_license_packaging_provenance",
+      "module_id": "tdesktop.thirdparty.microtex.res-res-readme",
+      "responsibility_id": "TDRP-R9-MICROTEX-RES-README-PROVENANCE-001",
+      "source_symbols": [
+        "desktop-app/MicroTeX:res/RES_README@386c018fee9c3fd41cd42860bd0c1c33ef61a9ee — 1,661 bytes / 73 unique newline-delimited resource paths",
+        "73/73 entries resolve to pinned-tree blobs: 3 license texts + 46 TTF + 24 XML",
+        "exact history e45a487 creation/page2 empty; parent bab5cff tree truncated=false/217 and target absent; creation 90 paths",
+        "exact qrc overlap 30; remaining 43 = 3 license texts + 20 Greek + 20 Cyrillic; bundled.qrc excludes Greek/Cyrillic"
+      ],
+      "capability_ids": [
+        "CAP-DEPENDENCY-SOURCE-PROVENANCE",
+        "CAP-DEPENDENCY-RESOURCE-INVENTORY-PROVENANCE",
+        "CAP-DEPENDENCY-FONT-LICENSE-PROVENANCE",
+        "CAP-DEPENDENCY-BUILD-INSTALL-PROVENANCE",
+        "CAP-DEPENDENCY-PACKAGING-BOUNDARY-PROVENANCE"
+      ],
+      "dependency_ids": [
+        "Telegram/ThirdParty/MicroTeX@61aaa7cc354de91d5898ffb0b2a6c62628d9a76f",
+        "desktop-app/MicroTeX:res/RES_README@386c018fee9c3fd41cd42860bd0c1c33ef61a9ee",
+        "desktop-app/MicroTeX:e45a487bc3c3b8f67dacd4c1373dcd17b30c0876",
+        "desktop-app/MicroTeX:bab5cffc87e848a991165de8f4fb5c595c714e3a",
+        "desktop-app/MicroTeX:res/bundled.qrc@303fb6bdf780d66a6e8960a095d17be466b909fa",
+        "desktop-app/MicroTeX:meson.build@d9968045f0162b8f1f8f518f554fd71199f067d5",
+        "desktop-app/MicroTeX:README.md@824af04fd8607532efed3f73752b81e5093577ef",
+        "desktop-app/MicroTeX:res/fonts/licences/OFL.txt@6836a0be000498319aebcc92a172159b6f80bb52",
+        "desktop-app/MicroTeX:res/fonts/licences/License_for_dsrom.txt@35e3ff2160fe16cb26f7830f936557ebc44c3e1c",
+        "desktop-app/MicroTeX:res/fonts/licences/Knuth_License.txt@5b03bf8a533e66c79d113b82ba95586f8c7af3b8",
+        "fabushi:projects/fabushi-communication-platform/current-owner-inventory.md@d252cac8d8d6f8cb1a5b485788fef47a5866f9be",
+        "fabushi:projects/fabushi-communication-platform/architecture-map.md@77a314c1c982da3aa85bb65165d80468b2663db3",
+        "fabushi:projects/fabushi-communication-platform/owner-resolution-matrix.md@7f822ccc57000501c47f1771499a68f93aa35aa8",
+        "fabushi:desktop/package.json@3d500622ce9b26e3452d98d0c4a7e7dcc019ac84"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microtex-res-res-readme-complete-read.md",
+      "behavior_contract": "Pinned MicroTeX resource-manifest provenance: enumerate the standalone resource payload, preserve mixed-license boundaries, and distinguish standalone Meson-installed inventory from accepted tdesktop bundled-qrc membership. No Fabushi product runtime is owned.",
+      "state_machine": "bab5cff parent absent -> e45a487 introduces RES_README with the static-resource migration -> accepted pin retains the same blob; standalone Meson may install all resource families while accepted bundled.qrc includes only its 30-font subset and explicitly excludes Greek/Cyrillic.",
+      "side_effects": [
+        "Standalone MicroTeX installations can use the manifest as resource inventory context.",
+        "Meson installs the manifest alongside resource trees.",
+        "No checked Fabushi runtime side effect is introduced."
+      ],
+      "failure_cases": [
+        "manifest path list drifts or duplicates/missing entries appear",
+        "history/parent/90-path creation boundary is misattributed",
+        "bundled.qrc subset is conflated with full manifest",
+        "Greek/Cyrillic exclusion is ignored",
+        "mixed resource licenses are flattened into project MIT",
+        "manifest is promoted into a parallel Fabushi resource/font/license runtime"
+      ],
+      "ui_disposition": "No Fabushi product UI; dependency resource/license/build/packaging provenance only.",
+      "non_ui_responsibilities": [
+        "exact 73-entry manifest identity and full pinned-tree resolution",
+        "3-license/46-TTF/24-XML classification",
+        "single-commit history, parent absence and 90-path co-change boundary",
+        "exact bundled.qrc 30-entry overlap and 43-entry non-bundled remainder",
+        "Greek/Cyrillic not-bundled boundary",
+        "Meson install_data/install_subdir boundary",
+        "README mixed-license boundary",
+        "existing-owner-first resource/license/packaging provenance disposition"
+      ],
+      "platform_delta": "Standalone resource filesystem/install inventory differs from accepted tdesktop bundled Qt resources; Fabushi keeps existing source-neutral resource and packaging owners.",
+      "existing_owner_candidates": [
+        "Existing TDRP recursive source/build/resource/license/packaging provenance governance (selected)",
+        "Fabushi attachments/resource lifecycle (runtime context)",
+        "Fabushi artifacts (context)",
+        "Desktop packaging/release composition (context)",
+        "New MicroTeX resource/font/license runtime (rejected)"
+      ],
+      "existing_owner": "Existing TDRP recursive source/build/resource/license/packaging provenance governance.",
+      "rejected_existing_owners": [
+        "Product Resource owners do not own a third-party source manifest.",
+        "Attachments/artifacts do not own font/license inventory.",
+        "Desktop packaging does not imply adoption of non-bundled MicroTeX resources.",
+        "A source-specific runtime/store would duplicate canonical owners."
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "projects/telegram-desktop-rust/dossiers/upstream-microtex-res-res-readme-complete-read.md"
+      ],
+      "fabushi_target_symbols": [
+        "TDRP_MICROTEX_RES_README_PROVENANCE_001"
+      ],
+      "target_language": "Source-only resource-manifest/license/build/packaging provenance; no shipping implementation.",
+      "language_rationale": "The target is declarative third-party resource inventory. The correct equivalent is exact provenance and legal/package-boundary accounting, not a new runtime implementation.",
+      "command_event_contracts": [
+        "73 source lines -> 73 unique pinned-tree blobs",
+        "RES_README 73 -> bundled.qrc overlap exactly 30",
+        "non-qrc remainder exactly 3 license + 20 Greek + 20 Cyrillic",
+        "bundled.qrc explicitly excludes Greek/Cyrillic",
+        "Meson installs res/fonts + res/greek + res/cyrillic and RES_README",
+        "README excludes res fonts/XML from project MIT",
+        "accepted tdesktop bundled package membership is narrower than RES_README",
+        "next res/SAMPLES.tex remains independent"
+      ],
+      "state_owner": "Git-tracked third-party resource inventory/provenance only.",
+      "lifecycle_owner": "Pinned dependency source/build/license provenance lifecycle; product runtime lifecycle remains existing Fabushi owners.",
+      "persistence_and_restart": "Git blobs persist the manifest and neighboring resources; no Fabushi product persistence.",
+      "concurrency_and_cancellation": "No product concurrency.",
+      "security_boundary": "No executable content; legal/supply-chain boundary requires exact source and license attribution.",
+      "network_service_dependencies": [
+        "GitHub Actions for exact-head evidence"
+      ],
+      "service_owner": "No Fabushi network service owner.",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "dependency-resource-manifest-license-packaging-provenance-mapped-open",
+      "blockers": [
+        "No production closure; manifest is provenance, not a Fabushi runtime feature.",
+        "Neighboring font/XML/Greek/Cyrillic resources remain independently open.",
+        "Broader recursive source closure remains open.",
+        "Fresh receipt-head GitHub Actions required.",
+        "Independent release acceptance remains open."
+      ],
+      "production_entrypoints": [],
+      "production_evidence": [],
+      "test_evidence": [
+        "Pre-write direct responsibility row count=0.",
+        "Target fully read: 1,661 bytes, 73 lines/unique paths, all 73 resolve to pinned-tree blobs.",
+        "Classification: 3 license texts + 46 TTF + 24 XML.",
+        "Exact history single e45a487; page2 empty; parent bab5cff tree truncated=false/217 and target absent; creation exactly 90 paths.",
+        "bundled.qrc has 30 file entries; overlap with manifest exactly 30; remaining 43 exactly 3 license + 20 Greek + 20 Cyrillic; qrc explicitly excludes Greek/Cyrillic.",
+        "Meson install_subdir/install_data and README license boundary re-read.",
+        "Live Fabushi owner inventory/matrix/architecture and desktop package composition re-read.",
+        "Parent 413d2b1b38b8c676bc331a03839ee4f150429124: TDRP 40165548344 61/61 success; authority 12588556259 sha256:4e7956b90dca5ec46b375aad90356a5d9971e2993cf378ec1b462bb0b0c3cc6d; closure 12588546650 sha256:0861ce729a4d76bed7e1b4d47d36528de72e269c08e1be1ab501077b71f1f4e1; reachability 12588297013 sha256:f7c0813c174702148f51fbf994c6ec5079f81859aef616fa54d42e6036e35760; Boost 12588646290 sha256:124f6ec56afab8927d0590b752aacc723ccd44c6469c39aba3bef0bbb0a4b5b1; Rust 40165548329 6/6 success artifact 12587847541 sha256:f20f12249379f91e5c0b2ccadd37f08d3bd619139bba0dfd1bce065c872f6206; Official MCP 40165548321 1/1 success."
+      ],
+      "target_commit": "413d2b1b38b8c676bc331a03839ee4f150429124",
+      "workflow_run": 40165548344,
+      "run_attempt": 1,
+      "job": "Source authority / recursive inventory",
+      "artifact_id": 12588556259,
+      "artifact_digest": "sha256:4e7956b90dca5ec46b375aad90356a5d9971e2993cf378ec1b462bb0b0c3cc6d",
+      "composition_root": "Existing TDRP recursive source/build/resource/license/packaging provenance governance.",
+      "composition_slot": "Dependency resource manifest/license/package boundary only; no Fabushi shipping slot.",
+      "capability_component": "MicroTeX resource manifest and license/package-boundary provenance.",
+      "variation_axes": [
+        "full 73-entry standalone inventory vs 30-entry bundled subset",
+        "font license texts vs TTF/XML payloads",
+        "Greek/Cyrillic standalone install vs bundled exclusion",
+        "project MIT vs res mixed licenses",
+        "standalone Meson vs accepted tdesktop bundled resources"
+      ],
+      "shared_owner_contracts": [
+        "TDRP recursive provenance",
+        "Pinned MicroTeX tree",
+        "Fabushi attachments/resource lifecycle",
+        "Fabushi artifacts",
+        "Desktop packaging/release",
+        "GitHub Actions exact-head evidence"
+      ],
+      "duplicate_root_check": "No MicroTeXResourceManifest runtime, second Resource/font/license store, second packaging root or Telegram runtime.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Not applicable",
+      "primary_navigation_target": "Not applicable",
+      "collection_surface": "Not applicable",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "No Fabushi product action.",
+      "detail_section": "Not applicable",
+      "capability_surface": "Source-only third-party resource inventory/license/package provenance.",
+      "route_contract": "Not applicable",
+      "search_scope": "Not applicable",
+      "search_provider": "Not applicable",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Not applicable",
+      "search_local_remote_contract": "Not applicable",
+      "responsive_disposition": "Not applicable",
+      "accessibility_contract": "No Fabushi accessibility surface.",
+      "keyboard_contract": "Not applicable",
+      "state_continuity_contract": "Any manifest membership/history/qrc overlap/Meson/license or owner-boundary drift requires exact-ref reconciliation; stability does not prove package inclusion or release readiness.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "Not applicable",
+      "semantic_token_usage": [],
+      "legacy_token_adapter": "Not applicable",
+      "canonical_component_ids": [],
+      "screen_pattern_id": "Not applicable",
+      "screen_slots": [],
+      "visual_state_matrix": [],
+      "density_contract": "Not applicable",
+      "icon_asset_contract": "No Fabushi asset change.",
+      "avatar_contract": "No avatar change.",
+      "content_copy_keys": [],
+      "motion_contract": "No motion change.",
+      "reduced_motion_contract": "Not applicable",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "high",
+      "requirement_ids": [
+        "TDRP-R9-MICROTEX-RES-README-PROVENANCE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MICROTEX-RES-README-EXACT-SOURCE-001",
+        "ORA-TDRP-MICROTEX-RES-README-HISTORY-001",
+        "ORA-TDRP-MICROTEX-RES-README-BUNDLED-SUBSET-001",
+        "ORA-TDRP-MICROTEX-RES-README-MESON-INSTALL-001",
+        "ORA-TDRP-MICROTEX-RES-README-LICENSE-BOUNDARY-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MICROTEX-RES-README-73-UNIQUE-RESOLVED-001",
+        "INV-TDRP-MICROTEX-RES-README-QRC-SUBSET-NOT-EQUIVALENCE-001",
+        "INV-TDRP-MICROTEX-RES-README-MIXED-LICENSE-BOUNDARY-001",
+        "INV-TDRP-MICROTEX-RES-README-NO-PARALLEL-OWNER-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MICROTEX-RES-README-PINNED-SOURCE-001",
+        "CONTRACT-TDRP-MICROTEX-RES-README-QRC-BOUNDARY-001",
+        "CONTRACT-TDRP-MICROTEX-RES-README-LICENSE-BOUNDARY-001",
+        "CONTRACT-TDRP-MICROTEX-RES-README-EXACT-HEAD-EVIDENCE-001"
+      ],
+      "integration_case_ids": [],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [
+        "FAULT-TDRP-MICROTEX-RES-README-SOURCE-DRIFT-001",
+        "FAULT-TDRP-MICROTEX-RES-README-HISTORY-MISATTRIBUTION-001",
+        "FAULT-TDRP-MICROTEX-RES-README-BUNDLE-CONFLATION-001",
+        "FAULT-TDRP-MICROTEX-RES-README-LICENSE-FLATTENING-001",
+        "FAULT-TDRP-MICROTEX-RES-README-RUNTIME-PROMOTION-001"
+      ],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY",
+        "G-EVIDENCE"
+      ],
+      "test_fixture_ids": [
+        "Pinned 73-entry RES_README",
+        "Pinned e45a487/bab5cff history boundary",
+        "Pinned bundled.qrc 30-entry subset",
+        "Pinned Meson install boundary",
+        "Pinned README mixed-license boundary",
+        "Live Fabushi existing owners"
+      ],
+      "test_environment_ids": [
+        "Pinned MicroTeX tree",
+        "Pinned tdesktop boundary",
+        "Live Fabushi exact-head owner inventory",
+        "GitHub Actions exact-head TDRP/Rust/MCP"
+      ],
+      "coverage_matrix_status": "mapped-open",
+      "flake_status": "not-applicable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "open",
+      "license_and_provenance": "RES_README enumerates a mixed-license resource tree. Project MIT explicitly excludes fonts/XML under res; three listed font-license texts and Greek/Cyrillic license areas remain their own legal sources. The manifest itself does not authorize redistribution under one blanket license.",
+      "reviewer": "primary-session",
+      "notes": "Strict218 resource-manifest/license/package provenance. Counters unknown=16158 unread=16133 omitted=0 responsibilities=236. Next res/SAMPLES.tex@e03f0088e3fba1d225b90d06d586f32c5f70310b; no font/XML/Greek/Cyrillic/render/shipping responsibility is closed."
     }
   ]
 }
