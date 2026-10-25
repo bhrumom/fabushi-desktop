@@ -361,10 +361,10 @@
   "coverage": {
     "root_source_entries_total": 6893,
     "recursive_source_entries_total": 16379,
-    "unknown_minimum": 16135,
-    "unread_minimum": 16110,
+    "unknown_minimum": 16134,
+    "unread_minimum": 16109,
     "omitted_known": 0,
-    "note": "Strict241 WNTT10 XML/fixed-width-font-metrics/style/parser/runtime/license/install/packaging provenance. Counters unknown=16135 unread=16110 omitted=0 responsibilities=259. root/c154-parent/c154/pinned are byte-identical 7679-byte blob 4baea371; 95 Char/0 Kern/36 Lig, every width .524996, 13 nonzero depth/zero italic, roman=wnr10/ss=wnss10 with reciprocal ttVersion from wnr10/wnss10. Parent f5fcf6f3 TDRP 40216969686 30/30, Rust 40216969649 6/6 and MCP 40216969644 1/1 are terminal-success. Next res/fonts/base/cmex10.ttf."
+    "note": "Strict242 CMEX10 TTF/compiled-math-extension-font/metrics/extensions/next-larger/rendering/license/install/packaging provenance. Counters unknown=16134 unread=16109 omitted=0 responsibilities=260. root/c154-parent=19240-byte blob 5ac93ac4; c154/pinned=19356-byte blob 4df1d6c8; c154 changes only name table plus head checksum, preserving the other 15 sfnt tables. Pinned sfnt has 17 tables/134 glyphs/unitsPerEm=2048/cmap=133; compiled cmex10.def.cpp has 128 metrics, 28 extension recipes and 76 next-larger links; Builtin FontSet registers cmex10 and bundled.qrc ships it in external_microtex_bundled.rcc. Parent 804c3b78 TDRP 40218118036 30/30, Rust 40218118026 6/6 and MCP 40218118035 1/1 are terminal-success. Next res/fonts/base/cmmi10.ttf@c12851691ef7a5424f83752e7d39737af9860c79."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -1827,38 +1827,38 @@
     "baseline_identity_accepted": false,
     "source_closure_ready": false
   },
-  "target_commit": "f5fcf6f3523ac506ad4312c597bdfe136668becf",
+  "target_commit": "804c3b78a465246e1a63a02641cff1e9a5b2dfaa",
   "last_completed_parent_head_validation": {
     "evidence_status": "historical-only-after-receipt-commit",
-    "head_sha": "f5fcf6f3523ac506ad4312c597bdfe136668becf",
+    "head_sha": "804c3b78a465246e1a63a02641cff1e9a5b2dfaa",
     "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
     "upstream_tree": "c539eabfb05e7dcaa84821ac44c35cdfb6551ae5",
     "recursive_non_directory_entries": 16379,
-    "tdrp_run_id": 40216969686,
+    "tdrp_run_id": 40218118036,
     "tdrp_jobs": "30/30 success",
     "source_authority_artifact": {
-      "id": 12608231983,
-      "digest": "sha256:c7f86b952f1b5fa920e3a94c5e39869448b030a8473e7b27e3314b7338a9f010"
+      "id": 12608124578,
+      "digest": "sha256:6a99dfb5879259449f5277447d9e149ed6826505804ad101afc8d462e7440ba0"
     },
     "recursive_closure_artifact": {
-      "id": 12608182798,
-      "digest": "sha256:7dee063cc378fcf01deb4131a816e069487ed035ebfcc8ca2792a9cae98132c2"
+      "id": 12608420808,
+      "digest": "sha256:469380f6c9225101762ad512ba15fad9ef4bf48121a2cc3ba3e3ddb6c8897771"
     },
     "recursive_reachability_artifact": {
-      "id": 12607318939,
-      "digest": "sha256:b4cc3482dfd5815051f58b1bd827e961704cd8f71468600b4111763e19cd5423"
+      "id": 12608840536,
+      "digest": "sha256:3db3f322f52d864cf9c7ddfcc13315809c0cbda23dcd991f351aebaa143755c7"
     },
     "boost_reachability_artifact": {
-      "id": 12607219103,
-      "digest": "sha256:1207c06268030a6461799606a7e1848216622f1bcd516ba508457419c17a572e"
+      "id": 12608920268,
+      "digest": "sha256:921a2c14a2baad8c13f800cfdffc85ac970e64fa09e8649c053808480abc9c8c"
     },
-    "rust_run_id": 40216969649,
+    "rust_run_id": 40218118026,
     "rust_jobs": "6/6 success",
     "rust_artifact": {
-      "id": 12608037673,
-      "digest": "sha256:6eba39137c8dbcac81b40f5c84696a5951bc681a8fc0cc76c222913a9395989c"
+      "id": 12608189021,
+      "digest": "sha256:a1bbf45a4aa497f425101484791c76e6b2a41f1b5f0aaf00a2ed3c704ab1ae34"
     },
-    "official_mcp_marketplace_run_id": 40216969644,
+    "official_mcp_marketplace_run_id": 40218118035,
     "official_mcp_marketplace_jobs": "1/1 success",
     "baseline_identity_accepted": false,
     "source_closure_ready": false,
