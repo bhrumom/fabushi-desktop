@@ -7,6 +7,7 @@ const source = fs.readFileSync(new URL('./discover-tdrp-candidate-root-inventory
 test('candidate inventory binds an immutable checkout and records every root blob', () => {
   assert.match(source, /candidate\.commit/);
   assert.match(source, /git.*ls-tree.*-r.*-z/s);
+  assert.ok(source.includes('[\\s\\S]+'), 'candidate path parser must accept newline-containing paths');
   assert.match(source, /root_non_directory_entries/);
   assert.match(source, /files/);
   assert.match(source, /recursive_non_directory_entries: null/);

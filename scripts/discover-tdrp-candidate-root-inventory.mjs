@@ -42,7 +42,9 @@ const entries = run('git', ['-C', checkoutRoot, 'ls-tree', '-r', '-z', 'HEAD'])
   .split('\0')
   .filter(Boolean)
   .map((line) => {
-    const match = line.match(/^([0-9]{6}) (\w+) ([0-9a-f]{40})\t(.+)$/);
+    // `git ls-tree -z` permits any byte except NUL in a path, including newlines.
+    // Match the complete NUL-delimited record rather than relying on dot matching.
+    const match = line.match(/^([0-9]{6}) (\w+) ([0-9a-f]{40})\t([\s\S]+)$/);
     fail(match, `unparseable candidate tree entry: ${line}`);
     const [, mode, type, blob, entryPath] = match;
     return { mode, type, path: entryPath, blob };
