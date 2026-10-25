@@ -27,13 +27,13 @@ Exact structural inventory:
 The accepted blob is passive, self-contained vector documentation content at this pin. Future blob drift requires re-audit.
 
 ## Stable index-10 source and Markdown relation
-The eleventh SAMPLES.tex body, sample index 9, is stable across every checked state. Under the tracked pre-push parser semantics (a delimiter is a line of only one-or-more percent signs; empty lines are omitted), the normalized body is exactly 250 characters at:
+The eleventh SAMPLES.tex body, sample index 10, is stable across every checked state. Under the tracked pre-push parser semantics (a delimiter is a line of only one-or-more percent signs; empty lines are omitted), the normalized body is exactly 250 characters at:
 - 95a54b5 creation: res/SAMPLES.tex@7fea73994bec7453fc82f3cb91bab842112cd0ab and samples.md@bed457ee0da253f6ff4a37b0152be6eaaca9c20c.
 - 63555c2 source-change state: res/SAMPLES.tex@e03f0088e3fba1d225b90d06d586f32c5f70310b while samples.md remains bed457ee0da253f6ff4a37b0152be6eaaca9c20c.
 - 08d9d6b generated-documentation update: SAMPLES.tex remains e03f0088e3fba1d225b90d06d586f32c5f70310b and samples.md becomes 4eb0be8a26e15f098156040366683f4e835631f6.
 - accepted pin: the same e03f0088 SAMPLES.tex and 4eb0be8a samples.md.
 
-At all four points the normalized index-10 SAMPLES.tex body exactly equals the corresponding samples.md fenced TeX body. The body covers cases, arrays, split equations and align/intertext examples. Index 9 itself does not change while other corpus/runtime state changes.
+At all four points the normalized index-10 SAMPLES.tex body exactly equals the corresponding samples.md fenced TeX body. The body contains three fraction/product display variants using sum/product notation, explicit displaystyle, and nolimits. Index 10 itself does not change while other corpus/runtime state changes.
 
 ## Exhaustive exact-path history and creation-only boundary
 The accepted-pin exact-path query for readme/samples/sample_10.svg returns exactly one commit on page 1 and an empty page 2:
@@ -55,7 +55,7 @@ githooks/pre-push is b426a77d194ac023a93acb57235635608a0d9e04 at creation, 08d9d
 
 At creation, samples.h is 633cdcc8163f34914d80eb172e1a049f924b81a7, gtkmm_main.cpp is 3b7b1c8ac7e40c43e948afe9a332d3f9780a975e and graphic_cairo.cpp is 5d8c3b465e37a2fba9177088eff20278da214f69. At 08d9d6b, samples.h remains 633cdcc8163f34914d80eb172e1a049f924b81a7 while gtkmm_main.cpp is e0dc57832ea7d722e5d089ab8aa87b4f079962fa and graphic_cairo.cpp is ae1535053ade8b3919e32fa69ee1eef34a3af681. At the accepted pin, samples.h is 2e8bcd0d3d8e2461ad12bce4e9e4763124b6b652, gtkmm_main.cpp is d491af61d05fbcc5d17c48f64e76664f91d5fce8 and graphic_cairo.cpp is 16331bfdb1d69926b7e14c7276acb3df052f40a8.
 
-The source-backed chain is SAMPLES index 9 -> LaTeX::parse -> Cairo::SvgSurface/Cairo::Context/Graphics2D_cairo -> indexed sample_10.svg -> scour -> tracked readme/samples asset. Generator source lineage is not execution-receipt evidence.
+The source-backed chain is SAMPLES index 10 -> LaTeX::parse -> Cairo::SvgSurface/Cairo::Context/Graphics2D_cairo -> indexed sample_10.svg -> scour -> tracked readme/samples asset. Generator source lineage is not execution-receipt evidence.
 
 ## Build, CI and shipping negative oracles
 Pinned MicroTeX CMakeLists.txt@75059dec500cff8114728331eb5cb317abf6daf9, src/QtLatex.pri@e5f4efcd78ec9d1e808127e414ce5689b44363b7 and res/bundled.qrc@303fb6bdf780d66a6e8960a095d17be466b909fa have zero sample_10/readme-samples/SAMPLES target references.
