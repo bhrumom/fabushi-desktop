@@ -232,7 +232,7 @@ fn test_ocrm_storage_o08_ensure_settings_file() {
     let path = ensure_settings_file(&db_path).expect("ensure settings");
     assert!(path.exists());
 
-    let settings = read_sand_settings_file(&path).expect("read settings");
+    let settings = read_sand_settings_file(&path);
     assert!(!settings.auto_mode);
 
     // Second call preserves existing
