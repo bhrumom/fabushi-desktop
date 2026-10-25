@@ -152,13 +152,18 @@ export function createCommandPaletteFileProvider(
     async setQuery(query) {
       if (disposed || !available) return { status: "unavailable", value: [] };
       cancelRequest();
+      const normalized = query.trim();
+      const previous = previousValue(snapshot);
+      if (normalized.length === 0) {
+        publish({ status: "empty", value: [] });
+        return { status: "empty", value: [] };
+      }
       const currentRequestId = requestId;
       const nextController = new AbortController();
       controller = nextController;
-      const previous = previousValue(snapshot);
       publish({ status: "loading", value: previous });
       try {
-        const raw = await source.searchMedia({ query: query.trim(), limit }, { signal: nextController.signal });
+        const raw = await source.searchMedia({ query: normalized, limit }, { signal: nextController.signal });
         if (disposed || currentRequestId !== requestId || nextController.signal.aborted) return { status: "cancelled", value: previous };
         const files = commandPaletteFilesFromCoordinator(raw);
         const next: CommandPaletteFileSnapshot = files.length === 0 ? { status: "empty", value: [] } : { status: "ready", value: files };

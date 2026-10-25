@@ -33,6 +33,8 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "${TDRP_TARGET_SHA}"
+      - name: Verify Revision 9 validator contracts
+        run: node --test scripts/validate-tdrp-revision9-authority.contract.test.mjs
       - name: Validate Revision 9 source authority
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -162,6 +164,13 @@ jobs:
         with:
           ref: ${{ env.TDRP_TARGET_SHA }}
           fetch-depth: 1
+      - name: Assert exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${TDRP_TARGET_SHA}"
+      - name: Verify Revision 9 validator contracts
+        run: node --test scripts/validate-tdrp-revision9-authority.contract.test.mjs
       - name: Verify full source-closure mode rejects current open baseline
         shell: bash
         env:

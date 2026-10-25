@@ -1,0 +1,164 @@
+name: Production transcript and search contracts
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/src/production/**"
+      - "frontend/src/recovered/features/conversation/workspace/pagination.ts"
+      - "frontend/src/recovered/features/conversation/workspace/pagination.contract.test.ts"
+      - ".github/workflows/production-transcript-search-contract.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "frontend/src/production/**"
+      - "frontend/src/recovered/features/conversation/workspace/pagination.ts"
+      - "frontend/src/recovered/features/conversation/workspace/pagination.contract.test.ts"
+      - ".github/workflows/production-transcript-search-contract.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-transcript-search-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    name: Exact-head production contracts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact event SHA
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - name: Assert exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}"
+          actual="$(git rev-parse HEAD)"
+          test "$actual" = "$expected"
+          echo "Exact tested HEAD: $actual" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - name: Install desktop dependencies
+        working-directory: desktop
+        run: npm ci
+      - name: Typecheck production sources and contracts
+        working-directory: desktop
+        run: npx tsc -p ../frontend/tsconfig.json --noEmit --allowImportingTsExtensions
+      - name: Run production transcript and search contracts
+        working-directory: desktop
+        run: >-
+          npx --yes tsx@4.21.0 --test
+          ../frontend/src/production/model.contract.test.ts
+          ../frontend/src/production/command-palette-search-provider.contract.test.ts
+          ../frontend/src/production/command-palette-message-provider.contract.test.ts
+          ../frontend/src/production/command-palette-provider.contract.test.ts
+          ../frontend/src/recovered/features/conversation/workspace/pagination.contract.test.ts
+      - name: Record exact-head contract evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/production-contracts
+          tested_sha="$(git rev-parse HEAD)"
+          cat > artifacts/production-contracts/evidence.json <<JSON
+          {
+            "project_id": "FBCP-001",
+            "spec_revision": 7,
+            "head_sha": "${tested_sha}",
+            "run_id": ${GITHUB_RUN_ID},
+            "run_attempt": ${GITHUB_RUN_ATTEMPT},
+            "contracts": [
+              "frontend/src/production/model.contract.test.ts",
+              "frontend/src/production/command-palette-search-provider.contract.test.ts",
+              "frontend/src/production/command-palette-message-provider.contract.test.ts",
+              "frontend/src/production/command-palette-provider.contract.test.ts",
+              "frontend/src/recovered/features/conversation/workspace/pagination.contract.test.ts"
+            ],
+            "status": "passed"
+          }
+          JSON
+      - name: Upload exact-head contract evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-contracts-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          path: artifacts/production-contracts
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+
+  independent-review:
+    name: Independent production contract review
+    needs: contracts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact event SHA independently
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - name: Assert exact checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}"
+          test "$(git rev-parse HEAD)" = "$expected"
+      - name: Download producer evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: production-contracts-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          path: artifacts/production-contracts
+      - name: Verify producer provenance and contract sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const evidence = JSON.parse(fs.readFileSync('artifacts/production-contracts/evidence.json', 'utf8'));
+          const actual = require('node:child_process').execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+          if (evidence.head_sha !== actual) throw new Error('contract evidence HEAD drift');
+          if (evidence.status !== 'passed') throw new Error('contract producer did not pass');
+          for (const path of evidence.contracts) {
+            if (!fs.existsSync(path)) throw new Error('missing contract source: ' + path);
+          }
+          const renderer = fs.readFileSync('frontend/src/production/ProductionRenderer.tsx', 'utf8');
+          const model = fs.readFileSync('frontend/src/production/model.ts', 'utf8');
+          if (!renderer.includes('reconcileAuthoritativeTranscriptBaseline')) throw new Error('renderer is not using canonical transcript reconciliation');
+          if (!renderer.includes('reconcileTranscriptFeedUpdate(existing, projected)')) throw new Error('renderer is not retaining pre-baseline transcript updates');
+          if (!model.includes('export function reconcileAuthoritativeTranscriptBaseline')) throw new Error('canonical transcript reconciliation owner missing');
+          if (!model.includes('export function reconcileTranscriptFeedUpdate')) throw new Error('canonical transcript update owner missing');
+          NODE
+      - name: Record independent review verdict
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/production-contract-review
+          tested_sha="$(git rev-parse HEAD)"
+          cat > artifacts/production-contract-review/review-verdict.json <<JSON
+          {
+            "project_id": "FBCP-001",
+            "spec_revision": 7,
+            "head_sha": "${tested_sha}",
+            "run_id": ${GITHUB_RUN_ID},
+            "run_attempt": ${GITHUB_RUN_ATTEMPT},
+            "review_scope": "independent-downstream-job-clean-checkout",
+            "status": "passed"
+          }
+          JSON
+      - name: Upload independent review evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-contract-review-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          path: artifacts/production-contract-review
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
