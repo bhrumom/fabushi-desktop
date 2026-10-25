@@ -614,6 +614,9 @@ jobs:
           bash "$recorder" stop "$MINIAPP_EVIDENCE_DIR" || stop_status=$?
           verify_status=0
           bash "$recorder" verify "$MINIAPP_EVIDENCE_DIR" || verify_status=$?
+          if [ "$test_status" -ne 0 ]; then
+            find "$MINIAPP_EVIDENCE_DIR" -type f -name failure.json -size +0c -print -quit | grep -q .
+          fi
           test "$test_status" -eq 0
           test "$stop_status" -eq 0
           test "$verify_status" -eq 0
