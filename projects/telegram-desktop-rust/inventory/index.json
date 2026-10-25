@@ -90,7 +90,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Strict240 WNTT10 TTF/font-metrics/style/parser/runtime/license/install/packaging provenance. Counters unknown=16136 unread=16111 omitted=0 responsibilities=258. root/c154-parent=33308-byte cb01bb52; c154/pinned=33424-byte 649e9b1b; c154 changes name namespace plus head checksum while cmap/glyf/OS2/hhea/maxp semantics stay unchanged. Pinned sfnt has 15 tables/99 glyphs, unitsPerEm=1000, bounds -11,-228..527,838, hhea 838/-228/90, OS/2 v3 weight=400 width=5. Adjacent wntt10.xml=7679 bytes/163 lines, 95 Char/36 Lig, roman=wnr10/ss=wnss10. Parent 7ff4a99f TDRP 40215710329 30/30 and Rust 40215710305 6/6 plus MCP 40215710357 1/1 are terminal-success. Next res/cyrillic/wntt10.xml@4baea371bade60de759650135b4773fbf2f28ee2.",
+  "note": "Strict241 WNTT10 XML/fixed-width-font-metrics/style/parser/runtime/license/install/packaging provenance. Counters unknown=16135 unread=16110 omitted=0 responsibilities=259. root/c154-parent/c154/pinned are byte-identical 7679-byte blob 4baea371; 95 Char/0 Kern/36 Lig, every width .524996, 13 nonzero depth/zero italic, roman=wnr10/ss=wnss10 with reciprocal ttVersion from wnr10/wnss10. Parent f5fcf6f3 TDRP 40216969686 30/30, Rust 40216969649 6/6 and MCP 40216969644 1/1 are terminal-success. Next res/fonts/base/cmex10.ttf.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
@@ -106,38 +106,38 @@
     "baseline_identity_accepted": false,
     "source_closure_ready": false
   },
-  "target_commit": "7ff4a99f4be96e2f82035dd2da2c8106e237fd54",
+  "target_commit": "f5fcf6f3523ac506ad4312c597bdfe136668becf",
   "last_completed_parent_head_validation": {
     "evidence_status": "historical-only-after-receipt-commit",
-    "head_sha": "7ff4a99f4be96e2f82035dd2da2c8106e237fd54",
+    "head_sha": "f5fcf6f3523ac506ad4312c597bdfe136668becf",
     "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
     "upstream_tree": "c539eabfb05e7dcaa84821ac44c35cdfb6551ae5",
     "recursive_non_directory_entries": 16379,
-    "tdrp_run_id": 40215710329,
+    "tdrp_run_id": 40216969686,
     "tdrp_jobs": "30/30 success",
     "source_authority_artifact": {
-      "id": 12607885727,
-      "digest": "sha256:4373a0dd3947decec2703630d2174158f222230ccc3e9a940955b42fb5f64d59"
+      "id": 12608231983,
+      "digest": "sha256:c7f86b952f1b5fa920e3a94c5e39869448b030a8473e7b27e3314b7338a9f010"
     },
     "recursive_closure_artifact": {
-      "id": 12607741584,
-      "digest": "sha256:42b22158c10ee4a2d92620845cd8a4bdc4b89ab94ed22605ebe254b11fe12028"
+      "id": 12608182798,
+      "digest": "sha256:7dee063cc378fcf01deb4131a816e069487ed035ebfcc8ca2792a9cae98132c2"
     },
     "recursive_reachability_artifact": {
-      "id": 12607986089,
-      "digest": "sha256:ca7a91822c51277b571322f8bd9fa61b72bbfe00f5737fdbda8303f5afef4d62"
+      "id": 12607318939,
+      "digest": "sha256:b4cc3482dfd5815051f58b1bd827e961704cd8f71468600b4111763e19cd5423"
     },
     "boost_reachability_artifact": {
-      "id": 12607826047,
-      "digest": "sha256:ffdacf569ad9e5a455a0b521172e04fe372b38756e6e379d8960da6516367001"
+      "id": 12607219103,
+      "digest": "sha256:1207c06268030a6461799606a7e1848216622f1bcd516ba508457419c17a572e"
     },
-    "rust_run_id": 40215710305,
+    "rust_run_id": 40216969649,
     "rust_jobs": "6/6 success",
     "rust_artifact": {
-      "id": 12607481643,
-      "digest": "sha256:ea1920ed93632195a7536c89df31a09f1e4d43b42d0dd2db3ac3a41128e51336"
+      "id": 12608037673,
+      "digest": "sha256:6eba39137c8dbcac81b40f5c84696a5951bc681a8fc0cc76c222913a9395989c"
     },
-    "official_mcp_marketplace_run_id": 40215710357,
+    "official_mcp_marketplace_run_id": 40216969644,
     "official_mcp_marketplace_jobs": "1/1 success",
     "baseline_identity_accepted": false,
     "source_closure_ready": false,
