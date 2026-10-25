@@ -361,10 +361,10 @@
   "coverage": {
     "root_source_entries_total": 6893,
     "recursive_source_entries_total": 16379,
-    "unknown_minimum": 16133,
-    "unread_minimum": 16108,
+    "unknown_minimum": 16132,
+    "unread_minimum": 16107,
     "omitted_known": 0,
-    "note": "Strict243 CMMI10 TTF/compiled-math-italic-font/metrics/kerns/next-larger/rendering/license/install/packaging provenance. Counters unknown=16133 unread=16108 omitted=0 responsibilities=261. root/c154-parent=26576-byte blob f10c3af2; c154/pinned=26708-byte blob c1285169; c154 changes name plus head checksumAdjustment/modified timestamp while preserving the other 13 sfnt tables. Pinned sfnt has 15 tables/134 glyphs/unitsPerEm=1000/cmap=133; compiled cmmi10.def has 128 metrics/166 kerns/3 next-larger links and cmmi10_unchanged has 57/37/3 over the same TTF. Builtin FontSet registers both and bundled.qrc ships cmmi10 in external_microtex_bundled.rcc. Parent 476a7968 TDRP 40219459433 30/30, Rust 40219459435 6/6 and MCP 40219459427 1/1 are terminal-success. Next res/fonts/base/cmmib10.ttf@6772eafd5b8c4d0d0a85b12d9e92c4a05d2caf64."
+    "note": "Strict244 CMMIB10 TTF/compiled-bold-math-italic-font/metrics/kerns/next-larger/rendering/license/install/packaging provenance. Counters unknown=16132 unread=16107 omitted=0 responsibilities=262. root/c154-parent=24348-byte blob 5ae39768; c154/pinned=24484-byte blob 6772eafd; c154 changes name plus head checksumAdjustment/modified timestamp while preserving the other 13 sfnt tables. Pinned sfnt has 15 tables/134 glyphs/unitsPerEm=1000/cmap=133, bbox -15,-250..1216,750, hhea 750/-250/90, OS/2 weight=700; compiled cmmib10.def has 128 metrics/166 kerns/3 next-larger links with roman=cmbx10/ss=cmssbx10/tt=cmtt10/it=cmbxti10, and cmmib10_unchanged has 67/37/3 over the same TTF. Builtin FontSet registers both and bundled.qrc ships cmmib10 in external_microtex_bundled.rcc. Parent 128eadfe TDRP 40221044843 30/30, Rust 40221044813 6/6 and MCP 40221044851 1/1 are terminal-success. Next res/fonts/euler/eufb10.ttf@935f84bd27c682b1ed2ed6e79c89c139d55943b9."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -1827,38 +1827,38 @@
     "baseline_identity_accepted": false,
     "source_closure_ready": false
   },
-  "target_commit": "476a7968f5c1bc1522e1ab3b54c7d093438664aa",
+  "target_commit": "128eadfe2836d61e513c42e93d07e6ff1dcc190f",
   "last_completed_parent_head_validation": {
     "evidence_status": "historical-only-after-receipt-commit",
-    "head_sha": "476a7968f5c1bc1522e1ab3b54c7d093438664aa",
+    "head_sha": "128eadfe2836d61e513c42e93d07e6ff1dcc190f",
     "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
     "upstream_tree": "c539eabfb05e7dcaa84821ac44c35cdfb6551ae5",
     "recursive_non_directory_entries": 16379,
-    "tdrp_run_id": 40219459433,
+    "tdrp_run_id": 40221044843,
     "tdrp_jobs": "30/30 success",
     "source_authority_artifact": {
-      "id": 12609077100,
-      "digest": "sha256:536dd2252126fe81a843451fa756e5f1d168fb2b7dbb4696df0500ee0a2aeafe"
+      "id": 12609725213,
+      "digest": "sha256:6664b4cf159eb68588a9c7bdbf8a733c9e8db66767ec2e13030ca72b02f3ecc6"
     },
     "recursive_closure_artifact": {
-      "id": 12609071508,
-      "digest": "sha256:6ae3862c8ea8eb2689b75f7137cb7f8e5847fba50e8c04e98ea3c20c4f2a0f34"
+      "id": 12608733993,
+      "digest": "sha256:6a4da0cbd975f096dabf754427ebdddb2a2f855d8673915cf432f14f4886c3d3"
     },
     "recursive_reachability_artifact": {
-      "id": 12608716889,
-      "digest": "sha256:3d621d50726ece643e24fdd1b6552503530de7d22c73bf909bd370e434073a07"
+      "id": 12608868996,
+      "digest": "sha256:a4d71f646380553b92b53ef6691f22f953d9dc0529fe0588af73d0fac65ab55d"
     },
     "boost_reachability_artifact": {
-      "id": 12609232157,
-      "digest": "sha256:ad2c0ceb0e49e0dbf3f9bb3b2f6f5b45585c1903176ebb145052e9be68661073"
+      "id": 12609740519,
+      "digest": "sha256:7b014cac53c12f8d655695e2da695f27dbe62937b1381c2e42ee7653516df358"
     },
-    "rust_run_id": 40219459435,
+    "rust_run_id": 40221044813,
     "rust_jobs": "6/6 success",
     "rust_artifact": {
-      "id": 12608682352,
-      "digest": "sha256:b3a7591b99544b91affd694a41efa67e5e4a4dc02d53696ca0edf646ab83276d"
+      "id": 12609387547,
+      "digest": "sha256:bb1a624abf2a4e2cf2c353eda30cfeec8c784580e6b8e7fd68fee568eb7d333b"
     },
-    "official_mcp_marketplace_run_id": 40219459427,
+    "official_mcp_marketplace_run_id": 40221044851,
     "official_mcp_marketplace_jobs": "1/1 success",
     "baseline_identity_accepted": false,
     "source_closure_ready": false,
