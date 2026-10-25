@@ -235,9 +235,31 @@ function bytesLabel(size: number): string {
   return size < 1024 ? `${size} B` : size < 1024 ** 2 ? `${(size / 1024).toFixed(1)} KiB` : `${(size / 1024 ** 2).toFixed(1)} MiB`;
 }
 
-async function verifyWasmFileReport(page: Page, inputFile: string, inputBytes: number, nativeLocalOverride?: boolean): Promise<void> {
+async function bounded<T>(operation: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      operation,
+      new Promise<T>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label}_TIMEOUT`)), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+async function verifyWasmFileReport(
+  page: Page,
+  inputFile: string,
+  inputBytes: number,
+  nativeLocalOverride?: boolean,
+  phase?: (name: string) => Promise<void>,
+): Promise<void> {
+  await phase?.('composer-status');
   const status = page.locator('#composer-status');
   await expect(status, 'the signed app must expose its live composer status').toBeVisible({ timeout: 45_000 });
+  await phase?.('composer-launch-ready');
   await expect.poll(async () => page.locator('#launch').isEnabled(), { timeout: 45_000, message: 'Wasm Rust adapter must enable the real composer launch control' }).toBe(true);
   const nativeLocal = nativeLocalOverride ?? await page.evaluate(async () => {
     const bridge = (globalThis as unknown as { fabushi?: { invoke(tool: string, args?: Record<string, unknown>): Promise<{ data?: { capabilities?: string[]; targetPools?: Array<{ id?: string }> } }> } }).fabushi;
@@ -247,9 +269,12 @@ async function verifyWasmFileReport(page: Page, inputFile: string, inputBytes: n
       && data.targetPools?.some((pool) => pool.id === 'loopback') === true;
   });
   if (nativeLocal) {
+    await phase?.('composer-native-fill');
     const contents = await readFile(inputFile, 'utf8');
-    await page.locator('#message').fill(contents);
-    await page.locator('#launch').click();
+    await bounded(page.locator('#message').fill(contents, { timeout: 60_000 }), 75_000, 'COMPOSER_NATIVE_FILL');
+    await phase?.('composer-native-click');
+    await bounded(page.locator('#launch').click({ timeout: 60_000 }), 75_000, 'COMPOSER_NATIVE_CLICK');
+    await phase?.('composer-native-complete');
     await expect(status).toContainText('引擎已完成', { timeout: 120_000 });
     const packetCount = Number(await page.locator('#composer-packets').textContent());
     expect(Number.isSafeInteger(packetCount) && packetCount > 0, 'native Rust loopback must produce verified packet(s)').toBe(true);
@@ -257,15 +282,18 @@ async function verifyWasmFileReport(page: Page, inputFile: string, inputBytes: n
     await expect(page.getByRole('button', { name: /导出报告/u })).toBeEnabled();
     return;
   }
+  await phase?.('composer-web-file-input');
   const fileInput = page.locator('#composer-files');
   await expect(fileInput, 'the signed app must provide its genuine Web file input').toHaveCount(1);
-  await fileInput.setInputFiles(inputFile);
+  await bounded(fileInput.setInputFiles(inputFile, { timeout: 60_000 }), 75_000, 'COMPOSER_WEB_FILE_INPUT');
   // A native-capable host may keep the web-file selection out of its native
   // attachment projection; the local Rust run still consumes the real input.
   await expect.poll(async () => page.locator('#composer-files').evaluate((node) => (node as HTMLInputElement).files?.length ?? 0)).toBe(1);
   const launch = page.locator('#launch');
   await expect(launch).toBeEnabled();
-  await launch.click();
+  await phase?.('composer-web-click');
+  await bounded(launch.click({ timeout: 60_000 }), 75_000, 'COMPOSER_WEB_CLICK');
+  await phase?.('composer-web-complete');
   await expect(status).toContainText('本地回环完成', { timeout: 120_000 });
   await expect(page.locator('#composer-pass')).toHaveText('1');
   const packetCount = Number(await page.locator('#composer-packets').textContent());
@@ -541,7 +569,7 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
         evidence.installedNativeDigests.push(...digests);
       }
       await markPhase('online-composer');
-      await verifyWasmFileReport(mini, inputFile, fixtureStat.size, onlineNativeVerified);
+      await verifyWasmFileReport(mini, inputFile, fixtureStat.size, onlineNativeVerified, markPhase);
       await markPhase('online-report-export');
       await exportAndVerifyReport(mini, app.process.pid!, evidenceDir, inputFile, fixtureStat.size);
       evidence.launchModes.push('online-install');
@@ -572,7 +600,7 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
       const offlineNativeVerified = await verifyInstalledNativeRuntime(mini);
       evidence.installedNativeVerified.push(offlineNativeVerified);
       await markPhase('offline-composer');
-      await verifyWasmFileReport(mini, inputFile, fixtureStat.size, offlineNativeVerified);
+      await verifyWasmFileReport(mini, inputFile, fixtureStat.size, offlineNativeVerified, markPhase);
       await markPhase('offline-report-export');
       await exportAndVerifyReport(mini, app.process.pid!, evidenceDir, inputFile, fixtureStat.size);
       evidence.launchModes.push('os-network-disabled-cold-launch');
