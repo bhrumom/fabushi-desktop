@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16146,
-    "unread_minimum": 16121,
+    "unknown_minimum": 16145,
+    "unread_minimum": 16120,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -90,7 +90,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Strict230 TDRP-R9-MICROTEX-RES-CYRILLIC-WNR10-TTF-PROVENANCE-001: wnr10.ttf@a93586f1 is 36196 bytes; root b13a442c is 36084. sfnt=15 tables/98 glyphs/UPM1000, OS/2 weight=400 fsType=0. c154 namespaces names; exact table delta is name plus head checksumAdjustment, glyph/layout/advance/cmap unchanged. Adjacent wnr10.xml@319d5db2 is stable: 95 Char/416 Kern/36 Lig and bold/ss/tt/it graph. Historical FontInfo binds adjacent TTF; accepted XML loader is disabled and external-font fallback is optional. RES_README/Meson/legacy latex.qrc include/install; accepted bundled.qrc excludes Cyrillic/Greek. GPLv3 subtree provenance; no parallel owner. Counters unknown=16146 unread=16121 omitted=0 responsibilities=248. Parent 21eb8531 TDRP 61/61, Rust 6/6, MCP 1/1. Next wnr10.xml@319d5db2d3ab2471d565e77e83dfdd29450fb106.",
+  "note": "Strict231 TDRP-R9-MICROTEX-RES-CYRILLIC-WNR10-XML-PROVENANCE-001: wnr10.xml@319d5db2 is 25900 bytes / 616 lines and root 17f3fc78, c1546216, pinned 61aaa7cc are byte-identical; exact-path history is root init only. Font name=wnr10.ttf id=wnr10 space=0.333334 xHeight=0.430555 quad=1.000003 unicode=95, with bold=wnbx10 ss=wnss10 tt=wntt10 it=wnti10. Exact surface is 95 Char/95 unique codes 171..1141, 416 Kern (-0.027779 x266, -0.083334 x117, -0.111112 x13, -0.055555 x19, +0.027779 x1), 36 Lig, 13 nonzero depth, 19 nonzero italic. Historical parser/FontInfo materialize metrics/Kern/Lig/style IDs and adjacent TTF; accepted XML loader is disabled and explicit external-font fallback is optional. RES_README/Meson/legacy latex.qrc include/install; accepted bundled.qrc excludes Cyrillic/Greek. README excludes res XML/fonts from MIT blanket and res/cyrillic/LICENSE is GPLv3 provenance. Existing TDRP source/resource/font/parser/license/install/packaging/provenance owner remains selected; no parallel runtime. Counters unknown=16145 unread=16120 omitted=0 responsibilities=249. Parent ad856054 TDRP 61/61, Rust 6/6, MCP 1/1. Next res/cyrillic/wnss10.ttf@6cc01cfd7d25ab5db44f01466bb0c5f54e9a144e.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
@@ -106,38 +106,38 @@
     "baseline_identity_accepted": false,
     "source_closure_ready": false
   },
-  "target_commit": "21eb85311a9833f7d3e9f8c798b6af0d74472f70",
+  "target_commit": "ad85605443cf1208905817345e86cbc9fdced966",
   "last_completed_parent_head_validation": {
     "evidence_status": "historical-only-after-receipt-commit",
-    "head_sha": "21eb85311a9833f7d3e9f8c798b6af0d74472f70",
+    "head_sha": "ad85605443cf1208905817345e86cbc9fdced966",
     "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
     "upstream_tree": "c539eabfb05e7dcaa84821ac44c35cdfb6551ae5",
     "recursive_non_directory_entries": 16379,
-    "tdrp_run_id": 40191431059,
+    "tdrp_run_id": 40194771569,
     "tdrp_jobs": "61/61 success",
     "source_authority_artifact": {
-      "id": 12597992808,
-      "digest": "sha256:89e85147d707646af0e1c95fdfbdbfb4801c318afc70110236217125e9b99d4f"
+      "id": 12599303531,
+      "digest": "sha256:088a43130c499d37cc2c5966b7c99618947bcdb5e4dfcabc74a03da133460ae6"
     },
     "recursive_closure_artifact": {
-      "id": 12597888461,
-      "digest": "sha256:a8f8a2c46a673d388b9d1e05d8cea4cf1464856a7bf3693cda5ea35a633fff86"
+      "id": 12599203972,
+      "digest": "sha256:485710aa1a9fe58f1da4fde5c1217907751ae2fb134602c936ac257419c503c5"
     },
     "recursive_reachability_artifact": {
-      "id": 12598167938,
-      "digest": "sha256:bb2b9983b0eea51cf3059f98b61999cf16934a4944bcc180afb82d4dac33baef"
+      "id": 12599498393,
+      "digest": "sha256:aa996735a731f513a6017c6239a39dac51450181465b0b29f032c5caf588d923"
     },
     "boost_reachability_artifact": {
-      "id": 12598057886,
-      "digest": "sha256:dd04814971eb8d9ddc0a0af306e103c342615a37c18d797ddbd6c444bf54bc64"
+      "id": 12599383594,
+      "digest": "sha256:7a91475529a940b774d6d74aa95498a97549969ed95ed26f3a18780c6ab5f5ef"
     },
-    "rust_run_id": 40191431064,
+    "rust_run_id": 40194771568,
     "rust_jobs": "6/6 success",
     "rust_artifact": {
-      "id": 12597938020,
-      "digest": "sha256:358c18e5530d1bf7d607731c87ef3f570476cef1824cd0323eb458b14d8e93d4"
+      "id": 12599128628,
+      "digest": "sha256:3170cd1e350fda0d3863627acdd9dad450075d675d73ffeda27f2e098e8fffe8"
     },
-    "official_mcp_marketplace_run_id": 40191431065,
+    "official_mcp_marketplace_run_id": 40194771559,
     "official_mcp_marketplace_jobs": "1/1 success",
     "baseline_identity_accepted": false,
     "source_closure_ready": false,
