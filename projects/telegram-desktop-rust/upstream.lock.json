@@ -361,10 +361,10 @@
   "coverage": {
     "root_source_entries_total": 6893,
     "recursive_source_entries_total": 16379,
-    "unknown_minimum": 16140,
-    "unread_minimum": 16115,
+    "unknown_minimum": 16139,
+    "unread_minimum": 16114,
     "omitted_known": 0,
-    "note": "Strict236 WNSSI10 TTF/sfnt/name/history/XML-style/runtime/license/install/packaging provenance. Counters unknown=16140 unread=16115 omitted=0 responsibilities=254. Root/c154-parent 24936/bd1f8718 differs from c154/pinned 25056/affdad63 by TDesktop family/PostScript namespace + head checksum adjustment only; glyph/layout/OS2/cmap semantics unchanged. Next deterministic non-directory entry is res/cyrillic/wnssi10.xml@5c2318c66e402f47c05ffb67015bcff0780523a8. Parent b13adb5f exact-head evidence: TDRP 61/61, Rust 6/6, MCP 1/1."
+    "note": "Strict237 WNSSI10 XML/font-metrics/style/parser/runtime/license/install/packaging provenance. Counters unknown=16139 unread=16114 omitted=0 responsibilities=255. root/c154-parent/c154/pinned are byte-identical 26762-byte blob 5c2318c6; 95 Char/406 Kern/36 Lig; roman=wnti10/tt=wntt10/bold=wnssbx10; exact-path history root-only. Parent 1edd236d TDRP 40211520354 exposed strict236 dossier traceability omission, repaired in this receipt without production-code changes. Last terminal-success parent evidence remains b13adb5f. Next res/cyrillic/wnti10.ttf@1dd164b2a3602494a1418eb16aca22d298b01ebd."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -1827,7 +1827,7 @@
     "baseline_identity_accepted": false,
     "source_closure_ready": false
   },
-  "target_commit": "b13adb5f77ac9e8cd11146ffa953f699ff3dfcd5",
+  "target_commit": "1edd236d3fb6c08f3afeacdbad34f7924d8a8f80",
   "last_completed_parent_head_validation": {
     "evidence_status": "historical-only-after-receipt-commit",
     "head_sha": "b13adb5f77ac9e8cd11146ffa953f699ff3dfcd5",
