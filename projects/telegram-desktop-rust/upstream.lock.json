@@ -361,10 +361,10 @@
   "coverage": {
     "root_source_entries_total": 6893,
     "recursive_source_entries_total": 16379,
-    "unknown_minimum": 16137,
-    "unread_minimum": 16112,
+    "unknown_minimum": 16136,
+    "unread_minimum": 16111,
     "omitted_known": 0,
-    "note": "Strict239 WNTI10 XML/font-metrics/style/parser/runtime/license/install/packaging provenance. Counters unknown=16137 unread=16112 omitted=0 responsibilities=257. root/c154-parent/c154/pinned are byte-identical 31229-byte blob 55046e15 with root-only exact-path history; 95 Char/512 Kern/36 Lig, roman=wnr10/bold=wnbxti10/ss=wnssi10/tt=wntt10, 12 nonzero depth/93 nonzero italic. Parent 2fa0a0d8 TDRP 40214093535 30/30, Rust 40214093545 6/6 and MCP 40214093561 1/1 are terminal-success. Next res/cyrillic/wntt10.ttf@649e9b1b24b3805646ad7cee71ae6e8d6e73e2c9."
+    "note": "Strict240 WNTT10 TTF/font-metrics/style/parser/runtime/license/install/packaging provenance. Counters unknown=16136 unread=16111 omitted=0 responsibilities=258. root/c154-parent=33308-byte cb01bb52; c154/pinned=33424-byte 649e9b1b; c154 changes name namespace plus head checksum while cmap/glyf/OS2/hhea/maxp semantics stay unchanged. Pinned sfnt has 15 tables/99 glyphs, unitsPerEm=1000, bounds -11,-228..527,838, hhea 838/-228/90, OS/2 v3 weight=400 width=5. Adjacent wntt10.xml=7679 bytes/163 lines, 95 Char/36 Lig, roman=wnr10/ss=wnss10. Parent 7ff4a99f TDRP 40215710329 30/30 and Rust 40215710305 6/6 plus MCP 40215710357 1/1 are terminal-success. Next res/cyrillic/wntt10.xml@4baea371bade60de759650135b4773fbf2f28ee2."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -1827,38 +1827,38 @@
     "baseline_identity_accepted": false,
     "source_closure_ready": false
   },
-  "target_commit": "2fa0a0d811ea04247a13495284919fc46a1e456c",
+  "target_commit": "7ff4a99f4be96e2f82035dd2da2c8106e237fd54",
   "last_completed_parent_head_validation": {
     "evidence_status": "historical-only-after-receipt-commit",
-    "head_sha": "2fa0a0d811ea04247a13495284919fc46a1e456c",
+    "head_sha": "7ff4a99f4be96e2f82035dd2da2c8106e237fd54",
     "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
     "upstream_tree": "c539eabfb05e7dcaa84821ac44c35cdfb6551ae5",
     "recursive_non_directory_entries": 16379,
-    "tdrp_run_id": 40214093535,
+    "tdrp_run_id": 40215710329,
     "tdrp_jobs": "30/30 success",
     "source_authority_artifact": {
-      "id": 12606159782,
-      "digest": "sha256:8c2ada2d0292d785faff0c54f467089ecf1c5e6d9abf27eb0045e39fdc1d8063"
+      "id": 12607885727,
+      "digest": "sha256:4373a0dd3947decec2703630d2174158f222230ccc3e9a940955b42fb5f64d59"
     },
     "recursive_closure_artifact": {
-      "id": 12607102507,
-      "digest": "sha256:597c30d5918ee5c29e08b7668d2654592da60fcc87523932d04ba4ac07772fce"
+      "id": 12607741584,
+      "digest": "sha256:42b22158c10ee4a2d92620845cd8a4bdc4b89ab94ed22605ebe254b11fe12028"
     },
     "recursive_reachability_artifact": {
-      "id": 12607156158,
-      "digest": "sha256:693e31156a13b88686c2e23f796868dfff30c846a0424510f3224d8ede6c247d"
+      "id": 12607986089,
+      "digest": "sha256:ca7a91822c51277b571322f8bd9fa61b72bbfe00f5737fdbda8303f5afef4d62"
     },
     "boost_reachability_artifact": {
-      "id": 12606858026,
-      "digest": "sha256:79aab3ab1a6832ceca63cdba1152b16dbb2bea4cd809f1e122d97f65c11200f9"
+      "id": 12607826047,
+      "digest": "sha256:ffdacf569ad9e5a455a0b521172e04fe372b38756e6e379d8960da6516367001"
     },
-    "rust_run_id": 40214093545,
+    "rust_run_id": 40215710305,
     "rust_jobs": "6/6 success",
     "rust_artifact": {
-      "id": 12606912325,
-      "digest": "sha256:6054710b6914157fb2ef72e280bed4ac5ebaa2a0ab70f7a3d069eeecd5bd8eb6"
+      "id": 12607481643,
+      "digest": "sha256:ea1920ed93632195a7536c89df31a09f1e4d43b42d0dd2db3ac3a41128e51336"
     },
-    "official_mcp_marketplace_run_id": 40214093561,
+    "official_mcp_marketplace_run_id": 40215710357,
     "official_mcp_marketplace_jobs": "1/1 success",
     "baseline_identity_accepted": false,
     "source_closure_ready": false,
