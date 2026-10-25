@@ -64400,10 +64400,10 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "projects/telegram-desktop-rust/dossiers/upstream-microtex-res-cyrillic-cyrillic-map-xml-complete-read.md"
+        "projects/telegram-desktop-rust/dossiers/upstream-microtex-res-cyrillic-language-cyrillic-xml-complete-read.md"
       ],
       "fabushi_target_symbols": [
-        "TDRP_MICROTEX_RES_CYRILLIC_MAP_XML_PROVENANCE_001"
+        "TDRP_MICROTEX_RES_CYRILLIC_LANGUAGE_XML_PROVENANCE_001"
       ],
       "target_language": "Source-only resource/font/parser/license/install/packaging provenance; no Fabushi shipping implementation.",
       "language_rationale": "Accepted production retains the manifest as source/install provenance but disables the XML runtime loader and excludes Cyrillic from the production bundle; traceability is required, a replacement runtime is not.",
