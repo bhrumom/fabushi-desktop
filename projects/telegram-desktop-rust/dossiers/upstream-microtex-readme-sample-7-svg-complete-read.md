@@ -12,7 +12,7 @@
 - Previous independent entry: sample_6.svg@b007345c2b8ffa1d60199bff3dceb84f4d17de7e. Next: sample_8.svg@2a3aceabd646957e4f47900551b60204b19b4794.
 
 ## Complete SVG read
-The complete accepted target was read. It is 77,841 ASCII bytes with 519 split-line slots including the terminal LF, width 740pt, height 102pt and viewBox 0 0 380 123.
+The complete accepted target was read. It is 77,841 ASCII bytes with 519 split-line slots including the terminal LF, width 380pt, height 123pt and viewBox 0 0 380 123.
 
 Exact structural inventory:
 - 63 symbol elements
@@ -20,7 +20,7 @@ Exact structural inventory:
 - 101 use elements
 - 1 rect
 - 101 g elements
-- 193 id values, all unique
+- 63 id values, all unique
 - 101 href/xlink:href references, all local fragments and all resolved
 - zero text, script, image, foreignObject, style, @font-face, external href, DOCTYPE or XML comments
 
@@ -42,7 +42,7 @@ The accepted-pin exact-path query for readme/samples/sample_7.svg returns exactl
 
 The creation parent recursive tree is truncated=false with 192 entries and has no target. The creation commit changes exactly thirteen paths, all additions: readme/samples.md plus sample_0.svg through sample_11.svg. sample_7.svg is created as blob be74e604b13e93e8cd92914fbd5079600e838867 with 518 added lines.
 
-The 08d9d6b update changes exactly eight paths: readme/samples.md and sample_2.svg, sample_3.svg, sample_4.svg, sample_7.svg, sample_7.svg, sample_8.svg and sample_11.svg. sample_7 becomes 6fe53b06b0df9d4433650c9deff13804c74a57d7 with 111 added and 111 deleted lines.
+The 08d9d6b update changes exactly eight paths: readme/samples.md and sample_2.svg, sample_3.svg, sample_4.svg, sample_6.svg, sample_7.svg, sample_8.svg and sample_11.svg. sample_7 becomes 6fe53b06b0df9d4433650c9deff13804c74a57d7 with 111 added and 111 deleted lines.
 
 The accepted tree is truncated=false with 315 entries and resolves sample_7.svg to mode 100644, size 77,841 and blob 6fe53b06b0df9d4433650c9deff13804c74a57d7. The 95a54b5..08d9d6b comparison is ahead by exactly 34 commits and reports 155 changed files.
 
@@ -76,7 +76,7 @@ Proven:
 - exact accepted and creation target identities and full passive/local structures;
 - stable normalized 595-character same-index source/Markdown body;
 - two exact-path commits, creation parent absence, complete 13-path creation co-add and 8-path update co-change;
-- 381pt x 123pt -> 380pt x 123pt output drift with exactly 210 differing line slots and unchanged structural cardinalities;
+- 381pt x 123pt -> 380pt x 123pt output drift with exactly 111 differing line slots and unchanged structural cardinalities;
 - 34-commit / 155-file historical comparison range;
 - creation/update/current generator source lineage;
 - build/CI/shipping negative oracles.
