@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16152,
-    "unread_minimum": 16127,
+    "unknown_minimum": 16151,
+    "unread_minimum": 16126,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -90,7 +90,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Strict224 TDRP-R9-MICROTEX-RES-CYRILLIC-MAPPINGS-XML-PROVENANCE-001: res/cyrillic/mappings_cyrillic.xml@15d7f60b319e8f7ca6b6c35824d4e7c2948e11ee is 4556 bytes/117 line slots with exactly 91 CharacterToSymbolMappings (91 unique chars/91 unique symbols) and 13 CharacterToFormulaMappings over 11 unique chars. Character 1027 appears three times in source order; historical character-keyed assignment is last-write-wins to the third \\'\\CYRK. Accepted XML file loader is disabled with external-font/TextRenderingAtom fallback. RES_README/Meson install retained; bundled tdesktop shipping excluded; GPLv3 subtree provenance retained. Counters unknown=16152 unread=16127 omitted=0 responsibilities=242. Parent 9730e386 exact-head TDRP 61/61, Rust 6/6, Official MCP 1/1. Receipt-head Actions required. Next res/cyrillic/symbols_cyrillic.xml@80e88bf296d68d4f0d65e4b502f1a60f6281626f.",
+  "note": "Strict225 TDRP-R9-MICROTEX-RES-CYRILLIC-SYMBOLS-XML-PROVENANCE-001: res/cyrillic/symbols_cyrillic.xml@80e88bf296d68d4f0d65e4b502f1a60f6281626f is 3577 bytes/105 line slots with exactly 95 Symbol entries / 93 unique names; types are 93 ord + 2 acc. CYRE occurs at source positions 9/13 and cyre at 43/47; historical TeXSymbolParser writes source-order into the symbol map so duplicates are last-write-wins, with both duplicate definitions retaining ord type. Historical language_cyrillic.xml -> DefaultTeXFontParser::parseExtraPath -> SymbolAtom::addSymbolAtom -> TeXSymbolParser::readSymbols consumed this file. Accepted MicroTeX keeps CyrillicRegistration but strips XML font/symbol loading: addTeXFontDescription throws ex_alphabet_registration, accepted built-in tex_symbols contains no Cyrillic CYRA/cyrbreve definitions, and parser handling falls through to external-font/TextRenderingAtom. RES_README/Meson standalone install retained; bundled.qrc/tdesktop shipping excludes Cyrillic/Greek; README excludes res/cyrillic from the MIT blanket and subtree LICENSE is GPLv3 provenance. Counters unknown=16151 unread=16126 omitted=0 responsibilities=243. Parent f78f321 exact-head TDRP 61/61, Rust 6/6, Official MCP 1/1. Receipt-head Actions required. Next res/cyrillic/wnbx10.ttf@5a79b6d484953b3664ae4875afc06139b56a2dc0.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
@@ -106,38 +106,38 @@
     "baseline_identity_accepted": false,
     "source_closure_ready": false
   },
-  "target_commit": "9730e386e1e4f2db1e6a9a8d40e45defb520dfac",
+  "target_commit": "f78f321a063b54a1a705266bd397089f81792b0b",
   "last_completed_parent_head_validation": {
     "evidence_status": "historical-only-after-receipt-commit",
-    "head_sha": "9730e386e1e4f2db1e6a9a8d40e45defb520dfac",
+    "head_sha": "f78f321a063b54a1a705266bd397089f81792b0b",
     "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
     "upstream_tree": "c539eabfb05e7dcaa84821ac44c35cdfb6551ae5",
     "recursive_non_directory_entries": 16379,
-    "tdrp_run_id": 40176112166,
+    "tdrp_run_id": 40178765618,
     "tdrp_jobs": "61/61 success",
     "source_authority_artifact": {
-      "id": 12592131491,
-      "digest": "sha256:fb0681b3a5b259645d29a76bf880ae23b05704593cf86474a53cbbdb5ad36716"
+      "id": 12593900023,
+      "digest": "sha256:0248658750a0a3cdc357cee2238aac5bf439c7eef665861e517aaa12a3596a86"
     },
     "recursive_closure_artifact": {
-      "id": 12592900732,
-      "digest": "sha256:a699e10bd6fcde23e9a638c9d07242cb837b049e93be96e72a893e8a5abd9387"
+      "id": 12593785535,
+      "digest": "sha256:c5f3dc5f2754ca7574619c0debca669b2517c83e20948acfc107348c4359925b"
     },
     "recursive_reachability_artifact": {
-      "id": 12592068727,
-      "digest": "sha256:4020da6ddf7ee13ccbe020090d70344e3ebb8240e07f13c25bb8bbb9a23a2f64"
+      "id": 12592504695,
+      "digest": "sha256:46e0a53f3eacecfbda0ceaec7ffcbf36241dfc6ee5006c09fb634a1c419a386a"
     },
     "boost_reachability_artifact": {
-      "id": 12592336273,
-      "digest": "sha256:bec0375de2e7c17a5fa68f5b93e3ad78204ad01a42da3d8d244dbd7783c68065"
+      "id": 12594110121,
+      "digest": "sha256:cd1d3f9eef4b13fc24143a1adeac8ae0ca37cd20538507cdc673b3d7672eea1f"
     },
-    "rust_run_id": 40176112119,
+    "rust_run_id": 40178765629,
     "rust_jobs": "6/6 success",
     "rust_artifact": {
-      "id": 12592695450,
-      "digest": "sha256:fa18cd3663e764caadf7cde2afb92cdba6665ac273438ee7989c0286bedd4b0f"
+      "id": 12592189888,
+      "digest": "sha256:e3b3443c4b46a5d6e1b4e72b0651bb3f16380730e369c3e2a61a133029243cf4"
     },
-    "official_mcp_marketplace_run_id": 40176112125,
+    "official_mcp_marketplace_run_id": 40178765627,
     "official_mcp_marketplace_jobs": "1/1 success",
     "baseline_identity_accepted": false,
     "source_closure_ready": false,
