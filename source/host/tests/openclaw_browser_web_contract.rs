@@ -18,10 +18,10 @@ use mahayana_host_runtime::runner::tools::sand_browser_driver_source::SAND_BROWS
 use mahayana_host_runtime::runner::tools::sand_browser_tools::{
     BOX_CDP_PORT_BASE, BrowserEnvelope, browser_tool_specs,
     build_browser_driver_invocation, decode_envelope, encode_envelope,
-    parse_driver_response, validate_browser_arguments,
+    parse_driver_response, to_driver_response, validate_browser_arguments,
 };
 use mahayana_host_runtime::runner::tools::sand_web_tools::{
-    SandWebToolBridge, WEB_FETCH_TOOL_NAME, WEB_SEARCH_TOOL_NAME,
+    SandWebToolBridge, WEB_FETCH_TOOL_NAME,
     WebToolExecutor, render_web_fetch_result,
 };
 use serde_json::{Map, Value, json};
@@ -156,7 +156,7 @@ fn test_ocrm_browser_o03_allowed_cdp_observation_specs() {
         .expect("browser_cdp tool");
     assert_eq!(cdp_spec.op, "cdp");
     assert!(
-        cdp_spec.schema.required.contains(&"method".to_string()),
+        cdp_spec.schema.required.contains(&"method"),
         "method must be a required parameter for browser_cdp"
     );
 
@@ -165,28 +165,41 @@ fn test_ocrm_browser_o03_allowed_cdp_observation_specs() {
         .find(|s| s.name == "browser_navigate")
         .expect("browser_navigate tool");
     assert_eq!(nav_spec.op, "navigate");
-    assert!(nav_spec.schema.required.contains(&"url".to_string()));
+    assert!(nav_spec.schema.required.contains(&"url"));
 }
 
 #[test]
 fn test_ocrm_browser_o04_view_generation_and_envelope_invariants() {
     let env = BrowserEnvelope {
-        view_id: Some("view-alpha".into()),
-        expected_generation: Some("gen-42".into()),
+        text: "{\"viewId\":\"view-alpha\",\"expectedGeneration\":\"gen-42\"}".into(),
+        image_key: Some("key-1".into()),
     };
     let encoded = encode_envelope(&env);
     let decoded = decode_envelope(&encoded);
-    assert_eq!(decoded.view_id.as_deref(), Some("view-alpha"));
-    assert_eq!(decoded.expected_generation.as_deref(), Some("gen-42"));
+    assert_eq!(decoded.text, "{\"viewId\":\"view-alpha\",\"expectedGeneration\":\"gen-42\"}");
+    assert_eq!(decoded.image_key.as_deref(), Some("key-1"));
+
+    let mut driver_map = Map::new();
+    driver_map.insert("ok".into(), json!(true));
+    driver_map.insert("viewId".into(), json!("view-alpha"));
+    driver_map.insert("generation".into(), json!("gen-42"));
+    let resp = to_driver_response(&driver_map);
+    assert_eq!(resp.view_id.as_deref(), Some("view-alpha"));
+    assert_eq!(resp.generation.as_deref(), Some("gen-42"));
 
     // Argument validation check for browser_click
+    let specs = browser_tool_specs();
+    let click_spec = specs
+        .iter()
+        .find(|s| s.name == "browser_click")
+        .expect("click tool");
     let mut args = Map::new();
     args.insert("viewId".into(), json!("tab-1"));
-    let missing_ref = validate_browser_arguments("click", &args);
+    let missing_ref = validate_browser_arguments(&click_spec.schema, &args);
     assert!(missing_ref.is_err(), "missing ref must fail argument validation");
 
     args.insert("ref".into(), json!("42"));
-    let valid = validate_browser_arguments("click", &args);
+    let valid = validate_browser_arguments(&click_spec.schema, &args);
     assert!(valid.is_ok(), "specifying ref must pass validation");
     assert_eq!(BOX_CDP_PORT_BASE, 9_222);
 }
@@ -213,8 +226,8 @@ fn test_ocrm_browser_o05_file_upload_workspace_confinement() {
         .iter()
         .find(|s| s.name == "browser_upload_file")
         .expect("upload tool");
-    assert!(upload_spec.schema.required.contains(&"ref".to_string()));
-    assert!(upload_spec.schema.required.contains(&"filePath".to_string()));
+    assert!(upload_spec.schema.required.contains(&"ref"));
+    assert!(upload_spec.schema.required.contains(&"filePath"));
 }
 
 #[test]
@@ -239,7 +252,7 @@ fn test_ocrm_browser_o06_file_download_size_cap_and_sha256_invariants() {
         .iter()
         .find(|s| s.name == "browser_download")
         .expect("download tool");
-    assert!(download_spec.schema.required.contains(&"ref".to_string()));
+    assert!(download_spec.schema.required.contains(&"ref"));
 }
 
 #[test]

@@ -74,6 +74,6 @@ The 10 contract oracles are implemented in `source/host/tests/openclaw_browser_w
 
 ## 5. Verification Receipt (GitHub Actions)
 
-- **Commit:** `<COMMIT_SHA>`
-- **Workflow Run:** `https://github.com/bhrumom/fabushi-desktop/actions/runs/<RUN_ID>`
-- **Status:** Pending execution and verification in GitHub Actions.
+- **Commit:** `f757ccd648ebcce6323cfc23a7ef64098952ca2e`
+- **Workflow Run:** [Run 40225041768](https://github.com/bhrumom/fabushi-desktop/actions/runs/40225041768)
+- **Status:** In progress (executing matrix validation across rust-host, platform-worker, renderer, and pressure profilers).
