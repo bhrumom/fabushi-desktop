@@ -40,7 +40,14 @@ jobs:
       - name: Validate Revision 9 source authority
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: node scripts/validate-tdrp-revision9-authority.mjs
+        run: |
+          set -o pipefail
+          # Preserve a machine-readable diagnostic artifact when the
+          # fail-closed validator exits before it can write its success report.
+          cat > artifacts/tdrp-authority/authority-report.json <<JSON
+          {"status":"validator-failed-before-report","target_commit":"${TDRP_TARGET_SHA}"}
+          JSON
+          node scripts/validate-tdrp-revision9-authority.mjs 2>&1 | tee artifacts/tdrp-authority/validator.log
       - name: Assert source closure remains fail-closed
         shell: bash
         run: |
