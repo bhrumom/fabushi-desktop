@@ -168,6 +168,7 @@ pub struct SettingsService {
     feature_flag_override_listeners:
         Arc<Mutex<BTreeMap<u64, FeatureFlagOverrideListener>>>,
     next_listener_id: AtomicU64,
+    write_lock: Mutex<()>,
 }
 impl SettingsService {
     pub fn production() -> Self {
@@ -180,6 +181,7 @@ impl SettingsService {
             change_listeners: Arc::new(Mutex::new(BTreeMap::new())),
             feature_flag_override_listeners: Arc::new(Mutex::new(BTreeMap::new())),
             next_listener_id: AtomicU64::new(1),
+            write_lock: Mutex::new(()),
         }
     }
     pub fn get_settings_path(&self) -> &Path {
@@ -252,6 +254,7 @@ impl SettingsService {
         field: &str,
         value: Option<Value>,
     ) -> Result<bool, String> {
+        let _guard = self.write_lock.lock().unwrap();
         let mut settings = self.load();
         let changed = match value {
             Some(value) => {
@@ -912,6 +915,7 @@ impl SettingsService {
         let Some(update) = update.as_object() else {
             return Ok(self.get_host_settings());
         };
+        let _guard = self.write_lock.lock().unwrap();
         let previous_zone = self.get_user_time_zone();
         let mut settings = self.load();
         let changed_fields = update.keys().cloned().collect::<Vec<_>>();

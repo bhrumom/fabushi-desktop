@@ -10389,9 +10389,14 @@ impl GatewayApi for UnifiedGatewayApi {
                 .map_err(map_local_tool_permission_resolution_error)?;
             return Ok(serde_json::Value::Null);
         }
+        if method == "getHostSettings" {
+            let settings = self.settings.get_host_settings();
+            return Ok(settings);
+        }
         if method == "setHostSettings" {
             let permission_changed = args.get("localToolPermission").is_some();
-            let result = call_host_lane(&self.host_tx, method, args)?;
+            let result = self.settings.set_host_settings(&args)
+                .map_err(|error| GatewayCommandError::Internal(format!("Failed to persist settings: {error}")))?;
             if permission_changed {
                 self.local_tool_permission.note_permission_changed();
             }

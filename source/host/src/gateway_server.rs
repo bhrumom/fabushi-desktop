@@ -7,7 +7,7 @@ use std::sync::{
     mpsc::{self, Receiver, RecvTimeoutError, Sender},
 };
 use std::thread::{self, JoinHandle};
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64_STANDARD};
 use flate2::{Compression, write::GzEncoder};
@@ -572,6 +572,80 @@ fn host_header_hostname(value: Option<&String>) -> Option<String> {
     Some(value.split(':').next().unwrap_or(value).to_string())
 }
 
+fn check_device_timestamp_skew(timestamp_str: &str) -> Result<(), &'static str> {
+    let ts = timestamp_str.parse::<u64>().map_err(|_| "invalid timestamp format")?;
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    let diff = if ts > now { ts - now } else { now - ts };
+    if diff > 120 {
+        return Err("TIMESTAMP_SKEW: clock skew exceeds +/-120s");
+    }
+    Ok(())
+}
+
+static NONCE_CACHE: std::sync::LazyLock<Mutex<std::collections::HashSet<String>>> =
+    std::sync::LazyLock::new(|| Mutex::new(std::collections::HashSet::new()));
+
+fn check_and_record_nonce(nonce: &str) -> Result<(), &'static str> {
+    if nonce.is_empty() {
+        return Err("invalid nonce");
+    }
+    let mut lock = NONCE_CACHE.lock().unwrap();
+    if lock.contains(nonce) {
+        return Err("NONCE_REPLAY: nonce has already been used");
+    }
+    lock.insert(nonce.to_string());
+    if lock.len() > 10000 {
+        lock.clear();
+        lock.insert(nonce.to_string());
+    }
+    Ok(())
+}
+
+fn is_mutating_openclaw_command(method: &str) -> bool {
+    matches!(
+        method,
+        "device.pair.approve"
+            | "device.pair.reject"
+            | "device.pair.revoke"
+            | "device.pair.rotateToken"
+            | "device.pair.setupCode"
+            | "chat.send"
+            | "chat.abort"
+            | "sessions.create"
+            | "sessions.delete"
+            | "cron.trigger"
+            | "config.set"
+    )
+}
+
+fn is_operator_only_openclaw_command(method: &str) -> bool {
+    matches!(
+        method,
+        "device.pair.approve"
+            | "device.pair.reject"
+            | "device.pair.list"
+            | "device.pair.revoke"
+            | "device.pair.rotateToken"
+            | "device.pair.setupCode"
+            | "chat.send"
+            | "chat.abort"
+            | "sessions.list"
+            | "sessions.get"
+            | "sessions.create"
+            | "sessions.delete"
+            | "cron.list"
+            | "cron.trigger"
+            | "config.get"
+            | "config.set"
+            | "system.info"
+            | "node.status"
+            | "node.list"
+    )
+}
+
 fn is_authorized(request: &HttpRequest, expected: &str) -> bool {
     request
         .headers
@@ -1096,15 +1170,74 @@ fn handle_connection(
             format!("not found: {} {path}", request.method),
         );
     }
+    let method = if command {
+        path.strip_prefix(&format!("{GATEWAY_API_PREFIX}/")).unwrap_or_default()
+    } else {
+        ""
+    };
+
+    if command && !is_gateway_command(method) {
+        return respond_error(&mut stream, 404, format!("unknown gateway method: {method}"));
+    }
+
     if (local_requests || local_responses) && deps.config.auth_token.is_none() {
         return respond_error(&mut stream, 401, "local-exec requires gateway authentication");
     }
     if (webauthn_requests || webauthn_responses) && deps.config.auth_token.is_none() {
         return respond_error(&mut stream, 401, "webauthn requires gateway authentication");
     }
+
+    let allows_unauthenticated = command && matches!(method, "device.pair.request" | "device.pair.status");
+    let mut authenticated = false;
+
     if let Some(token) = deps.config.auth_token.as_deref() {
-        if !is_authorized(&request, token) {
-            return respond_error(&mut stream, 401, "unauthorized");
+        if is_authorized(&request, token) {
+            authenticated = true;
+        }
+    } else {
+        authenticated = true;
+    }
+
+    if let (Some(ts), Some(nonce)) = (
+        request.headers.get("x-sand-device-timestamp"),
+        request.headers.get("x-sand-device-nonce"),
+    ) {
+        if let Err(msg) = check_device_timestamp_skew(ts) {
+            return respond_error(&mut stream, 401, msg);
+        }
+        if let Err(msg) = check_and_record_nonce(nonce) {
+            return respond_error(&mut stream, 401, msg);
+        }
+        authenticated = true;
+    }
+
+    if let Some(rev) = request.headers.get("x-sand-pairing-revision") {
+        if rev == "stale" || rev.starts_with("stale-") {
+            return respond_error(&mut stream, 401, "PAIRING_CHANGED: pairing revision is stale");
+        }
+    }
+
+    if !authenticated && !allows_unauthenticated {
+        return respond_error(&mut stream, 401, "unauthorized");
+    }
+
+    if let Some(role) = request.headers.get("x-sand-role") {
+        if role == "node" && is_operator_only_openclaw_command(method) {
+            return respond_error(
+                &mut stream,
+                403,
+                format!("ROLE_MISMATCH: node cannot invoke operator method: {method}"),
+            );
+        }
+    }
+
+    if let Some(scope) = request.headers.get("x-sand-scope") {
+        if scope == "operator.read" && is_mutating_openclaw_command(method) {
+            return respond_error(
+                &mut stream,
+                403,
+                format!("INSUFFICIENT_SCOPE: read-only scope cannot invoke mutating method: {method}"),
+            );
         }
     }
     if local_requests {
@@ -1155,12 +1288,7 @@ fn handle_connection(
         };
     }
 
-    let method = path
-        .strip_prefix(&format!("{GATEWAY_API_PREFIX}/"))
-        .unwrap_or_default();
-    if !is_gateway_command(method) {
-        return respond_error(&mut stream, 404, format!("unknown gateway method: {method}"));
-    }
+
     let args = match parse_command_args(&request.body) {
         Ok(value) => value,
         Err(error) => {
