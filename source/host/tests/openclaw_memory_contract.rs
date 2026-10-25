@@ -273,7 +273,7 @@ fn test_ocrm_mem_o08_tombstone_persistence_and_resurrection_prevention() {
     let apply_res = store
         .apply_synthesis(&snapshot, &changes, 1_700_002_000_000)
         .expect("apply synthesis");
-    assert_eq!(apply_res, SynthesisApplyResult::Applied);
+    assert_eq!(apply_res, SynthesisApplyResult::Committed);
     assert_eq!(
         store.count_memories(),
         0,
