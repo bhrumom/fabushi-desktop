@@ -16,17 +16,17 @@ on:
         description: Exact approved Mini App version for installed acceptance
         required: false
         type: string
-        default: '0.4.0'
+        default: '0.4.5'
       miniapp_digest:
         description: Exact approved Mini App SHA-256 for installed acceptance
         required: false
         type: string
-        default: '1c3f3291ae6d7a531502641edb9aee136f1f7cbef42777a31cb668ca11c8e22b'
+        default: 'edee0a39535b86bbc7de564483ca238448f0549bf011f4e252cccd328bc9ac75'
       native_engine_digest:
         description: SHA-256 of the executable resource inside the approved Mini App
         required: false
         type: string
-        default: 'a3e50d3f0a003e89dc95236b86839fab49ca1b8a1d90ad77e683418f24fc7569'
+        default: '450189b8ed6c3ca79037e5f0cbdd6e5ac33495b2b1360193b87b9a53cdbd3bfd'
       iterate_existing_miniapp_candidate:
         description: Diagnose the fixed e62ea0 signed binary with this harness; never publish or claim this harness SHA is the binary source.
         required: false
@@ -592,9 +592,9 @@ jobs:
         env:
           MINIAPP_REAL_ACCEPTANCE: '1'
           MINIAPP_REQUIRE_NATIVE_ENGINE: '1'
-          MINIAPP_NATIVE_EXECUTABLE_DIGEST: ${{ inputs.native_engine_digest || 'a3e50d3f0a003e89dc95236b86839fab49ca1b8a1d90ad77e683418f24fc7569' }}
-          MINIAPP_PACKAGE_VERSION: ${{ inputs.miniapp_version || '0.4.0' }}
-          MINIAPP_PACKAGE_DIGEST: ${{ inputs.miniapp_digest || '1c3f3291ae6d7a531502641edb9aee136f1f7cbef42777a31cb668ca11c8e22b' }}
+          MINIAPP_NATIVE_EXECUTABLE_DIGEST: ${{ inputs.native_engine_digest || '450189b8ed6c3ca79037e5f0cbdd6e5ac33495b2b1360193b87b9a53cdbd3bfd' }}
+          MINIAPP_PACKAGE_VERSION: ${{ inputs.miniapp_version || '0.4.5' }}
+          MINIAPP_PACKAGE_DIGEST: ${{ inputs.miniapp_digest || 'edee0a39535b86bbc7de564483ca238448f0549bf011f4e252cccd328bc9ac75' }}
           MINIAPP_EVIDENCE_DIR: ${{ runner.temp }}/fabushi-miniapp-acceptance
           OBF_SOURCE_SHA: ${{ steps.source.outputs.sha }}
           OBF_EXPECTED_SOURCE_SHA: ${{ steps.source.outputs.sha }}
