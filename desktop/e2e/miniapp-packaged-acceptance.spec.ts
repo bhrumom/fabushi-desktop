@@ -498,12 +498,15 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
       codeRemoved: false,
       reinstalledOnline: false,
       settingEntriesRetained: 0,
+      phase: 'fixture-created',
     };
     let app: Awaited<ReturnType<typeof launchSignedApp>> | null = null;
     let networkServices: NetworkService[] = [];
     try {
+      evidence.phase = 'online-launch';
       app = await launchSignedApp(appDataDir);
       await waitForProductionLogin(app.page);
+      evidence.phase = 'online-catalog-install';
       let catalog = await refreshUntilCatalogItem(app.page);
       const installButton = catalog.row.getByRole('button', { name: '安装并验证', exact: true });
       await expect(installButton).toBeEnabled();
@@ -516,42 +519,55 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
         expect(app.browser.contexts().flatMap(context => context.pages()).filter(page => page.url().startsWith('fabushi-miniapp://'))).toHaveLength(0);
         evidence.nativePermissionDeniedWithoutExecution = true;
       }
+      evidence.phase = 'online-native-open';
       await openWithNativePermission(catalog.row, app.process.pid!);
       let mini = await findMiniAppPage(app.browser);
+      evidence.phase = 'online-runtime-self-test';
       evidence.installedNativeVerified.push(await verifyInstalledNativeRuntime(mini));
       if (process.env.MINIAPP_REQUIRE_NATIVE_ENGINE === '1') {
         const digests = await activeNativeDigests(appDataDir);
         expect(digests).toEqual([process.env.MINIAPP_NATIVE_EXECUTABLE_DIGEST]);
         evidence.installedNativeDigests.push(...digests);
       }
+      evidence.phase = 'online-composer';
       await verifyWasmFileReport(mini, inputFile, fixtureStat.size);
+      evidence.phase = 'online-report-export';
       await exportAndVerifyReport(mini, app.process.pid!, evidenceDir, inputFile, fixtureStat.size);
       evidence.launchModes.push('online-install');
       evidence.wasmLoaded.push(true);
       evidence.reportObserved.push(true);
       evidence.reportVerified.push(true);
+      evidence.phase = 'online-preference';
       await setAndVerifyDisplayPreference(mini, true);
       evidence.settingEntriesRetained = 1;
       await writeFile(path.join(evidenceDir, 'online-installed.png'), await mini.screenshot());
       await quitSignedApp(app.process, app.browser);
       app = null;
 
+      evidence.phase = 'offline-network-disable';
       networkServices = disableRunnerNetwork();
       await expectInternetUnavailable();
+      evidence.phase = 'offline-cold-launch';
       app = await launchSignedApp(appDataDir);
       await waitForProductionLogin(app.page);
+      evidence.phase = 'offline-catalog';
       catalog = await refreshUntilCatalogItem(app.page);
       await expect(catalog.row).toContainText('已安装', { timeout: 60_000 });
       evidence.installedAfterColdLaunch = true;
+      evidence.phase = 'offline-native-open';
       await openWithNativePermission(catalog.row, app.process.pid!);
       mini = await findMiniAppPage(app.browser);
+      evidence.phase = 'offline-runtime-self-test';
       evidence.installedNativeVerified.push(await verifyInstalledNativeRuntime(mini));
+      evidence.phase = 'offline-composer';
       await verifyWasmFileReport(mini, inputFile, fixtureStat.size);
+      evidence.phase = 'offline-report-export';
       await exportAndVerifyReport(mini, app.process.pid!, evidenceDir, inputFile, fixtureStat.size);
       evidence.launchModes.push('os-network-disabled-cold-launch');
       evidence.wasmLoaded.push(true);
       evidence.reportObserved.push(true);
       evidence.reportVerified.push(true);
+      evidence.phase = 'offline-remove-code';
       await setAndVerifyDisplayPreference(mini, false);
       await app.page.bringToFront();
       await catalog.row.getByRole('button', { name: '移除代码，保留数据', exact: true }).click();
@@ -570,6 +586,7 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
         .filter((page) => page.url().startsWith('fabushi-miniapp://')).length,
       { timeout: 10_000, message: 'remove-code must leave no live Mini App window' }).toBe(0);
 
+      evidence.phase = 'online-network-restore';
       await quitSignedApp(app.process, app.browser);
       app = null;
       restoreRunnerNetwork(networkServices);
@@ -579,15 +596,19 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
         catch { return false; }
       }, { timeout: 60_000, message: 'runner network must be restored before the online reinstall phase' }).toBe(true);
 
+      evidence.phase = 'online-reinstall-launch';
       app = await launchSignedApp(appDataDir);
       await waitForProductionLogin(app.page);
+      evidence.phase = 'online-reinstall-catalog';
       catalog = await refreshUntilCatalogItem(app.page);
       await expect(catalog.row).toContainText('未安装');
       await catalog.row.getByRole('button', { name: '安装并验证', exact: true }).click();
       await expect(catalog.row).toContainText('已安装', { timeout: 90_000 });
       evidence.reinstalledOnline = true;
+      evidence.phase = 'online-reinstall-native-open';
       await openWithNativePermission(catalog.row, app.process.pid!);
       mini = await findMiniAppPage(app.browser);
+      evidence.phase = 'online-reinstall-preference';
       await setAndVerifyDisplayPreference(mini, false);
       evidence.launchModes.push('online-reinstall-retained-app-data');
       await writeFile(path.join(evidenceDir, 'reinstalled.png'), await mini.screenshot());
@@ -595,6 +616,14 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
     } catch (error) {
       // Disposable Actions desktop only; never collect the native credential store.
       execFileSync('/usr/sbin/screencapture', ['-x', path.join(evidenceDir, 'failure-desktop.png')], { timeout: 10_000 });
+      await writeFile(path.join(evidenceDir, 'failure.json'), JSON.stringify({
+        ...evidence,
+        failure: {
+          name: error instanceof Error ? error.name : typeof error,
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+        },
+      }, null, 2));
       await writeFile(path.join(evidenceDir, 'report-directories.json'), JSON.stringify(
         await Promise.all((await readdir(evidenceDir)).filter((name) => name.startsWith('report-'))
           .map(async (name) => ({ directory: name, members: await readdir(path.join(evidenceDir, name)) }))), null, 2));
