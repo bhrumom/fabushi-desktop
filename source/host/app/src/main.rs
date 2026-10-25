@@ -10648,6 +10648,9 @@ fn map_workflow_command_error(error: WorkflowCommandError) -> GatewayCommandErro
 fn map_gateway_send_error(error: GatewayCommandError) -> ProductionSendError {
     match error {
         GatewayCommandError::BadRequest(message) => ProductionSendError::BadRequest(message),
+        GatewayCommandError::Unauthorized(message) | GatewayCommandError::Forbidden(message) => {
+            ProductionSendError::Rejected(message)
+        }
         GatewayCommandError::Conflict(message) => ProductionSendError::Conflict(message),
         GatewayCommandError::UnknownMethod(message) | GatewayCommandError::Internal(message) => {
             ProductionSendError::Internal(message)
