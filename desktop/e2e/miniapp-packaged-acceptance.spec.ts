@@ -454,7 +454,9 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
   test.skip(!enabled, 'Set MINIAPP_REAL_ACCEPTANCE=1 only in the signed macOS packaged Actions job.');
 
   test('real Plugins install, Wasm report, offline cold launch, code removal and online reinstall', async () => {
-    test.setTimeout(20 * 60_000);
+    // The workflow grants this lifecycle 40 minutes; keep Playwright aligned
+    // so a slow real catalog/network transition is not killed halfway through.
+    test.setTimeout(40 * 60_000);
     expect(process.platform, 'MU-07 currently requires the signed macOS candidate').toBe('darwin');
     expect(process.env.GITHUB_ACTIONS, 'this test may only alter network services on an Actions runner').toBe('true');
     expect(executable, 'FABUSHI_ELECTRON_EXECUTABLE is required').toBeTruthy();
@@ -500,13 +502,21 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
       settingEntriesRetained: 0,
       phase: 'fixture-created',
     };
+    const markPhase = async (phase: string): Promise<void> => {
+      evidence.phase = phase;
+      await writeFile(path.join(evidenceDir, 'phase.json'), JSON.stringify({
+        phase,
+        updatedAt: new Date().toISOString(),
+        sourceSha,
+      }, null, 2));
+    };
     let app: Awaited<ReturnType<typeof launchSignedApp>> | null = null;
     let networkServices: NetworkService[] = [];
     try {
-      evidence.phase = 'online-launch';
+      await markPhase('online-launch');
       app = await launchSignedApp(appDataDir);
       await waitForProductionLogin(app.page);
-      evidence.phase = 'online-catalog-install';
+      await markPhase('online-catalog-install');
       let catalog = await refreshUntilCatalogItem(app.page);
       const installButton = catalog.row.getByRole('button', { name: '安装并验证', exact: true });
       await expect(installButton).toBeEnabled();
@@ -519,55 +529,55 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
         expect(app.browser.contexts().flatMap(context => context.pages()).filter(page => page.url().startsWith('fabushi-miniapp://'))).toHaveLength(0);
         evidence.nativePermissionDeniedWithoutExecution = true;
       }
-      evidence.phase = 'online-native-open';
+      await markPhase('online-native-open');
       await openWithNativePermission(catalog.row, app.process.pid!);
       let mini = await findMiniAppPage(app.browser);
-      evidence.phase = 'online-runtime-self-test';
+      await markPhase('online-runtime-self-test');
       evidence.installedNativeVerified.push(await verifyInstalledNativeRuntime(mini));
       if (process.env.MINIAPP_REQUIRE_NATIVE_ENGINE === '1') {
         const digests = await activeNativeDigests(appDataDir);
         expect(digests).toEqual([process.env.MINIAPP_NATIVE_EXECUTABLE_DIGEST]);
         evidence.installedNativeDigests.push(...digests);
       }
-      evidence.phase = 'online-composer';
+      await markPhase('online-composer');
       await verifyWasmFileReport(mini, inputFile, fixtureStat.size);
-      evidence.phase = 'online-report-export';
+      await markPhase('online-report-export');
       await exportAndVerifyReport(mini, app.process.pid!, evidenceDir, inputFile, fixtureStat.size);
       evidence.launchModes.push('online-install');
       evidence.wasmLoaded.push(true);
       evidence.reportObserved.push(true);
       evidence.reportVerified.push(true);
-      evidence.phase = 'online-preference';
+      await markPhase('online-preference');
       await setAndVerifyDisplayPreference(mini, true);
       evidence.settingEntriesRetained = 1;
       await writeFile(path.join(evidenceDir, 'online-installed.png'), await mini.screenshot());
       await quitSignedApp(app.process, app.browser);
       app = null;
 
-      evidence.phase = 'offline-network-disable';
+      await markPhase('offline-network-disable');
       networkServices = disableRunnerNetwork();
       await expectInternetUnavailable();
-      evidence.phase = 'offline-cold-launch';
+      await markPhase('offline-cold-launch');
       app = await launchSignedApp(appDataDir);
       await waitForProductionLogin(app.page);
-      evidence.phase = 'offline-catalog';
+      await markPhase('offline-catalog');
       catalog = await refreshUntilCatalogItem(app.page);
       await expect(catalog.row).toContainText('已安装', { timeout: 60_000 });
       evidence.installedAfterColdLaunch = true;
-      evidence.phase = 'offline-native-open';
+      await markPhase('offline-native-open');
       await openWithNativePermission(catalog.row, app.process.pid!);
       mini = await findMiniAppPage(app.browser);
-      evidence.phase = 'offline-runtime-self-test';
+      await markPhase('offline-runtime-self-test');
       evidence.installedNativeVerified.push(await verifyInstalledNativeRuntime(mini));
-      evidence.phase = 'offline-composer';
+      await markPhase('offline-composer');
       await verifyWasmFileReport(mini, inputFile, fixtureStat.size);
-      evidence.phase = 'offline-report-export';
+      await markPhase('offline-report-export');
       await exportAndVerifyReport(mini, app.process.pid!, evidenceDir, inputFile, fixtureStat.size);
       evidence.launchModes.push('os-network-disabled-cold-launch');
       evidence.wasmLoaded.push(true);
       evidence.reportObserved.push(true);
       evidence.reportVerified.push(true);
-      evidence.phase = 'offline-remove-code';
+      await markPhase('offline-remove-code');
       await setAndVerifyDisplayPreference(mini, false);
       await app.page.bringToFront();
       await catalog.row.getByRole('button', { name: '移除代码，保留数据', exact: true }).click();
@@ -586,7 +596,7 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
         .filter((page) => page.url().startsWith('fabushi-miniapp://')).length,
       { timeout: 10_000, message: 'remove-code must leave no live Mini App window' }).toBe(0);
 
-      evidence.phase = 'online-network-restore';
+      await markPhase('online-network-restore');
       await quitSignedApp(app.process, app.browser);
       app = null;
       restoreRunnerNetwork(networkServices);
@@ -596,19 +606,19 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
         catch { return false; }
       }, { timeout: 60_000, message: 'runner network must be restored before the online reinstall phase' }).toBe(true);
 
-      evidence.phase = 'online-reinstall-launch';
+      await markPhase('online-reinstall-launch');
       app = await launchSignedApp(appDataDir);
       await waitForProductionLogin(app.page);
-      evidence.phase = 'online-reinstall-catalog';
+      await markPhase('online-reinstall-catalog');
       catalog = await refreshUntilCatalogItem(app.page);
       await expect(catalog.row).toContainText('未安装');
       await catalog.row.getByRole('button', { name: '安装并验证', exact: true }).click();
       await expect(catalog.row).toContainText('已安装', { timeout: 90_000 });
       evidence.reinstalledOnline = true;
-      evidence.phase = 'online-reinstall-native-open';
+      await markPhase('online-reinstall-native-open');
       await openWithNativePermission(catalog.row, app.process.pid!);
       mini = await findMiniAppPage(app.browser);
-      evidence.phase = 'online-reinstall-preference';
+      await markPhase('online-reinstall-preference');
       await setAndVerifyDisplayPreference(mini, false);
       evidence.launchModes.push('online-reinstall-retained-app-data');
       await writeFile(path.join(evidenceDir, 'reinstalled.png'), await mini.screenshot());
