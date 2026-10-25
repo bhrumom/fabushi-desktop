@@ -184,7 +184,11 @@ test("CLI backend spawns real argv-only binary for scan, async transfer, cancell
         "    assert '--lan-only' in cmd, f'missing explicit LAN policy: {cmd}'",
         "    if 'slow' in cmd[2]:",
         "        time.sleep(10)",
-        "    print(json.dumps({'packets': 8, 'verifiedBytes': 4096, 'source': cmd[2]}))",
+        "    if '--progress-json' in cmd:",
+        "        print(json.dumps({'event': 'progress', 'sequence': 1, 'pass_verified_payload_bytes': 4096, 'pass_chunks_sent': 8}))",
+        "        print(json.dumps({'schema_version': 1, 'chunks_sent': 8, 'verified_payload_bytes': 4096, 'source': cmd[2]}))",
+        "    else:",
+        "        print(json.dumps({'packets': 8, 'verifiedBytes': 4096, 'source': cmd[2]}))",
         "elif cmd[:2] == ['hotspot', 'plan']:",
         "    print(json.dumps({'profileId': 'hs-preview-1'}))",
         "elif cmd[:2] == ['hotspot', 'apply']:",
@@ -254,7 +258,7 @@ test("CLI backend spawns real argv-only binary for scan, async transfer, cancell
       await new Promise((resolve) => setTimeout(resolve, 25));
     }
     assert.equal(finalState.state, "complete");
-    assert.equal((finalState.result as { packets: number }).packets, 8);
+    assert.equal((finalState.result as { chunks_sent: number }).chunks_sent, 8);
 
     chosenDir = slowDir;
     const slowPicked = await backend.pick("directory", { maxFiles: 1, maxBytes: 1024 ** 3 });

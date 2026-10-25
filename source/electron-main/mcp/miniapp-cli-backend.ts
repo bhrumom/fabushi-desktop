@@ -10,6 +10,7 @@
  */
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
+import { ProgressStream } from "./progress-stream.js";
 import { lstat, realpath, stat } from "node:fs/promises";
 import { basename, dirname, isAbsolute, relative, sep } from "node:path";
 import type {
@@ -88,9 +89,10 @@ function defaultSpawn(binaryPath: string, configPath: string): MiniAppSpawnPort 
       shell: false,
       windowsHide: true,
       stdio: ["ignore", "pipe", "pipe"],
-      env: { PATH: "/usr/local/bin:/usr/bin:/bin", LC_ALL: "C" },
+      env: { PATH: "/usr/local/bin:/usr/bin:/bin", LC_ALL: "C", DANDELION_LOG: "warn" },
     });
     let stdout = "", stderr = "", stdoutBytes = 0, stderrBytes = 0;
+    const progress = argv.includes("--progress-json") ? new ProgressStream() : null;
     let exceeded = false;
     let killTimer: ReturnType<typeof setTimeout> | undefined;
     let settled = false;
@@ -100,6 +102,10 @@ function defaultSpawn(binaryPath: string, configPath: string): MiniAppSpawnPort 
       killTimer = setTimeout(() => { if (!settled) child.kill("SIGKILL"); }, 3000);
     };
     child.stdout.on("data", (chunk: Buffer) => {
+      if (progress) {
+        try { progress.push(chunk); } catch { exceeded = true; kill(); }
+        return;
+      }
       stdoutBytes += chunk.length;
       if (stdoutBytes > 1_048_576) { exceeded = true; kill(); }
       else stdout += chunk.toString("utf8");
@@ -110,11 +116,11 @@ function defaultSpawn(binaryPath: string, configPath: string): MiniAppSpawnPort 
       else stderr += chunk.toString("utf8");
     });
     const done = new Promise<{ code: number; stdout: string; stderr: string }>((settle) => {
-      child.on("error", (error) => settle({ code: -1, stdout, stderr: String(error.message) }));
+      child.on("error", (error) => settle({ code: -1, stdout: progress?.snapshot() ?? stdout, stderr: String(error.message) }));
       child.on("close", (code) => {
         settled = true;
         if (killTimer) clearTimeout(killTimer);
-        settle({ code: exceeded ? -2 : code ?? -1, stdout, stderr });
+        settle({ code: exceeded ? -2 : code ?? -1, stdout: progress?.snapshot() ?? stdout, stderr });
       });
     });
     return { done, kill };
@@ -207,11 +213,17 @@ export function createDandelionCliBackend(
     return run;
   };
 
-  const parseResult = (text: string, mode: "single" | "receive" | "watch" = "single"): unknown => {
+  const parseResult = (text: string, mode: "single" | "receive" | "send" | "watch" = "single"): unknown => {
     const trimmed = text.trim();
     try {
       if (mode === "single") return trimmed ? JSON.parse(trimmed) : {};
       const records: unknown[] = trimmed.split(/\r?\n/).map((line) => JSON.parse(line));
+      if (mode === "send") {
+        if (!records.length || records.length > 1801 || records.slice(0, -1).some((record) => !record || typeof record !== "object" || Reflect.get(record, "event") !== "progress")) throw new Error();
+        const final = records.at(-1);
+        if (!final || typeof final !== "object" || Reflect.get(final, "schema_version") !== 1) throw new Error();
+        return final;
+      }
       if (mode === "watch") {
         if (records.length < 1 || records.length > 10_000) throw new Error();
         return { samples: records };
@@ -225,7 +237,7 @@ export function createDandelionCliBackend(
     } catch { throw new Error("DANDELION_INVALID_JSON"); }
   };
 
-  const finish = async (run: NativeRun, mode: "single" | "receive" | "watch" = "single"): Promise<unknown> => {
+  const finish = async (run: NativeRun, mode: "single" | "receive" | "send" | "watch" = "single"): Promise<unknown> => {
     let result;
     try { result = await run.result; }
     catch { throw new Error("DANDELION_PROCESS_FAILED"); }
@@ -251,7 +263,7 @@ export function createDandelionCliBackend(
     return finish(admit(argv), mode);
   };
 
-  const startOperation = (argv: readonly string[], mode: "single" | "receive"): { operationId: string } => {
+  const startOperation = (argv: readonly string[], mode: "single" | "receive" | "send"): { operationId: string } => {
     pruneOperations();
     if (operations.size >= MAX_OPERATIONS) throw new Error("NATIVE_OPERATION_LIMIT");
     const operationId = randomUUID();
@@ -344,8 +356,9 @@ export function createDandelionCliBackend(
       if (sendConfig.trafficLimitBytes !== undefined) argv.push("--traffic-limit-bytes", String(sendConfig.trafficLimitBytes));
       if (sendConfig.queueCapacity !== undefined) argv.push("--queue-capacity", String(sendConfig.queueCapacity));
       if (sendConfig.chunkBytes !== undefined) argv.push("--chunk-bytes", String(sendConfig.chunkBytes));
+      argv.push("--progress-json");
       argv.push("--json");
-      return startOperation(argv, "single");
+      return startOperation(argv, "send");
     },
     async receive(receiveConfig) {
       const ticket = generation;
