@@ -6965,3 +6965,32 @@ No Actions were started or rerun, and no production code, ledger, RTM, flags, so
 Immediately before this append, the live branch lease re-read exactly as `18dfd04164bb2d8323735283a09ddca0e1cd6d19`, tree `272ed234dcbf893fff19666cfc5932c080e8d3d0`, and dossier blob `c4aac57e1013e066390231e1f43b353f6cfe879a`, 6934 lines. `## Section 112` count was zero, and each of the five new exact refs in this section had zero exact occurrences in the prior dossier.
 
 No Actions were started or rerun, and no production code, ledger, RTM, flags, source lock, inventory, or source baseline was changed. The public-Cron durable cross-index/integrated terminal-read fixture, direct Gateway Stop replacement-late-success oracle, plugin failed-publication independent receiver, and third production plural settlement caller remain absent. Independent ACCEPT, scoped G01/G02, Rust implementation/wiring parity, package/device proof, release acceptance, and final OCRM acceptance remain open.
+
+
+
+## Section 113 — Queue identity disambiguation, direct Stop oracle recheck, and plugin retirement receiver closure
+
+### 113.1 Cron queue persistence still does not copy the public request-run identity
+
+- The deeper frozen reverse read closes the remaining `:run:` ambiguity without widening the identity domain. Cron history keeps the public/manual run id in retained run detail and receipt projection while the `task_runs.run_id` row remains an internal cancellation/history identity; session-delivery persistence stores its queue `id`, `sessionKey`, and full queue payload JSON.
+- The isolated Cron execution session key appends the Cron session row's `sessionId` as its terminal `:run:<id>` suffix. `parseCronRunScopeSuffix(...)` therefore recovers a session-incarnation run scope, not `cron_run_receipts.request_run_id`. Persisting that `sessionKey` in `delivery_queue_entries.session_key`/`entry_json` does not create a durable public-run cross-index.
+- Every frozen exact ref used for that disambiguation was already registered in this dossier, so no duplicate Cron ref is appended here. The scan still found no durable copy from the receipt/public history identity into queue `entry.id`/`sessionKey`, and no fixture that drives one same public run through restart settlement, continuation cleanup, physical queue finalization, and then a public `cron.runs { id, runId, ... }` terminal read.
+
+### 113.2 The requested direct Gateway Stop replacement-late-success fixture remains absent
+
+- Re-enumerating the frozen direct Gateway surface leaves `session-processes.ts` and its focused test as the relevant method/test pair. Production rechecks current request/placement authority after remote I/O and passes owner epoch plus placement generation into the worker observation path.
+- The focused deferred-reply oracle still dispatches `sessions.processes.list`, closes request authority, then resolves a successful remote list response and verifies that no success leaks. It does not dispatch `sessions.processes.stop`, does not replace `activeOwnerEpoch` or `placementGeneration` after dispatch, and therefore is not the requested successful Stop-reply-after-placement-replacement oracle.
+- All exact refs reached by this Stop recheck were already present in the dossier; no duplicate Stop ref is appended in this section.
+
+### 113.3 New production retirement joins do not form an independent failed-publication receiver
+
+- New exact ref `src/plugins/plugin-lifecycle-lease.ts@e012a9b4c5222b11b05e528540d96c7650873c6d` closes each lifecycle cache by joining `retirePluginCache(cache)` for operation caches and then `waitForPluginCacheRetirement`, collecting cleanup failures before releasing the lease. It consumes cache-retirement completion only; it never receives a source-publication `false`/throw result and never calls plural `settlePluginNativeAdmissions`.
+- New exact ref `src/gateway/server-shutdown.runtime.ts@822fd40f28a6d0848a580546a8b3a3c1469e9804` prepares active-plugin-registry shutdown and exposes `waitForPluginCacheRetirement` as one member of the Gateway shutdown runtime. This is a process-level retirement join, not a publication receiver, retry callback, or plural settlement caller.
+- New exact ref `src/agents/prepared-model-runtime.plugin-lifetime.ts@5819f92ffa250ec484228a9ad8590af09aae6ea4` closes outstanding prepared-plugin generations at process shutdown and then awaits `waitForPluginCacheRetirement(true)`, aggregating retained cleanup failures. It likewise observes cache retirement rather than receiving publication outcome or acquiring replacement publication authority.
+- These three lifecycle joins terminate at the already-owned cache/admission disposal path. A publication returning `false` remains retained by the existing admission state for later settlement, and a throw remains handled by that same admission owner; no independent production receiver/handoff is introduced. The frozen production plural settlement callers therefore remain the same two already registered callers, with no third production plural caller discovered.
+
+### 113.4 Dedupe, lease, and acceptance state
+
+Immediately before this append, the live branch lease re-read exactly as `25bbd7fd35407b2c61bde32927208d8bfdca086b`, tree `d2be1347f60805a20fa51dbf63dc83e662379604`, and dossier blob `6014e58759fd4be9c78ac0f85a9b0c93352f0ac0`, 6968 lines. `## Section 113` count was zero, and each of the three new exact refs in Section 113.3 had zero exact occurrences in the prior dossier.
+
+No Actions were started or rerun, and no production code, ledger, RTM, flags, source lock, inventory, or source baseline was changed. The public-Cron durable cross-index/same-public-run integrated terminal-read fixture, direct Gateway Stop replacement-late-success oracle, plugin failed-publication independent receiver, and third production plural settlement caller remain absent. Independent ACCEPT, scoped G01/G02, Rust implementation/wiring parity, package/device proof, release acceptance, and final OCRM acceptance remain open.
