@@ -6624,3 +6624,56 @@ New frozen identities:
 Immediately before this append, live lease was `19c0ca1a8b1ffef87d433077e8a7a6ec88f386ed`, dossier blob `f774473450b952fbd58d03a7e96aef38fed93350`, 6578 lines, Section 104 count zero, and all ten exact refs above had zero occurrences. Frozen upstream commit/tree were re-read. No Actions were started or rerun; no production code, ledger, RTM, flags, source lock, inventory, or source baseline changed.
 
 - The requested integrated public-Cron restart settlement/read oracle, direct Stop replacement-late-success Gateway oracle, and plugin-native distinct failed-publication receiver/third plural caller remain absent. Independent ACCEPT, scoped G01/G02, Rust implementation/wiring parity, package/device proof, release acceptance, and final OCRM acceptance remain open.
+
+
+## Section 105 — pending-final, transcript/idempotency, mailbox, and restart settlement do not bridge public Cron identity into recovery custody
+
+Frozen source remains `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`). Live target lease was re-read immediately before this append as `d2e4a0455efd9a39d966d3bba1dad25525478d6c` with tree `e7a652b8190b903722532aa5bd378867f50d001c`; the dossier blob was `ceade7cf4a0e7bb1fa6b118b19571f4e71422730`. This pass follows Section 104's separated `sourceTurnId/protocolRunId/restartRecoveryDeliveryRunId/sourceRunId` identities into pending-final state, transcript/idempotency storage, controller mailbox state, and restart settlement. Only frozen refs with zero exact occurrences in the full dossier before this append are registered.
+
+New frozen identities:
+- `src/agents/pending-final-recovery-source.ts@b225a946d1c6c7593fe2966d8bfba485a9e5d8de`
+- `src/config/sessions/session-entry-patch-operation.ts@efd73cfde2dd4c3999dbd9f9a39040100fe8f653`
+- `src/config/sessions/session-transcript-turn-state.ts@52c34743464093b12e2e2a8d0750c587a85b0e31`
+- `src/config/sessions/session-transcript-turn-lifecycle.types.ts@2711bc2368cd446b240eb4b44e54888af4ef769e`
+- `src/sessions/session-controller.mailbox.ts@61180f8a2a89c491d70581baa4dc984a48e23397`
+- `src/sessions/session-controller.state.ts@2bebcd97915856cb83035383dd10b55df57604e2`
+- `src/sessions/session-controller.contracts.ts@571dd3be560353da7e5ec34f28ff506a75ae29d7`
+- `src/sessions/session-controller.storage.ts@07a6bfe0ae544e85ff1a9f4023449658b0dac2be`
+- `src/agents/main-session-recovery/main-session-restart-recovery-store.ts@61b0b96a923da2dc3f8ddf9980ca76f3294698a8`
+- `src/agents/main-session-recovery/main-session-restart-dispatch-settlement.ts@92790ffa016ed83a529e0f00497e8755b1481f73`
+- `src/agents/main-session-recovery/main-session-restart-recovery-checkpoint.ts@65568671423d994627b45db0933f4c6d60d77ee5`
+- `src/gateway/session-transcript-memory-reader.ts@4ac76ccfb8aab6caabc42685621cd2fe318a6e67`
+- `src/sessions/user-turn-transcript.ts@b5b4e6a1c86b3932da5fd320e519ad5c0d27b53e`
+- `src/config/sessions/session-accessor.sqlite-transcript-suffix-idempotency.ts@29826ab28a887d1e34282136b61b91a39d028d5c`
+
+### 105.1 Pending-final custody remains a restart-private state fence, not a Cron public-id carrier
+
+- `pending-final-recovery-source.ts@b225a9…` snapshots only `sessionId`, `lifecycleRevision`, the restart delivery run/source pair, delivery context, and harness completion. Advancing that snapshot follows session/lifecycle transitions; there is no `requestRunId`, public run-history id, `child_session_key`, or queue identity field.
+- `session-entry-patch-operation.ts@efd73c…` makes `cron-run-continuation`, `pending-final-clear`, `restart-safe-terminal`, and `restart-claim-clear` separate operations. The continuation case is fenced by its own lifecycle revision; pending-final clear reads `restartRecoveryDeliveryRunId`; terminal cleanup records `restartRecoveryDeliverySourceRunId`. The file contains no `requestRunId` or `child_session_key` join between those operations.
+- `session-transcript-turn-state.ts@52c347…` and `session-transcript-turn-lifecycle.types.ts@2711bc…` fence transcript mutation against exact pending-final and restart-recovery fields plus session/lifecycle/writer identity. They do not add a public Cron receipt/history field to the expected-state contract.
+
+### 105.2 Transcript idempotency indexes local logical/execution turns, not public Cron requestRunId
+
+- `user-turn-transcript.ts@b5b4e6…` allocates a private `logicalTurnId = randomUUID()`; when no transport idempotency key exists, it derives `buildRunUserTurnIdempotencyKey(logicalTurnId)`. Storage identity is then fenced by agent/session/sessionId. No public Cron request id or child-session history column participates.
+- `session-transcript-memory-reader.ts@4ac76c…` resolves visibility by `buildRunUserTurnIdempotencyKey(runId)` and same-run transcript metadata. This is an execution/transcript run lookup, not a read of `cron_run_receipts.request_run_id` or task-history `child_session_key`.
+- `session-accessor.sqlite-transcript-suffix-idempotency.ts@29826a…` maintains `transcript_event_identities.message_idempotency_key` by `session_id` and transcript sequence, including replacement ownership for duplicate retained keys. Its SQLite query has no Cron receipt/history columns.
+- `main-session-restart-recovery-checkpoint.ts@655686…` locates a durable source-turn range from `sourceTurnId` plus optional restart continuation run id, both normalized through run-user-turn idempotency keys. Terminal message-tool reconciliation writes an idempotency key derived from sourceTurnId/toolCallId and fences the current restart run/source pair; it never consumes the public Cron request/history id.
+
+### 105.3 Mailbox and restart settlement preserve protocol/source separation and do not create a durable cross-index
+
+- `session-controller.mailbox.ts@61180f…` reserves `sourceTurnId` and `protocolRunId` as distinct fields and adopts the protocol id only under exact current mailbox ownership. `session-controller.contracts.ts@571dd3…` preserves that split in the typed input contract.
+- `session-controller.state.ts@2bebcd…` delegates owner state to `session-controller.storage.ts@07a6bf…`; that storage is a process-global singleton of `Map/Set/WeakMap` structures, including `rpcSourcesByRunId`. It is runtime coordination, not a durable DB index, and therefore cannot be the missing durable public-Cron requestRunId/child_session_key bridge.
+- `main-session-restart-recovery-store.ts@61b0b9…` derives expected recovery source from `restartRecoveryDeliverySourceRunId`, reads the transcript checkpoint, and resumes with that same source-turn identity. Its candidate/settlement path has no `requestRunId` or `child_session_key`.
+- `main-session-restart-dispatch-settlement.ts@92790f…` settles only when session id, expected restart run/source pair, lifecycle generation, and terminal evidence still match. It does not consult Cron receipt/history identity.
+- The already-registered `run-history.kernel.ts@08248d…` remains the place where public task history projects `run_id` and `child_session_key`, and where skipped receipt handling can read `cron_run_receipts.request_run_id`. None of the newly traced pending-final/transcript/mailbox/restart owners import that public identity into their recovery state, so the requested durable cross-index is still absent.
+
+### 105.4 Stop and plugin-native focused frontiers remain unchanged
+
+- The already-registered `session-processes.ts@b1455a…` sends remote observations with `activeOwnerEpoch` and placement generation and re-runs `assertCurrent()` after remote I/O before publication. However the frozen direct Gateway test `session-processes.test.ts@4d65f9…` exercises the stale in-flight path with `sessions.processes.list` and a closed request-authority boolean; it does not issue `sessions.processes.stop`, replace placement generation/owner epoch while Stop is pending, then return a successful stale Stop reply. No direct replacement-late-success Stop oracle was found.
+- The already-registered plugin-native state keeps failed publication intent in the same admission state's `publications` map: false leaves it queued, throw emits a warning without deleting it, and the already-registered `plugin-native-admission.ts@8f7e2e…` explicitly re-enters `startNativeAdmissionPublication(state, key)` on the same unchanged admission. Production plural `settlePluginNativeAdmissions` callers remain generation-preparation and prepared-model-runtime build only. No independent false/throw receiver handoff and no third production plural caller was found.
+
+### 105.5 Dedupe, lease, and remaining acceptance state
+
+Immediately before this append, live lease was `d2e4a0455efd9a39d966d3bba1dad25525478d6c`, tree `e7a652b8190b903722532aa5bd378867f50d001c`, dossier blob `ceade7cf4a0e7bb1fa6b118b19571f4e71422730`, 6627 lines, Section 105 count zero, and all fourteen exact refs above had zero occurrences. Frozen upstream commit/tree were re-read. No Actions were started or rerun; no production code, ledger, RTM, flags, source lock, inventory, or source baseline changed.
+
+- The predecessor public-Cron id -> restart/lost-reply durable session-delivery settlement -> exact alias cleanup -> public `cron.runs { id, runId, limit: 1 }` terminal-read fixture remains absent. The direct Stop replacement-late-success Gateway oracle and plugin-native distinct failed-publication receiver/third plural caller also remain absent. Independent ACCEPT, scoped G01/G02, Rust implementation/wiring parity, package/device proof, release acceptance, and final OCRM acceptance remain open.
