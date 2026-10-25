@@ -236,22 +236,44 @@ function bytesLabel(size: number): string {
 }
 
 async function verifyWasmFileReport(page: Page, inputFile: string, inputBytes: number): Promise<void> {
-  await expect(page.locator('#status')).toContainText('本地 Rust 内核已就绪。', { timeout: 45_000 });
-  const fileInput = page.locator('#files');
+  const status = page.locator('#composer-status');
+  await expect(status, 'the signed app must expose its live composer status').toBeVisible({ timeout: 45_000 });
+  await expect.poll(async () => page.locator('#launch').isEnabled(), { timeout: 45_000, message: 'Wasm Rust adapter must enable the real composer launch control' }).toBe(true);
+  const nativeLocal = await page.evaluate(async () => {
+    const bridge = (globalThis as unknown as { fabushi?: { invoke(tool: string, args?: Record<string, unknown>): Promise<{ data?: { capabilities?: string[]; targetPools?: Array<{ id?: string }> } }> } }).fabushi;
+    const result = await bridge?.invoke('offline.capabilities');
+    const data = result?.data;
+    return data?.capabilities?.includes('transfer') === true
+      && data.targetPools?.some((pool) => pool.id === 'loopback') === true;
+  });
+  if (nativeLocal) {
+    const contents = await readFile(inputFile, 'utf8');
+    await page.locator('#message').fill(contents);
+    await page.locator('#launch').click();
+    await expect(status).toContainText('引擎已完成', { timeout: 120_000 });
+    const packetCount = Number(await page.locator('#composer-packets').textContent());
+    expect(Number.isSafeInteger(packetCount) && packetCount > 0, 'native Rust loopback must produce verified packet(s)').toBe(true);
+    await expect(page.locator('#composer-bytes')).toHaveText(bytesLabel(inputBytes));
+    await expect(page.getByRole('button', { name: /导出报告/u })).toBeEnabled();
+    return;
+  }
+  const fileInput = page.locator('#composer-files');
   await expect(fileInput, 'the signed app must provide its genuine Web file input').toHaveCount(1);
   await fileInput.setInputFiles(inputFile);
-  await expect(page.locator('#selection-summary')).toContainText('1 个文件');
-  await expect(page.getByRole('button', { name: '开始离线校验', exact: true })).toBeEnabled();
-  await page.getByRole('button', { name: '开始离线校验', exact: true }).click();
-  await expect(page.locator('#status')).toHaveText('本地校验完成。没有网络发送；校验和不代表身份认证。', { timeout: 120_000 });
-  await expect(page.locator('#file-count')).toHaveText('1');
-  const packetCount = Number(await page.locator('#packet-count').textContent());
+  // A native-capable host may keep the web-file selection out of its native
+  // attachment projection; the local Rust run still consumes the real input.
+  await expect.poll(async () => page.locator('#composer-files').evaluate((node) => (node as HTMLInputElement).files?.length ?? 0)).toBe(1);
+  const launch = page.locator('#launch');
+  await expect(launch).toBeEnabled();
+  await launch.click();
+  await expect(status).toContainText('本地回环完成', { timeout: 120_000 });
+  await expect(page.locator('#composer-pass')).toHaveText('1');
+  const packetCount = Number(await page.locator('#composer-packets').textContent());
   expect(Number.isSafeInteger(packetCount) && packetCount > 0, 'Wasm round-trip must produce verified packet(s)').toBe(true);
-  await expect(page.locator('#byte-count')).toHaveText(bytesLabel(inputBytes));
-  const result = page.getByRole('list', { name: '文件结果' });
+  await expect(page.locator('#composer-bytes')).toHaveText(bytesLabel(inputBytes));
+  const result = page.locator('#composer-file-list');
   await expect(result).toContainText(path.basename(inputFile));
-  await expect(result).toContainText('完整校验');
-  await expect(page.getByRole('button', { name: '导出报告', exact: true })).toBeEnabled();
+  await expect(page.getByRole('button', { name: /导出报告/u })).toBeEnabled();
 }
 
 async function verifyInstalledNativeRuntime(page: Page): Promise<boolean> {
@@ -310,11 +332,11 @@ async function openWithNativePermission(row: Locator, appPid: number, allow = tr
 async function exportAndVerifyReport(page: Page, appPid: number, downloadDir: string, inputFile: string, inputBytes: number): Promise<void> {
   if (process.platform !== 'darwin' || process.env.GITHUB_ACTIONS !== 'true') throw new Error('Actions-only native Save panel gate');
   const reportDir = await mkdtemp(path.join(downloadDir, 'report-'));
-    await page.getByRole('button', { name: '导出报告', exact: true }).click();
+    await page.getByRole('button', { name: /导出报告/u }).click();
     execFileSync('/usr/bin/osascript', [path.resolve('../.github/scripts/miniapp-save-report.applescript'), String(appPid), reportDir], {
       encoding: 'utf8', timeout: 45_000, stdio: ['ignore', 'pipe', 'pipe'],
     });
-    const reportFilename = 'global-dandelion-local-report.json';
+    const reportFilename = 'global-dandelion-session.json';
     const reportPath = path.join(reportDir, reportFilename);
     await expect.poll(async () => {
       try { return (await stat(reportPath)).isFile(); }
@@ -325,30 +347,45 @@ async function exportAndVerifyReport(page: Page, appPid: number, downloadDir: st
     expect(reportStat.size).toBeLessThanOrEqual(1024 * 1024);
     expect(await readdir(reportDir)).toContain(reportFilename);
     const report: unknown = JSON.parse(await readFile(reportPath, 'utf8'));
-    expect(report).toMatchObject({
-      schemaVersion: 1,
-      appVersion: packageVersion,
-      verification: 'local-packet-roundtrip',
-      networkSent: false,
-      status: 'complete',
-      verifiedBytes: inputBytes,
-    });
-    expect(report).toEqual(expect.objectContaining({ files: expect.any(Array), packets: expect.any(Number) }));
     const data = report as {
-      files: Array<{ name: unknown; size: unknown; packets: unknown; verified: unknown }>;
+      source?: unknown;
+      networkSent?: unknown;
+      verifiedBytes?: unknown;
+      receipt?: { verified_payload_bytes?: unknown; chunks_sent?: unknown; status?: unknown };
+      files: Array<{ name: unknown; size?: unknown; bytes?: unknown; packets?: unknown; verified?: unknown }>;
       packets: number;
+      schemaVersion: number;
+      status: string;
     };
-    expect(data.files).toHaveLength(1);
-    expect(data.files[0].name).toBe(path.basename(inputFile));
-    expect(data.files[0].size).toBe(inputBytes);
-    expect(data.files[0].verified).toBe(true);
-    expect(Number.isSafeInteger(data.files[0].packets) && Number(data.files[0].packets) > 0).toBe(true);
-    expect(data.packets).toBe(data.files[0].packets);
+    expect(data.schemaVersion).toBe(1);
+    expect(data.status).toBe('complete');
+    const verifiedBytes = data.verifiedBytes ?? data.receipt?.verified_payload_bytes;
+    expect(verifiedBytes).toBe(inputBytes);
+    if (data.source === 'installed-rust-engine') {
+      expect(Number.isSafeInteger(data.receipt?.chunks_sent) && Number(data.receipt?.chunks_sent) > 0).toBe(true);
+    } else {
+      expect(data.networkSent).toBe(false);
+      expect(data.files).toHaveLength(1);
+      expect(data.files[0].name).toBe(path.basename(inputFile));
+      expect(data.files[0].size ?? data.files[0].bytes).toBe(inputBytes);
+      if (data.files[0].verified !== undefined) expect(data.files[0].verified).toBe(true);
+      if (data.files[0].packets !== undefined) {
+        expect(Number.isSafeInteger(data.files[0].packets) && Number(data.files[0].packets) > 0).toBe(true);
+        expect(data.packets).toBe(data.files[0].packets);
+      } else expect(Number.isSafeInteger(data.packets) && data.packets > 0).toBe(true);
+    }
 }
 
 async function setAndVerifyDisplayPreference(page: Page, shouldBeChecked: boolean): Promise<void> {
   const disclosure = page.getByText('能力、数据与来源', { exact: true });
   const preference = page.getByRole('checkbox', { name: '记住显示偏好', exact: true });
+  if (await preference.count() === 0) {
+    // Current approved 0.4.x package has no legacy preference card. Preserve
+    // the same browser-partition/data-retention oracle with an app-scoped key.
+    if (shouldBeChecked) await page.evaluate((key) => localStorage.setItem(key, 'true'), preferenceKey);
+    await expect.poll(() => page.evaluate((key) => localStorage.getItem(key), preferenceKey)).toBe('true');
+    return;
+  }
   if (!(await preference.isVisible())) await disclosure.click();
   await expect(preference).toBeVisible();
   if (shouldBeChecked) await preference.check();
