@@ -287,7 +287,10 @@ fn test_ocrm_wake_o04_channel_inbound_wake_prompt() {
     // Reaction-only envelopes
     let reaction_envelopes = vec![
         json!({
-            "address": "discord:chat",
+            "address": {
+                "platform": "discord",
+                "chat": "chat"
+            },
             "sender": "Charlie",
             "reaction": {
                 "emoji": "👍",
@@ -297,6 +300,7 @@ fn test_ocrm_wake_o04_channel_inbound_wake_prompt() {
     ];
     let prompt_reaction = build_channel_inbound_wake_prompt(&reaction_envelopes);
     assert!(prompt_reaction.contains("New reaction on a channel you are connected to."));
+    assert!(prompt_reaction.contains("On Discord, from discord:chat:"));
     assert!(prompt_reaction.contains("Charlie reacted 👍 to your message: \"Deployment complete\""));
     assert!(prompt_reaction.contains("You don't need to reply; act on a reaction only if it's useful"));
 }

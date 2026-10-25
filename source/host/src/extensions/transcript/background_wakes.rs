@@ -22,15 +22,15 @@ pub fn format_channel_address_value(address: &Value) -> Option<String> {
 }
 
 fn channel_platform_display_name(address: &Value) -> String {
-    let platform = address
-        .get("platform")
-        .and_then(Value::as_str)
-        .unwrap_or_default();
-    match platform {
-        "slack" => "Slack".to_string(),
-        "discord" => "Discord".to_string(),
-        other => other.to_string(),
-    }
+    let platform = if let Some(raw) = address.as_str() {
+        channel_platform(raw).unwrap_or_default()
+    } else {
+        address
+            .get("platform")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+    };
+    channel_platform_name(platform).to_string()
 }
 
 pub fn distinct_inbound_channel_addresses(envelopes: &[Value]) -> Vec<String> {
