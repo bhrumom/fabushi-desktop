@@ -61976,7 +61976,7 @@
       "source_path": "Telegram/ThirdParty/MicroTeX",
       "source_blob_sha": "61aaa7cc354de91d5898ffb0b2a6c62628d9a76f",
       "source_kind": "recursive_child_repository_generated_documentation_svg_provenance",
-      "module_id": "tdesktop.thirdparty.microtex.readme-sample-8-svg",
+      "module_id": "tdesktop.thirdparty.microtex.readme-sample-11-svg",
       "responsibility_id": "TDRP-R9-MICROTEX-README-SAMPLE-11-SVG-PROVENANCE-001",
       "source_symbols": [
         "desktop-app/MicroTeX:readme/samples/sample_11.svg@28039e570607bab47db7ff3976b16847c32fd768 — mode 100644, 45,691 ASCII bytes / 307 split-line slots including terminal LF slot, 146pt x 181pt, viewBox 0 0 146 181",
@@ -62027,7 +62027,7 @@
         "telegramdesktop/tdesktop:Telegram/SourceFiles/iv/markdown/iv_markdown_microtex.cpp@5c854b265e6dc67c1c500a72e04fa58b7fc6c3a2",
         "telegramdesktop/tdesktop:Telegram/build/build_mac.py@881a1c212486976b318777b7f6e5c944da2bd5d3"
       ],
-      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microtex-readme-sample-8-svg-complete-read.md",
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/upstream-microtex-readme-sample-11-svg-complete-read.md",
       "behavior_contract": "Source-only generated documentation SVG provenance. sample_11.svg is the passive same-index artifact for a stable normalized 217-character twelfth SAMPLES.tex body. Its committed SVG changes from creation blob d8427615 at 148pt x 181pt to accepted 28039e57 at 146pt x 181pt with identical structural cardinalities and exactly 10 line-slot differences while source identity stays stable; this output drift is not a single-cause renderer/font/toolchain proof. No shipping runtime is owned.",
       "state_machine": "95a54b5 stable 217-char index-11 source -> creation blob d8427615 at 148pt x 181pt -> 63555c2 changes other corpus state while index 11 remains stable -> 08d9d6b updates sample_11 to 28039e57 at 146pt x 181pt while samples.md is synchronized -> accepted pin retains 28039e57; accepted shipping bypasses this documentation chain.",
       "side_effects": [
@@ -62079,7 +62079,7 @@
       "new_owner_proposal": null,
       "new_owner_adr": null,
       "fabushi_target_paths": [
-        "projects/telegram-desktop-rust/dossiers/upstream-microtex-readme-sample-8-svg-complete-read.md"
+        "projects/telegram-desktop-rust/dossiers/upstream-microtex-readme-sample-11-svg-complete-read.md"
       ],
       "fabushi_target_symbols": [
         "TDRP_MICROTEX_README_SAMPLE_11_SVG_PROVENANCE_001"
