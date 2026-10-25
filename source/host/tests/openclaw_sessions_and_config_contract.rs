@@ -4,7 +4,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::settings::settings_service::SettingsService;
 use mahayana_host_runtime::gateway_command_error::GatewayCommandError;
-use mahayana_host_runtime::host_diagnostics::{pin_host_diagnostics_reporter, report_host_diagnostic};
+use mahayana_host_runtime::host_diagnostics::{pin_host_diagnostics_reporter, report_diagnostic_event};
 use mahayana_host_runtime::sha256::sha256_hex;
 use serde_json::{Value, json};
 
@@ -84,7 +84,7 @@ fn test_system_info_schema_and_zero_secret_leakage() {
         sink.lock().unwrap().push(d.kind.clone());
     })));
 
-    report_host_diagnostic("system.info.queried", json!({ "timestamp": 12345 }));
+    report_diagnostic_event("system.info.queried", json!({ "timestamp": 12345 }));
 
     let pid = std::process::id();
     let cpu_count = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1);

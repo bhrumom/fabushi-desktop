@@ -3231,7 +3231,7 @@ impl UnifiedGatewayApi {
         &self,
         _args: &serde_json::Value,
     ) -> Result<serde_json::Value, GatewayCommandError> {
-        mahayana_host_runtime::host_diagnostics::report_host_diagnostic(
+        mahayana_host_runtime::host_diagnostics::report_diagnostic_event(
             "system.info.queried",
             serde_json::json!({ "timestamp": started_at_ms() }),
         );

@@ -28,3 +28,11 @@ pub fn report_host_diagnostic(diagnostic: &HostDiagnostic) {
         reporter(diagnostic);
     }
 }
+
+pub fn report_diagnostic_event(kind: impl Into<String>, fields: Value) {
+    let fields_map = fields.as_object().cloned().unwrap_or_default();
+    report_host_diagnostic(&HostDiagnostic {
+        kind: kind.into(),
+        fields: fields_map,
+    });
+}
