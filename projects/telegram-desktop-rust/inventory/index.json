@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16148,
-    "unread_minimum": 16123,
+    "unknown_minimum": 16147,
+    "unread_minimum": 16122,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -90,7 +90,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Strict228 TDRP-R9-MICROTEX-RES-CYRILLIC-WNBXTI10-TTF-PROVENANCE-001: res/cyrillic/wnbxti10.ttf@e85a2a442738554dc728a75546d10fd6fef419d1 is 52160 bytes; root blob d7b5cb69ae108e64f2de62b72442d237e98a5bc4 is 52028 bytes. Current sfnt has 15 tables/98 glyphs/unitsPerEm=1000; OS/2 v3 weight=400 width=5 fsType=0 fsSelection=64, head.macStyle=0, post.italicAngle=0. Current names family/full=TDesktop wnbxti10, subfamily=Regular, unique=TDesktop-wnbxti10:Version 1.001, PostScript=TDesktop-wnbxti10; no name IDs 13/14. Root names are unprefixed wnbxti10. Exact-path history is root 17f3fc78 + c1546216 Attempt to force our fonts; c154 parent 43904b5c retains root blob. Root->pinned differs only name (612->741 bytes, 18d9cdff->4b316ae2) and head checksumAdjustment (f338644d->1228f079); glyf/loca/hmtx/cmap/GDEF/GPOS/GSUB/OS/2/maxp/hhea/post unchanged, so no glyph/layout/metric mutation. Historical style role is XML-driven: wnbx10.xml itVersion=wnbxti10 and wnbxti10.xml romanVersion=wnbx10/ttVersion=wntt10/ssVersion=wnssbx10; sfnt itself remains Regular. Accepted addTeXFontDescription throws ex_alphabet_registration; only external-font/TextRenderingAtom fallback may apply. RES_README/Meson install target; accepted bundled.qrc excludes Cyrillic/Greek. README excludes res fonts/XML from MIT blanket and res/cyrillic/LICENSE is GPLv3 provenance. Counters unknown=16148 unread=16123 omitted=0 responsibilities=246. Parent ed8aab4 exact-head TDRP 61/61, Rust 6/6, Official MCP 1/1. Receipt-head Actions required. Next res/cyrillic/wnbxti10.xml@de5036e7cec6e7cfdda57f63ed2be550aa04781f.",
+  "note": "Strict229 TDRP-R9-MICROTEX-RES-CYRILLIC-WNBXTI10-XML-PROVENANCE-001: res/cyrillic/wnbxti10.xml@de5036e7cec6e7cfdda57f63ed2be550aa04781f is 31184 bytes / 708 lines and is byte-identical at root 17f3fc7816e4de1f5764036f34d759d50098ae58 and pinned 61aaa7cc354de91d5898ffb0b2a6c62628d9a76f; exact-path history is root init only. Font root name=wnbxti10.ttf id=wnbxti10 space=0.414441 xHeight=0.444445 quad=1.182211 unicode=95 romanVersion=wnbx10 ttVersion=wntt10 ssVersion=wnssbx10. Exact metric surface is 95 Char/95 unique codes 171..1141, 512 Kern across -0.029445 x325, -0.088333 x128, -0.117777 x35, -0.058888 x23, +0.029445 x1, and 36 Lig; 12 Char have nonzero depth and 93 nonzero italic correction. Historical DefaultTeXFontParser stores width/height/depth/italic, Kern/Lig and style IDs into FontInfo and binds adjacent TTF; wnbx10.xml points back with itVersion=wnbxti10, wnssbx10.xml links romanVersion=wnbx10/ttVersion=wntt10, while wntt10.xml belongs to the regular roman/ss graph. Accepted addTeXFontDescription throws ex_alphabet_registration; only explicit external-font/TextRenderingAtom fallback may render otherwise unmapped blocks. RES_README/Meson and legacy latex.qrc include/install the target, but accepted bundled.qrc and tdesktop external_microtex_bundled.rcc composition exclude Cyrillic/Greek XML-loader resources. README excludes res XML/fonts from MIT blanket and res/cyrillic/LICENSE is GPLv3 provenance. Existing TDRP source/resource/font/parser/license/install/packaging/provenance owners remain selected; no second font/resource/package runtime is introduced. Counters unknown=16147 unread=16122 omitted=0 responsibilities=247. Parent 4d48d348 exact-head TDRP 61/61, Rust 6/6, Official MCP 1/1. Receipt-head Actions required. Next res/cyrillic/wnr10.ttf@a93586f1efd00c4009b72fc63a365661ce461435.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
@@ -106,38 +106,38 @@
     "baseline_identity_accepted": false,
     "source_closure_ready": false
   },
-  "target_commit": "ed8aab4a19ec53e489d41947146cf933f978a085",
+  "target_commit": "4d48d348780b129099c1776897219a24e51a4459",
   "last_completed_parent_head_validation": {
     "evidence_status": "historical-only-after-receipt-commit",
-    "head_sha": "ed8aab4a19ec53e489d41947146cf933f978a085",
+    "head_sha": "4d48d348780b129099c1776897219a24e51a4459",
     "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
     "upstream_tree": "c539eabfb05e7dcaa84821ac44c35cdfb6551ae5",
     "recursive_non_directory_entries": 16379,
-    "tdrp_run_id": 40184403670,
+    "tdrp_run_id": 40188785537,
     "tdrp_jobs": "61/61 success",
     "source_authority_artifact": {
-      "id": 12596055295,
-      "digest": "sha256:7b83f3fd69c587826b96f4cfdd69ef84cd486b4c2c56f72fd4569c4fca4b8964"
+      "id": 12597617359,
+      "digest": "sha256:9d9fbb65571023b24faf4ede10997002051e4978ef8c83141340e55c0de14e53"
     },
     "recursive_closure_artifact": {
-      "id": 12596140443,
-      "digest": "sha256:912ca377faad0f5a1d27deeeac295e8889aaac1fa3d0a694274b6021df67c603"
+      "id": 12596468777,
+      "digest": "sha256:3bdb61e1be138ada6968a81a3068281d345eecd844d4286dd82d962e47718d52"
     },
     "recursive_reachability_artifact": {
-      "id": 12595866038,
-      "digest": "sha256:d43410ebccd6bab4da11aec3943603dd01502bd838986191f7d5df61c9b810dd"
+      "id": 12596717872,
+      "digest": "sha256:efd843d0ff5544958ee73921a67c2e9a34d3b6aff379713d1f6b08f648637f7f"
     },
     "boost_reachability_artifact": {
-      "id": 12595362411,
-      "digest": "sha256:d6f4e079283c48a1d0ef94c659b04e20a1240c13f3224f48f8de512d44d562fb"
+      "id": 12597582603,
+      "digest": "sha256:ff12a91a07d322d9e8997d81448e6c5364f6520be84e478d5bf709ca9377a835"
     },
-    "rust_run_id": 40184403653,
+    "rust_run_id": 40188785494,
     "rust_jobs": "6/6 success",
     "rust_artifact": {
-      "id": 12596010071,
-      "digest": "sha256:c03e6b79c0dd639410b4669513342aac6b762a6aaf69f17a5d2d8276d8571e9f"
+      "id": 12596742517,
+      "digest": "sha256:7f77c08f3cdcedc3465af0225bb1a4c2981d121eda75ab912967117b894d278d"
     },
-    "official_mcp_marketplace_run_id": 40184403594,
+    "official_mcp_marketplace_run_id": 40188785498,
     "official_mcp_marketplace_jobs": "1/1 success",
     "baseline_identity_accepted": false,
     "source_closure_ready": false,
