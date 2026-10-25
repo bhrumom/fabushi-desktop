@@ -361,10 +361,10 @@
   "coverage": {
     "root_source_entries_total": 6893,
     "recursive_source_entries_total": 16379,
-    "unknown_minimum": 16153,
-    "unread_minimum": 16128,
+    "unknown_minimum": 16152,
+    "unread_minimum": 16127,
     "omitted_known": 0,
-    "note": "Strict223 TDRP-R9-MICROTEX-RES-CYRILLIC-LANGUAGE-XML-PROVENANCE-001: res/cyrillic/language_cyrillic.xml@b638f957889b97b24d1f6d98c615e4290acab1a8 is 579 bytes/28 line slots and exactly 1 SymbolMappings + 8 Metrics + 1 TeXSymbols + 1 FormulaSettings include. Exact history is one root init 17f3fc7816e4de1f5764036f34d759d50098ae58; page2 empty; root has no parent; tree f8a661f00ff420f91227f4e2bb1a3c39405a7bdd truncated=false/171 contains the same blob. Historical DefaultTeXFontParser consumed the manifest; accepted MicroTeX 61aaa7cc keeps CyrillicRegistration but strips tinyxml2 loaders, fences the block loaded, and falls through to external-font/TextRenderingAtom handling. RES_README lists the target; Meson installs res/cyrillic; bundled.qrc has 30 entries and zero Cyrillic/Greek, so accepted tdesktop bundled shipping excludes it. README excludes res/cyrillic from the MIT blanket; subtree LICENSE is GPLv3 provenance. Existing-owner-first keeps TDRP recursive resource/font/parser/license/install/packaging provenance; no parallel runtime owner. Counters unknown=16153 unread=16128 omitted=0 responsibilities=241. Parent 143d2150 exact-head TDRP 61/61, Rust 6/6, Official MCP 1/1. Receipt-head Actions required. Next res/cyrillic/mappings_cyrillic.xml@15d7f60b319e8f7ca6b6c35824d4e7c2948e11ee."
+    "note": "Strict224 TDRP-R9-MICROTEX-RES-CYRILLIC-MAPPINGS-XML-PROVENANCE-001: res/cyrillic/mappings_cyrillic.xml@15d7f60b319e8f7ca6b6c35824d4e7c2948e11ee is 4556 bytes/117 line slots with exactly 91 CharacterToSymbolMappings (91 unique chars/91 unique symbols) and 13 CharacterToFormulaMappings over 11 unique chars. Character 1027 appears three times in source order; historical character-keyed assignment is last-write-wins to the third \\'\\CYRK. Accepted XML file loader is disabled with external-font/TextRenderingAtom fallback. RES_README/Meson install retained; bundled tdesktop shipping excluded; GPLv3 subtree provenance retained. Counters unknown=16152 unread=16127 omitted=0 responsibilities=242. Parent 9730e386 exact-head TDRP 61/61, Rust 6/6, Official MCP 1/1. Receipt-head Actions required. Next res/cyrillic/symbols_cyrillic.xml@80e88bf296d68d4f0d65e4b502f1a60f6281626f."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -1827,38 +1827,38 @@
     "baseline_identity_accepted": false,
     "source_closure_ready": false
   },
-  "target_commit": "143d215007dec47c432a2d868263b38208fa0d47",
+  "target_commit": "9730e386e1e4f2db1e6a9a8d40e45defb520dfac",
   "last_completed_parent_head_validation": {
     "evidence_status": "historical-only-after-receipt-commit",
-    "head_sha": "143d215007dec47c432a2d868263b38208fa0d47",
+    "head_sha": "9730e386e1e4f2db1e6a9a8d40e45defb520dfac",
     "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
     "upstream_tree": "c539eabfb05e7dcaa84821ac44c35cdfb6551ae5",
     "recursive_non_directory_entries": 16379,
-    "tdrp_run_id": 40174349155,
+    "tdrp_run_id": 40176112166,
     "tdrp_jobs": "61/61 success",
     "source_authority_artifact": {
-      "id": 12591657083,
-      "digest": "sha256:0dd4355f49aa3584b8809dfc48208c5b95da952cb8699037cefe3ff5434d835b"
+      "id": 12592131491,
+      "digest": "sha256:fb0681b3a5b259645d29a76bf880ae23b05704593cf86474a53cbbdb5ad36716"
     },
     "recursive_closure_artifact": {
-      "id": 12591612450,
-      "digest": "sha256:432072ffe76eb1990b1d39a6ca2f9177f1eb84f5760292c1e00c63d6db90b99e"
+      "id": 12592900732,
+      "digest": "sha256:a699e10bd6fcde23e9a638c9d07242cb837b049e93be96e72a893e8a5abd9387"
     },
     "recursive_reachability_artifact": {
-      "id": 12591917016,
-      "digest": "sha256:db6698cf8faf926c1f6baa3c4cd6f52494b94659885d24b718202ff4db4e742e"
+      "id": 12592068727,
+      "digest": "sha256:4020da6ddf7ee13ccbe020090d70344e3ebb8240e07f13c25bb8bbb9a23a2f64"
     },
     "boost_reachability_artifact": {
-      "id": 12591607244,
-      "digest": "sha256:ab29ce655c0cb2a2354ca6db3b52ec8de7cec7fb5f6162ca0bbd4918011a76c7"
+      "id": 12592336273,
+      "digest": "sha256:bec0375de2e7c17a5fa68f5b93e3ad78204ad01a42da3d8d244dbd7783c68065"
     },
-    "rust_run_id": 40174349139,
+    "rust_run_id": 40176112119,
     "rust_jobs": "6/6 success",
     "rust_artifact": {
-      "id": 12591033824,
-      "digest": "sha256:7562f14936a7e80bccce21cd86082cae01fd8f0b09d28c047c3f4c617ebef67d"
+      "id": 12592695450,
+      "digest": "sha256:fa18cd3663e764caadf7cde2afb92cdba6665ac273438ee7989c0286bedd4b0f"
     },
-    "official_mcp_marketplace_run_id": 40174349146,
+    "official_mcp_marketplace_run_id": 40176112125,
     "official_mcp_marketplace_jobs": "1/1 success",
     "baseline_identity_accepted": false,
     "source_closure_ready": false,
