@@ -19,13 +19,10 @@ use std::collections::VecDeque;
 use mahayana_host_runtime::runner::sand_auto_review::{
     SandAutoReviewDecision, SandAutoReviewMode,
 };
-use mahayana_host_runtime::runner::turn_run_shell::{
-    CheckpointBoundary, TurnCancellation, TurnOwnerToken, TurnRunOptions, TurnRunShell,
-    TurnRunShellError,
-};
-use mahayana_host_runtime::runner::{
-    ContextWindowTracker, TerminalOutcome, TurnSettlement, TurnUsage,
-    merge_turn_usage,
+use mahayana_host_runtime::{
+    CheckpointBoundary, ContextWindowTracker, TerminalOutcome, TurnCancellation,
+    TurnOwnerToken, TurnRunOptions, TurnRunShell, TurnRunShellError, TurnSettlement,
+    TurnUsage, merge_turn_usage,
 };
 use serde_json::{Value, json};
 
@@ -195,7 +192,8 @@ fn test_ocrm_agent_o06_auto_review_approval_gate() {
     assert!(matches!(decision_approved, SandAutoReviewDecision::Approved));
 
     // Auto-review mode check
-    assert_ne!(SandAutoReviewMode::Active, SandAutoReviewMode::Disabled);
+    assert_ne!(SandAutoReviewMode::Enforce, SandAutoReviewMode::Off);
+    assert_ne!(SandAutoReviewMode::Shadow, SandAutoReviewMode::Off);
 }
 
 // ---------------------------------------------------------------------------
@@ -231,16 +229,19 @@ fn test_ocrm_agent_o07_model_catalog_pricing_calculation() {
         output_tokens: 150,
         cache_read_tokens: 200,
         cache_write_tokens: 50,
+        reasoning_tokens: None,
     };
     let usage2 = TurnUsage {
         input_tokens: 300,
         output_tokens: 100,
         cache_read_tokens: 0,
         cache_write_tokens: 0,
+        reasoning_tokens: Some(50),
     };
-    let merged = merge_turn_usage(usage1, usage2);
+    let merged = merge_turn_usage(Some(usage1), Some(usage2)).expect("merged usage");
     assert_eq!(merged.input_tokens, 800);
     assert_eq!(merged.output_tokens, 250);
+    assert_eq!(merged.reasoning_tokens, Some(50));
 }
 
 // ---------------------------------------------------------------------------
@@ -285,15 +286,34 @@ fn test_ocrm_agent_o08_provider_fallback_chain() {
 #[test]
 fn test_ocrm_agent_o09_context_window_compaction_trigger() {
     let mut tracker = ContextWindowTracker::default();
-    assert_eq!(tracker.raw_token_count(), 0);
+    assert_eq!(tracker.last_reported("claude-3-opus"), None);
 
-    // Add safe token usage
-    tracker.add_tokens(50_000);
-    assert_eq!(tracker.raw_token_count(), 50_000);
+    // Sanitize extended usage with maxTokens updates reported context window
+    let usage = tracker.sanitize_extended_usage(
+        &json!({
+            "inputTokens": 50_000,
+            "outputTokens": 2_000,
+            "cacheReadTokens": 10_000,
+            "cacheWriteTokens": 5_000,
+            "maxTokens": 200_000
+        }),
+        "claude-3-opus",
+    );
+    assert_eq!(usage.input_tokens, 50_000);
+    assert_eq!(usage.max_tokens, 200_000);
+    assert_eq!(tracker.last_reported("claude-3-opus"), Some(200_000));
 
-    // Over token cap triggers compaction
-    tracker.add_tokens(100_000);
-    assert_eq!(tracker.raw_token_count(), 150_000);
+    // When maxTokens is absent or zero, tracker preserves last reported maxTokens
+    let next_usage = tracker.sanitize_extended_usage(
+        &json!({
+            "inputTokens": 60_000,
+            "outputTokens": 1_000
+        }),
+        "claude-3-opus",
+    );
+    assert_eq!(next_usage.input_tokens, 60_000);
+    assert_eq!(next_usage.max_tokens, 0);
+    assert_eq!(tracker.last_reported("claude-3-opus"), Some(200_000));
 }
 
 // ---------------------------------------------------------------------------
@@ -332,20 +352,18 @@ fn test_ocrm_agent_o10_tool_argument_validation() {
 #[test]
 fn test_ocrm_agent_o11_runner_settlement_receipt() {
     let mut settlement = TurnSettlement::default();
-    assert!(!settlement.is_settled());
+    assert!(!settlement.is_terminal());
+    assert_eq!(settlement.outcome(), None);
 
-    settlement.record_usage(TurnUsage {
-        input_tokens: 1_200,
-        output_tokens: 450,
-        cache_read_tokens: 100,
-        cache_write_tokens: 0,
-    });
-    settlement.settle(TerminalOutcome::Completed);
+    let res = settlement.settle(TerminalOutcome::Completed);
+    assert!(res.is_ok());
+    assert!(settlement.is_terminal());
+    assert_eq!(settlement.outcome(), Some(&TerminalOutcome::Completed));
 
-    assert!(settlement.is_settled());
-    assert_eq!(settlement.terminal_outcome(), Some(TerminalOutcome::Completed));
-    assert_eq!(settlement.usage().input_tokens, 1_200);
-    assert_eq!(settlement.usage().output_tokens, 450);
+    // Settling again returns error as invariant
+    let err = settlement.settle(TerminalOutcome::Cancelled);
+    assert_eq!(err, Err("turn already has a terminal outcome"));
+    assert_eq!(settlement.outcome(), Some(&TerminalOutcome::Completed));
 }
 
 // ---------------------------------------------------------------------------
