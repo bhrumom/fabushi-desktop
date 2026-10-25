@@ -361,10 +361,10 @@
   "coverage": {
     "root_source_entries_total": 6893,
     "recursive_source_entries_total": 16379,
-    "unknown_minimum": 16155,
-    "unread_minimum": 16130,
+    "unknown_minimum": 16154,
+    "unread_minimum": 16129,
     "omitted_known": 0,
-    "note": "Strict221 TDRP-R9-MICROTEX-RES-CYRILLIC-LICENSE-PROVENANCE-001: res/cyrillic/LICENSE@f288702d2fa16d3cdf0035b15a9fcbc552cd88e7 is 35,149 bytes/675 line slots and complete GPLv3. Exact history one 59f45372/page2 empty; creation only LICENSE; parent 4658e41a truncated=false/275 target absent. README excludes res/cyrillic from MIT blanket. RES_README lists 20 Cyrillic runtime entries (8 TTF+12 XML). Meson installs entire res/cyrillic subtree, but bundled.qrc has zero Cyrillic file entries and explicitly excludes Cyrillic/Greek; accepted tdesktop registers/ships only bundled qrc/.rcc. Existing-owner-first selects TDRP recursive license/resource/install/packaging provenance. Counters unknown=16155 unread=16130 omitted=0 responsibilities=239. Parent 28596225 exact-head TDRP 61/61, Rust 6/6, Official MCP 1/1. Receipt-head Actions required. Next res/cyrillic/cyrillic.map.xml@5431dc86108e722f7899fbf3db4db7af67badcc4."
+    "note": "Strict222 TDRP-R9-MICROTEX-RES-CYRILLIC-MAP-XML-PROVENANCE-001: res/cyrillic/cyrillic.map.xml@5431dc86108e722f7899fbf3db4db7af67badcc4 is 5,472 bytes/101 line slots with 93 unique SymbolMapping entries, 93 unique codepoints, all fontId=wnr10. Exact history is one root init commit 17f3fc7816e4de1f5764036f34d759d50098ae58; page2 empty; the root commit has no parent and its recursive tree f8a661f00ff420f91227f4e2bb1a3c39405a7bdd is truncated=false/171 with the target. language_cyrillic.xml includes cyrillic.map.xml and wnr10 metrics; historical XML parsing mapped name/ch/fontId into CharFont while mappings_cyrillic.xml maps Unicode characters to those symbol names. Accepted MicroTeX 61aaa7cc strips the tinyxml loader: addTeXFontDescription throws ex_alphabet_registration, the Cyrillic block is marked loaded, and missing symbol/formula mappings fall through to the external-font handler, so this XML is dormant in accepted tdesktop runtime. RES_README lists it and Meson installs the whole res/cyrillic subtree. bundled.qrc has 30 entries and zero Cyrillic/Greek entries; accepted tdesktop links external_microtex, registers bundled qrc/.rcc, calls initBundled, and macOS ships external_microtex_bundled.rcc. README excludes res/cyrillic from the project MIT blanket and res/cyrillic/LICENSE is GPLv3. Existing-owner-first selects TDRP recursive resource/font/parser/license/install/packaging provenance; no MicroTeX/Cyrillic runtime or parallel owner is added. Counters unknown=16154 unread=16129 omitted=0 responsibilities=240. Parent f8b6d255 exact-head TDRP 61/61, Rust 6/6, Official MCP 1/1. Receipt-head Actions required. Next res/cyrillic/language_cyrillic.xml@b638f957889b97b24d1f6d98c615e4290acab1a8."
   },
   "acceptance": {
     "baseline_ready": false,
@@ -1827,38 +1827,38 @@
     "baseline_identity_accepted": false,
     "source_closure_ready": false
   },
-  "target_commit": "285962256732264555f6fdb8ce17573470e47d68",
+  "target_commit": "f8b6d2559775c08677fb939a766c51ae893e9a65",
   "last_completed_parent_head_validation": {
     "evidence_status": "historical-only-after-receipt-commit",
-    "head_sha": "285962256732264555f6fdb8ce17573470e47d68",
+    "head_sha": "f8b6d2559775c08677fb939a766c51ae893e9a65",
     "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
     "upstream_tree": "c539eabfb05e7dcaa84821ac44c35cdfb6551ae5",
     "recursive_non_directory_entries": 16379,
-    "tdrp_run_id": 40170692344,
+    "tdrp_run_id": 40172373927,
     "tdrp_jobs": "61/61 success",
     "source_authority_artifact": {
-      "id": 12590094543,
-      "digest": "sha256:224c30c95b4006ca4052f10ac9ac6902a90c24cbf5ce64894003d6ca84e0aff1"
+      "id": 12591086083,
+      "digest": "sha256:8dd4fc0e725ba4c0086633ab5cefdb53a3ef0178d1ea4f79a00119c534641f9c"
     },
     "recursive_closure_artifact": {
-      "id": 12590515563,
-      "digest": "sha256:f218287f8474e4a9b1b24cc8a132221e42e93c61c0065de3ac1401b05550c115"
+      "id": 12591101348,
+      "digest": "sha256:02eab94355073e7fbca3a09d6f8b73d7642636cde295dd4574e9177ed058c1d8"
     },
     "recursive_reachability_artifact": {
-      "id": 12590705304,
-      "digest": "sha256:aa9d8e0884e89b5a4376e937b0ff348939fcfbd26bfc748c37e3e3659f23ccdd"
+      "id": 12590703411,
+      "digest": "sha256:702d40aaa600f00a18e5ba827c63e384c1dee7942de62d75ebb58116483fa39e"
     },
     "boost_reachability_artifact": {
-      "id": 12590495458,
-      "digest": "sha256:6227f02a7ca734aa088763a5f1bded86741c513c78c787254bac1786485e266c"
+      "id": 12590169273,
+      "digest": "sha256:43a53a2b3c1f863f8c7556b0c693f88e56cd32e79ba32c7e80ca3187d71603f3"
     },
-    "rust_run_id": 40170692312,
+    "rust_run_id": 40172373932,
     "rust_jobs": "6/6 success",
     "rust_artifact": {
-      "id": 12590370442,
-      "digest": "sha256:39e6f66038def5f566f838358f8e8c692eb6f9293e12c034d1972330a7399caf"
+      "id": 12590777953,
+      "digest": "sha256:149c6f9096893cc41f48c7aa442844c8e28411f60b9a5ffa97fe5d799036c230"
     },
-    "official_mcp_marketplace_run_id": 40170692405,
+    "official_mcp_marketplace_run_id": 40172373934,
     "official_mcp_marketplace_jobs": "1/1 success",
     "baseline_identity_accepted": false,
     "source_closure_ready": false,
