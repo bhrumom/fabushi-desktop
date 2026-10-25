@@ -67,6 +67,12 @@ The 12 contract oracles are fully implemented in `source/host/tests/openclaw_mem
 
 ## 5. Verification Receipt (GitHub Actions)
 
-- **Commit:** `<COMMIT_SHA>`
-- **Workflow Run:** `https://github.com/bhrumom/fabushi-desktop/actions/runs/<RUN_ID>`
-- **Status:** Pending execution and verification in GitHub Actions.
+- **Commit:** `40112d048259d6819c99ec987ec8fc885b5974a4`
+- **Workflow Run:** [Run 40223602886](https://github.com/bhrumom/fabushi-desktop/actions/runs/40223602886)
+- **Status:** **Completed (SUCCESS)** across all 6 matrix jobs:
+  - `rust-host`: `completed` (`success`) — All 12 `openclaw_memory_contract` oracles passed cleanly.
+  - `renderer`: `completed` (`success`)
+  - `platform-worker`: `completed` (`success`)
+  - `Pressure profiler / macos-15`: `completed` (`success`)
+  - `Pressure profiler / windows-2025`: `completed` (`success`)
+  - `Pressure profiler / ubuntu-24.04`: `completed` (`success`)
