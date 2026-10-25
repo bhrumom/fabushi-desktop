@@ -19,7 +19,7 @@ use std::sync::{Arc, Mutex};
 
 use mahayana_host_runtime::attachment_paths::{
     get_agent_assets_dir, get_agent_attachments_dir, get_agent_media_store_roots,
-    persist_agent_media_bytes, AgentMediaKind, ASSETS_DIRNAME, ATTACHMENTS_DIRNAME,
+    persist_agent_media_bytes, safe_media_leaf, AgentMediaKind, ASSETS_DIRNAME, ATTACHMENTS_DIRNAME,
 };
 use mahayana_host_runtime::media_mime::{
     audio_mime_from_path, image_mime_from_path, servable_image_mime_from_path,
@@ -157,9 +157,11 @@ fn test_ocrm_media_o07_safe_media_leaf() {
     ];
 
     for name in dirty_names {
-        let leaf = Path::new(name).file_name().and_then(|v| v.to_str()).unwrap_or("attachment");
-        assert!(!leaf.contains('/'));
-        assert!(!leaf.contains('\\'));
+        let clean = safe_media_leaf(name);
+        assert!(!clean.contains('/'), "clean leaf must not contain forward slash");
+        assert!(!clean.contains('\\'), "clean leaf must not contain backslash");
+        assert!(!clean.starts_with('.'), "clean leaf must not start with dot");
+        assert!(clean.len() <= 160, "clean leaf must respect 160 char truncation");
     }
 }
 

@@ -26,8 +26,9 @@ pub fn get_agent_media_store_roots(agent_dir: impl AsRef<Path>) -> [PathBuf; 2] 
     [get_agent_attachments_dir(&agent_dir), get_agent_assets_dir(agent_dir)]
 }
 
-fn safe_media_leaf(source_name: &str) -> String {
-    let leaf = Path::new(source_name)
+pub fn safe_media_leaf(source_name: &str) -> String {
+    let normalized = source_name.replace('\\', "/");
+    let leaf = Path::new(&normalized)
         .file_name()
         .and_then(|value| value.to_str())
         .unwrap_or("attachment");
