@@ -63607,7 +63607,7 @@
       "creation_flow": "Not applicable",
       "object_action_scope": "No Fabushi product action.",
       "detail_section": "Not applicable",
-      "capability_surface": "Source-only third-party sample/test-fixture and build/provenance surface.",
+      "capability_surface": "Source-only third-party runtime-resource/font/license/build/packaging provenance surface.",
       "route_contract": "Not applicable",
       "search_scope": "Not applicable",
       "search_provider": "Not applicable",
