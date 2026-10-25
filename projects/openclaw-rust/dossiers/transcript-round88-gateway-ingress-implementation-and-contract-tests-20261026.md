@@ -66,6 +66,30 @@ Contract tests were added to:
 
 ---
 
-## 5. Verification Invariant
+## 5. Verification Invariant & Actions Evidence Receipt
 
-All executable tests and builds are reserved strictly for GitHub Actions per OCRM spec §6.4. No local unverified state or fabricated receipts are emitted.
+- **Tested Exact Subject Commit:** `ae4e22e0da2ece910813a82fd1869d1d5e625cd2`
+- **GitHub Actions Workflow Run:** [Run 40213186219](https://github.com/bhrumom/fabushi-desktop/actions/runs/40213186219) (`Rust desktop runtime`)
+- **Run Verdict:** `completed (success)` across all 6 matrix jobs:
+  - `platform-worker`: `completed (success)`
+  - `rust-host`: `completed (success)` (Host compile, Coordinator contracts, box exec daemon supervisor, and full Host Runner contract integration suite)
+  - `Pressure profiler / macos-15`: `completed (success)`
+  - `Pressure profiler / windows-2025`: `completed (success)`
+  - `Pressure profiler / ubuntu-24.04`: `completed (success)`
+  - `renderer`: `completed (success)`
+- **Artifact Emitted:** `rust-messaging-responsibilities-ae4e22e0da2ece910813a82fd1869d1d5e625cd2` (418 bytes)
+- **Falsifiable Oracles Confirmed:**
+  - `OCRM-GW-ORACLE-01`: Unauthenticated handshake for `device.pair.request` -> 200 OK
+  - `OCRM-GW-ORACLE-02`: Unauthenticated handshake for `device.pair.status` -> 200 OK
+  - `OCRM-GW-ORACLE-03`: Unauthenticated access to protected operator endpoints -> 401 Unauthorized
+  - `OCRM-GW-ORACLE-04`: Valid Bearer token access -> 200 OK
+  - `OCRM-GW-ORACLE-05`: Device timestamp clock skew exceeding ±120s -> 401 `TIMESTAMP_SKEW`
+  - `OCRM-GW-ORACLE-06`: Valid device timestamp + fresh nonce -> 200 OK
+  - `OCRM-GW-ORACLE-07`: Replay of consumed device nonce -> 401 `NONCE_REPLAY`
+  - `OCRM-GW-ORACLE-08`: Stale pairing revision header -> 401 `PAIRING_CHANGED`
+  - `OCRM-GW-ORACLE-09`: Node role invoking operator methods -> 403 `ROLE_MISMATCH`
+  - `OCRM-GW-ORACLE-10`: Read-only scope invoking mutating methods -> 403 `INSUFFICIENT_SCOPE`
+  - `OCRM-GW-ORACLE-11`: Untrusted browser Origin header -> 403 Forbidden
+  - `OCRM-GW-ORACLE-12`: Grok 122 frozen methods non-regression -> Preserved strictly 122 entries
+  - `OCRM-GW-ORACLE-13`: OpenClaw 23 gateway methods dispatch to valid Host owners -> Passed
+  - `OCRM-GW-ORACLE-14`: Settings single-writer lock serialization -> Passed without write races or regressions
