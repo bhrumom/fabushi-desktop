@@ -569,7 +569,11 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
         evidence.installedNativeDigests.push(...digests);
       }
       await markPhase('online-composer');
-      await verifyWasmFileReport(mini, inputFile, fixtureStat.size, onlineNativeVerified, markPhase);
+      await bounded(
+        verifyWasmFileReport(mini, inputFile, fixtureStat.size, onlineNativeVerified, markPhase),
+        5 * 60_000,
+        'VERIFY_ONLINE_WASM_FILE_REPORT',
+      );
       await markPhase('online-report-export');
       await exportAndVerifyReport(mini, app.process.pid!, evidenceDir, inputFile, fixtureStat.size);
       evidence.launchModes.push('online-install');
@@ -600,7 +604,11 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
       const offlineNativeVerified = await verifyInstalledNativeRuntime(mini);
       evidence.installedNativeVerified.push(offlineNativeVerified);
       await markPhase('offline-composer');
-      await verifyWasmFileReport(mini, inputFile, fixtureStat.size, offlineNativeVerified, markPhase);
+      await bounded(
+        verifyWasmFileReport(mini, inputFile, fixtureStat.size, offlineNativeVerified, markPhase),
+        5 * 60_000,
+        'VERIFY_OFFLINE_WASM_FILE_REPORT',
+      );
       await markPhase('offline-report-export');
       await exportAndVerifyReport(mini, app.process.pid!, evidenceDir, inputFile, fixtureStat.size);
       evidence.launchModes.push('os-network-disabled-cold-launch');
