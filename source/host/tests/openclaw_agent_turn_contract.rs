@@ -69,7 +69,7 @@ impl DeferredTurnQueue {
 
     fn on_active_finished(&mut self, owner: &TurnOwnerToken) {
         self.shell
-            .finish_run(owner, TerminalOutcome::Completed)
+            .finish_completed(owner)
             .expect("finish");
         if let Some((next_prompt, next_options)) = self.pending.pop_front() {
             self.shell.begin_run(&next_prompt, next_options).expect("next run");
@@ -129,14 +129,14 @@ fn test_ocrm_agent_o04_owner_token_monotonic_generation() {
 
     let started1 = shell.begin_run("Turn 1", TurnRunOptions::default()).expect("start 1");
     assert_eq!(started1.owner.generation, 1);
-    shell.finish_run(&started1.owner, TerminalOutcome::Completed).expect("finish 1");
+    shell.finish_completed(&started1.owner).expect("finish 1");
 
     let started2 = shell.begin_run("Turn 2", TurnRunOptions::default()).expect("start 2");
     assert_eq!(started2.owner.generation, 2);
     assert_ne!(started1.owner.request_id, started2.owner.request_id);
 
     // Stale owner from generation 1 cannot mutate generation 2
-    let stale_err = shell.finish_run(&started1.owner, TerminalOutcome::Completed);
+    let stale_err = shell.finish_completed(&started1.owner);
     assert_eq!(stale_err.unwrap_err(), TurnRunShellError::StaleOwner);
 }
 
