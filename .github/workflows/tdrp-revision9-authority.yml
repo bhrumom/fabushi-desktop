@@ -35,6 +35,8 @@ jobs:
           test "$(git rev-parse HEAD)" = "${TDRP_TARGET_SHA}"
       - name: Verify Revision 9 validator contracts
         run: node --test scripts/validate-tdrp-revision9-authority.contract.test.mjs
+      - name: Initialize authority artifact directory
+        run: mkdir -p artifacts/tdrp-authority
       - name: Validate Revision 9 source authority
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -182,7 +184,7 @@ jobs:
             echo "full source-closure gate unexpectedly passed before P0 closure" >&2
             exit 1
           fi
-          grep -E 'accepted mode requires|G-INVENTORY' accepted.log
+          grep -E 'accepted mode requires|G-INVENTORY|upstream dev advanced|rebaseline required' accepted.log
           echo "Fail-closed source-closure gate correctly rejected the unclosed baseline."
 
   recursive-root-authority-shards:
