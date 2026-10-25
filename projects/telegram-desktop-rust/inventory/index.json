@@ -13,8 +13,8 @@
     "recursive_non_directory_entries": 16379,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16160,
-    "unread_minimum": 16135,
+    "unknown_minimum": 16159,
+    "unread_minimum": 16134,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
@@ -90,7 +90,7 @@
     "require_bidirectional_traceability": true,
     "require_same_head_evidence": true
   },
-  "note": "Strict216 TDRP-R9-MICROTEX-README-TEX-LOGO-SVG-PROVENANCE-001: desktop-app/MicroTeX readme/tex_logo.svg@33647d95ba36e42839ac5a2469464c8cde2b6c99 source-only static README logo provenance. Accepted and creation resolve the identical 1,298-byte ASCII blob with 20 split-line slots, 61pt x 22pt/viewBox 0 0 61 22, 3 symbols + 3 paths + 3 local/resolved uses + 1 group + 3 unique ids and zero active/external surface. Exact-path history is exhausted at the single 63555c2 creation commit, page 2 empty; creation parent c85c841 recursive tree is truncated=false/228 entries and lacks the target. Creation changes exactly 12 paths and simultaneously replaces README parent '# cLaTeXMath' with '# ![logo](readme/tex_logo.svg)'; accepted README retains that reference. githooks/pre-push@b426a77d has zero tex_logo refs and only regenerates readme/samples.md plus readme/samples/*, so sample/headless/Cairo/scour generator provenance is a negative oracle for this logo. Pinned CMakeLists/QtLatex.pri/bundled.qrc and ubuntu-gtk/windows-gdi/windows-qt child workflows have zero tex_logo refs; Meson installs RES_README/SAMPLES.tex/.clatexmath-res_root only. Accepted tdesktop td_iv/Telegram CMake/iv_markdown_microtex/build_mac shipping paths have zero tex_logo refs. README places non-res project files under root MIT while separately excluding res fonts/XML; the SVG contains finalized paths only and does not establish per-outline font derivation, so layered font/resource licenses are not collapsed. Counters unknown=16160 unread=16135 omitted=0 responsibilities=234. Parent 4d53d67c93955cd4d0934a0c21345818406b50b3: TDRP 40161934482 61/61 success (authority 12586104944 sha256:e7fe8c758e89397c319e65b28aefe9b2bf63f2711fa24d064122b6e80597a786; closure 12587255417 sha256:31ce37604b3aecd87834820851562c1e82ff01db1e7a1bf04098fd258ee4bcfa; reachability 12587110597 sha256:265e6962093a720def03dafeb6a0b4868ea28854f9e3c6b93da3b03a1126d17f; Boost 12587230189 sha256:eda89d1883371c9caee37a69b1e84664f033607dd508eed8bb6574e0a5813723), Rust 40161934455 6/6 success (artifact 12586970548 sha256:ef8e800552148c007c0fa295378b2c340e824bbc56ec1d13509feaa6e05a3d95), Official MCP 40161934498 1/1 success. Receipt-head Actions required; baseline_identity_accepted=false/source_closure_ready=false. Next res/.clatexmath-res_root@e69de29bb2d1d6434b8b29ae775ad8c2e48c5391.",
+  "note": "Strict217 TDRP-R9-MICROTEX-RES-CLATEXMATH-RES-ROOT-PROVENANCE-001: desktop-app/MicroTeX res/.clatexmath-res_root@e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 is a zero-byte standalone resource-root sentinel, not accepted tdesktop shipping. History is one 3bdd94b9 creation/page2 empty; parent cd291c tree truncated=false/257 and target absent; creation changes exactly five paths. Accepted queryResourceLocation probes custom/CLM_DEVEL/XDG/HOME/system marker roots and returns empty on no hit, preserving RES_BASE=res. d699592/4ba3bc6/6fbdd5c repair environment/platform path handling; b56c224->0e3db008 repairs Meson marker install path. Accepted tdesktop external_microtex_bundled + bundled.qrc + td_iv + initBundled bypasses marker discovery and macOS packages external_microtex_bundled.rcc. Existing-owner-first selects TDRP source/build/resource/packaging provenance; Fabushi attachments/artifacts/platform lifecycle/packaging owners remain canonical context. Counters unknown=16159 unread=16134 omitted=0 responsibilities=235. Parent b745d625d41eeccdfc3404bf07947b9fdefd838f: TDRP 40163570117 61/61 success; Rust 40163570116 6/6 success; Official MCP 40163570243 1/1 success. Receipt-head Actions required; baseline_identity_accepted=false/source_closure_ready=false. Next res/RES_README@386c018fee9c3fd41cd42860bd0c1c33ef61a9ee.",
   "current_head_validation_evidence": {
     "status": "pending-current-head-revalidation",
     "head_sha": null,
@@ -106,38 +106,38 @@
     "baseline_identity_accepted": false,
     "source_closure_ready": false
   },
-  "target_commit": "4d53d67c93955cd4d0934a0c21345818406b50b3",
+  "target_commit": "b745d625d41eeccdfc3404bf07947b9fdefd838f",
   "last_completed_parent_head_validation": {
     "evidence_status": "historical-only-after-receipt-commit",
-    "head_sha": "4d53d67c93955cd4d0934a0c21345818406b50b3",
+    "head_sha": "b745d625d41eeccdfc3404bf07947b9fdefd838f",
     "upstream_commit": "a7f453612f4896ac04d0007a36ab0d377e5bcbcf",
     "upstream_tree": "c539eabfb05e7dcaa84821ac44c35cdfb6551ae5",
     "recursive_non_directory_entries": 16379,
-    "tdrp_run_id": 40161934482,
+    "tdrp_run_id": 40163570117,
     "tdrp_jobs": "61/61 success",
     "source_authority_artifact": {
-      "id": 12586104944,
-      "digest": "sha256:e7fe8c758e89397c319e65b28aefe9b2bf63f2711fa24d064122b6e80597a786"
+      "id": 12586794955,
+      "digest": "sha256:11c8a9a50ed096c87c66a67e6f73ce97537ce82e0a7f9f1817131f7f1b41e9c8"
     },
     "recursive_closure_artifact": {
-      "id": 12587255417,
-      "digest": "sha256:31ce37604b3aecd87834820851562c1e82ff01db1e7a1bf04098fd258ee4bcfa"
+      "id": 12587770458,
+      "digest": "sha256:9e2a7d72cd079eb9a3d863631d0370b7fc42fe218f0827f249163bd1b7965098"
     },
     "recursive_reachability_artifact": {
-      "id": 12587110597,
-      "digest": "sha256:265e6962093a720def03dafeb6a0b4868ea28854f9e3c6b93da3b03a1126d17f"
+      "id": 12587293320,
+      "digest": "sha256:e3d5070795dfe8bc0c99546d3c879845feaf4382816394cfd928a8bdbfff6b93"
     },
     "boost_reachability_artifact": {
-      "id": 12587230189,
-      "digest": "sha256:eda89d1883371c9caee37a69b1e84664f033607dd508eed8bb6574e0a5813723"
+      "id": 12587810346,
+      "digest": "sha256:202bc01fb14468fa5efd3a14dbf97fc0bc0790801feadccd3d7c7ef79c9f9056"
     },
-    "rust_run_id": 40161934455,
+    "rust_run_id": 40163570116,
     "rust_jobs": "6/6 success",
     "rust_artifact": {
-      "id": 12586970548,
-      "digest": "sha256:ef8e800552148c007c0fa295378b2c340e824bbc56ec1d13509feaa6e05a3d95"
+      "id": 12586694904,
+      "digest": "sha256:7d7e4193a598830252f21bbe98d3a7e96b56891832fb21ed87f2e1c1c42e1bc9"
     },
-    "official_mcp_marketplace_run_id": 40161934498,
+    "official_mcp_marketplace_run_id": 40163570243,
     "official_mcp_marketplace_jobs": "1/1 success",
     "baseline_identity_accepted": false,
     "source_closure_ready": false,
