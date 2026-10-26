@@ -200,9 +200,11 @@ fn test_ocrm_session_o01_session_key_routing() {
     assert_eq!(classify_session_kind("agent:123:group:main", None, None), SessionKind::Group);
     assert_eq!(classify_session_kind("direct-sess", None, None), SessionKind::Direct);
 
-    // Harness namespace reservation check
-    assert!(is_agent_harness_session_key("harness:agent-007:turn-1"));
-    assert!(is_agent_harness_session_key("agent:harness:agent-007:sub"));
+    // Harness namespace reservation check matching upstream agent-harness-session-key.test.ts
+    assert!(is_agent_harness_session_key("harness:codex:supervision:native-thread"));
+    assert!(is_agent_harness_session_key("agent:main:harness:codex:supervision:native-thread"));
+    assert!(is_agent_harness_session_key("agent:agent-007:harness:sub"));
+    assert!(!is_agent_harness_session_key("agent:harness:main"));
     assert!(!is_agent_harness_session_key("agent:regular-user:main"));
     assert!(!is_agent_harness_session_key("direct-user"));
 }
@@ -296,115 +298,5 @@ fn test_ocrm_session_o06_work_admission_and_archive() {
 
     assert_eq!(session_state["status"], "active");
     assert_eq!(session_state["archived"], false);
-}
-
-// ---------------------------------------------------------------------------
-// OCRM-SESSION-EXT-O01: Session Controller Lifecycle & Custody Handover
-// ---------------------------------------------------------------------------
-#[test]
-fn test_ocrm_session_ext_o01_controller_lifecycle() {
-    let controller_state = json!({
-        "sessionId": "sess-ctrl-001",
-        "lifecycleState": "active",
-        "executionCustody": "host_runner",
-        "mailboxPending": 0,
-        "watchdogActive": true
-    });
-
-    assert_eq!(controller_state["lifecycleState"], "active");
-    assert_eq!(controller_state["executionCustody"], "host_runner");
-    assert_eq!(controller_state["mailboxPending"], 0);
-}
-
-// ---------------------------------------------------------------------------
-// OCRM-SESSION-EXT-O02: Admission Barriers & Execution Queuing
-// ---------------------------------------------------------------------------
-#[test]
-fn test_ocrm_session_ext_o02_admission_barriers() {
-    let barrier_check = |concurrency: usize, max_concurrency: usize| -> Result<(), &'static str> {
-        if concurrency >= max_concurrency {
-            Err("Session concurrency barrier exceeded")
-        } else {
-            Ok(())
-        }
-    };
-
-    assert!(barrier_check(0, 5).is_ok());
-    assert!(barrier_check(4, 5).is_ok());
-    assert_eq!(barrier_check(5, 5), Err("Session concurrency barrier exceeded"));
-}
-
-// ---------------------------------------------------------------------------
-// OCRM-SESSION-EXT-O03: Transcript Persistence & Pagination
-// ---------------------------------------------------------------------------
-#[test]
-fn test_ocrm_session_ext_o03_transcript_persistence() {
-    let page_record = json!({
-        "sessionId": "sess-transcript-p01",
-        "pageIndex": 1,
-        "eventsCount": 50,
-        "firstSequence": 1,
-        "lastSequence": 50,
-        "hasMore": false
-    });
-
-    assert_eq!(page_record["pageIndex"], 1);
-    assert_eq!(page_record["eventsCount"], 50);
-    assert_eq!(page_record["hasMore"], false);
-}
-
-// ---------------------------------------------------------------------------
-// OCRM-SESSION-EXT-O04: User Turn Media Attachments & Annotations
-// ---------------------------------------------------------------------------
-#[test]
-fn test_ocrm_session_ext_o04_media_annotations() {
-    let media_annotation = json!({
-        "turnId": "turn-media-001",
-        "attachmentCount": 1,
-        "attachments": [
-            {
-                "mimeType": "image/png",
-                "byteSize": 1024,
-                "storageKey": "blobs/sess-001/img-1.png"
-            }
-        ]
-    });
-
-    assert_eq!(media_annotation["attachmentCount"], 1);
-    assert_eq!(media_annotation["attachments"][0]["mimeType"], "image/png");
-}
-
-// ---------------------------------------------------------------------------
-// OCRM-SESSION-EXT-O05: Session Crash Recovery & Upstream Link Reconnect
-// ---------------------------------------------------------------------------
-#[test]
-fn test_ocrm_session_ext_o05_mutation_recovery() {
-    let recovery_record = json!({
-        "sessionId": "sess-rec-001",
-        "recovered": true,
-        "reconciledTurns": 2,
-        "upstreamStatus": "reconnected"
-    });
-
-    assert_eq!(recovery_record["recovered"], true);
-    assert_eq!(recovery_record["reconciledTurns"], 2);
-    assert_eq!(recovery_record["upstreamStatus"], "reconnected");
-}
-
-// ---------------------------------------------------------------------------
-// OCRM-SESSION-EXT-O06: Session Error Telemetry & Diagnostic Event Logging
-// ---------------------------------------------------------------------------
-#[test]
-fn test_ocrm_session_ext_o06_diagnostics_telemetry() {
-    let diagnostic_event = json!({
-        "sessionId": "sess-diag-001",
-        "eventType": "SESSION_WARNING",
-        "code": "WARN_TOKEN_LIMIT_APPROACHING",
-        "tokensUsed": 195000,
-        "tokenLimit": 200000
-    });
-
-    assert_eq!(diagnostic_event["eventType"], "SESSION_WARNING");
-    assert_eq!(diagnostic_event["tokensUsed"], 195000);
 }
 

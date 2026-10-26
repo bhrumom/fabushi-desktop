@@ -178,14 +178,33 @@ pub fn classify_session_kind(
     SessionKind::Direct
 }
 
+/// Parse agent-scoped session key parts into (agent_id, rest) matching OpenClaw parseAgentSessionKey.
+/// Format: agent:<agentId>:<rest>
+pub fn parse_agent_session_key(session_key: &str) -> Option<(&str, &str)> {
+    let trimmed = session_key.trim();
+    if trimmed.len() < 6 || !trimmed[..6].eq_ignore_ascii_case("agent:") {
+        return None;
+    }
+    let after_agent = &trimmed[6..];
+    let colon_idx = after_agent.find(':')?;
+    let agent_id = after_agent[..colon_idx].trim();
+    let rest = &after_agent[colon_idx + 1..];
+    if agent_id.is_empty() || rest.is_empty() || rest.starts_with(':') {
+        None
+    } else {
+        Some((agent_id, rest))
+    }
+}
+
 /// Agent harness session key namespace check equivalent to OpenClaw isAgentHarnessSessionKey.
+/// Evaluates whether the session key (or its rest segment if agent-wrapped) starts with "harness:".
 pub fn is_agent_harness_session_key(session_key: &str) -> bool {
     let trimmed = session_key.trim();
-    let rest = if let Some(stripped) = trimmed.strip_prefix("agent:") {
-        stripped.split(':').nth(1).unwrap_or(stripped)
+    let rest = if let Some((_agent_id, rest)) = parse_agent_session_key(trimmed) {
+        rest
     } else {
         trimmed
     };
-    rest.starts_with("harness:")
+    rest.to_ascii_lowercase().starts_with("harness:")
 }
 
