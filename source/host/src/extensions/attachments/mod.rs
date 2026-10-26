@@ -4,6 +4,7 @@ pub mod extension;
 pub mod generate_image_resource_accessor;
 pub mod generate_image_service;
 pub mod link_preview_image_bounds;
+pub mod media_audio_transcode;
 pub mod media_facts;
 pub mod media_probe;
 pub mod media_reference;

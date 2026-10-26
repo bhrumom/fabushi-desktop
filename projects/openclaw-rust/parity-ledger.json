@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 160,
+    "mapped_paths": 167,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58590
+    "unclassified_paths": 58583
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -9919,6 +9919,564 @@
         "project_media_facts"
       ],
       "unit_id": "OCRM-UNIT-MEDIA-004"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Shared timeout, buffer cap (10MB), and max audio duration (20m) constraints for FFmpeg helper invocations.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "media.ffmpeg_limits"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_audio_transcode"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_audio_transcode_contract.rs",
+        "projects/openclaw-rust/dossiers/audio-transcode-ffmpeg-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_audio_transcode.rs",
+          "reason": "Host media FFmpeg limits owner"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-FFMPEG-LIMITS-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/video_playback_rendition.rs",
+        "entrypoint": "source/host/src/extensions/attachments/media_audio_transcode.rs::MEDIA_FFMPEG_MAX_BUFFER_BYTES",
+        "owner": "source/host/src/extensions/attachments/media_audio_transcode.rs",
+        "producer": "source/host/src/extensions/attachments/video_playback_rendition.rs"
+      },
+      "invariants": [
+        "Buffer cap 10MB",
+        "Probe timeout 10s, transcode timeout 45s",
+        "Max audio duration 20 minutes"
+      ],
+      "migration_rollback": "Unbounded FFmpeg execution",
+      "oracle_ids": [
+        "OCRM-AUDIO-O06"
+      ],
+      "owner_decision": "Expose shared FFmpeg execution limits in attachments subsystem",
+      "postconditions": [
+        "Constants defined with upstream values"
+      ],
+      "preconditions": [
+        "Runtime initialized"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; ensures bounded resource utilization for external tool invocations",
+      "selected_owner": "source/host/src/extensions/attachments/media_audio_transcode.rs",
+      "source_refs": [
+        {
+          "blob_sha": "930e010eebfac3c00aedf618e1cfb7e6e99a9c2f",
+          "path": "src/media/ffmpeg-limits.ts",
+          "range": {
+            "end_line": 8,
+            "start_line": 1
+          },
+          "symbol": "MEDIA_FFMPEG_MAX_BUFFER_BYTES"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_audio_transcode.rs",
+        "symbol": "MEDIA_FFMPEG_MAX_BUFFER_BYTES"
+      },
+      "tests": [
+        "source/host/tests/openclaw_audio_transcode_contract.rs::test_ocrm_audio_o06_build_ffmpeg_opus_args"
+      ],
+      "typed_contracts": [
+        "MEDIA_FFMPEG_MAX_BUFFER_BYTES",
+        "MEDIA_FFPROBE_TIMEOUT_MS",
+        "MEDIA_FFMPEG_TIMEOUT_MS"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-005"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Compact ffprobe stdout parsing for audio codec and positive sample rate.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "media.ffmpeg_exec"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_audio_transcode"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_audio_transcode_contract.rs",
+        "projects/openclaw-rust/dossiers/audio-transcode-ffmpeg-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_audio_transcode.rs",
+          "reason": "Host compact ffprobe parser owner"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-FFMPEG-EXEC-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/video_playback_rendition.rs",
+        "entrypoint": "source/host/src/extensions/attachments/media_audio_transcode.rs::parse_ffprobe_codec_and_sample_rate",
+        "owner": "source/host/src/extensions/attachments/media_audio_transcode.rs",
+        "producer": "source/host/src/extensions/attachments/video_playback_rendition.rs"
+      },
+      "invariants": [
+        "Multi-delimiter grouping (comma, newline) parses codec and numeric sample rate",
+        "Non-positive sample rates ignored"
+      ],
+      "migration_rollback": "Raw stdout inspection",
+      "oracle_ids": [
+        "OCRM-AUDIO-O02"
+      ],
+      "owner_decision": "Implement compact ffprobe parser in media_audio_transcode",
+      "postconditions": [
+        "Codec name and sample rate Hz extracted"
+      ],
+      "preconditions": [
+        "Compact ffprobe stdout provided"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; accurate audio stream parameter extraction",
+      "selected_owner": "source/host/src/extensions/attachments/media_audio_transcode.rs",
+      "source_refs": [
+        {
+          "blob_sha": "264a0b3bac20cbaf23178353003bf3a0ffc5f713",
+          "path": "src/media/ffmpeg-exec.ts",
+          "range": {
+            "end_line": 97,
+            "start_line": 1
+          },
+          "symbol": "parseFfprobeCodecAndSampleRate"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_audio_transcode.rs",
+        "symbol": "parse_ffprobe_codec_and_sample_rate"
+      },
+      "tests": [
+        "source/host/tests/openclaw_audio_transcode_contract.rs::test_ocrm_audio_o02_ffprobe_codec_and_sample_rate_parsing"
+      ],
+      "typed_contracts": [
+        "parse_ffprobe_codec_and_sample_rate"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-005"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Classification of voice-message compatible audio formats by MIME type and filename extension.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "media.voice_audio_compat"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_audio_transcode"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_audio_transcode_contract.rs",
+        "projects/openclaw-rust/dossiers/audio-transcode-ffmpeg-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_audio_transcode.rs",
+          "reason": "Host voice-message compatibility filter owner"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-VOICE-AUDIO-COMPAT-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/attachments_service.rs",
+        "entrypoint": "source/host/src/extensions/attachments/media_audio_transcode.rs::is_voice_message_compatible_audio",
+        "owner": "source/host/src/extensions/attachments/media_audio_transcode.rs",
+        "producer": "source/host/src/extensions/attachments/attachments_service.rs"
+      },
+      "invariants": [
+        "Accepted extensions: .oga, .ogg, .opus, .mp3, .m4a",
+        "Accepted MIMEs: audio/ogg, audio/opus, audio/mpeg, audio/mp3, audio/mp4, audio/x-m4a, audio/m4a"
+      ],
+      "migration_rollback": "Unfiltered audio upload",
+      "oracle_ids": [
+        "OCRM-AUDIO-O01"
+      ],
+      "owner_decision": "Implement voice audio compatibility check in media_audio_transcode",
+      "postconditions": [
+        "Boolean compatibility verdict returned"
+      ],
+      "preconditions": [
+        "Optional content type and/or filename provided"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; prevents incompatible voice note uploads across chat channels",
+      "selected_owner": "source/host/src/extensions/attachments/media_audio_transcode.rs",
+      "source_refs": [
+        {
+          "blob_sha": "9b6c0d7ba0a740137519b1f609931159471ca6f9",
+          "path": "src/media/audio.ts",
+          "range": {
+            "end_line": 39,
+            "start_line": 1
+          },
+          "symbol": "isVoiceMessageCompatibleAudio"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_audio_transcode.rs",
+        "symbol": "is_voice_message_compatible_audio"
+      },
+      "tests": [
+        "source/host/tests/openclaw_audio_transcode_contract.rs::test_ocrm_audio_o01_voice_message_compatible_audio"
+      ],
+      "typed_contracts": [
+        "is_voice_message_compatible_audio"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-005"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Audio transcode parameters normalization and FFmpeg Opus command construction.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "media.audio_transcode"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_audio_transcode"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_audio_transcode_contract.rs",
+        "projects/openclaw-rust/dossiers/audio-transcode-ffmpeg-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_audio_transcode.rs",
+          "reason": "Host audio transcode builder owner"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-AUDIO-TRANSCODE-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/video_playback_rendition.rs",
+        "entrypoint": "source/host/src/extensions/attachments/media_audio_transcode.rs::build_ffmpeg_opus_args",
+        "owner": "source/host/src/extensions/attachments/media_audio_transcode.rs",
+        "producer": "source/host/src/extensions/attachments/video_playback_rendition.rs"
+      },
+      "invariants": [
+        "Mono 48kHz Opus with 64kbps bitrate",
+        "Optional max duration passes -t limit"
+      ],
+      "migration_rollback": "Raw command formatting",
+      "oracle_ids": [
+        "OCRM-AUDIO-O05",
+        "OCRM-AUDIO-O06"
+      ],
+      "owner_decision": "Implement audio transcode parameter normalization and args builder in media_audio_transcode",
+      "postconditions": [
+        "Validated CLI arguments returned"
+      ],
+      "preconditions": [
+        "Input and output paths supplied"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; ensures standard voice memo audio parameters",
+      "selected_owner": "source/host/src/extensions/attachments/media_audio_transcode.rs",
+      "source_refs": [
+        {
+          "blob_sha": "ca6927f3285866b27418eccce344e548e59fea63",
+          "path": "src/media/audio-transcode.ts",
+          "range": {
+            "end_line": 196,
+            "start_line": 1
+          },
+          "symbol": "transcodeAudioBufferToOpus"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_audio_transcode.rs",
+        "symbol": "build_ffmpeg_opus_args"
+      },
+      "tests": [
+        "source/host/tests/openclaw_audio_transcode_contract.rs::test_ocrm_audio_o05_audio_extension_and_temp_normalization",
+        "source/host/tests/openclaw_audio_transcode_contract.rs::test_ocrm_audio_o06_build_ffmpeg_opus_args"
+      ],
+      "typed_contracts": [
+        "OpusTranscodeArgs",
+        "build_ffmpeg_opus_args",
+        "normalize_audio_extension"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-005"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Canonicalization of equivalent local media references without filesystem resolution.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "media.reference_comparison"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_audio_transcode"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_audio_transcode_contract.rs",
+        "projects/openclaw-rust/dossiers/audio-transcode-ffmpeg-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_audio_transcode.rs",
+          "reason": "Host media reference comparison owner"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-REF-COMPARISON-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/attachments_service.rs",
+        "entrypoint": "source/host/src/extensions/attachments/media_audio_transcode.rs::normalize_media_reference_for_comparison",
+        "owner": "source/host/src/extensions/attachments/media_audio_transcode.rs",
+        "producer": "source/host/src/extensions/attachments/attachments_service.rs"
+      },
+      "invariants": [
+        "Traversal segments (..) retained literally to prevent key collision",
+        "Encoded separators (%2f) preserved",
+        "file:// URLs normalized to absolute paths"
+      ],
+      "migration_rollback": "Raw string comparison",
+      "oracle_ids": [
+        "OCRM-AUDIO-O03"
+      ],
+      "owner_decision": "Implement media reference comparison normalization in media_audio_transcode",
+      "postconditions": [
+        "Canonical string key returned"
+      ],
+      "preconditions": [
+        "Input path or URL string supplied"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; prevents redundant attachment downloads and cache collisions",
+      "selected_owner": "source/host/src/extensions/attachments/media_audio_transcode.rs",
+      "source_refs": [
+        {
+          "blob_sha": "424dfbe15df6fc4c69d6cb23051773affd966325",
+          "path": "src/media/media-reference-comparison.ts",
+          "range": {
+            "end_line": 72,
+            "start_line": 1
+          },
+          "symbol": "normalizeMediaReferenceForComparison"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_audio_transcode.rs",
+        "symbol": "normalize_media_reference_for_comparison"
+      },
+      "tests": [
+        "source/host/tests/openclaw_audio_transcode_contract.rs::test_ocrm_audio_o03_media_reference_comparison_normalization"
+      ],
+      "typed_contracts": [
+        "normalize_media_reference_for_comparison"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-005"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Detection of prompt images requiring vision model inputs vs hydration-suppressed facts.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "media.prompt_image_input"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_audio_transcode"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_audio_transcode_contract.rs",
+        "projects/openclaw-rust/dossiers/audio-transcode-ffmpeg-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_audio_transcode.rs",
+          "reason": "Host prompt image input detector owner"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-PROMPT-IMAGE-INPUT-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/attachments_service.rs",
+        "entrypoint": "source/host/src/extensions/attachments/media_audio_transcode.rs::has_prompt_image_input",
+        "owner": "source/host/src/extensions/attachments/media_audio_transcode.rs",
+        "producer": "source/host/src/extensions/attachments/attachments_service.rs"
+      },
+      "invariants": [
+        "Facts with hydrationSuppressed = true do not trigger vision model requirements",
+        "Suppressed fact indexes excluded"
+      ],
+      "migration_rollback": "Unconditional vision model selection",
+      "oracle_ids": [
+        "OCRM-AUDIO-O04"
+      ],
+      "owner_decision": "Implement prompt image input detector in media_audio_transcode",
+      "postconditions": [
+        "Boolean vision input requirement verdict returned"
+      ],
+      "preconditions": [
+        "Optional images count, order, and facts supplied"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; avoids unnecessary multimodal model invocations when images are text-described",
+      "selected_owner": "source/host/src/extensions/attachments/media_audio_transcode.rs",
+      "source_refs": [
+        {
+          "blob_sha": "4179c24c0f155d2ffc935831aa2b8407e607963f",
+          "path": "src/media/prompt-image-input.ts",
+          "range": {
+            "end_line": 28,
+            "start_line": 1
+          },
+          "symbol": "hasPromptImageInput"
+        },
+        {
+          "blob_sha": "f20eab0ac1c55230f232325a60db29d010c39282",
+          "path": "src/media/prompt-image-order.ts",
+          "range": {
+            "end_line": 2,
+            "start_line": 1
+          },
+          "symbol": "PromptImageOrderEntry"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_audio_transcode.rs",
+        "symbol": "has_prompt_image_input"
+      },
+      "tests": [
+        "source/host/tests/openclaw_audio_transcode_contract.rs::test_ocrm_audio_o04_prompt_image_input_detection"
+      ],
+      "typed_contracts": [
+        "PromptImageOrderEntry",
+        "has_prompt_image_input"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-005"
     }
   ],
   "schema_version": 1,
