@@ -290,17 +290,27 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "in-progress",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "source/host/tests/openclaw_browser_web_contract.rs",
+        "projects/openclaw-rust/dossiers/transcript-round92-openclaw-browser-and-web-automation-native-fusion-20261026.md"
+      ],
       "gate_ids": [],
       "id": "OCRM-R11",
       "kind": "requirement",
       "not_applicable_reason": null,
       "oracle_ids": [],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
-      "responsibility_ids": [],
-      "reviewer": null
+      "responsibility_ids": [
+        "OCRM-RESP-BROWSER-SSRF-GUARD-001",
+        "OCRM-RESP-BROWSER-WEB-FETCH-001",
+        "OCRM-RESP-BROWSER-WEB-SEARCH-001",
+        "OCRM-RESP-BROWSER-FETCH-RUNTIME-001",
+        "OCRM-RESP-BROWSER-IMAGE-TYPES-001",
+        "OCRM-RESP-BROWSER-WORKER-LIFECYCLE-001"
+      ],
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
       "acceptance_status": "not-started",
@@ -698,7 +708,9 @@
         "source/host/tests/gateway_server_contract.rs",
         "source/host/tests/gateway_protocol_contract.rs",
         "source/host/tests/network_enrollment_owner_contract.rs",
-        "projects/openclaw-rust/dossiers/gateway-router-device-authority-followup-20261022.md"
+        "projects/openclaw-rust/dossiers/gateway-router-device-authority-followup-20261022.md",
+        "source/host/tests/openclaw_browser_web_contract.rs",
+        "projects/openclaw-rust/dossiers/transcript-round92-openclaw-browser-and-web-automation-native-fusion-20261026.md"
       ],
       "gate_ids": [],
       "id": "OCRM-AC11",
@@ -733,7 +745,13 @@
         "OCRM-RESP-DEVICE-PAIRING-APPROVAL-POLICY-001",
         "OCRM-RESP-DEVICE-PAIRING-TOKENS-LIFECYCLE-001",
         "OCRM-RESP-DEVICE-PAIRING-JOIN-CODE-001",
-        "OCRM-RESP-DEVICE-PAIRING-NODE-LIFECYCLE-001"
+        "OCRM-RESP-DEVICE-PAIRING-NODE-LIFECYCLE-001",
+        "OCRM-RESP-BROWSER-SSRF-GUARD-001",
+        "OCRM-RESP-BROWSER-WEB-FETCH-001",
+        "OCRM-RESP-BROWSER-WEB-SEARCH-001",
+        "OCRM-RESP-BROWSER-FETCH-RUNTIME-001",
+        "OCRM-RESP-BROWSER-IMAGE-TYPES-001",
+        "OCRM-RESP-BROWSER-WORKER-LIFECYCLE-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },

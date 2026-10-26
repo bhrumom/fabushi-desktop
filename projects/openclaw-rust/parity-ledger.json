@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 94,
+    "mapped_paths": 100,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58656
+    "unclassified_paths": 58650
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -3864,6 +3864,557 @@
         "build_fts_match_query(raw_query: &str) -> Option<String>"
       ],
       "unit_id": "OCRM-UNIT-MEM-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "SSRF defense evaluating host/IP targets, blocking localhost, RFC 1918 private subnets, cloud metadata IPs, and stripping user credentials.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "browser.ssrf_guard"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::runner::tools::sand_web_tools"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_browser_web_contract.rs",
+        "projects/openclaw-rust/dossiers/transcript-round92-openclaw-browser-and-web-automation-native-fusion-20261026.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/runner/tools/sand_web_tools.rs",
+          "reason": "Host web tools and SSRF guard"
+        }
+      ],
+      "id": "OCRM-RESP-BROWSER-SSRF-GUARD-001",
+      "integration": {
+        "consumer": "source/host/src/runner/production_turn_agent_owner.rs",
+        "entrypoint": "source/host/src/runner/tools/sand_web_tools.rs",
+        "owner": "source/host/src/runner/tools/sand_web_tools.rs",
+        "producer": "source/host/src/runner/sand_web_tools.rs"
+      },
+      "invariants": [
+        "Rejects non-HTTP/HTTPS protocols",
+        "Strips userinfo credentials from URL",
+        "Rejects private and link-local IPv4/IPv6 ranges"
+      ],
+      "migration_rollback": "Controlled by host web fetch configuration flags",
+      "oracle_ids": [
+        "OCRM-BROWSER-O07",
+        "OCRM-BROWSER-O08"
+      ],
+      "owner_decision": "Integrate SSRF validation in sand_web_tools.rs",
+      "postconditions": [
+        "Public reachable URLs sanitized for execution"
+      ],
+      "preconditions": [
+        "URL string provided to web fetch"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R11",
+        "OCRM-AC11"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "High; must fail closed to protect internal networks from agent traversal",
+      "selected_owner": "source/host/src/runner/tools/sand_web_tools.rs",
+      "source_refs": [
+        {
+          "blob_sha": "664540bba2ec156f9ef5ef57bfd1fb7bd7f93d0d",
+          "path": "src/infra/net/ssrf.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 736
+          },
+          "symbol": "validate_web_fetch_url"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/runner/tools/sand_web_tools.rs",
+        "symbol": "validate_web_fetch_url"
+      },
+      "tests": [
+        "source/host/tests/openclaw_browser_web_contract.rs::test_ocrm_browser_o07_web_fetch_ssrf_and_localhost_rejection",
+        "source/host/tests/openclaw_browser_web_contract.rs::test_ocrm_browser_o08_web_fetch_userinfo_sanitization"
+      ],
+      "typed_contracts": [
+        "validate_web_fetch_url"
+      ],
+      "unit_id": "OCRM-UNIT-BROWSER-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Web fetch result rendering, bounding external Markdown content to 100,000 characters with size cap and status code framing.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "browser.web_fetch"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::runner::tools::sand_web_tools"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_browser_web_contract.rs",
+        "projects/openclaw-rust/dossiers/transcript-round92-openclaw-browser-and-web-automation-native-fusion-20261026.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/runner/tools/sand_web_tools.rs",
+          "reason": "Host web fetch renderer"
+        }
+      ],
+      "id": "OCRM-RESP-BROWSER-WEB-FETCH-001",
+      "integration": {
+        "consumer": "source/host/src/runner/production_turn_agent_owner.rs",
+        "entrypoint": "source/host/src/runner/tools/sand_web_tools.rs",
+        "owner": "source/host/src/runner/tools/sand_web_tools.rs",
+        "producer": "source/host/src/runner/sand_web_tools.rs"
+      },
+      "invariants": [
+        "Content strictly truncated at 100,000 characters",
+        "Formats full output footer on truncation"
+      ],
+      "migration_rollback": "Controlled by host web fetch configuration flags",
+      "oracle_ids": [
+        "OCRM-BROWSER-O09"
+      ],
+      "owner_decision": "Integrate content bounding in render_web_fetch_result",
+      "postconditions": [
+        "Sanitized, bounded content returned to agent context"
+      ],
+      "preconditions": [
+        "Raw fetched response payload available"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R11",
+        "OCRM-AC11"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Medium; prevents large external pages from exhausting context window",
+      "selected_owner": "source/host/src/runner/tools/sand_web_tools.rs",
+      "source_refs": [
+        {
+          "blob_sha": "e9dd6374f40b7917a0a8b63398b047ad7e84e47c",
+          "path": "src/agents/tools/web-fetch.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 950
+          },
+          "symbol": "render_web_fetch_result"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/runner/tools/sand_web_tools.rs",
+        "symbol": "render_web_fetch_result"
+      },
+      "tests": [
+        "source/host/tests/openclaw_browser_web_contract.rs::test_ocrm_browser_o09_web_fetch_content_size_truncation"
+      ],
+      "typed_contracts": [
+        "render_web_fetch_result"
+      ],
+      "unit_id": "OCRM-UNIT-BROWSER-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Web search query routing, reference synthesis, and auto review input length boundary enforcement.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "browser.web_search"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::runner::tools::sand_web_tools"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_browser_web_contract.rs",
+        "projects/openclaw-rust/dossiers/transcript-round92-openclaw-browser-and-web-automation-native-fusion-20261026.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/runner/tools/sand_web_tools.rs",
+          "reason": "Host web search tool bridge"
+        }
+      ],
+      "id": "OCRM-RESP-BROWSER-WEB-SEARCH-001",
+      "integration": {
+        "consumer": "source/host/src/runner/production_turn_agent_owner.rs",
+        "entrypoint": "source/host/src/runner/tools/sand_web_tools.rs",
+        "owner": "source/host/src/runner/tools/sand_web_tools.rs",
+        "producer": "source/host/src/runner/sand_web_tools.rs"
+      },
+      "invariants": [
+        "Search term normalized and stripped of ASCII control chars",
+        "Enforces length limits on action parameters"
+      ],
+      "migration_rollback": "Controlled by host search tool configuration flags",
+      "oracle_ids": [
+        "OCRM-BROWSER-O01",
+        "OCRM-BROWSER-O10"
+      ],
+      "owner_decision": "Extend SandWebToolBridge for OpenClaw web search semantics",
+      "postconditions": [
+        "Ranked reference citations provided to turn runner"
+      ],
+      "preconditions": [
+        "Valid search query string input"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R11",
+        "OCRM-AC11"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; provides safe query normalization and bounded input review",
+      "selected_owner": "source/host/src/runner/tools/sand_web_tools.rs",
+      "source_refs": [
+        {
+          "blob_sha": "5cf9e9d4a8f394e5399e2658015137a1735b1a61",
+          "path": "src/web-search/runtime.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 616
+          },
+          "symbol": "SandWebToolBridge"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/runner/tools/sand_web_tools.rs",
+        "symbol": "SandWebToolBridge"
+      },
+      "tests": [
+        "source/host/tests/openclaw_browser_web_contract.rs::test_ocrm_browser_o01_tool_dispatch_and_delimiter_framing",
+        "source/host/tests/openclaw_browser_web_contract.rs::test_ocrm_browser_o10_auto_review_input_length_boundary_enforcement"
+      ],
+      "typed_contracts": [
+        "SandWebToolBridge::call_tool"
+      ],
+      "unit_id": "OCRM-UNIT-BROWSER-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Host WebToolExecutor interface and HTTP fetch invocation abstraction.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "browser.fetch_runtime"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::runner::tools::sand_web_tools"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_browser_web_contract.rs",
+        "projects/openclaw-rust/dossiers/transcript-round92-openclaw-browser-and-web-automation-native-fusion-20261026.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/runner/tools/sand_web_tools.rs",
+          "reason": "Host web executor trait"
+        }
+      ],
+      "id": "OCRM-RESP-BROWSER-FETCH-RUNTIME-001",
+      "integration": {
+        "consumer": "source/host/src/runner/production_turn_agent_owner.rs",
+        "entrypoint": "source/host/src/runner/tools/sand_web_tools.rs",
+        "owner": "source/host/src/runner/tools/sand_web_tools.rs",
+        "producer": "source/host/src/runner/sand_web_tools.rs"
+      },
+      "invariants": [
+        "Provider execution isolated and errors framed as ProviderSessionError"
+      ],
+      "migration_rollback": "Controlled by host tool enablement flags",
+      "oracle_ids": [
+        "OCRM-BROWSER-O09"
+      ],
+      "owner_decision": "Define WebToolExecutor trait in sand_web_tools.rs",
+      "postconditions": [
+        "Network response dispatched to caller"
+      ],
+      "preconditions": [
+        "Valid HTTP request specifier"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R11",
+        "OCRM-AC11"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; isolates network calls behind typed executor interface",
+      "selected_owner": "source/host/src/runner/tools/sand_web_tools.rs",
+      "source_refs": [
+        {
+          "blob_sha": "c818a88aa10cc7c72d2d9d254c60b2487ad65c57",
+          "path": "src/web-fetch/runtime.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 166
+          },
+          "symbol": "WebToolExecutor"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/runner/tools/sand_web_tools.rs",
+        "symbol": "WebToolExecutor"
+      },
+      "tests": [
+        "source/host/tests/openclaw_browser_web_contract.rs::test_ocrm_browser_o09_web_fetch_content_size_truncation"
+      ],
+      "typed_contracts": [
+        "WebToolExecutor::fetch"
+      ],
+      "unit_id": "OCRM-UNIT-BROWSER-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Browser raster image MIME type validation and screenshot framing with monotonic view generation.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "browser.image_types"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::runner::tools::sand_browser_tools"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_browser_web_contract.rs",
+        "projects/openclaw-rust/dossiers/transcript-round92-openclaw-browser-and-web-automation-native-fusion-20261026.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/runner/tools/sand_browser_tools.rs",
+          "reason": "Host browser tools envelope and specs"
+        }
+      ],
+      "id": "OCRM-RESP-BROWSER-IMAGE-TYPES-001",
+      "integration": {
+        "consumer": "source/host/src/runner/production_turn_agent_owner.rs",
+        "entrypoint": "source/host/src/runner/tools/sand_browser_tools.rs",
+        "owner": "source/host/src/runner/tools/sand_browser_tools.rs",
+        "producer": "source/host/src/runner/sand_browser_tools.rs"
+      },
+      "invariants": [
+        "Screenshots bound to sanitized tool call IDs",
+        "Monotonic view generations prevent race conditions"
+      ],
+      "migration_rollback": "Controlled by host browser tool configuration flags",
+      "oracle_ids": [
+        "OCRM-BROWSER-O01",
+        "OCRM-BROWSER-O04"
+      ],
+      "owner_decision": "Implement BrowserEnvelope and generation framing in sand_browser_tools.rs",
+      "postconditions": [
+        "Framed base64 screenshot envelope returned"
+      ],
+      "preconditions": [
+        "Captured browser frame buffer available"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R11",
+        "OCRM-AC11"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; deterministic envelope encoding and decoding",
+      "selected_owner": "source/host/src/runner/tools/sand_browser_tools.rs",
+      "source_refs": [
+        {
+          "blob_sha": "26f9a040cab5391c86383453a8b457e0a654bbea",
+          "path": "src/shared/browser-image-mime-types.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 9
+          },
+          "symbol": "BROWSER_IMAGE_MIME_TYPES"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/runner/tools/sand_browser_tools.rs",
+        "symbol": "BrowserEnvelope"
+      },
+      "tests": [
+        "source/host/tests/openclaw_browser_web_contract.rs::test_ocrm_browser_o01_tool_dispatch_and_delimiter_framing",
+        "source/host/tests/openclaw_browser_web_contract.rs::test_ocrm_browser_o04_view_generation_and_envelope_invariants"
+      ],
+      "typed_contracts": [
+        "encode_envelope",
+        "decode_envelope"
+      ],
+      "unit_id": "OCRM-UNIT-BROWSER-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Worker browser container lifecycle, strict CDP observation command allowlist, and arbitrary evaluation prevention.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "browser.worker_lifecycle"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::runner::tools::sand_browser_tools"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_browser_web_contract.rs",
+        "projects/openclaw-rust/dossiers/transcript-round92-openclaw-browser-and-web-automation-native-fusion-20261026.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/runner/tools/sand_browser_tools.rs",
+          "reason": "Host browser driver specs and port base"
+        }
+      ],
+      "id": "OCRM-RESP-BROWSER-WORKER-LIFECYCLE-001",
+      "integration": {
+        "consumer": "source/host/src/runner/production_turn_agent_owner.rs",
+        "entrypoint": "source/host/src/runner/tools/sand_browser_tools.rs",
+        "owner": "source/host/src/runner/tools/sand_browser_tools.rs",
+        "producer": "source/host/src/runner/sand_browser_tools.rs"
+      },
+      "invariants": [
+        "CDP commands outside explicit 7-method observation allowlist are denied",
+        "Arbitrary Runtime.evaluate is explicitly rejected"
+      ],
+      "migration_rollback": "Controlled by host browser tool configuration flags",
+      "oracle_ids": [
+        "OCRM-BROWSER-O02",
+        "OCRM-BROWSER-O03"
+      ],
+      "owner_decision": "Restrict browser driver tool specs to allowed observation commands",
+      "postconditions": [
+        "Driver command validated against allowlist"
+      ],
+      "preconditions": [
+        "Browser action requested by agent"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "security-negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R11",
+        "OCRM-AC11"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "High; blocks sandbox breakout and credential theft via arbitrary script evaluation",
+      "selected_owner": "source/host/src/runner/tools/sand_browser_tools.rs",
+      "source_refs": [
+        {
+          "blob_sha": "765032c984a44c6337373c9b1007b68764dc0463",
+          "path": "src/worker/browser-runtime.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 91
+          },
+          "symbol": "BOX_CDP_PORT_BASE"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/runner/tools/sand_browser_tools.rs",
+        "symbol": "browser_tool_specs"
+      },
+      "tests": [
+        "source/host/tests/openclaw_browser_web_contract.rs::test_ocrm_browser_o02_disallowed_cdp_command_rejection_in_driver",
+        "source/host/tests/openclaw_browser_web_contract.rs::test_ocrm_browser_o03_allowed_cdp_observation_specs"
+      ],
+      "typed_contracts": [
+        "browser_tool_specs",
+        "BOX_CDP_PORT_BASE"
+      ],
+      "unit_id": "OCRM-UNIT-BROWSER-001"
     }
   ],
   "schema_version": 1,
