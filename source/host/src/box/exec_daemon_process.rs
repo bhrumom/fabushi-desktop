@@ -221,6 +221,11 @@ pub fn start_box_exec_daemon_process(
         )
     })?;
     let pid = child.id();
+    crate::process_spawn_diagnostics::global_child_process_spawn_tracker().record_spawn(
+        &options.executable_path.to_string_lossy(),
+        &[],
+        Some("exec-daemon"),
+    );
     let parent_pipe = match child.stdin.take() {
         Some(parent_pipe) => parent_pipe,
         None => {

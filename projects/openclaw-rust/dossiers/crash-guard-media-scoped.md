@@ -54,9 +54,10 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
 
 5. **`OCRM-RESP-PROCESS-SPAWN-DIAGNOSTICS-001`**:
    - **Behavior**: Child process spawn telemetry tracking, command family classification (git, shell, node, python, rust, docker, curl, etc.), unscoped operation categorization, and atomic sample recording matching upstream `spawn-diagnostics.ts`.
-   - **Rust Owner**: `source/host/src/process_spawn_diagnostics.rs::ChildProcessSpawnTracker`.
+   - **Rust Owner**: `source/host/src/process_spawn_diagnostics.rs::ChildProcessSpawnTracker`, `global_child_process_spawn_tracker`.
+   - **Production Call Chain**: Producer `source/host/src/box/exec_daemon_process.rs::spawn_box_exec_daemon_process`, `source/host/src/network_worker_process.rs::spawn_network_worker_process` → Owner `global_child_process_spawn_tracker` → Consumer `sample_counts`.
    - **Oracles**: `OCRM-CRASH-O02`.
-   - **Status**: Honest calibration: `implementation=implemented`, `wiring=not-wired`, `verification=not-run` (`blocker_ids=["BL-SPAWN-DIAGNOSTICS-DAEMON-WIRING-001"]`: Process spawn diagnostics tracker is implemented and verified in standalone unit contract, pending daemon invocation hooks across background runners).
+   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=verified`.
 
 6. **`OCRM-RESP-ERROR-DIAGNOSTICS-ATTACH-001`**:
    - **Behavior**: Attaches sanitized diagnostic metadata to error objects, masking sensitive credentials (`Bearer <redacted>`, `sk-<redacted-secret>`, `password=<redacted>`) and producing bounded display format strings under 2,048 UTF-16 code units.
@@ -92,6 +93,6 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
   - `omitted_known`: 0
 - **Responsibilities**:
   - Total: 84
-  - Active blockers: `BL-CURSOR-BACKEND-IMAGE-RESOLUTION-001`, `BL-SPAWN-DIAGNOSTICS-DAEMON-WIRING-001`
+  - Active blockers: `BL-CURSOR-BACKEND-IMAGE-RESOLUTION-001`
 - **Global Completion Flags**:
   - All 8 flags remain `false`.

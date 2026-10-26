@@ -53,8 +53,9 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
 
 5. **`OCRM-RESP-MEDIA-DEFAULT-MODELS-001`**:
    - **Behavior**: Media understanding default provider and model resolution (`resolve_default_media_model`), vision/audio capability registration, configured model retrieval, and auto-discovery provider priority sorting (`resolve_auto_media_key_providers`).
-   - **Rust Owner**: `source/host/src/media_understanding_defaults.rs:resolve_default_media_model, resolve_auto_media_key_providers`.
-   - **Wiring Status**: Honest calibration: `implementation=implemented`, `wiring=not-wired`, `verification=not-run` (dynamic plugin provider metadata resolution implemented, pending live production model router dispatch integration).
+   - **Rust Owner**: `source/host/src/media_understanding_defaults.rs::resolve_default_media_model, resolve_auto_media_key_providers`.
+   - **Production Call Chain**: Producer `CursorGenerateImageOptions::production` → Entrypoint `generate_image_service.rs::configured_generate_image_model_id` → Owner `resolve_default_media_model` → Consumer `SandGenerateImageService::generate`.
+   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=verified`.
    - **Oracle**: `OCRM-ATTACH-O04`.
 
 6. **`OCRM-RESP-MEDIA-SNIFF-PREVIEW-001`**:

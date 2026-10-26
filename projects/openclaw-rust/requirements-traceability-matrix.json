@@ -201,9 +201,7 @@
     },
     {
       "acceptance_status": "in-progress",
-      "blocker_ids": [
-        "BL-SPAWN-DIAGNOSTICS-DAEMON-WIRING-001"
-      ],
+      "blocker_ids": [],
       "evidence_refs": [
         "projects/openclaw-rust/dossiers/crash-guard-media-scoped.md",
         "projects/openclaw-rust/dossiers/memory-knowledge-retrieval-scoped.md",
@@ -799,9 +797,7 @@
     },
     {
       "acceptance_status": "in-progress",
-      "blocker_ids": [
-        "BL-SPAWN-DIAGNOSTICS-DAEMON-WIRING-001"
-      ],
+      "blocker_ids": [],
       "evidence_refs": [
         "projects/openclaw-rust/dossiers/crash-guard-media-scoped.md",
         "projects/openclaw-rust/dossiers/memory-knowledge-retrieval-scoped.md",

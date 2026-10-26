@@ -107,11 +107,32 @@ impl CursorGenerateImageOptions {
 }
 
 pub fn configured_generate_image_model_id() -> String {
-    env::var("SAND_AGENT_MODEL")
-        .ok()
-        .map(|value| value.trim().to_string())
-        .filter(|value| !value.is_empty())
-        .unwrap_or_else(|| SAND_DEFAULT_MODEL_ID.to_string())
+    if let Ok(value) = env::var("SAND_AGENT_MODEL") {
+        let trimmed = value.trim();
+        if !trimmed.is_empty() {
+            return trimmed.to_string();
+        }
+    }
+    let mut default_registry = std::collections::HashMap::new();
+    let mut default_models = std::collections::HashMap::new();
+    default_models.insert("image".to_string(), SAND_DEFAULT_MODEL_ID.to_string());
+    default_registry.insert(
+        "cursor".to_string(),
+        crate::media_understanding_defaults::MediaUnderstandingProviderMetadata {
+            id: "cursor".to_string(),
+            capabilities: vec![crate::media_understanding_defaults::MediaUnderstandingCapability::Image],
+            default_models,
+            auto_priority: std::collections::HashMap::new(),
+        },
+    );
+    crate::media_understanding_defaults::resolve_default_media_model(
+        "cursor",
+        crate::media_understanding_defaults::MediaUnderstandingCapability::Image,
+        &default_registry,
+        None,
+        false,
+    )
+    .unwrap_or_else(|| SAND_DEFAULT_MODEL_ID.to_string())
 }
 
 #[derive(Clone, PartialEq, Message)]

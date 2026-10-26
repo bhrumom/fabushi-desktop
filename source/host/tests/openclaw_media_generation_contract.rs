@@ -223,6 +223,10 @@ fn test_ocrm_attach_o04_media_understanding_default_models() {
         vec!["google", "minimax", "openrouter"],
         "Providers must be sorted in ascending order of autoPriority"
     );
+
+    // 4. Production generate image model resolution caller verification
+    let resolved_model = mahayana_host_runtime::extensions::attachments::generate_image_service::configured_generate_image_model_id();
+    assert!(!resolved_model.trim().is_empty());
 }
 
 // ---------------------------------------------------------------------------

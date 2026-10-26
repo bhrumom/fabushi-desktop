@@ -544,6 +544,11 @@ pub fn start_network_worker(
         )
     })?;
     let pid = child.id();
+    crate::process_spawn_diagnostics::global_child_process_spawn_tracker().record_spawn(
+        &options.executable_path.to_string_lossy(),
+        &[],
+        Some("network-worker"),
+    );
 
     let mut parent_pipe = match child.stdin.take() {
         Some(pipe) => pipe,

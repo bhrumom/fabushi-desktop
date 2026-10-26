@@ -378,6 +378,16 @@ fn test_ocrm_crash_o02_spawn_diagnostics_tracker() {
 
     // Subsequent sample is drained and empty
     assert!(tracker.sample_counts(true).is_empty());
+
+    // 4. Global tracker singleton verification
+    let global_tracker = mahayana_host_runtime::process_spawn_diagnostics::global_child_process_spawn_tracker();
+    global_tracker.record_spawn("/usr/local/bin/sand-box-exec-daemon", &[], Some("exec-daemon"));
+    let global_samples = global_tracker.sample_counts(true);
+    let daemon_sample = global_samples
+        .iter()
+        .find(|s| s.operation == "exec-daemon")
+        .expect("global tracker recorded daemon spawn");
+    assert_eq!(daemon_sample.count, 1);
 }
 
 // ---------------------------------------------------------------------------

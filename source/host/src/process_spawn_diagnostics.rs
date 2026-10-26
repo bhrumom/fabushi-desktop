@@ -157,3 +157,9 @@ impl ChildProcessSpawnTracker {
         }
     }
 }
+
+static GLOBAL_SPAWN_TRACKER: std::sync::OnceLock<ChildProcessSpawnTracker> = std::sync::OnceLock::new();
+
+pub fn global_child_process_spawn_tracker() -> &'static ChildProcessSpawnTracker {
+    GLOBAL_SPAWN_TRACKER.get_or_init(ChildProcessSpawnTracker::new)
+}
