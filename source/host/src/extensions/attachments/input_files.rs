@@ -1011,7 +1011,8 @@ mod tests {
         let text = "Café 😀 notes";
         assert_eq!(truncate_utf16_safe(text, 6), "Café ");
         assert_eq!(truncate_utf16_safe(text, 7), "Café 😀");
-        assert_eq!(truncate_utf16_safe(text, 8), "Café 😀");
+        assert_eq!(truncate_utf16_safe(text, 8), "Café 😀 ");
+        assert_eq!(truncate_utf16_safe(text, 9), "Café 😀 n");
     }
 
     #[test]
@@ -1025,9 +1026,26 @@ mod tests {
 
     #[test]
     fn test_decode_text_windows1251() {
-        let text = "Café notes: résumé et météo pour demain.";
-        let (cow, _, _) = encoding_rs::ISO_8859_1.decode(text.as_bytes());
-        let (decoded, _) = decode_text_content(cow.as_bytes(), Some("windows-1251"), 100);
-        assert_eq!(decoded.chars().count() > 0, true);
+        let text = "Привет, мир!";
+        let (bytes, _, _) = encoding_rs::WINDOWS_1251.encode(text);
+        let (decoded, truncated) = decode_text_content(&bytes, Some("windows-1251"), 100);
+        assert_eq!(decoded, "Привет, мир!");
+        assert!(!truncated);
+    }
+
+    #[test]
+    fn test_decode_text_iso_8859_1_whatwg_alias() {
+        // WHATWG maps "iso-8859-1" and "latin1" to windows-1252
+        let (bytes, _, _) = encoding_rs::WINDOWS_1252.encode("café résumé");
+        let (decoded_iso, _) = decode_text_content(&bytes, Some("iso-8859-1"), 100);
+        assert_eq!(decoded_iso, "café résumé");
+
+        let (decoded_latin1, _) = decode_text_content(&bytes, Some("latin1"), 100);
+        assert_eq!(decoded_latin1, "café résumé");
+
+        // Fallback for unknown charset falls back to UTF-8
+        let utf8_sample = "hello world";
+        let (fallback_decoded, _) = decode_text_content(utf8_sample.as_bytes(), Some("x-unknown-encoding"), 100);
+        assert_eq!(fallback_decoded, "hello world");
     }
 }

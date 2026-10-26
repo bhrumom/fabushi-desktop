@@ -223,16 +223,18 @@ fn production_extension_reports_exec_failure_through_host_telemetry() {
         .sandbox(gate)
         .remote_resource_accessor()
         .manager();
+    let call_id = format!("failure-call-{unique}");
+    let call_id_for_shell = call_id.clone();
     let shell = thread::spawn(move || {
         manager.execute_shell(
             &GatewayLocalToolScope {
                 agent_id: Some("agent-local-exec".into()),
-                tool_call_id: Some("failure-call".into()),
+                tool_call_id: Some(call_id_for_shell.clone()),
                 action: Some("run-command".into()),
             },
             "tool",
             "/tmp",
-            "failure-call",
+            &call_id_for_shell,
         )
     });
     let frame = receive

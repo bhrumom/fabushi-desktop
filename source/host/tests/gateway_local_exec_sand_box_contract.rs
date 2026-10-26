@@ -463,16 +463,24 @@ fn exec_manager_drives_real_os_process_to_bounded_terminal_result() {
     let working_dir = std::env::temp_dir().to_string_lossy().into_owned();
     let shell_manager = Arc::clone(&manager);
     let shell_working_dir = working_dir.clone();
+    let unique = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let agent_id = format!("agent-real-process-{unique}");
+    let op_id = format!("operation-real-process-{unique}");
+    let shell_agent_id = agent_id.clone();
+    let shell_op_id = op_id.clone();
     let shell = thread::spawn(move || {
         shell_manager.execute_shell(
             &GatewayLocalToolScope {
-                agent_id: Some("agent-real-process".into()),
-                tool_call_id: Some("operation-real-process".into()),
+                agent_id: Some(shell_agent_id),
+                tool_call_id: Some(shell_op_id.clone()),
                 action: Some("run-command".into()),
             },
             "echo fabushi-terminal-real-process",
             &shell_working_dir,
-            "operation-real-process",
+            &shell_op_id,
         )
     });
 
@@ -502,7 +510,7 @@ fn exec_manager_drives_real_os_process_to_bounded_terminal_result() {
     assert!(result.stdout.contains("fabushi-terminal-real-process"));
     assert_eq!(result.exit_code, Some(0));
     let settled = manager
-        .operation_for_agent("agent-real-process", "operation-real-process")
+        .operation_for_agent(&agent_id, &op_id)
         .expect("settled real operation");
     assert_eq!(settled.status, GatewayLocalExecOperationStatus::Completed);
     assert!(settled.stdout.contains("fabushi-terminal-real-process"));
@@ -539,16 +547,24 @@ fn exec_manager_cancel_maps_to_real_child_termination_and_history() {
     let working_dir = std::env::temp_dir().to_string_lossy().into_owned();
     let shell_manager = Arc::clone(&manager);
     let shell_working_dir = working_dir.clone();
+    let unique = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let agent_id = format!("agent-real-cancel-{unique}");
+    let op_id = format!("operation-real-cancel-{unique}");
+    let shell_agent_id = agent_id.clone();
+    let shell_op_id = op_id.clone();
     let shell = thread::spawn(move || {
         shell_manager.execute_shell(
             &GatewayLocalToolScope {
-                agent_id: Some("agent-real-cancel".into()),
-                tool_call_id: Some("operation-real-cancel".into()),
+                agent_id: Some(shell_agent_id),
+                tool_call_id: Some(shell_op_id.clone()),
                 action: Some("run-command".into()),
             },
             "echo fabushi-terminal-cancel-started",
             &shell_working_dir,
-            "operation-real-cancel",
+            &shell_op_id,
         )
     });
 
@@ -571,7 +587,7 @@ fn exec_manager_cancel_maps_to_real_child_termination_and_history() {
         "message":{"id":2,"shellStream":{"stdout":{"data":"fabushi-terminal-cancel-started\\n"}}}
     }]}));
 
-    assert!(manager.cancel_operation_for_agent("agent-real-cancel", "operation-real-cancel"));
+    assert!(manager.cancel_operation_for_agent(&agent_id, &op_id));
     let cancel = receive
         .recv_timeout(Duration::from_secs(2))
         .expect("provider cancel frame");
@@ -590,8 +606,8 @@ fn exec_manager_cancel_maps_to_real_child_termination_and_history() {
     assert_eq!(result.exit_code, Some(130));
     assert!(result.aborted);
     let settled = manager
-        .operation_for_agent("agent-real-cancel", "operation-real-cancel")
+        .operation_for_agent(&agent_id, &op_id)
         .expect("settled cancelled operation");
     assert_eq!(settled.status, GatewayLocalExecOperationStatus::Cancelled);
-    assert_eq!(manager.operation_history_for_agent("agent-real-cancel").len(), 1);
+    assert_eq!(manager.operation_history_for_agent(&agent_id).len(), 1);
 }
