@@ -384,4 +384,74 @@ pub fn select_attachments(
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MediaUnderstandingModelConfig {
+    pub provider: Option<String>,
+    pub model: Option<String>,
+    pub entry_type: Option<String>, // "provider" or "cli"
+    pub command: Option<String>,
+    pub capabilities: Option<Vec<MediaUnderstandingCapability>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MediaUnderstandingProviderEntry {
+    pub id: String,
+    pub capabilities: Option<Vec<MediaUnderstandingCapability>>,
+    pub shared_entry_capabilities: Option<Vec<MediaUnderstandingCapability>>,
+    pub inherit_configured_image_capability: bool,
+}
+
+pub fn resolve_configured_media_entry_capabilities(
+    entry: &MediaUnderstandingModelConfig,
+) -> Option<Vec<MediaUnderstandingCapability>> {
+    let caps = entry.capabilities.as_ref()?;
+    if caps.is_empty() {
+        None
+    } else {
+        Some(caps.clone())
+    }
+}
+
+pub fn resolve_effective_media_entry_capabilities(
+    entry: &MediaUnderstandingModelConfig,
+    provider_registry: &HashMap<String, MediaUnderstandingProviderEntry>,
+) -> Option<Vec<MediaUnderstandingCapability>> {
+    if let Some(configured) = resolve_configured_media_entry_capabilities(entry) {
+        return Some(configured);
+    }
+    let is_cli = entry.entry_type.as_deref() == Some("cli")
+        || (entry.entry_type.is_none() && entry.command.is_some());
+    if is_cli {
+        return None;
+    }
+    let provider_id = entry.provider.as_deref()?.trim().to_ascii_lowercase();
+    if provider_id.is_empty() {
+        return None;
+    }
+    let provider = provider_registry.get(&provider_id)?;
+    match &provider.shared_entry_capabilities {
+        None => provider.capabilities.clone(),
+        Some(shared) => {
+            let effective = provider.capabilities.as_ref()?;
+            let filtered: Vec<MediaUnderstandingCapability> = shared
+                .iter()
+                .filter(|c| effective.contains(c))
+                .copied()
+                .collect();
+            Some(filtered)
+        }
+    }
+}
+
+pub fn matches_media_entry_capability(
+    entry: &MediaUnderstandingModelConfig,
+    capability: MediaUnderstandingCapability,
+    provider_registry: &HashMap<String, MediaUnderstandingProviderEntry>,
+) -> bool {
+    resolve_effective_media_entry_capabilities(entry, provider_registry)
+        .map(|caps| caps.contains(&capability))
+        .unwrap_or(false)
+}
+
+
 

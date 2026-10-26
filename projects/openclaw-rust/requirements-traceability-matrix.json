@@ -683,7 +683,8 @@
         "BL-MEDIA-READ-CAPABILITY-CHAT-WIRING-001",
         "BL-MEDIA-REMOTE-WORKSPACE-CONSUMERS-001",
         "BL-MEDIA-WEB-PIPELINE-CONSUMERS-001",
-        "BL-MEDIA-UND-ATTACHMENTS-SELECT-CHAT-WIRING-001"
+        "BL-MEDIA-UND-ATTACHMENTS-SELECT-CHAT-WIRING-001",
+        "BL-MEDIA-UND-ENTRY-CAPABILITIES-CHAT-WIRING-001"
       ],
       "evidence_refs": [
         "projects/openclaw-rust/dossiers/audio-transcode-ffmpeg-scoped.md",
@@ -706,7 +707,8 @@
         "source/host/tests/openclaw_web_media_contract.rs",
         "source/host/tests/openclaw_pdf_and_parse_contract.rs",
         "projects/openclaw-rust/dossiers/media-pdf-and-parse-output-scoped.md",
-        "projects/openclaw-rust/dossiers/media-understanding-attachments-select-scoped.md"
+        "projects/openclaw-rust/dossiers/media-understanding-attachments-select-scoped.md",
+        "projects/openclaw-rust/dossiers/media-understanding-entry-capabilities-scoped.md"
       ],
       "gate_ids": [],
       "id": "OCRM-R24",
@@ -815,7 +817,8 @@
         "OCRM-RESP-MEDIA-VOICE-AUDIO-COMPAT-001",
         "OCRM-RESP-MEDIA-WEB-PIPELINE-001",
         "OCRM-RESP-PLAYBACK-CODEC-POLICY-001",
-        "OCRM-RESP-MEDIA-UND-ATTACHMENTS-SELECT-001"
+        "OCRM-RESP-MEDIA-UND-ATTACHMENTS-SELECT-001",
+        "OCRM-RESP-MEDIA-ENTRY-CAPABILITIES-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
@@ -1426,7 +1429,8 @@
         "BL-MEDIA-READ-CAPABILITY-CHAT-WIRING-001",
         "BL-MEDIA-REMOTE-WORKSPACE-CONSUMERS-001",
         "BL-MEDIA-WEB-PIPELINE-CONSUMERS-001",
-        "BL-MEDIA-UND-ATTACHMENTS-SELECT-CHAT-WIRING-001"
+        "BL-MEDIA-UND-ATTACHMENTS-SELECT-CHAT-WIRING-001",
+        "BL-MEDIA-UND-ENTRY-CAPABILITIES-CHAT-WIRING-001"
       ],
       "evidence_refs": [
         "projects/openclaw-rust/dossiers/audio-transcode-ffmpeg-scoped.md",
@@ -1449,7 +1453,8 @@
         "source/host/tests/openclaw_web_media_contract.rs",
         "source/host/tests/openclaw_pdf_and_parse_contract.rs",
         "projects/openclaw-rust/dossiers/media-pdf-and-parse-output-scoped.md",
-        "projects/openclaw-rust/dossiers/media-understanding-attachments-select-scoped.md"
+        "projects/openclaw-rust/dossiers/media-understanding-attachments-select-scoped.md",
+        "projects/openclaw-rust/dossiers/media-understanding-entry-capabilities-scoped.md"
       ],
       "gate_ids": [],
       "id": "OCRM-AC24",
@@ -1558,7 +1563,8 @@
         "OCRM-RESP-MEDIA-VOICE-AUDIO-COMPAT-001",
         "OCRM-RESP-MEDIA-WEB-PIPELINE-001",
         "OCRM-RESP-PLAYBACK-CODEC-POLICY-001",
-        "OCRM-RESP-MEDIA-UND-ATTACHMENTS-SELECT-001"
+        "OCRM-RESP-MEDIA-UND-ATTACHMENTS-SELECT-001",
+        "OCRM-RESP-MEDIA-ENTRY-CAPABILITIES-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     }

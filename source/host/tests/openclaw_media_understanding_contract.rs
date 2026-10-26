@@ -306,4 +306,85 @@ fn test_ocrm_media_und_o13_attachment_selection_policy_ordering_and_limits() {
     assert!(res_audio.selected.is_empty());
 }
 
+#[test]
+fn test_ocrm_media_und_o14_entry_capabilities_resolution_and_matching() {
+    use std::collections::HashMap;
+
+    let mut provider_registry = HashMap::new();
+    provider_registry.insert(
+        "acme".to_string(),
+        MediaUnderstandingProviderEntry {
+            id: "acme".to_string(),
+            capabilities: Some(vec![
+                MediaUnderstandingCapability::Audio,
+                MediaUnderstandingCapability::Image,
+            ]),
+            shared_entry_capabilities: Some(vec![
+                MediaUnderstandingCapability::Image,
+                MediaUnderstandingCapability::Video,
+            ]),
+            inherit_configured_image_capability: false,
+        },
+    );
+
+    // 1. Shared capabilities narrowed against effective capabilities -> ["image"]
+    let entry = MediaUnderstandingModelConfig {
+        provider: Some("acme".to_string()),
+        model: Some("acme-model".to_string()),
+        entry_type: None,
+        command: None,
+        capabilities: None,
+    };
+    let effective = resolve_effective_media_entry_capabilities(&entry, &provider_registry);
+    assert_eq!(effective, Some(vec![MediaUnderstandingCapability::Image]));
+    assert!(matches_media_entry_capability(
+        &entry,
+        MediaUnderstandingCapability::Image,
+        &provider_registry
+    ));
+    assert!(!matches_media_entry_capability(
+        &entry,
+        MediaUnderstandingCapability::Audio,
+        &provider_registry
+    ));
+
+    // 2. Explicitly configured capabilities take precedence
+    let explicit_entry = MediaUnderstandingModelConfig {
+        provider: Some("acme".to_string()),
+        model: Some("acme-model".to_string()),
+        entry_type: None,
+        command: None,
+        capabilities: Some(vec![MediaUnderstandingCapability::Video]),
+    };
+    let explicit_caps = resolve_effective_media_entry_capabilities(&explicit_entry, &provider_registry);
+    assert_eq!(explicit_caps, Some(vec![MediaUnderstandingCapability::Video]));
+
+    // 3. CLI entry suppresses capability inference
+    let cli_entry = MediaUnderstandingModelConfig {
+        provider: Some("acme".to_string()),
+        model: None,
+        entry_type: Some("cli".to_string()),
+        command: Some("ffmpeg".to_string()),
+        capabilities: None,
+    };
+    assert_eq!(
+        resolve_effective_media_entry_capabilities(&cli_entry, &provider_registry),
+        None
+    );
+
+    // 4. Unknown provider yields None
+    let unknown_entry = MediaUnderstandingModelConfig {
+        provider: Some("unknown".to_string()),
+        model: None,
+        entry_type: None,
+        command: None,
+        capabilities: None,
+    };
+    assert_eq!(
+        resolve_effective_media_entry_capabilities(&unknown_entry, &provider_registry),
+        None
+    );
+}
+
+
 

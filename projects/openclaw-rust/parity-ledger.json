@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 277,
+    "mapped_paths": 283,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58473
+    "unclassified_paths": 58467
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -6090,7 +6090,8 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_media_generation_contract.rs",
-        "projects/openclaw-rust/dossiers/media-generation-attachments-scoped.md"
+        "projects/openclaw-rust/dossiers/media-generation-attachments-scoped.md",
+        "projects/openclaw-rust/dossiers/media-understanding-entry-capabilities-scoped.md"
       ],
       "existing_owner_candidates": [
         {
@@ -6145,6 +6146,42 @@
             "start_line": 1
           },
           "symbol": "resolveDefaultMediaModel"
+        },
+        {
+          "blob_sha": "319545cc697418461a21bcfd5313413e9df0df37",
+          "path": "src/media-understanding/defaults.constants.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 2
+          },
+          "symbol": "media understanding defaults constants"
+        },
+        {
+          "blob_sha": "6654f9a7a0a2619b341df1836fdb341456d312a1",
+          "path": "src/media-understanding/defaults.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 134
+          },
+          "symbol": "media defaults test suite"
+        },
+        {
+          "blob_sha": "c6b7c887ac475ba8230a4947bd2a6fae24a7aaef",
+          "path": "src/media-understanding/defaults.generation.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 81
+          },
+          "symbol": "media defaults generation ownership test suite"
+        },
+        {
+          "blob_sha": "58050bf666b092d8c99e4faad2558a873f352a01",
+          "path": "src/media-understanding/config-provider-models.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 31
+          },
+          "symbol": "listImageCapableConfiguredProviders, resolveConfiguredMediaProviderCapabilities"
         }
       ],
       "status": {
@@ -14457,6 +14494,110 @@
         "select_attachments"
       ],
       "unit_id": "OCRM-UNIT-MEDIA-UND-002"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Media understanding model entry capability resolution, shared provider capability inference, and capability matching.",
+      "blocker_ids": [
+        "BL-MEDIA-UND-ENTRY-CAPABILITIES-CHAT-WIRING-001"
+      ],
+      "capability_ids": [
+        "media.understanding.entry_capabilities"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_understanding_service"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_understanding_contract.rs",
+        "projects/openclaw-rust/dossiers/media-understanding-entry-capabilities-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+          "reason": "Media understanding model entry capability resolver"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-ENTRY-CAPABILITIES-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "entrypoint": "source/host/src/extensions/attachments/media_understanding_service.rs::resolve_effective_media_entry_capabilities",
+        "owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "producer": "source/host/src/extensions/attachments/media_understanding_service.rs"
+      },
+      "invariants": [
+        "Explicitly configured entry capabilities override metadata and shared provider entries",
+        "Shared provider capabilities are strictly narrowed against the provider effective capability set",
+        "CLI entries explicitly suppress shared capability inference and return undefined"
+      ],
+      "migration_rollback": "Use unconstrained model configurations without shared capability inference",
+      "oracle_ids": [
+        "OCRM-MEDIA-UND-O14"
+      ],
+      "owner_decision": "Incorporate entry capability resolution and shared provider inference into media_understanding_service",
+      "postconditions": [
+        "Effective capabilities returned or capability match boolean calculated"
+      ],
+      "preconditions": [
+        "Media understanding model config entry and provider registry supplied"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; validates model capability alignment before dispatching media workloads",
+      "selected_owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
+      "source_refs": [
+        {
+          "blob_sha": "258aab74c8397fc17c262fdd386f4c5da9d85df7",
+          "path": "src/media-understanding/entry-capabilities.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 55
+          },
+          "symbol": "resolveConfiguredMediaEntryCapabilities, resolveEffectiveMediaEntryCapabilities, matchesMediaEntryCapability"
+        },
+        {
+          "blob_sha": "c27ce0d57afe41eceb62c82bc58add371f8bfb9d",
+          "path": "src/media-understanding/entry-capabilities.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 55
+          },
+          "symbol": "shared media entry capability inference test suite"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "symbol": "resolve_configured_media_entry_capabilities, resolve_effective_media_entry_capabilities, matches_media_entry_capability"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o14_entry_capabilities_resolution_and_matching"
+      ],
+      "typed_contracts": [
+        "resolve_configured_media_entry_capabilities",
+        "resolve_effective_media_entry_capabilities",
+        "matches_media_entry_capability"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-UND-003"
     }
   ],
   "schema_version": 1,
