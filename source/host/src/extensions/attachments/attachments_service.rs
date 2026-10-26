@@ -1755,14 +1755,24 @@ impl AttachmentsService {
             "convertBmpToPng" => (|| {
                 let b64 = args
                     .get("bytesBase64")
+                    .or_else(|| args.get("base64"))
+                    .or_else(|| args.get("data"))
                     .and_then(Value::as_str)
-                    .ok_or_else(|| "convertBmpToPng.bytesBase64 must be a string".to_string())?;
+                    .ok_or_else(|| "convertBmpToPng.base64 must be a string".to_string())?;
                 use base64::Engine;
                 let raw = base64::prelude::BASE64_STANDARD
                     .decode(b64)
                     .map_err(|e| format!("Invalid base64 payload: {e}"))?;
-                let png = crate::extensions::attachments::media_qr_png::convert_bmp_to_png(&raw)?;
-                Ok(Value::String(base64::prelude::BASE64_STANDARD.encode(&png)))
+                let png = crate::extensions::attachments::image_ops::convert_bmp_to_png(&raw)?;
+                let encoded = base64::prelude::BASE64_STANDARD.encode(&png);
+                if args.get("base64").is_some() || args.get("data").is_some() {
+                    Ok(serde_json::json!({
+                        "data": encoded,
+                        "mimeType": "image/png"
+                    }))
+                } else {
+                    Ok(Value::String(encoded))
+                }
             })(),
             "formatMediaSize" => {
                 let bytes = args
@@ -1850,6 +1860,67 @@ impl AttachmentsService {
                     .unwrap_or("");
                 Ok(Value::String(crate::extensions::attachments::media_store::extract_original_filename(path)))
             }
+            "readImageMetadata" => (|| {
+                let base64_str = args
+                    .get("base64")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| "readImageMetadata.base64 must be a string".to_string())?;
+                use base64::Engine as _;
+                let bytes = base64::engine::general_purpose::STANDARD
+                    .decode(base64_str)
+                    .map_err(|e| format!("Invalid base64: {e}"))?;
+                let meta = crate::extensions::attachments::image_ops::read_image_metadata_from_header(&bytes);
+                Ok(serde_json::to_value(meta).unwrap_or(Value::Null))
+            })(),
+            "isAnimatedWebp" => (|| {
+                let base64_str = args
+                    .get("base64")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| "isAnimatedWebp.base64 must be a string".to_string())?;
+                use base64::Engine as _;
+                let bytes = base64::engine::general_purpose::STANDARD
+                    .decode(base64_str)
+                    .map_err(|e| format!("Invalid base64: {e}"))?;
+                Ok(Value::Bool(crate::extensions::attachments::image_ops::is_animated_webp_buffer(&bytes)))
+            })(),
+            "isStillPng" => (|| {
+                let base64_str = args
+                    .get("base64")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| "isStillPng.base64 must be a string".to_string())?;
+                use base64::Engine as _;
+                let bytes = base64::engine::general_purpose::STANDARD
+                    .decode(base64_str)
+                    .map_err(|e| format!("Invalid base64: {e}"))?;
+                Ok(Value::Bool(crate::extensions::attachments::image_ops::is_still_png_buffer(&bytes)))
+            })(),
+            "buildImageResizeSideGrid" => (|| {
+                let max_side = args.get("maxSide").and_then(Value::as_u64).unwrap_or(0) as u32;
+                let side_start = args.get("sideStart").and_then(Value::as_u64).unwrap_or(0) as u32;
+                let grid = crate::extensions::attachments::image_ops::build_image_resize_side_grid(max_side, side_start);
+                Ok(serde_json::to_value(grid).unwrap_or(Value::Array(Vec::new())))
+            })(),
+            "prepareAttachment" => (|| {
+                let input: crate::extensions::attachments::image_ops::AttachmentInput = serde_json::from_value(args.clone())
+                    .map_err(|e| format!("Invalid AttachmentInput: {e}"))?;
+                let prepared = crate::extensions::attachments::image_ops::prepare_attachment(&input)?;
+                Ok(serde_json::to_value(prepared).unwrap_or(Value::Null))
+            })(),
+            "normalizeAnthropicInlineImage" => (|| {
+                let data = args
+                    .get("data")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| "normalizeAnthropicInlineImage.data must be a string".to_string())?;
+                let mime = args
+                    .get("mimeType")
+                    .and_then(Value::as_str)
+                    .unwrap_or("image/jpeg");
+                let (norm_data, norm_mime) = crate::extensions::attachments::image_ops::normalize_anthropic_inline_image(data, mime)?;
+                Ok(serde_json::json!({
+                    "data": norm_data,
+                    "mimeType": norm_mime
+                }))
+            })(),
             _ => return None,
         };
         Some(result)

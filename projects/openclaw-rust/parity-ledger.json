@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 193,
+    "mapped_paths": 203,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58557
+    "unclassified_paths": 58547
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -7911,7 +7911,9 @@
     {
       "adr_refs": [],
       "behavior": "Attachment payload validation and preparation, calculating exact base64 decoded size and enforcing bounds limits before materialization.",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "BL-MEDIA-ATTACHMENT-PROCESSOR-CONSUMERS-001"
+      ],
       "capability_ids": [
         "media.attachment_processor"
       ],
@@ -7965,7 +7967,7 @@
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
       "risk": "Low; protects system memory against unbounded base64 decoding bombs",
-      "selected_owner": "source/host/src/attachment_paths.rs",
+      "selected_owner": "source/host/src/extensions/attachments/image_ops.rs",
       "source_refs": [
         {
           "blob_sha": "0dc184f58bfa76877108d9d57eaa3a3f06e59bd1",
@@ -7975,15 +7977,33 @@
             "start_line": 1
           },
           "symbol": "validateAndPrepareAttachmentPayload"
+        },
+        {
+          "path": "src/media/attachment-processor.runtime.ts",
+          "blob_sha": "0fcf4ed44b34069328b3bac5bef2a6b0c4a0f4b4",
+          "range": {
+            "start_line": 1,
+            "end_line": 71
+          },
+          "symbol": "prepareAttachment, isGenericContainerMime, ATTACHMENT_OFFLOAD_THRESHOLD_BYTES"
+        },
+        {
+          "path": "src/media/attachment-processor.worker.ts",
+          "blob_sha": "f17ac5981ec76e822bdda51eae5591bf762098b2",
+          "range": {
+            "start_line": 1,
+            "end_line": 12
+          },
+          "symbol": "serveWorkerTasks, prepareAttachment"
         }
       ],
       "status": {
-        "acceptance": "pending",
-        "implementation": "implemented",
-        "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "verified",
-        "wiring": "wired"
+        "mapping": "reviewed",
+        "implementation": "implemented",
+        "wiring": "not-wired",
+        "verification": "not-run",
+        "acceptance": "pending"
       },
       "target": {
         "language": "Rust",
@@ -7991,12 +8011,12 @@
         "symbol": "validate_and_prepare_attachment_payload"
       },
       "tests": [
-        "source/host/tests/openclaw_crash_guard_media_contract.rs::test_ocrm_media_o05_attachment_processor_size_limits"
+        "source/host/tests/openclaw_image_ops_contract.rs::test_ocrm_image_ops_prepare_attachment"
       ],
       "typed_contracts": [
         "validate_and_prepare_attachment_payload"
       ],
-      "unit_id": "OCRM-UNIT-MEDIA-001"
+      "unit_id": "OCRM-UNIT-MEDIA-009"
     },
     {
       "adr_refs": [],
@@ -11030,7 +11050,7 @@
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
       "risk": "Low; prevents memory exhaustion during image decoding/conversion operations",
-      "selected_owner": "source/host/src/extensions/attachments/media_file_context.rs",
+      "selected_owner": "source/host/src/extensions/attachments/image_ops.rs",
       "source_refs": [
         {
           "blob_sha": "c427946d91b46885bd0da80d5c488d56b7f2599f",
@@ -11067,15 +11087,42 @@
             "start_line": 1
           },
           "symbol": "media-services"
+        },
+        {
+          "path": "src/media/image-processor.ts",
+          "blob_sha": "dc10fca84534218baa58fd9614ec4656bc64f843",
+          "range": {
+            "start_line": 1,
+            "end_line": 119
+          },
+          "symbol": "createImageProcessor, createImageProcessorWithPixelLimits, convertBmpToPngWithWorker"
+        },
+        {
+          "path": "src/media/image-processor.worker.ts",
+          "blob_sha": "ee115ba30b9152be338bb278055214a445b09f92",
+          "range": {
+            "start_line": 1,
+            "end_line": 51
+          },
+          "symbol": "serveWorkerTasks, encode, transparency, bmpToPng"
+        },
+        {
+          "path": "src/media/image-processor.pixel-limits.test.ts",
+          "blob_sha": "f4941c67fbdf8f0de17c19c2cb94c8a0b14d3a59",
+          "range": {
+            "start_line": 1,
+            "end_line": 30
+          },
+          "symbol": "operation-specific pixel limits tests"
         }
       ],
       "status": {
-        "acceptance": "pending",
-        "implementation": "implemented",
-        "mapping": "reviewed",
         "read": "read-complete",
+        "mapping": "reviewed",
+        "implementation": "implemented",
+        "wiring": "not-wired",
         "verification": "not-run",
-        "wiring": "not-wired"
+        "acceptance": "pending"
       },
       "target": {
         "language": "Rust",
@@ -11090,11 +11137,11 @@
         "ImageOptimizationLimitError",
         "ImageProcessorOperation"
       ],
-      "unit_id": "OCRM-UNIT-MEDIA-006"
+      "unit_id": "OCRM-UNIT-MEDIA-009"
     },
     {
       "adr_refs": [],
-      "behavior": "Terminal ANSI QR text renderer supporting compact half-block characters (█, ▀, ▄, space), 1-module margin, quiet zone black-on-white formatting, and standard full-block terminal fallback.",
+      "behavior": "Terminal ANSI QR text renderer supporting compact half-block characters (\u2588, \u2580, \u2584, space), 1-module margin, quiet zone black-on-white formatting, and standard full-block terminal fallback.",
       "blocker_ids": [
         "BL-MEDIA-QR-TERMINAL-CALLER-001"
       ],
@@ -11454,7 +11501,7 @@
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
       "risk": "Low; provides safe pure-Rust BMP parsing without external WASM dependencies",
-      "selected_owner": "source/host/src/extensions/attachments/media_qr_png.rs",
+      "selected_owner": "source/host/src/extensions/attachments/image_ops.rs",
       "source_refs": [
         {
           "blob_sha": "1089b4ede000a03e5746f23cc449df7025f02735",
@@ -11464,15 +11511,24 @@
             "start_line": 1
           },
           "symbol": "convertBmpToPngWithPhoton"
+        },
+        {
+          "path": "src/media/photon.runtime.test.ts",
+          "blob_sha": "3a32779f6217527b39be304c146927b93d6fc397",
+          "range": {
+            "start_line": 1,
+            "end_line": 28
+          },
+          "symbol": "Photon BMP pixel decode tests"
         }
       ],
       "status": {
-        "acceptance": "pending",
-        "implementation": "implemented",
-        "mapping": "reviewed",
         "read": "read-complete",
+        "mapping": "reviewed",
+        "implementation": "implemented",
+        "wiring": "not-wired",
         "verification": "not-run",
-        "wiring": "not-wired"
+        "acceptance": "pending"
       },
       "target": {
         "language": "Rust",
@@ -11480,12 +11536,12 @@
         "symbol": "convert_bmp_to_png"
       },
       "tests": [
-        "source/host/tests/openclaw_qr_png_contract.rs::test_ocrm_bmp_to_png_conversion"
+        "source/host/tests/openclaw_image_ops_contract.rs::test_ocrm_image_ops_bmp_to_png_conversion_and_pixel_limit"
       ],
       "typed_contracts": [
         "convert_bmp_to_png"
       ],
-      "unit_id": "OCRM-UNIT-MEDIA-007"
+      "unit_id": "OCRM-UNIT-MEDIA-009"
     },
     {
       "adr_refs": [],
@@ -12113,6 +12169,147 @@
       "adr_refs": [],
       "evidence_refs": [
         "source/host/tests/openclaw_media_store_contract.rs"
+      ]
+    },
+    {
+      "id": "OCRM-RESP-MEDIA-IMAGE-OPS-001",
+      "unit_id": "OCRM-UNIT-MEDIA-009",
+      "capability_ids": [
+        "media.image_ops"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "status": {
+        "read": "read-complete",
+        "mapping": "reviewed",
+        "implementation": "implemented",
+        "wiring": "not-wired",
+        "verification": "not-run",
+        "acceptance": "pending"
+      },
+      "reviewer": "xuyao@ombhrum.com",
+      "behavior": "Build descending deduplicated image resize side grids, maintain reduce/within-budget quality steps ladder, detect animated WebP via VP8X RFC 9649 animation bit, verify still PNG via chunk scan (up to 512 chunks rejecting acTL before IDAT), extract image metadata swapping axes for EXIF orientations 5-8, and normalize Anthropic inline images converting BMP to PNG.",
+      "invariants": [
+        "EXIF orientations 5..8 swap display width and height without decoding image pixels",
+        "VP8X animation bit 0x02 accurately flags animated WebP before single-frame transcode",
+        "PNG chunk scan rejects acTL before IDAT to prevent APNG animation stripping",
+        "Resize side grid produces descending deduplicated positive values"
+      ],
+      "preconditions": [
+        "Valid image header bytes or dimensions within budget"
+      ],
+      "postconditions": [
+        "Correct display metadata returned, animated images preserved or flagged, inline images normalized"
+      ],
+      "selected_owner": "source/host/src/extensions/attachments/image_ops.rs",
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_qr_png.rs",
+          "reason": "PNG and BMP codec helpers"
+        },
+        {
+          "path": "source/host/src/extensions/attachments/link_preview_image_bounds.rs",
+          "reason": "Header image dimension bounds"
+        }
+      ],
+      "owner_decision": "Implement dedicated native image_ops module centralizing image operations, probe decoding, orientation normalization, and attachment preprocessing",
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/image_ops.rs",
+        "symbol": "build_image_resize_side_grid, is_animated_webp_buffer, is_still_png_buffer, read_image_probe_from_header, read_image_metadata_from_header, convert_bmp_to_png, prepare_attachment, normalize_anthropic_inline_image"
+      },
+      "source_refs": [
+        {
+          "path": "src/media/image-ops.ts",
+          "blob_sha": "a3570b0fdbb410f26fc58596910152d45e6832b8",
+          "range": {
+            "start_line": 1,
+            "end_line": 236
+          },
+          "symbol": "buildImageResizeSideGrid, IMAGE_REDUCE_QUALITY_STEPS, readImageMetadataFromHeader, isAnimatedWebpBuffer, isStillPngBuffer, convertBmpToPngWithWorker, convertImageToPng, resizeToJpeg, encodeImageWithinBytes"
+        },
+        {
+          "path": "src/media/image-ops.helpers.test.ts",
+          "blob_sha": "339087517caf0f8325b9116262a1498b37002d78",
+          "range": {
+            "start_line": 1,
+            "end_line": 20
+          },
+          "symbol": "buildImageResizeSideGrid, IMAGE_REDUCE_QUALITY_STEPS tests"
+        },
+        {
+          "path": "src/media/image-ops.rastermill-adapter.test.ts",
+          "blob_sha": "8d636e43f72edb6ea0a9456eba89a5214437fb41",
+          "range": {
+            "start_line": 1,
+            "end_line": 297
+          },
+          "symbol": "image ops Rastermill adapter and EXIF orientation swap tests"
+        },
+        {
+          "path": "src/media/image-ops.worker.test.ts",
+          "blob_sha": "e8f86c0e02c3a858a5d3a9fcc5608fe1e46f03fb",
+          "range": {
+            "start_line": 1,
+            "end_line": 97
+          },
+          "symbol": "image worker tests and inline BMP normalization"
+        }
+      ],
+      "integration": {
+        "producer": "AttachmentsService::dispatch_gateway",
+        "owner": "source/host/src/extensions/attachments/image_ops.rs",
+        "consumer": "Pending chat image resize and preview UI consumers (currently only gateway dispatch)",
+        "entrypoint": "source/host/src/extensions/attachments/attachments_service.rs::dispatch_gateway"
+      },
+      "tests": [
+        "source/host/tests/openclaw_image_ops_contract.rs::test_ocrm_image_ops_build_resize_side_grid",
+        "source/host/tests/openclaw_image_ops_contract.rs::test_ocrm_image_ops_quality_steps_ladder",
+        "source/host/tests/openclaw_image_ops_contract.rs::test_ocrm_image_ops_animated_webp_detection",
+        "source/host/tests/openclaw_image_ops_contract.rs::test_ocrm_image_ops_still_png_and_apng_detection",
+        "source/host/tests/openclaw_image_ops_contract.rs::test_ocrm_image_ops_display_metadata_orientation_swap",
+        "source/host/tests/openclaw_image_ops_contract.rs::test_ocrm_image_ops_bmp_to_png_conversion_and_pixel_limit",
+        "source/host/tests/openclaw_image_ops_contract.rs::test_ocrm_image_ops_prepare_attachment",
+        "source/host/tests/openclaw_image_ops_contract.rs::test_ocrm_image_ops_normalize_anthropic_inline_image",
+        "source/host/tests/openclaw_image_ops_contract.rs::test_ocrm_image_ops_gateway_dispatch"
+      ],
+      "typed_contracts": [
+        "build_image_resize_side_grid(max_side: u32, side_start: u32) -> Vec<u32>",
+        "is_animated_webp_buffer(buffer: &[u8]) -> bool",
+        "is_still_png_buffer(buffer: &[u8]) -> bool",
+        "read_image_metadata_from_header(buffer: &[u8]) -> Option<ImageMetadata>",
+        "convert_bmp_to_png(buffer: &[u8]) -> Result<Vec<u8>, String>",
+        "prepare_attachment(input: &AttachmentInput) -> Result<PreparedAttachment, String>",
+        "normalize_anthropic_inline_image(data_base64: &str, declared_mime: &str) -> Result<(String, String), String>"
+      ],
+      "oracle_ids": [
+        "OCRM-IMAGE-OPS-O01",
+        "OCRM-IMAGE-OPS-O02",
+        "OCRM-IMAGE-OPS-O03"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "blocker_ids": [
+        "BL-MEDIA-IMAGE-OPS-CONSUMERS-001"
+      ],
+      "risk": "Low; header inspection without full decode prevents memory exhaustion and preserves animation",
+      "migration_rollback": "Fallback to raw attachment bytes",
+      "dependencies": [
+        "source/host/src/extensions/attachments/media_qr_png.rs"
+      ],
+      "adr_refs": [],
+      "evidence_refs": [
+        "source/host/tests/openclaw_image_ops_contract.rs"
       ]
     }
   ],

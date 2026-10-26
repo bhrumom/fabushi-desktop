@@ -661,7 +661,10 @@
     },
     {
       "acceptance_status": "in-progress",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "BL-MEDIA-IMAGE-OPS-CONSUMERS-001",
+        "BL-MEDIA-ATTACHMENT-PROCESSOR-CONSUMERS-001"
+      ],
       "evidence_refs": [
         "projects/openclaw-rust/dossiers/audio-transcode-ffmpeg-scoped.md",
         "projects/openclaw-rust/dossiers/media-generation-attachments-scoped.md",
@@ -754,7 +757,8 @@
         "OCRM-RESP-MEDIA-STORE-READ-SCOPE-001",
         "OCRM-RESP-MEDIA-STORE-LIFECYCLE-001",
         "OCRM-RESP-MEDIA-STORE-REMOTE-001",
-        "OCRM-RESP-MEDIA-STORE-TEST-SUPPORT-001"
+        "OCRM-RESP-MEDIA-STORE-TEST-SUPPORT-001",
+        "OCRM-RESP-MEDIA-IMAGE-OPS-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
@@ -1343,7 +1347,10 @@
     },
     {
       "acceptance_status": "in-progress",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "BL-MEDIA-IMAGE-OPS-CONSUMERS-001",
+        "BL-MEDIA-ATTACHMENT-PROCESSOR-CONSUMERS-001"
+      ],
       "evidence_refs": [
         "projects/openclaw-rust/dossiers/audio-transcode-ffmpeg-scoped.md",
         "projects/openclaw-rust/dossiers/media-generation-attachments-scoped.md",
@@ -1436,7 +1443,8 @@
         "OCRM-RESP-MEDIA-STORE-READ-SCOPE-001",
         "OCRM-RESP-MEDIA-STORE-LIFECYCLE-001",
         "OCRM-RESP-MEDIA-STORE-REMOTE-001",
-        "OCRM-RESP-MEDIA-STORE-TEST-SUPPORT-001"
+        "OCRM-RESP-MEDIA-STORE-TEST-SUPPORT-001",
+        "OCRM-RESP-MEDIA-IMAGE-OPS-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     }

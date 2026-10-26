@@ -348,7 +348,9 @@
       "first_path": "src/infra/update-startup-campaign-run.test.ts",
       "last_path": "src/plugin-sdk/agent-sessions.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0042.jsonl.gz",
-      "uncompressed_sha256": "3208ba89d8da15c0a26b35c63f965ae016e2e905642a262705ff2e9864863d5e"
+      "uncompressed_sha256": "3208ba89d8da15c0a26b35c63f965ae016e2e905642a262705ff2e9864863d5e",
+      "sha256": "cd5d7a78c3a37fa5ec39bb0ef2f10a03bd6825b6fd7e61c01ca440020bfe7c58",
+      "size_bytes": 49002
     },
     {
       "compressed_sha256": "412b84f956dcebb7a98613e3839d9571f4b0c9f44e826c68964a076d0437c0fa",
