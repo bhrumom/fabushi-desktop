@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 167,
+    "mapped_paths": 176,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58583
+    "unclassified_paths": 58574
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -10507,6 +10507,584 @@
         "has_prompt_image_input"
       ],
       "unit_id": "OCRM-UNIT-MEDIA-005"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Renders sanitized attachment text as a model-visible <file> block with attribute XML escaping (&, <, >, \", ') and escaping of injected </file> and <file markers in content body, supporting compact single-line mode.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "media.file_context"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_file_context"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_file_context_contract.rs",
+        "projects/openclaw-rust/dossiers/media-file-context-local-path-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/attachments_service.rs",
+          "reason": "Authoritative attachment service and gateway bridge"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-FILE-CONTEXT-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/attachments_service.rs::dispatch_gateway",
+        "entrypoint": "source/host/src/extensions/attachments/attachments_service.rs::dispatch_gateway(\"renderFileContext\")",
+        "owner": "source/host/src/extensions/attachments/media_file_context.rs::render_file_context_block",
+        "producer": "source/host/src/extensions/attachments/attachments_service.rs"
+      },
+      "invariants": [
+        "File tag closing markers </file> in content replaced with &lt;/file&gt;",
+        "File tag opening markers <file in content replaced with &lt;file",
+        "Filename XML attribute values escaped for quotes and brackets"
+      ],
+      "migration_rollback": "Use unescaped raw string interpolation for attachment blocks",
+      "oracle_ids": [
+        "OCRM-FILE-CTX-O01",
+        "OCRM-FILE-CTX-O02",
+        "OCRM-FILE-CTX-O08"
+      ],
+      "owner_decision": "Extend AttachmentsService gateway dispatch and provide standalone native helper in media_file_context.rs",
+      "postconditions": [
+        "Sanitized XML file block string returned to caller"
+      ],
+      "preconditions": [
+        "Content string and optional filename/mime provided"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "contract",
+        "injection-protection"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; eliminates prompt injection via untrusted attachment filenames or fake </file> tags",
+      "selected_owner": "source/host/src/extensions/attachments/media_file_context.rs",
+      "source_refs": [
+        {
+          "blob_sha": "fd5986503de5dd96a3ca64f9603d080c374e3419",
+          "path": "src/media/file-context.ts",
+          "range": {
+            "end_line": 34,
+            "start_line": 1
+          },
+          "symbol": "renderFileContextBlock"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_file_context.rs",
+        "symbol": "render_file_context_block"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_file_context_contract.rs::test_ocrm_file_ctx_01_xml_attribute_escaping_and_sanitization",
+        "source/host/tests/openclaw_media_file_context_contract.rs::test_ocrm_file_ctx_02_render_file_context_block_escaping",
+        "source/host/tests/openclaw_media_file_context_contract.rs::test_ocrm_file_ctx_08_gateway_service_dispatch"
+      ],
+      "typed_contracts": [
+        "render_file_context_block(params: RenderFileContextParams) -> String"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-006"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Resolves raw media reference string to local filesystem PathBuf when not a remote URL or data URL, normalizing single-slash and mixed-case file URLs, rejecting UNC hostnames and encoded traversal separators (%2f, %5c), and expanding tilde home directory paths.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "media.local_path"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::connectors::channel_attachment"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_file_context_contract.rs",
+        "projects/openclaw-rust/dossiers/media-file-context-local-path-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/connectors/channel_attachment.rs",
+          "reason": "Channel attachment local path resolution pipeline"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-LOCAL-PATH-001",
+      "integration": {
+        "consumer": "source/host/src/connectors/channel_attachment.rs::resolve_channel_attachment",
+        "entrypoint": "source/host/src/connectors/channel_attachment.rs::to_local_channel_attachment_path",
+        "owner": "source/host/src/extensions/attachments/media_file_context.rs::resolve_local_media_path",
+        "producer": "source/host/src/connectors/channel_attachment.rs"
+      },
+      "invariants": [
+        "Remote media URLs (http, https, media, blob, data) return None",
+        "File URLs containing %2f or %5c return None to prevent path traversal",
+        "UNC hostnames return None"
+      ],
+      "migration_rollback": "Fallback to standard Url::to_file_path without UNC / traversal checks",
+      "oracle_ids": [
+        "OCRM-FILE-CTX-O03",
+        "OCRM-FILE-CTX-O08"
+      ],
+      "owner_decision": "Implement resolve_local_media_path in media_file_context and wire directly into channel_attachment.rs to_local_channel_attachment_path",
+      "postconditions": [
+        "Normalized local PathBuf returned if valid local source, None otherwise"
+      ],
+      "preconditions": [
+        "Raw media source string received"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "contract",
+        "security-traversal"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; hardens local file path resolution against URL encoding exploit vectors",
+      "selected_owner": "source/host/src/extensions/attachments/media_file_context.rs",
+      "source_refs": [
+        {
+          "blob_sha": "f105ca514b5754849284c429b032af30d1487f1a",
+          "path": "src/media/local-media-path.ts",
+          "range": {
+            "end_line": 29,
+            "start_line": 1
+          },
+          "symbol": "resolveLocalMediaPath"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_file_context.rs",
+        "symbol": "resolve_local_media_path"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_file_context_contract.rs::test_ocrm_file_ctx_03_resolve_local_media_path",
+        "source/host/tests/openclaw_media_file_context_contract.rs::test_ocrm_file_ctx_08_gateway_service_dispatch"
+      ],
+      "typed_contracts": [
+        "resolve_local_media_path(source: &str) -> Option<PathBuf>"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-006"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Best-effort temporary file cleanup helper for optional file paths produced during media conversion and staging flows, gracefully ignoring missing files.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "media.temp_cleanup"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_file_context"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_file_context_contract.rs",
+        "projects/openclaw-rust/dossiers/media-file-context-local-path-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_file_context.rs",
+          "reason": "Media utilities and file context module"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-TEMP-CLEANUP-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/media_file_context.rs::unlink_if_exists",
+        "entrypoint": "source/host/src/extensions/attachments/media_file_context.rs::unlink_if_exists",
+        "owner": "source/host/src/extensions/attachments/media_file_context.rs",
+        "producer": "source/host/src/extensions/attachments/media_file_context.rs"
+      },
+      "invariants": [
+        "Non-existent file paths do not return an error or panic",
+        "None path inputs are silently ignored"
+      ],
+      "migration_rollback": "Use std::fs::remove_file directly with ignored results",
+      "oracle_ids": [
+        "OCRM-FILE-CTX-O04"
+      ],
+      "owner_decision": "Implement unlink_if_exists in media_file_context.rs",
+      "postconditions": [
+        "Target file deleted from disk if it existed"
+      ],
+      "preconditions": [
+        "Optional file path reference provided"
+      ],
+      "required_evidence_dimensions": [
+        "unit"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "None; prevents filesystem disk leaks from intermediate media conversions",
+      "selected_owner": "source/host/src/extensions/attachments/media_file_context.rs",
+      "source_refs": [
+        {
+          "blob_sha": "0bbafd218ede309730b383c1ae45c77a3db3d409",
+          "path": "src/media/temp-files.ts",
+          "range": {
+            "end_line": 21,
+            "start_line": 1
+          },
+          "symbol": "unlinkIfExists"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_file_context.rs",
+        "symbol": "unlink_if_exists"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_file_context_contract.rs::test_ocrm_file_ctx_04_unlink_if_exists"
+      ],
+      "typed_contracts": [
+        "unlink_if_exists(file_path: Option<&Path>)"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-006"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Formats structured notice for partial document text or page extractions, reflecting automatic selection limits, explicit user limits, and text/image truncation flags.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "media.doc_truncation"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_file_context"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_file_context_contract.rs",
+        "projects/openclaw-rust/dossiers/media-file-context-local-path-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/attachments_service.rs",
+          "reason": "Attachment service document preview pipeline"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-DOC-TRUNCATION-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/attachments_service.rs::dispatch_gateway",
+        "entrypoint": "source/host/src/extensions/attachments/attachments_service.rs::dispatch_gateway(\"renderDocumentTruncation\")",
+        "owner": "source/host/src/extensions/attachments/media_file_context.rs::render_document_truncation_notice",
+        "producer": "source/host/src/extensions/attachments/attachments_service.rs"
+      },
+      "invariants": [
+        "Returns None when metadata contains no truncation flags and no explicit selection limit is set",
+        "Formats notice as [Partial document: <reasons>.]"
+      ],
+      "migration_rollback": "Return raw unannotated document extraction text",
+      "oracle_ids": [
+        "OCRM-FILE-CTX-O05",
+        "OCRM-FILE-CTX-O08"
+      ],
+      "owner_decision": "Implement render_document_truncation_notice in media_file_context.rs and bridge to AttachmentsService gateway dispatch",
+      "postconditions": [
+        "Formatted truncation string returned if partial, None otherwise"
+      ],
+      "preconditions": [
+        "Optional extraction metadata and optional selection limit provided"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "contract"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "None; ensures agent awareness of omitted document pages or truncated text",
+      "selected_owner": "source/host/src/extensions/attachments/media_file_context.rs",
+      "source_refs": [
+        {
+          "blob_sha": "988d38f46a181c06a477b9538ac21e12fc0df5c0",
+          "path": "src/media/document-extraction-metadata.ts",
+          "range": {
+            "end_line": 25,
+            "start_line": 1
+          },
+          "symbol": "renderDocumentTruncationNotice"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_file_context.rs",
+        "symbol": "render_document_truncation_notice"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_file_context_contract.rs::test_ocrm_file_ctx_05_document_truncation_notice",
+        "source/host/tests/openclaw_media_file_context_contract.rs::test_ocrm_file_ctx_08_gateway_service_dispatch"
+      ],
+      "typed_contracts": [
+        "render_document_truncation_notice(metadata: Option<&DocumentExtractionMetadata>, explicit_selection_limit: Option<usize>) -> Option<String>"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-006"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Carries prompt image fact ownership indexes across provider-visible message payload structures without altering provider-visible bytes or schema contracts.",
+      "blocker_ids": [
+        "BL-MEDIA-PROMPT-IMAGE-PROVENANCE-UPSTREAM-001"
+      ],
+      "capability_ids": [
+        "media.prompt_image_provenance"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_file_context"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_file_context_contract.rs",
+        "projects/openclaw-rust/dossiers/media-file-context-local-path-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_file_context.rs",
+          "reason": "Media file context module"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-PROMPT-IMAGE-PROVENANCE-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/inference/provider_session.rs (pending upstream prompt assembler integration)",
+        "entrypoint": "source/host/src/extensions/attachments/media_file_context.rs::finalize_runtime_prompt_images",
+        "owner": "source/host/src/extensions/attachments/media_file_context.rs",
+        "producer": "source/host/src/extensions/attachments/media_file_context.rs"
+      },
+      "invariants": [
+        "Image fact index list length matches finalized prompt images array length",
+        "Empty images bundle returns None fact indexes"
+      ],
+      "migration_rollback": "Pass prompt images without fact index ownership metadata",
+      "oracle_ids": [
+        "OCRM-FILE-CTX-O06"
+      ],
+      "owner_decision": "Implement finalize_runtime_prompt_images and read_runtime_prompt_image_fact_indexes in media_file_context.rs",
+      "postconditions": [
+        "Finalized prompt image bundle with parallel fact index array created"
+      ],
+      "preconditions": [
+        "List of runtime prompt image entries provided"
+      ],
+      "required_evidence_dimensions": [
+        "unit"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; preserves provenance between user turn attachments and LLM prompt images",
+      "selected_owner": "source/host/src/extensions/attachments/media_file_context.rs",
+      "source_refs": [
+        {
+          "blob_sha": "c0b2fc87db982a0da6478a1cad8e57f915bfd81f",
+          "path": "src/media/runtime-prompt-image-provenance.ts",
+          "range": {
+            "end_line": 36,
+            "start_line": 1
+          },
+          "symbol": "finalizeRuntimePromptImages"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_file_context.rs",
+        "symbol": "finalize_runtime_prompt_images"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_file_context_contract.rs::test_ocrm_file_ctx_06_runtime_prompt_image_provenance"
+      ],
+      "typed_contracts": [
+        "finalize_runtime_prompt_images(entries: &[RuntimePromptImageEntry]) -> FinalizedPromptImages"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-006"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Contracts and error types for image processor limits (MAX_IMAGE_INPUT_PIXELS=25,000,000), ImageProcessorPixelLimits, ImageOptimizationLimitError byte budgeting, and image operations (encode, transparency, bmpToPng).",
+      "blocker_ids": [
+        "BL-MEDIA-IMAGE-PROCESSOR-RASTERMILL-001"
+      ],
+      "capability_ids": [
+        "media.image_processor_spec"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_file_context"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_file_context_contract.rs",
+        "projects/openclaw-rust/dossiers/media-file-context-local-path-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_file_context.rs",
+          "reason": "Media utilities and image contracts"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-IMAGE-PROCESSOR-SPEC-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/image_ops.rs (pending native image processing worker integration)",
+        "entrypoint": "source/host/src/extensions/attachments/media_file_context.rs::MAX_IMAGE_INPUT_PIXELS",
+        "owner": "source/host/src/extensions/attachments/media_file_context.rs",
+        "producer": "source/host/src/extensions/attachments/media_file_context.rs"
+      },
+      "invariants": [
+        "MAX_IMAGE_INPUT_PIXELS is exactly 25,000,000 pixels",
+        "Default ImageProcessorPixelLimits allocates 25,000,000 input and output pixels"
+      ],
+      "migration_rollback": "Use unconstrained image decoding limits",
+      "oracle_ids": [
+        "OCRM-FILE-CTX-O07"
+      ],
+      "owner_decision": "Implement image processor contracts, limits, and error types in media_file_context.rs",
+      "postconditions": [
+        "Typed contracts and error types defined for image operations"
+      ],
+      "preconditions": [
+        "Image processing request initiated"
+      ],
+      "required_evidence_dimensions": [
+        "unit"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; prevents memory exhaustion during image decoding/conversion operations",
+      "selected_owner": "source/host/src/extensions/attachments/media_file_context.rs",
+      "source_refs": [
+        {
+          "blob_sha": "c427946d91b46885bd0da80d5c488d56b7f2599f",
+          "path": "src/media/image-optimization-error.ts",
+          "range": {
+            "end_line": 10,
+            "start_line": 1
+          },
+          "symbol": "ImageOptimizationLimitError"
+        },
+        {
+          "blob_sha": "96475b37a8e9413a1c54b603a3cf642e978d676c",
+          "path": "src/media/image-processor-config.ts",
+          "range": {
+            "end_line": 27,
+            "start_line": 1
+          },
+          "symbol": "createLocalImageProcessor"
+        },
+        {
+          "blob_sha": "5654ebb6e56847d1143030ea9b7cedda2f4d58cf",
+          "path": "src/media/image-processor.types.ts",
+          "range": {
+            "end_line": 23,
+            "start_line": 1
+          },
+          "symbol": "ImageProcessorOperation"
+        },
+        {
+          "blob_sha": "7e9d2a6226fca81f143e0b21bb1a505e84285c73",
+          "path": "src/media/media-services.ts",
+          "range": {
+            "end_line": 6,
+            "start_line": 1
+          },
+          "symbol": "media-services"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_file_context.rs",
+        "symbol": "ImageProcessorPixelLimits"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_file_context_contract.rs::test_ocrm_file_ctx_07_image_processor_contracts"
+      ],
+      "typed_contracts": [
+        "ImageProcessorPixelLimits",
+        "ImageOptimizationLimitError",
+        "ImageProcessorOperation"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-006"
     }
   ],
   "schema_version": 1,

@@ -29,15 +29,7 @@ pub fn to_local_channel_attachment_path(raw: &str) -> Option<PathBuf> {
         return None;
     }
 
-    match Url::parse(raw) {
-        Ok(parsed) => {
-            if parsed.scheme() != "file" {
-                return None;
-            }
-            parsed.to_file_path().ok()
-        }
-        Err(_) => (!raw.is_empty()).then(|| PathBuf::from(raw)),
-    }
+    crate::extensions::attachments::media_file_context::resolve_local_media_path(raw)
 }
 
 pub fn is_voice_message_attachment(raw_url: &str) -> bool {

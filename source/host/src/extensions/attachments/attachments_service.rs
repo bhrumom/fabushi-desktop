@@ -1678,6 +1678,54 @@ impl AttachmentsService {
                     })
                     .unwrap_or(Value::Null)
                 }),
+            "renderFileContext" => {
+                let content = args
+                    .get("content")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default();
+                let filename = args.get("filename").and_then(Value::as_str);
+                let fallback_name = args.get("fallbackName").and_then(Value::as_str);
+                let mime_type = args.get("mimeType").and_then(Value::as_str);
+                let surround = args
+                    .get("surroundContentWithNewlines")
+                    .and_then(Value::as_bool)
+                    .unwrap_or(true);
+                let rendered = crate::extensions::attachments::media_file_context::render_file_context_block(
+                    crate::extensions::attachments::media_file_context::RenderFileContextParams {
+                        filename,
+                        fallback_name,
+                        mime_type,
+                        content,
+                        surround_content_with_newlines: surround,
+                    },
+                );
+                Ok(Value::String(rendered))
+            }
+            "resolveLocalMediaPath" => {
+                let source = args
+                    .get("source")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| "resolveLocalMediaPath.source must be a string".to_string());
+                source.map(|src| {
+                    crate::extensions::attachments::media_file_context::resolve_local_media_path(src)
+                        .map(|p| Value::String(p.to_string_lossy().into_owned()))
+                        .unwrap_or(Value::Null)
+                })
+            }
+            "renderDocumentTruncation" => {
+                let explicit_limit = args
+                    .get("explicitSelectionLimit")
+                    .and_then(Value::as_u64)
+                    .map(|n| n as usize);
+                let meta = args
+                    .get("metadata")
+                    .and_then(|v| serde_json::from_value(v.clone()).ok());
+                let rendered = crate::extensions::attachments::media_file_context::render_document_truncation_notice(
+                    meta.as_ref(),
+                    explicit_limit,
+                );
+                Ok(rendered.map(Value::String).unwrap_or(Value::Null))
+            }
             _ => return None,
         };
         Some(result)

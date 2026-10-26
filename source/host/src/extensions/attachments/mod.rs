@@ -6,6 +6,7 @@ pub mod generate_image_service;
 pub mod link_preview_image_bounds;
 pub mod media_audio_transcode;
 pub mod media_facts;
+pub mod media_file_context;
 pub mod media_probe;
 pub mod media_reference;
 pub mod media_understanding_service;
