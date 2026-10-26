@@ -2120,6 +2120,56 @@ impl AttachmentsService {
                 crate::extensions::attachments::staged_inputs::ensure_staged_input_directory(Path::new(root_str), dir_str)?;
                 Ok(serde_json::json!({ "success": true }))
             })(),
+            "extractPdfContent" => (|| {
+                let req: crate::extensions::attachments::pdf_extract::PdfExtractionRequest =
+                    serde_json::from_value(args.clone()).map_err(|e| format!("Invalid PdfExtractionRequest: {e}"))?;
+                let res = crate::extensions::attachments::pdf_extract::extract_pdf_content(&req, &[])?;
+                Ok(serde_json::to_value(res).unwrap_or(Value::Null))
+            })(),
+            "validatePdfExtractionMetadata" => (|| {
+                let meta_val = args.get("metadata").ok_or_else(|| "metadata required".to_string())?;
+                let req_val = args.get("request").ok_or_else(|| "request required".to_string())?;
+                let meta: crate::extensions::attachments::pdf_extract::DocumentExtractionMetadata =
+                    serde_json::from_value(meta_val.clone()).map_err(|e| format!("Invalid metadata: {e}"))?;
+                let req: crate::extensions::attachments::pdf_extract::PdfExtractionRequest =
+                    serde_json::from_value(req_val.clone()).map_err(|e| format!("Invalid request: {e}"))?;
+                let trusted = crate::extensions::attachments::pdf_extract::validate_extraction_metadata(&meta, &req);
+                Ok(serde_json::to_value(trusted).unwrap_or(Value::Null))
+            })(),
+            "splitMediaFromOutput" => (|| {
+                let raw = args.get("raw").and_then(Value::as_str)
+                    .or_else(|| args.as_str())
+                    .ok_or_else(|| "splitMediaFromOutput requires raw text".to_string())?;
+                let opts: crate::extensions::attachments::parse_output::SplitMediaFromOutputOptions =
+                    if let Some(o) = args.get("options") {
+                        serde_json::from_value(o.clone()).unwrap_or_default()
+                    } else {
+                        crate::extensions::attachments::parse_output::SplitMediaFromOutputOptions {
+                            extract_media_directives: true,
+                            extract_audio_directives: true,
+                            ..Default::default()
+                        }
+                    };
+                let parsed = crate::extensions::attachments::parse_output::split_media_from_output(raw, &opts);
+                Ok(serde_json::to_value(parsed).unwrap_or(Value::Null))
+            })(),
+            "splitMediaOutput" => (|| {
+                let raw = args.get("raw").and_then(Value::as_str)
+                    .or_else(|| args.as_str())
+                    .ok_or_else(|| "splitMediaOutput requires raw text".to_string())?;
+                let opts: crate::extensions::attachments::parse_output::SplitMediaOutputOptions =
+                    if let Some(o) = args.get("options") {
+                        serde_json::from_value(o.clone()).unwrap_or_default()
+                    } else {
+                        crate::extensions::attachments::parse_output::SplitMediaOutputOptions {
+                            extract_media_directives: true,
+                            extract_audio_directives: true,
+                            ..Default::default()
+                        }
+                    };
+                let parsed = crate::extensions::attachments::parse_output::split_media_output(raw, &opts);
+                Ok(serde_json::to_value(parsed).unwrap_or(Value::Null))
+            })(),
             _ => return None,
         };
         Some(result)

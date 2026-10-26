@@ -691,7 +691,9 @@
         "source/host/tests/openclaw_media_understanding_contract.rs",
         "source/host/tests/openclaw_qr_png_contract.rs",
         "source/host/tests/openclaw_read_capability_contract.rs",
-        "source/host/tests/openclaw_web_media_contract.rs"
+        "source/host/tests/openclaw_web_media_contract.rs",
+        "source/host/tests/openclaw_pdf_and_parse_contract.rs",
+        "projects/openclaw-rust/dossiers/media-pdf-and-parse-output-scoped.md"
       ],
       "gate_ids": [],
       "id": "OCRM-R24",
@@ -771,6 +773,8 @@
         "OCRM-RESP-MEDIA-INBOUND-URI-001",
         "OCRM-RESP-MEDIA-LOCAL-PATH-001",
         "OCRM-RESP-MEDIA-LOCAL-ROOTS-001",
+        "OCRM-RESP-MEDIA-PARSE-OUTPUT-001",
+        "OCRM-RESP-MEDIA-PDF-EXTRACT-001",
         "OCRM-RESP-MEDIA-PHOTON-RUNTIME-001",
         "OCRM-RESP-MEDIA-PNG-ENCODE-001",
         "OCRM-RESP-MEDIA-PROBE-METADATA-001",
@@ -1416,7 +1420,9 @@
         "source/host/tests/openclaw_media_understanding_contract.rs",
         "source/host/tests/openclaw_qr_png_contract.rs",
         "source/host/tests/openclaw_read_capability_contract.rs",
-        "source/host/tests/openclaw_web_media_contract.rs"
+        "source/host/tests/openclaw_web_media_contract.rs",
+        "source/host/tests/openclaw_pdf_and_parse_contract.rs",
+        "projects/openclaw-rust/dossiers/media-pdf-and-parse-output-scoped.md"
       ],
       "gate_ids": [],
       "id": "OCRM-AC24",
@@ -1496,6 +1502,8 @@
         "OCRM-RESP-MEDIA-INBOUND-URI-001",
         "OCRM-RESP-MEDIA-LOCAL-PATH-001",
         "OCRM-RESP-MEDIA-LOCAL-ROOTS-001",
+        "OCRM-RESP-MEDIA-PARSE-OUTPUT-001",
+        "OCRM-RESP-MEDIA-PDF-EXTRACT-001",
         "OCRM-RESP-MEDIA-PHOTON-RUNTIME-001",
         "OCRM-RESP-MEDIA-PNG-ENCODE-001",
         "OCRM-RESP-MEDIA-PROBE-METADATA-001",

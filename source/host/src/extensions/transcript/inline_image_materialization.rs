@@ -42,6 +42,8 @@ fn materialize_one(
     image: &InlineImage,
 ) -> Option<MaterializedInlineImage> {
     crate::media_mime::inspect_canonical_base64(&image.base64)?;
+    let max_bytes = crate::extensions::attachments::image_ops::MAX_IMAGE_BYTES;
+    let _ = crate::attachment_paths::validate_and_prepare_attachment_payload("inline_image", &image.base64, max_bytes).ok()?;
     let bytes = STANDARD.decode(image.base64.as_bytes()).ok()?;
     if bytes.is_empty() {
         return None;

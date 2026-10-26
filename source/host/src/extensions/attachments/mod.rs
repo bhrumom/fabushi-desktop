@@ -21,6 +21,8 @@ pub mod media_reference;
 pub mod media_store;
 pub mod media_store_shared;
 pub mod media_understanding_service;
+pub mod parse_output;
+pub mod pdf_extract;
 pub mod read_capability;
 pub mod remote_workspace_file;
 pub mod safe_link_preview_fetch;
