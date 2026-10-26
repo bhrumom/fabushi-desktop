@@ -653,5 +653,255 @@ fn test_ocrm_media_und_o18_inbound_document_context_and_marker_budget() {
     assert_eq!(stripped.data, "base64data");
 }
 
+#[test]
+fn test_ocrm_media_und_o19_openai_audio_api_and_transcription_form() {
+    // 1. API contract resolution
+    assert_eq!(
+        resolve_openai_audio_auth_model_api(MediaUnderstandingCapability::Audio, "openai"),
+        Some(OPENAI_AUDIO_TRANSCRIPTIONS_API)
+    );
+    assert_eq!(
+        resolve_openai_audio_auth_model_api(MediaUnderstandingCapability::Audio, "  OpenAI  "),
+        Some(OPENAI_AUDIO_TRANSCRIPTIONS_API)
+    );
+    assert_eq!(
+        resolve_openai_audio_auth_model_api(MediaUnderstandingCapability::Audio, "groq"),
+        None
+    );
+    assert_eq!(
+        resolve_openai_audio_auth_model_api(MediaUnderstandingCapability::Video, "openai"),
+        None
+    );
+
+    // 2. Transcription form data construction & AAC remapping
+    let form_aac = build_audio_transcription_form_data(
+        "voice-note.aac",
+        "audio/aac",
+        "whisper-1",
+        Some("en"),
+        Some("prompt text"),
+    );
+    assert_eq!(form_aac.file_name, "voice-note.m4a");
+    assert_eq!(form_aac.mime, "audio/aac");
+    assert_eq!(form_aac.model, "whisper-1");
+    assert_eq!(form_aac.language, Some("en".to_string()));
+    assert_eq!(form_aac.prompt, Some("prompt text".to_string()));
+
+    // Whitespace prompt/language normalized to None
+    let form_clean = build_audio_transcription_form_data(
+        "memo.mp3",
+        "audio/mpeg",
+        "whisper-1",
+        Some("   "),
+        None,
+    );
+    assert_eq!(form_clean.file_name, "memo.mp3");
+    assert_eq!(form_clean.language, None);
+    assert_eq!(form_clean.prompt, None);
+}
+
+#[test]
+fn test_ocrm_media_und_o20_openai_compatible_video_request_and_coercion() {
+    // 1. String fallback resolution
+    assert_eq!(resolve_media_understanding_string(Some("custom"), "default"), "custom");
+    assert_eq!(resolve_media_understanding_string(Some("  trimmed  "), "default"), "trimmed");
+    assert_eq!(resolve_media_understanding_string(Some("   "), "default"), "default");
+    assert_eq!(resolve_media_understanding_string(None, "default"), "default");
+
+    // 2. Request body structure
+    let body = build_openai_compatible_video_request_body(
+        "video-model-v1",
+        "describe action in video",
+        "video/mp4",
+        "AAAA",
+    );
+    assert_eq!(body["model"], "video-model-v1");
+    assert_eq!(body["messages"][0]["role"], "user");
+    assert_eq!(body["messages"][0]["content"][0]["type"], "text");
+    assert_eq!(body["messages"][0]["content"][0]["text"], "describe action in video");
+    assert_eq!(body["messages"][0]["content"][1]["type"], "video_url");
+    assert_eq!(
+        body["messages"][0]["content"][1]["video_url"]["url"],
+        "data:video/mp4;base64,AAAA"
+    );
+
+    // 3. Text coercion: direct string
+    let payload_str = serde_json::json!({
+        "choices": [{
+            "message": {
+                "content": "A person walking a dog"
+            }
+        }]
+    });
+    assert_eq!(
+        coerce_openai_compatible_video_text(&payload_str),
+        Some("A person walking a dog".to_string())
+    );
+
+    // Text coercion: array of text blocks
+    let payload_arr = serde_json::json!({
+        "choices": [{
+            "message": {
+                "content": [
+                    { "text": "Segment 1" },
+                    { "text": "Segment 2" }
+                ]
+            }
+        }]
+    });
+    assert_eq!(
+        coerce_openai_compatible_video_text(&payload_arr),
+        Some("Segment 1\nSegment 2".to_string())
+    );
+
+    // Text coercion: reasoning_content fallback
+    let payload_reasoning = serde_json::json!({
+        "choices": [{
+            "message": {
+                "content": null,
+                "reasoning_content": "Chain-of-thought description"
+            }
+        }]
+    });
+    assert_eq!(
+        coerce_openai_compatible_video_text(&payload_reasoning),
+        Some("Chain-of-thought description".to_string())
+    );
+
+    // Text coercion: empty/missing
+    let payload_empty = serde_json::json!({ "choices": [] });
+    assert_eq!(coerce_openai_compatible_video_text(&payload_empty), None);
+}
+
+#[test]
+fn test_ocrm_media_und_o21_local_audio_command_and_backend_detection() {
+    // 1. Command id normalization
+    assert_eq!(command_id("/opt/homebrew/bin/whisper-cli"), "whisper-cli");
+    assert_eq!(command_id(r"C:\Program Files\Whisper\whisper-cli.exe"), "whisper-cli");
+    assert_eq!(command_id("SHERPA-ONNX-OFFLINE.BAT"), "sherpa-onnx-offline");
+
+    // 2. Requested backend resolution
+    // sherpa-onnx
+    let sherpa_args1 = vec!["--provider".to_string(), "cuda".to_string()];
+    assert_eq!(
+        resolve_requested_local_audio_backend("sherpa-onnx-offline", &sherpa_args1),
+        Some("cuda".to_string())
+    );
+    let sherpa_args2 = vec!["--provider=coreml".to_string()];
+    assert_eq!(
+        resolve_requested_local_audio_backend("sherpa-onnx-offline", &sherpa_args2),
+        Some("coreml".to_string())
+    );
+    let sherpa_default = vec!["tokens.txt".to_string()];
+    assert_eq!(
+        resolve_requested_local_audio_backend("sherpa-onnx-offline", &sherpa_default),
+        Some("cpu".to_string())
+    );
+
+    // whisper-cli
+    let whisper_args_ng = vec!["-m".to_string(), "model.bin".to_string(), "-ng".to_string()];
+    assert_eq!(
+        resolve_requested_local_audio_backend("whisper-cli", &whisper_args_ng),
+        Some("cpu".to_string())
+    );
+    let whisper_args_dev = vec!["--device".to_string(), "1".to_string()];
+    assert_eq!(
+        resolve_requested_local_audio_backend("whisper-cli", &whisper_args_dev),
+        Some("device:1".to_string())
+    );
+    let whisper_args_default = vec!["-m".to_string(), "model.bin".to_string()];
+    assert_eq!(
+        resolve_requested_local_audio_backend("whisper-cli", &whisper_args_default),
+        None
+    );
+
+    // 3. Output observation
+    assert_eq!(
+        record_local_audio_backend_observation("whisper-cli", "failed to initialize MTL0 backend"),
+        Some("cpu")
+    );
+    assert_eq!(
+        record_local_audio_backend_observation("whisper-cli", "whisper_init_state: using Metal backend"),
+        Some("metal")
+    );
+    assert_eq!(
+        record_local_audio_backend_observation("whisper-cli", "whisper_init_state: using CUDA0 backend"),
+        Some("cuda")
+    );
+    assert_eq!(
+        record_local_audio_backend_observation("whisper-cli", "whisper_init_state: using CPU backend"),
+        Some("cpu")
+    );
+    assert_eq!(
+        record_local_audio_backend_observation("parakeet-mlx", "using Metal backend"),
+        None
+    );
+}
+
+#[test]
+fn test_ocrm_media_und_o22_local_audio_candidate_ranking_and_selection_formatting() {
+    // 1. Candidate ranking
+    assert_eq!(rank_local_audio_candidate("whisper-cli", Some("metal")), 0);
+    assert_eq!(rank_local_audio_candidate("whisper-cli", Some("cuda")), 0);
+    assert_eq!(rank_local_audio_candidate("sherpa-onnx-offline", None), 1);
+    assert_eq!(rank_local_audio_candidate("whisper-cli", Some("cpu")), 2);
+    assert_eq!(rank_local_audio_candidate("whisper-cli", None), 2);
+    assert_eq!(rank_local_audio_candidate("parakeet-mlx", None), 3);
+    assert_eq!(rank_local_audio_candidate("whisper", None), 4);
+
+    // 2. Selection formatting
+    let selection = LocalAudioSelection {
+        candidates: vec![
+            LocalAudioCandidate {
+                id: "whisper-cli".to_string(),
+                command: "whisper-cli".to_string(),
+                available: true,
+                ready: true,
+                capable_backend: Some("metal".to_string()),
+                requested_backend: None,
+                observed_backend: Some("metal".to_string()),
+                evidence: "Apple Silicon Homebrew whisper-cpp runtime with Metal support".to_string(),
+                selected: true,
+                reason: None,
+                entry_command: Some("/opt/homebrew/bin/whisper-cli".to_string()),
+                entry_args: vec![],
+            },
+            LocalAudioCandidate {
+                id: "sherpa-onnx-offline".to_string(),
+                command: "sherpa-onnx-offline".to_string(),
+                available: true,
+                ready: true,
+                capable_backend: None,
+                requested_backend: Some("cpu".to_string()),
+                observed_backend: None,
+                evidence: "CPU default".to_string(),
+                selected: false,
+                reason: None,
+                entry_command: Some("sherpa-onnx-offline".to_string()),
+                entry_args: vec![],
+            },
+        ],
+        selected: Some(LocalAudioCandidate {
+            id: "whisper-cli".to_string(),
+            command: "whisper-cli".to_string(),
+            available: true,
+            ready: true,
+            capable_backend: Some("metal".to_string()),
+            requested_backend: None,
+            observed_backend: Some("metal".to_string()),
+            evidence: "Apple Silicon Homebrew whisper-cpp runtime with Metal support".to_string(),
+            selected: true,
+            reason: None,
+            entry_command: Some("/opt/homebrew/bin/whisper-cli".to_string()),
+            entry_args: vec![],
+        }),
+    };
+
+    let formatted = format_local_audio_selection(&selection).expect("formatted");
+    assert!(formatted.contains("whisper-cli (capable=metal, observed=metal)"));
+    assert!(formatted.contains("Apple Silicon Homebrew whisper-cpp runtime with Metal support"));
+    assert!(formatted.contains("fallbacks: sherpa-onnx-offline (requested=cpu, observed=unknown)"));
+}
+
 
 

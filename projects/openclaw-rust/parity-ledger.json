@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 291,
+    "mapped_paths": 300,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58459
+    "unclassified_paths": 58450
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -14847,6 +14847,265 @@
         "render_inbound_document_context_from_items"
       ],
       "unit_id": "OCRM-UNIT-MEDIA-UND-004"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Local audio runner detection, CLI argument backend extraction, accelerator observation parsing, candidate ranking, and selection formatting.",
+      "blocker_ids": [
+        "BL-MEDIA-UND-LOCAL-AUDIO-CLI-WIRING-001"
+      ],
+      "capability_ids": [
+        "media.understanding.local_audio"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_understanding_service"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_understanding_contract.rs",
+        "projects/openclaw-rust/dossiers/media-understanding-local-audio-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+          "reason": "Local audio selection and accelerator observation manager"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-UND-LOCAL-AUDIO-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "entrypoint": "source/host/src/extensions/attachments/media_understanding_service.rs::format_local_audio_selection",
+        "owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "producer": "source/host/src/extensions/attachments/media_understanding_service.rs"
+      },
+      "invariants": [
+        "Command paths normalized across operating systems stripping Windows extensions",
+        "Sherpa-onnx provider args and whisper-cli device/no-gpu flags properly extracted",
+        "Metal and CUDA accelerator initialization failures gracefully fall back to CPU observation",
+        "Candidate priority ranks observed hardware-accelerated whisper-cli above CPU alternatives"
+      ],
+      "migration_rollback": "Use remote audio transcription provider exclusively",
+      "oracle_ids": [
+        "OCRM-MEDIA-UND-O21",
+        "OCRM-MEDIA-UND-O22"
+      ],
+      "owner_decision": "Incorporate local audio backend discovery, ranking, and formatting into media_understanding_service",
+      "postconditions": [
+        "Local audio runner ranking and selection formatted"
+      ],
+      "preconditions": [
+        "Command name, arguments, or execution output provided"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "platform"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; prioritizes local speech-to-text models while preventing bad accelerator configurations",
+      "selected_owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
+      "source_refs": [
+        {
+          "blob_sha": "97540bf20ea8bbb628e7fd8ff21b47023112cbe9",
+          "path": "src/media-understanding/local-audio.ts",
+          "range": {
+            "end_line": 388,
+            "start_line": 1
+          },
+          "symbol": "inspectLocalAudioSelection, formatLocalAudioSelection, resolveRequestedLocalAudioBackend, recordLocalAudioBackendObservation"
+        },
+        {
+          "blob_sha": "9e83b749ee3aad39a6060f82cb495ed9bc98cc6e",
+          "path": "src/media-understanding/local-audio.test.ts",
+          "range": {
+            "end_line": 273,
+            "start_line": 1
+          },
+          "symbol": "local audio detection and execution test suite"
+        },
+        {
+          "blob_sha": "8f259f91c31e5f74dfd2a6a6ae57f8033129dcdd",
+          "path": "src/media-understanding/local-audio.test-support.ts",
+          "range": {
+            "end_line": 25,
+            "start_line": 1
+          },
+          "symbol": "local audio test mocks"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "symbol": "command_id, resolve_requested_local_audio_backend, record_local_audio_backend_observation, rank_local_audio_candidate, format_local_audio_selection"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o21_local_audio_command_and_backend_detection",
+        "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o22_local_audio_candidate_ranking_and_selection_formatting"
+      ],
+      "typed_contracts": [
+        "resolve_requested_local_audio_backend",
+        "record_local_audio_backend_observation",
+        "format_local_audio_selection"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-UND-005"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "OpenAI-compatible audio and video transcription/description request formulation, MIME remapping, authentication headers, and response text coercion.",
+      "blocker_ids": [
+        "BL-MEDIA-UND-OPENAI-COMPAT-HTTP-WIRING-001"
+      ],
+      "capability_ids": [
+        "media.understanding.openai_compat"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_understanding_service"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_understanding_contract.rs",
+        "projects/openclaw-rust/dossiers/media-understanding-local-audio-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+          "reason": "OpenAI-compatible media request and response payload adapter"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-UND-OPENAI-COMPAT-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "entrypoint": "source/host/src/extensions/attachments/media_understanding_service.rs::build_openai_compatible_video_request_body",
+        "owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "producer": "source/host/src/extensions/attachments/media_understanding_service.rs"
+      },
+      "invariants": [
+        "Audio transcription API contract key is strictly openai-audio-transcriptions",
+        "AAC audio files automatically remapped to M4A for multipart upload compliance",
+        "OpenAI video completions request body wraps base64 video in video_url content blocks",
+        "Coercion gracefully accepts direct string, part array, or reasoning_content text"
+      ],
+      "migration_rollback": "Use native non-OpenAI provider implementations",
+      "oracle_ids": [
+        "OCRM-MEDIA-UND-O19",
+        "OCRM-MEDIA-UND-O20"
+      ],
+      "owner_decision": "Implement OpenAI-compatible audio/video payload builders and text coercers in media_understanding_service",
+      "postconditions": [
+        "Request payload generated or response text extracted"
+      ],
+      "preconditions": [
+        "Audio/video model request parameters or JSON response payload provided"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; ensures seamless compatibility with OpenAI speech-to-text and vision/video completion endpoints",
+      "selected_owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
+      "source_refs": [
+        {
+          "blob_sha": "d31db797b1a3e388728d93541a374f68f63263c3",
+          "path": "src/media-understanding/openai-audio-api.ts",
+          "range": {
+            "end_line": 15,
+            "start_line": 1
+          },
+          "symbol": "OPENAI_AUDIO_TRANSCRIPTIONS_API, resolveOpenAiAudioAuthModelApi"
+        },
+        {
+          "blob_sha": "c6a5f08effe107ffe2efa3e1a6efae9cb9a494b7",
+          "path": "src/media-understanding/openai-compatible-audio.ts",
+          "range": {
+            "end_line": 80,
+            "start_line": 1
+          },
+          "symbol": "transcribeOpenAiCompatibleAudio"
+        },
+        {
+          "blob_sha": "07a9178ca2e1eb1571101950e05479d854759ad1",
+          "path": "src/media-understanding/openai-compatible-audio.test.ts",
+          "range": {
+            "end_line": 85,
+            "start_line": 1
+          },
+          "symbol": "OpenAI audio transcription adapter test suite"
+        },
+        {
+          "blob_sha": "7213cbab57b5a9ee49f3927efe9322d7446f4998",
+          "path": "src/media-understanding/openai-compatible-audio.pin-dns.test.ts",
+          "range": {
+            "end_line": 58,
+            "start_line": 1
+          },
+          "symbol": "OpenAI audio DNS pin test suite"
+        },
+        {
+          "blob_sha": "c00cbe235346791487760f901f6c6de4e69dd3f6",
+          "path": "src/media-understanding/openai-compatible-auth.test.ts",
+          "range": {
+            "end_line": 99,
+            "start_line": 1
+          },
+          "symbol": "OpenAI auth header test suite"
+        },
+        {
+          "blob_sha": "e25370f3b3464eec5ff3ecaed10f792eb9172d3c",
+          "path": "src/media-understanding/openai-compatible-video.ts",
+          "range": {
+            "end_line": 69,
+            "start_line": 1
+          },
+          "symbol": "describeOpenAiCompatibleVideo, buildOpenAiCompatibleVideoRequestBody, coerceOpenAiCompatibleVideoText"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "symbol": "resolve_openai_audio_auth_model_api, resolve_media_understanding_string, coerce_openai_compatible_video_text, build_openai_compatible_video_request_body, build_audio_transcription_form_data"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o19_openai_audio_api_and_transcription_form",
+        "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o20_openai_compatible_video_request_and_coercion"
+      ],
+      "typed_contracts": [
+        "resolve_openai_audio_auth_model_api",
+        "build_openai_compatible_video_request_body",
+        "coerce_openai_compatible_video_text"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-UND-005"
     }
   ],
   "schema_version": 1,

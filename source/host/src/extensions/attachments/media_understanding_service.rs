@@ -915,5 +915,283 @@ pub fn render_inbound_document_context_from_items(
     }
 }
 
+// =========================================================================
+// Unit 34: Local Audio & OpenAI Compatible Audio/Video (OCRM-RESP-MEDIA-UND-LOCAL-AUDIO-001 & OPENAI-COMPAT-001)
+// =========================================================================
+
+pub const OPENAI_AUDIO_TRANSCRIPTIONS_API: &str = "openai-audio-transcriptions";
+
+pub fn resolve_openai_audio_auth_model_api(
+    capability: MediaUnderstandingCapability,
+    provider_id: &str,
+) -> Option<&'static str> {
+    if capability == MediaUnderstandingCapability::Audio
+        && provider_id.trim().eq_ignore_ascii_case("openai")
+    {
+        Some(OPENAI_AUDIO_TRANSCRIPTIONS_API)
+    } else {
+        None
+    }
+}
+
+pub fn resolve_media_understanding_string(value: Option<&str>, fallback: &str) -> String {
+    let trimmed = value.map(str::trim).unwrap_or("");
+    if trimmed.is_empty() {
+        fallback.to_string()
+    } else {
+        trimmed.to_string()
+    }
+}
+
+pub fn coerce_openai_compatible_video_text(payload: &serde_json::Value) -> Option<String> {
+    let message = payload.get("choices")?.get(0)?.get("message")?;
+    if let Some(content) = message.get("content") {
+        if let Some(s) = content.as_str() {
+            let trimmed = s.trim();
+            if !trimmed.is_empty() {
+                return Some(trimmed.to_string());
+            }
+        } else if let Some(arr) = content.as_array() {
+            let parts: Vec<&str> = arr
+                .iter()
+                .filter_map(|p| p.get("text")?.as_str().map(str::trim))
+                .filter(|s| !s.is_empty())
+                .collect();
+            if !parts.is_empty() {
+                return Some(parts.join("\n"));
+            }
+        }
+    }
+    if let Some(reasoning) = message.get("reasoning_content").and_then(|r| r.as_str()) {
+        let trimmed = reasoning.trim();
+        if !trimmed.is_empty() {
+            return Some(trimmed.to_string());
+        }
+    }
+    None
+}
+
+pub fn build_openai_compatible_video_request_body(
+    model: &str,
+    prompt: &str,
+    mime: &str,
+    buffer_base64: &str,
+) -> serde_json::Value {
+    serde_json::json!({
+        "model": model,
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    { "type": "text", "text": prompt },
+                    {
+                        "type": "video_url",
+                        "video_url": {
+                            "url": format!("data:{mime};base64,{buffer_base64}")
+                        }
+                    }
+                ]
+            }
+        ]
+    })
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AudioTranscriptionFormData {
+    pub file_name: String,
+    pub mime: String,
+    pub model: String,
+    pub language: Option<String>,
+    pub prompt: Option<String>,
+}
+
+pub fn build_audio_transcription_form_data(
+    file_name: &str,
+    mime: &str,
+    model: &str,
+    language: Option<&str>,
+    prompt: Option<&str>,
+) -> AudioTranscriptionFormData {
+    let remapped_name = resolve_audio_transcription_upload_file_name(Some(file_name), Some(mime));
+    AudioTranscriptionFormData {
+        file_name: remapped_name,
+        mime: mime.to_string(),
+        model: model.to_string(),
+        language: language.map(str::trim).filter(|s| !s.is_empty()).map(str::to_string),
+        prompt: prompt.map(str::trim).filter(|s| !s.is_empty()).map(str::to_string),
+    }
+}
+
+pub fn command_id(command: &str) -> String {
+    let trimmed = command.trim();
+    let basename = trimmed
+        .rsplit(|c| c == '/' || c == '\\')
+        .next()
+        .unwrap_or(trimmed);
+    let stem = if let Some(idx) = basename.rfind('.') {
+        let ext = &basename[idx..];
+        if ext.eq_ignore_ascii_case(".exe")
+            || ext.eq_ignore_ascii_case(".com")
+            || ext.eq_ignore_ascii_case(".cmd")
+            || ext.eq_ignore_ascii_case(".bat")
+        {
+            &basename[..idx]
+        } else {
+            basename
+        }
+    } else {
+        basename
+    };
+    stem.to_ascii_lowercase()
+}
+
+pub fn resolve_requested_local_audio_backend(command: &str, args: &[String]) -> Option<String> {
+    let cmd = command_id(command);
+    if cmd == "sherpa-onnx-offline" {
+        for (i, arg) in args.iter().enumerate() {
+            if arg == "--provider" {
+                if let Some(next) = args.get(i + 1) {
+                    return Some(next.trim().to_ascii_lowercase());
+                }
+            } else if let Some(stripped) = arg.strip_prefix("--provider=") {
+                return Some(stripped.trim().to_ascii_lowercase());
+            }
+        }
+        return Some("cpu".to_string());
+    }
+    if cmd == "whisper-cli" {
+        if args.iter().any(|arg| arg == "-ng" || arg == "--no-gpu") {
+            return Some("cpu".to_string());
+        }
+        for (i, arg) in args.iter().enumerate() {
+            if arg == "-dev" || arg == "--device" {
+                if let Some(next) = args.get(i + 1) {
+                    let dev = next.trim();
+                    if !dev.is_empty() {
+                        return Some(format!("device:{dev}"));
+                    }
+                }
+            } else if let Some(stripped) = arg.strip_prefix("--device=") {
+                let dev = stripped.trim();
+                if !dev.is_empty() {
+                    return Some(format!("device:{dev}"));
+                }
+            }
+        }
+        return None;
+    }
+    None
+}
+
+static ACCELERATOR_FAILED_RE: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| {
+    regex::Regex::new(r"(?i)failed to initialize\s+(?:MTL\d+|Metal|CUDA\d*)\s+backend")
+        .expect("valid regex")
+});
+
+static USING_METAL_RE: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| {
+    regex::Regex::new(r"(?i)using\s+(?:MTL\d+|Metal)\s+backend").expect("valid regex")
+});
+
+static USING_CUDA_RE: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| {
+    regex::Regex::new(r"(?i)using\s+CUDA\d*\s+backend").expect("valid regex")
+});
+
+static USING_CPU_RE: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| {
+    regex::Regex::new(r"(?i)using\s+CPU\s+backend|no GPU found").expect("valid regex")
+});
+
+pub fn record_local_audio_backend_observation(command: &str, output: &str) -> Option<&'static str> {
+    if command_id(command) != "whisper-cli" {
+        return None;
+    }
+    if ACCELERATOR_FAILED_RE.is_match(output) {
+        return Some("cpu");
+    }
+    if USING_METAL_RE.is_match(output) {
+        return Some("metal");
+    }
+    if USING_CUDA_RE.is_match(output) {
+        return Some("cuda");
+    }
+    if USING_CPU_RE.is_match(output) {
+        return Some("cpu");
+    }
+    None
+}
+
+pub fn rank_local_audio_candidate(candidate_id: &str, observed_backend: Option<&str>) -> usize {
+    if candidate_id == "whisper-cli" && (observed_backend == Some("metal") || observed_backend == Some("cuda")) {
+        0
+    } else if candidate_id == "sherpa-onnx-offline" {
+        1
+    } else if candidate_id == "whisper-cli" {
+        2
+    } else if candidate_id == "parakeet-mlx" {
+        3
+    } else {
+        4
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct LocalAudioCandidate {
+    pub id: String,
+    pub command: String,
+    pub available: bool,
+    pub ready: bool,
+    pub capable_backend: Option<String>,
+    pub requested_backend: Option<String>,
+    pub observed_backend: Option<String>,
+    pub evidence: String,
+    pub selected: bool,
+    pub reason: Option<String>,
+    pub entry_command: Option<String>,
+    pub entry_args: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct LocalAudioSelection {
+    pub candidates: Vec<LocalAudioCandidate>,
+    pub selected: Option<LocalAudioCandidate>,
+}
+
+pub fn format_local_audio_selection(selection: &LocalAudioSelection) -> Option<String> {
+    let selected = selection.selected.as_ref()?;
+    let describe_backend = |c: &LocalAudioCandidate| {
+        let mut parts = Vec::new();
+        if let Some(ref cap) = c.capable_backend {
+            parts.push(format!("capable={cap}"));
+        }
+        if let Some(ref req) = c.requested_backend {
+            parts.push(format!("requested={req}"));
+        }
+        parts.push(format!(
+            "observed={}",
+            c.observed_backend.as_deref().unwrap_or("unknown")
+        ));
+        parts.join(", ")
+    };
+
+    let fallbacks: Vec<String> = selection
+        .candidates
+        .iter()
+        .filter(|c| c.ready && c.id != selected.id)
+        .map(|c| format!("{} ({})", c.command, describe_backend(c)))
+        .collect();
+
+    let fallbacks_str = if fallbacks.is_empty() {
+        String::new()
+    } else {
+        format!("; fallbacks: {}", fallbacks.join(", "))
+    };
+
+    Some(format!(
+        "{} ({}); {}{fallbacks_str}",
+        selected.command,
+        describe_backend(selected),
+        selected.evidence
+    ))
+}
+
 
 
