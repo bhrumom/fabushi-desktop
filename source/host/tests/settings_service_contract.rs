@@ -364,6 +364,16 @@ fn test_ocrm_config_o02_immutable_mode_guard() {
     // Reading settings works normally
     let host = service.get_host_settings();
     assert_eq!(host.get("version"), Some(&serde_json::json!(1)));
+    assert_eq!(host.get("readOnly"), Some(&serde_json::json!(true)));
+    assert!(service.is_read_only());
+
+    // Mutations must fail closed and leave disk untouched
+    assert!(service.set_has_seen_onboarding(true).is_err());
+    assert!(service.set_host_settings(&serde_json::json!({"userTimeZone": "UTC"})).is_err());
+
+    let on_disk = fs::read_to_string(&path).expect("read");
+    assert!(!on_disk.contains("hasSeenOnboarding"), "Disk must remain untouched in readOnly mode");
+
     let _ = fs::remove_file(path);
 }
 

@@ -252,7 +252,25 @@ impl SettingsService {
         }
         value
     }
+    pub fn is_read_only(&self) -> bool {
+        if std::env::var("OPENCLAW_CONFIG_READONLY").map(|v| v == "1").unwrap_or(false)
+            || std::env::var("OPENCLAW_NIX_MODE").map(|v| v == "1").unwrap_or(false)
+        {
+            return true;
+        }
+        self.load()
+            .get("readOnly")
+            .and_then(Value::as_bool)
+            .unwrap_or(false)
+    }
+
     fn persist(&self, value: &Map<String, Value>) -> io::Result<()> {
+        if self.is_read_only() {
+            return Err(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                "Config is externally managed or marked readOnly; mutations are not allowed",
+            ));
+        }
         if let Some(parent) = self.settings_path.parent() {
             fs::create_dir_all(parent)?;
         }
@@ -294,6 +312,9 @@ impl SettingsService {
         field: &str,
         value: Option<Value>,
     ) -> Result<bool, String> {
+        if self.is_read_only() {
+            return Err("Config is externally managed or marked readOnly; mutations are not allowed".into());
+        }
         let _guard = self.write_lock.lock().unwrap();
         let mut settings = self.load();
         let changed = match value {
@@ -870,6 +891,10 @@ impl SettingsService {
 
     pub fn get_host_settings(&self) -> Value {
         let mut object = Map::new();
+        object.insert("version".into(), Value::from(1));
+        if self.is_read_only() {
+            object.insert("readOnly".into(), Value::Bool(true));
+        }
         object.insert("notifications".into(), self.get_notification_config());
         object.insert(
             "mcpCustomInstructions".into(),
@@ -952,6 +977,9 @@ impl SettingsService {
     }
 
     pub fn set_host_settings(&self, update: &Value) -> Result<Value, String> {
+        if self.is_read_only() {
+            return Err("Config is externally managed or marked readOnly; mutations are not allowed".into());
+        }
         let Some(update) = update.as_object() else {
             return Ok(self.get_host_settings());
         };
