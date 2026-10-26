@@ -903,5 +903,74 @@ fn test_ocrm_media_und_o22_local_audio_candidate_ranking_and_selection_formattin
     assert!(formatted.contains("fallbacks: sherpa-onnx-offline (requested=cpu, observed=unknown)"));
 }
 
+#[test]
+fn test_ocrm_media_und_o23_image_input_normalization_and_caps() {
+    // 1. HEIC/HEIF detection
+    assert!(is_heic_image_input(Some("image/heic"), None));
+    assert!(is_heic_image_input(Some("Image/Heif"), None));
+    assert!(is_heic_image_input(Some("image/heic-sequence"), None));
+    assert!(is_heic_image_input(None, Some("photo.HEIC")));
+    assert!(is_heic_image_input(None, Some("/tmp/upload.heif")));
+
+    assert!(!is_heic_image_input(Some("image/png"), None));
+    assert!(!is_heic_image_input(Some("image/jpeg"), Some("photo.jpg")));
+    assert!(!is_heic_image_input(None, None));
+
+    // 2. Effective byte cap clamping
+    assert_eq!(effective_image_bytes_cap(10 * 1024 * 1024, Some(5 * 1024 * 1024)), 5 * 1024 * 1024);
+    assert_eq!(effective_image_bytes_cap(10 * 1024 * 1024, Some(20 * 1024 * 1024)), 10 * 1024 * 1024);
+    assert_eq!(effective_image_bytes_cap(10 * 1024 * 1024, None), 10 * 1024 * 1024);
+    assert_eq!(effective_image_bytes_cap(10 * 1024 * 1024, Some(0)), 10 * 1024 * 1024);
+}
+
+#[test]
+fn test_ocrm_media_und_o24_image_runtime_model_checks_and_token_resolution() {
+    // 1. Image capability validation
+    assert!(require_image_capable_model("openai", "gpt-4o", &["text".to_string(), "image".to_string()]).is_ok());
+
+    let err = require_image_capable_model("openai", "gpt-3.5-turbo", &["text".to_string()]).unwrap_err();
+    assert!(err.contains("Model does not support images: openai/gpt-3.5-turbo (input: text)"));
+
+    let err_empty = require_image_capable_model("custom", "model-x", &[]).unwrap_err();
+    assert!(err_empty.contains("Model does not support images: custom/model-x (input: none)"));
+
+    // 2. Token limit resolution
+    assert_eq!(resolve_image_tool_max_tokens(Some(8192), 4096), 4096);
+    assert_eq!(resolve_image_tool_max_tokens(Some(2048), 4096), 2048);
+    assert_eq!(resolve_image_tool_max_tokens(None, 4096), 4096);
+    assert_eq!(resolve_image_tool_max_tokens(Some(0), 4096), 4096);
+}
+
+#[test]
+fn test_ocrm_media_und_o25_image_reasoning_stripping_and_copilot_placement() {
+    // 1. Reasoning removal for image retries
+    let payload = serde_json::json!({
+        "model": "o3-mini",
+        "reasoning": { "effort": "high" },
+        "reasoning_effort": "high",
+        "include": ["reasoning.encrypted_content", "text.verbose"],
+        "messages": [{ "role": "user", "content": "see attached" }]
+    });
+
+    let non_native = disable_reasoning_for_image_retry_payload(&payload, false).unwrap();
+    assert!(non_native.get("reasoning").is_none());
+    assert!(non_native.get("reasoning_effort").is_none());
+    assert_eq!(non_native["include"], serde_json::json!(["text.verbose"]));
+
+    // Native OpenAI Responses sets effort to "none"
+    let native = disable_reasoning_for_image_retry_payload(&payload, true).unwrap();
+    assert_eq!(native["reasoning"], serde_json::json!({ "effort": "none" }));
+
+    // 2. GitHub Copilot prompt placement
+    assert!(should_place_image_prompt_in_user_content("github-copilot"));
+    assert!(should_place_image_prompt_in_user_content("  GitHub-Copilot  "));
+    assert!(!should_place_image_prompt_in_user_content("openai"));
+    assert!(!should_place_image_prompt_in_user_content("anthropic"));
+
+    // 3. Image model no-text error recognition
+    assert!(is_image_model_no_text_error("Image model returned no text (status 200)"));
+    assert!(!is_image_model_no_text_error("Network timeout connecting to provider"));
+}
+
 
 

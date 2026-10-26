@@ -1193,5 +1193,105 @@ pub fn format_local_audio_selection(selection: &LocalAudioSelection) -> Option<S
     ))
 }
 
+// =========================================================================
+// Unit 35: Image Understanding & Runtime Model Resolution (OCRM-RESP-MEDIA-UND-IMAGE-INPUT-001 & IMAGE-RUNTIME-001)
+// =========================================================================
+
+pub const MEDIA_UNDERSTANDING_MAX_SOURCE_PIXELS: usize = 40_000_000;
+
+pub fn is_heic_image_input(mime: Option<&str>, file_name: Option<&str>) -> bool {
+    if let Some(m) = mime.map(str::trim).filter(|s| !s.is_empty()) {
+        let lower = m.to_ascii_lowercase();
+        if lower == "image/heic"
+            || lower == "image/heif"
+            || lower == "image/heic-sequence"
+            || lower == "image/heif-sequence"
+        {
+            return true;
+        }
+    }
+    if let Some(f) = file_name.map(str::trim).filter(|s| !s.is_empty()) {
+        let lower = f.to_ascii_lowercase();
+        if lower.ends_with(".heic") || lower.ends_with(".heif") {
+            return true;
+        }
+    }
+    false
+}
+
+pub fn effective_image_bytes_cap(max_bytes: usize, model_max_bytes: Option<usize>) -> usize {
+    model_max_bytes
+        .filter(|&m| m > 0)
+        .map_or(max_bytes, |m| std::cmp::min(max_bytes, m))
+}
+
+pub fn require_image_capable_model(
+    model_provider: &str,
+    model_id: &str,
+    input_capabilities: &[String],
+) -> Result<(), String> {
+    if input_capabilities.iter().any(|c| c == "image") {
+        Ok(())
+    } else {
+        let caps = if input_capabilities.is_empty() {
+            "none".to_string()
+        } else {
+            input_capabilities.join(", ")
+        };
+        Err(format!(
+            "Model does not support images: {model_provider}/{model_id} (input: {caps})"
+        ))
+    }
+}
+
+pub fn resolve_image_tool_max_tokens(
+    model_max_tokens: Option<usize>,
+    requested_max_tokens: usize,
+) -> usize {
+    match model_max_tokens {
+        Some(m) if m > 0 => std::cmp::min(m, requested_max_tokens),
+        _ => requested_max_tokens,
+    }
+}
+
+pub fn disable_reasoning_for_image_retry_payload(
+    payload: &serde_json::Value,
+    is_native_responses: bool,
+) -> Option<serde_json::Value> {
+    let mut map = payload.as_object()?.clone();
+    map.remove("reasoning");
+    map.remove("reasoning_effort");
+
+    if let Some(include) = map.get("include").and_then(|v| v.as_array()) {
+        let filtered: Vec<serde_json::Value> = include
+            .iter()
+            .filter(|v| v.as_str() != Some("reasoning.encrypted_content"))
+            .cloned()
+            .collect();
+        if filtered.is_empty() {
+            map.remove("include");
+        } else {
+            map.insert("include".to_string(), serde_json::Value::Array(filtered));
+        }
+    }
+
+    if is_native_responses {
+        map.insert(
+            "reasoning".to_string(),
+            serde_json::json!({ "effort": "none" }),
+        );
+    }
+
+    Some(serde_json::Value::Object(map))
+}
+
+pub fn should_place_image_prompt_in_user_content(provider: &str) -> bool {
+    provider.trim().eq_ignore_ascii_case("github-copilot")
+}
+
+pub fn is_image_model_no_text_error(message: &str) -> bool {
+    message.trim_start().starts_with("Image model returned no text")
+}
+
 
 

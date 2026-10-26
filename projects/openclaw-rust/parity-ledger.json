@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 300,
+    "mapped_paths": 311,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58450
+    "unclassified_paths": 58439
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -15106,6 +15106,279 @@
         "coerce_openai_compatible_video_text"
       ],
       "unit_id": "OCRM-UNIT-MEDIA-UND-005"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Image input normalization, HEIC/HEIF MIME and extension identification, and model-specific effective image byte cap calculation.",
+      "blocker_ids": [
+        "BL-MEDIA-UND-IMAGE-INPUT-HEIC-WIRING-001"
+      ],
+      "capability_ids": [
+        "media.understanding.image_input"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_understanding_service"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_understanding_contract.rs",
+        "projects/openclaw-rust/dossiers/media-understanding-image-runtime-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+          "reason": "Image input normalization and bounds evaluator"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-UND-IMAGE-INPUT-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "entrypoint": "source/host/src/extensions/attachments/media_understanding_service.rs::effective_image_bytes_cap",
+        "owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "producer": "source/host/src/extensions/attachments/media_understanding_service.rs"
+      },
+      "invariants": [
+        "HEIC and HEIF inputs recognized via MIME or file extension",
+        "Effective image byte cap respects model limits when smaller than global limit",
+        "Source pixel ceiling bounded at 40 million pixels"
+      ],
+      "migration_rollback": "Use uncompressed input image forwarding",
+      "oracle_ids": [
+        "OCRM-MEDIA-UND-O23"
+      ],
+      "owner_decision": "Implement image input normalization predicates and bounds calculation in media_understanding_service",
+      "postconditions": [
+        "Effective image byte budget and HEIC detection evaluated"
+      ],
+      "preconditions": [
+        "Image input metadata and candidate compression policy provided"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; guards downstream model vision APIs from incompatible container formats",
+      "selected_owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
+      "source_refs": [
+        {
+          "blob_sha": "904f5775868eff2e0cff425d50065fd7e9026da3",
+          "path": "src/media-understanding/image-input-normalize.ts",
+          "range": {
+            "end_line": 89,
+            "start_line": 1
+          },
+          "symbol": "normalizeImageDescriptionInput, optimizeImageDescriptionInput"
+        },
+        {
+          "blob_sha": "4cdc7ba834853a21dd2f1a7e8510aef7be17d399",
+          "path": "src/media-understanding/image-input-normalize.test.ts",
+          "range": {
+            "end_line": 73,
+            "start_line": 1
+          },
+          "symbol": "image description input optimization test suite"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "symbol": "is_heic_image_input, effective_image_bytes_cap, MEDIA_UNDERSTANDING_MAX_SOURCE_PIXELS"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o23_image_input_normalization_and_caps"
+      ],
+      "typed_contracts": [
+        "is_heic_image_input",
+        "effective_image_bytes_cap"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-UND-006"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Image model runtime selection, vision capability enforcement, token budget clamping, reasoning strip for retry payloads, and provider prompt routing.",
+      "blocker_ids": [
+        "BL-MEDIA-UND-IMAGE-RUNTIME-WIRING-001"
+      ],
+      "capability_ids": [
+        "media.understanding.image_runtime"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::media_understanding_service"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_media_understanding_contract.rs",
+        "projects/openclaw-rust/dossiers/media-understanding-image-runtime-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+          "reason": "Image understanding model runtime and token budget manager"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-UND-IMAGE-RUNTIME-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "entrypoint": "source/host/src/extensions/attachments/media_understanding_service.rs::require_image_capable_model",
+        "owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "producer": "source/host/src/extensions/attachments/media_understanding_service.rs"
+      },
+      "invariants": [
+        "Models lacking image input capability are rejected before dispatch",
+        "Requested image tool max tokens bounded against model limits",
+        "Reasoning payloads stripped for image retries to avoid empty-text responses",
+        "GitHub Copilot models place prompt inside user message to satisfy gateway schema"
+      ],
+      "migration_rollback": "Use unconstrained model vision routing",
+      "oracle_ids": [
+        "OCRM-MEDIA-UND-O24",
+        "OCRM-MEDIA-UND-O25"
+      ],
+      "owner_decision": "Implement image model runtime checks, token clamping, and reasoning retry stripping in media_understanding_service",
+      "postconditions": [
+        "Image model capability validated and retry payload prepared"
+      ],
+      "preconditions": [
+        "Model capabilities, token limits, or provider completion payload provided"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R24",
+        "OCRM-AC24"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; ensures vision dispatch adheres to provider message constraints and model capabilities",
+      "selected_owner": "source/host/src/extensions/attachments/media_understanding_service.rs",
+      "source_refs": [
+        {
+          "blob_sha": "3fd6e6f6dbcd27d2c9627815b6ca5a47f28db19f",
+          "path": "src/media-understanding/image-model-runtime.ts",
+          "range": {
+            "end_line": 299,
+            "start_line": 1
+          },
+          "symbol": "resolveImageRuntime, requireImageCapableModel"
+        },
+        {
+          "blob_sha": "bea1d9385af7660b972f41e6acff680b7ce4326b",
+          "path": "src/media-understanding/image-runtime.ts",
+          "range": {
+            "end_line": 19,
+            "start_line": 1
+          },
+          "symbol": "describeImageWithModel, describeImagesWithModel"
+        },
+        {
+          "blob_sha": "37a4ff4ea897a0725048d53d96875927c4f14650",
+          "path": "src/media-understanding/image.ts",
+          "range": {
+            "end_line": 547,
+            "start_line": 1
+          },
+          "symbol": "describeImageWithModelCore, disableReasoningForImageRetryPayload, resolveImageToolMaxTokens, shouldPlaceImagePromptInUserContent"
+        },
+        {
+          "blob_sha": "73b7a990089cc81d8bd018a8e48f8b1bf8c38cdc",
+          "path": "src/media-understanding/image.test.ts",
+          "range": {
+            "end_line": 551,
+            "start_line": 1
+          },
+          "symbol": "image model understanding test suite"
+        },
+        {
+          "blob_sha": "bbd52b466f71f9796567893931b2920a0bca401d",
+          "path": "src/media-understanding/image.test-support.ts",
+          "range": {
+            "end_line": 292,
+            "start_line": 1
+          },
+          "symbol": "image understanding test helpers"
+        },
+        {
+          "blob_sha": "9845b9437bb5bc30e5920d9ca0da2797caa25d87",
+          "path": "src/media-understanding/image.clawrouter.test.ts",
+          "range": {
+            "end_line": 180,
+            "start_line": 1
+          },
+          "symbol": "clawrouter image routing test suite"
+        },
+        {
+          "blob_sha": "c74d30c62f235fd7ec87036401c1044beb98f994",
+          "path": "src/media-understanding/image.resources.test.ts",
+          "range": {
+            "end_line": 821,
+            "start_line": 1
+          },
+          "symbol": "image resource management test suite"
+        },
+        {
+          "blob_sha": "0adcad4ea67f41e6d2c784bb0fbb064f9a342c0c",
+          "path": "src/media-understanding/image.runtime-profile.test.ts",
+          "range": {
+            "end_line": 260,
+            "start_line": 1
+          },
+          "symbol": "image runtime profile test suite"
+        },
+        {
+          "blob_sha": "f058466d63de196817e50d0833cbe9091cd6c68b",
+          "path": "src/media-understanding/image.selected-model.test.ts",
+          "range": {
+            "end_line": 101,
+            "start_line": 1
+          },
+          "symbol": "selected model vision resolution test suite"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
+        "symbol": "require_image_capable_model, resolve_image_tool_max_tokens, disable_reasoning_for_image_retry_payload, should_place_image_prompt_in_user_content, is_image_model_no_text_error"
+      },
+      "tests": [
+        "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o24_image_runtime_model_checks_and_token_resolution",
+        "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o25_image_reasoning_stripping_and_copilot_placement"
+      ],
+      "typed_contracts": [
+        "require_image_capable_model",
+        "resolve_image_tool_max_tokens",
+        "disable_reasoning_for_image_retry_payload"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-UND-006"
     }
   ],
   "schema_version": 1,
