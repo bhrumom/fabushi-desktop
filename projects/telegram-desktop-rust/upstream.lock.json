@@ -20,12 +20,12 @@
   },
   "observed_root_inventory": {
     "tree_truncated": false,
-    "entry_count": 7014,
-    "blob_count": 6681,
+    "entry_count": 7194,
+    "blob_count": 6859,
     "direct_gitlink_count": 36,
-    "sourcefiles_blob_count": 3271,
-    "resource_blob_count": 3129,
-    "root_non_directory_count": 6717
+    "root_non_directory_count": 6895,
+    "sourcefiles_blob_count": null,
+    "resource_blob_count": null
   },
   "delta_from_previous_baseline": {
     "ahead_by": 1,
@@ -150,7 +150,7 @@
     {
       "path": "Telegram/lib_base",
       "repository": "desktop-app/lib_base",
-      "commit": "ad56a40232ba542ceb796af7c6b4f474c64df851"
+      "commit": "95a543e426e35938dd632139d0bb828b268c3b4c"
     },
     {
       "path": "Telegram/lib_crl",
@@ -195,7 +195,7 @@
     {
       "path": "Telegram/lib_ui",
       "repository": "desktop-app/lib_ui",
-      "commit": "af1132e87d75f80926dbce1017a96312af3d0bbe"
+      "commit": "79c846fdf0327ff99d3efdc1cc4e11ef50bedc6d"
     },
     {
       "path": "Telegram/lib_webrtc",
@@ -205,12 +205,12 @@
     {
       "path": "Telegram/lib_webview",
       "repository": "desktop-app/lib_webview",
-      "commit": "48c72924706c37addb5f0bcf70b2df8b227f1313"
+      "commit": "ef03bbfd696c7527d7cb57ac20c3a5d30feb98fa"
     },
     {
       "path": "cmake",
       "repository": "desktop-app/cmake_helpers",
-      "commit": "c90e6a1236142cbd80ac0ea3cdf219dabab2ed53"
+      "commit": "7ceca3019b4750d7a5acb2de0faffd523ee14095"
     }
   ],
   "known_nested_gitlinks": [
@@ -255,7 +255,7 @@
     "pointer_scan_required_in_github_actions": true
   },
   "coverage": {
-    "root_source_entries_total": 6717,
+    "root_source_entries_total": 6895,
     "recursive_source_entries_total": null,
     "unknown_minimum": null,
     "unread_minimum": null,
