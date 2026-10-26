@@ -211,3 +211,177 @@ pub fn can_deliver_transcript_echo(channel: Option<&str>, to: Option<&str>) -> b
     !dest.is_empty() && is_deliverable_message_channel(chan)
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NormalizedMediaAttachment {
+    pub path: Option<String>,
+    pub url: Option<String>,
+    pub mime: Option<String>,
+    pub kind: Option<String>,
+    pub file_name: Option<String>,
+    pub workspace_dir: Option<String>,
+    pub index: usize,
+    pub already_transcribed: bool,
+}
+
+/// Normalizes local attachment paths while rejecting Windows UNC network paths and remote file schemes.
+pub fn normalize_attachment_path(raw: Option<&str>) -> Option<String> {
+    let raw = raw?.trim();
+    if raw.is_empty() {
+        return None;
+    }
+    // Reject Windows UNC network paths (e.g. \\server\share or //server/share)
+    if raw.starts_with(r"\\") || raw.starts_with("//") {
+        return None;
+    }
+    if raw.to_ascii_lowercase().starts_with("file://") {
+        let stripped = &raw[7..];
+        if stripped.starts_with(r"\\") || stripped.starts_with("//") {
+            return None;
+        }
+        return Some(stripped.to_string());
+    }
+    Some(raw.to_string())
+}
+
+/// Classifies an attachment by authoritative kind, MIME, then filename extension.
+pub fn resolve_attachment_media_kind(attachment: &NormalizedMediaAttachment) -> &'static str {
+    if let Some(ref k) = attachment.kind {
+        let lk = k.to_ascii_lowercase();
+        match lk.as_str() {
+            "image" | "sticker" => return "image",
+            "audio" => return "audio",
+            "video" => return "video",
+            "document" => return "unknown",
+            _ => {}
+        }
+    }
+    if let Some(ref m) = attachment.mime {
+        let lm = m.to_ascii_lowercase();
+        if lm.starts_with("image/") {
+            return "image";
+        }
+        if lm.starts_with("audio/") {
+            return "audio";
+        }
+        if lm.starts_with("video/") {
+            return "video";
+        }
+    }
+    if let Some(ref p) = attachment.path.as_deref().or(attachment.file_name.as_deref()) {
+        let path = Path::new(p);
+        if let Some(ext) = path.extension().and_then(|s| s.to_str()) {
+            let lext = ext.to_ascii_lowercase();
+            match lext.as_str() {
+                "png" | "jpg" | "jpeg" | "webp" | "gif" | "bmp" => return "image",
+                "mp3" | "wav" | "m4a" | "aac" | "ogg" | "flac" => return "audio",
+                "mp4" | "mov" | "webm" | "mkv" | "avi" => return "video",
+                _ => {}
+            }
+        }
+    }
+    "unknown"
+}
+
+pub fn is_audio_attachment(attachment: &NormalizedMediaAttachment) -> bool {
+    resolve_attachment_media_kind(attachment) == "audio"
+}
+
+pub fn is_image_attachment(attachment: &NormalizedMediaAttachment) -> bool {
+    resolve_attachment_media_kind(attachment) == "image"
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AttachmentOrderPreference {
+    First,
+    Last,
+    Path,
+    Url,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AttachmentSelectionMode {
+    First,
+    All,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AttachmentSelectionPolicy {
+    pub prefer: Option<AttachmentOrderPreference>,
+    pub mode: AttachmentSelectionMode,
+    pub max_attachments: usize,
+}
+
+impl Default for AttachmentSelectionPolicy {
+    fn default() -> Self {
+        Self {
+            prefer: None,
+            mode: AttachmentSelectionMode::First,
+            max_attachments: 1,
+        }
+    }
+}
+
+pub struct AttachmentSelectionResult {
+    pub selected: Vec<NormalizedMediaAttachment>,
+    pub dropped_attachment_indexes: Vec<usize>,
+}
+
+pub fn select_attachments(
+    capability: MediaUnderstandingCapability,
+    attachments: &[NormalizedMediaAttachment],
+    policy: &AttachmentSelectionPolicy,
+    decided_audio_indexes: Option<&[usize]>,
+) -> AttachmentSelectionResult {
+    let target_kind = capability.as_str();
+    let decided_set: std::collections::HashSet<usize> = decided_audio_indexes
+        .map(|s| s.iter().copied().collect())
+        .unwrap_or_default();
+
+    let mut matches: Vec<NormalizedMediaAttachment> = attachments
+        .iter()
+        .filter(|att| {
+            if capability == MediaUnderstandingCapability::Audio
+                && (att.already_transcribed || decided_set.contains(&att.index))
+            {
+                return false;
+            }
+            resolve_attachment_media_kind(att) == target_kind
+        })
+        .cloned()
+        .collect();
+
+    if matches.is_empty() {
+        return AttachmentSelectionResult {
+            selected: Vec::new(),
+            dropped_attachment_indexes: Vec::new(),
+        };
+    }
+
+    match policy.prefer {
+        Some(AttachmentOrderPreference::Last) => {
+            matches.reverse();
+        }
+        Some(AttachmentOrderPreference::Path) => {
+            matches.sort_by_key(|att| if att.path.is_some() { 0 } else { 1 });
+        }
+        Some(AttachmentOrderPreference::Url) => {
+            matches.sort_by_key(|att| if att.url.is_some() { 0 } else { 1 });
+        }
+        _ => {}
+    }
+
+    let limit = match policy.mode {
+        AttachmentSelectionMode::All => policy.max_attachments.max(1),
+        AttachmentSelectionMode::First => 1,
+    };
+
+    let selected: Vec<NormalizedMediaAttachment> = matches.iter().take(limit).cloned().collect();
+    let dropped: Vec<usize> = matches.iter().skip(limit).map(|att| att.index).collect();
+
+    AttachmentSelectionResult {
+        selected,
+        dropped_attachment_indexes: dropped,
+    }
+}
+
+

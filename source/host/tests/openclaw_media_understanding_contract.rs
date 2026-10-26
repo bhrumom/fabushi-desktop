@@ -164,3 +164,146 @@ fn test_ocrm_media_und_o10_echo_transcript_channel_deliverability() {
     assert!(!can_deliver_transcript_echo(Some("telegram"), None));
 }
 
+#[test]
+fn test_ocrm_media_und_o11_attachment_path_normalization_and_guards() {
+    // Normal paths
+    assert_eq!(
+        normalize_attachment_path(Some("/tmp/image.png")),
+        Some("/tmp/image.png".to_string())
+    );
+
+    // file:// URLs
+    assert_eq!(
+        normalize_attachment_path(Some("file:///tmp/image.png")),
+        Some("/tmp/image.png".to_string())
+    );
+
+    // Windows UNC network paths rejected
+    assert_eq!(normalize_attachment_path(Some(r"\\server\share\file.png")), None);
+    assert_eq!(normalize_attachment_path(Some("//server/share/file.png")), None);
+    assert_eq!(normalize_attachment_path(Some(r"file://\\server\share\file.png")), None);
+
+    // Whitespace / None
+    assert_eq!(normalize_attachment_path(Some("   ")), None);
+    assert_eq!(normalize_attachment_path(None), None);
+}
+
+#[test]
+fn test_ocrm_media_und_o12_attachment_kind_resolution() {
+    let mut att = NormalizedMediaAttachment {
+        path: Some("/tmp/test.png".to_string()),
+        url: None,
+        mime: None,
+        kind: None,
+        file_name: None,
+        workspace_dir: None,
+        index: 0,
+        already_transcribed: false,
+    };
+    assert_eq!(resolve_attachment_media_kind(&att), "image");
+    assert!(is_image_attachment(&att));
+    assert!(!is_audio_attachment(&att));
+
+    // Sticker kind is treated as image
+    att.kind = Some("sticker".to_string());
+    assert_eq!(resolve_attachment_media_kind(&att), "image");
+
+    // Audio by mime
+    att.kind = None;
+    att.path = Some("/tmp/unknown_ext".to_string());
+    att.mime = Some("audio/ogg".to_string());
+    assert_eq!(resolve_attachment_media_kind(&att), "audio");
+    assert!(is_audio_attachment(&att));
+
+    // Video by extension
+    att.mime = None;
+    att.path = Some("/tmp/recording.mp4".to_string());
+    assert_eq!(resolve_attachment_media_kind(&att), "video");
+}
+
+#[test]
+fn test_ocrm_media_und_o13_attachment_selection_policy_ordering_and_limits() {
+    let att0 = NormalizedMediaAttachment {
+        path: Some("/tmp/0.png".to_string()),
+        url: None,
+        mime: None,
+        kind: Some("image".to_string()),
+        file_name: None,
+        workspace_dir: None,
+        index: 0,
+        already_transcribed: false,
+    };
+    let att1 = NormalizedMediaAttachment {
+        path: None,
+        url: Some("https://example.com/1.png".to_string()),
+        mime: None,
+        kind: Some("image".to_string()),
+        file_name: None,
+        workspace_dir: None,
+        index: 1,
+        already_transcribed: false,
+    };
+    let att2 = NormalizedMediaAttachment {
+        path: Some("/tmp/2.png".to_string()),
+        url: None,
+        mime: None,
+        kind: Some("image".to_string()),
+        file_name: None,
+        workspace_dir: None,
+        index: 2,
+        already_transcribed: false,
+    };
+
+    let items = vec![att0.clone(), att1.clone(), att2.clone()];
+
+    // 1. Default policy: Mode=First -> selects index 0, drops [1, 2]
+    let default_policy = AttachmentSelectionPolicy::default();
+    let res = select_attachments(MediaUnderstandingCapability::Image, &items, &default_policy, None);
+    assert_eq!(res.selected.len(), 1);
+    assert_eq!(res.selected[0].index, 0);
+    assert_eq!(res.dropped_attachment_indexes, vec![1, 2]);
+
+    // 2. Prefer Last: selects index 2, drops [1, 0]
+    let last_policy = AttachmentSelectionPolicy {
+        prefer: Some(AttachmentOrderPreference::Last),
+        mode: AttachmentSelectionMode::First,
+        max_attachments: 1,
+    };
+    let res_last = select_attachments(MediaUnderstandingCapability::Image, &items, &last_policy, None);
+    assert_eq!(res_last.selected.len(), 1);
+    assert_eq!(res_last.selected[0].index, 2);
+    assert_eq!(res_last.dropped_attachment_indexes, vec![1, 0]);
+
+    // 3. Mode All with max_attachments = 2
+    let all_policy = AttachmentSelectionPolicy {
+        prefer: None,
+        mode: AttachmentSelectionMode::All,
+        max_attachments: 2,
+    };
+    let res_all = select_attachments(MediaUnderstandingCapability::Image, &items, &all_policy, None);
+    assert_eq!(res_all.selected.len(), 2);
+    assert_eq!(res_all.selected[0].index, 0);
+    assert_eq!(res_all.selected[1].index, 1);
+    assert_eq!(res_all.dropped_attachment_indexes, vec![2]);
+
+    // 4. Audio preflight skip of already transcribed / decided indexes
+    let audio_att = NormalizedMediaAttachment {
+        path: Some("/tmp/audio.mp3".to_string()),
+        url: None,
+        mime: None,
+        kind: Some("audio".to_string()),
+        file_name: None,
+        workspace_dir: None,
+        index: 5,
+        already_transcribed: true,
+    };
+    let res_audio = select_attachments(
+        MediaUnderstandingCapability::Audio,
+        &[audio_att],
+        &default_policy,
+        None,
+    );
+    assert!(res_audio.selected.is_empty());
+}
+
+
