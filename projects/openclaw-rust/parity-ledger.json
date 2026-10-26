@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 63,
+    "mapped_paths": 126,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58687
+    "unclassified_paths": 58624
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -2566,6 +2566,1071 @@
         "Session work admission and archive lifecycle"
       ],
       "unit_id": "OCRM-UNIT-SESSIONS-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Enforce device pairing state transitions (Pending -> Approved, Rejected, Revoked) with immutable request identity and audit provenance.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "device.pairing_state_machine"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::network_enrollment_owner"
+      ],
+      "evidence_refs": [
+        "source/host/tests/network_enrollment_owner_contract.rs",
+        "projects/openclaw-rust/dossiers/gateway-router-device-authority-followup-20261022.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/network_enrollment_owner.rs",
+          "reason": "Authoritative device pairing and network enrollment owner"
+        }
+      ],
+      "id": "OCRM-RESP-DEVICE-PAIRING-STATE-MACHINE-001",
+      "integration": {
+        "consumer": "source/host/src/network_enrollment_owner.rs",
+        "entrypoint": "source/host/src/network_enrollment_owner.rs",
+        "owner": "source/host/src/network_enrollment_owner.rs",
+        "producer": "source/host/src/network_enrollment_owner.rs"
+      },
+      "invariants": [
+        "Once revoked, device pairing cannot transition to pending or approved without new request"
+      ],
+      "migration_rollback": "Enrollment state transitions adhere to NetworkEnrollmentOwner lifecycle",
+      "oracle_ids": [
+        "OCRM-DEVICE-PAIRING-O01"
+      ],
+      "owner_decision": "Implement pairing state machine in network_enrollment_owner.rs",
+      "postconditions": [
+        "Device pairing state updated with timestamp and audit record"
+      ],
+      "preconditions": [
+        "Valid device identifier and registration request"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R10",
+        "OCRM-R13",
+        "OCRM-AC11"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; ensures device admission control",
+      "selected_owner": "source/host/src/network_enrollment_owner.rs",
+      "source_refs": [
+        {
+          "blob_sha": "ded452595bb22cdd5582d06cc7fe2ff9d4d6b609",
+          "path": "src/infra/device-pairing.ts",
+          "range": {
+            "end_line": 283,
+            "start_line": 1
+          },
+          "symbol": "devicePairing"
+        },
+        {
+          "blob_sha": "53889a9bed1994c1ca009f0df3dca366a774b907",
+          "path": "src/infra/device-pairing-access.ts",
+          "range": {
+            "end_line": 21,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-access"
+        },
+        {
+          "blob_sha": "5ca4d8260d643920adcd0bf10e74c921916774e9",
+          "path": "src/infra/device-pairing-admission.types.ts",
+          "range": {
+            "end_line": 23,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-admission"
+        },
+        {
+          "blob_sha": "5d7b5fc031662b0a9a24466f2f3ea932e7e509b6",
+          "path": "src/infra/device-pairing-binding.ts",
+          "range": {
+            "end_line": 20,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-binding"
+        },
+        {
+          "blob_sha": "7a4be496ebfcd66b4fb7b0a341c5c41d1b2e7654",
+          "path": "src/infra/device-pairing-card-renderer.ts",
+          "range": {
+            "end_line": 16,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-card-renderer"
+        },
+        {
+          "blob_sha": "4f11cbec9fa86b8f73ffa18aa5578cf1e7960cf3",
+          "path": "src/infra/device-pairing-churn.test.ts",
+          "range": {
+            "end_line": 119,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-churn"
+        },
+        {
+          "blob_sha": "7d17c6b00992c27ce44f1f0d6ac9c7d6e8c4a6c4",
+          "path": "src/infra/device-pairing-cloud-worker.ts",
+          "range": {
+            "end_line": 90,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-cloud-worker"
+        },
+        {
+          "blob_sha": "3e86654e35d51639500179b66e281a5b17517f6f",
+          "path": "src/infra/device-pairing-core.kernel.ts",
+          "range": {
+            "end_line": 450,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-core"
+        },
+        {
+          "blob_sha": "2cc2a8adfc6b75ad9faf21506e1f8a1dbd07751f",
+          "path": "src/infra/device-pairing-core.types.ts",
+          "range": {
+            "end_line": 123,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-core"
+        },
+        {
+          "blob_sha": "db24acd2ea14899798738c03c313eec64b90918e",
+          "path": "src/infra/device-pairing-core.worker-contract.ts",
+          "range": {
+            "end_line": 4,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-core"
+        },
+        {
+          "blob_sha": "fb60cb2a473a26e1388ea59cc4be840fd33f3110",
+          "path": "src/infra/device-pairing-core.worker.ts",
+          "range": {
+            "end_line": 102,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-core"
+        },
+        {
+          "blob_sha": "26b447c56db8318c92dcc6f47c11ebc7c85d985a",
+          "path": "src/infra/device-pairing-dispatch.worker.ts",
+          "range": {
+            "end_line": 101,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-dispatch"
+        },
+        {
+          "blob_sha": "673840213426acbe6e96b4ae3ab088f83e47def9",
+          "path": "src/infra/device-pairing-identity.test.ts",
+          "range": {
+            "end_line": 150,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-identity"
+        },
+        {
+          "blob_sha": "61869ba59284d2322fa334dde5a5028fdcf0aa85",
+          "path": "src/infra/device-pairing-identity.ts",
+          "range": {
+            "end_line": 198,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-identity"
+        },
+        {
+          "blob_sha": "50face6d5f32ef58cbfe23cef7f19ccdb2348118",
+          "path": "src/infra/device-pairing-mutation.worker.ts",
+          "range": {
+            "end_line": 25,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-mutation"
+        },
+        {
+          "blob_sha": "6d9f9e74761cfd01825462d3b6824be94d1da9b2",
+          "path": "src/infra/device-pairing-publication.test.ts",
+          "range": {
+            "end_line": 537,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-publication"
+        },
+        {
+          "blob_sha": "a8d9e7bcbde564ebf8d08cd00ca7fd8e6cf97666",
+          "path": "src/infra/device-pairing-publication.ts",
+          "range": {
+            "end_line": 260,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-publication"
+        },
+        {
+          "blob_sha": "0d9e76f04508c0594f2d77eead7176716104f939",
+          "path": "src/infra/device-pairing-read.kernel.ts",
+          "range": {
+            "end_line": 85,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-read"
+        },
+        {
+          "blob_sha": "d5d06829a860925a467547fd626eb18ed1a3950e",
+          "path": "src/infra/device-pairing-read.types.ts",
+          "range": {
+            "end_line": 63,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-read"
+        },
+        {
+          "blob_sha": "a56b6eface64a5b20b66b085730f5504c225cf20",
+          "path": "src/infra/device-pairing-resolution.test.ts",
+          "range": {
+            "end_line": 53,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-resolution"
+        },
+        {
+          "blob_sha": "53f26d60aa67be1cc546e81ca244440ca79e4e62",
+          "path": "src/infra/device-pairing-resolution.ts",
+          "range": {
+            "end_line": 75,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-resolution"
+        },
+        {
+          "blob_sha": "d5714607a7ad69b27fe142cb38fc162f7d734b2a",
+          "path": "src/infra/device-pairing-state.kernel.ts",
+          "range": {
+            "end_line": 69,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-state"
+        },
+        {
+          "blob_sha": "fa2cbecafa411cb8b1a4c32b069521308f69562c",
+          "path": "src/infra/device-pairing-state.test-support.ts",
+          "range": {
+            "end_line": 42,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-state"
+        },
+        {
+          "blob_sha": "202047fca6cbe2c7e0ead969fa2bffbdd0a5190d",
+          "path": "src/infra/device-pairing-worker-contract.ts",
+          "range": {
+            "end_line": 7,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-worker-contract"
+        },
+        {
+          "blob_sha": "c500eb0d4d209c449c61a9ec017cc8b2541886bf",
+          "path": "src/infra/device-pairing-worker.benchmark.test.ts",
+          "range": {
+            "end_line": 93,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-worker"
+        },
+        {
+          "blob_sha": "ce6f54087111c5df4aa7b2cf97663cd4fe6fffc1",
+          "path": "src/infra/device-pairing-worker.test.ts",
+          "range": {
+            "end_line": 739,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-worker"
+        },
+        {
+          "blob_sha": "190f6301ff4a865992d8bd1c5f3ddf4aff912ca5",
+          "path": "src/infra/device-pairing-worker.ts",
+          "range": {
+            "end_line": 239,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-worker"
+        },
+        {
+          "blob_sha": "3d2de5c7da742fbc9884895818b584e1d82849c1",
+          "path": "src/infra/device-pairing.test.ts",
+          "range": {
+            "end_line": 1012,
+            "start_line": 1
+          },
+          "symbol": "device-pairing"
+        },
+        {
+          "blob_sha": "5a7413d40f0a96fff15da5588ecee53f427b25f7",
+          "path": "src/infra/device-pairing.types.ts",
+          "range": {
+            "end_line": 163,
+            "start_line": 1
+          },
+          "symbol": "device-pairing"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/network_enrollment_owner.rs",
+        "symbol": "network_enrollment_owner"
+      },
+      "tests": [
+        "source/host/tests/network_enrollment_owner_contract.rs::test_ocrm_device_pairing_o01_state_transitions"
+      ],
+      "typed_contracts": [
+        "Device pairing state transition machine"
+      ],
+      "unit_id": "OCRM-UNIT-DEVICE-PAIRING-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Durable pairing store persistence and row mapping, ensuring durable state write before grant side effects.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "device.pairing_store"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::network_enrollment_owner"
+      ],
+      "evidence_refs": [
+        "source/host/tests/network_enrollment_owner_contract.rs",
+        "projects/openclaw-rust/dossiers/gateway-router-device-authority-followup-20261022.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/network_enrollment_owner.rs",
+          "reason": "Host network enrollment state persistence"
+        }
+      ],
+      "id": "OCRM-RESP-DEVICE-PAIRING-STORE-PERSISTENCE-001",
+      "integration": {
+        "consumer": "source/host/src/network_enrollment_owner.rs",
+        "entrypoint": "source/host/src/network_enrollment_owner.rs",
+        "owner": "source/host/src/network_enrollment_owner.rs",
+        "producer": "source/host/src/network_enrollment_owner.rs"
+      },
+      "invariants": [
+        "State write must precede external grant request execution"
+      ],
+      "migration_rollback": "Standard SQLite schema and file persistence",
+      "oracle_ids": [
+        "OCRM-DEVICE-PAIRING-O02"
+      ],
+      "owner_decision": "Persist pairing enrollment state in network_enrollment_owner.rs",
+      "postconditions": [
+        "Durable state written on disk"
+      ],
+      "preconditions": [
+        "Device enrollment request payload"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R10",
+        "OCRM-R13",
+        "OCRM-AC11"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; ensures crash recovery of pairing records",
+      "selected_owner": "source/host/src/network_enrollment_owner.rs",
+      "source_refs": [
+        {
+          "blob_sha": "b7592120467b67ab19011d3ce3eea055559adf25",
+          "path": "src/infra/device-pairing-store.ts",
+          "range": {
+            "end_line": 648,
+            "start_line": 1
+          },
+          "symbol": "devicePairingStore"
+        },
+        {
+          "blob_sha": "5140962d35e1b27ec082aa61554490bbf694acaf",
+          "path": "src/infra/database-engine/device-pairing.conformance.test.ts",
+          "range": {
+            "end_line": 77,
+            "start_line": 1
+          },
+          "symbol": "device-pairing"
+        },
+        {
+          "blob_sha": "de139c29b9f96b57fa19d339bef3ef4937baedc6",
+          "path": "src/infra/device-pairing-lock.ts",
+          "range": {
+            "end_line": 23,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-lock"
+        },
+        {
+          "blob_sha": "ae9ba870ad19d2034ab31e9458ae4359841d04a3",
+          "path": "src/infra/device-pairing-migration.test.ts",
+          "range": {
+            "end_line": 176,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-migration"
+        },
+        {
+          "blob_sha": "7b0b605e63f3ba7ab97ea00bb200cb5672ee4df1",
+          "path": "src/infra/device-pairing-migration.ts",
+          "range": {
+            "end_line": 145,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-migration"
+        },
+        {
+          "blob_sha": "7706de1ca574a4bf2216f72991781df1e4b9f255",
+          "path": "src/infra/device-pairing-node-desktop-migration.test.ts",
+          "range": {
+            "end_line": 246,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-node-desktop-migration"
+        },
+        {
+          "blob_sha": "6b2aed1cea6a701498538ea2d2692b4e32cbdde6",
+          "path": "src/infra/device-pairing-node-desktop-migration.ts",
+          "range": {
+            "end_line": 134,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-node-desktop-migration"
+        },
+        {
+          "blob_sha": "8af0a7638a6e2c23300323043935c549cb77739d",
+          "path": "src/infra/device-pairing-row-mapping.ts",
+          "range": {
+            "end_line": 246,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-row-mapping"
+        },
+        {
+          "blob_sha": "82335a9a30db69a0a612ae42e1dace395cf7c486",
+          "path": "src/infra/device-pairing-store-cache.ts",
+          "range": {
+            "end_line": 63,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-store-cache"
+        },
+        {
+          "blob_sha": "a2541c87160e7acfffd96374dde710bba7c186ea",
+          "path": "src/infra/device-pairing-store-readonly.ts",
+          "range": {
+            "end_line": 165,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-store-readonly"
+        },
+        {
+          "blob_sha": "205d5a9ab1f59b0ec2fc1b6762844f02eecf12cb",
+          "path": "src/infra/device-pairing-store.test.ts",
+          "range": {
+            "end_line": 235,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-store"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/network_enrollment_owner.rs",
+        "symbol": "write_state"
+      },
+      "tests": [
+        "source/host/tests/network_enrollment_owner_contract.rs::test_ocrm_device_pairing_o02_durable_persistence"
+      ],
+      "typed_contracts": [
+        "write_state(path: &Path, state: &EnrollmentState) -> io::Result<()>"
+      ],
+      "unit_id": "OCRM-UNIT-DEVICE-PAIRING-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Role-based approval policy for inbound pairing requests; only authorized operators can approve node enrollment.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "device.pairing_approval_policy"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::network_enrollment_owner"
+      ],
+      "evidence_refs": [
+        "source/host/tests/network_enrollment_owner_contract.rs",
+        "projects/openclaw-rust/dossiers/gateway-router-device-authority-followup-20261022.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/network_enrollment_owner.rs",
+          "reason": "Host network enrollment authorization owner"
+        }
+      ],
+      "id": "OCRM-RESP-DEVICE-PAIRING-APPROVAL-POLICY-001",
+      "integration": {
+        "consumer": "source/host/src/network_enrollment_owner.rs",
+        "entrypoint": "source/host/src/network_enrollment_owner.rs",
+        "owner": "source/host/src/network_enrollment_owner.rs",
+        "producer": "source/host/src/network_enrollment_owner.rs"
+      },
+      "invariants": [
+        "Non-operator roles cannot approve or reject device pairing requests"
+      ],
+      "migration_rollback": "Operator role validation enforced by host gateway policy",
+      "oracle_ids": [
+        "OCRM-DEVICE-PAIRING-O03"
+      ],
+      "owner_decision": "Enforce operator privilege requirement for pairing approvals",
+      "postconditions": [
+        "Pairing approved or rejected based on operator command"
+      ],
+      "preconditions": [
+        "Authenticated operator context and pending request ID"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R10",
+        "OCRM-R13",
+        "OCRM-AC11"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; prevents rogue device self-enrollment",
+      "selected_owner": "source/host/src/network_enrollment_owner.rs",
+      "source_refs": [
+        {
+          "blob_sha": "708db58a83f4d743054f70e2208a4fc4cc08bb3b",
+          "path": "src/infra/device-pairing-approval.ts",
+          "range": {
+            "end_line": 156,
+            "start_line": 1
+          },
+          "symbol": "approveDevicePairing"
+        },
+        {
+          "blob_sha": "b8edee7f829134a211fbb2c91018fad7c72edca8",
+          "path": "src/infra/device-pairing-approval-policy.test.ts",
+          "range": {
+            "end_line": 101,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-approval-policy"
+        },
+        {
+          "blob_sha": "7a563c858c078347587d4bfc6e153be59550393a",
+          "path": "src/infra/device-pairing-approval.kernel.ts",
+          "range": {
+            "end_line": 381,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-approval"
+        },
+        {
+          "blob_sha": "c04fdbcace777ef0a5c937995292316a1110e259",
+          "path": "src/infra/device-pairing.ingress-approval.test.ts",
+          "range": {
+            "end_line": 99,
+            "start_line": 1
+          },
+          "symbol": "device-pairing"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/network_enrollment_owner.rs",
+        "symbol": "network_enrollment_owner"
+      },
+      "tests": [
+        "source/host/tests/network_enrollment_owner_contract.rs::test_ocrm_device_pairing_o03_approval_policy"
+      ],
+      "typed_contracts": [
+        "Device pairing approval policy check"
+      ],
+      "unit_id": "OCRM-UNIT-DEVICE-PAIRING-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Pairing token derivation, single-use auth key invalidation, and token rotation upon pairing refresh.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "device.pairing_tokens"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::network_enrollment_owner"
+      ],
+      "evidence_refs": [
+        "source/host/tests/network_enrollment_owner_contract.rs",
+        "projects/openclaw-rust/dossiers/gateway-router-device-authority-followup-20261022.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/network_enrollment_owner.rs",
+          "reason": "Host network credential manager"
+        }
+      ],
+      "id": "OCRM-RESP-DEVICE-PAIRING-TOKENS-LIFECYCLE-001",
+      "integration": {
+        "consumer": "source/host/src/network_enrollment_owner.rs",
+        "entrypoint": "source/host/src/network_enrollment_owner.rs",
+        "owner": "source/host/src/network_enrollment_owner.rs",
+        "producer": "source/host/src/network_enrollment_owner.rs"
+      },
+      "invariants": [
+        "One-time authentication keys are invalidated immediately after worker start"
+      ],
+      "migration_rollback": "Single-use key clearing ensures forward secrecy",
+      "oracle_ids": [
+        "OCRM-DEVICE-PAIRING-O04"
+      ],
+      "owner_decision": "Enforce single-use auth key clearing in network_enrollment_owner.rs",
+      "postconditions": [
+        "Auth key set to None after worker launch"
+      ],
+      "preconditions": [
+        "Valid enrollment state and one-time auth key"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R10",
+        "OCRM-R13",
+        "OCRM-AC11"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; prevents replay attacks with consumed keys",
+      "selected_owner": "source/host/src/network_enrollment_owner.rs",
+      "source_refs": [
+        {
+          "blob_sha": "5e2f2662f1401e0f1f40f419a95557b458875027",
+          "path": "src/infra/device-pairing-tokens.ts",
+          "range": {
+            "end_line": 154,
+            "start_line": 1
+          },
+          "symbol": "devicePairingTokens"
+        },
+        {
+          "blob_sha": "11044c4dfd3e1a1e4146768b85e217f877c44109",
+          "path": "src/infra/device-pairing-token-policy.ts",
+          "range": {
+            "end_line": 142,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-token-policy"
+        },
+        {
+          "blob_sha": "7bb56b799c5945489f60520329d67ea18c06ce75",
+          "path": "src/infra/device-pairing-token-utils.ts",
+          "range": {
+            "end_line": 62,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-token-utils"
+        },
+        {
+          "blob_sha": "5c61ce1a12a816dd5c147a91f66a0f1f837051d4",
+          "path": "src/infra/device-pairing-tokens.kernel.ts",
+          "range": {
+            "end_line": 248,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-tokens"
+        },
+        {
+          "blob_sha": "4590ce8aa514052941ca44f70a93ee9714dd996d",
+          "path": "src/infra/device-pairing.local-credentials.test.ts",
+          "range": {
+            "end_line": 272,
+            "start_line": 1
+          },
+          "symbol": "device-pairing"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/network_enrollment_owner.rs",
+        "symbol": "network_enrollment_owner"
+      },
+      "tests": [
+        "source/host/tests/network_enrollment_owner_contract.rs::test_ocrm_device_pairing_o04_token_lifecycle"
+      ],
+      "typed_contracts": [
+        "Single-use token invalidation"
+      ],
+      "unit_id": "OCRM-UNIT-DEVICE-PAIRING-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Short-lived setup and join code generation, verification, and rate limiting for out-of-band device pairing.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "device.join_code"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::network_enrollment_owner"
+      ],
+      "evidence_refs": [
+        "source/host/tests/network_enrollment_owner_contract.rs",
+        "projects/openclaw-rust/dossiers/gateway-router-device-authority-followup-20261022.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/network_enrollment_owner.rs",
+          "reason": "Host pairing join code manager"
+        }
+      ],
+      "id": "OCRM-RESP-DEVICE-PAIRING-JOIN-CODE-001",
+      "integration": {
+        "consumer": "source/host/src/network_enrollment_owner.rs",
+        "entrypoint": "source/host/src/network_enrollment_owner.rs",
+        "owner": "source/host/src/network_enrollment_owner.rs",
+        "producer": "source/host/src/network_enrollment_owner.rs"
+      },
+      "invariants": [
+        "Join codes must be 8 alphanumeric characters and expire after fixed TTL"
+      ],
+      "migration_rollback": "Standard 8-character join code verification",
+      "oracle_ids": [
+        "OCRM-DEVICE-PAIRING-O05"
+      ],
+      "owner_decision": "Implement join code format verification in network_enrollment_owner.rs",
+      "postconditions": [
+        "Valid join code returns authorized pairing session"
+      ],
+      "preconditions": [
+        "Candidate join code string"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R10",
+        "OCRM-R13",
+        "OCRM-AC11"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; provides user-friendly pairing without compromising security",
+      "selected_owner": "source/host/src/network_enrollment_owner.rs",
+      "source_refs": [
+        {
+          "blob_sha": "fe6266b798457ae1dd7963f1f629783a10dd6c27",
+          "path": "src/infra/device-pairing-join-code.ts",
+          "range": {
+            "end_line": 78,
+            "start_line": 1
+          },
+          "symbol": "generateJoinCode"
+        },
+        {
+          "blob_sha": "0965f1879247a48fd641780484d670de711c1982",
+          "path": "src/infra/device-pairing-join-code.worker.test.ts",
+          "range": {
+            "end_line": 229,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-join-code"
+        },
+        {
+          "blob_sha": "9972c1aba9e6e728d75784f377ca8dd33576f68a",
+          "path": "src/infra/device-pairing-join-code.worker.ts",
+          "range": {
+            "end_line": 69,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-join-code"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/network_enrollment_owner.rs",
+        "symbol": "network_enrollment_owner"
+      },
+      "tests": [
+        "source/host/tests/network_enrollment_owner_contract.rs::test_ocrm_device_pairing_o05_join_code"
+      ],
+      "typed_contracts": [
+        "Join code verification and generation"
+      ],
+      "unit_id": "OCRM-UNIT-DEVICE-PAIRING-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Node device pairing lifecycle, capability reporting, heartbeat monitoring, and automatic stale node pruning.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "device.node_lifecycle"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::network_enrollment_owner"
+      ],
+      "evidence_refs": [
+        "source/host/tests/network_enrollment_owner_contract.rs",
+        "projects/openclaw-rust/dossiers/gateway-router-device-authority-followup-20261022.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/network_enrollment_owner.rs",
+          "reason": "Host network worker and node supervisor"
+        }
+      ],
+      "id": "OCRM-RESP-DEVICE-PAIRING-NODE-LIFECYCLE-001",
+      "integration": {
+        "consumer": "source/host/src/network_enrollment_owner.rs",
+        "entrypoint": "source/host/src/network_enrollment_owner.rs",
+        "owner": "source/host/src/network_enrollment_owner.rs",
+        "producer": "source/host/src/network_enrollment_owner.rs"
+      },
+      "invariants": [
+        "Stale nodes failing heartbeat checks are transitioned to disconnected or pruned"
+      ],
+      "migration_rollback": "Supervisor poll loop cleans up terminated workers",
+      "oracle_ids": [
+        "OCRM-DEVICE-PAIRING-O06"
+      ],
+      "owner_decision": "Enforce node supervisor poll and pruning in network_enrollment_owner.rs",
+      "postconditions": [
+        "Active node list reflects live, responsive devices only"
+      ],
+      "preconditions": [
+        "Connected node instance"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "integration",
+        "negative-test"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R04",
+        "OCRM-R10",
+        "OCRM-R13",
+        "OCRM-AC11"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; keeps node roster accurate and healthy",
+      "selected_owner": "source/host/src/network_enrollment_owner.rs",
+      "source_refs": [
+        {
+          "blob_sha": "3e032d10f1b2079a22784e8181d14f2eda8e4946",
+          "path": "src/infra/device-pairing-node.ts",
+          "range": {
+            "end_line": 311,
+            "start_line": 1
+          },
+          "symbol": "devicePairingNode"
+        },
+        {
+          "blob_sha": "b693415fb8eb2503c3512e26d7a530066b900792",
+          "path": "src/infra/device-pairing-node-bins.worker.test.ts",
+          "range": {
+            "end_line": 54,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-node-bins"
+        },
+        {
+          "blob_sha": "d1ff4770d301a6b6003c23b5613196b8c761013a",
+          "path": "src/infra/device-pairing-node-facts.ts",
+          "range": {
+            "end_line": 50,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-node-facts"
+        },
+        {
+          "blob_sha": "4cc23766efb819a207bf3b04c596d974a98d93fa",
+          "path": "src/infra/device-pairing-node-state.ts",
+          "range": {
+            "end_line": 77,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-node-state"
+        },
+        {
+          "blob_sha": "d632873d782487012c1d36286a61fd88f87a1f44",
+          "path": "src/infra/device-pairing-node.lifecycle.test.ts",
+          "range": {
+            "end_line": 170,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-node"
+        },
+        {
+          "blob_sha": "fdf8b81e2bb38e68a32ecd4df065c6553696e2c1",
+          "path": "src/infra/device-pairing-node.records.ts",
+          "range": {
+            "end_line": 266,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-node"
+        },
+        {
+          "blob_sha": "d9efa6a44861fa55a5f9915cd9bc4708816f84d9",
+          "path": "src/infra/device-pairing-node.test-support.ts",
+          "range": {
+            "end_line": 44,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-node"
+        },
+        {
+          "blob_sha": "aebbbab2f441e4c952e2094c1a7d8373819c8995",
+          "path": "src/infra/device-pairing-node.test.ts",
+          "range": {
+            "end_line": 1044,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-node"
+        },
+        {
+          "blob_sha": "65d62fa69615af473971e4e3281aca9943eefd78",
+          "path": "src/infra/device-pairing-node.worker-contract.ts",
+          "range": {
+            "end_line": 4,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-node"
+        },
+        {
+          "blob_sha": "aabf81b31f4d514b0517bffd435d16e7cc5d85a9",
+          "path": "src/infra/device-pairing-node.worker.ts",
+          "range": {
+            "end_line": 339,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-node"
+        },
+        {
+          "blob_sha": "95f609492b463999b268658f2265a4470e54b293",
+          "path": "src/infra/device-pairing-prune.test.ts",
+          "range": {
+            "end_line": 343,
+            "start_line": 1
+          },
+          "symbol": "device-pairing-prune"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/network_enrollment_owner.rs",
+        "symbol": "network_enrollment_owner"
+      },
+      "tests": [
+        "source/host/tests/network_enrollment_owner_contract.rs::test_ocrm_device_pairing_o06_node_lifecycle"
+      ],
+      "typed_contracts": [
+        "Node pairing lifecycle and supervisor poll"
+      ],
+      "unit_id": "OCRM-UNIT-DEVICE-PAIRING-001"
     }
   ],
   "schema_version": 1,

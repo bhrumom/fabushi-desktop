@@ -1,5 +1,5 @@
 {
-  "canonical_inventory_sha256": "10431493212748f1f8b331faa93b77dcdde821f2c7c2704c42b01833ea5263fa",
+  "canonical_inventory_sha256": "5914ab3f17841323400f5f7e7afd8b0a1ee76adb637ebd7d18088b58e50df92d",
   "compression": "gzip with mtime=0, UTF-8 JSONL, full canonical schema records",
   "format_version": 1,
   "project_id": "OCRM-001",
@@ -319,12 +319,12 @@
       "uncompressed_sha256": "62ce93f30601200031baa75e17d65c30251d37f80f4041c02ec20ac7e56abb55"
     },
     {
-      "compressed_sha256": "7681af5b279d0b6b840e45296f00f6ff61568c0e6dd7b2b7172f0b077e8ea17b",
+      "compressed_sha256": "93633f9ff64b45cf554ad340331789b7430e8efab2bd8fe126bcfb840980cd69",
       "count": 1024,
       "first_path": "src/hooks/bundled/compaction-notifier/HOOK.md",
       "last_path": "src/infra/heartbeat-runner.subagent-session-guard.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0039.jsonl.gz",
-      "uncompressed_sha256": "28b95a26d35fd886bcef24875c215bef42f79e4114b37090e4c94a32ff9c10f9"
+      "uncompressed_sha256": "2bd284cf5314df2e7272b41f4f92fad0b076a1cd10a380f23605bf126c0c21ad"
     },
     {
       "compressed_sha256": "a1edc5afd87eed0294b82c3440766660dbd87f64fc46baebb0d5d60dd0459b22",

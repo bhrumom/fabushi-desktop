@@ -61,7 +61,9 @@
         "projects/openclaw-rust/dossiers/transcript-round56-settings-gateway-ingress-and-worker-writers-20261024.md",
         "source/host/tests/settings_service_contract.rs",
         "source/host/tests/openclaw_sessions_and_config_contract.rs",
-        "source/host/tests/session_conversation_state_contract.rs"
+        "source/host/tests/session_conversation_state_contract.rs",
+        "source/host/tests/network_enrollment_owner_contract.rs",
+        "projects/openclaw-rust/dossiers/gateway-router-device-authority-followup-20261022.md"
       ],
       "gate_ids": [],
       "id": "OCRM-R04",
@@ -95,7 +97,13 @@
         "OCRM-SESSION-O03",
         "OCRM-SESSION-O04",
         "OCRM-SESSION-O05",
-        "OCRM-SESSION-O06"
+        "OCRM-SESSION-O06",
+        "OCRM-DEVICE-PAIRING-O01",
+        "OCRM-DEVICE-PAIRING-O02",
+        "OCRM-DEVICE-PAIRING-O03",
+        "OCRM-DEVICE-PAIRING-O04",
+        "OCRM-DEVICE-PAIRING-O05",
+        "OCRM-DEVICE-PAIRING-O06"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
       "responsibility_ids": [
@@ -122,7 +130,13 @@
         "OCRM-RESP-SESSION-CONVERSATION-TURNS-001",
         "OCRM-RESP-SESSION-MODEL-OVERRIDES-001",
         "OCRM-RESP-SESSION-AUTH-PROFILE-LIFECYCLE-001",
-        "OCRM-RESP-SESSION-WORK-ADMISSION-001"
+        "OCRM-RESP-SESSION-WORK-ADMISSION-001",
+        "OCRM-RESP-DEVICE-PAIRING-STATE-MACHINE-001",
+        "OCRM-RESP-DEVICE-PAIRING-STORE-PERSISTENCE-001",
+        "OCRM-RESP-DEVICE-PAIRING-APPROVAL-POLICY-001",
+        "OCRM-RESP-DEVICE-PAIRING-TOKENS-LIFECYCLE-001",
+        "OCRM-RESP-DEVICE-PAIRING-JOIN-CODE-001",
+        "OCRM-RESP-DEVICE-PAIRING-NODE-LIFECYCLE-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
@@ -226,17 +240,34 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "in-progress",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "source/host/tests/network_enrollment_owner_contract.rs",
+        "projects/openclaw-rust/dossiers/gateway-router-device-authority-followup-20261022.md"
+      ],
       "gate_ids": [],
       "id": "OCRM-R10",
       "kind": "requirement",
       "not_applicable_reason": null,
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-DEVICE-PAIRING-O01",
+        "OCRM-DEVICE-PAIRING-O02",
+        "OCRM-DEVICE-PAIRING-O03",
+        "OCRM-DEVICE-PAIRING-O04",
+        "OCRM-DEVICE-PAIRING-O05",
+        "OCRM-DEVICE-PAIRING-O06"
+      ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
-      "responsibility_ids": [],
-      "reviewer": null
+      "responsibility_ids": [
+        "OCRM-RESP-DEVICE-PAIRING-STATE-MACHINE-001",
+        "OCRM-RESP-DEVICE-PAIRING-STORE-PERSISTENCE-001",
+        "OCRM-RESP-DEVICE-PAIRING-APPROVAL-POLICY-001",
+        "OCRM-RESP-DEVICE-PAIRING-TOKENS-LIFECYCLE-001",
+        "OCRM-RESP-DEVICE-PAIRING-JOIN-CODE-001",
+        "OCRM-RESP-DEVICE-PAIRING-NODE-LIFECYCLE-001"
+      ],
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
       "acceptance_status": "not-started",
@@ -265,17 +296,34 @@
       "reviewer": null
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "in-progress",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "source/host/tests/network_enrollment_owner_contract.rs",
+        "projects/openclaw-rust/dossiers/gateway-router-device-authority-followup-20261022.md"
+      ],
       "gate_ids": [],
       "id": "OCRM-R13",
       "kind": "requirement",
       "not_applicable_reason": null,
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-DEVICE-PAIRING-O01",
+        "OCRM-DEVICE-PAIRING-O02",
+        "OCRM-DEVICE-PAIRING-O03",
+        "OCRM-DEVICE-PAIRING-O04",
+        "OCRM-DEVICE-PAIRING-O05",
+        "OCRM-DEVICE-PAIRING-O06"
+      ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
-      "responsibility_ids": [],
-      "reviewer": null
+      "responsibility_ids": [
+        "OCRM-RESP-DEVICE-PAIRING-STATE-MACHINE-001",
+        "OCRM-RESP-DEVICE-PAIRING-STORE-PERSISTENCE-001",
+        "OCRM-RESP-DEVICE-PAIRING-APPROVAL-POLICY-001",
+        "OCRM-RESP-DEVICE-PAIRING-TOKENS-LIFECYCLE-001",
+        "OCRM-RESP-DEVICE-PAIRING-JOIN-CODE-001",
+        "OCRM-RESP-DEVICE-PAIRING-NODE-LIFECYCLE-001"
+      ],
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
       "acceptance_status": "not-started",
@@ -608,7 +656,9 @@
       "blocker_ids": [],
       "evidence_refs": [
         "source/host/tests/gateway_server_contract.rs",
-        "source/host/tests/gateway_protocol_contract.rs"
+        "source/host/tests/gateway_protocol_contract.rs",
+        "source/host/tests/network_enrollment_owner_contract.rs",
+        "projects/openclaw-rust/dossiers/gateway-router-device-authority-followup-20261022.md"
       ],
       "gate_ids": [],
       "id": "OCRM-AC11",
@@ -623,7 +673,13 @@
         "OCRM-GW-O06",
         "OCRM-GW-O07",
         "OCRM-GW-O08",
-        "OCRM-GW-O09"
+        "OCRM-GW-O09",
+        "OCRM-DEVICE-PAIRING-O01",
+        "OCRM-DEVICE-PAIRING-O02",
+        "OCRM-DEVICE-PAIRING-O03",
+        "OCRM-DEVICE-PAIRING-O04",
+        "OCRM-DEVICE-PAIRING-O05",
+        "OCRM-DEVICE-PAIRING-O06"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [
@@ -631,7 +687,13 @@
         "OCRM-RESP-GW-METHOD-SCOPE-001",
         "OCRM-RESP-GW-DEVICE-PAIRING-AUTH-001",
         "OCRM-RESP-GW-DISPATCH-REGISTRY-001",
-        "OCRM-RESP-GW-DEVICE-REVOCATION-FENCE-001"
+        "OCRM-RESP-GW-DEVICE-REVOCATION-FENCE-001",
+        "OCRM-RESP-DEVICE-PAIRING-STATE-MACHINE-001",
+        "OCRM-RESP-DEVICE-PAIRING-STORE-PERSISTENCE-001",
+        "OCRM-RESP-DEVICE-PAIRING-APPROVAL-POLICY-001",
+        "OCRM-RESP-DEVICE-PAIRING-TOKENS-LIFECYCLE-001",
+        "OCRM-RESP-DEVICE-PAIRING-JOIN-CODE-001",
+        "OCRM-RESP-DEVICE-PAIRING-NODE-LIFECYCLE-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },
