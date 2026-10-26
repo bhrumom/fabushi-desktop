@@ -319,12 +319,12 @@
       "uncompressed_sha256": "62ce93f30601200031baa75e17d65c30251d37f80f4041c02ec20ac7e56abb55"
     },
     {
-      "compressed_sha256": "fa957cf483c8ba82de057f357c1c03feab0f610541a1e5a56e25c6c538c39770",
+      "compressed_sha256": "264deee2e156c88ad836417b2bfd31061eeff6bac447e80b7ab8759dae5f8f07",
       "count": 1024,
       "first_path": "src/hooks/bundled/compaction-notifier/HOOK.md",
       "last_path": "src/infra/heartbeat-runner.subagent-session-guard.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0039.jsonl.gz",
-      "uncompressed_sha256": "29758246848f7779e11d396163b1fe05efff26673dbfdf33a4f712d24e3a113f"
+      "uncompressed_sha256": "993d28715d3a338a37388c2f54c3fefac3b226adc9f2688d6259801bc74fe626"
     },
     {
       "compressed_sha256": "a1edc5afd87eed0294b82c3440766660dbd87f64fc46baebb0d5d60dd0459b22",
@@ -375,12 +375,12 @@
       "uncompressed_sha256": "ff9db8146072d04d0bbb46ec95951739c378b190e6a163755e6e5e0a39be2ad4"
     },
     {
-      "compressed_sha256": "20d3aace03bb2300007c3dc0005db42ff403723db317931f9d97b6279c848b2e",
+      "compressed_sha256": "22122340fe1ceb803d6f96dfb38a2a9745be6cedee256dab1146979a86e5c4a4",
       "count": 1024,
       "first_path": "src/sessions/session-controller-model.test-support.ts",
       "last_path": "src/state/openclaw-agent-legacy-acp-schema.test.ts",
       "path": "projects/openclaw-rust/inventory/shards/part-0046.jsonl.gz",
-      "uncompressed_sha256": "faf9abb103a741386feb3459865996828ad7218b6204d549824393b2756efa5e"
+      "uncompressed_sha256": "e95feb927668fdfd471d5e3d97223a45f5cf87cf697b36430693efafa80c7388"
     },
     {
       "compressed_sha256": "c82e41bf4efd64a54ebde7346ff3c182e04aed100eadf0dd0ff3bdc6eb272e36",
