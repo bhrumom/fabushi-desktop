@@ -4,90 +4,23 @@
   "spec_revision": 9,
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
-    "commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a",
-    "tree": "5151db79560ed40bf3802482fcfb74b950be6c40",
+    "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "tree": "91f2b083ab2877c0a17d07868eabec362a5cfca6",
     "baseline_identity_accepted": false
   },
   "inventory": {
-    "root_non_directory_entries": 6717,
-    "recursive_non_directory_entries": 16202,
+    "root_non_directory_entries": 6895,
+    "recursive_non_directory_entries": null,
     "semantic_read_complete": false,
     "responsibility_decomposition_complete": false,
-    "unknown_minimum": 16175,
-    "unread_minimum": 16148,
+    "unknown_minimum": null,
+    "unread_minimum": null,
     "omitted_known": 0
   },
   "latest_recursive_evidence": {
-    "run_id": 39267321482,
-    "run_attempt": 1,
-    "job_id": 118110183925,
-    "head_sha": "5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-    "artifact_id": 12193803207,
-    "artifact_name": "tdrp-revision9-authority-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-    "artifact_digest": "sha256:7526811deaba969c6cf3c4a442a79ba5a2020811a993655c3dac457b146db9e0",
-    "artifact_files": [
-      "upstream-root-inventory.json",
-      "upstream-recursive-inventory.json",
-      "authority-report.json",
-      "build-time-acquisition-candidates.txt",
-      "external-recursive-child-acquisition-candidates.txt",
-      "external-recursive-child-discovery.json",
-      "root-open-authority-discovery.json",
-      "root-tool-authority-discovery.json"
-    ],
-    "supporting_artifacts": [
-      {
-        "kind": "recursive-root-aggregate",
-        "job_id": 118110671436,
-        "artifact_id": 12192619393,
-        "artifact_name": "tdrp-recursive-root-aggregate-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-        "artifact_digest": "sha256:c44a0247eb8977732373d08e06bf8cb52f4a72e2b22d10a587c451162a077b0e"
-      },
-      {
-        "kind": "recursive-child-aggregate",
-        "job_id": 118111905184,
-        "artifact_id": 12193158582,
-        "artifact_name": "tdrp-recursive-child-aggregate-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-        "artifact_digest": "sha256:6eaf637f330f01469dee3771e90e904f3f36d079e57217ae67d5373af1164e63"
-      },
-      {
-        "kind": "recursive-next-aggregate",
-        "job_id": 118114082297,
-        "artifact_id": 12193324860,
-        "artifact_name": "tdrp-recursive-next-aggregate-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-        "artifact_digest": "sha256:1afe55fae04e55577cc7c35254678f0b5ccfbde8b75b7821c2d47bb09471dd02"
-      },
-      {
-        "kind": "recursive-fixed-point",
-        "job_id": 118114176711,
-        "artifact_id": 12194136074,
-        "artifact_name": "tdrp-recursive-closure-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-        "artifact_digest": "sha256:87d18391079527ffce7a4d588e8dec08579e354a1ad02612a511e590e31233b2"
-      },
-      {
-        "kind": "recursive-build-reachability",
-        "job_id": 118114339699,
-        "artifact_id": 12193419380,
-        "artifact_name": "tdrp-recursive-reachability-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-        "artifact_digest": "sha256:1fd0f2411814962d74f2f8b991e6fd9a01bfc7c1da67e9590b8e9c49d5bf6d89"
-      },
-      {
-        "kind": "root-source-archives",
-        "job_id": 118110183972,
-        "artifact_id": 12192789573,
-        "artifact_name": "tdrp-root-source-archives-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-        "artifact_digest": "sha256:d461dd8f78d7e25b5ada127aaf10e08abedb1dc7c77d80d478cd235336a2cb2d"
-      },
-      {
-        "kind": "boost-build-reachability",
-        "job_id": 118110617587,
-        "artifact_id": 12193702905,
-        "artifact_name": "tdrp-boost-reachability-5221b86fe51d7caf0a1c16186cbdc9b4a8daece3",
-        "artifact_digest": "sha256:a5e1383f1a6e51093a92acc383d6bfb52e4e4f9cfec1d99e3739cf92d7b1af33"
-      }
-    ],
     "evidence_status": "historical-only",
-    "upstream_commit": "0a11537c220df35fe59a96aebe413b1e52bc6e47"
+    "note": "Evidence belongs to older upstream; new f985723 recursive tree and nested links not yet revalidated.",
+    "upstream_commit": "351204f3695b4a39bc3f4d2f230c061b9a01fe2a"
   },
   "closure_rules": {
     "executable_runner": "github-actions",
