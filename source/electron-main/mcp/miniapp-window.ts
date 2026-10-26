@@ -215,7 +215,9 @@ function isAllowedReportExport(appId: string, item: MiniAppDownloadItem, content
     return expectedFilename !== null && compatibleFilename && contents === owner && item.hasUserGesture() && blob.protocol === "blob:" && matchesOrigin(new URL(blob.pathname), origin)
       && item.getMimeType().split(";")[0]?.trim().toLowerCase() === "application/json"
       && filename === expectedFilename
-      && item.getTotalBytes() > 0 && item.getTotalBytes() <= MAX_REPORT_BYTES
+      // Chromium may report zero for a blob download before the first update;
+      // the updated handler enforces the bounded size once bytes arrive.
+      && item.getTotalBytes() >= 0 && item.getTotalBytes() <= MAX_REPORT_BYTES
       && item.getReceivedBytes() >= 0 && item.getReceivedBytes() <= MAX_REPORT_BYTES;
   } catch { return false; }
 }
