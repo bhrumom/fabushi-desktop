@@ -33,42 +33,42 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
    - **Rust Owner**: `source/host/src/agents/agent_roster.rs::list_agent_ids, try_resolve_default_agent_id`.
    - **Production Call Chain**: Producer `HostRosterBookkeeping::apply_config` → Owner `try_resolve_default_agent_id` → Consumer `HostRosterBookkeeping::apply`.
    - **Oracles**: `OCRM-ROSTER-O01`, `OCRM-ROSTER-O02`, `OCRM-ROSTER-O03`, `OCRM-ROSTER-O09`.
-   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=verified`.
+   - **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run` (`blocker_ids=["BL-AGENT-ROSTER-UPSTREAM-CALLER-001"]`: Host agent workspace configuration & doctor inspection pipelines do not yet invoke roster collapse, provenance, audit, and doctor include inspection helpers in real production flows).
 
 2. **`OCRM-RESP-AGENT-ROSTER-PROVENANCE-001`**:
    - **Behavior**: Roster include provenance evaluation, determining whether `$include` contributes membership or default metadata at `agents.entries`, `agents.list`, `id`, `default`, or `bindings` boundaries.
    - **Rust Owner**: `source/host/src/agents/agent_roster.rs::config_include_owns_agent_roster_values`.
    - **Production Call Chain**: Producer `can_write_doctor_include` → Owner `include_contribution_owns_agent_roster` → Consumer `can_write_doctor_include`.
    - **Oracle**: `OCRM-ROSTER-O04`.
-   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=verified`.
+   - **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run` (`blocker_ids=["BL-AGENT-ROSTER-UPSTREAM-CALLER-001"]`: Host agent workspace configuration & doctor inspection pipelines do not yet invoke roster collapse, provenance, audit, and doctor include inspection helpers in real production flows).
 
 3. **`OCRM-RESP-AGENT-WORKSPACE-TRANSITION-001`**:
    - **Behavior**: Workspace transition and survivor workspace pinning on multi-agent to sole-agent collapse, preserving agent workspace isolation across roster mutations.
    - **Rust Owner**: `source/host/src/agents/agent_roster.rs::pin_survivor_workspace_for_roster_collapse`.
    - **Production Call Chain**: Producer `pin_survivor_workspace_for_roster_collapse` → Consumer `source/host/src/agents/settings_file.rs::write_sand_settings_file`.
    - **Oracle**: `OCRM-ROSTER-O07`.
-   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=verified`.
+   - **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run` (`blocker_ids=["BL-AGENT-ROSTER-UPSTREAM-CALLER-001"]`: Host agent workspace configuration & doctor inspection pipelines do not yet invoke roster collapse, provenance, audit, and doctor include inspection helpers in real production flows).
 
 4. **`OCRM-RESP-AGENT-IMPLICIT-ROSTER-001`**:
    - **Behavior**: Materializes default implicit agent roster (`{ entries: { main: {} } }`) on fresh unauthored configurations.
    - **Rust Owner**: `source/host/src/agents/agent_roster.rs::apply_implicit_agent_roster_defaults`.
    - **Production Call Chain**: Producer `HostRosterBookkeeping::apply_config` → Owner `apply_implicit_agent_roster_defaults` → Consumer `list_agent_ids`.
    - **Oracle**: `OCRM-ROSTER-O05`.
-   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=verified`.
+   - **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run` (`blocker_ids=["BL-AGENT-ROSTER-UPSTREAM-CALLER-001"]`: Host agent workspace configuration & doctor inspection pipelines do not yet invoke roster collapse, provenance, audit, and doctor include inspection helpers in real production flows).
 
 5. **`OCRM-RESP-AGENT-ROSTER-AUDIT-001`**:
    - **Behavior**: Security audit rule `config.agent_roster.invalid_default_count`, detecting invalid default selection counts in explicit vs compatibility fleets.
    - **Rust Owner**: `source/host/src/agents/agent_roster.rs::collect_agent_roster_findings`.
    - **Production Call Chain**: Producer `collect_agent_roster_findings` → Consumer `security_diagnostics`.
    - **Oracle**: `OCRM-ROSTER-O06`.
-   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=verified`.
+   - **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run` (`blocker_ids=["BL-AGENT-ROSTER-UPSTREAM-CALLER-001"]`: Host agent workspace configuration & doctor inspection pipelines do not yet invoke roster collapse, provenance, audit, and doctor include inspection helpers in real production flows).
 
 6. **`OCRM-RESP-DOCTOR-ROSTER-INCLUDE-WRITE-001`**:
    - **Behavior**: Doctor guarded config write staging and include boundary determination, protecting include-owned rosters from destructive in-place writes.
    - **Rust Owner**: `source/host/src/agents/agent_roster.rs::can_write_doctor_include`.
    - **Production Call Chain**: Producer `can_write_doctor_include` → Consumer `source/host/src/agents/settings_file.rs::write_sand_settings_file`.
    - **Oracle**: `OCRM-ROSTER-O08`.
-   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=verified`.
+   - **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run` (`blocker_ids=["BL-AGENT-ROSTER-UPSTREAM-CALLER-001"]`: Host agent workspace configuration & doctor inspection pipelines do not yet invoke roster collapse, provenance, audit, and doctor include inspection helpers in real production flows).
 
 ---
 
@@ -95,6 +95,6 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
   - `omitted_known`: 0
 - **Responsibilities**:
   - Total: 90
-  - Active blockers: `BL-CURSOR-BACKEND-IMAGE-RESOLUTION-001` (Cursor AiService proto schema lacks resolution parameter)
+  - Active blockers: `BL-CURSOR-BACKEND-IMAGE-RESOLUTION-001` (Cursor AiService proto schema lacks resolution parameter), `BL-AGENT-ROSTER-UPSTREAM-CALLER-001` (Host agent workspace configuration & doctor inspection pipelines do not yet invoke roster collapse, provenance, audit, and doctor include inspection helpers in real production flows).
 - **Global Completion Flags**:
   - All 8 flags remain `false`.

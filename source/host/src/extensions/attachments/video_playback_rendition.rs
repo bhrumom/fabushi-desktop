@@ -16,7 +16,6 @@ use uuid::Uuid;
 pub const VIDEO_TOOL_TIMEOUT_MS: u64 = 2 * 60 * 1_000;
 pub const MAX_CACHED_RENDITIONS: usize = 8;
 pub const FAILED_RESOLUTION_RETRY_MS: u64 = 30_000;
-const VIDEO_TOOL_MAX_OUTPUT_BYTES: usize = 64 * 1024;
 const MAX_ACTIVE_TRANSCODES: usize = 2;
 
 pub type VideoToolRunner =
@@ -64,10 +63,16 @@ pub fn run_video_tool(command: &str, args: &[String]) -> Result<String, String> 
         .stderr
         .take()
         .ok_or_else(|| format!("{command} stderr unavailable"))?;
-    let stdout_reader = thread::spawn(move || read_capped(stdout, VIDEO_TOOL_MAX_OUTPUT_BYTES));
-    let stderr_reader = thread::spawn(move || read_capped(stderr, VIDEO_TOOL_MAX_OUTPUT_BYTES));
+    let max_bytes = crate::extensions::attachments::media_audio_transcode::MEDIA_FFMPEG_MAX_BUFFER_BYTES;
+    let stdout_reader = thread::spawn(move || read_capped(stdout, max_bytes));
+    let stderr_reader = thread::spawn(move || read_capped(stderr, max_bytes));
 
-    let deadline = Instant::now() + Duration::from_millis(VIDEO_TOOL_TIMEOUT_MS);
+    let timeout_ms = if command == "ffprobe" {
+        crate::extensions::attachments::media_audio_transcode::MEDIA_FFPROBE_TIMEOUT_MS
+    } else {
+        crate::extensions::attachments::media_audio_transcode::MEDIA_FFMPEG_TIMEOUT_MS
+    };
+    let deadline = Instant::now() + Duration::from_millis(timeout_ms);
     let status = loop {
         match child.try_wait() {
             Ok(Some(status)) => break status,
@@ -172,7 +177,15 @@ pub fn create_video_playback_source_with(
     let probe_raw = runner("ffprobe", &probe_args).ok()?;
     let probe_trimmed = probe_raw.trim();
 
-    let requires_transcode = if let Some(probe_meta) =
+    let policy = crate::extensions::attachments::media_probe::get_playback_policy(
+        crate::extensions::attachments::media_probe::PlaybackMediaKind::Video,
+    );
+    let mime = crate::media_mime::video_mime_from_path(source_path).unwrap_or("video/mp4");
+    let playback_mode = crate::extensions::attachments::media_probe::resolve_playback_mode(mime, policy);
+
+    let requires_transcode = if playback_mode == Some(crate::extensions::attachments::media_probe::PlaybackMode::Transcode) {
+        true
+    } else if let Some(probe_meta) =
         crate::extensions::attachments::media_probe::parse_ffprobe_media_metadata(
             probe_trimmed,
             crate::extensions::attachments::media_probe::PlaybackMediaKind::Video,
@@ -180,7 +193,7 @@ pub fn create_video_playback_source_with(
     {
         crate::extensions::attachments::media_probe::resolve_native_playback_codec_compatibility(
             crate::extensions::attachments::media_probe::PlaybackMediaKind::Video,
-            "video/mp4",
+            mime,
             &probe_meta,
         ) == Some(false)
     } else {

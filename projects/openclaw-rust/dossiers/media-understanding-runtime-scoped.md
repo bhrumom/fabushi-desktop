@@ -31,30 +31,30 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
 1. **`OCRM-RESP-MEDIA-APPLY-UNDERSTANDING-001`**:
    - **Behavior**: Application of media understanding across attachments in capability order (image, audio, video), voice note placeholder handling (`[Voice note could not be transcribed because the audio attachment was too small]`), and body block concatenation.
    - **Rust Owner**: `source/host/src/extensions/attachments/media_understanding_service.rs::append_file_blocks`.
-   - **Production Call Chain**: Producer `append_file_blocks` → Consumer `source/host/src/extensions/transcript/production_runtime.rs`.
+   - **Production Call Chain**: Producer `append_file_blocks` → Consumer `source/host/src/extensions/transcript/production_runtime.rs` (pending active upstream caller integration).
    - **Oracles**: `OCRM-MEDIA-UND-O04`, `OCRM-MEDIA-UND-O05`.
-   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=verified`.
+   - **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run` (`blocker_ids=["BL-MEDIA-UNDERSTANDING-UPSTREAM-CALLER-001"]`: Production agent inference engine does not yet route inbound attachments through media understanding pre-processing pipeline).
 
 2. **`OCRM-RESP-MEDIA-ATTACHMENTS-CACHE-001`**:
    - **Behavior**: Inbound media reference source classification (`media://` local store URLs vs remote fetch), maxBytes bounds checking, and fetch retry policies.
    - **Rust Owner**: `source/host/src/extensions/attachments/media_understanding_service.rs::is_media_store_url`.
-   - **Production Call Chain**: Producer `attachments_service.rs::upload` → Owner `is_media_store_url` → Consumer `attachments_service.rs::read_attachment_text_with_root`.
+   - **Production Call Chain**: Producer `attachments_service.rs::upload` → Owner `is_media_store_url` → Consumer `attachments_service.rs::read_attachment_text_with_root` (pending active upstream caller integration).
    - **Oracle**: `OCRM-MEDIA-UND-O07`.
-   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=verified`.
+   - **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run` (`blocker_ids=["BL-MEDIA-UNDERSTANDING-UPSTREAM-CALLER-001"]`: Inbound media store caching pipeline not yet integrated into upload flow).
 
 3. **`OCRM-RESP-MEDIA-UNDERSTANDING-RUNTIME-001`**:
    - **Behavior**: Runtime dispatch for image description, structured extraction, video description, and audio input budgeting.
    - **Rust Owner**: `source/host/src/extensions/attachments/media_understanding_service.rs::AudioInputBudget`.
-   - **Production Call Chain**: Producer `attachments_service.rs::upload` → Owner `AudioInputBudget` → Consumer `attachments_service.rs`.
+   - **Production Call Chain**: Producer `attachments_service.rs::upload` → Owner `AudioInputBudget` → Consumer `attachments_service.rs` (pending active upstream caller integration).
    - **Oracle**: `OCRM-MEDIA-UND-O06`.
-   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=verified`.
+   - **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run` (`blocker_ids=["BL-MEDIA-UNDERSTANDING-UPSTREAM-CALLER-001"]`: Media understanding runtime dispatch not yet wired into active inference caller).
 
 4. **`OCRM-RESP-MEDIA-SHARED-TRANSPORT-001`**:
    - **Behavior**: Shared media transport utilities: OpenAI-compatible auth header generation, audio transcription upload filename mapping (AAC to `.m4a`), and multipart form data building.
    - **Rust Owner**: `source/host/src/extensions/attachments/media_understanding_service.rs::resolve_audio_transcription_upload_file_name`.
-   - **Production Call Chain**: Producer `attachments_service.rs::upload` → Owner `resolve_audio_transcription_upload_file_name` → Consumer `attachments_service.rs`.
+   - **Production Call Chain**: Producer `attachments_service.rs::upload` → Owner `resolve_audio_transcription_upload_file_name` → Consumer `attachments_service.rs` (pending active upstream caller integration).
    - **Oracles**: `OCRM-MEDIA-UND-O02`, `OCRM-MEDIA-UND-O03`.
-   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=verified`.
+   - **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run` (`blocker_ids=["BL-MEDIA-UNDERSTANDING-UPSTREAM-CALLER-001"]`: Shared media transport helper not yet called by active inference transport).
 
 5. **`OCRM-RESP-MEDIA-TRANSCRIPTION-ARTIFACTS-001`**:
    - **Behavior**: Detection and suppression of empty STT prompt artifact echoes (`context:`, `###`, `transcribe the audio`) from transcript entries and preview pipelines.
@@ -66,9 +66,9 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
 6. **`OCRM-RESP-MEDIA-UNDERSTANDING-TYPES-001`**:
    - **Behavior**: Typed data contracts for media understanding decisions, attachment dispositions, processing states, and model request structures.
    - **Rust Owner**: `source/host/src/extensions/attachments/media_understanding_service.rs`.
-   - **Production Call Chain**: Producer `media_understanding_service.rs` → Consumer `attachments_service.rs`.
+   - **Production Call Chain**: Producer `media_understanding_service.rs` → Consumer `attachments_service.rs` (pending active upstream caller integration).
    - **Oracle**: `OCRM-MEDIA-UND-O04`.
-   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=verified`.
+   - **Status**: `implementation=implemented`, `wiring=not-wired`, `verification=not-run` (`blocker_ids=["BL-MEDIA-UNDERSTANDING-UPSTREAM-CALLER-001"]`: Typed media understanding data contracts not yet consumed by live inference engine).
 
 ---
 
@@ -94,6 +94,6 @@ The audited source code was decomposed into 6 discrete Rust runtime responsibili
   - `omitted_known`: 0
 - **Responsibilities**:
   - Total: 96
-  - Active blockers: `BL-CURSOR-BACKEND-IMAGE-RESOLUTION-001`
+  - Active blockers: `BL-CURSOR-BACKEND-IMAGE-RESOLUTION-001`, `BL-MEDIA-UNDERSTANDING-UPSTREAM-CALLER-001` (Production agent inference engine does not yet route inbound attachments through media understanding pre-processing pipeline).
 - **Global Completion Flags**:
   - All 8 flags remain `false`.

@@ -8273,7 +8273,9 @@
     {
       "adr_refs": [],
       "behavior": "Agent roster representation decoding (entries map vs list array), normalization, sole-agent vs marked default resolution, ACP subagent target aggregation, and Gateway system agent enumeration.",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "BL-AGENT-ROSTER-UPSTREAM-CALLER-001"
+      ],
       "capability_ids": [
         "agents.roster.representation"
       ],
@@ -8348,8 +8350,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "verified",
-        "wiring": "wired"
+        "verification": "not-run",
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
@@ -8371,7 +8373,9 @@
     {
       "adr_refs": [],
       "behavior": "Roster include provenance evaluation, determining whether  contributes membership or default metadata at agents.entries/list or bindings boundaries.",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "BL-AGENT-ROSTER-UPSTREAM-CALLER-001"
+      ],
       "capability_ids": [
         "config.agent_roster.provenance"
       ],
@@ -8442,8 +8446,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "verified",
-        "wiring": "wired"
+        "verification": "not-run",
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
@@ -8461,7 +8465,9 @@
     {
       "adr_refs": [],
       "behavior": "Workspace transition and survivor workspace pinning on multi-agent to sole-agent collapse, preserving agent workspace isolation across roster mutations.",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "BL-AGENT-ROSTER-UPSTREAM-CALLER-001"
+      ],
       "capability_ids": [
         "config.agent_roster.transition"
       ],
@@ -8532,8 +8538,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "verified",
-        "wiring": "wired"
+        "verification": "not-run",
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
@@ -8551,7 +8557,9 @@
     {
       "adr_refs": [],
       "behavior": "Materializes default implicit agent roster ({ entries: { main: {} } }) on fresh unauthored configurations.",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "BL-AGENT-ROSTER-UPSTREAM-CALLER-001"
+      ],
       "capability_ids": [
         "config.agent_roster.implicit_defaults"
       ],
@@ -8622,8 +8630,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "verified",
-        "wiring": "wired"
+        "verification": "not-run",
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
@@ -8641,7 +8649,9 @@
     {
       "adr_refs": [],
       "behavior": "Security audit rule config.agent_roster.invalid_default_count, detecting invalid default selection counts in explicit vs compatibility fleets.",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "BL-AGENT-ROSTER-UPSTREAM-CALLER-001"
+      ],
       "capability_ids": [
         "security.audit.agent_roster"
       ],
@@ -8712,8 +8722,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "verified",
-        "wiring": "wired"
+        "verification": "not-run",
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
@@ -8731,7 +8741,9 @@
     {
       "adr_refs": [],
       "behavior": "Doctor guarded config write staging and include boundary determination, protecting include-owned rosters from destructive in-place writes.",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "BL-AGENT-ROSTER-UPSTREAM-CALLER-001"
+      ],
       "capability_ids": [
         "commands.doctor.roster_include_write"
       ],
@@ -8802,8 +8814,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "verified",
-        "wiring": "wired"
+        "verification": "not-run",
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
@@ -8821,7 +8833,9 @@
     {
       "adr_refs": [],
       "behavior": "Application of media understanding across attachments in capability order (image, audio, video), voice note placeholder handling, and body block concatenation.",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "BL-MEDIA-UNDERSTANDING-UPSTREAM-CALLER-001"
+      ],
       "capability_ids": [
         "media.apply_understanding"
       ],
@@ -8893,8 +8907,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "verified",
-        "wiring": "wired"
+        "verification": "not-run",
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
@@ -8913,7 +8927,9 @@
     {
       "adr_refs": [],
       "behavior": "Inbound media reference source classification (media:// local store URLs vs remote fetch), maxBytes bounds checking, and fetch retry policies.",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "BL-MEDIA-UNDERSTANDING-UPSTREAM-CALLER-001"
+      ],
       "capability_ids": [
         "media.attachments_cache"
       ],
@@ -8984,8 +9000,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "verified",
-        "wiring": "wired"
+        "verification": "not-run",
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
@@ -9003,7 +9019,9 @@
     {
       "adr_refs": [],
       "behavior": "Runtime dispatch for image description, structured extraction, video description, and audio input budgeting.",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "BL-MEDIA-UNDERSTANDING-UPSTREAM-CALLER-001"
+      ],
       "capability_ids": [
         "media.understanding_runtime"
       ],
@@ -9074,8 +9092,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "verified",
-        "wiring": "wired"
+        "verification": "not-run",
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
@@ -9093,7 +9111,9 @@
     {
       "adr_refs": [],
       "behavior": "Shared media transport utilities: OpenAI-compatible auth header generation, audio transcription upload filename mapping (AAC to .m4a), and multipart form data building.",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "BL-MEDIA-UNDERSTANDING-UPSTREAM-CALLER-001"
+      ],
       "capability_ids": [
         "media.shared_transport"
       ],
@@ -9165,8 +9185,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "verified",
-        "wiring": "wired"
+        "verification": "not-run",
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
@@ -9278,7 +9298,9 @@
     {
       "adr_refs": [],
       "behavior": "Typed data contracts for media understanding decisions, attachment dispositions, processing states, and model request structures.",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "BL-MEDIA-UNDERSTANDING-UPSTREAM-CALLER-001"
+      ],
       "capability_ids": [
         "media.understanding_types"
       ],
@@ -9349,8 +9371,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "verified",
-        "wiring": "wired"
+        "verification": "not-run",
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
@@ -10016,7 +10038,9 @@
     {
       "adr_refs": [],
       "behavior": "Compact ffprobe stdout parsing for audio codec and positive sample rate.",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "BL-MEDIA-FFMPEG-EXEC-UPSTREAM-001"
+      ],
       "capability_ids": [
         "media.ffmpeg_exec"
       ],
@@ -10087,8 +10111,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "verified",
-        "wiring": "wired"
+        "verification": "not-run",
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
@@ -10196,7 +10220,9 @@
     {
       "adr_refs": [],
       "behavior": "Audio transcode parameters normalization and FFmpeg Opus command construction.",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "BL-MEDIA-AUDIO-TRANSCODE-UPSTREAM-001"
+      ],
       "capability_ids": [
         "media.audio_transcode"
       ],
@@ -10268,8 +10294,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "verified",
-        "wiring": "wired"
+        "verification": "not-run",
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
@@ -10290,7 +10316,9 @@
     {
       "adr_refs": [],
       "behavior": "Canonicalization of equivalent local media references without filesystem resolution.",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "BL-MEDIA-REF-COMPARISON-UPSTREAM-001"
+      ],
       "capability_ids": [
         "media.reference_comparison"
       ],
@@ -10362,8 +10390,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "verified",
-        "wiring": "wired"
+        "verification": "not-run",
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
@@ -10381,7 +10409,9 @@
     {
       "adr_refs": [],
       "behavior": "Detection of prompt images requiring vision model inputs vs hydration-suppressed facts.",
-      "blocker_ids": [],
+      "blocker_ids": [
+        "BL-MEDIA-PROMPT-IMAGE-INPUT-UPSTREAM-001"
+      ],
       "capability_ids": [
         "media.prompt_image_input"
       ],
@@ -10461,8 +10491,8 @@
         "implementation": "implemented",
         "mapping": "reviewed",
         "read": "read-complete",
-        "verification": "verified",
-        "wiring": "wired"
+        "verification": "not-run",
+        "wiring": "not-wired"
       },
       "target": {
         "language": "Rust",
