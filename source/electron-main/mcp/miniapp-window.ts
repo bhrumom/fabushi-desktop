@@ -210,7 +210,9 @@ function isAllowedReportExport(appId: string, item: MiniAppDownloadItem, content
       : appId === "org.fabushi.chatgpt-auto-confirm"
         ? "chatgpt-auto-confirm-local-report.json"
         : null;
-    return expectedFilename !== null && contents === owner && item.hasUserGesture() && blob.protocol === "blob:" && matchesOrigin(new URL(blob.pathname), origin)
+    const compatibleFilename = filename === expectedFilename
+      || (appId === "org.fabushi.global-dandelion" && filename === "global-dandelion-session.json");
+    return expectedFilename !== null && compatibleFilename && contents === owner && item.hasUserGesture() && blob.protocol === "blob:" && matchesOrigin(new URL(blob.pathname), origin)
       && item.getMimeType().split(";")[0]?.trim().toLowerCase() === "application/json"
       && filename === expectedFilename
       && item.getTotalBytes() > 0 && item.getTotalBytes() <= MAX_REPORT_BYTES
