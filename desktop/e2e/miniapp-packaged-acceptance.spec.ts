@@ -255,6 +255,7 @@ async function verifyWasmFileReport(
   inputBytes: number,
   nativeLocalOverride?: boolean,
   phase?: (name: string) => Promise<void>,
+  appPid?: number,
 ): Promise<void> {
   await phase?.('composer-status');
   const status = page.locator('#composer-status');
@@ -274,6 +275,10 @@ async function verifyWasmFileReport(
     await bounded(page.locator('#message').fill(contents, { timeout: 60_000 }), 75_000, 'COMPOSER_NATIVE_FILL');
     await phase?.('composer-native-click');
     await bounded(page.locator('#launch').click({ timeout: 60_000 }), 75_000, 'COMPOSER_NATIVE_CLICK');
+    if (process.env.MINIAPP_REQUIRE_NATIVE_ENGINE === '1') {
+      if (process.platform !== 'darwin' || process.env.GITHUB_ACTIONS !== 'true' || !appPid) throw new Error('Actions-only native transfer permission gate');
+      execFileSync('/usr/bin/osascript', [path.resolve('../.github/scripts/miniapp-native-confirm.applescript'), String(appPid), '允许'], { timeout: 30_000, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    }
     await phase?.('composer-native-complete');
     await expect(status).toContainText('引擎已完成', { timeout: 120_000 });
     const packetCount = Number(await page.locator('#composer-packets').textContent());
@@ -570,7 +575,7 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
       }
       await markPhase('online-composer');
       await bounded(
-        verifyWasmFileReport(mini, inputFile, fixtureStat.size, onlineNativeVerified, markPhase),
+        verifyWasmFileReport(mini, inputFile, fixtureStat.size, onlineNativeVerified, markPhase, app.process.pid!),
         5 * 60_000,
         'VERIFY_ONLINE_WASM_FILE_REPORT',
       );
@@ -605,7 +610,7 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
       evidence.installedNativeVerified.push(offlineNativeVerified);
       await markPhase('offline-composer');
       await bounded(
-        verifyWasmFileReport(mini, inputFile, fixtureStat.size, offlineNativeVerified, markPhase),
+        verifyWasmFileReport(mini, inputFile, fixtureStat.size, offlineNativeVerified, markPhase, app.process.pid!),
         5 * 60_000,
         'VERIFY_OFFLINE_WASM_FILE_REPORT',
       );
