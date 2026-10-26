@@ -362,16 +362,18 @@ async function openWithNativePermission(row: Locator, appPid: number, allow = tr
   execFileSync('/usr/bin/osascript', [path.resolve('../.github/scripts/miniapp-native-confirm.applescript'), String(appPid), allow ? '允许' : '取消'], { timeout: 30000, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
 }
 
-async function exportAndVerifyReport(page: Page, downloadDir: string, inputFile: string, inputBytes: number): Promise<void> {
+async function exportAndVerifyReport(page: Page, appPid: number, downloadDir: string, inputFile: string, inputBytes: number): Promise<void> {
   const reportDir = await mkdtemp(path.join(downloadDir, 'report-'));
-    const downloadPromise = page.waitForEvent('download', { timeout: 30_000 });
     await page.getByRole('button', { name: /导出报告/u }).click();
-    const download = await downloadPromise;
+    execFileSync('/usr/bin/osascript', [path.resolve('../.github/scripts/miniapp-save-report.applescript'), String(appPid), reportDir], {
+      encoding: 'utf8', timeout: 45_000, stdio: ['ignore', 'pipe', 'pipe'],
+    });
     const reportFilename = 'global-dandelion-session.json';
-    expect(download.suggestedFilename()).toBe(reportFilename);
     const reportPath = path.join(reportDir, reportFilename);
-    await download.saveAs(reportPath);
-    expect((await stat(reportPath)).isFile()).toBe(true);
+    await expect.poll(async () => {
+      try { return (await stat(reportPath)).isFile(); }
+      catch { return false; }
+    }, { timeout: 10_000, message: 'completed native download must materialize its report file' }).toBe(true);
     const reportStat = await stat(reportPath);
     expect(reportStat.size).toBeGreaterThan(0);
     expect(reportStat.size).toBeLessThanOrEqual(1024 * 1024);
@@ -577,7 +579,7 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
         'VERIFY_ONLINE_WASM_FILE_REPORT',
       );
       await markPhase('online-report-export');
-      await exportAndVerifyReport(mini, evidenceDir, inputFile, fixtureStat.size);
+      await exportAndVerifyReport(mini, app.process.pid!, evidenceDir, inputFile, fixtureStat.size);
       evidence.launchModes.push('online-install');
       evidence.wasmLoaded.push(true);
       evidence.reportObserved.push(true);
@@ -612,7 +614,7 @@ test.describe('signed production Mini App install and offline lifecycle', () => 
         'VERIFY_OFFLINE_WASM_FILE_REPORT',
       );
       await markPhase('offline-report-export');
-      await exportAndVerifyReport(mini, evidenceDir, inputFile, fixtureStat.size);
+      await exportAndVerifyReport(mini, app.process.pid!, evidenceDir, inputFile, fixtureStat.size);
       evidence.launchModes.push('os-network-disabled-cold-launch');
       evidence.wasmLoaded.push(true);
       evidence.reportObserved.push(true);

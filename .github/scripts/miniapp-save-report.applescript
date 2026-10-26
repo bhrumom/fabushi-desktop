@@ -3,7 +3,7 @@
 on run argv
   set appPid to (item 1 of argv) as integer
   set reportDirectory to item 2 of argv
-  set expectedName to "global-dandelion-local-report.json"
+  set expectedName to "global-dandelion-session.json"
   tell application "System Events"
     if not UI elements enabled then error "MACOS_UI_AUTOMATION_NOT_CONFIGURED"
     set appProcess to first application process whose unix id is appPid
