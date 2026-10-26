@@ -10,6 +10,7 @@ pub mod media_file_context;
 pub mod media_probe;
 pub mod media_qr_png;
 pub mod media_reference;
+pub mod media_store;
 pub mod media_store_shared;
 pub mod media_understanding_service;
 pub mod safe_link_preview_fetch;

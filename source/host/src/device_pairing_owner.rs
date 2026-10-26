@@ -528,7 +528,16 @@ impl DevicePairingOwner {
             params![setup_code, setup_code, setup_id, now],
         ).map_err(|e| GatewayCommandError::Internal(format!("Failed to store bootstrap token: {e}")))?;
 
-        Ok(json!({
+        let qr_data_url = crate::extensions::attachments::media_qr_png::render_qr_png_data_url(
+            &setup_code,
+            &crate::extensions::attachments::media_qr_png::QrPngRenderOptions::default(),
+        ).ok();
+        let qr_terminal = crate::extensions::attachments::media_qr_png::render_qr_terminal(
+            &setup_code,
+            true,
+        ).ok();
+
+        let mut res = json!({
             "setupId": setup_id,
             "setupCode": setup_code,
             "gatewayUrl": "http://127.0.0.1:8080",
@@ -536,7 +545,14 @@ impl DevicePairingOwner {
             "urlSource": "local",
             "access": "full",
             "expiresAtMs": expires_at
-        }))
+        });
+        if let Some(qr) = qr_data_url {
+            res["qrDataUrl"] = Value::String(qr);
+        }
+        if let Some(term) = qr_terminal {
+            res["qrTerminal"] = Value::String(term);
+        }
+        Ok(res)
     }
 
     pub fn handle_pairing_command(&self, method: &str, args: &Value) -> Result<Value, GatewayCommandError> {

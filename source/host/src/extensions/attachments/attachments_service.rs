@@ -1771,6 +1771,85 @@ impl AttachmentsService {
                     .unwrap_or(0);
                 Ok(Value::String(crate::extensions::attachments::media_store_shared::format_media_size(bytes)))
             }
+            "saveMediaBuffer" => (|| {
+                let b64 = args
+                    .get("bufferBase64")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| "saveMediaBuffer.bufferBase64 must be a string".to_string())?;
+                let content_type = args.get("contentType").and_then(Value::as_str);
+                let subdir = args.get("subdir").and_then(Value::as_str).unwrap_or("inbound");
+                let max_bytes = args.get("maxBytes").and_then(Value::as_u64).unwrap_or(crate::extensions::attachments::media_store::MEDIA_MAX_BYTES);
+                let original_filename = args.get("originalFilename").and_then(Value::as_str);
+
+                use base64::Engine;
+                let raw = base64::prelude::BASE64_STANDARD
+                    .decode(b64)
+                    .map_err(|e| format!("Invalid base64 buffer: {e}"))?;
+
+                let saved = crate::extensions::attachments::media_store::save_media_buffer(
+                    &raw,
+                    content_type,
+                    subdir,
+                    max_bytes,
+                    original_filename,
+                    None,
+                    None,
+                ).map_err(|e| e.to_string())?;
+
+                serde_json::to_value(&saved).map_err(|e| e.to_string())
+            })(),
+            "readMediaBuffer" => (|| {
+                let id = args
+                    .get("id")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| "readMediaBuffer.id must be a string".to_string())?;
+                let subdir = args.get("subdir").and_then(Value::as_str).unwrap_or("inbound");
+                let max_bytes = args.get("maxBytes").and_then(Value::as_u64).unwrap_or(crate::extensions::attachments::media_store::MEDIA_MAX_BYTES);
+
+                let (bytes, path) = crate::extensions::attachments::media_store::read_media_buffer(
+                    id,
+                    subdir,
+                    max_bytes,
+                    None,
+                ).map_err(|e| e.to_string())?;
+
+                use base64::Engine;
+                let b64 = base64::prelude::BASE64_STANDARD.encode(&bytes);
+
+                Ok(json!({
+                    "id": id,
+                    "path": path.to_string_lossy(),
+                    "size": bytes.len(),
+                    "bufferBase64": b64
+                }))
+            })(),
+            "deleteMediaBuffer" => (|| {
+                let id = args
+                    .get("id")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| "deleteMediaBuffer.id must be a string".to_string())?;
+                let subdir = args.get("subdir").and_then(Value::as_str).unwrap_or("inbound");
+                crate::extensions::attachments::media_store::delete_media_buffer(id, subdir, None)
+                    .map(|_| Value::Bool(true))
+            })(),
+            "cleanOldMedia" => (|| {
+                let ttl_ms = args.get("ttlMs").and_then(Value::as_u64).unwrap_or(crate::extensions::attachments::media_store::DEFAULT_TTL_MS);
+                let recursive = args.get("recursive").and_then(Value::as_bool);
+                let prune_empty_dirs = args.get("pruneEmptyDirs").and_then(Value::as_bool);
+                let opts = crate::extensions::attachments::media_store::CleanOldMediaOptions {
+                    recursive,
+                    prune_empty_dirs,
+                };
+                crate::extensions::attachments::media_store::clean_old_media(ttl_ms, &opts, None)
+                    .map(|_| Value::Bool(true))
+            })(),
+            "extractOriginalFilename" => {
+                let path = args
+                    .get("path")
+                    .and_then(Value::as_str)
+                    .unwrap_or("");
+                Ok(Value::String(crate::extensions::attachments::media_store::extract_original_filename(path)))
+            }
             _ => return None,
         };
         Some(result)
