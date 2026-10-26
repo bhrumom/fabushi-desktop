@@ -453,30 +453,58 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "in-progress",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "source/host/tests/gateway_local_exec_sand_box_contract.rs",
+        "source/host/tests/production_turn_run_shell_adapter_contract.rs",
+        "projects/openclaw-rust/dossiers/process-exec-shell-scoped.md"
+      ],
       "gate_ids": [],
       "id": "OCRM-R16",
       "kind": "requirement",
       "not_applicable_reason": null,
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-EXEC-O01",
+        "OCRM-EXEC-O02",
+        "OCRM-EXEC-O03",
+        "OCRM-EXEC-O04",
+        "OCRM-EXEC-O09",
+        "OCRM-EXEC-O10"
+      ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
-      "responsibility_ids": [],
-      "reviewer": null
+      "responsibility_ids": [
+        "OCRM-RESP-EXEC-PROCESS-SPAWN-001",
+        "OCRM-RESP-EXEC-RUNNER-TIMEOUT-001",
+        "OCRM-RESP-EXEC-LINE-FRAMER-001"
+      ],
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "in-progress",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "source/host/tests/extensions_local_exec_contract.rs",
+        "source/host/tests/gateway_local_exec_sand_box_contract.rs",
+        "projects/openclaw-rust/dossiers/process-exec-shell-scoped.md"
+      ],
       "gate_ids": [],
       "id": "OCRM-R17",
       "kind": "requirement",
       "not_applicable_reason": null,
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-EXEC-O05",
+        "OCRM-EXEC-O06",
+        "OCRM-EXEC-O07",
+        "OCRM-EXEC-O08"
+      ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
-      "responsibility_ids": [],
-      "reviewer": null
+      "responsibility_ids": [
+        "OCRM-RESP-EXEC-COMMAND-ERROR-001",
+        "OCRM-RESP-EXEC-TERMINATION-CONTROLLER-001",
+        "OCRM-RESP-EXEC-KILL-TREE-001"
+      ],
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
       "acceptance_status": "not-started",
@@ -913,24 +941,42 @@
       "reviewer": "xuyao@ombhrum.com"
     },
     {
-      "acceptance_status": "not-started",
+      "acceptance_status": "in-progress",
       "blocker_ids": [],
-      "evidence_refs": [],
+      "evidence_refs": [
+        "source/host/tests/gateway_local_exec_sand_box_contract.rs",
+        "source/host/tests/production_turn_run_shell_adapter_contract.rs",
+        "projects/openclaw-rust/dossiers/process-exec-shell-scoped.md"
+      ],
       "gate_ids": [],
       "id": "OCRM-AC16",
       "kind": "acceptance-criterion",
       "not_applicable_reason": null,
-      "oracle_ids": [],
+      "oracle_ids": [
+        "OCRM-EXEC-O01",
+        "OCRM-EXEC-O02",
+        "OCRM-EXEC-O03",
+        "OCRM-EXEC-O04",
+        "OCRM-EXEC-O09",
+        "OCRM-EXEC-O10"
+      ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
-      "responsibility_ids": [],
-      "reviewer": null
+      "responsibility_ids": [
+        "OCRM-RESP-EXEC-PROCESS-SPAWN-001",
+        "OCRM-RESP-EXEC-RUNNER-TIMEOUT-001",
+        "OCRM-RESP-EXEC-LINE-FRAMER-001"
+      ],
+      "reviewer": "xuyao@ombhrum.com"
     },
     {
       "acceptance_status": "in-progress",
       "blocker_ids": [],
       "evidence_refs": [
         "projects/openclaw-rust/dossiers/transcript-round56-settings-gateway-ingress-and-worker-writers-20261024.md",
-        "source/host/tests/settings_service_contract.rs"
+        "source/host/tests/settings_service_contract.rs",
+        "source/host/tests/extensions_local_exec_contract.rs",
+        "source/host/tests/gateway_local_exec_sand_box_contract.rs",
+        "projects/openclaw-rust/dossiers/process-exec-shell-scoped.md"
       ],
       "gate_ids": [],
       "id": "OCRM-AC17",
@@ -942,7 +988,11 @@
         "OCRM-CONFIG-O03",
         "OCRM-CONFIG-O04",
         "OCRM-CONFIG-O05",
-        "OCRM-CONFIG-O06"
+        "OCRM-CONFIG-O06",
+        "OCRM-EXEC-O05",
+        "OCRM-EXEC-O06",
+        "OCRM-EXEC-O07",
+        "OCRM-EXEC-O08"
       ],
       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
       "responsibility_ids": [
@@ -951,7 +1001,10 @@
         "OCRM-RESP-CONFIG-SINGLE-WRITER-LOCK-001",
         "OCRM-RESP-CONFIG-IO-SNAPSHOT-001",
         "OCRM-RESP-CONFIG-SCHEMA-NORMALIZATION-001",
-        "OCRM-RESP-CONFIG-AGENT-WORKSPACE-DIRS-001"
+        "OCRM-RESP-CONFIG-AGENT-WORKSPACE-DIRS-001",
+        "OCRM-RESP-EXEC-COMMAND-ERROR-001",
+        "OCRM-RESP-EXEC-TERMINATION-CONTROLLER-001",
+        "OCRM-RESP-EXEC-KILL-TREE-001"
       ],
       "reviewer": "xuyao@ombhrum.com"
     },

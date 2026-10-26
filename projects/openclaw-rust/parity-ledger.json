@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 118,
+    "mapped_paths": 124,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58632
+    "unclassified_paths": 58626
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -6071,6 +6071,552 @@
         "verify_webhook_hmac_sha256"
       ],
       "unit_id": "OCRM-UNIT-CHANNELS-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Sandboxed process spawning, execution timeout enforcement (timeoutMs), cwd isolation, environment variable allowlisting/sanitization, and standard descriptor configuration.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "exec.process_spawn"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::local_exec"
+      ],
+      "evidence_refs": [
+        "source/host/tests/gateway_local_exec_sand_box_contract.rs",
+        "projects/openclaw-rust/dossiers/process-exec-shell-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
+          "reason": "Host GatewayLocalExecSandBox"
+        }
+      ],
+      "id": "OCRM-RESP-EXEC-PROCESS-SPAWN-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
+        "entrypoint": "source/host/src/extensions/local_exec/mod.rs",
+        "owner": "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
+        "producer": "source/host/src/runner/mod.rs"
+      },
+      "invariants": [
+        "Execution timeout aborts child process when elapsed exceeds deadline",
+        "Environment variables are stripped of non-allowlisted credentials"
+      ],
+      "migration_rollback": "Disable sandboxed tool execution in runner config",
+      "oracle_ids": [
+        "OCRM-EXEC-O01",
+        "OCRM-EXEC-O02"
+      ],
+      "owner_decision": "Implement sandboxed command execution in host local exec sandbox",
+      "postconditions": [
+        "Spawned process output collected within memory bounds"
+      ],
+      "preconditions": [
+        "Tool call or shell execution request admitted by agent runner"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "security"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R16",
+        "OCRM-AC16"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "High; prevents runaway subprocesses and credential leakage",
+      "selected_owner": "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
+      "source_refs": [
+        {
+          "blob_sha": "b46a1511556b7da193b88c6d29fdd9630f4b67d3",
+          "path": "src/process/exec.ts",
+          "range": {
+            "end_line": 383,
+            "start_line": 1
+          },
+          "symbol": "runExec"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
+        "symbol": "GatewayLocalExecSandBox"
+      },
+      "tests": [
+        "source/host/tests/gateway_local_exec_sand_box_contract.rs::sandbox_projects_provider_state_and_user_computers",
+        "source/host/tests/gateway_local_exec_sand_box_contract.rs::upload_and_download_enforce_gate_and_use_frozen_frames"
+      ],
+      "typed_contracts": [
+        "GatewayLocalExecSandBox::ensure_ready"
+      ],
+      "unit_id": "OCRM-UNIT-EXEC-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Bounded command execution runner, activity timers, no-output-timeout deadline detection, and buffered output accumulation with memory bounds (DEFAULT_EXEC_MAX_BUFFER_BYTES).",
+      "blocker_ids": [],
+      "capability_ids": [
+        "exec.runner_timeout"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::runner"
+      ],
+      "evidence_refs": [
+        "source/host/tests/production_turn_run_shell_adapter_contract.rs",
+        "projects/openclaw-rust/dossiers/process-exec-shell-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/runner/production_turn_run_shell_adapter.rs",
+          "reason": "Host turn shell lifecycle adapter"
+        }
+      ],
+      "id": "OCRM-RESP-EXEC-RUNNER-TIMEOUT-001",
+      "integration": {
+        "consumer": "source/host/src/runner/production_turn_run_shell_adapter.rs",
+        "entrypoint": "source/host/src/runner/mod.rs",
+        "owner": "source/host/src/runner/production_turn_run_shell_adapter.rs",
+        "producer": "source/host/src/runner/production_turn_agent_owner.rs"
+      },
+      "invariants": [
+        "No-output timeout fires if process emits no stdout/stderr during configured interval",
+        "Output buffer caps memory usage to prevent OOM"
+      ],
+      "migration_rollback": "Controlled by runner stream attempt policy",
+      "oracle_ids": [
+        "OCRM-EXEC-O03",
+        "OCRM-EXEC-O04"
+      ],
+      "owner_decision": "Implement command lifecycle execution and timeout handling in turn shell adapter",
+      "postconditions": [
+        "Execution terminates and returns structured command result"
+      ],
+      "preconditions": [
+        "Command invocation active with deadline options"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "lifecycle"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R16",
+        "OCRM-AC16"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "High; prevents hangs on interactive prompts or stalled network calls",
+      "selected_owner": "source/host/src/runner/production_turn_run_shell_adapter.rs",
+      "source_refs": [
+        {
+          "blob_sha": "e9a9c349eddab54fc6f697f75463bfca858f9708",
+          "path": "src/process/exec-runner.ts",
+          "range": {
+            "end_line": 721,
+            "start_line": 1
+          },
+          "symbol": "runCommandWithTimeout"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/runner/production_turn_run_shell_adapter.rs",
+        "symbol": "run_production_turn_shell_lifecycle"
+      },
+      "tests": [
+        "source/host/tests/production_turn_run_shell_adapter_contract.rs::first_output_timeout_for_attempt"
+      ],
+      "typed_contracts": [
+        "run_production_turn_shell_lifecycle"
+      ],
+      "unit_id": "OCRM-UNIT-EXEC-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Command execution error formatting, output tail truncation, ANSI escape sequence stripping, and Grok spawn failure classification (SpawnEnoent, SpawnPermissions, SpawnOther).",
+      "blocker_ids": [],
+      "capability_ids": [
+        "exec.command_error"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::local_exec"
+      ],
+      "evidence_refs": [
+        "source/host/tests/extensions_local_exec_contract.rs",
+        "projects/openclaw-rust/dossiers/process-exec-shell-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/local_exec/local_exec_failure_classifier.rs",
+          "reason": "Host local exec failure classifier"
+        }
+      ],
+      "id": "OCRM-RESP-EXEC-COMMAND-ERROR-001",
+      "integration": {
+        "consumer": "source/host/src/runner/mod.rs",
+        "entrypoint": "source/host/src/extensions/local_exec/mod.rs",
+        "owner": "source/host/src/extensions/local_exec/local_exec_failure_classifier.rs",
+        "producer": "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs"
+      },
+      "invariants": [
+        "ANSI escape codes stripped from error logs",
+        "Errno properly mapped to SpawnEnoent, SpawnPermissions, or SpawnOther"
+      ],
+      "migration_rollback": "Fallback to raw error string",
+      "oracle_ids": [
+        "OCRM-EXEC-O05"
+      ],
+      "owner_decision": "Implement command error sanitization and spawn error classification in host local exec",
+      "postconditions": [
+        "Sanitized error report suitable for agent prompt feedback"
+      ],
+      "preconditions": [
+        "Non-zero exit code, signal termination, or spawn exception"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "error-handling"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R17",
+        "OCRM-AC17"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Medium; guarantees agent prompt does not receive corrupted or ANSI-polluted text",
+      "selected_owner": "source/host/src/extensions/local_exec/local_exec_failure_classifier.rs",
+      "source_refs": [
+        {
+          "blob_sha": "6a49f9c79278aca9381b11a1323d30e6d351995b",
+          "path": "src/process/command-error.ts",
+          "range": {
+            "end_line": 87,
+            "start_line": 1
+          },
+          "symbol": "createCommandError"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/local_exec/local_exec_failure_classifier.rs",
+        "symbol": "classify_local_exec_failure"
+      },
+      "tests": [
+        "source/host/tests/extensions_local_exec_contract.rs::failure_classifier_matches_grok_spawn_errno_contract",
+        "source/host/tests/extensions_local_exec_contract.rs::local_exec_error_preserves_provider_message"
+      ],
+      "typed_contracts": [
+        "classify_local_exec_failure"
+      ],
+      "unit_id": "OCRM-UNIT-EXEC-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Process termination controller, graceful kill grace window (killGraceMs), fallback to SIGKILL / taskkill force kill, and process group reap settlement.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "exec.termination_controller"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::local_exec"
+      ],
+      "evidence_refs": [
+        "source/host/tests/gateway_local_exec_sand_box_contract.rs",
+        "projects/openclaw-rust/dossiers/process-exec-shell-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
+          "reason": "Host GatewayLocalExecSandBox"
+        }
+      ],
+      "id": "OCRM-RESP-EXEC-TERMINATION-CONTROLLER-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
+        "entrypoint": "source/host/src/extensions/local_exec/mod.rs",
+        "owner": "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
+        "producer": "source/host/src/runner/mod.rs"
+      },
+      "invariants": [
+        "Graceful signal sent first; force kill applied if process remains alive past killGraceMs",
+        "Windows taskkill targets process tree /T to eliminate child workers"
+      ],
+      "migration_rollback": "Immediate SIGKILL fallback",
+      "oracle_ids": [
+        "OCRM-EXEC-O06",
+        "OCRM-EXEC-O07"
+      ],
+      "owner_decision": "Implement graceful-then-force process termination in local exec sandbox",
+      "postconditions": [
+        "All descendant processes terminated and resources released"
+      ],
+      "preconditions": [
+        "Process cancellation or timeout triggered"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "lifecycle"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R17",
+        "OCRM-AC17"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "High; prevents zombie processes consuming host CPU and memory",
+      "selected_owner": "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
+      "source_refs": [
+        {
+          "blob_sha": "8b799aea4cccb13dd5b76b4b25c49b4c025cf5d1",
+          "path": "src/process/exec-termination.ts",
+          "range": {
+            "end_line": 211,
+            "start_line": 1
+          },
+          "symbol": "createCommandTerminationController"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
+        "symbol": "GatewayLocalExecSandBox::terminate"
+      },
+      "tests": [
+        "source/host/tests/gateway_local_exec_sand_box_contract.rs::upload_and_download_enforce_gate_and_use_frozen_frames"
+      ],
+      "typed_contracts": [
+        "GatewayLocalExecSandBox::terminate"
+      ],
+      "unit_id": "OCRM-UNIT-EXEC-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Recursive process-tree discovery and termination, Unix process group signaling, Windows taskkill PID enumeration, and orphan process cleanup.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "exec.kill_tree"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::runner"
+      ],
+      "evidence_refs": [
+        "source/host/tests/gateway_local_exec_sand_box_contract.rs",
+        "projects/openclaw-rust/dossiers/process-exec-shell-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/runner/mod.rs",
+          "reason": "Host process tree terminator"
+        }
+      ],
+      "id": "OCRM-RESP-EXEC-KILL-TREE-001",
+      "integration": {
+        "consumer": "source/host/src/runner/mod.rs",
+        "entrypoint": "source/host/src/runner/mod.rs",
+        "owner": "source/host/src/runner/mod.rs",
+        "producer": "source/host/src/runner/mod.rs"
+      },
+      "invariants": [
+        "All child and descendant PIDs are discovered and signaled",
+        "Process group signaling ensures detached grandchildren terminate"
+      ],
+      "migration_rollback": "Signal root PID only",
+      "oracle_ids": [
+        "OCRM-EXEC-O08"
+      ],
+      "owner_decision": "Implement cross-platform process tree termination in runner",
+      "postconditions": [
+        "Complete process subtree terminated without orphans"
+      ],
+      "preconditions": [
+        "Root PID of subprocess known"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "system"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R17",
+        "OCRM-AC17"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "High; guarantees clean process isolation and prevents orphan background jobs",
+      "selected_owner": "source/host/src/runner/mod.rs",
+      "source_refs": [
+        {
+          "blob_sha": "1a0ccc2f9732f307de6f87604fab3fec24d79514",
+          "path": "src/process/kill-tree.ts",
+          "range": {
+            "end_line": 11,
+            "start_line": 1
+          },
+          "symbol": "killProcessTree"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/runner/mod.rs",
+        "symbol": "kill_process_tree"
+      },
+      "tests": [
+        "source/host/tests/box_exec_daemon_process_contract.rs"
+      ],
+      "typed_contracts": [
+        "kill_process_tree"
+      ],
+      "unit_id": "OCRM-UNIT-EXEC-001"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Bounded LF-delimited byte stream framing, zero-copy chunk search, buffer memory cap enforcement with overflow error generation, and safe line yielding.",
+      "blocker_ids": [],
+      "capability_ids": [
+        "exec.line_framer"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::runner"
+      ],
+      "evidence_refs": [
+        "source/host/tests/production_turn_run_shell_adapter_contract.rs",
+        "projects/openclaw-rust/dossiers/process-exec-shell-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/runner/mod.rs",
+          "reason": "Host BoundedLineFramer"
+        }
+      ],
+      "id": "OCRM-RESP-EXEC-LINE-FRAMER-001",
+      "integration": {
+        "consumer": "source/host/src/runner/mod.rs",
+        "entrypoint": "source/host/src/runner/mod.rs",
+        "owner": "source/host/src/runner/mod.rs",
+        "producer": "source/host/src/runner/mod.rs"
+      },
+      "invariants": [
+        "Incomplete trailing line preserved across chunk pushes",
+        "Line length exceeding maxBytes triggers overflow error immediately"
+      ],
+      "migration_rollback": "Fallback to standard line reader without strict byte bounds",
+      "oracle_ids": [
+        "OCRM-EXEC-O09",
+        "OCRM-EXEC-O10"
+      ],
+      "owner_decision": "Implement bounded line framing in host runner",
+      "postconditions": [
+        "Complete lines yielded cleanly as byte slices"
+      ],
+      "preconditions": [
+        "Raw streaming byte chunks received from process stdio"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R16",
+        "OCRM-AC16"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Medium; protects against memory exhaustion from un-delimited infinite streams",
+      "selected_owner": "source/host/src/runner/mod.rs",
+      "source_refs": [
+        {
+          "blob_sha": "e2395772f795cd0597b854c478f9f1cfb69bb5ea",
+          "path": "src/process/bounded-line-framer.ts",
+          "range": {
+            "end_line": 36,
+            "start_line": 1
+          },
+          "symbol": "createBoundedLineFramer"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "verified",
+        "wiring": "wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/runner/mod.rs",
+        "symbol": "BoundedLineFramer"
+      },
+      "tests": [
+        "source/host/tests/production_turn_run_shell_adapter_contract.rs"
+      ],
+      "typed_contracts": [
+        "BoundedLineFramer::push"
+      ],
+      "unit_id": "OCRM-UNIT-EXEC-001"
     }
   ],
   "schema_version": 1,
