@@ -491,3 +491,151 @@ where
 {
     default_resolver().with_source(source_path, read)
 }
+
+pub const PLAYBACK_TRANSCODE_CACHE_VERSION: &str = "v2";
+pub const PLAYBACK_TRANSCODE_SUBDIR: &str = "playback-transcode";
+pub const PLAYBACK_TRANSCODE_MAX_ALLOC_BYTES: u64 = 256 * 1024 * 1024;
+pub const PLAYBACK_TRANSCODE_MAX_DURATION_SECS: u64 = 20 * 60;
+pub const PLAYBACK_TRANSCODE_MAX_INPUT_PIXELS: u64 = 4096 * 4096;
+pub const PLAYBACK_TRANSCODE_THREADS: u32 = 2;
+pub const PLAYBACK_TRANSCODE_FAILURE_COOLDOWN_MS: u64 = 60_000;
+
+pub fn create_playback_transcode_cache_key(
+    path: &str,
+    size: u64,
+    mtime_ms: u64,
+    ctime_ms: u64,
+    dev: u64,
+    ino: u64,
+) -> String {
+    let payload = serde_json::json!([
+        path,
+        size,
+        mtime_ms,
+        ctime_ms,
+        dev.to_string(),
+        ino.to_string()
+    ]);
+    let serialized = serde_json::to_string(&payload).unwrap_or_default();
+    let mut hasher = Sha256::new();
+    hasher.update(serialized.as_bytes());
+    format!("{:x}", hasher.finalize())
+}
+
+pub fn playback_cache_relative_path(cache_key: &str, extension: &str) -> String {
+    format!(
+        "{}/{}-{}{}",
+        PLAYBACK_TRANSCODE_SUBDIR,
+        PLAYBACK_TRANSCODE_CACHE_VERSION,
+        cache_key,
+        extension
+    )
+}
+
+pub fn replace_playback_file_extension(file_name: &str, extension: &str) -> String {
+    let ext_idx = file_name.rfind('.').and_then(|idx| {
+        if idx > 0 {
+            Some(idx)
+        } else {
+            None
+        }
+    });
+    let stem = match ext_idx {
+        Some(idx) => &file_name[..idx],
+        None => file_name,
+    };
+    let stem = if stem.is_empty() { "media" } else { stem };
+    format!("{}{}", stem, extension)
+}
+
+pub fn playback_durations_match(source_duration_ms: u64, output_duration_ms: u64) -> bool {
+    let tolerance_ms = ((source_duration_ms as f64 * 0.02).ceil() as u64).clamp(1000, 2000);
+    output_duration_ms <= PLAYBACK_TRANSCODE_MAX_DURATION_SECS * 1000
+        && (source_duration_ms as i64 - output_duration_ms as i64).unsigned_abs() <= tolerance_ms
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PlaybackTranscodeResolution {
+    Passthrough,
+    Preparing,
+    Fallback,
+    Transcoded {
+        path: PathBuf,
+        content_type: String,
+        extension: String,
+    },
+}
+
+pub fn build_ffmpeg_playback_args(
+    input_path: &Path,
+    output_path: &Path,
+    kind: crate::extensions::attachments::media_probe::PlaybackMediaKind,
+    input_format: &str,
+    primary_stream_index: u32,
+    audio_stream_index: Option<u32>,
+    max_bytes: u64,
+) -> Vec<String> {
+    let audio_only = kind == crate::extensions::attachments::media_probe::PlaybackMediaKind::Audio;
+    let mut args = vec![
+        "-hide_banner".into(),
+        "-loglevel".into(),
+        "error".into(),
+        "-max_alloc".into(),
+        PLAYBACK_TRANSCODE_MAX_ALLOC_BYTES.to_string(),
+        "-filter_threads".into(),
+        PLAYBACK_TRANSCODE_THREADS.to_string(),
+        "-y".into(),
+        "-protocol_whitelist".into(),
+        "file".into(),
+        "-f".into(),
+        input_format.to_string(),
+        "-max_pixels".into(),
+        PLAYBACK_TRANSCODE_MAX_INPUT_PIXELS.to_string(),
+        "-threads".into(),
+        PLAYBACK_TRANSCODE_THREADS.to_string(),
+        "-i".into(),
+        input_path.to_string_lossy().into_owned(),
+        "-map_metadata".into(),
+        "-1".into(),
+        "-map_chapters".into(),
+        "-1".into(),
+        "-map".into(),
+        format!("0:{}", primary_stream_index),
+    ];
+    if !audio_only {
+        if let Some(audio_idx) = audio_stream_index {
+            args.push("-map".into());
+            args.push(format!("0:{}", audio_idx));
+        }
+    }
+    if audio_only {
+        args.push("-vn".into());
+    }
+    args.push("-sn".into());
+    args.push("-dn".into());
+    args.push("-t".into());
+    args.push(PLAYBACK_TRANSCODE_MAX_DURATION_SECS.to_string());
+    if !audio_only {
+        args.push("-vf".into());
+        args.push("scale=w='min(1920,iw)':h='min(1080,ih)':force_original_aspect_ratio=decrease:force_divisible_by=2".into());
+        args.push("-c:v".into());
+        args.push("libx264".into());
+        args.push("-threads".into());
+        args.push(PLAYBACK_TRANSCODE_THREADS.to_string());
+        args.push("-pix_fmt".into());
+        args.push("yuv420p".into());
+    }
+    args.push("-c:a".into());
+    args.push("aac".into());
+    args.push("-b:a".into());
+    args.push("128k".into());
+    args.push("-movflags".into());
+    args.push("+faststart".into());
+    args.push("-f".into());
+    args.push((if audio_only { "ipod" } else { "mp4" }).into());
+    args.push("-fs".into());
+    args.push((max_bytes + 1).to_string());
+    args.push(output_path.to_string_lossy().into_owned());
+    args
+}
+

@@ -336,3 +336,57 @@ pub fn assert_host_read_media_allowed(params: &AssertHostReadParams<'_>) -> Resu
         "Host-local media sends only allow buffer-verified images, audio, video, PDF, Office documents, archives, and validated plain-text documents (got {got_type})."
     )))
 }
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GeneratedHtmlProvenanceRow {
+    pub realpath: String,
+    pub kind: String,
+    pub version: i64,
+    pub sha256: String,
+    pub size_bytes: i64,
+    pub created_at_ms: i64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct HtmlProvenanceMarker {
+    pub sha256: String,
+    pub size: usize,
+}
+
+pub fn validate_provenance_row(row: &GeneratedHtmlProvenanceRow) -> Option<HtmlProvenanceMarker> {
+    if row.kind == "trusted-generated-html" && row.version == 1 {
+        Some(HtmlProvenanceMarker {
+            sha256: row.sha256.clone(),
+            size: row.size_bytes.max(0) as usize,
+        })
+    } else {
+        None
+    }
+}
+
+pub fn filter_stale_provenance_rows(rows: &[GeneratedHtmlProvenanceRow]) -> Vec<GeneratedHtmlProvenanceRow> {
+    let mut stale = Vec::new();
+    for row in rows {
+        let path = Path::new(&row.realpath);
+        let meta = match std::fs::symlink_metadata(path) {
+            Ok(m) => m,
+            Err(_) => {
+                stale.push(row.clone());
+                continue;
+            }
+        };
+        if !meta.is_file() || meta.file_type().is_symlink() {
+            stale.push(row.clone());
+            continue;
+        }
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::MetadataExt;
+            if meta.nlink() != 1 {
+                stale.push(row.clone());
+            }
+        }
+    }
+    stale
+}
+

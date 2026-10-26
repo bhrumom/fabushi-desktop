@@ -10,10 +10,10 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "mapped_paths": 256,
+    "mapped_paths": 264,
     "omitted_known": 0,
     "tracked_paths": 58750,
-    "unclassified_paths": 58494
+    "unclassified_paths": 58486
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -13919,6 +13919,248 @@
         "is_relative_assistant_media_reference(url: &str) -> bool"
       ],
       "unit_id": "OCRM-UNIT-MEDIA-015"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Video/audio playback transcoding policy, lazy store cache key management, single-flight inspection permits, and bounded FFmpeg arguments.",
+      "blocker_ids": [
+        "BL-MEDIA-PLAYBACK-TRANSCODE-CHAT-WIRING-001"
+      ],
+      "capability_ids": [
+        "media.playback"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::video_playback_rendition"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_playback_transcode_contract.rs",
+        "projects/openclaw-rust/dossiers/media-playback-and-html-provenance-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/video_playback_rendition.rs",
+          "reason": "Playback transcoding and video rendition cache owner"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-PLAYBACK-TRANSCODE-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/video_playback_rendition.rs",
+        "entrypoint": "source/host/src/extensions/attachments/video_playback_rendition.rs::create_playback_transcode_cache_key",
+        "owner": "source/host/src/extensions/attachments/video_playback_rendition.rs",
+        "producer": "source/host/src/extensions/attachments/video_playback_rendition.rs"
+      },
+      "invariants": [
+        "Deterministic SHA256 cache key composed from immutable path, size, mtime, ctime, dev, and ino",
+        "FFmpeg transcode bounds input pixels to 16MP and duration to 1200 seconds with 2 worker threads",
+        "Output duration matches source duration within tolerance clamp(ceil(source_duration * 0.02), 1000, 2000)"
+      ],
+      "migration_rollback": "Directly serve untranscoded original media without playback cache store",
+      "oracle_ids": [
+        "OCRM-PLAYBACK-TRANSCODE-O01"
+      ],
+      "owner_decision": "Incorporate playback transcode policies and deterministic caching into video_playback_rendition module",
+      "postconditions": [
+        "Playback transcode resolution returns passthrough, preparing, fallback, or transcoded asset path"
+      ],
+      "preconditions": [
+        "Source audio or video asset provided with stat metadata and target MIME"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R23",
+        "OCRM-AC23"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Medium; video/audio transcoding involves child subprocess execution and resource limits",
+      "selected_owner": "source/host/src/extensions/attachments/video_playback_rendition.rs",
+      "source_refs": [
+        {
+          "blob_sha": "d1494a0f2f5e68114552b02b602afa0f4a2e881f",
+          "path": "src/media/playback-transcode.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 598
+          },
+          "symbol": "createPlaybackTranscodeCacheKey, resolvePlaybackTranscode, resolvePlaybackMetadataForSource"
+        },
+        {
+          "blob_sha": "d8863fe39c1db2561076d559f94042d792f3a49b",
+          "path": "src/media/playback-transcode.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 927
+          },
+          "symbol": "playback transcode policy test suite"
+        },
+        {
+          "blob_sha": "ec5701c2fa59037daf24ba840ff3140e028f6e21",
+          "path": "src/media/playback-transcode.staging.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 225
+          },
+          "symbol": "playback transcode staging test suite"
+        },
+        {
+          "blob_sha": "d57dd08b487cf944a492413e017879ecb19165de",
+          "path": "src/media/playback-transcode.test-support.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 91
+          },
+          "symbol": "usePlaybackFixture, observePlaybackSourceOpen"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/video_playback_rendition.rs",
+        "symbol": "create_playback_transcode_cache_key, build_ffmpeg_playback_args"
+      },
+      "tests": [
+        "source/host/tests/openclaw_playback_transcode_contract.rs::test_playback_transcode_deterministic_cache_and_policy"
+      ],
+      "typed_contracts": [
+        "create_playback_transcode_cache_key",
+        "build_ffmpeg_playback_args"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-016"
+    },
+    {
+      "adr_refs": [],
+      "behavior": "Outbound generated HTML document provenance tracking, trusted marker verification, and stale marker pruning.",
+      "blocker_ids": [
+        "BL-MEDIA-HTML-PROVENANCE-CHAT-WIRING-001"
+      ],
+      "capability_ids": [
+        "media.provenance"
+      ],
+      "dependencies": [
+        "mahayana_host_runtime::extensions::attachments::host_read_media_policy"
+      ],
+      "evidence_refs": [
+        "source/host/tests/openclaw_html_provenance_contract.rs",
+        "projects/openclaw-rust/dossiers/media-playback-and-html-provenance-scoped.md"
+      ],
+      "existing_owner_candidates": [
+        {
+          "path": "source/host/src/extensions/attachments/host_read_media_policy.rs",
+          "reason": "Host read media policy and HTML trust validator"
+        }
+      ],
+      "id": "OCRM-RESP-MEDIA-GENERATED-HTML-PROVENANCE-001",
+      "integration": {
+        "consumer": "source/host/src/extensions/attachments/host_read_media_policy.rs",
+        "entrypoint": "source/host/src/extensions/attachments/host_read_media_policy.rs::is_allowed_host_read_html",
+        "owner": "source/host/src/extensions/attachments/host_read_media_policy.rs",
+        "producer": "source/host/src/extensions/attachments/host_read_media_policy.rs"
+      },
+      "invariants": [
+        "Trusted generated HTML markers strictly enforce kind=trusted-generated-html and version=1",
+        "Host read media admission validates exact SHA256 and byte size against recorded provenance",
+        "Pruning filters rows referencing missing files, symbolic links, or hardlinks (nlink != 1)"
+      ],
+      "migration_rollback": "Allow host read text fallback without strict outbound HTML provenance verification",
+      "oracle_ids": [
+        "OCRM-HTML-PROVENANCE-O01"
+      ],
+      "owner_decision": "Incorporate outbound HTML provenance types and validation into host_read_media_policy module",
+      "postconditions": [
+        "Validated HTML provenance marker returned or stale rows identified for cleanup"
+      ],
+      "preconditions": [
+        "HTML document path and provenance metadata available for registration or validation"
+      ],
+      "required_evidence_dimensions": [
+        "unit",
+        "format"
+      ],
+      "required_gate_ids": [
+        "OCRM-G04-rust-contract",
+        "OCRM-G05-frozen-oracle"
+      ],
+      "requirement_ids": [
+        "OCRM-R23",
+        "OCRM-AC23"
+      ],
+      "responsibility_kind": "business-runtime",
+      "reviewer": "xuyao@ombhrum.com",
+      "risk": "Low; validates HTML document origin to prevent unauthorized local read escalations",
+      "selected_owner": "source/host/src/extensions/attachments/host_read_media_policy.rs",
+      "source_refs": [
+        {
+          "blob_sha": "d00a635b7ee764126236a7f7c4c32969acf3f893",
+          "path": "src/media/generated-html-provenance.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 97
+          },
+          "symbol": "readGeneratedHtmlProvenance, writeGeneratedHtmlProvenance, pruneGeneratedHtmlProvenance"
+        },
+        {
+          "blob_sha": "e49c01be45ac77f6275498eeeece0b83feb648a1",
+          "path": "src/media/generated-html-provenance.test.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 293
+          },
+          "symbol": "generated HTML provenance worker boundary test suite"
+        },
+        {
+          "blob_sha": "0dd1b22b82eb26d4c53e00a8bc8bf9ae62b035fa",
+          "path": "src/media/generated-html-provenance.worker.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 90
+          },
+          "symbol": "generatedHtmlProvenanceReadOperations, generatedHtmlProvenanceOperations"
+        },
+        {
+          "blob_sha": "3d1ad1f65212e1b7dd166e647c426c38fe4283d6",
+          "path": "src/media/generated-html-provenance.worker-contract.ts",
+          "range": {
+            "start_line": 1,
+            "end_line": 23
+          },
+          "symbol": "GeneratedHtmlProvenanceRow, GeneratedHtmlProvenanceOperations"
+        }
+      ],
+      "status": {
+        "acceptance": "pending",
+        "implementation": "implemented",
+        "mapping": "reviewed",
+        "read": "read-complete",
+        "verification": "not-run",
+        "wiring": "not-wired"
+      },
+      "target": {
+        "language": "Rust",
+        "path": "source/host/src/extensions/attachments/host_read_media_policy.rs",
+        "symbol": "validate_provenance_row, filter_stale_provenance_rows"
+      },
+      "tests": [
+        "source/host/tests/openclaw_html_provenance_contract.rs::test_html_provenance_marker_validation"
+      ],
+      "typed_contracts": [
+        "validate_provenance_row",
+        "filter_stale_provenance_rows"
+      ],
+      "unit_id": "OCRM-UNIT-MEDIA-016"
     }
   ],
   "schema_version": 1,
